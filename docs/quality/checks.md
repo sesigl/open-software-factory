@@ -1,0 +1,64 @@
+---
+covers: [tools/checks/**, Makefile, .github/workflows/**]
+---
+
+# Checks
+
+Every check is deterministic: the same commit gives the same result, with no model call and no network.
+`make check` runs the fast checks for changed modules. `make verify` runs all of them. Each failure prints its
+check ID and the file and line to fix.
+
+Scope: SPEC, TRACE, STEPS and PASS apply to `modules/*/features/`, `ports/*/features/`, `packages/*/features/`,
+`tools/features/`, `deploy/features/` and `e2e/features/`. The factory-level requirements in `docs/vision/` are
+source material and are not checked; module scenarios link to them with `@realizes=SCN-FACTORY-...`.
+
+Until TODO item T-00 is done, these checks are a specification. T-00 builds them as scripts in `tools/checks/`;
+from phase 2 on, the released `spec-trace` module replaces TRACE, STEPS and PASS.
+
+## Specification and traceability
+
+| ID | What it checks | How |
+| --- | --- | --- |
+| SPEC | Every scenario has one `@id`, one `@status` (`planned`, `implemented`, `deprecated`), and the ID matches `^SCN-[A-Z][A-Z0-9]*-\d{3}$` with the module's registered prefix. IDs are unique in the repository. | Parse every `.feature` file with the official Gherkin parser. |
+| TRACE | Every `implemented` scenario has exactly one system test; every system test names an existing scenario; `planned` scenarios may have a test that is expected to fail; `deprecated` scenarios have none. `@conformance` scenarios have exactly one test per adapter of the port. | Read `scenario("SCN-...")` calls (TypeScript AST) and `@scenario("SCN-...")` decorators (Python AST). Only string literals count. |
+| STEPS | The labels of `given`, `when` and `then` calls match the scenario's steps, in order, word for word. Outline parameters `<name>` match any value. | Compare AST string literals with the parsed steps. |
+| PASS | Every `implemented` scenario's test ran in this CI run and passed. Skipped, todo, retried-to-pass and missing results fail. | Join the JUnit XML results (each test case carries its scenario ID) with the scenario list. |
+| SPECGUARD | A pull request that changes the steps of an `implemented` scenario, deletes a scenario, or changes `@status` back from `implemented` carries an approval from a code owner. | Diff the parsed scenarios between base and head; check the review state through the forge API. |
+
+## Boundaries
+
+| ID | What it checks | How |
+| --- | --- | --- |
+| BOUNDARY-STATIC | System tests import only `@osf/testkit`, generated contract clients, test fixtures and the test framework. No import from `src/`, no database driver, no `fs` or `child_process` outside the testkit. | dependency-cruiser rules for TypeScript; import-linter contracts for Python. |
+| BOUNDARY-RUNTIME | The module under test runs as its built artifact in a separate process or container, with its own data folder that the test process cannot read. | The testkit starts the artifact; the data folder lives inside the container or in a temp folder owned by another user. Tests receive only URLs, a CLI handle and the documented input and output folders. |
+| BOUNDARY-ENV | Tests set only environment variables that the module's README documents. | The testkit refuses undocumented variables; the list is generated from the module's config schema. |
+| ISOLATION | No module imports another module's package or source. | dependency-cruiser and import-linter on `modules/**`. |
+| NOREAL | No real network, model, clock or randomness in system tests. | The sandboxed test network allows only testkit fakes; the fake model gateway fails on any unscripted call; the testkit injects a fixed clock and seed through documented config. |
+
+## Test quality
+
+| ID | What it checks | How |
+| --- | --- | --- |
+| ASSERT | Every `then` block contains at least one assertion on a value that came from `sut` or `fakes`. | AST data-flow check on the assertion arguments. |
+| NOSKIP | No `.skip`, `.only`, `xfail`, `pytest.mark.skip` or `todo` in system tests. | AST search. |
+| REACH | Code that no system test reaches is reported; new unreached lines in a pull request fail. | Process coverage of the module while system tests run (`NODE_V8_COVERAGE`, `coverage.py` in subprocess mode). |
+| MUTATION | System tests notice small changes to the code they claim to cover. | Nightly Stryker (TypeScript) and mutmut (Python) on a sample of changed files; a falling score opens a ticket. Not a pull request gate, because it is slow. |
+| FLAKE | A test that passed only on retry is a failure. | PASS reads the retry count from the results. |
+| BUDGET | Each module's system tests finish inside the budget in its `AGENTS.md`. | Timing from the JUnit results. |
+
+## Contracts and docs
+
+| ID | What it checks | How |
+| --- | --- | --- |
+| CONTRACT | No breaking change to an API or schema without a major version. | `oasdiff` for OpenAPI; JSON Schema compatibility check against the last release; shared fixtures validate against every schema. |
+| DOCS-GEN | Generated reference docs are current. | `make docs` and fail on any diff. |
+| DOCS-AFFECTED | Every hand-written doc whose `covers:` paths changed is updated or listed as `docs-reviewed:` in the pull request. | Path match between the diff and the front matter. |
+| DOCS-LINKS | Internal links and anchors resolve. | lychee in offline mode. |
+| ADR | New modules, dependencies and services have an accepted ADR with a filled Prior art section. | Parse the ADR front matter and sections. |
+
+## End-to-end
+
+| ID | What it checks | How |
+| --- | --- | --- |
+| SMOKE | The scenarios in `e2e/features/` pass against the Compose profile with fakes. | `make smoke` in CI on every merge to `main` and before every release. |
+| SMOKE-PAID | One real-model run per first-party harness completes a small task. | `make smoke-paid`, nightly and before a release; never on pull requests. |

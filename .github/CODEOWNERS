@@ -1,0 +1,17 @@
+# People own the rules and the requirements. Agents propose; a code owner approves.
+# Replace @sesigl with a maintainers team when there is one.
+
+/AGENTS.md                      @sesigl
+/CLAUDE.md                      @sesigl
+/TODO.md                        @sesigl
+/.github/                       @sesigl
+/.claude/                       @sesigl
+/contracts/                     @sesigl
+/docs/quality/                  @sesigl
+/docs/principles.md             @sesigl
+/docs/vision/                   @sesigl
+/docs/decisions/                @sesigl
+/tools/checks/                  @sesigl
+/tools/hooks/                   @sesigl
+**/features/                    @sesigl
+**/budgets.json                 @sesigl
