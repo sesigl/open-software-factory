@@ -1,0 +1,153 @@
+---
+covers: [modules/**, ports/**, adapters/**, contracts/**]
+---
+
+# Internals: adapters, factory as code, loops, communication
+
+## Ports and adapters
+
+Each module defines a small interface (a port) for every outside system. An adapter implements one port for
+one product and must pass the port's `@conformance` scenarios in `ports/<port>/features/`. Abstract only where
+users really differ: the workflow engine (Temporal) stays fixed.
+
+| Port | Interface | Example adapters |
+| --- | --- | --- |
+| harness | start · send · stream events · approve tool · cancel · export transcript | **acp** (generic, any agent in the ACP Registry); **claude-code** (Claude Agent SDK or `claude -p --output-format stream-json`, hooks for approvals, sessions in `~/.claude/projects`); **codex** (`codex exec --json` or SDK, `[otel]` in `config.toml`, sessions in `~/.codex/sessions`); **opencode** (`opencode serve` + SDK); **agentapi** fallback for terminal-only agents; **scripted** (testkit, deterministic) |
+| sandbox | create(template, resources, network policy) · exec · copy · snapshot · destroy | **docker**; **kubernetes** (agent-sandbox SandboxTemplate, SandboxClaim, WarmPool; gVisor or Kata); e2b, daytona (community); macOS VM runner |
+| channel | receive → WorkItem · reply(thread, message or card) · ask(approval) → decision | **slack** (threads, Block Kit), **teams** (Adaptive Cards, tenant consent), **github** (comments, labels, checks), **linear** (agent sessions); all through Vercel Chat SDK; jira and sentry through webhooks |
+| tracker | create · update state · link PR · comment | github issues, linear, jira |
+| forge | branch · PR · checks · comments · merge rules | **github**, **forgejo** (also the deterministic test forge), gitlab |
+| inference | OpenAI-compatible endpoint + spend log | **litellm** in front of any provider |
+| secrets | resolve(reference) at the egress proxy, never in the sandbox | **env**, **openbao**, vault, infisical |
+| telemetry | OTLP | **otlp** via the OpenTelemetry Collector to any backend |
+| policy | decide(input) → allow, deny or gate | **opa**, cedar |
+| benchmark environment | Harbor environment | docker, daytona, modal, e2b (all in Harbor) |
+
+Docker Compose and Helm are not sandbox adapters; they install the factory itself.
+
+## Everything in code
+
+We do not invent a language. `factory.yaml` with a JSON Schema, plus Markdown prompts and skills, plus Rego
+policies, in one Git repository. We copy Terraform's four pillars:
+
+| Pillar | Terraform | Factory |
+| --- | --- | --- |
+| Desired state | HCL in Git | `factory.yaml`, prompts, skills, policies; secrets only as references |
+| Providers | plugins pinned in a lock file | adapters declared in `providers:`, pinned in `factory.lock` with versions and image digests |
+| Plan, apply, drift | `plan`, `apply`, state | `factory plan` shows changes; `factory apply` registers webhooks, writes harness configs, sets gateway routes, upserts scorers; nightly plan reports drift |
+| Modules | reusable blocks | stage packs, for example `osf/modules/code-review@1.2` |
+
+Every run records the hash of the factory version it ran on.
+
+```yaml
+# Illustrative
+version: 1
+factory: web-app
+providers:
+  harness:   { claude-code: "^2", codex: "^1" }
+  sandbox:   { kubernetes: "^0.4" }
+  channel:   { slack: "^1", github: "^1" }
+  inference: { litellm: "^1" }
+agents:
+  triage:
+    harness: claude-code
+    model: routes/triage            # routing rule, not a fixed model
+    prompt: ./agents/triage.md
+    mcp: [registry:io.github/github@1.4, linear@2]
+    secrets: [ref:openbao/linear-token]
+    sandbox: { template: small, egress: [api.linear.app] }
+  implement:
+    harness: codex
+    model: routes/implement
+    prompt: ./agents/implement.md
+    skills: [./skills/testing]
+    sandbox: { template: node-24, cpu: 4, memory: 8Gi }
+workflow:
+  - stage: triage
+  - stage: spec
+    gate: { policy: ./policy/spec.rego }
+  - stage: implement
+  - stage: review
+  - stage: verify
+    evidence: required
+automations:
+  - on: github.issue.labeled(auto-implement)
+  - on: sentry.fatal
+  - cron: "0 10 * * *"
+    run: self-triage-report
+scorers:
+  redundant-tests: { sample: 0.2, judge: ./scorers/redundant-tests.md }
+```
+
+Two ways to apply it: **CLI reconcile** (`factory plan` and `apply` from CI; Docker Compose install) and a
+**Kubernetes operator mode** (`factory render --k8s` writes kagent Agent, ModelConfig and MCPServer resources and
+agent-sandbox templates; Argo CD or Flux applies them). An OpenTofu provider can come later as an add-on.
+
+## Three nested loops
+
+| Loop | Time scale | Engine | Steps |
+| --- | --- | --- | --- |
+| Inner (harness) | seconds to minutes | the harness | build context → model answers with text or tool calls → permission check → run tools (read, edit, shell, MCP) → results into context, compact when large → repeat until done, budget or interruption |
+| Outer (delivery) | hours | foreman on Temporal | each stage is an activity that starts an inner loop in a fresh sandbox; deterministic checks between stages; gates wait for gatekeeper signals; steering and handoff are signals; sub-agents are child workflows |
+| Meta (improvement) | days | scorekit, observer, taskcapture | score sampled runs → group repeated failures → PR to the factory → benchmark it → person merges → foreman loads new version → same scorer checks the effect |
+
+### OpenTelemetry support of harnesses (October 2026)
+
+| Harness | Status | Notes |
+| --- | --- | --- |
+| Gemini CLI | native | logs, metrics, traces; reported to follow GenAI conventions |
+| Codex CLI | native | logs and traces via `[otel]`; internal span names; conversation as span events; prompt text off by default |
+| Claude Code | traces in beta | metrics and log events native; traces need `CLAUDE_CODE_ENHANCED_TELEMETRY_BETA` and `OTEL_TRACES_EXPORTER` |
+| OpenCode | experimental | OTLP traces behind a flag; plugins |
+| Goose and others | not checked | fall back to session files |
+
+Verify names against vendor docs before writing an adapter. runlog makes telemetry uniform in three steps:
+1. **Correlate at launch:** the foreman sets `OTEL_RESOURCE_ATTRIBUTES=factory.version=…,work_item.id=…,run.id=…,stage=…`.
+2. **Normalize in the Collector:** a per-harness mapping renames spans to the GenAI conventions.
+3. **Complete from the session file:** runlog attaches the full transcript when the stage ends.
+
+## Communication
+
+```mermaid
+flowchart LR
+  P[people + tools] -->|webhooks, REST, MCP| IN[intake]
+  subgraph Bus[event bus: CloudEvents on NATS]
+  end
+  IN --- Bus
+  FO[foreman] --- Bus
+  GK[gatekeeper] --- Bus
+  PR[proof] --- Bus
+  SK[scorekit] --- Bus
+  OB[observer] --- Bus
+  LG[ledger] --- Bus
+  GK -.->|approval request| P
+  FO -->|ACP JSON-RPC| H
+  subgraph Sandbox
+    H[harness]
+  end
+  H -->|MCP| MG[MCP gateway] --> MS[MCP servers]
+  H -->|HTTP via egress proxy| LG2[LLM gateway] --> M[model APIs]
+  H -->|OTLP| OC[OTel Collector] --> T[trace store]
+  T -->|REST: runs, scores| SK
+  OB -->|PR| R[factory repo]
+  U[upstream registries: MCP, ACP, OCI] -->|pinned at plan time| R
+```
+
+| Protocol | Job | Where |
+| --- | --- | --- |
+| MCP | what a model can call | tools inside the sandbox through the MCP gateway; Factory MCP server for outside agents; optional MCP faces of tools |
+| ACP | drive a harness | foreman → harness |
+| REST (OpenAPI) | commands between programs | every module's server mode; generated TS, Python and Java clients |
+| CloudEvents on a bus | facts others react to | NATS JetStream; webhooks when there is no bus; events are past tense and versioned (`run.completed@v1`) |
+| OTLP | telemetry | harnesses, gateways and modules to the Collector |
+| A2A | agents of other organizations | later only |
+
+### Registries: consult, pin, don't build
+
+| Catalog | Holds | Status (Oct 2026) | Use |
+| --- | --- | --- | --- |
+| MCP Registry | MCP servers | live, preview, API v0.1 | reference `registry:<name>@<version>`; organizations may run an approved list in front |
+| ACP Registry | harnesses | live since January 2026 | pin harnesses by registry ID |
+| OCI registry | images, packaged agents, modules | mature | pin by digest in `factory.lock` |
+| A2A agent cards | remote agents | registry in progress | later |
+| the factory repository | what actually runs | ours | the only registry that decides; `factory plan` resolves and pins |
