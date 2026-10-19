@@ -66,7 +66,7 @@ jobs:
     environment: npm
     permissions:
       contents: read
-      id-token: write # trusted publishing and provenance
+      id-token: write # trusted publishing and provenance (public repository only)
     steps:
       - uses: actions/checkout@v5
         with:
@@ -87,4 +87,9 @@ jobs:
         env:
           # Only for the first version, before the trusted publisher exists; unset afterwards (contracts/README.md#releases).
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish "$RUNNER_TEMP"/npm/*.tgz --access public --provenance
+          # npm accepts provenance only from public repositories; it turns on when this repository is public.
+          PRIVATE: ${{ github.event.repository.private }}
+        run: |
+          provenance=--provenance
+          if [ "$PRIVATE" = "true" ]; then provenance=--no-provenance; fi
+          npm publish "$RUNNER_TEMP"/npm/*.tgz --access public "$provenance"
