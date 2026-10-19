@@ -11,6 +11,7 @@ Use these terms in scenarios, code, UI text and docs.
 | Factory | A closed loop of agents and people that turns work items into shipped, verified changes, declared in one factory definition. |
 | Factory definition | `factory.yaml` plus prompts, skills and policies in Git; the desired state of a factory. |
 | Factory version | The commit hash of the factory definition a run used. |
+| Lock file | `factory.lock` next to `factory.yaml`: the exact version of each MCP server from a registry, pinned by `factory plan`. |
 | Product surface | A part of a product with its own factory, for example "web" or "server". |
 | Work item | One unit of requested work (idea, bug, automated trigger) as a CloudEvent. |
 | Stage | One step of the delivery loop: triage, spec, implement, review, verify, ship, monitor. |

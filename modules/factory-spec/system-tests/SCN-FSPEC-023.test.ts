@@ -16,8 +16,8 @@ scenario("SCN-FSPEC-023", async ({ sut, given, when, then }) => {
     expect(run.exitCode, run.stdout + run.stderr).toBe(0);
   });
 
-  await then('the output starts with "Applied factory web-app version "', async () => {
-    expect(run.stdout).toMatch(/^Applied factory web-app version [0-9a-f]{12}\n$/);
+  await then('the output starts with "Applied factory web-app, digest "', async () => {
+    expect(run.stdout).toMatch(/^Applied factory web-app, digest [0-9a-f]{12}\n$/);
   });
 
   await then('the output folder contains "AGENTS.md" and ".mcp.json"', async () => {

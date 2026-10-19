@@ -141,7 +141,7 @@ const definition = resolveFactory("factory.yaml"); // a FactoryDefinition with d
 | SCN-FSPEC-020 | implemented | Render asks for a plan when factory.lock has no entry for a registry server |
 | SCN-FSPEC-021 | implemented | Plan reports a range that no registry version matches |
 | SCN-FSPEC-022 | implemented | Plan of a factory that was never applied shows the factory as added |
-| SCN-FSPEC-023 | implemented | Apply renders the files and prints the applied version |
+| SCN-FSPEC-023 | implemented | Apply renders the files and prints the digest of what it applied |
 | SCN-FSPEC-024 | implemented | Plan after apply shows no changes |
 | SCN-FSPEC-025 | implemented | Plan shows a model change as one diff line |
 | SCN-FSPEC-026 | implemented | Plan shows a changed prompt |

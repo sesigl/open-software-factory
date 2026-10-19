@@ -34,7 +34,7 @@ file, plan, apply and drift. This repository links its skills with a hand-writte
 - `factory plan` compares the resolved definition with the last applied one and prints one line per changed
   value (`~ agents.triage.model: "a" -> "b"`), plus one line per rendered file changed by hand since the last
   apply (drift). `factory apply` renders the files and stores the applied definition and file hashes in the state
-  folder `OSF_DATA`. Rolling back is applying an older version. `factory diff <old> [new]` compares two versions,
+  folder `OSF_DATA` and prints a digest of what it applied. Rolling back is applying an older version. `factory diff <old> [new]` compares two versions,
   as files or Git revisions (`HEAD~1:factory.yaml`). `factory resolve` prints the resolved definition: defaults
   filled in and MCP versions pinned, still a valid `factory-definition` document. The same function is the
   package's library export.
@@ -65,7 +65,8 @@ file, plan, apply and drift. This repository links its skills with a hand-writte
 - gh-aw (MIT, active) and kagent (Apache-2.0, active): later render targets, not inputs.
 - `yaml` by eemeli (ISC, active, YAML 1.2 by default, keeps source positions): adopted to read `factory.yaml` and
   name the line of each problem. js-yaml (MIT) parses YAML 1.1 by default and turns the key `on` into `true`.
-- `semver` (ISC, npm, active): adopted to pick the highest registry version inside a range.
+- `semver` (ISC, npm, active) with its types `@types/semver` (MIT, DefinitelyTyped): adopted to pick the highest
+  registry version inside a range.
 - The MCP Registry (API v0.1, preview): consulted at plan time only, as the architecture says (pin, never live).
 
 ## Consequences

@@ -3,7 +3,7 @@ Feature: Plan, apply, diff and resolve
   "factory plan" shows what "factory apply" would change compared with the last applied version, one line per
   changed value, and reports rendered files changed by hand as drift. Rolling back is applying an older version.
 
-  @id=SCN-FSPEC-022 @status=implemented @realizes=SCN-FACTORY-CODE-003
+  @id=SCN-FSPEC-022 @status=implemented
   Scenario: Plan of a factory that was never applied shows the factory as added
     Given a factory.yaml of the factory "web-app" with the agent "triage"
     And the factory was never applied
@@ -12,12 +12,12 @@ Feature: Plan, apply, diff and resolve
     And the output contains "+ factory: \"web-app\""
     And the output contains "Plan: 5 to add, 0 to change, 0 to remove, 0 drifted."
 
-  @id=SCN-FSPEC-023 @status=implemented @realizes=SCN-FACTORY-CODE-003
-  Scenario: Apply renders the files and prints the applied version
+  @id=SCN-FSPEC-023 @status=implemented
+  Scenario: Apply renders the files and prints the digest of what it applied
     Given a factory.yaml of the factory "web-app" with the agent "triage"
     When the factory engineer runs "factory apply"
     Then the command exits with code 0
-    And the output starts with "Applied factory web-app version "
+    And the output starts with "Applied factory web-app, digest "
     And the output folder contains "AGENTS.md" and ".mcp.json"
 
   @id=SCN-FSPEC-024 @status=implemented

@@ -66,5 +66,5 @@ export async function apply(loaded: Factory, output: string, options: RenderOpti
   const files = render(factory, output, options);
   const applied = model(factory);
   writeState({ model: applied, files });
-  return `Applied factory ${factory.definition.factory} version ${sha256(JSON.stringify(applied))}`;
+  return `Applied factory ${factory.definition.factory}, digest ${sha256(JSON.stringify(applied))}`;
 }

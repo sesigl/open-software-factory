@@ -61,7 +61,7 @@ function rules(definition: FactoryDefinition, exists: (path: string) => boolean)
   }
   (definition.workflow ?? []).forEach((stage, index) => {
     const agent = stage.agent ?? stage.stage;
-    if (!(agent in definition.agents)) {
+    if (!Object.hasOwn(definition.agents, agent)) {
       findings.push([
         ["workflow", String(index), "stage"],
         `stage "${stage.stage}" runs the agent "${agent}", which agents does not declare`,
