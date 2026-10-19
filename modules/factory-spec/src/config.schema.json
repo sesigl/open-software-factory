@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "OUTPUT": {
+      "type": "string",
+      "default": ".",
+      "description": "Folder that render and apply write the harness files to."
+    },
+    "OSF_DATA": {
+      "type": "string",
+      "default": ".factory",
+      "description": "State folder: apply records the applied version here and plan compares with it."
+    },
+    "FACTORY_MCP_REGISTRY": {
+      "type": "string",
+      "default": "https://registry.modelcontextprotocol.io",
+      "description": "Base URL of the MCP Registry that plan reads to pin registry servers in factory.lock."
+    }
+  }
+}

@@ -61,5 +61,6 @@ docs: ## regenerate generated doc sections
 docs-affected: ## list hand-written docs whose covers: paths changed since OSF_BASE
 	@$(OSF) docs-affected
 
-agents-sync: ## link skills/ into .claude/skills/ and the other harness folders
-	@$(OSF) agents-sync
+agents-sync: ## render factory.yaml: CLAUDE.md, the MCP files and the skill links of every harness
+	@pnpm --silent --filter @opensoftware/factory-spec build
+	@OUTPUT=. node modules/factory-spec/dist/cli.js render --harness all

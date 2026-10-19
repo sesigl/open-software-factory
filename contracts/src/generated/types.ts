@@ -112,15 +112,21 @@ export type components = {
             /** @description Adapters per port with a version range, pinned in `factory.lock` by `factory plan`. */
             providers?: components["schemas"]["Providers"];
             /** @description Agents by name. */
-            agents: Record<string, never>;
+            agents: {
+                [key: string]: components["schemas"]["Agent"];
+            };
             /** @description Stages in order. Each stage runs one agent; the agent defaults to the stage name. */
             workflow?: components["schemas"]["Stage"][];
             /** @description What starts work without a person asking. */
             automations?: components["schemas"]["Automation"][];
             /** @description Scorers by name. */
-            scorers?: Record<string, never>;
+            scorers?: {
+                [key: string]: components["schemas"]["Scorer"];
+            };
             /** @description Benchmark suites by name. */
-            benchmarks?: Record<string, never>;
+            benchmarks?: {
+                [key: string]: components["schemas"]["Benchmark"];
+            };
         };
         /**
          * @description The version of a format inside its documents. Only 1 exists; a new major version of a format adds the next.
@@ -269,15 +275,33 @@ export type components = {
         };
         /** @description The adapters a factory uses, per port (docs/architecture/internals.md). Keys are adapter names. */
         Providers: {
-            harness?: Record<string, never>;
-            sandbox?: Record<string, never>;
-            channel?: Record<string, never>;
-            tracker?: Record<string, never>;
-            forge?: Record<string, never>;
-            inference?: Record<string, never>;
-            secrets?: Record<string, never>;
-            telemetry?: Record<string, never>;
-            policy?: Record<string, never>;
+            harness?: {
+                [key: string]: components["schemas"]["VersionRange"];
+            };
+            sandbox?: {
+                [key: string]: components["schemas"]["VersionRange"];
+            };
+            channel?: {
+                [key: string]: components["schemas"]["VersionRange"];
+            };
+            tracker?: {
+                [key: string]: components["schemas"]["VersionRange"];
+            };
+            forge?: {
+                [key: string]: components["schemas"]["VersionRange"];
+            };
+            inference?: {
+                [key: string]: components["schemas"]["VersionRange"];
+            };
+            secrets?: {
+                [key: string]: components["schemas"]["VersionRange"];
+            };
+            telemetry?: {
+                [key: string]: components["schemas"]["VersionRange"];
+            };
+            policy?: {
+                [key: string]: components["schemas"]["VersionRange"];
+            };
         };
         /** @description foreman: a run ended. */
         RunCompleted: {
@@ -441,6 +465,8 @@ export type components = {
             "osf.judge.model"?: string;
             /** @description Cost of the judge call. */
             "osf.judge.cost.usd"?: number;
+        } & {
+            [key: string]: unknown;
         };
         /** @description scorekit: a scorer scored a run. */
         ScoreRecorded: {

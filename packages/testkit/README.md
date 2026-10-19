@@ -59,6 +59,11 @@ Every server, client and subscription stops when the scenario ends, before the f
 - `fakes.modelGateway([{ when, reply }])`: an OpenAI-compatible endpoint on `127.0.0.1`. Pass its `url` (ending
   in `/v1`) to the module through its documented config. `POST /v1/chat/completions` whose body contains `when`
   gets `reply`; any other call gets HTTP 500 and fails the scenario with the request shown.
+- `fakes.http([{ method, path, status, body }])`: a scripted JSON API on `127.0.0.1`
+  ([ADR 0021](../../docs/decisions/0021-testkit-scripted-http.md)). Pass its `url` to the module through its
+  documented config. A request whose method (default `GET`) and exact path with query match a route gets its
+  `status` (default 200) and JSON `body`; any other request gets HTTP 404 and fails the scenario with the request
+  shown. `requests()` lists what it received.
 - `fakes.harness([{ when, edits, reply }])`: a scripted coding agent that speaks ACP on stdio
   ([ADR 0018](../../docs/decisions/0018-testkit-scripted-acp-harness.md)). Start it with its `command` and `args`.
   The first prompt that contains `when` gets the `edits` (files by path below the session's folder) and the
@@ -142,3 +147,5 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-024 | implemented | The sut refuses a module whose bin is a source file |
 | SCN-TK-025 | implemented | A module that reaches a real host fails the scenario with the host shown |
 | SCN-TK-026 | implemented | The testkit records which functions of the module its system tests ran |
+| SCN-TK-027 | implemented | A scripted route gets its scripted answer |
+| SCN-TK-028 | implemented | An unscripted request fails the test with the request shown |

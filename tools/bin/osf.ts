@@ -3,7 +3,6 @@
 // @opensoftware/testkit. It works on the Git repository that contains the current directory.
 import { spawnSync } from "node:child_process";
 import { relative, resolve } from "node:path";
-import { agentsSync } from "../scaffold/agents-sync.ts";
 import { generateDocs } from "../scaffold/docs.ts";
 import { installTools } from "../scaffold/install-tools.ts";
 import { newModule } from "../scaffold/new-module.ts";
@@ -18,7 +17,6 @@ const USAGE = `Usage: osf <command>
   new-module <name> [--prefix PREFIX]
   next-id <module>        print the next free scenario ID of a module or prefix
   test-scenario <ID>      run the one system test of a scenario
-  agents-sync             link skills/ into the skill folders of every harness
   install-tools           download the pinned lychee and oasdiff binaries into .tools/bin
 `;
 
@@ -50,8 +48,6 @@ async function main(argv: string[]): Promise<number> {
       return nextId(root, args);
     case "test-scenario":
       return testScenario(root, args);
-    case "agents-sync":
-      return agentsSync(root);
     case "install-tools":
       return installTools(root);
     case undefined:

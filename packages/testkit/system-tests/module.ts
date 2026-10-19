@@ -56,6 +56,33 @@ export function demoModule(options: DemoOptions = {}): Record<string, string> {
   return files;
 }
 
+/**
+ * Module demo whose CLI gets `/v0.1/servers?search=tracker` from `DEMO_API_URL` and prints the body; its test scripts
+ * `fakes.http` with `routes` (TypeScript source) and expects the body `{"count":1}`.
+ */
+export function apiModule(routes: string): Record<string, string> {
+  return demoModule({
+    bin: [
+      "const response = await fetch(`${process.env.DEMO_API_URL}/v0.1/servers?search=tracker`);",
+      "process.stdout.write(await response.text());",
+      "",
+    ].join("\n"),
+    readme:
+      "# demo\n\n## Configuration\n\n| Variable | Meaning |\n| --- | --- |\n| `DEMO_API_URL` | Base URL of the API. |\n",
+    steps: ['When the user runs "demo"', 'Then the output is {"count":1}'],
+    test: [
+      `const api = await fakes.http(${routes});`,
+      "let run: Awaited<ReturnType<typeof sut.cli>>;",
+      "await when('the user runs \"demo\"', async () => {",
+      "  run = await sut.cli([], { env: { DEMO_API_URL: api.url } });",
+      "});",
+      "await then('the output is {\"count\":1}', async () => {",
+      "  expect(run.stdout).toBe('{\"count\":1}');",
+      "});",
+    ],
+  });
+}
+
 /** The test cases of a JUnit report: name and whether it has a failure. */
 export function testCases(report: string): { name: string; failed: boolean }[] {
   return [...report.matchAll(/<testcase [^>]*name="([^"]+)"[^>]*?(\/>|>([\s\S]*?)<\/testcase>)/g)].map((match) => ({

@@ -155,6 +155,13 @@ read them for ideas, do not copy their company-specific rules.
 - **From T-00:** the first module with a CLI: generate the README `Commands` section from its CLI help in
   `make docs` (DOCS-GEN generates only Scenarios and Configuration today).
 - **Done when:** this repository's own `AGENTS.md` skill links are produced by `factory render`.
+- **Slices:**
+  - [x] Lint, render, plan, apply, diff and resolve (ADR 0020, `SCN-FSPEC-001` to `-032`): render for Claude Code,
+    Codex and OpenCode with skill links; MCP Registry pins in `factory.lock` (testkit `fakes.http`, ADR 0021);
+    plan against the applied state with file drift; the README Commands section generated from `factory --help`
+    (`SCN-REPO-035`). This repository's `factory.yaml` produces its skill links through `make agents-sync`.
+  - [ ] Forge webhooks for automations, applied and checked for drift against a Forgejo fake; `render --k8s`
+    (kagent Agent, ModelConfig, MCPServer; agent-sandbox templates); gh-aw workflow files; a release of the module.
 
 ### [ ] T-04 · runlog
 
