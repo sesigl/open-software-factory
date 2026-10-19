@@ -95,7 +95,8 @@ export function docsLinks(context: Context): Finding[] {
   return findings;
 }
 
-const ADR_STATUS = /^(proposed|accepted|rejected|deprecated|superseded by \d{4})$/;
+/** A status, optionally followed by a note: `accepted; build tool part superseded by 0010`. */
+const ADR_STATUS = /^(proposed|accepted|rejected|deprecated|superseded by \d{4})(;.*)?$/;
 const TEMPLATE_PRIOR_ART = "Required for every new module";
 
 interface Adr {
@@ -109,6 +110,7 @@ export function adr(context: Context): Finding[] {
   const { repo } = context;
   const findings: Finding[] = [];
   const adrs: Adr[] = [];
+  const numbers = new Map<string, string>();
 
   for (const file of repo.match("docs/decisions/[0-9][0-9][0-9][0-9]-*.md")) {
     const text = repo.read(file);
@@ -121,6 +123,9 @@ export function adr(context: Context): Finding[] {
       at(`status "${status}" is not proposed, accepted, rejected, deprecated or superseded by NNNN`);
     if (!meta.date) at("front matter needs a date");
     const number = posix.basename(file).slice(0, 4);
+    const earlier = numbers.get(number);
+    if (earlier) at(`ADR number ${number} is already used by ${earlier}: take the next free number`);
+    else numbers.set(number, file);
     if (!new RegExp(`^# ${number}\\. `, "m").test(text)) at(`the title must start with "# ${number}. "`);
     if (!/^## Decision\s*$/m.test(text)) at("needs a ## Decision section");
     const priorArt = section(text, "Prior art");
@@ -133,7 +138,7 @@ export function adr(context: Context): Finding[] {
   const justified = (name: string): boolean =>
     adrs.some(
       (entry) =>
-        entry.status === "accepted" &&
+        /^accepted\b/.test(entry.status) &&
         entry.priorArt !== undefined &&
         entry.priorArt !== "" &&
         !entry.priorArt.includes(TEMPLATE_PRIOR_ART) &&

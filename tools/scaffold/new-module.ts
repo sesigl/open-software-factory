@@ -13,12 +13,9 @@ export function newModule(root: string, args: string[]): number {
     return index >= 0 ? args[index + 1] : undefined;
   };
   const prefix = option("prefix") ?? name?.toUpperCase().replaceAll("-", "");
-  const lang = option("lang") ?? "ts";
 
   if (!name || !/^[a-z][a-z0-9-]*$/.test(name)) return fail("Give a module name in kebab case: osf new-module <name>");
   if (!prefix || !/^[A-Z][A-Z0-9]*$/.test(prefix)) return fail(`Not a valid scenario prefix: ${prefix}`);
-  if (lang !== "ts")
-    return fail("Only LANG=ts has a template yet; the Python template comes with the Python testkit (T-02).");
 
   const template = join(root, "modules/_template");
   const target = join(root, "modules", name);

@@ -31,9 +31,6 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
-      - uses: astral-sh/setup-uv@v6
-        with:
-          python-version: "3.12"
       - run: make install
 
       - name: Pull request context for SPECGUARD and DOCS-AFFECTED

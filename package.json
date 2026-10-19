@@ -6,10 +6,14 @@
   "engines": {
     "node": ">=24"
   },
+  "scripts": {
+    "lint": "biome check biome.json package.json turbo.json tsconfig.base.json .release-please-manifest.json release-please-config.json",
+    "osf": "node tools/bin/osf.ts"
+  },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
     "@types/node": "24.19.2",
-    "pyright": "1.1.414",
+    "turbo": "2.11.7",
     "typescript": "5.9.3",
     "vitest": "4.1.12"
   }
