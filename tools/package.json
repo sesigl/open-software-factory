@@ -5,7 +5,7 @@
   "description": "Repository tooling and the deterministic checks of docs/quality/checks.md.",
   "type": "module",
   "bin": {
-    "osf": "checks/cli.ts"
+    "osf": "bin/osf.ts"
   },
   "dependencies": {
     "@cucumber/gherkin": "42.0.1",

@@ -3,15 +3,16 @@
     "PreToolUse": [
       {
         "matcher": "Edit|Write|MultiEdit",
-        "hooks": [
-          { "type": "command", "command": "tools/hooks/protect-paths.sh" }
-        ]
+        "hooks": [{ "type": "command", "command": "tools/hooks/protect-paths.sh" }]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "make check --quiet || echo 'make check failed: fix before you report done' >&2" }
+          {
+            "type": "command",
+            "command": "make check --quiet || echo 'make check failed: fix before you report done' >&2"
+          }
         ]
       }
     ]
