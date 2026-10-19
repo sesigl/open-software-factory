@@ -16,8 +16,9 @@ A family of independent open-source tools that together form a software factory.
 ## Current phase
 
 Phase 0: the foundation is being built, `TODO.md` items T-00 to T-02 (repository tooling, contracts,
-testkit). T-00 provides `make` and the checks; run `make install` once after cloning (Node 24, pnpm, uv,
-Python 3.12+). The tooling is described in `tools/README.md`. Every pull request is reviewed by a person. `docs/explanation/bootstrapping.md` describes the phases and what changes in each.
+testkit). T-00 provides `make` and the checks; run `make install` once after cloning (Node 24, pnpm). The
+tooling is described in `tools/README.md`. Every pull request is reviewed by a person.
+`docs/explanation/bootstrapping.md` describes the phases and what changes in each.
 
 ## Typical requests
 
@@ -112,3 +113,14 @@ When a check fails, its output starts with the check ID and the file and line to
 Stop when a scenario is unclear or contradicts another, when a scenario or contract must change, when a change
 needs a new service, dependency, permission or paid call, or when a check fails for a reason you cannot fix
 inside the module. Ask one clear question with the options and their effects.
+
+<!-- BEGIN:turborepo-agent-rules -->
+
+# This is NOT the Turborepo you know
+
+Turborepo configuration, task behavior, and CLI commands can vary between installed versions and may differ from your training data. Resolve the `turbo` package from this file's directory or relevant workspace; in monorepos, it may not be visible from the repository root. For example, run `node -p "require.resolve('turbo/package.json')"` from a workspace that depends on `turbo`.
+
+Read `docs/README.md` inside that installed package first, then read the relevant pages from its `docs/` directory before changing Turborepo configuration or commands. Heed deprecation notices. These bundled docs match the installed package version and are available without network access.
+
+This block is written and re-added by `turbo` before repository-scoped commands when an AI agent is detected. In the Turborepo source repository, its template is defined in `crates/turborepo-cli/src/cli/agent_guidance.rs`. Removing the managed block while updates are enabled means a later qualifying invocation will add it again. Set `"agentGuidance": false` in the root `turbo.json` or `turbo.jsonc` to opt out; this does not remove an existing block. Keep the block committed with your work to avoid an uncommitted change on the next agent invocation.
+<!-- END:turborepo-agent-rules -->

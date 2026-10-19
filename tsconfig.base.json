@@ -13,7 +13,5 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "skipLibCheck": true
-  },
-  "include": ["tools/**/*.ts", "packages/*/src/**/*.ts", "vitest.config.ts"],
-  "exclude": ["**/node_modules/**"]
+  }
 }

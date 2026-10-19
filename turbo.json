@@ -1,0 +1,44 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "globalDependencies": ["biome.json", "tsconfig.base.json"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!system-tests/**", "!features/**"],
+      "outputs": ["dist/**"]
+    },
+    "lint": {
+      "inputs": ["$TURBO_DEFAULT$"],
+      "outputs": []
+    },
+    "//#lint": {
+      "inputs": ["biome.json", "package.json", "turbo.json", "tsconfig.base.json", "*.json"],
+      "outputs": []
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$"],
+      "outputs": []
+    },
+    "check": {
+      "dependsOn": ["^build"],
+      "cache": false
+    },
+    "test:system": {
+      "dependsOn": ["build", "^build"],
+      "cache": false
+    },
+    "docs": {
+      "inputs": ["$TURBO_DEFAULT$"],
+      "outputs": ["README.md"]
+    },
+    "test:paid": {
+      "dependsOn": ["build", "^build"],
+      "cache": false
+    },
+    "mutation": {
+      "dependsOn": ["build", "^build"],
+      "cache": false
+    }
+  }
+}

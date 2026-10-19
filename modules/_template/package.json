@@ -7,6 +7,11 @@
   "bin": {
     "<name>": "dist/cli.js"
   },
+  "scripts": {
+    "lint": "biome check .",
+    "test:system": "vitest run",
+    "docs": "node ../../tools/bin/osf.ts docs ."
+  },
   "devDependencies": {
     "@osf/testkit": "workspace:*"
   }

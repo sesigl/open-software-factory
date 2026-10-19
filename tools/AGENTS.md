@@ -16,7 +16,6 @@ The only ways a system test or another program may use the tooling:
 ## Allowed exceptions
 
 - Unit tests: none.
-- Python: `checks/py/` reads Python test files with the `ast` module, because only Python can parse Python.
 
 ## Budget
 

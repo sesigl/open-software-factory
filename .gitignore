@@ -1,10 +1,6 @@
 node_modules/
-.venv/
-__pycache__/
-*.pyc
 .tools/
 reports/
 coverage/
 dist/
-.pytest_cache/
-.ruff_cache/
+.turbo/

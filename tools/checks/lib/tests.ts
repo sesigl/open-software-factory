@@ -1,13 +1,10 @@
 // Reads system test files into one shape for TRACE, STEPS, NOSKIP, ASSERT, BOUNDARY-STATIC and BOUNDARY-ENV.
-// TypeScript is read with ts-morph, Python with its own `ast` module (checks/py/scan_tests.py).
-import { spawnSync } from "node:child_process";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+// Every system test is TypeScript (ADR 0009); files are read with ts-morph.
 import { type CallExpression, Node, Project, SyntaxKind } from "ts-morph";
 import type { Repo } from "./repo.ts";
 
-export const TEST_GLOBS = ["**/system-tests/**/*.test.ts", "**/system-tests/**/test_*.py"];
-export const SYSTEM_TEST_SOURCES = ["**/system-tests/**/*.ts", "**/system-tests/**/*.py"];
+export const TEST_GLOBS = ["**/system-tests/**/*.test.ts"];
+export const SYSTEM_TEST_SOURCES = ["**/system-tests/**/*.ts"];
 
 export interface TestStep {
   keyword: "Given" | "When" | "Then";
@@ -53,12 +50,7 @@ export function loadTests(repo: Repo): TestFile[] {
   if (cache) return cache;
   const isTest = new Set(repo.match(...TEST_GLOBS));
   const files = repo.match(...SYSTEM_TEST_SOURCES);
-  const typescript = files.filter((file) => file.endsWith(".ts")).map((file) => scanTypeScript(file, repo.read(file)));
-  const python = scanPython(
-    repo,
-    files.filter((file) => file.endsWith(".py")),
-  );
-  cache = [...typescript, ...python].map((test) => ({ ...test, isTest: isTest.has(test.file) }));
+  cache = files.map((file) => ({ ...scanTypeScript(file, repo.read(file)), isTest: isTest.has(file) }));
   return cache;
 }
 
@@ -186,12 +178,4 @@ function rootIdentifier(node: Node): string | undefined {
   let current = node;
   while (Node.isPropertyAccessExpression(current) || Node.isCallExpression(current)) current = current.getExpression();
   return Node.isIdentifier(current) ? current.getText() : undefined;
-}
-
-function scanPython(repo: Repo, files: string[]): TestFile[] {
-  if (files.length === 0) return [];
-  const script = join(dirname(fileURLToPath(import.meta.url)), "..", "py", "scan_tests.py");
-  const run = spawnSync("python3", ["-I", script, ...files], { cwd: repo.root, encoding: "utf8" });
-  if (run.status !== 0) throw new Error(`Python test reader failed: ${run.stderr || run.error?.message}`);
-  return JSON.parse(run.stdout) as TestFile[];
 }
