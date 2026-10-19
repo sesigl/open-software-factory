@@ -1137,7 +1137,8 @@
           },
           "cpu": {
             "type": "number",
-            "exclusiveMinimum": 0
+            "minimum": 0.001,
+            "description": "CPU cores. The smallest unit is 0.001 (one millicore)."
           },
           "memory": {
             "type": "string",

@@ -388,6 +388,7 @@ export type components = {
         Sandbox: {
             /** @description Sandbox template name, for example "node-24". */
             template: string;
+            /** @description CPU cores. The smallest unit is 0.001 (one millicore). */
             cpu?: number;
             /** @description Kubernetes quantity, for example "8Gi". */
             memory?: string;

@@ -104,7 +104,8 @@ model Sandbox {
   @minLength(1)
   template: string;
 
-  @minValueExclusive(0)
+  /** CPU cores. The smallest unit is 0.001 (one millicore). */
+  @minValue(0.001)
   cpu?: float64;
 
   /** Kubernetes quantity, for example "8Gi". */
