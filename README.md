@@ -23,7 +23,6 @@ open-source project already exists, the factory adopts it and builds only the ad
 | Know how quality is proven | [`docs/quality/testing-strategy.md`](docs/quality/testing-strategy.md), [`docs/quality/checks.md`](docs/quality/checks.md) |
 | Start building a module | [`TODO.md`](TODO.md), then [`AGENTS.md`](AGENTS.md) |
 | Find a decision and its reason | [`docs/decisions/`](docs/decisions/) |
-| See it all visually, with diagrams | [`docs/pages/`](docs/pages/) (HTML snapshots; Markdown docs win) |
 
 ## The tools
 
