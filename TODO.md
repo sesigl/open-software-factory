@@ -61,25 +61,25 @@ read them for ideas, do not copy their company-specific rules.
 
 ### [ ] T-01 · contracts
 
-- **Tier / wave / language:** core · 0 · TypeSpec, generated TypeScript (Python and Java clients generated for users)
+- **Tier / wave / language:** core · 0 · TypeSpec, generated TypeScript (the only client; ADR 0012)
 - **Path / prefix:** `contracts/` · `SCN-CTR`
 - **Purpose:** the five shared formats and every module API, as the single source of generated types.
 - **Build:** TypeSpec sources for: factory definition (JSON Schema), work item event (CloudEvents data schema),
   run record attributes (OTel resource and span attributes on top of GenAI conventions), evidence bundle manifest,
   score (Langfuse-compatible). AsyncAPI for events (`work.received@v1`, `run.completed@v1`, `gate.requested@v1`,
-  `gate.decided@v1`, `score.recorded@v1`, `pr.opened@v1`). Generated package `@osf/contracts` (npm); generated
-  client packages for Python (PyPI) and Java (Maven) for users, not used by modules. Valid and invalid fixtures per format.
+  `gate.decided@v1`, `score.recorded@v1`, `pr.opened@v1`). Generated package `@osf/contracts` (npm), the only client;
+  clients for other languages are not built (ADR 0012). Valid and invalid fixtures per format.
 - **Adopt:** TypeSpec, CloudEvents, OpenTelemetry GenAI semantic conventions (pin a version), Agent Trace,
   Langfuse score model (ADR 0006).
 - **Realizes:** CODE-001 (schema side), DATA-001 (record shape), RUNTIME-008 (attribution fields).
 - **First scenarios:** a valid factory definition validates; a definition with an unknown agent field is
-  rejected with its path; a breaking change to a schema fails CONTRACT; generated TypeScript types and the generated
-  Python and Java clients round-trip every fixture.
+  rejected with its path; a breaking change to a schema fails CONTRACT; generated TypeScript types round-trip every
+  fixture.
 - **From T-00:** CONTRACT compares with the pull request base and covers only removed properties, newly
   required fields, type changes, removed enum values and closed objects. Point it at the last `contracts-v*` release
   tag, replace the home-made JSON Schema diff with a full compatibility checker if one fits, and run oasdiff on the
   real OpenAPI files. Keep the fixture layout `contracts/<format>/fixtures/{valid,invalid}/` or change the check.
-- **Done when:** the packages publish from CI; CONTRACT check runs against the last release.
+- **Done when:** `@osf/contracts` publishes from CI; CONTRACT check runs against the last release.
 
 ### [ ] T-02 · testkit
 

@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "description": "The shared formats of the open software factory: JSON Schemas, TypeScript types and the osf-contracts CLI.",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "contracts"
+  },
   "type": "module",
   "bin": {
     "osf-contracts": "dist/cli.js"

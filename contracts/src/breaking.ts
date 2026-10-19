@@ -158,7 +158,7 @@ function isSchema(file: string): boolean {
 function schemaFiles(dir: string): string[] {
   if (!existsSync(dir)) return [];
   return readdirSync(dir).flatMap((entry) => {
-    if (entry === "node_modules" || entry === "fixtures" || entry === "clients" || entry.startsWith(".")) return [];
+    if (entry === "node_modules" || entry === "fixtures" || entry.startsWith(".")) return [];
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) return schemaFiles(full);
     return isSchema(full) ? [full] : [];

@@ -19,7 +19,7 @@ const USAGE = `Usage: osf <command>
   next-id <module>        print the next free scenario ID of a module or prefix
   test-scenario <ID>      run the one system test of a scenario
   agents-sync             link skills/ into the skill folders of every harness
-  install-tools           download the pinned lychee, oasdiff and openapi-generator into .tools/bin
+  install-tools           download the pinned lychee and oasdiff binaries into .tools/bin
   protect-paths [FILE]    PreToolUse guard: exit 2 for an edit to a protected path (event JSON in FILE or stdin)
 `;
 

@@ -139,7 +139,7 @@ flowchart LR
 | --- | --- | --- |
 | MCP | what a model can call | tools inside the sandbox through the MCP gateway; Factory MCP server for outside agents; optional MCP faces of tools |
 | ACP | drive a harness | foreman → harness |
-| REST (OpenAPI) | commands between programs | every module's server mode; generated TypeScript types; Python and Java clients for users |
+| REST (OpenAPI) | commands between programs | every module's server mode; generated TypeScript types (the only client, ADR 0012) |
 | CloudEvents on a bus | facts others react to | NATS JetStream; webhooks when there is no bus; events are past tense and versioned (`run.completed@v1`) |
 | OTLP | telemetry | harnesses, gateways and modules to the Collector |
 | A2A | agents of other organizations | later only |

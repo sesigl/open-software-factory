@@ -1,11 +1,11 @@
 ---
-covers: [contracts/typespec/**, contracts/src/**, contracts/scripts/**, contracts/events/asyncapi.yaml, contracts/clients/roundtrip/**]
+covers: [contracts/typespec/**, contracts/src/**, contracts/scripts/**, contracts/events/asyncapi.yaml]
 ---
 
 # contracts
 
 The formats that modules share, from one TypeSpec source: JSON Schemas for every format, the AsyncAPI document of
-the events, the TypeScript package `@osf/contracts`, and Python and Java clients for users. Decisions:
+the events, and the TypeScript package `@osf/contracts`. Decisions:
 [ADR 0006](../docs/decisions/0006-contracts-typespec.md), [ADR 0012](../docs/decisions/0012-contracts-toolchain.md).
 
 ## Quick start
@@ -48,19 +48,40 @@ into `true`.
 | --- | --- |
 | `osf-contracts validate <format> <file>` | Check a YAML or JSON document. Prints `<file>: valid <format>`, or one `<file> <JSON Pointer>: <problem>` line per problem and exits 1. |
 | `osf-contracts breaking [--base <ref>]` | Compare every schema with the last `contracts-v*` tag (or `<ref>`). A change that makes released documents invalid fails unless `contracts/package.json` has a new major version. |
-| `osf-contracts roundtrip --client <typescript\|python\|java> [dir]` | Load every valid fixture under `dir` (default `contracts`) with a generated client and compare what it writes back. Needs the clients from `pnpm build`. |
+| `osf-contracts roundtrip --client typescript [dir]` | Load every valid fixture under `dir` (default `contracts`) with the generated TypeScript types and compare what they write back. TypeScript is the only client (ADR 0012). |
 
 ## Changing a format
 
 1. Change `typespec/`. Run `pnpm build` in `contracts/`; it regenerates the schemas, `openapi/openapi.json`,
-   `src/generated/types.ts` and the clients. `pnpm lint` fails when a committed generated file is out of date.
+   `src/generated/types.ts` and `dist/`. `pnpm lint` fails when a committed generated file is out of date.
 2. Add or update fixtures in `<format>/fixtures/{valid,invalid}/`.
 3. A breaking change (removed or newly required field, changed type, removed enum value, closed object, tighter
    bound or pattern) needs a new major version in `package.json`. Prefer a new optional field, or for events a new
    type `name@v2` next to the old one.
 4. `contracts/` is a protected path: every change needs a person (CODEOWNERS).
 
-The build needs Java 17+ and Python 3.10+ for the clients; `make install` downloads the pinned openapi-generator.
+## Releases
+
+release-please opens a release pull request from the Conventional Commits under `contracts/`. Merging it creates
+the tag `contracts-v<version>`. The workflow `.github/workflows/publish-contracts.yml` then builds the package and
+publishes it to npm as `@osf/contracts`, with provenance. To publish a tag again, run the workflow by hand with the
+tag. The CONTRACT check and `osf-contracts breaking` compare with the newest `contracts-v*` tag.
+
+Only the TypeScript package exists (ADR 0012). A client for another language can be generated from
+`openapi/openapi.json` with any OpenAPI generator when someone needs one.
+
+One-time setup by a person (no credential is ever stored in the repository):
+
+1. npm: own the scope `@osf` on npmjs.com (an npm organization named `osf`). If the scope is taken, the package
+   name has to change, which is a contract change.
+2. GitHub: create the environment `npm` (Settings → Environments). Add required reviewers if a person should
+   approve each publish.
+3. First version only: npm configures trusted publishing per existing package, so `1.0.0` needs a token. Add a
+   granular npm access token with publish rights for `@osf/contracts` as the secret `NPM_TOKEN` of the
+   environment `npm`, or publish `1.0.0` by hand.
+4. After the first version: on npmjs.com, package settings → Trusted publishing, add GitHub Actions with the
+   repository `sesigl/open-software-factory`, the workflow `publish-contracts.yml` and the environment `npm`.
+   Then delete the secret `NPM_TOKEN` and revoke the token. Later versions publish through OIDC only.
 
 ## Configuration
 
@@ -78,5 +99,5 @@ None. The CLI reads no environment variables.
 | SCN-CTR-004 | implemented | A run record without a requester is rejected with its path |
 | SCN-CTR-005 | implemented | A breaking change to a released schema fails the compatibility check |
 | SCN-CTR-006 | implemented | The generated TypeScript types round-trip every valid fixture |
-| SCN-CTR-007 | implemented | The generated Python client round-trips every valid fixture |
-| SCN-CTR-008 | implemented | The generated Java client round-trips every valid fixture |
+| SCN-CTR-007 | deprecated | The generated Python client round-trips every valid fixture |
+| SCN-CTR-008 | deprecated | The generated Java client round-trips every valid fixture |
