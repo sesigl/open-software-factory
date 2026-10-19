@@ -35,3 +35,5 @@ Use these terms in scenarios, code, UI text and docs.
 | Product engineer | A person who delivers product value through the factory. |
 | Factory engineer | A person who improves the factory itself. |
 | Drift | A difference between the factory definition and the running factory. |
+| Automation | A trigger in the factory definition that starts work without a person asking: an event filter such as `forgejo.issue.labeled(auto-implement)`, or a schedule. |
+| Webhook | A forge's call to a URL when an event happens; `factory apply` registers one per repository for the automations. |

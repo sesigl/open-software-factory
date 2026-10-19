@@ -19,6 +19,8 @@ export interface Lock {
 export interface McpServer {
   name: string;
   launch: { command: string; args: string[] } | { url: string };
+  /** The transport of a remote server as the registry names it, for example "streamable-http" or "sse". */
+  transport?: string;
 }
 
 export function parseReference(reference: string): { registry: boolean; name: string; range: string } {
@@ -53,6 +55,6 @@ export function servers(references: string[], lock: Lock): McpServer[] {
           command: "npx",
           args: ["-y", entry?.package ? `${entry.package.identifier}@${entry.package.version}` : reference],
         };
-    return { name: serverKey(name), launch };
+    return { name: serverKey(name), launch, ...(entry?.remote ? { transport: entry.remote.type } : {}) };
   });
 }

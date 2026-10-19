@@ -16,6 +16,32 @@
       "type": "string",
       "default": "https://registry.modelcontextprotocol.io",
       "description": "Base URL of the MCP Registry that plan reads to pin registry servers in factory.lock."
+    },
+    "FACTORY_INFERENCE_URL": {
+      "type": "string",
+      "default": "http://inference-gateway:4000/v1",
+      "description": "Base URL of the inference gateway that every ModelConfig of render --k8s points at."
+    },
+    "FACTORY_SANDBOX_IMAGES": {
+      "type": "string",
+      "default": "ghcr.io/sesigl/open-software-factory/sandbox",
+      "description": "Registry folder of the sandbox images; render --k8s uses <folder>/<sandbox.template> as the image."
+    },
+    "FACTORY_FORGE_URL": {
+      "type": "string",
+      "description": "Base URL of the Forgejo that holds the repositories; apply registers webhooks there and plan reads them."
+    },
+    "FACTORY_FORGE_TOKEN": {
+      "type": "string",
+      "description": "API token for FACTORY_FORGE_URL with the scope write:repository. Never written to a file."
+    },
+    "FACTORY_INTAKE_URL": {
+      "type": "string",
+      "description": "URL every webhook of the factory delivers to, for example the intake."
+    },
+    "FACTORY_WEBHOOK_SECRET": {
+      "type": "string",
+      "description": "Secret that signs the webhook deliveries. Optional; never written to a file."
     }
   }
 }

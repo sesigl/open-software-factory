@@ -82,6 +82,83 @@ Plan: 0 to add, 1 to change, 0 to remove, 1 drifted.
 applying an older version: check out the older `factory.yaml` and run `factory apply`. `factory diff` compares two
 versions without the state, for example `factory diff HEAD~1:factory.yaml`.
 
+## Webhooks for automations
+
+An automation whose `on` filter starts with `forgejo.` is started by a Forgejo webhook
+([ADR 0022](../../docs/decisions/0022-factory-spec-webhooks-k8s-gh-aw.md)):
+
+```yaml
+agents:
+  implement:
+    # ...
+    repositories: [acme/web-app]
+automations:
+  - on: forgejo.issue.labeled(auto-implement)
+```
+
+`factory apply` gives every repository under `agents.*.repositories` one webhook to `FACTORY_INTAKE_URL` for the
+events of all such automations, at the Forgejo `FACTORY_FORGE_URL` with `FACTORY_FORGE_TOKEN`. It creates the
+webhook, updates it on the next apply and deletes it when no automation needs it any more:
+
+```text
+Applied factory web-app, digest 3f2a9c1b7e40
+webhook of acme/web-app: created
+```
+
+`factory plan` reads the webhooks again and reports one changed or deleted by hand as drift:
+`! webhook of acme/web-app changed outside "factory apply"`. The filter maps to Forgejo events as follows:
+
+| Filter | Forgejo event |
+| --- | --- |
+| `forgejo.issue.labeled`, `forgejo.issue.unlabeled` | `issue_label` |
+| `forgejo.issue.commented` | `issue_comment` |
+| `forgejo.issue.<other>` | `issues` |
+| `forgejo.pull_request.labeled` | `pull_request_label` |
+| `forgejo.pull_request.<other>` | `pull_request` |
+| `forgejo.push` | `push` |
+| `forgejo.release.<action>` | `release` |
+
+## Kubernetes
+
+`factory render --k8s` writes the resources of every agent below `$OUTPUT/k8s/`, one file each, for Argo CD or
+Flux to apply:
+
+| File | Resource |
+| --- | --- |
+| `agent-<agent>.yaml` | kagent `Agent` (`kagent.dev/v1alpha2`): the prompt as system message, the MCP servers as tools |
+| `modelconfig-<agent>.yaml` | kagent `ModelConfig`: the agent's model through the gateway at `FACTORY_INFERENCE_URL` |
+| `mcpserver-<server>.yaml` | kmcp `MCPServer` (`kagent.dev/v1alpha1`): an npm server started with `npx -y` over stdio |
+| `remotemcpserver-<server>.yaml` | kagent `RemoteMCPServer`: a registry server with the remote URL `factory.lock` pins |
+| `sandboxtemplate-<agent>.yaml` | agent-sandbox `SandboxTemplate`: image `<FACTORY_SANDBOX_IMAGES>/<sandbox.template>`, CPU and memory, egress hosts in the annotation `opensoftware.dev/egress` |
+
+## gh-aw workflows
+
+`factory render --gh-aw` writes one [GitHub Agentic Workflow](https://github.github.com/gh-aw/) per automation
+that GitHub starts: a filter that starts with `github.`, or a `cron`. `github.issue.labeled(auto-implement)` becomes
+`.github/workflows/issue-labeled-auto-implement.md`:
+
+```markdown
+---
+on:
+  issues:
+    types:
+      - labeled
+    names:
+      - auto-implement
+engine: claude
+---
+
+# implement
+...
+```
+
+A scheduled automation is named after its `run`. The workflow runs the agent that `run` names, else the agent of
+the first workflow stage, else the first agent; its harness gives the engine (`claude-code` is `claude`, `codex` is
+`codex`). Compile the files with `gh aw compile`.
+
+`factory apply --k8s` and `factory apply --gh-aw` write the same files and record them, so plan reports them as
+drift when they change by hand.
+
 As a library, `resolveFactory(file)` returns the resolved definition that `factory resolve` prints:
 
 ```ts
@@ -89,6 +166,15 @@ import { resolveFactory } from "@opensoftware/factory-spec";
 
 const definition = resolveFactory("factory.yaml"); // a FactoryDefinition with defaults and pinned MCP versions
 ```
+
+## Releases
+
+release-please opens a release pull request from the Conventional Commits under `modules/factory-spec/`. Merging it
+creates the tag `factory-spec-v<version>`. The workflow `.github/workflows/publish-factory-spec.yml` then builds
+`dist/` and publishes `@opensoftware/factory-spec` to npm. The first release is `0.1.0`; until `1.0.0`, a breaking
+change raises the minor version. The one-time npm setup is the same as for the contracts
+([`contracts/README.md`](../../contracts/README.md#releases)), with the workflow `publish-factory-spec.yml`. No
+credential is stored in the repository.
 
 ## Commands
 
@@ -98,8 +184,10 @@ const definition = resolveFactory("factory.yaml"); // a FactoryDefinition with d
 | --- | --- |
 | `factory lint` | Check factory.yaml; print each problem with its file, line and column. |
 | `factory render [--agent <name>] [--harness <name>]` | Write AGENTS.md, the MCP servers and the skill links of one agent to $OUTPUT. --harness all writes every declared harness. |
-| `factory plan` | Pin registry MCP servers in factory.lock; show what apply changes and what drifted. |
-| `factory apply [--agent <name>] [--harness <name>]` | Render like render and record the applied version in OSF_DATA. |
+| `factory render --k8s` | Write the kagent and agent-sandbox resources of every agent to $OUTPUT/k8s/. |
+| `factory render --gh-aw` | Write one gh-aw workflow per GitHub automation to $OUTPUT/.github/workflows/. |
+| `factory plan` | Pin registry MCP servers in factory.lock; show what apply changes and what drifted, webhooks included. |
+| `factory apply [--agent <name>] [--harness <name>] [--k8s \| --gh-aw]` | Render like render, register the forge webhooks and record the applied version in OSF_DATA. |
 | `factory diff <old> [<new>]` | Show the changes between two versions of factory.yaml, as files or Git revisions. |
 | `factory resolve` | Print the resolved definition as JSON: defaults filled in, registry servers pinned. |
 
@@ -112,6 +200,12 @@ const definition = resolveFactory("factory.yaml"); // a FactoryDefinition with d
 | `OUTPUT` | string | `"."` | Folder that render and apply write the harness files to. |
 | `OSF_DATA` | string | `".factory"` | State folder: apply records the applied version here and plan compares with it. |
 | `FACTORY_MCP_REGISTRY` | string | `"https://registry.modelcontextprotocol.io"` | Base URL of the MCP Registry that plan reads to pin registry servers in factory.lock. |
+| `FACTORY_INFERENCE_URL` | string | `"http://inference-gateway:4000/v1"` | Base URL of the inference gateway that every ModelConfig of render --k8s points at. |
+| `FACTORY_SANDBOX_IMAGES` | string | `"ghcr.io/sesigl/open-software-factory/sandbox"` | Registry folder of the sandbox images; render --k8s uses <folder>/<sandbox.template> as the image. |
+| `FACTORY_FORGE_URL` | string |  | Base URL of the Forgejo that holds the repositories; apply registers webhooks there and plan reads them. |
+| `FACTORY_FORGE_TOKEN` | string |  | API token for FACTORY_FORGE_URL with the scope write:repository. Never written to a file. |
+| `FACTORY_INTAKE_URL` | string |  | URL every webhook of the factory delivers to, for example the intake. |
+| `FACTORY_WEBHOOK_SECRET` | string |  | Secret that signs the webhook deliveries. Optional; never written to a file. |
 
 ## Scenarios
 
@@ -151,21 +245,21 @@ const definition = resolveFactory("factory.yaml"); // a FactoryDefinition with d
 | SCN-FSPEC-030 | implemented | Diff of two equal versions shows no changes |
 | SCN-FSPEC-031 | implemented | Resolve prints the definition with defaults and pins |
 | SCN-FSPEC-032 | implemented | The help lists every command |
-| SCN-FSPEC-033 | planned | Render --k8s writes a kagent Agent with the prompt as its system message |
-| SCN-FSPEC-034 | planned | Render --k8s writes a ModelConfig that sends the model to the inference gateway |
-| SCN-FSPEC-035 | planned | Render --k8s runs an npm MCP server as an MCPServer and gives it to the agent as a tool |
-| SCN-FSPEC-036 | planned | Render --k8s connects a registry server with a remote URL as a RemoteMCPServer |
-| SCN-FSPEC-037 | planned | Render --k8s writes an agent-sandbox SandboxTemplate with the declared resources and egress |
-| SCN-FSPEC-038 | planned | Render --k8s writes the resources of every agent of the factory |
-| SCN-FSPEC-039 | planned | Render --gh-aw writes a workflow for an issue label automation |
-| SCN-FSPEC-040 | planned | Render --gh-aw writes a scheduled workflow named after the agent it runs |
-| SCN-FSPEC-041 | planned | Render --gh-aw gives the workflow the MCP servers of its agent |
-| SCN-FSPEC-042 | planned | Render --gh-aw refuses an agent whose harness gh-aw cannot run |
-| SCN-FSPEC-043 | planned | Apply registers a webhook for a forge automation |
-| SCN-FSPEC-044 | planned | Applying again keeps one webhook per repository |
-| SCN-FSPEC-045 | planned | Apply changes the events of the webhook when the automations change |
-| SCN-FSPEC-046 | planned | Plan reports a webhook changed by hand as drift |
-| SCN-FSPEC-047 | planned | Plan reports a deleted webhook as drift |
-| SCN-FSPEC-048 | planned | Apply deletes the webhook when the factory no longer has a forge automation |
-| SCN-FSPEC-049 | planned | Apply asks for the forge when a forge automation needs a webhook |
-| SCN-FSPEC-050 | planned | Apply refuses a forge event it cannot map to a webhook event |
+| SCN-FSPEC-033 | implemented | Render --k8s writes a kagent Agent with the prompt as its system message |
+| SCN-FSPEC-034 | implemented | Render --k8s writes a ModelConfig that sends the model to the inference gateway |
+| SCN-FSPEC-035 | implemented | Render --k8s runs an npm MCP server as an MCPServer and gives it to the agent as a tool |
+| SCN-FSPEC-036 | implemented | Render --k8s connects a registry server with a remote URL as a RemoteMCPServer |
+| SCN-FSPEC-037 | implemented | Render --k8s writes an agent-sandbox SandboxTemplate with the declared resources and egress |
+| SCN-FSPEC-038 | implemented | Render --k8s writes the resources of every agent of the factory |
+| SCN-FSPEC-039 | implemented | Render --gh-aw writes a workflow for an issue label automation |
+| SCN-FSPEC-040 | implemented | Render --gh-aw writes a scheduled workflow named after the agent it runs |
+| SCN-FSPEC-041 | implemented | Render --gh-aw gives the workflow the MCP servers of its agent |
+| SCN-FSPEC-042 | implemented | Render --gh-aw refuses an agent whose harness gh-aw cannot run |
+| SCN-FSPEC-043 | implemented | Apply registers a webhook for a forge automation |
+| SCN-FSPEC-044 | implemented | Applying again keeps one webhook per repository |
+| SCN-FSPEC-045 | implemented | Apply changes the events of the webhook when the automations change |
+| SCN-FSPEC-046 | implemented | Plan reports a webhook changed by hand as drift |
+| SCN-FSPEC-047 | implemented | Plan reports a deleted webhook as drift |
+| SCN-FSPEC-048 | implemented | Apply deletes the webhook when the factory no longer has a forge automation |
+| SCN-FSPEC-049 | implemented | Apply asks for the forge when a forge automation needs a webhook |
+| SCN-FSPEC-050 | implemented | Apply refuses a forge event it cannot map to a webhook event |

@@ -69,7 +69,7 @@ are in [`contracts/events/asyncapi.yaml`](../../contracts/events/asyncapi.yaml).
 
 | Tool | Tier | Wave | Lang | Useful alone as | Reads → writes | Adopts | Prior art and why we still build | Seed in sesigl/child-apps-company |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| factory-spec | core | 1 | TS | One agent config rendered for every harness; `lint`, `diff`, `plan`, `apply` | factory.yaml → harness configs, resolved definition | JSON Schema, gh-aw as an output | Warp's factory format is closed; gh-aw is per-workflow and GitHub-only; AGENTS.md has no schema | `orchestration/workflow.config.json` |
+| factory-spec | core | 1 | TS | One agent config rendered for every harness; `lint`, `diff`, `plan`, `apply` | factory.yaml → harness configs, kagent and agent-sandbox resources, gh-aw workflows, forge webhooks, resolved definition | JSON Schema; gh-aw and kagent as outputs | Warp's factory format is closed; gh-aw is per-workflow and GitHub-only; AGENTS.md has no schema | `orchestration/workflow.config.json` |
 | runlog | core | 1 | TS | Every harness session as an OTel run record | session files, native OTel → OTLP | OTel SDK, Collector, Agent Trace | Viewers exist (Claudescope, agentlogs) but no standard exporter | `scripts/observability/hermes_transcript.py` |
 | proof | core | 1 | TS | Evidence on any PR | Playwright, test reports → evidence bundle, PR comment, check | Playwright, Playwright MCP | none found | `qa-scenarios` skill |
 | spec-trace | optional | 2 | TS | Scenario ↔ test ↔ PR traceability | features, tests, results → report, check | Gherkin parser | Cucumber executes; nothing lints ID traceability | `make specs-check`, `traceability-check` |

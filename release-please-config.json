@@ -14,6 +14,13 @@
       "component": "testkit",
       "initial-version": "0.1.0",
       "bump-minor-pre-major": true
+    },
+    "modules/factory-spec": {
+      "release-type": "node",
+      "package-name": "@opensoftware/factory-spec",
+      "component": "factory-spec",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
     }
   }
 }
