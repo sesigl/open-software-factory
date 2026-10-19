@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Open Software Factory Internals</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: one reading column (~72ch) with wide figure and tables; component cards in a two-column grid that stacks on phones. */
+:root {
+  --paper: #f3f5f7;
+  --sheet: #ffffff;
+  --ink: #14202b;
+  --muted: #5a6875;
+  --rule: #d6dde4;
+  --accent: #0d6b70;
+  --accent-soft: #e0efef;
+  --amber: #a35c00;
+  --amber-soft: #fbefdc;
+  --slate: #3d5a80;
+  --slate-soft: #e3eaf3;
+  --f-display: "Archivo", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0d141b; --sheet: #131d27; --ink: #e3e9ee; --muted: #9aa8b5; --rule: #2a3a48;
+    --accent: #5cc3bf; --accent-soft: #123334; --amber: #e7a54a; --amber-soft: #33240f;
+    --slate: #9db7d8; --slate-soft: #1b2838;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0d141b; --sheet: #131d27; --ink: #e3e9ee; --muted: #9aa8b5; --rule: #2a3a48;
+  --accent: #5cc3bf; --accent-soft: #123334; --amber: #e7a54a; --amber-soft: #33240f;
+  --slate: #9db7d8; --slate-soft: #1b2838;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font: 400 16px/1.6 var(--f-body); }
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+code { font-family: var(--f-mono); font-size: .88em; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.top { background: var(--sheet); border-bottom: 1px solid var(--rule); }
+.top .wrap { padding-block: 44px 32px; }
+.eyebrow { font: 600 12px/1.4 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font: 800 clamp(34px, 6vw, 58px)/1.02 var(--f-display); font-stretch: 80%; margin: 12px 0 16px; text-wrap: balance; }
+.lede { max-width: 70ch; font-size: 18px; margin: 0; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 28px; margin-top: 22px; font: 500 13px/1.4 var(--f-mono); color: var(--muted); }
+.facts b { color: var(--ink); font-weight: 600; }
+main { padding-block: 16px 80px; }
+main > section { padding-block: 32px; border-bottom: 1px solid var(--rule); }
+main > section:last-child { border-bottom: 0; }
+h2 { font: 700 30px/1.1 var(--f-display); font-stretch: 85%; margin: 0 0 8px; text-wrap: balance; }
+h2 .sn { font: 600 13px var(--f-mono); color: var(--accent); vertical-align: middle; margin-right: 10px; }
+.intro { max-width: 72ch; color: var(--muted); margin: 0 0 22px; }
+p { max-width: 72ch; }
+
+/* rules */
+.rules { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 14px; }
+.rules li { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; }
+.rules b { display: block; font: 700 17px/1.2 var(--f-display); font-stretch: 85%; margin-bottom: 4px; }
+.rules span { font-size: 15px; color: var(--muted); }
+
+/* figure */
+figure { margin: 0; }
+.fig { overflow-x: auto; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 12px; }
+.fig svg { display: block; width: 100%; min-width: 960px; height: auto; color: var(--ink); font-family: var(--f-body); }
+figcaption { font-size: 14px; color: var(--muted); margin-top: 10px; max-width: 80ch; }
+svg .bx-b { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+svg .bx-r { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 5 4; }
+svg .nm { font: 600 13px var(--f-mono); fill: currentColor; }
+svg .nm-b { fill: var(--accent); }
+svg .sub { font-size: 11px; fill: var(--muted); }
+svg .ln { fill: none; stroke: currentColor; stroke-width: 1.2; }
+svg .ln-h { stroke-dasharray: 4 3; }
+svg .lb { font-size: 11px; fill: var(--muted); }
+svg .lb-k { font-size: 11px; fill: var(--ink); font-weight: 500; }
+svg .lane { font: 600 10px var(--f-mono); letter-spacing: .1em; fill: var(--muted); }
+svg .ah { fill: currentColor; }
+
+/* tables */
+.tbl { overflow-x: auto; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--rule); }
+tr:last-child td { border-bottom: 0; }
+th { font: 600 11px/1.3 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--paper); }
+td.h { font-weight: 600; min-width: 140px; }
+td.m { font-family: var(--f-mono); font-size: 13px; white-space: nowrap; }
+.tag { font: 600 11px/1 var(--f-mono); padding: 4px 7px; border-radius: 3px; white-space: nowrap; display: inline-block; }
+.tag.build { background: var(--accent-soft); color: var(--accent); }
+.tag.reuse { background: var(--slate-soft); color: var(--slate); }
+.tag.verify { background: var(--amber-soft); color: var(--amber); }
+
+/* component cards */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 520px), 1fr)); gap: 16px; }
+.card { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 18px 20px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.card .hd { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: baseline; }
+.card h3 { font: 600 19px/1.2 var(--f-mono); margin: 0; color: var(--accent); }
+.card .one { margin: 0; font-size: 15px; }
+.card dl { margin: 0; display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 6px 12px; font-size: 14px; }
+.card dt { font: 600 11px/1.6 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.card dd { margin: 0; min-width: 0; }
+@media (max-width: 520px) { .card dl { grid-template-columns: minmax(0, 1fr); } .card dt { margin-top: 4px; } }
+.wave { font: 600 11px var(--f-mono); color: var(--muted); }
+
+/* ladder */
+.ladder { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-width: 900px; }
+.ladder li { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 16px; font-size: 15px; }
+.ladder code { color: var(--accent); }
+.ladder span { color: var(--muted); }
+@media (max-width: 640px) { .ladder li { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+
+/* waves */
+.waves { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 14px; }
+.wv { background: var(--sheet); border: 1px solid var(--rule); border-top: 3px solid var(--accent); border-radius: 4px; padding: 14px 16px; }
+.wv h3 { font: 700 18px/1.2 var(--f-display); font-stretch: 85%; margin: 0 0 6px; }
+.wv p { font-size: 14px; margin: 0 0 8px; color: var(--muted); }
+.wv ul { margin: 0; padding-left: 18px; font-size: 14px; }
+
+/* decisions */
+.dec { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; max-width: 86ch; }
+.dec li { background: var(--sheet); border: 1px solid var(--rule); border-left: 3px solid var(--amber); border-radius: 4px; padding: 12px 16px; font-size: 15px; }
+.dec b { display: block; }
+.dec span { color: var(--muted); font-size: 14px; }
+.small { font-size: 14px; color: var(--muted); }
+.src { font-size: 13px; color: var(--muted); columns: 2 320px; column-gap: 32px; padding-left: 18px; }
+</style>
+<style>
+pre.code { margin: 0; overflow-x: auto; background: #0f1a24; color: #d8e2ea; border-radius: 6px; padding: 16px 18px; font: 13px/1.6 var(--f-mono); }
+pre.code .c { color: #8197aa; font-style: italic; }
+pre.code .k { color: #7fd1c7; }
+.answers { display: grid; gap: 12px; }
+.ans { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 18px; display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 4px 12px; }
+.ans .q { font: 700 22px/1 var(--f-display); color: var(--accent); grid-row: span 2; }
+.ans b { font: 700 17px/1.25 var(--f-display); font-stretch: 85%; }
+.ans p { margin: 0; font-size: 15px; }
+h3.sub { font: 700 20px/1.2 var(--f-display); font-stretch: 85%; margin: 28px 0 10px; }
+.loops { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 14px; }
+.loops li { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 16px; font-size: 14px; }
+.loops li b { display: block; font: 700 18px/1.2 var(--f-display); font-stretch: 85%; }
+.loops li .when { font: 600 11px var(--f-mono); color: var(--accent); letter-spacing: .06em; text-transform: uppercase; }
+.loops ol { margin: 8px 0 0; padding-left: 18px; }
+.tag.beta { background: var(--amber-soft); color: var(--amber); }
+.grid2 > div { min-width: 0; }
+td.m { white-space: normal; }
+main li code, main p code { overflow-wrap: anywhere; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="eyebrow">Design notes · companion to the Open Software Factory Map</div>
+    <h1>Open Software Factory Internals</h1>
+    <p class="lede">How the tools plug into real systems, how the factory is declared in code, which loops run inside it, how the parts talk to each other, and how the principles become checks that run automatically.</p>
+    <div class="facts">
+      <span><b>10</b> ports with adapters</span>
+      <span><b>3</b> nested loops</span>
+      <span><b>6</b> protocols, each with one job</span>
+      <span><b>15</b> principles with a check each</span>
+    </div>
+  </div>
+</header>
+<div class="wrap" style="padding-block:10px"><p style="margin:0;padding:10px 14px;border:1px solid var(--rule);border-left:3px solid var(--amber);border-radius:4px;background:var(--sheet);font-size:14px;max-width:none"><b>Snapshot from 2026-10-18.</b> The Markdown documents in this repository are the source of truth and win where this page differs. Changed since: TypeScript is the only core language (ADR 0009), and the monorepo tooling is pnpm workspaces with Turborepo, not Nx (ADR 0010).</p></div>
+
+<div class="wrap">
+<main>
+
+<section id="short">
+  <h2><span class="sn">00</span>Short answers</h2>
+  <div class="answers">
+    <div class="ans"><span class="q">1</span><b>Adapters</b><p>Each tool defines a small interface (a port) for every outside system it touches: harness, sandbox, chat, tracker, forge, model, secrets, telemetry. An adapter implements one port for one product, such as Claude Code, Kubernetes or Teams, and must pass the port's shared conformance tests.</p></div>
+    <div class="ans"><span class="q">2</span><b>Factory as code</b><p>Don't invent a language. Use YAML with a JSON Schema, and copy Terraform's four pillars: desired state, providers, plan and apply with drift detection, and reusable modules. It runs as a CLI for small setups and as a Kubernetes operator, using the kagent and agent-sandbox resources, for large ones.</p></div>
+    <div class="ans"><span class="q">3</span><b>The agentic loop</b><p>Three loops are nested. Inside a harness, the model calls tools until the task is done (seconds). The foreman runs the stages as a durable workflow (hours). The improvement loop changes the factory from scores (days). All major harnesses now emit OpenTelemetry, but not in the same shape: Gemini CLI natively, Codex and OpenCode in their own formats, and Claude Code with traces in beta. runlog makes them uniform.</p></div>
+    <div class="ans"><span class="q">4</span><b>Communication</b><p>Each protocol has one job. MCP is for what a model calls, ACP for driving a harness, REST for program-to-program commands, CloudEvents on a bus for facts, and OTLP for telemetry. There is no central registry to build: upstream catalogs (the MCP Registry, the ACP Registry, OCI registries) are consulted at plan time, and factory.yaml pins exact versions. Git is the registry of what is in use.</p></div>
+    <div class="ans"><span class="q">5</span><b>Principles in practice</b><p>A principle counts only when a script enforces it. Each principle in section 05 has a practice and an automatic check in CI or at runtime. This repository already works this way, for example scripts instead of prose for merges and metrics.</p></div>
+  </div>
+</section>
+
+<section id="ports">
+  <h2><span class="sn">01</span>Ports and adapters</h2>
+  <p class="intro">An adapter is its own package, for example <code>@osf/harness-claude-code</code>, with its own version. A port ships a conformance test kit, like Terraform provider acceptance tests; an adapter that passes it is listed. Abstract only where teams really differ: the workflow engine (Temporal) stays fixed, because an abstraction over it would cost more than it gives.</p>
+  <div class="tbl"><table>
+    <tr><th>Port</th><th>Interface (short)</th><th>Example adapters and what differs</th></tr>
+    <tr><td class="h">Harness</td><td class="m">start · send · stream events · approve tool · cancel · export transcript</td><td>
+      <b>Claude Code</b>: Claude Agent SDK or headless <code>claude -p --output-format stream-json</code>; hooks for tool approval; session files in <code>~/.claude/projects</code>; OTel through environment variables.<br>
+      <b>Codex</b>: <code>codex exec --json</code> or the Codex SDK; <code>[otel]</code> block in <code>config.toml</code>; session files in <code>~/.codex/sessions</code>.<br>
+      <b>OpenCode</b>: <code>opencode serve</code> HTTP server and SDK; experimental OTel; plugins.<br>
+      <b>Gemini CLI</b>: reference ACP agent; native OTel.<br>
+      <b>Any other</b>: the generic ACP adapter covers every agent in the ACP Registry. Coder's agentapi is the fallback for agents with only a terminal UI.<br>
+      <span class="small">Rule: use ACP first, a native SDK when it gives more control (hooks, permissions), and terminal emulation last.</span></td></tr>
+    <tr><td class="h">Sandbox</td><td class="m">create(template, resources, network policy) · exec · copy · snapshot · destroy</td><td>
+      <b>Docker</b>: one container per run on a single host; local development and small teams.<br>
+      <b>Kubernetes</b>: <code>agent-sandbox</code> SandboxTemplate, SandboxClaim and WarmPool for fast start; gVisor or Kata for isolation.<br>
+      <b>E2B / Daytona</b>: managed or self-hosted microVMs.<br>
+      <b>macOS</b>: a VM runner for Apple builds.<br>
+      <span class="small">Docker Compose and Helm are not sandbox adapters. They are the two ways to install the factory itself (section 02).</span></td></tr>
+    <tr><td class="h">Channel</td><td class="m">receive → WorkItem · reply(thread, message or card) · ask(approval) → decision</td><td>
+      <b>Slack</b>: threads, Block Kit buttons, app mentions.<br>
+      <b>Teams</b>: Bot Framework, Adaptive Cards, tenant admin consent.<br>
+      <b>GitHub</b>: comments, labels, check runs, review requests.<br>
+      <b>Linear</b>: agent sessions, issue assignment.<br>
+      <b>Google Chat, Discord, Telegram</b>: through the same SDK.<br>
+      <span class="small">All of these through Vercel Chat SDK adapters. Jira and Sentry through their webhooks and REST APIs.</span></td></tr>
+    <tr><td class="h">Tracker</td><td class="m">create · update state · link PR · comment</td><td>GitHub Issues and Projects, Linear, Jira. Differences: state models (board columns, workflow states, Jira transitions) map to one small work-item state set.</td></tr>
+    <tr><td class="h">Forge</td><td class="m">branch · PR · checks · comments · merge rules</td><td>GitHub, GitLab, Forgejo or Gitea. Differences: check runs versus commit statuses, approval rules, bot identities.</td></tr>
+    <tr><td class="h">Inference</td><td class="m">OpenAI-compatible chat endpoint + spend log</td><td>LiteLLM in front of Anthropic, OpenAI, Bedrock, Vertex, vLLM or Ollama. One endpoint for every harness, with budgets and routing rules.</td></tr>
+    <tr><td class="h">Secrets</td><td class="m">resolve(reference) at the egress proxy, never in the sandbox</td><td>OpenBao, Vault, Infisical, Kubernetes Secrets, 1Password. The sandbox sees only placeholder tokens; iron-proxy or agentgateway swaps in the real value.</td></tr>
+    <tr><td class="h">Telemetry sink</td><td class="m">OTLP</td><td>Langfuse, Arize Phoenix, Grafana Tempo and Loki, Datadog, Honeycomb. No adapter code needed: an OpenTelemetry Collector exports to any of them.</td></tr>
+    <tr><td class="h">Policy</td><td class="m">decide(input) → allow, deny or gate</td><td>OPA (Rego) or Cedar. Used for gates, tool allowlists and merge rules.</td></tr>
+    <tr><td class="h">Benchmark environment</td><td class="m">Harbor environment</td><td>Docker, Daytona, Modal, E2B, all supported by Harbor already.</td></tr>
+  </table></div>
+</section>
+
+<section id="code">
+  <h2><span class="sn">02</span>Everything in code</h2>
+  <p class="intro">The tools already exist. Terraform and OpenTofu (HCL), Pulumi (general languages), Kubernetes resources with GitOps (Argo CD, Flux), and for agents specifically kagent (resources Agent, ModelConfig and MCPServer) and Docker Agent (agent teams in YAML). The factory reuses their ideas and, where it fits, their engines.</p>
+
+  <h3 class="sub">The four pillars, taken from Terraform</h3>
+  <div class="tbl"><table>
+    <tr><th>Pillar</th><th>In Terraform</th><th>In the factory</th></tr>
+    <tr><td class="h">Desired state</td><td>HCL files in Git</td><td><code>factory.yaml</code> plus prompts and skills as Markdown, policies as Rego, all in one repository. Secrets appear only as references.</td></tr>
+    <tr><td class="h">Providers</td><td>Plugins per cloud, pinned in a lock file</td><td>Adapters per port, declared in <code>providers:</code> and pinned in <code>factory.lock</code> with versions and image digests.</td></tr>
+    <tr><td class="h">Plan, apply, drift</td><td><code>plan</code> shows the diff; <code>apply</code> reconciles; state records reality</td><td><code>factory plan</code> shows what changes (new agent, model change, new webhook). <code>factory apply</code> registers webhooks, writes harness configs, sets gateway routes, upserts scorers. A nightly plan reports drift, such as a webhook changed by hand.</td></tr>
+    <tr><td class="h">Modules</td><td>Reusable, versioned building blocks</td><td>Stage packs, for example <code>osf/modules/code-review@1.2</code>, with their agent, prompts, scorers and gate.</td></tr>
+  </table></div>
+  <p class="small">Three more pillars make the code trustworthy. Every run records the hash of the factory version it ran on. Schemas are checked in CI. Changes go through the same reviewed pull request as product code.</p>
+
+  <div class="grid2" style="margin-top:20px">
+    <div>
+      <h3 class="sub" style="margin-top:0">Example (illustrative)</h3>
+<pre class="code"><span class="k">version</span>: 1
+<span class="k">factory</span>: web-app
+<span class="k">providers</span>:
+  harness:   { claude-code: "^2", codex: "^1" }
+  sandbox:   { kubernetes: "^0.4" }
+  channel:   { slack: "^1", github: "^1" }
+  inference: { litellm: "^1" }
+<span class="k">agents</span>:
+  triage:
+    harness: claude-code
+    model: routes/triage            <span class="c"># routing rule, not a fixed model</span>
+    prompt: ./agents/triage.md
+    mcp: [registry:io.github/github@1.4, linear@2]
+    secrets: [ref:openbao/linear-token]
+    sandbox: { template: small, egress: [api.linear.app] }
+  implement:
+    harness: codex
+    model: routes/implement
+    prompt: ./agents/implement.md
+    skills: [./skills/testing]
+    sandbox: { template: node-22, cpu: 4, memory: 8Gi }
+<span class="k">workflow</span>:
+  - stage: triage
+  - stage: spec
+    gate: { policy: ./policy/spec.rego }   <span class="c"># who must approve</span>
+  - stage: implement
+  - stage: review
+  - stage: verify
+    evidence: required
+<span class="k">automations</span>:
+  - on: github.issue.labeled(auto-implement)
+  - on: sentry.fatal
+  - cron: "0 10 * * *"   run: self-triage-report
+<span class="k">scorers</span>:
+  redundant-tests: { sample: 0.2, judge: ./scorers/redundant-tests.md }</pre>
+    </div>
+    <div>
+      <h3 class="sub" style="margin-top:0">Two ways to apply it</h3>
+      <div class="tbl"><table>
+        <tr><th>Mode</th><th>How it works</th><th>For</th></tr>
+        <tr><td class="h">CLI reconcile</td><td><code>factory plan</code> and <code>apply</code> in CI after merge; state in a small database or file. Installed with Docker Compose.</td><td>One team, a single VM, getting started</td></tr>
+        <tr><td class="h">Kubernetes operator</td><td><code>factory render --k8s</code> writes kagent Agent, ModelConfig and MCPServer resources and agent-sandbox templates. Argo CD or Flux applies them; controllers reconcile and fix drift. Installed with Helm.</td><td>Platform teams, many factories</td></tr>
+        <tr><td class="h">Later: OpenTofu provider</td><td>A <code>factory</code> provider so infrastructure teams declare factories in HCL next to their cloud resources. An add-on, not a second source of truth.</td><td>Organizations that already run everything through Terraform</td></tr>
+      </table></div>
+      <p class="small">kagent's agent resource is a CNCF Sandbox proposal, not yet a standard. Rendering to it keeps it optional.</p>
+    </div>
+  </div>
+</section>
+
+<section id="loops">
+  <h2><span class="sn">03</span>The loops and their telemetry</h2>
+  <p class="intro">The “agentic loop” is three loops nested inside each other. Each has its own engine and its own record.</p>
+  <ul class="loops">
+    <li><span class="when">Inner loop · seconds to minutes</span><b>The harness loop</b>Same basic pattern in Claude Code, Codex, OpenCode and Gemini CLI:
+      <ol><li>Build context: system prompt, instructions such as AGENTS.md, task, files.</li><li>The model answers with text or tool calls.</li><li>The harness checks permission (hooks, allowlists) and runs the tools: read, edit, shell, MCP.</li><li>Results go back into the context; compact it when it grows too large.</li><li>Repeat until the model stops, a budget runs out, or a person interrupts.</li></ol></li>
+    <li><span class="when">Outer loop · hours</span><b>The delivery loop (foreman)</b>A Temporal workflow per work item:
+      <ol><li>Each stage is an activity that starts an inner loop in a fresh sandbox.</li><li>Between stages: deterministic checks such as CI, tests and spec-trace.</li><li>Gates wait for a signal from gatekeeper; timers handle timeouts.</li><li>Steering and handoff arrive as signals into a running stage.</li><li>Sub-agents are child workflows; crashes resume from history.</li></ol></li>
+    <li><span class="when">Meta loop · days</span><b>The improvement loop</b>Runs offline on recorded data:
+      <ol><li>scorekit scores sampled runs.</li><li>observer groups repeated failures and opens a pull request to the factory.</li><li>taskcapture benchmarks the change, or a model choice, on real tasks.</li><li>A person merges; the foreman loads the new version.</li><li>The same scorer checks whether the failure rate fell.</li></ol></li>
+  </ul>
+
+  <h3 class="sub">Do the harnesses speak OpenTelemetry?</h3>
+  <div class="tbl"><table>
+    <tr><th>Harness</th><th>Status</th><th>What you get</th></tr>
+    <tr><td class="h">Gemini CLI</td><td><span class="tag reuse">native</span></td><td>Logs, metrics and traces to any OTLP endpoint; reported to follow the GenAI conventions.</td></tr>
+    <tr><td class="h">Codex CLI</td><td><span class="tag reuse">native</span></td><td>Logs and traces through the <code>[otel]</code> config. Spans are internal (session loop, responses); conversation details arrive as span events; prompt text is off by default.</td></tr>
+    <tr><td class="h">Claude Code</td><td><span class="tag beta">traces in beta</span></td><td>Metrics and log events natively. Traces need <code>CLAUDE_CODE_ENHANCED_TELEMETRY_BETA</code> and <code>OTEL_TRACES_EXPORTER</code>: an interaction span with model-request and tool spans.</td></tr>
+    <tr><td class="h">OpenCode</td><td><span class="tag beta">experimental</span></td><td>Traces over OTLP/HTTP behind an experimental flag; plugins, including one for Langfuse.</td></tr>
+    <tr><td class="h">Claude Agent SDK and API</td><td><span class="tag beta">public beta</span></td><td>Anthropic platform traces for the Messages API, Managed Agents and SDKs (since October 14, 2026).</td></tr>
+    <tr><td class="h">Goose and others</td><td><span class="tag verify">not checked</span></td><td>Check per release; fall back to reading the session files.</td></tr>
+  </table></div>
+  <p>So every major harness emits OpenTelemetry, but with different span names, mostly outside the GenAI conventions, and with content off by default. runlog closes the gap in three steps:</p>
+  <ol>
+    <li><b>Correlate at launch.</b> The foreman starts each harness with <code>OTEL_RESOURCE_ATTRIBUTES=factory.version=…,work_item.id=…,run.id=…,stage=…</code>, so all native telemetry carries the same keys.</li>
+    <li><b>Normalize in the Collector.</b> A per-harness mapping in the OpenTelemetry Collector renames spans and attributes to the GenAI conventions.</li>
+    <li><b>Complete from the session file.</b> When the stage ends, runlog reads the harness's session file and attaches the full transcript. Telemetry alone usually leaves out content.</li>
+  </ol>
+</section>
+
+<section id="comms">
+  <h2><span class="sn">04</span>How the parts talk</h2>
+  <p class="intro">Six protocols, each with one job. A component never calls another component's database or imports its code.</p>
+  <figure>
+    <div class="fig">
+      <svg viewBox="0 0 1200 530" role="img" aria-label="People and tools reach intake through webhooks, REST and MCP. Intake, foreman, gatekeeper, proof, scorekit, observer and ledger exchange facts as CloudEvents on an event bus. The foreman drives the harness inside the sandbox over ACP; the harness reaches tools through an MCP gateway, models through an LLM gateway via the egress proxy, and sends telemetry over OTLP to a collector and trace store. Upstream registries are consulted at plan time and pinned in factory.yaml.">
+        <defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+
+        <!-- external -->
+        <rect class="bx-r" x="20" y="70" width="150" height="56" rx="5"/>
+        <text class="nm" x="95" y="94" text-anchor="middle">people + tools</text><text class="sub" x="95" y="112" text-anchor="middle">Slack · GitHub · local agents</text>
+        <line class="ln" x1="170" y1="98" x2="229" y2="98" marker-end="url(#a2)"/><text class="lb" x="200" y="62" text-anchor="middle">webhooks · REST · MCP</text>
+
+        <!-- components above bus -->
+        <rect class="bx-b" x="230" y="70" width="150" height="56" rx="5"/>
+        <text class="nm nm-b" x="305" y="94" text-anchor="middle">intake</text><text class="sub" x="305" y="112" text-anchor="middle">REST · Factory MCP</text>
+        <rect class="bx-b" x="440" y="70" width="150" height="56" rx="5"/>
+        <text class="nm nm-b" x="515" y="94" text-anchor="middle">foreman</text><text class="sub" x="515" y="112" text-anchor="middle">Temporal workflows</text>
+        <rect class="bx-b" x="230" y="170" width="150" height="56" rx="5"/>
+        <text class="nm nm-b" x="305" y="194" text-anchor="middle">gatekeeper</text><text class="sub" x="305" y="212" text-anchor="middle">REST</text>
+        <rect class="bx-b" x="440" y="170" width="150" height="56" rx="5"/>
+        <text class="nm nm-b" x="515" y="194" text-anchor="middle">proof</text><text class="sub" x="515" y="212" text-anchor="middle">CLI · REST</text>
+        <path class="ln ln-h" d="M260,170 V150 H95 V127" marker-end="url(#a2)"/><text class="lb" x="178" y="144" text-anchor="middle">approval request</text>
+
+        <!-- bus -->
+        <rect x="20" y="270" width="620" height="28" rx="4" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <text class="nm" x="330" y="289" text-anchor="middle">event bus · CloudEvents on NATS</text>
+        <path class="ln" d="M380,110 H405 V270"/>
+        <path class="ln" d="M590,110 H615 V270"/>
+        <line class="ln" x1="305" y1="226" x2="305" y2="270"/>
+        <line class="ln" x1="515" y1="226" x2="515" y2="270"/>
+        <text class="lb" x="22" y="318">work.received · run.completed · gate.decided · score.recorded</text>
+
+        <!-- below bus -->
+        <rect class="bx-b" x="20" y="350" width="150" height="56" rx="5"/>
+        <text class="nm nm-b" x="95" y="374" text-anchor="middle">ledger</text><text class="sub" x="95" y="392" text-anchor="middle">SQL views</text>
+        <rect class="bx-b" x="230" y="350" width="150" height="56" rx="5"/>
+        <text class="nm nm-b" x="305" y="374" text-anchor="middle">observer</text><text class="sub" x="305" y="392" text-anchor="middle">opens PRs</text>
+        <rect class="bx-b" x="440" y="350" width="150" height="56" rx="5"/>
+        <text class="nm nm-b" x="515" y="374" text-anchor="middle">scorekit</text><text class="sub" x="515" y="392" text-anchor="middle">judges</text>
+        <line class="ln" x1="95" y1="298" x2="95" y2="350"/>
+        <line class="ln" x1="305" y1="298" x2="305" y2="350"/>
+        <line class="ln" x1="515" y1="298" x2="515" y2="350"/>
+        <rect class="bx-b" x="230" y="450" width="150" height="56" rx="5"/>
+        <text class="nm nm-b" x="305" y="474" text-anchor="middle">factory repo</text><text class="sub" x="305" y="492" text-anchor="middle">Git · factory.yaml</text>
+        <line class="ln" x1="305" y1="406" x2="305" y2="449" marker-end="url(#a2)"/><text class="lb" x="313" y="432">PR</text>
+
+        <!-- sandbox -->
+        <rect x="690" y="40" width="200" height="200" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 3"/>
+        <text class="lane" x="700" y="58">SANDBOX</text>
+        <rect class="bx-r" x="715" y="70" width="150" height="56" rx="5"/>
+        <text class="nm" x="790" y="94" text-anchor="middle">harness</text><text class="sub" x="790" y="112" text-anchor="middle">Claude Code · Codex</text>
+        <line class="ln" x1="590" y1="90" x2="714" y2="90" marker-end="url(#a2)"/><text class="lb" x="652" y="82" text-anchor="middle">ACP</text><text class="lb" x="652" y="108" text-anchor="middle">JSON-RPC</text>
+
+        <!-- gateways -->
+        <rect class="bx-r" x="920" y="70" width="130" height="56" rx="5"/>
+        <text class="nm" x="985" y="94" text-anchor="middle">MCP gateway</text><text class="sub" x="985" y="112" text-anchor="middle">allowlist · creds</text>
+        <rect class="bx-r" x="1070" y="70" width="120" height="56" rx="5"/>
+        <text class="nm" x="1130" y="94" text-anchor="middle">MCP servers</text><text class="sub" x="1130" y="112" text-anchor="middle">GitHub · browser</text>
+        <line class="ln" x1="865" y1="90" x2="919" y2="90" marker-end="url(#a2)"/><text class="lb" x="892" y="82" text-anchor="middle">MCP</text>
+        <line class="ln" x1="1050" y1="98" x2="1069" y2="98" marker-end="url(#a2)"/>
+
+        <rect class="bx-r" x="920" y="170" width="130" height="56" rx="5"/>
+        <text class="nm" x="985" y="194" text-anchor="middle">LLM gateway</text><text class="sub" x="985" y="212" text-anchor="middle">LiteLLM</text>
+        <rect class="bx-r" x="1070" y="170" width="120" height="56" rx="5"/>
+        <text class="nm" x="1130" y="194" text-anchor="middle">model APIs</text><text class="sub" x="1130" y="212" text-anchor="middle">any provider</text>
+        <path class="ln" d="M865,115 H895 V198 H919" marker-end="url(#a2)"/><text class="lb" x="903" y="160">HTTP</text>
+        <line class="ln" x1="1050" y1="198" x2="1069" y2="198" marker-end="url(#a2)"/>
+
+        <rect class="bx-r" x="920" y="270" width="130" height="56" rx="5"/>
+        <text class="nm" x="985" y="294" text-anchor="middle">OTel Collector</text><text class="sub" x="985" y="312" text-anchor="middle">normalize</text>
+        <rect class="bx-r" x="1070" y="270" width="120" height="56" rx="5"/>
+        <text class="nm" x="1130" y="294" text-anchor="middle">trace store</text><text class="sub" x="1130" y="312" text-anchor="middle">Langfuse</text>
+        <path class="ln" d="M790,126 V298 H919" marker-end="url(#a2)"/><text class="lb" x="798" y="285">OTLP</text>
+        <line class="ln" x1="1050" y1="298" x2="1069" y2="298" marker-end="url(#a2)"/>
+        <path class="ln" d="M1130,326 V378 H591" marker-end="url(#a2)"/><text class="lb" x="860" y="370" text-anchor="middle">REST: runs, scores</text>
+
+        <!-- registries -->
+        <rect class="bx-r" x="690" y="450" width="500" height="56" rx="5"/>
+        <text class="nm" x="940" y="474" text-anchor="middle">upstream registries</text><text class="sub" x="940" y="492" text-anchor="middle">MCP Registry · ACP Registry · OCI images</text>
+        <line class="ln" x1="690" y1="478" x2="381" y2="478" marker-end="url(#a2)"/><text class="lb" x="535" y="470" text-anchor="middle">pinned at plan time</text>
+
+        <text class="lb" x="902" y="254">all egress passes the proxy</text>
+      </svg>
+    </div>
+    <figcaption>Components publish facts to the bus and subscribe to the ones they need. Commands go over REST. Only the sandbox talks to models and tools, and only through the two gateways and the egress proxy, so credentials never enter it. Telemetry takes its own path to the trace store.</figcaption>
+  </figure>
+
+  <h3 class="sub">Which protocol for which job</h3>
+  <div class="tbl"><table>
+    <tr><th>Protocol</th><th>Job</th><th>Where it is used</th></tr>
+    <tr><td class="h">MCP</td><td>What a model can call</td><td>Tools inside the sandbox, through the MCP gateway that enforces each agent's allowlist and adds credentials. The Factory MCP server lets an outside agent, such as Claude Code on a laptop, submit work and read run status. A tool may add an MCP face for agents, for example “why did this run fail?”.</td></tr>
+    <tr><td class="h">ACP</td><td>Drive a harness</td><td>Foreman to harness: start a session, send messages, approve tool calls, stream progress, cancel.</td></tr>
+    <tr><td class="h">REST (OpenAPI)</td><td>Commands between programs</td><td>Every tool's server mode: submit work, request a gate decision, upload evidence, query runs and scores. Generated clients for TypeScript and Python.</td></tr>
+    <tr><td class="h">CloudEvents on a bus</td><td>Facts that others react to</td><td>NATS JetStream by default; webhooks when there is no bus. Events are past tense and versioned, for example <code>run.completed@v1</code>.</td></tr>
+    <tr><td class="h">OTLP</td><td>Telemetry</td><td>Harnesses, gateways and tools to the Collector, then to any backend.</td></tr>
+    <tr><td class="h">A2A</td><td>Agents of other organizations</td><td>Not needed at first. Add it when factories must hand work to outside agents. Signed agent cards exist; a shared registry is still in progress.</td></tr>
+  </table></div>
+
+  <h3 class="sub">Registries: consult, pin, don't build</h3>
+  <div class="tbl"><table>
+    <tr><th>Catalog</th><th>Holds</th><th>Status</th><th>Factory use</th></tr>
+    <tr><td class="h">MCP Registry</td><td>MCP servers (server.json, verified namespaces)</td><td>Live, still a preview; API frozen at v0.1; about 17,000 servers in July 2026</td><td>Reference servers as <code>registry:&lt;name&gt;@&lt;version&gt;</code>. An organization can run its own approved list in front of it.</td></tr>
+    <tr><td class="h">ACP Registry</td><td>Harnesses (Claude Code, Codex, OpenCode, Gemini CLI and others)</td><td>Live since January 2026</td><td>Install and pin harnesses by registry ID.</td></tr>
+    <tr><td class="h">OCI registry</td><td>Sandbox images, packaged agents, modules</td><td>Mature</td><td>Pin by digest in <code>factory.lock</code>.</td></tr>
+    <tr><td class="h">A2A agent cards</td><td>Remote agents</td><td>Cards at well-known URLs; registry work in progress</td><td>Later, for outside agents only.</td></tr>
+    <tr><td class="h">The factory repository</td><td>What is actually in use, at which version</td><td>Yours</td><td>The only registry that decides what runs. <code>factory plan</code> resolves upstream names to pinned versions.</td></tr>
+  </table></div>
+</section>
+
+<section id="principles">
+  <h2><span class="sn">05</span>Principles in practice</h2>
+  <p class="intro">A principle without a check is a wish. Each row names the practice and the automatic check that enforces it. The first ones protect independence, the later ones trust and cost.</p>
+  <div class="tbl"><table>
+    <tr><th>Principle</th><th>Practice</th><th>Automatic check</th></tr>
+    <tr><td class="h">Enforce by script, not prose</td><td>Every rule that matters runs as code: gates, merges, releases, metric events</td><td>CI fails on a rule written only as text where a check could exist (review checklist item; this repository already works this way)</td></tr>
+    <tr><td class="h">Declare, then reconcile</td><td>All factory state in Git; changes only through <code>factory apply</code></td><td>Nightly <code>factory plan</code>; drift opens a ticket</td></tr>
+    <tr><td class="h">Formats over code</td><td>Tools share only versioned schemas and events</td><td>Schema breaking-change check in CI; a dependency check forbids imports between tools</td></tr>
+    <tr><td class="h">Ports with conformance</td><td>Every outside system behind a port</td><td>An adapter must pass the port's conformance kit before it is listed</td></tr>
+    <tr><td class="h">Useful alone</td><td>Each tool has a five-minute quick start without a server or a sibling tool</td><td>CI runs the quick start in a clean container on every release</td></tr>
+    <tr><td class="h">Adopt before build</td><td>Every new tool or adapter records the prior art it checked</td><td>The repository template requires a “prior art” section in the ADR; review rejects it when empty</td></tr>
+    <tr><td class="h">Open standards at every boundary</td><td>MCP, ACP, OpenAPI, CloudEvents, OTLP</td><td>Public interfaces are generated from OpenAPI and AsyncAPI specs; review rejects custom wire formats</td></tr>
+    <tr><td class="h">Record and correlate everything</td><td>Every run carries <code>run.id</code>, <code>work_item.id</code> and <code>factory.version</code></td><td>Ingest rejects records without them; the dashboard shows the share of spend that is not attributed</td></tr>
+    <tr><td class="h">Least privilege by default</td><td>No secrets in sandboxes; egress and MCP allowlists per agent</td><td>Policy tests in CI; a prompt-injection task in every benchmark suite</td></tr>
+    <tr><td class="h">Humans at the gates</td><td>Gate policy as code, chosen by risk class</td><td>Merge is blocked without a signed approval record</td></tr>
+    <tr><td class="h">Evidence or it didn't happen</td><td>No PR is ready without an evidence bundle for its scenarios</td><td>spec-trace and proof are required checks</td></tr>
+    <tr><td class="h">Measure before you change</td><td>Every factory change shows a score or benchmark comparison</td><td>A bot comment on the factory PR; merge rule requires it</td></tr>
+    <tr><td class="h">Cost is visible and bounded</td><td>A budget per run and per work item at the LLM gateway</td><td>Gateway stops at the budget; the ledger alerts on cost per PR over target</td></tr>
+    <tr><td class="h">Every change can be undone</td><td>Versions are immutable; rollback is a revert commit</td><td>Runs reference the version hash; a rollback drill runs in CI each release</td></tr>
+    <tr><td class="h">Run it on ourselves first</td><td>Every release runs in our own factory before it is published</td><td>The release gate requires a time in the dogfood environment with no new failing scorer</td></tr>
+  </table></div>
+</section>
+
+<section id="sources">
+  <h2><span class="sn">06</span>Sources checked</h2>
+  <ul class="src">
+    <li><a href="https://code.claude.com/docs/en/monitoring-usage">Claude Code monitoring (OTel)</a> · <a href="https://last9.io/docs/integrations/claude-code/">Last9 guide</a></li>
+    <li><a href="https://codex.danielvaughan.com/2026/04/16/codex-cli-opentelemetry-observability-tracing-agent-sessions/">Codex CLI OTel tracing</a> · <a href="https://coralogix.com/docs/integrations/ai-observability/codex-cli/">Coralogix guide</a></li>
+    <li><a href="https://langfuse.com/integrations/developer-tools/opencode">OpenCode and Langfuse</a> · <a href="https://www.dynatrace.com/hub/detail/opencode-monitoring">Dynatrace OpenCode</a></li>
+    <li><a href="https://geminicli.com/docs/cli/telemetry/">Gemini CLI telemetry</a></li>
+    <li><a href="https://pasqualepillitteri.it/en/news/23861/opentelemetry-claude-api-traces-public-beta">Claude API traces beta</a></li>
+    <li><a href="https://kagent.dev/docs/kagent/getting-started/first-mcp-tool">kagent docs</a> · <a href="https://pub.towardsai.net/kagent-on-kubernetes-what-does-it-give-your-ai-platform-02050dc3aeff">kagent overview</a></li>
+    <li><a href="https://ravichaganti.com/blog/docker-cagent-an-introduction/">Docker Agent (cagent)</a></li>
+    <li><a href="https://pub.towardsai.net/mcp-registries-in-mid-2026-one-upstream-won-2ce541b92036">MCP registries in mid-2026</a> · <a href="https://glama.ai/blog/2026-01-24-official-mcp-registry-serverjson-requirements">server.json requirements</a></li>
+    <li><a href="https://zed.dev/blog/acp-registry">ACP Registry</a></li>
+    <li><a href="https://www.linuxfoundation.org/press/a2a-protocol-surpasses-150-organizations-lands-in-major-cloud-platforms-and-sees-enterprise-production-use-in-first-year">A2A at one year</a></li>
+    <li><a href="https://agent-sandbox.sigs.k8s.io/docs/getting_started/overview/">Kubernetes agent-sandbox</a> · <a href="https://vercel.com/kb/guide/the-complete-guide-to-chat-sdk">Vercel Chat SDK</a></li>
+  </ul>
+  <p class="small">Several facts come from third-party guides rather than vendor documentation. Check the exact variable names and versions against each vendor's documentation before building an adapter.</p>
+</section>
+
+</main>
+</div>

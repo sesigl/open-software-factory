@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Open Software Factory Stack</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: one reading column (~72ch) with wide figure and tables; component cards in a two-column grid that stacks on phones. */
+:root {
+  --paper: #f3f5f7;
+  --sheet: #ffffff;
+  --ink: #14202b;
+  --muted: #5a6875;
+  --rule: #d6dde4;
+  --accent: #0d6b70;
+  --accent-soft: #e0efef;
+  --amber: #a35c00;
+  --amber-soft: #fbefdc;
+  --slate: #3d5a80;
+  --slate-soft: #e3eaf3;
+  --f-display: "Archivo", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0d141b; --sheet: #131d27; --ink: #e3e9ee; --muted: #9aa8b5; --rule: #2a3a48;
+    --accent: #5cc3bf; --accent-soft: #123334; --amber: #e7a54a; --amber-soft: #33240f;
+    --slate: #9db7d8; --slate-soft: #1b2838;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0d141b; --sheet: #131d27; --ink: #e3e9ee; --muted: #9aa8b5; --rule: #2a3a48;
+  --accent: #5cc3bf; --accent-soft: #123334; --amber: #e7a54a; --amber-soft: #33240f;
+  --slate: #9db7d8; --slate-soft: #1b2838;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font: 400 16px/1.6 var(--f-body); }
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+code { font-family: var(--f-mono); font-size: .88em; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.top { background: var(--sheet); border-bottom: 1px solid var(--rule); }
+.top .wrap { padding-block: 44px 32px; }
+.eyebrow { font: 600 12px/1.4 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font: 800 clamp(34px, 6vw, 58px)/1.02 var(--f-display); font-stretch: 80%; margin: 12px 0 16px; text-wrap: balance; }
+.lede { max-width: 70ch; font-size: 18px; margin: 0; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 28px; margin-top: 22px; font: 500 13px/1.4 var(--f-mono); color: var(--muted); }
+.facts b { color: var(--ink); font-weight: 600; }
+main { padding-block: 16px 80px; }
+main > section { padding-block: 32px; border-bottom: 1px solid var(--rule); }
+main > section:last-child { border-bottom: 0; }
+h2 { font: 700 30px/1.1 var(--f-display); font-stretch: 85%; margin: 0 0 8px; text-wrap: balance; }
+h2 .sn { font: 600 13px var(--f-mono); color: var(--accent); vertical-align: middle; margin-right: 10px; }
+.intro { max-width: 72ch; color: var(--muted); margin: 0 0 22px; }
+p { max-width: 72ch; }
+
+/* rules */
+.rules { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 14px; }
+.rules li { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; }
+.rules b { display: block; font: 700 17px/1.2 var(--f-display); font-stretch: 85%; margin-bottom: 4px; }
+.rules span { font-size: 15px; color: var(--muted); }
+
+/* figure */
+figure { margin: 0; }
+.fig { overflow-x: auto; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 12px; }
+.fig svg { display: block; width: 100%; min-width: 960px; height: auto; color: var(--ink); font-family: var(--f-body); }
+figcaption { font-size: 14px; color: var(--muted); margin-top: 10px; max-width: 80ch; }
+svg .bx-b { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+svg .bx-r { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 5 4; }
+svg .nm { font: 600 13px var(--f-mono); fill: currentColor; }
+svg .nm-b { fill: var(--accent); }
+svg .sub { font-size: 11px; fill: var(--muted); }
+svg .ln { fill: none; stroke: currentColor; stroke-width: 1.2; }
+svg .ln-h { stroke-dasharray: 4 3; }
+svg .lb { font-size: 11px; fill: var(--muted); }
+svg .lb-k { font-size: 11px; fill: var(--ink); font-weight: 500; }
+svg .lane { font: 600 10px var(--f-mono); letter-spacing: .1em; fill: var(--muted); }
+svg .ah { fill: currentColor; }
+
+/* tables */
+.tbl { overflow-x: auto; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--rule); }
+tr:last-child td { border-bottom: 0; }
+th { font: 600 11px/1.3 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--paper); }
+td.h { font-weight: 600; min-width: 140px; }
+td.m { font-family: var(--f-mono); font-size: 13px; white-space: nowrap; }
+.tag { font: 600 11px/1 var(--f-mono); padding: 4px 7px; border-radius: 3px; white-space: nowrap; display: inline-block; }
+.tag.build { background: var(--accent-soft); color: var(--accent); }
+.tag.reuse { background: var(--slate-soft); color: var(--slate); }
+.tag.verify { background: var(--amber-soft); color: var(--amber); }
+
+/* component cards */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 520px), 1fr)); gap: 16px; }
+.card { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 18px 20px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.card .hd { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: baseline; }
+.card h3 { font: 600 19px/1.2 var(--f-mono); margin: 0; color: var(--accent); }
+.card .one { margin: 0; font-size: 15px; }
+.card dl { margin: 0; display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 6px 12px; font-size: 14px; }
+.card dt { font: 600 11px/1.6 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.card dd { margin: 0; min-width: 0; }
+@media (max-width: 520px) { .card dl { grid-template-columns: minmax(0, 1fr); } .card dt { margin-top: 4px; } }
+.wave { font: 600 11px var(--f-mono); color: var(--muted); }
+
+/* ladder */
+.ladder { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-width: 900px; }
+.ladder li { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 16px; font-size: 15px; }
+.ladder code { color: var(--accent); }
+.ladder span { color: var(--muted); }
+@media (max-width: 640px) { .ladder li { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+
+/* waves */
+.waves { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 14px; }
+.wv { background: var(--sheet); border: 1px solid var(--rule); border-top: 3px solid var(--accent); border-radius: 4px; padding: 14px 16px; }
+.wv h3 { font: 700 18px/1.2 var(--f-display); font-stretch: 85%; margin: 0 0 6px; }
+.wv p { font-size: 14px; margin: 0 0 8px; color: var(--muted); }
+.wv ul { margin: 0; padding-left: 18px; font-size: 14px; }
+
+/* decisions */
+.dec { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; max-width: 86ch; }
+.dec li { background: var(--sheet); border: 1px solid var(--rule); border-left: 3px solid var(--amber); border-radius: 4px; padding: 12px 16px; font-size: 15px; }
+.dec b { display: block; }
+.dec span { color: var(--muted); font-size: 14px; }
+.small { font-size: 14px; color: var(--muted); }
+.src { font-size: 13px; color: var(--muted); columns: 2 320px; column-gap: 32px; padding-left: 18px; }
+</style>
+<style>
+.pick { display: grid; gap: 4px; }
+td.win { background: var(--accent-soft); }
+.score { font: 600 13px var(--f-mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+tr.total td { font-weight: 700; border-top: 2px solid var(--rule); }
+.verdict { margin: 14px 0 0; padding: 12px 16px; background: var(--sheet); border: 1px solid var(--rule); border-left: 3px solid var(--accent); border-radius: 4px; max-width: 86ch; font-size: 15px; }
+.verdict b { color: var(--accent); }
+h3.sub { font: 700 20px/1.2 var(--f-display); font-stretch: 85%; margin: 30px 0 10px; }
+td ul { margin: 0; padding-left: 16px; }
+td.pro li::marker { content: "+ "; color: var(--accent); }
+td.con li::marker { content: "− "; color: var(--amber); }
+main li code, main p code, td code { overflow-wrap: anywhere; }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="eyebrow">Technology decisions · Open Software Factory</div>
+    <h1>Open Software Factory Stack</h1>
+    <p class="lede">Languages, storage, workflow engine, build and release tooling for the tool family, with the options weighed against each other and a recommendation for each. The deciding question throughout: what makes each tool easy to adopt alone and easy for outside contributors to work on.</p>
+    <div class="facts">
+      <span><b>2</b> main languages</span>
+      <span><b>1</b> database to start</span>
+      <span><b>3</b> install profiles</span>
+      <span><b>9</b> decisions</span>
+    </div>
+  </div>
+</header>
+<div class="wrap" style="padding-block:10px"><p style="margin:0;padding:10px 14px;border:1px solid var(--rule);border-left:3px solid var(--amber);border-radius:4px;background:var(--sheet);font-size:14px;max-width:none"><b>Snapshot from 2026-10-18.</b> The Markdown documents in this repository are the source of truth and win where this page differs. Changed since: TypeScript is the only core language (ADR 0009), and the monorepo tooling is pnpm workspaces with Turborepo, not Nx (ADR 0010).</p></div>
+
+<div class="wrap">
+<main>
+
+<section id="glance">
+  <h2><span class="sn">00</span>Recommendation at a glance</h2>
+  <div class="tbl"><table>
+    <tr><th>Layer</th><th>Pick</th><th>Main reason</th><th>Runner-up</th></tr>
+    <tr><td class="h">Languages</td><td><b>TypeScript</b> for tools and adapters, <b>Python</b> for evaluation and benchmarks</td><td>The agent ecosystem (MCP, ACP, Chat SDK, Harbor, LiteLLM, Langfuse) lives there, and so do the contributors</td><td>Java with Temporal, for an internal-only factory</td></tr>
+    <tr><td class="h">Source of truth</td><td><b>Git</b></td><td>Review, versions and rollback for free</td><td>—</td></tr>
+    <tr><td class="h">Operational database</td><td><b>PostgreSQL</b>; SQLite in CLI mode</td><td>Temporal, Langfuse and pgvector all run on it; one database to operate</td><td>—</td></tr>
+    <tr><td class="h">Analytics</td><td><b>DuckDB</b> locally, <b>PostgreSQL</b> views in server mode, <b>ClickHouse</b> at scale</td><td>Ledger works from a laptop to a large org with nearly the same SQL</td><td>ClickHouse everywhere</td></tr>
+    <tr><td class="h">Object storage</td><td><b>S3 API</b>; SeaweedFS when self-hosted; local folder in CLI mode</td><td>MinIO's community edition was archived in April 2026; SeaweedFS is Apache-2.0</td><td>Garage (AGPL, lighter)</td></tr>
+    <tr><td class="h">Events</td><td><b>CloudEvents</b> on <b>NATS JetStream</b>, written through a Postgres outbox</td><td>One small binary; no lost events when a service is down</td><td>Webhooks only</td></tr>
+    <tr><td class="h">Workflow engine</td><td><b>Temporal</b></td><td>Long human waits, signals, timers, history UI, workers in any language</td><td>DBOS (library on Postgres)</td></tr>
+    <tr><td class="h">Repo and build</td><td>Monorepo: <b>pnpm</b> + <b>uv</b> workspaces, <b>Nx</b> task graph, <b>release-please</b></td><td>Native tools per language, affected-only builds, independent releases</td><td>moon instead of Nx</td></tr>
+    <tr><td class="h">Contracts</td><td><b>TypeSpec</b> → OpenAPI 3.1 + JSON Schema; AsyncAPI for events</td><td>One source for the formats, generated types for TypeScript, Python and Java</td><td>Hand-written JSON Schema</td></tr>
+  </table></div>
+</section>
+
+<section id="lang">
+  <h2><span class="sn">01</span>Programming languages</h2>
+  <p class="intro">Scores are my judgment from 1 to 5, weighted by what matters for a family of open-source tools. Change the weights if the factory will be internal-only; then Java moves up.</p>
+  <div class="tbl"><table>
+    <tr><th>Criterion</th><th class="score">Weight</th><th class="score">TypeScript</th><th class="score">Python</th><th class="score">Java</th><th class="score">Go</th></tr>
+    <tr><td>Libraries the tools need (MCP, ACP, Chat SDK, Harbor, LiteLLM, Langfuse)</td><td class="score">25</td><td class="score win">5</td><td class="score">4</td><td class="score">2</td><td class="score">3</td></tr>
+    <tr><td>Contributors in AI-tooling open source</td><td class="score">20</td><td class="score win">5</td><td class="score win">5</td><td class="score">2</td><td class="score">3</td></tr>
+    <tr><td>Distributing CLIs and small tools</td><td class="score">15</td><td class="score win">5</td><td class="score">4</td><td class="score">2</td><td class="score win">5</td></tr>
+    <tr><td>Your speed</td><td class="score">15</td><td class="score">4</td><td class="score">4</td><td class="score win">5</td><td class="score">1</td></tr>
+    <tr><td>Robustness of long-running services</td><td class="score">15</td><td class="score">4</td><td class="score">3</td><td class="score win">5</td><td class="score">4</td></tr>
+    <tr><td>Kubernetes and infrastructure fit</td><td class="score">10</td><td class="score">3</td><td class="score">2</td><td class="score">3</td><td class="score win">5</td></tr>
+    <tr class="total"><td>Weighted result (max 100)</td><td class="score">100</td><td class="score win">90</td><td class="score">77</td><td class="score">60</td><td class="score">67</td></tr>
+  </table></div>
+
+  <h3 class="sub">Pros and cons for this project</h3>
+  <div class="tbl"><table>
+    <tr><th>Language</th><th>For</th><th>Against</th></tr>
+    <tr><td class="h">TypeScript</td><td class="pro"><ul><li>Reference language of MCP and ACP; Vercel Chat SDK is TypeScript only</li><li><code>npx</code> makes the “five-minute quick start” real</li><li>Temporal TypeScript SDK is official and actively developed</li><li>Strict mode with interfaces feels close to Java's ports and adapters</li></ul></td><td class="con"><ul><li>Runtime types need a validator (Zod or TypeBox)</li><li>Weaker for heavy concurrency and CPU work</li><li>Dependency trees are deep; supply-chain care needed</li></ul></td></tr>
+    <tr><td class="h">Python</td><td class="pro"><ul><li>Harbor, Inspect, LiteLLM and the judge and eval tooling are Python</li><li><code>uvx</code> gives a one-line start</li><li>Natural for data work in scorekit and taskcapture</li></ul></td><td class="con"><ul><li>No Chat SDK equivalent for every platform</li><li>Typing is optional; needs pyright in CI to stay honest</li><li>Packaging for long-running services is weaker than the JVM's</li></ul></td></tr>
+    <tr><td class="h">Java</td><td class="pro"><ul><li>Your strongest language: fastest delivery and best judgment</li><li>Official MCP Java SDK, maintained with Spring AI</li><li>Temporal's Java SDK is its most proven; best OpenTelemetry auto-instrumentation</li><li>Excellent for robust services</li></ul></td><td class="con"><ul><li>Microsoft's Java bot SDK is retired, and the new Agents and Teams SDKs support only C#, JavaScript and Python</li><li>No Harbor, Chat SDK or LiteLLM equivalents</li><li>CLIs need a JVM or GraalVM native image</li><li>Few AI-tooling contributors expect Java</li></ul></td></tr>
+    <tr><td class="h">Go</td><td class="pro"><ul><li>Single static binaries; best for operators, proxies, collectors</li><li>Kubernetes ecosystem is Go</li></ul></td><td class="con"><ul><li>New language for you</li><li>Thinner agent-library ecosystem</li></ul></td></tr>
+  </table></div>
+  <div class="verdict"><b>Decision:</b> TypeScript and Python, nothing else in the core. Two languages are the most a small project can maintain well. Java appears as a generated client from the OpenAPI contracts, so Java teams can integrate without the core being Java.</div>
+
+  <h3 class="sub">Which tool in which language</h3>
+  <div class="tbl"><table>
+    <tr><th>TypeScript</th><th>Python</th></tr>
+    <tr><td>factory-spec, proof, spec-trace, gatekeeper, intake (with Factory MCP), foreman, all harness, sandbox and channel adapters</td><td>runlog, scorekit, taskcapture, observer, ledger CLI (its SQL is plain SQL)</td></tr>
+  </table></div>
+  <p class="small">runlog sits on the border. It is in Python because scorekit and observer parse the same transcripts and should share one library. Move it to TypeScript if the harness adapters end up reading transcripts too.</p>
+</section>
+
+<section id="storage">
+  <h2><span class="sn">02</span>Storage</h2>
+  <p class="intro">Every tool must work alone from files. Servers are added only in server mode, and the fewer stateful services an install needs, the more people will try it.</p>
+
+  <h3 class="sub">Operational database</h3>
+  <div class="tbl"><table>
+    <tr><th>Option</th><th>For</th><th>Against</th></tr>
+    <tr><td class="h">PostgreSQL</td><td class="pro"><ul><li>Temporal, Langfuse and the outbox all run on it</li><li>JSONB for event payloads; pgvector for agent memory</li><li>Every cloud offers it managed</li></ul></td><td class="con"><ul><li>A server to run, even for small installs</li></ul></td></tr>
+    <tr><td class="h">SQLite</td><td class="pro"><ul><li>Zero setup; perfect for CLI mode and tests</li></ul></td><td class="con"><ul><li>One writer; no shared server mode</li></ul></td></tr>
+    <tr><td class="h">MySQL</td><td class="pro"><ul><li>Temporal supports it</li></ul></td><td class="con"><ul><li>Langfuse and pgvector need Postgres; would mean two databases</li></ul></td></tr>
+  </table></div>
+  <div class="verdict"><b>Decision:</b> PostgreSQL in server mode, SQLite in CLI mode, behind one query layer (Kysely or Drizzle in TypeScript, SQLAlchemy in Python). Agent memory starts as pgvector, not a separate vector database.</div>
+
+  <h3 class="sub">Analytics for ledger and traces</h3>
+  <div class="tbl"><table>
+    <tr><th>Option</th><th>For</th><th>Against</th></tr>
+    <tr><td class="h">DuckDB</td><td class="pro"><ul><li>Embedded; reads JSONL and Parquet directly</li><li>Postgres-like SQL</li></ul></td><td class="con"><ul><li>Single process; no shared dashboards</li></ul></td></tr>
+    <tr><td class="h">PostgreSQL views</td><td class="pro"><ul><li>Already there in server mode; Grafana reads it</li></ul></td><td class="con"><ul><li>Slows down past millions of spans</li></ul></td></tr>
+    <tr><td class="h">ClickHouse</td><td class="pro"><ul><li>Built for traces at scale; Langfuse stores its data there</li></ul></td><td class="con"><ul><li>Heavy for small installs; a different SQL dialect</li></ul></td></tr>
+  </table></div>
+  <div class="verdict"><b>Decision:</b> ledger targets DuckDB and PostgreSQL first, which share nearly all SQL, and adds ClickHouse views when an install already runs ClickHouse for Langfuse.</div>
+
+  <h3 class="sub">Object storage for evidence, transcripts and benchmark artifacts</h3>
+  <div class="tbl"><table>
+    <tr><th>Option</th><th>For</th><th>Against</th></tr>
+    <tr><td class="h">Cloud S3, GCS, R2</td><td class="pro"><ul><li>No operations</li></ul></td><td class="con"><ul><li>Not self-hosted</li></ul></td></tr>
+    <tr><td class="h">SeaweedFS</td><td class="pro"><ul><li>Apache-2.0; closest replacement for MinIO; Kubernetes CSI driver</li></ul></td><td class="con"><ul><li>Smaller community than Ceph</li></ul></td></tr>
+    <tr><td class="h">Garage</td><td class="pro"><ul><li>Single binary; simple</li></ul></td><td class="con"><ul><li>AGPL-3.0; fewer S3 features</li></ul></td></tr>
+    <tr><td class="h">MinIO</td><td class="pro"><ul><li>Known by everyone</li></ul></td><td class="con"><ul><li>Community edition archived in April 2026; no new security fixes</li></ul></td></tr>
+    <tr><td class="h">Ceph (Rook)</td><td class="pro"><ul><li>Most mature at scale</li></ul></td><td class="con"><ul><li>Far too heavy for this</li></ul></td></tr>
+  </table></div>
+  <div class="verdict"><b>Decision:</b> code against the S3 API only. SeaweedFS in the self-hosted distribution, cloud storage when managed, a local folder in CLI mode.</div>
+
+  <h3 class="sub">Event transport</h3>
+  <div class="tbl"><table>
+    <tr><th>Option</th><th>For</th><th>Against</th></tr>
+    <tr><td class="h">NATS JetStream</td><td class="pro"><ul><li>One small binary; durable streams; CloudEvents binding</li></ul></td><td class="con"><ul><li>One more service</li></ul></td></tr>
+    <tr><td class="h">Postgres outbox + polling</td><td class="pro"><ul><li>No new service; transactional with the state change</li></ul></td><td class="con"><ul><li>Fan-out to many consumers gets awkward</li></ul></td></tr>
+    <tr><td class="h">Kafka</td><td class="pro"><ul><li>Industry standard at scale</li></ul></td><td class="con"><ul><li>Heavy to operate for this volume</li></ul></td></tr>
+    <tr><td class="h">Webhooks only</td><td class="pro"><ul><li>Simplest</li></ul></td><td class="con"><ul><li>Retries and ordering are your problem</li></ul></td></tr>
+  </table></div>
+  <div class="verdict"><b>Decision:</b> every tool writes events to a Postgres outbox in the same transaction as its state change; a relay publishes them to NATS JetStream. A small install can skip NATS and use webhooks from the outbox.</div>
+
+  <h3 class="sub">Smaller choices</h3>
+  <div class="tbl"><table>
+    <tr><th>Need</th><th>Pick</th><th>Why not the obvious one</th></tr>
+    <tr><td class="h">Cache and queues for Langfuse</td><td>Valkey</td><td>Linux Foundation project under BSD; Redis changed its license twice</td></tr>
+    <tr><td class="h">Secrets</td><td>OpenBao</td><td>Open-source fork of Vault (MPL-2.0); Vault moved to the Business Source License</td></tr>
+    <tr><td class="h">Trace store</td><td>Langfuse (full profile); Arize Phoenix as the lighter option</td><td>Langfuse brings ClickHouse, Valkey and S3. Phoenix runs on Postgres or SQLite</td></tr>
+  </table></div>
+</section>
+
+<section id="workflow">
+  <h2><span class="sn">03</span>Workflow engine for the foreman</h2>
+  <div class="tbl"><table>
+    <tr><th>Option</th><th>For</th><th>Against</th></tr>
+    <tr><td class="h">Temporal</td><td class="pro"><ul><li>Made for waits of days: signals, timers, child workflows</li><li>History UI shows every step of every work item</li><li>Workers in TypeScript, Python, Java or Go can share one workflow</li><li>MIT; runs on Postgres</li></ul></td><td class="con"><ul><li>A server cluster to operate</li><li>Deterministic-workflow rules take learning</li></ul></td></tr>
+    <tr><td class="h">DBOS</td><td class="pro"><ul><li>A library on top of Postgres: no extra service</li><li>Fits “useful alone” well</li></ul></td><td class="con"><ul><li>Younger; smaller operational track record for long human waits</li></ul></td></tr>
+    <tr><td class="h">Hatchet, Inngest, Restate</td><td class="pro"><ul><li>Good developer experience</li></ul></td><td class="con"><ul><li>Check each server's license before shipping it in an open-source distribution</li></ul></td></tr>
+    <tr><td class="h">LangGraph</td><td class="pro"><ul><li>Agent graphs with checkpoints</li></ul></td><td class="con"><ul><li>Orchestrates model calls, not a delivery process with people and CI</li></ul></td></tr>
+  </table></div>
+  <div class="verdict"><b>Decision:</b> Temporal. Keep the foreman's stage logic in plain functions so a DBOS backend stays possible for the single-VM profile. This is the one place where Java would also be a good fit, through Temporal's Java SDK, if you want to own the foreman yourself.</div>
+</section>
+
+<section id="build">
+  <h2><span class="sn">04</span>Repository, build and release</h2>
+  <div class="tbl"><table>
+    <tr><th>Option</th><th>For</th><th>Against</th></tr>
+    <tr><td class="h">pnpm + uv + Nx</td><td class="pro"><ul><li>Native package managers per language; contributors know them</li><li>Nx builds and tests only what a change affects, with caching</li><li>Large community</li></ul></td><td class="con"><ul><li>Nx is TypeScript-first; its Python support comes from a community plugin</li><li>Another config layer</li></ul></td></tr>
+    <tr><td class="h">pnpm + uv + moon</td><td class="pro"><ul><li>Polyglot by design; pins Node and Python versions; simple config</li></ul></td><td class="con"><ul><li>Smaller community</li></ul></td></tr>
+    <tr><td class="h">Bazel</td><td class="pro"><ul><li>Hermetic and polyglot; scales to anything</li></ul></td><td class="con"><ul><li>Steep; JavaScript and Python rules fight the native tools; scares contributors</li></ul></td></tr>
+    <tr><td class="h">Gradle</td><td class="pro"><ul><li>You know it well</li></ul></td><td class="con"><ul><li>Unexpected for TypeScript and Python contributors; Node and Python plugins are awkward</li></ul></td></tr>
+    <tr><td class="h">Make or just only</td><td class="pro"><ul><li>Zero learning; this repository already uses make</li></ul></td><td class="con"><ul><li>No affected-only builds or caching; CI slows down as adapters grow</li></ul></td></tr>
+  </table></div>
+  <div class="verdict"><b>Decision:</b> a monorepo with pnpm and uv workspaces and a top-level <code>make</code> for familiar commands. Add Nx for the task graph and caching when CI passes about ten minutes. Release each package independently with <b>release-please</b>, which handles npm and PyPI packages from conventional commits, rather than Changesets, which is JavaScript only.</div>
+
+  <h3 class="sub">Quality tooling</h3>
+  <div class="tbl"><table>
+    <tr><th>Concern</th><th>TypeScript</th><th>Python</th></tr>
+    <tr><td class="h">Format and lint</td><td>Biome; typescript-eslint only for type-aware rules</td><td>Ruff</td></tr>
+    <tr><td class="h">Types</td><td><code>tsc --strict</code>; Zod or TypeBox at the boundaries</td><td>pyright in strict mode; Pydantic at the boundaries</td></tr>
+    <tr><td class="h">Tests</td><td>Vitest</td><td>pytest</td></tr>
+    <tr><td class="h">Integration tests</td><td colspan="2">Testcontainers in both languages: real Postgres, NATS, Temporal and SeaweedFS in CI, as this repository already prefers</td></tr>
+    <tr><td class="h">Contract tests</td><td colspan="2">One shared fixture set per format and per port; every adapter in every language runs it</td></tr>
+  </table></div>
+</section>
+
+<section id="contracts">
+  <h2><span class="sn">05</span>Contracts and code generation</h2>
+  <div class="tbl"><table>
+    <tr><th>Option</th><th>For</th><th>Against</th></tr>
+    <tr><td class="h">TypeSpec</td><td class="pro"><ul><li>One compact source that emits OpenAPI 3.1 and JSON Schema</li><li>Reads like Java interfaces</li></ul></td><td class="con"><ul><li>Another language to learn, though a small one</li></ul></td></tr>
+    <tr><td class="h">Hand-written JSON Schema and OpenAPI</td><td class="pro"><ul><li>No extra tool</li></ul></td><td class="con"><ul><li>Verbose; the two drift apart</li></ul></td></tr>
+    <tr><td class="h">Protobuf with buf</td><td class="pro"><ul><li>Best breaking-change checks and code generation</li></ul></td><td class="con"><ul><li>MCP, CloudEvents and REST here are JSON; it would be a translation layer</li></ul></td></tr>
+  </table></div>
+  <div class="verdict"><b>Decision:</b> TypeSpec for formats and APIs, AsyncAPI for events. Generate TypeScript types with openapi-typescript, Python models with datamodel-code-generator (Pydantic), and Java clients with openapi-generator. Block breaking changes in CI with oasdiff.</div>
+</section>
+
+<section id="runtime">
+  <h2><span class="sn">06</span>Runtime, packaging and supply chain</h2>
+  <div class="tbl"><table>
+    <tr><th>Concern</th><th>Pick</th><th>Note</th></tr>
+    <tr><td class="h">Runtimes</td><td>Node 24 LTS; Python 3.12 and 3.13</td><td>Temporal's TypeScript worker needs Node; Bun support is still experimental</td></tr>
+    <tr><td class="h">HTTP servers</td><td>Fastify (TypeScript); FastAPI (Python)</td><td>Both validate requests from JSON Schema, which matches the contract-first approach</td></tr>
+    <tr><td class="h">Tool distribution</td><td>npm (<code>npx</code>), PyPI (<code>uvx</code>), multi-arch container images</td><td>Every tool installs with one command</td></tr>
+    <tr><td class="h">Installation of the whole factory</td><td>Docker Compose and a Helm chart</td><td>Same images, two profiles</td></tr>
+    <tr><td class="h">Supply chain</td><td>Sigstore signatures, SLSA provenance from GitHub Actions, SBOMs, Renovate</td><td>A tool that runs agents with repository access will be audited; make that easy</td></tr>
+    <tr><td class="h">CI</td><td>GitHub Actions</td><td>Each tool also ships as a GitHub Action</td></tr>
+    <tr><td class="h">License</td><td>Apache-2.0</td><td>Patent grant; compatible with every adopted project above</td></tr>
+  </table></div>
+</section>
+
+<section id="profiles">
+  <h2><span class="sn">07</span>Install profiles</h2>
+  <p class="intro">What each profile needs to run. The jump from one profile to the next is a configuration change, not a migration of code.</p>
+  <div class="tbl"><table>
+    <tr><th>Profile</th><th>For</th><th>Stateful services</th></tr>
+    <tr><td class="h">Laptop</td><td>Trying one tool</td><td>None. Files, SQLite, DuckDB, a local folder for artifacts</td></tr>
+    <tr><td class="h">Single VM (Compose)</td><td>One team</td><td>PostgreSQL (with Temporal and pgvector), SeaweedFS, NATS; Phoenix as trace store. Docker sandboxes</td></tr>
+    <tr><td class="h">Kubernetes (Helm)</td><td>Platform teams</td><td>Managed PostgreSQL, object storage, NATS, Temporal, Langfuse with ClickHouse and Valkey, OpenBao, agent-sandbox</td></tr>
+  </table></div>
+</section>
+
+<section id="risks">
+  <h2><span class="sn">08</span>Risks and when to revisit</h2>
+  <ul class="dec">
+    <li><b>You would work mostly outside Java.</b><span>Mitigation: write TypeScript in a Java-like style (strict types, interfaces for ports, constructor injection), and take the foreman in Java on Temporal if that becomes the bottleneck. Its workflow contract stays language-neutral.</span></li>
+    <li><b>Langfuse makes the full profile heavy.</b><span>Revisit if users complain about install size; Phoenix is the fallback, and runlog speaks OTLP to both.</span></li>
+    <li><b>Nx's Python support is a community plugin.</b><span>If it breaks, switch the task graph to moon; the packages themselves use only pnpm and uv, so nothing else moves.</span></li>
+    <li><b>Fast-moving dependencies.</b><span>ACP, the OpenTelemetry GenAI conventions and the MCP Registry API are all still changing. Pin versions and keep each behind one adapter.</span></li>
+  </ul>
+</section>
+
+<section id="sources">
+  <h2><span class="sn">09</span>Sources checked</h2>
+  <ul class="src">
+    <li><a href="https://infoq.com/news/2025/12/minio-s3-api-alternatives/">InfoQ: MinIO and S3 alternatives</a> · <a href="https://wz-it.com/en/blog/minio-successor-s3-storage-comparison/">WZ-IT comparison</a></li>
+    <li><a href="https://learn.microsoft.com/en-us/azure/bot-service/bot-service-overview">Bot Framework status</a> · <a href="https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/agents-sdk-overview">Microsoft 365 Agents SDK</a></li>
+    <li><a href="https://spring.io/blog/2025/02/14/mcp-java-sdk-released-2">MCP Java SDK</a> · <a href="https://modelcontextprotocol.io/development/updates">MCP updates</a></li>
+    <li><a href="https://docs.temporal.io/encyclopedia/temporal-sdks.md">Temporal SDKs</a> · <a href="https://releases.sh/temporal/temporal-typescript-sdk/highlights">Temporal TypeScript releases</a></li>
+  </ul>
+  <p class="small">Scores in section 01 are judgments, not measurements. Licenses of Hatchet, Inngest and Restate were not checked; verify them before including any of them.</p>
+</section>
+
+</main>
+</div>
