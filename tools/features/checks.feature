@@ -151,3 +151,11 @@ Feature: Repository checks
     Then the command exits with code 1
     And the output contains "ADR modules/demo/package.json"
     And the output contains "left-pad"
+
+  @id=SCN-REPO-019 @status=implemented
+  Scenario: BOUNDARY-STATIC names the line of a Node built-in import in a system test
+    Given a repository with the implemented scenario "SCN-DEMO-001" and its system test
+    And the test imports "node:fs"
+    When the developer runs "osf check BOUNDARY-STATIC"
+    Then the command exits with code 1
+    And the output contains 'BOUNDARY-STATIC modules/demo/system-tests/SCN-DEMO-001.test.ts:2 import "node:fs"'

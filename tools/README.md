@@ -71,3 +71,4 @@ Each failure prints one line: the check ID, `file:line`, and what to fix. Each c
 | SCN-REPO-016 | implemented | DOCS-GEN rejects a generated README section that is out of date |
 | SCN-REPO-017 | implemented | DOCS-LINKS rejects a link to a missing file |
 | SCN-REPO-018 | implemented | ADR rejects a new dependency without an accepted ADR |
+| SCN-REPO-019 | implemented | BOUNDARY-STATIC names the line of a Node built-in import in a system test |
