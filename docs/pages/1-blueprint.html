@@ -1,0 +1,1221 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Software Factory Blueprint</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a technical blueprint — left rail of contents on wide screens, one reading column of ~70ch, wide code panels for Gherkin. */
+:root {
+  --paper: #f3f5f7;
+  --sheet: #ffffff;
+  --ink: #14202b;
+  --muted: #5a6875;
+  --rule: #d6dde4;
+  --accent: #0d6b70;
+  --accent-soft: #e0efef;
+  --amber: #a35c00;
+  --amber-soft: #fbefdc;
+  --slate: #3d5a80;
+  --slate-soft: #e3eaf3;
+  --code-bg: #0f1a24;
+  --code-fg: #d8e2ea;
+  --code-kw: #7fd1c7;
+  --code-str: #f2c879;
+  --code-tag: #8aa6c4;
+  --code-com: #74879a;
+  --code-id: #ffffff;
+  --f-display: "Archivo", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0d141b; --sheet: #131d27; --ink: #e3e9ee; --muted: #9aa8b5; --rule: #24323f;
+    --accent: #5cc3bf; --accent-soft: #123334; --amber: #e7a54a; --amber-soft: #33240f;
+    --slate: #9db7d8; --slate-soft: #1b2838;
+    --code-bg: #0a1017; --code-fg: #d8e2ea; --code-kw: #7fd1c7; --code-str: #f2c879; --code-tag: #8aa6c4; --code-com: #6f8295; --code-id: #ffffff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0d141b; --sheet: #131d27; --ink: #e3e9ee; --muted: #9aa8b5; --rule: #24323f;
+  --accent: #5cc3bf; --accent-soft: #123334; --amber: #e7a54a; --amber-soft: #33240f;
+  --slate: #9db7d8; --slate-soft: #1b2838;
+  --code-bg: #0a1017; --code-fg: #d8e2ea; --code-kw: #7fd1c7; --code-str: #f2c879; --code-tag: #8aa6c4; --code-com: #6f8295; --code-id: #ffffff;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font: 400 16px/1.6 var(--f-body); }
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+code { font-family: var(--f-mono); font-size: .88em; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.grid { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 48px; align-items: start; }
+@media (max-width: 920px) { .grid { grid-template-columns: minmax(0, 1fr); gap: 0; } }
+
+/* header */
+.top { border-bottom: 1px solid var(--rule); background: var(--sheet); }
+.top .wrap { padding-block: 48px 36px; }
+.eyebrow { font: 600 12px/1.4 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font: 800 clamp(34px, 6vw, 60px)/1.02 var(--f-display); font-stretch: 80%; letter-spacing: -.01em; margin: 12px 0 16px; text-wrap: balance; }
+.lede { max-width: 68ch; font-size: 18px; color: var(--ink); margin: 0; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 28px; margin-top: 24px; font: 500 13px/1.4 var(--f-mono); color: var(--muted); }
+.facts b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* toc */
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); padding-block: 32px; font-size: 14px; max-height: calc(100vh - 48px); overflow-y: auto; }
+nav.toc h2 { font: 600 11px/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+nav.toc ol, nav.toc ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+nav.toc ul { margin: 8px 0 4px 12px; gap: 4px; font-size: 13px; }
+nav.toc a { color: var(--ink); text-decoration: none; }
+nav.toc a:hover { color: var(--accent); }
+nav.toc .cnt { color: var(--muted); font: 12px var(--f-mono); }
+@media (max-width: 920px) { nav.toc { position: static; max-height: none; border-bottom: 1px solid var(--rule); } nav.toc ul { display: none; } }
+
+/* content */
+main { padding-block: 32px 80px; min-width: 0; }
+main > section { padding-block: 24px 40px; border-bottom: 1px solid var(--rule); }
+main > section:last-child { border-bottom: 0; }
+h2 { font: 700 30px/1.1 var(--f-display); font-stretch: 85%; margin: 0 0 8px; text-wrap: balance; }
+h2 .sn { font: 600 13px var(--f-mono); color: var(--accent); vertical-align: middle; margin-right: 10px; letter-spacing: .06em; }
+.intro { max-width: 70ch; color: var(--muted); margin: 0 0 24px; }
+p { max-width: 70ch; }
+
+/* tables */
+.tbl { overflow-x: auto; border: 1px solid var(--rule); border-radius: 6px; background: var(--sheet); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--rule); }
+tr:last-child td { border-bottom: 0; }
+th { font: 600 11px/1.3 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--paper); }
+td.t { font: 500 13px var(--f-mono); color: var(--accent); white-space: nowrap; font-variant-numeric: tabular-nums; }
+td.h { font-weight: 600; min-width: 150px; }
+td ul { margin: 0; padding-left: 18px; }
+
+/* principles */
+.principles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 16px; }
+.pr { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 18px 20px; display: grid; gap: 8px; align-content: start; }
+.pr .pn { font: 600 12px var(--f-mono); color: var(--accent); letter-spacing: .06em; }
+.pr h3 { font: 700 20px/1.15 var(--f-display); font-stretch: 85%; margin: 0; }
+.pr p { margin: 0; font-size: 15px; }
+.pr .why { color: var(--muted); font-size: 14px; }
+.pr .ref { font: 12px/1.5 var(--f-mono); color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 500 11px/1 var(--f-mono); padding: 5px 7px; border-radius: 3px; background: var(--slate-soft); color: var(--slate); }
+
+/* stack */
+.stack { display: grid; gap: 6px; }
+.layer { display: grid; grid-template-columns: 56px 170px minmax(0, 1fr); gap: 16px; align-items: start; padding: 14px 16px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; }
+.layer .no { font: 700 26px/1 var(--f-display); color: var(--accent); }
+.layer .nm { font: 700 15px/1.3 var(--f-display); letter-spacing: .04em; text-transform: uppercase; }
+.layer .parts { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 14px; }
+.layer .parts span b { font-weight: 600; }
+.layer .parts span i { font-style: normal; color: var(--muted); }
+.layer .note { grid-column: 3; font-size: 13px; color: var(--muted); margin: 4px 0 0; }
+@media (max-width: 640px) { .layer { grid-template-columns: 40px minmax(0, 1fr); } .layer .parts, .layer .note { grid-column: 1 / -1; } }
+
+/* evidence legend + pills */
+.legend { display: flex; flex-wrap: wrap; gap: 10px 22px; margin: 0 0 24px; font-size: 14px; }
+.legend div { display: flex; gap: 8px; align-items: baseline; max-width: 40ch; }
+.pill { font: 600 11px/1 var(--f-mono); padding: 4px 7px; border-radius: 3px; white-space: nowrap; }
+.pill.ev-spoken { background: var(--accent-soft); color: var(--accent); }
+.pill.ev-screen { background: var(--slate-soft); color: var(--slate); }
+.pill.ev-derived { background: var(--amber-soft); color: var(--amber); }
+
+/* features */
+.feature { margin-top: 28px; }
+.fhead { display: grid; gap: 6px; margin-bottom: 10px; }
+.fmeta { display: flex; flex-wrap: wrap; gap: 6px 14px; font: 12px var(--f-mono); color: var(--muted); align-items: baseline; }
+.fnum { color: var(--accent); font-weight: 600; }
+.fhead h3 { font: 700 22px/1.15 var(--f-display); font-stretch: 85%; margin: 0; }
+.fstats { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font: 13px var(--f-mono); color: var(--muted); }
+.fstats > span:first-child { margin-right: 4px; }
+button.copy { margin-left: auto; font: 600 12px var(--f-mono); padding: 6px 10px; border-radius: 4px; border: 1px solid var(--rule); background: var(--sheet); color: var(--ink); cursor: pointer; }
+button.copy:hover { border-color: var(--accent); color: var(--accent); }
+.code { overflow-x: auto; border-radius: 6px; background: var(--code-bg); }
+.code pre { margin: 0; padding: 18px 20px; font: 13px/1.6 var(--f-mono); color: var(--code-fg); white-space: pre; tab-size: 2; }
+.code .k { color: var(--code-kw); font-weight: 500; }
+.code .s { color: var(--code-str); }
+.code .tg { color: var(--code-tag); }
+.code .tg.id { color: var(--code-id); font-weight: 500; }
+.code .tg.ev-derived { color: #f0a85a; }
+.code .c { color: var(--code-com); font-style: italic; }
+.code .tb { color: #c6d2dc; }
+
+/* gaps */
+.gaps { display: grid; gap: 12px; counter-reset: g; padding: 0; list-style: none; max-width: 80ch; }
+.gaps li { background: var(--sheet); border: 1px solid var(--rule); border-left: 3px solid var(--amber); border-radius: 4px; padding: 12px 16px; font-size: 15px; }
+.gaps li b { display: block; margin-bottom: 2px; }
+.gaps li span { color: var(--muted); font-size: 14px; }
+.small { font-size: 14px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+html { scroll-behavior: smooth; }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="eyebrow">Blueprint · from Zach Lloyd (Warp), “Software Engineering Is Becoming Factory Engineering”, recorded talk, 25:51</div>
+    <h1>Software Factory Blueprint</h1>
+    <p class="lede">The talk, analysed chapter by chapter and screen by screen, turned into leading principles, a reference stack and Gherkin requirements for a modern software factory. Each requirement says whether the talk states it, shows it on screen, or whether it is derived.</p>
+    <div class="facts">
+      <span><b>17</b> principles</span>
+      <span><b>15</b> features</span>
+      <span><b>82</b> scenarios</span>
+      <span><b>60</b> spoken · <b>20</b> screen · <b>2</b> derived</span>
+      <span><b>7</b> stack layers</span>
+    </div>
+  </div>
+</header>
+<div class="wrap" style="padding-block:10px"><p style="margin:0;padding:10px 14px;border:1px solid var(--rule);border-left:3px solid var(--amber);border-radius:4px;background:var(--sheet);font-size:14px;max-width:none"><b>Snapshot from 2026-10-18.</b> The Markdown documents in this repository are the source of truth and win where this page differs. Changed since: TypeScript is the only core language (ADR 0009), and the monorepo tooling is pnpm workspaces with Turborepo, not Nx (ADR 0010).</p></div>
+
+<div class="wrap grid">
+<nav class="toc" aria-label="Contents">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#definition">What a software factory is</a></li>
+    <li><a href="#chapters">The talk, chapter by chapter</a></li>
+    <li><a href="#principles">Leading principles</a></li>
+    <li><a href="#stack">The factory stack</a></li>
+    <li><a href="#requirements">Requirements in Gherkin</a>
+      <ul><li><a href="#f-factory-loop">The factory loop</a> <span class="cnt">13</span></li>
+<li><a href="#f-factory-runtime">Cloud execution, sandboxes and governance</a> <span class="cnt">9</span></li>
+<li><a href="#f-factory-as-code">Factories as code</a> <span class="cnt">6</span></li>
+<li><a href="#f-factory-openness">Open and pluggable infrastructure</a> <span class="cnt">6</span></li>
+<li><a href="#f-factory-data">Data, context and sovereignty</a> <span class="cnt">6</span></li>
+<li><a href="#f-factory-access">Access points</a> <span class="cnt">3</span></li>
+<li><a href="#f-factory-orchestration">Orchestration</a> <span class="cnt">8</span></li>
+<li><a href="#f-factory-automation">Automations</a> <span class="cnt">2</span></li>
+<li><a href="#f-factory-visibility">Team visibility</a> <span class="cnt">2</span></li>
+<li><a href="#f-factory-metrics">Flow and cost metrics</a> <span class="cnt">8</span></li>
+<li><a href="#f-factory-scoring">Scoring (online evaluation)</a> <span class="cnt">4</span></li>
+<li><a href="#f-factory-improvement">Self-improvement</a> <span class="cnt">5</span></li>
+<li><a href="#f-factory-benchmark">Benchmarks and model routing</a> <span class="cnt">6</span></li>
+<li><a href="#f-factory-roles">Product engineering and factory engineering</a> <span class="cnt">2</span></li>
+<li><a href="#f-factory-outcomes">Business outcomes</a> <span class="cnt">2</span></li></ul></li>
+    <li><a href="#metrics">Metric catalogue</a></li>
+    <li><a href="#gaps">What the talk leaves open</a></li>
+    <li><a href="#method">Method and sources</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<section id="definition">
+  <h2><span class="sn">01</span>What a software factory is</h2>
+  <p class="intro">The definition the talk commits to (03:31–04:13). Every principle and requirement below follows from these three properties.</p>
+  <div class="tbl"><table>
+    <tr><th>Property</th><th>Meaning</th><th>Consequence for the blueprint</th></tr>
+    <tr><td class="h">An agentic loop</td><td>Humans and agents work together in a loop: idea or bug → triage → spec → implement → review → verify → ship → monitor → new work. Humans touch the loop at spec review, code review and product review.</td><td>Feature F01, orchestration (F07), human gates.</td></tr>
+    <tr><td class="h">Runs in the cloud</td><td>“You can't have a local software factory”: automations cannot run on laptops, and local agents cannot be governed.</td><td>Cloud runtime and sandboxes (F02), central context (F05).</td></tr>
+    <tr><td class="h">Measurable and improvable</td><td>The factory itself is a system you engineer: <em>factory engineering</em>. It must get better over time.</td><td>Factory as code (F03), metrics (F10), scoring (F11), self-improvement (F12), benchmarks (F13).</td></tr>
+  </table></div>
+</section>
+
+<section id="chapters">
+  <h2><span class="sn">02</span>The talk, chapter by chapter</h2>
+  <p class="intro">Each chapter with what is said and shown, and what it adds to the blueprint. Numbers are checked against the screen where both exist.</p>
+  <div class="tbl"><table>
+    <tr><th>Time</th><th>Chapter</th><th>What is said and shown</th><th>Adds to the blueprint</th></tr>
+    <tr><td class="t">00:00</td><td class="h">Agenda</td><td>What a factory is, its key characteristics, the factory as infrastructure, and what a working factory looks like, shown in Warp's product but meant to apply to factories built from scratch.</td><td>Scope: concept, not vendor.</td></tr>
+    <tr><td class="t">00:35</td><td class="h">Speaker</td><td>Former principal engineer at Google (led Google Docs engineering), founder and CEO of Warp. Warp's focus: “Warp factories”, open infrastructure for internal software factories.</td><td>Context and possible bias (he says so at 24:38).</td></tr>
+    <tr><td class="t">01:30</td><td class="h">Evolution of agentic development</td><td>Autocomplete → each developer runs an interactive agent (Claude Code, Codex) on a laptop and pushes a PR → automated development. Everyone wants maximum business value without sloppy quality.</td><td>Target state: automated, not interactive.</td></tr>
+    <tr><td class="t">02:43</td><td class="h">More AI usage ≠ more business value</td><td>Three problems of interactive agents: (1) people are the bottleneck, ad-hoc use, no automation; (2) no systematic way to optimize cost and quality, because everyone works differently; (3) no central layer for governance and control. Slide headlines on token spending and AI governance underline it.</td><td>P2, P11, P13; outcome feature F15.</td></tr>
+    <tr><td class="t">03:12</td><td class="h">Local agents are insecure agents</td><td>Everyone sets up their own MCPs; a compromise acts as the logged-in user; hard to govern. Answer: sandbox them.</td><td>F02 sandbox and secret scenarios.</td></tr>
+    <tr><td class="t">03:31</td><td class="h">A cloud software factory</td><td>Definition (section 01). Loop diagram: new idea or bug → triage → spec → implement → verify → ship → monitor, with human touchpoints “reviewing the spec”, “reviewing the code”, “reviewing the product”. Agents verify with computer use and QA, ship through CI/CD.</td><td>F01 end to end.</td></tr>
+    <tr><td class="t">04:42</td><td class="h">No one size fits all</td><td>The loop differs per company and team. A factory must support variants, for software and for the wider product lifecycle.</td><td>P16; LOOP-011/012.</td></tr>
+    <tr><td class="t">05:07</td><td class="h">Factories are infrastructure</td><td>As flexible as a cloud provider. Open (any model, any harness, composable), adaptable (works with existing tools; the only way at scale), defined in code (agents, MCPs, repos, skills) and versioned, which makes it possible to test versions and let agents improve the factory.</td><td>P3, P4, P5; F03, F04.</td></tr>
+    <tr><td class="t">06:19</td><td class="h">AI sovereignty: your data</td><td>Keep all data that flows through the factory in your own systems; it is what you use to improve your agents. Run on your own compute, your own models, your own inference gateway. Open wins over a walled garden.</td><td>P7; DATA-006, OPEN-003/006.</td></tr>
+    <tr><td class="t">07:01</td><td class="h">Measurement &gt; vibes</td><td>Social media keeps naming a new best model or harness, often with conflicts of interest. Instead: LLM-as-judge evals on all your agent sessions (scoring), use them to drive self-improvement, and benchmark configurations on your own work instead of SWE-bench or Terminal-Bench.</td><td>P8; F11–F13.</td></tr>
+    <tr><td class="t">07:53</td><td class="h">Two types of engineers</td><td>Product engineering still matters but happens <em>through</em> the factory, with human touchpoints. Factory engineering is performance tuning of the factory: skills, MCPs, model mix, workflow.</td><td>P17; F14.</td></tr>
+    <tr><td class="t">08:44</td><td class="h">Demo: agents and the foreman</td><td>One factory per product surface; a factory is a collection of agents defined in code. All work goes through a <em>foreman</em> agent with central configuration (MCPs, secrets, model, runtime, triggers, prompt) that delegates to triage, spec, implementation and code-review agents. Configuration is read-only in the UI and managed in a GitHub repository.</td><td>F07 foreman; CODE-001/002.</td></tr>
+    <tr><td class="t">10:25</td><td class="h">Demo: work from any surface</td><td>Warp uses Slack; customers use Teams, Linear, Jira, GitHub; a local coding agent can submit work too. A Slack request goes to the foreman, through triage, creates a Linear issue and a server PR, and is verified with computer use. “The least interesting part” of the approach.</td><td>P5; F06; DATA-003.</td></tr>
+    <tr><td class="t">12:25</td><td class="h">Demo: the team in real time</td><td>Because work is central, you see what everyone's agents are doing across all factories, “like Google Docs, but for your team's coding agents”, and can open a teammate's run and its Slack origin. Runs are stored and tracked automatically.</td><td>P6; F09.</td></tr>
+    <tr><td class="t">13:19</td><td class="h">Factory engineering: flow and cost</td><td>Dashboard (last 7 days): 21.5 human interactions per PR; median kickoff→PR 44 min, kickoff→merge 15 h, PR→first human review 2.6 h, first review→merge 27 min; 326 PRs, 189 merged; 1,791 runs (743 top-level) by agent type. Cost per PR $16.42 (compute, platform, inference), spend by source across 10 sources, top 20 most expensive PRs. Know cost per PR and have a plan to lower it.</td><td>P13; F10; metric catalogue.</td></tr>
+    <tr><td class="t">14:06</td><td class="h">Scoring (online evals)</td><td>LLM-as-judge over stored runs on your own dimensions. Example: “redundant tests”, a common failure mode that wastes money, time and context. Sampled because it is expensive; pass/fail criteria; defined in code; trend shown. Other scorers on screen: change requested, Slack MCP reply, computer-use ask, integration MCP loss, status update nudge.</td><td>F11.</td></tr>
+    <tr><td class="t">15:22</td><td class="h">Self-improvement</td><td>Agents read the scores, find repeated problems (a triage problem seen 54 times) and propose changes to the factory definition. Example PR “Let triage start research subagents” with Problem, Solution and Evidence sections; a human merges it. He admits they are still learning how to prove it works.</td><td>P15; F12; gap 1.</td></tr>
+    <tr><td class="t">17:16</td><td class="h">Automations</td><td>Work from triggers goes through the same (or a slightly different) workflow as human work. On screen: daily self-triage report, feedback digest, GitHub issue labeled → auto-implement, PR closed/merged, CI failure, Linear and Slack mentions, a Sentry fatal-error webhook.</td><td>P12; F08.</td></tr>
+    <tr><td class="t">17:52</td><td class="h">Benchmarks on your own work</td><td>Add any real task (hard, or of a class such as front-end) to a benchmark suite; replay stored sessions, careful with side effects; run a matrix of models and harness configurations; get a correctness-versus-cost chart. GPT-5.6-sol (high): 94.8 % at $6.23; GLM 5.3 flash: about 93 % at $1.99, a third of the cost. He would probably choose the cheaper one, and feeds the result into model routing for similar tasks.</td><td>F13.</td></tr>
+    <tr><td class="t">21:41</td><td class="h">The factory stack</td><td>Seven layers from factories-as-code to access (section 04).</td><td>Reference architecture.</td></tr>
+    <tr><td class="t">24:38</td><td class="h">Results and close</td><td>Aimed at platform teams. Warp lowered cost per PR from about $55 to about $15 in six weeks, raised PR throughput by about 40 % and has a lower revert rate: “this isn't just putting out slop”.</td><td>P14; OUTCOME-002.</td></tr>
+  </table></div>
+</section>
+
+<section id="principles">
+  <h2><span class="sn">03</span>Leading principles</h2>
+  <p class="intro">Seventeen principles that hold across nearly every area of the factory. Each names its evidence in the talk and the areas it governs. Use them to decide cases the requirements do not cover.</p>
+  <div class="principles">
+    <article class="pr"><div class="pn">P1</div><h3>Close the loop</h3><p>Work flows from intake through triage, spec, build, review, verification and shipping to monitoring, and monitoring creates new work.</p><p class="why">An open pipeline cannot learn. The loop is what turns output into feedback.</p><div class="ref">03:43 · 04:13–04:42</div><div class="chips"><span class="chip">loop</span><span class="chip">automation</span><span class="chip">metrics</span></div></article>
+    <article class="pr"><div class="pn">P2</div><h3>Run in the cloud, not on laptops</h3><p>The factory, its agents and its automations run in a central, always-on environment.</p><p class="why">Laptops bottleneck work on people, cannot run automations and cannot be governed.</p><div class="ref">02:48 · 03:49</div><div class="chips"><span class="chip">runtime</span><span class="chip">access</span></div></article>
+    <article class="pr"><div class="pn">P3</div><h3>Declare the factory in code</h3><p>Agents, prompts, MCP servers, skills, secrets, repositories, models, runners, automations and scorers are versioned files. The UI only shows them.</p><p class="why">Only code can be tested, rolled back, reviewed and changed by agents through a pull request.</p><div class="ref">05:51–06:19 · 09:35 · 15:16 · 21:56</div><div class="chips"><span class="chip">all areas</span></div></article>
+    <article class="pr"><div class="pn">P4</div><h3>Open and pluggable</h3><p>Any model, any harness, any inference provider, any compute. Every layer can be replaced without rebuilding the others.</p><p class="why">The best model and harness change every month. A closed stack cannot follow the evidence.</p><div class="ref">05:23–05:35 · 06:51–07:01 · 23:07–23:22</div><div class="chips"><span class="chip">inference</span><span class="chip">compute</span><span class="chip">orchestration</span></div></article>
+    <article class="pr"><div class="pn">P5</div><h3>Meet people where they work</h3><p>Work enters and is followed from the chat, tracker, forge and devices people already use. Everything is API-driven; the factory UI is one surface among many.</p><p class="why">Adoption at scale depends on fitting existing tools, not replacing them.</p><div class="ref">05:39 · 10:31–11:10 · 24:16–24:27</div><div class="chips"><span class="chip">access</span><span class="chip">integration</span></div></article>
+    <article class="pr"><div class="pn">P6</div><h3>Centralize context, record everything</h3><p>Every run stores its transcript, trace, artifacts and links to its origin, issue and pull requests, in one place.</p><p class="why">Visibility, scoring, benchmarks and self-improvement all start from the recorded run.</p><div class="ref">11:03 · 12:56–13:19 · 22:25–22:45</div><div class="chips"><span class="chip">data</span><span class="chip">visibility</span><span class="chip">improvement</span></div></article>
+    <article class="pr"><div class="pn">P7</div><h3>Own your data</h3><p>Run data stays in systems the company controls, on its own compute and inference gateway when required.</p><p class="why">If producing software is core to the business, the data that improves it is a core asset.</p><div class="ref">06:19–06:55</div><div class="chips"><span class="chip">data</span><span class="chip">security</span></div></article>
+    <article class="pr"><div class="pn">P8</div><h3>Measure, don't trust vibes</h3><p>Decide models, harnesses and workflows with evidence from your own work: online scores and your own benchmarks, not public leaderboards or social media.</p><p class="why">Public benchmarks measure general intelligence, not your codebase; commentators have conflicts of interest.</p><div class="ref">07:08–07:53 · 21:16–21:37</div><div class="chips"><span class="chip">scoring</span><span class="chip">benchmarks</span><span class="chip">routing</span></div></article>
+    <article class="pr"><div class="pn">P9</div><h3>Humans at the gates, agents in between</h3><p>Explicit human touchpoints (spec, code, product) and deterministic gates guard the stages. Agents use their intelligence to route work inside the allowed paths.</p><p class="why">Determinism gives control; intelligence gives speed. Each has its place.</p><div class="ref">04:26–04:36 · 08:17 · 23:41–23:48</div><div class="chips"><span class="chip">orchestration</span><span class="chip">loop</span></div></article>
+    <article class="pr"><div class="pn">P10</div><h3>Prove the work</h3><p>A change is done when the factory shows evidence that it works: computer-use verification, screenshots, video, test results.</p><p class="why">Without proof, review becomes trust, and throughput becomes slop.</p><div class="ref">04:36 · 12:01–12:09</div><div class="chips"><span class="chip">verification</span><span class="chip">review</span></div></article>
+    <article class="pr"><div class="pn">P11</div><h3>Sandbox and govern centrally</h3><p>Agents run in isolated sandboxes with only declared secrets and MCP servers, under role-based access, with every action attributed.</p><p class="why">A compromised local agent acts as the logged-in person. A sandboxed one cannot.</p><div class="ref">03:08–03:31 · 09:54 · 22:45–22:59</div><div class="chips"><span class="chip">runtime</span><span class="chip">security</span><span class="chip">access</span></div></article>
+    <article class="pr"><div class="pn">P12</div><h3>One workflow, many triggers</h3><p>Work from people and work from automations (schedules, webhooks, labels, CI failures, error reports) go through the same declared workflow or a declared variant.</p><p class="why">One path means one place to measure, govern and improve.</p><div class="ref">17:22–17:58</div><div class="chips"><span class="chip">automation</span><span class="chip">loop</span></div></article>
+    <article class="pr"><div class="pn">P13</div><h3>Cost is a first-class metric</h3><p>Know the cost per pull request, attributed by source, person, agent and model, and have a plan to lower it. Trade quality against cost explicitly.</p><p class="why">Without attribution, AI spend grows faster than the value it buys.</p><div class="ref">13:47–14:06 · 20:51–21:06</div><div class="chips"><span class="chip">metrics</span><span class="chip">benchmarks</span><span class="chip">routing</span></div></article>
+    <article class="pr"><div class="pn">P14</div><h3>Guard quality while you speed up</h3><p>Every speed or cost gain is read next to a quality signal such as revert rate or change-requested rate.</p><p class="why">Lower cost and more PRs mean nothing if the output is slop.</p><div class="ref">02:28 · 25:19–25:39</div><div class="chips"><span class="chip">metrics</span><span class="chip">outcomes</span></div></article>
+    <article class="pr"><div class="pn">P15</div><h3>Improve the factory through the factory</h3><p>Repeated failures become pull requests to the factory definition, with problem, solution and evidence, merged by a human.</p><p class="why">The factory gets better every week without a person finding each problem.</p><div class="ref">15:28–17:11</div><div class="chips"><span class="chip">improvement</span><span class="chip">factory as code</span></div></article>
+    <article class="pr"><div class="pn">P16</div><h3>Templates, not one process</h3><p>The loop is a template that each team and product surface adapts; the factory supports variants, also beyond software.</p><p class="why">One fixed process fits no real company.</p><div class="ref">04:42–05:07 · 09:16</div><div class="chips"><span class="chip">loop</span><span class="chip">orchestration</span></div></article>
+    <article class="pr"><div class="pn">P17</div><h3>Two jobs: build product, build the factory</h3><p>Product engineers deliver value through the factory. Factory engineers tune the factory: skills, MCP servers, model mix, workflow.</p><p class="why">Improving the machine is real work with its own owner, or it does not happen.</p><div class="ref">07:53–08:44</div><div class="chips"><span class="chip">roles</span><span class="chip">metrics</span></div></article>
+  </div>
+</section>
+
+<section id="stack">
+  <h2><span class="sn">04</span>The factory stack</h2>
+  <p class="intro">The reference architecture from the talk (21:41–24:27, slide at 22:15), top to bottom. Each layer depends on the ones below it. Layers 00–03 can be vendor-hosted or customer-hosted.</p>
+  <div class="stack">
+    <div class="layer"><div class="no">06</div><div class="nm">Access</div><div class="parts"><span><b>Factory MCP</b> <i>any coding agent</i></span><span><b>Chat</b> <i>Slack, Teams</i></span><span><b>Tracker</b> <i>Jira, Linear</i></span><span><b>Code forge</b> <i>GitHub, GitLab</i></span><span><b>Any device</b> <i>web, mobile</i></span><span><b>Programmatic</b> <i>API, SDK</i></span></div></div>
+    <div class="layer"><div class="no">05</div><div class="nm">Orchestration</div><div class="parts"><span><b>Native stages</b> <i>triage, spec, implement, review, verify</i></span><span><b>Multi-agent</b> <i>Warp, Claude Code, Codex</i></span><span><b>Human in the loop</b> <i>live steering, handoff</i></span><span><b>Automations</b> <i>trigger, cron</i></span></div></div>
+    <div class="layer"><div class="no">04</div><div class="nm">Improvement</div><div class="parts"><span><b>Metrics</b> <i>autonomy, cost, cycle time</i></span><span><b>Scorers</b> <i>evaluate completed runs</i></span><span><b>Benchmarks</b> <i>compare models and skills per task set</i></span><span><b>Self-improvement</b> <i>automatic observer loop</i></span></div></div>
+    <div class="layer"><div class="no">03</div><div class="nm">Inference</div><div class="parts"><span><b>Hosted inference</b> <i>frontier and open-weight models</i></span><span><b>Bring your own</b> <i>Bedrock, Vertex</i></span><span><b>Model routing</b> <i>routing rules, self-improving</i></span></div></div>
+    <div class="layer"><div class="no">02</div><div class="nm">Compute</div><div class="parts"><span><b>Sandbox</b> <i>Docker image, Kubernetes, any remote environment</i></span><span><b>Agent runner</b> <i>Mac, Linux, Windows; configurable disk, RAM, CPU</i></span><span><b>Computer use</b> <i>video, image</i></span></div></div>
+    <div class="layer"><div class="no">01</div><div class="nm">Data &amp; context</div><div class="parts"><span><b>Runs and transcripts</b> <i>agent traces</i></span><span><b>Agent memory</b> <i>vector store</i></span><span><b>Agent artifacts</b> <i>PRs, reports, attachments</i></span><span><b>MCPs</b> <i>internal knowledge</i></span><span><b>Access control</b> <i>RBAC and attribution</i></span></div></div>
+    <div class="layer"><div class="no">00</div><div class="nm">Factories as code</div><div class="parts"><span><b>Factory.yaml</b></span><span><b>Agent definitions</b></span><span><b>Automation definitions</b></span><span><b>Launch config</b> <i>runners</i></span><span><b>Repo config</b></span></div><p class="note">The foundation: it makes versioning, testing and rolling back the whole development process possible.</p></div>
+  </div>
+</section>
+
+<section id="requirements">
+  <h2><span class="sn">05</span>Requirements in Gherkin</h2>
+  <p class="intro">82 scenarios in 15 features. Identifiers use the format <code>SCN-FACTORY-&lt;AREA&gt;-NNN</code>; all are <code>@status=planned</code>. Each scenario carries its evidence and the time in the talk.</p>
+  <div class="legend">
+    <div><span class="pill ev-spoken">spoken</span><span>Said in the talk.</span></div>
+    <div><span class="pill ev-screen">screen</span><span>Shown on a slide or in the demo, not said.</span></div>
+    <div><span class="pill ev-derived">derived</span><span>Implied or needed by the talk, not stated. Challenge these first.</span></div>
+  </div>
+  
+<section class="feature" id="f-factory-loop">
+  <header class="fhead">
+    <div class="fmeta"><span class="fnum">F01</span><code>factory-loop</code><span>owner: factory-engineering</span></div>
+    <h3>The factory loop</h3>
+    <div class="fstats"><span>13 scenarios</span>
+      <span class="pill ev-spoken">9 spoken</span>
+      <span class="pill ev-screen">4 screen</span>
+      <span class="pill ev-derived">0 derived</span>
+      <button class="copy" type="button" data-target="f-factory-loop-src">Copy Gherkin</button></div>
+  </header>
+  <div class="code"><pre id="f-factory-loop-src"><span class="tg">@context=factory-loop</span> <span class="tg">@owner=factory-engineering</span>
+<span class="k">Feature:</span> The factory loop
+  A software factory is a closed agentic loop in which people and agents work together:
+  work enters, is triaged, specified, implemented, reviewed, verified, shipped and monitored,
+  and monitoring feeds new work back into the start of the loop.
+
+  <span class="k">Rule:</span> Work enters the loop from people and from production signals
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-LOOP-001</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=04:13</span>
+    <span class="k">Scenario:</span> A person submits a new product idea
+      <span class="k">Given</span> a factory for the product surface <span class="s">&quot;web app&quot;</span>
+      <span class="k">When</span> a product engineer submits the idea <span class="s">&quot;Export reports as CSV&quot;</span> from a connected surface
+      <span class="k">Then</span> the factory creates exactly one work item for the idea
+      <span class="k">And</span> the work item enters the <span class="s">&quot;triage&quot;</span> stage
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-LOOP-002</span> <span class="tg">@status=planned</span> <span class="tg ev-screen">@evidence=screen</span> <span class="tg">@source=03:40</span>
+    <span class="k">Scenario:</span> A bug report enters the same loop as an idea
+      <span class="k">Given</span> a factory for the product surface <span class="s">&quot;web app&quot;</span>
+      <span class="k">When</span> a user reports the bug <span class="s">&quot;Export button does nothing on Safari&quot;</span>
+      <span class="k">Then</span> the factory creates a work item of type <span class="s">&quot;bug&quot;</span>
+      <span class="k">And</span> the work item follows the same loop as a product idea
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-LOOP-003</span> <span class="tg">@status=planned</span> <span class="tg ev-screen">@evidence=screen</span> <span class="tg">@source=03:40</span> <span class="tg">@source=04:42</span> <span class="tg">@source=17:30</span>
+    <span class="k">Scenario:</span> Monitoring feeds new work back to the start of the loop
+      <span class="k">Given</span> the factory watches production error reports
+      <span class="k">When</span> a new fatal error is reported for a shipped change
+      <span class="k">Then</span> the factory creates a work item that links the error report and the change
+      <span class="k">And</span> the work item enters the <span class="s">&quot;triage&quot;</span> stage
+
+  <span class="k">Rule:</span> Each stage has a defined owner and hands its result to the next stage
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-LOOP-004</span> <span class="tg">@status=planned</span> <span class="tg ev-screen">@evidence=screen</span> <span class="tg">@source=04:19</span> <span class="tg">@source=09:58</span>
+    <span class="k">Scenario:</span> Triage classifies new work and sets its task state
+      <span class="k">Given</span> a new work item in the <span class="s">&quot;triage&quot;</span> stage
+      <span class="k">When</span> the triage agent finishes
+      <span class="k">Then</span> the work item has a type, a priority and a task state
+      <span class="k">And</span> the work item is routed to the next stage that its type requires
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-LOOP-005</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=04:26</span>
+    <span class="k">Scenario:</span> The spec agent writes a specification and drives its approval
+      <span class="k">Given</span> a triaged work item that needs a specification
+      <span class="k">When</span> the spec agent finishes a draft specification
+      <span class="k">Then</span> the specification is attached to the work item
+      <span class="k">And</span> a human is asked to review the specification
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-LOOP-006</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=04:32</span>
+    <span class="k">Scenario:</span> The implementation agent implements, validates and updates code changes
+      <span class="k">Given</span> a work item with an approved specification
+      <span class="k">When</span> the implementation agent finishes
+      <span class="k">Then</span> a pull request exists for the work item
+      <span class="k">And</span> the pull request records which checks the agent ran and their results
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-LOOP-007</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=04:32</span> <span class="tg">@source=09:58</span>
+    <span class="k">Scenario:</span> The code review agent reviews the pull request and routes findings
+      <span class="k">Given</span> an open pull request created by the factory
+      <span class="k">When</span> the code review agent reviews it
+      <span class="k">Then</span> each finding is routed either back to rework or to a human for resolution
+      <span class="k">And</span> a human can be asked to review the code
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-LOOP-008</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=04:36</span> <span class="tg">@source=12:01</span>
+    <span class="k">Scenario:</span> Verification uses computer use and produces evidence
+      <span class="k">Given</span> a pull request that changes user-visible behavior
+      <span class="k">When</span> the verification step runs
+      <span class="k">Then</span> an agent operates the running product through computer use
+      <span class="k">And</span> screenshots or a video of the verified behavior are attached to the run
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-LOOP-009</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=04:36</span>
+    <span class="k">Scenario:</span> The change ships through the existing CI/CD pipeline
+      <span class="k">Given</span> a reviewed and verified pull request
+      <span class="k">When</span> the change is merged
+      <span class="k">Then</span> it ships through the company&#x27;s CI/CD pipeline
+      <span class="k">And</span> the monitoring stage starts to watch the shipped change
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-LOOP-010</span> <span class="tg">@status=planned</span> <span class="tg ev-screen">@evidence=screen</span> <span class="tg">@source=03:40</span>
+    <span class="k">Scenario:</span> A human reviews the product, not only the code
+      <span class="k">Given</span> a shipped change
+      <span class="k">When</span> the change reaches the <span class="s">&quot;reviewing the product&quot;</span> touchpoint
+      <span class="k">Then</span> a human judges whether the product outcome is useful
+      <span class="k">And</span> the judgment is stored with the work item
+
+  <span class="k">Rule:</span> The loop is a template, not one fixed process
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-LOOP-011</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=04:42</span>
+    <span class="k">Scenario:</span> Two teams run different variants of the loop
+      <span class="k">Given</span> team <span class="s">&quot;Payments&quot;</span> requires a human spec review
+      <span class="k">And</span> team <span class="s">&quot;Docs&quot;</span> skips the spec stage
+      <span class="k">When</span> both teams submit work
+      <span class="k">Then</span> each work item follows the loop variant of its team
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-LOOP-012</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=05:02</span> <span class="tg">@source=09:16</span>
+    <span class="k">Scenario:</span> A factory serves the wider product lifecycle
+      <span class="k">Given</span> a factory named <span class="s">&quot;Marketing factory&quot;</span>
+      <span class="k">When</span> a marketing request is submitted
+      <span class="k">Then</span> the request follows the loop that the marketing factory defines
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-LOOP-013</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=09:16</span>
+    <span class="k">Scenario:</span> There is one factory per product surface
+      <span class="k">Given</span> the product surfaces <span class="s">&quot;server&quot;</span>, <span class="s">&quot;web&quot;</span> and <span class="s">&quot;mobile&quot;</span>
+      <span class="k">When</span> the company sets up its factories
+      <span class="k">Then</span> each product surface has its own factory definition
+      <span class="k">And</span> a person can see all factories in one place</pre></div>
+</section>
+
+<section class="feature" id="f-factory-runtime">
+  <header class="fhead">
+    <div class="fmeta"><span class="fnum">F02</span><code>factory-runtime</code><span>owner: platform-team</span></div>
+    <h3>Cloud execution, sandboxes and governance</h3>
+    <div class="fstats"><span>9 scenarios</span>
+      <span class="pill ev-spoken">6 spoken</span>
+      <span class="pill ev-screen">2 screen</span>
+      <span class="pill ev-derived">1 derived</span>
+      <button class="copy" type="button" data-target="f-factory-runtime-src">Copy Gherkin</button></div>
+  </header>
+  <div class="code"><pre id="f-factory-runtime-src"><span class="tg">@context=factory-runtime</span> <span class="tg">@owner=platform-team</span>
+<span class="k">Feature:</span> Cloud execution, sandboxes and governance
+  A software factory runs in the cloud, because automation cannot run on laptops,
+  and every agent runs in a sandbox under one central layer of governance.
+
+  <span class="k">Rule:</span> The factory runs in the cloud
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-RUNTIME-001</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=03:49</span>
+    <span class="k">Scenario:</span> Automations run while every engineer&#x27;s laptop is off
+      <span class="k">Given</span> no engineer is online
+      <span class="k">When</span> a scheduled automation becomes due
+      <span class="k">Then</span> the factory runs it in the cloud
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-RUNTIME-002</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=11:03</span>
+    <span class="k">Scenario:</span> All factory context is in one central place
+      <span class="k">Given</span> work that started in Slack and continued in Linear
+      <span class="k">When</span> a person opens the run in the factory
+      <span class="k">Then</span> the person sees the full context of both conversations
+
+  <span class="k">Rule:</span> Agents run in sandboxes, never as the logged-in user
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-RUNTIME-003</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=03:18</span> <span class="tg">@source=03:26</span>
+    <span class="k">Scenario:</span> A compromised agent cannot act as a human user
+      <span class="k">Given</span> an agent run that is compromised through a malicious input
+      <span class="k">When</span> the agent tries to use credentials
+      <span class="k">Then</span> it has only the scoped credentials of its sandbox
+      <span class="k">And</span> it cannot use the credentials of any logged-in person
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-RUNTIME-004</span> <span class="tg">@status=planned</span> <span class="tg ev-screen">@evidence=screen</span> <span class="tg">@source=22:45</span>
+    <span class="k">Scenario:</span> Each run gets an isolated sandbox with declared resources
+      <span class="k">Given</span> an agent definition that declares a container image and CPU, memory and disk limits
+      <span class="k">When</span> a run of that agent starts
+      <span class="k">Then</span> the run executes in a new sandbox built from that image with those limits
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-RUNTIME-005</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=22:55</span>
+    <span class="k">Scenario:</span> Sandboxes are available on more than one platform
+      <span class="k">Given</span> a task that must build a macOS application
+      <span class="k">When</span> the task starts
+      <span class="k">Then</span> the factory runs it on a macOS runner
+      <span class="k">And</span> a Linux task in the same factory runs on a Linux runner
+
+  <span class="k">Rule:</span> Secrets, tools and MCP servers are governed centrally
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-RUNTIME-006</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=09:54</span>
+    <span class="k">Scenario:</span> An agent receives only the secrets its definition declares
+      <span class="k">Given</span> the foreman agent declares the secret <span class="s">&quot;LINEAR_TOKEN&quot;</span>
+      <span class="k">And</span> it does not declare the secret <span class="s">&quot;STRIPE_KEY&quot;</span>
+      <span class="k">When</span> a foreman run starts
+      <span class="k">Then</span> the run can read <span class="s">&quot;LINEAR_TOKEN&quot;</span>
+      <span class="k">And</span> the run cannot read <span class="s">&quot;STRIPE_KEY&quot;</span>
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-RUNTIME-007</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=03:18</span> <span class="tg">@source=09:54</span>
+    <span class="k">Scenario:</span> MCP servers are configured once, centrally
+      <span class="k">Given</span> the factory declares the MCP servers each agent may use
+      <span class="k">When</span> an agent tries to call an MCP server that its definition does not declare
+      <span class="k">Then</span> the call is refused and recorded
+
+  <span class="k">Rule:</span> Every action is attributed and access is role-based
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-RUNTIME-008</span> <span class="tg">@status=planned</span> <span class="tg ev-screen">@evidence=screen</span> <span class="tg">@source=12:36</span> <span class="tg">@source=22:20</span>
+    <span class="k">Scenario:</span> Every run is attributed to a person or a trigger and a source
+      <span class="k">Given</span> a run started from a Slack message by <span class="s">&quot;Varun&quot;</span>
+      <span class="k">Then</span> the run records <span class="s">&quot;Varun&quot;</span> as requester and <span class="s">&quot;Slack&quot;</span> as source
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-RUNTIME-009</span> <span class="tg">@status=planned</span> <span class="tg ev-derived">@evidence=derived</span> <span class="tg">@source=22:20</span>
+    <span class="k">Scenario:</span> Only authorized roles can change a factory
+      <span class="k">Given</span> a person without the role <span class="s">&quot;factory-engineer&quot;</span>
+      <span class="k">When</span> the person tries to change the factory definition
+      <span class="k">Then</span> the change is refused</pre></div>
+</section>
+
+<section class="feature" id="f-factory-as-code">
+  <header class="fhead">
+    <div class="fmeta"><span class="fnum">F03</span><code>factory-as-code</code><span>owner: factory-engineering</span></div>
+    <h3>Factories as code</h3>
+    <div class="fstats"><span>6 scenarios</span>
+      <span class="pill ev-spoken">5 spoken</span>
+      <span class="pill ev-screen">1 screen</span>
+      <span class="pill ev-derived">0 derived</span>
+      <button class="copy" type="button" data-target="f-factory-as-code-src">Copy Gherkin</button></div>
+  </header>
+  <div class="code"><pre id="f-factory-as-code-src"><span class="tg">@context=factory-as-code</span> <span class="tg">@owner=factory-engineering</span>
+<span class="k">Feature:</span> Factories as code
+  The factory is declared in code and versioned. Everything else (testing versions,
+  rolling back, self-improvement) depends on this.
+
+  <span class="k">Rule:</span> The factory definition is declarative and complete
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-CODE-001</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=05:51</span> <span class="tg">@source=09:54</span> <span class="tg">@source=21:56</span>
+    <span class="k">Scenario:</span> The definition declares every part of the factory
+      <span class="k">Given</span> a factory definition file
+      <span class="k">Then</span> it declares the agents and their prompts
+      <span class="k">And</span> it declares the MCP servers, skills and secrets of each agent
+      <span class="k">And</span> it declares the repositories each agent operates on
+      <span class="k">And</span> it declares the model and the runtime of each agent
+      <span class="k">And</span> it declares the automations that trigger work
+      <span class="k">And</span> it declares the scorers and benchmarks
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-CODE-002</span> <span class="tg">@status=planned</span> <span class="tg ev-screen">@evidence=screen</span> <span class="tg">@source=09:35</span>
+    <span class="k">Scenario:</span> The factory UI shows configuration read-only
+      <span class="k">Given</span> the factory definition is managed in a Git repository
+      <span class="k">When</span> a person opens an agent configuration in the factory UI
+      <span class="k">Then</span> the configuration is read-only
+      <span class="k">And</span> the UI links to the file and the branch where the change must be made
+
+  <span class="k">Rule:</span> Every change is versioned, testable and reversible
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-CODE-003</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=06:01</span>
+    <span class="k">Scenario:</span> A change to the factory is a versioned commit
+      <span class="k">When</span> a person changes the model of the triage agent
+      <span class="k">Then</span> the change exists as a commit in the factory repository
+      <span class="k">And</span> runs record which factory version they ran on
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-CODE-004</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=06:07</span> <span class="tg">@source=22:05</span>
+    <span class="k">Scenario:</span> A new factory version is tested before it replaces the current one
+      <span class="k">Given</span> factory version <span class="s">&quot;v2&quot;</span> changes the implementation prompt
+      <span class="k">When</span> the benchmark suite runs on <span class="s">&quot;v1&quot;</span> and <span class="s">&quot;v2&quot;</span>
+      <span class="k">Then</span> the results of both versions can be compared before <span class="s">&quot;v2&quot;</span> is released
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-CODE-005</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=22:05</span>
+    <span class="k">Scenario:</span> A bad factory version is rolled back
+      <span class="k">Given</span> factory version <span class="s">&quot;v3&quot;</span> increased the failure rate
+      <span class="k">When</span> a factory engineer rolls back to <span class="s">&quot;v2&quot;</span>
+      <span class="k">Then</span> new runs use <span class="s">&quot;v2&quot;</span>
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-CODE-006</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=15:16</span>
+    <span class="k">Scenario:</span> Scorers are defined in code
+      <span class="k">When</span> a factory engineer adds the scorer <span class="s">&quot;Redundant tests&quot;</span>
+      <span class="k">Then</span> its judge prompt, sampling rate and pass criterion exist in the factory repository</pre></div>
+</section>
+
+<section class="feature" id="f-factory-openness">
+  <header class="fhead">
+    <div class="fmeta"><span class="fnum">F04</span><code>factory-openness</code><span>owner: platform-team</span></div>
+    <h3>Open and pluggable infrastructure</h3>
+    <div class="fstats"><span>6 scenarios</span>
+      <span class="pill ev-spoken">5 spoken</span>
+      <span class="pill ev-screen">1 screen</span>
+      <span class="pill ev-derived">0 derived</span>
+      <button class="copy" type="button" data-target="f-factory-openness-src">Copy Gherkin</button></div>
+  </header>
+  <div class="code"><pre id="f-factory-openness-src"><span class="tg">@context=factory-openness</span> <span class="tg">@owner=platform-team</span>
+<span class="k">Feature:</span> Open and pluggable infrastructure
+  The factory is infrastructure, as flexible as a cloud provider: any model, any harness,
+  any inference provider, any compute, and the company&#x27;s existing tools.
+
+  <span class="k">Rule:</span> Models and harnesses are interchangeable
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-OPEN-001</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=05:23</span> <span class="tg">@source=09:58</span>
+    <span class="k">Scenario:</span> The model of one agent changes without changing other agents
+      <span class="k">Given</span> the triage agent uses model <span class="s">&quot;A&quot;</span> and the implementation agent uses model <span class="s">&quot;B&quot;</span>
+      <span class="k">When</span> a factory engineer sets the triage agent to model <span class="s">&quot;C&quot;</span>
+      <span class="k">Then</span> the triage agent uses model <span class="s">&quot;C&quot;</span>
+      <span class="k">And</span> the implementation agent still uses model <span class="s">&quot;B&quot;</span>
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-OPEN-002</span> <span class="tg">@status=planned</span> <span class="tg ev-screen">@evidence=screen</span> <span class="tg">@source=23:54</span>
+    <span class="k">Scenario Outline:</span> An agent runs on the harness its definition declares
+      <span class="k">Given</span> an agent definition with the harness <span class="s">&quot;&lt;harness&gt;&quot;</span>
+      <span class="k">When</span> a run of that agent starts
+      <span class="k">Then</span> the run uses <span class="s">&quot;&lt;harness&gt;&quot;</span>
+
+      Examples:
+<span class="tb">        | harness     |</span>
+<span class="tb">        | Warp        |</span>
+<span class="tb">        | Claude Code |</span>
+<span class="tb">        | Codex       |</span>
+
+  <span class="k">Rule:</span> Inference is pluggable
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-OPEN-003</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=06:51</span> <span class="tg">@source=23:07</span>
+    <span class="k">Scenario:</span> The company brings its own inference gateway
+      <span class="k">Given</span> the company routes model calls through its own gateway on <span class="s">&quot;Bedrock&quot;</span>
+      <span class="k">When</span> an agent calls a model
+      <span class="k">Then</span> the call goes through the company gateway
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-OPEN-004</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=23:11</span>
+    <span class="k">Scenario:</span> An open-weight or fine-tuned model is used
+      <span class="k">Given</span> the company has a fine-tuned model
+      <span class="k">When</span> a factory engineer assigns it to the triage agent
+      <span class="k">Then</span> the triage agent uses the fine-tuned model
+
+  <span class="k">Rule:</span> The factory adapts to existing tools and infrastructure
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-OPEN-005</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=05:39</span>
+    <span class="k">Scenario:</span> The factory uses the company&#x27;s existing tracker, chat and code forge
+      <span class="k">Given</span> the company uses Jira, Microsoft Teams and GitLab
+      <span class="k">When</span> the factory is set up
+      <span class="k">Then</span> work is tracked in Jira, discussed in Teams and reviewed in GitLab
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-OPEN-006</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=06:46</span>
+    <span class="k">Scenario:</span> The factory runs on the company&#x27;s own compute
+      <span class="k">Given</span> the company requires that code never leaves its cloud account
+      <span class="k">When</span> the factory is installed in that account
+      <span class="k">Then</span> sandboxes, run data and inference stay in that account</pre></div>
+</section>
+
+<section class="feature" id="f-factory-data">
+  <header class="fhead">
+    <div class="fmeta"><span class="fnum">F05</span><code>factory-data</code><span>owner: platform-team</span></div>
+    <h3>Data, context and sovereignty</h3>
+    <div class="fstats"><span>6 scenarios</span>
+      <span class="pill ev-spoken">6 spoken</span>
+      <span class="pill ev-screen">0 screen</span>
+      <span class="pill ev-derived">0 derived</span>
+      <button class="copy" type="button" data-target="f-factory-data-src">Copy Gherkin</button></div>
+  </header>
+  <div class="code"><pre id="f-factory-data-src"><span class="tg">@context=factory-data</span> <span class="tg">@owner=platform-team</span>
+<span class="k">Feature:</span> Data, context and sovereignty
+  Run data is the raw material of improvement. The company records it completely
+  and keeps it in its own systems.
+
+  <span class="k">Rule:</span> Every run is recorded completely
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-DATA-001</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=13:06</span> <span class="tg">@source=22:28</span>
+    <span class="k">Scenario:</span> A run stores its transcript, trace and artifacts
+      <span class="k">When</span> an agent run ends
+      <span class="k">Then</span> its full transcript and tool trace are stored
+      <span class="k">And</span> its artifacts are stored, for example pull requests, reports, screenshots and videos
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-DATA-002</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=12:56</span>
+    <span class="k">Scenario:</span> A run links back to where the work started
+      <span class="k">Given</span> a run started from a Slack thread
+      <span class="k">When</span> a person opens the run
+      <span class="k">Then</span> the person can open the original Slack thread
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-DATA-003</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=11:49</span>
+    <span class="k">Scenario:</span> A run links to the issue and pull requests it created
+      <span class="k">Given</span> a run that created a Linear issue and a pull request
+      <span class="k">Then</span> the run shows links to both
+      <span class="k">And</span> a person can continue the work from the Linear issue
+
+  <span class="k">Rule:</span> Context flows in from internal knowledge and agent memory
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-DATA-004</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=22:25</span>
+    <span class="k">Scenario:</span> Agents read internal knowledge through declared MCP servers and APIs
+      <span class="k">Given</span> the factory declares the internal knowledge source <span class="s">&quot;engineering wiki&quot;</span>
+      <span class="k">When</span> an agent needs a design rule
+      <span class="k">Then</span> the agent can read it from the engineering wiki
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-DATA-005</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=22:40</span>
+    <span class="k">Scenario:</span> Agents keep memory between runs
+      <span class="k">Given</span> an earlier run learned that <span class="s">&quot;the staging database resets nightly&quot;</span>
+      <span class="k">When</span> a later run needs that fact
+      <span class="k">Then</span> the agent can retrieve it from agent memory
+
+  <span class="k">Rule:</span> The company owns its factory data
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-DATA-006</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=06:25</span>
+    <span class="k">Scenario:</span> Run data stays in company-controlled storage
+      <span class="k">When</span> runs are stored
+      <span class="k">Then</span> transcripts, traces and artifacts are stored in storage the company controls
+      <span class="k">And</span> the data is available to the company&#x27;s scorers, benchmarks and self-improvement</pre></div>
+</section>
+
+<section class="feature" id="f-factory-access">
+  <header class="fhead">
+    <div class="fmeta"><span class="fnum">F06</span><code>factory-access</code><span>owner: platform-team</span></div>
+    <h3>Access points</h3>
+    <div class="fstats"><span>3 scenarios</span>
+      <span class="pill ev-spoken">3 spoken</span>
+      <span class="pill ev-screen">0 screen</span>
+      <span class="pill ev-derived">0 derived</span>
+      <button class="copy" type="button" data-target="f-factory-access-src">Copy Gherkin</button></div>
+  </header>
+  <div class="code"><pre id="f-factory-access-src"><span class="tg">@context=factory-access</span> <span class="tg">@owner=platform-team</span>
+<span class="k">Feature:</span> Access points
+  People and systems put work into the factory from wherever they already work.
+  The factory is API-driven, and its own UI is only one surface.
+
+  <span class="k">Rule:</span> Every surface reaches the same factory workflow
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-ACCESS-001</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=10:31</span> <span class="tg">@source=24:16</span>
+    <span class="k">Scenario Outline:</span> Work is submitted from &lt;surface&gt;
+      <span class="k">When</span> a person submits work from <span class="s">&quot;&lt;surface&gt;&quot;</span>
+      <span class="k">Then</span> the work reaches the foreman agent of the right factory
+      <span class="k">And</span> it follows the same workflow as work from any other surface
+
+      Examples:
+<span class="tb">        | surface                                  |</span>
+<span class="tb">        | Slack                                    |</span>
+<span class="tb">        | Microsoft Teams                          |</span>
+<span class="tb">        | Linear                                   |</span>
+<span class="tb">        | Jira                                     |</span>
+<span class="tb">        | GitHub                                   |</span>
+<span class="tb">        | GitLab                                   |</span>
+<span class="tb">        | a local coding agent through Factory MCP |</span>
+<span class="tb">        | the factory web UI                       |</span>
+<span class="tb">        | a mobile device                          |</span>
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-ACCESS-002</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=24:22</span>
+    <span class="k">Scenario:</span> A team builds its own UI on the factory API
+      <span class="k">Given</span> a team builds an internal tool on the factory API
+      <span class="k">When</span> the tool submits work and reads run status
+      <span class="k">Then</span> the tool has the same abilities as the factory&#x27;s own UI
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-ACCESS-003</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=10:38</span>
+    <span class="k">Scenario:</span> The factory&#x27;s own chat UI is optional
+      <span class="k">Given</span> a team works only in Slack
+      <span class="k">Then</span> the team can submit, follow and finish work without opening the factory UI</pre></div>
+</section>
+
+<section class="feature" id="f-factory-orchestration">
+  <header class="fhead">
+    <div class="fmeta"><span class="fnum">F07</span><code>factory-orchestration</code><span>owner: factory-engineering</span></div>
+    <h3>Orchestration</h3>
+    <div class="fstats"><span>8 scenarios</span>
+      <span class="pill ev-spoken">4 spoken</span>
+      <span class="pill ev-screen">4 screen</span>
+      <span class="pill ev-derived">0 derived</span>
+      <button class="copy" type="button" data-target="f-factory-orchestration-src">Copy Gherkin</button></div>
+  </header>
+  <div class="code"><pre id="f-factory-orchestration-src"><span class="tg">@context=factory-orchestration</span> <span class="tg">@owner=factory-engineering</span>
+<span class="k">Feature:</span> Orchestration
+  A foreman agent receives work and delegates it through the stages. Deterministic
+  and human gates guard the stages; agents add intelligent routing between them.
+
+  <span class="k">Rule:</span> A foreman agent receives all work and delegates it
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-ORCH-001</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=09:42</span> <span class="tg">@source=10:10</span>
+    <span class="k">Scenario:</span> The foreman delegates work to stage agents
+      <span class="k">Given</span> work arrives at the factory
+      <span class="k">When</span> the foreman agent handles it
+      <span class="k">Then</span> the foreman dispatches the triage, spec, implementation and code review agents as the workflow requires
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-ORCH-002</span> <span class="tg">@status=planned</span> <span class="tg ev-screen">@evidence=screen</span> <span class="tg">@source=16:27</span>
+    <span class="k">Scenario:</span> An agent starts sub-agents only with declared permission
+      <span class="k">Given</span> the triage agent does not declare permission to start sub-agents
+      <span class="k">When</span> the triage agent tries to start a research sub-agent
+      <span class="k">Then</span> the platform refuses to start it
+      <span class="k">And</span> the refusal is visible in the run trace
+
+  <span class="k">Rule:</span> Human gates and deterministic gates guard the stages; agents route intelligently
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-ORCH-003</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=23:41</span>
+    <span class="k">Scenario:</span> Work waits at a human gate until a human approves
+      <span class="k">Given</span> the workflow requires human approval of the specification
+      <span class="k">When</span> the spec agent finishes
+      <span class="k">Then</span> the work stops at the gate
+      <span class="k">And</span> implementation starts only after a human approves
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-ORCH-004</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=23:41</span>
+    <span class="k">Scenario:</span> A deterministic gate blocks shipping when checks fail
+      <span class="k">Given</span> a pull request whose required CI checks fail
+      <span class="k">Then</span> the factory does not ship the change
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-ORCH-005</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=23:48</span>
+    <span class="k">Scenario:</span> An agent routes work intelligently inside the allowed paths
+      <span class="k">Given</span> the workflow allows small bug fixes to skip the spec stage
+      <span class="k">When</span> triage classifies a work item as a small bug fix
+      <span class="k">Then</span> the work goes directly to implementation
+
+  <span class="k">Rule:</span> Humans can steer and take over
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-ORCH-006</span> <span class="tg">@status=planned</span> <span class="tg ev-screen">@evidence=screen</span> <span class="tg">@source=21:56</span>
+    <span class="k">Scenario:</span> A human steers a running agent
+      <span class="k">Given</span> an implementation run in progress
+      <span class="k">When</span> a human sends the instruction <span class="s">&quot;use the existing date helper&quot;</span>
+      <span class="k">Then</span> the running agent receives the instruction and continues
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-ORCH-007</span> <span class="tg">@status=planned</span> <span class="tg ev-screen">@evidence=screen</span> <span class="tg">@source=21:56</span>
+    <span class="k">Scenario:</span> A human takes over a run
+      <span class="k">Given</span> an implementation run in progress
+      <span class="k">When</span> a human takes over the run
+      <span class="k">Then</span> the human continues from the run&#x27;s current state and context
+
+  <span class="k">Rule:</span> Run states are explicit
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-ORCH-008</span> <span class="tg">@status=planned</span> <span class="tg ev-screen">@evidence=screen</span> <span class="tg">@source=12:36</span>
+    <span class="k">Scenario:</span> Every run has one visible state
+      <span class="k">Then</span> every run is in exactly one of the states <span class="s">&quot;running&quot;</span>, <span class="s">&quot;complete&quot;</span>, <span class="s">&quot;failed&quot;</span>, <span class="s">&quot;blocked&quot;</span> or <span class="s">&quot;cancelled&quot;</span>
+      <span class="k">And</span> a person can filter runs by state</pre></div>
+</section>
+
+<section class="feature" id="f-factory-automation">
+  <header class="fhead">
+    <div class="fmeta"><span class="fnum">F08</span><code>factory-automation</code><span>owner: factory-engineering</span></div>
+    <h3>Automations</h3>
+    <div class="fstats"><span>2 scenarios</span>
+      <span class="pill ev-spoken">1 spoken</span>
+      <span class="pill ev-screen">1 screen</span>
+      <span class="pill ev-derived">0 derived</span>
+      <button class="copy" type="button" data-target="f-factory-automation-src">Copy Gherkin</button></div>
+  </header>
+  <div class="code"><pre id="f-factory-automation-src"><span class="tg">@context=factory-automation</span> <span class="tg">@owner=factory-engineering</span>
+<span class="k">Feature:</span> Automations
+  Work also enters through automated triggers, and that work uses the same workflow,
+  or a declared variant of it, as work from people.
+
+  <span class="k">Rule:</span> Automated triggers feed the factory workflow
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-AUTO-001</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=17:22</span> <span class="tg">@source=17:43</span>
+    <span class="k">Scenario Outline:</span> The trigger <span class="s">&quot;&lt;trigger&gt;&quot;</span> starts the automation <span class="s">&quot;&lt;automation&gt;&quot;</span>
+      <span class="k">Given</span> the automation <span class="s">&quot;&lt;automation&gt;&quot;</span> is enabled with the trigger <span class="s">&quot;&lt;trigger&gt;&quot;</span>
+      <span class="k">When</span> <span class="s">&quot;&lt;trigger&gt;&quot;</span> happens
+      <span class="k">Then</span> the factory starts a run of <span class="s">&quot;&lt;automation&gt;&quot;</span> through its declared workflow
+
+      Examples:
+<span class="tb">        | automation                      | trigger                               |</span>
+<span class="tb">        | daily-factory-self-triage-report | daily at 10:00                        |</span>
+<span class="tb">        | feedback-factory-digest         | daily at 08:00                        |</span>
+<span class="tb">        | github-factory-auto-implement   | GitHub issue labeled                  |</span>
+<span class="tb">        | github-pr-closed-or-merged      | GitHub pull request closed or merged  |</span>
+<span class="tb">        | github-factory-mention-assign   | GitHub issue or pull request mentions the factory |</span>
+<span class="tb">        | github-factory-pr-ci-failure    | GitHub workflow run completed with failure |</span>
+<span class="tb">        | linear-warp-mention             | Linear issue assigned or created      |</span>
+<span class="tb">        | slack-dms                       | Slack direct message received         |</span>
+<span class="tb">        | sentry-fatal-investigate        | Sentry fatal error webhook            |</span>
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-AUTO-002</span> <span class="tg">@status=planned</span> <span class="tg ev-screen">@evidence=screen</span> <span class="tg">@source=17:52</span>
+    <span class="k">Scenario:</span> Automations are defined in code and can be switched on and off
+      <span class="k">Given</span> the automations are declared in the factory repository
+      <span class="k">When</span> a person opens the automation list
+      <span class="k">Then</span> each automation shows its trigger, last run and enabled state
+      <span class="k">And</span> its configuration is read-only in the UI</pre></div>
+</section>
+
+<section class="feature" id="f-factory-visibility">
+  <header class="fhead">
+    <div class="fmeta"><span class="fnum">F09</span><code>factory-visibility</code><span>owner: factory-engineering</span></div>
+    <h3>Team visibility</h3>
+    <div class="fstats"><span>2 scenarios</span>
+      <span class="pill ev-spoken">2 spoken</span>
+      <span class="pill ev-screen">0 screen</span>
+      <span class="pill ev-derived">0 derived</span>
+      <button class="copy" type="button" data-target="f-factory-visibility-src">Copy Gherkin</button></div>
+  </header>
+  <div class="code"><pre id="f-factory-visibility-src"><span class="tg">@context=factory-visibility</span> <span class="tg">@owner=factory-engineering</span>
+<span class="k">Feature:</span> Team visibility
+  <span class="k">When</span> agent work is centralized, everyone can see in real time what every agent and every
+  person is doing, like Google Docs for the team&#x27;s coding agents.
+
+  <span class="k">Rule:</span> All agent work is visible in real time
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-VIS-001</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=12:36</span>
+    <span class="k">Scenario:</span> A person sees all runs across all factories in real time
+      <span class="k">Given</span> 12 runs are in progress across two factories
+      <span class="k">When</span> a person opens the runs view
+      <span class="k">Then</span> the person sees all 12 runs with their title, source, requester, linked PRs and age
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-VIS-002</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=12:56</span>
+    <span class="k">Scenario:</span> A person opens a teammate&#x27;s run
+      <span class="k">Given</span> <span class="s">&quot;Ben&quot;</span> started a run <span class="s">&quot;Add diagnostics to cloud agent runs&quot;</span>
+      <span class="k">When</span> another engineer opens that run
+      <span class="k">Then</span> the engineer sees its transcript, artifacts and origin</pre></div>
+</section>
+
+<section class="feature" id="f-factory-metrics">
+  <header class="fhead">
+    <div class="fmeta"><span class="fnum">F10</span><code>factory-metrics</code><span>owner: factory-engineering</span></div>
+    <h3>Flow and cost metrics</h3>
+    <div class="fstats"><span>8 scenarios</span>
+      <span class="pill ev-spoken">6 spoken</span>
+      <span class="pill ev-screen">2 screen</span>
+      <span class="pill ev-derived">0 derived</span>
+      <button class="copy" type="button" data-target="f-factory-metrics-src">Copy Gherkin</button></div>
+  </header>
+  <div class="code"><pre id="f-factory-metrics-src"><span class="tg">@context=factory-metrics</span> <span class="tg">@owner=factory-engineering</span>
+<span class="k">Feature:</span> Flow and cost metrics
+  Factory engineering starts with understanding the flow of work through the factory
+  and what it costs.
+
+  <span class="k">Rule:</span> Flow is measured per pull request
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-METRIC-001</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=13:38</span>
+    <span class="k">Scenario:</span> The dashboard shows human interactions per pull request
+      <span class="k">Given</span> 326 pull requests in the last 7 days
+      <span class="k">When</span> a factory engineer opens the productivity dashboard
+      <span class="k">Then</span> the dashboard shows the average number of human interactions per pull request and its trend
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-METRIC-002</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=13:47</span>
+    <span class="k">Scenario:</span> The dashboard shows median cycle time by segment
+      <span class="k">When</span> a factory engineer opens the productivity dashboard
+      <span class="k">Then</span> it shows the median time from kickoff to pull request
+      <span class="k">And</span> from kickoff to merge
+      <span class="k">And</span> from pull request to first human review
+      <span class="k">And</span> from first human review to merge
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-METRIC-003</span> <span class="tg">@status=planned</span> <span class="tg ev-screen">@evidence=screen</span> <span class="tg">@source=13:38</span>
+    <span class="k">Scenario:</span> The dashboard shows throughput and runs by agent type
+      <span class="k">Then</span> the dashboard shows pull requests opened and merged per day
+      <span class="k">And</span> total runs and top-level runs split by agent type
+
+  <span class="k">Rule:</span> Cost is measured per pull request and attributable
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-METRIC-004</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=13:52</span>
+    <span class="k">Scenario:</span> The dashboard shows cost per pull request with its breakdown
+      <span class="k">Given</span> total spend of 5351.38 USD for 326 pull requests
+      <span class="k">Then</span> the dashboard shows a cost per pull request of 16.42 USD
+      <span class="k">And</span> splits it into compute, platform and inference
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-METRIC-005</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=13:52</span>
+    <span class="k">Scenario Outline:</span> Spend is sliced by &lt;dimension&gt;
+      <span class="k">When</span> a factory engineer groups spend by <span class="s">&quot;&lt;dimension&gt;&quot;</span>
+      <span class="k">Then</span> each group shows its spend and its share of the total
+
+      Examples:
+<span class="tb">        | dimension |</span>
+<span class="tb">        | source    |</span>
+<span class="tb">        | user      |</span>
+<span class="tb">        | agent     |</span>
+<span class="tb">        | model     |</span>
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-METRIC-006</span> <span class="tg">@status=planned</span> <span class="tg ev-screen">@evidence=screen</span> <span class="tg">@source=13:52</span>
+    <span class="k">Scenario:</span> The most expensive pull requests are listed
+      <span class="k">Then</span> the dashboard lists the 20 pull requests with the highest attributed cost
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-METRIC-007</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=14:00</span>
+    <span class="k">Scenario:</span> Cost per pull request has a reduction target
+      <span class="k">Given</span> a cost per pull request target of 15 USD
+      <span class="k">Then</span> the dashboard shows the gap between the current cost per pull request and the target
+
+  <span class="k">Rule:</span> Speed never hides a quality loss
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-METRIC-008</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=25:26</span>
+    <span class="k">Scenario:</span> Revert rate is shown next to throughput and cost
+      <span class="k">When</span> throughput rises or cost per pull request falls
+      <span class="k">Then</span> the dashboard also shows the revert rate for the same period</pre></div>
+</section>
+
+<section class="feature" id="f-factory-scoring">
+  <header class="fhead">
+    <div class="fmeta"><span class="fnum">F11</span><code>factory-scoring</code><span>owner: factory-engineering</span></div>
+    <h3>Scoring (online evaluation)</h3>
+    <div class="fstats"><span>4 scenarios</span>
+      <span class="pill ev-spoken">3 spoken</span>
+      <span class="pill ev-screen">1 screen</span>
+      <span class="pill ev-derived">0 derived</span>
+      <button class="copy" type="button" data-target="f-factory-scoring-src">Copy Gherkin</button></div>
+  </header>
+  <div class="code"><pre id="f-factory-scoring-src"><span class="tg">@context=factory-scoring</span> <span class="tg">@owner=factory-engineering</span>
+<span class="k">Feature:</span> Scoring (online evaluation)
+  Because every run is stored, an LLM judge can evaluate completed runs on dimensions
+  the company defines, at a sampled rate, with explicit pass criteria.
+
+  <span class="k">Rule:</span> Scorers evaluate stored runs
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-SCORE-001</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=14:23</span> <span class="tg">@source=14:31</span>
+    <span class="k">Scenario:</span> A scorer evaluates completed runs with an LLM judge
+      <span class="k">Given</span> the scorer <span class="s">&quot;Redundant tests&quot;</span> judges whether a run added unnecessary tests
+      <span class="k">When</span> an implementation run completes and is sampled
+      <span class="k">Then</span> the judge records pass or fail with a reason for that run
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-SCORE-002</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=15:05</span>
+    <span class="k">Scenario:</span> A scorer samples runs to control its cost
+      <span class="k">Given</span> the scorer <span class="s">&quot;Redundant tests&quot;</span> has a sampling rate of 20 percent
+      <span class="k">When</span> 100 implementation runs complete
+      <span class="k">Then</span> about 20 runs are scored
+      <span class="k">And</span> the scorer&#x27;s own cost is recorded
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-SCORE-003</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=15:16</span> <span class="tg">@source=15:22</span>
+    <span class="k">Scenario:</span> A scorer shows its pass rate trend
+      <span class="k">When</span> a factory engineer opens a scorer
+      <span class="k">Then</span> it shows the pass rate over time, its all-time cost and each scored run with result, reason, run time and cost
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-SCORE-004</span> <span class="tg">@status=planned</span> <span class="tg ev-screen">@evidence=screen</span> <span class="tg">@source=14:37</span>
+    <span class="k">Scenario Outline:</span> The company defines its own scoring dimensions
+      <span class="k">Given</span> the scorer <span class="s">&quot;&lt;scorer&gt;&quot;</span> exists
+      <span class="k">Then</span> its pass rate is shown on the scorer dashboard
+
+      Examples:
+<span class="tb">        | scorer                |</span>
+<span class="tb">        | Redundant tests       |</span>
+<span class="tb">        | Change requested      |</span>
+<span class="tb">        | Slack MCP reply       |</span>
+<span class="tb">        | Computer use ask      |</span>
+<span class="tb">        | Integration MCP loss  |</span>
+<span class="tb">        | Status update nudge   |</span></pre></div>
+</section>
+
+<section class="feature" id="f-factory-improvement">
+  <header class="fhead">
+    <div class="fmeta"><span class="fnum">F12</span><code>factory-improvement</code><span>owner: factory-engineering</span></div>
+    <h3>Self-improvement</h3>
+    <div class="fstats"><span>5 scenarios</span>
+      <span class="pill ev-spoken">2 spoken</span>
+      <span class="pill ev-screen">2 screen</span>
+      <span class="pill ev-derived">1 derived</span>
+      <button class="copy" type="button" data-target="f-factory-improvement-src">Copy Gherkin</button></div>
+  </header>
+  <div class="code"><pre id="f-factory-improvement-src"><span class="tg">@context=factory-improvement</span> <span class="tg">@owner=factory-engineering</span>
+<span class="k">Feature:</span> Self-improvement
+  Observer agents read the scores, find failures that repeat, and propose changes to the
+  factory definition as pull requests with evidence. A human merges them.
+
+  <span class="k">Rule:</span> Repeated failures become proposals to change the factory
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-IMPROVE-001</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=15:28</span> <span class="tg">@source=16:01</span>
+    <span class="k">Scenario:</span> An observer agent groups repeated failures
+      <span class="k">Given</span> the triage scorer failed 54 times with the same reason
+      <span class="k">When</span> the self-improvement loop runs
+      <span class="k">Then</span> it records one problem with 54 occurrences and links to the failed runs
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-IMPROVE-002</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=16:07</span> <span class="tg">@source=16:52</span>
+    <span class="k">Scenario:</span> The observer proposes a change to the factory definition as a pull request
+      <span class="k">Given</span> a recorded problem that the factory definition causes
+      <span class="k">When</span> the observer agent proposes a fix
+      <span class="k">Then</span> a pull request to the factory repository exists
+      <span class="k">And</span> its description states the problem, the solution and the evidence with run links
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-IMPROVE-003</span> <span class="tg">@status=planned</span> <span class="tg ev-screen">@evidence=screen</span> <span class="tg">@source=16:52</span>
+    <span class="k">Scenario:</span> A human approves a factory change before it merges
+      <span class="k">Given</span> a self-improvement pull request
+      <span class="k">Then</span> it cannot merge without at least one approving human review
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-IMPROVE-004</span> <span class="tg">@status=planned</span> <span class="tg ev-screen">@evidence=screen</span> <span class="tg">@source=15:35</span>
+    <span class="k">Scenario:</span> Proposals wait in a self-improvement inbox
+      <span class="k">When</span> a factory engineer opens the self-improvement inbox
+      <span class="k">Then</span> the engineer sees open proposals, their age and their state <span class="s">&quot;needs review&quot;</span> or <span class="s">&quot;approved&quot;</span>
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-IMPROVE-005</span> <span class="tg">@status=planned</span> <span class="tg ev-derived">@evidence=derived</span> <span class="tg">@source=15:47</span>
+    <span class="k">Scenario:</span> A merged improvement is checked against the same scorer
+      <span class="k">Given</span> a merged factory change that targets the problem <span class="s">&quot;triage investigates inline&quot;</span>
+      <span class="k">When</span> the scorer runs on later runs
+      <span class="k">Then</span> the occurrence rate of that problem is compared before and after the change</pre></div>
+</section>
+
+<section class="feature" id="f-factory-benchmark">
+  <header class="fhead">
+    <div class="fmeta"><span class="fnum">F13</span><code>factory-benchmark</code><span>owner: factory-engineering</span></div>
+    <h3>Benchmarks and model routing</h3>
+    <div class="fstats"><span>6 scenarios</span>
+      <span class="pill ev-spoken">5 spoken</span>
+      <span class="pill ev-screen">1 screen</span>
+      <span class="pill ev-derived">0 derived</span>
+      <button class="copy" type="button" data-target="f-factory-benchmark-src">Copy Gherkin</button></div>
+  </header>
+  <div class="code"><pre id="f-factory-benchmark-src"><span class="tg">@context=factory-benchmark</span> <span class="tg">@owner=factory-engineering</span>
+<span class="k">Feature:</span> Benchmarks and model routing
+  The company measures models, harnesses and factory configurations on its own real tasks,
+  and routes work by the result, instead of trusting public benchmarks or social media.
+
+  <span class="k">Rule:</span> Real tasks become benchmark suites
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-BENCH-001</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=18:34</span>
+    <span class="k">Scenario:</span> A factory engineer adds a real task to a benchmark
+      <span class="k">Given</span> a completed run of a hard front-end task
+      <span class="k">When</span> a factory engineer chooses <span class="s">&quot;Add to benchmark&quot;</span> on the run
+      <span class="k">Then</span> the task is added to the benchmark suite <span class="s">&quot;front-end tasks&quot;</span>
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-BENCH-002</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=19:06</span>
+    <span class="k">Scenario:</span> A benchmark task is replayed without real side effects
+      <span class="k">Given</span> a benchmark task that originally posted to Slack and opened a pull request
+      <span class="k">When</span> the task is replayed
+      <span class="k">Then</span> it does not post to the real Slack channel
+      <span class="k">And</span> it does not open a real pull request
+
+  <span class="k">Rule:</span> Configurations are compared on correctness and cost
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-BENCH-003</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=19:16</span> <span class="tg">@source=19:37</span>
+    <span class="k">Scenario:</span> A benchmark runs a matrix of models and harness configurations
+      <span class="k">Given</span> the benchmark suite <span class="s">&quot;WarpBench 0.1&quot;</span> with 29 tasks
+      <span class="k">When</span> a factory engineer runs it for 4 models and 2 harness configurations
+      <span class="k">Then</span> every task runs once for each of the 8 combinations
+      <span class="k">And</span> each combination gets a correctness score and an average cost per trial
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-BENCH-004</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=20:07</span> <span class="tg">@source=20:31</span>
+    <span class="k">Scenario:</span> The result shows the trade-off between correctness and cost
+      <span class="k">Given</span> model <span class="s">&quot;gpt-5.6-sol (high)&quot;</span> reached 94.8 percent correctness at 6.23 USD per trial
+      <span class="k">And</span> model <span class="s">&quot;glm 5.3 flash&quot;</span> reached about 93 percent correctness at 1.99 USD per trial
+      <span class="k">When</span> a factory engineer opens the result
+      <span class="k">Then</span> the chart plots correctness against average cost
+      <span class="k">And</span> it names the most efficient option and the lowest-cost option
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-BENCH-005</span> <span class="tg">@status=planned</span> <span class="tg ev-screen">@evidence=screen</span> <span class="tg">@source=20:07</span>
+    <span class="k">Scenario:</span> Incomplete scoring is flagged
+      <span class="k">Given</span> a model with 28 of 29 tasks scored
+      <span class="k">Then</span> the result warns that its plotted score uses incomplete scorer results
+      <span class="k">And</span> offers to rescore the missing tasks
+
+  <span class="k">Rule:</span> Benchmark results drive model routing
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-BENCH-006</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=21:11</span> <span class="tg">@source=21:37</span>
+    <span class="k">Scenario:</span> A routing rule uses the benchmark result for similar tasks
+      <span class="k">Given</span> the team accepts <span class="s">&quot;glm 5.3 flash&quot;</span> for front-end tasks because it costs a third at slightly lower correctness
+      <span class="k">When</span> a new front-end task arrives
+      <span class="k">Then</span> the routing rule sends it to <span class="s">&quot;glm 5.3 flash&quot;</span></pre></div>
+</section>
+
+<section class="feature" id="f-factory-roles">
+  <header class="fhead">
+    <div class="fmeta"><span class="fnum">F14</span><code>factory-roles</code><span>owner: engineering-leadership</span></div>
+    <h3>Product engineering and factory engineering</h3>
+    <div class="fstats"><span>2 scenarios</span>
+      <span class="pill ev-spoken">2 spoken</span>
+      <span class="pill ev-screen">0 screen</span>
+      <span class="pill ev-derived">0 derived</span>
+      <button class="copy" type="button" data-target="f-factory-roles-src">Copy Gherkin</button></div>
+  </header>
+  <div class="code"><pre id="f-factory-roles-src"><span class="tg">@context=factory-roles</span> <span class="tg">@owner=engineering-leadership</span>
+<span class="k">Feature:</span> Product engineering and factory engineering
+  Two kinds of engineers use the factory. Product engineers build value for users through the
+  factory. Factory engineers make the factory itself better.
+
+  <span class="k">Rule:</span> Product engineering happens through the factory
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-ROLE-001</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=08:07</span> <span class="tg">@source=08:17</span>
+    <span class="k">Scenario:</span> A product engineer works through the factory&#x27;s touchpoints
+      <span class="k">Given</span> a product engineer wants a feature
+      <span class="k">Then</span> the engineer submits it to the factory
+      <span class="k">And</span> works with it at the human touchpoints: spec review, code review and product review
+
+  <span class="k">Rule:</span> Factory engineering tunes the factory
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-ROLE-002</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=08:22</span> <span class="tg">@source=08:33</span>
+    <span class="k">Scenario:</span> A factory engineer tunes skills, MCP servers, model mix and workflow
+      <span class="k">Given</span> the metrics show high cost per pull request for the implementation agent
+      <span class="k">When</span> the factory engineer changes the model mix in the factory definition
+      <span class="k">Then</span> the change is measured with the same metrics, scorers and benchmarks</pre></div>
+</section>
+
+<section class="feature" id="f-factory-outcomes">
+  <header class="fhead">
+    <div class="fmeta"><span class="fnum">F15</span><code>factory-outcomes</code><span>owner: engineering-leadership</span></div>
+    <h3>Business outcomes</h3>
+    <div class="fstats"><span>2 scenarios</span>
+      <span class="pill ev-spoken">1 spoken</span>
+      <span class="pill ev-screen">1 screen</span>
+      <span class="pill ev-derived">0 derived</span>
+      <button class="copy" type="button" data-target="f-factory-outcomes-src">Copy Gherkin</button></div>
+  </header>
+  <div class="code"><pre id="f-factory-outcomes-src"><span class="tg">@context=factory-outcomes</span> <span class="tg">@owner=engineering-leadership</span>
+<span class="k">Feature:</span> Business outcomes
+  More AI usage is not more business value. The factory exists to ship more useful software
+  at lower cost without a loss of quality.
+
+  <span class="k">Rule:</span> The factory is judged by outcomes, not by usage
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-OUTCOME-001</span> <span class="tg">@status=planned</span> <span class="tg ev-screen">@evidence=screen</span> <span class="tg">@source=02:43</span>
+    <span class="k">Scenario:</span> Leadership reviews outcome metrics, not token usage
+      <span class="k">When</span> leadership reviews the factory
+      <span class="k">Then</span> the review uses throughput, cycle time, cost per pull request and revert rate
+      <span class="k">And</span> token volume alone is not a success measure
+
+    <span class="tg id">@scenario_id=SCN-FACTORY-OUTCOME-002</span> <span class="tg">@status=planned</span> <span class="tg ev-spoken">@evidence=spoken</span> <span class="tg">@source=25:19</span>
+    <span class="k">Scenario:</span> Cost falls while throughput rises and quality holds
+      <span class="k">Given</span> cost per pull request was 55 USD six weeks ago
+      <span class="k">When</span> the factory engineers have tuned the factory for six weeks
+      <span class="k">Then</span> cost per pull request is about 15 USD
+      <span class="k">And</span> pull request throughput is about 40 percent higher
+      <span class="k">And</span> the revert rate is lower than before</pre></div>
+</section>
+</section>
+
+<section id="metrics">
+  <h2><span class="sn">06</span>Metric catalogue</h2>
+  <p class="intro">Every measure the talk names or shows, with the value from the demo where one is visible (Warp's own factory, last 7 days).</p>
+  <div class="tbl"><table>
+    <tr><th>Metric</th><th>Definition</th><th>Slices</th><th>Demo value</th></tr>
+    <tr><td class="h">Human interactions per PR</td><td>Human touches needed per merged pull request; a measure of autonomy</td><td>time</td><td class="t">21.5</td></tr>
+    <tr><td class="h">Cycle time, kickoff → PR</td><td>Median time from work submitted to first pull request</td><td>time</td><td class="t">44 min</td></tr>
+    <tr><td class="h">Cycle time, kickoff → merge</td><td>Median time from work submitted to merge</td><td>time</td><td class="t">15 h</td></tr>
+    <tr><td class="h">PR → first human review</td><td>Median wait for the first human review</td><td>time</td><td class="t">2.6 h</td></tr>
+    <tr><td class="h">First human review → merge</td><td>Median time from first human review to merge</td><td>time</td><td class="t">27 min</td></tr>
+    <tr><td class="h">Pull requests</td><td>Opened and merged</td><td>day</td><td class="t">326 / 189</td></tr>
+    <tr><td class="h">Runs</td><td>Total and top-level agent runs</td><td>agent type: foreman, code, review, triage, spec, custom</td><td class="t">1,791 / 743</td></tr>
+    <tr><td class="h">Cost per PR</td><td>Total attributed spend ÷ pull requests</td><td>compute, platform, inference</td><td class="t">$16.42</td></tr>
+    <tr><td class="h">Spend</td><td>Attributed spend</td><td>source (Slack, web, scorer, Factory MCP, scheduled, Linear, GitHub, self-improvement, other), user, agent, model</td><td class="t">$4,988.78</td></tr>
+    <tr><td class="h">Most expensive PRs</td><td>Top 20 pull requests by attributed cost</td><td>—</td><td class="t">list</td></tr>
+    <tr><td class="h">Scorer pass rate</td><td>Share of sampled runs that pass a scorer, with trend and scorer cost</td><td>scorer, agent</td><td class="t">94–99 %</td></tr>
+    <tr><td class="h">Repeated problems</td><td>Occurrences of one failure pattern across scored runs</td><td>agent</td><td class="t">54 (triage)</td></tr>
+    <tr><td class="h">Benchmark correctness and cost</td><td>Correctness score and average cost per trial for each model and configuration</td><td>suite, model, harness</td><td class="t">94.8 % / $6.23</td></tr>
+    <tr><td class="h">Revert rate</td><td>Share of merged changes that are reverted; the quality guardrail</td><td>time</td><td class="t">“lower”</td></tr>
+  </table></div>
+</section>
+
+<section id="gaps">
+  <h2><span class="sn">07</span>What the talk leaves open</h2>
+  <p class="intro">Questions a real factory must answer that the talk does not. They are the first places to add your own requirements.</p>
+  <ol class="gaps">
+    <li><b>How to prove that self-improvement works.</b><span>He says they are still learning this (15:47). IMPROVE-005 asks for a before-and-after comparison; it still needs a rule for sample size and for when a change is reverted.</span></li>
+    <li><b>Whether the judges can be trusted.</b><span>Scoring relies on LLM judges, but nothing is said about checking them against human labels. A wrong judge sends self-improvement in the wrong direction.</span></li>
+    <li><b>How replay avoids side effects.</b><span>Benchmarks replay real tasks “thoughtfully” (19:06). The factory needs fakes or sandboxes for chat, forge, tracker and databases during replay.</span></li>
+    <li><b>Which change needs which human.</b><span>Human gates exist, but no policy says which risk class needs spec, code or product review, or who may merge a change to the factory itself.</span></li>
+    <li><b>Which direction is good for human interactions per PR.</b><span>The demo shows 21.5 with no target. Define what counts as an interaction and whether the goal is fewer touches or better ones.</span></li>
+    <li><b>How specifications and acceptance are written.</b><span>The loop has a spec stage, but nothing on spec format, acceptance criteria or traceability from spec to test to PR.</span></li>
+    <li><b>Security beyond the sandbox.</b><span>Network egress, secret rotation and prompt injection through tickets, chat messages or web pages are not covered.</span></li>
+    <li><b>How cost is attributed.</b><span>The total is marked “approximate”. Shared platform cost and scorer cost need an allocation rule before cost per PR can drive decisions.</span></li>
+    <li><b>Whether benchmarks overfit.</b><span>Suites built from your own past tasks can go stale or be gamed by routing rules. Decide how often suites are refreshed and held out.</span></li>
+    <li><b>What the monitoring stage does.</b><span>The talk mentions “some aspect of monitoring” and one error webhook. Define which production signals create work and how they link to the change that caused them.</span></li>
+  </ol>
+</section>
+
+<section id="method">
+  <h2><span class="sn">08</span>Method and sources</h2>
+  <p>The source is the recorded version of the talk (25:51), provided as a video file. The audio was transcribed locally with Whisper (<code>small.en</code>) into 262 timed segments. Slides and demo screens were reviewed from frames taken every 30 seconds and at scene changes, and key screens were read at full resolution. Misheard product names were corrected (Claude Code, Codex, SWE-bench, Terminal-Bench, GPT-5.6-sol, GLM 5.3 flash). Where the spoken and the shown values differ, the shown value is used (for example 94.8 % on screen, “95 %” spoken).</p>
+  <p class="small">Public pages for the talk: <a href="https://x.com/zachlloydtweets/status/2111165023238160603">post on X</a> · <a href="https://www.youtube.com/watch?v=tUPPVhBBcoM">YouTube</a> · <a href="https://ai.engineer/speakers/zach-lloyd">AI Engineer speaker page</a>. The speaker sells a product in this space and says so; the principles here are stated without the product.</p>
+</section>
+
+</main>
+</div>
+
+<script>
+document.querySelectorAll("button.copy").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    var pre = document.getElementById(btn.dataset.target);
+    var text = pre.innerText;
+    var done = function () { btn.textContent = "Copied"; setTimeout(function () { btn.textContent = "Copy Gherkin"; }, 1600); };
+    var fallback = function () {
+      var r = document.createRange(); r.selectNodeContents(pre);
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      btn.textContent = "Selected, press copy";
+    };
+    try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
+  });
+});
+</script>
