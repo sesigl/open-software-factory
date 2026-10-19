@@ -103,7 +103,8 @@ release-please opens a release pull request from the Conventional Commits under 
 creates the tag `testkit-v<version>`. The workflow `.github/workflows/publish-testkit.yml` then builds `dist/`
 with `pnpm build` and publishes the package to npm. In this repository the package runs from its TypeScript
 sources; `publishConfig` points the published `exports` and `bin` at `dist/`. To publish a tag again, run the
-workflow by hand with the tag.
+workflow by hand with the tag. The first release is `0.1.0`; until `1.0.0`, a breaking change raises the minor
+version.
 
 The one-time setup is the same as for contracts ([`contracts/README.md`](../../contracts/README.md#releases)):
 the npm scope `@opensoftware`, the GitHub environment `npm`, a token only for the first version, then a trusted
