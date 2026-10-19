@@ -121,8 +121,9 @@ read them for ideas, do not copy their company-specific rules.
   - [x] Servers and services: `sut.http` (with an openapi-fetch client), `sut.mcp`, `sut.events`
     (`SCN-TK-014` to `-018`, ADR 0017); Postgres, NATS, Temporal, SeaweedFS, the Forgejo helper, fake Slack
     (`SCN-TK-008` to `-013`, ADR 0016).
-  - [ ] Harness and ports (ADR for ACP): the scripted ACP harness applies its edit and reports completion;
-    `conformance(port, adapter)` and the `@conformance` scenario of TRACE.
+  - [x] Harness and ports: the scripted ACP harness applies its edit and reports completion (`SCN-TK-019`,
+    `-020`, ADR 0018); `testkit conformance <port features>` is the conformance runner (`SCN-TK-021`, `-022`);
+    TRACE's `@conformance` rule has its scenario (`SCN-REPO-030`).
   - [ ] Runtime guards and release: BOUNDARY-RUNTIME, NOREAL, REACH; `release-please-config.json` entry and a
     publish workflow.
 

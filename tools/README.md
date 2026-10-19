@@ -79,3 +79,4 @@ Each failure prints one line: the check ID, `file:line`, and what to fix. Each c
 | SCN-REPO-027 | implemented | ARCH rejects a source file outside every declared layer |
 | SCN-REPO-028 | implemented | ARCH rejects a module without architecture.json |
 | SCN-REPO-029 | implemented | ISOLATION finds an import in a file that another file of the module imports |
+| SCN-REPO-030 | implemented | TRACE rejects an adapter without a system test for a conformance scenario of its port |

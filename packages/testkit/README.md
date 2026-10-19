@@ -27,6 +27,7 @@ Each test case in `report.xml` is named after its scenario and has the property 
 | Command | What it does |
 | --- | --- |
 | `testkit run --junit <file>` | Run `system-tests/**/*.test.ts` of the module in the current folder with globals, no retries and a 120 s test timeout. Write the JUnit report to `<file>`. Exit 1 when a test fails. |
+| `testkit conformance <port features folder> --junit <file>` | Run an adapter's system tests like `run`, then print `CONFORMANCE <id> passed` (or `failed`, `was skipped`, `has no system test`) for every implemented `@conformance` scenario in the folder and `N of M conformance scenarios passed`. Exit 1 unless all passed. |
 
 ## Writing a system test
 
@@ -56,6 +57,11 @@ Every server, client and subscription stops when the scenario ends, before the f
 - `fakes.modelGateway([{ when, reply }])`: an OpenAI-compatible endpoint on `127.0.0.1`. Pass its `url` (ending
   in `/v1`) to the module through its documented config. `POST /v1/chat/completions` whose body contains `when`
   gets `reply`; any other call gets HTTP 500 and fails the scenario with the request shown.
+- `fakes.harness([{ when, edits, reply }])`: a scripted coding agent that speaks ACP on stdio
+  ([ADR 0018](../../docs/decisions/0018-testkit-scripted-acp-harness.md)). Start it with its `command` and `args`.
+  The first prompt that contains `when` gets the `edits` (files by path below the session's folder) and the
+  `reply`, then the turn ends with `end_turn`. Any other prompt ends with `refusal` and fails the scenario with the
+  prompt shown. `prompts()` lists what it received.
 - `fakes.postgres()`, `fakes.nats()`, `fakes.temporal()`, `fakes.s3()`: a real service in a container for this
   scenario ([ADR 0016](../../docs/decisions/0016-testkit-service-fakes.md)). Each gives only what a module needs
   to reach it: a URL, an address or an endpoint with keys. Docker must run.
@@ -69,7 +75,11 @@ A `planned` scenario's test must fail; when it passes, the testkit fails it and 
 
 ## Configuration
 
-The testkit reads no environment variables.
+The testkit reads no environment variables. `testkit conformance` passes the port features folder to the
+tests itself.
+
+An adapter's tests (`adapters/<port>/<adapter>/system-tests/`) use the scenario IDs of its port; the testkit
+reads their status from `ports/<port>/features/` or from the folder `testkit conformance` names.
 
 ## Scenarios
 
@@ -95,3 +105,7 @@ The testkit reads no environment variables.
 | SCN-TK-016 | implemented | sut.mcp connects to the module's MCP server and calls a tool |
 | SCN-TK-017 | implemented | sut.events records the CloudEvent a module publishes on NATS |
 | SCN-TK-018 | implemented | sut.events names the events that arrived instead of the expected one |
+| SCN-TK-019 | implemented | The scripted harness applies its edit and reports completion over ACP |
+| SCN-TK-020 | implemented | A prompt the script does not name fails the scenario with the prompt shown |
+| SCN-TK-021 | implemented | testkit conformance names each conformance scenario the adapter does not pass |
+| SCN-TK-022 | implemented | An adapter that passes every conformance scenario of its port conforms |

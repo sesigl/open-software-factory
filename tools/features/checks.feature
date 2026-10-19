@@ -227,3 +227,11 @@ Feature: Repository checks
     When the developer runs "osf check ISOLATION"
     Then the command exits with code 1
     And the output contains "ISOLATION modules/demo/src/run.ts:1"
+
+  @id=SCN-REPO-030 @status=implemented
+  Scenario: TRACE rejects an adapter without a system test for a conformance scenario of its port
+    Given a port "forge" with the implemented @conformance scenario "SCN-FORGE-001" and the adapters "a" and "b"
+    And only the adapter "a" has a system test for "SCN-FORGE-001"
+    When the developer runs "osf check TRACE"
+    Then the command exits with code 1
+    And the output contains "TRACE ports/forge/features/a.feature:5 SCN-FORGE-001 needs exactly one system test in adapters/forge/b/system-tests/, has 0"
