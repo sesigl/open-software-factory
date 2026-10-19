@@ -16,6 +16,23 @@
       "type": "string",
       "default": "https://registry.modelcontextprotocol.io",
       "description": "Base URL of the MCP Registry that plan reads to pin registry servers in factory.lock."
+    },
+    "FACTORY_FORGE_URL": {
+      "type": "string",
+      "description": "Base URL of the Forgejo forge that holds the webhooks of forgejo automations, for example https://code.example.org."
+    },
+    "FACTORY_FORGE_TOKEN": {
+      "type": "string",
+      "description": "Forgejo API token that may manage the webhooks of the agents' repositories."
+    },
+    "FACTORY_INTAKE_URL": {
+      "type": "string",
+      "description": "The address that receives the webhooks of forgejo automations, usually intake."
+    },
+    "FACTORY_INFERENCE_URL": {
+      "type": "string",
+      "default": "http://litellm:4000/v1",
+      "description": "Base URL of the OpenAI-compatible inference gateway that the kagent ModelConfig of render --k8s points at."
     }
   }
 }

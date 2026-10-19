@@ -10,6 +10,7 @@ import { type Lock, type LockEntry, parseReference } from "../domain/mcp.ts";
 import { resolveDefinition } from "../domain/resolve.ts";
 import type { Factory } from "./load.ts";
 import { type RenderOptions, render } from "./render.ts";
+import { applyWebhooks, webhookDrift } from "./webhooks.ts";
 
 /** factory.lock with an entry for every registry server: kept from the lock, or pinned from the registry once. */
 export async function pin(factory: Factory): Promise<Factory> {
@@ -57,7 +58,7 @@ export async function plan(loaded: Factory, output: string): Promise<string[]> {
   const drift = Object.entries(state?.files ?? {})
     .filter(([path, hash]) => hashOf(output, path) !== hash)
     .map(([path]) => `! ${path} changed outside "factory apply"`);
-  const lines = [...changes, ...drift];
+  const lines = [...changes, ...drift, ...(await webhookDrift(state?.hooks))];
   return lines.length > 0 ? [...lines, "", summary(lines)] : ["No changes."];
 }
 
@@ -65,6 +66,7 @@ export async function apply(loaded: Factory, output: string, options: RenderOpti
   const factory = await pin(loaded);
   const files = render(factory, output, options);
   const applied = model(factory);
-  writeState({ model: applied, files });
+  const hooks = await applyWebhooks(factory.definition, readState()?.hooks);
+  writeState({ model: applied, files, hooks });
   return `Applied factory ${factory.definition.factory}, digest ${sha256(JSON.stringify(applied))}`;
 }
