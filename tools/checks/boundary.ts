@@ -52,7 +52,9 @@ async function violations(context: Context, files: string[], rules: IForbiddenRu
   const output = (await cruise(files, {
     baseDir: context.repo.root,
     validate: true,
-    maxDepth: 1,
+    // Only the listed files, each with its own imports. maxDepth 1 skipped the imports of a listed file that
+    // another listed file reached first.
+    doNotFollow: { path: ".+" },
     tsPreCompilationDeps: true,
     ruleSet: { forbidden: rules },
   })) as IReporterOutput;

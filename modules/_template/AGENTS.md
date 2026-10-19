@@ -12,6 +12,11 @@ The only ways a system test or another program may use this module:
 - Input folder: `$INPUT`, output folder: `$OUTPUT`
 - Environment variables: the list in `README.md#configuration` (generated from `src/config.schema.json`)
 
+## Architecture
+
+Layers, top to bottom, in `architecture.json` (ADR 0014): `entry` (`src/cli.ts`) → `adapters` → `domain`. A file
+imports only its own layer and the layers below it. The ARCH check enforces this.
+
 ## Allowed exceptions
 
 - Unit tests: none.

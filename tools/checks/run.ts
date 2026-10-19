@@ -1,4 +1,5 @@
 // `osf check`: runs checks by ID and prints one line per finding: `ID file:line message`.
+import { arch } from "./arch.ts";
 import { boundaryEnv, boundaryStatic, assert as checkAssert, isolation, noskip } from "./boundary.ts";
 import { contract } from "./contract.ts";
 import { adr, docsAffected, docsGen, docsLinks } from "./docs.ts";
@@ -17,6 +18,7 @@ export const FAST: Record<string, Check> = {
   "BOUNDARY-STATIC": boundaryStatic,
   "BOUNDARY-ENV": boundaryEnv,
   ISOLATION: isolation,
+  ARCH: arch,
   "DOCS-GEN": docsGen,
   "DOCS-LINKS": docsLinks,
   ADR: adr,

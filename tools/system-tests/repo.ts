@@ -128,3 +128,25 @@ export const acceptedAdr = (number: string, names: string, status = "accepted"):
     "None worth noting.",
     "",
   ].join("\n");
+
+/** architecture.json of module demo: the layer cli in src/cli/ above the layer domain in src/domain/. */
+export const DEMO_ARCHITECTURE = `${JSON.stringify(
+  {
+    layers: [
+      { name: "cli", paths: ["src/cli/"] },
+      { name: "domain", paths: ["src/domain/"] },
+    ],
+  },
+  null,
+  2,
+)}\n`;
+
+/** Module demo with two layers and one file in each. */
+export function layeredModule(): Record<string, string> {
+  return {
+    "modules/demo/package.json": DEMO_PACKAGE,
+    "modules/demo/architecture.json": DEMO_ARCHITECTURE,
+    "modules/demo/src/cli/main.ts": 'import { rule } from "../domain/rules.ts";\nexport const main = () => rule;\n',
+    "modules/demo/src/domain/rules.ts": "export const rule = 1;\n",
+  };
+}
