@@ -1,0 +1,6 @@
+node_modules/
+.tools/
+reports/
+coverage/
+dist/
+.turbo/

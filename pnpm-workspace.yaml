@@ -1,0 +1,9 @@
+packages:
+  - tools
+  - packages/*
+  - modules/*
+  - "!modules/_template"
+  - contracts
+  - ports/*
+  - adapters/*/*
+  - e2e
