@@ -7,6 +7,12 @@
       "release-type": "node",
       "package-name": "@osf/testkit",
       "component": "testkit"
+    },
+    "contracts": {
+      "release-type": "node",
+      "package-name": "@osf/contracts",
+      "component": "contracts",
+      "release-as": "1.0.0"
     }
   }
 }
