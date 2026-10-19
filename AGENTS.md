@@ -64,7 +64,7 @@ A new module starts with `skills/new-module`. A new dependency or service starts
   Unit tests never replace a system test and never count for any check.
 - Test from the outside only: the module's CLI, HTTP API, MCP server, published events or published files.
   Never import from `src/`. Never read or write the module's database, cache or private files.
-- No real network, model, clock or randomness in system tests. Use the fakes in `@osf/testkit`.
+- No real network, model, clock or randomness in system tests. Use the fakes in `@opensoftware/testkit`.
 - Never change the text of an `implemented` scenario to make a test pass. A scenario change needs a person.
 - Never skip, delete or weaken the test of an `implemented` scenario. To remove behavior, a person marks the
   scenario `deprecated`.

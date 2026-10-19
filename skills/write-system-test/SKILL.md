@@ -16,7 +16,7 @@ it only through its public surface.
 ## Example
 
 ```ts
-import { scenario } from "@osf/testkit";
+import { scenario } from "@opensoftware/testkit";
 
 scenario("SCN-PROOF-004", async ({ sut, fakes, given, when, then }) => {
   const forge = await fakes.forge();                 // Forgejo container, real API

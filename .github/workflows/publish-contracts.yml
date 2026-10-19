@@ -1,4 +1,4 @@
-# Publishes a contracts release to npm as @osf/contracts. The one-time setup a person does is in
+# Publishes a contracts release to npm as @opensoftware/contracts. The one-time setup a person does is in
 # contracts/README.md#releases.
 name: publish-contracts
 
@@ -78,7 +78,7 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @osf/contracts build
+      - run: pnpm --filter @opensoftware/contracts build
       # pnpm pack replaces workspace: versions with real ones.
       - run: pnpm --dir contracts pack --pack-destination "$RUNNER_TEMP/npm"
       # Trusted publishing needs npm 11.5.1 or later.

@@ -1,4 +1,4 @@
-// `pnpm build` of @osf/contracts (ADR 0012). TypeSpec in typespec/ is the only hand-written source of the formats.
+// `pnpm build` of @opensoftware/contracts (ADR 0012). TypeSpec in typespec/ is the only hand-written source of the formats.
 //
 //   1. TypeSpec → one JSON Schema bundle (temporary).
 //   2. One self-contained schema per format, references inlined: <format>/<format>.schema.json, committed.

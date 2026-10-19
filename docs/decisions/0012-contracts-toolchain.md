@@ -7,7 +7,7 @@ date: 2026-10-19
 
 ## Context
 
-ADR 0006 puts the shared formats into TypeSpec, events into AsyncAPI, TypeScript types into `@osf/contracts` and
+ADR 0006 puts the shared formats into TypeSpec, events into AsyncAPI, TypeScript types into `@opensoftware/contracts` and
 Python and Java clients into packages for users. TODO item T-01 builds them. Every module, the testkit and the
 checks are TypeScript (ADR 0009), and nobody uses a Python or Java client yet. Three facts shape the toolchain:
 
@@ -20,7 +20,7 @@ checks are TypeScript (ADR 0009), and nobody uses a Python or Java client yet. T
 
 ## Decision
 
-`contracts/` is the package `@osf/contracts`, version 1.0.0 at its first release, published to npm. It is the
+`contracts/` is the package `@opensoftware/contracts`, version 1.0.0 at its first release, published to npm. It is the
 only client: no Python, Java or other client is generated or published. This replaces the generated Python and
 Java clients in ADR 0006, the generated-client exception for Python and Java in ADR 0009, and their release in ADR
 0005. A client for another language needs a new ADR; it can be generated from `openapi/openapi.json`.
@@ -83,5 +83,5 @@ Pins: OpenTelemetry semantic conventions v1.44.0 for resource attributes; GenAI 
 
 The build needs only Node. Adding a client for another language later is cheap: generate it from
 `openapi/openapi.json` and prove it with a round-trip scenario. GenAI attribute names can still change upstream; when
-they do, the pin moves in a new major version of `@osf/contracts`. Revisit the AsyncAPI choice when TypeSpec
+they do, the pin moves in a new major version of `@opensoftware/contracts`. Revisit the AsyncAPI choice when TypeSpec
 ships an official emitter, and the OpenAPI assembly when the first module API exists.

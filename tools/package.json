@@ -1,5 +1,5 @@
 {
-  "name": "@osf/tools",
+  "name": "@opensoftware/tools",
   "version": "0.0.0",
   "private": true,
   "description": "Repository tooling and the deterministic checks of docs/quality/checks.md.",
@@ -17,7 +17,7 @@
   "dependencies": {
     "@cucumber/gherkin": "42.0.1",
     "@cucumber/messages": "34.2.1",
-    "@osf/contracts": "workspace:*",
+    "@opensoftware/contracts": "workspace:*",
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
     "dependency-cruiser": "18.6.0",
@@ -27,7 +27,7 @@
     "yaml": "2.9.1"
   },
   "devDependencies": {
-    "@osf/testkit": "workspace:*",
+    "@opensoftware/testkit": "workspace:*",
     "@types/picomatch": "4.0.3"
   }
 }

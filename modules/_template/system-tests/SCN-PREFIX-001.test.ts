@@ -1,4 +1,4 @@
-import { scenario } from "@osf/testkit";
+import { scenario } from "@opensoftware/testkit";
 
 // One file per scenario. Rename to the real ID when the module is created.
 scenario("SCN-<PREFIX>-001", async ({ sut, given, when, then }) => {

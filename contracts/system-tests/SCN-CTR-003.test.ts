@@ -1,4 +1,4 @@
-import { scenario } from "@osf/testkit";
+import { scenario } from "@opensoftware/testkit";
 
 scenario("SCN-CTR-003", async ({ sut, fakes, given, when, then }) => {
   await given('a run record "run.json" with a transcript URI, two artifact URIs and a pull request URL', async () => {

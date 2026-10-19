@@ -66,7 +66,7 @@ publish only the TypeScript package; clients for other languages are not built (
 | --- | --- |
 | Runtime | Node 24 LTS |
 | HTTP servers | Fastify |
-| Tool distribution | npm (`npx`), multi-arch container images; `@osf/contracts` on npm |
+| Tool distribution | npm (`npx`), multi-arch container images; `@opensoftware/contracts` on npm |
 | Factory install | Docker Compose and Helm |
 | Supply chain | Sigstore signatures, SLSA provenance, SBOMs, Renovate |
 | CI | GitHub Actions; each tool also ships as a GitHub Action |

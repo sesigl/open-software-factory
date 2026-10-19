@@ -1,4 +1,4 @@
-import { scenario } from "@osf/testkit";
+import { scenario } from "@opensoftware/testkit";
 
 scenario("SCN-CTR-004", async ({ sut, fakes, given, when, then }) => {
   await given('a run record "run.json" without the attribute "osf.requester.id"', async () => {

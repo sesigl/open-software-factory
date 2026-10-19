@@ -52,12 +52,12 @@ export async function contract(context: Context): Promise<Finding[]> {
   };
 
   // The diff of `osf-contracts breaking`, loaded only here: it needs the built package (contracts/dist).
-  let breakingChanges: typeof import("@osf/contracts").breakingChanges;
+  let breakingChanges: typeof import("@opensoftware/contracts").breakingChanges;
   try {
-    ({ breakingChanges } = await import("@osf/contracts"));
+    ({ breakingChanges } = await import("@opensoftware/contracts"));
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
-    findings.push({ check: "CONTRACT", message: `@osf/contracts is not built (run make verify): ${reason}` });
+    findings.push({ check: "CONTRACT", message: `@opensoftware/contracts is not built (run make verify): ${reason}` });
     return findings;
   }
   const current = new Set(schemas);

@@ -43,7 +43,7 @@ read them for ideas, do not copy their company-specific rules.
     SPEC, TRACE, STEPS, PASS, SPECGUARD, BOUNDARY-STATIC, BOUNDARY-ENV, ISOLATION, NOSKIP, ASSERT, FLAKE, BUDGET,
     CONTRACT, DOCS-GEN, DOCS-AFFECTED, DOCS-LINKS, ADR. BOUNDARY-RUNTIME, NOREAL and REACH come with T-02.
     MUTATION and SMOKE-PAID as nightly workflows.
-  - ISOLATION allows a module to depend only on `@osf/contracts`, `@osf/testkit` (tests only) and external
+  - ISOLATION allows a module to depend only on `@opensoftware/contracts`, `@opensoftware/testkit` (tests only) and external
     packages.
   - GitHub Actions: `verify` on every PR (required check), nightly mutation, release-please.
   - Biome, `tsc --strict`, dependency-cruiser, lychee configs.
@@ -67,7 +67,7 @@ read them for ideas, do not copy their company-specific rules.
 - **Build:** TypeSpec sources for: factory definition (JSON Schema), work item event (CloudEvents data schema),
   run record attributes (OTel resource and span attributes on top of GenAI conventions), evidence bundle manifest,
   score (Langfuse-compatible). AsyncAPI for events (`work.received@v1`, `run.completed@v1`, `gate.requested@v1`,
-  `gate.decided@v1`, `score.recorded@v1`, `pr.opened@v1`). Generated package `@osf/contracts` (npm), the only client;
+  `gate.decided@v1`, `score.recorded@v1`, `pr.opened@v1`). Generated package `@opensoftware/contracts` (npm), the only client;
   clients for other languages are not built (ADR 0012). Valid and invalid fixtures per format.
 - **Adopt:** TypeSpec, CloudEvents, OpenTelemetry GenAI semantic conventions (pin a version), Agent Trace,
   Langfuse score model (ADR 0006).
@@ -79,11 +79,11 @@ read them for ideas, do not copy their company-specific rules.
   required fields, type changes, removed enum values and closed objects. Point it at the last `contracts-v*` release
   tag, replace the home-made JSON Schema diff with a full compatibility checker if one fits, and run oasdiff on the
   real OpenAPI files. Keep the fixture layout `contracts/<format>/fixtures/{valid,invalid}/` or change the check.
-- **Done when:** `@osf/contracts` publishes from CI; CONTRACT check runs against the last release.
+- **Done when:** `@opensoftware/contracts` publishes from CI; CONTRACT check runs against the last release.
 
 ### [ ] T-02 · testkit
 
-- **Tier / wave / language:** core · 0 · TypeScript (`@osf/testkit`), one testkit for every module (ADR 0009)
+- **Tier / wave / language:** core · 0 · TypeScript (`@opensoftware/testkit`), one testkit for every module (ADR 0009)
 - **Path / prefix:** `packages/testkit/` · `SCN-TK`
 - **Purpose:** the only way system tests touch a module; also the conformance kit for community adapters.
 - **Build:**

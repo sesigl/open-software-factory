@@ -5,7 +5,7 @@ covers: [contracts/typespec/**, contracts/src/**, contracts/scripts/**, contract
 # contracts
 
 The formats that modules share, from one TypeSpec source: JSON Schemas for every format, the AsyncAPI document of
-the events, and the TypeScript package `@osf/contracts`. Decisions:
+the events, and the TypeScript package `@opensoftware/contracts`. Decisions:
 [ADR 0006](../docs/decisions/0006-contracts-typespec.md), [ADR 0012](../docs/decisions/0012-contracts-toolchain.md).
 
 ## Quick start
@@ -13,20 +13,20 @@ the events, and the TypeScript package `@osf/contracts`. Decisions:
 This quick start is scenario `SCN-CTR-001` and is tested on every change.
 
 ```sh
-npx @osf/contracts validate factory-definition factory.yaml
+npx @opensoftware/contracts validate factory-definition factory.yaml
 # factory.yaml: valid factory-definition
 ```
 
 From TypeScript:
 
 ```ts
-import { type FactoryDefinition, validate } from "@osf/contracts";
+import { type FactoryDefinition, validate } from "@opensoftware/contracts";
 
 const problems = validate("factory-definition", document); // [] when valid, else { path, message } per problem
 ```
 
 The schema files are exported at the paths in the table below, for example
-`@osf/contracts/work-item/work-item.schema.json`, along with `events/asyncapi.yaml`, `openapi/*` and `typespec/*`.
+`@opensoftware/contracts/work-item/work-item.schema.json`, along with `events/asyncapi.yaml`, `openapi/*` and `typespec/*`.
 
 ## Formats
 
@@ -67,21 +67,21 @@ into `true`.
 
 release-please opens a release pull request from the Conventional Commits under `contracts/`. Merging it creates
 the tag `contracts-v<version>`. The workflow `.github/workflows/publish-contracts.yml` then builds the package and
-publishes it to npm as `@osf/contracts`, with provenance. To publish a tag again, run the workflow by hand with the
-tag. The CONTRACT check and `osf-contracts breaking` compare with the newest `contracts-v*` tag.
+publishes it to npm as `@opensoftware/contracts`, with provenance. To publish a tag again, run the workflow by
+hand with the tag. The CONTRACT check and `osf-contracts breaking` compare with the newest `contracts-v*` tag.
 
 Only the TypeScript package exists (ADR 0012). A client for another language can be generated from
 `openapi/openapi.json` with any OpenAPI generator when someone needs one.
 
 One-time setup by a person (no credential is ever stored in the repository):
 
-1. npm: own the scope `@osf` on npmjs.com (an npm organization named `osf`). If the scope is taken, the package
-   name has to change, which is a contract change.
-2. GitHub: create the environment `npm` (Settings → Environments). Add required reviewers if a person should
-   approve each publish.
+1. npm: the organization `opensoftware` owns the scope `@opensoftware`, under which every package of this
+   repository is published.
+2. GitHub: the publish job runs in the environment `npm` (Settings → Environments; GitHub creates it on the first
+   run). Add required reviewers if a person should approve each publish.
 3. First version only: npm configures trusted publishing per existing package, so `1.0.0` needs a token. Add a
-   granular npm access token with publish rights for `@osf/contracts` as the secret `NPM_TOKEN` of the
-   environment `npm`, or publish `1.0.0` by hand.
+   granular npm access token with read and write access to the `opensoftware` organization's packages as the
+   secret `NPM_TOKEN` (a repository secret or a secret of the environment `npm`), or publish `1.0.0` by hand.
 4. After the first version: on npmjs.com, package settings → Trusted publishing, add GitHub Actions with the
    repository `sesigl/open-software-factory`, the workflow `publish-contracts.yml` and the environment `npm`.
    Then delete the secret `NPM_TOKEN` and revoke the token. Later versions publish through OIDC only.

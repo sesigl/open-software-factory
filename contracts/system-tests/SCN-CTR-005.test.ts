@@ -1,10 +1,11 @@
-import { scenario } from "@osf/testkit";
+import { scenario } from "@opensoftware/testkit";
 
 const SCHEMA = "contracts/factory-definition/factory-definition.schema.json";
 
 scenario("SCN-CTR-005", async ({ sut, fakes, given, when, then }) => {
   const released = fakes.fromRepository("contracts/factory-definition")["factory-definition.schema.json"] ?? "";
-  const manifest = (version: string): string => `${JSON.stringify({ name: "@osf/contracts", version }, null, 2)}\n`;
+  const manifest = (version: string): string =>
+    `${JSON.stringify({ name: "@opensoftware/contracts", version }, null, 2)}\n`;
 
   await given('the release tag "contracts-v1.0.0" of the contracts', async () => {
     await sut.files.put(SCHEMA, released);

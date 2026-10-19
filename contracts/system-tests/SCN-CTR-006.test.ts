@@ -1,4 +1,4 @@
-import { scenario } from "@osf/testkit";
+import { scenario } from "@opensoftware/testkit";
 
 scenario("SCN-CTR-006", async ({ sut, fakes, given, when, then }) => {
   const fixtures: string[] = [];

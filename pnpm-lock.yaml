@@ -39,7 +39,7 @@ importers:
       '@asyncapi/parser':
         specifier: 3.6.6
         version: 3.6.6
-      '@osf/testkit':
+      '@opensoftware/testkit':
         specifier: workspace:*
         version: link:../packages/testkit
       '@typespec/compiler':
@@ -66,7 +66,7 @@ importers:
       '@cucumber/messages':
         specifier: 34.2.1
         version: 34.2.1
-      '@osf/contracts':
+      '@opensoftware/contracts':
         specifier: workspace:*
         version: link:../contracts
       ajv:
@@ -91,7 +91,7 @@ importers:
         specifier: 2.9.1
         version: 2.9.1
     devDependencies:
-      '@osf/testkit':
+      '@opensoftware/testkit':
         specifier: workspace:*
         version: link:../packages/testkit
       '@types/picomatch':

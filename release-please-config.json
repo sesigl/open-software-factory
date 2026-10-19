@@ -5,12 +5,12 @@
   "packages": {
     "packages/testkit": {
       "release-type": "node",
-      "package-name": "@osf/testkit",
+      "package-name": "@opensoftware/testkit",
       "component": "testkit"
     },
     "contracts": {
       "release-type": "node",
-      "package-name": "@osf/contracts",
+      "package-name": "@opensoftware/contracts",
       "component": "contracts",
       "release-as": "1.0.0"
     }

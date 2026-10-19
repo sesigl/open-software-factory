@@ -1,4 +1,4 @@
-import { scenario } from "@osf/testkit";
+import { scenario } from "@opensoftware/testkit";
 
 const schema = (agent: string[]): string =>
   `${JSON.stringify(
@@ -23,7 +23,7 @@ scenario("SCN-REPO-023", async ({ sut, given, when, then }) => {
   await given(
     'the release tag "contracts-v1.2.0" on a commit whose schema "contracts/demo/demo.schema.json" gives every agent the property "prompt"',
     async () => {
-      await sut.files.put("contracts/package.json", '{ "name": "@osf/contracts", "version": "1.2.0" }\n');
+      await sut.files.put("contracts/package.json", '{ "name": "@opensoftware/contracts", "version": "1.2.0" }\n');
       await sut.files.put("contracts/demo/demo.schema.json", schema(["model", "prompt"]));
       await sut.git.commit("release 1.2.0");
       await sut.git.tag("contracts-v1.2.0");
@@ -32,7 +32,7 @@ scenario("SCN-REPO-023", async ({ sut, given, when, then }) => {
 
   let base = "";
   await given('a later base commit that removes the property "prompt" and sets the version "1.3.0"', async () => {
-    await sut.files.put("contracts/package.json", '{ "name": "@osf/contracts", "version": "1.3.0" }\n');
+    await sut.files.put("contracts/package.json", '{ "name": "@opensoftware/contracts", "version": "1.3.0" }\n');
     await sut.files.put("contracts/demo/demo.schema.json", schema(["model"]));
     base = await sut.git.commit("drop prompt");
   });

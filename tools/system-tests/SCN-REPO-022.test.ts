@@ -1,4 +1,4 @@
-import { scenario } from "@osf/testkit";
+import { scenario } from "@opensoftware/testkit";
 
 scenario("SCN-REPO-022", async ({ sut, given, when, then }) => {
   await given('a hook event for an edit of "contracts/../tools/checks/contract.ts"', async () => {

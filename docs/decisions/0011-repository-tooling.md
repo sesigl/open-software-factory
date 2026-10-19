@@ -14,7 +14,7 @@ the quality tools.
 
 ## Decision
 
-The tooling is the private package `@osf/tools` in `tools/`, run directly by Node 24 (type stripping, no build).
+The tooling is the private package `@opensoftware/tools` in `tools/`, run directly by Node 24 (type stripping, no build).
 It depends on:
 
 | Need | Dependency | Version |

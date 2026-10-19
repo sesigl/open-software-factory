@@ -1,4 +1,4 @@
-// @osf/contracts: the types of the shared formats and a validator for each. Modules import only from here.
+// @opensoftware/contracts: the types of the shared formats and a validator for each. Modules import only from here.
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";

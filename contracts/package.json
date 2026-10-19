@@ -1,5 +1,5 @@
 {
-  "name": "@osf/contracts",
+  "name": "@opensoftware/contracts",
   "version": "1.0.0",
   "description": "The shared formats of the open software factory: JSON Schemas, TypeScript types and the osf-contracts CLI.",
   "license": "Apache-2.0",
@@ -45,7 +45,7 @@
   },
   "devDependencies": {
     "@asyncapi/parser": "3.6.6",
-    "@osf/testkit": "workspace:*",
+    "@opensoftware/testkit": "workspace:*",
     "@typespec/compiler": "1.17.0",
     "@typespec/json-schema": "1.17.0",
     "openapi-typescript": "7.13.0"

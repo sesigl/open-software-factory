@@ -1,4 +1,4 @@
-import { scenario } from "@osf/testkit";
+import { scenario } from "@opensoftware/testkit";
 
 const SCHEMA = `${JSON.stringify(
   {
@@ -12,7 +12,7 @@ const SCHEMA = `${JSON.stringify(
 
 scenario("SCN-REPO-024", async ({ sut, given, when, then }) => {
   await given('the schema "contracts/demo/demo.schema.json" whose property "link" has the format "uri"', async () => {
-    await sut.files.put("contracts/package.json", '{ "name": "@osf/contracts", "version": "1.0.0" }\n');
+    await sut.files.put("contracts/package.json", '{ "name": "@opensoftware/contracts", "version": "1.0.0" }\n');
     await sut.files.put("contracts/demo/demo.schema.json", SCHEMA);
   });
 

@@ -2,8 +2,8 @@
 Feature: Shared formats
   contracts/ holds the formats modules share: factory definition, work item, run record, evidence bundle manifest,
   score, and the events between modules. The TypeSpec sources in typespec/ are the single source; the JSON
-  Schemas and @osf/contracts are generated from them. TypeScript is the only client (ADR 0012). "osf-contracts"
-  is the CLI of @osf/contracts.
+  Schemas and @opensoftware/contracts are generated from them. TypeScript is the only client (ADR 0012). "osf-contracts"
+  is the CLI of @opensoftware/contracts.
 
   @id=SCN-CTR-001 @status=implemented @realizes=SCN-FACTORY-CODE-001
   Scenario: A valid factory definition validates

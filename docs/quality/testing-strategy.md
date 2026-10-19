@@ -14,7 +14,7 @@ the module calls is a fake the test controls.
 ```mermaid
 flowchart LR
   subgraph Test process
-    T[system test SCN-…] --> K["@osf/testkit: sut handle, fakes, clock"]
+    T[system test SCN-…] --> K["@opensoftware/testkit: sut handle, fakes, clock"]
   end
   subgraph Module under test, own process or container
     A[built artifact]

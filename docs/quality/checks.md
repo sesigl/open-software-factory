@@ -30,7 +30,7 @@ From phase 2 on, the released `spec-trace` module replaces TRACE, STEPS and PASS
 
 | ID | What it checks | How |
 | --- | --- | --- |
-| BOUNDARY-STATIC | System tests import only `@osf/testkit`, generated contract clients, test fixtures and the test framework. No import from `src/`, no database driver, no `fs` or `child_process` outside the testkit. | dependency-cruiser rules. |
+| BOUNDARY-STATIC | System tests import only `@opensoftware/testkit`, generated contract clients, test fixtures and the test framework. No import from `src/`, no database driver, no `fs` or `child_process` outside the testkit. | dependency-cruiser rules. |
 | BOUNDARY-RUNTIME | The module under test runs as its built artifact in a separate process or container, with its own data folder that the test process cannot read. | The testkit starts the artifact; the data folder lives inside the container or in a temp folder owned by another user. Tests receive only URLs, a CLI handle and the documented input and output folders. |
 | BOUNDARY-ENV | Tests set only environment variables that the module's README documents. | The testkit refuses undocumented variables; the list is generated from the module's config schema. |
 | ISOLATION | No module imports another module's package or source. | dependency-cruiser on `modules/**`, `ports/**`, `adapters/**`. |

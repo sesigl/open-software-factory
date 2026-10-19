@@ -1,4 +1,4 @@
-import { scenario } from "@osf/testkit";
+import { scenario } from "@opensoftware/testkit";
 
 scenario("SCN-REPO-017", async ({ sut, given, when, then }) => {
   await given('a repository with the doc "docs/guide.md" that links "missing.md"', async () => {

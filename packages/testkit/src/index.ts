@@ -1,4 +1,4 @@
-// Bootstrap subset of @osf/testkit, built in T-00 so the repository tooling can prove its own scenarios.
+// Bootstrap subset of @opensoftware/testkit, built in T-00 so the repository tooling can prove its own scenarios.
 // T-02 adds HTTP, MCP and event handles, the fakes, NOREAL and REACH.
 import { spawn, spawnSync } from "node:child_process";
 import {

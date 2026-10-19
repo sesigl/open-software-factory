@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Entry point of the repository tooling. `make` and package scripts call it; system tests call it through
-// @osf/testkit. It works on the Git repository that contains the current directory.
+// @opensoftware/testkit. It works on the Git repository that contains the current directory.
 import { spawnSync } from "node:child_process";
 import { relative, resolve } from "node:path";
 import { agentsSync } from "../scaffold/agents-sync.ts";

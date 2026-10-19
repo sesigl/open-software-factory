@@ -1,4 +1,4 @@
-import { scenario } from "@osf/testkit";
+import { scenario } from "@opensoftware/testkit";
 
 scenario("SCN-CTR-001", async ({ sut, fakes, given, when, then }) => {
   await given('a factory definition "factory.yaml" with the agents "triage" and "implement"', async () => {
