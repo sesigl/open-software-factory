@@ -65,7 +65,8 @@ into `true`.
 ## Releases
 
 release-please opens a release pull request from the Conventional Commits under `contracts/`. Merging it creates
-the tag `contracts-v<version>`. The workflow `.github/workflows/publish-contracts.yml` then builds the package and
+the tag `contracts-v<version>`. The release pull request also sets the version in `openapi/openapi.json`, which
+`pnpm build` copies from `package.json`, so the generated file stays current. The workflow `.github/workflows/publish-contracts.yml` then builds the package and
 publishes it to npm as `@opensoftware/contracts`. npm accepts a provenance statement only from a public
 repository, so the workflow adds one only when this repository is public. To publish a tag again, run the
 workflow by hand with the tag. The CONTRACT check and `osf-contracts breaking` compare with the newest `contracts-v*` tag.
