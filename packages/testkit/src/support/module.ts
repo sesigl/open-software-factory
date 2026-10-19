@@ -17,6 +17,14 @@ export function repoRoot(): string {
   return process.cwd();
 }
 
+/** The pnpm workspace that contains the folder, or undefined. */
+export function workspaceOf(dir: string): string | undefined {
+  for (let at = dir; at !== dirname(at); at = dirname(at)) {
+    if (existsSync(join(at, "pnpm-workspace.yaml"))) return at;
+  }
+  return undefined;
+}
+
 export function artifactOf(moduleRoot: string): string {
   const manifest = JSON.parse(readFileSync(join(moduleRoot, "package.json"), "utf8")) as {
     bin?: string | Record<string, string>;

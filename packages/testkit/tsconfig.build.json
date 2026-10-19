@@ -6,7 +6,8 @@
     "rootDir": ".",
     "declaration": true,
     "rewriteRelativeImportExtensions": true,
-    "types": ["node"]
+    "types": ["node"],
+    "sourceMap": true
   },
   "include": ["bin/**/*.ts", "src/**/*.ts"]
 }
