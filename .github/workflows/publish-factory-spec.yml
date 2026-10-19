@@ -78,7 +78,8 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @opensoftware/factory-spec build
+      # The three dots build its workspace dependencies first: factory-spec compiles against contracts/dist.
+      - run: pnpm --filter "@opensoftware/factory-spec..." build
       # pnpm pack replaces workspace: versions with real ones.
       - run: pnpm --dir modules/factory-spec pack --pack-destination "$RUNNER_TEMP/npm"
       # Trusted publishing needs npm 11.5.1 or later.
