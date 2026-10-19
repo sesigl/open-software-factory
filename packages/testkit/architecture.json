@@ -1,0 +1,10 @@
+{
+  "layers": [
+    { "name": "cli", "paths": ["bin/"] },
+    { "name": "api", "paths": ["src/index.ts"] },
+    { "name": "scenario", "paths": ["src/scenario.ts"] },
+    { "name": "sut", "paths": ["src/sut/"] },
+    { "name": "fakes", "paths": ["src/fakes/"] },
+    { "name": "support", "paths": ["src/support/"] }
+  ]
+}
