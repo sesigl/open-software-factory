@@ -1,5 +1,5 @@
 ---
-covers: [tools/bin/**, tools/scaffold/**, tools/checks/**, Makefile]
+covers: [tools/bin/**, tools/scaffold/**, tools/checks/**, tools/hooks/**, Makefile]
 ---
 
 # tools
@@ -30,6 +30,7 @@ make verify      # everything: lint, types, all system tests, all checks
 | `osf test-scenario <ID>` | `make test-scenario ID=…` | Run the one system test of a scenario. |
 | `osf agents-sync` | `make agents-sync` | Link `skills/` into `.claude/skills/`, `.agents/skills/` and `.opencode/skills/`. |
 | `osf install-tools` | `make install` | Download the checksum-pinned lychee and oasdiff into `.tools/bin/`. |
+| `osf protect-paths [FILE]` | (hook) | The Claude Code `PreToolUse` guard, called by `tools/hooks/protect-paths.sh`. Reads the hook event from `FILE` or stdin; exits 2 for an edit to a protected path. See [Protected paths](#protected-paths). |
 
 `make` holds no build logic (ADR 0010). `make check` runs the affected `lint`, `typecheck` and `test:system`
 Turborepo tasks (`--filter=...[OSF_BASE]`) and then the fast checks. `make verify` runs those tasks for every
@@ -37,6 +38,17 @@ package without the cache, then every check. The checks themselves always run ou
 
 Each failure prints one line: the check ID, `file:line`, and what to fix. Each check ends with `ID ok` or
 `ID failed: N`. The exit code is 1 when any check failed.
+
+## Protected paths
+
+`osf protect-paths` refuses an edit to `contracts/`, `docs/quality/`, `tools/checks/`, `.github/workflows/` and
+`CODEOWNERS`, a rewrite of a feature file with implemented scenarios, and an edit that touches an implemented
+scenario. It is a fast local guard for Claude Code; CODEOWNERS and SPECGUARD in CI are the real guard.
+
+A person can approve protected paths for one session: start the session with `OSF_APPROVED_PATHS` set to
+comma-separated path prefixes, for example `OSF_APPROVED_PATHS=contracts/ claude`. The guard then allows every
+edit under those prefixes. Paths are normalized first, so `contracts/../tools/checks/x.ts` is not covered. The
+approval does not replace the review: the pull request still needs a code owner.
 
 ## Configuration
 
@@ -46,6 +58,7 @@ Each failure prints one line: the check ID, `file:line`, and what to fix. Each c
 | `OSF_APPROVALS` | JSON file with the pull request reviews (GitHub's reviews format). SPECGUARD accepts a change when a code owner of the file approved. |
 | `OSF_PR_BODY` | File with the pull request description. DOCS-AFFECTED accepts `docs-reviewed: <path>` lines in it. |
 | `OSF_JUNIT_DIR` | Folder with JUnit XML results. Default `reports/junit`. |
+| `OSF_APPROVED_PATHS` | Comma-separated path prefixes, relative to the repository root, that a person approved for one session (for example `contracts/`). `osf protect-paths` allows edits under them. Only the person who starts the session sets it; an agent never sets or changes it. |
 
 ## Scenarios
 
@@ -73,3 +86,5 @@ Each failure prints one line: the check ID, `file:line`, and what to fix. Each c
 | SCN-REPO-018 | implemented | ADR rejects a new dependency without an accepted ADR |
 | SCN-REPO-019 | implemented | BOUNDARY-STATIC names the line of a Node built-in import in a system test |
 | SCN-REPO-020 | implemented | Running every check without a base fails and names the skipped comparisons |
+| SCN-REPO-021 | implemented | The guard allows an edit to a protected path that a person approved for the session |
+| SCN-REPO-022 | implemented | The guard refuses a path that leaves an approved prefix |

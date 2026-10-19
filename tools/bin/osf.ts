@@ -20,6 +20,7 @@ const USAGE = `Usage: osf <command>
   test-scenario <ID>      run the one system test of a scenario
   agents-sync             link skills/ into the skill folders of every harness
   install-tools           download the pinned lychee and oasdiff binaries into .tools/bin
+  protect-paths [FILE]    PreToolUse guard: exit 2 for an edit to a protected path (event JSON in FILE or stdin)
 `;
 
 function repositoryRoot(): string {
@@ -54,6 +55,10 @@ async function main(argv: string[]): Promise<number> {
       return agentsSync(root);
     case "install-tools":
       return installTools(root);
+    case "protect-paths": {
+      const { protectPaths } = await import("../hooks/protect-paths.ts");
+      return protectPaths(root, args);
+    }
     case undefined:
     case "help":
     case "--help":
