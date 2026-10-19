@@ -57,7 +57,7 @@ publish only the TypeScript package; clients for other languages are not built (
 | Tests | Vitest |
 | Integration | Testcontainers (Postgres, NATS, Temporal, SeaweedFS, Forgejo) |
 | Import boundaries | dependency-cruiser |
-| Coverage of the running module | `NODE_V8_COVERAGE` |
+| Coverage of the running module | V8 precise coverage recorded by the testkit, read with v8-to-istanbul (ADR 0019) |
 | Mutation (nightly) | Stryker |
 
 ## Runtime, packaging, supply chain

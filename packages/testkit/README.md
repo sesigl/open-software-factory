@@ -83,6 +83,9 @@ A `planned` scenario's test must fail; when it passes, the testkit fails it and 
   `NODE_OPTIONS`. A TCP connection may go to a loopback address or to a host of the testkit's containers; local
   sockets are allowed. Any other connection fails as unreachable and fails the scenario with
   `NOREAL: the module tried to reach <host>:<port>`. A module written in another language gets no guard.
+- REACH: every Node process of the module also records which of the module's code it ran, in
+  `reports/coverage/` of the workspace ([ADR 0019](../../docs/decisions/0019-reach-from-process-coverage.md)).
+  `osf check REACH` fails on lines a pull request adds that no system test reaches.
 - The clock and the seed are fixed through `OSF_NOW` and `OSF_SEED`; a module reads them instead of the system
   clock and a random seed.
 
@@ -137,3 +140,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-023 | implemented | The module keeps its state in a private data folder |
 | SCN-TK-024 | implemented | The sut refuses a module whose bin is a source file |
 | SCN-TK-025 | implemented | A module that reaches a real host fails the scenario with the host shown |
+| SCN-TK-026 | implemented | The testkit records which functions of the module its system tests ran |

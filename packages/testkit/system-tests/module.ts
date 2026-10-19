@@ -96,3 +96,17 @@ export function demoAdapter(scenarios: string[], tested: string[]): Record<strin
   }
   return files;
 }
+
+/** Call counts of the functions of the script whose URL ends with `suffix`, from V8 coverage files. */
+export function functionCounts(reports: string[], suffix: string): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const report of reports) {
+    const { result } = JSON.parse(report) as {
+      result: { url: string; functions: { functionName: string; ranges: { count: number }[] }[] }[];
+    };
+    for (const script of result.filter((entry) => entry.url.endsWith(suffix))) {
+      for (const fn of script.functions) counts[fn.functionName] = fn.ranges[0]?.count ?? 0;
+    }
+  }
+  return counts;
+}

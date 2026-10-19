@@ -80,7 +80,7 @@ read them for ideas, do not copy their company-specific rules.
   real OpenAPI files. Keep the fixture layout `contracts/<format>/fixtures/{valid,invalid}/` or change the check.
 - **Done when:** `@opensoftware/contracts` publishes from CI; CONTRACT check runs against the last release.
 
-### [ ] T-02 · testkit
+### [x] T-02 · testkit
 
 - **Tier / wave / language:** core · 0 · TypeScript (`@opensoftware/testkit`), one testkit for every module (ADR 0009)
 - **Path / prefix:** `packages/testkit/` · `SCN-TK`
@@ -127,7 +127,8 @@ read them for ideas, do not copy their company-specific rules.
   - [x] Runtime guards and release: BOUNDARY-RUNTIME (a private `OSF_DATA` folder, only a built `bin`;
     `SCN-TK-023`, `-024`), NOREAL (a network guard in every module process; `SCN-TK-025`); a
     `release-please-config.json` entry, a `dist/` build and `publish-testkit.yml`.
-  - [ ] REACH: coverage of the running module; new unreached lines in a pull request fail.
+  - [x] REACH: the testkit records coverage in every module process (`SCN-TK-026`); `osf check REACH` fails on
+    added lines and files no system test reaches (`SCN-REPO-031` to `-034`, ADR 0019).
 
 ---
 
