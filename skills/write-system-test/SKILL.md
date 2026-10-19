@@ -11,9 +11,9 @@ it only through its public surface.
 ## File and name
 
 - Location: `modules/<name>/system-tests/`.
-- One file per scenario, named after the ID: `SCN-PROOF-004.test.ts` or `test_scn_proof_004.py`.
+- One file per scenario, named after the ID: `SCN-PROOF-004.test.ts`.
 
-## TypeScript
+## Example
 
 ```ts
 import { scenario } from "@osf/testkit";
@@ -42,20 +42,8 @@ scenario("SCN-PROOF-004", async ({ sut, fakes, given, when, then }) => {
 });
 ```
 
-## Python
-
-```python
-from osf_testkit import scenario
-
-@scenario("SCN-SCORE-002")
-def test(sut, fakes, given, when, then):
-    with given("100 implementation runs in the run log"):
-        sut.files.put("runs.jsonl", fakes.fixture("runs-100.jsonl"))
-    with when('the developer runs "scorekit score" with a sampling rate of 20 percent'):
-        run = sut.cli(["score", "runs.jsonl", "--sample", "0.2", "--seed", "7"])
-    with then("about 20 runs are scored"):
-        assert 15 <= len(run.json()["scores"]) <= 25
-```
+Every module is TypeScript (ADR 0009). A plugin written in another language, such as the Harbor agent plugin,
+is tested with this same testkit through its CLI or API.
 
 ## Rules
 

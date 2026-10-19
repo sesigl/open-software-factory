@@ -12,7 +12,7 @@ description: Create a new module or adapter from the template. Use when a tool o
 
 ## Steps
 
-1. `make new-module NAME=<name> LANG=ts|py`. This copies `modules/_template/` and registers the module ID
+1. `make new-module NAME=<name>`. This copies `modules/_template/` and registers the module ID
    prefix in `docs/reference/scenario-prefixes.md`.
 2. Fill in `README.md`: the one problem the module solves alone, the quick start, inputs and outputs.
 3. Fill in `AGENTS.md` for the module: public surface, allowed exceptions (for example unit tests for a parser),
