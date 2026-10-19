@@ -50,7 +50,7 @@ The forge port and its adapters come with T-15. The `factory-definition` contrac
   `schedule`), `engine` (`claude` for `claude-code`, `codex` for `codex`; other harnesses fail) and
   `mcp-servers`; the body is the agent's prompt. The name is `run`, or the filter without its source, for example
   `issue-labeled-auto-implement`. The agent is the one `run` names, else the agent of the first workflow stage,
-  else the only agent. `gh aw compile` turns the file into its lock file; factory-spec does not compile.
+  else the first agent. `gh aw compile` turns the file into its lock file; factory-spec does not compile.
 - `factory apply` accepts `--k8s` and `--gh-aw` like render, so plan reports those files as drift too.
 - **Release.** `@opensoftware/factory-spec` is published like the testkit: release-please with the component
   `factory-spec`, first version `0.1.0`, minor bumps before `1.0.0`, and `.github/workflows/publish-factory-spec.yml`

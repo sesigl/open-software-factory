@@ -1,6 +1,6 @@
 # AGENTS.md for module `factory-spec`
 
-Adds rules for this module. The root `AGENTS.md` applies in full. Decision: ADR 0020.
+Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0020, ADR 0022.
 
 ## Public surface
 
@@ -11,7 +11,8 @@ The only ways a system test or another program may use this module:
 - Input: `factory.yaml` (the `factory-definition` contract), its prompts and skills, and `factory.lock`, in the
   current folder (`$INPUT` in tests)
 - Output folder: `$OUTPUT`; state folder: `OSF_DATA`
-- Outside systems: the MCP Registry at `FACTORY_MCP_REGISTRY`, only in `factory plan`
+- Outside systems: the MCP Registry at `FACTORY_MCP_REGISTRY`, only in `factory plan`; the webhooks of the Forgejo at
+  `FACTORY_FORGE_URL`, in `factory apply` and `factory plan` (ADR 0022)
 - Environment variables: the list in `README.md#configuration` (generated from `src/config.schema.json`)
 
 ## Architecture

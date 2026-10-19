@@ -8,6 +8,7 @@ import { diff, summary } from "../domain/diff.ts";
 import { fail } from "../domain/errors.ts";
 import { type Lock, type LockEntry, parseReference } from "../domain/mcp.ts";
 import { resolveDefinition } from "../domain/resolve.ts";
+import { applyHooks, hookDrifts } from "./hooks.ts";
 import type { Factory } from "./load.ts";
 import { type RenderOptions, render } from "./render.ts";
 
@@ -57,14 +58,15 @@ export async function plan(loaded: Factory, output: string): Promise<string[]> {
   const drift = Object.entries(state?.files ?? {})
     .filter(([path, hash]) => hashOf(output, path) !== hash)
     .map(([path]) => `! ${path} changed outside "factory apply"`);
-  const lines = [...changes, ...drift];
+  const lines = [...changes, ...drift, ...(await hookDrifts(state?.hooks))];
   return lines.length > 0 ? [...lines, "", summary(lines)] : ["No changes."];
 }
 
-export async function apply(loaded: Factory, output: string, options: RenderOptions): Promise<string> {
+export async function apply(loaded: Factory, output: string, options: RenderOptions): Promise<string[]> {
   const factory = await pin(loaded);
   const files = render(factory, output, options);
+  const { hooks, lines } = await applyHooks(factory, readState()?.hooks);
   const applied = model(factory);
-  writeState({ model: applied, files });
-  return `Applied factory ${factory.definition.factory}, digest ${sha256(JSON.stringify(applied))}`;
+  writeState({ model: applied, files, ...(Object.keys(hooks).length > 0 ? { hooks } : {}) });
+  return [`Applied factory ${factory.definition.factory}, digest ${sha256(JSON.stringify(applied))}`, ...lines];
 }

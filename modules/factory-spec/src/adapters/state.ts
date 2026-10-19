@@ -1,12 +1,15 @@
 // The applied state: what the last "factory apply" rendered, kept in the state folder OSF_DATA (ADR 0020).
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import type { Hook } from "../domain/hooks.ts";
 
 export interface AppliedState {
   /** The resolved definition and the prompt hashes that were applied. */
   model: Record<string, unknown>;
   /** The hash of every rendered file, by its path below the output folder. */
   files: Record<string, string>;
+  /** The webhook apply registered in each repository, as the forge returned it. */
+  hooks?: Record<string, Hook>;
 }
 
 const statePath = (): string => join(resolve(process.env.OSF_DATA ?? ".factory"), "state.json");

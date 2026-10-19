@@ -134,7 +134,7 @@ read them for ideas, do not copy their company-specific rules.
 
 ## Wave 1 · Record
 
-### [ ] T-03 · factory-spec
+### [x] T-03 · factory-spec
 
 - **Tier / language / path / prefix:** core · TS · `modules/factory-spec/` · `SCN-FSPEC`
 - **Alone:** one agent configuration rendered for every harness; lint and diff in CI; plan and apply a factory.
@@ -160,8 +160,11 @@ read them for ideas, do not copy their company-specific rules.
     Codex and OpenCode with skill links; MCP Registry pins in `factory.lock` (testkit `fakes.http`, ADR 0021);
     plan against the applied state with file drift; the README Commands section generated from `factory --help`
     (`SCN-REPO-035`). This repository's `factory.yaml` produces its skill links through `make agents-sync`.
-  - [ ] Forge webhooks for automations, applied and checked for drift against a Forgejo fake; `render --k8s`
-    (kagent Agent, ModelConfig, MCPServer; agent-sandbox templates); gh-aw workflow files; a release of the module.
+  - [x] Forge webhooks, Kubernetes and gh-aw (ADR 0022, `SCN-FSPEC-033` to `-050`): apply registers one Forgejo webhook
+    per repository for the `forgejo.*` automations and plan reports webhook drift (testkit `fakes.forge`);
+    `render --k8s` writes kagent Agent, ModelConfig, MCPServer and RemoteMCPServer and agent-sandbox
+    SandboxTemplate resources; `render --gh-aw` writes one gh-aw workflow per GitHub automation; the module is
+    released with release-please and `publish-factory-spec.yml`.
 
 ### [ ] T-04 · runlog
 
