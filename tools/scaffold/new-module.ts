@@ -1,5 +1,5 @@
-// `make new-module NAME=x`: copies modules/_template, fills in the name and the scenario prefix, registers the
-// prefix in docs/reference/scenario-prefixes.md and generates the README sections.
+// `make new-module NAME=x`: copies the working module modules/_template (ADR 0015), renames it and its scenario
+// prefix, registers the prefix in docs/reference/scenario-prefixes.md and generates the README sections.
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { refreshDocs } from "./docs.ts";
@@ -27,9 +27,14 @@ export function newModule(root: string, args: string[]): number {
   if (new RegExp(`^\\|\\s*${prefix}\\s*\\|`, "m").test(table))
     return fail(`The prefix ${prefix} is already registered`);
 
-  const fill = (text: string): string => text.replaceAll("<name>", name).replaceAll("<PREFIX>", prefix);
+  // The template's own names: its folder, its package and bin name, and its scenario prefix.
+  const fill = (text: string): string =>
+    text
+      .replaceAll("modules/_template", `modules/${name}`)
+      .replaceAll("module-template", name)
+      .replaceAll("SCN-TEMPLATE-", `SCN-${prefix}-`);
   for (const file of listFiles(template)) {
-    const path = relative(template, file).replaceAll("SCN-PREFIX-", `SCN-${prefix}-`);
+    const path = relative(template, file).replaceAll("SCN-TEMPLATE-", `SCN-${prefix}-`);
     mkdirSync(dirname(join(target, path)), { recursive: true });
     writeFileSync(join(target, path), fill(readFileSync(file, "utf8")));
   }
@@ -57,9 +62,11 @@ function fail(message: string): number {
   return 1;
 }
 
+/** The template's source files, without installed packages and build output. */
 function listFiles(dir: string): string[] {
   return readdirSync(dir)
     .sort()
+    .filter((entry) => !["node_modules", "dist", ".turbo"].includes(entry))
     .flatMap((entry) => {
       const full = join(dir, entry);
       return statSync(full).isDirectory() ? listFiles(full) : [full];

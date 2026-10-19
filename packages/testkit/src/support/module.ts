@@ -57,3 +57,19 @@ export function listFiles(dir: string): string[] {
   }
   return out;
 }
+
+/** The Quick start section of the module's README: the arguments of its `npx` line and the file it promises. */
+export function quickStart(moduleRoot: string): { args: string[]; output: string } {
+  const readme = join(moduleRoot, "README.md");
+  const section =
+    (existsSync(readme) ? readFileSync(readme, "utf8") : "")
+      .split(/^## /m)
+      .find((part) => part.startsWith("Quick start")) ?? "";
+  const command = /^\s*npx\s+\S+[ \t]*(.*)$/m.exec(section);
+  const output = /`\$OUTPUT\/([^`]+)`/.exec(section);
+  if (!command || !output) {
+    throw new Error(`${readme} needs a Quick start section with an "npx <package> ..." line and a \`$OUTPUT/<file>\``);
+  }
+  const args = (command[1] ?? "").trim();
+  return { args: args ? args.split(/\s+/) : [], output: output[1] as string };
+}

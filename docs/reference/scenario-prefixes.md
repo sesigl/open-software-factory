@@ -32,6 +32,7 @@ adds a row.
 | DIST | distribution | `deploy/features/` |
 | E2E | end-to-end smoke | `e2e/features/` |
 | REPO | repository tooling and checks | `tools/features/` |
+| TEMPLATE | module template | `modules/_template/features/` |
 
 The factory-level requirements in `docs/vision/software-factory.feature` use `SCN-FACTORY-<AREA>-NNN`. They are
 the source for module scenarios and are not checked by SPEC. A module scenario that realizes one names it with

@@ -30,7 +30,7 @@ function featureFiles(dir: string): string[] {
   return readdirSync(dir)
     .sort()
     .flatMap((entry) => {
-      if (entry === ".git" || entry === "node_modules" || entry === "_template") return [];
+      if (entry === ".git" || entry === "node_modules") return [];
       const full = join(dir, entry);
       if (statSync(full).isDirectory()) return featureFiles(full);
       return entry.endsWith(".feature") ? [full] : [];
