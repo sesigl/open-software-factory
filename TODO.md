@@ -75,6 +75,10 @@ read them for ideas, do not copy their company-specific rules.
 - **First scenarios:** a valid factory definition validates; a definition with an unknown agent field is
   rejected with its path; a breaking change to a schema fails CONTRACT; generated TypeScript types and the generated
   Python and Java clients round-trip every fixture.
+- **From T-00:** CONTRACT compares with the pull request base and covers only removed properties, newly
+  required fields, type changes, removed enum values and closed objects. Point it at the last `contracts-v*` release
+  tag, replace the home-made JSON Schema diff with a full compatibility checker if one fits, and run oasdiff on the
+  real OpenAPI files. Keep the fixture layout `contracts/<format>/fixtures/{valid,invalid}/` or change the check.
 - **Done when:** the packages publish from CI; CONTRACT check runs against the last release.
 
 ### [ ] T-02 · testkit
@@ -97,6 +101,10 @@ read them for ideas, do not copy their company-specific rules.
 - **First scenarios:** a test that imports from `src/` fails BOUNDARY-STATIC; an unscripted model call fails the
   test with the request shown; `sut.files` refuses a path outside $INPUT/$OUTPUT; a scenario's JUnit result
   carries its ID; the scripted harness applies its edit and reports completion over ACP.
+- **From T-00:** `packages/testkit` holds a bootstrap subset (`scenario`, step labels, `sut.cli`, `sut.files`,
+  `sut.git`, `fakes.fixture`, `fakes.fromRepository`); extend it, do not replace it. BOUNDARY-ENV reads the
+  documented variables from README backticks; generate them from the module's config schema instead. The
+  `@conformance` part of TRACE is untested until the first port; add its scenario with the `conformance` runner.
 - **Done when:** `modules/_template`'s quick-start test runs green through the testkit.
 
 ---
@@ -121,6 +129,8 @@ read them for ideas, do not copy their company-specific rules.
   declared MCP servers; plan shows a model change as one diff line; plan reports a manually changed webhook as
   drift (against a fake forge); the lock file pins an MCP server to an exact registry version.
 - **Not in scope:** running agents (foreman), approvals (gatekeeper).
+- **From T-00:** the first module with a CLI: generate the README `Commands` section from its CLI help in
+  `make docs` (DOCS-GEN generates only Scenarios and Configuration today).
 - **Done when:** this repository's own `AGENTS.md` skill links are produced by `factory render`.
 
 ### [ ] T-04 · runlog
@@ -174,6 +184,8 @@ read them for ideas, do not copy their company-specific rules.
 - **First scenarios:** quick start reports scenario coverage of a sample repository; same cases as T-00's
   checks, now from the released CLI; configurable ID pattern and prefixes; outline examples counted once per
   test.
+- **From T-00:** SPECGUARD accepts approvals only from individual code owners; resolve team owners
+  (`@org/team`) through the forge port.
 - **Done when:** this repository's CI uses spec-trace instead of the bootstrap scripts.
 
 ### [ ] T-07 · scorekit
@@ -386,6 +398,9 @@ read them for ideas, do not copy their company-specific rules.
 - **Path / prefix:** `e2e/` · `SCN-E2E`
 - **Build:** implement the five scenarios in `e2e/features/smoke.feature` against the Compose profile with the
   testkit fakes; add `SMOKE-PAID` (one small real task per first-party harness with a real model, nightly).
+- **From T-00:** `make smoke`, `make smoke-paid` and `make mutation` run Turborepo tasks that no package defines
+  yet, so they run nothing. Give `e2e/` a package with `test:system` and `test:paid` scripts; the nightly workflow
+  already calls them. Add a Stryker `mutation` script with the first module that has code.
 - **Done when:** all five pass on every merge to `main`; SMOKE-PAID runs nightly.
 
 ---
