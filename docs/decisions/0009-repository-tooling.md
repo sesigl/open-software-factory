@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-10-19
 ---
 
@@ -66,4 +66,4 @@ BOUNDARY-STATIC and ISOLATION for Python files.
 
 Contributors need Node 24, pnpm, uv and Python 3.12+. `make install` downloads lychee and oasdiff for Linux
 x86_64; on other platforms they must be on `PATH`. The ADR check now requires an accepted ADR that names every
-new dependency, so this ADR must be accepted before the T-00 pull request passes `make verify`.
+new dependency.
