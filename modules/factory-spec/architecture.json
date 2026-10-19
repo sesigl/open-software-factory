@@ -1,6 +1,7 @@
 {
   "layers": [
-    { "name": "entry", "paths": ["src/cli.ts"] },
+    { "name": "entry", "paths": ["src/cli.ts", "src/index.ts"] },
+    { "name": "commands", "paths": ["src/commands/"] },
     { "name": "adapters", "paths": ["src/adapters/"] },
     { "name": "domain", "paths": ["src/domain/"] }
   ]

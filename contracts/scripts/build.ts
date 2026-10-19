@@ -152,7 +152,9 @@ function openApi(defs: JsonObject): JsonObject {
 }
 
 async function types(openapi: JsonObject): Promise<string> {
-  const ast = await openapiTS(openapi as unknown as Parameters<typeof openapiTS>[0], { exportType: true });
+  // openapi-typescript ignores unevaluatedProperties, so a map of models would become Record<string, never>.
+  const maps = JSON.parse(JSON.stringify(openapi).replaceAll('"unevaluatedProperties":', '"additionalProperties":'));
+  const ast = await openapiTS(maps as Parameters<typeof openapiTS>[0], { exportType: true });
   return `// ${GENERATED_NOTE}\n${astToString(ast)}`;
 }
 

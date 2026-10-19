@@ -2,11 +2,17 @@
   "name": "@opensoftware/factory-spec",
   "version": "0.0.0",
   "private": true,
-  "description": "factory-spec: one sentence from the README.",
+  "description": "factory-spec: one factory.yaml rendered for every harness, with lint, plan, apply and drift.",
   "license": "Apache-2.0",
   "type": "module",
   "bin": {
-    "factory-spec": "dist/cli.js"
+    "factory": "dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -15,7 +21,13 @@
     "test:system": "vitest run",
     "docs": "node ../../tools/bin/osf.ts docs ."
   },
+  "dependencies": {
+    "@opensoftware/contracts": "workspace:*",
+    "semver": "7.7.3",
+    "yaml": "2.8.1"
+  },
   "devDependencies": {
-    "@opensoftware/testkit": "workspace:*"
+    "@opensoftware/testkit": "workspace:*",
+    "@types/semver": "7.7.1"
   }
 }

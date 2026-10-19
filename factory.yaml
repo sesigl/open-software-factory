@@ -1,0 +1,22 @@
+# The agent that builds this repository, declared with factory-spec (ADR 0020). `make agents-sync` renders it.
+version: 1
+factory: open-software-factory
+description: The coding agent of this repository, for every harness its contributors use.
+providers:
+  harness:
+    claude-code: "^2"
+    codex: "^1"
+    opencode: "^1"
+agents:
+  developer:
+    harness: claude-code
+    model: routes/developer
+    prompt: ./AGENTS.md
+    repositories: [sesigl/open-software-factory]
+    skills:
+      - ./skills/implement-scenario
+      - ./skills/keep-docs-evergreen
+      - ./skills/new-module
+      - ./skills/write-adr
+      - ./skills/write-scenario
+      - ./skills/write-system-test
