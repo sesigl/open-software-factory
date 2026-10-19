@@ -23,4 +23,4 @@ MinIO's community edition was archived in April 2026 (no new security fixes). Se
 community forks.
 
 ## Consequences
-One query layer per language (Kysely or Drizzle, SQLAlchemy) to run on SQLite and PostgreSQL.
+One query layer (Kysely or Drizzle) to run on SQLite and PostgreSQL.
