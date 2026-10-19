@@ -18,7 +18,7 @@ work on. Each choice has an ADR in [`../decisions/`](../decisions/).
 | Object storage | S3 API; SeaweedFS self-hosted; local folder in CLI mode | MinIO community edition archived April 2026; SeaweedFS is Apache-2.0 | Garage (AGPL) | 0003 |
 | Events | CloudEvents on NATS JetStream via a Postgres outbox | small binary; no lost events | webhooks only | 0003 |
 | Workflow engine | Temporal | long human waits, signals, timers, history UI, polyglot workers | DBOS | 0004 |
-| Repo and build | monorepo; pnpm workspaces; `make` on top; Nx when CI > 10 min; release-please | native tools, affected builds, independent releases | moon | 0005 |
+| Repo and build | monorepo; pnpm workspaces + Turborepo; `make` on top; release-please | native tools, cached affected builds, independent releases, nothing to migrate | Nx | 0005, 0010 |
 | Contracts | TypeSpec → OpenAPI 3.1 + JSON Schema; AsyncAPI for events | one source; generated TypeScript types and Python and Java clients | hand-written JSON Schema | 0006 |
 | Testing | system tests from the outside, no unit tests by default | see testing strategy | — | 0007 |
 | License | Apache-2.0 | patent grant | MIT | 0008 |
@@ -95,4 +95,6 @@ generated clients; Java only as generated clients.
 - users complain about install size: make Phoenix the default trace store;
 - scorekit or observer need real machine learning: add a separate Python service behind an HTTP contract, with
   its own ADR (see ADR 0009);
+- the repository grows past a few hundred packages or needs finer dependency analysis than Turborepo gives:
+  evaluate Nx (ADR 0010);
 - ACP, the OTel GenAI conventions or the MCP Registry API change: they are pinned behind single adapters.
