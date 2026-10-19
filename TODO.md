@@ -28,7 +28,7 @@ read them for ideas, do not copy their company-specific rules.
 
 ## Phase 0 · Foundation
 
-### [ ] T-00 · Repository tooling and checks
+### [x] T-00 · Repository tooling and checks
 
 - **Path / prefix:** `Makefile`, `package.json`, `pyproject.toml`, `tools/checks/`, `.github/workflows/` · `SCN-REPO`
 - **Language:** TypeScript for checks, Python only where a Python AST is needed.

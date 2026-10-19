@@ -7,8 +7,9 @@ improving itself over time.
 Each tool solves one problem on its own and connects to the others only through open formats. Where a good
 open-source project already exists, the factory adopts it and builds only the adapter.
 
-> Status: **phase 0, nothing is built yet.** This repository holds the vision, the architecture, the quality
-> system, the agent rules and the work plan. Start with [`TODO.md`](TODO.md).
+> Status: **phase 0, the foundation.** The repository tooling and its checks exist ([`tools/`](tools/README.md));
+> no tool module is built yet. This repository holds the vision, the architecture, the quality system, the agent
+> rules and the work plan. Start with [`TODO.md`](TODO.md).
 
 ## Start here
 

@@ -1,0 +1,70 @@
+# The required check for every pull request: `make verify` (docs/quality/checks.md).
+name: verify
+
+on:
+  pull_request:
+  # SPECGUARD reads the reviews, so a new approval runs the check again.
+  pull_request_review:
+    types: [submitted, dismissed]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: verify-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: make install
+
+      - name: Pull request context for SPECGUARD and DOCS-AFFECTED
+        if: github.event.pull_request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.pull_request.number }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          mkdir -p reports
+          printf '%s\n' "$PR_BODY" > reports/pr-body.md
+          gh api --paginate "repos/$REPO/pulls/$NUMBER/reviews" --jq '.[]' | jq -s . > reports/reviews.json
+          {
+            echo "OSF_BASE=$BASE_SHA"
+            echo "OSF_PR_BODY=reports/pr-body.md"
+            echo "OSF_APPROVALS=reports/reviews.json"
+          } >> "$GITHUB_ENV"
+
+      - name: Base for pushes to main
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: echo "OSF_BASE=$BEFORE" >> "$GITHUB_ENV"
+
+      - run: make verify
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: junit
+          path: reports/junit/
+          if-no-files-found: ignore

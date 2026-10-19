@@ -47,21 +47,21 @@ Each failure prints one line: the check ID, `file:line`, and what to fix. Each c
 
 | ID | Status | Scenario |
 | --- | --- | --- |
-| SCN-REPO-001 | planned | A module created from the template passes the fast checks |
-| SCN-REPO-002 | planned | SPEC rejects a duplicate scenario ID |
-| SCN-REPO-003 | planned | TRACE rejects an implemented scenario without a system test |
-| SCN-REPO-004 | planned | STEPS rejects a label that differs from the step |
-| SCN-REPO-005 | planned | PASS rejects a skipped test |
-| SCN-REPO-006 | planned | BOUNDARY-STATIC rejects an import from src/ |
-| SCN-REPO-007 | planned | SPECGUARD rejects a changed implemented step without approval |
-| SCN-REPO-008 | planned | DOCS-AFFECTED lists a doc whose covers path changed |
-| SCN-REPO-009 | planned | ISOLATION rejects a module that imports another module |
-| SCN-REPO-010 | planned | BOUNDARY-ENV rejects an environment variable that the README does not document |
-| SCN-REPO-011 | planned | NOSKIP rejects a skipped test |
-| SCN-REPO-012 | planned | ASSERT rejects a then step that asserts only on a value the test created |
-| SCN-REPO-013 | planned | FLAKE rejects a test that passed only on retry |
-| SCN-REPO-014 | planned | BUDGET rejects system tests that take longer than the module budget |
-| SCN-REPO-015 | planned | CONTRACT rejects a removed schema property without a major version |
-| SCN-REPO-016 | planned | DOCS-GEN rejects a generated README section that is out of date |
-| SCN-REPO-017 | planned | DOCS-LINKS rejects a link to a missing file |
-| SCN-REPO-018 | planned | ADR rejects a new dependency without an accepted ADR |
+| SCN-REPO-001 | implemented | A module created from the template passes the fast checks |
+| SCN-REPO-002 | implemented | SPEC rejects a duplicate scenario ID |
+| SCN-REPO-003 | implemented | TRACE rejects an implemented scenario without a system test |
+| SCN-REPO-004 | implemented | STEPS rejects a label that differs from the step |
+| SCN-REPO-005 | implemented | PASS rejects a skipped test |
+| SCN-REPO-006 | implemented | BOUNDARY-STATIC rejects an import from src/ |
+| SCN-REPO-007 | implemented | SPECGUARD rejects a changed implemented step without approval |
+| SCN-REPO-008 | implemented | DOCS-AFFECTED lists a doc whose covers path changed |
+| SCN-REPO-009 | implemented | ISOLATION rejects a module that imports another module |
+| SCN-REPO-010 | implemented | BOUNDARY-ENV rejects an environment variable that the README does not document |
+| SCN-REPO-011 | implemented | NOSKIP rejects a skipped test |
+| SCN-REPO-012 | implemented | ASSERT rejects a then step that asserts only on a value the test created |
+| SCN-REPO-013 | implemented | FLAKE rejects a test that passed only on retry |
+| SCN-REPO-014 | implemented | BUDGET rejects system tests that take longer than the module budget |
+| SCN-REPO-015 | implemented | CONTRACT rejects a removed schema property without a major version |
+| SCN-REPO-016 | implemented | DOCS-GEN rejects a generated README section that is out of date |
+| SCN-REPO-017 | implemented | DOCS-LINKS rejects a link to a missing file |
+| SCN-REPO-018 | implemented | ADR rejects a new dependency without an accepted ADR |
