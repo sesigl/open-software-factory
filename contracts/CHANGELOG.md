@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.0](https://github.com/sesigl/open-software-factory/compare/contracts-v1.0.0...contracts-v1.0.0) (2026-10-19)
+
+
+### Bug Fixes
+
+* **ci:** publish contracts without provenance while the repository is private ([#7](https://github.com/sesigl/open-software-factory/issues/7)) ([4566123](https://github.com/sesigl/open-software-factory/commit/4566123edb8e3d5ef7c3f6f3701ec22b602221b9))
+
 ## 1.0.0 (2026-10-19)
 
 
