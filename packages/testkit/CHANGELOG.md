@@ -1,0 +1,17 @@
+# Changelog
+
+## 0.1.0 (2026-10-19)
+
+
+### Features
+
+* **checks:** REACH from coverage of the running module; T-02 done ([#19](https://github.com/sesigl/open-software-factory/issues/19)) ([82c4911](https://github.com/sesigl/open-software-factory/commit/82c49110ee44392d5577b2f6e28576c9cb2a36e3))
+* **contracts:** T-01 shared formats, npm publishing as [@opensoftware](https://github.com/opensoftware), no development gates ([#2](https://github.com/sesigl/open-software-factory/issues/2)) ([953bb2f](https://github.com/sesigl/open-software-factory/commit/953bb2ff68051943f91e85cb955b32744a0917b8))
+* **repo:** T-00 repository tooling and checks ([#1](https://github.com/sesigl/open-software-factory/issues/1)) ([f2981ca](https://github.com/sesigl/open-software-factory/commit/f2981ca6df7069ac711e4f8cd5b1709163d382bb))
+* **testkit:** NOREAL and BOUNDARY-RUNTIME guards, and a release setup ([#17](https://github.com/sesigl/open-software-factory/issues/17)) ([4d4b8df](https://github.com/sesigl/open-software-factory/commit/4d4b8dfe96860e9ee5c8b811cc9e876f58c112d1))
+* **testkit:** scripted ACP harness and the conformance runner ([#16](https://github.com/sesigl/open-software-factory/issues/16)) ([2f00473](https://github.com/sesigl/open-software-factory/commit/2f0047348c796ec05922291781880a384a990d40))
+* **testkit:** service fakes and the http, mcp and events surfaces ([#15](https://github.com/sesigl/open-software-factory/issues/15)) ([ef23e15](https://github.com/sesigl/open-software-factory/commit/ef23e1582fb4b6dfdc80b7a69df2c601ca53d0c5))
+* **testkit:** T-02 drive a module: sut.readme, fixed clock and seed, scripted model gateway, working template ([#14](https://github.com/sesigl/open-software-factory/issues/14)) ([cbd81b1](https://github.com/sesigl/open-software-factory/commit/cbd81b1b6059195355f787bf30e77d0ce6955d86))
+* **testkit:** T-02 sut.files refuses paths outside $INPUT and $OUTPUT ([#12](https://github.com/sesigl/open-software-factory/issues/12)) ([8221a09](https://github.com/sesigl/open-software-factory/commit/8221a097c6a46081faf9cbb26816f99eb253d9ab))
+* **testkit:** T-02 testkit run writes JUnit results that carry the scenario ID ([#11](https://github.com/sesigl/open-software-factory/issues/11)) ([d68c655](https://github.com/sesigl/open-software-factory/commit/d68c6551bd697370876a327bb0fde85522f11b30))
+* **tools:** T-02 declared module layers and the ARCH check ([#13](https://github.com/sesigl/open-software-factory/issues/13)) ([fd09566](https://github.com/sesigl/open-software-factory/commit/fd095660c03c12f73bed28e2e8ac0e2d50b271d6))
