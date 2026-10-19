@@ -159,3 +159,12 @@ Feature: Repository checks
     When the developer runs "osf check BOUNDARY-STATIC"
     Then the command exits with code 1
     And the output contains 'BOUNDARY-STATIC modules/demo/system-tests/SCN-DEMO-001.test.ts:2 import "node:fs"'
+
+  @id=SCN-REPO-020 @status=implemented
+  Scenario: Running every check without a base fails and names the skipped comparisons
+    Given a repository with the implemented scenario "SCN-DEMO-001" and its system test
+    And a JUnit report in which the test of "SCN-DEMO-001" passed
+    When the developer runs "osf check --all" without OSF_BASE
+    Then the command exits with code 1
+    And the output contains "SPECGUARD skipped: OSF_BASE is not set"
+    And the output contains "DOCS-AFFECTED skipped: OSF_BASE is not set"
