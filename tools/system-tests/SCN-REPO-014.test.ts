@@ -3,15 +3,15 @@ import { DEMO_TEST, demoModule, junit } from "./repo.ts";
 
 scenario("SCN-REPO-014", async ({ sut, given, when, then }) => {
   await given('a repository whose module "demo" has a budget of 10 seconds', async () => {
-    for (const [path, content] of Object.entries(demoModule())) await sut.files.put(path, content);
+    for (const [path, content] of Object.entries(demoModule())) await sut.files.put(`$INPUT/${path}`, content);
     await sut.files.put(
-      "modules/demo/AGENTS.md",
+      "$INPUT/modules/demo/AGENTS.md",
       "# demo\n\n## Budget\n\n- System tests: 10 seconds in total on the CI runner.\n",
     );
   });
 
   await given('a JUnit report in which the system tests of "demo" took 12.5 seconds', async () => {
-    await sut.files.put("reports/junit/demo.xml", junit([{ file: DEMO_TEST, id: "SCN-DEMO-001", time: 12.5 }]));
+    await sut.files.put("$INPUT/reports/junit/demo.xml", junit([{ file: DEMO_TEST, id: "SCN-DEMO-001", time: 12.5 }]));
   });
 
   let run: Awaited<ReturnType<typeof sut.cli>>;

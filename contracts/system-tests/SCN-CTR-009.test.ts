@@ -8,8 +8,8 @@ scenario("SCN-CTR-009", async ({ sut, fakes, given, when, then }) => {
     `${JSON.stringify({ name: "@opensoftware/contracts", version }, null, 2)}\n`;
 
   await given('the release tag "contracts-v1.0.0" of the contracts', async () => {
-    await sut.files.put(SCHEMA, released);
-    await sut.files.put("contracts/package.json", manifest("1.0.0"));
+    await sut.files.put(`$INPUT/${SCHEMA}`, released);
+    await sut.files.put("$INPUT/contracts/package.json", manifest("1.0.0"));
     await sut.git.commit("release contracts 1.0.0");
     await sut.git.tag("contracts-v1.0.0");
   });
@@ -20,8 +20,8 @@ scenario("SCN-CTR-009", async ({ sut, fakes, given, when, then }) => {
       const schema = JSON.parse(released);
       const scheduled = schema.properties.automations.items.oneOf[1];
       scheduled.required = [...scheduled.required, "timezone"];
-      await sut.files.put(SCHEMA, `${JSON.stringify(schema, null, 2)}\n`);
-      await sut.files.put("contracts/package.json", manifest("1.1.0"));
+      await sut.files.put(`$INPUT/${SCHEMA}`, `${JSON.stringify(schema, null, 2)}\n`);
+      await sut.files.put("$INPUT/contracts/package.json", manifest("1.1.0"));
       await sut.git.commit("require a timezone");
     },
   );

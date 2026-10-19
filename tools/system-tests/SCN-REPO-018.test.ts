@@ -4,18 +4,21 @@ import { acceptedAdr } from "./repo.ts";
 scenario("SCN-REPO-018", async ({ sut, given, when, then }) => {
   let base = "";
   await given("a base commit without dependencies", async () => {
-    await sut.files.put("modules/demo/package.json", '{\n  "name": "@opensoftware/demo",\n  "version": "0.1.0"\n}\n');
-    await sut.files.put("docs/decisions/0001-demo.md", acceptedAdr("0001", "the module `modules/demo`"));
+    await sut.files.put(
+      "$INPUT/modules/demo/package.json",
+      '{\n  "name": "@opensoftware/demo",\n  "version": "0.1.0"\n}\n',
+    );
+    await sut.files.put("$INPUT/docs/decisions/0001-demo.md", acceptedAdr("0001", "the module `modules/demo`"));
     base = await sut.git.commit("base");
   });
 
   await given('a change that adds the dependency "left-pad" to "modules/demo/package.json"', async () => {
     const manifest = { name: "@opensoftware/demo", version: "0.1.0", dependencies: { "left-pad": "1.3.0" } };
-    await sut.files.put("modules/demo/package.json", `${JSON.stringify(manifest, null, 2)}\n`);
+    await sut.files.put("$INPUT/modules/demo/package.json", `${JSON.stringify(manifest, null, 2)}\n`);
   });
 
   await given('the only ADR that names "left-pad" is proposed', async () => {
-    await sut.files.put("docs/decisions/0002-left-pad.md", acceptedAdr("0002", "`left-pad`", "proposed"));
+    await sut.files.put("$INPUT/docs/decisions/0002-left-pad.md", acceptedAdr("0002", "`left-pad`", "proposed"));
   });
 
   let run: Awaited<ReturnType<typeof sut.cli>>;

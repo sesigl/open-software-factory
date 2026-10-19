@@ -24,16 +24,19 @@ export interface CliResult {
 }
 
 export interface Sut {
-  /** Runs the module's built artifact with these arguments in the working folder. */
+  /** Runs the module's built artifact with these arguments, with $INPUT as the current directory. */
   cli(args: string[], options?: { env?: Record<string, string> }): Promise<CliResult>;
-  /** The working folder the module reads and writes. Paths must stay inside it. */
+  /**
+   * The module's input and output folders. Every path starts with `$INPUT/` or `$OUTPUT/` and stays inside that
+   * folder; the module gets them as the environment variables `INPUT` and `OUTPUT`.
+   */
   files: {
     put(path: string, content: string): Promise<void>;
     read(path: string): Promise<string>;
     list(dir?: string): Promise<string[]>;
     remove(path: string): Promise<void>;
   };
-  /** The working folder is a Git repository with a fixed author and clock. */
+  /** $INPUT is a Git repository with a fixed author and clock. */
   git: {
     commit(message: string): Promise<string>;
     /** Tags the current commit, for example a release tag. */
@@ -70,7 +73,7 @@ export function scenario(id: string, body: (context: ScenarioContext) => Promise
     const status = scenarioStatus(moduleRoot, id);
     const workspace = mkdtempSync(join(tmpdir(), "osf-sut-"));
     try {
-      const context = makeContext(moduleRoot, workspace);
+      const context = makeContext(moduleRoot, folders(workspace));
       if (status !== "planned") return await body(context);
       // A planned scenario's test is expected to fail until the behavior exists.
       let failed = false;
@@ -86,7 +89,20 @@ export function scenario(id: string, body: (context: ScenarioContext) => Promise
   });
 }
 
-function makeContext(moduleRoot: string, workspace: string): ScenarioContext {
+interface Folders {
+  input: string;
+  output: string;
+}
+
+function folders(workspace: string): Folders {
+  const input = join(workspace, "input");
+  const output = join(workspace, "output");
+  mkdirSync(input);
+  mkdirSync(output);
+  return { input, output };
+}
+
+function makeContext(moduleRoot: string, dirs: Folders): ScenarioContext {
   const step =
     (keyword: string): StepFn =>
     async (label, body) => {
@@ -97,9 +113,9 @@ function makeContext(moduleRoot: string, workspace: string): ScenarioContext {
         throw error;
       }
     };
-  initGit(workspace);
+  initGit(dirs.input);
   return {
-    sut: makeSut(moduleRoot, workspace),
+    sut: makeSut(moduleRoot, dirs),
     fakes: makeFakes(moduleRoot),
     given: step("Given"),
     when: step("When"),
@@ -108,13 +124,16 @@ function makeContext(moduleRoot: string, workspace: string): ScenarioContext {
   };
 }
 
-function makeSut(moduleRoot: string, workspace: string): Sut {
+function makeSut(moduleRoot: string, dirs: Folders): Sut {
   const artifact = artifactOf(moduleRoot);
   const documented = documentedEnv(moduleRoot);
+  const input = dirs.input;
   const inside = (path: string): string => {
-    const full = resolve(workspace, path);
-    if (full !== workspace && !full.startsWith(workspace + sep)) {
-      throw new Error(`sut.files refuses a path outside the working folder: ${path}`);
+    const [, name, rest = ""] = /^\$(INPUT|OUTPUT)(?:\/(.*))?$/s.exec(path) ?? [];
+    const root = name === "INPUT" ? dirs.input : name === "OUTPUT" ? dirs.output : undefined;
+    const full = root && resolve(root, rest);
+    if (!root || !full || (full !== root && !full.startsWith(root + sep))) {
+      throw new Error(`sut.files refuses a path outside $INPUT and $OUTPUT: ${path}`);
     }
     return full;
   };
@@ -128,7 +147,8 @@ function makeSut(moduleRoot: string, workspace: string): Sut {
           );
         }
       }
-      return run(process.execPath, [artifact, ...args], workspace, { ...baseEnv(workspace), ...env });
+      const folderEnv = { INPUT: dirs.input, OUTPUT: dirs.output };
+      return run(process.execPath, [artifact, ...args], input, { ...baseEnv(input), ...folderEnv, ...env });
     },
     files: {
       async put(path, content) {
@@ -139,7 +159,7 @@ function makeSut(moduleRoot: string, workspace: string): Sut {
       async read(path) {
         return readFileSync(inside(path), "utf8");
       },
-      async list(dir = ".") {
+      async list(dir = "$INPUT") {
         return listFiles(inside(dir)).map((file) => relative(inside(dir), file));
       },
       async remove(path) {
@@ -148,12 +168,12 @@ function makeSut(moduleRoot: string, workspace: string): Sut {
     },
     git: {
       async commit(message) {
-        await mustRun("git", ["add", "-A"], workspace);
-        await mustRun("git", ["commit", "-q", "--allow-empty", "-m", message], workspace);
-        return (await mustRun("git", ["rev-parse", "HEAD"], workspace)).stdout.trim();
+        await mustRun("git", ["add", "-A"], input);
+        await mustRun("git", ["commit", "-q", "--allow-empty", "-m", message], input);
+        return (await mustRun("git", ["rev-parse", "HEAD"], input)).stdout.trim();
       },
       async tag(name) {
-        await mustRun("git", ["tag", name], workspace);
+        await mustRun("git", ["tag", name], input);
       },
     },
   };

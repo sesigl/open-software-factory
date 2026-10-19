@@ -3,11 +3,11 @@ import { DEMO_README, demoModule } from "./repo.ts";
 
 scenario("SCN-REPO-016", async ({ sut, given, when, then }) => {
   await given('a repository with the implemented scenario "SCN-DEMO-001" and its system test', async () => {
-    for (const [path, content] of Object.entries(demoModule())) await sut.files.put(path, content);
+    for (const [path, content] of Object.entries(demoModule())) await sut.files.put(`$INPUT/${path}`, content);
   });
 
   await given("the module README lists no scenarios under its generated marker", async () => {
-    await sut.files.put("modules/demo/README.md", DEMO_README);
+    await sut.files.put("$INPUT/modules/demo/README.md", DEMO_README);
   });
 
   let run: Awaited<ReturnType<typeof sut.cli>>;

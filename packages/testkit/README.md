@@ -33,9 +33,11 @@ Each test case in `report.xml` is named after its scenario and has the property 
 See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The context of `scenario` holds:
 
 - `given`, `when`, `then`: step functions; each label repeats the scenario's step text.
-- `sut.cli(args)`: runs the module's `bin` in its own process in a fresh working folder.
-- `sut.files`: `put`, `read`, `list` and `remove` inside the working folder only.
-- `sut.git`: the working folder is a Git repository with a fixed author and clock.
+- `sut.cli(args)`: runs the module's `bin` in its own process, with `$INPUT` as the current directory and the
+  environment variables `INPUT` and `OUTPUT` set to the two folders.
+- `sut.files`: `put`, `read`, `list` and `remove` in the module's input and output folders. Every path starts
+  with `$INPUT/` or `$OUTPUT/` and stays inside that folder; any other path fails the test.
+- `sut.git`: `$INPUT` is a Git repository with a fixed author and clock.
 - `fakes.fixture(name)`, `fakes.fromRepository(dir)`: fixture files.
 
 A `planned` scenario's test must fail; when it passes, the testkit fails it and asks for `@status=implemented`.
@@ -51,3 +53,4 @@ The testkit reads no environment variables.
 | ID | Status | Scenario |
 | --- | --- | --- |
 | SCN-TK-001 | implemented | The JUnit result of a scenario's system test carries the scenario ID |
+| SCN-TK-002 | implemented | sut.files refuses a path outside $INPUT and $OUTPUT |

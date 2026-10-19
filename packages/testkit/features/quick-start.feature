@@ -8,3 +8,10 @@ Feature: Quick start
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has a test case named "SCN-DEMO-001" with the property "scenario" set to "SCN-DEMO-001"
+
+  @id=SCN-TK-002 @status=implemented
+  Scenario: sut.files refuses a path outside $INPUT and $OUTPUT
+    Given a module whose system test puts the file "$INPUT/../secret.txt"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 1
+    And the output contains "sut.files refuses a path outside $INPUT and $OUTPUT: $INPUT/../secret.txt"

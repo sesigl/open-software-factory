@@ -4,7 +4,7 @@ scenario("SCN-CTR-004", async ({ sut, fakes, given, when, then }) => {
   await given('a run record "run.json" without the attribute "osf.requester.id"', async () => {
     const record = JSON.parse(fakes.fixture("run.json"));
     delete record.resource["osf.requester.id"];
-    await sut.files.put("run.json", JSON.stringify(record, null, 2));
+    await sut.files.put("$INPUT/run.json", JSON.stringify(record, null, 2));
   });
 
   let run: Awaited<ReturnType<typeof sut.cli>>;
