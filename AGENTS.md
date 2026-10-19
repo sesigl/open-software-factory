@@ -1,7 +1,8 @@
 # AGENTS.md
 
 Rules for every agent and every person who changes this repository. Keep this file short and stable.
-Details live in `skills/` and `docs/`. Claude Code also reads `CLAUDE.md`, which imports this file.
+Details live in `skills/` and `docs/`. This repository declares its own agent in `factory.yaml`; `make agents-sync`
+renders `CLAUDE.md`, the MCP files and the skill links of every harness from it with `factory render`.
 
 ## What this repository is
 
@@ -86,10 +87,19 @@ make next-id MODULE=proof  print the next free scenario ID for a module
 make new-module NAME=x     create a module from modules/_template
 make docs                  regenerate generated docs
 make docs-affected         list hand-written docs whose covers: paths your change touched
-make agents-sync           link skills/ into the skill folders of every harness
+make agents-sync           render factory.yaml: CLAUDE.md, MCP files, skill links of every harness
 ```
 
 When a check fails, its output starts with the check ID and the file and line to fix.
+
+## Harness notes
+
+- Skills live in `skills/` and are declared in `factory.yaml`. Run `make agents-sync` after you add or remove one.
+- Claude Code: a `Stop` hook in `.claude/settings.json` runs `make check` before you end a turn. Use plan mode
+  before a change that touches `contracts/` or more than one module. Use subagents for independent modules; never
+  let two agents change the same module at the same time.
+- When `make check` fails, read the check ID in the output (for example `BOUNDARY`) and open
+  `docs/quality/checks.md` for the fix. Do not work around a check. CI runs `make verify` for every harness.
 
 ## Where to find things
 
