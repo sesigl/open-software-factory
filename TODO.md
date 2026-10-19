@@ -30,11 +30,11 @@ read them for ideas, do not copy their company-specific rules.
 
 ### [ ] T-00 · Repository tooling and checks
 
-- **Path / prefix:** `Makefile`, `package.json`, `pyproject.toml`, `tools/checks/`, `.github/workflows/` · `SCN-REPO`
-- **Language:** TypeScript for checks, Python only where a Python AST is needed.
+- **Path / prefix:** `Makefile`, `package.json`, `tools/checks/`, `.github/workflows/` · `SCN-REPO`
+- **Language:** TypeScript (ADR 0009).
 - **Purpose:** every later item depends on `make check`, `make verify` and the checks being real.
 - **Build:**
-  - pnpm workspace and uv workspace at the root; Node 24, Python 3.12+ (ADR 0005).
+  - pnpm workspace at the root; Node 24 (ADR 0005, ADR 0009).
   - `make check`, `verify`, `smoke`, `smoke-paid`, `next-id`, `new-module`, `docs`, `docs-affected`,
     `test-scenario ID=…`, `agents-sync` (links `skills/` into `.claude/skills/` and other harness folders).
   - Checks from `docs/quality/checks.md` as scripts in `tools/checks/`, each printing its ID and file:line:
@@ -44,9 +44,9 @@ read them for ideas, do not copy their company-specific rules.
   - ISOLATION allows a module to depend only on `@osf/contracts`, `@osf/testkit` (tests only) and external
     packages.
   - GitHub Actions: `verify` on every PR (required check), nightly mutation, release-please.
-  - Biome, Ruff, pyright, dependency-cruiser, import-linter, lychee configs.
+  - Biome, `tsc --strict`, dependency-cruiser, lychee configs.
   - Make `tools/hooks/protect-paths.sh` executable; it is already wired in `.claude/settings.json`.
-- **Adopt:** `@cucumber/gherkin` parser, ts-morph, Python `ast`, JUnit XML reporters, oasdiff, lychee,
+- **Adopt:** `@cucumber/gherkin` parser, ts-morph, JUnit XML reporters, oasdiff, lychee,
   release-please.
 - **Seed:** child-apps-company `make specs-check`, `make traceability-check`, `scripts/lib/gherkin.ts`,
   `scripts/metrics/timed.py` (budgets).
@@ -59,30 +59,30 @@ read them for ideas, do not copy their company-specific rules.
 
 ### [ ] T-01 · contracts
 
-- **Tier / wave / language:** core · 0 · TypeSpec, generated TS and Python
+- **Tier / wave / language:** core · 0 · TypeSpec, generated TypeScript (Python and Java clients generated for users)
 - **Path / prefix:** `contracts/` · `SCN-CTR`
 - **Purpose:** the five shared formats and every module API, as the single source of generated types.
 - **Build:** TypeSpec sources for: factory definition (JSON Schema), work item event (CloudEvents data schema),
   run record attributes (OTel resource and span attributes on top of GenAI conventions), evidence bundle manifest,
   score (Langfuse-compatible). AsyncAPI for events (`work.received@v1`, `run.completed@v1`, `gate.requested@v1`,
-  `gate.decided@v1`, `score.recorded@v1`, `pr.opened@v1`). Generated packages `@osf/contracts` (npm) and
-  `osf-contracts` (PyPI). Valid and invalid fixtures per format.
+  `gate.decided@v1`, `score.recorded@v1`, `pr.opened@v1`). Generated package `@osf/contracts` (npm); generated
+  client packages for Python (PyPI) and Java (Maven) for users, not used by modules. Valid and invalid fixtures per format.
 - **Adopt:** TypeSpec, CloudEvents, OpenTelemetry GenAI semantic conventions (pin a version), Agent Trace,
   Langfuse score model (ADR 0006).
 - **Realizes:** CODE-001 (schema side), DATA-001 (record shape), RUNTIME-008 (attribution fields).
 - **First scenarios:** a valid factory definition validates; a definition with an unknown agent field is
-  rejected with its path; a breaking change to a schema fails CONTRACT; generated TS and Python types round-trip
-  every fixture.
-- **Done when:** both packages publish from CI; CONTRACT check runs against the last release.
+  rejected with its path; a breaking change to a schema fails CONTRACT; generated TypeScript types and the generated
+  Python and Java clients round-trip every fixture.
+- **Done when:** the packages publish from CI; CONTRACT check runs against the last release.
 
 ### [ ] T-02 · testkit
 
-- **Tier / wave / language:** core · 0 · TypeScript (`@osf/testkit`) and Python (`osf-testkit`)
+- **Tier / wave / language:** core · 0 · TypeScript (`@osf/testkit`), one testkit for every module (ADR 0009)
 - **Path / prefix:** `packages/testkit/` · `SCN-TK`
 - **Purpose:** the only way system tests touch a module; also the conformance kit for community adapters.
 - **Build:**
-  - `scenario(id, fn)` with `given`, `when`, `then` (TS); `@scenario(id)` with context managers (Python);
-    JUnit output carries the scenario ID.
+  - `scenario(id, fn)` with `given`, `when`, `then`; JUnit output carries the scenario ID. A module written
+    in another language (only by ADR) is tested with this testkit through its CLI or API.
   - `sut`: starts the module's built artifact (CLI, server or container) in its own process with a private data
     folder; exposes only `cli`, `http` (generated client), `mcp`, `events`, `files` ($INPUT, $OUTPUT), `readme`.
     Refuses undocumented environment variables (BOUNDARY-ENV).
@@ -91,11 +91,11 @@ read them for ideas, do not copy their company-specific rules.
     SeaweedFS; fixed clock and seed passed through documented config.
   - Test network that reaches only fakes (NOREAL); process coverage collection (REACH).
   - `conformance(port, adapter)` runner for `ports/<port>/features`.
-- **Adopt:** Vitest, pytest, Testcontainers, Forgejo image.
+- **Adopt:** Vitest, Testcontainers, Forgejo image.
 - **First scenarios:** a test that imports from `src/` fails BOUNDARY-STATIC; an unscripted model call fails the
   test with the request shown; `sut.files` refuses a path outside $INPUT/$OUTPUT; a scenario's JUnit result
   carries its ID; the scripted harness applies its edit and reports completion over ACP.
-- **Done when:** `modules/_template`'s quick-start test runs green through the testkit in TS and Python.
+- **Done when:** `modules/_template`'s quick-start test runs green through the testkit.
 
 ---
 
@@ -123,14 +123,14 @@ read them for ideas, do not copy their company-specific rules.
 
 ### [ ] T-04 · runlog
 
-- **Tier / language / path / prefix:** core · Python · `modules/runlog/` · `SCN-RUN`
+- **Tier / language / path / prefix:** core · TypeScript · `modules/runlog/` · `SCN-RUN`
 - **Alone:** every Claude Code, Codex or OpenCode session of a team in one trace store, with cost and PR links.
 - **Public surface:** CLI `runlog export | watch | attach`; an OTel Collector config pack per harness
   (`collector/`); OTLP output.
 - **Reads → writes:** harness session files (`~/.claude/projects`, `~/.codex/sessions`, OpenCode storage),
   native harness OTel → run records (OTLP) with `run.id`, `work_item.id`, `factory.version`, `stage`, cost,
   model, harness, links.
-- **Adopt:** OTel Python SDK and Collector (transform processor for per-harness span mapping), Agent Trace for
+- **Adopt:** OTel JavaScript SDK and Collector (transform processor for per-harness span mapping), Agent Trace for
   line attribution. Check each harness's native OTel first (see internals) and only read files for what is
   missing.
 - **Seed:** child-apps-company `scripts/observability/hermes_transcript.py`.
@@ -176,12 +176,13 @@ read them for ideas, do not copy their company-specific rules.
 
 ### [ ] T-07 · scorekit
 
-- **Tier / language / path / prefix:** optional · Python · `modules/scorekit/` · `SCN-SCORE`
+- **Tier / language / path / prefix:** optional · TypeScript · `modules/scorekit/` · `SCN-SCORE`
 - **Alone:** grade a team's agent sessions on concrete failure modes, with judges calibrated against human labels.
 - **Public surface:** CLI `scorekit score | calibrate | report`; scorer definition format (Markdown judge prompt
   + YAML: sample rate, pass criterion, judge model); export as Langfuse evaluators.
 - **Reads → writes:** run records → scores (T-01), calibration report (agreement with labeled runs).
-- **Adopt:** Langfuse evaluators as runtime when present; the inference port for judge calls.
+- **Adopt:** Langfuse evaluators as runtime when present (Langfuse TypeScript SDK); the inference port for judge
+  calls.
 - **Realizes:** SCORE-001…004, CODE-006.
 - **First scenarios:** quick start scores 10 sample runs with the scorer "redundant-tests" through the scripted
   model gateway; sampling at 20 percent with a fixed seed scores the expected runs; calibrate reports agreement
@@ -191,11 +192,11 @@ read them for ideas, do not copy their company-specific rules.
 
 ### [ ] T-08 · ledger
 
-- **Tier / language / path / prefix:** optional · SQL + Python CLI · `modules/ledger/` · `SCN-LEDGER`
+- **Tier / language / path / prefix:** optional · SQL + TypeScript CLI · `modules/ledger/` · `SCN-LEDGER`
 - **Alone:** cost per PR and flow metrics for any team using agents.
 - **Public surface:** CLI `ledger ingest | report`; SQL views for DuckDB and PostgreSQL; Grafana dashboard JSON.
 - **Reads → writes:** LiteLLM spend logs, run records, forge PR events, work item events → views, dashboards.
-- **Adopt:** DuckDB, PostgreSQL, Grafana.
+- **Adopt:** DuckDB and PostgreSQL (Node drivers), Grafana.
 - **Seed:** child-apps-company metrics pipeline (ADR 0029), `company-metrics` dashboard.
 - **Realizes:** METRIC-001…008, OUTCOME-001, OUTCOME-002, ROLE-002 (measurement side).
 - **First scenarios:** quick start computes cost per PR from sample files with DuckDB; cycle-time segments from
@@ -209,12 +210,15 @@ read them for ideas, do not copy their company-specific rules.
 
 ### [ ] T-09 · taskcapture
 
-- **Tier / language / path / prefix:** optional · Python · `modules/taskcapture/` · `SCN-TASK`
+- **Tier / language / path / prefix:** optional · TypeScript · `modules/taskcapture/` · `SCN-TASK`
 - **Alone:** a private benchmark from a team's merged PRs, with a correctness-versus-cost report.
 - **Public surface:** CLI `taskcapture capture | run | report | route`.
 - **Reads → writes:** merged PR (base commit, diff, tests), run record → Harbor task; Harbor results →
   report (Pareto chart data), LiteLLM routing config.
-- **Adopt:** Harbor (task format, runner, Docker and cloud environments).
+- **Adopt:** Harbor (task format, `harbor` CLI as a separate process, Docker and cloud environments). Use
+  Harbor's built-in agents for Claude Code, Codex and OpenHands. Only if a run must go through our harness port,
+  add the optional Python Harbor agent plugin in `adapters/harbor/` (ADR 0009 allows it), tested through the
+  `harbor` CLI.
 - **Realizes:** BENCH-001…006, CODE-004 (benchmarking a factory version).
 - **First scenarios:** quick start captures a merged Forgejo PR as a Harbor task whose hidden tests come from the
   PR; replay uses fakes for chat and forge (no side effects); a matrix of 2 scripted models × 2 configs yields
@@ -224,7 +228,7 @@ read them for ideas, do not copy their company-specific rules.
 
 ### [ ] T-10 · observer
 
-- **Tier / language / path / prefix:** optional · Python · `modules/observer/` · `SCN-OBS`
+- **Tier / language / path / prefix:** optional · TypeScript · `modules/observer/` · `SCN-OBS`
 - **Alone:** point it at session logs and agent instructions; it proposes reviewed fixes and later reports
   whether the failure rate fell.
 - **Public surface:** CLI `observer analyze | propose | check`.
@@ -288,7 +292,7 @@ read them for ideas, do not copy their company-specific rules.
 
 ### [ ] T-14 · inference port
 
-- **Tier / language / path / prefix:** core · TS/Python config · `ports/inference/`, `adapters/inference/litellm/`
+- **Tier / language / path / prefix:** core · TypeScript + LiteLLM config · `ports/inference/`, `adapters/inference/litellm/`
   · `SCN-INFER`
 - **Alone:** one OpenAI-compatible endpoint for every harness with budgets, routing and spend logs.
 - **Adopt:** LiteLLM (configuration, not a fork).

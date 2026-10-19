@@ -7,8 +7,8 @@ date: 2026-10-18
 
 ## Decision
 `contracts/` holds TypeSpec sources that emit OpenAPI 3.1 and JSON Schema, and AsyncAPI documents for events.
-Types are generated: openapi-typescript (TS), datamodel-code-generator with Pydantic (Python), openapi-generator
-(Java clients). oasdiff and JSON Schema compatibility checks block breaking changes without a major version.
+Types are generated with openapi-typescript for the modules. Client packages for users are generated with
+openapi-generator (Python, Java). oasdiff and JSON Schema compatibility checks block breaking changes without a major version.
 
 ## Options considered
 Hand-written JSON Schema and OpenAPI (verbose, drift apart); Protobuf with buf (best tooling, but all wire
