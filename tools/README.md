@@ -42,7 +42,7 @@ Each failure prints one line: the check ID, `file:line`, and what to fix. Each c
 
 | Variable | Meaning |
 | --- | --- |
-| `OSF_BASE` | Git ref to compare with for SPECGUARD, DOCS-AFFECTED, CONTRACT and the dependency rule of ADR. `make` uses the merge base with `origin/main`. Without it, these comparisons pass with a note. |
+| `OSF_BASE` | Git ref to compare with for SPECGUARD, DOCS-AFFECTED, CONTRACT and the dependency rule of ADR. `make` uses the merge base with `origin/main`. Without it, these comparisons print `skipped` and `osf check --all` (so `make verify`) fails. |
 | `OSF_APPROVALS` | JSON file with the pull request reviews (GitHub's reviews format). SPECGUARD accepts a change when a code owner of the file approved. |
 | `OSF_PR_BODY` | File with the pull request description. DOCS-AFFECTED accepts `docs-reviewed: <path>` lines in it. |
 | `OSF_JUNIT_DIR` | Folder with JUnit XML results. Default `reports/junit`. |
@@ -72,3 +72,4 @@ Each failure prints one line: the check ID, `file:line`, and what to fix. Each c
 | SCN-REPO-017 | implemented | DOCS-LINKS rejects a link to a missing file |
 | SCN-REPO-018 | implemented | ADR rejects a new dependency without an accepted ADR |
 | SCN-REPO-019 | implemented | BOUNDARY-STATIC names the line of a Node built-in import in a system test |
+| SCN-REPO-020 | implemented | Running every check without a base fails and names the skipped comparisons |

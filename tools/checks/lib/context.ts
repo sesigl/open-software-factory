@@ -25,10 +25,13 @@ export class Context {
     return loadTests(this.repo);
   }
 
-  /** The base commit, or undefined (with a note) when OSF_BASE is not set. */
+  /** Checks whose comparison with the base did not run because OSF_BASE is not set. */
+  readonly skipped = new Set<string>();
+
+  /** The base commit, or undefined when OSF_BASE is not set; the check then counts as skipped. */
   base(check: string): string | undefined {
     const base = baseCommit(this.repo.root);
-    if (!base) this.notes.push(`${check}: OSF_BASE is not set, so there is nothing to compare with`);
+    if (!base) this.skipped.add(check);
     return base;
   }
 }
