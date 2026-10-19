@@ -2,7 +2,7 @@
 import type { Context } from "./lib/context.ts";
 import { byId, isConformance, type Scenario, type Step, statusOf } from "./lib/features.ts";
 import { readResults, type TestResult } from "./lib/junit.ts";
-import { type Finding, isTemplate, lineOf, moduleRootOf } from "./lib/repo.ts";
+import { type Finding, lineOf, moduleRootOf } from "./lib/repo.ts";
 import type { TestScenario } from "./lib/tests.ts";
 
 interface Located extends TestScenario {
@@ -198,7 +198,7 @@ export function budget(context: Context): Finding[] {
   const results = readResults(context.repo) ?? [];
   const seconds = new Map<string, number>();
   for (const result of results) {
-    if (!result.file.includes("/system-tests/") || isTemplate(result.file)) continue;
+    if (!result.file.includes("/system-tests/")) continue;
     const root = moduleRootOf(result.file);
     seconds.set(root, (seconds.get(root) ?? 0) + result.seconds);
   }

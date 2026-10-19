@@ -1,4 +1,4 @@
-# AGENTS.md for module `<name>`
+# AGENTS.md for module `module-template`
 
 Adds rules for this module. The root `AGENTS.md` applies in full.
 
@@ -6,9 +6,9 @@ Adds rules for this module. The root `AGENTS.md` applies in full.
 
 The only ways a system test or another program may use this module:
 
-- CLI: `<name> <command>` (see `README.md#commands`)
-- HTTP API: `contracts/<name>/openapi.yaml` (server mode only)
-- Events: `contracts/<name>/asyncapi.yaml`
+- CLI: `module-template <command>` (see `README.md#commands`)
+- HTTP API: `contracts/module-template/openapi.yaml` (server mode only)
+- Events: `contracts/module-template/asyncapi.yaml`
 - Input folder: `$INPUT`, output folder: `$OUTPUT`
 - Environment variables: the list in `README.md#configuration` (generated from `src/config.schema.json`)
 
@@ -27,4 +27,4 @@ imports only its own layer and the layers below it. The ARCH check enforces this
 
 ## Scenario prefix
 
-`SCN-<PREFIX>-NNN`
+`SCN-TEMPLATE-NNN`

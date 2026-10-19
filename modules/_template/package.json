@@ -1,14 +1,17 @@
 {
-  "name": "@opensoftware/<name>",
+  "name": "@opensoftware/module-template",
   "version": "0.0.0",
-  "description": "<name>: one sentence from the README.",
+  "private": true,
+  "description": "module-template: one sentence from the README.",
   "license": "Apache-2.0",
   "type": "module",
   "bin": {
-    "<name>": "dist/cli.js"
+    "module-template": "dist/cli.js"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "test:system": "vitest run",
     "docs": "node ../../tools/bin/osf.ts docs ."
   },
