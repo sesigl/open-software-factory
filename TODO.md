@@ -104,6 +104,8 @@ read them for ideas, do not copy their company-specific rules.
   `sut.git`, `fakes.fixture`, `fakes.fromRepository`); extend it, do not replace it. BOUNDARY-ENV reads the
   documented variables from README backticks; generate them from the module's config schema instead. The
   `@conformance` part of TRACE is untested until the first port; add its scenario with the `conformance` runner.
+- **Release:** add `packages/testkit` back to `release-please-config.json` and give it a publish workflow like
+  `publish-contracts.yml` when it is ready for users; until then it is not released.
 - **Done when:** `modules/_template`'s quick-start test runs green through the testkit.
 
 ---
