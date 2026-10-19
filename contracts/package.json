@@ -1,0 +1,44 @@
+{
+  "name": "@osf/contracts",
+  "version": "1.0.0",
+  "description": "The shared formats of the open software factory: JSON Schemas, TypeScript types and the osf-contracts CLI.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "osf-contracts": "dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./schemas/*": "./schemas/*"
+  },
+  "files": [
+    "dist",
+    "typespec",
+    "*/*.schema.json",
+    "events/*/*.schema.json",
+    "events/asyncapi.yaml",
+    "openapi"
+  ],
+  "scripts": {
+    "build": "node scripts/build.ts",
+    "lint": "biome check . && node scripts/build.ts --check",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "vitest run",
+    "docs": "node ../tools/bin/osf.ts docs ."
+  },
+  "dependencies": {
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "yaml": "2.9.1"
+  },
+  "devDependencies": {
+    "@asyncapi/parser": "3.6.6",
+    "@osf/testkit": "workspace:*",
+    "@typespec/compiler": "1.17.0",
+    "@typespec/json-schema": "1.17.0",
+    "openapi-typescript": "7.13.0"
+  }
+}

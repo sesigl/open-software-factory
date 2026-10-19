@@ -23,7 +23,7 @@ AFFECTED := $(if $(OSF_BASE),--filter=...[$(OSF_BASE)])
 help: ## list the targets
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-16s %s\n", $$1, $$2}'
 
-install: ## install dependencies and the pinned lychee and oasdiff binaries
+install: ## install dependencies, the pinned lychee and oasdiff binaries and the openapi-generator jar
 	pnpm install --frozen-lockfile
 	@$(OSF) install-tools
 

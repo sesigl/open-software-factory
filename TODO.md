@@ -140,7 +140,7 @@ read them for ideas, do not copy their company-specific rules.
 - **Public surface:** CLI `runlog export | watch | attach`; an OTel Collector config pack per harness
   (`collector/`); OTLP output.
 - **Reads → writes:** harness session files (`~/.claude/projects`, `~/.codex/sessions`, OpenCode storage),
-  native harness OTel → run records (OTLP) with `run.id`, `work_item.id`, `factory.version`, `stage`, cost,
+  native harness OTel → run records (OTLP) with `osf.run.id`, `osf.work_item.id`, `osf.factory.version`, `osf.stage`, cost,
   model, harness, links.
 - **Adopt:** OTel JavaScript SDK and Collector (transform processor for per-harness span mapping), Agent Trace for
   line attribution. Check each harness's native OTel first (see internals) and only read files for what is
@@ -312,7 +312,7 @@ read them for ideas, do not copy their company-specific rules.
 - **Adopt:** LiteLLM (configuration, not a fork).
 - **Realizes:** OPEN-001, OPEN-003, OPEN-004, BENCH-006 (routing), principle "cost is bounded".
 - **First scenarios:** a request with a routing alias reaches the configured model; a run over its budget is
-  stopped with a clear error; every call writes a spend log line with `run.id`; a bring-your-own gateway URL is
+  stopped with a clear error; every call writes a spend log line with `osf.run.id`; a bring-your-own gateway URL is
   used instead of the bundled one.
 - **Done when:** taskcapture's `route` output is applied by this adapter in E2E-004.
 

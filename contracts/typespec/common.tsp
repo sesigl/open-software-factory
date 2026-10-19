@@ -22,6 +22,11 @@ scalar CommitHash extends string;
 @pattern("^SCN-[A-Z][A-Z0-9]*(-[A-Z][A-Z0-9]*)*-[0-9]{3}$")
 scalar ScenarioId extends string;
 
+/** The version of a format inside its documents. Only 1 exists; a new major version of a format adds the next. */
+@extension("const", Json<1>)
+@minValue(1)
+scalar FormatVersion extends int32;
+
 /** An OpenTelemetry trace ID: 32 lowercase hex characters. */
 @pattern("^[0-9a-f]{32}$")
 scalar TraceId extends string;

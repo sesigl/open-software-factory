@@ -18,7 +18,7 @@ scalar Sha256 extends string;
  */
 model EvidenceManifest {
   /** Version of this format. */
-  manifestVersion: 1;
+  manifestVersion: FormatVersion;
 
   id: Identifier;
   createdAt: utcDateTime;

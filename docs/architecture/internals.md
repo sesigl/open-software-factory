@@ -102,7 +102,9 @@ agent-sandbox templates; Argo CD or Flux applies them). An OpenTofu provider can
 | Goose and others | not checked | fall back to session files |
 
 Verify names against vendor docs before writing an adapter. runlog makes telemetry uniform in three steps:
-1. **Correlate at launch:** the foreman sets `OTEL_RESOURCE_ATTRIBUTES=factory.version=…,work_item.id=…,run.id=…,stage=…`.
+1. **Correlate at launch:** the foreman sets
+   `OTEL_RESOURCE_ATTRIBUTES=osf.factory.version=…,osf.work_item.id=…,osf.run.id=…,osf.stage=…`. The attribute names
+   and the pinned GenAI conventions are in [`contracts/run-record/`](../../contracts/run-record/run-record.schema.json).
 2. **Normalize in the Collector:** a per-harness mapping renames spans to the GenAI conventions.
 3. **Complete from the session file:** runlog attaches the full transcript when the stage ends.
 

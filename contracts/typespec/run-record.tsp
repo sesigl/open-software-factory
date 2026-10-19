@@ -23,10 +23,10 @@ model RunRecord {
 model RunResource {
   `service.name`: string;
   `osf.run.id`: Identifier;
-  `osf.work_item.id`?: Identifier;
+  `osf.work_item.id`: Identifier;
 
   /** Commit of the factory definition the run used. */
-  `osf.factory.version`?: CommitHash;
+  `osf.factory.version`: CommitHash;
 
   `osf.stage`?: Name;
   `osf.requester.kind`: ActorKind;

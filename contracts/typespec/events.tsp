@@ -56,9 +56,9 @@ model PrOpened is CloudEvent<"pr.opened@v1", PrOpenedData>;
 
 model RunCompletedData {
   runId: Identifier;
-  workItemId?: Identifier;
+  workItemId: Identifier;
   stage?: Name;
-  factoryVersion?: CommitHash;
+  factoryVersion: CommitHash;
   outcome: RunOutcome;
   startedAt: utcDateTime;
   endedAt: utcDateTime;

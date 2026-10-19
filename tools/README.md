@@ -10,7 +10,7 @@ the helpers behind `make`. From phase 2 on, the released `spec-trace` module rep
 ## Quick start
 
 ```sh
-make install     # pnpm dependencies and the pinned lychee and oasdiff binaries
+make install     # pnpm dependencies, the pinned lychee and oasdiff binaries, the openapi-generator jar
 make check       # lint and the static checks, in seconds
 make verify      # everything: lint, types, all system tests, all checks
 ```
@@ -29,7 +29,7 @@ make verify      # everything: lint, types, all system tests, all checks
 | `osf next-id <module>` | `make next-id MODULE=x` | Print the next free scenario ID of a module or prefix. |
 | `osf test-scenario <ID>` | `make test-scenario ID=…` | Run the one system test of a scenario. |
 | `osf agents-sync` | `make agents-sync` | Link `skills/` into `.claude/skills/`, `.agents/skills/` and `.opencode/skills/`. |
-| `osf install-tools` | `make install` | Download the checksum-pinned lychee and oasdiff into `.tools/bin/`. |
+| `osf install-tools` | `make install` | Download the checksum-pinned lychee, oasdiff and openapi-generator jar (clients of `contracts/`) into `.tools/bin/`. |
 | `osf protect-paths [FILE]` | (hook) | The Claude Code `PreToolUse` guard, called by `tools/hooks/protect-paths.sh`. Reads the hook event from `FILE` or stdin; exits 2 for an edit to a protected path. See [Protected paths](#protected-paths). |
 
 `make` holds no build logic (ADR 0010). `make check` runs the affected `lint`, `typecheck` and `test:system`

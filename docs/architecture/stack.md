@@ -19,7 +19,7 @@ work on. Each choice has an ADR in [`../decisions/`](../decisions/).
 | Events | CloudEvents on NATS JetStream via a Postgres outbox | small binary; no lost events | webhooks only | 0003 |
 | Workflow engine | Temporal | long human waits, signals, timers, history UI, polyglot workers | DBOS | 0004 |
 | Repo and build | monorepo; pnpm workspaces + Turborepo; `make` on top; release-please | native tools, cached affected builds, independent releases, nothing to migrate | Nx | 0005, 0010 |
-| Contracts | TypeSpec → OpenAPI 3.1 + JSON Schema; AsyncAPI for events | one source; generated TypeScript types and Python and Java clients | hand-written JSON Schema | 0006 |
+| Contracts | TypeSpec → JSON Schema and OpenAPI 3.1; hand-written AsyncAPI 3.1 for events | one source; generated TypeScript types and Python and Java clients | hand-written JSON Schema | 0006, 0012 |
 | Testing | system tests from the outside, no unit tests by default | see testing strategy | — | 0007 |
 | License | Apache-2.0 | patent grant | MIT | 0008 |
 

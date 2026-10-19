@@ -1,0 +1,24 @@
+{
+  "specversion": "1.0",
+  "id": "01JABCDEVT00000000000000003",
+  "source": "/osf/gatekeeper",
+  "type": "gate.requested@v1",
+  "time": "2026-10-19T09:05:00Z",
+  "subject": "01JABCDGATE0000000000000001",
+  "datacontenttype": "application/json",
+  "data": {
+    "gateId": "01JABCDGATE0000000000000001",
+    "workItemId": "01JABCDWORK0000000000000001",
+    "stage": "spec",
+    "policy": "./policy/spec.rego",
+    "approvers": ["product-owners"],
+    "summary": "Approve the specification for: Checkout button does nothing on Safari",
+    "links": [
+      {
+        "url": "https://github.com/acme/web/pull/6",
+        "title": "Specification"
+      }
+    ],
+    "expiresAt": "2026-10-20T09:00:00Z"
+  }
+}

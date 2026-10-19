@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-10-19
 ---
 
@@ -35,9 +35,18 @@ The build (`pnpm build` in `contracts/`):
 1. compiles `typespec/` with the JSON Schema emitter into one bundle;
 2. writes one self-contained schema per format, `contracts/<format>/<format>.schema.json`, all references
    inlined, so the CONTRACT check and every reader see the whole format in one file (committed);
-3. writes `contracts/openapi/openapi.yaml`: OpenAPI 3.1 whose `components.schemas` are the named models, the
-   input of openapi-typescript and openapi-generator;
-4. validates `events/asyncapi.yaml` (hand-written AsyncAPI 3.1 that references the event schemas).
+3. writes `contracts/openapi/openapi.json`: OpenAPI 3.1 whose `components.schemas` are the named models, the
+   input of openapi-typescript and openapi-generator. JSON, not YAML: YAML 1.1 readers such as the generator turn
+   the key `on` into `true`;
+4. validates `events/asyncapi.yaml` (hand-written AsyncAPI 3.1 that references the event schemas);
+5. generates the clients into `contracts/clients/` (not committed): the Python package `osf-contracts` with its
+   own dependencies (pydantic 2, python-dateutil, typing-extensions) in a virtual environment, and the Java
+   artifact `io.github.sesigl:osf-contracts` built with Maven (Jackson). `pnpm lint` fails when a committed
+   generated file is out of date.
+
+Every format is a plain model or a closed set of models, never a union without a discriminator: the generated
+Java client cannot tell undiscriminated `anyOf` branches apart. "Exactly one of" rules use `oneOf` with
+`required` and `not` inside one model.
 
 Pins: OpenTelemetry semantic conventions v1.44.0 for resource attributes; GenAI conventions at
 `open-telemetry/semantic-conventions-genai@547934a` (schema `gen-ai-dev/1.42.0-dev`). The pins are written in

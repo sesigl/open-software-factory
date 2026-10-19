@@ -36,6 +36,8 @@ export interface Sut {
   /** The working folder is a Git repository with a fixed author and clock. */
   git: {
     commit(message: string): Promise<string>;
+    /** Tags the current commit, for example a release tag. */
+    tag(name: string): Promise<void>;
   };
 }
 
@@ -149,6 +151,9 @@ function makeSut(moduleRoot: string, workspace: string): Sut {
         await mustRun("git", ["add", "-A"], workspace);
         await mustRun("git", ["commit", "-q", "--allow-empty", "-m", message], workspace);
         return (await mustRun("git", ["rev-parse", "HEAD"], workspace)).stdout.trim();
+      },
+      async tag(name) {
+        await mustRun("git", ["tag", name], workspace);
       },
     },
   };

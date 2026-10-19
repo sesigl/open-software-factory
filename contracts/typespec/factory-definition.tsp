@@ -19,7 +19,7 @@ model FactoryDefinition {
   `$schema`?: string;
 
   /** Version of this format. A new major version of the format gets a new value. */
-  version: 1;
+  version: FormatVersion;
 
   /** Name of the factory. */
   factory: Name;
@@ -144,29 +144,29 @@ model Gate {
   approvers?: Name[];
 }
 
-/** Starts the workflow, or the named job, on an event or a schedule. */
-union Automation {
-  event: EventAutomation,
-  schedule: ScheduleAutomation,
-}
-
+/**
+ * Starts the workflow, or the named job, on an event (`on`) or a schedule (`cron`). Exactly one of the two; a
+ * schedule names its job. One model rather than a union, so every generated client reads it without guessing.
+ */
 @extension("additionalProperties", Json<false>)
-model EventAutomation {
+@extension(
+  "oneOf",
+  #[
+    #{ required: #["on"], not: #{ required: #["cron"] } },
+    #{ required: #["cron", "run"], not: #{ required: #["on"] } }
+  ]
+)
+model Automation {
   /** Event filter, for example "github.issue.labeled(auto-implement)" or "sentry.fatal". */
   @minLength(1)
-  on: string;
+  on?: string;
 
-  /** Job to run. Without it the event starts the workflow. */
-  run?: Name;
-}
-
-@extension("additionalProperties", Json<false>)
-model ScheduleAutomation {
   /** Five-field cron expression in UTC. */
   @minLength(1)
-  cron: string;
+  cron?: string;
 
-  run: Name;
+  /** Job to run. Required with `cron`; without it an event starts the workflow. */
+  run?: Name;
 }
 
 @extension("additionalProperties", Json<false>)

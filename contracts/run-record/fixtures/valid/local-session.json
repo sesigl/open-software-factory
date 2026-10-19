@@ -1,0 +1,16 @@
+{
+  "resource": {
+    "service.name": "codex",
+    "osf.run.id": "01JABCDRUN00000000000000002",
+    "osf.requester.kind": "person",
+    "osf.requester.id": "git:dev@example.com",
+    "osf.source": "cli",
+    "osf.harness.name": "codex",
+    "osf.work_item.id": "01JABCDWORK0000000000000003",
+    "osf.factory.version": "3f2a9c1"
+  },
+  "span": {
+    "gen_ai.operation.name": "invoke_agent",
+    "osf.outcome": "failed"
+  }
+}
