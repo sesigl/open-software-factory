@@ -15,9 +15,10 @@ A family of independent open-source tools that together form a software factory.
 
 ## Current phase
 
-Phase 0: nothing is built yet. The first work is `TODO.md` items T-00 to T-02 (repository tooling, contracts,
-testkit). Until T-00 is done, the `make` commands below do not exist; build them first. Every pull request is
-reviewed by a person. `docs/explanation/bootstrapping.md` describes the phases and what changes in each.
+Phase 0: the foundation is being built, `TODO.md` items T-00 to T-02 (repository tooling, contracts,
+testkit). T-00 provides `make` and the checks; run `make install` once after cloning (Node 24, pnpm). The
+tooling is described in `tools/README.md`. Every pull request is reviewed by a person.
+`docs/explanation/bootstrapping.md` describes the phases and what changes in each.
 
 ## Typical requests
 
@@ -75,14 +76,20 @@ A new module starts with `skills/new-module`. A new dependency or service starts
 ## Commands
 
 ```text
-make check                 fast checks for the modules you changed (seconds)
+make install               install dependencies and the pinned lychee and oasdiff binaries
+make check                 lint and the static checks (seconds)
 make verify                all checks; required before you report done
+make test-scenario ID=…    run the one system test of a scenario
 make smoke                 the deterministic end-to-end scenarios in e2e/ (minutes)
 make smoke-paid            one real-model run per harness; only when asked
 make next-id MODULE=proof  print the next free scenario ID for a module
 make new-module NAME=x     create a module from modules/_template
 make docs                  regenerate generated docs
+make docs-affected         list hand-written docs whose covers: paths your change touched
+make agents-sync           link skills/ into the skill folders of every harness
 ```
+
+When a check fails, its output starts with the check ID and the file and line to fix.
 
 ## Where to find things
 
@@ -106,3 +113,14 @@ make docs                  regenerate generated docs
 Stop when a scenario is unclear or contradicts another, when a scenario or contract must change, when a change
 needs a new service, dependency, permission or paid call, or when a check fails for a reason you cannot fix
 inside the module. Ask one clear question with the options and their effects.
+
+<!-- BEGIN:turborepo-agent-rules -->
+
+# This is NOT the Turborepo you know
+
+Turborepo configuration, task behavior, and CLI commands can vary between installed versions and may differ from your training data. Resolve the `turbo` package from this file's directory or relevant workspace; in monorepos, it may not be visible from the repository root. For example, run `node -p "require.resolve('turbo/package.json')"` from a workspace that depends on `turbo`.
+
+Read `docs/README.md` inside that installed package first, then read the relevant pages from its `docs/` directory before changing Turborepo configuration or commands. Heed deprecation notices. These bundled docs match the installed package version and are available without network access.
+
+This block is written and re-added by `turbo` before repository-scoped commands when an AI agent is detected. In the Turborepo source repository, its template is defined in `crates/turborepo-cli/src/cli/agent_guidance.rs`. Removing the managed block while updates are enabled means a later qualifying invocation will add it again. Set `"agentGuidance": false` in the root `turbo.json` or `turbo.jsonc` to opt out; this does not remove an existing block. Keep the block committed with your work to avoid an uncommitted change on the next agent invocation.
+<!-- END:turborepo-agent-rules -->

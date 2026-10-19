@@ -1,0 +1,17 @@
+{
+  "name": "@osf/testkit",
+  "version": "0.0.0",
+  "description": "The only way system tests touch a module. Bootstrap subset from T-00; T-02 completes it.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "peerDependencies": {
+    "vitest": "^4.1.0"
+  }
+}
