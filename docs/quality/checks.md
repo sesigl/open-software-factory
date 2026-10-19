@@ -13,7 +13,7 @@ Scope: SPEC, TRACE, STEPS and PASS apply to `modules/*/features/`, `ports/*/feat
 source material and are not checked; module scenarios link to them with `@realizes=SCN-FACTORY-...`.
 
 The checks are scripts in `tools/checks/` (TODO item T-00), run with `osf check <ID>`; see
-[`tools/README.md`](../../tools/README.md). BOUNDARY-RUNTIME, NOREAL and REACH come with the testkit (T-02).
+[`tools/README.md`](../../tools/README.md). BOUNDARY-RUNTIME and NOREAL are guards in the testkit; REACH comes with T-02.
 From phase 2 on, the released `spec-trace` module replaces TRACE, STEPS and PASS.
 
 ## Specification and traceability
@@ -30,11 +30,11 @@ From phase 2 on, the released `spec-trace` module replaces TRACE, STEPS and PASS
 | ID | What it checks | How |
 | --- | --- | --- |
 | BOUNDARY-STATIC | System tests import only `@opensoftware/testkit`, generated contract clients, test fixtures and the test framework. No import from `src/`, no database driver, no `fs` or `child_process` outside the testkit. | dependency-cruiser rules. |
-| BOUNDARY-RUNTIME | The module under test runs as its built artifact in a separate process or container, with its own data folder that the test process cannot read. | The testkit starts the artifact; the data folder lives inside the container or in a temp folder owned by another user. Tests receive only URLs, a CLI handle and the documented input and output folders. |
+| BOUNDARY-RUNTIME | The module under test runs as its built artifact in a separate process, with its own data folder that the test has no path into. | The testkit starts the module's `bin` and refuses a `bin` in `src/`; the module keeps its state in `OSF_DATA`, a folder outside `$INPUT` and `$OUTPUT` that `sut.files` refuses. Tests receive only URLs, a CLI handle and the documented input and output folders. |
 | BOUNDARY-ENV | Tests set only environment variables that the module's README documents. | The testkit refuses undocumented variables; the list is generated from the module's config schema. |
 | ISOLATION | No module imports another module's package or source. | dependency-cruiser on `modules/**`, `ports/**`, `adapters/**`. |
 | ARCH | Every module with files in `src/` or `bin/` declares its layers in `architecture.json`; every source file is in a layer; no file imports a layer listed above its own (ADR 0014). | dependency-cruiser on each module's source files. |
-| NOREAL | No real network, model, clock or randomness in system tests. | The sandboxed test network allows only testkit fakes; the fake model gateway fails on any unscripted call; the testkit injects a fixed clock and seed through documented config. |
+| NOREAL | No real network, model, clock or randomness in system tests. | A network guard loaded into every Node process of the module refuses connections to anything but loopback and the testkit's containers and fails the scenario; the fake model gateway and the scripted harness fail on any unscripted call; the testkit injects a fixed clock and seed through documented config. |
 
 ## Test quality
 

@@ -34,7 +34,7 @@ export function scenario(id: string, body: (context: ScenarioContext) => Promise
     try {
       const dirs = folders(workspace);
       initGit(dirs.input);
-      sut = makeSut(moduleRoot, dirs);
+      sut = makeSut(moduleRoot, dirs, () => handle.hosts());
       const context = makeContext(sut, handle);
       if (status !== "planned") return await runBody(body, context, sut, handle);
       // A planned scenario's test is expected to fail until the behavior exists.
@@ -67,8 +67,7 @@ async function runBody(
     failure = error;
   }
   // The module stops before its fakes, so it cannot call them while they close.
-  await sut.close();
-  const problems = await handle.close();
+  const problems = [...(await sut.close()), ...(await handle.close())];
   if (problems.length > 0) throw new Error(problems.join("\n\n"), { cause: failure });
   if (failure !== undefined) throw failure;
 }

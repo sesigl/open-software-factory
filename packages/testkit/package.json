@@ -1,8 +1,13 @@
 {
   "name": "@opensoftware/testkit",
   "version": "0.0.0",
-  "description": "The only way system tests touch a module. Bootstrap subset from T-00; T-02 completes it.",
+  "description": "The only way system tests touch a module: scenario(), the sut handle, fakes and the testkit CLI.",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "packages/testkit"
+  },
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
@@ -10,7 +15,23 @@
   "bin": {
     "testkit": "bin/testkit.ts"
   },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/src/index.d.ts",
+        "default": "./dist/src/index.js"
+      }
+    },
+    "bin": {
+      "testkit": "dist/bin/testkit.js"
+    }
+  },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "lint": "biome check .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test:system": "vitest run"

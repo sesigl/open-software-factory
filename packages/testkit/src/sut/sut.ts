@@ -1,6 +1,6 @@
 // The handle on the module under test: its CLI, HTTP API, MCP server and events, its input and output folders and
 // the Git repository in $INPUT.
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { listFiles, quickStart } from "../support/module.ts";
 import { type CliResult, mustRun, run } from "../support/process.ts";
@@ -51,24 +51,33 @@ export interface Sut {
 export interface Folders {
   input: string;
   output: string;
+  /** The module's private data folder, `OSF_DATA`. The test has no path into it. */
+  data: string;
+  /** Where the network guard logs refused connections. */
+  noreal: string;
 }
 
 export function folders(workspace: string): Folders {
-  const input = join(workspace, "input");
-  const output = join(workspace, "output");
-  mkdirSync(input);
-  mkdirSync(output);
-  return { input, output };
+  const dirs = {
+    input: join(workspace, "input"),
+    output: join(workspace, "output"),
+    data: join(workspace, "data"),
+    noreal: join(workspace, "noreal.log"),
+  };
+  mkdirSync(dirs.input);
+  mkdirSync(dirs.output);
+  mkdirSync(dirs.data);
+  return dirs;
 }
 
 export interface SutHandle {
   sut: Sut;
-  /** Stops every server, client and subscription the scenario started. */
-  close(): Promise<void>;
+  /** Stops every server, client and subscription the scenario started, and returns the connections NOREAL refused. */
+  close(): Promise<string[]>;
 }
 
-export function makeSut(moduleRoot: string, dirs: Folders): SutHandle {
-  const launch = makeLaunch(moduleRoot, dirs);
+export function makeSut(moduleRoot: string, dirs: Folders, hosts: () => string[] = () => []): SutHandle {
+  const launch = makeLaunch(moduleRoot, dirs, hosts);
   const stops: (() => Promise<unknown>)[] = [];
   const onStop = (stop: () => Promise<unknown>): void => {
     stops.push(stop);
@@ -131,6 +140,10 @@ export function makeSut(moduleRoot: string, dirs: Folders): SutHandle {
     async close() {
       // Last started, first stopped: a server stops before the subscription that watches it.
       for (const stop of stops.splice(0).reverse()) await stop().catch(() => undefined);
+      if (!existsSync(dirs.noreal)) return [];
+      const refused = readFileSync(dirs.noreal, "utf8").split("\n").filter(Boolean);
+      rmSync(dirs.noreal);
+      return [...new Set(refused)];
     },
   };
 }

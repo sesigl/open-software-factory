@@ -2,7 +2,7 @@
 // performs the scripted file edits and ends each turn. A prompt that matches no turn fails the scenario.
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export interface HarnessTurn {
@@ -22,7 +22,8 @@ export interface Harness {
   prompts(): string[];
 }
 
-const AGENT = fileURLToPath(new URL("./harness-agent.ts", import.meta.url));
+// Next to this file in the source tree and in the built package alike.
+const AGENT = fileURLToPath(new URL(`./harness-agent${extname(fileURLToPath(import.meta.url))}`, import.meta.url));
 
 export function startHarness(script: HarnessTurn[]): { harness: Harness; close(): Promise<string[]> } {
   const dir = mkdtempSync(join(tmpdir(), "osf-harness-"));
