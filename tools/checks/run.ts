@@ -1,0 +1,70 @@
+// `osf check`: runs checks by ID and prints one line per finding: `ID file:line message`.
+import { boundaryEnv, boundaryStatic, assert as checkAssert, isolation, noskip } from "./boundary.ts";
+import { contract } from "./contract.ts";
+import { adr, docsAffected, docsGen, docsLinks } from "./docs.ts";
+import { type Check, Context } from "./lib/context.ts";
+import { type Finding, Repo } from "./lib/repo.ts";
+import { spec, specguard } from "./spec.ts";
+import { budget, flake, pass, steps, trace } from "./trace.ts";
+
+/** The fast set: static checks that need no test run and no base. */
+export const FAST: Record<string, Check> = {
+  SPEC: spec,
+  TRACE: trace,
+  STEPS: steps,
+  NOSKIP: noskip,
+  ASSERT: checkAssert,
+  "BOUNDARY-STATIC": boundaryStatic,
+  "BOUNDARY-ENV": boundaryEnv,
+  ISOLATION: isolation,
+  "DOCS-GEN": docsGen,
+  "DOCS-LINKS": docsLinks,
+  ADR: adr,
+};
+
+/** Checks that read test results or compare with OSF_BASE; `make verify` runs them after the tests. */
+export const SLOW: Record<string, Check> = {
+  PASS: pass,
+  FLAKE: flake,
+  BUDGET: budget,
+  SPECGUARD: specguard,
+  "DOCS-AFFECTED": docsAffected,
+  CONTRACT: contract,
+};
+
+const ALL: Record<string, Check> = { ...FAST, ...SLOW };
+
+export async function runChecks(root: string, args: string[]): Promise<number> {
+  const ids = args.filter((arg) => !arg.startsWith("--"));
+  const unknown = ids.filter((id) => !(id in ALL));
+  if (unknown.length > 0) {
+    process.stderr.write(`Unknown check: ${unknown.join(", ")}. Known: ${Object.keys(ALL).join(", ")}\n`);
+    return 2;
+  }
+  const selected = ids.length > 0 ? ids : Object.keys(args.includes("--all") ? ALL : FAST);
+  const context = new Context(new Repo(root), { list: args.includes("--list") });
+
+  let failed = 0;
+  for (const id of selected) {
+    let findings: Finding[];
+    try {
+      findings = await (ALL[id] as Check)(context);
+    } catch (error) {
+      findings = [{ check: id, message: error instanceof Error ? error.message : String(error) }];
+    }
+    for (const finding of findings.sort(byLocation)) process.stdout.write(`${format(finding)}\n`);
+    process.stdout.write(findings.length === 0 ? `${id} ok\n` : `${id} failed: ${findings.length}\n`);
+    if (findings.length > 0) failed++;
+  }
+  for (const note of context.notes) process.stdout.write(`note: ${note}\n`);
+  return failed > 0 ? 1 : 0;
+}
+
+function format(finding: Finding): string {
+  const where = finding.file ? ` ${finding.file}${finding.line ? `:${finding.line}` : ""}` : "";
+  return `${finding.check}${where} ${finding.message}`;
+}
+
+function byLocation(a: Finding, b: Finding): number {
+  return (a.file ?? "").localeCompare(b.file ?? "") || (a.line ?? 0) - (b.line ?? 0);
+}

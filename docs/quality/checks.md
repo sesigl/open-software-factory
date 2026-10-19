@@ -12,8 +12,9 @@ Scope: SPEC, TRACE, STEPS and PASS apply to `modules/*/features/`, `ports/*/feat
 `tools/features/`, `deploy/features/` and `e2e/features/`. The factory-level requirements in `docs/vision/` are
 source material and are not checked; module scenarios link to them with `@realizes=SCN-FACTORY-...`.
 
-Until TODO item T-00 is done, these checks are a specification. T-00 builds them as scripts in `tools/checks/`;
-from phase 2 on, the released `spec-trace` module replaces TRACE, STEPS and PASS.
+The checks are scripts in `tools/checks/` (TODO item T-00), run with `osf check <ID>`; see
+[`tools/README.md`](../../tools/README.md). BOUNDARY-RUNTIME, NOREAL and REACH come with the testkit (T-02).
+From phase 2 on, the released `spec-trace` module replaces TRACE, STEPS and PASS.
 
 ## Specification and traceability
 

@@ -20,7 +20,7 @@ It depends on:
 | --- | --- | --- |
 | Parse feature files (SPEC, TRACE, STEPS, SPECGUARD, DOCS-GEN) | `@cucumber/gherkin`, `@cucumber/messages` | 42.0.1, 34.2.1 |
 | Read TypeScript tests (TRACE, STEPS, NOSKIP, ASSERT, BOUNDARY-ENV) | `ts-morph` | 28.0.0 |
-| Import rules for TypeScript (BOUNDARY-STATIC, ISOLATION) | `dependency-cruiser` | 18.6.0 |
+| Imports between TypeScript modules (ISOLATION) | `dependency-cruiser` | 18.6.0 |
 | Read JUnit XML (PASS, FLAKE, BUDGET) | `fast-xml-parser` | 5.11.2 |
 | Validate contract fixtures (CONTRACT) | `ajv` | 8.20.0 |
 | Front matter and YAML (DOCS-AFFECTED, ADR) | `yaml` | 2.9.1 |
@@ -32,7 +32,9 @@ It depends on:
 | Links in Markdown (DOCS-LINKS) | `lychee` binary, checksum-pinned in the `Makefile` | 0.20.1 |
 | Breaking OpenAPI changes (CONTRACT) | `oasdiff` binary, checksum-pinned in the `Makefile` | 1.11.7 |
 
-Python test files are read with the standard library `ast` module (no dependency). import-linter waits for the
+BOUNDARY-STATIC uses the imports that the test readers already collect, because they give exact lines and
+treat TypeScript and Python alike. Python test files are read with the standard library `ast` module (no
+dependency). import-linter waits for the
 first Python module: it needs an installed package to inspect, and until then the `ast` reader covers
 BOUNDARY-STATIC and ISOLATION for Python files.
 
