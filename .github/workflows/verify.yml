@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read # the description of the merged pull request, for pushes to main
 
 concurrency:
   group: verify-${{ github.event.pull_request.number || github.ref }}
@@ -44,11 +45,20 @@ jobs:
             echo "OSF_PR_BODY=reports/pr-body.md"
           } >> "$GITHUB_ENV"
 
-      - name: Base for pushes to main
+      # A push to main has no description of its own: DOCS-AFFECTED reads the one of the merged pull request.
+      - name: Push context for DOCS-AFFECTED
         if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
         env:
+          GH_TOKEN: ${{ github.token }}
           BEFORE: ${{ github.event.before }}
-        run: echo "OSF_BASE=$BEFORE" >> "$GITHUB_ENV"
+          REPO: ${{ github.repository }}
+        run: |
+          mkdir -p reports
+          gh api "repos/$REPO/commits/$GITHUB_SHA/pulls" --jq '.[0].body // ""' > reports/pr-body.md
+          {
+            echo "OSF_BASE=$BEFORE"
+            echo "OSF_PR_BODY=reports/pr-body.md"
+          } >> "$GITHUB_ENV"
 
       - run: make verify
 

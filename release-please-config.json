@@ -3,11 +3,6 @@
   "separate-pull-requests": true,
   "include-component-in-tag": true,
   "packages": {
-    "packages/testkit": {
-      "release-type": "node",
-      "package-name": "@opensoftware/testkit",
-      "component": "testkit"
-    },
     "contracts": {
       "release-type": "node",
       "package-name": "@opensoftware/contracts",
