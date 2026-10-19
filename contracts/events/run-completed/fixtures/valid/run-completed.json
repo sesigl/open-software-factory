@@ -1,0 +1,27 @@
+{
+  "specversion": "1.0",
+  "id": "01JABCDEVT00000000000000002",
+  "source": "/osf/foreman",
+  "type": "run.completed@v1",
+  "time": "2026-10-19T09:05:00Z",
+  "subject": "01JABCDRUN00000000000000001",
+  "datacontenttype": "application/json",
+  "data": {
+    "runId": "01JABCDRUN00000000000000001",
+    "workItemId": "01JABCDWORK0000000000000001",
+    "stage": "implement",
+    "factoryVersion": "3f2a9c1",
+    "outcome": "succeeded",
+    "startedAt": "2026-10-19T08:10:00Z",
+    "endedAt": "2026-10-19T08:52:13Z",
+    "requester": {
+      "kind": "person",
+      "id": "slack:U024BE7LH",
+      "displayName": "Varun"
+    },
+    "source": "slack",
+    "costUsd": 1.42,
+    "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+    "pullRequests": ["https://github.com/acme/web/pull/7"]
+  }
+}

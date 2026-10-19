@@ -1,0 +1,14 @@
+{
+  "$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
+  "root": false,
+  "extends": "//",
+  "files": {
+    "includes": [
+      "**",
+      "!*/*.schema.json",
+      "!events/*/*.schema.json",
+      "!openapi/openapi.json",
+      "!src/generated/types.ts"
+    ]
+  }
+}

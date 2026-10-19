@@ -1,4 +1,4 @@
-import { scenario } from "@osf/testkit";
+import { scenario } from "@opensoftware/testkit";
 
 scenario("SCN-REPO-008", async ({ sut, given, when, then }) => {
   let base = "";

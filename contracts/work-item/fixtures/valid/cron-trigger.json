@@ -1,0 +1,13 @@
+{
+  "id": "01JABCDWORK0000000000000002",
+  "type": "automation",
+  "title": "Daily self-triage report",
+  "requester": {
+    "kind": "trigger",
+    "id": "cron:self-triage-report"
+  },
+  "origin": {
+    "source": "cron"
+  },
+  "dedupeKey": "cron:self-triage-report:2026-10-19"
+}

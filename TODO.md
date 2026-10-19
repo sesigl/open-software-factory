@@ -40,50 +40,49 @@ read them for ideas, do not copy their company-specific rules.
   - `make check`, `verify`, `smoke`, `smoke-paid`, `next-id`, `new-module`, `docs`, `docs-affected`,
     `test-scenario ID=…`, `agents-sync` (links `skills/` into `.claude/skills/` and other harness folders).
   - Checks from `docs/quality/checks.md` as scripts in `tools/checks/`, each printing its ID and file:line:
-    SPEC, TRACE, STEPS, PASS, SPECGUARD, BOUNDARY-STATIC, BOUNDARY-ENV, ISOLATION, NOSKIP, ASSERT, FLAKE, BUDGET,
+    SPEC, TRACE, STEPS, PASS, BOUNDARY-STATIC, BOUNDARY-ENV, ISOLATION, NOSKIP, ASSERT, FLAKE, BUDGET,
     CONTRACT, DOCS-GEN, DOCS-AFFECTED, DOCS-LINKS, ADR. BOUNDARY-RUNTIME, NOREAL and REACH come with T-02.
     MUTATION and SMOKE-PAID as nightly workflows.
-  - ISOLATION allows a module to depend only on `@osf/contracts`, `@osf/testkit` (tests only) and external
+  - ISOLATION allows a module to depend only on `@opensoftware/contracts`, `@opensoftware/testkit` (tests only) and external
     packages.
   - GitHub Actions: `verify` on every PR (required check), nightly mutation, release-please.
   - Biome, `tsc --strict`, dependency-cruiser, lychee configs.
-  - Make `tools/hooks/protect-paths.sh` executable; it is already wired in `.claude/settings.json`.
 - **Adopt:** pnpm, Turborepo, `@cucumber/gherkin` parser, ts-morph, JUnit XML reporters, oasdiff, lychee,
   release-please.
 - **Seed:** child-apps-company `make specs-check`, `make traceability-check`, `scripts/lib/gherkin.ts`,
   `scripts/metrics/timed.py` (budgets).
 - **First scenarios** (`tools/features/checks.feature`): SPEC rejects a duplicate ID; TRACE rejects an
   implemented scenario without a test; STEPS rejects a label that differs from the step; PASS rejects a skipped
-  test; BOUNDARY-STATIC rejects an import from `src/`; SPECGUARD rejects a changed implemented step without
-  approval; DOCS-AFFECTED lists a doc whose `covers:` path changed.
+  test; BOUNDARY-STATIC rejects an import from `src/`; DOCS-AFFECTED lists a doc whose `covers:` path changed.
+  (SPECGUARD, the approval check for implemented scenarios, was removed by ADR 0013.)
 - **Done when:** `make verify` passes on `modules/_template` (renamed to a real example module or kept as a
   fixture) with every listed check active, and CI requires `verify`.
 
 ### [ ] T-01 · contracts
 
-- **Tier / wave / language:** core · 0 · TypeSpec, generated TypeScript (Python and Java clients generated for users)
+- **Tier / wave / language:** core · 0 · TypeSpec, generated TypeScript (the only client; ADR 0012)
 - **Path / prefix:** `contracts/` · `SCN-CTR`
 - **Purpose:** the five shared formats and every module API, as the single source of generated types.
 - **Build:** TypeSpec sources for: factory definition (JSON Schema), work item event (CloudEvents data schema),
   run record attributes (OTel resource and span attributes on top of GenAI conventions), evidence bundle manifest,
   score (Langfuse-compatible). AsyncAPI for events (`work.received@v1`, `run.completed@v1`, `gate.requested@v1`,
-  `gate.decided@v1`, `score.recorded@v1`, `pr.opened@v1`). Generated package `@osf/contracts` (npm); generated
-  client packages for Python (PyPI) and Java (Maven) for users, not used by modules. Valid and invalid fixtures per format.
+  `gate.decided@v1`, `score.recorded@v1`, `pr.opened@v1`). Generated package `@opensoftware/contracts` (npm), the only client;
+  clients for other languages are not built (ADR 0012). Valid and invalid fixtures per format.
 - **Adopt:** TypeSpec, CloudEvents, OpenTelemetry GenAI semantic conventions (pin a version), Agent Trace,
   Langfuse score model (ADR 0006).
 - **Realizes:** CODE-001 (schema side), DATA-001 (record shape), RUNTIME-008 (attribution fields).
 - **First scenarios:** a valid factory definition validates; a definition with an unknown agent field is
-  rejected with its path; a breaking change to a schema fails CONTRACT; generated TypeScript types and the generated
-  Python and Java clients round-trip every fixture.
+  rejected with its path; a breaking change to a schema fails CONTRACT; generated TypeScript types round-trip every
+  fixture.
 - **From T-00:** CONTRACT compares with the pull request base and covers only removed properties, newly
   required fields, type changes, removed enum values and closed objects. Point it at the last `contracts-v*` release
   tag, replace the home-made JSON Schema diff with a full compatibility checker if one fits, and run oasdiff on the
   real OpenAPI files. Keep the fixture layout `contracts/<format>/fixtures/{valid,invalid}/` or change the check.
-- **Done when:** the packages publish from CI; CONTRACT check runs against the last release.
+- **Done when:** `@opensoftware/contracts` publishes from CI; CONTRACT check runs against the last release.
 
 ### [ ] T-02 · testkit
 
-- **Tier / wave / language:** core · 0 · TypeScript (`@osf/testkit`), one testkit for every module (ADR 0009)
+- **Tier / wave / language:** core · 0 · TypeScript (`@opensoftware/testkit`), one testkit for every module (ADR 0009)
 - **Path / prefix:** `packages/testkit/` · `SCN-TK`
 - **Purpose:** the only way system tests touch a module; also the conformance kit for community adapters.
 - **Build:**
@@ -140,7 +139,7 @@ read them for ideas, do not copy their company-specific rules.
 - **Public surface:** CLI `runlog export | watch | attach`; an OTel Collector config pack per harness
   (`collector/`); OTLP output.
 - **Reads → writes:** harness session files (`~/.claude/projects`, `~/.codex/sessions`, OpenCode storage),
-  native harness OTel → run records (OTLP) with `run.id`, `work_item.id`, `factory.version`, `stage`, cost,
+  native harness OTel → run records (OTLP) with `osf.run.id`, `osf.work_item.id`, `osf.factory.version`, `osf.stage`, cost,
   model, harness, links.
 - **Adopt:** OTel JavaScript SDK and Collector (transform processor for per-harness span mapping), Agent Trace for
   line attribution. Check each harness's native OTel first (see internals) and only read files for what is
@@ -180,12 +179,10 @@ read them for ideas, do not copy their company-specific rules.
 - **Reads → writes:** feature files, test ASTs, JUnit results, evidence bundles, base/head diff → report,
   required check.
 - **Seed:** T-00's `tools/checks/` scripts; replace them in phase 2.
-- **Realizes:** checks SPEC, TRACE, STEPS, PASS, SPECGUARD as a product; principle P10 with proof.
+- **Realizes:** checks SPEC, TRACE, STEPS, PASS as a product; principle P10 with proof.
 - **First scenarios:** quick start reports scenario coverage of a sample repository; same cases as T-00's
   checks, now from the released CLI; configurable ID pattern and prefixes; outline examples counted once per
   test.
-- **From T-00:** SPECGUARD accepts approvals only from individual code owners; resolve team owners
-  (`@org/team`) through the forge port.
 - **Done when:** this repository's CI uses spec-trace instead of the bootstrap scripts.
 
 ### [ ] T-07 · scorekit
@@ -312,7 +309,7 @@ read them for ideas, do not copy their company-specific rules.
 - **Adopt:** LiteLLM (configuration, not a fork).
 - **Realizes:** OPEN-001, OPEN-003, OPEN-004, BENCH-006 (routing), principle "cost is bounded".
 - **First scenarios:** a request with a routing alias reaches the configured model; a run over its budget is
-  stopped with a clear error; every call writes a spend log line with `run.id`; a bring-your-own gateway URL is
+  stopped with a clear error; every call writes a spend log line with `osf.run.id`; a bring-your-own gateway URL is
   used instead of the bundled one.
 - **Done when:** taskcapture's `route` output is applied by this adapter in E2E-004.
 

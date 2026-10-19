@@ -1,0 +1,15 @@
+{
+  "id": "01JABCDSCORE000000000000002",
+  "name": "scope-creep",
+  "value": "minor",
+  "dataType": "CATEGORICAL",
+  "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+  "comment": "Adds a test that repeats SCN-PROOF-004.",
+  "timestamp": "2026-10-19T09:00:00Z",
+  "source": "API",
+  "metadata": {
+    "osf.run.id": "01JABCDRUN00000000000000001",
+    "osf.judge.model": "claude-haiku-5-5",
+    "osf.judge.cost.usd": 0.003
+  }
+}

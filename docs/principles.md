@@ -41,7 +41,7 @@ without a check is a wish. When a requirement or a design question is not covere
 | Ports with conformance | Every outside system sits behind a port; each port has `@conformance` scenarios. | An adapter is listed only when it passes them. |
 | Adopt before build | Every new module, dependency or service records the prior art that was checked. | ADR check rejects an empty Prior art section. |
 | Open standards at every boundary | MCP, ACP, OpenAPI, CloudEvents, OTLP. | Interfaces are generated from TypeSpec, OpenAPI and AsyncAPI; review rejects custom wire formats. |
-| Record and correlate everything | Every run carries `run.id`, `work_item.id`, `factory.version`. | Ingest rejects records without them. |
+| Record and correlate everything | Every run carries `osf.run.id`, `osf.work_item.id`, `osf.factory.version` (`contracts/run-record/`). | Ingest rejects records without them. |
 | Least privilege by default | No secrets in sandboxes; egress and MCP allowlists per agent. | Policy tests; a prompt-injection task in every benchmark suite. |
 | Humans at the gates | Gate policy as code by risk class. | Merge blocked without a signed approval record. |
 | Evidence or it didn't happen | No PR is ready without an evidence bundle for its scenarios. | proof and spec-trace are required checks. |

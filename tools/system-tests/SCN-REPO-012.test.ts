@@ -1,4 +1,4 @@
-import { scenario } from "@osf/testkit";
+import { scenario } from "@opensoftware/testkit";
 import { DEMO_TEST, demoModule, systemTest } from "./repo.ts";
 
 scenario("SCN-REPO-012", async ({ sut, given, when, then }) => {

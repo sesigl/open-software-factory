@@ -1,0 +1,9 @@
+{
+  "specversion": "1.0",
+  "id": "01JABCDEVT00000000000000001",
+  "source": "/osf/gatekeeper",
+  "type": "gate.decided@v1",
+  "time": "2026-10-19T09:05:00Z",
+  "subject": "01JABCDGATE0000000000000001",
+  "datacontenttype": "application/json"
+}

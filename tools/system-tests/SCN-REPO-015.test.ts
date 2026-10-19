@@ -1,4 +1,4 @@
-import { scenario } from "@osf/testkit";
+import { scenario } from "@opensoftware/testkit";
 
 const schema = (properties: string[]): string =>
   `${JSON.stringify(
@@ -14,13 +14,13 @@ const schema = (properties: string[]): string =>
 scenario("SCN-REPO-015", async ({ sut, given, when, then }) => {
   let base = "";
   await given('a base commit with the schema "contracts/demo/demo.schema.json" at version "1.2.0"', async () => {
-    await sut.files.put("contracts/package.json", '{ "name": "@osf/contracts", "version": "1.2.0" }\n');
+    await sut.files.put("contracts/package.json", '{ "name": "@opensoftware/contracts", "version": "1.2.0" }\n');
     await sut.files.put("contracts/demo/demo.schema.json", schema(["id", "name"]));
     base = await sut.git.commit("base");
   });
 
   await given('a change that removes its property "name" and sets the version "1.3.0"', async () => {
-    await sut.files.put("contracts/package.json", '{ "name": "@osf/contracts", "version": "1.3.0" }\n');
+    await sut.files.put("contracts/package.json", '{ "name": "@opensoftware/contracts", "version": "1.3.0" }\n');
     await sut.files.put("contracts/demo/demo.schema.json", schema(["id"]));
   });
 

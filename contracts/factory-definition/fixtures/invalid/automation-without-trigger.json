@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "factory": "web-app",
+  "providers": {
+    "harness": {
+      "claude-code": "^2",
+      "codex": "^1"
+    },
+    "sandbox": {
+      "kubernetes": "^0.4"
+    },
+    "channel": {
+      "slack": "^1",
+      "github": "^1"
+    },
+    "inference": {
+      "litellm": "^1"
+    }
+  },
+  "agents": {
+    "triage": {
+      "harness": "claude-code",
+      "model": "routes/triage",
+      "prompt": "./agents/triage.md",
+      "mcp": ["registry:io.github/github@1.4", "linear@2"],
+      "secrets": ["ref:openbao/linear-token"],
+      "repositories": ["acme/web"],
+      "sandbox": {
+        "template": "small",
+        "egress": ["api.linear.app"]
+      }
+    },
+    "implement": {
+      "harness": "codex",
+      "model": "routes/implement",
+      "prompt": "./agents/implement.md",
+      "skills": ["./skills/testing"],
+      "sandbox": {
+        "template": "node-24",
+        "cpu": 4,
+        "memory": "8Gi"
+      }
+    }
+  },
+  "workflow": [
+    {
+      "stage": "triage"
+    },
+    {
+      "stage": "spec",
+      "agent": "triage",
+      "gate": {
+        "policy": "./policy/spec.rego"
+      }
+    },
+    {
+      "stage": "implement"
+    },
+    {
+      "stage": "verify",
+      "agent": "implement",
+      "evidence": "required"
+    }
+  ],
+  "automations": [
+    {
+      "run": "self-triage-report"
+    }
+  ],
+  "scorers": {
+    "redundant-tests": {
+      "sample": 0.2,
+      "judge": "./scorers/redundant-tests.md"
+    }
+  },
+  "benchmarks": {
+    "merged-prs": {
+      "suite": "./benchmarks/merged-prs",
+      "schedule": "0 3 * * *"
+    }
+  }
+}

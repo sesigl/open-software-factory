@@ -4,8 +4,8 @@ import type { Context } from "./lib/context.ts";
 import { documentedEnv, type Finding, lineOf, moduleRootOf } from "./lib/repo.ts";
 
 /**
- * A system test imports only files in its own system-tests folder, @osf/testkit, generated contract clients
- * (@osf/contracts) and the test framework. Workspace packages resolve to their source folders.
+ * A system test imports only files in its own system-tests folder, @opensoftware/testkit, generated contract clients
+ * (@opensoftware/contracts) and the test framework. Workspace packages resolve to their source folders.
  */
 const BOUNDARY_RULES: IForbiddenRuleType[] = [
   {
@@ -15,11 +15,11 @@ const BOUNDARY_RULES: IForbiddenRuleType[] = [
     to: {
       pathNot: [
         "^$1/",
-        "^@osf/(testkit|contracts)(/|$)",
+        "^@opensoftware/(testkit|contracts)(/|$)",
         "^vitest(/|$)",
         "^packages/(testkit|contracts)/",
         "^contracts/",
-        "(^|/)node_modules/(@osf/(testkit|contracts)|vitest|@vitest)/",
+        "(^|/)node_modules/(@opensoftware/(testkit|contracts)|vitest|@vitest)/",
       ],
     },
   },
@@ -71,7 +71,7 @@ async function violations(context: Context, files: string[], rules: IForbiddenRu
     const check = violation.rule.name;
     const message =
       check === "BOUNDARY-STATIC"
-        ? `import "${written}" is not allowed in a system test; use @osf/testkit, generated contract clients or the test framework`
+        ? `import "${written}" is not allowed in a system test; use @opensoftware/testkit, generated contract clients or the test framework`
         : `imports ${violation.to}; modules share data only through contracts/`;
     return { check, file: violation.from, line, message };
   });
@@ -92,15 +92,15 @@ export async function isolation(context: Context): Promise<Finding[]> {
     .filter((file) => !file.includes("/system-tests/") && !file.includes("/node_modules/"));
   const findings = await violations(context, sources, ISOLATION_RULES);
 
-  // A module declares only @osf/contracts, @osf/testkit (devDependencies) and external packages.
+  // A module declares only @opensoftware/contracts, @opensoftware/testkit (devDependencies) and external packages.
   for (const manifest of repo.match("modules/*/package.json")) {
     const text = repo.read(manifest);
     const json = JSON.parse(text) as Record<string, Record<string, string> | undefined>;
     for (const section of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]) {
       for (const name of Object.keys(json[section] ?? {})) {
-        if (!name.startsWith("@osf/") || name === "@osf/contracts") continue;
-        if (name === "@osf/testkit" && section === "devDependencies") continue;
-        const why = name === "@osf/testkit" ? "is allowed only in devDependencies" : "is another module";
+        if (!name.startsWith("@opensoftware/") || name === "@opensoftware/contracts") continue;
+        if (name === "@opensoftware/testkit" && section === "devDependencies") continue;
+        const why = name === "@opensoftware/testkit" ? "is allowed only in devDependencies" : "is another module";
         findings.push({
           check: "ISOLATION",
           file: manifest,

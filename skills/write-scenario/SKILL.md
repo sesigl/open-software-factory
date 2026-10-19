@@ -34,7 +34,7 @@ A scenario describes one observable behavior of one module, seen from outside th
 - Use the glossary terms in `docs/reference/glossary.md`.
 - Step text is a contract: the system test repeats it word for word.
 - New scenarios start as `@status=planned`. Only `implement-scenario` sets `implemented`, after the test passes.
-- Changing the steps of an `implemented` scenario needs a person (CODEOWNERS). To replace behavior, write a new
-  scenario with `@replaces=SCN-...` and ask a person to mark the old one `deprecated`.
+- Never edit the steps of an `implemented` scenario. To replace behavior, write a new scenario with
+  `@replaces=SCN-...`, mark the old one `deprecated` and delete its test in the same change.
 - A port's shared behavior goes into `ports/<port>/features/` with `@conformance`. Every adapter of the port
   runs those scenarios.

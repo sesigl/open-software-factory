@@ -24,13 +24,12 @@ From phase 2 on, the released `spec-trace` module replaces TRACE, STEPS and PASS
 | TRACE | Every `implemented` scenario has exactly one system test; every system test names an existing scenario; `planned` scenarios may have a test that is expected to fail; `deprecated` scenarios have none. `@conformance` scenarios have exactly one test per adapter of the port. | Read `scenario("SCN-...")` calls from the TypeScript AST. Only string literals count. |
 | STEPS | The labels of `given`, `when` and `then` calls match the scenario's steps, in order, word for word. Outline parameters `<name>` match any value. | Compare AST string literals with the parsed steps. |
 | PASS | Every `implemented` scenario's test ran in this CI run and passed. Skipped, todo, retried-to-pass and missing results fail. | Join the JUnit XML results (each test case carries its scenario ID) with the scenario list. |
-| SPECGUARD | A pull request that changes the steps of an `implemented` scenario, deletes a scenario, or changes `@status` back from `implemented` carries an approval from a code owner. | Diff the parsed scenarios between base and head; check the review state through the forge API. |
 
 ## Boundaries
 
 | ID | What it checks | How |
 | --- | --- | --- |
-| BOUNDARY-STATIC | System tests import only `@osf/testkit`, generated contract clients, test fixtures and the test framework. No import from `src/`, no database driver, no `fs` or `child_process` outside the testkit. | dependency-cruiser rules. |
+| BOUNDARY-STATIC | System tests import only `@opensoftware/testkit`, generated contract clients, test fixtures and the test framework. No import from `src/`, no database driver, no `fs` or `child_process` outside the testkit. | dependency-cruiser rules. |
 | BOUNDARY-RUNTIME | The module under test runs as its built artifact in a separate process or container, with its own data folder that the test process cannot read. | The testkit starts the artifact; the data folder lives inside the container or in a temp folder owned by another user. Tests receive only URLs, a CLI handle and the documented input and output folders. |
 | BOUNDARY-ENV | Tests set only environment variables that the module's README documents. | The testkit refuses undocumented variables; the list is generated from the module's config schema. |
 | ISOLATION | No module imports another module's package or source. | dependency-cruiser on `modules/**`, `ports/**`, `adapters/**`. |

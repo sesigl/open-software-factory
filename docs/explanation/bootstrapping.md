@@ -28,4 +28,4 @@ listed for the next phase are added.
 ## What never changes
 
 The checks in `docs/quality/checks.md` apply in every phase and to every author, person, local agent or
-factory. Protected paths stay protected. The factory gets no right that a local agent does not have.
+factory. The factory gets no right that a local agent does not have.

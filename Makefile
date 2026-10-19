@@ -12,7 +12,7 @@ TURBO := pnpm exec turbo run --output-logs=errors-only
 export PATH := $(CURDIR)/.tools/bin:$(PATH)
 export TURBO_TELEMETRY_DISABLED := 1
 
-# Base for affected runs and for SPECGUARD, DOCS-AFFECTED, CONTRACT and ADR. CI sets OSF_BASE to the PR base.
+# Base for affected runs and for DOCS-AFFECTED, CONTRACT and ADR. CI sets OSF_BASE to the PR base.
 OSF_BASE ?= $(shell git merge-base HEAD origin/main 2>/dev/null)
 export OSF_BASE
 AFFECTED := $(if $(OSF_BASE),--filter=...[$(OSF_BASE)])

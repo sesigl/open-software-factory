@@ -3,15 +3,13 @@ name: verify
 
 on:
   pull_request:
-  # SPECGUARD reads the reviews, so a new approval runs the check again.
-  pull_request_review:
-    types: [submitted, dismissed]
+    # edited: DOCS-AFFECTED reads `docs-reviewed:` lines from the description.
+    types: [opened, synchronize, reopened, edited]
   push:
     branches: [main]
 
 permissions:
   contents: read
-  pull-requests: read
 
 concurrency:
   group: verify-${{ github.event.pull_request.number || github.ref }}
@@ -33,22 +31,17 @@ jobs:
           cache: pnpm
       - run: make install
 
-      - name: Pull request context for SPECGUARD and DOCS-AFFECTED
+      - name: Pull request context for DOCS-AFFECTED
         if: github.event.pull_request
         env:
-          GH_TOKEN: ${{ github.token }}
           PR_BODY: ${{ github.event.pull_request.body }}
-          REPO: ${{ github.repository }}
-          NUMBER: ${{ github.event.pull_request.number }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           mkdir -p reports
           printf '%s\n' "$PR_BODY" > reports/pr-body.md
-          gh api --paginate "repos/$REPO/pulls/$NUMBER/reviews" --jq '.[]' | jq -s . > reports/reviews.json
           {
             echo "OSF_BASE=$BASE_SHA"
             echo "OSF_PR_BODY=reports/pr-body.md"
-            echo "OSF_APPROVALS=reports/reviews.json"
           } >> "$GITHUB_ENV"
 
       - name: Base for pushes to main

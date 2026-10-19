@@ -1,0 +1,33 @@
+{
+  "specversion": "1.0",
+  "id": "01JABCDEVT00000000000000001",
+  "source": "/osf/intake",
+  "type": "work.received@v1",
+  "time": "2026-10-19T09:05:00Z",
+  "subject": "01JABCDWORK0000000000000001",
+  "datacontenttype": "application/json",
+  "data": {
+    "id": "01JABCDWORK0000000000000001",
+    "type": "bug",
+    "title": "Checkout button does nothing on Safari",
+    "requester": {
+      "kind": "person",
+      "id": "slack:U024BE7LH",
+      "displayName": "Varun"
+    },
+    "origin": {
+      "source": "slack",
+      "url": "https://acme.slack.com/archives/C01/p1700000000000200",
+      "externalId": "1700000000.000200"
+    },
+    "dedupeKey": "slack:C01/1700000000.000200",
+    "surface": "checkout",
+    "priority": "high",
+    "links": [
+      {
+        "url": "https://sentry.io/acme/issues/42",
+        "title": "TypeError in checkout.js"
+      }
+    ]
+  }
+}
