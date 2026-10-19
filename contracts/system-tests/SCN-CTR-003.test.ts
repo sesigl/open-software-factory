@@ -6,7 +6,7 @@ scenario("SCN-CTR-003", async ({ sut, fakes, given, when, then }) => {
     expect(record.span["osf.transcript.uri"]).toBeDefined();
     expect(record.span["osf.artifact.uris"]).toHaveLength(2);
     expect(record.span["osf.pull_request.urls"]).toHaveLength(1);
-    await sut.files.put("run.json", fakes.fixture("run.json"));
+    await sut.files.put("$INPUT/run.json", fakes.fixture("run.json"));
   });
 
   let run: Awaited<ReturnType<typeof sut.cli>>;

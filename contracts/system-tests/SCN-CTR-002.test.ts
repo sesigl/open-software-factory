@@ -5,7 +5,7 @@ scenario("SCN-CTR-002", async ({ sut, fakes, given, when, then }) => {
     const definition = fakes
       .fixture("factory.yaml")
       .replace("    model: routes/triage\n", "    model: routes/triage\n    modle: x\n");
-    await sut.files.put("factory.yaml", definition);
+    await sut.files.put("$INPUT/factory.yaml", definition);
   });
 
   let run: Awaited<ReturnType<typeof sut.cli>>;

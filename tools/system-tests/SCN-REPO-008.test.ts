@@ -3,13 +3,13 @@ import { scenario } from "@opensoftware/testkit";
 scenario("SCN-REPO-008", async ({ sut, given, when, then }) => {
   let base = "";
   await given('a base commit with a doc "docs/how-to/demo.md" that covers "modules/demo/src/**"', async () => {
-    await sut.files.put("docs/how-to/demo.md", "---\ncovers: [modules/demo/src/**]\n---\n\n# Use demo\n");
-    await sut.files.put("modules/demo/src/run.ts", "export const run = () => 0;\n");
+    await sut.files.put("$INPUT/docs/how-to/demo.md", "---\ncovers: [modules/demo/src/**]\n---\n\n# Use demo\n");
+    await sut.files.put("$INPUT/modules/demo/src/run.ts", "export const run = () => 0;\n");
     base = await sut.git.commit("base");
   });
 
   await given('a change to "modules/demo/src/run.ts"', async () => {
-    await sut.files.put("modules/demo/src/run.ts", "export const run = () => 1;\n");
+    await sut.files.put("$INPUT/modules/demo/src/run.ts", "export const run = () => 1;\n");
   });
 
   let run: Awaited<ReturnType<typeof sut.cli>>;

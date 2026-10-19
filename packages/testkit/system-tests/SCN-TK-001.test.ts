@@ -18,7 +18,7 @@ scenario("SCN-TK-001", async ({ sut, given, when, then }) => {
   await then(
     '"report.xml" has a test case named "SCN-DEMO-001" with the property "scenario" set to "SCN-DEMO-001"',
     async () => {
-      const report = await sut.files.read("report.xml");
+      const report = await sut.files.read("$INPUT/report.xml");
       expect(report).toMatch(
         /<testcase [^>]*name="SCN-DEMO-001"[^>]*>\s*<properties>\s*<property name="scenario" value="SCN-DEMO-001">/,
       );

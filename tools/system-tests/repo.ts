@@ -1,5 +1,5 @@
 // Text builders for the small repositories the system tests create. They only build strings; the tests put
-// them into the working folder through sut.files.
+// them into $INPUT through sut.files.
 
 export const DEMO_FEATURE = "modules/demo/features/a.feature";
 export const DEMO_TEST = "modules/demo/system-tests/SCN-DEMO-001.test.ts";

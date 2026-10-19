@@ -9,7 +9,7 @@ The only ways a system test or another program may use the testkit:
 - Library: the exports of `src/index.ts` (`scenario` and its context), used by system tests
 - CLI: `testkit <command>` (`bin/testkit.ts`, see `README.md#commands`), run in a module folder
 
-The testkit's own system tests use the CLI on small modules they write into the working folder.
+The testkit's own system tests use the CLI on small modules they write into `$INPUT`.
 
 ## Allowed exceptions
 

@@ -3,12 +3,15 @@ import { DEMO_TEST, demoModule, systemTest } from "./repo.ts";
 
 scenario("SCN-REPO-006", async ({ sut, given, when, then }) => {
   await given('a repository with the implemented scenario "SCN-DEMO-001" and its system test', async () => {
-    for (const [path, content] of Object.entries(demoModule())) await sut.files.put(path, content);
-    await sut.files.put("modules/demo/src/run.ts", "export const run = () => 0;\n");
+    for (const [path, content] of Object.entries(demoModule())) await sut.files.put(`$INPUT/${path}`, content);
+    await sut.files.put("$INPUT/modules/demo/src/run.ts", "export const run = () => 0;\n");
   });
 
   await given('the test imports "../src/run.ts"', async () => {
-    await sut.files.put(DEMO_TEST, systemTest({ extraImport: 'import { run as direct } from "../src/run.ts";' }));
+    await sut.files.put(
+      `$INPUT/${DEMO_TEST}`,
+      systemTest({ extraImport: 'import { run as direct } from "../src/run.ts";' }),
+    );
   });
 
   let run: Awaited<ReturnType<typeof sut.cli>>;

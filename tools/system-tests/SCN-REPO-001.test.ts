@@ -4,11 +4,11 @@ import { acceptedAdr } from "./repo.ts";
 scenario("SCN-REPO-001", async ({ sut, fakes, given, when, then }) => {
   await given('a repository with the module template and an accepted ADR for the module "demo"', async () => {
     for (const [path, content] of Object.entries(fakes.fromRepository("modules/_template"))) {
-      await sut.files.put(`modules/_template/${path}`, content);
+      await sut.files.put(`$INPUT/modules/_template/${path}`, content);
     }
     const reference = fakes.fromRepository("docs/reference");
-    await sut.files.put("docs/reference/scenario-prefixes.md", reference["scenario-prefixes.md"] ?? "");
-    await sut.files.put("docs/decisions/0001-demo.md", acceptedAdr("0001", "the module `modules/demo`"));
+    await sut.files.put("$INPUT/docs/reference/scenario-prefixes.md", reference["scenario-prefixes.md"] ?? "");
+    await sut.files.put("$INPUT/docs/decisions/0001-demo.md", acceptedAdr("0001", "the module `modules/demo`"));
   });
 
   await given('the developer ran "osf new-module demo"', async () => {
