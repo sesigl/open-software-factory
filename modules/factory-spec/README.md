@@ -151,3 +151,21 @@ const definition = resolveFactory("factory.yaml"); // a FactoryDefinition with d
 | SCN-FSPEC-030 | implemented | Diff of two equal versions shows no changes |
 | SCN-FSPEC-031 | implemented | Resolve prints the definition with defaults and pins |
 | SCN-FSPEC-032 | implemented | The help lists every command |
+| SCN-FSPEC-033 | planned | Render --k8s writes a kagent Agent with the prompt as its system message |
+| SCN-FSPEC-034 | planned | Render --k8s writes a ModelConfig that sends the model to the inference gateway |
+| SCN-FSPEC-035 | planned | Render --k8s runs an npm MCP server as an MCPServer and gives it to the agent as a tool |
+| SCN-FSPEC-036 | planned | Render --k8s connects a registry server with a remote URL as a RemoteMCPServer |
+| SCN-FSPEC-037 | planned | Render --k8s writes an agent-sandbox SandboxTemplate with the declared resources and egress |
+| SCN-FSPEC-038 | planned | Render --k8s writes the resources of every agent of the factory |
+| SCN-FSPEC-039 | planned | Render --gh-aw writes a workflow for an issue label automation |
+| SCN-FSPEC-040 | planned | Render --gh-aw writes a scheduled workflow named after the agent it runs |
+| SCN-FSPEC-041 | planned | Render --gh-aw gives the workflow the MCP servers of its agent |
+| SCN-FSPEC-042 | planned | Render --gh-aw refuses an agent whose harness gh-aw cannot run |
+| SCN-FSPEC-043 | planned | Apply registers a webhook for a forge automation |
+| SCN-FSPEC-044 | planned | Applying again keeps one webhook per repository |
+| SCN-FSPEC-045 | planned | Apply changes the events of the webhook when the automations change |
+| SCN-FSPEC-046 | planned | Plan reports a webhook changed by hand as drift |
+| SCN-FSPEC-047 | planned | Plan reports a deleted webhook as drift |
+| SCN-FSPEC-048 | planned | Apply deletes the webhook when the factory no longer has a forge automation |
+| SCN-FSPEC-049 | planned | Apply asks for the forge when a forge automation needs a webhook |
+| SCN-FSPEC-050 | planned | Apply refuses a forge event it cannot map to a webhook event |
