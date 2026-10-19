@@ -1,10 +1,19 @@
 // Bootstrap subset of @osf/testkit, built in T-00 so the repository tooling can prove its own scenarios.
 // T-02 adds HTTP, MCP and event handles, the fakes, the Python twin, NOREAL and REACH.
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve, sep } from "node:path";
-import { test, type TestContext } from "vitest";
+import { type TestContext, test } from "vitest";
 
 export type StepFn = (label: string, body: () => unknown) => Promise<void>;
 
@@ -92,6 +101,7 @@ function makeContext(moduleRoot: string, workspace: string): ScenarioContext {
     fakes: makeFakes(moduleRoot),
     given: step("Given"),
     when: step("When"),
+    // biome-ignore lint/suspicious/noThenProperty: `then` is the Gherkin keyword; the context is never awaited.
     then: step("Then"),
   };
 }
@@ -111,7 +121,9 @@ function makeSut(moduleRoot: string, workspace: string): Sut {
       const env = options.env ?? {};
       for (const name of Object.keys(env)) {
         if (!documented.has(name)) {
-          throw new Error(`BOUNDARY-ENV: ${name} is not documented in ${relative(repoRoot(), join(moduleRoot, "README.md"))}#configuration`);
+          throw new Error(
+            `BOUNDARY-ENV: ${name} is not documented in ${relative(repoRoot(), join(moduleRoot, "README.md"))}#configuration`,
+          );
         }
       }
       return run(process.execPath, [artifact, ...args], workspace, { ...baseEnv(workspace), ...env });
@@ -171,7 +183,9 @@ function repoRoot(): string {
 }
 
 function artifactOf(moduleRoot: string): string {
-  const manifest = JSON.parse(readFileSync(join(moduleRoot, "package.json"), "utf8")) as { bin?: string | Record<string, string> };
+  const manifest = JSON.parse(readFileSync(join(moduleRoot, "package.json"), "utf8")) as {
+    bin?: string | Record<string, string>;
+  };
   const bin = typeof manifest.bin === "string" ? manifest.bin : Object.values(manifest.bin ?? {})[0];
   if (!bin) throw new Error(`${moduleRoot}/package.json declares no bin: the testkit has no artifact to start`);
   return join(moduleRoot, bin);
@@ -181,7 +195,10 @@ function artifactOf(moduleRoot: string): string {
 function documentedEnv(moduleRoot: string): Set<string> {
   const readme = join(moduleRoot, "README.md");
   if (!existsSync(readme)) return new Set();
-  const section = readFileSync(readme, "utf8").split(/^## /m).find((part) => part.startsWith("Configuration")) ?? "";
+  const section =
+    readFileSync(readme, "utf8")
+      .split(/^## /m)
+      .find((part) => part.startsWith("Configuration")) ?? "";
   return new Set([...section.matchAll(/`([A-Z][A-Z0-9_]*)`/g)].map((match) => match[1] as string));
 }
 

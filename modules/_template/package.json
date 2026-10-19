@@ -1,0 +1,13 @@
+{
+  "name": "@osf/<name>",
+  "version": "0.0.0",
+  "description": "<name>: one sentence from the README.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "<name>": "dist/cli.js"
+  },
+  "devDependencies": {
+    "@osf/testkit": "workspace:*"
+  }
+}
