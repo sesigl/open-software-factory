@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://github.com/sesigl/open-software-factory/compare/contracts-v1.1.0...contracts-v1.2.0) (2026-10-19)
+
+
+### Features
+
+* **factory-spec:** T-03 forge webhooks, render --k8s and --gh-aw, and a release ([#22](https://github.com/sesigl/open-software-factory/issues/22)) ([9da31e0](https://github.com/sesigl/open-software-factory/commit/9da31e04cbbe40dba07756aed123d9801b403431))
+
+
+### Bug Fixes
+
+* **release:** contracts version in openapi.json, and build contracts before publishing factory-spec ([#25](https://github.com/sesigl/open-software-factory/issues/25)) ([4322c4b](https://github.com/sesigl/open-software-factory/commit/4322c4be6e80a3b208ab3d2b3f1c9e60513b7db1))
+
 ## [1.1.0](https://github.com/sesigl/open-software-factory/compare/contracts-v1.0.0...contracts-v1.1.0) (2026-10-19)
 
 
