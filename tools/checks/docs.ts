@@ -197,7 +197,7 @@ function mentions(text: string, name: string): boolean {
   return new RegExp(`(^|[\\s\`(/])${escaped}($|[\\s\`),.;:/])`, "m").test(text);
 }
 
-/** External dependencies of a manifest; workspace packages (`@osf/*`, `osf-*`, `workspace:`) are not counted. */
+/** External dependencies of a manifest; workspace packages (`@opensoftware/*`, `osf-*`, `workspace:`) are not counted. */
 function dependencies(manifest: string, text: string): string[] {
   const names: string[] = [];
   if (manifest.endsWith(".json")) {
@@ -209,7 +209,7 @@ function dependencies(manifest: string, text: string): string[] {
     }
     for (const key of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]) {
       for (const [name, version] of Object.entries(json[key] ?? {})) {
-        if (!name.startsWith("@osf/") && !String(version).startsWith("workspace:")) names.push(name);
+        if (!name.startsWith("@opensoftware/") && !String(version).startsWith("workspace:")) names.push(name);
       }
     }
   } else {

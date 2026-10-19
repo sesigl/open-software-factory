@@ -1,4 +1,4 @@
-// Bootstrap subset of @osf/testkit, built in T-00 so the repository tooling can prove its own scenarios.
+// Bootstrap subset of @opensoftware/testkit, built in T-00 so the repository tooling can prove its own scenarios.
 // T-02 adds HTTP, MCP and event handles, the fakes, NOREAL and REACH.
 import { spawn, spawnSync } from "node:child_process";
 import {
@@ -36,6 +36,8 @@ export interface Sut {
   /** The working folder is a Git repository with a fixed author and clock. */
   git: {
     commit(message: string): Promise<string>;
+    /** Tags the current commit, for example a release tag. */
+    tag(name: string): Promise<void>;
   };
 }
 
@@ -149,6 +151,9 @@ function makeSut(moduleRoot: string, workspace: string): Sut {
         await mustRun("git", ["add", "-A"], workspace);
         await mustRun("git", ["commit", "-q", "--allow-empty", "-m", message], workspace);
         return (await mustRun("git", ["rev-parse", "HEAD"], workspace)).stdout.trim();
+      },
+      async tag(name) {
+        await mustRun("git", ["tag", name], workspace);
       },
     },
   };

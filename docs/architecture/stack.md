@@ -11,7 +11,7 @@ work on. Each choice has an ADR in [`../decisions/`](../decisions/).
 
 | Layer | Pick | Main reason | Runner-up | ADR |
 | --- | --- | --- | --- | --- |
-| Languages | TypeScript for every module, port, adapter, the testkit and the checks; Python only for plugins into Python-only tools and generated clients | one toolchain; no module edge needs Python | TypeScript + Python (ADR 0002, superseded) | 0009 |
+| Languages | TypeScript for every module, port, adapter, the testkit and the checks; Python only for plugins into Python-only tools; no generated clients for other languages | one toolchain; no module edge needs Python | TypeScript + Python (ADR 0002, superseded) | 0009, 0012 |
 | Source of truth | Git | review, versions, rollback | — | — |
 | Operational database | PostgreSQL; SQLite in CLI mode | Temporal, Langfuse, pgvector run on it | — | 0003 |
 | Analytics | DuckDB locally, PostgreSQL views in server mode, ClickHouse at scale | nearly the same SQL from laptop to large org | ClickHouse everywhere | 0003 |
@@ -19,7 +19,7 @@ work on. Each choice has an ADR in [`../decisions/`](../decisions/).
 | Events | CloudEvents on NATS JetStream via a Postgres outbox | small binary; no lost events | webhooks only | 0003 |
 | Workflow engine | Temporal | long human waits, signals, timers, history UI, polyglot workers | DBOS | 0004 |
 | Repo and build | monorepo; pnpm workspaces + Turborepo; `make` on top; release-please | native tools, cached affected builds, independent releases, nothing to migrate | Nx | 0005, 0010 |
-| Contracts | TypeSpec → OpenAPI 3.1 + JSON Schema; AsyncAPI for events | one source; generated TypeScript types and Python and Java clients | hand-written JSON Schema | 0006 |
+| Contracts | TypeSpec → JSON Schema and OpenAPI 3.1; hand-written AsyncAPI 3.1 for events | one source; generated TypeScript types, the only client | hand-written JSON Schema | 0006, 0012 |
 | Testing | system tests from the outside, no unit tests by default | see testing strategy | — | 0007 |
 | License | Apache-2.0 | patent grant | MIT | 0008 |
 
@@ -45,8 +45,8 @@ has an official Java SDK; Temporal's Java SDK is its most proven.
 runlog, scorekit, ledger, taskcapture and observer depend only on files, HTTP, SQL and CLIs that work from
 TypeScript, and system tests drive modules from outside. Two languages would double the testkit, the checks, the
 lint and type stacks and the release paths. So every module, port, adapter, the testkit and the checks are
-TypeScript. Python appears only as plugins into Python-only tools (an optional Harbor agent plugin) and as
-generated clients; Java only as generated clients.
+TypeScript. Python appears only as plugins into Python-only tools (an optional Harbor agent plugin). The contracts
+publish only the TypeScript package; clients for other languages are not built (ADR 0012).
 
 ## Quality tooling
 
@@ -66,7 +66,7 @@ generated clients; Java only as generated clients.
 | --- | --- |
 | Runtime | Node 24 LTS |
 | HTTP servers | Fastify |
-| Tool distribution | npm (`npx`), multi-arch container images; generated clients on npm, PyPI and Maven |
+| Tool distribution | npm (`npx`), multi-arch container images; `@opensoftware/contracts` on npm |
 | Factory install | Docker Compose and Helm |
 | Supply chain | Sigstore signatures, SLSA provenance, SBOMs, Renovate |
 | CI | GitHub Actions; each tool also ships as a GitHub Action |

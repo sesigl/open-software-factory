@@ -1,0 +1,24 @@
+{
+  "specversion": "1.0",
+  "id": "01JABCDEVT00000000000000005",
+  "source": "/osf/scorekit",
+  "type": "score.recorded@v2",
+  "time": "2026-10-19T09:05:00Z",
+  "subject": "01JABCDSCORE000000000000001",
+  "datacontenttype": "application/json",
+  "data": {
+    "id": "01JABCDSCORE000000000000001",
+    "name": "redundant-tests",
+    "value": 0,
+    "dataType": "BOOLEAN",
+    "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+    "comment": "Adds a test that repeats SCN-PROOF-004.",
+    "timestamp": "2026-10-19T09:00:00Z",
+    "source": "API",
+    "metadata": {
+      "osf.run.id": "01JABCDRUN00000000000000001",
+      "osf.judge.model": "claude-haiku-5-5",
+      "osf.judge.cost.usd": 0.003
+    }
+  }
+}

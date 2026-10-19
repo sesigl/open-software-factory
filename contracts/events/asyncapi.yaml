@@ -1,0 +1,144 @@
+# Events between modules (ADR 0006). Hand-written: TypeSpec has no maintained AsyncAPI emitter, so the
+# payloads are the JSON Schemas that `pnpm build` emits from typespec/events.tsp. Every message is a CloudEvents
+# 1.0 event in structured JSON mode; its `type` is the versioned name, for example "work.received@v1".
+asyncapi: 3.1.0
+info:
+  title: Open Software Factory events
+  version: 0.0.0
+  description: Facts that modules publish and others react to. Past tense, versioned, at-least-once.
+defaultContentType: application/cloudevents+json
+servers:
+  nats:
+    host: localhost:4222
+    protocol: nats
+    description: NATS JetStream (ADR 0003). Without a bus the same JSON is posted to webhooks.
+channels:
+  work-received:
+    address: osf.work.received.v1
+    description: A work item was accepted. `data` is a work item.
+    messages:
+      WorkReceived:
+        $ref: '#/components/messages/WorkReceived'
+  run-completed:
+    address: osf.run.completed.v1
+    description: A run ended.
+    messages:
+      RunCompleted:
+        $ref: '#/components/messages/RunCompleted'
+  gate-requested:
+    address: osf.gate.requested.v1
+    description: A stage waits for a decision.
+    messages:
+      GateRequested:
+        $ref: '#/components/messages/GateRequested'
+  gate-decided:
+    address: osf.gate.decided.v1
+    description: A gate was approved, rejected or expired.
+    messages:
+      GateDecided:
+        $ref: '#/components/messages/GateDecided'
+  score-recorded:
+    address: osf.score.recorded.v1
+    description: A scorer scored a run. `data` is a score.
+    messages:
+      ScoreRecorded:
+        $ref: '#/components/messages/ScoreRecorded'
+  pr-opened:
+    address: osf.pr.opened.v1
+    description: The factory opened a pull request.
+    messages:
+      PrOpened:
+        $ref: '#/components/messages/PrOpened'
+operations:
+  publishWorkReceived:
+    action: send
+    summary: Published by intake.
+    channel:
+      $ref: '#/channels/work-received'
+    messages:
+      - $ref: '#/channels/work-received/messages/WorkReceived'
+  publishRunCompleted:
+    action: send
+    summary: Published by foreman.
+    channel:
+      $ref: '#/channels/run-completed'
+    messages:
+      - $ref: '#/channels/run-completed/messages/RunCompleted'
+  publishGateRequested:
+    action: send
+    summary: Published by gatekeeper.
+    channel:
+      $ref: '#/channels/gate-requested'
+    messages:
+      - $ref: '#/channels/gate-requested/messages/GateRequested'
+  publishGateDecided:
+    action: send
+    summary: Published by gatekeeper.
+    channel:
+      $ref: '#/channels/gate-decided'
+    messages:
+      - $ref: '#/channels/gate-decided/messages/GateDecided'
+  publishScoreRecorded:
+    action: send
+    summary: Published by scorekit.
+    channel:
+      $ref: '#/channels/score-recorded'
+    messages:
+      - $ref: '#/channels/score-recorded/messages/ScoreRecorded'
+  publishPrOpened:
+    action: send
+    summary: Published by forge adapters.
+    channel:
+      $ref: '#/channels/pr-opened'
+    messages:
+      - $ref: '#/channels/pr-opened/messages/PrOpened'
+components:
+  messages:
+    WorkReceived:
+      name: work.received@v1
+      title: work.received@v1
+      contentType: application/cloudevents+json
+      payload:
+        schemaFormat: application/schema+json;version=draft-2020-12
+        schema:
+          $ref: './work-received/work-received.schema.json'
+    RunCompleted:
+      name: run.completed@v1
+      title: run.completed@v1
+      contentType: application/cloudevents+json
+      payload:
+        schemaFormat: application/schema+json;version=draft-2020-12
+        schema:
+          $ref: './run-completed/run-completed.schema.json'
+    GateRequested:
+      name: gate.requested@v1
+      title: gate.requested@v1
+      contentType: application/cloudevents+json
+      payload:
+        schemaFormat: application/schema+json;version=draft-2020-12
+        schema:
+          $ref: './gate-requested/gate-requested.schema.json'
+    GateDecided:
+      name: gate.decided@v1
+      title: gate.decided@v1
+      contentType: application/cloudevents+json
+      payload:
+        schemaFormat: application/schema+json;version=draft-2020-12
+        schema:
+          $ref: './gate-decided/gate-decided.schema.json'
+    ScoreRecorded:
+      name: score.recorded@v1
+      title: score.recorded@v1
+      contentType: application/cloudevents+json
+      payload:
+        schemaFormat: application/schema+json;version=draft-2020-12
+        schema:
+          $ref: './score-recorded/score-recorded.schema.json'
+    PrOpened:
+      name: pr.opened@v1
+      title: pr.opened@v1
+      contentType: application/cloudevents+json
+      payload:
+        schemaFormat: application/schema+json;version=draft-2020-12
+        schema:
+          $ref: './pr-opened/pr-opened.schema.json'

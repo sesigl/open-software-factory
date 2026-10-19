@@ -62,6 +62,9 @@ through a reviewed PR to `factory-spec`, which the foreman loads as its next ver
 
 The OpenTelemetry GenAI conventions still have “Development” status. Pin a version.
 
+The schemas, fixtures and pins are in [`contracts/`](../../contracts/README.md#formats); the events between modules
+are in [`contracts/events/asyncapi.yaml`](../../contracts/events/asyncapi.yaml).
+
 ## Tools to build
 
 | Tool | Tier | Wave | Lang | Useful alone as | Reads → writes | Adopts | Prior art and why we still build | Seed in sesigl/child-apps-company |

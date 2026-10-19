@@ -1,32 +1,34 @@
 // CONTRACT: no breaking change to a schema or API without a major version, and every fixture agrees with its
-// schema. JSON Schemas are compared here; OpenAPI files go through oasdiff.
+// schema. The base is the last `contracts-v*` release tag, else OSF_BASE. JSON Schemas go through the same diff as
+// `osf-contracts breaking`; OpenAPI files go through oasdiff.
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import Ajv2020 from "ajv/dist/2020.js";
+import addFormats from "ajv-formats";
+import picomatch from "picomatch";
 import type { Context } from "./lib/context.ts";
-import { showAt } from "./lib/git.ts";
+import { filesAt, lastTag, showAt } from "./lib/git.ts";
 import type { Finding } from "./lib/repo.ts";
 import { findTool } from "./lib/tools.ts";
 
-type Schema = {
-  type?: string | string[];
-  properties?: Record<string, Schema>;
-  required?: string[];
-  enum?: unknown[];
-  items?: Schema;
-  additionalProperties?: boolean | Schema;
-};
+const RELEASE_TAGS = "contracts-v*";
+const SCHEMAS = "contracts/**/*.schema.json";
+const NOT_SCHEMAS = ["**/node_modules/**", "**/fixtures/**"];
 
-export function contract(context: Context): Finding[] {
+export async function contract(context: Context): Promise<Finding[]> {
   const { repo } = context;
   const findings: Finding[] = [...fixtures(context)];
-  const schemas = repo.match("contracts/**/*.schema.json");
+  const isSchema = picomatch(SCHEMAS, { dot: true, ignore: NOT_SCHEMAS });
+  const schemas = repo.match(SCHEMAS).filter((file) => isSchema(file));
   const apis = repo.match("contracts/**/openapi.{yaml,yml,json}");
   if (schemas.length + apis.length === 0) return findings;
-  const base = context.base("CONTRACT");
+  const tag = lastTag(repo.root, RELEASE_TAGS);
+  const base = tag ?? context.base("CONTRACT");
   if (!base) return findings;
+  const released = filesAt(repo.root, base).filter((file) => isSchema(file));
+  const since = tag ?? process.env.OSF_BASE?.trim() ?? base;
 
   const versionAt = (file: string, at?: string): string | undefined => {
     const manifest = manifestOf(file);
@@ -45,14 +47,23 @@ export function contract(context: Context): Finding[] {
       check: "CONTRACT",
       file,
       line: 1,
-      message: `breaking change without a major version (${versions} in ${manifestOf(file)}): ${changes.join("; ")}`,
+      message: `breaking change since ${since} without a major version (${versions} in ${manifestOf(file)}): ${changes.join("; ")}`,
     });
   };
 
-  for (const file of schemas) {
-    const before = showAt(repo.root, base, file);
-    if (before === undefined) continue;
-    report(file, breaking(JSON.parse(before) as Schema, JSON.parse(repo.read(file)) as Schema, ""));
+  // The diff of `osf-contracts breaking`, loaded only here: it needs the built package (contracts/dist).
+  let breakingChanges: typeof import("@opensoftware/contracts").breakingChanges;
+  try {
+    ({ breakingChanges } = await import("@opensoftware/contracts"));
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    findings.push({ check: "CONTRACT", message: `@opensoftware/contracts is not built (run make verify): ${reason}` });
+    return findings;
+  }
+  const current = new Set(schemas);
+  for (const file of released) {
+    const before = JSON.parse(showAt(repo.root, base, file) ?? "{}");
+    report(file, current.has(file) ? breakingChanges(before, JSON.parse(repo.read(file))) : ["removed the format"]);
   }
 
   for (const file of apis) {
@@ -78,35 +89,7 @@ export function contract(context: Context): Finding[] {
   return findings;
 }
 
-/** Changes that make data valid under the old schema invalid, or remove what readers relied on. */
-function breaking(before: Schema, after: Schema, path: string): string[] {
-  const changes: string[] = [];
-  const name = (key: string): string => (path ? `${path}.${key}` : key);
-  const types = (schema: Schema): string => [schema.type ?? []].flat().sort().join("|");
-  if (before.type !== undefined && types(before) !== types(after)) {
-    changes.push(`changed the type of ${path || "the root"} from ${types(before)} to ${types(after) || "any"}`);
-  }
-  for (const key of Object.keys(before.properties ?? {})) {
-    const next = after.properties?.[key];
-    if (!next) changes.push(`removed property ${name(key)}`);
-    else changes.push(...breaking(before.properties?.[key] as Schema, next, name(key)));
-  }
-  for (const key of after.required ?? []) {
-    if (!(before.required ?? []).includes(key)) changes.push(`made ${name(key)} required`);
-  }
-  for (const value of before.enum ?? []) {
-    if (after.enum && !after.enum.some((candidate) => JSON.stringify(candidate) === JSON.stringify(value))) {
-      changes.push(`removed the value ${JSON.stringify(value)} from ${path || "the root"}`);
-    }
-  }
-  if (before.additionalProperties !== false && after.additionalProperties === false) {
-    changes.push(`closed ${path || "the root"} to additional properties`);
-  }
-  if (before.items && after.items) changes.push(...breaking(before.items, after.items, `${path}[]`));
-  return changes;
-}
-
-/** Fixtures in `<dir>/fixtures/valid|invalid/*.json` against the one schema in `<dir>`. */
+/** Fixtures in `<dir>/fixtures/valid|invalid/*.json` against the one schema in `<dir>`, formats included. */
 function fixtures(context: Context): Finding[] {
   const { repo } = context;
   const findings: Finding[] = [];
@@ -120,6 +103,7 @@ function fixtures(context: Context): Finding[] {
       continue;
     }
     const ajv = new Ajv2020.default({ strict: false, allErrors: true });
+    addFormats.default(ajv);
     const validate = ajv.compile(JSON.parse(repo.read(schemas[0] as string)) as object);
     const valid = validate(JSON.parse(repo.read(fixture)));
     if (kind === "valid" && !valid) {

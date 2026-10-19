@@ -45,7 +45,7 @@ export function systemTest(options: TestOptions = {}): string {
     trailer = "",
   } = options;
   return [
-    'import { scenario } from "@osf/testkit";',
+    'import { scenario } from "@opensoftware/testkit";',
     extraImport,
     "",
     'scenario("SCN-DEMO-001", async ({ sut, given, when, then }) => {',
@@ -78,7 +78,7 @@ export const DEMO_README = [
   "",
 ].join("\n");
 
-export const DEMO_PACKAGE = `${JSON.stringify({ name: "@osf/demo", version: "0.1.0", type: "module" }, null, 2)}\n`;
+export const DEMO_PACKAGE = `${JSON.stringify({ name: "@opensoftware/demo", version: "0.1.0", type: "module" }, null, 2)}\n`;
 
 /** The files of module demo with the implemented scenario SCN-DEMO-001 and its system test. */
 export function demoModule(test: TestOptions = {}): Record<string, string> {

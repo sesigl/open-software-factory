@@ -11,7 +11,7 @@ One sentence: the one problem this module solves on its own.
 This quick start is scenario `SCN-<PREFIX>-001` and is tested on every change.
 
 ```sh
-npx @osf/<name> <command> <args>
+npx @opensoftware/<name> <command> <args>
 ```
 
 ## Commands

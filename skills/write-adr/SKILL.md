@@ -10,5 +10,6 @@ description: Record a durable decision, including every new module, dependency, 
 3. Fill in **Prior art** for every new module, dependency or service: which existing projects you checked,
    their license and maintenance state, and why you adopt, extend or build. The DOCS check rejects an empty
    Prior art section.
-4. Set `status: proposed`. A person sets `accepted`.
+4. Set `status: accepted` when the pull request makes the decision; its review is the approval. Use
+   `proposed` only for a decision that stays open after the pull request.
 5. Link the ADR from the module README and the pull request.

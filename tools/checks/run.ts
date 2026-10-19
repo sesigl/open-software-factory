@@ -4,7 +4,7 @@ import { contract } from "./contract.ts";
 import { adr, docsAffected, docsGen, docsLinks } from "./docs.ts";
 import { type Check, Context } from "./lib/context.ts";
 import { type Finding, Repo } from "./lib/repo.ts";
-import { spec, specguard } from "./spec.ts";
+import { spec } from "./spec.ts";
 import { budget, flake, pass, steps, trace } from "./trace.ts";
 
 /** The fast set: static checks that need no test run and no base. */
@@ -27,7 +27,6 @@ export const SLOW: Record<string, Check> = {
   PASS: pass,
   FLAKE: flake,
   BUDGET: budget,
-  SPECGUARD: specguard,
   "DOCS-AFFECTED": docsAffected,
   CONTRACT: contract,
 };

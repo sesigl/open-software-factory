@@ -14,6 +14,12 @@ export function baseCommit(root: string): string | undefined {
   return resolved.out.trim();
 }
 
+/** The highest version tag matching the pattern that HEAD contains, for example the last `contracts-v*` release. */
+export function lastTag(root: string, pattern: string): string | undefined {
+  const tags = git(root, ["tag", "--list", pattern, "--merged", "HEAD", "--sort=-v:refname"]);
+  return tags.ok ? tags.out.split("\n")[0]?.trim() || undefined : undefined;
+}
+
 /** Files that differ between the base commit and the working tree, plus untracked files. */
 export function changedFiles(root: string, base: string): string[] {
   const diff = git(root, ["diff", "--name-only", "-z", "--no-renames", base]).out.split("\0");

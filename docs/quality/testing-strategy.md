@@ -14,7 +14,7 @@ the module calls is a fake the test controls.
 ```mermaid
 flowchart LR
   subgraph Test process
-    T[system test SCN-…] --> K["@osf/testkit: sut handle, fakes, clock"]
+    T[system test SCN-…] --> K["@opensoftware/testkit: sut handle, fakes, clock"]
   end
   subgraph Module under test, own process or container
     A[built artifact]
@@ -38,7 +38,7 @@ Because the module runs as its artifact in its own process, a test cannot pass b
 modules/proof/
   README.md            how to use; generated sections
   AGENTS.md            public surface, exceptions, budget, scenario prefix
-  features/            requirements (protected once implemented)
+  features/            requirements (implemented steps never change; replace them)
   system-tests/        one file per scenario: SCN-PROOF-004.test.ts
   src/                 private
   adapters/github/     runs ports/forge @conformance scenarios
@@ -65,8 +65,8 @@ docs/vision/           factory-level requirements; source for module scenarios, 
 | Confidence that code is exercised | Coverage numbers agents learn to game | REACH (coverage of the running module) and nightly MUTATION |
 
 Limits: STEPS proves the test follows the scenario's words, not their meaning. ASSERT, MUTATION and human
-review of the first tests in each module close most of the gap. The local Claude Code hook catches only obvious
-edits to implemented scenarios; SPECGUARD in CI is the real guard.
+review of the first tests in each module close most of the gap. Edits to implemented scenarios show up in the
+pull request diff, where the review catches them.
 
 ## Smoke tests
 

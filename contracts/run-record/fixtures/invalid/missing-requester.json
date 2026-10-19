@@ -1,0 +1,31 @@
+{
+  "resource": {
+    "service.name": "claude-code",
+    "osf.run.id": "01JABCDRUN00000000000000001",
+    "osf.work_item.id": "01JABCDWORK0000000000000001",
+    "osf.factory.version": "3f2a9c1",
+    "osf.stage": "implement",
+    "osf.requester.kind": "person",
+    "osf.source": "slack",
+    "osf.origin.url": "https://acme.slack.com/archives/C01/p1700000000000200",
+    "osf.harness.name": "claude-code",
+    "osf.harness.version": "2.1.0"
+  },
+  "span": {
+    "gen_ai.operation.name": "invoke_agent",
+    "gen_ai.provider.name": "anthropic",
+    "gen_ai.agent.name": "implement",
+    "gen_ai.conversation.id": "5b8e0c7e-1d2a-4f00-9a7e-0d1f2a3b4c5d",
+    "gen_ai.request.model": "claude-sonnet-5-5",
+    "gen_ai.usage.input_tokens": 182340,
+    "gen_ai.usage.output_tokens": 9120,
+    "osf.outcome": "succeeded",
+    "osf.cost.usd": 1.42,
+    "osf.transcript.uri": "s3://runs/01JABCDRUN00000000000000001/transcript.jsonl",
+    "osf.pull_request.urls": ["https://github.com/acme/web/pull/7"],
+    "osf.artifact.uris": [
+      "s3://runs/01JABCDRUN00000000000000001/report.md",
+      "s3://runs/01JABCDRUN00000000000000001/checkout.png"
+    ]
+  }
+}
