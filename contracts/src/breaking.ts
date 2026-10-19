@@ -12,6 +12,7 @@ export interface Schema {
   const?: unknown;
   items?: Schema;
   anyOf?: Schema[];
+  oneOf?: Schema[];
   additionalProperties?: boolean | Schema;
   unevaluatedProperties?: boolean | Schema;
   pattern?: string;
@@ -115,11 +116,14 @@ export function diff(before: Schema, after: Schema, path = ""): string[] {
     if (typeof old === "object" && typeof next === "object") changes.push(...diff(old, next, name("*")));
   }
   if (before.items && after.items) changes.push(...diff(before.items, after.items, `${path}[]`));
-  if (before.anyOf && after.anyOf) {
-    if (after.anyOf.length < before.anyOf.length) changes.push(`removed a form of ${at}`);
-    before.anyOf.forEach((form, index) => {
-      const next = after.anyOf?.[index];
-      if (next) changes.push(...diff(form, next, `${path}|${index + 1}`));
+  for (const keyword of ["anyOf", "oneOf"] as const) {
+    const old = before[keyword];
+    const next = after[keyword];
+    if (!old || !next) continue;
+    if (next.length < old.length) changes.push(`removed a form of ${at}`);
+    old.forEach((form, index) => {
+      const replaced = next[index];
+      if (replaced) changes.push(...diff(form, replaced, `${path}|${index + 1}`));
     });
   }
   changes.push(...constraints(before, after, at));

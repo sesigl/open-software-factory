@@ -103,3 +103,4 @@ None. The CLI reads no environment variables.
 | SCN-CTR-006 | implemented | The generated TypeScript types round-trip every valid fixture |
 | SCN-CTR-007 | deprecated | The generated Python client round-trips every valid fixture |
 | SCN-CTR-008 | deprecated | The generated Java client round-trips every valid fixture |
+| SCN-CTR-009 | implemented | A tighter form of a "exactly one of" rule fails the compatibility check |

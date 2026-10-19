@@ -62,3 +62,11 @@ Feature: Shared formats
     When the developer runs "osf-contracts roundtrip --client java"
     Then the command exits with code 0
     And the output names every valid fixture as "unchanged"
+
+  @id=SCN-CTR-009 @status=implemented
+  Scenario: A tighter form of a "exactly one of" rule fails the compatibility check
+    Given the release tag "contracts-v1.0.0" of the contracts
+    And a change that makes "timezone" required for scheduled automations and sets the version "1.1.0"
+    When the developer runs "osf-contracts breaking"
+    Then the command exits with code 1
+    And the output contains "made automations[]|2.timezone required"
