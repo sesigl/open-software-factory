@@ -62,14 +62,18 @@ async function violations(context: Context, files: string[], rules: IForbiddenRu
     const dependency = result.modules
       .find((module) => module.source === violation.from)
       ?.dependencies.find((candidate) => candidate.resolved === violation.to);
-    const written = dependency?.module ?? violation.to;
     const text = context.repo.read(violation.from);
+    // dependency-cruiser drops the `node:` prefix of built-in modules; find the specifier with or without it.
+    const bare = dependency?.module ?? violation.to;
+    const quoted = (name: string): RegExp => new RegExp(`["']${escapeRegExp(name)}["']`);
+    const written = [bare, `node:${bare}`].find((name) => quoted(name).test(text)) ?? bare;
+    const line = text.split("\n").findIndex((row) => quoted(written).test(row)) + 1 || 1;
     const check = violation.rule.name;
     const message =
       check === "BOUNDARY-STATIC"
         ? `import "${written}" is not allowed in a system test; use @osf/testkit, generated contract clients or the test framework`
         : `imports ${violation.to}; modules share data only through contracts/`;
-    return { check, file: violation.from, line: lineOf(text, `"${written}"`), message };
+    return { check, file: violation.from, line, message };
   });
 }
 
@@ -155,4 +159,8 @@ export function assert(context: Context): Finding[] {
     }
   }
   return findings;
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
