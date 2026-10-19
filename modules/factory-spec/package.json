@@ -1,0 +1,21 @@
+{
+  "name": "@opensoftware/factory-spec",
+  "version": "0.0.0",
+  "private": true,
+  "description": "factory-spec: one sentence from the README.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "factory-spec": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "vitest run",
+    "docs": "node ../../tools/bin/osf.ts docs ."
+  },
+  "devDependencies": {
+    "@opensoftware/testkit": "workspace:*"
+  }
+}
