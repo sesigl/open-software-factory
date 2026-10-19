@@ -58,7 +58,7 @@ read them for ideas, do not copy their company-specific rules.
 - **Done when:** `make verify` passes on `modules/_template` (renamed to a real example module or kept as a
   fixture) with every listed check active, and CI requires `verify`.
 
-### [ ] T-01 · contracts
+### [x] T-01 · contracts
 
 - **Tier / wave / language:** core · 0 · TypeSpec, generated TypeScript (the only client; ADR 0012)
 - **Path / prefix:** `contracts/` · `SCN-CTR`

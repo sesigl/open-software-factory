@@ -6,8 +6,7 @@
     "contracts": {
       "release-type": "node",
       "package-name": "@opensoftware/contracts",
-      "component": "contracts",
-      "release-as": "1.0.0"
+      "component": "contracts"
     }
   }
 }
