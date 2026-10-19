@@ -17,7 +17,11 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./schemas/*": "./schemas/*"
+    "./*.schema.json": "./*.schema.json",
+    "./events/asyncapi.yaml": "./events/asyncapi.yaml",
+    "./openapi/*": "./openapi/*",
+    "./typespec/*": "./typespec/*",
+    "./package.json": "./package.json"
   },
   "files": [
     "dist",

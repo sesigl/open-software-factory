@@ -25,6 +25,9 @@ import { type FactoryDefinition, validate } from "@osf/contracts";
 const problems = validate("factory-definition", document); // [] when valid, else { path, message } per problem
 ```
 
+The schema files are exported at the paths in the table below, for example
+`@osf/contracts/work-item/work-item.schema.json`, along with `events/asyncapi.yaml`, `openapi/*` and `typespec/*`.
+
 ## Formats
 
 Each format has one schema, generated from `typespec/`, and fixtures that CONTRACT checks on every change.
