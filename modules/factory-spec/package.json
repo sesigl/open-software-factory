@@ -1,9 +1,13 @@
 {
   "name": "@opensoftware/factory-spec",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "factory-spec: one factory.yaml rendered for every harness, with lint, plan, apply and drift.",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "modules/factory-spec"
+  },
   "type": "module",
   "bin": {
     "factory": "dist/cli.js"
@@ -13,6 +17,12 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

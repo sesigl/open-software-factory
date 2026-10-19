@@ -134,7 +134,7 @@ read them for ideas, do not copy their company-specific rules.
 
 ## Wave 1 · Record
 
-### [ ] T-03 · factory-spec
+### [x] T-03 · factory-spec
 
 - **Tier / language / path / prefix:** core · TS · `modules/factory-spec/` · `SCN-FSPEC`
 - **Alone:** one agent configuration rendered for every harness; lint and diff in CI; plan and apply a factory.
@@ -160,8 +160,10 @@ read them for ideas, do not copy their company-specific rules.
     Codex and OpenCode with skill links; MCP Registry pins in `factory.lock` (testkit `fakes.http`, ADR 0021);
     plan against the applied state with file drift; the README Commands section generated from `factory --help`
     (`SCN-REPO-035`). This repository's `factory.yaml` produces its skill links through `make agents-sync`.
-  - [ ] Forge webhooks for automations, applied and checked for drift against a Forgejo fake; `render --k8s`
-    (kagent Agent, ModelConfig, MCPServer; agent-sandbox templates); gh-aw workflow files; a release of the module.
+  - [x] Forge webhooks for automations, applied and checked for drift against the Forgejo fake; `render --k8s`
+    (kagent Agent, ModelConfig, MCPServer, RemoteMCPServer); gh-aw workflow files; a release of the module (ADR 0022,
+    `SCN-FSPEC-033` to `-047`). Moved: agent-sandbox templates to T-13, GitHub webhooks to T-15, ACP Registry pins
+    to T-12.
 
 ### [ ] T-04 · runlog
 
@@ -315,6 +317,7 @@ read them for ideas, do not copy their company-specific rules.
   call outside the allowlist is refused; a steering message reaches a running session; cancel stops the session
   within 5 seconds; the transcript export matches the run record shape.
 - **Done when:** all five adapters pass conformance; claude-code, codex and opencode also in SMOKE-PAID.
+- **From T-03:** `factory plan` pins harnesses by ACP Registry ID in `factory.lock` (ADR 0022).
 
 ### [ ] T-13 · sandbox port, egress and MCP gateway wiring
 
@@ -331,6 +334,8 @@ read them for ideas, do not copy their company-specific rules.
   egress proxy reaches a fake API with the real secret; an undeclared MCP server is refused and logged; destroy
   removes all data.
 - **Done when:** docker and kubernetes adapters pass conformance (kubernetes on kind in CI).
+- **From T-03:** `factory render --k8s` also writes an agent-sandbox `SandboxTemplate` for `agents.<name>.sandbox`
+  (ADR 0022).
 
 ### [ ] T-14 · inference port
 
@@ -360,6 +365,8 @@ read them for ideas, do not copy their company-specific rules.
   same thread; an approval card returns the decision with the person's identity; the forge adapter opens a PR,
   posts a check and reads merge state.
 - **Done when:** forgejo and github forge adapters and slack and github channels pass conformance.
+- **From T-03:** factory-spec registers the webhooks of `github.*` automations through the forge port, as it does
+  for Forgejo today (ADR 0022).
 
 ### [ ] T-16 · intake
 

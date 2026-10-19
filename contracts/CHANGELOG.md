@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.2.0](https://github.com/sesigl/open-software-factory/compare/contracts-v1.1.0...contracts-v1.2.0) (2026-10-19)
+
+
+### Features
+
+* **factory-spec:** T-03 forge webhooks, render --k8s and --gh-aw, and a release ([#22](https://github.com/sesigl/open-software-factory/issues/22)) ([9da31e0](https://github.com/sesigl/open-software-factory/commit/9da31e04cbbe40dba07756aed123d9801b403431))
+
+
+### Bug Fixes
+
+* **release:** contracts version in openapi.json, and build contracts before publishing factory-spec ([#25](https://github.com/sesigl/open-software-factory/issues/25)) ([4322c4b](https://github.com/sesigl/open-software-factory/commit/4322c4be6e80a3b208ab3d2b3f1c9e60513b7db1))
+
+## [1.1.0](https://github.com/sesigl/open-software-factory/compare/contracts-v1.0.0...contracts-v1.1.0) (2026-10-19)
+
+
+### Features
+
+* **checks:** REACH from coverage of the running module; T-02 done ([#19](https://github.com/sesigl/open-software-factory/issues/19)) ([82c4911](https://github.com/sesigl/open-software-factory/commit/82c49110ee44392d5577b2f6e28576c9cb2a36e3))
+* **factory-spec:** T-03 lint, render, plan, apply, diff and resolve ([#20](https://github.com/sesigl/open-software-factory/issues/20)) ([657172c](https://github.com/sesigl/open-software-factory/commit/657172c60360156b9a7881c7224e621142f13414))
+* **testkit:** T-02 sut.files refuses paths outside $INPUT and $OUTPUT ([#12](https://github.com/sesigl/open-software-factory/issues/12)) ([8221a09](https://github.com/sesigl/open-software-factory/commit/8221a097c6a46081faf9cbb26816f99eb253d9ab))
+
+
+### Bug Fixes
+
+* **ci:** publish contracts without provenance while the repository is private ([#7](https://github.com/sesigl/open-software-factory/issues/7)) ([4566123](https://github.com/sesigl/open-software-factory/commit/4566123edb8e3d5ef7c3f6f3701ec22b602221b9))
+
 ## 1.0.0 (2026-10-19)
 
 

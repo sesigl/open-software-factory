@@ -6,12 +6,26 @@
     "contracts": {
       "release-type": "node",
       "package-name": "@opensoftware/contracts",
-      "component": "contracts"
+      "component": "contracts",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "openapi/openapi.json",
+          "jsonpath": "$.info.version"
+        }
+      ]
     },
     "packages/testkit": {
       "release-type": "node",
       "package-name": "@opensoftware/testkit",
       "component": "testkit",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
+    },
+    "modules/factory-spec": {
+      "release-type": "node",
+      "package-name": "@opensoftware/factory-spec",
+      "component": "factory-spec",
       "initial-version": "0.1.0",
       "bump-minor-pre-major": true
     }
