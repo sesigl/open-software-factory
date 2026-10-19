@@ -195,3 +195,35 @@ Feature: Repository checks
     Then the command exits with code 1
     And the output contains "DOCS-AFFECTED skipped: OSF_BASE is not set"
     And the output contains "check --all needs OSF_BASE"
+
+  @id=SCN-REPO-026 @status=implemented
+  Scenario: ARCH rejects an import from a layer above
+    Given a module "demo" whose architecture.json lists the layer "cli" with "src/cli/" above the layer "domain" with "src/domain/"
+    And "modules/demo/src/domain/rules.ts" imports "../cli/main.ts"
+    When the developer runs "osf check ARCH"
+    Then the command exits with code 1
+    And the output contains "ARCH modules/demo/src/domain/rules.ts:1 layer domain imports ../cli/main.ts from layer cli above it"
+
+  @id=SCN-REPO-027 @status=implemented
+  Scenario: ARCH rejects a source file outside every declared layer
+    Given a module "demo" whose architecture.json lists the layer "cli" with "src/cli/" above the layer "domain" with "src/domain/"
+    And the file "modules/demo/src/util.ts"
+    When the developer runs "osf check ARCH"
+    Then the command exits with code 1
+    And the output contains "ARCH modules/demo/src/util.ts:1 is in no layer of modules/demo/architecture.json"
+
+  @id=SCN-REPO-028 @status=implemented
+  Scenario: ARCH rejects a module without architecture.json
+    Given a module "demo" with the file "modules/demo/src/index.ts" and no architecture.json
+    When the developer runs "osf check ARCH"
+    Then the command exits with code 1
+    And the output contains "ARCH modules/demo/package.json:1 has no architecture.json"
+
+  @id=SCN-REPO-029 @status=implemented
+  Scenario: ISOLATION finds an import in a file that another file of the module imports
+    Given a repository with the modules "demo" and "other"
+    And "modules/demo/src/a.ts" imports "./run.ts"
+    And "modules/demo/src/run.ts" imports "../../other/src/index.ts"
+    When the developer runs "osf check ISOLATION"
+    Then the command exits with code 1
+    And the output contains "ISOLATION modules/demo/src/run.ts:1"

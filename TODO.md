@@ -107,25 +107,21 @@ read them for ideas, do not copy their company-specific rules.
 - **Release:** add `packages/testkit` back to `release-please-config.json` and give it a publish workflow like
   `publish-contracts.yml` when it is ready for users; until then it is not released.
 - **Done when:** `modules/_template`'s quick-start test runs green through the testkit.
-- **Slices** (one pull request each, in this order; "a test that imports from `src/` fails BOUNDARY-STATIC" is
-  already `SCN-REPO-006`):
+- **Slices** (a few large pull requests; "a test that imports from `src/` fails BOUNDARY-STATIC" is already
+  `SCN-REPO-006`):
   - [x] `testkit run` writes a JUnit report whose test case carries the scenario ID (`SCN-TK-001`); the
     testkit's own features, system tests, README and AGENTS.md.
   - [x] `sut.files` refuses a path outside `$INPUT`/`$OUTPUT` (`SCN-TK-002`); `sut.cli` runs in `$INPUT`.
-  - [ ] `sut.readme` and `sut.files.clear`; `modules/_template`'s quick-start test runs green through the testkit.
-  - [ ] Scripted model gateway: an unscripted model call fails the test with the request shown.
-  - [ ] Fixed clock and seed passed through documented config.
-  - [ ] Testcontainers helpers for Postgres, NATS, Temporal and SeaweedFS (ADR).
-  - [ ] Forgejo container helper.
-  - [ ] Fake Slack.
-  - [ ] Scripted ACP harness applies its edit and reports completion over ACP (ADR).
-  - [ ] `sut.http` (generated client), `sut.mcp`, `sut.events`.
-  - [ ] BOUNDARY-ENV reads the documented variables from the module's config schema.
-  - [ ] BOUNDARY-RUNTIME: a private data folder the test process cannot read.
-  - [ ] NOREAL: a test network that reaches only fakes.
-  - [ ] REACH: process coverage collection.
-  - [ ] `conformance(port, adapter)` runner and the `@conformance` scenario of TRACE.
-  - [ ] Release: `release-please-config.json` entry and a publish workflow.
+  - [x] Declared module layers: `architecture.json` and the ARCH check (ADR 0014, `SCN-REPO-026` to `-028`);
+    the testkit split into layers. ISOLATION and BOUNDARY-STATIC now see every import (`SCN-REPO-029`).
+  - [ ] Drive a module: `sut.readme`, `sut.files.clear`, `modules/_template`'s quick start green through the
+    testkit; scripted model gateway (an unscripted call fails the test with the request shown); fixed clock and
+    seed through documented config; BOUNDARY-ENV from the config schema; `sut.http`, `sut.mcp`, `sut.events`.
+  - [ ] Services (ADR for Testcontainers): Postgres, NATS, Temporal, SeaweedFS, the Forgejo helper, fake Slack.
+  - [ ] Harness and ports (ADR for ACP): the scripted ACP harness applies its edit and reports completion;
+    `conformance(port, adapter)` and the `@conformance` scenario of TRACE.
+  - [ ] Runtime guards and release: BOUNDARY-RUNTIME, NOREAL, REACH; `release-please-config.json` entry and a
+    publish workflow.
 
 ---
 

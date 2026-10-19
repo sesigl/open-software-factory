@@ -40,6 +40,7 @@ A change is done only when `make verify` passes. `docs/quality/checks.md` lists 
 | PASS | Every `implemented` scenario's test ran and passed in this run. Skipped counts as failed. |
 | BOUNDARY | System tests reach the module only through its public surface. |
 | ISOLATION | No module imports another module. |
+| ARCH | Every module declares its layers in `architecture.json`; no file imports a layer above its own. |
 | CONTRACT | No breaking change to `contracts/` without a major version. |
 | DOCS | Generated docs are current; docs that cover changed code were reviewed. |
 | BUDGET | Each module's system tests finish inside their time budget. |

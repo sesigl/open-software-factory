@@ -29,6 +29,7 @@ Use these terms in scenarios, code, UI text and docs.
 | Self-improvement | The loop that turns repeated failures into reviewed changes to the factory definition. |
 | Port | An interface to an outside system. |
 | Adapter | An implementation of a port for one product. |
+| Layer | A named group of a module's source files in its `architecture.json`; a file imports only its own layer and the layers below it. |
 | Conformance scenario | A port scenario every adapter of the port must pass. |
 | Product engineer | A person who delivers product value through the factory. |
 | Factory engineer | A person who improves the factory itself. |

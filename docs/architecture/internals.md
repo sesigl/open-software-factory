@@ -10,6 +10,10 @@ Each module defines a small interface (a port) for every outside system. An adap
 one product and must pass the port's `@conformance` scenarios in `ports/<port>/features/`. Abstract only where
 users really differ: the workflow engine (Temporal) stays fixed.
 
+Inside a module, `architecture.json` lists its layers from top to bottom, and the ARCH check keeps every import
+pointing down (ADR 0014). The template starts with `entry` → `adapters` → `domain`, so domain code never imports
+an adapter.
+
 | Port | Interface | Example adapters |
 | --- | --- | --- |
 | harness | start · send · stream events · approve tool · cancel · export transcript | **acp** (generic, any agent in the ACP Registry); **claude-code** (Claude Agent SDK or `claude -p --output-format stream-json`, hooks for approvals, sessions in `~/.claude/projects`); **codex** (`codex exec --json` or SDK, `[otel]` in `config.toml`, sessions in `~/.codex/sessions`); **opencode** (`opencode serve` + SDK); **agentapi** fallback for terminal-only agents; **scripted** (testkit, deterministic) |
