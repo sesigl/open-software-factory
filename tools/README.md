@@ -43,7 +43,7 @@ Each failure prints one line: the check ID, `file:line`, and what to fix. Each c
 | Variable | Meaning |
 | --- | --- |
 | `OSF_BASE` | Git ref to compare with for DOCS-AFFECTED, CONTRACT (only without a `contracts-v*` tag in HEAD's history) and the dependency rule of ADR. `make` uses the merge base with `origin/main`. Without it, these comparisons print `skipped` and `osf check --all` (so `make verify`) fails. |
-| `OSF_PR_BODY` | File with the pull request description. DOCS-AFFECTED accepts `docs-reviewed: <path>` lines in it. |
+| `OSF_PR_BODY` | File with the pull request description. DOCS-AFFECTED accepts `docs-reviewed: <path>` lines in it. CI passes the description of the pull request, and for a push to `main` the description of the merged pull request. |
 | `OSF_JUNIT_DIR` | Folder with JUnit XML results. Default `reports/junit`. |
 
 ## Scenarios
