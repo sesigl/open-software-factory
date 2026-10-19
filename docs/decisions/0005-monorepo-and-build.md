@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; build tool part superseded by 0010
 date: 2026-10-18
 ---
 
@@ -7,8 +7,8 @@ date: 2026-10-18
 
 ## Decision
 One repository. pnpm workspaces (TypeScript only, ADR 0009), `make` as the single entry point
-(`make check`, `make verify`, `make smoke`). Add Nx for the task graph and caching when CI passes about ten
-minutes. Release every package independently with release-please (Changesets would also work now that
+(`make check`, `make verify`, `make smoke`). Task graph and caching: see ADR 0010 (Turborepo; replaces the earlier
+"add Nx later"). Release every package independently with release-please (Changesets would also work now that
 every package is npm; release-please also covers the generated Python and Java clients) from conventional commits.
 
 ## Options considered

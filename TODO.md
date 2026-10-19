@@ -34,7 +34,9 @@ read them for ideas, do not copy their company-specific rules.
 - **Language:** TypeScript (ADR 0009).
 - **Purpose:** every later item depends on `make check`, `make verify` and the checks being real.
 - **Build:**
-  - pnpm workspace at the root; Node 24 (ADR 0005, ADR 0009).
+  - pnpm workspace and Turborepo at the root (`pnpm-workspace.yaml`, `turbo.json` with `build`, `lint`,
+    `typecheck`, `check`, `test:system`, `docs`); Node 24 (ADR 0005, 0009, 0010). `make` targets only call
+    pnpm and turbo; affected runs use `--filter=...[origin/main]`. No Nx, moon or Bazel.
   - `make check`, `verify`, `smoke`, `smoke-paid`, `next-id`, `new-module`, `docs`, `docs-affected`,
     `test-scenario ID=…`, `agents-sync` (links `skills/` into `.claude/skills/` and other harness folders).
   - Checks from `docs/quality/checks.md` as scripts in `tools/checks/`, each printing its ID and file:line:
@@ -46,7 +48,7 @@ read them for ideas, do not copy their company-specific rules.
   - GitHub Actions: `verify` on every PR (required check), nightly mutation, release-please.
   - Biome, `tsc --strict`, dependency-cruiser, lychee configs.
   - Make `tools/hooks/protect-paths.sh` executable; it is already wired in `.claude/settings.json`.
-- **Adopt:** `@cucumber/gherkin` parser, ts-morph, JUnit XML reporters, oasdiff, lychee,
+- **Adopt:** pnpm, Turborepo, `@cucumber/gherkin` parser, ts-morph, JUnit XML reporters, oasdiff, lychee,
   release-please.
 - **Seed:** child-apps-company `make specs-check`, `make traceability-check`, `scripts/lib/gherkin.ts`,
   `scripts/metrics/timed.py` (budgets).
