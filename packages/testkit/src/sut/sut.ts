@@ -1,8 +1,13 @@
-// The handle on the module under test: its CLI, its input and output folders and the Git repository in $INPUT.
+// The handle on the module under test: its CLI, HTTP API, MCP server and events, its input and output folders and
+// the Git repository in $INPUT.
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
-import { artifactOf, documentedEnv, listFiles, quickStart, repoRoot } from "../support/module.ts";
-import { baseEnv, type CliResult, FIXED_DATE, FIXED_SEED, mustRun, run } from "../support/process.ts";
+import { listFiles, quickStart } from "../support/module.ts";
+import { type CliResult, mustRun, run } from "../support/process.ts";
+import { type Events, makeEvents } from "./events.ts";
+import { type Http, makeHttp } from "./http.ts";
+import { makeLaunch } from "./launch.ts";
+import { type Mcp, makeMcp } from "./mcp.ts";
 
 export interface Sut {
   /**
@@ -10,6 +15,12 @@ export interface Sut {
    * a fixed clock and seed as `OSF_NOW` (2026-01-01T00:00:00Z) and `OSF_SEED` (1).
    */
   cli(args: string[], options?: { env?: Record<string, string> }): Promise<CliResult>;
+  /** The module as an HTTP server. It gets the same environment as `cli`, plus `PORT`. */
+  http: Http;
+  /** The module as an MCP server on stdio. It gets the same environment as `cli`. */
+  mcp: Mcp;
+  /** The CloudEvents the module publishes on NATS, and events sent to it. */
+  events: Events;
   /**
    * The module's input and output folders. Every path starts with `$INPUT/` or `$OUTPUT/` and stays inside that
    * folder; the module gets them as the environment variables `INPUT` and `OUTPUT`.
@@ -50,9 +61,18 @@ export function folders(workspace: string): Folders {
   return { input, output };
 }
 
-export function makeSut(moduleRoot: string, dirs: Folders): Sut {
-  const artifact = artifactOf(moduleRoot);
-  const documented = documentedEnv(moduleRoot);
+export interface SutHandle {
+  sut: Sut;
+  /** Stops every server, client and subscription the scenario started. */
+  close(): Promise<void>;
+}
+
+export function makeSut(moduleRoot: string, dirs: Folders): SutHandle {
+  const launch = makeLaunch(moduleRoot, dirs);
+  const stops: (() => Promise<unknown>)[] = [];
+  const onStop = (stop: () => Promise<unknown>): void => {
+    stops.push(stop);
+  };
   const input = dirs.input;
   const inside = (path: string): string => {
     const [, name, rest = ""] = /^\$(INPUT|OUTPUT)(?:\/(.*))?$/s.exec(path) ?? [];
@@ -63,19 +83,14 @@ export function makeSut(moduleRoot: string, dirs: Folders): Sut {
     }
     return full;
   };
-  return {
+  const sut: Sut = {
     async cli(args, options = {}) {
-      const env = options.env ?? {};
-      for (const name of Object.keys(env)) {
-        if (!documented.has(name)) {
-          throw new Error(
-            `BOUNDARY-ENV: ${name} is not documented in ${relative(repoRoot(), join(moduleRoot, "README.md"))}#configuration`,
-          );
-        }
-      }
-      const fixed = { INPUT: dirs.input, OUTPUT: dirs.output, OSF_NOW: FIXED_DATE, OSF_SEED: FIXED_SEED };
-      return run(process.execPath, [artifact, ...args], input, { ...baseEnv(input), ...fixed, ...env });
+      const { command, argv, cwd, env } = launch(args, options.env);
+      return run(command, argv, cwd, env);
     },
+    http: makeHttp(launch, onStop),
+    mcp: makeMcp(launch, onStop),
+    events: makeEvents(onStop),
     files: {
       async put(path, content) {
         const full = inside(path);
@@ -109,6 +124,13 @@ export function makeSut(moduleRoot: string, dirs: Folders): Sut {
       async tag(name) {
         await mustRun("git", ["tag", name], input);
       },
+    },
+  };
+  return {
+    sut,
+    async close() {
+      // Last started, first stopped: a server stops before the subscription that watches it.
+      for (const stop of stops.splice(0).reverse()) await stop().catch(() => undefined);
     },
   };
 }

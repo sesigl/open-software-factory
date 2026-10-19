@@ -28,7 +28,7 @@ const vitest = await startVitest("test", [], {
   include: ["system-tests/**/*.test.ts"],
   globals: true,
   retry: 0,
-  testTimeout: 60_000,
+  testTimeout: 120_000,
   watch: false,
   reporters: ["default", ["junit", { outputFile: resolve(root, values.junit), classnameTemplate: "{filepath}" }]],
   // The module's tests import the testkit by name; it resolves to this copy wherever the module lives.
