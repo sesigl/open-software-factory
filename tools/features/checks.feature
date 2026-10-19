@@ -168,3 +168,21 @@ Feature: Repository checks
     Then the command exits with code 1
     And the output contains "SPECGUARD skipped: OSF_BASE is not set"
     And the output contains "DOCS-AFFECTED skipped: OSF_BASE is not set"
+
+  @id=SCN-REPO-023 @status=implemented
+  Scenario: CONTRACT compares with the last contracts release and checks the values of maps
+    Given the release tag "contracts-v1.2.0" on a commit whose schema "contracts/demo/demo.schema.json" gives every agent the property "prompt"
+    And a later base commit that removes the property "prompt" and sets the version "1.3.0"
+    When the developer runs "osf check CONTRACT" against the later base commit
+    Then the command exits with code 1
+    And the output contains "CONTRACT contracts/demo/demo.schema.json"
+    And the output contains "since contracts-v1.2.0"
+    And the output contains "removed property agents.*.prompt"
+
+  @id=SCN-REPO-024 @status=implemented
+  Scenario: CONTRACT checks the formats of fixture values
+    Given the schema "contracts/demo/demo.schema.json" whose property "link" has the format "uri"
+    And the invalid fixture "contracts/demo/fixtures/invalid/relative-link.json" with the link "not a uri"
+    When the developer runs "osf check CONTRACT" without OSF_BASE
+    Then the command exits with code 0
+    And the output does not contain "unknown format"
