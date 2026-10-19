@@ -3,14 +3,15 @@
 // writes a JUnit report in which every test case carries its scenario ID. `testkit conformance <features>` does
 // the same for an adapter and then reports, for every @conformance scenario of the port, whether it passed.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import type { RunnerTask } from "vitest";
 import { startVitest } from "vitest/node";
 
 const USAGE = "usage: testkit run --junit <file>\n       testkit conformance <port features folder> --junit <file>\n";
-const testkitEntry = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "index.ts");
+const self = fileURLToPath(import.meta.url);
+const testkitEntry = join(dirname(self), "..", "src", `index${extname(self)}`);
 
 const [command, ...rest] = process.argv.slice(2);
 if (command !== "run" && command !== "conformance") {
