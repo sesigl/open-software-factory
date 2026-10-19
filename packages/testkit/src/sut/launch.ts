@@ -1,7 +1,7 @@
 // How the testkit starts the module's artifact: one command, one working folder and a checked environment.
 import { extname, join, relative } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
-import { artifactOf, documentedEnv, repoRoot } from "../support/module.ts";
+import { fileURLToPath } from "node:url";
+import { artifactOf, documentedEnv, repoRoot, workspaceOf } from "../support/module.ts";
 import { baseEnv, FIXED_DATE, FIXED_SEED } from "../support/process.ts";
 import type { Folders } from "./sut.ts";
 
@@ -10,8 +10,12 @@ export type Launch = (
   env?: Record<string, string>,
 ) => { command: string; argv: string[]; cwd: string; env: Record<string, string> };
 
-/** The network guard (NOREAL), next to this file in the source tree and in the built package alike. */
-const GUARD = fileURLToPath(new URL(`../support/guard${extname(fileURLToPath(import.meta.url))}`, import.meta.url));
+// Loaded into every module process: the network guard (NOREAL) and the coverage recorder (REACH). They sit next
+// to this file in the source tree and in the built package alike.
+const preload = (name: string): string =>
+  `--import=${new URL(`../support/${name}${extname(fileURLToPath(import.meta.url))}`, import.meta.url).href}`;
+// The recorder comes first, so it also sees the guard run.
+const NODE_OPTIONS = `${preload("coverage")} ${preload("guard")}`;
 
 /**
  * Starts the built artifact (BOUNDARY-RUNTIME) with the network guard (NOREAL) and refuses environment variables
@@ -26,6 +30,7 @@ export function makeLaunch(moduleRoot: string, dirs: Folders, hosts: () => strin
     );
   }
   const documented = documentedEnv(moduleRoot);
+  const coverage = coverageEnv(moduleRoot);
   return (args, env = {}) => {
     for (const name of Object.keys(env)) {
       if (!documented.has(name)) {
@@ -40,9 +45,10 @@ export function makeLaunch(moduleRoot: string, dirs: Folders, hosts: () => strin
       OSF_DATA: dirs.data,
       OSF_NOW: FIXED_DATE,
       OSF_SEED: FIXED_SEED,
-      NODE_OPTIONS: `--import=${pathToFileURL(GUARD).href}`,
+      NODE_OPTIONS,
       OSF_TESTKIT_NOREAL_LOG: dirs.noreal,
       OSF_TESTKIT_ALLOWED_HOSTS: hosts().join(","),
+      ...coverage,
     };
     return {
       command: process.execPath,
@@ -51,4 +57,18 @@ export function makeLaunch(moduleRoot: string, dirs: Folders, hosts: () => strin
       env: { ...baseEnv(dirs.input), ...fixed, ...env },
     };
   };
+}
+
+/**
+ * Where the module's processes record coverage: `reports/coverage/` of the workspace the module is in. A module
+ * outside a workspace, such as a demo module of the testkit's own tests, records into the coverage of the module
+ * that runs it, so code of that module that runs in it still counts.
+ */
+function coverageEnv(moduleRoot: string): Record<string, string> {
+  const workspace = workspaceOf(moduleRoot);
+  if (workspace) {
+    return { OSF_TESTKIT_COVERAGE: join(workspace, "reports", "coverage"), OSF_TESTKIT_COVERAGE_ROOT: moduleRoot };
+  }
+  const { OSF_TESTKIT_COVERAGE: dir, OSF_TESTKIT_COVERAGE_ROOT: root } = process.env;
+  return dir && root ? { OSF_TESTKIT_COVERAGE: dir, OSF_TESTKIT_COVERAGE_ROOT: root } : {};
 }

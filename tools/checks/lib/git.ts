@@ -35,3 +35,18 @@ export function showAt(root: string, base: string, file: string): string | undef
   const shown = git(root, ["show", `${base}:${file}`]);
   return shown.ok ? shown.out : undefined;
 }
+
+/** Line numbers that the working tree adds to the file since the base commit; every line of an untracked file. */
+export function addedLines(root: string, base: string, file: string): number[] {
+  const untracked = git(root, ["ls-files", "--others", "--exclude-standard", "--", file]).out.trim();
+  const diff = untracked
+    ? git(root, ["diff", "--no-index", "-U0", "/dev/null", file])
+    : git(root, ["diff", "-U0", "--no-renames", base, "--", file]);
+  const lines: number[] = [];
+  for (const match of diff.out.matchAll(/^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/gm)) {
+    const start = Number(match[1]);
+    const count = match[2] === undefined ? 1 : Number(match[2]);
+    for (let line = start; line < start + count; line++) lines.push(line);
+  }
+  return lines;
+}

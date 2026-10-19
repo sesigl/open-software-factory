@@ -83,6 +83,9 @@ A `planned` scenario's test must fail; when it passes, the testkit fails it and 
   `NODE_OPTIONS`. A TCP connection may go to a loopback address or to a host of the testkit's containers; local
   sockets are allowed. Any other connection fails as unreachable and fails the scenario with
   `NOREAL: the module tried to reach <host>:<port>`. A module written in another language gets no guard.
+- REACH: every Node process of the module also records which of the module's code it ran, in
+  `reports/coverage/` of the workspace ([ADR 0019](../../docs/decisions/0019-reach-from-process-coverage.md)).
+  `osf check REACH` fails on lines a pull request adds that no system test reaches.
 - The clock and the seed are fixed through `OSF_NOW` and `OSF_SEED`; a module reads them instead of the system
   clock and a random seed.
 
@@ -100,7 +103,8 @@ release-please opens a release pull request from the Conventional Commits under 
 creates the tag `testkit-v<version>`. The workflow `.github/workflows/publish-testkit.yml` then builds `dist/`
 with `pnpm build` and publishes the package to npm. In this repository the package runs from its TypeScript
 sources; `publishConfig` points the published `exports` and `bin` at `dist/`. To publish a tag again, run the
-workflow by hand with the tag.
+workflow by hand with the tag. The first release is `0.1.0`; until `1.0.0`, a breaking change raises the minor
+version.
 
 The one-time setup is the same as for contracts ([`contracts/README.md`](../../contracts/README.md#releases)):
 the npm scope `@opensoftware`, the GitHub environment `npm`, a token only for the first version, then a trusted
@@ -137,3 +141,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-023 | implemented | The module keeps its state in a private data folder |
 | SCN-TK-024 | implemented | The sut refuses a module whose bin is a source file |
 | SCN-TK-025 | implemented | A module that reaches a real host fails the scenario with the host shown |
+| SCN-TK-026 | implemented | The testkit records which functions of the module its system tests ran |
