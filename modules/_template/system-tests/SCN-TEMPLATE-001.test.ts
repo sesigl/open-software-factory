@@ -1,7 +1,7 @@
 import { scenario } from "@opensoftware/testkit";
 
-// One file per scenario. Rename to the real ID when the module is created.
-scenario("SCN-<PREFIX>-001", async ({ sut, given, when, then }) => {
+// One file per scenario, named after its ID.
+scenario("SCN-TEMPLATE-001", async ({ sut, given, when, then }) => {
   await given("an empty working folder", async () => {
     await sut.files.clear("$INPUT");
   });
@@ -12,7 +12,7 @@ scenario("SCN-<PREFIX>-001", async ({ sut, given, when, then }) => {
   });
 
   await then("the command exits with code 0", async () => {
-    expect(run.exitCode).toBe(0);
+    expect(run.exitCode, run.stdout + run.stderr).toBe(0);
   });
 
   await then("the output folder contains the file the README promises", async () => {

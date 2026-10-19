@@ -1,11 +1,14 @@
 // The handle on the module under test: its CLI, its input and output folders and the Git repository in $INPUT.
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
-import { artifactOf, documentedEnv, listFiles, repoRoot } from "../support/module.ts";
-import { baseEnv, type CliResult, mustRun, run } from "../support/process.ts";
+import { artifactOf, documentedEnv, listFiles, quickStart, repoRoot } from "../support/module.ts";
+import { baseEnv, type CliResult, FIXED_DATE, FIXED_SEED, mustRun, run } from "../support/process.ts";
 
 export interface Sut {
-  /** Runs the module's built artifact with these arguments, with $INPUT as the current directory. */
+  /**
+   * Runs the module's built artifact with these arguments, with $INPUT as the current directory. The module gets
+   * a fixed clock and seed as `OSF_NOW` (2026-01-01T00:00:00Z) and `OSF_SEED` (1).
+   */
   cli(args: string[], options?: { env?: Record<string, string> }): Promise<CliResult>;
   /**
    * The module's input and output folders. Every path starts with `$INPUT/` or `$OUTPUT/` and stays inside that
@@ -16,6 +19,15 @@ export interface Sut {
     read(path: string): Promise<string>;
     list(dir?: string): Promise<string[]>;
     remove(path: string): Promise<void>;
+    /** Removes everything inside the folder and keeps the folder. */
+    clear(path: string): Promise<void>;
+  };
+  /** What the module's README promises in its Quick start section. */
+  readme: {
+    /** The arguments of the first `npx <package> ...` line. */
+    quickStartArgs(): string[];
+    /** The first `$OUTPUT/<path>` in backticks, as a path below $OUTPUT. */
+    quickStartOutput(): string;
   };
   /** $INPUT is a Git repository with a fixed author and clock. */
   git: {
@@ -61,8 +73,8 @@ export function makeSut(moduleRoot: string, dirs: Folders): Sut {
           );
         }
       }
-      const folderEnv = { INPUT: dirs.input, OUTPUT: dirs.output };
-      return run(process.execPath, [artifact, ...args], input, { ...baseEnv(input), ...folderEnv, ...env });
+      const fixed = { INPUT: dirs.input, OUTPUT: dirs.output, OSF_NOW: FIXED_DATE, OSF_SEED: FIXED_SEED };
+      return run(process.execPath, [artifact, ...args], input, { ...baseEnv(input), ...fixed, ...env });
     },
     files: {
       async put(path, content) {
@@ -79,6 +91,14 @@ export function makeSut(moduleRoot: string, dirs: Folders): Sut {
       async remove(path) {
         rmSync(inside(path), { recursive: true, force: true });
       },
+      async clear(path) {
+        const folder = inside(path);
+        for (const entry of readdirSync(folder)) rmSync(join(folder, entry), { recursive: true, force: true });
+      },
+    },
+    readme: {
+      quickStartArgs: () => quickStart(moduleRoot).args,
+      quickStartOutput: () => quickStart(moduleRoot).output,
     },
     git: {
       async commit(message) {

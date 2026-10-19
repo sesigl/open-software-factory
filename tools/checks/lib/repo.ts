@@ -10,9 +10,6 @@ export interface Finding {
   message: string;
 }
 
-/** Folders that hold a template, not real requirements. `make new-module` copies them. */
-export const TEMPLATE_DIRS = ["modules/_template/"];
-
 export class Repo {
   readonly root: string;
   #files: string[] | undefined;
@@ -35,10 +32,10 @@ export class Repo {
     return this.#files;
   }
 
-  /** Files matching the globs, without template folders. */
+  /** Files matching the globs. */
   match(...globs: string[]): string[] {
     const isMatch = picomatch(globs, { dot: true });
-    return this.files().filter((file) => isMatch(file) && !isTemplate(file));
+    return this.files().filter((file) => isMatch(file));
   }
 
   /** Paths are relative to the root; an absolute path (for example from OSF_PR_BODY) is used as is. */
@@ -49,10 +46,6 @@ export class Repo {
   exists(file: string): boolean {
     return existsSync(resolve(this.root, file));
   }
-}
-
-export function isTemplate(file: string): boolean {
-  return TEMPLATE_DIRS.some((dir) => file.startsWith(dir));
 }
 
 function walk(dir: string): string[] {

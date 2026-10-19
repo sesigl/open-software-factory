@@ -2,7 +2,6 @@ packages:
   - tools
   - packages/*
   - modules/*
-  - "!modules/_template"
   - contracts
   - ports/*
   - adapters/*/*

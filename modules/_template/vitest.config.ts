@@ -9,7 +9,7 @@ export default defineConfig({
     testTimeout: 60_000,
     reporters: [
       "default",
-      ["junit", { outputFile: "../../reports/junit/<name>.xml", classnameTemplate: "{filepath}" }],
+      ["junit", { outputFile: "../../reports/junit/module-template.xml", classnameTemplate: "{filepath}" }],
     ],
   },
 });

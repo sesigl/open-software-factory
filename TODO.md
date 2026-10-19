@@ -114,10 +114,12 @@ read them for ideas, do not copy their company-specific rules.
   - [x] `sut.files` refuses a path outside `$INPUT`/`$OUTPUT` (`SCN-TK-002`); `sut.cli` runs in `$INPUT`.
   - [x] Declared module layers: `architecture.json` and the ARCH check (ADR 0014, `SCN-REPO-026` to `-028`);
     the testkit split into layers. ISOLATION and BOUNDARY-STATIC now see every import (`SCN-REPO-029`).
-  - [ ] Drive a module: `sut.readme`, `sut.files.clear`, `modules/_template`'s quick start green through the
-    testkit; scripted model gateway (an unscripted call fails the test with the request shown); fixed clock and
-    seed through documented config; BOUNDARY-ENV from the config schema; `sut.http`, `sut.mcp`, `sut.events`.
-  - [ ] Services (ADR for Testcontainers): Postgres, NATS, Temporal, SeaweedFS, the Forgejo helper, fake Slack.
+  - [x] Drive a module: `sut.readme`, `sut.files.clear`, a fixed clock and seed (`SCN-TK-003` to `-005`); the
+    scripted model gateway (`SCN-TK-006`, `-007`); `modules/_template` is a working module whose quick start
+    `SCN-TEMPLATE-001` runs green through the testkit (ADR 0015). BOUNDARY-ENV keeps reading the README:
+    `make docs` generates its Configuration table from `src/config.schema.json`, and DOCS-GEN keeps them equal.
+  - [ ] Servers and services (ADR for Testcontainers): `sut.http`, `sut.mcp`, `sut.events`; Postgres, NATS,
+    Temporal, SeaweedFS, the Forgejo helper, fake Slack.
   - [ ] Harness and ports (ADR for ACP): the scripted ACP harness applies its edit and reports completion;
     `conformance(port, adapter)` and the `@conformance` scenario of TRACE.
   - [ ] Runtime guards and release: BOUNDARY-RUNTIME, NOREAL, REACH; `release-please-config.json` entry and a

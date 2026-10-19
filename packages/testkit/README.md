@@ -33,12 +33,18 @@ Each test case in `report.xml` is named after its scenario and has the property 
 See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The context of `scenario` holds:
 
 - `given`, `when`, `then`: step functions; each label repeats the scenario's step text.
-- `sut.cli(args)`: runs the module's `bin` in its own process, with `$INPUT` as the current directory and the
-  environment variables `INPUT` and `OUTPUT` set to the two folders.
-- `sut.files`: `put`, `read`, `list` and `remove` in the module's input and output folders. Every path starts
-  with `$INPUT/` or `$OUTPUT/` and stays inside that folder; any other path fails the test.
+- `sut.cli(args, { env })`: runs the module's `bin` in its own process, with `$INPUT` as the current directory.
+  The module gets `INPUT` and `OUTPUT` (the two folders), `OSF_NOW=2026-01-01T00:00:00Z` and `OSF_SEED=1`.
+  `env` may only name variables the module's README documents under Configuration.
+- `sut.files`: `put`, `read`, `list`, `remove` and `clear` in the module's input and output folders. Every path
+  starts with `$INPUT/` or `$OUTPUT/` and stays inside that folder; any other path fails the test.
+- `sut.readme`: `quickStartArgs()` (the arguments of the README's `npx <package> ...` line) and
+  `quickStartOutput()` (the first `$OUTPUT/<file>` it names).
 - `sut.git`: `$INPUT` is a Git repository with a fixed author and clock.
 - `fakes.fixture(name)`, `fakes.fromRepository(dir)`: fixture files.
+- `fakes.modelGateway([{ when, reply }])`: an OpenAI-compatible endpoint on `127.0.0.1`. Pass its `url` (ending
+  in `/v1`) to the module through its documented config. `POST /v1/chat/completions` whose body contains `when`
+  gets `reply`; any other call gets HTTP 500 and fails the scenario with the request shown.
 
 A `planned` scenario's test must fail; when it passes, the testkit fails it and asks for `@status=implemented`.
 
@@ -54,3 +60,8 @@ The testkit reads no environment variables.
 | --- | --- | --- |
 | SCN-TK-001 | implemented | The JUnit result of a scenario's system test carries the scenario ID |
 | SCN-TK-002 | implemented | sut.files refuses a path outside $INPUT and $OUTPUT |
+| SCN-TK-003 | implemented | sut.readme gives the quick start command and the file it promises |
+| SCN-TK-004 | implemented | sut.files.clear empties a folder |
+| SCN-TK-005 | implemented | The module runs with a fixed clock and seed |
+| SCN-TK-006 | implemented | A scripted model call gets its scripted reply |
+| SCN-TK-007 | implemented | An unscripted model call fails the test with the request shown |

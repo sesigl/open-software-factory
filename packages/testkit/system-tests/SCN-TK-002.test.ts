@@ -3,7 +3,14 @@ import { demoModule } from "./module.ts";
 
 scenario("SCN-TK-002", async ({ sut, given, when, then }) => {
   await given('a module whose system test puts the file "$INPUT/../secret.txt"', async () => {
-    const module = demoModule(['await sut.files.put("$INPUT/../secret.txt", "secret");']);
+    const module = demoModule({
+      steps: ['When the test puts "$INPUT/../secret.txt"'],
+      test: [
+        "await when('the test puts \"$INPUT/../secret.txt\"', async () => {",
+        '  await sut.files.put("$INPUT/../secret.txt", "secret");',
+        "});",
+      ],
+    });
     for (const [path, content] of Object.entries(module)) await sut.files.put(path, content);
   });
 
