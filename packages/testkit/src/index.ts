@@ -1,6 +1,7 @@
 // @opensoftware/testkit: the only way system tests touch a module. Layers: see ../architecture.json.
 export type { Fakes } from "./fakes/fakes.ts";
 export type { Forge, PullRequest } from "./fakes/forge.ts";
+export type { Harness, HarnessTurn } from "./fakes/harness.ts";
 export type { ModelGateway, ScriptedReply } from "./fakes/model-gateway.ts";
 export type { Nats, Postgres, S3, Temporal } from "./fakes/services.ts";
 export type { FakeSlack, SlackMessage } from "./fakes/slack.ts";

@@ -63,3 +63,36 @@ export function testCases(report: string): { name: string; failed: boolean }[] {
     failed: /<failure|<error/.test(match[3] ?? ""),
   }));
 }
+
+/**
+ * An adapter in $INPUT whose port features in `port/features/` have these implemented @conformance scenarios, and
+ * whose system tests pass the scenarios in `tested`.
+ */
+export function demoAdapter(scenarios: string[], tested: string[]): Record<string, string> {
+  const files: Record<string, string> = {
+    "$INPUT/package.json": `${JSON.stringify({ name: "demo-adapter", version: "0.1.0", type: "module", bin: { demo: "bin/demo.js" } }, null, 2)}\n`,
+    "$INPUT/bin/demo.js": 'process.stdout.write("hello\\n");\n',
+    "$INPUT/port/features/demo.feature": [
+      "Feature: Demo port",
+      "",
+      ...scenarios.flatMap((id) => [
+        `  @id=${id} @status=implemented @conformance`,
+        `  Scenario: ${id}`,
+        '    When the user runs "demo"',
+        '    Then the output is "hello"',
+        "",
+      ]),
+    ].join("\n"),
+  };
+  for (const id of tested) {
+    files[`$INPUT/system-tests/${id}.test.ts`] = [
+      'import { scenario } from "@opensoftware/testkit";',
+      "",
+      `scenario("${id}", async ({ sut, when, then }) => {`,
+      ...HELLO.test.map((line) => `  ${line}`),
+      "});",
+      "",
+    ].join("\n");
+  }
+  return files;
+}
