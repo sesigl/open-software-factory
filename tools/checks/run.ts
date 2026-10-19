@@ -5,6 +5,7 @@ import { contract } from "./contract.ts";
 import { adr, docsAffected, docsGen, docsLinks } from "./docs.ts";
 import { type Check, Context } from "./lib/context.ts";
 import { type Finding, Repo } from "./lib/repo.ts";
+import { reach } from "./reach.ts";
 import { spec } from "./spec.ts";
 import { budget, flake, pass, steps, trace } from "./trace.ts";
 
@@ -31,6 +32,7 @@ export const SLOW: Record<string, Check> = {
   BUDGET: budget,
   "DOCS-AFFECTED": docsAffected,
   CONTRACT: contract,
+  REACH: reach,
 };
 
 const ALL: Record<string, Check> = { ...FAST, ...SLOW };

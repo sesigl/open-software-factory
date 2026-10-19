@@ -235,3 +235,40 @@ Feature: Repository checks
     When the developer runs "osf check TRACE"
     Then the command exits with code 1
     And the output contains "TRACE ports/forge/features/a.feature:5 SCN-FORGE-001 needs exactly one system test in adapters/forge/b/system-tests/, has 0"
+
+  @id=SCN-REPO-031 @status=implemented
+  Scenario: REACH rejects added lines that no system test reaches
+    Given a base commit with "modules/demo/src/run.ts" whose function "used" a system test runs
+    And a change that adds the function "unused", whose body is lines 5 and 6
+    And a coverage report in which the system tests ran only "used"
+    When the developer runs "osf check REACH" against the base commit
+    Then the command exits with code 1
+    And the output contains "REACH modules/demo/src/run.ts:5 no system test reaches lines 5 to 6"
+
+  @id=SCN-REPO-032 @status=implemented
+  Scenario: REACH rejects a new source file that no system test loads and skips a file of types only
+    Given a base commit with "modules/demo/src/run.ts" whose function "used" a system test runs
+    And a change that adds "modules/demo/src/extra.ts" with a function and "modules/demo/src/types.ts" with an interface
+    And a coverage report in which the system tests ran only "used"
+    When the developer runs "osf check REACH" against the base commit
+    Then the command exits with code 1
+    And the output contains "REACH modules/demo/src/extra.ts:1 no system test loads this file"
+    And the output does not contain "types.ts"
+
+  @id=SCN-REPO-033 @status=implemented
+  Scenario: REACH accepts a change whose lines a system test reaches
+    Given a base commit with "modules/demo/src/run.ts" whose function "used" a system test runs
+    And a change to the body of "used"
+    And a coverage report in which the system tests ran only "used"
+    When the developer runs "osf check REACH" against the base commit
+    Then the command exits with code 0
+    And the output contains "REACH ok"
+
+  @id=SCN-REPO-034 @status=implemented
+  Scenario: REACH asks for a test run when a changed module has no coverage
+    Given a base commit with "modules/demo/src/run.ts" whose function "used" a system test runs
+    And a change to the body of "used"
+    And no coverage report
+    When the developer runs "osf check REACH" against the base commit
+    Then the command exits with code 1
+    And the output contains "REACH modules/demo/package.json:1 no coverage in reports/coverage/ for this module: run its system tests first"

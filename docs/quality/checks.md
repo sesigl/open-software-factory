@@ -13,7 +13,7 @@ Scope: SPEC, TRACE, STEPS and PASS apply to `modules/*/features/`, `ports/*/feat
 source material and are not checked; module scenarios link to them with `@realizes=SCN-FACTORY-...`.
 
 The checks are scripts in `tools/checks/` (TODO item T-00), run with `osf check <ID>`; see
-[`tools/README.md`](../../tools/README.md). BOUNDARY-RUNTIME and NOREAL are guards in the testkit; REACH comes with T-02.
+[`tools/README.md`](../../tools/README.md). BOUNDARY-RUNTIME and NOREAL are guards in the testkit; the testkit also records the coverage REACH reads.
 From phase 2 on, the released `spec-trace` module replaces TRACE, STEPS and PASS.
 
 ## Specification and traceability
@@ -42,7 +42,7 @@ From phase 2 on, the released `spec-trace` module replaces TRACE, STEPS and PASS
 | --- | --- | --- |
 | ASSERT | Every `then` block contains at least one assertion on a value that came from `sut` or `fakes`. | AST data-flow check on the assertion arguments. |
 | NOSKIP | No `.skip`, `.only`, `.todo` or `.fails` in system tests. | AST search. |
-| REACH | Code that no system test reaches is reported; new unreached lines in a pull request fail. | Process coverage of the module while system tests run (`NODE_V8_COVERAGE`). |
+| REACH | A pull request adds no line to a module's `src/` or `bin/` that no system test reaches, and no source file that no system test loads (files of types only are exempt). | The testkit records V8 coverage in every Node process of the module (`reports/coverage/`); `osf check REACH` maps it to source lines with v8-to-istanbul, through source maps for built files, and compares it with the lines added since `OSF_BASE` (ADR 0019). |
 | MUTATION | System tests notice small changes to the code they claim to cover. | Nightly Stryker on a sample of changed files; a falling score opens a ticket. Not a pull request gate, because it is slow. |
 | FLAKE | A test that passed only on retry is a failure. | PASS reads the retry count from the results. |
 | BUDGET | Each module's system tests finish inside the budget in its `AGENTS.md`. | Timing from the JUnit results. |

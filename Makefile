@@ -32,7 +32,7 @@ check: ## affected lint, typecheck and system tests, then the fast repository ch
 	@$(OSF) check
 
 verify: ## everything from a clean state; required before you report done
-	@rm -rf reports/junit
+	@rm -rf reports/junit reports/coverage
 	@# The repository checks run even when tests fail, so PASS can name each failing scenario.
 	@status=0; $(TURBO) lint typecheck build test:system --force || status=$$?; \
 	$(OSF) check --all || status=1; exit $$status

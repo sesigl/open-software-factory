@@ -150,3 +150,24 @@ export function layeredModule(): Record<string, string> {
     "modules/demo/src/domain/rules.ts": "export const rule = 1;\n",
   };
 }
+
+/**
+ * A coverage file as the testkit writes it to reports/coverage/: V8 coverage of one module file in which the
+ * top level ran and, of the functions declared in `source`, only those in `ran`.
+ */
+export function coverageFile(path: string, source: string, ran: string[]): string {
+  const functions = [
+    { functionName: "", ranges: [{ startOffset: 0, endOffset: source.length, count: 1 }], isBlockCoverage: true },
+  ];
+  for (const match of source.matchAll(/function (\w+)\(/g)) {
+    const start = match.index;
+    const end = source.indexOf("\n}", start) + 2;
+    const count = ran.includes(match[1] as string) ? 1 : 0;
+    functions.push({
+      functionName: match[1] as string,
+      ranges: [{ startOffset: start, endOffset: end, count }],
+      isBlockCoverage: true,
+    });
+  }
+  return `${JSON.stringify({ root: "file:///repo", result: [{ url: `file:///repo/${path}`, functions }] })}\n`;
+}
