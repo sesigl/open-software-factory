@@ -6,7 +6,7 @@ scenario("SCN-CTR-006", async ({ sut, fakes, given, when, then }) => {
   await given("the valid fixtures of every format", async () => {
     for (const [path, content] of Object.entries(fakes.fromRepository("contracts"))) {
       if (!path.includes("/fixtures/valid/") || path.startsWith("system-tests/")) continue;
-      await sut.files.put(`contracts/${path}`, content);
+      await sut.files.put(`$INPUT/contracts/${path}`, content);
       fixtures.push(`contracts/${path}`);
     }
     expect(fixtures.length).toBeGreaterThanOrEqual(11);

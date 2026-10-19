@@ -12,14 +12,14 @@ const SCHEMA = `${JSON.stringify(
 
 scenario("SCN-REPO-024", async ({ sut, given, when, then }) => {
   await given('the schema "contracts/demo/demo.schema.json" whose property "link" has the format "uri"', async () => {
-    await sut.files.put("contracts/package.json", '{ "name": "@opensoftware/contracts", "version": "1.0.0" }\n');
-    await sut.files.put("contracts/demo/demo.schema.json", SCHEMA);
+    await sut.files.put("$INPUT/contracts/package.json", '{ "name": "@opensoftware/contracts", "version": "1.0.0" }\n');
+    await sut.files.put("$INPUT/contracts/demo/demo.schema.json", SCHEMA);
   });
 
   await given(
     'the invalid fixture "contracts/demo/fixtures/invalid/relative-link.json" with the link "not a uri"',
     async () => {
-      await sut.files.put("contracts/demo/fixtures/invalid/relative-link.json", '{ "link": "not a uri" }\n');
+      await sut.files.put("$INPUT/contracts/demo/fixtures/invalid/relative-link.json", '{ "link": "not a uri" }\n');
     },
   );
 

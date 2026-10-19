@@ -111,8 +111,8 @@ read them for ideas, do not copy their company-specific rules.
   already `SCN-REPO-006`):
   - [x] `testkit run` writes a JUnit report whose test case carries the scenario ID (`SCN-TK-001`); the
     testkit's own features, system tests, README and AGENTS.md.
-  - [ ] `sut.files` refuses a path outside `$INPUT`/`$OUTPUT`, with `sut.files.clear`.
-  - [ ] `sut.readme`; `modules/_template`'s quick-start test runs green through the testkit.
+  - [x] `sut.files` refuses a path outside `$INPUT`/`$OUTPUT` (`SCN-TK-002`); `sut.cli` runs in `$INPUT`.
+  - [ ] `sut.readme` and `sut.files.clear`; `modules/_template`'s quick-start test runs green through the testkit.
   - [ ] Scripted model gateway: an unscripted model call fails the test with the request shown.
   - [ ] Fixed clock and seed passed through documented config.
   - [ ] Testcontainers helpers for Postgres, NATS, Temporal and SeaweedFS (ADR).

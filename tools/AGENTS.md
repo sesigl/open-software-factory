@@ -9,7 +9,8 @@ The only ways a system test or another program may use the tooling:
 - CLI: `osf <command>` (`tools/bin/osf.ts`, see `README.md#commands`), run in the repository it checks
 - Make targets that call it (root `Makefile`)
 - Environment variables: the list in `README.md#configuration`
-- Input: the repository in the current directory and its JUnit results in `reports/junit/`
+- Input: the repository in the current directory (`$INPUT` in system tests) and its JUnit results in
+  `reports/junit/`
 
 `checks/` and `scaffold/` are private.
 

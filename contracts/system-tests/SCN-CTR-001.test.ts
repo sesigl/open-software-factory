@@ -2,7 +2,7 @@ import { scenario } from "@opensoftware/testkit";
 
 scenario("SCN-CTR-001", async ({ sut, fakes, given, when, then }) => {
   await given('a factory definition "factory.yaml" with the agents "triage" and "implement"', async () => {
-    await sut.files.put("factory.yaml", fakes.fixture("factory.yaml"));
+    await sut.files.put("$INPUT/factory.yaml", fakes.fixture("factory.yaml"));
   });
 
   let run: Awaited<ReturnType<typeof sut.cli>>;

@@ -2,7 +2,7 @@ import { scenario } from "@opensoftware/testkit";
 
 scenario("SCN-REPO-017", async ({ sut, given, when, then }) => {
   await given('a repository with the doc "docs/guide.md" that links "missing.md"', async () => {
-    await sut.files.put("docs/guide.md", "# Guide\n\nRead [the missing page](missing.md) first.\n");
+    await sut.files.put("$INPUT/docs/guide.md", "# Guide\n\nRead [the missing page](missing.md) first.\n");
   });
 
   let run: Awaited<ReturnType<typeof sut.cli>>;
