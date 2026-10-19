@@ -67,13 +67,13 @@ The OpenTelemetry GenAI conventions still have “Development” status. Pin a v
 | Tool | Tier | Wave | Lang | Useful alone as | Reads → writes | Adopts | Prior art and why we still build | Seed in sesigl/child-apps-company |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | factory-spec | core | 1 | TS | One agent config rendered for every harness; `lint`, `diff`, `plan`, `apply` | factory.yaml → harness configs, resolved definition | JSON Schema, gh-aw as an output | Warp's factory format is closed; gh-aw is per-workflow and GitHub-only; AGENTS.md has no schema | `orchestration/workflow.config.json` |
-| runlog | core | 1 | Py | Every harness session as an OTel run record | session files, native OTel → OTLP | OTel SDK, Collector, Agent Trace | Viewers exist (Claudescope, agentlogs) but no standard exporter | `scripts/observability/hermes_transcript.py` |
+| runlog | core | 1 | TS | Every harness session as an OTel run record | session files, native OTel → OTLP | OTel SDK, Collector, Agent Trace | Viewers exist (Claudescope, agentlogs) but no standard exporter | `scripts/observability/hermes_transcript.py` |
 | proof | core | 1 | TS | Evidence on any PR | Playwright, test reports → evidence bundle, PR comment, check | Playwright, Playwright MCP | none found | `qa-scenarios` skill |
 | spec-trace | optional | 2 | TS | Scenario ↔ test ↔ PR traceability | features, tests, results → report, check | Gherkin parser | Cucumber executes; nothing lints ID traceability | `make specs-check`, `traceability-check` |
-| scorekit | optional | 2 | Py | Calibrated scorers for coding sessions | run records → scores | Langfuse evaluators | Platforms have judges, not coding-session scorers or calibration | — |
-| ledger | optional | 2 | SQL+Py | Cost per PR and flow dashboard | gateway spend, runs, forge events → views, dashboards | Postgres, DuckDB, Grafana | DORA tools lack agent cost | metrics pipeline (ADR 0029) |
-| taskcapture | optional | 3 | Py | Private benchmark from merged PRs; routing rules | PR + run → Harbor task; results → report, LiteLLM config | Harbor | Harbor runs tasks but does not create them from history | — |
-| observer | optional | 3 | Py | Reviewed fixes to agent instructions and the factory, with before/after check | scores, runs, definition → PR, report | backpass (for AGENTS.md edits) | backpass edits AGENTS.md; lacks scores, full definition, before/after | `agent-cleaner` agent |
+| scorekit | optional | 2 | TS | Calibrated scorers for coding sessions | run records → scores | Langfuse evaluators | Platforms have judges, not coding-session scorers or calibration | — |
+| ledger | optional | 2 | SQL+TS | Cost per PR and flow dashboard | gateway spend, runs, forge events → views, dashboards | Postgres, DuckDB, Grafana | DORA tools lack agent cost | metrics pipeline (ADR 0029) |
+| taskcapture | optional | 3 | TS | Private benchmark from merged PRs; routing rules | PR + run → Harbor task; results → report, LiteLLM config | Harbor | Harbor runs tasks but does not create them from history | — |
+| observer | optional | 3 | TS | Reviewed fixes to agent instructions and the factory, with before/after check | scores, runs, definition → PR, report | backpass (for AGENTS.md edits) | backpass edits AGENTS.md; lacks scores, full definition, before/after | `agent-cleaner` agent |
 | gatekeeper | core | 3 | TS | Rule-based approvals for any automation | change + policy → request; decision → signed record | OPA or Cedar, Chat SDK | check human-approval SDKs before building | `controls.json`, `wf.sh pr merge` |
 | intake | optional | 4 | TS | One inbox for agent work; Factory MCP server | webhooks → work item events | Vercel Chat SDK, MCP SDK | — | — |
 | foreman | core | 4 | TS | Run declared multi-agent pipelines with gates | work items + definition → sandbox runs, gate requests | Temporal, agent-sandbox, ACP, agentapi | OpenHands covers much as one product; stay thin and support it as a harness | `scripts/workflow/wf/next_action.py` |
@@ -93,7 +93,7 @@ Plus `contracts` and `testkit` (core, wave 0) and the `open-software-factory` di
 | Durable workflows | Temporal | DBOS | workflows and signals |
 | Chat, tracker and forge adapters | Vercel Chat SDK | native webhooks | bot handlers |
 | Trace store and judges | Langfuse | Arize Phoenix | OTLP, score API |
-| Benchmark runner | Harbor | Inspect | Harbor task format |
+| Benchmark runner | Harbor | Inspect | Harbor task format and CLI; optional Python agent plugin (ADR 0009) |
 | Code attribution | Agent Trace | — | trace records |
 | Browser verification | Playwright, Playwright MCP | browser-use, Stagehand | traces, video |
 | Policy | OPA | Cedar | policy files |
