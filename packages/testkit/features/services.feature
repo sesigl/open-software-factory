@@ -1,0 +1,52 @@
+@module=testkit @owner=maintainers
+Feature: Services and outside systems
+  The fakes start real services in containers, a real Forgejo forge and a fake Slack. A module reaches each one
+  through the URL its configuration documents; the test reads only what the module produced.
+
+  @id=SCN-TK-008 @status=implemented
+  Scenario: fakes.postgres gives the module a reachable PostgreSQL
+    Given a module whose CLI sends a PostgreSQL SSL request to "DEMO_DATABASE_URL" and prints the answer
+    And its system test passes the URL of fakes.postgres and expects the output "postgres answered N"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-009 @status=implemented
+  Scenario: fakes.nats gives the module a reachable NATS server
+    Given a module whose CLI connects to "DEMO_NATS_URL" and prints the first word the server sends
+    And its system test passes the URL of fakes.nats and expects the output "INFO"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-010 @status=implemented
+  Scenario: fakes.temporal gives the module a Temporal server with the namespace "default"
+    Given a module whose CLI reads the namespace "default" from the Temporal HTTP API at "DEMO_TEMPORAL_HTTP" and prints its name
+    And its system test passes the HTTP URL of fakes.temporal and expects the output "default"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-011 @status=implemented
+  Scenario: fakes.s3 gives the module an S3 API that stores objects
+    Given a module whose CLI creates the bucket "demo", puts "notes.txt" with "hello" at "DEMO_S3_ENDPOINT" and prints the object it reads back
+    And its system test passes the endpoint of fakes.s3 and expects the output "hello"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-012 @status=implemented
+  Scenario: fakes.forge shows the comment and the commit status a module posts on a pull request
+    Given a module whose CLI comments "evidence bundle attached" and sets the status "proof" to "success" on a pull request at "DEMO_FORGE_URL"
+    And its system test opens a pull request in fakes.forge and expects that comment and that status
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-013 @status=implemented
+  Scenario: fakes.slack shows the message a module posts
+    Given a module whose CLI posts "hello from demo" to the channel "C1" through the Slack Web API at "DEMO_SLACK_URL"
+    And its system test passes the URL and token of fakes.slack and expects that message in "C1"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

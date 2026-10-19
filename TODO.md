@@ -118,8 +118,9 @@ read them for ideas, do not copy their company-specific rules.
     scripted model gateway (`SCN-TK-006`, `-007`); `modules/_template` is a working module whose quick start
     `SCN-TEMPLATE-001` runs green through the testkit (ADR 0015). BOUNDARY-ENV keeps reading the README:
     `make docs` generates its Configuration table from `src/config.schema.json`, and DOCS-GEN keeps them equal.
-  - [ ] Servers and services (ADR for Testcontainers): `sut.http`, `sut.mcp`, `sut.events`; Postgres, NATS,
-    Temporal, SeaweedFS, the Forgejo helper, fake Slack.
+  - [x] Servers and services: `sut.http` (with an openapi-fetch client), `sut.mcp`, `sut.events`
+    (`SCN-TK-014` to `-018`, ADR 0017); Postgres, NATS, Temporal, SeaweedFS, the Forgejo helper, fake Slack
+    (`SCN-TK-008` to `-013`, ADR 0016).
   - [ ] Harness and ports (ADR for ACP): the scripted ACP harness applies its edit and reports completion;
     `conformance(port, adapter)` and the `@conformance` scenario of TRACE.
   - [ ] Runtime guards and release: BOUNDARY-RUNTIME, NOREAL, REACH; `release-please-config.json` entry and a

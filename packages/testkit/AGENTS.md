@@ -30,7 +30,7 @@ Layers, top to bottom, in `architecture.json` (ADR 0014). A file imports only it
 
 ## Budget
 
-- System tests: 60 seconds in total on the CI runner.
+- System tests: 240 seconds in total on the CI runner.
 
 ## Scenario prefix
 

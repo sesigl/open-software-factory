@@ -1,8 +1,21 @@
 // The fakes a system test controls instead of real outside systems.
 import { readFileSync } from "node:fs";
 import { join, relative } from "node:path";
+import type { StartedTestContainer } from "testcontainers";
 import { listFiles, repoRoot } from "../support/module.ts";
-import { type ModelGateway, type RunningGateway, type ScriptedReply, startModelGateway } from "./model-gateway.ts";
+import { type Forge, startForge } from "./forge.ts";
+import { type ModelGateway, type ScriptedReply, startModelGateway } from "./model-gateway.ts";
+import {
+  type Nats,
+  type Postgres,
+  type S3,
+  startNats,
+  startPostgres,
+  startS3,
+  startTemporal,
+  type Temporal,
+} from "./services.ts";
+import { type FakeSlack, startSlack } from "./slack.ts";
 
 export interface Fakes {
   /** A fixture file from the module's `system-tests/fixtures/` folder. */
@@ -11,6 +24,18 @@ export interface Fakes {
   fromRepository(dir: string): Record<string, string>;
   /** Starts a scripted model gateway. An unscripted call fails the scenario with the request shown. */
   modelGateway(script: ScriptedReply[]): Promise<ModelGateway>;
+  /** PostgreSQL in a container. */
+  postgres(): Promise<Postgres>;
+  /** NATS with JetStream in a container. */
+  nats(): Promise<Nats>;
+  /** A Temporal dev server in a container. */
+  temporal(): Promise<Temporal>;
+  /** An S3 API (SeaweedFS) in a container. */
+  s3(): Promise<S3>;
+  /** A Forgejo forge in a container, with a user and an API token. */
+  forge(): Promise<Forge>;
+  /** A fake of the Slack Web API. An unsupported method fails the scenario. */
+  slack(): Promise<FakeSlack>;
 }
 
 export interface FakesHandle {
@@ -20,7 +45,19 @@ export interface FakesHandle {
 }
 
 export function makeFakes(moduleRoot: string): FakesHandle {
-  const running: RunningGateway[] = [];
+  const stops: (() => Promise<string[]>)[] = [];
+  const track = (container: StartedTestContainer): StartedTestContainer => {
+    stops.push(async () => {
+      await container.stop();
+      return [];
+    });
+    return container;
+  };
+  const inProcess = async <T>(started: Promise<{ close(): Promise<string[]> } & T>): Promise<T> => {
+    const fake = await started;
+    stops.push(() => fake.close());
+    return fake;
+  };
   return {
     fakes: {
       fixture(name) {
@@ -33,13 +70,19 @@ export function makeFakes(moduleRoot: string): FakesHandle {
         return tree;
       },
       async modelGateway(script) {
-        const started = await startModelGateway(script);
-        running.push(started);
-        return started.gateway;
+        return (await inProcess(startModelGateway(script))).gateway;
+      },
+      postgres: () => startPostgres(track),
+      nats: () => startNats(track),
+      temporal: () => startTemporal(track),
+      s3: () => startS3(track),
+      forge: () => startForge(track),
+      async slack() {
+        return (await inProcess(startSlack())).slack;
       },
     },
     async close() {
-      return (await Promise.all(running.splice(0).map((fake) => fake.close()))).flat();
+      return (await Promise.all(stops.splice(0).map((stop) => stop()))).flat();
     },
   };
 }

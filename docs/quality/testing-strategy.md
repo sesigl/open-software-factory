@@ -25,7 +25,7 @@ flowchart LR
   K -->|HTTP API, MCP via generated clients| A
   A -->|published events| K
   K -->|$INPUT / $OUTPUT folders| A
-  A -->|calls| F[fakes: scripted model gateway, scripted ACP harness, fake Slack, Forgejo, Postgres, NATS, S3, fixed clock]
+  A -->|calls| F[fakes: scripted model gateway, scripted ACP harness, fake Slack, Forgejo, Postgres, NATS, Temporal, S3, fixed clock]
   T -. "✕ import from src/ (BOUNDARY-STATIC)" .-> S
   T -. "✕ read or write its data (BOUNDARY-RUNTIME)" .-> D
 ```

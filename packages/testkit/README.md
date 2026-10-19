@@ -26,7 +26,7 @@ Each test case in `report.xml` is named after its scenario and has the property 
 
 | Command | What it does |
 | --- | --- |
-| `testkit run --junit <file>` | Run `system-tests/**/*.test.ts` of the module in the current folder with globals, no retries and a 60 s test timeout. Write the JUnit report to `<file>`. Exit 1 when a test fails. |
+| `testkit run --junit <file>` | Run `system-tests/**/*.test.ts` of the module in the current folder with globals, no retries and a 120 s test timeout. Write the JUnit report to `<file>`. Exit 1 when a test fails. |
 
 ## Writing a system test
 
@@ -41,10 +41,29 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
 - `sut.readme`: `quickStartArgs()` (the arguments of the README's `npx <package> ...` line) and
   `quickStartOutput()` (the first `$OUTPUT/<file>` it names).
 - `sut.git`: `$INPUT` is a Git repository with a fixed author and clock.
+- `sut.http.start(args, { env })`: starts the module's `bin` as a server with the same environment as `sut.cli`
+  plus `PORT`, waits until it listens on `127.0.0.1:PORT` and returns the base URL. Then `get`, `post` and
+  `request` call it, and `client<paths>()` gives an [openapi-fetch](https://openapi-ts.dev/openapi-fetch/) client
+  typed by the module's generated OpenAPI `paths`. A server that exits first fails the test with its error output.
+- `sut.mcp.connect(args, { env })`: starts the module's `bin` as an MCP server on stdio and returns a connected
+  MCP client (`listTools`, `callTool`, ...).
+- `sut.events.watch(nats, subjects)`: records the CloudEvents published on a NATS server from now on.
+  `received(type, { count, timeoutMs })` waits for them and, on timeout, names what arrived instead;
+  `publish(subject, event)` sends an event to the module.
+
+Every server, client and subscription stops when the scenario ends, before the fakes.
 - `fakes.fixture(name)`, `fakes.fromRepository(dir)`: fixture files.
 - `fakes.modelGateway([{ when, reply }])`: an OpenAI-compatible endpoint on `127.0.0.1`. Pass its `url` (ending
   in `/v1`) to the module through its documented config. `POST /v1/chat/completions` whose body contains `when`
   gets `reply`; any other call gets HTTP 500 and fails the scenario with the request shown.
+- `fakes.postgres()`, `fakes.nats()`, `fakes.temporal()`, `fakes.s3()`: a real service in a container for this
+  scenario ([ADR 0016](../../docs/decisions/0016-testkit-service-fakes.md)). Each gives only what a module needs
+  to reach it: a URL, an address or an endpoint with keys. Docker must run.
+- `fakes.forge()`: a real Forgejo with a user and an API token (`url`, `token`, `owner`). The test can
+  `createRepository`, `openPullRequest`, and read a pull request's `comments` and `statuses`.
+- `fakes.slack()`: a fake Slack Web API (`chat.postMessage`, `conversations.history`, `conversations.replies`,
+  `reactions.add`) at `url` with `token`. The test reads `messages(channel)` and posts as a person with `say`.
+  Any other method fails the scenario.
 
 A `planned` scenario's test must fail; when it passes, the testkit fails it and asks for `@status=implemented`.
 
@@ -65,3 +84,14 @@ The testkit reads no environment variables.
 | SCN-TK-005 | implemented | The module runs with a fixed clock and seed |
 | SCN-TK-006 | implemented | A scripted model call gets its scripted reply |
 | SCN-TK-007 | implemented | An unscripted model call fails the test with the request shown |
+| SCN-TK-008 | implemented | fakes.postgres gives the module a reachable PostgreSQL |
+| SCN-TK-009 | implemented | fakes.nats gives the module a reachable NATS server |
+| SCN-TK-010 | implemented | fakes.temporal gives the module a Temporal server with the namespace "default" |
+| SCN-TK-011 | implemented | fakes.s3 gives the module an S3 API that stores objects |
+| SCN-TK-012 | implemented | fakes.forge shows the comment and the commit status a module posts on a pull request |
+| SCN-TK-013 | implemented | fakes.slack shows the message a module posts |
+| SCN-TK-014 | implemented | sut.http starts the module as a server and calls its API |
+| SCN-TK-015 | implemented | sut.http shows the server's error output when it exits before it listens |
+| SCN-TK-016 | implemented | sut.mcp connects to the module's MCP server and calls a tool |
+| SCN-TK-017 | implemented | sut.events records the CloudEvent a module publishes on NATS |
+| SCN-TK-018 | implemented | sut.events names the events that arrived instead of the expected one |

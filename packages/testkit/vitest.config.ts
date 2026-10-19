@@ -6,7 +6,7 @@ export default defineConfig({
     include: ["system-tests/**/*.test.ts"],
     globals: true,
     retry: 0,
-    testTimeout: 60_000,
+    testTimeout: 180_000,
     reporters: [
       "default",
       ["junit", { outputFile: "../../reports/junit/testkit.xml", classnameTemplate: "{filepath}" }],
