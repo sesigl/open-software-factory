@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; Python and Java clients superseded by 0012
 date: 2026-10-18
 ---
 

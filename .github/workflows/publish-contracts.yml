@@ -1,4 +1,4 @@
-# Publishes a contracts release to npm as @opensoftware/contracts. The one-time setup a person does is in
+# Publishes a contracts release to npm as @opensoftware/contracts. The one-time setup is in
 # contracts/README.md#releases.
 name: publish-contracts
 

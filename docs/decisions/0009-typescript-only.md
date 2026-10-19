@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; generated-client exception superseded by 0012
 date: 2026-10-19
 supersedes: 0002
 ---

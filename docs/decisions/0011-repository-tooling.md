@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; SPECGUARD, CODEOWNERS and the path guard removed by 0013
 date: 2026-10-19
 ---
 

@@ -1,7 +1,6 @@
 # AGENTS.md for `contracts`
 
-Adds rules for the contracts. The root `AGENTS.md` applies in full. `contracts/` is a protected path: change it only
-with a person's approval.
+Adds rules for the contracts. The root `AGENTS.md` applies in full.
 
 ## Public surface
 

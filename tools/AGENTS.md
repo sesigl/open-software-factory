@@ -11,7 +11,7 @@ The only ways a system test or another program may use the tooling:
 - Environment variables: the list in `README.md#configuration`
 - Input: the repository in the current directory and its JUnit results in `reports/junit/`
 
-`checks/` and `scaffold/` are private. `tools/checks/` is a protected path: changing a check needs a person.
+`checks/` and `scaffold/` are private.
 
 ## Allowed exceptions
 

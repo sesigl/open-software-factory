@@ -24,7 +24,6 @@ From phase 2 on, the released `spec-trace` module replaces TRACE, STEPS and PASS
 | TRACE | Every `implemented` scenario has exactly one system test; every system test names an existing scenario; `planned` scenarios may have a test that is expected to fail; `deprecated` scenarios have none. `@conformance` scenarios have exactly one test per adapter of the port. | Read `scenario("SCN-...")` calls from the TypeScript AST. Only string literals count. |
 | STEPS | The labels of `given`, `when` and `then` calls match the scenario's steps, in order, word for word. Outline parameters `<name>` match any value. | Compare AST string literals with the parsed steps. |
 | PASS | Every `implemented` scenario's test ran in this CI run and passed. Skipped, todo, retried-to-pass and missing results fail. | Join the JUnit XML results (each test case carries its scenario ID) with the scenario list. |
-| SPECGUARD | A pull request that changes the steps of an `implemented` scenario, deletes a scenario, or changes `@status` back from `implemented` carries an approval from a code owner. | Diff the parsed scenarios between base and head; check the review state through the forge API. |
 
 ## Boundaries
 

@@ -40,22 +40,21 @@ read them for ideas, do not copy their company-specific rules.
   - `make check`, `verify`, `smoke`, `smoke-paid`, `next-id`, `new-module`, `docs`, `docs-affected`,
     `test-scenario ID=…`, `agents-sync` (links `skills/` into `.claude/skills/` and other harness folders).
   - Checks from `docs/quality/checks.md` as scripts in `tools/checks/`, each printing its ID and file:line:
-    SPEC, TRACE, STEPS, PASS, SPECGUARD, BOUNDARY-STATIC, BOUNDARY-ENV, ISOLATION, NOSKIP, ASSERT, FLAKE, BUDGET,
+    SPEC, TRACE, STEPS, PASS, BOUNDARY-STATIC, BOUNDARY-ENV, ISOLATION, NOSKIP, ASSERT, FLAKE, BUDGET,
     CONTRACT, DOCS-GEN, DOCS-AFFECTED, DOCS-LINKS, ADR. BOUNDARY-RUNTIME, NOREAL and REACH come with T-02.
     MUTATION and SMOKE-PAID as nightly workflows.
   - ISOLATION allows a module to depend only on `@opensoftware/contracts`, `@opensoftware/testkit` (tests only) and external
     packages.
   - GitHub Actions: `verify` on every PR (required check), nightly mutation, release-please.
   - Biome, `tsc --strict`, dependency-cruiser, lychee configs.
-  - Make `tools/hooks/protect-paths.sh` executable; it is already wired in `.claude/settings.json`.
 - **Adopt:** pnpm, Turborepo, `@cucumber/gherkin` parser, ts-morph, JUnit XML reporters, oasdiff, lychee,
   release-please.
 - **Seed:** child-apps-company `make specs-check`, `make traceability-check`, `scripts/lib/gherkin.ts`,
   `scripts/metrics/timed.py` (budgets).
 - **First scenarios** (`tools/features/checks.feature`): SPEC rejects a duplicate ID; TRACE rejects an
   implemented scenario without a test; STEPS rejects a label that differs from the step; PASS rejects a skipped
-  test; BOUNDARY-STATIC rejects an import from `src/`; SPECGUARD rejects a changed implemented step without
-  approval; DOCS-AFFECTED lists a doc whose `covers:` path changed.
+  test; BOUNDARY-STATIC rejects an import from `src/`; DOCS-AFFECTED lists a doc whose `covers:` path changed.
+  (SPECGUARD, the approval check for implemented scenarios, was removed by ADR 0013.)
 - **Done when:** `make verify` passes on `modules/_template` (renamed to a real example module or kept as a
   fixture) with every listed check active, and CI requires `verify`.
 
@@ -180,12 +179,10 @@ read them for ideas, do not copy their company-specific rules.
 - **Reads → writes:** feature files, test ASTs, JUnit results, evidence bundles, base/head diff → report,
   required check.
 - **Seed:** T-00's `tools/checks/` scripts; replace them in phase 2.
-- **Realizes:** checks SPEC, TRACE, STEPS, PASS, SPECGUARD as a product; principle P10 with proof.
+- **Realizes:** checks SPEC, TRACE, STEPS, PASS as a product; principle P10 with proof.
 - **First scenarios:** quick start reports scenario coverage of a sample repository; same cases as T-00's
   checks, now from the released CLI; configurable ID pattern and prefixes; outline examples counted once per
   test.
-- **From T-00:** SPECGUARD accepts approvals only from individual code owners; resolve team owners
-  (`@org/team`) through the forge port.
 - **Done when:** this repository's CI uses spec-trace instead of the bootstrap scripts.
 
 ### [ ] T-07 · scorekit

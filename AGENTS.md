@@ -65,11 +65,10 @@ A new module starts with `skills/new-module`. A new dependency or service starts
 - Test from the outside only: the module's CLI, HTTP API, MCP server, published events or published files.
   Never import from `src/`. Never read or write the module's database, cache or private files.
 - No real network, model, clock or randomness in system tests. Use the fakes in `@opensoftware/testkit`.
-- Never change the text of an `implemented` scenario to make a test pass. A scenario change needs a person.
-- Never skip, delete or weaken the test of an `implemented` scenario. To remove behavior, a person marks the
-  scenario `deprecated`.
-- Never change `features/**`, `contracts/**`, `docs/quality/**`, budgets or CI workflows without a person's
-  approval. CODEOWNERS enforces it.
+- Never change the text of an `implemented` scenario to make a test pass. To change behavior on purpose, write
+  a new scenario with `@replaces=SCN-...`, mark the old one `deprecated` and delete its test in the same change.
+- Never skip or weaken the test of an `implemented` scenario. To remove behavior, mark the scenario `deprecated`
+  and delete its test in the same change.
 - Adopt before you build. Check for an existing open-source project first and record what you found.
 - Never write a credential into code, tests, fixtures, logs or documents.
 
@@ -108,11 +107,12 @@ When a check fails, its output starts with the check ID and the file and line to
 | What each check does | `docs/quality/checks.md` |
 | Module tiers (core, optional, community) | `docs/explanation/module-tiers.md` |
 
-## When to stop and ask a person
+## When to stop and ask
 
-Stop when a scenario is unclear or contradicts another, when a scenario or contract must change, when a change
-needs a new service, dependency, permission or paid call, or when a check fails for a reason you cannot fix
-inside the module. Ask one clear question with the options and their effects.
+Stop when a requirement is unclear or contradicts another, when a change needs a new paid service or a paid
+call, or when a check fails for a reason you cannot fix. Ask one clear question with the options and their
+effects. Everything else, including scenarios, contracts, checks and workflows, you change yourself in the pull
+request; its review is the approval.
 
 <!-- BEGIN:turborepo-agent-rules -->
 

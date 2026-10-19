@@ -61,7 +61,6 @@ into `true`.
 3. A breaking change (removed or newly required field, changed type, removed enum value, closed object, tighter
    bound or pattern) needs a new major version in `package.json`. Prefer a new optional field, or for events a new
    type `name@v2` next to the old one.
-4. `contracts/` is a protected path: every change needs a person (CODEOWNERS).
 
 ## Releases
 
@@ -73,12 +72,12 @@ hand with the tag. The CONTRACT check and `osf-contracts breaking` compare with 
 Only the TypeScript package exists (ADR 0012). A client for another language can be generated from
 `openapi/openapi.json` with any OpenAPI generator when someone needs one.
 
-One-time setup by a person (no credential is ever stored in the repository):
+One-time setup (no credential is ever stored in the repository):
 
 1. npm: the organization `opensoftware` owns the scope `@opensoftware`, under which every package of this
    repository is published.
 2. GitHub: the publish job runs in the environment `npm` (Settings → Environments; GitHub creates it on the first
-   run). Add required reviewers if a person should approve each publish.
+   run).
 3. First version only: npm configures trusted publishing per existing package, so `1.0.0` needs a token. Add a
    granular npm access token with read and write access to the `opensoftware` organization's packages as the
    secret `NPM_TOKEN` (a repository secret or a secret of the environment `npm`), or publish `1.0.0` by hand.
