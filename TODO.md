@@ -124,8 +124,10 @@ read them for ideas, do not copy their company-specific rules.
   - [x] Harness and ports: the scripted ACP harness applies its edit and reports completion (`SCN-TK-019`,
     `-020`, ADR 0018); `testkit conformance <port features>` is the conformance runner (`SCN-TK-021`, `-022`);
     TRACE's `@conformance` rule has its scenario (`SCN-REPO-030`).
-  - [ ] Runtime guards and release: BOUNDARY-RUNTIME, NOREAL, REACH; `release-please-config.json` entry and a
-    publish workflow.
+  - [x] Runtime guards and release: BOUNDARY-RUNTIME (a private `OSF_DATA` folder, only a built `bin`;
+    `SCN-TK-023`, `-024`), NOREAL (a network guard in every module process; `SCN-TK-025`); a
+    `release-please-config.json` entry, a `dist/` build and `publish-testkit.yml`.
+  - [ ] REACH: coverage of the running module; new unreached lines in a pull request fail.
 
 ---
 

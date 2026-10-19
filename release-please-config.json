@@ -7,6 +7,11 @@
       "release-type": "node",
       "package-name": "@opensoftware/contracts",
       "component": "contracts"
+    },
+    "packages/testkit": {
+      "release-type": "node",
+      "package-name": "@opensoftware/testkit",
+      "component": "testkit"
     }
   }
 }

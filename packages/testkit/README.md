@@ -8,8 +8,8 @@ The only way system tests touch a module. A system test declares its scenario wi
 the `sut` handle and the fakes; `testkit run` runs the tests and writes a JUnit report that carries each
 scenario ID, so the PASS check can join results with scenarios.
 
-This is the bootstrap subset from T-00, extended item by item in T-02 (see [`TODO.md`](../../TODO.md)). It is
-not released yet.
+It is built in T-02 (see [`TODO.md`](../../TODO.md)) and released to npm as `@opensoftware/testkit` (see
+[Releases](#releases)). Install it with `vitest` as a dev dependency of a module or an adapter.
 
 ## Quick start
 
@@ -35,8 +35,10 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
 
 - `given`, `when`, `then`: step functions; each label repeats the scenario's step text.
 - `sut.cli(args, { env })`: runs the module's `bin` in its own process, with `$INPUT` as the current directory.
-  The module gets `INPUT` and `OUTPUT` (the two folders), `OSF_NOW=2026-01-01T00:00:00Z` and `OSF_SEED=1`.
-  `env` may only name variables the module's README documents under Configuration.
+  The module gets `INPUT` and `OUTPUT` (the two folders), `OSF_DATA` (its private data folder, which persists
+  for the scenario and which the test has no path into), `OSF_NOW=2026-01-01T00:00:00Z` and `OSF_SEED=1`.
+  `env` may only name variables the module's README documents under Configuration. `bin` must be the built
+  artifact: a `bin` in `src/` fails the test (BOUNDARY-RUNTIME).
 - `sut.files`: `put`, `read`, `list`, `remove` and `clear` in the module's input and output folders. Every path
   starts with `$INPUT/` or `$OUTPUT/` and stays inside that folder; any other path fails the test.
 - `sut.readme`: `quickStartArgs()` (the arguments of the README's `npx <package> ...` line) and
@@ -73,6 +75,17 @@ Every server, client and subscription stops when the scenario ends, before the f
 
 A `planned` scenario's test must fail; when it passes, the testkit fails it and asks for `@status=implemented`.
 
+## Runtime guards
+
+- BOUNDARY-RUNTIME: every surface starts the module's built `bin` in its own process, with `$INPUT` as its
+  folder and `OSF_DATA` for its own state. The test reaches the module only through `sut`.
+- NOREAL: every Node process of the module (and the processes it starts) loads a network guard through
+  `NODE_OPTIONS`. A TCP connection may go to a loopback address or to a host of the testkit's containers; local
+  sockets are allowed. Any other connection fails as unreachable and fails the scenario with
+  `NOREAL: the module tried to reach <host>:<port>`. A module written in another language gets no guard.
+- The clock and the seed are fixed through `OSF_NOW` and `OSF_SEED`; a module reads them instead of the system
+  clock and a random seed.
+
 ## Configuration
 
 The testkit reads no environment variables. `testkit conformance` passes the port features folder to the
@@ -80,6 +93,18 @@ tests itself.
 
 An adapter's tests (`adapters/<port>/<adapter>/system-tests/`) use the scenario IDs of its port; the testkit
 reads their status from `ports/<port>/features/` or from the folder `testkit conformance` names.
+
+## Releases
+
+release-please opens a release pull request from the Conventional Commits under `packages/testkit/`. Merging it
+creates the tag `testkit-v<version>`. The workflow `.github/workflows/publish-testkit.yml` then builds `dist/`
+with `pnpm build` and publishes the package to npm. In this repository the package runs from its TypeScript
+sources; `publishConfig` points the published `exports` and `bin` at `dist/`. To publish a tag again, run the
+workflow by hand with the tag.
+
+The one-time setup is the same as for contracts ([`contracts/README.md`](../../contracts/README.md#releases)):
+the npm scope `@opensoftware`, the GitHub environment `npm`, a token only for the first version, then a trusted
+publisher for the workflow `publish-testkit.yml`. No credential is stored in the repository.
 
 ## Scenarios
 
@@ -109,3 +134,6 @@ reads their status from `ports/<port>/features/` or from the folder `testkit con
 | SCN-TK-020 | implemented | A prompt the script does not name fails the scenario with the prompt shown |
 | SCN-TK-021 | implemented | testkit conformance names each conformance scenario the adapter does not pass |
 | SCN-TK-022 | implemented | An adapter that passes every conformance scenario of its port conforms |
+| SCN-TK-023 | implemented | The module keeps its state in a private data folder |
+| SCN-TK-024 | implemented | The sut refuses a module whose bin is a source file |
+| SCN-TK-025 | implemented | A module that reaches a real host fails the scenario with the host shown |

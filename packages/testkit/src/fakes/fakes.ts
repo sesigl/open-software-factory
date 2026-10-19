@@ -43,13 +43,17 @@ export interface Fakes {
 
 export interface FakesHandle {
   fakes: Fakes;
+  /** The hosts of the running containers; the module may connect to them (NOREAL). */
+  hosts(): string[];
   /** Stops every fake and returns what went wrong, such as unscripted calls. */
   close(): Promise<string[]>;
 }
 
 export function makeFakes(moduleRoot: string): FakesHandle {
   const stops: (() => Promise<string[]>)[] = [];
+  const hosts = new Set<string>();
   const track = (container: StartedTestContainer): StartedTestContainer => {
+    hosts.add(container.getHost());
     stops.push(async () => {
       await container.stop();
       return [];
@@ -87,6 +91,7 @@ export function makeFakes(moduleRoot: string): FakesHandle {
         return (await inProcess(startSlack())).slack;
       },
     },
+    hosts: () => [...hosts],
     async close() {
       return (await Promise.all(stops.splice(0).map((stop) => stop()))).flat();
     },

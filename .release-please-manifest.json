@@ -1,3 +1,4 @@
 {
-  "contracts": "1.0.0"
+  "contracts": "1.0.0",
+  "packages/testkit": "0.0.0"
 }
