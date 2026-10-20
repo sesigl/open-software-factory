@@ -35,6 +35,13 @@
       "component": "runlog",
       "initial-version": "0.1.0",
       "bump-minor-pre-major": true
+    },
+    "modules/proof": {
+      "release-type": "node",
+      "package-name": "@opensoftware/proof",
+      "component": "proof",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
     }
   }
 }
