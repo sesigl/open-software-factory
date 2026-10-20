@@ -5,7 +5,27 @@
     "OUTPUT": {
       "type": "string",
       "default": ".",
-      "description": "Folder the module writes its results to."
+      "description": "Folder that export appends runs.jsonl to when no OTLP endpoint is set."
+    },
+    "OTEL_RESOURCE_ATTRIBUTES": {
+      "type": "string",
+      "description": "Resource attributes of the run as key=value pairs, set by the launcher, for example osf.run.id=…,osf.work_item.id=…,osf.factory.version=…,osf.stage=…. They override what runlog finds itself."
+    },
+    "OTEL_SERVICE_NAME": {
+      "type": "string",
+      "description": "The service.name of the run. Default: the harness, for example claude-code."
+    },
+    "OTEL_EXPORTER_OTLP_ENDPOINT": {
+      "type": "string",
+      "description": "Base URL of an OTLP/HTTP receiver, for example http://collector:4318. When set, export sends the run to <url>/v1/traces instead of writing runs.jsonl."
+    },
+    "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": {
+      "type": "string",
+      "description": "Full URL of the OTLP/HTTP traces endpoint; takes precedence over OTEL_EXPORTER_OTLP_ENDPOINT."
+    },
+    "OTEL_EXPORTER_OTLP_HEADERS": {
+      "type": "string",
+      "description": "Headers for the OTLP endpoint as key=value pairs, for example a token from a secret store. Never write the value into a file."
     }
   }
 }
