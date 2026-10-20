@@ -1,6 +1,6 @@
 // The run as OpenTelemetry spans: written as one OTLP/JSON line to a file, or sent to an OTLP/HTTP endpoint with the
 // exporter of the OpenTelemetry JavaScript SDK, which retries on 429, 502, 503 and 504.
-import { appendFileSync, mkdirSync } from "node:fs";
+import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { SpanKind, SpanStatusCode, TraceFlags } from "@opentelemetry/api";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
@@ -48,10 +48,19 @@ export function spansOf(run: Run, resource: Resource, version: string): Readable
   });
 }
 
+const line = (spans: ReadableSpan[]): string =>
+  `${new TextDecoder().decode(JsonTraceSerializer.serializeRequest(spans))}\n`;
+
 /** Appends the spans to `file` as one OTLP/JSON ExportTraceServiceRequest. */
 export function appendTo(file: string, spans: ReadableSpan[]): void {
   mkdirSync(dirname(file), { recursive: true });
-  appendFileSync(file, `${new TextDecoder().decode(JsonTraceSerializer.serializeRequest(spans))}\n`);
+  appendFileSync(file, line(spans));
+}
+
+/** Writes the spans to `file` as its only line, replacing what it held. */
+export function writeTo(file: string, spans: ReadableSpan[]): void {
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, line(spans));
 }
 
 /** Sends the spans to the endpoint in OTEL_EXPORTER_OTLP_(TRACES_)ENDPOINT; resolves with the error, if any. */

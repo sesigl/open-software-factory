@@ -295,3 +295,41 @@ Feature: Repository checks
     When the developer runs "osf docs-affected" against the base commit
     Then the command exits with code 1
     And the output contains "DOCS-AFFECTED docs/how-to/demo.md:1"
+
+  @id=SCN-REPO-038 @status=implemented
+  Scenario: RUNS rejects a run record with prompt content
+    Given a run record "runs/run-1.jsonl" whose chat span has the attribute "gen_ai.input.messages"
+    When the developer runs "osf check RUNS"
+    Then the command exits with code 1
+    And the output contains "RUNS runs/run-1.jsonl:1 has content gen_ai.input.messages"
+
+  @id=SCN-REPO-039 @status=implemented
+  Scenario: RUNS rejects a run record that does not match the run-record contract
+    Given a run record "runs/run-1.jsonl" without the resource attribute "osf.run.id"
+    When the developer runs "osf check RUNS"
+    Then the command exits with code 1
+    And the output contains "RUNS runs/run-1.jsonl:1 does not match the run-record contract"
+    And the output contains "osf.run.id"
+
+  @id=SCN-REPO-040 @status=implemented
+  Scenario: RUNS rejects agent commits without a run record
+    Given a base commit
+    And a later commit with the trailer "Co-Authored-By: Claude <noreply@anthropic.com>" that changes no file in "runs/"
+    When the developer runs "osf check RUNS" against the base commit
+    Then the command exits with code 1
+    And the output contains "no run record in runs/ changed: run make run-record and commit runs/"
+
+  @id=SCN-REPO-041 @status=implemented
+  Scenario: RUNS accepts agent commits that add a run record
+    Given a base commit
+    And a later commit with the trailer "Co-Authored-By: Claude <noreply@anthropic.com>" that adds the run record "runs/run-1.jsonl"
+    When the developer runs "osf check RUNS" against the base commit
+    Then the command exits with code 0
+    And the output contains "RUNS ok"
+
+  @id=SCN-REPO-042 @status=implemented
+  Scenario: RUNS asks no run record of commits without an agent trailer
+    Given a base commit
+    And a later commit without a "Co-Authored-By:" trailer that changes no file in "runs/"
+    When the developer runs "osf check RUNS" against the base commit
+    Then the command exits with code 0
