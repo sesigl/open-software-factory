@@ -1,0 +1,63 @@
+// The run as OpenTelemetry spans: written as one OTLP/JSON line to a file, or sent to an OTLP/HTTP endpoint with the
+// exporter of the OpenTelemetry JavaScript SDK, which retries on 429, 502, 503 and 504.
+import { appendFileSync, mkdirSync } from "node:fs";
+import { dirname } from "node:path";
+import { SpanKind, SpanStatusCode, TraceFlags } from "@opentelemetry/api";
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
+import { JsonTraceSerializer } from "@opentelemetry/otlp-transformer";
+import { detectResources, envDetector, type Resource, resourceFromAttributes } from "@opentelemetry/resources";
+import type { ReadableSpan } from "@opentelemetry/sdk-trace-base";
+import type { Attributes, Run } from "../domain/run.ts";
+
+/** The resource of the run: the attributes runlog knows, overridden by OTEL_RESOURCE_ATTRIBUTES and OTEL_SERVICE_NAME. */
+export const resourceOf = (known: Attributes): Resource =>
+  resourceFromAttributes(known).merge(detectResources({ detectors: [envDetector] }));
+
+const time = (iso: string): [number, number] => {
+  const millis = Date.parse(iso);
+  return [Math.floor(millis / 1000), (millis % 1000) * 1_000_000];
+};
+
+const duration = ([s1, n1]: [number, number], [s2, n2]: [number, number]): [number, number] =>
+  n2 >= n1 ? [s2 - s1, n2 - n1] : [s2 - s1 - 1, n2 - n1 + 1_000_000_000];
+
+export function spansOf(run: Run, resource: Resource, version: string): ReadableSpan[] {
+  const context = (spanId: string) => ({ traceId: run.traceId, spanId, traceFlags: TraceFlags.SAMPLED });
+  return run.spans.map((span) => {
+    const startTime = time(span.start);
+    const endTime = time(span.end);
+    return {
+      name: span.name,
+      kind: span.kind === "client" ? SpanKind.CLIENT : SpanKind.INTERNAL,
+      spanContext: () => context(span.spanId),
+      parentSpanContext: span.parentSpanId ? context(span.parentSpanId) : undefined,
+      startTime,
+      endTime,
+      duration: duration(startTime, endTime),
+      status: { code: SpanStatusCode.UNSET },
+      attributes: span.attributes,
+      links: [],
+      events: [],
+      ended: true,
+      resource,
+      instrumentationScope: { name: "@opensoftware/runlog", version },
+      droppedAttributesCount: 0,
+      droppedEventsCount: 0,
+      droppedLinksCount: 0,
+    };
+  });
+}
+
+/** Appends the spans to `file` as one OTLP/JSON ExportTraceServiceRequest. */
+export function appendTo(file: string, spans: ReadableSpan[]): void {
+  mkdirSync(dirname(file), { recursive: true });
+  appendFileSync(file, `${new TextDecoder().decode(JsonTraceSerializer.serializeRequest(spans))}\n`);
+}
+
+/** Sends the spans to the endpoint in OTEL_EXPORTER_OTLP_(TRACES_)ENDPOINT; resolves with the error, if any. */
+export async function send(spans: ReadableSpan[]): Promise<Error | undefined> {
+  const exporter = new OTLPTraceExporter();
+  const result = await new Promise<{ error?: Error }>((resolve) => exporter.export(spans, resolve));
+  await exporter.shutdown();
+  return result.error;
+}
