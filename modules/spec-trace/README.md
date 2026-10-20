@@ -141,52 +141,52 @@ with a trusted publisher for `publish-spec-trace.yml`. No credential is stored i
 
 | ID | Status | Scenario |
 | --- | --- | --- |
-| SCN-TRACE-001 | planned | A new user reports the scenario coverage of the sample repository from the README |
-| SCN-TRACE-002 | planned | The help lists every command |
-| SCN-TRACE-003 | planned | SPEC rejects a duplicate scenario ID |
-| SCN-TRACE-004 | planned | SPEC rejects a scenario without a status |
-| SCN-TRACE-005 | planned | SPEC rejects an unknown status |
-| SCN-TRACE-006 | planned | SPEC rejects an ID that does not match the default pattern |
-| SCN-TRACE-007 | planned | SPEC accepts the IDs of a configured pattern |
-| SCN-TRACE-008 | planned | SPEC rejects a prefix that is not registered |
-| SCN-TRACE-009 | planned | SPEC rejects a prefix outside the folder of its row in a Markdown table |
-| SCN-TRACE-010 | planned | SPEC names the line of a feature file that does not parse |
-| SCN-TRACE-011 | planned | TRACE rejects an implemented scenario without a test |
-| SCN-TRACE-012 | planned | TRACE rejects an implemented scenario with two tests |
-| SCN-TRACE-013 | planned | TRACE rejects a test that names no scenario |
-| SCN-TRACE-014 | planned | TRACE rejects a deprecated scenario that still has a test |
-| SCN-TRACE-015 | planned | TRACE rejects a scenario ID that is not a string literal |
-| SCN-TRACE-016 | planned | TRACE accepts planned scenarios with and without a test |
-| SCN-TRACE-017 | planned | TRACE rejects a test outside the configured test folder |
-| SCN-TRACE-018 | planned | TRACE rejects an adapter without a test for a conformance scenario of its port |
-| SCN-TRACE-019 | planned | TRACE reads the tests of a configured function name |
-| SCN-TRACE-020 | planned | STEPS rejects a label that differs from the step |
-| SCN-TRACE-021 | planned | STEPS rejects a test that misses a step |
-| SCN-TRACE-022 | planned | STEPS rejects a step that the scenario does not have |
-| SCN-TRACE-023 | planned | STEPS matches an outline parameter with any value |
-| SCN-TRACE-024 | planned | STEPS puts the background steps first |
-| SCN-TRACE-025 | planned | PASS rejects a skipped test |
-| SCN-TRACE-026 | planned | PASS rejects a failed test |
-| SCN-TRACE-027 | planned | PASS rejects an implemented scenario whose test did not run |
-| SCN-TRACE-028 | planned | PASS asks for a test run when there is no JUnit report |
-| SCN-TRACE-029 | planned | PASS reads the scenario ID from the name of a test case |
-| SCN-TRACE-030 | planned | PASS rejects an outline when one of its examples failed |
-| SCN-TRACE-031 | planned | PASS reads the JUnit reports from the configured folder |
-| SCN-TRACE-032 | planned | check runs every rule on a traced repository |
-| SCN-TRACE-033 | planned | check rejects an unknown rule |
-| SCN-TRACE-034 | planned | check rejects an unknown key in spec-trace.json |
-| SCN-TRACE-035 | planned | check rejects a key of the wrong type in spec-trace.json |
-| SCN-TRACE-036 | planned | check reads the configuration file named by --config |
-| SCN-TRACE-037 | planned | check rejects a configuration file that does not exist |
-| SCN-TRACE-038 | planned | check rejects a prefix file that does not exist |
-| SCN-TRACE-039 | planned | report lists each scenario with its status, its test and its result |
-| SCN-TRACE-040 | planned | report counts a scenario outline once |
-| SCN-TRACE-041 | planned | report has no result and no PASS finding without a JUnit report |
-| SCN-TRACE-042 | planned | report lists the findings of the rules |
-| SCN-TRACE-043 | planned | report counts the artifacts of a proof bundle per scenario |
-| SCN-TRACE-044 | planned | report rejects a bundle that does not match the evidence-bundle contract |
-| SCN-TRACE-045 | planned | report writes the file named by --out |
-| SCN-TRACE-046 | planned | next-id follows the highest ID of the prefix, deprecated included |
-| SCN-TRACE-047 | planned | next-id starts a new prefix at 001 |
-| SCN-TRACE-048 | planned | next-id starts a new prefix of a configured pattern |
-| SCN-TRACE-049 | planned | next-id asks for the first ID by hand when the pattern has no fixed width |
+| SCN-TRACE-001 | implemented | A new user reports the scenario coverage of the sample repository from the README |
+| SCN-TRACE-002 | implemented | The help lists every command |
+| SCN-TRACE-003 | implemented | SPEC rejects a duplicate scenario ID |
+| SCN-TRACE-004 | implemented | SPEC rejects a scenario without a status |
+| SCN-TRACE-005 | implemented | SPEC rejects an unknown status |
+| SCN-TRACE-006 | implemented | SPEC rejects an ID that does not match the default pattern |
+| SCN-TRACE-007 | implemented | SPEC accepts the IDs of a configured pattern |
+| SCN-TRACE-008 | implemented | SPEC rejects a prefix that is not registered |
+| SCN-TRACE-009 | implemented | SPEC rejects a prefix outside the folder of its row in a Markdown table |
+| SCN-TRACE-010 | implemented | SPEC names the line where a feature file stops parsing |
+| SCN-TRACE-011 | implemented | TRACE rejects an implemented scenario without a test |
+| SCN-TRACE-012 | implemented | TRACE rejects an implemented scenario with two tests |
+| SCN-TRACE-013 | implemented | TRACE rejects a test that names no scenario |
+| SCN-TRACE-014 | implemented | TRACE rejects a deprecated scenario that still has a test |
+| SCN-TRACE-015 | implemented | TRACE rejects a scenario ID that is not a string literal |
+| SCN-TRACE-016 | implemented | TRACE accepts planned scenarios with and without a test |
+| SCN-TRACE-017 | implemented | TRACE rejects a test outside the configured test folder |
+| SCN-TRACE-018 | implemented | TRACE rejects an adapter without a test for a conformance scenario of its port |
+| SCN-TRACE-019 | implemented | TRACE reads the tests of a configured function name |
+| SCN-TRACE-020 | implemented | STEPS rejects a label that differs from the step |
+| SCN-TRACE-021 | implemented | STEPS rejects a test that misses a step |
+| SCN-TRACE-022 | implemented | STEPS rejects a step that the scenario does not have |
+| SCN-TRACE-023 | implemented | STEPS matches an outline parameter with any value |
+| SCN-TRACE-024 | implemented | STEPS puts the background steps first |
+| SCN-TRACE-025 | implemented | PASS rejects a skipped test |
+| SCN-TRACE-026 | implemented | PASS rejects a failed test |
+| SCN-TRACE-027 | implemented | PASS rejects an implemented scenario whose test did not run |
+| SCN-TRACE-028 | implemented | PASS asks for a test run when there is no JUnit report |
+| SCN-TRACE-029 | implemented | PASS reads the scenario ID from the name of a test case |
+| SCN-TRACE-030 | implemented | PASS rejects an outline when one of its examples failed |
+| SCN-TRACE-031 | implemented | PASS reads the JUnit reports from the configured folder |
+| SCN-TRACE-032 | implemented | check runs every rule on a traced repository |
+| SCN-TRACE-033 | implemented | check rejects an unknown rule |
+| SCN-TRACE-034 | implemented | check rejects an unknown key in spec-trace.json |
+| SCN-TRACE-035 | implemented | check rejects a key of the wrong type in spec-trace.json |
+| SCN-TRACE-036 | implemented | check reads the configuration file named by --config |
+| SCN-TRACE-037 | implemented | check rejects a configuration file that does not exist |
+| SCN-TRACE-038 | implemented | check rejects a prefix file that does not exist |
+| SCN-TRACE-039 | implemented | report lists each scenario with its status, its test and its result |
+| SCN-TRACE-040 | implemented | report counts a scenario outline once |
+| SCN-TRACE-041 | implemented | report has no result and no PASS finding without a JUnit report |
+| SCN-TRACE-042 | implemented | report lists the findings of the rules |
+| SCN-TRACE-043 | implemented | report counts the artifacts of a proof bundle per scenario |
+| SCN-TRACE-044 | implemented | report rejects a bundle that does not match the evidence-bundle contract |
+| SCN-TRACE-045 | implemented | report writes the file named by --out |
+| SCN-TRACE-046 | implemented | next-id follows the highest ID of the prefix, deprecated included |
+| SCN-TRACE-047 | implemented | next-id starts a new prefix at 001 |
+| SCN-TRACE-048 | implemented | next-id starts a new prefix of a configured pattern |
+| SCN-TRACE-049 | implemented | next-id asks for the first ID by hand when the pattern has no fixed width |

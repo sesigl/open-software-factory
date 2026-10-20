@@ -241,6 +241,12 @@ read them for ideas, do not copy their company-specific rules.
   checks, now from the released CLI; configurable ID pattern and prefixes; outline examples counted once per
   test.
 - **Done when:** this repository's CI uses spec-trace instead of the bootstrap scripts.
+- **Slices:**
+  - [x] `spec-trace check` (SPEC, TRACE, STEPS, PASS with the cases and messages of `tools/checks/`), `spec-trace
+    report` (JSON, with proof bundles), `spec-trace next-id`, the settings file `spec-trace.json` (ID pattern,
+    prefixes, folders, test function, conformance), and the npm release (ADR 0030, `SCN-TRACE-001` to `-049`).
+  - [ ] The GitHub Action, the base and head diff in the report, and the dogfood: a root `spec-trace.json` and CI
+    runs spec-trace instead of `tools/checks/` for SPEC, TRACE, STEPS and PASS.
 
 ### [ ] T-07 · scorekit
 

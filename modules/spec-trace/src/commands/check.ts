@@ -3,7 +3,7 @@ import { type Finding, type Inputs, RULES, type Rule } from "../domain/model.ts"
 import { CHECKS } from "../domain/rules.ts";
 
 export function findings(inputs: Inputs, rules: Rule[]): Finding[] {
-  return rules.flatMap((rule) => CHECKS[rule](inputs).sort(byLocation));
+  return rules.flatMap((rule) => CHECKS[rule](inputs));
 }
 
 export function check(inputs: Inputs, only: string | undefined): { lines: string[]; ok: boolean } {
@@ -22,8 +22,4 @@ export function check(inputs: Inputs, only: string | undefined): { lines: string
 
 function format(finding: Finding): string {
   return `${finding.rule} ${finding.file}:${finding.line} ${finding.message}`;
-}
-
-function byLocation(a: Finding, b: Finding): number {
-  return a.file.localeCompare(b.file) || a.line - b.line;
 }
