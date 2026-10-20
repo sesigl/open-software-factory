@@ -38,12 +38,11 @@ export function claudeCodeSession(lines: Line[]): Session {
   let previous = first.timestamp as string;
   for (const line of messages) {
     const content = line.message?.content;
+    const blocks: Line[] = Array.isArray(content) ? content : [];
     if (line.type === "user") {
-      const text = textOf(
-        typeof content === "string" ? content : content.filter((block: Line) => block.type === "text"),
-      );
+      const text = textOf(Array.isArray(content) ? blocks.filter((block) => block.type === "text") : content);
       if (text) pending.push({ role: "user", text });
-      for (const block of Array.isArray(content) ? content : []) {
+      for (const block of blocks) {
         const call = block.type === "tool_result" ? tools.get(block.tool_use_id) : undefined;
         if (call) Object.assign(call, { end: line.timestamp, result: textOf(block.content) });
       }
@@ -63,7 +62,7 @@ export function claudeCodeSession(lines: Line[]): Session {
       const text = textOf(content);
       if (text) response.output.push({ role: "assistant", text });
       responses.set(id, response);
-      for (const block of content.filter((part: Line) => part.type === "tool_use")) {
+      for (const block of blocks.filter((part) => part.type === "tool_use")) {
         const call = { id: block.id, name: block.name, start: line.timestamp, end: line.timestamp };
         tools.set(block.id, { ...call, arguments: JSON.stringify(block.input), result: "" });
       }

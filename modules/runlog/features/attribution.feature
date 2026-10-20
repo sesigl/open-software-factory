@@ -25,3 +25,10 @@ Feature: Attribute a run
     Then the command exits with code 1
     And the output contains "the run does not match the run-record contract: /resource/osf.requester.kind"
     And the output folder has no "runs.jsonl"
+
+  @id=SCN-RUN-021 @status=implemented
+  Scenario: A run outside a Git repository with a commit has no factory version and is not exported
+    Given a Git repository without a commit and the Claude Code session "5b8e0c7e-1d2a-4f00-9a7e-0d1f2a3b4c5d"
+    When the developer runs "runlog export session.jsonl"
+    Then the command exits with code 1
+    And the output contains "the run does not match the run-record contract: /resource/osf.factory.version missing required field"
