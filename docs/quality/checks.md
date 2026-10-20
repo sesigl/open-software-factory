@@ -16,7 +16,10 @@ The checks are scripts in `tools/checks/` (TODO item T-00), run with `osf check 
 [`tools/README.md`](../../tools/README.md). BOUNDARY-RUNTIME and NOREAL are guards in the testkit; the testkit also records the coverage REACH reads.
 From phase 2 on, the released `spec-trace` module replaces TRACE, STEPS and PASS.
 
-CI runs `make verify` in `.github/workflows/verify.yml` for every pull request and every push to `main`.
+CI runs `make verify` in `.github/workflows/verify.yml` for every pull request and every push to `main`. It runs
+the three parts of `make verify` as jobs: `verify-static` (lint, typecheck, build) and one `verify-tests` job per
+test suite run side by side, each on its own runner. The `verify` job then collects their JUnit and coverage results
+and runs `verify-checks`; it fails when any part failed. A package without its own job runs in the `rest` job.
 Release pull requests are opened by release-please with `GITHUB_TOKEN`, and their `pull_request` run waits for a
 person's approval. So `release-please.yml` also starts `verify` on each release branch it created or updated,
 with `workflow_dispatch`, and that run needs no approval.
@@ -50,7 +53,7 @@ with `workflow_dispatch`, and that run needs no approval.
 | REACH | A pull request adds no line to a module's `src/` or `bin/` that no system test reaches, and no source file that no system test loads (files of types only are exempt). | The testkit records V8 coverage in every Node process of the module (`reports/coverage/`); `osf check REACH` maps it to source lines with v8-to-istanbul, through source maps for built files, and compares it with the lines added since `OSF_BASE` (ADR 0019). |
 | MUTATION | System tests notice small changes to the code they claim to cover. | Nightly Stryker on a sample of changed files; a falling score opens a ticket. Not a pull request gate, because it is slow. |
 | FLAKE | A test that passed only on retry is a failure. | PASS reads the retry count from the results. |
-| BUDGET | Each module's system tests finish inside the budget in its `AGENTS.md`. | Timing from the JUnit results; `make verify` runs one suite at a time, so suites do not slow each other. |
+| BUDGET | Each module's system tests finish inside the budget in its `AGENTS.md`. | Timing from the JUnit results; `make verify` runs one suite at a time and CI gives each suite its own runner, so suites do not slow each other. |
 
 ## Contracts and docs
 
