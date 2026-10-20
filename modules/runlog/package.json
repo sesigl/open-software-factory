@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/runlog",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "runlog: every Claude Code, Codex or OpenCode session as an OpenTelemetry run record.",
   "license": "Apache-2.0",
   "repository": {
