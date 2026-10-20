@@ -37,6 +37,9 @@ make verify      # everything: lint, types, all system tests, all checks
 `make` holds no build logic (ADR 0010). `make check` runs the affected `lint`, `typecheck` and `test:system`
 Turborepo tasks (`--filter=...[OSF_BASE]`) and then the fast checks. `make verify` runs those tasks for every
 package without the cache, then every check. The checks themselves always run outside the Turborepo cache.
+`make verify` is three targets that CI runs as parallel jobs: `make verify-static` (lint, typecheck, build),
+`make verify-tests` (the system test suites, one at a time; `FILTER="pkg !pkg"` limits them to some packages) and
+`make verify-checks` (every check, on the results in `reports/`).
 
 Each failure prints one line: the check ID, `file:line`, and what to fix. Each check ends with `ID ok` or
 `ID failed: N`. The exit code is 1 when any check failed.
