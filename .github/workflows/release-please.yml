@@ -20,13 +20,14 @@ jobs:
           manifest-file: .release-please-manifest.json
 
       # A pull request that GITHUB_TOKEN opens or updates starts no pull_request run that can pass without a
-      # person's approval. A workflow_dispatch run is the exception, so start verify on every open release branch
-      # after each push to main: also on the ones release-please left unchanged, since main moved under them.
+      # person's approval. A workflow_dispatch run is the exception, so start verify for every open release pull
+      # request after each push to main: also for the ones release-please left unchanged, since main moved under
+      # them. The run uses verify.yml from main, because a release branch can carry an older one.
       - name: Run verify on the open release pull requests
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          for branch in $(gh pr list --repo "$GITHUB_REPOSITORY" --state open --label "autorelease: pending" \
-            --json headRefName --jq '.[].headRefName'); do
-            gh workflow run verify.yml --repo "$GITHUB_REPOSITORY" --ref "$branch"
+          for pr in $(gh pr list --repo "$GITHUB_REPOSITORY" --state open --label "autorelease: pending" \
+            --json number --jq '.[].number'); do
+            gh workflow run verify.yml --repo "$GITHUB_REPOSITORY" --ref main -f pr="$pr"
           done
