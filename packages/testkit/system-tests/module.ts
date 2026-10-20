@@ -169,3 +169,51 @@ export function postModule(routes: string, expectations: string[]): Record<strin
     ],
   });
 }
+
+/** A Collector config that receives OTLP/HTTP on 4318, runs the one `processor` (YAML lines) and exports as JSON. */
+export function collectorConfig(processor: string[]): string {
+  const name = (processor[0] ?? "").replace(":", "");
+  return [
+    "receivers:",
+    "  otlp:",
+    "    protocols:",
+    "      http:",
+    "        endpoint: 0.0.0.0:4318",
+    "processors:",
+    ...processor.map((line) => `  ${line}`),
+    "exporters:",
+    "  otlphttp:",
+    "    endpoint: ${env:OTEL_EXPORTER_OTLP_ENDPOINT}",
+    "    encoding: json",
+    "service:",
+    "  pipelines:",
+    "    traces:",
+    "      receivers: [otlp]",
+    `      processors: [${name}]`,
+    "      exporters: [otlphttp]",
+    "",
+  ].join("\n");
+}
+
+/** One OTLP/JSON request with the span "work". */
+export const WORK_SPAN = {
+  resourceSpans: [
+    {
+      resource: { attributes: [] },
+      scopeSpans: [
+        {
+          spans: [
+            {
+              traceId: "5b8e0c7e1d2a4f009a7e0d1f2a3b4c5d",
+              spanId: "0000000000000001",
+              name: "work",
+              kind: 1,
+              startTimeUnixNano: "1767225600000000000",
+              endTimeUnixNano: "1767225660000000000",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};

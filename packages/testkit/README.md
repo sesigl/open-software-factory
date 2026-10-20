@@ -65,7 +65,8 @@ Every server, client and subscription stops when the scenario ends, before the f
   `status` (default 200) and JSON `body`; a route with `times` answers only that many requests, and later ones go to
   the next matching route, for example an outage before a success ([ADR 0023](../../docs/decisions/0023-runlog.md)).
   Any other request gets HTTP 404 and fails the scenario with the request shown. `requests()` lists what it
-  received as `METHOD /path`; `received()` lists each request with its `body` (JSON, or text when it is not JSON).
+  received as `METHOD /path`; `received()` lists each request with its `body` (JSON, or text when it is not JSON;
+  a gzip body is unpacked first).
 - `fakes.harness([{ when, edits, reply }])`: a scripted coding agent that speaks ACP on stdio
   ([ADR 0018](../../docs/decisions/0018-testkit-scripted-acp-harness.md)). Start it with its `command` and `args`.
   The first prompt that contains `when` gets the `edits` (files by path below the session's folder) and the
@@ -76,6 +77,11 @@ Every server, client and subscription stops when the scenario ends, before the f
   to reach it: a URL, an address or an endpoint with keys. Docker must run.
 - `fakes.forge()`: a real Forgejo with a user and an API token (`url`, `token`, `owner`). The test can
   `createRepository`, `openPullRequest`, and read a pull request's `comments` and `statuses`.
+- `fakes.collector(config)`: the real OpenTelemetry Collector Contrib in a container, running the config text a
+  module wrote ([ADR 0025](../../docs/decisions/0025-runlog-collector-config-pack.md)). The config receives OTLP/HTTP
+  on `0.0.0.0:4318` and exports to `${env:OTEL_EXPORTER_OTLP_ENDPOINT}`, which the fake points at its own receiver.
+  `send(request)` posts an OTLP/JSON request to the Collector; `exported({ count, timeoutMs })` waits for the
+  requests the Collector exported (JSON encoding) and, on timeout, shows the Collector's log. Docker must run.
 - `fakes.slack()`: a fake Slack Web API (`chat.postMessage`, `conversations.history`, `conversations.replies`,
   `reactions.add`) at `url` with `token`. The test reads `messages(channel)` and posts as a person with `say`.
   Any other method fails the scenario.
@@ -153,3 +159,5 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-028 | implemented | An unscripted request fails the test with the request shown |
 | SCN-TK-029 | implemented | A route with "times" answers only that many requests |
 | SCN-TK-030 | implemented | The fake gives the body of every request it received |
+| SCN-TK-031 | implemented | fakes.collector runs the Collector config a module wrote and shows what it exported |
+| SCN-TK-032 | implemented | fakes.collector shows the Collector log when the Collector exports nothing |
