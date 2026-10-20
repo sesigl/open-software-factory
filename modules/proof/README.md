@@ -180,3 +180,6 @@ with a trusted publisher for `publish-proof.yml`. No credential is stored in the
 | SCN-PROOF-029 | implemented | Attach without a token is refused |
 | SCN-PROOF-030 | implemented | A forge that refuses the comment fails the attach |
 | SCN-PROOF-031 | implemented | Attach without a pull request is refused |
+| SCN-PROOF-032 | implemented | Any other attachment with a file becomes an artifact of the kind "other" |
+| SCN-PROOF-033 | implemented | A bundle that would break the contract is not written |
+| SCN-PROOF-034 | implemented | Attach refuses a manifest that breaks the contract |
