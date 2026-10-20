@@ -88,3 +88,5 @@ Each failure prints one line: the check ID, `file:line`, and what to fix. Each c
 | SCN-REPO-033 | implemented | REACH accepts a change whose lines a system test reaches |
 | SCN-REPO-034 | implemented | REACH asks for a test run when a changed module has no coverage |
 | SCN-REPO-035 | implemented | make docs generates the Commands section from the CLI help |
+| SCN-REPO-036 | implemented | DOCS-AFFECTED ignores the files of a release |
+| SCN-REPO-037 | implemented | DOCS-AFFECTED lists a doc when package.json changes more than its version |

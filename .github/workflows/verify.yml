@@ -7,6 +7,8 @@ on:
     types: [opened, synchronize, reopened, edited]
   push:
     branches: [main]
+  # release-please.yml starts verify this way on release pull requests (docs/quality/checks.md).
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -59,6 +61,17 @@ jobs:
             echo "OSF_BASE=$BEFORE"
             echo "OSF_PR_BODY=reports/pr-body.md"
           } >> "$GITHUB_ENV"
+
+      # A dispatched run on a release branch: OSF_BASE defaults to the merge base with main (Makefile).
+      - name: Release pull request context for DOCS-AFFECTED
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          mkdir -p reports
+          gh pr list --repo "$REPO" --head "$GITHUB_REF_NAME" --json body --jq '.[0].body // ""' > reports/pr-body.md
+          echo "OSF_PR_BODY=reports/pr-body.md" >> "$GITHUB_ENV"
 
       - run: make verify
 

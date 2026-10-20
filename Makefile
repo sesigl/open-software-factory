@@ -34,7 +34,9 @@ check: ## affected lint, typecheck and system tests, then the fast repository ch
 verify: ## everything from a clean state; required before you report done
 	@rm -rf reports/junit reports/coverage
 	@# The repository checks run even when tests fail, so PASS can name each failing scenario.
-	@status=0; $(TURBO) lint typecheck build test:system --force || status=$$?; \
+	@# One system test suite at a time: BUDGET adds up test times, and suites that share the cores slow each other.
+	@status=0; $(TURBO) lint typecheck build --force || status=$$?; \
+	$(TURBO) test:system --concurrency=1 --continue || status=$$?; \
 	$(OSF) check --all || status=1; exit $$status
 
 test-scenario: ## run the one system test of a scenario: make test-scenario ID=SCN-REPO-002

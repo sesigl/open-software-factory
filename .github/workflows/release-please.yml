@@ -8,12 +8,26 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write # start verify on the release pull requests
 
 jobs:
   release-please:
     runs-on: ubuntu-24.04
     steps:
       - uses: googleapis/release-please-action@v4
+        id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      # A pull request that GITHUB_TOKEN opens or updates starts no pull_request run that can pass without a
+      # person's approval. A workflow_dispatch run is the exception, so start verify on each release branch here.
+      - name: Run verify on the release pull requests
+        if: steps.release.outputs.prs_created == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRS: ${{ steps.release.outputs.prs }}
+        run: |
+          for branch in $(jq -r '.[].headBranchName' <<<"$PRS"); do
+            gh workflow run verify.yml --repo "$GITHUB_REPOSITORY" --ref "$branch"
+          done
