@@ -5,7 +5,44 @@
     "OUTPUT": {
       "type": "string",
       "default": ".",
-      "description": "Folder the module writes its results to."
+      "description": "Folder below which bundle writes evidence/ when --out is not given."
+    },
+    "OSF_NOW": {
+      "type": "string",
+      "description": "The creation time of a bundle as an ISO 8601 timestamp. Default: the system clock."
+    },
+    "GITHUB_SERVER_URL": {
+      "type": "string",
+      "description": "Set by GitHub Actions. With GITHUB_REPOSITORY, the repository of a bundle when --repository is not given."
+    },
+    "GITHUB_REPOSITORY": {
+      "type": "string",
+      "description": "Set by GitHub Actions, for example acme/web."
+    },
+    "PROOF_FORGE_URL": {
+      "type": "string",
+      "description": "Base URL of the forge API for attach. GitHub: the REST API, default https://api.github.com. Forgejo: the server, default the origin of the pull request URL; proof adds /api/v1."
+    },
+    "PROOF_FORGE_TOKEN": {
+      "type": "string",
+      "description": "Token that may comment on the pull request and set commit statuses, for example GITHUB_TOKEN. Never write the value into a file."
+    },
+    "AWS_ENDPOINT_URL": {
+      "type": "string",
+      "description": "Endpoint of the S3-compatible store for attach --store. Default: AWS S3 in AWS_REGION."
+    },
+    "AWS_REGION": {
+      "type": "string",
+      "default": "us-east-1",
+      "description": "Region of the store."
+    },
+    "AWS_ACCESS_KEY_ID": {
+      "type": "string",
+      "description": "Access key of the store."
+    },
+    "AWS_SECRET_ACCESS_KEY": {
+      "type": "string",
+      "description": "Secret key of the store. Never write the value into a file."
     }
   }
 }

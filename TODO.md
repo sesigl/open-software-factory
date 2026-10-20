@@ -213,6 +213,12 @@ read them for ideas, do not copy their company-specific rules.
   comment and a check "proof" on a Forgejo PR; verify fails when a listed scenario has no evidence; a bundle
   records the scenario IDs it proves; attach is idempotent on re-run.
 - **Done when:** every PR in this repository carries a proof check from the released tool.
+- **Slices:**
+  - [x] `proof bundle` from Playwright JSON and JUnit XML reports, `proof verify`, `proof attach` with one marker
+    comment and the commit status `proof` on GitHub and Forgejo, upload to an S3-compatible store, and the npm release
+    (ADR 0028, `SCN-PROOF-001` to `-034`).
+  - [ ] `proof capture` (screenshots and video of a running product with Playwright and Playwright MCP), the GitHub
+    Action, and the dogfood: a proof check on every pull request of this repository from the released tool.
 
 ---
 
