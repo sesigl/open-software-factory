@@ -105,8 +105,19 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
+      # A dispatched run on a release branch tests the merge into main, as a pull_request run does.
+      - name: Merge ref of a dispatched release pull request
+        id: release-pr
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          number=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$GITHUB_REF_NAME" --json number --jq '.[0].number // ""')
+          if [ -n "$number" ]; then echo "ref=refs/pull/$number/merge" >> "$GITHUB_OUTPUT"; fi
+
       - uses: actions/checkout@v5
         with:
+          ref: ${{ steps.release-pr.outputs.ref }}
           fetch-depth: 0
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
@@ -143,7 +154,7 @@ jobs:
             echo "OSF_PR_BODY=reports/pr-body.md"
           } >> "$GITHUB_ENV"
 
-      # A dispatched run on a release branch: OSF_BASE defaults to the merge base with main (Makefile).
+      # A dispatched run: OSF_BASE defaults to the merge base with main (Makefile), so main itself.
       - name: Release pull request context for DOCS-AFFECTED
         if: github.event_name == 'workflow_dispatch'
         env:

@@ -21,8 +21,8 @@ the three parts of `make verify` as jobs: `verify-static` (lint, typecheck, buil
 test suite run side by side, each on its own runner. The `verify` job then collects their JUnit and coverage results
 and runs `verify-checks`; it fails when any part failed. A package without its own job runs in the `rest` job.
 Release pull requests are opened by release-please with `GITHUB_TOKEN`, and their `pull_request` run waits for a
-person's approval. So `release-please.yml` also starts `verify` on each release branch it created or updated,
-with `workflow_dispatch`, and that run needs no approval.
+person's approval. So after each push to `main`, `release-please.yml` also starts `verify` on every open release
+branch with `workflow_dispatch`. That run needs no approval, and it tests the pull request's merge into `main`.
 
 ## Specification and traceability
 
