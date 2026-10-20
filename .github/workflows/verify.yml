@@ -8,7 +8,7 @@ on:
   push:
     branches: [main]
   # release-please.yml starts verify this way on release pull requests (docs/quality/checks.md). The run uses this
-  # file from main, tests the merge of the pull request into main and reports a commit status on its head.
+  # file from main, merges the pull request into main and reports a commit status on its head.
   workflow_dispatch:
     inputs:
       pr:
@@ -34,7 +34,15 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ inputs.pr && format('refs/pull/{0}/merge', inputs.pr) || '' }}
+          fetch-depth: ${{ inputs.pr && '0' || '1' }}
+      # A dispatched run tests the release pull request merged into main. GitHub's merge ref can lag behind main.
+      - name: Merge the release pull request into main
+        if: inputs.pr
+        env:
+          PR: ${{ inputs.pr }}
+        run: |
+          git fetch --no-tags origin "pull/$PR/head"
+          git -c user.name=verify -c user.email=verify@invalid merge --no-edit FETCH_HEAD
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:
@@ -67,8 +75,15 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ inputs.pr && format('refs/pull/{0}/merge', inputs.pr) || '' }}
           fetch-depth: 0
+      # A dispatched run tests the release pull request merged into main. GitHub's merge ref can lag behind main.
+      - name: Merge the release pull request into main
+        if: inputs.pr
+        env:
+          PR: ${{ inputs.pr }}
+        run: |
+          git fetch --no-tags origin "pull/$PR/head"
+          git -c user.name=verify -c user.email=verify@invalid merge --no-edit FETCH_HEAD
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:
@@ -116,8 +131,15 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ inputs.pr && format('refs/pull/{0}/merge', inputs.pr) || '' }}
           fetch-depth: 0
+      # A dispatched run tests the release pull request merged into main. GitHub's merge ref can lag behind main.
+      - name: Merge the release pull request into main
+        if: inputs.pr
+        env:
+          PR: ${{ inputs.pr }}
+        run: |
+          git fetch --no-tags origin "pull/$PR/head"
+          git -c user.name=verify -c user.email=verify@invalid merge --no-edit FETCH_HEAD
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:
