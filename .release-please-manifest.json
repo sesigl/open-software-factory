@@ -1,6 +1,6 @@
 {
   "contracts": "1.2.0",
-  "packages/testkit": "0.3.0",
+  "packages/testkit": "0.4.0",
   "modules/factory-spec": "0.1.0",
   "modules/runlog": "0.2.0",
   "modules/proof": "0.0.0"
