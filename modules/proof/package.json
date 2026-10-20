@@ -1,0 +1,36 @@
+{
+  "name": "@opensoftware/proof",
+  "version": "0.0.0",
+  "description": "proof: evidence for each scenario a pull request claims, as a bundle, a comment and a commit status.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "modules/proof"
+  },
+  "type": "module",
+  "bin": {
+    "proof": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "vitest run",
+    "docs": "node ../../tools/bin/osf.ts docs ."
+  },
+  "devDependencies": {
+    "@opensoftware/testkit": "workspace:*"
+  },
+  "dependencies": {
+    "@opensoftware/contracts": "workspace:*",
+    "aws4fetch": "1.0.20",
+    "fast-xml-parser": "5.11.2"
+  }
+}

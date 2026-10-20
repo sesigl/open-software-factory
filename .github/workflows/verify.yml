@@ -70,9 +70,12 @@ jobs:
           - suite: runlog
             filter: "@opensoftware/runlog"
             images: collector
+          - suite: proof
+            filter: "@opensoftware/proof"
+            images: s3 forge
           # Every other package, so a new module runs without a change here.
           - suite: rest
-            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog"
+            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof"
     steps:
       - uses: actions/checkout@v5
         with:
