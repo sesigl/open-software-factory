@@ -4,7 +4,7 @@ Feature: Export an OpenCode session
   shape as a Claude Code session. The session "ses_4c2e9a1b7f3dQ8mN2pR5tV6wXy" of the system tests has two
   assistant messages of "claude-sonnet-5-5", an "edit" call and a "bash" call.
 
-  @id=SCN-RUN-022 @status=planned @realizes=SCN-FACTORY-DATA-001
+  @id=SCN-RUN-022 @status=implemented @realizes=SCN-FACTORY-DATA-001
   Scenario: An OpenCode run has the same root span as a Claude Code run
     Given a Git repository with one commit and the OpenCode session "ses_4c2e9a1b7f3dQ8mN2pR5tV6wXy"
     When the developer runs "runlog export session.json"
@@ -13,14 +13,14 @@ Feature: Export an OpenCode session
     And the root span has "gen_ai.usage.input_tokens" 2800, "gen_ai.usage.output_tokens" 80 and "gen_ai.usage.cache_read.input_tokens" 1600
     And the resource has "osf.harness.name" "opencode" and "osf.harness.version" "1.18.2"
 
-  @id=SCN-RUN-023 @status=planned
+  @id=SCN-RUN-023 @status=implemented
   Scenario: Each assistant message of an OpenCode run becomes one chat span
     Given a Git repository with one commit and the OpenCode session "ses_4c2e9a1b7f3dQ8mN2pR5tV6wXy"
     When the developer runs "runlog export session.json"
     Then "runs.jsonl" has 2 spans "chat claude-sonnet-5-5" below the root span
     And the first has "gen_ai.response.id" "msg_a1", "gen_ai.usage.input_tokens" 1300 and "gen_ai.usage.output_tokens" 60
 
-  @id=SCN-RUN-024 @status=planned @realizes=SCN-FACTORY-DATA-001
+  @id=SCN-RUN-024 @status=implemented @realizes=SCN-FACTORY-DATA-001
   Scenario: Each tool part of an OpenCode run becomes one execute_tool span that lasts from its start to its end
     Given a Git repository with one commit and the OpenCode session "ses_4c2e9a1b7f3dQ8mN2pR5tV6wXy"
     When the developer runs "runlog export session.json"

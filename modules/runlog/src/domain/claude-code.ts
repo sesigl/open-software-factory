@@ -10,13 +10,17 @@ import {
   type ToolCall,
   textOf,
   type Usage,
+  type Write,
 } from "./session.ts";
 
 // biome-ignore lint/suspicious/noExplicitAny: session lines are external JSON of many shapes.
 type Line = Record<string, any>;
 
-export const isClaudeCode = (lines: Line[]): boolean =>
-  lines.some((line) => typeof line.sessionId === "string" && (line.type === "user" || line.type === "assistant"));
+// A subagent's transcript repeats the parent's session ID with isSidechain set; it belongs to the parent's run.
+const isMessage = (line: Line): boolean =>
+  typeof line.sessionId === "string" && (line.type === "user" || line.type === "assistant") && !line.isSidechain;
+
+export const isClaudeCode = (lines: Line[]): boolean => lines.some(isMessage);
 
 const usageOf = (usage: Line = {}): Usage => {
   const cacheRead = usage.cache_read_input_tokens ?? 0;
@@ -29,11 +33,21 @@ const usageOf = (usage: Line = {}): Usage => {
   };
 };
 
+/** The text that an Edit, MultiEdit or Write call wrote. */
+function writesOf(name: string, input: Line = {}): Write[] {
+  const path = input.file_path as string;
+  if (name === "Write") return [{ path, text: input.content }];
+  if (name === "Edit") return [{ path, text: input.new_string }];
+  if (name === "MultiEdit") return (input.edits ?? []).map((edit: Line) => ({ path, text: edit.new_string }));
+  return [];
+}
+
 export function claudeCodeSession(lines: Line[]): Session {
-  const messages = lines.filter((line) => line.type === "user" || line.type === "assistant");
+  const messages = lines.filter(isMessage);
   const first = messages[0] as Line;
   const responses = new Map<string, Response>();
   const tools = new Map<string, ToolCall>();
+  const writes: Write[] = [];
   let pending: Message[] = [];
   let previous = first.timestamp as string;
   for (const line of messages) {
@@ -65,6 +79,7 @@ export function claudeCodeSession(lines: Line[]): Session {
       for (const block of blocks.filter((part) => part.type === "tool_use")) {
         const call = { id: block.id, name: block.name, start: line.timestamp, end: line.timestamp };
         tools.set(block.id, { ...call, arguments: JSON.stringify(block.input), result: "" });
+        writes.push(...writesOf(block.name, block.input));
       }
     }
     previous = line.timestamp;
@@ -74,11 +89,14 @@ export function claudeCodeSession(lines: Line[]): Session {
     harness: "claude-code",
     harnessVersion: first.version,
     provider: "anthropic",
+    model: all[0]?.model ?? "",
     conversationId: first.sessionId,
+    cwd: first.cwd,
     start: first.timestamp,
     end: previous,
     usage: all.reduce((total, response) => sum(total, response.usage), NO_USAGE),
     responses: all,
     tools: [...tools.values()],
+    writes,
   };
 }
