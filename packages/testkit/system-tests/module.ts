@@ -219,8 +219,8 @@ export const WORK_SPAN = {
 };
 
 /**
- * Module demo with a composite GitHub Action: `action.yml` holds the `steps` (YAML lines below `steps:`) and the
- * inputs `name` and `command`; the CLI prints "hello <first argument>". Its test runs `test` (TypeScript lines).
+ * Module demo with a composite GitHub Action: `action.yml` holds the `steps` (YAML lines below `steps:`), the input
+ * `name` without a default and the input `command`; the CLI prints "hello <first argument>". Its test runs `test` (TypeScript lines).
  */
 export function actionModule(actionSteps: string[], steps: string[], test: string[]): Record<string, string> {
   return {
@@ -231,7 +231,6 @@ export function actionModule(actionSteps: string[], steps: string[], test: strin
       "inputs:",
       "  name:",
       "    description: Who to greet.",
-      "    default: world",
       "  command:",
       "    description: The demo command.",
       "    default: npx demo",

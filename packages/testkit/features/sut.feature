@@ -28,7 +28,7 @@ Feature: The sut handle
 
   @id=SCN-TK-033 @status=implemented
   Scenario: sut.action runs the module's GitHub Action with its inputs
-    Given a module whose composite action.yml has the input "name" and runs its "command" with it in a "run" step
+    Given a module whose composite action.yml has the input "name", checks "github.action_path" and "github.token", and runs its "command" with the name in a "run" step
     And its system test runs sut.action with the input "name" set to "web" and expects the output "hello web" and the step output "greeting"
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
@@ -73,3 +73,11 @@ Feature: The sut handle
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 1
     And the output contains "sut.action runs only \"run\" steps with \"shell: bash\" and without \"if:\", not step 1"
+
+  @id=SCN-TK-040 @status=implemented
+  Scenario: An input the action does not declare fails the test
+    Given a module whose composite action.yml has the inputs "name" and "command"
+    And its system test runs sut.action with the input "nmae"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 1
+    And the output contains "sut.action: action.yml has no input \"nmae\""

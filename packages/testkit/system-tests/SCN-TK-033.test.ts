@@ -4,7 +4,7 @@ import { actionModule, testCases } from "./module.ts";
 scenario("SCN-TK-033", async ({ sut, given, when, then }) => {
   let module: Record<string, string> = {};
   await given(
-    'a module whose composite action.yml has the input "name" and runs its "command" with it in a "run" step',
+    'a module whose composite action.yml has the input "name", checks "github.action_path" and "github.token", and runs its "command" with the name in a "run" step',
     async () => {
       module = actionModule(
         [
@@ -12,7 +12,10 @@ scenario("SCN-TK-033", async ({ sut, given, when, then }) => {
           "  shell: bash",
           "  env:",
           "    NAME: ${{ inputs.name }}",
+          "    TOKEN: ${{ github.token }}",
           "  run: |",
+          '    test -f "${{ github.action_path }}/action.yml"',
+          '    test "$TOKEN" = testkit-github-token',
           '    greeting=$(${{ inputs.command }} "$NAME")',
           '    echo "$greeting"',
           '    echo "greeting=$greeting" >> "$GITHUB_OUTPUT"',
