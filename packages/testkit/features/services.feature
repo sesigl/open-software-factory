@@ -50,3 +50,11 @@ Feature: Services and outside systems
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-031 @status=planned
+  Scenario: fakes.collector runs the Collector config a module wrote and shows what it exported
+    Given a module whose CLI prints a Collector config that renames the span "work" to "done"
+    And its system test starts fakes.collector with that config, sends the span "work" and expects the exported span "done"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
