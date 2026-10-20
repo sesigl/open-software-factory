@@ -185,3 +185,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-037 | implemented | A route with a content type answers its body as is |
 | SCN-TK-038 | implemented | The first failing step ends the action with its exit code |
 | SCN-TK-039 | implemented | A run step with a condition fails the test |
+| SCN-TK-040 | implemented | An input the action does not declare fails the test |

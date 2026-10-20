@@ -220,7 +220,7 @@ read them for ideas, do not copy their company-specific rules.
   - [x] `proof capture` (screenshots, video and a trace of a running product with Playwright, and the files of a
     Playwright MCP session), the GitHub Action `modules/proof/action.yml`, `sut.action` in the testkit, and the
     dogfood: a proof check on every pull request of this repository from the build of the checkout (ADR 0029,
-    `SCN-PROOF-035` to `-046`, `SCN-TK-033` to `-039`).
+    `SCN-PROOF-035` to `-046`, `SCN-TK-033` to `-040`).
   - [ ] The dogfood from the released tool: once `@opensoftware/proof` is on npm, drop the input `command` of the step
     `proof` in `.github/workflows/verify.yml`, so the action runs its release.
 

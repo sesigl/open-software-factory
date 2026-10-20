@@ -40,7 +40,7 @@ interface Step {
 
 interface Manifest {
   inputs?: Record<string, { default?: string }>;
-  runs?: { using?: string; steps?: Step[] };
+  runs: { using: "composite"; steps: Step[] };
 }
 
 /** The token a step gets for `${{ github.token }}`. */
@@ -49,8 +49,7 @@ const TOKEN = "testkit-github-token";
 export function makeAction(moduleRoot: string, dirs: Folders, launch: Launch): Action {
   return async (given = {}, options = {}) => {
     const manifest = parse(readFileSync(join(moduleRoot, "action.yml"), "utf8")) as Manifest;
-    if (manifest.runs?.using !== "composite") throw new Error("sut.action runs only a composite action.yml");
-    const declared = manifest.inputs ?? {};
+    const declared: Record<string, { default?: string }> = { ...manifest.inputs };
     for (const name of Object.keys(given)) {
       if (!(name in declared)) throw new Error(`sut.action: action.yml has no input "${name}"`);
     }
@@ -61,7 +60,7 @@ export function makeAction(moduleRoot: string, dirs: Folders, launch: Launch): A
         if (name === "github.action_path") return moduleRoot;
         if (name === "github.token") return TOKEN;
         const input = /^inputs\.([\w-]+)$/.exec(name)?.[1];
-        if (input !== undefined && input in declared) return values[input] ?? "";
+        if (input !== undefined && input in declared) return values[input] as string;
         throw new Error(`sut.action supports only inputs.<name>, github.action_path and github.token: ${expression}`);
       });
     for (const [name, input] of Object.entries(declared)) values[name] = given[name] ?? expand(input.default ?? "");
@@ -74,7 +73,7 @@ export function makeAction(moduleRoot: string, dirs: Folders, launch: Launch): A
     mkdirSync(temp);
     const event = options.event ?? {};
     writeFileSync(join(runner, "event.json"), JSON.stringify(event));
-    const head = await run("git", ["rev-parse", "HEAD"], dirs.input, baseEnv(dirs.input));
+    const head = await run("git", ["rev-parse", "--verify", "--quiet", "HEAD"], dirs.input, baseEnv(dirs.input));
     const runnerEnv = {
       GITHUB_ACTIONS: "true",
       GITHUB_ACTION_PATH: moduleRoot,
@@ -85,12 +84,12 @@ export function makeAction(moduleRoot: string, dirs: Folders, launch: Launch): A
       GITHUB_REPOSITORY: options.repository ?? "acme/web",
       GITHUB_SERVER_URL: "https://github.com",
       GITHUB_RUN_ID: "1",
-      GITHUB_SHA: options.sha ?? (head.exitCode === 0 ? head.stdout.trim() : "0".repeat(40)),
+      GITHUB_SHA: options.sha ?? (head.stdout.trim() || "0".repeat(40)),
       RUNNER_TEMP: temp,
     };
 
     const result: ActionResult = { exitCode: 0, stdout: "", stderr: "", outputs: {}, skipped: [] };
-    for (const [index, step] of (manifest.runs.steps ?? []).entries()) {
+    for (const [index, step] of manifest.runs.steps.entries()) {
       if (step.uses) {
         result.skipped.push(step.uses);
         continue;
