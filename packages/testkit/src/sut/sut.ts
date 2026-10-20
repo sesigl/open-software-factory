@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { listFiles, quickStart } from "../support/module.ts";
 import { type CliResult, mustRun, run } from "../support/process.ts";
+import { type Action, makeAction } from "./action.ts";
 import { type Events, makeEvents } from "./events.ts";
 import { type Http, makeHttp } from "./http.ts";
 import { makeLaunch } from "./launch.ts";
@@ -15,6 +16,12 @@ export interface Sut {
    * a fixed clock and seed as `OSF_NOW` (2026-01-01T00:00:00Z) and `OSF_SEED` (1).
    */
   cli(args: string[], options?: { env?: Record<string, string> }): Promise<CliResult>;
+  /**
+   * Runs the module's composite GitHub Action (`action.yml`) like a runner: each `run` step in bash with $INPUT as
+   * the workspace, the `GITHUB_*` variables, the event in `GITHUB_EVENT_PATH` and `RUNNER_TEMP`. The input
+   * `command` is the module's built bin; `uses` steps are skipped. Steps get the same environment as `cli`.
+   */
+  action: Action;
   /** The module as an HTTP server. It gets the same environment as `cli`, plus `PORT`. */
   http: Http;
   /** The module as an MCP server on stdio. It gets the same environment as `cli`. */
@@ -97,6 +104,7 @@ export function makeSut(moduleRoot: string, dirs: Folders, hosts: () => string[]
       const { command, argv, cwd, env } = launch(args, options.env);
       return run(command, argv, cwd, env);
     },
+    action: makeAction(moduleRoot, dirs, launch),
     http: makeHttp(launch, onStop),
     mcp: makeMcp(launch, onStop),
     events: makeEvents(onStop),

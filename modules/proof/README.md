@@ -1,5 +1,5 @@
 ---
-covers: [modules/proof/src/**]
+covers: [modules/proof/src/**, modules/proof/action.yml, modules/proof/action.sh]
 ---
 
 # proof
@@ -7,7 +7,8 @@ covers: [modules/proof/src/**]
 Evidence for each behavior a pull request claims. proof joins the screenshots, videos, traces and test results of
 your test reports by scenario ID into an evidence bundle (the `evidence-bundle` contract in
 [`contracts/`](../../contracts/README.md#formats)), checks it, and shows it on the pull request as one comment and
-the commit status `proof`. Decision: [ADR 0028](../../docs/decisions/0028-proof.md).
+the commit status `proof`. It also captures a running product, and runs as a GitHub Action. Decisions:
+[ADR 0028](../../docs/decisions/0028-proof.md), [ADR 0029](../../docs/decisions/0029-proof-capture-and-action.md).
 
 ## Quick start
 
@@ -61,6 +62,8 @@ SHA-256.
 
 | Command | What it does |
 | --- | --- |
+| `capture <url> --scenario <id> [--expect <text>] [--out <folder>]` | Open the page in headless Chromium and keep a screenshot, a video and a trace of it for the scenario in --out ($OUTPUT/capture), with report.json for bundle --playwright. Exit 1 when the page answers 400 or more or does not show --expect. |
+| `capture --from <folder> --scenario <id> [--out <folder>]` | Take the screenshots, videos and traces in the folder, for example the --output-dir of Playwright MCP, for the scenario instead. |
 | `bundle --playwright <report.json> --junit <report.xml> [--out <folder>] [--repository <url>] [--commit <sha>] [--pull-request <url>]` | Join the tests of Playwright JSON and JUnit XML reports (each repeatable) by scenario ID into an evidence bundle in --out ($OUTPUT/evidence). |
 | `verify <bundle> [--scenario <id>]...` | Check the manifest against the evidence-bundle contract and every artifact against its SHA-256, and that each listed scenario (default: each in the bundle) passed with evidence. Exit 1 on any problem. |
 | `attach <bundle> [--pr <url>] [--store s3://<bucket>/<prefix>] [--bundle-url <url>]` | Post or update one comment with the scenarios on the pull request and set the commit status "proof". --store uploads the bundle first and links it. |
@@ -101,6 +104,36 @@ against its SHA-256 (`<path> does not match its SHA-256`, `<path> is missing`), 
 scenario of the bundle without `--scenario`: `<id> passed with <n> artifacts`, `<id> has no evidence`, `<id> failed`
 or `<id> was skipped`. It exits 1 when any line is a problem.
 
+## Capture a running product
+
+Not every behavior has a Playwright test. To show a page as it is, capture it:
+
+```sh
+npx playwright-core install chromium   # once
+proof capture http://localhost:3000/checkout --scenario SCN-WEB-001 --expect "Pay with a card"
+proof bundle --playwright "$OUTPUT/capture/report.json"
+```
+
+capture opens the page in headless Chromium and writes `page.png` (the whole page), `video.webm` and `trace.zip`
+(open it with `npx playwright show-trace`) to `$OUTPUT/capture/SCN-WEB-001/`, or below `--out`. It adds the
+scenario to `report.json` there, a Playwright JSON report, so `bundle` reads a capture like a test run. A second
+capture of another scenario adds it; a second capture of the same scenario replaces it. A page that answers 400 or
+more (`SCN-WEB-001: <url> answered 500`), or that does not show the `--expect` text within 5 seconds
+(`SCN-WEB-001: the page does not show "Pay with a card"`), is still captured, as `unexpected`, and capture exits
+with code 1.
+
+An agent that drives the product with [Playwright MCP](https://github.com/microsoft/playwright-mcp) saves its
+screenshots, videos and traces with `--output-dir <folder>`, `--save-video` and `--save-trace`. Take them for a
+scenario with:
+
+```sh
+proof capture --from <folder> --scenario SCN-WEB-002
+```
+
+Every `.png`, `.jpg` and `.jpeg` below the folder is a screenshot, every `.webm` a video and every `.zip` a trace;
+other files are left out. They keep their paths below `$OUTPUT/capture/SCN-WEB-002/`. A folder without one of them
+is refused (`<folder> has no screenshot, video or trace`).
+
 ## Attach a bundle to a pull request
 
 ```sh
@@ -117,6 +150,37 @@ With `--store s3://<bucket>/<prefix>`, attach first uploads every file of the bu
 `<prefix>/<bundle id>/` in an S3-compatible store and links its `evidence.json`. The store is set with the usual
 `AWS_*` variables; the bucket must exist. Without `--store`, `--bundle-url` names where the bundle is, for example the
 CI run that kept it as an artifact.
+
+## GitHub Action
+
+```yaml
+permissions:
+  pull-requests: write
+  statuses: write
+steps:
+  # ... run the tests, with Playwright's JSON reporter or a JUnit reporter
+  - uses: sesigl/open-software-factory/modules/proof@proof-v0.1.0
+    if: always()
+    with:
+      playwright: playwright-report.json
+      junit: reports/junit/*.xml
+```
+
+The action bundles the reports into `$RUNNER_TEMP/proof/evidence` (its output `bundle`), for the head commit of the
+pull request or else `GITHUB_SHA`, and verifies it. On a pull request it then attaches the bundle with a link to
+the workflow run, and uploads it as the artifact `proof` of the run. It fails when the verification failed, after
+the attach, so the pull request shows why.
+
+| Input | Default | Meaning |
+| --- | --- | --- |
+| `playwright` | | Playwright JSON reports, one path or glob per line. |
+| `junit` | | JUnit XML reports, one path or glob per line. |
+| `scenarios` | every scenario of the bundle | Scenario IDs that must pass with evidence. |
+| `token` | `github.token` | Token that may comment on the pull request and set commit statuses. |
+| `command` | `npx --yes @opensoftware/proof@<version>` | The proof command. The version is the one of the action's release. |
+
+On GitHub Enterprise the action attaches through `GITHUB_API_URL`. This repository runs the action on every pull
+request in the job `verify` of `.github/workflows/verify.yml`.
 
 ## Releases
 
@@ -142,6 +206,7 @@ with a trusted publisher for `publish-proof.yml`. No credential is stored in the
 | `AWS_REGION` | string | `"us-east-1"` | Region of the store. |
 | `AWS_ACCESS_KEY_ID` | string |  | Access key of the store. |
 | `AWS_SECRET_ACCESS_KEY` | string |  | Secret key of the store. Never write the value into a file. |
+| `PLAYWRIGHT_BROWSERS_PATH` | string |  | Where Playwright keeps its browsers, for capture. Default: Playwright's cache folder below HOME. Install Chromium with npx playwright-core install chromium. |
 
 ## Scenarios
 
@@ -183,3 +248,15 @@ with a trusted publisher for `publish-proof.yml`. No credential is stored in the
 | SCN-PROOF-032 | implemented | Any other attachment with a file becomes an artifact of the kind "other" |
 | SCN-PROOF-033 | implemented | A bundle that would break the contract is not written |
 | SCN-PROOF-034 | implemented | Attach refuses a manifest that breaks the contract |
+| SCN-PROOF-035 | implemented | A capture keeps a screenshot, a video and a trace of the page |
+| SCN-PROOF-036 | implemented | A page without the expected text fails the capture |
+| SCN-PROOF-037 | implemented | A page that answers with an error fails the capture |
+| SCN-PROOF-038 | implemented | A second capture adds its scenario to the report |
+| SCN-PROOF-039 | implemented | The files of a Playwright MCP session become a capture |
+| SCN-PROOF-040 | implemented | A folder without screenshots, videos or traces is refused |
+| SCN-PROOF-041 | implemented | A capture without a scenario is refused |
+| SCN-PROOF-042 | implemented | A capture bundles into evidence for its scenario |
+| SCN-PROOF-043 | implemented | The action attaches the bundle to the pull request of the run |
+| SCN-PROOF-044 | implemented | A failed verification fails the action after the attach |
+| SCN-PROOF-045 | implemented | A listed scenario without evidence fails the action |
+| SCN-PROOF-046 | implemented | On a push the action bundles and verifies without a comment |

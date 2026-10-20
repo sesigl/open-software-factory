@@ -1,0 +1,41 @@
+# The proof GitHub Action (ADR 0029): bundle the reports of the run, verify the bundle, attach it to the pull request.
+name: proof
+description: Evidence for each scenario a pull request claims, as one comment and the commit status "proof".
+inputs:
+  playwright:
+    description: Playwright JSON reports, one path or glob per line.
+    default: ""
+  junit:
+    description: JUnit XML reports, one path or glob per line.
+    default: ""
+  scenarios:
+    description: Scenario IDs that must pass with evidence, separated by spaces or lines. Default every scenario in the bundle.
+    default: ""
+  token:
+    description: Token that may comment on the pull request and set commit statuses.
+    default: ${{ github.token }}
+  command:
+    description: The proof command. Default npx --yes @opensoftware/proof@<version of this action>.
+    default: ""
+outputs:
+  bundle:
+    description: The folder of the evidence bundle.
+    value: ${{ steps.proof.outputs.bundle }}
+runs:
+  using: composite
+  steps:
+    - id: proof
+      shell: bash
+      env:
+        PROOF_INPUT_PLAYWRIGHT: ${{ inputs.playwright }}
+        PROOF_INPUT_JUNIT: ${{ inputs.junit }}
+        PROOF_INPUT_SCENARIOS: ${{ inputs.scenarios }}
+        PROOF_INPUT_COMMAND: ${{ inputs.command }}
+        PROOF_FORGE_TOKEN: ${{ inputs.token }}
+      run: bash "${{ github.action_path }}/action.sh"
+    - uses: actions/upload-artifact@v4
+      if: always() && steps.proof.outputs.bundle != ''
+      with:
+        name: proof
+        path: ${{ steps.proof.outputs.bundle }}
+        if-no-files-found: ignore
