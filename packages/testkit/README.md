@@ -50,6 +50,16 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
   typed by the module's generated OpenAPI `paths`. A server that exits first fails the test with its error output.
 - `sut.mcp.connect(args, { env })`: starts the module's `bin` as an MCP server on stdio and returns a connected
   MCP client (`listTools`, `callTool`, ...).
+- `sut.action(inputs, { event, eventName, repository, sha, env })`: runs the module's composite `action.yml` like a
+  GitHub runner ([ADR 0029](../../docs/decisions/0029-proof-capture-and-action.md)). Each `run` step runs in bash with
+  `$INPUT` as `GITHUB_WORKSPACE`, the environment of `sut.cli`, `GITHUB_EVENT_PATH` with `event` (default `{}`),
+  `GITHUB_EVENT_NAME` (`pull_request` when the event has one, else `push`), `GITHUB_REPOSITORY` (default
+  `acme/web`), `GITHUB_SHA` (default the HEAD of `$INPUT`), `GITHUB_SERVER_URL=https://github.com`,
+  `GITHUB_RUN_ID=1`, `GITHUB_OUTPUT` and `RUNNER_TEMP`. The input `command` is the module's built `bin`, so the
+  action runs the module under the guards. Steps with `uses` are skipped and listed in `skipped`; `outputs` holds
+  the `name=value` lines the steps wrote to `GITHUB_OUTPUT`. Only `${{ inputs.<name> }}`, `${{ github.action_path }}` and
+  `${{ github.token }}` (`testkit-github-token`) are expanded; any other expression, an `if:` on a `run` step or a
+  shell other than bash fails the test. The first failing step ends the run with its exit code.
 - `sut.events.watch(nats, subjects)`: records the CloudEvents published on a NATS server from now on.
   `received(type, { count, timeoutMs })` waits for them and, on timeout, names what arrived instead;
   `publish(subject, event)` sends an event to the module.
@@ -59,11 +69,12 @@ Every server, client and subscription stops when the scenario ends, before the f
 - `fakes.modelGateway([{ when, reply }])`: an OpenAI-compatible endpoint on `127.0.0.1`. Pass its `url` (ending
   in `/v1`) to the module through its documented config. `POST /v1/chat/completions` whose body contains `when`
   gets `reply`; any other call gets HTTP 500 and fails the scenario with the request shown.
-- `fakes.http([{ method, path, status, body, times }])`: a scripted JSON API on `127.0.0.1`
+- `fakes.http([{ method, path, status, body, contentType, times }])`: a scripted JSON API on `127.0.0.1`
   ([ADR 0021](../../docs/decisions/0021-testkit-scripted-http.md)). Pass its `url` to the module through its
   documented config. A request whose method (default `GET`) and exact path with query match a route gets its
   `status` (default 200) and JSON `body`; a route with `times` answers only that many requests, and later ones go to
   the next matching route, for example an outage before a success ([ADR 0023](../../docs/decisions/0023-runlog.md)).
+  A route with `contentType`, such as `text/html`, answers its `body` text as is, for example a page to capture.
   Any other request gets HTTP 404 and fails the scenario with the request shown. `requests()` lists what it
   received as `METHOD /path`; `received()` lists each request with its `body` (JSON, or text when it is not JSON;
   a gzip body is unpacked first).
@@ -104,7 +115,13 @@ A `planned` scenario's test must fail; when it passes, the testkit fails it and 
 
 ## Configuration
 
-The testkit reads no environment variables. `testkit conformance` passes the port features folder to the
+The testkit reads one environment variable and passes it on to the module:
+
+| Variable | Meaning |
+| --- | --- |
+| `PLAYWRIGHT_BROWSERS_PATH` | Where Playwright keeps its browsers. The module gets it like `PATH`, since its `HOME` is the working folder. |
+
+`testkit conformance` passes the port features folder to the
 tests itself.
 
 An adapter's tests (`adapters/<port>/<adapter>/system-tests/`) use the scenario IDs of its port; the testkit
@@ -161,3 +178,10 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-030 | implemented | The fake gives the body of every request it received |
 | SCN-TK-031 | implemented | fakes.collector runs the Collector config a module wrote and shows what it exported |
 | SCN-TK-032 | implemented | fakes.collector shows the Collector log when the Collector exports nothing |
+| SCN-TK-033 | implemented | sut.action runs the module's GitHub Action with its inputs |
+| SCN-TK-034 | implemented | sut.action gives the action the event of the workflow run |
+| SCN-TK-035 | implemented | An expression sut.action does not support fails the test |
+| SCN-TK-036 | implemented | The module finds the browsers Playwright installed |
+| SCN-TK-037 | implemented | A route with a content type answers its body as is |
+| SCN-TK-038 | implemented | The first failing step ends the action with its exit code |
+| SCN-TK-039 | implemented | A run step with a condition fails the test |

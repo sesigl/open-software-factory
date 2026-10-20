@@ -43,6 +43,10 @@
     "AWS_SECRET_ACCESS_KEY": {
       "type": "string",
       "description": "Secret key of the store. Never write the value into a file."
+    },
+    "PLAYWRIGHT_BROWSERS_PATH": {
+      "type": "string",
+      "description": "Where Playwright keeps its browsers, for capture. Default: Playwright's cache folder below HOME. Install Chromium with npx playwright-core install chromium."
     }
   }
 }

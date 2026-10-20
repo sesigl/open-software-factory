@@ -26,7 +26,8 @@
     },
     "test:system": {
       "dependsOn": ["build", "^build"],
-      "cache": false
+      "cache": false,
+      "passThroughEnv": ["PLAYWRIGHT_BROWSERS_PATH"]
     },
     "docs": {
       "inputs": ["$TURBO_DEFAULT$"],

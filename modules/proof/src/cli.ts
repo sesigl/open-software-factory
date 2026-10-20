@@ -5,11 +5,14 @@ import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { attach } from "./commands/attach.ts";
 import { bundle } from "./commands/bundle.ts";
+import { capture } from "./commands/capture.ts";
 import { verify } from "./commands/verify.ts";
 
 const HELP = `Usage: proof <command> [options]
 
 Commands:
+  capture <url> --scenario <id> [--expect <text>] [--out <folder>]  Open the page in headless Chromium and keep a screenshot, a video and a trace of it for the scenario in --out ($OUTPUT/capture), with report.json for bundle --playwright. Exit 1 when the page answers 400 or more or does not show --expect.
+  capture --from <folder> --scenario <id> [--out <folder>]  Take the screenshots, videos and traces in the folder, for example the --output-dir of Playwright MCP, for the scenario instead.
   bundle --playwright <report.json> --junit <report.xml> [--out <folder>] [--repository <url>] [--commit <sha>] [--pull-request <url>]  Join the tests of Playwright JSON and JUnit XML reports (each repeatable) by scenario ID into an evidence bundle in --out ($OUTPUT/evidence).
   verify <bundle> [--scenario <id>]...  Check the manifest against the evidence-bundle contract and every artifact against its SHA-256, and that each listed scenario (default: each in the bundle) passed with evidence. Exit 1 on any problem.
   attach <bundle> [--pr <url>] [--store s3://<bucket>/<prefix>] [--bundle-url <url>]  Post or update one comment with the scenarios on the pull request and set the commit status "proof". --store uploads the bundle first and links it.
@@ -32,12 +35,28 @@ const { positionals, values } = parseArgs({
     pr: { type: "string" },
     store: { type: "string" },
     "bundle-url": { type: "string" },
+    from: { type: "string" },
+    expect: { type: "string" },
   },
 });
 const [command, folder] = positionals;
 const env = process.env;
 
 const commands: Record<string, () => Promise<string>> = {
+  capture: async () => {
+    const captured = await capture({
+      url: folder,
+      from: values.from,
+      scenario: values.scenario?.[0],
+      expect: values.expect,
+      out: values.out ?? join(env.OUTPUT ?? ".", "capture"),
+    });
+    if (captured.problem) {
+      process.stderr.write(`proof: ${captured.problem}\n`);
+      process.exitCode = 1;
+    }
+    return captured.output;
+  },
   bundle: async () =>
     bundle({
       playwright: values.playwright ?? [],
@@ -74,7 +93,8 @@ const commands: Record<string, () => Promise<string>> = {
       },
     }),
 };
-const ready = command === "bundle" || ((command === "verify" || command === "attach") && folder);
+const ready =
+  command === "bundle" || command === "capture" || ((command === "verify" || command === "attach") && folder);
 const chosen = ready && !values.help ? commands[command as string] : undefined;
 
 if (chosen) {

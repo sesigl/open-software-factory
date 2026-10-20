@@ -12,8 +12,11 @@ export const FIXED_DATE = "2026-01-01T00:00:00Z";
 export const FIXED_SEED = "1";
 
 export function baseEnv(workspace: string): Record<string, string> {
+  // Where Playwright keeps its browsers belongs to the machine, like PATH; HOME is the workspace.
+  const browsers = process.env.PLAYWRIGHT_BROWSERS_PATH;
   return {
     PATH: process.env.PATH ?? "",
+    ...(browsers ? { PLAYWRIGHT_BROWSERS_PATH: browsers } : {}),
     HOME: workspace,
     LANG: "C.UTF-8",
     TZ: "UTC",
