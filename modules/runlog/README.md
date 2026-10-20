@@ -7,8 +7,9 @@ covers: [modules/runlog/src/**, modules/runlog/collector/**]
 Every agent session as one run record. runlog reads the session file of Claude Code, Codex or OpenCode and writes the
 run as OpenTelemetry spans with the GenAI attribute names and the factory attributes of the `run-record` contract
 ([`contracts/`](../../contracts/README.md)). Any OTLP backend can store and show it. Decisions:
-[ADR 0023](../../docs/decisions/0023-runlog.md), [ADR 0024](../../docs/decisions/0024-runlog-attach-watch-opencode.md) and
-[ADR 0025](../../docs/decisions/0025-runlog-collector-config-pack.md).
+[ADR 0023](../../docs/decisions/0023-runlog.md), [ADR 0024](../../docs/decisions/0024-runlog-attach-watch-opencode.md),
+[ADR 0025](../../docs/decisions/0025-runlog-collector-config-pack.md) and
+[ADR 0027](../../docs/decisions/0027-runlog-dogfood-run-records.md).
 
 ## Quick start
 
@@ -78,6 +79,19 @@ same trace ID. A file that is no session, and the transcript of a Claude Code su
 endpoint refused it, is named on the error output and tried again in the next pass. `--passes <n>` stops after n
 passes.
 
+## Export the newest session
+
+```sh
+runlog export --latest ~/.claude/projects ~/.codex/sessions --per-run
+```
+
+`--latest <folder>...` takes the place of the session file: runlog reads every `.jsonl` and `.json` file below the
+folders and exports the session whose last event is the latest. Without one it exits with code 1. `--per-run`
+writes the run to `$OUTPUT/<run id>.jsonl` and replaces that file, instead of appending to `$OUTPUT/runs.jsonl`. The
+run ID is `osf.run.id`, with every character other than letters, digits, `.`, `_` and `-` turned into `-`. This
+repository commits the run of each agent session this way
+([ADR 0027](../../docs/decisions/0027-runlog-dogfood-run-records.md)).
+
 ## Agent Trace
 
 `--agent-trace <file>` on `export` and `attach` writes an [Agent Trace](https://agent-trace.dev) record (version
@@ -144,7 +158,8 @@ with a trusted publisher for `publish-runlog.yml`. No credential is stored in th
 
 | Command | What it does |
 | --- | --- |
-| `export <session file> [--include-content] [--agent-trace <file>]` | Write a Claude Code, Codex or OpenCode session as an OTLP run to $OUTPUT/runs.jsonl, or send it to OTEL_EXPORTER_OTLP_ENDPOINT. --agent-trace also writes the Agent Trace record of the lines it wrote. |
+| `export <session file> [--include-content] [--agent-trace <file>] [--per-run]` | Write a Claude Code, Codex or OpenCode session as an OTLP run to $OUTPUT/runs.jsonl, or send it to OTEL_EXPORTER_OTLP_ENDPOINT. --agent-trace also writes the Agent Trace record of the lines it wrote. --per-run writes $OUTPUT/<run id>.jsonl and replaces it. |
+| `export --latest <folder>... [options]` | Export like export the session below the folders whose last event is the latest. |
 | `attach <session file> [--outcome <outcome>] [--include-content] [--agent-trace <file>]` | Export like export, but into the trace of the launcher's TRACEPARENT, with the outcome succeeded, failed or cancelled. |
 | `watch <folder>... [--idle <minutes>] [--passes <n>] [--interval <seconds>] [--include-content]` | Export each session below the folders once, when its last event is --idle minutes (5) old; repeat every --interval seconds (60). |
 | `collector <harness>` | Write the OpenTelemetry Collector config of claude-code, codex or opencode to $OUTPUT/collector.yaml. It renames the harness's native spans to invoke_agent, chat and execute_tool and sends them to OTEL_EXPORTER_OTLP_ENDPOINT. |
@@ -225,3 +240,8 @@ with a trusted publisher for `publish-runlog.yml`. No credential is stored in th
 | SCN-RUN-052 | implemented | An OpenCode step becomes the root span "invoke_agent" |
 | SCN-RUN-053 | implemented | An OpenCode tool call becomes an execute_tool span without its arguments |
 | SCN-RUN-054 | implemented | The Collector config of an unknown harness is refused |
+| SCN-RUN-055 | implemented | --latest exports the session whose last event is the latest |
+| SCN-RUN-056 | implemented | --latest without a session below the folders fails |
+| SCN-RUN-057 | implemented | --per-run writes the run to a file named after its run ID |
+| SCN-RUN-058 | implemented | A second --per-run export of the same session replaces its file |
+| SCN-RUN-059 | implemented | --per-run turns the characters of a run ID that a file name cannot hold into hyphens |

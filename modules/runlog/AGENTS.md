@@ -1,6 +1,6 @@
 # AGENTS.md for module `runlog`
 
-Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0023, ADR 0024, ADR 0025.
+Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0023, ADR 0024, ADR 0025, ADR 0027.
 
 ## Public surface
 
@@ -11,7 +11,7 @@ The only ways a system test or another program may use this module:
   them for `watch`, in the current folder (`$INPUT` in tests); the Git repository in the current folder for the
   commit, the author and the files Agent Trace attributes; `TRACEPARENT` from the launcher for `attach`
 - Output: `$OUTPUT/collector.yaml` from `runlog collector`, which a test runs in `fakes.collector`;
-  `$OUTPUT/runs.jsonl` (OTLP/JSON lines), or OTLP/HTTP to `OTEL_EXPORTER_OTLP_ENDPOINT`; the Agent Trace
+  `$OUTPUT/runs.jsonl` (OTLP/JSON lines) or `$OUTPUT/<run id>.jsonl` with `--per-run`, or OTLP/HTTP to `OTEL_EXPORTER_OTLP_ENDPOINT`; the Agent Trace
   record at the path of `--agent-trace`
 - State: `watch.json` in `OSF_DATA`, which tests never read
 - Formats: the `run-record` contract (`contracts/run-record/`) and the OTLP trace format

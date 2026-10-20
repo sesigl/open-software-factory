@@ -18,7 +18,7 @@ export OSF_BASE
 AFFECTED := $(if $(OSF_BASE),--filter=...[$(OSF_BASE)])
 
 .PHONY: help install check verify verify-static verify-tests verify-checks test-scenario smoke smoke-paid mutation next-id new-module docs docs-affected \
-        agents-sync
+        agents-sync run-record
 
 help: ## list the targets
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-16s %s\n", $$1, $$2}'
@@ -78,3 +78,10 @@ docs-affected: ## list hand-written docs whose covers: paths changed since OSF_B
 agents-sync: ## render factory.yaml: CLAUDE.md, the MCP files and the skill links of every harness
 	@pnpm --silent --filter @opensoftware/factory-spec build
 	@OUTPUT=. node modules/factory-spec/dist/cli.js render --harness all
+
+# The session folders of this checkout (ADR 0027): its Claude Code project folder and every Codex session.
+RUN_SESSIONS ?= $(wildcard $(HOME)/.claude/projects/$(shell pwd | sed 's/[^a-zA-Z0-9]/-/g') $(HOME)/.codex/sessions)
+
+run-record: ## export the run of this checkout's newest agent session to runs/<run id>.jsonl; commit it before you push
+	@pnpm --silent --filter @opensoftware/runlog build
+	@OUTPUT=runs node modules/runlog/dist/cli.js export --latest --per-run $(RUN_SESSIONS)
