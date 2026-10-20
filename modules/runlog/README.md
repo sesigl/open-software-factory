@@ -106,6 +106,26 @@ else.
 | SCN-RUN-016 | implemented | The run goes to the configured OTLP endpoint |
 | SCN-RUN-017 | implemented | The export retries after an outage of the OTLP endpoint |
 | SCN-RUN-018 | implemented | An export the OTLP endpoint refuses fails |
-| SCN-RUN-019 | implemented | A file that is no session is refused |
+| SCN-RUN-019 | deprecated | A file that is no session is refused |
 | SCN-RUN-020 | implemented | A missing session file is named |
 | SCN-RUN-021 | implemented | A run outside a Git repository with a commit has no factory version and is not exported |
+| SCN-RUN-022 | planned | An OpenCode run has the same root span as a Claude Code run |
+| SCN-RUN-023 | planned | Each assistant message of an OpenCode run becomes one chat span |
+| SCN-RUN-024 | planned | Each tool part of an OpenCode run becomes one execute_tool span that lasts from its start to its end |
+| SCN-RUN-025 | planned | A file that is no session of a known harness is refused |
+| SCN-RUN-026 | planned | Issue links that a tool printed end up on the root span |
+| SCN-RUN-027 | planned | attach puts the run into the trace of the launch |
+| SCN-RUN-028 | planned | attach records the outcome of the stage |
+| SCN-RUN-029 | planned | attach without a TRACEPARENT is refused |
+| SCN-RUN-030 | planned | An outcome the run-record contract does not know is refused |
+| SCN-RUN-031 | planned | watch exports a session that has ended |
+| SCN-RUN-032 | planned | watch leaves a session that is still running for a later pass |
+| SCN-RUN-033 | planned | --idle sets how long a session must be quiet before watch exports it |
+| SCN-RUN-034 | planned | A second watch does not export a session again |
+| SCN-RUN-035 | planned | watch repeats its pass and exports each session once |
+| SCN-RUN-036 | planned | watch skips files that are no session |
+| SCN-RUN-037 | planned | The lines a Claude Code session wrote are attributed to its model |
+| SCN-RUN-038 | planned | The lines a Codex patch added are attributed to its model |
+| SCN-RUN-039 | planned | The lines an OpenCode edit wrote are attributed to its model |
+| SCN-RUN-040 | planned | The root span links the Agent Trace record |
+| SCN-RUN-041 | planned | Text that the session wrote and a person changed later is not attributed |

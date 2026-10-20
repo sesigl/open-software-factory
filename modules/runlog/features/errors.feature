@@ -2,7 +2,7 @@
 Feature: Files runlog cannot export
   runlog names the file it cannot export and why, and writes nothing.
 
-  @id=SCN-RUN-019 @status=implemented
+  @id=SCN-RUN-019 @status=deprecated
   Scenario: A file that is no session is refused
     Given a file "notes.txt" with the text "hello"
     When the developer runs "runlog export notes.txt"
@@ -14,3 +14,10 @@ Feature: Files runlog cannot export
     When the developer runs "runlog export missing.jsonl"
     Then the command exits with code 1
     And the output contains "cannot read missing.jsonl"
+
+  @id=SCN-RUN-025 @status=planned @replaces=SCN-RUN-019
+  Scenario: A file that is no session of a known harness is refused
+    Given a file "notes.txt" with the text "hello"
+    When the developer runs "runlog export notes.txt"
+    Then the command exits with code 1
+    And the output contains "notes.txt is not a Claude Code, Codex or OpenCode session"
