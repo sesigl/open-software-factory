@@ -19,8 +19,77 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # `make verify` in three parts (Makefile): verify-static and verify-tests run side by side, then verify-checks
+  # reads every result. Each test suite gets its own runner, so suites never share cores and BUDGET stays fair.
+  static:
+    name: lint, typecheck, build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: make install
+      - run: make verify-static
+
+  tests:
+    name: tests (${{ matrix.suite }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suite: testkit
+            filter: "@opensoftware/testkit"
+          - suite: factory-spec
+            filter: "@opensoftware/factory-spec"
+          - suite: tools
+            filter: "@opensoftware/tools"
+          - suite: runlog
+            filter: "@opensoftware/runlog"
+          # Every other package, so a new module runs without a change here.
+          - suite: rest
+            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog"
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: make install
+      - run: make verify-tests FILTER="$FILTER"
+        env:
+          FILTER: ${{ matrix.filter }}
+      # Coverage files are named after the process ID, which repeats across runners: prefix them with the suite.
+      - name: Name the coverage files after the suite
+        if: always()
+        env:
+          SUITE: ${{ matrix.suite }}
+        run: |
+          shopt -s nullglob
+          for file in reports/coverage/*.json; do mv "$file" "reports/coverage/$SUITE-${file##*/}"; done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reports-${{ matrix.suite }}
+          path: |
+            reports/junit/
+            reports/coverage/
+          if-no-files-found: ignore
+          retention-days: 7
+
   verify:
     name: verify
+    needs: [static, tests]
+    # The checks run even when tests fail, so PASS can name each failing scenario.
+    if: always() && !cancelled()
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -73,7 +142,21 @@ jobs:
           gh pr list --repo "$REPO" --head "$GITHUB_REF_NAME" --json body --jq '.[0].body // ""' > reports/pr-body.md
           echo "OSF_PR_BODY=reports/pr-body.md" >> "$GITHUB_ENV"
 
-      - run: make verify
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: reports-*
+          path: reports/
+          merge-multiple: true
+
+      - run: make verify-checks
+
+      - name: Lint, typecheck, build and every test suite passed
+        env:
+          STATIC: ${{ needs.static.result }}
+          TESTS: ${{ needs.tests.result }}
+        run: |
+          echo "lint, typecheck, build: $STATIC; tests: $TESTS"
+          [ "$STATIC" = success ] && [ "$TESTS" = success ]
 
       - uses: actions/upload-artifact@v4
         if: always()

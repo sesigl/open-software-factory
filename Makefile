@@ -17,7 +17,7 @@ OSF_BASE ?= $(shell git merge-base HEAD origin/main 2>/dev/null)
 export OSF_BASE
 AFFECTED := $(if $(OSF_BASE),--filter=...[$(OSF_BASE)])
 
-.PHONY: help install check verify test-scenario smoke smoke-paid mutation next-id new-module docs docs-affected \
+.PHONY: help install check verify verify-static verify-tests verify-checks test-scenario smoke smoke-paid mutation next-id new-module docs docs-affected \
         agents-sync
 
 help: ## list the targets
@@ -34,10 +34,22 @@ check: ## affected lint, typecheck and system tests, then the fast repository ch
 verify: ## everything from a clean state; required before you report done
 	@rm -rf reports/junit reports/coverage
 	@# The repository checks run even when tests fail, so PASS can name each failing scenario.
-	@# One system test suite at a time: BUDGET adds up test times, and suites that share the cores slow each other.
-	@status=0; $(TURBO) lint typecheck build --force || status=$$?; \
-	$(TURBO) test:system --concurrency=1 --continue || status=$$?; \
-	$(OSF) check --all || status=1; exit $$status
+	@status=0; $(MAKE) verify-static || status=$$?; \
+	$(MAKE) verify-tests || status=$$?; \
+	$(MAKE) verify-checks || status=1; exit $$status
+
+# The three parts of `make verify`. CI runs them as parallel jobs (.github/workflows/verify.yml).
+verify-static: ## part of verify: lint, typecheck and build every package without the cache
+	@$(TURBO) lint typecheck build --force
+
+# One system test suite at a time: BUDGET adds up test times, and suites that share the cores slow each other.
+verify-tests: ## part of verify: the system test suites; FILTER="pkg !pkg" limits them to some packages
+	@$(TURBO) test:system --concurrency=1 --continue $(foreach f,$(FILTER),--filter=$(f))
+
+# REACH maps the coverage in reports/coverage/ to the built files, so the build comes first (cached after verify-static).
+verify-checks: ## part of verify: every check, on the test results in reports/
+	@$(TURBO) build
+	@$(OSF) check --all
 
 test-scenario: ## run the one system test of a scenario: make test-scenario ID=SCN-REPO-002
 	@$(OSF) test-scenario $(ID)
