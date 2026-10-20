@@ -40,8 +40,8 @@ This change is the first slice of T-05: `bundle`, `verify` and `attach`, and the
   `--repository` or, in GitHub Actions, `GITHUB_SERVER_URL/GITHUB_REPOSITORY`; the pull request is `--pull-request`.
   The bundle ID is a hash of the subject and the evidence, and `createdAt` is `OSF_NOW` or the clock, so the same
   evidence gives the same bundle.
-- **`proof verify <bundle> [--scenario <id>]...`** checks the manifest against the contract, every artifact's size
-  and SHA-256, and that each listed scenario (or, without a list, each scenario of the bundle) passed with at least
+- **`proof verify <bundle> [--scenario <id>]...`** checks the manifest against the contract, every artifact's
+  SHA-256, and that each listed scenario (or, without a list, each scenario of the bundle) passed with at least
   one artifact. It prints one line per scenario and one per problem and exits 1 on any problem.
 - **`proof attach <bundle> [--pr <url>] [--store s3://<bucket>/<prefix>] [--bundle-url <url>]`** posts one comment
   with a table of the scenarios and a link to the bundle, and sets the commit status `proof` on the bundle's commit
