@@ -16,6 +16,11 @@ The checks are scripts in `tools/checks/` (TODO item T-00), run with `osf check 
 [`tools/README.md`](../../tools/README.md). BOUNDARY-RUNTIME and NOREAL are guards in the testkit; the testkit also records the coverage REACH reads.
 From phase 2 on, the released `spec-trace` module replaces TRACE, STEPS and PASS.
 
+CI runs `make verify` in `.github/workflows/verify.yml` for every pull request and every push to `main`.
+Release pull requests are opened by release-please with `GITHUB_TOKEN`, and their `pull_request` run waits for a
+person's approval. So `release-please.yml` also starts `verify` on each release branch it created or updated,
+with `workflow_dispatch`, and that run needs no approval.
+
 ## Specification and traceability
 
 | ID | What it checks | How |
@@ -45,7 +50,7 @@ From phase 2 on, the released `spec-trace` module replaces TRACE, STEPS and PASS
 | REACH | A pull request adds no line to a module's `src/` or `bin/` that no system test reaches, and no source file that no system test loads (files of types only are exempt). | The testkit records V8 coverage in every Node process of the module (`reports/coverage/`); `osf check REACH` maps it to source lines with v8-to-istanbul, through source maps for built files, and compares it with the lines added since `OSF_BASE` (ADR 0019). |
 | MUTATION | System tests notice small changes to the code they claim to cover. | Nightly Stryker on a sample of changed files; a falling score opens a ticket. Not a pull request gate, because it is slow. |
 | FLAKE | A test that passed only on retry is a failure. | PASS reads the retry count from the results. |
-| BUDGET | Each module's system tests finish inside the budget in its `AGENTS.md`. | Timing from the JUnit results. |
+| BUDGET | Each module's system tests finish inside the budget in its `AGENTS.md`. | Timing from the JUnit results; `make verify` runs one suite at a time, so suites do not slow each other. |
 
 ## Contracts and docs
 
@@ -53,7 +58,7 @@ From phase 2 on, the released `spec-trace` module replaces TRACE, STEPS and PASS
 | --- | --- | --- |
 | CONTRACT | No breaking change to an API or schema without a major version. | `oasdiff` for OpenAPI; JSON Schema compatibility check against the last release; shared fixtures validate against every schema. |
 | DOCS-GEN | Generated reference docs are current. | `make docs` and fail on any diff. |
-| DOCS-AFFECTED | Every hand-written doc whose `covers:` paths changed is updated or listed as `docs-reviewed:` in the pull request. | Path match between the diff and the front matter. |
+| DOCS-AFFECTED | Every hand-written doc whose `covers:` paths changed is updated or listed as `docs-reviewed:` in the pull request. | Path match between the diff and the front matter. The files of a release (`CHANGELOG.md`, the release-please manifest, a `package.json` that only changes `version`) do not count. |
 | DOCS-LINKS | Internal links and anchors resolve. | lychee in offline mode. |
 | ADR | New modules, dependencies and services have an accepted ADR with a filled Prior art section. | Parse the ADR front matter and sections. |
 

@@ -280,3 +280,18 @@ Feature: Repository checks
     When the developer runs "osf docs"
     Then the command exits with code 0
     And the module README has the row "| `demo run` | Run the demo. |"
+
+  @id=SCN-REPO-036 @status=implemented
+  Scenario: DOCS-AFFECTED ignores the files of a release
+    Given a base commit with a doc "docs/how-to/demo.md" that covers "modules/demo/**"
+    And a change that adds "modules/demo/CHANGELOG.md" and sets "version" in "modules/demo/package.json" to "0.2.0"
+    When the developer runs "osf docs-affected" against the base commit
+    Then the command exits with code 0
+
+  @id=SCN-REPO-037 @status=implemented
+  Scenario: DOCS-AFFECTED lists a doc when package.json changes more than its version
+    Given a base commit with a doc "docs/how-to/demo.md" that covers "modules/demo/**"
+    And a change that sets "version" to "0.2.0" and adds the dependency "yaml" in "modules/demo/package.json"
+    When the developer runs "osf docs-affected" against the base commit
+    Then the command exits with code 1
+    And the output contains "DOCS-AFFECTED docs/how-to/demo.md:1"
