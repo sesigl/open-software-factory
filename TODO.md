@@ -165,7 +165,7 @@ read them for ideas, do not copy their company-specific rules.
     `SCN-FSPEC-033` to `-047`). Moved: agent-sandbox templates to T-13, GitHub webhooks to T-15, ACP Registry pins
     to T-12.
 
-### [ ] T-04 · runlog
+### [x] T-04 · runlog
 
 - **Tier / language / path / prefix:** core · TypeScript · `modules/runlog/` · `SCN-RUN`
 - **Alone:** every Claude Code, Codex or OpenCode session of a team in one trace store, with cost and PR links.
@@ -195,7 +195,8 @@ read them for ideas, do not copy their company-specific rules.
   - [x] The Collector config pack per harness (`collector/`, `runlog collector <harness>`), proven against the real
     Collector Contrib in the system tests through the new testkit `fakes.collector` (ADR 0025, `SCN-RUN-044` to `-054`,
     `SCN-TK-031`).
-  - [ ] The dogfood export of this repository's sessions on every PR (needs a decision on where the runs are stored).
+  - [x] The dogfood export of this repository's sessions on every PR: `runlog export --latest --per-run`,
+    `make run-record` into `runs/`, and the check RUNS (ADR 0027, `SCN-RUN-055` to `-059`, `SCN-REPO-038` to `-042`).
 
 ### [ ] T-05 · proof
 

@@ -171,3 +171,62 @@ export function coverageFile(path: string, source: string, ran: string[]): strin
   }
   return `${JSON.stringify({ root: "file:///repo", result: [{ url: `file:///repo/${path}`, functions }] })}\n`;
 }
+
+const otlpValue = (value: string | number): Record<string, string | number> =>
+  typeof value === "number" ? { intValue: value } : { stringValue: value };
+const otlpAttributes = (attributes: Record<string, string | number>) =>
+  Object.entries(attributes).map(([key, value]) => ({ key, value: otlpValue(value) }));
+
+/** The resource of a run that matches the run-record contract. */
+export const RUN_RESOURCE: Record<string, string> = {
+  "service.name": "claude-code",
+  "osf.run.id": "run-1",
+  "osf.work_item.id": "run-1",
+  "osf.factory.version": "3f2a9c1",
+  "osf.requester.kind": "person",
+  "osf.requester.id": "git:dev@example.com",
+  "osf.source": "cli",
+  "osf.harness.name": "claude-code",
+};
+
+/** One line of runs/<run id>.jsonl as runlog writes it: the root span "invoke_agent" and one chat span. */
+export function runRecord(
+  options: { resource?: Record<string, string>; chat?: Record<string, string | number> } = {},
+): string {
+  const { resource = RUN_RESOURCE, chat = {} } = options;
+  const span = (spanId: string, name: string, attributes: Record<string, string | number>, parentSpanId = "") => ({
+    traceId: "0af7651916cd43dd8448eb211c80319c",
+    spanId,
+    parentSpanId,
+    name,
+    kind: 1,
+    startTimeUnixNano: "1767261600000000000",
+    endTimeUnixNano: "1767261645000000000",
+    attributes: otlpAttributes(attributes),
+  });
+  const request = {
+    resourceSpans: [
+      {
+        resource: { attributes: otlpAttributes(resource) },
+        scopeSpans: [
+          {
+            scope: { name: "@opensoftware/runlog" },
+            spans: [
+              span("b7ad6b7169203331", "invoke_agent", {
+                "gen_ai.operation.name": "invoke_agent",
+                "osf.outcome": "succeeded",
+              }),
+              span(
+                "00f067aa0ba902b7",
+                "chat claude-sonnet-5-5",
+                { "gen_ai.operation.name": "chat", "gen_ai.usage.input_tokens": 1200, ...chat },
+                "b7ad6b7169203331",
+              ),
+            ],
+          },
+        ],
+      },
+    ],
+  };
+  return `${JSON.stringify(request)}\n`;
+}

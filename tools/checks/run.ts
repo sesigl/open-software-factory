@@ -6,6 +6,7 @@ import { adr, docsAffected, docsGen, docsLinks } from "./docs.ts";
 import { type Check, Context } from "./lib/context.ts";
 import { type Finding, Repo } from "./lib/repo.ts";
 import { reach } from "./reach.ts";
+import { runs } from "./runs.ts";
 import { spec } from "./spec.ts";
 import { budget, flake, pass, steps, trace } from "./trace.ts";
 
@@ -33,12 +34,13 @@ export const SLOW: Record<string, Check> = {
   "DOCS-AFFECTED": docsAffected,
   CONTRACT: contract,
   REACH: reach,
+  RUNS: runs,
 };
 
 const ALL: Record<string, Check> = { ...FAST, ...SLOW };
 
-/** Checks with parts that run without a base (ADR: modules; CONTRACT: fixtures). */
-const PARTLY_BASED = new Set(["ADR", "CONTRACT"]);
+/** Checks with parts that run without a base (ADR: modules; CONTRACT: fixtures; RUNS: the records). */
+const PARTLY_BASED = new Set(["ADR", "CONTRACT", "RUNS"]);
 
 export async function runChecks(root: string, args: string[]): Promise<number> {
   const ids = args.filter((arg) => !arg.startsWith("--"));

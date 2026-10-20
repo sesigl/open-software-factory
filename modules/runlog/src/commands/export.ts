@@ -3,8 +3,9 @@
 import { join } from "node:path";
 import { validate } from "@opensoftware/contracts";
 import { fileUrl, readRepositoryFile, writeAgentTrace } from "../adapters/files.ts";
+import { sessionFiles } from "../adapters/folders.ts";
 import { repository } from "../adapters/git.ts";
-import { appendTo, resourceOf, send, spansOf } from "../adapters/otlp.ts";
+import { appendTo, resourceOf, send, spansOf, writeTo } from "../adapters/otlp.ts";
 import { readSession } from "../adapters/session-file.ts";
 import { agentTraceOf } from "../domain/agent-trace.ts";
 import { sessionOf } from "../domain/detect.ts";
@@ -20,6 +21,8 @@ export interface ExportOptions {
   version: string;
   /** The file to write the Agent Trace record to, relative to the current folder. */
   agentTrace?: string;
+  /** Write `<output>/<run id>.jsonl` and replace it, in place of appending to runs.jsonl (ADR 0027). */
+  perRun?: boolean;
 }
 
 /** The session in the file; throws an Error that names the file when it is none. */
@@ -57,6 +60,12 @@ export async function exportRun(
     if (error) throw new Error(`the OTLP endpoint refused the run: ${error.message}`);
     return `exported the run of ${session.conversationId} to ${options.endpoint}`;
   }
+  if (options.perRun) {
+    const runId = String(resource.attributes["osf.run.id"]).replace(/[^A-Za-z0-9._-]/g, "-");
+    const target = join(options.output, `${runId}.jsonl`);
+    writeTo(target, spans);
+    return `exported the run of ${session.conversationId} to ${target}`;
+  }
   const target = join(options.output, "runs.jsonl");
   appendTo(target, spans);
   return `exported the run of ${session.conversationId} to ${target}`;
@@ -64,3 +73,14 @@ export async function exportRun(
 
 export const exportSession = (file: string, options: ExportOptions): Promise<string> =>
   exportRun(readSessionFile(file), options);
+
+/** Exports the session below the folders whose last event is the latest (ADR 0027). */
+export function exportLatest(folders: string[], options: ExportOptions): Promise<string> {
+  const sessions = sessionFiles(folders).flatMap(({ file }) => sessionOf(readSession(file)) ?? []);
+  const latest = sessions.reduce<Session | undefined>(
+    (best, session) => (!best || Date.parse(session.end) > Date.parse(best.end) ? session : best),
+    undefined,
+  );
+  if (!latest) throw new Error(`no Claude Code, Codex or OpenCode session below ${folders.join(", ")}`);
+  return exportRun(latest, options);
+}
