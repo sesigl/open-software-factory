@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.3.0...testkit-v0.4.0) (2026-10-20)
+
+
+### Features
+
+* **proof:** T-05 capture a running product, the GitHub Action and a proof check on every pull request ([#43](https://github.com/sesigl/open-software-factory/issues/43)) ([f7ebe7d](https://github.com/sesigl/open-software-factory/commit/f7ebe7d9e653dd367722f3a85462e556617a9524))
+
 ## [0.3.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.2.0...testkit-v0.3.0) (2026-10-20)
 
 
