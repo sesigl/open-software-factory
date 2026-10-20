@@ -45,8 +45,10 @@ jobs:
         include:
           - suite: testkit
             filter: "@opensoftware/testkit"
+            images: postgres nats temporal s3 forge
           - suite: factory-spec
             filter: "@opensoftware/factory-spec"
+            images: forge
           - suite: tools
             filter: "@opensoftware/tools"
           - suite: runlog
@@ -64,6 +66,16 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: make install
+      # The scenarios start these containers (ADR 0016). Pulling them now overlaps the download with the build.
+      - name: Pull the container images in the background
+        if: matrix.images
+        env:
+          IMAGES: ${{ matrix.images }}
+        run: |
+          for image in $(node -e 'import("./packages/testkit/src/fakes/services.ts").then(({ IMAGES: all }) =>
+            console.log(process.env.IMAGES.split(" ").map((name) => all[name]).join(" ")))'); do
+            nohup docker pull --quiet "$image" >/dev/null 2>&1 &
+          done
       - run: make verify-tests FILTER="$FILTER"
         env:
           FILTER: ${{ matrix.filter }}
