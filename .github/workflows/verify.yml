@@ -60,6 +60,16 @@ jobs:
             echo "OSF_PR_BODY=reports/pr-body.md"
           } >> "$GITHUB_ENV"
 
+      # Pull the images of the testkit's container fakes (packages/testkit/src/fakes/services.ts) before the tests,
+      # so that unpacking them does not slow the suites that run in parallel and count against BUDGET.
+      - name: Pull the images of the container fakes
+        run: |
+          for image in postgres:17.6-alpine nats:2.11.9-alpine temporalio/temporal:1.4.1 chrislusf/seaweedfs:3.97 \
+            code.forgejo.org/forgejo/forgejo:11 otel/opentelemetry-collector-contrib:0.148.0 testcontainers/sshd:1.4.0 testcontainers/ryuk:0.14.0; do
+            docker pull --quiet "$image" &
+          done
+          wait
+
       - run: make verify
 
       - uses: actions/upload-artifact@v4
