@@ -7,15 +7,21 @@ on:
     types: [opened, synchronize, reopened, edited]
   push:
     branches: [main]
-  # release-please.yml starts verify this way on release pull requests (docs/quality/checks.md).
+  # release-please.yml starts verify this way on release pull requests (docs/quality/checks.md). The run uses this
+  # file from main, tests the merge of the pull request into main and reports a commit status on its head.
   workflow_dispatch:
+    inputs:
+      pr:
+        description: Number of the release pull request to verify
+        required: true
 
 permissions:
   contents: read
   pull-requests: read # the description of the merged pull request, for pushes to main
+  statuses: write # the result of a dispatched run on the release pull request's head
 
 concurrency:
-  group: verify-${{ github.event.pull_request.number || github.ref }}
+  group: verify-${{ github.event.pull_request.number || inputs.pr || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -27,6 +33,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.pr && format('refs/pull/{0}/merge', inputs.pr) || '' }}
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:
@@ -59,6 +67,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
+          ref: ${{ inputs.pr && format('refs/pull/{0}/merge', inputs.pr) || '' }}
           fetch-depth: 0
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
@@ -105,19 +114,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      # A dispatched run on a release branch tests the merge into main, as a pull_request run does.
-      - name: Merge ref of a dispatched release pull request
-        id: release-pr
-        if: github.event_name == 'workflow_dispatch'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          number=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$GITHUB_REF_NAME" --json number --jq '.[0].number // ""')
-          if [ -n "$number" ]; then echo "ref=refs/pull/$number/merge" >> "$GITHUB_OUTPUT"; fi
-
       - uses: actions/checkout@v5
         with:
-          ref: ${{ steps.release-pr.outputs.ref }}
+          ref: ${{ inputs.pr && format('refs/pull/{0}/merge', inputs.pr) || '' }}
           fetch-depth: 0
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
@@ -159,10 +158,10 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
+          PR: ${{ inputs.pr }}
         run: |
           mkdir -p reports
-          gh pr list --repo "$REPO" --head "$GITHUB_REF_NAME" --json body --jq '.[0].body // ""' > reports/pr-body.md
+          gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json body --jq '.body' > reports/pr-body.md
           echo "OSF_PR_BODY=reports/pr-body.md" >> "$GITHUB_ENV"
 
       - uses: actions/download-artifact@v5
@@ -187,3 +186,16 @@ jobs:
           name: junit
           path: reports/junit/
           if-no-files-found: ignore
+
+      # A dispatched run belongs to main, so its check does not show on the release pull request: report a status.
+      - name: Report the result on the release pull request
+        if: always() && github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ inputs.pr }}
+          STATE: ${{ job.status == 'success' && 'success' || 'failure' }}
+          URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          head=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq '.headRefOid')
+          gh api "repos/$GITHUB_REPOSITORY/statuses/$head" -f state="$STATE" -f context=verify \
+            -f target_url="$URL" -f description="make verify on the merge into main"
