@@ -1,0 +1,51 @@
+# OpenTelemetry Collector config for OpenCode (runlog, ADR 0025). OpenCode's traces come from the AI SDK telemetry;
+# point its OTLP exporter at this Collector and set OTEL_EXPORTER_OTLP_ENDPOINT of the Collector to the trace store.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+processors:
+  # Prompt and tool content stays out of the run. Remove this processor from the pipeline to keep it.
+  transform/content:
+    error_mode: ignore
+    trace_statements:
+      - context: span
+        statements:
+          - delete_key(attributes, "ai.prompt")
+          - delete_key(attributes, "ai.prompt.messages")
+          - delete_key(attributes, "ai.response.text")
+          - delete_key(attributes, "ai.response.toolCalls")
+          - delete_key(attributes, "ai.toolCall.args")
+          - delete_key(attributes, "ai.toolCall.result")
+  transform/opencode:
+    error_mode: ignore
+    trace_statements:
+      - context: resource
+        statements:
+          - set(attributes["osf.harness.name"], "opencode") where attributes["osf.harness.name"] == nil
+      - context: span
+        statements:
+          - set(attributes["gen_ai.provider.name"], attributes["ai.model.provider"]) where attributes["ai.model.provider"] != nil
+          - set(attributes["gen_ai.operation.name"], "invoke_agent") where name == "ai.streamText"
+          - set(name, "invoke_agent") where name == "ai.streamText"
+          - set(attributes["gen_ai.operation.name"], "chat") where name == "ai.streamText.doStream"
+          - set(name, Concat(["chat", attributes["gen_ai.request.model"]], " ")) where name == "ai.streamText.doStream" and attributes["gen_ai.request.model"] != nil
+          - set(name, "chat") where name == "ai.streamText.doStream"
+          - set(attributes["gen_ai.operation.name"], "execute_tool") where name == "ai.toolCall"
+          - set(attributes["gen_ai.tool.name"], attributes["ai.toolCall.name"]) where name == "ai.toolCall" and attributes["ai.toolCall.name"] != nil
+          - set(attributes["gen_ai.tool.call.id"], attributes["ai.toolCall.id"]) where name == "ai.toolCall" and attributes["ai.toolCall.id"] != nil
+          - set(name, Concat(["execute_tool", attributes["ai.toolCall.name"]], " ")) where name == "ai.toolCall" and attributes["ai.toolCall.name"] != nil
+          - set(name, "execute_tool") where name == "ai.toolCall"
+exporters:
+  otlphttp:
+    endpoint: ${env:OTEL_EXPORTER_OTLP_ENDPOINT}
+    encoding: json
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [transform/content, transform/opencode]
+      exporters: [otlphttp]

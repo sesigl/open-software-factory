@@ -1,5 +1,5 @@
 ---
-covers: [modules/runlog/src/**]
+covers: [modules/runlog/src/**, modules/runlog/collector/**]
 ---
 
 # runlog
@@ -7,7 +7,8 @@ covers: [modules/runlog/src/**]
 Every agent session as one run record. runlog reads the session file of Claude Code, Codex or OpenCode and writes the
 run as OpenTelemetry spans with the GenAI attribute names and the factory attributes of the `run-record` contract
 ([`contracts/`](../../contracts/README.md)). Any OTLP backend can store and show it. Decisions:
-[ADR 0023](../../docs/decisions/0023-runlog.md) and [ADR 0024](../../docs/decisions/0024-runlog-attach-watch-opencode.md).
+[ADR 0023](../../docs/decisions/0023-runlog.md), [ADR 0024](../../docs/decisions/0024-runlog-attach-watch-opencode.md) and
+[ADR 0025](../../docs/decisions/0025-runlog-collector-config-pack.md).
 
 ## Quick start
 
@@ -98,6 +99,37 @@ to `<endpoint>/v1/traces` instead of writing `runs.jsonl`. The exporter of the O
 while the endpoint answers 429, 502, 503 or 504; any other error exits with code 1. runlog sends nothing anywhere
 else.
 
+## Collector config pack
+
+A harness that sends its own traces can go through an OpenTelemetry Collector with the config of
+[`collector/`](collector/): `claude-code.yaml`, `codex.yaml` and `opencode.yaml`. Each config receives OTLP on ports
+4317 (gRPC) and 4318 (HTTP), renames the native spans and sends them as OTLP/HTTP JSON to the Collector's
+`OTEL_EXPORTER_OTLP_ENDPOINT`. The trace store then sees the same span names as from `runlog export`:
+
+| Harness | Native span | Exported span |
+| --- | --- | --- |
+| Claude Code | `claude_code.interaction` | `invoke_agent`, with `session.id` as `gen_ai.conversation.id` |
+| Claude Code | `claude_code.llm_request` | `chat <model>`, with the token counts as `gen_ai.usage.*` |
+| Claude Code | `claude_code.tool` | `execute_tool <tool>` |
+| Codex | `session_loop` | `invoke_agent`, with `conversation.id` as `gen_ai.conversation.id` |
+| Codex | `handle_responses` | `chat` |
+| OpenCode | `ai.streamText` | `invoke_agent`, with `ai.model.provider` as `gen_ai.provider.name` |
+| OpenCode | `ai.streamText.doStream` | `chat <model>` |
+| OpenCode | `ai.toolCall` | `execute_tool <tool>` |
+
+Other spans pass through. The resource gets `osf.harness.name` unless the launch set it in
+`OTEL_RESOURCE_ATTRIBUTES`. The processor `transform/content` deletes prompts and tool arguments and results; remove
+it from the pipeline to keep them. Codex has no tool span with the tool's name; `runlog attach` adds the tool calls
+from its session file. To get a config:
+
+```sh
+npx @opensoftware/runlog collector claude-code
+docker run -v "$PWD/collector.yaml:/etc/otelcol-contrib/config.yaml" -p 4317:4317 -p 4318:4318 \
+  -e OTEL_EXPORTER_OTLP_ENDPOINT=http://trace-store:4318 otel/opentelemetry-collector-contrib:0.148.0
+```
+
+The system tests run each mapping in this Collector image.
+
 ## Releases
 
 release-please opens a release pull request from the Conventional Commits under `modules/runlog/`. Merging it
@@ -115,6 +147,7 @@ with a trusted publisher for `publish-runlog.yml`. No credential is stored in th
 | `export <session file> [--include-content] [--agent-trace <file>]` | Write a Claude Code, Codex or OpenCode session as an OTLP run to $OUTPUT/runs.jsonl, or send it to OTEL_EXPORTER_OTLP_ENDPOINT. --agent-trace also writes the Agent Trace record of the lines it wrote. |
 | `attach <session file> [--outcome <outcome>] [--include-content] [--agent-trace <file>]` | Export like export, but into the trace of the launcher's TRACEPARENT, with the outcome succeeded, failed or cancelled. |
 | `watch <folder>... [--idle <minutes>] [--passes <n>] [--interval <seconds>] [--include-content]` | Export each session below the folders once, when its last event is --idle minutes (5) old; repeat every --interval seconds (60). |
+| `collector <harness>` | Write the OpenTelemetry Collector config of claude-code, codex or opencode to $OUTPUT/collector.yaml. It renames the harness's native spans to invoke_agent, chat and execute_tool and sends them to OTEL_EXPORTER_OTLP_ENDPOINT. |
 
 ## Configuration
 
@@ -181,3 +214,14 @@ with a trusted publisher for `publish-runlog.yml`. No credential is stored in th
 | SCN-RUN-041 | implemented | Text that the session wrote and a person changed later is not attributed |
 | SCN-RUN-042 | implemented | watch names a session it could not export and exports it in a later pass |
 | SCN-RUN-043 | implemented | watch skips the transcript of a Claude Code subagent |
+| SCN-RUN-044 | implemented | A Claude Code interaction becomes the root span "invoke_agent" |
+| SCN-RUN-045 | implemented | A Claude Code model request becomes a chat span with its token usage |
+| SCN-RUN-046 | implemented | A Claude Code tool span becomes an execute_tool span |
+| SCN-RUN-047 | implemented | The Claude Code config drops the prompt text |
+| SCN-RUN-048 | implemented | The launch attributes of a harness pass through the Collector |
+| SCN-RUN-049 | implemented | A Codex session loop becomes the root span "invoke_agent" |
+| SCN-RUN-050 | implemented | A Codex response handler becomes a chat span |
+| SCN-RUN-051 | implemented | An OpenCode model call becomes a chat span with its token usage |
+| SCN-RUN-052 | implemented | An OpenCode step becomes the root span "invoke_agent" |
+| SCN-RUN-053 | implemented | An OpenCode tool call becomes an execute_tool span without its arguments |
+| SCN-RUN-054 | implemented | The Collector config of an unknown harness is refused |

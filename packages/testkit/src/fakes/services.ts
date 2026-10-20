@@ -34,6 +34,7 @@ export const IMAGES = {
   temporal: "temporalio/temporal:1.4.1",
   s3: "chrislusf/seaweedfs:3.97",
   forge: "code.forgejo.org/forgejo/forgejo:11",
+  collector: "otel/opentelemetry-collector-contrib:0.148.0",
 } as const;
 
 export type Track = (container: StartedTestContainer) => StartedTestContainer;
