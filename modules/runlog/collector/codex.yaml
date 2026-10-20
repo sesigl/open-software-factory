@@ -1,0 +1,38 @@
+# OpenTelemetry Collector config for Codex (runlog, ADR 0025). Point Codex's [otel.trace_exporter.otlp-http] at this
+# Collector and set OTEL_EXPORTER_OTLP_ENDPOINT of the Collector to the trace store. Codex has no tool span with the
+# tool's name; "runlog attach" adds the tool calls from the session file.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+processors:
+  transform/codex:
+    error_mode: ignore
+    trace_statements:
+      - context: resource
+        statements:
+          - set(attributes["osf.harness.name"], "codex") where attributes["osf.harness.name"] == nil
+      - context: span
+        statements:
+          - set(attributes["gen_ai.conversation.id"], attributes["conversation.id"]) where attributes["conversation.id"] != nil
+          - set(attributes["gen_ai.operation.name"], "invoke_agent") where name == "session_loop"
+          - set(attributes["gen_ai.provider.name"], "openai") where name == "session_loop"
+          - set(name, "invoke_agent") where name == "session_loop"
+          - set(attributes["gen_ai.operation.name"], "chat") where name == "handle_responses"
+          - set(attributes["gen_ai.provider.name"], "openai") where name == "handle_responses"
+          - set(attributes["gen_ai.request.model"], attributes["model"]) where name == "handle_responses" and attributes["model"] != nil
+          - set(name, Concat(["chat", attributes["gen_ai.request.model"]], " ")) where name == "handle_responses" and attributes["gen_ai.request.model"] != nil
+          - set(name, "chat") where name == "handle_responses"
+exporters:
+  otlphttp:
+    endpoint: ${env:OTEL_EXPORTER_OTLP_ENDPOINT}
+    encoding: json
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [transform/codex]
+      exporters: [otlphttp]

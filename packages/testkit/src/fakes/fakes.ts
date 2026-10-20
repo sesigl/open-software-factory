@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { StartedTestContainer } from "testcontainers";
 import { listFiles, repoRoot } from "../support/module.ts";
+import { type Collector, startCollector } from "./collector.ts";
 import { type Forge, startForge } from "./forge.ts";
 import { type Harness, type HarnessTurn, startHarness } from "./harness.ts";
 import { type FakeHttp, type HttpRoute, startHttp } from "./http.ts";
@@ -42,6 +43,8 @@ export interface Fakes {
   forge(): Promise<Forge>;
   /** A fake of the Slack Web API. An unsupported method fails the scenario. */
   slack(): Promise<FakeSlack>;
+  /** The OpenTelemetry Collector in a container, running `config`; it exports to OTEL_EXPORTER_OTLP_ENDPOINT. */
+  collector(config: string): Promise<Collector>;
 }
 
 export interface FakesHandle {
@@ -95,6 +98,9 @@ export function makeFakes(moduleRoot: string): FakesHandle {
       forge: () => startForge(track),
       async slack() {
         return (await inProcess(startSlack())).slack;
+      },
+      async collector(config) {
+        return (await inProcess(startCollector(config, track))).collector;
       },
     },
     hosts: () => [...hosts],
