@@ -192,8 +192,10 @@ read them for ideas, do not copy their company-specific rules.
   - [x] `runlog attach` into the launcher's `TRACEPARENT` trace with `--outcome`, `runlog watch` of session folders,
     OpenCode sessions from `opencode export`, issue links in `osf.issue.urls`, Agent Trace records with
     `--agent-trace`, and the npm release (ADR 0024, `SCN-RUN-022` to `-043`; `SCN-RUN-019` replaced by `-025`).
-  - [ ] The Collector config pack per harness (`collector/`), proven against a real Collector in the system tests,
-    and the dogfood export of this repository's sessions on every PR (needs a decision on where the runs are stored).
+  - [x] The Collector config pack per harness (`collector/`, `runlog collector <harness>`), proven against the real
+    Collector Contrib in the system tests through the new testkit `fakes.collector` (ADR 0025, `SCN-RUN-044` to `-054`,
+    `SCN-TK-031`).
+  - [ ] The dogfood export of this repository's sessions on every PR (needs a decision on where the runs are stored).
 
 ### [ ] T-05 · proof
 

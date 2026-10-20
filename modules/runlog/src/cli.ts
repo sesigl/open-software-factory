@@ -3,6 +3,7 @@
 import { readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { attachSession } from "./commands/attach.ts";
+import { collectorConfig, UnknownHarness } from "./commands/collector.ts";
 import { type ExportOptions, exportSession } from "./commands/export.ts";
 import { watchFolders } from "./commands/watch.ts";
 
@@ -12,6 +13,7 @@ Commands:
   export <session file> [--include-content] [--agent-trace <file>]  Write a Claude Code, Codex or OpenCode session as an OTLP run to $OUTPUT/runs.jsonl, or send it to OTEL_EXPORTER_OTLP_ENDPOINT. --agent-trace also writes the Agent Trace record of the lines it wrote.
   attach <session file> [--outcome <outcome>] [--include-content] [--agent-trace <file>]  Export like export, but into the trace of the launcher's TRACEPARENT, with the outcome succeeded, failed or cancelled.
   watch <folder>... [--idle <minutes>] [--passes <n>] [--interval <seconds>] [--include-content]  Export each session below the folders once, when its last event is --idle minutes (5) old; repeat every --interval seconds (60).
+  collector <harness>  Write the OpenTelemetry Collector config of claude-code, codex or opencode to $OUTPUT/collector.yaml. It renames the harness's native spans to invoke_agent, chat and execute_tool and sends them to OTEL_EXPORTER_OTLP_ENDPOINT.
 `;
 
 const { version } = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
@@ -52,6 +54,7 @@ const commands: Record<string, () => Promise<string | undefined>> = {
     };
     return watchFolders(rest, watch, options).then(() => undefined);
   },
+  collector: async () => collectorConfig(file as string, options.output),
 };
 const chosen = command && file && !values.help ? commands[command] : undefined;
 
@@ -60,7 +63,7 @@ if (chosen) {
     (line) => line && process.stdout.write(`${line}\n`),
     (error: Error) => {
       process.stderr.write(`runlog: ${error.message}\n`);
-      process.exitCode = 1;
+      process.exitCode = error instanceof UnknownHarness ? 2 : 1;
     },
   );
 } else {

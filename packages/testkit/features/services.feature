@@ -51,10 +51,19 @@ Feature: Services and outside systems
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
-  @id=SCN-TK-031 @status=planned
+  @id=SCN-TK-031 @status=implemented
   Scenario: fakes.collector runs the Collector config a module wrote and shows what it exported
     Given a module whose CLI prints a Collector config that renames the span "work" to "done"
     And its system test starts fakes.collector with that config, sends the span "work" and expects the exported span "done"
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-032 @status=implemented
+  Scenario: fakes.collector shows the Collector log when the Collector exports nothing
+    Given a module whose CLI prints a Collector config that drops the span "work"
+    And its system test sends the span "work" to fakes.collector and expects one export within 1000 ms
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 1
+    And the output contains "expected 1 export(s) from the Collector, got 0"
+    And the output contains "Collector log:"

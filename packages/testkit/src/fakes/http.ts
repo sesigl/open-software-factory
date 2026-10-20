@@ -2,6 +2,7 @@
 // HTTP 404 and fails the scenario with the method and path it received.
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
+import { gunzipSync } from "node:zlib";
 
 export interface HttpRoute {
   /** Default `GET`. */
@@ -21,7 +22,7 @@ export interface HttpRequest {
   method: string;
   /** The path with its query. */
   path: string;
-  /** The request body as JSON, or as text when it is not JSON; undefined when it is empty. */
+  /** The request body as JSON, or as text when it is not JSON; undefined when it is empty. A gzip body is unpacked. */
   body: unknown;
 }
 
@@ -49,7 +50,9 @@ export async function startHttp(routes: HttpRoute[]): Promise<RunningHttp> {
     request.on("data", (chunk: Buffer) => chunks.push(chunk));
     request.on("end", () => {
       const line = `${request.method} ${request.url}`;
-      received.push({ method: request.method ?? "", path: request.url ?? "", body: parse(Buffer.concat(chunks)) });
+      const raw = Buffer.concat(chunks);
+      const body = request.headers["content-encoding"] === "gzip" ? gunzipSync(raw) : raw;
+      received.push({ method: request.method ?? "", path: request.url ?? "", body: parse(body) });
       const entry = scripted.find(
         ({ route, answered }) =>
           `${route.method ?? "GET"} ${route.path}` === line && (route.times === undefined || answered < route.times),
