@@ -1,5 +1,5 @@
 {
   "contracts": "1.2.0",
-  "packages/testkit": "0.2.0",
+  "packages/testkit": "0.3.0",
   "modules/factory-spec": "0.1.0"
 }
