@@ -14,7 +14,8 @@ source material and are not checked; module scenarios link to them with `@realiz
 
 The checks are scripts in `tools/checks/` (TODO item T-00), run with `osf check <ID>`; see
 [`tools/README.md`](../../tools/README.md). BOUNDARY-RUNTIME and NOREAL are guards in the testkit; the testkit also records the coverage REACH reads.
-From phase 2 on, the released `spec-trace` module replaces TRACE, STEPS and PASS.
+From phase 2 on, the released `spec-trace` module ([ADR 0030](../decisions/0030-spec-trace.md)) replaces TRACE, STEPS and PASS. It has
+the same cases and messages; until the dogfood slice of T-06, CI runs the scripts.
 
 CI runs `make verify` in `.github/workflows/verify.yml` for every pull request and every push to `main`. It runs
 the three parts of `make verify` as jobs: `verify-static` (lint, typecheck, build) and one `verify-tests` job per

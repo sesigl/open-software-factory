@@ -42,6 +42,13 @@
       "component": "proof",
       "initial-version": "0.1.0",
       "bump-minor-pre-major": true
+    },
+    "modules/spec-trace": {
+      "release-type": "node",
+      "package-name": "@opensoftware/spec-trace",
+      "component": "spec-trace",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
     }
   }
 }
