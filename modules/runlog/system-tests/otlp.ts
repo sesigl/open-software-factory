@@ -65,7 +65,8 @@ export function runOf(request: unknown): Run {
       })),
     );
   });
-  const root = spans.find((span) => !span.parentSpanId);
+  // An attached run's root span has the launcher's span as parent.
+  const root = spans.find((span) => span.name === "invoke_agent") ?? spans.find((span) => !span.parentSpanId);
   if (!root) throw new Error("the run has no root span");
   return { resource: root.resource, spans, root };
 }

@@ -1,6 +1,6 @@
 import { scenario } from "@opensoftware/testkit";
 
-scenario("SCN-RUN-019", async ({ sut, given, when, then }) => {
+scenario("SCN-RUN-025", async ({ sut, given, when, then }) => {
   await given('a file "notes.txt" with the text "hello"', async () => {
     await sut.files.put("$INPUT/notes.txt", "hello\n");
   });
@@ -14,7 +14,7 @@ scenario("SCN-RUN-019", async ({ sut, given, when, then }) => {
     expect(run.exitCode).toBe(1);
   });
 
-  await then('the output contains "notes.txt is neither a Claude Code nor a Codex session"', async () => {
-    expect(run.stderr).toContain("notes.txt is neither a Claude Code nor a Codex session");
+  await then('the output contains "notes.txt is not a Claude Code, Codex or OpenCode session"', async () => {
+    expect(run.stderr).toContain("notes.txt is not a Claude Code, Codex or OpenCode session");
   });
 });

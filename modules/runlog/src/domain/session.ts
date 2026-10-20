@@ -35,16 +35,29 @@ export interface ToolCall {
   result: string;
 }
 
+/** Text a tool call wrote into a file: a whole file, the new text of an edit, or the added lines of a patch. */
+export interface Write {
+  /** The path as the session names it: absolute, or relative to the session's folder. */
+  path: string;
+  text: string;
+}
+
 export interface Session {
-  harness: "claude-code" | "codex";
+  harness: "claude-code" | "codex" | "opencode";
   harnessVersion?: string;
-  provider: "anthropic" | "openai";
+  /** The GenAI provider name, for example "anthropic". */
+  provider: string;
+  /** The model of the first response. */
+  model: string;
   conversationId: string;
+  /** The folder the session worked in. */
+  cwd?: string;
   start: string;
   end: string;
   usage: Usage;
   responses: Response[];
   tools: ToolCall[];
+  writes: Write[];
 }
 
 export const NO_USAGE: Usage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };

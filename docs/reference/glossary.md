@@ -22,6 +22,7 @@ Use these terms in scenarios, code, UI text and docs.
 | Sandbox | An isolated environment in which one stage's harness runs. |
 | Run | One harness session for one stage of one work item. |
 | Run record | The stored transcript, trace, cost and links of a run, in OpenTelemetry form. |
+| Agent Trace record | The lines of the files a run wrote, attributed to the agent and its model, in the open Agent Trace format. |
 | Evidence bundle | The screenshots, video, traces and test results that prove a change works. |
 | Scorer | An LLM-judge or code check that grades sampled runs on one dimension. |
 | Score | The result of one scorer on one run. |
