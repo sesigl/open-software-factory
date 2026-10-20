@@ -32,7 +32,7 @@ export function docsAffected(context: Context): Finding[] {
   const base = context.base("DOCS-AFFECTED");
   if (!base) return [];
   const { repo } = context;
-  const changed = changedFiles(repo.root, base);
+  const changed = changedFiles(repo.root, base).filter((file) => !isReleaseOnly(context, base, file));
   const body =
     process.env.OSF_PR_BODY && repo.exists(process.env.OSF_PR_BODY) ? repo.read(process.env.OSF_PR_BODY) : "";
   const reviewed = new Set([...body.matchAll(/^\s*docs-reviewed:\s*(\S+)/gm)].map((match) => match[1] as string));
@@ -58,6 +58,22 @@ export function docsAffected(context: Context): Finding[] {
     });
   }
   return findings;
+}
+
+/** What release-please writes for a release: changelogs, its manifest, and a package.json that only changes "version". */
+function isReleaseOnly({ repo }: Context, base: string, file: string): boolean {
+  const name = posix.basename(file);
+  if (name === "CHANGELOG.md" || file === ".release-please-manifest.json") return true;
+  if (name !== "package.json") return false;
+  const before = showAt(repo.root, base, file);
+  if (before === undefined || !repo.exists(file)) return false;
+  try {
+    const { version: _old, ...rest } = JSON.parse(before) as Record<string, unknown>;
+    const { version: _new, ...now } = JSON.parse(repo.read(file)) as Record<string, unknown>;
+    return JSON.stringify(rest) === JSON.stringify(now);
+  } catch {
+    return false;
+  }
 }
 
 export function docsLinks(context: Context): Finding[] {
