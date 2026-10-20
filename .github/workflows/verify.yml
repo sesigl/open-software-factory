@@ -69,6 +69,7 @@ jobs:
             filter: "@opensoftware/tools"
           - suite: runlog
             filter: "@opensoftware/runlog"
+            images: collector
           # Every other package, so a new module runs without a change here.
           - suite: rest
             filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog"

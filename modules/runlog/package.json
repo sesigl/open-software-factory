@@ -13,7 +13,8 @@
     "runlog": "dist/cli.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "collector"
   ],
   "publishConfig": {
     "access": "public"

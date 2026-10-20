@@ -109,7 +109,8 @@ Verify names against vendor docs before writing an adapter. runlog makes telemet
 1. **Correlate at launch:** the foreman sets
    `OTEL_RESOURCE_ATTRIBUTES=osf.factory.version=…,osf.work_item.id=…,osf.run.id=…,osf.stage=…`. The attribute names
    and the pinned GenAI conventions are in [`contracts/run-record/`](../../contracts/run-record/run-record.schema.json).
-2. **Normalize in the Collector:** a per-harness mapping renames spans to the GenAI conventions.
+2. **Normalize in the Collector:** a per-harness mapping renames spans to the GenAI conventions (runlog's
+   [Collector config pack](../../modules/runlog/README.md#collector-config-pack), ADR 0025).
 3. **Complete from the session file:** the foreman also sets a W3C `TRACEPARENT`; when the stage ends,
    `runlog attach` exports the session file into that trace with the outcome of the stage (ADR 0024).
 
