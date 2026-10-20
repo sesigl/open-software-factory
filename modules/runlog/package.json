@@ -1,12 +1,22 @@
 {
   "name": "@opensoftware/runlog",
   "version": "0.0.0",
-  "private": true,
-  "description": "runlog: every Claude Code or Codex session as an OpenTelemetry run record.",
+  "description": "runlog: every Claude Code, Codex or OpenCode session as an OpenTelemetry run record.",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "modules/runlog"
+  },
   "type": "module",
   "bin": {
     "runlog": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

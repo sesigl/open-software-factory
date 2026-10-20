@@ -15,7 +15,7 @@ Feature: Files runlog cannot export
     Then the command exits with code 1
     And the output contains "cannot read missing.jsonl"
 
-  @id=SCN-RUN-025 @status=planned @replaces=SCN-RUN-019
+  @id=SCN-RUN-025 @status=implemented @replaces=SCN-RUN-019
   Scenario: A file that is no session of a known harness is refused
     Given a file "notes.txt" with the text "hello"
     When the developer runs "runlog export notes.txt"

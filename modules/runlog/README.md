@@ -4,10 +4,10 @@ covers: [modules/runlog/src/**]
 
 # runlog
 
-Every agent session as one run record. runlog reads the session file of Claude Code or Codex and writes the run as
-OpenTelemetry spans with the GenAI attribute names and the factory attributes of the `run-record` contract
-([`contracts/`](../../contracts/README.md)). Any OTLP backend can store and show it. Decision:
-[ADR 0023](../../docs/decisions/0023-runlog.md).
+Every agent session as one run record. runlog reads the session file of Claude Code, Codex or OpenCode and writes the
+run as OpenTelemetry spans with the GenAI attribute names and the factory attributes of the `run-record` contract
+([`contracts/`](../../contracts/README.md)). Any OTLP backend can store and show it. Decisions:
+[ADR 0023](../../docs/decisions/0023-runlog.md) and [ADR 0024](../../docs/decisions/0024-runlog-attach-watch-opencode.md).
 
 ## Quick start
 
@@ -29,17 +29,19 @@ npx @opensoftware/runlog export session.jsonl
 
 It appends one line to `$OUTPUT/runs.jsonl`: the run as an OTLP/JSON export request, with the root span
 `invoke_agent`, two `chat claude-sonnet-5-5` spans and one `execute_tool Bash` span. Your own sessions are in
-`~/.claude/projects/<project>/` and `~/.codex/sessions/`.
+`~/.claude/projects/<project>/` and `~/.codex/sessions/`. For OpenCode, export a session first:
+`opencode export <session id> > session.json`.
 
 ## What a run holds
 
 | Span | Attributes |
 | --- | --- |
-| `invoke_agent` (root) | `gen_ai.conversation.id` (the session ID), `gen_ai.provider.name`, `gen_ai.request.model` (of the first response), the token usage of the whole session, `osf.outcome` (`succeeded`), `osf.pull_request.urls` (pull request links that a tool printed) |
-| `chat <model>`, one per model response | `gen_ai.request.model`, `gen_ai.response.id` (Claude Code), the token usage of the response |
+| `invoke_agent` (root) | `gen_ai.conversation.id` (the session ID), `gen_ai.provider.name`, `gen_ai.request.model` (of the first response), the token usage of the whole session, `osf.outcome` (`succeeded`, or what `attach --outcome` says), `osf.pull_request.urls` and `osf.issue.urls` (links that a tool printed), `osf.agent_trace.uri` (with `--agent-trace`) |
+| `chat <model>`, one per model response | `gen_ai.request.model`, `gen_ai.response.id` (Claude Code, OpenCode), the token usage of the response |
 | `execute_tool <name>`, one per tool call | `gen_ai.tool.name`, `gen_ai.tool.call.id`; the span lasts from the call to its result |
 
-Input tokens include cached tokens, as the GenAI conventions ask; `gen_ai.usage.cache_read.input_tokens` and
+Issue links are GitHub and Forgejo `/issues/<n>`, GitLab `/-/issues/<n>` and Linear `linear.app/<team>/issue/<KEY-n>`
+(without the title). Input tokens include cached tokens, as the GenAI conventions ask; `gen_ai.usage.cache_read.input_tokens` and
 `gen_ai.usage.cache_write.input_tokens` show the cached part. The trace and span IDs come from the session ID, so a
 second export of the same session gives the same trace.
 
@@ -47,6 +49,41 @@ The resource carries the attributes of the launch from `OTEL_RESOURCE_ATTRIBUTES
 `osf.run.id` and `osf.work_item.id` become the session ID, `osf.requester.id` becomes `git:<author email>`,
 `osf.source` becomes `cli` and `osf.factory.version` becomes the commit of the Git repository in the current
 folder. A run that still breaks the `run-record` contract is not exported, and the error names the attribute.
+
+## Attach a session to its launch
+
+A launcher (the foreman, or a CI job) starts the harness with a W3C `TRACEPARENT` and `OTEL_RESOURCE_ATTRIBUTES`.
+When the stage ends, it runs:
+
+```sh
+runlog attach session.jsonl --outcome failed
+```
+
+attach exports the session like `export`, but the trace ID comes from `TRACEPARENT` and the root span `invoke_agent`
+is a child of its span. Claude Code honors `TRACEPARENT` in `claude -p` and Agent SDK sessions, so its native spans
+and the session's spans end up in one trace. `--outcome` is `succeeded` (default), `failed` or `cancelled`. attach
+without a valid `TRACEPARENT` exits with code 1.
+
+## Watch session folders
+
+```sh
+runlog watch ~/.claude/projects ~/.codex/sessions
+```
+
+watch looks at every `.jsonl` and `.json` file below the folders every `--interval` seconds (60) and exports each
+session whose last event is at least `--idle` minutes (5) old. It remembers each file it exported, with its size, in
+`watch.json` in `OSF_DATA`, so a session is exported once; a resumed session that grew is exported again, with the
+same trace ID. A file that is no session, and the transcript of a Claude Code subagent, is skipped. A session it cannot export, for example because the OTLP
+endpoint refused it, is named on the error output and tried again in the next pass. `--passes <n>` stops after n
+passes.
+
+## Agent Trace
+
+`--agent-trace <file>` on `export` and `attach` writes an [Agent Trace](https://agent-trace.dev) record (version
+`0.1.0`) of the lines the session wrote and puts its `file:` URL into `osf.agent_trace.uri`. runlog takes the text of
+each write (Claude Code `Edit`, `MultiEdit` and `Write`, OpenCode `edit` and `write`, the added lines of a Codex
+`apply_patch`) and finds it in the file as it is now in the current folder. The ranges get the contributor `ai` and
+the model as `<provider>/<model>`; the record's revision is `HEAD`. Text a person changed since is not attributed.
 
 ## Prompt content
 
@@ -61,13 +98,23 @@ to `<endpoint>/v1/traces` instead of writing `runs.jsonl`. The exporter of the O
 while the endpoint answers 429, 502, 503 or 504; any other error exits with code 1. runlog sends nothing anywhere
 else.
 
+## Releases
+
+release-please opens a release pull request from the Conventional Commits under `modules/runlog/`. Merging it
+creates the tag `runlog-v<version>`, and `.github/workflows/publish-runlog.yml` builds `dist/` and publishes
+`@opensoftware/runlog` to npm. The first release is `0.1.0`; until `1.0.0`, a breaking change raises the minor
+version. The one-time setup is the same as for contracts ([`contracts/README.md`](../../contracts/README.md#releases)),
+with a trusted publisher for `publish-runlog.yml`. No credential is stored in the repository.
+
 ## Commands
 
 <!-- generated by make docs from src/cli.ts --help: do not edit -->
 
 | Command | What it does |
 | --- | --- |
-| `export <session file> [--include-content]` | Write a Claude Code or Codex session as an OTLP run to $OUTPUT/runs.jsonl, or send it to OTEL_EXPORTER_OTLP_ENDPOINT. |
+| `export <session file> [--include-content] [--agent-trace <file>]` | Write a Claude Code, Codex or OpenCode session as an OTLP run to $OUTPUT/runs.jsonl, or send it to OTEL_EXPORTER_OTLP_ENDPOINT. --agent-trace also writes the Agent Trace record of the lines it wrote. |
+| `attach <session file> [--outcome <outcome>] [--include-content] [--agent-trace <file>]` | Export like export, but into the trace of the launcher's TRACEPARENT, with the outcome succeeded, failed or cancelled. |
+| `watch <folder>... [--idle <minutes>] [--passes <n>] [--interval <seconds>] [--include-content]` | Export each session below the folders once, when its last event is --idle minutes (5) old; repeat every --interval seconds (60). |
 
 ## Configuration
 
@@ -75,12 +122,15 @@ else.
 
 | Variable | Type | Default | Meaning |
 | --- | --- | --- | --- |
-| `OUTPUT` | string | `"."` | Folder that export appends runs.jsonl to when no OTLP endpoint is set. |
+| `OUTPUT` | string | `"."` | Folder that export, attach and watch append runs.jsonl to when no OTLP endpoint is set. |
 | `OTEL_RESOURCE_ATTRIBUTES` | string |  | Resource attributes of the run as key=value pairs, set by the launcher, for example osf.run.id=…,osf.work_item.id=…,osf.factory.version=…,osf.stage=…. They override what runlog finds itself. |
 | `OTEL_SERVICE_NAME` | string |  | The service.name of the run. Default: the harness, for example claude-code. |
+| `TRACEPARENT` | string |  | W3C trace context of the stage, set by the launcher, for example 00-<trace id>-<span id>-01. attach puts the run into this trace, below this span. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | string |  | Base URL of an OTLP/HTTP receiver, for example http://collector:4318. When set, export sends the run to <url>/v1/traces instead of writing runs.jsonl. |
 | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | string |  | Full URL of the OTLP/HTTP traces endpoint; takes precedence over OTEL_EXPORTER_OTLP_ENDPOINT. |
 | `OTEL_EXPORTER_OTLP_HEADERS` | string |  | Headers for the OTLP endpoint as key=value pairs, for example a token from a secret store. Never write the value into a file. |
+| `OSF_DATA` | string | `".runlog"` | Folder where watch remembers which session files it exported. |
+| `OSF_NOW` | string |  | The current time as an ISO 8601 timestamp, for watch to decide whether a session has ended. Default: the system clock. |
 
 ## Scenarios
 
@@ -109,23 +159,25 @@ else.
 | SCN-RUN-019 | deprecated | A file that is no session is refused |
 | SCN-RUN-020 | implemented | A missing session file is named |
 | SCN-RUN-021 | implemented | A run outside a Git repository with a commit has no factory version and is not exported |
-| SCN-RUN-022 | planned | An OpenCode run has the same root span as a Claude Code run |
-| SCN-RUN-023 | planned | Each assistant message of an OpenCode run becomes one chat span |
-| SCN-RUN-024 | planned | Each tool part of an OpenCode run becomes one execute_tool span that lasts from its start to its end |
-| SCN-RUN-025 | planned | A file that is no session of a known harness is refused |
-| SCN-RUN-026 | planned | Issue links that a tool printed end up on the root span |
-| SCN-RUN-027 | planned | attach puts the run into the trace of the launch |
-| SCN-RUN-028 | planned | attach records the outcome of the stage |
-| SCN-RUN-029 | planned | attach without a TRACEPARENT is refused |
-| SCN-RUN-030 | planned | An outcome the run-record contract does not know is refused |
-| SCN-RUN-031 | planned | watch exports a session that has ended |
-| SCN-RUN-032 | planned | watch leaves a session that is still running for a later pass |
-| SCN-RUN-033 | planned | --idle sets how long a session must be quiet before watch exports it |
-| SCN-RUN-034 | planned | A second watch does not export a session again |
-| SCN-RUN-035 | planned | watch repeats its pass and exports each session once |
-| SCN-RUN-036 | planned | watch skips files that are no session |
-| SCN-RUN-037 | planned | The lines a Claude Code session wrote are attributed to its model |
-| SCN-RUN-038 | planned | The lines a Codex patch added are attributed to its model |
-| SCN-RUN-039 | planned | The lines an OpenCode edit wrote are attributed to its model |
-| SCN-RUN-040 | planned | The root span links the Agent Trace record |
-| SCN-RUN-041 | planned | Text that the session wrote and a person changed later is not attributed |
+| SCN-RUN-022 | implemented | An OpenCode run has the same root span as a Claude Code run |
+| SCN-RUN-023 | implemented | Each assistant message of an OpenCode run becomes one chat span |
+| SCN-RUN-024 | implemented | Each tool part of an OpenCode run becomes one execute_tool span that lasts from its start to its end |
+| SCN-RUN-025 | implemented | A file that is no session of a known harness is refused |
+| SCN-RUN-026 | implemented | Issue links that a tool printed end up on the root span |
+| SCN-RUN-027 | implemented | attach puts the run into the trace of the launch |
+| SCN-RUN-028 | implemented | attach records the outcome of the stage |
+| SCN-RUN-029 | implemented | attach without a TRACEPARENT is refused |
+| SCN-RUN-030 | implemented | An outcome the run-record contract does not know is refused |
+| SCN-RUN-031 | implemented | watch exports a session that has ended |
+| SCN-RUN-032 | implemented | watch leaves a session that is still running for a later pass |
+| SCN-RUN-033 | implemented | --idle sets how long a session must be quiet before watch exports it |
+| SCN-RUN-034 | implemented | A second watch does not export a session again |
+| SCN-RUN-035 | implemented | watch repeats its pass and exports each session once |
+| SCN-RUN-036 | implemented | watch skips files that are no session |
+| SCN-RUN-037 | implemented | The lines a Claude Code session wrote are attributed to its model |
+| SCN-RUN-038 | implemented | The lines a Codex patch added are attributed to its model |
+| SCN-RUN-039 | implemented | The lines an OpenCode edit wrote are attributed to its model |
+| SCN-RUN-040 | implemented | The root span links the Agent Trace record |
+| SCN-RUN-041 | implemented | Text that the session wrote and a person changed later is not attributed |
+| SCN-RUN-042 | implemented | watch names a session it could not export and exports it in a later pass |
+| SCN-RUN-043 | implemented | watch skips the transcript of a Claude Code subagent |

@@ -189,8 +189,11 @@ read them for ideas, do not copy their company-specific rules.
     `OTEL_RESOURCE_ATTRIBUTES` and Git checked against the `run-record` contract, content only with
     `--include-content`, `runs.jsonl` or an OTLP/HTTP endpoint with retries. testkit `fakes.http` gained `times`
     and `received()`.
-  - [ ] `runlog watch` and `runlog attach`, OpenCode storage, the Collector config pack per harness (`collector/`),
-    Agent Trace line attribution, the npm release, and the dogfood export of this repository's sessions.
+  - [x] `runlog attach` into the launcher's `TRACEPARENT` trace with `--outcome`, `runlog watch` of session folders,
+    OpenCode sessions from `opencode export`, issue links in `osf.issue.urls`, Agent Trace records with
+    `--agent-trace`, and the npm release (ADR 0024, `SCN-RUN-022` to `-043`; `SCN-RUN-019` replaced by `-025`).
+  - [ ] The Collector config pack per harness (`collector/`), proven against a real Collector in the system tests,
+    and the dogfood export of this repository's sessions on every PR (needs a decision on where the runs are stored).
 
 ### [ ] T-05 · proof
 

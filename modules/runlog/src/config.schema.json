@@ -5,7 +5,7 @@
     "OUTPUT": {
       "type": "string",
       "default": ".",
-      "description": "Folder that export appends runs.jsonl to when no OTLP endpoint is set."
+      "description": "Folder that export, attach and watch append runs.jsonl to when no OTLP endpoint is set."
     },
     "OTEL_RESOURCE_ATTRIBUTES": {
       "type": "string",
@@ -14,6 +14,10 @@
     "OTEL_SERVICE_NAME": {
       "type": "string",
       "description": "The service.name of the run. Default: the harness, for example claude-code."
+    },
+    "TRACEPARENT": {
+      "type": "string",
+      "description": "W3C trace context of the stage, set by the launcher, for example 00-<trace id>-<span id>-01. attach puts the run into this trace, below this span."
     },
     "OTEL_EXPORTER_OTLP_ENDPOINT": {
       "type": "string",
@@ -26,6 +30,15 @@
     "OTEL_EXPORTER_OTLP_HEADERS": {
       "type": "string",
       "description": "Headers for the OTLP endpoint as key=value pairs, for example a token from a secret store. Never write the value into a file."
+    },
+    "OSF_DATA": {
+      "type": "string",
+      "default": ".runlog",
+      "description": "Folder where watch remembers which session files it exported."
+    },
+    "OSF_NOW": {
+      "type": "string",
+      "description": "The current time as an ISO 8601 timestamp, for watch to decide whether a session has ended. Default: the system clock."
     }
   }
 }
