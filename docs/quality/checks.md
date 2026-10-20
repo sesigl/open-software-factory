@@ -24,6 +24,9 @@ Release pull requests are opened by release-please with `GITHUB_TOKEN`, and thei
 person's approval. So after each push to `main`, `release-please.yml` also starts `verify` on every open release
 pull request with `workflow_dispatch`. That run needs no approval. It uses `verify.yml` from `main`, merges the pull
 request into `main` before it tests, and reports the result as the `verify` commit status on the pull request's head.
+On each pull request from this repository, the `verify` job also runs the proof GitHub Action on the JUnit results of
+every suite ([ADR 0029](../decisions/0029-proof-capture-and-action.md)): one proof comment and the commit status
+`proof`. The `proof` suite's job installs Chromium for the capture scenarios.
 
 ## Specification and traceability
 

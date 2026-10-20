@@ -9,6 +9,7 @@ export type { Nats, Postgres, S3, Temporal } from "./fakes/services.ts";
 export type { FakeSlack, SlackMessage } from "./fakes/slack.ts";
 export { type ScenarioContext, type StepFn, scenario } from "./scenario.ts";
 export type { CliResult } from "./support/process.ts";
+export type { Action, ActionOptions, ActionResult } from "./sut/action.ts";
 export type { CloudEvent, EventLog, Events } from "./sut/events.ts";
 export type { Http, HttpResponse } from "./sut/http.ts";
 export type { Mcp, McpClient } from "./sut/mcp.ts";

@@ -34,3 +34,11 @@ Feature: Scripted HTTP API
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-037 @status=implemented
+  Scenario: A route with a content type answers its body as is
+    Given a module whose CLI gets "/checkout" from the API at "DEMO_API_URL" and prints the content type and the body
+    And its system test scripts the answer "<h1>Pay with a card</h1>" with the content type "text/html" for "GET /checkout"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

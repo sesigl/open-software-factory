@@ -11,8 +11,10 @@ export interface HttpRoute {
   path: string;
   /** Default 200. */
   status?: number;
-  /** The JSON body of the answer. */
+  /** The JSON body of the answer, or its text when `contentType` is set. */
   body: unknown;
+  /** The content type of a body that is not JSON, for example `text/html`; the body is then sent as is. */
+  contentType?: string;
   /** Answer only this many requests; later requests go to the next route that matches. Default: every request. */
   times?: number;
 }
@@ -60,9 +62,10 @@ export async function startHttp(routes: HttpRoute[]): Promise<RunningHttp> {
       const route = entry?.route;
       if (entry) entry.answered += 1;
       else unscripted.push(`unscripted HTTP request: ${line}`);
-      response.setHeader("content-type", "application/json");
+      response.setHeader("content-type", route?.contentType ?? "application/json");
       response.statusCode = route ? (route.status ?? 200) : 404;
-      response.end(JSON.stringify(route ? route.body : { error: `unscripted HTTP request: ${line}` }));
+      if (route?.contentType) response.end(String(route.body));
+      else response.end(JSON.stringify(route ? route.body : { error: `unscripted HTTP request: ${line}` }));
     });
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
