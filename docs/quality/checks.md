@@ -22,8 +22,8 @@ test suite run side by side, each on its own runner. The `verify` job then colle
 and runs `verify-checks`; it fails when any part failed. A package without its own job runs in the `rest` job.
 Release pull requests are opened by release-please with `GITHUB_TOKEN`, and their `pull_request` run waits for a
 person's approval. So after each push to `main`, `release-please.yml` also starts `verify` on every open release
-pull request with `workflow_dispatch`. That run needs no approval. It uses `verify.yml` from `main`, tests the pull
-request's merge into `main`, and reports the result as the `verify` commit status on the pull request's head.
+pull request with `workflow_dispatch`. That run needs no approval. It uses `verify.yml` from `main`, merges the pull
+request into `main` before it tests, and reports the result as the `verify` commit status on the pull request's head.
 
 ## Specification and traceability
 
