@@ -121,6 +121,34 @@ importers:
         specifier: workspace:*
         version: link:../../packages/testkit
 
+  modules/spec-trace:
+    dependencies:
+      '@cucumber/gherkin':
+        specifier: 42.0.1
+        version: 42.0.1
+      '@cucumber/messages':
+        specifier: 34.2.1
+        version: 34.2.1
+      '@opensoftware/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      fast-xml-parser:
+        specifier: 5.11.2
+        version: 5.11.2
+      picomatch:
+        specifier: 4.0.7
+        version: 4.0.7
+      ts-morph:
+        specifier: 28.0.0
+        version: 28.0.0
+    devDependencies:
+      '@opensoftware/testkit':
+        specifier: workspace:*
+        version: link:../../packages/testkit
+      '@types/picomatch':
+        specifier: 4.0.3
+        version: 4.0.3
+
   packages/testkit:
     dependencies:
       '@agentclientprotocol/sdk':
