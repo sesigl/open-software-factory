@@ -108,9 +108,9 @@ function homeOf(inputs: Inputs, scenario: Scenario, testFile: string): string | 
       ? `${own}${folder}`
       : `${template(config.conformance?.adapters ?? "", portOf(inputs, scenario))}${folder}`;
   }
-  const marker = scenario.file.indexOf("features/");
-  if (!config.testFolder || marker < 0) return undefined;
-  return `${scenario.file.slice(0, marker)}${folder}`;
+  const root = /^(.*\/)?features\//.exec(scenario.file);
+  if (!config.testFolder || !root) return undefined;
+  return `${root[1] ?? ""}${folder}`;
 }
 
 function portOf({ config }: Inputs, scenario: Scenario): string | undefined {
