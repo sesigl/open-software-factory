@@ -18,3 +18,19 @@ Feature: Scripted HTTP API
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 1
     And the output contains "unscripted HTTP request: GET /v0.1/servers?search=tracker"
+
+  @id=SCN-TK-029 @status=implemented
+  Scenario: A route with "times" answers only that many requests
+    Given a module whose CLI posts {"n":1} to "/v1/traces" at "DEMO_API_URL" twice and prints both status codes
+    And its system test scripts "POST /v1/traces" to answer 503 once and then 200, and expects "503 200"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-030 @status=implemented
+  Scenario: The fake gives the body of every request it received
+    Given a module whose CLI posts {"n":1} to "/v1/traces" at "DEMO_API_URL" twice and prints both status codes
+    And its system test expects the fake to have received the body {"n":1} at "POST /v1/traces" twice
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

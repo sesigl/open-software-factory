@@ -2,7 +2,7 @@
   "name": "@opensoftware/runlog",
   "version": "0.0.0",
   "private": true,
-  "description": "runlog: one sentence from the README.",
+  "description": "runlog: every Claude Code or Codex session as an OpenTelemetry run record.",
   "license": "Apache-2.0",
   "type": "module",
   "bin": {
@@ -17,5 +17,13 @@
   },
   "devDependencies": {
     "@opensoftware/testkit": "workspace:*"
+  },
+  "dependencies": {
+    "@opensoftware/contracts": "workspace:*",
+    "@opentelemetry/api": "1.9.1",
+    "@opentelemetry/exporter-trace-otlp-http": "0.223.0",
+    "@opentelemetry/otlp-transformer": "0.223.0",
+    "@opentelemetry/resources": "2.12.0",
+    "@opentelemetry/sdk-trace-base": "2.12.0"
   }
 }
