@@ -1,0 +1,29 @@
+{
+  "name": "@opensoftware/runlog",
+  "version": "0.0.0",
+  "private": true,
+  "description": "runlog: every Claude Code or Codex session as an OpenTelemetry run record.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "runlog": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "vitest run",
+    "docs": "node ../../tools/bin/osf.ts docs ."
+  },
+  "devDependencies": {
+    "@opensoftware/testkit": "workspace:*"
+  },
+  "dependencies": {
+    "@opensoftware/contracts": "workspace:*",
+    "@opentelemetry/api": "1.9.1",
+    "@opentelemetry/exporter-trace-otlp-http": "0.223.0",
+    "@opentelemetry/otlp-transformer": "0.223.0",
+    "@opentelemetry/resources": "2.12.0",
+    "@opentelemetry/sdk-trace-base": "2.12.0"
+  }
+}

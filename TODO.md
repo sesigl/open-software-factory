@@ -183,6 +183,14 @@ read them for ideas, do not copy their company-specific rules.
   maps to the same record shape; `OTEL_RESOURCE_ATTRIBUTES` from the launch end up on every span; prompt content
   is excluded unless `--include-content` is set; export to a fake OTLP endpoint retries after an outage.
 - **Done when:** this repository's own agent sessions are exported on every PR (phase 1 dogfood).
+- **Slices:**
+  - [x] `runlog export` for Claude Code and Codex session files (ADR 0023, `SCN-RUN-001` to `-021`): root span
+    `invoke_agent` with session token usage and pull request links, `chat` and `execute_tool` spans, attribution from
+    `OTEL_RESOURCE_ATTRIBUTES` and Git checked against the `run-record` contract, content only with
+    `--include-content`, `runs.jsonl` or an OTLP/HTTP endpoint with retries. testkit `fakes.http` gained `times`
+    and `received()`.
+  - [ ] `runlog watch` and `runlog attach`, OpenCode storage, the Collector config pack per harness (`collector/`),
+    Agent Trace line attribution, the npm release, and the dogfood export of this repository's sessions.
 
 ### [ ] T-05 · proof
 

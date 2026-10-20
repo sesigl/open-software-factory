@@ -12,6 +12,17 @@ export interface HttpRoute {
   status?: number;
   /** The JSON body of the answer. */
   body: unknown;
+  /** Answer only this many requests; later requests go to the next route that matches. Default: every request. */
+  times?: number;
+}
+
+/** One request the fake received. */
+export interface HttpRequest {
+  method: string;
+  /** The path with its query. */
+  path: string;
+  /** The request body as JSON, or as text when it is not JSON; undefined when it is empty. */
+  body: unknown;
 }
 
 export interface FakeHttp {
@@ -19,6 +30,8 @@ export interface FakeHttp {
   url: string;
   /** Every request the fake received, in order, as `METHOD /path`. */
   requests(): string[];
+  /** Every request the fake received, in order, with its body. */
+  received(): HttpRequest[];
 }
 
 export interface RunningHttp {
@@ -28,25 +41,49 @@ export interface RunningHttp {
 }
 
 export async function startHttp(routes: HttpRoute[]): Promise<RunningHttp> {
-  const received: string[] = [];
+  const received: HttpRequest[] = [];
   const unscripted: string[] = [];
+  const scripted = routes.map((route) => ({ route, answered: 0 }));
   const server = createServer((request, response) => {
-    const line = `${request.method} ${request.url}`;
-    received.push(line);
-    const route = routes.find((entry) => `${entry.method ?? "GET"} ${entry.path}` === line);
-    response.setHeader("content-type", "application/json");
-    if (!route) unscripted.push(`unscripted HTTP request: ${line}`);
-    response.statusCode = route ? (route.status ?? 200) : 404;
-    response.end(JSON.stringify(route ? route.body : { error: `unscripted HTTP request: ${line}` }));
+    const chunks: Buffer[] = [];
+    request.on("data", (chunk: Buffer) => chunks.push(chunk));
+    request.on("end", () => {
+      const line = `${request.method} ${request.url}`;
+      received.push({ method: request.method ?? "", path: request.url ?? "", body: parse(Buffer.concat(chunks)) });
+      const entry = scripted.find(
+        ({ route, answered }) =>
+          `${route.method ?? "GET"} ${route.path}` === line && (route.times === undefined || answered < route.times),
+      );
+      const route = entry?.route;
+      if (entry) entry.answered += 1;
+      else unscripted.push(`unscripted HTTP request: ${line}`);
+      response.setHeader("content-type", "application/json");
+      response.statusCode = route ? (route.status ?? 200) : 404;
+      response.end(JSON.stringify(route ? route.body : { error: `unscripted HTTP request: ${line}` }));
+    });
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   const { port } = server.address() as AddressInfo;
   return {
-    http: { url: `http://127.0.0.1:${port}`, requests: () => [...received] },
+    http: {
+      url: `http://127.0.0.1:${port}`,
+      requests: () => received.map((entry) => `${entry.method} ${entry.path}`),
+      received: () => received.map((entry) => ({ ...entry })),
+    },
     async close() {
       server.closeAllConnections();
       await new Promise<void>((resolve) => server.close(() => resolve()));
       return unscripted;
     },
   };
+}
+
+function parse(body: Buffer): unknown {
+  if (body.length === 0) return undefined;
+  const text = body.toString("utf8");
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
 }

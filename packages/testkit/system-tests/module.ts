@@ -137,3 +137,35 @@ export function functionCounts(reports: string[], suffix: string): Record<string
   }
   return counts;
 }
+
+/**
+ * Module demo whose CLI posts `{"n":1}` to `/v1/traces` at `DEMO_API_URL` twice and prints both status codes; its
+ * test scripts `fakes.http` with `routes` (TypeScript source) and runs `expectations` (TypeScript lines with `run`
+ * and `api`).
+ */
+export function postModule(routes: string, expectations: string[]): Record<string, string> {
+  return demoModule({
+    bin: [
+      "const codes = [];",
+      "for (const _ of [1, 2]) {",
+      '  const response = await fetch(`${process.env.DEMO_API_URL}/v1/traces`, { method: "POST", body: \'{"n":1}\' });',
+      "  codes.push(response.status);",
+      "}",
+      'process.stdout.write(codes.join(" "));',
+      "",
+    ].join("\n"),
+    readme:
+      "# demo\n\n## Configuration\n\n| Variable | Meaning |\n| --- | --- |\n| `DEMO_API_URL` | Base URL of the API. |\n",
+    steps: ['When the user runs "demo"', "Then the fake answered as scripted"],
+    test: [
+      `const api = await fakes.http(${routes});`,
+      "let run: Awaited<ReturnType<typeof sut.cli>>;",
+      "await when('the user runs \"demo\"', async () => {",
+      "  run = await sut.cli([], { env: { DEMO_API_URL: api.url } });",
+      "});",
+      "await then('the fake answered as scripted', async () => {",
+      ...expectations.map((line) => `  ${line}`),
+      "});",
+    ],
+  });
+}
