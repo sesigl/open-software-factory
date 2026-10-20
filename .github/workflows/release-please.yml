@@ -15,19 +15,18 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: googleapis/release-please-action@v4
-        id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
       # A pull request that GITHUB_TOKEN opens or updates starts no pull_request run that can pass without a
-      # person's approval. A workflow_dispatch run is the exception, so start verify on each release branch here.
-      - name: Run verify on the release pull requests
-        if: steps.release.outputs.prs_created == 'true'
+      # person's approval. A workflow_dispatch run is the exception, so start verify on every open release branch
+      # after each push to main: also on the ones release-please left unchanged, since main moved under them.
+      - name: Run verify on the open release pull requests
         env:
           GH_TOKEN: ${{ github.token }}
-          PRS: ${{ steps.release.outputs.prs }}
         run: |
-          for branch in $(jq -r '.[].headBranchName' <<<"$PRS"); do
+          for branch in $(gh pr list --repo "$GITHUB_REPOSITORY" --state open --label "autorelease: pending" \
+            --json headRefName --jq '.[].headRefName'); do
             gh workflow run verify.yml --repo "$GITHUB_REPOSITORY" --ref "$branch"
           done

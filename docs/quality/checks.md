@@ -18,8 +18,8 @@ From phase 2 on, the released `spec-trace` module replaces TRACE, STEPS and PASS
 
 CI runs `make verify` in `.github/workflows/verify.yml` for every pull request and every push to `main`.
 Release pull requests are opened by release-please with `GITHUB_TOKEN`, and their `pull_request` run waits for a
-person's approval. So `release-please.yml` also starts `verify` on each release branch it created or updated,
-with `workflow_dispatch`, and that run needs no approval.
+person's approval. So after each push to `main`, `release-please.yml` also starts `verify` on every open release
+branch with `workflow_dispatch`. That run needs no approval, and it tests the pull request's merge into `main`.
 
 ## Specification and traceability
 
