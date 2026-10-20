@@ -45,6 +45,7 @@ A change is done only when `make verify` passes. `docs/quality/checks.md` lists 
 | CONTRACT | No breaking change to `contracts/` without a major version. |
 | DOCS | Generated docs are current; docs that cover changed code were reviewed. |
 | BUDGET | Each module's system tests finish inside their time budget. |
+| RUNS | An agent's pull request commits the run of its session to `runs/`, without prompt content. |
 
 ## How to work
 
@@ -55,6 +56,7 @@ Follow this loop for every behavior change. Each step has a skill.
 3. Implement until it passes: `skills/implement-scenario`.
 4. Update the docs in the same change: `skills/keep-docs-evergreen`.
 5. Run `make verify` and report its result.
+6. Before you push, run `make run-record` and commit `runs/` (ADR 0027).
 
 A new module starts with `skills/new-module`. A new dependency or service starts with `skills/write-adr`.
 
@@ -88,6 +90,7 @@ make new-module NAME=x     create a module from modules/_template
 make docs                  regenerate generated docs
 make docs-affected         list hand-written docs whose covers: paths your change touched
 make agents-sync           render factory.yaml: CLAUDE.md, MCP files, skill links of every harness
+make run-record            export your session's run to runs/<run id>.jsonl; commit it before you push
 ```
 
 When a check fails, its output starts with the check ID and the file and line to fix.

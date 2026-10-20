@@ -50,3 +50,11 @@ export function addedLines(root: string, base: string, file: string): number[] {
   }
   return lines;
 }
+
+/** The messages of the commits that HEAD has and the base commit does not. */
+export function commitMessages(root: string, base: string): string[] {
+  return git(root, ["log", "--format=%B%x00", `${base}..HEAD`])
+    .out.split("\0")
+    .map((message) => message.trim())
+    .filter(Boolean);
+}
