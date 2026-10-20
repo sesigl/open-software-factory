@@ -26,7 +26,7 @@ Feature: The sut handle
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
-  @id=SCN-TK-033 @status=planned
+  @id=SCN-TK-033 @status=implemented
   Scenario: sut.action runs the module's GitHub Action with its inputs
     Given a module whose composite action.yml has the input "name" and runs its "command" with it in a "run" step
     And its system test runs sut.action with the input "name" set to "web" and expects the output "hello web" and the step output "greeting"
@@ -34,7 +34,7 @@ Feature: The sut handle
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
-  @id=SCN-TK-034 @status=planned
+  @id=SCN-TK-034 @status=implemented
   Scenario: sut.action gives the action the event of the workflow run
     Given a module whose composite action.yml prints "GITHUB_EVENT_NAME" and the pull request number of the event in "GITHUB_EVENT_PATH"
     And its system test runs sut.action with a pull request event of the number 7 and expects the output "pull_request 7"
@@ -42,7 +42,7 @@ Feature: The sut handle
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
-  @id=SCN-TK-035 @status=planned
+  @id=SCN-TK-035 @status=implemented
   Scenario: An expression sut.action does not support fails the test
     Given a module whose composite action.yml runs "echo ${{ github.event.number }}"
     And its system test runs sut.action
@@ -50,10 +50,26 @@ Feature: The sut handle
     Then the command exits with code 1
     And the output contains "sut.action supports only inputs.<name>, github.action_path and github.token: ${{ github.event.number }}"
 
-  @id=SCN-TK-036 @status=planned
+  @id=SCN-TK-036 @status=implemented
   Scenario: The module finds the browsers Playwright installed
     Given a module whose CLI prints the environment variable "PLAYWRIGHT_BROWSERS_PATH"
     And its system test expects the output "/opt/browsers"
     When the developer runs "testkit run --junit report.xml" with PLAYWRIGHT_BROWSERS_PATH "/opt/browsers" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-038 @status=implemented
+  Scenario: The first failing step ends the action with its exit code
+    Given a module whose composite action.yml runs "exit 3" in its first step and "echo second" in its second
+    And its system test runs sut.action and expects the exit code 3 without the output "second"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-039 @status=implemented
+  Scenario: A run step with a condition fails the test
+    Given a module whose composite action.yml has a "run" step with "if: always()"
+    And its system test runs sut.action
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 1
+    And the output contains "sut.action runs only \"run\" steps with \"shell: bash\" and without \"if:\", not step 1"

@@ -217,3 +217,29 @@ export const WORK_SPAN = {
     },
   ],
 };
+
+/**
+ * Module demo with a composite GitHub Action: `action.yml` holds the `steps` (YAML lines below `steps:`) and the
+ * inputs `name` and `command`; the CLI prints "hello <first argument>". Its test runs `test` (TypeScript lines).
+ */
+export function actionModule(actionSteps: string[], steps: string[], test: string[]): Record<string, string> {
+  return {
+    ...demoModule({ bin: "process.stdout.write(`hello ${process.argv[2]}\\n`);\n", steps, test }),
+    "$INPUT/action.yml": [
+      "name: demo",
+      "description: Greets.",
+      "inputs:",
+      "  name:",
+      "    description: Who to greet.",
+      "    default: world",
+      "  command:",
+      "    description: The demo command.",
+      "    default: npx demo",
+      "runs:",
+      "  using: composite",
+      "  steps:",
+      ...actionSteps.map((line) => `    ${line}`),
+      "",
+    ].join("\n"),
+  };
+}

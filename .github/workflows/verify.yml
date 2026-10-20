@@ -73,6 +73,7 @@ jobs:
           - suite: proof
             filter: "@opensoftware/proof"
             images: s3 forge
+            browser: chromium
           # Every other package, so a new module runs without a change here.
           - suite: rest
             filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof"
@@ -104,6 +105,15 @@ jobs:
             console.log(process.env.IMAGES.split(" ").map((name) => all[name]).join(" ")))'); do
             nohup docker pull --quiet "$image" >/dev/null 2>&1 &
           done
+      # proof capture opens pages in Chromium (ADR 0029); the testkit hands PLAYWRIGHT_BROWSERS_PATH to the module.
+      - name: Install the browser of the capture scenarios
+        if: matrix.browser
+        env:
+          BROWSER: ${{ matrix.browser }}
+        run: |
+          echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/playwright" >> "$GITHUB_ENV"
+          PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/playwright" \
+            pnpm --filter @opensoftware/proof exec playwright-core install --with-deps "$BROWSER"
       - run: make verify-tests FILTER="$FILTER"
         env:
           FILTER: ${{ matrix.filter }}
@@ -132,6 +142,10 @@ jobs:
     if: always() && !cancelled()
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write # the proof comment, and the description of the merged pull request for pushes to main
+      statuses: write # the commit status proof, and the result of a dispatched run on the release pull request's head
     steps:
       - uses: actions/checkout@v5
         with:
@@ -212,6 +226,19 @@ jobs:
           name: junit
           path: reports/junit/
           if-no-files-found: ignore
+
+      # Dogfood of proof (ADR 0029): the JUnit reports of every suite as evidence, one comment and the commit status
+      # proof on each pull request from this repository. A fork's token may not comment.
+      - name: Build proof for its dogfood
+        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: pnpm --filter "@opensoftware/proof..." build
+      - name: proof
+        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: ./modules/proof
+        with:
+          junit: reports/junit/*.xml
+          # Until @opensoftware/proof is on npm, the build of this checkout; then the action's default, the release.
+          command: node modules/proof/dist/cli.js
 
       # A dispatched run belongs to main, so its check does not show on the release pull request: report a status.
       - name: Report the result on the release pull request
