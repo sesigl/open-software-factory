@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "OUTPUT": {
+      "type": "string",
+      "default": ".",
+      "description": "Folder below which report writes spec-trace.json when --out is not given."
+    }
+  }
+}
