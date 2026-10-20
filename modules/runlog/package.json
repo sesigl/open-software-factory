@@ -1,0 +1,21 @@
+{
+  "name": "@opensoftware/runlog",
+  "version": "0.0.0",
+  "private": true,
+  "description": "runlog: one sentence from the README.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "runlog": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "vitest run",
+    "docs": "node ../../tools/bin/osf.ts docs ."
+  },
+  "devDependencies": {
+    "@opensoftware/testkit": "workspace:*"
+  }
+}
