@@ -7,9 +7,6 @@ export default defineConfig({
     globals: true,
     retry: 0,
     testTimeout: 60_000,
-    // Two files at a time: the Collector scenarios start containers, and more workers slow the suites that run
-    // next to this one in make verify past their BUDGET.
-    maxWorkers: 2,
     reporters: [
       "default",
       ["junit", { outputFile: "../../reports/junit/runlog.xml", classnameTemplate: "{filepath}" }],
