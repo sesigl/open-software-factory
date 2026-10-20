@@ -108,3 +108,4 @@ else.
 | SCN-RUN-018 | implemented | An export the OTLP endpoint refuses fails |
 | SCN-RUN-019 | implemented | A file that is no session is refused |
 | SCN-RUN-020 | implemented | A missing session file is named |
+| SCN-RUN-021 | implemented | A run outside a Git repository with a commit has no factory version and is not exported |

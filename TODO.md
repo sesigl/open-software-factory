@@ -184,7 +184,7 @@ read them for ideas, do not copy their company-specific rules.
   is excluded unless `--include-content` is set; export to a fake OTLP endpoint retries after an outage.
 - **Done when:** this repository's own agent sessions are exported on every PR (phase 1 dogfood).
 - **Slices:**
-  - [x] `runlog export` for Claude Code and Codex session files (ADR 0023, `SCN-RUN-001` to `-020`): root span
+  - [x] `runlog export` for Claude Code and Codex session files (ADR 0023, `SCN-RUN-001` to `-021`): root span
     `invoke_agent` with session token usage and pull request links, `chat` and `execute_tool` spans, attribution from
     `OTEL_RESOURCE_ATTRIBUTES` and Git checked against the `run-record` contract, content only with
     `--include-content`, `runs.jsonl` or an OTLP/HTTP endpoint with retries. testkit `fakes.http` gained `times`
