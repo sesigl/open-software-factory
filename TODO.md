@@ -273,7 +273,9 @@ read them for ideas, do not copy their company-specific rules.
     labels), `scorekit report` (JSON and Markdown, pass rate per day), `scorekit push` to Langfuse's score API, the
     scorer file format, the pack of five scorers, the testkit's token usage and request headers, and the npm release
     (ADR 0032, `SCN-SCORE-001` to `-032`, `SCN-TK-042`, `SCN-TK-043`).
-  - [ ] Export of the scorers as Langfuse LLM-as-a-judge evaluators.
+  - [x] `scorekit export`: the scorers as Langfuse LLM-as-a-judge evaluators with their evaluation rules, written to
+    `evaluators.json` or, with `--push`, created or updated through Langfuse's public API v2 (ADR 0033,
+    `SCN-SCORE-033` to `-045`).
   - [ ] The dogfood: score this repository's `runs/` nightly with a real judge model and link the report from the
     README. Needs a paid model call; ask the owner first.
 
