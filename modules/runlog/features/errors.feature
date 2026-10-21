@@ -21,3 +21,11 @@ Feature: Files runlog cannot export
     When the developer runs "runlog export notes.txt"
     Then the command exits with code 1
     And the output contains "notes.txt is not a Claude Code, Codex or OpenCode session"
+
+
+  @id=SCN-RUN-079 @status=implemented
+  Scenario: A JSON file with messages but without a session ID is refused
+    Given a file "chat.json" with the text "{\"messages\": []}"
+    When the developer runs "runlog export chat.json"
+    Then the command exits with code 1
+    And the output contains "chat.json is not a Claude Code, Codex or OpenCode session"
