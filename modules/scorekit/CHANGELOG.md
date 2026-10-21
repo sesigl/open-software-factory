@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/sesigl/open-software-factory/compare/scorekit-v0.2.0...scorekit-v0.3.0) (2026-10-21)
+
+
+### Features
+
+* **tools:** mutation testing and duplication limits for every module (ADR 0037) ([#59](https://github.com/sesigl/open-software-factory/issues/59)) ([f62849e](https://github.com/sesigl/open-software-factory/commit/f62849ee318038dc4a0a84b6b3303528c3368f9e))
+
 ## [0.2.0](https://github.com/sesigl/open-software-factory/compare/scorekit-v0.1.0...scorekit-v0.2.0) (2026-10-21)
 
 
