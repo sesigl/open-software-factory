@@ -12,6 +12,7 @@ adds a row.
 | CTR | contracts | `contracts/features/` |
 | TK | testkit | `packages/testkit/features/` |
 | CLI | cli library | `packages/cli/features/` |
+| SPECFILES | spec-files library | `packages/spec-files/features/` |
 | FSPEC | factory-spec | `modules/factory-spec/features/` |
 | RUN | runlog | `modules/runlog/features/` |
 | PROOF | proof | `modules/proof/features/` |

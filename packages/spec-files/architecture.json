@@ -1,0 +1,6 @@
+{
+  "layers": [
+    { "name": "api", "paths": ["src/index.ts"] },
+    { "name": "readers", "paths": ["src/gherkin.ts", "src/junit.ts"] }
+  ]
+}

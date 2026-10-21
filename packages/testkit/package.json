@@ -10,7 +10,8 @@
   },
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./readme": "./src/support/readme.ts"
   },
   "bin": {
     "testkit": "bin/testkit.ts"
@@ -24,6 +25,10 @@
       ".": {
         "types": "./dist/src/index.d.ts",
         "default": "./dist/src/index.js"
+      },
+      "./readme": {
+        "types": "./dist/src/support/readme.d.ts",
+        "default": "./dist/src/support/readme.js"
       }
     },
     "bin": {

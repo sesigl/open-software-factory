@@ -7,9 +7,15 @@ Adds rules for the testkit. The root `AGENTS.md` applies in full.
 The only ways a system test or another program may use the testkit:
 
 - Library: the exports of `src/index.ts` (`scenario` and its context), used by system tests
+- Library: `@opensoftware/testkit/readme` (`src/support/readme.ts`: `documentedEnv`, `readmeSection`), used by
+  the checks that read a module's README without running a test (ADR 0042)
 - CLI: `testkit <command>` (`bin/testkit.ts`, see `README.md#commands`), run in a module folder
 
-The testkit's own system tests use the CLI on small modules they write into `$INPUT`.
+The testkit's own system tests use the CLI on small modules they write into `$INPUT`, and call
+`@opensoftware/testkit/readme` directly.
+
+The testkit depends on no library in `packages/`: every library is tested with the testkit, so such a dependency
+would be a cycle.
 
 ## Architecture
 

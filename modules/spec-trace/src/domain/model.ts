@@ -1,30 +1,11 @@
 // The shapes the rules work on: scenarios from feature files, tests from test files, results from JUnit reports.
+import type { Keyword, Scenario } from "@opensoftware/spec-files";
 
-export type Keyword = "Given" | "When" | "Then";
+export type { Keyword, Scenario, Step } from "@opensoftware/spec-files";
+
 export type Rule = "SPEC" | "TRACE" | "STEPS" | "PASS";
 export const RULES: Rule[] = ["SPEC", "TRACE", "STEPS", "PASS"];
 export const STATUSES = ["planned", "implemented", "deprecated"];
-
-export interface Step {
-  /** `And`, `But` and `*` take the keyword of the step before them. */
-  keyword: Keyword;
-  text: string;
-  line: number;
-}
-
-export interface Scenario {
-  file: string;
-  line: number;
-  name: string;
-  ids: string[];
-  statuses: string[];
-  /** Feature, rule and scenario tags. */
-  tags: string[];
-  /** Background steps first. */
-  steps: Step[];
-  /** The rows of all Examples tables; 0 for a plain scenario. */
-  examples: number;
-}
 
 export interface TestStep {
   keyword: Keyword;
@@ -100,6 +81,4 @@ export function byId(scenarios: Scenario[]): Map<string, Scenario> {
   return map;
 }
 
-export function statusOf(scenario: Scenario): string | undefined {
-  return scenario.statuses.length === 1 ? scenario.statuses[0] : undefined;
-}
+export { statusOf } from "@opensoftware/spec-files";
