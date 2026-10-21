@@ -35,6 +35,8 @@ export interface FakeHttp {
   requests(): string[];
   /** Every request the fake received, in order, with its body. */
   received(): HttpRequest[];
+  /** Every request the fake received, in order, with its headers; names are lower case. */
+  headers(): { method: string; path: string; headers: Record<string, string> }[];
 }
 
 export interface RunningHttp {
@@ -45,6 +47,7 @@ export interface RunningHttp {
 
 export async function startHttp(routes: HttpRoute[]): Promise<RunningHttp> {
   const received: HttpRequest[] = [];
+  const headers: { method: string; path: string; headers: Record<string, string> }[] = [];
   const unscripted: string[] = [];
   const scripted = routes.map((route) => ({ route, answered: 0 }));
   const server = createServer((request, response) => {
@@ -55,6 +58,11 @@ export async function startHttp(routes: HttpRoute[]): Promise<RunningHttp> {
       const raw = Buffer.concat(chunks);
       const body = request.headers["content-encoding"] === "gzip" ? gunzipSync(raw) : raw;
       received.push({ method: request.method ?? "", path: request.url ?? "", body: parse(body) });
+      headers.push({
+        method: request.method ?? "",
+        path: request.url ?? "",
+        headers: Object.fromEntries(Object.entries(request.headers).map(([name, value]) => [name, String(value)])),
+      });
       const entry = scripted.find(
         ({ route, answered }) =>
           `${route.method ?? "GET"} ${route.path}` === line && (route.times === undefined || answered < route.times),
@@ -75,6 +83,7 @@ export async function startHttp(routes: HttpRoute[]): Promise<RunningHttp> {
       url: `http://127.0.0.1:${port}`,
       requests: () => received.map((entry) => `${entry.method} ${entry.path}`),
       received: () => received.map((entry) => ({ ...entry })),
+      headers: () => headers.map((entry) => ({ ...entry, headers: { ...entry.headers } })),
     },
     async close() {
       server.closeAllConnections();
