@@ -95,7 +95,7 @@ export async function isolation(context: Context): Promise<Finding[]> {
   const findings = await violations(context, sources, ISOLATION_RULES);
 
   // A module declares only @opensoftware/contracts, @opensoftware/testkit (devDependencies), the libraries in
-  // packages/ (ADR 0035) and external packages.
+  // packages/ (ADR 0036) and external packages.
   const libraries = new Set(
     repo
       .match("packages/*/package.json")
