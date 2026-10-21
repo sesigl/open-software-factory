@@ -182,3 +182,16 @@ with a trusted publisher for `publish-scorekit.yml`. No credential is stored in 
 | SCN-SCORE-030 | implemented | A scorer file without a pass criterion is refused |
 | SCN-SCORE-031 | implemented | A scorer file whose front matter is not YAML is refused |
 | SCN-SCORE-032 | implemented | A runs file line that is not JSON is named with its file and line |
+| SCN-SCORE-033 | planned | Export writes the five scorers of the pack as evaluators |
+| SCN-SCORE-034 | planned | An exported evaluator carries the judge prompt and the pass criterion as a boolean score |
+| SCN-SCORE-035 | planned | The evaluation rule samples the scorer's share of the runs and starts disabled |
+| SCN-SCORE-036 | planned | The options "--provider" and "--model" set the evaluator's model |
+| SCN-SCORE-037 | planned | Without "--model" the evaluator uses the project's default evaluation model |
+| SCN-SCORE-038 | planned | The option "--model" without "--provider" is refused |
+| SCN-SCORE-039 | planned | Push creates a missing evaluator and its disabled rule in Langfuse with basic auth |
+| SCN-SCORE-040 | planned | Push with "--enable" creates the rule enabled |
+| SCN-SCORE-041 | planned | Push leaves an evaluator alone when Langfuse already holds the same definition |
+| SCN-SCORE-042 | planned | Push updates a changed evaluator and keeps its rule |
+| SCN-SCORE-043 | planned | Push finds an evaluator on the second page of Langfuse's list |
+| SCN-SCORE-044 | planned | An evaluator Langfuse refuses is named and fails the command |
+| SCN-SCORE-045 | planned | Push without Langfuse keys names the missing variables |
