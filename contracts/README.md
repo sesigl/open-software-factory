@@ -39,7 +39,7 @@ Each format has one schema, generated from `typespec/`, and fixtures that CONTRA
 | run record | `run-record/run-record.schema.json` | `RunRecord` | OTel resource and root-span attributes; pins in `typespec/run-record.tsp`. |
 | evidence bundle | `evidence-bundle/evidence-bundle.schema.json` | `EvidenceManifest` | `evidence.json` at the bundle root. |
 | score | `score/score.schema.json` | `Score` | Subset of Langfuse's create-score request; factory fields in `metadata`. |
-| events | `events/<event>/<event>.schema.json`, `events/asyncapi.yaml` | `WorkReceived` … `PrOpened` | CloudEvents 1.0, structured JSON. |
+| events | `events/<event>/<event>.schema.json`, `events/asyncapi.yaml` | `WorkReceived` … `PrClosed` | CloudEvents 1.0, structured JSON. |
 
 Wire formats (everything but the factory definition) are open: readers ignore fields they do not know, so a minor
 version may add optional fields. Read `factory.yaml` with a YAML 1.2 parser: YAML 1.1 parsers turn the key `on`

@@ -23,6 +23,8 @@ export type GateRequested = Schemas["GateRequested"];
 export type GateDecided = Schemas["GateDecided"];
 export type ScoreRecorded = Schemas["ScoreRecorded"];
 export type PrOpened = Schemas["PrOpened"];
+export type PrReviewed = Schemas["PrReviewed"];
+export type PrClosed = Schemas["PrClosed"];
 
 /** One reason a document does not match its format. `path` is a JSON Pointer into the document. */
 export interface Problem {
