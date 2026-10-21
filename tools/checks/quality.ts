@@ -1,4 +1,4 @@
-// DUP and MUTATION: limits on duplicated code and on mutants that no system test notices (ADR 0036). Each unit
+// DUP and MUTATION: limits on duplicated code and on mutants that no system test notices (ADR 0037). Each unit
 // declares its limits in its AGENTS.md under "Quality limits".
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
@@ -158,7 +158,7 @@ export function dup(context: Context): Finding[] {
     seen.add(key);
     if (baseline.has(key)) continue;
     findings.push(
-      cloneFinding(clone, "move the shared code into a package in packages/ or into contracts/ (ADR 0036)"),
+      cloneFinding(clone, "move the shared code into a package in packages/ or into contracts/ (ADR 0037)"),
     );
   }
   for (const [key, line] of baseline) {
@@ -217,7 +217,7 @@ export function mutation(context: Context): Finding[] {
     if (!scripts.mutation) {
       const text = repo.read(manifest);
       const at = lineOf(text, '"scripts"');
-      findings.push({ check: "MUTATION", file: manifest, line: at, message: `has no "mutation" script (ADR 0036)` });
+      findings.push({ check: "MUTATION", file: manifest, line: at, message: `has no "mutation" script (ADR 0037)` });
       continue;
     }
     const limit = limitOf(repo, unit, MUTATION_LIMIT);

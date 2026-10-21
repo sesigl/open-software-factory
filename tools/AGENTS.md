@@ -24,7 +24,7 @@ The only ways a system test or another program may use the tooling:
 
 ## Quality limits
 
-Checked by DUP (ADR 0036):
+Checked by DUP (ADR 0037):
 
 - Duplication: at most 3% of the source lines.
 

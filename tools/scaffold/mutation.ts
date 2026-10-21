@@ -1,5 +1,5 @@
 // `osf mutation <unit>`: Stryker on the source lines of one module that changed since OSF_BASE, or on every line
-// with --all (ADR 0036). The module's `mutation` script calls it; `osf check MUTATION` scores the report.
+// with --all (ADR 0037). The module's `mutation` script calls it; `osf check MUTATION` scores the report.
 import { spawnSync } from "node:child_process";
 import { availableParallelism } from "node:os";
 import { join, relative, resolve } from "node:path";

@@ -44,7 +44,7 @@ read them for ideas, do not copy their company-specific rules.
     CONTRACT, DOCS-GEN, DOCS-AFFECTED, DOCS-LINKS, ADR. BOUNDARY-RUNTIME, NOREAL and REACH come with T-02.
     MUTATION and SMOKE-PAID as nightly workflows.
   - ISOLATION allows a module to depend only on `@opensoftware/contracts`, `@opensoftware/testkit` (tests only), the
-    libraries in `packages/` (ADR 0036) and external packages.
+    libraries in `packages/` (ADR 0037) and external packages.
   - GitHub Actions: `verify` on every PR (required check), nightly mutation, release-please.
   - Biome, `tsc --strict`, dependency-cruiser, lychee configs.
 - **Adopt:** pnpm, Turborepo, `@cucumber/gherkin` parser, ts-morph, JUnit XML reporters, oasdiff, lychee,
@@ -495,7 +495,7 @@ read them for ideas, do not copy their company-specific rules.
   testkit fakes; add `SMOKE-PAID` (one small real task per first-party harness with a real model, nightly).
 - **From T-00:** `make smoke` and `make smoke-paid` run Turborepo tasks that no package defines yet, so they run
   nothing. Give `e2e/` a package with `test:system` and `test:paid` scripts; the nightly workflow already calls
-  them. (`make mutation` runs in every module since ADR 0036.)
+  them. (`make mutation` runs in every module since ADR 0037.)
 - **Done when:** all five pass on every merge to `main`; SMOKE-PAID runs nightly.
 
 ---

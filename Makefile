@@ -63,7 +63,7 @@ smoke: ## the deterministic end-to-end scenarios in e2e/
 smoke-paid: ## one real-model run per harness; only when asked
 	@$(TURBO) test:paid
 
-# Stryker on the lines each module changed since OSF_BASE, then MUTATION on the reports (ADR 0036). ALL=1 mutates
+# Stryker on the lines each module changed since OSF_BASE, then MUTATION on the reports (ADR 0037). ALL=1 mutates
 # every line of every module and scores the totals, as the nightly run does. One module at a time: Stryker uses the cores.
 mutation: ## mutation testing (Stryker) of the changed lines, then MUTATION; ALL=1 mutates every line
 	@rm -rf reports/mutation

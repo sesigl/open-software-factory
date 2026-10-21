@@ -2,7 +2,7 @@
 Feature: Quality limits
   DUP limits duplicated code inside a unit and forbids it across units. MUTATION limits the mutants that no system
   test notices, in the lines a change adds and in a module as a whole. Each unit states its limits in its AGENTS.md
-  under "Quality limits" (ADR 0036).
+  under "Quality limits" (ADR 0037).
 
   @id=SCN-REPO-044 @status=implemented
   Scenario: DUP rejects a module whose duplicated lines exceed its limit

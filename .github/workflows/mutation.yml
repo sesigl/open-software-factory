@@ -1,4 +1,4 @@
-# MUTATION on every pull request (docs/quality/checks.md, ADR 0036): Stryker mutates the source lines the pull request
+# MUTATION on every pull request (docs/quality/checks.md, ADR 0037): Stryker mutates the source lines the pull request
 # adds to each module, and the check fails when too few of those mutants make a system test fail.
 name: mutation
 
