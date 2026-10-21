@@ -1,7 +1,7 @@
 // ledger report: query the views for one period and write report.json and, when asked, Markdown.
-import type { DuckDBValue } from "@duckdb/node-api";
-import type { Ledger, Row } from "../adapters/duckdb.ts";
+
 import { writeText } from "../adapters/files.ts";
+import type { Ledger, Parameter, Row } from "../adapters/ledger.ts";
 import { buildReport, type Facts, markdown, type Options, type Slice, summary } from "../domain/report.ts";
 
 /** The period as [from, to) timestamps; an open end is infinity. */
@@ -11,8 +11,6 @@ const bounds = ({ since, until }: Options): string[] => [
 ];
 
 const between = (column: string) => `${column} >= $1::TIMESTAMP AND ${column} < $2::TIMESTAMP`;
-const hoursBetween = (from: string, to: string) => `median(date_diff('millisecond', ${from}, ${to})::DOUBLE / 3600000)`;
-const DAY = "%Y-%m-%d";
 
 export async function report(
   ledger: Ledger,
@@ -20,44 +18,46 @@ export async function report(
   files: { out: string; markdown: string | undefined },
 ): Promise<string[]> {
   const period = bounds(options);
-  const one = async (statement: string, parameters: DuckDBValue[] = period) =>
+  const one = async (statement: string, parameters: Parameter[] = period) =>
     (await ledger.query(statement, parameters))[0] as Row;
-  const all = (statement: string, parameters: DuckDBValue[] = period) => ledger.query(statement, parameters);
+  const all = (statement: string, parameters: Parameter[] = period) => ledger.query(statement, parameters);
+  // The same queries on DuckDB and PostgreSQL (ADR 0035); the dialect fills in what differs.
+  const { hours, day, sorted } = ledger.dialect;
+  const median = (from: string, to: string) => `percentile_cont(0.5) WITHIN GROUP (ORDER BY ${hours(from, to)})`;
 
   const totals = await one(`SELECT
       count(*) FILTER (WHERE ${between("opened_at")})::INTEGER AS opened,
       count(*) FILTER (WHERE ${between("merged_at")})::INTEGER AS merged,
       count(*) FILTER (WHERE ${between("merged_at")} AND is_revert)::INTEGER AS reverts,
-      avg(human_interactions) FILTER (WHERE ${between("opened_at")}) AS interactions
+      (avg(human_interactions) FILTER (WHERE ${between("opened_at")}))::DOUBLE PRECISION AS interactions
     FROM pr_flow`);
-  const perDay =
-    await all(`SELECT strftime(day, '${DAY}') AS date, sum(opened)::INTEGER AS opened, sum(merged)::INTEGER AS merged
+  const perDay = await all(`SELECT ${day("day")} AS date, sum(opened)::INTEGER AS opened, sum(merged)::INTEGER AS merged
     FROM (SELECT opened_at::DATE AS day, 1 AS opened, 0 AS merged FROM pr_flow WHERE ${between("opened_at")}
-          UNION ALL SELECT merged_at::DATE, 0, 1 FROM pr_flow WHERE ${between("merged_at")})
+          UNION ALL SELECT merged_at::DATE, 0, 1 FROM pr_flow WHERE ${between("merged_at")}) AS days
     GROUP BY day ORDER BY day`);
   const cycle = await one(`SELECT
-      ${hoursBetween("kickoff_at", "opened_at")} AS "kickoffToPullRequest",
-      ${hoursBetween("kickoff_at", "merged_at")} AS "kickoffToMerge",
-      ${hoursBetween("opened_at", "first_human_review_at")} AS "pullRequestToFirstHumanReview",
-      ${hoursBetween("first_human_review_at", "merged_at")} AS "firstHumanReviewToMerge"
+      ${median("kickoff_at", "opened_at")} AS "kickoffToPullRequest",
+      ${median("kickoff_at", "merged_at")} AS "kickoffToMerge",
+      ${median("opened_at", "first_human_review_at")} AS "pullRequestToFirstHumanReview",
+      ${median("first_human_review_at", "merged_at")} AS "firstHumanReviewToMerge"
     FROM pr_flow WHERE ${between("opened_at")}`);
   const interactionsPerDay =
-    await all(`SELECT strftime(opened_at::DATE, '${DAY}') AS date, avg(human_interactions) AS "perPullRequest"
-    FROM pr_flow WHERE ${between("opened_at")} GROUP BY ALL ORDER BY date`);
+    await all(`SELECT ${day("opened_at::DATE")} AS date, avg(human_interactions)::DOUBLE PRECISION AS "perPullRequest"
+    FROM pr_flow WHERE ${between("opened_at")} GROUP BY 1 ORDER BY 1`);
   const runs = await one(`SELECT count(*)::INTEGER AS total, count(*) FILTER (WHERE top_level)::INTEGER AS "topLevel",
       coalesce(sum(hours), 0) AS hours FROM run_cost WHERE ${between("started_at")}`);
   const byAgent =
     await all(`SELECT agent, count(*)::INTEGER AS total, count(*) FILTER (WHERE top_level)::INTEGER AS "topLevel"
-    FROM run_cost WHERE ${between("started_at")} GROUP BY agent ORDER BY total DESC, agent`);
+    FROM run_cost WHERE ${between("started_at")} GROUP BY agent ORDER BY total DESC, ${sorted("agent")}`);
   const spend =
     await one(`SELECT coalesce(sum(usd), 0) AS total, coalesce(sum(usd) FILTER (WHERE run_id IS NULL), 0) AS unattributed
     FROM spend_attributed WHERE ${between("spent_at")}`);
   const slice = async (column: string) =>
     (await all(`SELECT ${column} AS name, sum(usd) AS usd FROM spend_attributed WHERE ${between("spent_at")}
-      GROUP BY name ORDER BY usd DESC, name`)) as unknown as Slice[];
+      GROUP BY ${column} ORDER BY usd DESC, ${sorted(column)}`)) as unknown as Slice[];
   const top = await all(
     `SELECT url, title, inference_usd + hours * $3 AS usd FROM pr_cost WHERE ${between("opened_at")}
-      ORDER BY usd DESC, url LIMIT 20`,
+      ORDER BY usd DESC, ${sorted("url")} LIMIT 20`,
     [...period, options.computeUsdPerHour],
   );
 
