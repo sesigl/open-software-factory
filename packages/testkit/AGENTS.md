@@ -32,6 +32,12 @@ Layers, top to bottom, in `architecture.json` (ADR 0014). A file imports only it
 
 - System tests: 240 seconds in total on the CI runner.
 
+## Quality limits
+
+Checked by DUP (ADR 0035):
+
+- Duplication: at most 3% of the source lines.
+
 ## Scenario prefix
 
 `SCN-TK-NNN`

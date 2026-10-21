@@ -78,5 +78,5 @@ export function moduleRootOf(file: string): string {
 /** Environment variables named in backticks in the Configuration section of a README. */
 export function documentedEnv(readme: string): Set<string> {
   const section = readme.split(/^## /m).find((part) => part.startsWith("Configuration")) ?? "";
-  return new Set([...section.matchAll(/`([A-Z][A-Z0-9_]*)`/g)].map((match) => match[1] as string));
+  return new Set([...section.matchAll(/`([A-Z_][A-Z0-9_]*)`/g)].map((match) => match[1] as string));
 }

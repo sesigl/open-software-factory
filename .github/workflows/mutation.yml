@@ -1,0 +1,40 @@
+# MUTATION on every pull request (docs/quality/checks.md, ADR 0035): Stryker mutates the source lines the pull request
+# adds to each module, and the check fails when too few of those mutants make a system test fail.
+name: mutation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  mutation:
+    name: mutation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: make install
+      - run: make mutation
+        env:
+          OSF_BASE: ${{ github.event.pull_request.base.sha }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mutation
+          path: reports/mutation/
+          if-no-files-found: ignore
+          retention-days: 7

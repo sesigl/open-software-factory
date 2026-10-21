@@ -29,6 +29,13 @@ files, the registry, the forge, Git and the state; `commands` join them. The ARC
 
 - System tests: 300 seconds in total on the CI runner.
 
+## Quality limits
+
+Checked by DUP and MUTATION (ADR 0035):
+
+- Duplication: at most 3% of the lines in src/.
+- Mutation score: at least 70% of the mutants in changed lines, 80% in total.
+
 ## Scenario prefix
 
 `SCN-FSPEC-NNN`

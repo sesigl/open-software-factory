@@ -63,8 +63,12 @@ smoke: ## the deterministic end-to-end scenarios in e2e/
 smoke-paid: ## one real-model run per harness; only when asked
 	@$(TURBO) test:paid
 
-mutation: ## nightly mutation testing (Stryker) of every package that defines a mutation script
-	@$(TURBO) mutation
+# Stryker on the lines each module changed since OSF_BASE, then MUTATION on the reports (ADR 0035). ALL=1 mutates
+# every line of every module and scores the totals, as the nightly run does. One module at a time: Stryker uses the cores.
+mutation: ## mutation testing (Stryker) of the changed lines, then MUTATION; ALL=1 mutates every line
+	@rm -rf reports/mutation
+	@$(TURBO) mutation --concurrency=1 $(if $(ALL),,$(AFFECTED)) $(if $(ALL),-- --all)
+	@$(OSF) check MUTATION $(if $(ALL),--total)
 
 next-id: ## print the next free scenario ID: make next-id MODULE=proof (or a prefix: MODULE=REPO)
 	@$(OSF) next-id $(MODULE)

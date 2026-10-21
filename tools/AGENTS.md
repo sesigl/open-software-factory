@@ -22,6 +22,12 @@ The only ways a system test or another program may use the tooling:
 
 - System tests: 120 seconds in total on the CI runner.
 
+## Quality limits
+
+Checked by DUP (ADR 0035):
+
+- Duplication: at most 3% of the source lines.
+
 ## Scenario prefix
 
 `SCN-REPO-NNN`

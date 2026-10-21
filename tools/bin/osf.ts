@@ -5,6 +5,7 @@ import { spawnSync } from "node:child_process";
 import { relative, resolve } from "node:path";
 import { generateDocs } from "../scaffold/docs.ts";
 import { installTools } from "../scaffold/install-tools.ts";
+import { mutation } from "../scaffold/mutation.ts";
 import { newModule } from "../scaffold/new-module.ts";
 import { nextId } from "../scaffold/next-id.ts";
 import { testScenario } from "../scaffold/test-scenario.ts";
@@ -17,6 +18,8 @@ const USAGE = `Usage: osf <command>
   new-module <name> [--prefix PREFIX]
   next-id <module>        print the next free scenario ID of a module or prefix
   test-scenario <ID>      run the one system test of a scenario
+  mutation <folder> [--all] [--list]
+                          Stryker on the lines of a module changed since OSF_BASE (--all: every line)
   install-tools           download the pinned lychee and oasdiff binaries into .tools/bin
 `;
 
@@ -48,6 +51,8 @@ async function main(argv: string[]): Promise<number> {
       return nextId(root, args);
     case "test-scenario":
       return testScenario(root, args);
+    case "mutation":
+      return mutation(root, args);
     case "install-tools":
       return installTools(root);
     case undefined:
