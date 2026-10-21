@@ -29,7 +29,7 @@ for (const test of readJUnitFolder("reports/junit") ?? []) {
 | --- | --- |
 | `parseFeature(file, text)` | `{ scenarios, errors }`. Each scenario has `file`, `line`, `name`, `ids` and `statuses` (the values of its `@id=` and `@status=` tags), `tags` (feature, rule and scenario tags), `steps` (Background first; `And`, `But` and `*` take the keyword before them) and `examples` (rows of all Examples tables). A file that does not parse gives one error with its line. Uses the official Gherkin parser. |
 | `statusOf(scenario)`, `tagValues(tags, key)` | The status of a scenario with exactly one `@status=` tag; the values of `@<key>=` tags. |
-| `parseJUnit(xml)` | One test case per `<testcase>`, from `<testsuites>` or a lone `<testsuite>`: `name`, `classname`, `suite`, `properties`, `status` (`failure` and `error` are failed), `reruns` (`flakyFailure`, `flakyError`, `rerunFailure`, `rerunError`) and `seconds`. |
+| `parseJUnit(xml)` | From the text or the bytes of a report, one test case per `<testcase>`, from `<testsuites>` or a lone `<testsuite>`: `name`, `classname`, `suite`, `properties`, `status` (`failure` and `error` are failed), `reruns` (`flakyFailure`, `flakyError`, `rerunFailure`, `rerunError`) and `seconds`. |
 | `readJUnitFolder(dir)` | The test cases of every `.xml` file in the folder, by file name; `undefined` when there is none. |
 | `scenarioIdOf(test, id)` | The property `scenario` of a test case, else the first match of `id` in its name, else in its class name. |
 

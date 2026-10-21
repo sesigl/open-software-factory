@@ -20,7 +20,8 @@ const RERUNS = ["flakyFailure", "flakyError", "rerunFailure", "rerunError"];
 
 type Xml = Record<string, unknown>;
 
-export function parseJUnit(xml: string): TestCase[] {
+/** The test cases of a report, given as text or as the bytes of the file. */
+export function parseJUnit(xml: string | Buffer): TestCase[] {
   const parser = new XMLParser({
     ignoreAttributes: false,
     attributeNamePrefix: "",
@@ -44,7 +45,7 @@ export function readJUnitFolder(dir: string): TestCase[] | undefined {
     files = readdirSync(dir).filter((file) => file.endsWith(".xml"));
   } catch {}
   if (files.length === 0) return undefined;
-  return files.flatMap((file) => parseJUnit(readFileSync(join(dir, file), "utf8")));
+  return files.flatMap((file) => parseJUnit(readFileSync(join(dir, file))));
 }
 
 /** The scenario ID of a test case: its property `scenario`, else the first match of `id` in its name or class name. */

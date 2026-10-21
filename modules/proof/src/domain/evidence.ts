@@ -23,10 +23,10 @@ export interface Test {
   attachments: Attachment[];
 }
 
-/** One report that is itself evidence (JUnit) for the scenarios of its tests. */
+/** One report that is itself evidence (JUnit) for the scenarios of its tests; its tests attach no files. */
 export interface Report {
   source: string;
-  tests: Test[];
+  tests: Omit<Test, "attachments">[];
 }
 
 /** One file to copy into the bundle. */
