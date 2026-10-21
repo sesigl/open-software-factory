@@ -51,6 +51,22 @@ Feature: Repository checks
     Then the command exits with code 1
     And the output contains "BOUNDARY-STATIC modules/demo/system-tests/SCN-DEMO-001.test.ts:2"
 
+  @id=SCN-REPO-056 @status=implemented
+  Scenario: BOUNDARY-STATIC accepts a library's system test that imports the library
+    Given a repository with the library "packages/money" named "@opensoftware/money" and the implemented scenario "SCN-MONEY-001"
+    And its system test imports "@opensoftware/money"
+    When the developer runs "osf check BOUNDARY-STATIC"
+    Then the command exits with code 0
+    And the output contains "BOUNDARY-STATIC ok"
+
+  @id=SCN-REPO-057 @status=implemented
+  Scenario: BOUNDARY-STATIC rejects a library's system test that imports the library's src/
+    Given a repository with the library "packages/money" named "@opensoftware/money" and the implemented scenario "SCN-MONEY-001"
+    And its system test imports "../src/index.ts"
+    When the developer runs "osf check BOUNDARY-STATIC"
+    Then the command exits with code 1
+    And the output contains "BOUNDARY-STATIC packages/money/system-tests/SCN-MONEY-001.test.ts:2"
+
   @id=SCN-REPO-007 @status=deprecated
   Scenario: SPECGUARD rejects a changed implemented step without approval
     Given a base commit with the implemented scenario "SCN-DEMO-001"
@@ -109,6 +125,14 @@ Feature: Repository checks
     When the developer runs "osf check ASSERT"
     Then the command exits with code 1
     And the output contains "ASSERT modules/demo/system-tests/SCN-DEMO-001.test.ts"
+
+  @id=SCN-REPO-059 @status=implemented
+  Scenario: ASSERT accepts a library's then step that asserts on what the library returned
+    Given a repository with the library "packages/money" named "@opensoftware/money" and the implemented scenario "SCN-MONEY-001"
+    And its system test asserts on the value that "cents" from "@opensoftware/money" returned
+    When the developer runs "osf check ASSERT"
+    Then the command exits with code 0
+    And the output contains "ASSERT ok"
 
   @id=SCN-REPO-013 @status=implemented
   Scenario: FLAKE rejects a test that passed only on retry
@@ -263,6 +287,15 @@ Feature: Repository checks
     Then the command exits with code 1
     And the output contains "REACH modules/demo/src/extra.ts:1 no system test loads this file"
     And the output does not contain "types.ts"
+
+  @id=SCN-REPO-060 @status=implemented
+  Scenario: REACH leaves the lines of a library to MUTATION
+    Given a base commit with the library "packages/money" named "@opensoftware/money"
+    And a change that adds "packages/money/src/extra.ts" with a function
+    And no coverage report
+    When the developer runs "osf check REACH" against the base commit
+    Then the command exits with code 0
+    And the output contains "REACH ok"
 
   @id=SCN-REPO-033 @status=implemented
   Scenario: REACH accepts a change whose lines a system test reaches

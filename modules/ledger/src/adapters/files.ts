@@ -1,16 +1,11 @@
 // Files: the input files and folders, and the report files.
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { check } from "../domain/errors.ts";
+import { readFileSync } from "node:fs";
+import { check, readInputs } from "@opensoftware/cli";
 
 /** Each object of the files and folders named, with "<file>:<line>". A folder gives every .json and .jsonl file below it. */
 export function readObjects(paths: string[]): { where: string; value: unknown }[] {
   check(paths.length, "name at least one file or folder to ingest");
-  return paths.flatMap((path) => {
-    check(existsSync(path), `${path}: no such file or folder`);
-    const files = statSync(path).isDirectory() ? walk(path).filter((file) => /\.jsonl?$/.test(file)) : [path];
-    return files.flatMap((file) => objectsOf(file, readFileSync(file, "utf8")));
-  });
+  return readInputs(paths, /\.jsonl?$/).flatMap(({ file, text }) => objectsOf(file, text));
 }
 
 /** One JSON value (an object, or an array of objects) or JSON Lines. */
@@ -37,18 +32,4 @@ function parseLine(line: string): unknown {
 /** A file the package ships, like grafana/ledger-dashboard.json, next to dist/. */
 export function packageFile(path: string): string {
   return readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
-}
-
-export function writeText(path: string, text: string): void {
-  mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, text);
-}
-
-function walk(dir: string): string[] {
-  return readdirSync(dir)
-    .sort()
-    .flatMap((entry) => {
-      const full = join(dir, entry);
-      return statSync(full).isDirectory() ? walk(full) : [full];
-    });
 }

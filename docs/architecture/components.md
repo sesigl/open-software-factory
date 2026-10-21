@@ -81,7 +81,9 @@ are in [`contracts/events/asyncapi.yaml`](../../contracts/events/asyncapi.yaml).
 | intake | optional | 4 | TS | One inbox for agent work; Factory MCP server | webhooks → work item events | Vercel Chat SDK, MCP SDK | — | — |
 | foreman | core | 4 | TS | Run declared multi-agent pipelines with gates | work items + definition → sandbox runs, gate requests | Temporal, agent-sandbox, ACP, agentapi | OpenHands covers much as one product; stay thin and support it as a harness | `scripts/workflow/wf/next_action.py` |
 
-Plus `contracts` and `testkit` (core, wave 0) and the `open-software-factory` distribution (wave 4).
+Plus `contracts` and `testkit` (core, wave 0) and the `open-software-factory` distribution (wave 4). Libraries in
+`packages/` hold code that several modules share, without a CLI or state of their own (ADR 0039): `cli` runs the
+commands of a module (ADR 0040). The reader of run records, `runSpans`, lives in `contracts` (ADR 0041).
 
 ## Adopt, don't rebuild
 

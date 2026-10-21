@@ -245,3 +245,6 @@ with a trusted publisher for `publish-runlog.yml`. No credential is stored in th
 | SCN-RUN-057 | implemented | --per-run writes the run to a file named after its run ID |
 | SCN-RUN-058 | implemented | A second --per-run export of the same session replaces its file |
 | SCN-RUN-059 | implemented | --per-run turns the characters of a run ID that a file name cannot hold into hyphens |
+| SCN-RUN-060 | implemented | export names the run and the file it wrote |
+| SCN-RUN-061 | implemented | A command without its file prints the usage |
+| SCN-RUN-062 | implemented | An error starts with the name of the program |

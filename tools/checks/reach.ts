@@ -7,7 +7,7 @@ import { Node, Project } from "ts-morph";
 import v8ToIstanbul from "v8-to-istanbul";
 import type { Context } from "./lib/context.ts";
 import { addedLines, changedFiles } from "./lib/git.ts";
-import type { Finding, Repo } from "./lib/repo.ts";
+import { type Finding, isLibrary, type Repo } from "./lib/repo.ts";
 
 const COVERAGE = "reports/coverage";
 const SOURCE =
@@ -29,7 +29,10 @@ export async function reach(context: Context): Promise<Finding[]> {
 
   const findings: Finding[] = [];
   const uncoveredModules = new Set<string>();
-  for (const file of changedFiles(repo.root, base).filter((path) => SOURCE.test(path) && repo.exists(path))) {
+  // A library's tests call it in their own process, which records no coverage; MUTATION covers its lines (ADR 0039).
+  const checked = (path: string): boolean =>
+    SOURCE.test(path) && repo.exists(path) && !isLibrary(repo, (SOURCE.exec(path) as RegExpExecArray)[1] as string);
+  for (const file of changedFiles(repo.root, base).filter(checked)) {
     const lines = covered.get(file);
     if (!lines) {
       const text = repo.read(file);

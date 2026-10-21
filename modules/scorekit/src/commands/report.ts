@@ -1,5 +1,7 @@
 // scorekit report: sum up score files as JSON and, with --markdown, as Markdown.
-import { readScores, writeText } from "../adapters/files.ts";
+
+import { writeText } from "@opensoftware/cli";
+import { readScores } from "../adapters/files.ts";
 import { markdown, report as sum } from "../domain/report.ts";
 
 export function report(paths: string[], options: { out: string; markdown?: string }): string[] {

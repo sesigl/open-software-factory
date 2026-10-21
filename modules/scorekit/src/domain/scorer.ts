@@ -1,7 +1,7 @@
 // A scorer file: YAML front matter, then the judge prompt in Markdown (ADR 0032).
 import { createHash } from "node:crypto";
+import { UsageError } from "@opensoftware/cli";
 import { parse } from "yaml";
-import { UsageError } from "./errors.ts";
 
 export interface Scorer {
   name: string;

@@ -1,5 +1,6 @@
 // The input records: LiteLLM spend log rows, OTLP/JSON trace export requests and CloudEvents, turned into rows.
-import { check } from "./errors.ts";
+import { check } from "@opensoftware/cli";
+import { type AttributeValue, type RunSpan, runSpans } from "@opensoftware/contracts";
 
 export interface SpendRow {
   requestId: string;
@@ -64,7 +65,8 @@ export function readRecords(objects: Located[], validate: Validate): Records {
   const records: Records = { spend: [], runs: [], spans: [], events: [], skipped: 0 };
   for (const { where, value } of objects) {
     const object = (value ?? {}) as Record<string, unknown>;
-    if (Array.isArray(object.resourceSpans)) readTrace(object.resourceSpans, records);
+    const spans = runSpans(value);
+    if (spans) readTrace(spans, records);
     else if (object.specversion !== undefined) readEvent(where, object, records, validate);
     else if (object.request_id !== undefined && object.spend !== undefined) records.spend.push(spendRow(where, object));
     else check(false, `${where}: not a run, a spend row or a CloudEvent`);
@@ -103,63 +105,30 @@ export function utc(time: string): string | undefined {
   return Number.isNaN(date.getTime()) ? undefined : date.toISOString().replace("T", " ").replace("Z", "");
 }
 
-interface OtlpValue {
-  stringValue?: string;
-  intValue?: string | number;
-  doubleValue?: number;
-  arrayValue?: { values?: OtlpValue[] };
-}
-type OtlpAttributes = { key: string; value: OtlpValue }[] | undefined;
-type Value = string | number | Value[] | undefined;
+const text = (value: AttributeValue): string | null => (typeof value === "string" && value ? value : null);
 
-const value = (otlp: OtlpValue): Value => {
-  if (otlp.arrayValue) return (otlp.arrayValue.values ?? []).map(value);
-  return otlp.intValue === undefined ? (otlp.stringValue ?? otlp.doubleValue) : Number(otlp.intValue);
-};
+const nanosToUtc = (nanos: bigint): string => utc(new Date(Number(nanos / 1_000_000n)).toISOString()) as string;
 
-const attributes = (list: OtlpAttributes): Record<string, Value> =>
-  Object.fromEntries((list ?? []).map(({ key, value: entry }) => [key, value(entry)]));
-
-const text = (value: Value): string | null => (typeof value === "string" && value ? value : null);
-
-const nanosToUtc = (nanos: string | number | undefined): string =>
-  utc(new Date(Number(BigInt(nanos ?? 0) / 1_000_000n)).toISOString()) as string;
-
-interface OtlpSpan {
-  traceId: string;
-  spanId: string;
-  parentSpanId?: string;
-  name?: string;
-  startTimeUnixNano?: string;
-  endTimeUnixNano?: string;
-  attributes?: OtlpAttributes;
-}
-
-// biome-ignore lint/suspicious/noExplicitAny: OTLP/JSON as runlog writes it
-function readTrace(resourceSpans: any[], records: Records): void {
-  for (const entry of resourceSpans) {
-    const resource = attributes(entry.resource?.attributes);
-    for (const scope of entry.scopeSpans ?? [])
-      for (const span of (scope.spans ?? []) as OtlpSpan[]) {
-        records.spans.push({ traceId: span.traceId, spanId: span.spanId, parentSpanId: span.parentSpanId || null });
-        const own = attributes(span.attributes);
-        if (own["gen_ai.operation.name"] !== "invoke_agent") continue;
-        const urls = own["osf.pull_request.urls"];
-        const cost = own["osf.cost.usd"];
-        records.runs.push({
-          runId: String(resource["osf.run.id"] ?? own["gen_ai.conversation.id"] ?? span.spanId),
-          traceId: span.traceId,
-          spanId: span.spanId,
-          workItemId: text(resource["osf.work_item.id"]),
-          source: text(resource["osf.source"]),
-          requesterId: text(resource["osf.requester.id"]),
-          agent: text(own["gen_ai.agent.name"]) ?? text(resource["osf.harness.name"]),
-          model: text(own["gen_ai.response.model"]) ?? text(own["gen_ai.request.model"]),
-          startedAt: nanosToUtc(span.startTimeUnixNano),
-          endedAt: nanosToUtc(span.endTimeUnixNano),
-          costUsd: typeof cost === "number" ? cost : null,
-          pullRequests: Array.isArray(urls) ? urls.map(String) : [],
-        });
-      }
+function readTrace(spans: RunSpan[], records: Records): void {
+  for (const span of spans) {
+    records.spans.push({ traceId: span.traceId, spanId: span.spanId, parentSpanId: span.parentSpanId ?? null });
+    const { resource, attributes: own } = span;
+    if (own["gen_ai.operation.name"] !== "invoke_agent") continue;
+    const urls = own["osf.pull_request.urls"];
+    const cost = own["osf.cost.usd"];
+    records.runs.push({
+      runId: String(resource["osf.run.id"] ?? own["gen_ai.conversation.id"] ?? span.spanId),
+      traceId: span.traceId,
+      spanId: span.spanId,
+      workItemId: text(resource["osf.work_item.id"]),
+      source: text(resource["osf.source"]),
+      requesterId: text(resource["osf.requester.id"]),
+      agent: text(own["gen_ai.agent.name"]) ?? text(resource["osf.harness.name"]),
+      model: text(own["gen_ai.response.model"]) ?? text(own["gen_ai.request.model"]),
+      startedAt: nanosToUtc(span.start),
+      endedAt: nanosToUtc(span.end),
+      costUsd: typeof cost === "number" ? cost : null,
+      pullRequests: Array.isArray(urls) ? urls.map(String) : [],
+    });
   }
 }

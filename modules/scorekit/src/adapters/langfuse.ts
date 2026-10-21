@@ -1,7 +1,8 @@
 // Langfuse's public API with basic auth: the score API (ADR 0032) and the v2 evaluator and evaluation-rule API
 // (ADR 0033). Langfuse keeps one score per ID.
+
+import { UsageError } from "@opensoftware/cli";
 import type { Score } from "@opensoftware/contracts";
-import { UsageError } from "../domain/errors.ts";
 import type { Evaluator, Rule } from "../domain/evaluator.ts";
 
 export interface Langfuse {

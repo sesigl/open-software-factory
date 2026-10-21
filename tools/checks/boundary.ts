@@ -1,25 +1,40 @@
 // BOUNDARY-STATIC, BOUNDARY-ENV, ISOLATION, NOSKIP and ASSERT: how tests and modules reach each other.
 import { cruise, type ICruiseResult, type IForbiddenRuleType, type IReporterOutput } from "dependency-cruiser";
 import type { Context } from "./lib/context.ts";
-import { documentedEnv, type Finding, lineOf, moduleRootOf } from "./lib/repo.ts";
+import { documentedEnv, type Finding, isLibrary, lineOf, moduleRootOf } from "./lib/repo.ts";
+
+/** What every system test may import besides its own folder. */
+const TEST_IMPORTS = [
+  "^@opensoftware/(testkit|contracts)(/|$)",
+  "^vitest(/|$)",
+  "^packages/(testkit|contracts)/",
+  "^contracts/",
+  "(^|/)node_modules/(@opensoftware/(testkit|contracts)|vitest|@vitest)/",
+];
 
 /**
  * A system test imports only files in its own system-tests folder, @opensoftware/testkit, generated contract clients
- * (@opensoftware/contracts) and the test framework. Workspace packages resolve to their source folders.
+ * (@opensoftware/contracts) and the test framework. The tests of a library in packages/ also import the library by
+ * its package name, which resolves to its built entry point (ADR 0039). Workspace packages resolve to their folders.
  */
 const BOUNDARY_RULES: IForbiddenRuleType[] = [
   {
     name: "BOUNDARY-STATIC",
     severity: "error",
-    from: { path: "^(.+/system-tests)/" },
+    from: { path: "^(.+/system-tests)/", pathNot: "^packages/" },
+    to: { pathNot: ["^$1/", ...TEST_IMPORTS] },
+  },
+  {
+    name: "BOUNDARY-STATIC",
+    severity: "error",
+    from: { path: "^packages/([^/]+)/system-tests/" },
     to: {
       pathNot: [
-        "^$1/",
-        "^@opensoftware/(testkit|contracts)(/|$)",
-        "^vitest(/|$)",
-        "^packages/(testkit|contracts)/",
-        "^contracts/",
-        "(^|/)node_modules/(@opensoftware/(testkit|contracts)|vitest|@vitest)/",
+        "^packages/$1/system-tests/",
+        "^@opensoftware/$1$",
+        "^packages/$1/dist/index\\.(js|d\\.ts)$",
+        "(^|/)node_modules/@opensoftware/$1/dist/index\\.(js|d\\.ts)$",
+        ...TEST_IMPORTS,
       ],
     },
   },
@@ -73,7 +88,7 @@ async function violations(context: Context, files: string[], rules: IForbiddenRu
     const check = violation.rule.name;
     const message =
       check === "BOUNDARY-STATIC"
-        ? `import "${written}" is not allowed in a system test; use @opensoftware/testkit, generated contract clients or the test framework`
+        ? `import "${written}" is not allowed in a system test; use @opensoftware/testkit, generated contract clients, the test framework or, in a library's test, the library`
         : `imports ${violation.to}; modules share data only through contracts/`;
     return { check, file: violation.from, line, message };
   });
@@ -99,8 +114,8 @@ export async function isolation(context: Context): Promise<Finding[]> {
   const libraries = new Set(
     repo
       .match("packages/*/package.json")
-      .map((manifest) => (JSON.parse(repo.read(manifest)) as { name?: string }).name)
-      .filter((name) => name !== undefined && name !== "@opensoftware/testkit"),
+      .filter((manifest) => isLibrary(repo, manifest.slice(0, -"/package.json".length)))
+      .map((manifest) => (JSON.parse(repo.read(manifest)) as { name?: string }).name),
   );
   for (const manifest of repo.match("modules/*/package.json")) {
     const text = repo.read(manifest);

@@ -118,3 +118,8 @@ Each failure prints one line: the check ID, `file:line`, and what to fix. Each c
 | SCN-REPO-053 | implemented | osf mutation lists the line ranges a change adds |
 | SCN-REPO-054 | implemented | ISOLATION accepts a module that depends on a library in packages |
 | SCN-REPO-055 | implemented | DOCS-AFFECTED ignores the version that a release writes into an extra file |
+| SCN-REPO-056 | implemented | BOUNDARY-STATIC accepts a library's system test that imports the library |
+| SCN-REPO-057 | implemented | BOUNDARY-STATIC rejects a library's system test that imports the library's src/ |
+| SCN-REPO-058 | implemented | MUTATION rejects a library in packages without a mutation script |
+| SCN-REPO-059 | implemented | ASSERT accepts a library's then step that asserts on what the library returned |
+| SCN-REPO-060 | implemented | REACH leaves the lines of a library to MUTATION |

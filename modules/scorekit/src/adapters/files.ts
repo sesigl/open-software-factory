@@ -1,23 +1,19 @@
 // Files: runs files and folders, scorer files and the pack, score files.
-import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { type Input, readInputs, UsageError } from "@opensoftware/cli";
 import { type Score, validate } from "@opensoftware/contracts";
-import { UsageError } from "../domain/errors.ts";
 import { jsonLines } from "../domain/lines.ts";
 import { parseScorer, type Scorer } from "../domain/scorer.ts";
 
 /** The scorers the package ships, in scorers/ next to dist/. */
 const PACK = fileURLToPath(new URL("../../scorers/", import.meta.url));
 
-/** [path, text] of each file named, and of every .jsonl file below each folder named, sorted by path. */
-export function readRunFiles(paths: string[]): [string, string][] {
+/** Each runs file named, and every .jsonl file below each folder named, sorted by path. */
+export function readRunFiles(paths: string[]): Input[] {
   if (!paths.length) throw new UsageError("name at least one runs file or folder");
-  return paths.flatMap((path) => {
-    if (!existsSync(path)) throw new UsageError(`${path}: no such file or folder`);
-    const files = statSync(path).isDirectory() ? walk(path).filter((file) => file.endsWith(".jsonl")) : [path];
-    return files.map((file): [string, string] => [file, readFileSync(file, "utf8")]);
-  });
+  return readInputs(paths, /\.jsonl$/);
 }
 
 export function packNames(): string[] {
@@ -56,18 +52,4 @@ export function appendScore(path: string, score: Score): void {
   if (problems.length) throw new Error(`a score breaks the contract: ${problems[0]?.path} ${problems[0]?.message}`);
   mkdirSync(dirname(path), { recursive: true });
   appendFileSync(path, `${JSON.stringify(score)}\n`);
-}
-
-export function writeText(path: string, text: string): void {
-  mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, text);
-}
-
-function walk(dir: string): string[] {
-  return readdirSync(dir)
-    .sort()
-    .flatMap((entry) => {
-      const full = join(dir, entry);
-      return statSync(full).isDirectory() ? walk(full) : [full];
-    });
 }

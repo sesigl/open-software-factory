@@ -1,6 +1,6 @@
 // A forge's pull requests, reviews and comments, as GitHub's REST API and Forgejo's API v1 return them, turned into
 // the CloudEvents pr.opened@v1, pr.reviewed@v1 and pr.closed@v1 (ADR 0036).
-import { check } from "./errors.ts";
+import { check } from "@opensoftware/cli";
 
 export type ForgeKind = "github" | "forgejo";
 
