@@ -1,9 +1,10 @@
 @module=tools @owner=maintainers
 Feature: Repository checks
   The checks of docs/quality/checks.md run as "osf check" in a repository. Each failure prints its check ID and
-  the file and line to fix. Checks that compare against a base read the Git ref from OSF_BASE.
+  the file and line to fix. Checks that compare against a base read the Git ref from OSF_BASE. SPEC, TRACE, STEPS
+  and PASS moved to the module spec-trace (ADR 0031); its scenarios SCN-TRACE-001 to -049 cover them.
 
-  @id=SCN-REPO-001 @status=implemented
+  @id=SCN-REPO-001 @status=deprecated
   Scenario: A module created from the template passes the fast checks
     Given a repository with the module template and an accepted ADR for the module "demo"
     And the developer ran "osf new-module demo"
@@ -11,21 +12,21 @@ Feature: Repository checks
     Then the command exits with code 0
     And the output contains "SPEC ok"
 
-  @id=SCN-REPO-002 @status=implemented
+  @id=SCN-REPO-002 @status=deprecated
   Scenario: SPEC rejects a duplicate scenario ID
     Given a repository with two scenarios with the ID "SCN-DEMO-001"
     When the developer runs "osf check SPEC"
     Then the command exits with code 1
     And the output contains "SPEC modules/demo/features/b.feature:5 duplicate ID SCN-DEMO-001"
 
-  @id=SCN-REPO-003 @status=implemented
+  @id=SCN-REPO-003 @status=deprecated
   Scenario: TRACE rejects an implemented scenario without a system test
     Given a repository with the implemented scenario "SCN-DEMO-001" and no system test
     When the developer runs "osf check TRACE"
     Then the command exits with code 1
     And the output contains "TRACE modules/demo/features/a.feature:5 SCN-DEMO-001 is implemented but has no system test"
 
-  @id=SCN-REPO-004 @status=implemented
+  @id=SCN-REPO-004 @status=deprecated
   Scenario: STEPS rejects a label that differs from the step
     Given a repository with the implemented scenario "SCN-DEMO-001" and its system test
     And the test labels the step 'When the user runs "demo run"' as "the user runs demo"
@@ -34,7 +35,7 @@ Feature: Repository checks
     And the output contains "STEPS modules/demo/system-tests/SCN-DEMO-001.test.ts:7"
     And the output contains "differs from the step"
 
-  @id=SCN-REPO-005 @status=implemented
+  @id=SCN-REPO-005 @status=deprecated
   Scenario: PASS rejects a skipped test
     Given a repository with the implemented scenario "SCN-DEMO-001" and its system test
     And a JUnit report in which the test of "SCN-DEMO-001" was skipped
@@ -228,7 +229,7 @@ Feature: Repository checks
     Then the command exits with code 1
     And the output contains "ISOLATION modules/demo/src/run.ts:1"
 
-  @id=SCN-REPO-030 @status=implemented
+  @id=SCN-REPO-030 @status=deprecated
   Scenario: TRACE rejects an adapter without a system test for a conformance scenario of its port
     Given a port "forge" with the implemented @conformance scenario "SCN-FORGE-001" and the adapters "a" and "b"
     And only the adapter "a" has a system test for "SCN-FORGE-001"
@@ -333,3 +334,11 @@ Feature: Repository checks
     And a later commit without a "Co-Authored-By:" trailer that changes no file in "runs/"
     When the developer runs "osf check RUNS" against the base commit
     Then the command exits with code 0
+
+  @id=SCN-REPO-043 @status=planned @replaces=SCN-REPO-001
+  Scenario: A module created from the template passes the fast checks of osf
+    Given a repository with the module template and an accepted ADR for the module "demo"
+    And the developer ran "osf new-module demo"
+    When the developer runs "osf check"
+    Then the command exits with code 0
+    And the output contains "ARCH ok"

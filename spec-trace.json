@@ -1,0 +1,15 @@
+{
+  "features": [
+    "modules/*/features/**/*.feature",
+    "ports/*/features/**/*.feature",
+    "packages/*/features/**/*.feature",
+    "contracts/features/**/*.feature",
+    "tools/features/**/*.feature",
+    "deploy/features/**/*.feature",
+    "e2e/features/**/*.feature"
+  ],
+  "tests": ["**/system-tests/**/*.test.ts"],
+  "prefixes": "docs/reference/scenario-prefixes.md",
+  "testFolder": "system-tests",
+  "conformance": { "tag": "@conformance", "ports": "ports/{port}/features", "adapters": "adapters/{port}/{adapter}" }
+}
