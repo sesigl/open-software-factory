@@ -300,7 +300,9 @@ read them for ideas, do not copy their company-specific rules.
     rest, the 20 most expensive pull requests, throughput, cycle time by segment, human interactions, runs by agent
     type and the revert rate, as JSON and Markdown), the new events `pr.reviewed@v1` and `pr.closed@v1`, and the npm
     release (ADR 0034, `SCN-LEDGER-001` to `-029`).
-  - [ ] The same views for PostgreSQL and a Grafana dashboard JSON over them.
+  - [x] The same tables and views for PostgreSQL (`--db` or `LEDGER_DB` takes a `postgres://` URL, the report is the
+    same on both engines, the password is never printed), `ledger query`, and `ledger dashboard`: a Grafana dashboard
+    JSON over the views with a PostgreSQL data source input (ADR 0035, `SCN-LEDGER-030` to `-038`).
   - [ ] An import of a forge's pull requests and reviews as `pr.*` events, for teams without forge adapters (T-15).
   - [ ] The dogfood: this repository's spend, `runs/` and pull requests in the dashboard, linked from the README.
 
