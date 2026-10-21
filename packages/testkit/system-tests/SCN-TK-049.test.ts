@@ -1,7 +1,7 @@
 import { scenario } from "@opensoftware/testkit";
 import { demoModule, testCases } from "./module.ts";
 
-scenario("SCN-TK-047", async ({ sut, given, when, then }) => {
+scenario("SCN-TK-049", async ({ sut, given, when, then }) => {
   let module: Record<string, string> = {};
   await given(
     'a module whose CLI prints whether a pull request at "DEMO_FORGE_URL" is merged and its merge commit',

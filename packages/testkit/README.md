@@ -197,4 +197,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-044 | implemented | The module runs the mutant that Stryker activates |
 | SCN-TK-045 | implemented | sut.files.path gives the absolute path of a file in $INPUT |
 | SCN-TK-046 | implemented | A library without a bin uses sut.files |
-| SCN-TK-047 | implemented | fakes.forge merges a pull request, so a module can read the merge commit |
+| SCN-TK-049 | implemented | fakes.forge merges a pull request, so a module can read the merge commit |

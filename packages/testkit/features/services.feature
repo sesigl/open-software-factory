@@ -43,7 +43,7 @@ Feature: Services and outside systems
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
-  @id=SCN-TK-047 @status=implemented
+  @id=SCN-TK-049 @status=implemented
   Scenario: fakes.forge merges a pull request, so a module can read the merge commit
     Given a module whose CLI prints whether a pull request at "DEMO_FORGE_URL" is merged and its merge commit
     And its system test merges a pull request in fakes.forge and expects "merged" and the merge commit it got back

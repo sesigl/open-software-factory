@@ -9,7 +9,7 @@ turns a merged pull request into a [Harbor](https://harborframework.com) task: t
 title and description and the repository before the merge; the tests the pull request changed stay hidden and
 decide the reward. Run the suite with `harbor run` for each model and configuration. taskcapture then reports
 correctness against cost per model and configuration, flags incomplete scoring, and writes a LiteLLM rule that
-routes a kind of task to the model you chose. Decision: [ADR 0042](../../docs/decisions/0042-taskcapture.md).
+routes a kind of task to the model you chose. Decision: [ADR 0043](../../docs/decisions/0043-taskcapture.md).
 
 ## Quick start
 

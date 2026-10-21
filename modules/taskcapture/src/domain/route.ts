@@ -1,4 +1,4 @@
-// The model a tag routes to, and the LiteLLM proxy config that sends the alias with that tag to it (ADR 0042).
+// The model a tag routes to, and the LiteLLM proxy config that sends the alias with that tag to it (ADR 0043).
 import { type Document, isMap, isSeq, type YAMLMap } from "yaml";
 import { type Cell, cellName } from "./cells.ts";
 import { percent, usd } from "./present.ts";

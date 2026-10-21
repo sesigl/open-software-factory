@@ -3,7 +3,7 @@ status: accepted
 date: 2026-10-21
 ---
 
-# 0042. taskcapture turns merged pull requests into Harbor tasks and benchmark results into routing rules
+# 0043. taskcapture turns merged pull requests into Harbor tasks and benchmark results into routing rules
 
 ## Context
 
