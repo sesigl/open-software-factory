@@ -28,6 +28,14 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: make install
+      # Capture scenarios open pages in Chromium: install it when a module depends on playwright-core.
+      - name: Install the browser of modules that capture pages
+        run: |
+          if grep -q '"playwright-core"' modules/*/package.json; then
+            echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/playwright" >> "$GITHUB_ENV"
+            PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/playwright" \
+              pnpm --filter @opensoftware/proof exec playwright-core install --with-deps chromium
+          fi
       - run: make mutation
         env:
           OSF_BASE: ${{ github.event.pull_request.base.sha }}
