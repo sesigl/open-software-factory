@@ -74,9 +74,12 @@ jobs:
             filter: "@opensoftware/proof"
             images: s3 forge
             browser: chromium
+          - suite: ledger
+            filter: "@opensoftware/ledger"
+            images: postgres forge
           # Every other package, so a new module runs without a change here.
           - suite: rest
-            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof"
+            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger"
     steps:
       - uses: actions/checkout@v5
         with:
