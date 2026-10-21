@@ -72,8 +72,51 @@ export interface Report {
   }[];
   totals: Record<string, number>;
   findings: { rule: string; file: string; line: number; message: string }[];
+  changes: {
+    base: string;
+    added: string[];
+    removed: string[];
+    status: { id: string; from: string; to: string }[];
+    steps: string[];
+  } | null;
 }
 
 export async function readReport(sut: Sut, path = "$OUTPUT/spec-trace.json"): Promise<Report> {
   return JSON.parse(await sut.files.read(path)) as Report;
+}
+
+/** A base commit with SCN-SHOP-001 in the given status and its test; returns the commit. */
+export async function baseCommit(sut: Sut, status = "implemented"): Promise<string> {
+  await traced(sut, status);
+  return sut.git.commit("base");
+}
+
+/** A proof bundle in $INPUT/<folder> with two artifacts for SCN-SHOP-001. */
+export async function proofBundle(sut: Sut, folder = "evidence"): Promise<void> {
+  const artifact = (path: string, kind: string, mediaType: string) => ({
+    path,
+    kind,
+    mediaType,
+    sha256: "0".repeat(64),
+  });
+  const manifest = {
+    manifestVersion: 1,
+    id: "01JABCDEVID0000000000000001",
+    createdAt: "2026-01-01T00:00:00Z",
+    subject: { repository: "https://github.com/acme/shop", commit: "9b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c" },
+    producer: { name: "proof", version: "0.1.0" },
+    result: "passed",
+    scenarios: [{ id: "SCN-SHOP-001", result: "passed", artifacts: ["shot.png", "trace.zip"] }],
+    artifacts: [
+      artifact("shot.png", "screenshot", "image/png"),
+      artifact("trace.zip", "playwright-trace", "application/zip"),
+    ],
+  };
+  await sut.files.put(`$INPUT/${folder}/evidence.json`, JSON.stringify(manifest));
+}
+
+/** The report the action named in its output "report", a path in the workspace $INPUT. */
+export async function actionReport(sut: Sut, outputs: Record<string, string>): Promise<Report> {
+  if (!outputs.report) throw new Error("the action named no report");
+  return readReport(sut, `$INPUT/${outputs.report}`);
 }

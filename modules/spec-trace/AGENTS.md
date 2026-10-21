@@ -7,9 +7,12 @@ Adds rules for this module. The root `AGENTS.md` applies in full. Decision: ADR 
 The only ways a system test or another program may use this module:
 
 - CLI: `spec-trace <command>` (see `README.md#commands`)
+- GitHub Action: `action.yml` with its script `action.sh`, run in tests with `sut.action` (see `README.md#github-action`)
 - Input: the repository in the current folder (`$INPUT` in tests): feature files, test files, JUnit XML reports,
-  `spec-trace.json` or the file named by `--config`, a Markdown prefix table, and proof bundles named by `--evidence`
-- Output: the lines of `check` and `next-id`; the report file (`$OUTPUT/spec-trace.json` or `--out`)
+  `spec-trace.json` or the file named by `--config`, a Markdown prefix table, proof bundles named by `--evidence`,
+  and the Git history for `--base`
+- Output: the lines of `check` and `next-id`; the report file (`$OUTPUT/spec-trace.json` or `--out`); the Markdown
+  summary named by `--summary`; the action's output `report` and job summary
 - Formats: the `evidence-bundle` contract (`contracts/evidence-bundle/`), read only
 - Environment variables: the list in `README.md#configuration` (generated from `src/config.schema.json`)
 

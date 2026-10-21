@@ -13,9 +13,6 @@ export const FEATURE_GLOBS = [
   "e2e/features/**/*.feature",
 ];
 
-export const ID_PATTERN = /^SCN-([A-Z][A-Z0-9]*)-\d{3}$/;
-export const STATUSES = ["planned", "implemented", "deprecated"];
-
 export interface Step {
   /** Given, When or Then; `And`, `But` and `*` take the keyword of the step before them. */
   keyword: "Given" | "When" | "Then";
@@ -93,22 +90,8 @@ export function loadScenarios(repo: Repo): ParsedFeatures {
   return result;
 }
 
-/** Scenarios by their single ID; scenarios without exactly one ID are left out (SPEC reports them). */
-export function byId(scenarios: Scenario[]): Map<string, Scenario> {
-  const map = new Map<string, Scenario>();
-  for (const scenario of scenarios) {
-    const [id] = scenario.ids;
-    if (scenario.ids.length === 1 && id && !map.has(id)) map.set(id, scenario);
-  }
-  return map;
-}
-
 export function statusOf(scenario: Scenario): string | undefined {
   return scenario.statuses.length === 1 ? scenario.statuses[0] : undefined;
-}
-
-export function isConformance(scenario: Scenario): boolean {
-  return scenario.tags.includes("@conformance");
 }
 
 export function tagValues(tags: string[], key: string): string[] {

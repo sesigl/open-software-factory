@@ -6,15 +6,11 @@ import { adr, docsAffected, docsGen, docsLinks } from "./docs.ts";
 import { type Check, Context } from "./lib/context.ts";
 import { type Finding, Repo } from "./lib/repo.ts";
 import { reach } from "./reach.ts";
+import { budget, flake } from "./results.ts";
 import { runs } from "./runs.ts";
-import { spec } from "./spec.ts";
-import { budget, flake, pass, steps, trace } from "./trace.ts";
 
-/** The fast set: static checks that need no test run and no base. */
+/** The fast set: static checks that need no test run and no base. SPEC, TRACE, STEPS and PASS are spec-trace's. */
 export const FAST: Record<string, Check> = {
-  SPEC: spec,
-  TRACE: trace,
-  STEPS: steps,
   NOSKIP: noskip,
   ASSERT: checkAssert,
   "BOUNDARY-STATIC": boundaryStatic,
@@ -28,7 +24,6 @@ export const FAST: Record<string, Check> = {
 
 /** Checks that read test results or compare with OSF_BASE; `make verify` runs them after the tests. */
 export const SLOW: Record<string, Check> = {
-  PASS: pass,
   FLAKE: flake,
   BUDGET: budget,
   "DOCS-AFFECTED": docsAffected,

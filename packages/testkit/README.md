@@ -55,9 +55,10 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
   `$INPUT` as `GITHUB_WORKSPACE`, the environment of `sut.cli`, `GITHUB_EVENT_PATH` with `event` (default `{}`),
   `GITHUB_EVENT_NAME` (`pull_request` when the event has one, else `push`), `GITHUB_REPOSITORY` (default
   `acme/web`), `GITHUB_SHA` (default the HEAD of `$INPUT`), `GITHUB_SERVER_URL=https://github.com`,
-  `GITHUB_RUN_ID=1`, `GITHUB_OUTPUT` and `RUNNER_TEMP`. The input `command` is the module's built `bin`, so the
-  action runs the module under the guards. Steps with `uses` are skipped and listed in `skipped`; `outputs` holds
-  the `name=value` lines the steps wrote to `GITHUB_OUTPUT`. Only `${{ inputs.<name> }}`, `${{ github.action_path }}` and
+  `GITHUB_RUN_ID=1`, `GITHUB_OUTPUT`, `GITHUB_STEP_SUMMARY` and `RUNNER_TEMP`. The input `command` is the module's
+  built `bin`, so the action runs the module under the guards. Steps with `uses` are skipped and listed in `skipped`;
+  `outputs` holds the `name=value` lines the steps wrote to `GITHUB_OUTPUT`, and `summary` the text they wrote to
+  the job summary ([ADR 0031](../../docs/decisions/0031-spec-trace-action-and-dogfood.md)). Only `${{ inputs.<name> }}`, `${{ github.action_path }}` and
   `${{ github.token }}` (`testkit-github-token`) are expanded; any other expression, an `if:` on a `run` step or a
   shell other than bash fails the test. The first failing step ends the run with its exit code.
 - `sut.events.watch(nats, subjects)`: records the CloudEvents published on a NATS server from now on.
@@ -186,3 +187,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-038 | implemented | The first failing step ends the action with its exit code |
 | SCN-TK-039 | implemented | A run step with a condition fails the test |
 | SCN-TK-040 | implemented | An input the action does not declare fails the test |
+| SCN-TK-041 | implemented | sut.action gives the action a job summary and returns its text |
