@@ -38,3 +38,6 @@ It writes `$OUTPUT/hello.txt` with the text `Hello, Ada`.
 | ID | Status | Scenario |
 | --- | --- | --- |
 | SCN-TEMPLATE-001 | implemented | A new user runs the quick start |
+| SCN-TEMPLATE-002 | implemented | The greeting names the user |
+| SCN-TEMPLATE-003 | implemented | A greeting without a name shows the usage |
+| SCN-TEMPLATE-004 | implemented | An unknown command shows the usage |

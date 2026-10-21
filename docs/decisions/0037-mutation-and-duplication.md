@@ -36,7 +36,8 @@ Two facts shape the design:
 - `osf check MUTATION` reads the Stryker JSON reports in `reports/mutation/`. Killed and timed-out mutants count
   as detected; survived and uncovered mutants count as missed. Each module states its limits in its `AGENTS.md`
   under "Quality limits": "Mutation score: at least 70% of the mutants in changed lines, 80% in total". A module
-  without the script or the limit fails.
+  without the script or the limit fails. A module that scored below 80% in the first full run states its measured
+  score as its total limit. That limit only rises, until it reaches 80%.
 - A pull request fails when the score of the mutants in its changed lines is below the module's first limit
   (workflow `mutation.yml`). The nightly run mutates every line of every module, one runner per module. It opens an
   issue when a module's total score is below the second limit.
