@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/sesigl/open-software-factory/compare/ledger-v0.1.0...ledger-v0.2.0) (2026-10-21)
+
+
+### Features
+
+* **ledger:** T-08 import a forge's pull requests and reviews as pr.* events ([#58](https://github.com/sesigl/open-software-factory/issues/58)) ([534776e](https://github.com/sesigl/open-software-factory/commit/534776ee5d56bdfbfb67b8bfdc2ca1e3d7cbcfbe))
+
 ## 0.1.0 (2026-10-21)
 
 

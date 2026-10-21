@@ -117,3 +117,4 @@ Each failure prints one line: the check ID, `file:line`, and what to fix. Each c
 | SCN-REPO-052 | implemented | MUTATION rejects a module without a mutation script |
 | SCN-REPO-053 | implemented | osf mutation lists the line ranges a change adds |
 | SCN-REPO-054 | implemented | ISOLATION accepts a module that depends on a library in packages |
+| SCN-REPO-055 | implemented | DOCS-AFFECTED ignores the version that a release writes into an extra file |

@@ -305,6 +305,14 @@ Feature: Repository checks
     Then the command exits with code 1
     And the output contains "DOCS-AFFECTED docs/how-to/demo.md:1"
 
+  @id=SCN-REPO-055 @status=implemented
+  Scenario: DOCS-AFFECTED ignores the version that a release writes into an extra file
+    Given a base commit with a doc "docs/how-to/demo.md" that covers "modules/demo/**"
+    And a release-please config whose package "modules/demo" lists the extra file "openapi.json" with the jsonpath "$.info.version"
+    And a change that sets "info.version" in "modules/demo/openapi.json" to "0.2.0"
+    When the developer runs "osf docs-affected" against the base commit
+    Then the command exits with code 0
+
   @id=SCN-REPO-038 @status=implemented
   Scenario: RUNS rejects a run record with prompt content
     Given a run record "runs/run-1.jsonl" whose chat span has the attribute "gen_ai.input.messages"
