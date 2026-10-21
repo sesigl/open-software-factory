@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/spec-trace",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "spec-trace: every Gherkin scenario traced to its one test and its result, as a check and a JSON report.",
   "license": "Apache-2.0",
   "repository": {
