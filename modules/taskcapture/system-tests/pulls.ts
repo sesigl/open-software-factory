@@ -42,7 +42,8 @@ interface Sut {
 
 /** Commits the repository and then the pull request in $INPUT; returns the API route and both commits. */
 export async function commitPull(sut: Sut, pull: Pull): Promise<{ route: HttpRoute; parent: string; merge: string }> {
-  for (const [path, content] of Object.entries(pull.base ?? NODE_REPOSITORY)) await sut.files.put(`$INPUT/${path}`, content);
+  for (const [path, content] of Object.entries(pull.base ?? NODE_REPOSITORY))
+    await sut.files.put(`$INPUT/${path}`, content);
   const parent = await sut.git.commit("the repository before the pull request");
   for (const [path, content] of Object.entries(pull.change ?? SUM_FIX)) await sut.files.put(`$INPUT/${path}`, content);
   for (const path of pull.deletes ?? []) await sut.files.remove(`$INPUT/${path}`);

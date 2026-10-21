@@ -12,7 +12,10 @@ scenario("SCN-TASK-004", async ({ sut, fakes, given, when, then }) => {
       pr = await forge.openPullRequest("web", {
         branch: "fix-sum",
         title: "Fix the sum",
-        files: { "src/sum-fixed.js": SUM_FIX["src/sum.js"] as string, "test/sum.test.js": SUM_FIX["test/sum.test.js"] as string },
+        files: {
+          "src/sum-fixed.js": SUM_FIX["src/sum.js"] as string,
+          "test/sum.test.js": SUM_FIX["test/sum.test.js"] as string,
+        },
       });
       await forge.mergePullRequest(pr);
     },
@@ -35,7 +38,13 @@ scenario("SCN-TASK-004", async ({ sut, fakes, given, when, then }) => {
     '"$OUTPUT/suite/web-1" holds "instruction.md", "task.toml", "environment/Dockerfile", "tests/test.sh" and "solution/solve.sh"',
     async () => {
       const files = await sut.files.list("$OUTPUT/suite/web-1");
-      for (const file of ["instruction.md", "task.toml", "environment/Dockerfile", "tests/test.sh", "solution/solve.sh"])
+      for (const file of [
+        "instruction.md",
+        "task.toml",
+        "environment/Dockerfile",
+        "tests/test.sh",
+        "solution/solve.sh",
+      ])
         expect(files).toContain(file);
       expect(files).toContain("tests/files/test/sum.test.js");
       expect(files).toContain("environment/repo/src/sum.js");

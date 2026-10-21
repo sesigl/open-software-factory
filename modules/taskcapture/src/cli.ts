@@ -76,7 +76,7 @@ async function main(): Promise<string[]> {
   usage(paths.length === 1, "route takes one report.json");
   const min = values["min-correctness"];
   usage(
-    min === undefined || (/^(0(\.\d+)?|1(\.0+)?)$/.test(min)),
+    min === undefined || /^(0(\.\d+)?|1(\.0+)?)$/.test(min),
     "--min-correctness takes a share from 0 to 1, like 0.9",
   );
   return route(paths[0] as string, {
@@ -89,14 +89,15 @@ async function main(): Promise<string[]> {
   });
 }
 
-if (["capture", "report", "route"].includes(command as string) && !values.help) {
-  try {
-    process.stdout.write(`${(await main()).join("\n")}\n`);
-  } catch (error) {
-    process.stderr.write(`taskcapture: ${(error as Error).message}\n`);
-    process.exitCode = error instanceof UsageError ? 2 : 1;
-  }
-} else {
+if (values.help || !["capture", "report", "route"].includes(command as string)) {
   (values.help ? process.stdout : process.stderr).write(HELP);
   process.exitCode = values.help ? 0 : 2;
+} else {
+  await main().then(
+    (lines) => process.stdout.write(`${lines.join("\n")}\n`),
+    (error: Error) => {
+      process.exitCode = error instanceof UsageError ? 2 : 1;
+      process.stderr.write(`taskcapture: ${error.message}\n`);
+    },
+  );
 }

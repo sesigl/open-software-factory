@@ -13,14 +13,12 @@ export interface PullRef {
   cloneUrl: string;
 }
 
+/** Hosts whose API does not live below the host itself; GitHub Enterprise answers at /api/v3, Forgejo at /api/v1. */
+const API_OF_HOST: Record<string, string> = { "github.com": "https://api.github.com" };
+
 /** The pull request a URL names. `forge` is "github" or "forgejo" for a host whose kind the path does not tell. */
 export function pullRefOf(url: string, forge: string | undefined, apiOverride: string | undefined): PullRef {
-  let parsed: URL | undefined;
-  try {
-    parsed = new URL(url);
-  } catch {
-    parsed = undefined;
-  }
+  const parsed = URL.canParse(url) ? new URL(url) : undefined;
   const [owner, repo, kind, number] = parsed?.pathname.split("/").filter(Boolean) ?? [];
   usage(
     parsed && owner && repo && (kind === "pull" || kind === "pulls") && /^\d+$/.test(number ?? ""),
@@ -28,13 +26,10 @@ export function pullRefOf(url: string, forge: string | undefined, apiOverride: s
   );
   usage(forge === undefined || forge === "github" || forge === "forgejo", "--forge takes github or forgejo");
   const github = (forge ?? (kind === "pull" ? "github" : "forgejo")) === "github";
-  const api = apiOverride
-    ? apiOverride.replace(/\/+$/, "")
-    : github
-      ? parsed.host === "github.com"
-        ? "https://api.github.com"
-        : `${parsed.origin}/api/v3`
-      : `${parsed.origin}/api/v1`;
+  const api = (apiOverride || (API_OF_HOST[parsed.host] ?? `${parsed.origin}/api/${github ? "v3" : "v1"}`)).replace(
+    /\/+$/,
+    "",
+  );
   return { url, owner, repo, number: Number(number), api, cloneUrl: `${parsed.origin}/${owner}/${repo}.git` };
 }
 

@@ -17,7 +17,12 @@ export function trialResult(trial: TrialResult): string {
     agent_result: { n_input_tokens: 1000, n_output_tokens: 100, cost_usd: trial.costUsd ?? null },
     verifier_result: trial.reward === undefined ? null : { rewards: { reward: trial.reward } },
     exception_info: trial.error
-      ? { exception_type: trial.error, exception_message: "", exception_traceback: "", occurred_at: "2026-01-01T00:00:00Z" }
+      ? {
+          exception_type: trial.error,
+          exception_message: "",
+          exception_traceback: "",
+          occurred_at: "2026-01-01T00:00:00Z",
+        }
       : null,
   })}\n`;
 }

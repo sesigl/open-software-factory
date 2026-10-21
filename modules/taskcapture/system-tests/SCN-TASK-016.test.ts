@@ -6,17 +6,20 @@ scenario("SCN-TASK-016", async ({ sut, fakes, given, when, then }) => {
   let pull: Awaited<ReturnType<typeof commitPull>>;
   await given('a merged GitHub pull request 7 that changes "src/sum.js" and adds "checks/sum.sh"', async () => {
     pull = await commitPull(sut, {
-      change: { "src/sum.js": "export const sum = (a, b) => a + b;\n", "checks/sum.sh": "node -e \"process.exit(0)\"\n" },
+      change: { "src/sum.js": "export const sum = (a, b) => a + b;\n", "checks/sum.sh": 'node -e "process.exit(0)"\n' },
     });
     github = await fakes.http([pull.route]);
   });
 
   let run: Awaited<ReturnType<typeof sut.cli>>;
-  await when('the user runs "taskcapture capture --git . --tests ^checks/ https://github.com/acme/web/pull/7" with "TASKCAPTURE_FORGE_URL" set to the GitHub API', async () => {
-    run = await capture(sut, github, ["--tests", "^checks/"]);
-  });
+  await when(
+    'the user runs "taskcapture capture --git . --tests ^checks/ https://github.com/acme/web/pull/7" with "TASKCAPTURE_FORGE_URL" set to the GitHub API',
+    async () => {
+      run = await capture(sut, github, ["--tests", "^checks/"]);
+    },
+  );
 
-  await then('the command exits with code 0', async () => {
+  await then("the command exits with code 0", async () => {
     expect(run.exitCode, run.stderr).toBe(0);
   });
 

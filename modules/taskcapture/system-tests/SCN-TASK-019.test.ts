@@ -8,11 +8,14 @@ scenario("SCN-TASK-019", async ({ sut, fakes, given, when, then }) => {
   });
 
   let run: Awaited<ReturnType<typeof sut.cli>>;
-  await when('the user runs "taskcapture capture --git . https://github.com/acme/web/pull/7" with "TASKCAPTURE_FORGE_URL" set to the GitHub API', async () => {
-    run = await capture(sut, github);
-  });
+  await when(
+    'the user runs "taskcapture capture --git . https://github.com/acme/web/pull/7" with "TASKCAPTURE_FORGE_URL" set to the GitHub API',
+    async () => {
+      run = await capture(sut, github);
+    },
+  );
 
-  await then('the command exits with code 1', async () => {
+  await then("the command exits with code 1", async () => {
     expect(run.exitCode).toBe(1);
   });
 
