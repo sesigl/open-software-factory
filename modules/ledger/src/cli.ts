@@ -4,10 +4,12 @@ import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { openLedger } from "./adapters/ledger.ts";
 import { dashboard } from "./commands/dashboard.ts";
+import { importForge } from "./commands/import.ts";
 import { ingest } from "./commands/ingest.ts";
 import { query } from "./commands/query.ts";
 import { report } from "./commands/report.ts";
 import { check, UsageError } from "./domain/errors.ts";
+import { repositoryOf } from "./domain/forge.ts";
 
 const HELP = `Usage: ledger <command> [options]
 
@@ -17,6 +19,8 @@ Commands:
          Ingest the files named, then write cost per pull request, spend, throughput, cycle time, runs and revert rate to --out ($OUTPUT/report.json), and as Markdown to --markdown.
   query [--db <file or URL>] <SQL>  Run one SQL statement, like "SELECT * FROM pr_cost", and print its rows as JSON Lines.
   dashboard [--out <file>]  Write the Grafana dashboard over the PostgreSQL views to --out ($OUTPUT/ledger-dashboard.json).
+  import [--forge github|forgejo] [--since <date>] [--out <file>] <repository URL>
+         Read the pull requests, reviews and comments of a GitHub or Forgejo repository and write them as pr.* events to --out ($OUTPUT/pr-events.jsonl).
 
 --db is a DuckDB file or a postgres:// URL; its default is $LEDGER_DB, else ledger.duckdb.
 `;
@@ -33,6 +37,7 @@ const { positionals, values } = parseArgs({
     target: { type: "string" },
     "compute-usd-per-hour": { type: "string", default: "0" },
     "platform-usd": { type: "string", default: "0" },
+    forge: { type: "string" },
   },
 });
 const [command, ...paths] = positionals;
@@ -57,6 +62,12 @@ async function main(): Promise<string[]> {
   };
   const output = (file: string) => values.out ?? join(process.env.OUTPUT ?? ".", file);
   if (command === "dashboard") return [dashboard(output("ledger-dashboard.json"))];
+  if (command === "import") {
+    check(paths.length === 1, "import takes one repository URL like https://github.com/acme/web");
+    const repository = repositoryOf(paths[0] as string, values.forge, process.env.LEDGER_FORGE_URL);
+    const token = process.env.LEDGER_FORGE_TOKEN || undefined;
+    return [await importForge(repository, { token, since: options.since, out: output("pr-events.jsonl") })];
+  }
   const ledger = await openLedger(values.db);
   try {
     if (command === "ingest") return [await ingest(ledger, paths)];
@@ -68,7 +79,7 @@ async function main(): Promise<string[]> {
   }
 }
 
-if (["ingest", "report", "query", "dashboard"].includes(command as string) && !values.help) {
+if (["ingest", "report", "query", "dashboard", "import"].includes(command as string) && !values.help) {
   try {
     const lines = await main();
     if (lines.length) process.stdout.write(`${lines.join("\n")}\n`);
