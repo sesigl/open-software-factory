@@ -60,20 +60,55 @@ export function docsAffected(context: Context): Finding[] {
   return findings;
 }
 
-/** What release-please writes for a release: changelogs, its manifest, and a package.json that only changes "version". */
+/**
+ * What release-please writes for a release: changelogs, its manifest, a package.json that only changes "version",
+ * and a JSON extra file from release-please-config.json that only changes the value at its jsonpath.
+ */
 function isReleaseOnly({ repo }: Context, base: string, file: string): boolean {
   const name = posix.basename(file);
   if (name === "CHANGELOG.md" || file === ".release-please-manifest.json") return true;
-  if (name !== "package.json") return false;
+  const path = name === "package.json" ? ["version"] : extraFileVersionPath(repo.root, base, file);
+  if (!path) return false;
   const before = showAt(repo.root, base, file);
   if (before === undefined || !repo.exists(file)) return false;
   try {
-    const { version: _old, ...rest } = JSON.parse(before) as Record<string, unknown>;
-    const { version: _new, ...now } = JSON.parse(repo.read(file)) as Record<string, unknown>;
-    return JSON.stringify(rest) === JSON.stringify(now);
+    return sameExcept(JSON.parse(before), JSON.parse(repo.read(file)), path);
   } catch {
     return false;
   }
+}
+
+/** The jsonpath, as keys, that release-please-config.json at the base commit gives a JSON extra file. */
+function extraFileVersionPath(root: string, base: string, file: string): string[] | undefined {
+  const text = showAt(root, base, "release-please-config.json");
+  if (text === undefined) return undefined;
+  try {
+    const config = JSON.parse(text) as {
+      packages?: Record<string, { "extra-files"?: ({ type?: string; path?: string; jsonpath?: string } | string)[] }>;
+    };
+    for (const [dir, pkg] of Object.entries(config.packages ?? {})) {
+      for (const extra of pkg["extra-files"] ?? []) {
+        if (typeof extra === "string" || extra.type !== "json" || !extra.path || !extra.jsonpath) continue;
+        if (posix.join(dir, extra.path) !== file) continue;
+        if (!/^\$(\.[A-Za-z_][\w-]*)+$/.test(extra.jsonpath)) return undefined;
+        return extra.jsonpath.split(".").slice(1);
+      }
+    }
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}
+
+/** True when the two JSON values are equal once the value at the path is removed from both. */
+function sameExcept(before: unknown, now: unknown, path: string[]): boolean {
+  const strip = (value: unknown, keys: string[]): unknown => {
+    if (keys.length === 0 || typeof value !== "object" || value === null || Array.isArray(value)) return value;
+    const [key, ...rest] = keys as [string, ...string[]];
+    const { [key]: inner, ...others } = value as Record<string, unknown>;
+    return rest.length === 0 || inner === undefined ? others : { ...others, [key]: strip(inner, rest) };
+  };
+  return JSON.stringify(strip(before, path)) === JSON.stringify(strip(now, path));
 }
 
 export function docsLinks(context: Context): Finding[] {
