@@ -11,13 +11,20 @@ export interface Message {
   content: string;
 }
 
-export function judgeMessages(scorer: Scorer, transcript: string): Message[] {
-  const system = [
+/** The scorer's prompt and pass criterion, framed for a judge of one session. */
+export function judgeInstructions(scorer: Scorer): string {
+  return [
     `You judge one session of a coding agent for the scorer "${scorer.name}".`,
     "",
     scorer.prompt,
     "",
     `Pass criterion: ${scorer.pass}`,
+  ].join("\n");
+}
+
+export function judgeMessages(scorer: Scorer, transcript: string): Message[] {
+  const system = [
+    judgeInstructions(scorer),
     "",
     'Answer with one JSON object and nothing else: {"result": "pass" or "fail", "reason": "one or two sentences"}.',
   ].join("\n");
