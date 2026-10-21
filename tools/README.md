@@ -108,7 +108,7 @@ Each failure prints one line: the check ID, `file:line`, and what to fix. Each c
 | SCN-REPO-043 | implemented | A module created from the template passes the fast checks of osf |
 | SCN-REPO-044 | implemented | DUP rejects a module whose duplicated lines exceed its limit |
 | SCN-REPO-045 | implemented | DUP rejects a clone between two modules |
-| SCN-REPO-046 | implemented | DUP rejects a baseline entry whose clone is gone |
+| SCN-REPO-046 | deprecated | DUP rejects a baseline entry whose clone is gone |
 | SCN-REPO-047 | implemented | DUP rejects a module without a duplication limit |
 | SCN-REPO-048 | implemented | MUTATION rejects a change whose mutants in changed lines score below the limit |
 | SCN-REPO-049 | implemented | MUTATION accepts a change whose mutants in changed lines are all killed |
@@ -123,3 +123,4 @@ Each failure prints one line: the check ID, `file:line`, and what to fix. Each c
 | SCN-REPO-058 | implemented | MUTATION rejects a library in packages without a mutation script |
 | SCN-REPO-059 | implemented | ASSERT accepts a library's then step that asserts on what the library returned |
 | SCN-REPO-060 | implemented | REACH leaves the lines of a library to MUTATION |
+| SCN-REPO-061 | implemented | ASSERT accepts a then step that asserts on what a subpath export of the package returned |
