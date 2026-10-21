@@ -49,6 +49,18 @@ channels:
     messages:
       PrOpened:
         $ref: '#/components/messages/PrOpened'
+  pr-reviewed:
+    address: osf.pr.reviewed.v1
+    description: A person, an agent or a bot reviewed or commented on a pull request.
+    messages:
+      PrReviewed:
+        $ref: '#/components/messages/PrReviewed'
+  pr-closed:
+    address: osf.pr.closed.v1
+    description: A pull request was merged or closed without a merge.
+    messages:
+      PrClosed:
+        $ref: '#/components/messages/PrClosed'
 operations:
   publishWorkReceived:
     action: send
@@ -92,6 +104,20 @@ operations:
       $ref: '#/channels/pr-opened'
     messages:
       - $ref: '#/channels/pr-opened/messages/PrOpened'
+  publishPrReviewed:
+    action: send
+    summary: Published by forge adapters.
+    channel:
+      $ref: '#/channels/pr-reviewed'
+    messages:
+      - $ref: '#/channels/pr-reviewed/messages/PrReviewed'
+  publishPrClosed:
+    action: send
+    summary: Published by forge adapters.
+    channel:
+      $ref: '#/channels/pr-closed'
+    messages:
+      - $ref: '#/channels/pr-closed/messages/PrClosed'
 components:
   messages:
     WorkReceived:
@@ -142,3 +168,19 @@ components:
         schemaFormat: application/schema+json;version=draft-2020-12
         schema:
           $ref: './pr-opened/pr-opened.schema.json'
+    PrReviewed:
+      name: pr.reviewed@v1
+      title: pr.reviewed@v1
+      contentType: application/cloudevents+json
+      payload:
+        schemaFormat: application/schema+json;version=draft-2020-12
+        schema:
+          $ref: './pr-reviewed/pr-reviewed.schema.json'
+    PrClosed:
+      name: pr.closed@v1
+      title: pr.closed@v1
+      contentType: application/cloudevents+json
+      payload:
+        schemaFormat: application/schema+json;version=draft-2020-12
+        schema:
+          $ref: './pr-closed/pr-closed.schema.json'

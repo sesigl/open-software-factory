@@ -1,0 +1,19 @@
+{
+  "specversion": "1.0",
+  "source": "/osf/forge",
+  "time": "2026-10-19T11:30:00Z",
+  "subject": "https://github.com/acme/web/pull/7",
+  "datacontenttype": "application/json",
+  "id": "01JABCDEVT00000000000000007",
+  "type": "pr.reviewed@v1",
+  "data": {
+    "url": "https://github.com/acme/web/pull/7",
+    "reviewer": {
+      "kind": "person",
+      "id": "github:octocat",
+      "displayName": "Mona"
+    },
+    "automated": false,
+    "state": "dismissed"
+  }
+}
