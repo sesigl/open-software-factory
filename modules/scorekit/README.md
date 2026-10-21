@@ -7,8 +7,9 @@ covers: [modules/scorekit/src/**, modules/scorekit/scorers/**]
 Grade a team's agent sessions on concrete failure modes. A scorer is a Markdown file with a judge prompt, a pass
 criterion and a sampling rate. scorekit asks an LLM judge about each sampled run and writes one score per run, with
 pass or fail, the reason and the judge's cost. `calibrate` checks a judge against labels a person wrote before you
-trust it, and `report` shows each scorer's pass rate over time. Decision:
-[ADR 0032](../../docs/decisions/0032-scorekit.md).
+trust it, and `report` shows each scorer's pass rate over time. `export` turns the
+scorers into Langfuse evaluators, so Langfuse can judge new runs as they arrive. Decisions:
+[ADR 0032](../../docs/decisions/0032-scorekit.md), [ADR 0033](../../docs/decisions/0033-scorekit-langfuse-evaluators.md).
 
 ## Quick start
 
@@ -39,6 +40,8 @@ It appends two lines to `$OUTPUT/scores.jsonl`: one score per run in the format 
 | `scorekit calibrate --scorer <name or file> --labels <file> <runs>...` | Judge every labeled run and write the agreement with the labels to `--out` (`$OUTPUT/calibration.json`). `--min-agreement <0..1>` exits 1 below it. |
 | `scorekit report <scores>...` | Write each scorer's runs, passes, fails, pass rate, cost, pass rate per day and scored runs to `--out` (`$OUTPUT/report.json`); `--markdown <file>` writes the same as Markdown tables. |
 | `scorekit push <scores>...` | Send the scores to Langfuse's score API (`POST /api/public/scores`). |
+| `scorekit export [--scorer <name or file>]...` | Write the scorers (default: the pack) as Langfuse LLM-as-a-judge evaluators with their evaluation rules to `--out` (`$OUTPUT/evaluators.json`). `--provider <name> --model <name>` set the evaluators' model. |
+| `scorekit export --push [--enable] [--scorer <name or file>]...` | Create or update the evaluators in Langfuse. A new evaluator gets a rule, disabled unless `--enable`. See [Langfuse evaluators](#langfuse-evaluators). |
 | `scorekit scorers` | List the scorers of the pack with their sampling rate and description. |
 
 `<runs>` are files of OTLP/JSON trace export requests, one per line, or folders: every `.jsonl` file below a folder
@@ -122,6 +125,33 @@ with basic auth from `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`. The score'
 the score appears on the run in Langfuse when the run was sent there too. Langfuse keeps one score per ID, and a
 score's ID comes from the scorer and the run, so a second push changes nothing.
 
+## Langfuse evaluators
+
+`export` maps each scorer to Langfuse's public API v2 (ADR 0033):
+
+| Scorer | Evaluator in Langfuse |
+| --- | --- |
+| `name`, `description` | `name`, `description` of an `llm_as_judge` evaluator |
+| prompt and `pass` | a system message with the prompt and `Pass criterion: <pass>`, and a user message with `{{input}}` and `{{output}}`, mapped to the observation's input and output |
+| `pass` | a `BOOLEAN` output whose value instructions repeat the pass criterion |
+| `sample` | the sampling of the rule `scorekit <name>`, which matches the observations named `invoke_agent`, the root span of a run |
+| `model` | not exported: it is a gateway alias. `--provider` and `--model` set `modelConfig`; without them Langfuse uses the project's default evaluation model |
+
+```sh
+export LANGFUSE_PUBLIC_KEY=pk-lf-... LANGFUSE_SECRET_KEY=sk-lf-...
+npx @opensoftware/scorekit export --push --scorer redundant-tests --provider anthropic --model claude-haiku-5-5
+```
+
+`--push` lists the project's evaluators and takes the newest one with the scorer's name. When there is none, it
+creates the evaluator and its rule and prints `created <scorer>`. When the description, prompt, output and model
+are the same, it sends nothing and prints `unchanged <scorer>`. Otherwise it replaces the definition, which makes a
+new version in Langfuse with the same ID and rules, and prints `updated <scorer>`. An existing rule is never
+changed, so a sampling rate or filter a person set in Langfuse stays. The rule starts disabled, because an enabled
+rule makes Langfuse call a paid model for each new run; enable it in Langfuse or pass `--enable`.
+
+The evaluator sees only the root observation's input and output, not the transcript with every tool call that
+`score` builds. Calibrate the scores of each runtime before you trust them.
+
 ## Releases
 
 release-please opens a release pull request from the Conventional Commits under `modules/scorekit/`. Merging it
@@ -136,12 +166,12 @@ with a trusted publisher for `publish-scorekit.yml`. No credential is stored in 
 
 | Variable | Type | Default | Meaning |
 | --- | --- | --- | --- |
-| `OUTPUT` | string | `"."` | Folder of scores.jsonl, calibration.json and report.json when --out is not given. |
+| `OUTPUT` | string | `"."` | Folder of scores.jsonl, calibration.json, report.json and evaluators.json when --out is not given. |
 | `SCOREKIT_INFERENCE_URL` | string |  | Base URL of the OpenAI-compatible gateway of the judge, ending in /v1, for example http://litellm:4000/v1. Required by score and calibrate. |
 | `SCOREKIT_INFERENCE_KEY` | string |  | API key of the gateway, sent as a bearer token. Never write the value into a file. |
-| `LANGFUSE_HOST` | string | `"https://cloud.langfuse.com"` | Base URL of Langfuse for push. |
-| `LANGFUSE_PUBLIC_KEY` | string |  | Langfuse public key for push. |
-| `LANGFUSE_SECRET_KEY` | string |  | Langfuse secret key for push. Never write the value into a file. |
+| `LANGFUSE_HOST` | string | `"https://cloud.langfuse.com"` | Base URL of Langfuse for push and export --push. |
+| `LANGFUSE_PUBLIC_KEY` | string |  | Langfuse public key for push and export --push. |
+| `LANGFUSE_SECRET_KEY` | string |  | Langfuse secret key for push and export --push. Never write the value into a file. |
 | `OSF_NOW` | string |  | The time of new scores as an ISO 8601 timestamp. Default: the system clock. |
 
 ## Scenarios
@@ -182,3 +212,16 @@ with a trusted publisher for `publish-scorekit.yml`. No credential is stored in 
 | SCN-SCORE-030 | implemented | A scorer file without a pass criterion is refused |
 | SCN-SCORE-031 | implemented | A scorer file whose front matter is not YAML is refused |
 | SCN-SCORE-032 | implemented | A runs file line that is not JSON is named with its file and line |
+| SCN-SCORE-033 | implemented | Export writes the five scorers of the pack as evaluators |
+| SCN-SCORE-034 | implemented | An exported evaluator carries the judge prompt and the pass criterion as a boolean score |
+| SCN-SCORE-035 | implemented | The evaluation rule samples the scorer's share of the runs and starts disabled |
+| SCN-SCORE-036 | implemented | The options "--provider" and "--model" set the evaluator's model |
+| SCN-SCORE-037 | implemented | Without "--model" the evaluator uses the project's default evaluation model |
+| SCN-SCORE-038 | implemented | The option "--model" without "--provider" is refused |
+| SCN-SCORE-039 | implemented | Push creates a missing evaluator and its disabled rule in Langfuse with basic auth |
+| SCN-SCORE-040 | implemented | Push with "--enable" creates the rule enabled |
+| SCN-SCORE-041 | implemented | Push leaves an evaluator alone when Langfuse already holds the same definition |
+| SCN-SCORE-042 | implemented | Push updates a changed evaluator and keeps its rule |
+| SCN-SCORE-043 | implemented | Push finds an evaluator on the second page of Langfuse's list |
+| SCN-SCORE-044 | implemented | An evaluator Langfuse refuses is named and fails the command |
+| SCN-SCORE-045 | implemented | Push without Langfuse keys names the missing variables |

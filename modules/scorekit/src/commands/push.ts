@@ -1,12 +1,9 @@
 // scorekit push: send score records to Langfuse.
 import { readScores } from "../adapters/files.ts";
-import { pushScore } from "../adapters/langfuse.ts";
-import { UsageError } from "../domain/errors.ts";
+import { langfuseFrom, pushScore } from "../adapters/langfuse.ts";
 
 export async function push(paths: string[], env: NodeJS.ProcessEnv) {
-  const { LANGFUSE_PUBLIC_KEY: publicKey, LANGFUSE_SECRET_KEY: secretKey } = env;
-  if (!publicKey || !secretKey) throw new UsageError("set LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY");
-  const langfuse = { host: env.LANGFUSE_HOST || "https://cloud.langfuse.com", publicKey, secretKey };
+  const langfuse = langfuseFrom(env);
   const scores = readScores(paths);
   const errors: string[] = [];
   for (const score of scores) {
