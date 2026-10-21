@@ -7,5 +7,6 @@
   "modules/proof": "0.2.0",
   "modules/spec-trace": "0.2.0",
   "modules/scorekit": "0.3.0",
-  "modules/ledger": "0.3.0"
+  "modules/ledger": "0.3.0",
+  "modules/taskcapture": "0.0.0"
 }

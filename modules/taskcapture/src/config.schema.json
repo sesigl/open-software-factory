@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "OUTPUT": {
+      "type": "string",
+      "default": ".",
+      "description": "Folder of the suite, report.json and litellm-config.yaml when --suite or --out is not given."
+    },
+    "TASKCAPTURE_FORGE_URL": {
+      "type": "string",
+      "description": "Base URL of the forge API for capture. Default: https://api.github.com for github.com, <origin>/api/v3 for another GitHub host, <origin>/api/v1 for Forgejo."
+    },
+    "TASKCAPTURE_FORGE_TOKEN": {
+      "type": "string",
+      "description": "Token that may read the repository, for capture: sent to the forge API and to git clone. Without it, capture reads a public repository. Never written into a task."
+    }
+  }
+}
