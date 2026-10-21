@@ -54,6 +54,12 @@ model ScoreRecorded is CloudEvent<"score.recorded@v1", Score>;
 /** forge adapters: the factory opened a pull request. */
 model PrOpened is CloudEvent<"pr.opened@v1", PrOpenedData>;
 
+/** forge adapters: a person, an agent or a bot reviewed or commented on a pull request. */
+model PrReviewed is CloudEvent<"pr.reviewed@v1", PrReviewedData>;
+
+/** forge adapters: a pull request was merged or closed without a merge. */
+model PrClosed is CloudEvent<"pr.closed@v1", PrClosedData>;
+
 model RunCompletedData {
   runId: Identifier;
   workItemId: Identifier;
@@ -131,4 +137,32 @@ model PrOpenedData {
   author: Actor;
   workItemId?: Identifier;
   runId?: Identifier;
+}
+
+enum ReviewState {
+  approved,
+  changes_requested,
+  commented,
+}
+
+model PrReviewedData {
+  /** The pull request. */
+  url: url;
+
+  reviewer: Actor;
+
+  /** True when an agent or a bot wrote the review, not a person. */
+  automated?: boolean;
+
+  state: ReviewState;
+}
+
+model PrClosedData {
+  /** The pull request. */
+  url: url;
+
+  /** True when the pull request was merged, false when it was closed without a merge. */
+  merged: boolean;
+
+  mergeCommit?: CommitHash;
 }
