@@ -1,0 +1,36 @@
+{
+  "name": "@opensoftware/ledger",
+  "version": "0.0.0",
+  "description": "ledger: cost per pull request and flow metrics for teams that use agents, from gateway spend, run records and forge events.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "modules/ledger"
+  },
+  "type": "module",
+  "bin": {
+    "ledger": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "sql"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "vitest run",
+    "docs": "node ../../tools/bin/osf.ts docs ."
+  },
+  "devDependencies": {
+    "@opensoftware/testkit": "workspace:*"
+  },
+  "dependencies": {
+    "@duckdb/node-api": "1.5.6-r.1",
+    "@opensoftware/contracts": "workspace:*"
+  }
+}

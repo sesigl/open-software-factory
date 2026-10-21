@@ -1,0 +1,14 @@
+{
+  "specversion": "1.0",
+  "source": "/osf/forge",
+  "time": "2026-10-19T14:00:00Z",
+  "subject": "https://github.com/acme/web/pull/7",
+  "datacontenttype": "application/json",
+  "id": "01JABCDEVT00000000000000008",
+  "type": "pr.closed@v1",
+  "data": {
+    "url": "https://github.com/acme/web/pull/7",
+    "merged": true,
+    "mergeCommit": "4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d"
+  }
+}
