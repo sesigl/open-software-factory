@@ -5,7 +5,7 @@
     "OUTPUT": {
       "type": "string",
       "default": ".",
-      "description": "Folder of scores.jsonl, calibration.json and report.json when --out is not given."
+      "description": "Folder of scores.jsonl, calibration.json, report.json and evaluators.json when --out is not given."
     },
     "SCOREKIT_INFERENCE_URL": {
       "type": "string",
@@ -18,15 +18,15 @@
     "LANGFUSE_HOST": {
       "type": "string",
       "default": "https://cloud.langfuse.com",
-      "description": "Base URL of Langfuse for push."
+      "description": "Base URL of Langfuse for push and export --push."
     },
     "LANGFUSE_PUBLIC_KEY": {
       "type": "string",
-      "description": "Langfuse public key for push."
+      "description": "Langfuse public key for push and export --push."
     },
     "LANGFUSE_SECRET_KEY": {
       "type": "string",
-      "description": "Langfuse secret key for push. Never write the value into a file."
+      "description": "Langfuse secret key for push and export --push. Never write the value into a file."
     },
     "OSF_NOW": {
       "type": "string",
