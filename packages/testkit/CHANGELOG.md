@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.4.0...testkit-v0.5.0) (2026-10-21)
+
+
+### Features
+
+* **spec-trace:** T-06 GitHub Action, changes since a base commit, and CI runs spec-trace ([#47](https://github.com/sesigl/open-software-factory/issues/47)) ([d414e83](https://github.com/sesigl/open-software-factory/commit/d414e839fa647bda72906dff7c29abc4e19310ca))
+
 ## [0.4.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.3.0...testkit-v0.4.0) (2026-10-20)
 
 
