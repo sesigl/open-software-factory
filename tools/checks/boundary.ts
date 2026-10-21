@@ -94,13 +94,20 @@ export async function isolation(context: Context): Promise<Finding[]> {
     .filter((file) => !file.includes("/system-tests/") && !file.includes("/node_modules/"));
   const findings = await violations(context, sources, ISOLATION_RULES);
 
-  // A module declares only @opensoftware/contracts, @opensoftware/testkit (devDependencies) and external packages.
+  // A module declares only @opensoftware/contracts, @opensoftware/testkit (devDependencies), the libraries in
+  // packages/ (ADR 0037) and external packages.
+  const libraries = new Set(
+    repo
+      .match("packages/*/package.json")
+      .map((manifest) => (JSON.parse(repo.read(manifest)) as { name?: string }).name)
+      .filter((name) => name !== undefined && name !== "@opensoftware/testkit"),
+  );
   for (const manifest of repo.match("modules/*/package.json")) {
     const text = repo.read(manifest);
     const json = JSON.parse(text) as Record<string, Record<string, string> | undefined>;
     for (const section of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]) {
       for (const name of Object.keys(json[section] ?? {})) {
-        if (!name.startsWith("@opensoftware/") || name === "@opensoftware/contracts") continue;
+        if (!name.startsWith("@opensoftware/") || name === "@opensoftware/contracts" || libraries.has(name)) continue;
         if (name === "@opensoftware/testkit" && section === "devDependencies") continue;
         const why = name === "@opensoftware/testkit" ? "is allowed only in devDependencies" : "is another module";
         findings.push({

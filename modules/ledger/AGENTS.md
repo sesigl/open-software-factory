@@ -37,6 +37,13 @@ The ARCH check enforces the layers.
 
 - System tests: 120 seconds in total on the CI runner. The PostgreSQL and dashboard scenarios need Docker.
 
+## Quality limits
+
+Checked by DUP and MUTATION (ADR 0037):
+
+- Duplication: at most 3% of the lines in src/.
+- Mutation score: at least 70% of the mutants in changed lines, 80% in total.
+
 ## Scenario prefix
 
 `SCN-LEDGER-NNN`

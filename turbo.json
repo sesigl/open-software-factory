@@ -39,7 +39,8 @@
     },
     "mutation": {
       "dependsOn": ["build", "^build"],
-      "cache": false
+      "cache": false,
+      "passThroughEnv": ["OSF_BASE", "PLAYWRIGHT_BROWSERS_PATH"]
     }
   }
 }
