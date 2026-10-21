@@ -34,8 +34,10 @@ Because the module runs as its artifact in its own process, a test cannot pass b
 
 A library in `packages/` (ADR 0039) has no artifact to start: its system tests import its built package by name,
 `@opensoftware/<name>`, and call its exports in the test's process. That import is the only one BOUNDARY-STATIC
-adds for them; an import from its `src/` still fails. Files still go through `sut.files`, and
-`sut.files.path("$INPUT/...")` gives a library function the absolute path. MUTATION covers libraries like modules.
+adds for them; an import from its `src/` still fails. For ASSERT, what its exports return counts as coming from
+the system under test. Files still go through `sut.files`, and
+`sut.files.path("$INPUT/...")` gives a library function the absolute path. MUTATION covers libraries like modules
+and takes the place of REACH for them.
 
 ## Layout
 

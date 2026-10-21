@@ -30,11 +30,15 @@ the library. MUTATION covered only modules and adapters.
   it (`^build`). A module's built artifact imports the built library, in this repository and from npm.
 - **Tests.** A library's system tests import the library by its package name and call it in their own process.
   BOUNDARY-STATIC allows that import, and only that one, in `packages/<name>/system-tests/`; it resolves to
-  `dist/index.js`. An import of the library's `src/` still fails. The testkit looks up a unit's `bin` only when a
+  `dist/index.js`. An import of the library's `src/` still fails. ASSERT counts a value that a call of the
+  package's own exports returned as a value from the system under test, in a library's tests and in the contracts'
+  tests (SCN-REPO-059). The testkit looks up a unit's `bin` only when a
   test starts it, so a library's test runs without one. `sut.files.path("$INPUT/...")` gives the absolute path of
   a file in `$INPUT` or `$OUTPUT` for functions that take paths (SCN-TK-045, SCN-TK-046).
 - **Quality.** DUP and MUTATION apply as to a module. MUTATION covers every package without a `bin`; Stryker
-  rebuilds `dist/` from the mutated sources, so the tests in the same process see each mutant.
+  rebuilds `dist/` from the mutated sources, so the tests in the same process see each mutant. REACH leaves out
+  libraries: the testkit records coverage only in the processes it starts, and a mutant in a line no test reaches
+  survives, so MUTATION already rejects such a line (SCN-REPO-060).
 - **ISOLATION.** A module may depend on any package without a `bin` in `packages/`. The testkit has a `bin` and
   stays a dev dependency only.
 - **Releases.** Each library is released with release-please (ADR 0038) as `<name>-v<version>` and published by

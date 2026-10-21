@@ -126,6 +126,14 @@ Feature: Repository checks
     Then the command exits with code 1
     And the output contains "ASSERT modules/demo/system-tests/SCN-DEMO-001.test.ts"
 
+  @id=SCN-REPO-059 @status=implemented
+  Scenario: ASSERT accepts a library's then step that asserts on what the library returned
+    Given a repository with the library "packages/money" named "@opensoftware/money" and the implemented scenario "SCN-MONEY-001"
+    And its system test asserts on the value that "cents" from "@opensoftware/money" returned
+    When the developer runs "osf check ASSERT"
+    Then the command exits with code 0
+    And the output contains "ASSERT ok"
+
   @id=SCN-REPO-013 @status=implemented
   Scenario: FLAKE rejects a test that passed only on retry
     Given a repository with the implemented scenario "SCN-DEMO-001" and its system test
@@ -279,6 +287,15 @@ Feature: Repository checks
     Then the command exits with code 1
     And the output contains "REACH modules/demo/src/extra.ts:1 no system test loads this file"
     And the output does not contain "types.ts"
+
+  @id=SCN-REPO-060 @status=implemented
+  Scenario: REACH leaves the lines of a library to MUTATION
+    Given a base commit with the library "packages/money" named "@opensoftware/money"
+    And a change that adds "packages/money/src/extra.ts" with a function
+    And no coverage report
+    When the developer runs "osf check REACH" against the base commit
+    Then the command exits with code 0
+    And the output contains "REACH ok"
 
   @id=SCN-REPO-033 @status=implemented
   Scenario: REACH accepts a change whose lines a system test reaches

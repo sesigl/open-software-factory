@@ -1,5 +1,6 @@
+import { runProgram } from "@opensoftware/cli";
 import { scenario } from "@opensoftware/testkit";
-import { lines, type Ran, runDemo } from "./program.ts";
+import { capture, demo, lines, type Ran } from "./program.ts";
 
 scenario("SCN-CLI-008", async ({ given, when, then }) => {
   let usage: string;
@@ -9,7 +10,7 @@ scenario("SCN-CLI-008", async ({ given, when, then }) => {
 
   let ran: Ran;
   await when("the module runs the program without a command", async () => {
-    ran = await runDemo(undefined, { usage });
+    ran = await capture((io) => runProgram(demo(undefined, { usage }), io));
   });
 
   await then("the exit code is 2", async () => {

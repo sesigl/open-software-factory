@@ -1,6 +1,6 @@
-import { check } from "@opensoftware/cli";
+import { check, runProgram } from "@opensoftware/cli";
 import { scenario } from "@opensoftware/testkit";
-import { lines, type Ran, runDemo } from "./program.ts";
+import { capture, demo, lines, type Ran } from "./program.ts";
 
 scenario("SCN-CLI-006", async ({ given, when, then }) => {
   let command: () => { lines: string[] };
@@ -17,7 +17,7 @@ scenario("SCN-CLI-006", async ({ given, when, then }) => {
 
   let ran: Ran;
   await when("the module runs the program", async () => {
-    ran = await runDemo(command);
+    ran = await capture((io) => runProgram(demo(command), io));
   });
 
   await then("the exit code is 2", async () => {
