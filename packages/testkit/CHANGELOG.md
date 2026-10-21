@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.6.0...testkit-v0.7.0) (2026-10-21)
+
+
+### Features
+
+* **tools:** mutation testing and duplication limits for every module (ADR 0037) ([#59](https://github.com/sesigl/open-software-factory/issues/59)) ([f62849e](https://github.com/sesigl/open-software-factory/commit/f62849ee318038dc4a0a84b6b3303528c3368f9e))
+
 ## [0.6.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.5.0...testkit-v0.6.0) (2026-10-21)
 
 
