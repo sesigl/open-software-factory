@@ -303,7 +303,9 @@ read them for ideas, do not copy their company-specific rules.
   - [x] The same tables and views for PostgreSQL (`--db` or `LEDGER_DB` takes a `postgres://` URL, the report is the
     same on both engines, the password is never printed), `ledger query`, and `ledger dashboard`: a Grafana dashboard
     JSON over the views with a PostgreSQL data source input (ADR 0035, `SCN-LEDGER-030` to `-038`).
-  - [ ] An import of a forge's pull requests and reviews as `pr.*` events, for teams without forge adapters (T-15).
+  - [x] `ledger import`: the pull requests, reviews and comments of a GitHub or Forgejo repository as `pr.opened@v1`,
+    `pr.reviewed@v1` and `pr.closed@v1` events in a JSON Lines file for `ledger ingest`, for teams without forge
+    adapters (ADR 0036, `SCN-LEDGER-039` to `-050`).
   - [ ] The dogfood: this repository's spend, `runs/` and pull requests in the dashboard, linked from the README.
 
 ---
