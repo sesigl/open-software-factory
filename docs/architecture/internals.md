@@ -20,7 +20,7 @@ an adapter.
 | sandbox | create(template, resources, network policy) · exec · copy · snapshot · destroy | **docker**; **kubernetes** (agent-sandbox SandboxTemplate, SandboxClaim, WarmPool; gVisor or Kata); e2b, daytona (community); macOS VM runner |
 | channel | receive → WorkItem · reply(thread, message or card) · ask(approval) → decision | **slack** (threads, Block Kit), **teams** (Adaptive Cards, tenant consent), **github** (comments, labels, checks), **linear** (agent sessions); all through Vercel Chat SDK; jira and sentry through webhooks |
 | tracker | create · update state · link PR · comment | github issues, linear, jira |
-| forge | branch · PR · checks · comments · merge rules | **github**, **forgejo** (also the deterministic test forge), gitlab |
+| forge | branch · PR · checks · comments · merge rules · PR events (`pr.opened`, `pr.reviewed`, `pr.closed`) | **github**, **forgejo** (also the deterministic test forge), gitlab |
 | inference | OpenAI-compatible endpoint + spend log | **litellm** in front of any provider |
 | secrets | resolve(reference) at the egress proxy, never in the sandbox | **env**, **openbao**, vault, infisical |
 | telemetry | OTLP | **otlp** via the OpenTelemetry Collector to any backend |
