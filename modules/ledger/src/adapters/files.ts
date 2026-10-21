@@ -34,6 +34,11 @@ function parseLine(line: string): unknown {
   }
 }
 
+/** A file the package ships, like grafana/ledger-dashboard.json, next to dist/. */
+export function packageFile(path: string): string {
+  return readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
+}
+
 export function writeText(path: string, text: string): void {
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, text);

@@ -1,0 +1,723 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_LEDGER",
+      "label": "ledger",
+      "description": "The PostgreSQL database that ledger ingest fills.",
+      "type": "datasource",
+      "pluginId": "grafana-postgresql-datasource",
+      "pluginName": "PostgreSQL"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "11.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "grafana-postgresql-datasource",
+      "name": "PostgreSQL",
+      "version": "1.0.0"
+    }
+  ],
+  "title": "ledger: cost per pull request and flow",
+  "description": "Cost per pull request and flow metrics from the views of @opensoftware/ledger (ADR 0035).",
+  "uid": "osf-ledger",
+  "tags": ["ledger", "open-software-factory"],
+  "editable": true,
+  "graphTooltip": 1,
+  "schemaVersion": 39,
+  "version": 1,
+  "timezone": "utc",
+  "refresh": "",
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "compute_usd_per_hour",
+        "label": "Compute USD per run hour",
+        "description": "What one hour of a run costs in compute, for example a sandbox.",
+        "type": "textbox",
+        "query": "0",
+        "current": {
+          "text": "0",
+          "value": "0"
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "0",
+            "value": "0"
+          }
+        ],
+        "hide": 0
+      },
+      {
+        "name": "platform_usd",
+        "label": "Platform USD in the period",
+        "description": "What the platform cost in the period: servers, licenses.",
+        "type": "textbox",
+        "query": "0",
+        "current": {
+          "text": "0",
+          "value": "0"
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "0",
+            "value": "0"
+          }
+        ],
+        "hide": 0
+      }
+    ]
+  },
+  "annotations": {
+    "list": []
+  },
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Cost per pull request",
+      "description": "Inference, compute and platform cost of the period, divided by the pull requests opened in it.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_LEDGER}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_LEDGER}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH spent AS (SELECT coalesce(sum(usd), 0) AS usd FROM spend_attributed WHERE spent_at >= $__timeFrom()::TIMESTAMP AND spent_at < $__timeTo()::TIMESTAMP),\nran AS (SELECT coalesce(sum(hours), 0) AS hours FROM run_cost WHERE started_at >= $__timeFrom()::TIMESTAMP AND started_at < $__timeTo()::TIMESTAMP),\nopened AS (SELECT count(*) AS n FROM pr_flow WHERE opened_at >= $__timeFrom()::TIMESTAMP AND opened_at < $__timeTo()::TIMESTAMP)\nSELECT (spent.usd + ran.hours * $compute_usd_per_hour + $platform_usd) / nullif(opened.n, 0) AS \"Cost per pull request\"\nFROM spent, ran, opened"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Cost per pull request by part",
+      "description": "The cost per pull request split into inference, compute and platform.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_LEDGER}"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_LEDGER}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH spent AS (SELECT coalesce(sum(usd), 0) AS usd FROM spend_attributed WHERE spent_at >= $__timeFrom()::TIMESTAMP AND spent_at < $__timeTo()::TIMESTAMP),\nran AS (SELECT coalesce(sum(hours), 0) AS hours FROM run_cost WHERE started_at >= $__timeFrom()::TIMESTAMP AND started_at < $__timeTo()::TIMESTAMP),\nopened AS (SELECT count(*) AS n FROM pr_flow WHERE opened_at >= $__timeFrom()::TIMESTAMP AND opened_at < $__timeTo()::TIMESTAMP)\nSELECT spent.usd / nullif(opened.n, 0) AS \"Inference\", ran.hours * $compute_usd_per_hour / nullif(opened.n, 0) AS \"Compute\",\n  $platform_usd::DOUBLE PRECISION / nullif(opened.n, 0) AS \"Platform\"\nFROM spent, ran, opened"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Revert rate",
+      "description": "Reverted pull requests divided by the pull requests merged in the period.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_LEDGER}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 4,
+        "h": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_LEDGER}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT (count(*) FILTER (WHERE is_revert))::DOUBLE PRECISION / nullif(count(*), 0) AS \"Revert rate\"\nFROM pr_flow WHERE merged_at >= $__timeFrom()::TIMESTAMP AND merged_at < $__timeTo()::TIMESTAMP"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Human interactions per pull request",
+      "description": "Reviews and comments by people per pull request opened in the period.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_LEDGER}"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 0,
+        "w": 4,
+        "h": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_LEDGER}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT avg(human_interactions)::DOUBLE PRECISION AS \"Human interactions\" FROM pr_flow WHERE opened_at >= $__timeFrom()::TIMESTAMP AND opened_at < $__timeTo()::TIMESTAMP"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Unattributed spend",
+      "description": "Spend that no run names. Send osf.run.id in LiteLLM's spend_logs_metadata to attribute it.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_LEDGER}"
+      },
+      "gridPos": {
+        "x": 20,
+        "y": 0,
+        "w": 4,
+        "h": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_LEDGER}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT coalesce(sum(usd) FILTER (WHERE run_id IS NULL), 0) AS \"Unattributed\" FROM spend_attributed WHERE spent_at >= $__timeFrom()::TIMESTAMP AND spent_at < $__timeTo()::TIMESTAMP"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Pull requests opened and merged per day",
+      "description": "Throughput: read it next to the cost and the revert rate.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_LEDGER}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_LEDGER}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT day AS time, sum(opened) AS \"Opened\", sum(merged) AS \"Merged\"\nFROM (SELECT date_trunc('day', opened_at) AS day, 1 AS opened, 0 AS merged FROM pr_flow WHERE opened_at >= $__timeFrom()::TIMESTAMP AND opened_at < $__timeTo()::TIMESTAMP\n      UNION ALL SELECT date_trunc('day', merged_at), 0, 1 FROM pr_flow WHERE merged_at >= $__timeFrom()::TIMESTAMP AND merged_at < $__timeTo()::TIMESTAMP) AS days\nGROUP BY day ORDER BY day"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Spend per day",
+      "description": "Inference spend of each day.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_LEDGER}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 5,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_LEDGER}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT date_trunc('day', spent_at) AS time, sum(usd) AS \"Spend\" FROM spend_attributed WHERE spent_at >= $__timeFrom()::TIMESTAMP AND spent_at < $__timeTo()::TIMESTAMP\nGROUP BY 1 ORDER BY 1"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "bargauge",
+      "title": "Median cycle time in hours",
+      "description": "The median hours of each segment, for the pull requests opened in the period.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_LEDGER}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "h",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": true
+        },
+        "orientation": "horizontal",
+        "displayMode": "basic"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_LEDGER}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  percentile_cont(0.5) WITHIN GROUP (ORDER BY extract(epoch FROM opened_at - kickoff_at) / 3600) AS \"Kickoff to pull request\",\n  percentile_cont(0.5) WITHIN GROUP (ORDER BY extract(epoch FROM merged_at - kickoff_at) / 3600) AS \"Kickoff to merge\",\n  percentile_cont(0.5) WITHIN GROUP (ORDER BY extract(epoch FROM first_human_review_at - opened_at) / 3600) AS \"Pull request to first human review\",\n  percentile_cont(0.5) WITHIN GROUP (ORDER BY extract(epoch FROM merged_at - first_human_review_at) / 3600) AS \"First human review to merge\"\nFROM pr_flow WHERE opened_at >= $__timeFrom()::TIMESTAMP AND opened_at < $__timeTo()::TIMESTAMP"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Human interactions per pull request per day",
+      "description": "The trend should go down as the factory needs people less.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_LEDGER}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 13,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_LEDGER}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT date_trunc('day', opened_at) AS time, avg(human_interactions)::DOUBLE PRECISION AS \"Human interactions\"\nFROM pr_flow WHERE opened_at >= $__timeFrom()::TIMESTAMP AND opened_at < $__timeTo()::TIMESTAMP GROUP BY 1 ORDER BY 1"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "bargauge",
+      "title": "Spend by source",
+      "description": "Spend of the period by source; unattributed spend is its own line.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_LEDGER}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 21,
+        "w": 6,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": true
+        },
+        "orientation": "horizontal",
+        "displayMode": "basic"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_LEDGER}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT source AS \"source\", sum(usd) AS \"Spend\" FROM spend_attributed WHERE spent_at >= $__timeFrom()::TIMESTAMP AND spent_at < $__timeTo()::TIMESTAMP\nGROUP BY source ORDER BY 2 DESC"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "bargauge",
+      "title": "Spend by user",
+      "description": "Spend of the period by user; unattributed spend is its own line.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_LEDGER}"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 21,
+        "w": 6,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": true
+        },
+        "orientation": "horizontal",
+        "displayMode": "basic"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_LEDGER}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT user_id AS \"user\", sum(usd) AS \"Spend\" FROM spend_attributed WHERE spent_at >= $__timeFrom()::TIMESTAMP AND spent_at < $__timeTo()::TIMESTAMP\nGROUP BY user_id ORDER BY 2 DESC"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "bargauge",
+      "title": "Spend by agent",
+      "description": "Spend of the period by agent; unattributed spend is its own line.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_LEDGER}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 21,
+        "w": 6,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": true
+        },
+        "orientation": "horizontal",
+        "displayMode": "basic"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_LEDGER}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT agent AS \"agent\", sum(usd) AS \"Spend\" FROM spend_attributed WHERE spent_at >= $__timeFrom()::TIMESTAMP AND spent_at < $__timeTo()::TIMESTAMP\nGROUP BY agent ORDER BY 2 DESC"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "type": "bargauge",
+      "title": "Spend by model",
+      "description": "Spend of the period by model; unattributed spend is its own line.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_LEDGER}"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 21,
+        "w": 6,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": true
+        },
+        "orientation": "horizontal",
+        "displayMode": "basic"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_LEDGER}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT model AS \"model\", sum(usd) AS \"Spend\" FROM spend_attributed WHERE spent_at >= $__timeFrom()::TIMESTAMP AND spent_at < $__timeTo()::TIMESTAMP\nGROUP BY model ORDER BY 2 DESC"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "type": "table",
+      "title": "The 20 most expensive pull requests",
+      "description": "Inference cost of each pull request's runs by their share, plus compute.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_LEDGER}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 29,
+        "w": 16,
+        "h": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_LEDGER}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT url AS \"Pull request\", title AS \"Title\", inference_usd + hours * $compute_usd_per_hour AS \"Cost\"\nFROM pr_cost WHERE opened_at >= $__timeFrom()::TIMESTAMP AND opened_at < $__timeTo()::TIMESTAMP ORDER BY 3 DESC, url LIMIT 20"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "type": "table",
+      "title": "Runs by agent type",
+      "description": "All runs and the top-level runs, by agent type.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_LEDGER}"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 29,
+        "w": 8,
+        "h": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_LEDGER}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT agent AS \"Agent\", count(*) AS \"Runs\", count(*) FILTER (WHERE top_level) AS \"Top-level runs\"\nFROM run_cost WHERE started_at >= $__timeFrom()::TIMESTAMP AND started_at < $__timeTo()::TIMESTAMP GROUP BY agent ORDER BY 2 DESC, agent"
+        }
+      ]
+    }
+  ]
+}
