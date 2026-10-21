@@ -40,7 +40,8 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
   `env` may only name variables the module's README documents under Configuration. `bin` must be the built
   artifact: a `bin` in `src/` fails the test (BOUNDARY-RUNTIME).
 - `sut.files`: `put`, `read`, `list`, `remove` and `clear` in the module's input and output folders. Every path
-  starts with `$INPUT/` or `$OUTPUT/` and stays inside that folder; any other path fails the test.
+  starts with `$INPUT/` or `$OUTPUT/` and stays inside that folder; any other path fails the test. `path` gives
+  the absolute path of a file there, for a library in `packages/` whose functions take paths (ADR 0039).
 - `sut.readme`: `quickStartArgs()` (the arguments of the README's `npx <package> ...` line) and
   `quickStartOutput()` (the first `$OUTPUT/<file>` it names).
 - `sut.git`: `$INPUT` is a Git repository with a fixed author and clock.
@@ -194,3 +195,5 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-042 | implemented | A scripted reply reports its token usage |
 | SCN-TK-043 | implemented | The fake gives the headers of every request it received |
 | SCN-TK-044 | implemented | The module runs the mutant that Stryker activates |
+| SCN-TK-045 | implemented | sut.files.path gives the absolute path of a file in $INPUT |
+| SCN-TK-046 | implemented | A library without a bin uses sut.files |

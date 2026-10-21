@@ -82,6 +82,14 @@ Feature: Quality limits
     And the output contains "MUTATION modules/demo/package.json"
     And the output contains 'has no "mutation" script'
 
+  @id=SCN-REPO-058 @status=implemented
+  Scenario: MUTATION rejects a library in packages without a mutation script
+    Given a library "packages/money" with a source file, its quality limits and a package.json without a "mutation" script and without a bin
+    When the developer runs "osf check MUTATION --total"
+    Then the command exits with code 1
+    And the output contains "MUTATION packages/money/package.json"
+    And the output contains 'has no "mutation" script'
+
   @id=SCN-REPO-053 @status=implemented
   Scenario: osf mutation lists the line ranges a change adds
     Given a base commit with module "demo", the limit "at least 70% of the mutants in changed lines" and "src/run.ts" of 5 lines

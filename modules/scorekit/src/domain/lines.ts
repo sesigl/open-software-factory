@@ -1,5 +1,5 @@
 // JSON Lines: one JSON value per non-empty line.
-import { UsageError } from "./errors.ts";
+import { UsageError } from "@opensoftware/cli";
 
 /** The values of a JSON Lines text with their line numbers. A line that is not JSON exits 2 with file and line. */
 export function jsonLines(file: string, text: string): { line: number; value: unknown }[] {

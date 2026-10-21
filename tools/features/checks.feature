@@ -51,6 +51,22 @@ Feature: Repository checks
     Then the command exits with code 1
     And the output contains "BOUNDARY-STATIC modules/demo/system-tests/SCN-DEMO-001.test.ts:2"
 
+  @id=SCN-REPO-056 @status=implemented
+  Scenario: BOUNDARY-STATIC accepts a library's system test that imports the library
+    Given a repository with the library "packages/money" named "@opensoftware/money" and the implemented scenario "SCN-MONEY-001"
+    And its system test imports "@opensoftware/money"
+    When the developer runs "osf check BOUNDARY-STATIC"
+    Then the command exits with code 0
+    And the output contains "BOUNDARY-STATIC ok"
+
+  @id=SCN-REPO-057 @status=implemented
+  Scenario: BOUNDARY-STATIC rejects a library's system test that imports the library's src/
+    Given a repository with the library "packages/money" named "@opensoftware/money" and the implemented scenario "SCN-MONEY-001"
+    And its system test imports "../src/index.ts"
+    When the developer runs "osf check BOUNDARY-STATIC"
+    Then the command exits with code 1
+    And the output contains "BOUNDARY-STATIC packages/money/system-tests/SCN-MONEY-001.test.ts:2"
+
   @id=SCN-REPO-007 @status=deprecated
   Scenario: SPECGUARD rejects a changed implemented step without approval
     Given a base commit with the implemented scenario "SCN-DEMO-001"

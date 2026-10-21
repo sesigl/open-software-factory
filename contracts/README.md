@@ -25,6 +25,9 @@ import { type FactoryDefinition, validate } from "@opensoftware/contracts";
 const problems = validate("factory-definition", document); // [] when valid, else { path, message } per problem
 ```
 
+`runSpans(record)` reads a run record as runlog writes it: each span with its decoded resource and attributes, or
+`undefined` when the value is no OTLP/JSON trace export request ([ADR 0041](../docs/decisions/0041-run-record-reader.md)).
+
 The schema files are exported at the paths in the table below, for example
 `@opensoftware/contracts/work-item/work-item.schema.json`, along with `events/asyncapi.yaml`, `openapi/*` and `typespec/*`.
 
@@ -106,3 +109,5 @@ None. The CLI reads no environment variables.
 | SCN-CTR-007 | deprecated | The generated Python client round-trips every valid fixture |
 | SCN-CTR-008 | deprecated | The generated Java client round-trips every valid fixture |
 | SCN-CTR-009 | implemented | A tighter form of a "exactly one of" rule fails the compatibility check |
+| SCN-CTR-010 | implemented | runSpans gives each span of a run record with its resource and decoded attributes |
+| SCN-CTR-011 | implemented | runSpans gives no spans for a value that is not a trace export request |

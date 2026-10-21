@@ -31,6 +31,7 @@
     "@opensoftware/testkit": "workspace:*"
   },
   "dependencies": {
+    "@opensoftware/cli": "workspace:*",
     "@opensoftware/contracts": "workspace:*",
     "@opentelemetry/api": "1.9.1",
     "@opentelemetry/exporter-trace-otlp-http": "0.223.0",

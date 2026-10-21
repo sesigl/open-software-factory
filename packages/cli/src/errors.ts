@@ -1,8 +1,6 @@
-// A usage error (a wrong option or input record) exits 2 before anything is written.
+// A usage error: a wrong option, argument or input file. The program exits 2 and writes nothing.
 
-export class UsageError extends Error {
-  override name = "UsageError";
-}
+export class UsageError extends Error {}
 
 /** Throws a usage error with the message unless the condition holds. */
 export function check(condition: unknown, message: string): asserts condition {

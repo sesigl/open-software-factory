@@ -1,6 +1,6 @@
 // ledger report: query the views for one period and write report.json and, when asked, Markdown.
 
-import { writeText } from "../adapters/files.ts";
+import { writeText } from "@opensoftware/cli";
 import type { Ledger, Parameter, Row } from "../adapters/ledger.ts";
 import { buildReport, type Facts, markdown, type Options, type Slice, summary } from "../domain/report.ts";
 

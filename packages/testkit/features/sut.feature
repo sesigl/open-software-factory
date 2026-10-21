@@ -18,6 +18,21 @@ Feature: The sut handle
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-045 @status=implemented
+  Scenario: sut.files.path gives the absolute path of a file in $INPUT
+    Given a module whose system test puts "$INPUT/a.txt" and expects sut.files.path of "$INPUT/a.txt" to be an absolute path that ends with "/input/a.txt"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-046 @status=implemented
+  Scenario: A library without a bin uses sut.files
+    Given a library whose package.json has no bin
+    And its system test puts "$INPUT/a.txt" with the text "a" and expects to read "a" from it
+    When the developer runs "testkit run --junit report.xml" in the library
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-005 @status=implemented
   Scenario: The module runs with a fixed clock and seed
     Given a module whose CLI prints the environment variables "OSF_NOW" and "OSF_SEED"

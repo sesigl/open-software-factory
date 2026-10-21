@@ -10,6 +10,8 @@ export interface DemoOptions {
   steps?: string[];
   /** Body of the test of SCN-DEMO-001; the context gives `sut`, `fakes`, `given`, `when` and `then`. */
   test?: string[];
+  /** A library: package.json has no bin and there is no CLI. */
+  library?: boolean;
 }
 
 const HELLO: Required<Pick<DemoOptions, "bin" | "steps" | "test">> = {
@@ -32,9 +34,15 @@ const HELLO: Required<Pick<DemoOptions, "bin" | "steps" | "test">> = {
  */
 export function demoModule(options: DemoOptions = {}): Record<string, string> {
   const { bin, steps, test } = { ...HELLO, ...options };
+  const manifest = {
+    name: "demo",
+    version: "0.1.0",
+    type: "module",
+    ...(options.library ? {} : { bin: { demo: "bin/demo.js" } }),
+  };
   const files: Record<string, string> = {
-    "$INPUT/package.json": `${JSON.stringify({ name: "demo", version: "0.1.0", type: "module", bin: { demo: "bin/demo.js" } }, null, 2)}\n`,
-    "$INPUT/bin/demo.js": bin,
+    "$INPUT/package.json": `${JSON.stringify(manifest, null, 2)}\n`,
+    ...(options.library ? {} : { "$INPUT/bin/demo.js": bin }),
     "$INPUT/features/a.feature": [
       "Feature: Demo",
       "",

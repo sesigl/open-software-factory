@@ -10,6 +10,7 @@ import type { components } from "./generated/types.ts";
 export { diff as breakingChanges, type Schema } from "./breaking.ts";
 export { FORMATS, type Format, formatNamed } from "./formats.ts";
 export type { components } from "./generated/types.ts";
+export { type AttributeValue, type RunSpan, runSpans, type SpanAttributes } from "./run-record.ts";
 
 type Schemas = components["schemas"];
 export type FactoryDefinition = Schemas["FactoryDefinition"];

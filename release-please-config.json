@@ -22,6 +22,13 @@
       "initial-version": "0.1.0",
       "bump-minor-pre-major": true
     },
+    "packages/cli": {
+      "release-type": "node",
+      "package-name": "@opensoftware/cli",
+      "component": "cli",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
+    },
     "modules/factory-spec": {
       "release-type": "node",
       "package-name": "@opensoftware/factory-spec",

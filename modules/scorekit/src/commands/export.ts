@@ -1,8 +1,9 @@
 // scorekit export: the scorers as Langfuse LLM-as-a-judge evaluators with their rules, written to a file or, with
 // --push, created or updated in Langfuse (ADR 0033).
-import { packNames, readScorer, writeText } from "../adapters/files.ts";
+
+import { UsageError, writeText } from "@opensoftware/cli";
+import { packNames, readScorer } from "../adapters/files.ts";
 import { createEvaluator, createRule, langfuseFrom, listEvaluators, updateEvaluator } from "../adapters/langfuse.ts";
-import { UsageError } from "../domain/errors.ts";
 import { evaluatorOf, type ModelConfig, ruleOf, sameDefinition } from "../domain/evaluator.ts";
 
 export interface ExportOptions {

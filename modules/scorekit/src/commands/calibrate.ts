@@ -1,7 +1,8 @@
 // scorekit calibrate: judge every labeled run and compare the judge with the labels.
-import { readRunFiles, readScorer, readScores, writeText } from "../adapters/files.ts";
+
+import { UsageError, writeText } from "@opensoftware/cli";
+import { readRunFiles, readScorer, readScores } from "../adapters/files.ts";
 import { calibrate as compare, type Judged, percent } from "../domain/calibration.ts";
-import { UsageError } from "../domain/errors.ts";
 import { parseRuns } from "../domain/runs.ts";
 import { runOf } from "../domain/score.ts";
 import { gatewayFrom, judgeRuns } from "./judge-runs.ts";
@@ -41,6 +42,6 @@ export async function calibrate(paths: string[], options: CalibrateOptions, env:
   return {
     lines: [below ? `${agreement} is below ${percent(minimum)}` : `${agreement}${kappa}`],
     errors,
-    failed: below || errors.length > missing.length,
+    exitCode: below || errors.length > missing.length ? 1 : 0,
   };
 }
