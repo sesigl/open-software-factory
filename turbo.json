@@ -40,7 +40,7 @@
     "mutation": {
       "dependsOn": ["build", "^build"],
       "cache": false,
-      "passThroughEnv": ["OSF_BASE"]
+      "passThroughEnv": ["OSF_BASE", "PLAYWRIGHT_BROWSERS_PATH"]
     }
   }
 }
