@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.7.0...testkit-v0.8.0) (2026-10-21)
+
+
+### Features
+
+* **cli:** shared libraries for the command line and run records (ADR 0039, 0040, 0041) ([#65](https://github.com/sesigl/open-software-factory/issues/65)) ([5f49dd9](https://github.com/sesigl/open-software-factory/commit/5f49dd9921d5dd086e53ab5c0359e2d4f8f3a1d2))
+
 ## [0.7.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.6.0...testkit-v0.7.0) (2026-10-21)
 
 
