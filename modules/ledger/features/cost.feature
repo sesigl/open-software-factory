@@ -18,18 +18,14 @@ Feature: Cost per pull request
     Then "report.json" shows a cost per pull request of 9.00 USD split into inference 5.00, compute 1.00 and platform 3.00
 
   @id=SCN-LEDGER-012 @status=implemented @realizes=SCN-FACTORY-METRIC-005
-  Scenario Outline: Spend is sliced by <dimension>
+  Scenario: Spend is sliced by source, user, agent and model
     Given a run with the source "slack", the requester "github:mona", the agent "implementer" and the model "claude-sonnet-5-5" and spend rows of 3.00 USD
     And a run with the source "github", the requester "github:hubot", the agent "reviewer" and the model "claude-haiku-5-5" and spend rows of 1.00 USD
     When the user runs "ledger report data.jsonl"
-    Then "report.json" shows the spend by "<dimension>" as "<first>" 3.00 USD with the share 0.75 and "<second>" 1.00 USD with the share 0.25
-
-    Examples:
-      | dimension | first             | second           |
-      | source    | slack             | github           |
-      | user      | github:mona       | github:hubot     |
-      | agent     | implementer       | reviewer         |
-      | model     | claude-sonnet-5-5 | claude-haiku-5-5 |
+    Then "report.json" shows the spend by "source" as "slack" 3.00 USD with the share 0.75 and "github" 1.00 USD with the share 0.25
+    And "report.json" shows the spend by "user" as "github:mona" 3.00 USD with the share 0.75 and "github:hubot" 1.00 USD with the share 0.25
+    And "report.json" shows the spend by "agent" as "implementer" 3.00 USD with the share 0.75 and "reviewer" 1.00 USD with the share 0.25
+    And "report.json" shows the spend by "model" as "claude-sonnet-5-5" 3.00 USD with the share 0.75 and "claude-haiku-5-5" 1.00 USD with the share 0.25
 
   @id=SCN-LEDGER-013 @status=implemented @realizes=SCN-FACTORY-METRIC-005
   Scenario: Spend without a run is reported as unattributed

@@ -147,7 +147,7 @@ with a trusted publisher for `publish-ledger.yml`. No credential is stored in th
 | SCN-LEDGER-009 | implemented | An event of another type is skipped and counted |
 | SCN-LEDGER-010 | implemented | The cost per pull request is the total spend divided by the pull requests |
 | SCN-LEDGER-011 | implemented | The cost per pull request is split into compute, platform and inference |
-| SCN-LEDGER-012 | implemented | Spend is sliced by <dimension> |
+| SCN-LEDGER-012 | implemented | Spend is sliced by source, user, agent and model |
 | SCN-LEDGER-013 | implemented | Spend without a run is reported as unattributed |
 | SCN-LEDGER-014 | implemented | A run without spend rows counts its own cost |
 | SCN-LEDGER-015 | implemented | Spend rows of a run replace the run's own cost |
