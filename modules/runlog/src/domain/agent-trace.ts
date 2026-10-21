@@ -44,6 +44,10 @@ function joined(ranges: Range[]): Range[] {
   return result;
 }
 
+/** A 32-digit hex ID in the 8-4-4-4-12 form of a UUID. */
+const uuidOf = (hex: string): string =>
+  [hex.slice(0, 8), hex.slice(8, 12), hex.slice(12, 16), hex.slice(16, 20), hex.slice(20)].join("-");
+
 /**
  * The record for the session. `read` gives the content of a file relative to the repository as it is now, or
  * undefined; `traceId` gives the record its ID and `revision` is the commit the ranges refer to.
@@ -57,21 +61,22 @@ export function agentTraceOf(
   const ranges = new Map<string, Range[]>();
   for (const write of session.writes) {
     const path = pathIn(session, write.path);
-    const text = write.text?.replace(/\n+$/, "");
-    const content = path && text?.trim() ? read(path) : undefined;
-    const range = path && text && content !== undefined ? rangeOf(content, text) : undefined;
-    if (path && range) ranges.set(path, [...(ranges.get(path) ?? []), range]);
+    // A session file can hold a call without its text.
+    const text = typeof write.text === "string" ? write.text.replace(/\n+$/, "") : "";
+    const content = path && text.trim() ? read(path) : undefined;
+    const range = content === undefined ? undefined : rangeOf(content, text);
+    if (range) ranges.set(path as string, [...(ranges.get(path as string) ?? []), range]);
   }
   const contributor = { type: "ai" as const, model_id: `${session.provider}/${session.model}` };
   return {
     version: "0.1.0",
-    id: traceId.replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, "$1-$2-$3-$4-$5"),
+    id: uuidOf(traceId),
     timestamp: session.end,
     ...(revision ? { vcs: { type: "git" as const, revision } } : {}),
     tool: { name: session.harness, ...(session.harnessVersion ? { version: session.harnessVersion } : {}) },
     files: [...ranges.keys()].sort().map((path) => ({
       path,
-      conversations: [{ contributor, ranges: joined(ranges.get(path) ?? []) }],
+      conversations: [{ contributor, ranges: joined(ranges.get(path) as Range[]) }],
     })),
   };
 }

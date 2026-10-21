@@ -38,3 +38,31 @@ Feature: Agent Trace line attribution
     When the developer runs "runlog export session.jsonl --agent-trace trace.json"
     Then the command exits with code 0
     And "trace.json" has no file "src/login.ts"
+
+  @id=SCN-RUN-071 @status=implemented
+  Scenario: Overlapping and touching ranges of a file are joined, and the files are in the order of their paths
+    Given a Git repository with one commit, the files "src/cart.ts" and "README.md" and a Claude Code session whose MultiEdit wrote lines 7 to 8, 2 to 3, 3 to 4, nothing and 5 of "src/cart.ts" and that then wrote "README.md"
+    When the developer runs "runlog export session.jsonl --agent-trace trace.json"
+    Then the command exits with code 0
+    And "trace.json" attributes line 1 of "README.md", lines 2 to 5 of "src/cart.ts" and lines 7 to 8 of "src/cart.ts" to "ai" with the model "anthropic/claude-sonnet-5-5", in this order
+
+  @id=SCN-RUN-072 @status=implemented
+  Scenario: The Agent Trace record names the harness and carries the trace ID of the run
+    Given a Git repository with one commit, the file "src/login.ts" and a Claude Code session that edited lines 3 to 4 of "src/login.ts" and wrote "src/logout.ts" with 3 lines
+    When the developer runs "runlog export session.jsonl --agent-trace trace.json"
+    Then "trace.json" names the tool "claude-code" with the version "2.1.0"
+    And its ID is the trace ID of the run in "runs.jsonl" in the 8-4-4-4-12 form of a UUID
+
+  @id=SCN-RUN-073 @status=implemented
+  Scenario: Each block of lines that a Codex patch added is attributed on its own
+    Given a Git repository with one commit, the file "src/auth.ts" and a Codex session whose patch added line 1, kept lines 2 to 4 and added lines 5 to 7 of it
+    When the developer runs "runlog export rollout.jsonl --agent-trace trace.json"
+    Then the command exits with code 0
+    And "trace.json" attributes line 1 and lines 5 to 7 of "src/auth.ts" to "ai" with the model "openai/gpt-5-codex"
+
+  @id=SCN-RUN-074 @status=implemented
+  Scenario: The lines an OpenCode write call wrote are attributed to its model
+    Given a Git repository with one commit, the files "src/login.ts" and "src/logout.ts" and the OpenCode session "ses_4c2e9a1b7f3dQ8mN2pR5tV6wXy" that edited lines 3 to 4 of "src/login.ts" and wrote "src/logout.ts" with 3 lines
+    When the developer runs "runlog export session.json --agent-trace trace.json"
+    Then the command exits with code 0
+    And "trace.json" attributes lines 3 to 4 of "src/login.ts" and lines 1 to 3 of "src/logout.ts" to "ai" with the model "anthropic/claude-sonnet-5-5"
