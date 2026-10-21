@@ -6,7 +6,8 @@ export const CLAUDE_SESSION_ID = "5b8e0c7e-1d2a-4f00-9a7e-0d1f2a3b4c5d";
 
 /**
  * A Claude Code session: the prompt "Fix the failing login test", three responses of claude-sonnet-5-5 (msg_01 on
- * two lines), "npm test" from 10:00:06 to 10:00:20 and "gh pr create" that prints a pull request link.
+ * two lines), "npm test" from 10:00:06 to 10:00:20 and "gh pr create" that prints a pull request link. Claude Code
+ * also writes system lines with the session ID, such as a compact boundary.
  */
 export function claudeSession(minute = "2026-01-01T10:00"): string {
   const base = { sessionId: CLAUDE_SESSION_ID, cwd: "/work/web", version: "2.1.0", gitBranch: "main" };
@@ -32,6 +33,13 @@ export function claudeSession(minute = "2026-01-01T10:00"): string {
   return jsonl([
     { type: "summary", summary: "Fix the login test", leafUuid: "a1" },
     user("00", "Fix the failing login test"),
+    {
+      ...base,
+      type: "system",
+      subtype: "compact_boundary",
+      content: "Conversation compacted",
+      timestamp: `${minute}:02.000Z`,
+    },
     assistant("05", "msg_01", [{ type: "text", text: "I will run the tests." }], usage(1000, 200, 300, 50)),
     assistant(
       "06",
@@ -54,8 +62,8 @@ export function claudeSession(minute = "2026-01-01T10:00"): string {
 export const CODEX_SESSION_ID = "7f9c2b1a-5d3e-4c8f-9b0a-1e2d3c4b5a69";
 
 /**
- * A Codex rollout: the prompt "Fix the failing login test", two responses of gpt-5-codex and the shell call
- * "npm test" from 10:00:05 to 10:00:13.
+ * A Codex rollout: the prompt "Fix the failing login test", two responses of gpt-5-codex, the shell call
+ * "npm test" from 10:00:05 to 10:00:13 and the apply_patch call that added src/session.ts at 10:00:15.
  */
 export function codexSession(): string {
   const at = (seconds: string) => `2026-01-01T10:00:${seconds}.000Z`;
@@ -104,6 +112,16 @@ export function codexSession(): string {
       timestamp: at("13"),
       type: "response_item",
       payload: { type: "function_call_output", call_id: "call_01", output: "1 failing" },
+    },
+    {
+      timestamp: at("15"),
+      type: "response_item",
+      payload: { type: "custom_tool_call", name: "apply_patch", input: ADD_SESSION_PATCH, call_id: "call_02" },
+    },
+    {
+      timestamp: at("16"),
+      type: "response_item",
+      payload: { type: "custom_tool_call_output", call_id: "call_02", output: "Success." },
     },
     {
       timestamp: at("20"),
@@ -177,15 +195,85 @@ export function claudeEditSession(): string {
   return claudeToolSession("Edit", edit, "The file has been updated.", [write]);
 }
 
+/** src/cart.ts after the session of claudeMultiEditSession: lines 2 to 5 and 7 to 8 are the agent's. */
+export const CART_TS = [
+  "export function total(items) {",
+  "  let sum = 0;",
+  "  for (const item of items) sum += item.price;",
+  "  return sum;",
+  "}",
+  "",
+  "export function empty(items) {",
+  "  return items.length === 0;",
+  "}",
+  "",
+].join("\n");
+
+/** README.md as claudeMultiEditSession wrote it: 1 line. */
+export const README_MD = "# Cart\n";
+
+/**
+ * A Claude Code session whose MultiEdit of src/cart.ts wrote, in this order, lines 7 to 8, lines 2 to 3, lines 3
+ * to 4, nothing (it deleted text) and line 5, and which then wrote README.md.
+ */
+export function claudeMultiEditSession(): string {
+  const edits = [
+    "export function empty(items) {\n  return items.length === 0;",
+    "  let sum = 0;\n  for (const item of items) sum += item.price;",
+    "  for (const item of items) sum += item.price;\n  return sum;",
+    "",
+    "}",
+  ].map((text, index) => ({ old_string: `old ${index}`, new_string: text }));
+  const write = {
+    type: "tool_use",
+    id: "toolu_02",
+    name: "Write",
+    input: { file_path: "/work/web/README.md", content: README_MD },
+  };
+  return claudeToolSession("MultiEdit", { file_path: "/work/web/src/cart.ts", edits }, "Applied 5 edits.", [write]);
+}
+
+/** A Claude Code session whose Bash call printed Forgejo links over http and a GitHub pull request link twice. */
+export function claudeLinkSession(): string {
+  const printed = [
+    "Opened http://forgejo.local/acme/web/pulls/42 for http://forgejo.local/acme/web/issues/9",
+    "See https://github.com/acme/web/pull/108 and again https://github.com/acme/web/pull/108",
+  ].join("\n");
+  return claudeToolSession("Bash", { command: "make pr" }, printed);
+}
+
+/** A Claude Code session of one prompt at 10:00:00.250 and one answer at 10:00:01.750. */
+export function claudeMillisecondSession(): string {
+  const base = { sessionId: CLAUDE_SESSION_ID, cwd: "/work/web", version: "2.1.0" };
+  const usage = { input_tokens: 100, output_tokens: 10 };
+  return jsonl([
+    { ...base, type: "user", timestamp: "2026-01-01T10:00:00.250Z", message: { role: "user", content: "Go" } },
+    {
+      ...base,
+      type: "assistant",
+      timestamp: "2026-01-01T10:00:01.750Z",
+      message: {
+        id: "msg_01",
+        role: "assistant",
+        model: "claude-sonnet-5-5",
+        content: [{ type: "text", text: "Done." }],
+        usage,
+      },
+    },
+  ]);
+}
+
 /** A Codex rollout of gpt-5-codex whose apply_patch added src/session.ts with the 2 lines of SESSION_TS. */
 export const SESSION_TS = 'export const ttl = 3600;\nexport const name = "sid";\n';
 
-export function codexPatchSession(): string {
+/** The apply_patch patch that adds src/session.ts with SESSION_TS. */
+export const ADD_SESSION_PATCH = `*** Begin Patch\n*** Add File: src/session.ts\n${SESSION_TS.trimEnd()
+  .split("\n")
+  .map((line) => `+${line}`)
+  .join("\n")}\n*** End Patch\n`;
+
+export function codexPatchSession(patch = ADD_SESSION_PATCH): string {
   const at = (seconds: string) => `2026-01-01T10:00:${seconds}.000Z`;
-  const patch = `*** Begin Patch\n*** Add File: src/session.ts\n${SESSION_TS.trimEnd()
-    .split("\n")
-    .map((line) => `+${line}`)
-    .join("\n")}\n*** End Patch\n`;
   return jsonl([
     {
       timestamp: at("00"),
@@ -206,11 +294,41 @@ export function codexPatchSession(): string {
   ]);
 }
 
+/** src/auth.ts after the patch of UPDATE_AUTH_PATCH: line 1 and lines 5 to 7 are the agent's. */
+export const AUTH_TS = [
+  "export const ttl = 3600;",
+  "export function check(user) {",
+  "  return true;",
+  "}",
+  "export function renew(user) {",
+  "  return true;",
+  "}",
+  "",
+].join("\n");
+
+/** An apply_patch patch that updates src/auth.ts: it adds line 1, keeps lines 2 to 4 and adds lines 5 to 7. */
+export const UPDATE_AUTH_PATCH = [
+  "*** Begin Patch",
+  "*** Update File: src/auth.ts",
+  "@@",
+  "-export const ttl = 60;",
+  "+export const ttl = 3600;",
+  " export function check(user) {",
+  "   return true;",
+  " }",
+  "+export function renew(user) {",
+  "+  return true;",
+  "+}",
+  "*** End Patch",
+  "",
+].join("\n");
+
 export const OPENCODE_SESSION_ID = "ses_4c2e9a1b7f3dQ8mN2pR5tV6wXy";
 
 /**
  * What "opencode export" prints for a session of claude-sonnet-5-5: the prompt "Fix the failing login test", the
- * assistant message msg_a1 with an "edit" of src/login.ts and "npm test" from 10:00:06 to 10:00:15, then msg_a2.
+ * assistant message msg_a1 with an "edit" of src/login.ts and "npm test" from 10:00:06 to 10:00:15, then msg_a2 with
+ * a "read" of a missing file that failed with "File not found" and a "write" of src/logout.ts with LOGOUT_TS.
  */
 export function openCodeSession(): string {
   const at = (seconds: number) => Date.parse("2026-01-01T10:00:00.000Z") + seconds * 1000;
@@ -248,6 +366,11 @@ export function openCodeSession(): string {
       time: { start: at(span[0] ?? 0), end: at(span[1] ?? 0) },
     },
   });
+  // A tool part whose call failed has an error in place of its output.
+  const failed = (messageID: string, callID: string, name: string, input: unknown, error: string, second: number) => {
+    const part = tool(messageID, callID, name, input, "", [second, second]);
+    return { ...part, state: { status: "error", input, error, time: part.state.time } };
+  };
   const text = (messageID: string, id: string, value: string) => ({ ...ids, id, messageID, type: "text", text: value });
   return `${JSON.stringify(
     {
@@ -286,7 +409,18 @@ export function openCodeSession(): string {
         },
         {
           info: assistant("msg_a2", 16, 20, [300, 20, 1200, 0]),
-          parts: [text("msg_a2", "prt_t2", "The test passes now.")],
+          parts: [
+            text("msg_a2", "prt_t2", "The test passes now."),
+            failed("msg_a2", "toolu_oc3", "read", { filePath: "/work/web/src/missing.ts" }, "File not found", 17),
+            tool(
+              "msg_a2",
+              "toolu_oc4",
+              "write",
+              { filePath: "/work/web/src/logout.ts", content: LOGOUT_TS },
+              "Wrote file successfully.",
+              [18, 19],
+            ),
+          ],
         },
       ],
     },

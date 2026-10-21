@@ -9,3 +9,10 @@ Feature: Link the issues a run touched
     When the developer runs "runlog export session.jsonl"
     Then the command exits with code 0
     And the root span in "runs.jsonl" has "osf.issue.urls" ["https://linear.app/acme/issue/WEB-42", "https://github.com/acme/web/issues/12"]
+
+  @id=SCN-RUN-075 @status=implemented @realizes=SCN-FACTORY-DATA-003
+  Scenario: Links over http and with numbers of several digits end up on the root span once each
+    Given a Git repository with one commit and a Claude Code session whose tool printed "http://forgejo.local/acme/web/pulls/42", "http://forgejo.local/acme/web/issues/9" and "https://github.com/acme/web/pull/108" twice
+    When the developer runs "runlog export session.jsonl"
+    Then the root span in "runs.jsonl" has "osf.pull_request.urls" ["http://forgejo.local/acme/web/pulls/42", "https://github.com/acme/web/pull/108"]
+    And it has "osf.issue.urls" ["http://forgejo.local/acme/web/issues/9"]
