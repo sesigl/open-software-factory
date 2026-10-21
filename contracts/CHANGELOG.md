@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/sesigl/open-software-factory/compare/contracts-v1.2.0...contracts-v1.3.0) (2026-10-21)
+
+
+### Features
+
+* **ledger:** T-08 cost per pull request and flow metrics from spend, runs and forge events ([#54](https://github.com/sesigl/open-software-factory/issues/54)) ([bff015b](https://github.com/sesigl/open-software-factory/commit/bff015be22d45ad59b09b28dc9affb12df4c0d9d))
+
 ## [1.2.0](https://github.com/sesigl/open-software-factory/compare/contracts-v1.1.0...contracts-v1.2.0) (2026-10-19)
 
 
