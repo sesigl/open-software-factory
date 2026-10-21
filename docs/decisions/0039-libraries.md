@@ -27,7 +27,8 @@ the library. MUTATION covered only modules and adapters.
   `architecture.json`, `features/`, `system-tests/`, `tsconfig.json`, `tsconfig.build.json`, `vitest.config.ts`,
   `biome.json`. Its scenario prefix is registered in `docs/reference/scenario-prefixes.md`.
 - **Built before use.** `exports` points at `dist/`. Turbo builds a library before every package that depends on
-  it (`^build`). A module's built artifact imports the built library, in this repository and from npm.
+  it (`^build`), and builds every package before its own type check, because a library's tests import its `dist/`.
+  A module's built artifact imports the built library, in this repository and from npm.
 - **Tests.** A library's system tests import the library by its package name and call it in their own process.
   BOUNDARY-STATIC allows that import, and only that one, in `packages/<name>/system-tests/`; it resolves to
   `dist/index.js`. An import of the library's `src/` still fails. ASSERT counts a value that a call of the
