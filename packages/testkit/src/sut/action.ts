@@ -25,6 +25,8 @@ export interface ActionResult extends CliResult {
   outputs: Record<string, string>;
   /** The `uses` of every step the testkit did not run. */
   skipped: string[];
+  /** What the steps wrote to the job summary in `GITHUB_STEP_SUMMARY`. */
+  summary: string;
 }
 
 export type Action = (inputs?: Record<string, string>, options?: ActionOptions) => Promise<ActionResult>;
@@ -73,6 +75,8 @@ export function makeAction(moduleRoot: string, dirs: Folders, launch: Launch): A
     mkdirSync(temp);
     const event = options.event ?? {};
     writeFileSync(join(runner, "event.json"), JSON.stringify(event));
+    const summary = join(runner, "summary.md");
+    writeFileSync(summary, "");
     const head = await run("git", ["rev-parse", "--verify", "--quiet", "HEAD"], dirs.input, baseEnv(dirs.input));
     const runnerEnv = {
       GITHUB_ACTIONS: "true",
@@ -86,9 +90,10 @@ export function makeAction(moduleRoot: string, dirs: Folders, launch: Launch): A
       GITHUB_RUN_ID: "1",
       GITHUB_SHA: options.sha ?? (head.stdout.trim() || "0".repeat(40)),
       RUNNER_TEMP: temp,
+      GITHUB_STEP_SUMMARY: summary,
     };
 
-    const result: ActionResult = { exitCode: 0, stdout: "", stderr: "", outputs: {}, skipped: [] };
+    const result: ActionResult = { exitCode: 0, stdout: "", stderr: "", outputs: {}, skipped: [], summary: "" };
     for (const [index, step] of manifest.runs.steps.entries()) {
       if (step.uses) {
         result.skipped.push(step.uses);
@@ -116,6 +121,7 @@ export function makeAction(moduleRoot: string, dirs: Folders, launch: Launch): A
         break;
       }
     }
+    result.summary = readFileSync(summary, "utf8");
     return result;
   };
 }

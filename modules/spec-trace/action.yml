@@ -1,0 +1,45 @@
+# The spec-trace GitHub Action (ADR 0031): the report of the run with a job summary, then the rules.
+name: spec-trace
+description: Every Gherkin scenario traced to its test and its result, with the changes of the pull request.
+inputs:
+  rules:
+    description: The rules to check, separated by commas. Empty writes only the report.
+    default: SPEC,TRACE,STEPS,PASS
+  evidence:
+    description: Folders of proof evidence bundles, one per line.
+    default: ""
+  base:
+    description: The commit to compare the scenarios with. Default the base commit of the pull request; none on other events.
+    default: ""
+  out:
+    description: Where to write the JSON report. Default $RUNNER_TEMP/spec-trace/spec-trace.json.
+    default: ""
+  config:
+    description: The settings file. Default spec-trace.json when it exists.
+    default: ""
+  command:
+    description: The spec-trace command. Default npx --yes @opensoftware/spec-trace@<version of this action>.
+    default: ""
+outputs:
+  report:
+    description: The path of the JSON report.
+    value: ${{ steps.spec-trace.outputs.report }}
+runs:
+  using: composite
+  steps:
+    - id: spec-trace
+      shell: bash
+      env:
+        SPEC_TRACE_INPUT_RULES: ${{ inputs.rules }}
+        SPEC_TRACE_INPUT_EVIDENCE: ${{ inputs.evidence }}
+        SPEC_TRACE_INPUT_BASE: ${{ inputs.base }}
+        SPEC_TRACE_INPUT_OUT: ${{ inputs.out }}
+        SPEC_TRACE_INPUT_CONFIG: ${{ inputs.config }}
+        SPEC_TRACE_INPUT_COMMAND: ${{ inputs.command }}
+      run: bash "${{ github.action_path }}/action.sh"
+    - uses: actions/upload-artifact@v4
+      if: always() && steps.spec-trace.outputs.report != ''
+      with:
+        name: spec-trace
+        path: ${{ steps.spec-trace.outputs.report }}
+        if-no-files-found: ignore

@@ -8,6 +8,8 @@ SHELL := /bin/bash
 MAKEFLAGS += --no-print-directory
 
 OSF := pnpm --silent run osf
+# SPEC, TRACE, STEPS and PASS (ADR 0031): spec-trace built from this checkout, with spec-trace.json.
+SPEC_TRACE := node modules/spec-trace/dist/cli.js
 TURBO := pnpm exec turbo run --output-logs=errors-only
 export PATH := $(CURDIR)/.tools/bin:$(PATH)
 export TURBO_TELEMETRY_DISABLED := 1
@@ -29,7 +31,8 @@ install: ## install dependencies and the pinned lychee and oasdiff binaries
 
 check: ## affected lint, typecheck and system tests, then the fast repository checks
 	@$(TURBO) lint typecheck test:system $(AFFECTED)
-	@$(OSF) check
+	@$(TURBO) build --filter=@opensoftware/spec-trace...
+	@status=0; $(SPEC_TRACE) check --only SPEC,TRACE,STEPS || status=1; $(OSF) check || status=1; exit $$status
 
 verify: ## everything from a clean state; required before you report done
 	@rm -rf reports/junit reports/coverage
@@ -49,7 +52,7 @@ verify-tests: ## part of verify: the system test suites; FILTER="pkg !pkg" limit
 # REACH maps the coverage in reports/coverage/ to the built files, so the build comes first (cached after verify-static).
 verify-checks: ## part of verify: every check, on the test results in reports/
 	@$(TURBO) build
-	@$(OSF) check --all
+	@status=0; $(SPEC_TRACE) check || status=1; $(OSF) check --all || status=1; exit $$status
 
 test-scenario: ## run the one system test of a scenario: make test-scenario ID=SCN-REPO-002
 	@$(OSF) test-scenario $(ID)

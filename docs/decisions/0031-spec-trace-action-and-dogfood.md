@@ -41,15 +41,16 @@ runs a module's composite action, but gives it no job summary file.
   `summary`.
 - **Dogfood.** A root `spec-trace.json` describes this repository: the feature folders of `docs/quality/checks.md`,
   the tests in `system-tests/`, the prefix table `docs/reference/scenario-prefixes.md` and the `@conformance`
-  scenarios of `ports/`. `make check` runs `spec-trace check --only SPEC,TRACE,STEPS` and `make verify` runs
-  `spec-trace check` from the source of the checkout (`node modules/spec-trace/src/cli.ts`), so no build is needed
-  first. The job `verify` of `.github/workflows/verify.yml` also runs the action from the checkout on every pull
-  request and push, with the base of the pull request. Until `@opensoftware/spec-trace` is on npm, its input
-  `command` runs the built `modules/spec-trace/dist/cli.js`; then the job switches to the released package.
-- **One copy of the rules.** `osf check` loses SPEC, TRACE, STEPS and PASS; `tools/checks/spec.ts` and the three
-  rules in `tools/checks/trace.ts` are deleted. The scenarios `SCN-REPO-002` to `-005` and `SCN-REPO-030` are
+  scenarios of `ports/`. `make check` builds spec-trace with the Turborepo cache and runs `spec-trace check --only SPEC,TRACE,STEPS`;
+  `make verify` runs `spec-trace check`, all four rules on the results in `reports/junit/`. The job `verify` of
+  `.github/workflows/verify.yml` also runs the action from the checkout (`uses: ./modules/spec-trace`) on every pull
+  request and push, with the base of the pull request, for the report, the job summary and the artifact. Until
+  `@opensoftware/spec-trace` is on npm, its input `command` runs the built `modules/spec-trace/dist/cli.js`; then the
+  job switches to the released package.
+- **One copy of the rules.** `osf check` loses SPEC, TRACE, STEPS and PASS; `tools/checks/spec.ts` and
+  `tools/checks/trace.ts` are deleted, and FLAKE and BUDGET move to `tools/checks/results.ts`. The scenarios `SCN-REPO-002` to `-005` and `SCN-REPO-030` are
   deprecated with their tests; spec-trace's `SCN-TRACE-001` to `-049` cover the same cases.
-  `SCN-REPO-043` replaces `SCN-REPO-001`, whose last step named `SPEC ok`. FLAKE and BUDGET stay in `tools/`.
+  `SCN-REPO-043` replaces `SCN-REPO-001`, whose last step named `SPEC ok`.
 
 ## Options considered
 
@@ -60,7 +61,8 @@ runs a module's composite action, but gives it no job summary file.
 | Changes as a rule that fails on changed steps | Enforces the scenario rules | SPECGUARD was tried and deprecated: a rename or a typo fix needs a person, not a gate |
 | `osf check` calls spec-trace for the four rules | `SCN-REPO-002` to `-005` stay | Two entry points for one rule; the scripts' fallbacks (no prefix table) differ from spec-trace's |
 | `make` and CI run spec-trace directly (chosen) | One copy of the rules; the dogfood is the product | Five tools scenarios are deprecated |
-| spec-trace from source in `make` (chosen) | `make check` needs no build | Node 24 type stripping; the Action and the release run `dist/` |
+| spec-trace from `dist/` in `make` (chosen) | The same files the release ships | `make check` builds spec-trace and contracts first; the Turborepo cache makes it fast |
+| spec-trace from `src/` with Node type stripping | No build | `src/` imports the built `@opensoftware/contracts`, so it needs a build anyway |
 
 ## Prior art
 

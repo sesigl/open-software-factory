@@ -212,6 +212,16 @@ jobs:
 
       - run: make verify-checks
 
+      # Dogfood of spec-trace (ADR 0031): the report with the scenarios this change adds, removes or changes, as the
+      # job summary and the artifact spec-trace. make verify-checks built spec-trace and ran its rules already.
+      - name: spec-trace
+        if: always()
+        uses: ./modules/spec-trace
+        with:
+          rules: ""
+          # Until @opensoftware/spec-trace is on npm, the build of this checkout; then the action's default, the release.
+          command: node modules/spec-trace/dist/cli.js
+
       - name: Lint, typecheck, build and every test suite passed
         env:
           STATIC: ${{ needs.static.result }}

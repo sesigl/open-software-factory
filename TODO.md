@@ -245,8 +245,12 @@ read them for ideas, do not copy their company-specific rules.
   - [x] `spec-trace check` (SPEC, TRACE, STEPS, PASS with the cases and messages of `tools/checks/`), `spec-trace
     report` (JSON, with proof bundles), `spec-trace next-id`, the settings file `spec-trace.json` (ID pattern,
     prefixes, folders, test function, conformance), and the npm release (ADR 0030, `SCN-TRACE-001` to `-049`).
-  - [ ] The GitHub Action, the base and head diff in the report, and the dogfood: a root `spec-trace.json` and CI
-    runs spec-trace instead of `tools/checks/` for SPEC, TRACE, STEPS and PASS.
+  - [x] The GitHub Action `modules/spec-trace/action.yml`, `report --base` (the scenarios added, removed or changed
+    since a base commit) and `report --summary`, `sut.action`'s job summary in the testkit, and the dogfood: a root
+    `spec-trace.json`, `make check`, `make verify` and CI run spec-trace instead of `tools/checks/` for SPEC, TRACE,
+    STEPS and PASS (ADR 0031, `SCN-TRACE-050` to `-064`, `SCN-TK-041`, `SCN-REPO-043`).
+  - [ ] The dogfood from the released tool: once `@opensoftware/spec-trace` is on npm, drop the input `command` of the
+    step `spec-trace` in `.github/workflows/verify.yml`, so the action runs its release.
 
 ### [ ] T-07 · scorekit
 
