@@ -15,3 +15,22 @@ Feature: Quick start
     When the user runs "runlog --help"
     Then the command exits with code 0
     And the output lists the command "export"
+
+  @id=SCN-RUN-060 @status=implemented
+  Scenario: export names the run and the file it wrote
+    Given a Git repository with one commit and the sample Claude Code session from the README
+    When the user runs "runlog export session.jsonl"
+    Then the command exits with code 0
+    And the standard output is "exported the run of 0f6c1d2e-3a4b-4c5d-8e9f-a0b1c2d3e4f5 to $OUTPUT/runs.jsonl"
+
+  @id=SCN-RUN-061 @status=implemented
+  Scenario: A command without its file prints the usage
+    When the user runs "runlog export"
+    Then the command exits with code 2
+    And the error output lists the command "export"
+
+  @id=SCN-RUN-062 @status=implemented
+  Scenario: An error starts with the name of the program
+    When the user runs "runlog export missing.jsonl"
+    Then the command exits with code 1
+    And the error output starts with "runlog: cannot read missing.jsonl"

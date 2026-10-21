@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // runlog <command>: the entry layer only parses arguments and calls the commands.
-import { readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
+import { type Command, packageVersion, runProgram } from "@opensoftware/cli";
 import { attachSession } from "./commands/attach.ts";
-import { collectorConfig, UnknownHarness } from "./commands/collector.ts";
+import { collectorConfig } from "./commands/collector.ts";
 import { type ExportOptions, exportLatest, exportSession } from "./commands/export.ts";
 import { watchFolders } from "./commands/watch.ts";
 
@@ -17,9 +17,7 @@ Commands:
   collector <harness>  Write the OpenTelemetry Collector config of claude-code, codex or opencode to $OUTPUT/collector.yaml. It renames the harness's native spans to invoke_agent, chat and execute_tool and sends them to OTEL_EXPORTER_OTLP_ENDPOINT.
 `;
 
-const { version } = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
-  version: string;
-};
+const version = packageVersion(new URL("../package.json", import.meta.url));
 const { positionals, values } = parseArgs({
   allowPositionals: true,
   options: {
@@ -46,31 +44,23 @@ const options: ExportOptions = {
   perRun: values["per-run"] ?? false,
 };
 
-const commands: Record<string, () => Promise<string | undefined>> = {
-  export: () => (values.latest ? exportLatest(rest, options) : exportSession(file as string, options)),
-  attach: () => attachSession(file as string, TRACEPARENT, values.outcome, options),
-  watch: () => {
+/** The one line that export, attach and collector print. */
+const print = (text: string) => ({ lines: [text] });
+const commands: Record<string, Command> = {
+  export: async () =>
+    print(await (values.latest ? exportLatest(rest, options) : exportSession(file as string, options))),
+  attach: async () => print(await attachSession(file as string, TRACEPARENT, values.outcome, options)),
+  watch: async () => {
     const watch = {
       idle: Number(values.idle ?? 5),
       passes: Number(values.passes ?? Number.POSITIVE_INFINITY),
       interval: Number(values.interval ?? 60),
       now: () => (OSF_NOW ? Date.parse(OSF_NOW) : Date.now()),
     };
-    return watchFolders(rest, watch, options).then(() => undefined);
+    await watchFolders(rest, watch, options);
+    return {};
   },
-  collector: async () => collectorConfig(file as string, options.output),
+  collector: async () => print(collectorConfig(file as string, options.output)),
 };
-const chosen = command && file && !values.help ? commands[command] : undefined;
-
-if (chosen) {
-  chosen().then(
-    (line) => line && process.stdout.write(`${line}\n`),
-    (error: Error) => {
-      process.stderr.write(`runlog: ${error.message}\n`);
-      process.exitCode = error instanceof UnknownHarness ? 2 : 1;
-    },
-  );
-} else {
-  (values.help ? process.stdout : process.stderr).write(HELP);
-  process.exitCode = values.help ? 0 : 2;
-}
+const chosen = command && file ? commands[command] : undefined;
+process.exitCode = await runProgram({ name: "runlog", usage: HELP, command: chosen, help: values.help });

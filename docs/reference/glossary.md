@@ -31,7 +31,7 @@ Use these terms in scenarios, code, UI text and docs.
 | Self-improvement | The loop that turns repeated failures into reviewed changes to the factory definition. |
 | Port | An interface to an outside system. |
 | Adapter | An implementation of a port for one product. |
-| Library | A package in `packages/` that modules may depend on: shared code with no CLI and no state of its own (ADR 0037). |
+| Library | A package in `packages/` without a `bin` that modules may depend on: shared code with no CLI and no state of its own. Its system tests import it by its package name (ADR 0037, ADR 0039). |
 | Mutant | A small change Stryker makes to a module's code. A system test that fails on it detects the mutant; MUTATION scores the share detected. |
 | Clone | Source code of 50 tokens or more that appears twice. DUP limits clones inside a unit and forbids them across units. |
 | Layer | A named group of a module's source files in its `architecture.json`; a file imports only its own layer and the layers below it. |

@@ -7,7 +7,8 @@ Adds rules for the contracts. The root `AGENTS.md` applies in full.
 The only ways a system test or another program may use the contracts:
 
 - CLI: `osf-contracts <command>` (see `README.md#commands`)
-- Library: `@opensoftware/contracts` (`validate`, `isValid`, `schemaOf`, `breakingChanges`, the format types)
+- Library: `@opensoftware/contracts` (`validate`, `isValid`, `schemaOf`, `breakingChanges`, `runSpans`, the format
+  types)
 - Files: `<format>/<format>.schema.json`, `events/asyncapi.yaml`, `openapi/openapi.json`
 
 `typespec/` is the source; `scripts/` and `src/` are private. Generated files are never edited by hand.

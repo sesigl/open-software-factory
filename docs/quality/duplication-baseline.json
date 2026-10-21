@@ -1,11 +1,7 @@
 {
   "$comment": "Clones across units that existed when DUP started (ADR 0037). Remove an entry when its clone is gone; never add one.",
   "clones": [
-    ["modules/ledger/src/adapters/files.ts", "modules/scorekit/src/adapters/files.ts"],
-    ["modules/ledger/src/cli.ts", "modules/scorekit/src/cli.ts"],
-    ["modules/ledger/src/domain/records.ts", "modules/scorekit/src/domain/runs.ts"],
     ["modules/proof/src/adapters/junit.ts", "modules/spec-trace/src/adapters/junit.ts"],
-    ["modules/proof/src/cli.ts", "modules/runlog/src/cli.ts"],
     ["modules/spec-trace/src/adapters/gherkin.ts", "tools/checks/lib/features.ts"],
     ["modules/spec-trace/src/adapters/junit.ts", "tools/checks/lib/junit.ts"],
     ["modules/spec-trace/src/domain/model.ts", "tools/checks/lib/features.ts"],

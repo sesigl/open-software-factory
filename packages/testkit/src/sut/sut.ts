@@ -39,6 +39,8 @@ export interface Sut {
     remove(path: string): Promise<void>;
     /** Removes everything inside the folder and keeps the folder. */
     clear(path: string): Promise<void>;
+    /** The absolute path of a file or folder in $INPUT or $OUTPUT, for a library whose functions take paths. */
+    path(path: string): string;
   };
   /** What the module's README promises in its Quick start section. */
   readme: {
@@ -127,6 +129,7 @@ export function makeSut(moduleRoot: string, dirs: Folders, hosts: () => string[]
         const folder = inside(path);
         for (const entry of readdirSync(folder)) rmSync(join(folder, entry), { recursive: true, force: true });
       },
+      path: inside,
     },
     readme: {
       quickStartArgs: () => quickStart(moduleRoot).args,

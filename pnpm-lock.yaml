@@ -82,6 +82,9 @@ importers:
       '@duckdb/node-api':
         specifier: 1.5.6-r.1
         version: 1.5.6-r.1
+      '@opensoftware/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
       '@opensoftware/contracts':
         specifier: workspace:*
         version: link:../../contracts
@@ -98,6 +101,9 @@ importers:
 
   modules/proof:
     dependencies:
+      '@opensoftware/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
       '@opensoftware/contracts':
         specifier: workspace:*
         version: link:../../contracts
@@ -117,6 +123,9 @@ importers:
 
   modules/runlog:
     dependencies:
+      '@opensoftware/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
       '@opensoftware/contracts':
         specifier: workspace:*
         version: link:../../contracts
@@ -142,6 +151,9 @@ importers:
 
   modules/scorekit:
     dependencies:
+      '@opensoftware/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
       '@opensoftware/contracts':
         specifier: workspace:*
         version: link:../../contracts
@@ -180,6 +192,12 @@ importers:
       '@types/picomatch':
         specifier: 4.0.3
         version: 4.0.3
+
+  packages/cli:
+    devDependencies:
+      '@opensoftware/testkit':
+        specifier: workspace:*
+        version: link:../testkit
 
   packages/testkit:
     dependencies:

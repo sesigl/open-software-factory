@@ -1,7 +1,7 @@
 // Reads system test files into one shape for TRACE, STEPS, NOSKIP, ASSERT, BOUNDARY-STATIC and BOUNDARY-ENV.
 // Every system test is TypeScript (ADR 0009); files are read with ts-morph.
 import { type CallExpression, Node, Project, SyntaxKind } from "ts-morph";
-import type { Repo } from "./repo.ts";
+import { moduleRootOf, type Repo } from "./repo.ts";
 
 export const TEST_GLOBS = ["**/system-tests/**/*.test.ts"];
 export const SYSTEM_TEST_SOURCES = ["**/system-tests/**/*.ts"];
@@ -12,7 +12,10 @@ export interface TestStep {
   label: string | null;
   line: number;
   assertions: number;
-  /** At least one assertion reads a value that came from `sut` or `fakes`. */
+  /**
+   * At least one assertion reads a value that came from `sut` or `fakes`, or, in the tests of a library or the
+   * contracts, from a call of the package's own exports (ADR 0039).
+   */
   assertsOnSut: boolean;
 }
 
@@ -50,18 +53,36 @@ export function loadTests(repo: Repo): TestFile[] {
   if (cache) return cache;
   const isTest = new Set(repo.match(...TEST_GLOBS));
   const files = repo.match(...SYSTEM_TEST_SOURCES);
-  cache = files.map((file) => ({ ...scanTypeScript(file, repo.read(file)), isTest: isTest.has(file) }));
+  cache = files.map((file) => ({
+    ...scanTypeScript(file, repo.read(file), ownPackage(repo, file)),
+    isTest: isTest.has(file),
+  }));
   return cache;
 }
 
-export function scanTypeScript(file: string, text: string): TestFile {
+/** The name in the package.json of the unit a test file belongs to. */
+function ownPackage(repo: Repo, file: string): string | undefined {
+  const manifest = `${moduleRootOf(file)}/package.json`;
+  return repo.exists(manifest) ? (JSON.parse(repo.read(manifest)) as { name?: string }).name : undefined;
+}
+
+/** `own` is the package the test belongs to: values from its exports come from the system under test. */
+export function scanTypeScript(file: string, text: string, own?: string): TestFile {
   const project = new Project({ useInMemoryFileSystem: true, compilerOptions: { allowJs: true } });
   const source = project.createSourceFile(`/${file}`, text);
   const result: TestFile = { file, isTest: true, scenarios: [], imports: [], skips: [], env: [] };
 
+  const sources = new Set(SOURCES);
   for (const declaration of [...source.getImportDeclarations(), ...source.getExportDeclarations()]) {
     const name = declaration.getModuleSpecifierValue();
     if (name) result.imports.push({ name, line: declaration.getStartLineNumber() });
+  }
+  for (const declaration of source.getImportDeclarations()) {
+    if (own === undefined || declaration.getModuleSpecifierValue() !== own) continue;
+    for (const named of declaration.getNamedImports())
+      sources.add((named.getAliasNode() ?? named.getNameNode()).getText());
+    const other = declaration.getDefaultImport() ?? declaration.getNamespaceImport();
+    if (other) sources.add(other.getText());
   }
 
   for (const node of source.getDescendants()) {
@@ -78,7 +99,9 @@ export function scanTypeScript(file: string, text: string): TestFile {
       if (callee.getText() === "vi.stubEnv" && literal) {
         result.env.push({ name: first.getLiteralText(), line: node.getStartLineNumber() });
       }
-      if (Node.isIdentifier(callee) && callee.getText() === "scenario") result.scenarios.push(readScenario(node));
+      if (Node.isIdentifier(callee) && callee.getText() === "scenario") {
+        result.scenarios.push(readScenario(node, sources));
+      }
     }
     if (Node.isPropertyAccessExpression(node) && SKIP_PROPERTIES.has(node.getName())) {
       const root = rootIdentifier(node.getExpression());
@@ -105,12 +128,12 @@ export function scanTypeScript(file: string, text: string): TestFile {
   return result;
 }
 
-function readScenario(call: CallExpression): TestScenario {
+function readScenario(call: CallExpression, sources: Set<string>): TestScenario {
   const [idArg, body] = call.getArguments();
   const id = idArg && Node.isStringLiteral(idArg) ? idArg.getLiteralText() : null;
   const scenario: TestScenario = { id, line: call.getStartLineNumber(), steps: [] };
   if (!body) return scenario;
-  const tainted = taint(body);
+  const tainted = taint(body, sources);
   for (const step of body.getDescendantsOfKind(SyntaxKind.CallExpression)) {
     const callee = step.getExpression();
     const keyword = Node.isIdentifier(callee) ? STEP_KEYWORDS[callee.getText()] : undefined;
@@ -131,9 +154,9 @@ function readScenario(call: CallExpression): TestScenario {
   return scenario;
 }
 
-/** Names whose value comes from `sut` or `fakes`, followed through declarations and assignments. */
-function taint(body: Node): Set<string> {
-  const tainted = new Set(SOURCES);
+/** Names whose value comes from the sources, followed through declarations and assignments. */
+function taint(body: Node, sources: Set<string>): Set<string> {
+  const tainted = new Set(sources);
   for (let changed = true; changed; ) {
     changed = false;
     const add = (names: string[]): void => {

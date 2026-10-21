@@ -1,6 +1,7 @@
 // ledger query: run one SQL statement on the database and print its rows as JSON Lines (ADR 0035).
+
+import { check } from "@opensoftware/cli";
 import type { Ledger } from "../adapters/ledger.ts";
-import { check } from "../domain/errors.ts";
 
 export async function query(ledger: Ledger, statement: string): Promise<string[]> {
   check(statement.trim(), 'name the SQL to run, like ledger query "SELECT * FROM pr_cost"');

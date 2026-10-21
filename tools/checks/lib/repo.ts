@@ -75,6 +75,13 @@ export function moduleRootOf(file: string): string {
   return parts[0] as string;
 }
 
+/** A library is a package in packages/ without a bin: code that modules may depend on (ADR 0037, ADR 0039). */
+export function isLibrary(repo: Repo, unit: string): boolean {
+  const manifest = `${unit}/package.json`;
+  if (!/^packages\/[^/]+$/.test(unit) || !repo.exists(manifest)) return false;
+  return (JSON.parse(repo.read(manifest)) as { bin?: unknown }).bin === undefined;
+}
+
 /** Environment variables named in backticks in the Configuration section of a README. */
 export function documentedEnv(readme: string): Set<string> {
   const section = readme.split(/^## /m).find((part) => part.startsWith("Configuration")) ?? "";

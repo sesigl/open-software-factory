@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join, posix, relative } from "node:path";
 import type { Context } from "./lib/context.ts";
 import { addedLines, changedFiles } from "./lib/git.ts";
-import { type Finding, lineOf, type Repo } from "./lib/repo.ts";
+import { type Finding, isLibrary, lineOf, type Repo } from "./lib/repo.ts";
 
 /** Folders whose packages hold source code: modules, packages and adapters, as for ARCH. */
 const UNIT_MANIFESTS = ["modules/*/package.json", "packages/*/package.json", "adapters/*/*/package.json"];
@@ -37,9 +37,12 @@ export function units(repo: Repo): Map<string, string[]> {
   return found;
 }
 
-/** The units that mutation testing covers: modules and adapters with source files. */
+/**
+ * The units that mutation testing covers: modules and adapters with source files, and libraries, whose system tests
+ * call the built library in their own process (ADR 0039).
+ */
 export function mutatedUnits(repo: Repo): Map<string, string[]> {
-  return new Map([...units(repo)].filter(([unit]) => MUTATED.test(unit)));
+  return new Map([...units(repo)].filter(([unit]) => MUTATED.test(unit) || isLibrary(repo, unit)));
 }
 
 /** Where `osf mutation` writes the Stryker report of a unit. */

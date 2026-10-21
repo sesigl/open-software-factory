@@ -1,14 +1,13 @@
 #!/usr/bin/env node
 // ledger <command>: the entry layer only parses arguments and calls the commands.
-import { join } from "node:path";
 import { parseArgs } from "node:util";
+import { check, outputPath, runProgram } from "@opensoftware/cli";
 import { openLedger } from "./adapters/ledger.ts";
 import { dashboard } from "./commands/dashboard.ts";
 import { importForge } from "./commands/import.ts";
 import { ingest } from "./commands/ingest.ts";
 import { query } from "./commands/query.ts";
 import { report } from "./commands/report.ts";
-import { check, UsageError } from "./domain/errors.ts";
 import { repositoryOf } from "./domain/forge.ts";
 
 const HELP = `Usage: ledger <command> [options]
@@ -60,7 +59,7 @@ async function main(): Promise<string[]> {
     computeUsdPerHour: usd("compute-usd-per-hour", values["compute-usd-per-hour"]),
     platformUsd: usd("platform-usd", values["platform-usd"]),
   };
-  const output = (file: string) => values.out ?? join(process.env.OUTPUT ?? ".", file);
+  const output = (file: string) => outputPath(file, values.out);
   if (command === "dashboard") return [dashboard(output("ledger-dashboard.json"))];
   if (command === "import") {
     check(paths.length === 1, "import takes one repository URL like https://github.com/acme/web");
@@ -79,15 +78,11 @@ async function main(): Promise<string[]> {
   }
 }
 
-if (["ingest", "report", "query", "dashboard", "import"].includes(command as string) && !values.help) {
-  try {
-    const lines = await main();
-    if (lines.length) process.stdout.write(`${lines.join("\n")}\n`);
-  } catch (error) {
-    process.stderr.write(`ledger: ${(error as Error).message}\n`);
-    process.exitCode = error instanceof UsageError ? 2 : 1;
-  }
-} else {
-  (values.help ? process.stdout : process.stderr).write(HELP);
-  process.exitCode = values.help ? 0 : 2;
-}
+const known = ["ingest", "report", "query", "dashboard", "import"].includes(command as string);
+const run = async () => ({ lines: await main() });
+process.exitCode = await runProgram({
+  name: "ledger",
+  usage: HELP,
+  command: known ? run : undefined,
+  help: values.help,
+});

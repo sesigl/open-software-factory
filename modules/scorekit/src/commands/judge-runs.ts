@@ -1,6 +1,7 @@
 // Asks the judge about runs one after another. A failed call or an answer without a verdict is reported and skipped.
+
+import { UsageError } from "@opensoftware/cli";
 import { askJudge, JudgeError } from "../adapters/judge.ts";
-import { UsageError } from "../domain/errors.ts";
 import { judgeCost, judgeMessages, parseVerdict, type Verdict } from "../domain/judge.ts";
 import type { Run } from "../domain/runs.ts";
 import type { Scorer } from "../domain/scorer.ts";

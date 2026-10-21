@@ -30,6 +30,7 @@
     "@opensoftware/testkit": "workspace:*"
   },
   "dependencies": {
+    "@opensoftware/cli": "workspace:*",
     "@opensoftware/contracts": "workspace:*",
     "aws4fetch": "1.0.20",
     "fast-xml-parser": "5.11.2",

@@ -1,6 +1,7 @@
 // scorekit score: judge each sampled run that has no score of the scorer yet and append its score.
+
+import { UsageError } from "@opensoftware/cli";
 import { appendScore, readRunFiles, readScorer, readScores } from "../adapters/files.ts";
-import { UsageError } from "../domain/errors.ts";
 import { round } from "../domain/judge.ts";
 import { parseRuns } from "../domain/runs.ts";
 import { isSampled } from "../domain/sample.ts";

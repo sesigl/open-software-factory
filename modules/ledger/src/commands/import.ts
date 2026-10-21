@@ -1,7 +1,7 @@
 // ledger import: read one repository's pull requests, reviews and comments from its forge and write them as pr.*
 // events to a JSON Lines file that ingest reads (ADR 0036).
 
-import { writeText } from "../adapters/files.ts";
+import { writeText } from "@opensoftware/cli";
 import { forgeClient } from "../adapters/forge.ts";
 import { pullEvents, type Repository } from "../domain/forge.ts";
 

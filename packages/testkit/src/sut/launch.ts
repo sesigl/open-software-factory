@@ -17,11 +17,7 @@ const preload = (name: string): string =>
 // The recorder comes first, so it also sees the guard run.
 const NODE_OPTIONS = `${preload("coverage")} ${preload("guard")}`;
 
-/**
- * Starts the built artifact (BOUNDARY-RUNTIME) with the network guard (NOREAL) and refuses environment variables
- * the module's README does not document (BOUNDARY-ENV). `hosts` are the hosts of the running containers.
- */
-export function makeLaunch(moduleRoot: string, dirs: Folders, hosts: () => string[]): Launch {
+function builtArtifact(moduleRoot: string): string {
   const artifact = artifactOf(moduleRoot);
   const source = relative(moduleRoot, artifact);
   if (source.startsWith("src/")) {
@@ -29,9 +25,20 @@ export function makeLaunch(moduleRoot: string, dirs: Folders, hosts: () => strin
       `BOUNDARY-RUNTIME: ${relative(repoRoot(), join(moduleRoot, "package.json"))} starts ${source}; point bin at the built artifact`,
     );
   }
+  return artifact;
+}
+
+/**
+ * Starts the built artifact (BOUNDARY-RUNTIME) with the network guard (NOREAL) and refuses environment variables
+ * the module's README does not document (BOUNDARY-ENV). `hosts` are the hosts of the running containers.
+ */
+export function makeLaunch(moduleRoot: string, dirs: Folders, hosts: () => string[]): Launch {
+  // A library in packages/ has no bin: its tests never launch it, so the artifact is looked up on the first launch.
+  let artifact: string | undefined;
   const documented = documentedEnv(moduleRoot);
   const coverage = coverageEnv(moduleRoot);
   return (args, env = {}) => {
+    artifact ??= builtArtifact(moduleRoot);
     for (const name of Object.keys(env)) {
       if (!documented.has(name)) {
         throw new Error(

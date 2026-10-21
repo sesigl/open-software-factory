@@ -1,14 +1,13 @@
 #!/usr/bin/env node
 // scorekit <command>: the entry layer only parses arguments and calls the commands.
-import { join } from "node:path";
 import { parseArgs } from "node:util";
+import { type Command, outputPath, runProgram } from "@opensoftware/cli";
 import { calibrate } from "./commands/calibrate.ts";
 import { exportEvaluators } from "./commands/export.ts";
 import { push } from "./commands/push.ts";
 import { report } from "./commands/report.ts";
 import { score } from "./commands/score.ts";
 import { scorers } from "./commands/scorers.ts";
-import { UsageError } from "./domain/errors.ts";
 
 const HELP = `Usage: scorekit <command> [options]
 
@@ -43,10 +42,9 @@ const [command, ...paths] = positionals;
 const env = process.env;
 /** score and calibrate take one scorer: the last one named. */
 const scorer = values.scorer?.at(-1);
-const output = (file: string) => values.out ?? join(env.OUTPUT ?? ".", file);
+const output = (file: string) => outputPath(file, values.out);
 
-type Result = { lines: string[]; errors?: string[]; failed?: boolean };
-const commands: Record<string, () => Promise<Result> | Result> = {
+const commands: Record<string, Command> = {
   score: () =>
     score(
       paths,
@@ -86,19 +84,5 @@ const commands: Record<string, () => Promise<Result> | Result> = {
     ),
   scorers: () => ({ lines: scorers() }),
 };
-const chosen = command && !values.help ? commands[command] : undefined;
-
-if (chosen) {
-  try {
-    const { lines, errors = [], failed } = await chosen();
-    for (const error of errors) process.stderr.write(`scorekit: ${error}\n`);
-    process.stdout.write(`${lines.join("\n")}\n`);
-    if (failed ?? errors.length > 0) process.exitCode = 1;
-  } catch (error) {
-    process.stderr.write(`scorekit: ${(error as Error).message}\n`);
-    process.exitCode = error instanceof UsageError ? 2 : 1;
-  }
-} else {
-  (values.help ? process.stdout : process.stderr).write(HELP);
-  process.exitCode = values.help ? 0 : 2;
-}
+const chosen = command ? commands[command] : undefined;
+process.exitCode = await runProgram({ name: "scorekit", usage: HELP, command: chosen, help: values.help });
