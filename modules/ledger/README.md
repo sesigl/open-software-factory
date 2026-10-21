@@ -9,8 +9,10 @@ uses agents already has: the spend log of its LLM gateway (LiteLLM), the run rec
 ([runlog](../runlog/README.md)) and its forge's pull request events. It writes them into one DuckDB file and reports
 the cost per pull request, split into inference, compute and platform, the spend by source, user, agent and model,
 the most expensive pull requests, throughput, cycle time, human interactions, runs by agent type and the revert rate.
-For a team, it writes to PostgreSQL instead and ships a Grafana dashboard over the same views.
-Decisions: [ADR 0034](../../docs/decisions/0034-ledger.md), [ADR 0035](../../docs/decisions/0035-ledger-postgres-grafana.md).
+For a team, it writes to PostgreSQL instead and ships a Grafana dashboard over the same views. A team without forge
+adapters imports its pull requests and reviews from GitHub or Forgejo.
+Decisions: [ADR 0034](../../docs/decisions/0034-ledger.md), [ADR 0035](../../docs/decisions/0035-ledger-postgres-grafana.md),
+[ADR 0036](../../docs/decisions/0036-ledger-forge-import.md).
 
 ## Quick start
 
@@ -45,6 +47,7 @@ It writes `ledger.duckdb` and `$OUTPUT/report.json`, and prints
 | `ledger report [options] [<file or folder>...]` | Ingest the files named, then write the report of the database to `--out` (`$OUTPUT/report.json`). |
 | `ledger query [--db <file or URL>] <SQL>` | Run one SQL statement, like `SELECT * FROM pr_cost`, and print its rows as JSON Lines. |
 | `ledger dashboard [--out <file>]` | Write the Grafana dashboard to `--out` (`$OUTPUT/ledger-dashboard.json`). See [PostgreSQL and Grafana](#postgresql-and-grafana). |
+| `ledger import [--forge github\|forgejo] [--since <date>] [--out <file>] <repository URL>` | Write the pull requests, reviews and comments of a repository as `pr.*` events to `--out` (`$OUTPUT/pr-events.jsonl`). See [Import from a forge](#import-from-a-forge). |
 
 Options of `report`:
 
@@ -131,6 +134,33 @@ requests and runs by agent type. The time picker sets the period. The variables 
 `platform_usd` do what `--compute-usd-per-hour` and `--platform-usd` do for `report`; `platform_usd` is the
 platform cost of the period the time picker shows.
 
+## Import from a forge
+
+The forge adapters of the factory publish the `pr.*` events. Without them, import the events from the forge's API:
+
+```sh
+export LEDGER_FORGE_TOKEN=<a token that may read the repository>
+npx @opensoftware/ledger import --since 2026-01-01 https://github.com/acme/web
+npx @opensoftware/ledger ingest pr-events.jsonl
+```
+
+`import` prints `wrote 5 events of 2 pull requests to pr-events.jsonl` and writes nothing when the forge answers with
+an error. The host `github.com` is GitHub; any other host is Forgejo (or Gitea), whose API is `<origin>/api/v1`. For
+GitHub Enterprise, pass `--forge github`; its API is `<origin>/api/v3`. `LEDGER_FORGE_URL` sets another API URL.
+
+| Forge data | Event |
+| --- | --- |
+| A pull request | `pr.opened@v1` at its creation time, with its title, branches, head commit and author |
+| A submitted review | `pr.reviewed@v1` at its submit time: `approved`, `changes_requested`, or `commented` (also when dismissed) |
+| A comment on the pull request's conversation | `pr.reviewed@v1` with the state `commented`. Line comments belong to a review. |
+| A merged or closed pull request | `pr.closed@v1` at its merge or close time, with `merged` and the merge commit |
+
+Reviews and comments by the pull request's author are left out: they are no review. A user of type `Bot` or with a
+login that ends in `[bot]` is a trigger, and its reviews are `automated`. User IDs are `github:<login>` or
+`forgejo:<login>`. `--since <date>` reads only the pull requests updated on or after that day. The event IDs are the
+same on every import, so ingesting a newer file again replaces the records and doubles nothing. Each import makes one
+request per page of pull requests and two per pull request, so run a daily import with `--since`.
+
 ## Report
 
 `report.json` holds `period`, `pullRequests` (opened, merged, per day), `cost` (the period's total, inference,
@@ -157,6 +187,8 @@ with a trusted publisher for `publish-ledger.yml`. No credential is stored in th
 | --- | --- | --- | --- |
 | `OUTPUT` | string | `"."` | Folder of report.json and ledger-dashboard.json when --out is not given. |
 | `LEDGER_DB` | string | `"ledger.duckdb"` | Default of --db: a DuckDB file, or a PostgreSQL URL like postgres://user:password@host:5432/ledger. Keeps the password off the command line. |
+| `LEDGER_FORGE_URL` | string |  | Base URL of the forge API for import. Default: https://api.github.com for github.com, <origin>/api/v3 for another GitHub host, <origin>/api/v1 for Forgejo. |
+| `LEDGER_FORGE_TOKEN` | string |  | Token that may read the repository's pull requests, for import, for example GITHUB_TOKEN. Without it, import reads a public repository. Never write the value into a file. |
 
 ## Scenarios
 
@@ -202,3 +234,15 @@ with a trusted publisher for `publish-ledger.yml`. No credential is stored in th
 | SCN-LEDGER-036 | implemented | The panel "Cost per pull request" shows the cost of the README sample |
 | SCN-LEDGER-037 | implemented | The dashboard variables add compute and platform cost |
 | SCN-LEDGER-038 | implemented | A database that refuses the password exits 1 without printing the password |
+| SCN-LEDGER-039 | implemented | Import writes the pull requests, reviews, comments and merges of a GitHub repository as events |
+| SCN-LEDGER-040 | implemented | The imported events give the report its merges and first human reviews |
+| SCN-LEDGER-041 | implemented | A review by a bot is imported as automated |
+| SCN-LEDGER-042 | implemented | Reviews and comments by the author of the pull request are left out |
+| SCN-LEDGER-043 | implemented | A pull request closed without a merge gives "merged" false |
+| SCN-LEDGER-044 | implemented | The option "--since" imports only pull requests updated on or after the day |
+| SCN-LEDGER-045 | implemented | Pull requests on more than one page are all imported |
+| SCN-LEDGER-046 | implemented | The token in "LEDGER_FORGE_TOKEN" is sent with each request |
+| SCN-LEDGER-047 | implemented | A forge that refuses the token exits 1 without printing the token |
+| SCN-LEDGER-048 | implemented | A Forgejo repository is read through its API v1 |
+| SCN-LEDGER-049 | implemented | The option "--forge github" reads a GitHub Enterprise repository |
+| SCN-LEDGER-050 | implemented | A URL that names no repository is refused |
