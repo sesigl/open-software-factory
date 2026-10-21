@@ -194,3 +194,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-042 | implemented | A scripted reply reports its token usage |
 | SCN-TK-043 | implemented | The fake gives the headers of every request it received |
 | SCN-TK-044 | implemented | The module runs the mutant that Stryker activates |
+| SCN-TK-045 | implemented | fakes.forge merges a pull request, so a module can read the merge commit |

@@ -24,6 +24,8 @@ export interface Forge {
     repository: string,
     change: { branch: string; title: string; files: Record<string, string> },
   ): Promise<PullRequest>;
+  /** Merges the pull request into `main` with a merge commit and returns that commit. */
+  mergePullRequest(pr: PullRequest): Promise<string>;
   /** The bodies of the pull request's comments, oldest first. */
   comments(pr: PullRequest): Promise<string[]>;
   /** The commit statuses of the pull request's head commit. */
@@ -91,6 +93,22 @@ export async function startForge(track: Track): Promise<Forge> {
         { base: "main", head: change.branch, title: change.title },
       );
       return { repository, number: pr.number, url: pr.html_url, sha: pr.head.sha };
+    },
+    async mergePullRequest(pr) {
+      const path = `/repos/${OWNER}/${pr.repository}/pulls/${pr.number}`;
+      // Forgejo checks whether a new pull request can merge in the background and answers 405 until it knows.
+      for (let attempt = 1; ; attempt++) {
+        const answer = await fetch(`${url}/api/v1${path}/merge`, {
+          method: "POST",
+          headers: { authorization: auth, "content-type": "application/json" },
+          body: JSON.stringify({ Do: "merge" }),
+        });
+        if (answer.ok) break;
+        if (answer.status !== 405 || attempt === 50)
+          throw new Error(`fakes.forge: POST ${path}/merge returned ${answer.status}: ${await answer.text()}`);
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+      return (await api<{ merge_commit_sha: string }>("GET", path)).merge_commit_sha;
     },
     async comments(pr) {
       const list = await api<{ body: string }[]>(

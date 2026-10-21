@@ -1,0 +1,35 @@
+{
+  "name": "@opensoftware/taskcapture",
+  "version": "0.0.0",
+  "description": "taskcapture: a private benchmark from a team's merged pull requests as Harbor tasks, with a correctness-versus-cost report and LiteLLM routing.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "modules/taskcapture"
+  },
+  "type": "module",
+  "bin": {
+    "taskcapture": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "vitest run",
+    "docs": "node ../../tools/bin/osf.ts docs .",
+    "mutation": "node ../../tools/bin/osf.ts mutation ."
+  },
+  "devDependencies": {
+    "@opensoftware/testkit": "workspace:*"
+  },
+  "dependencies": {
+    "yaml": "2.9.1"
+  }
+}
