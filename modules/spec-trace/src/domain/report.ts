@@ -1,4 +1,5 @@
 // The JSON report: one entry per scenario with its tests, its result and its evidence, and the totals.
+import { type Changes, changeLine } from "./changes.ts";
 import { type Finding, type Inputs, statusOf } from "./model.ts";
 import { resultOf } from "./rules.ts";
 
@@ -28,10 +29,17 @@ export interface Report {
     passed: number;
   };
   findings: Finding[];
+  /** The scenarios changed since the base commit; null without --base. */
+  changes: Changes | null;
 }
 
 /** `evidence` maps a scenario ID to its artifact count, or is undefined without bundles. */
-export function report(inputs: Inputs, findings: Finding[], evidence: Map<string, number> | undefined): Report {
+export function report(
+  inputs: Inputs,
+  findings: Finding[],
+  evidence: Map<string, number> | undefined,
+  changes: Changes | null = null,
+): Report {
   const scenarios = inputs.scenarios
     .filter((scenario) => scenario.ids.length === 1)
     .map((scenario): ReportScenario => {
@@ -61,9 +69,15 @@ export function report(inputs: Inputs, findings: Finding[], evidence: Map<string
       passed: scenarios.filter((scenario) => scenario.result === "passed").length,
     },
     findings,
+    changes,
   };
 }
 
 export function summary({ totals }: Report): string {
   return `${totals.scenarios} scenarios: ${totals.implemented} implemented, ${totals.planned} planned, ${totals.deprecated} deprecated; ${totals.tested} with a test, ${totals.passed} passed`;
+}
+
+/** The last line of the report command: the totals, and the changes when there is a base. */
+export function outcome(report: Report): string {
+  return report.changes ? `${summary(report)}; ${changeLine(report.changes)}` : summary(report);
 }

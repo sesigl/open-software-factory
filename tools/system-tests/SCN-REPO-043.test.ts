@@ -1,7 +1,7 @@
 import { scenario } from "@opensoftware/testkit";
 import { acceptedAdr } from "./repo.ts";
 
-scenario("SCN-REPO-001", async ({ sut, fakes, given, when, then }) => {
+scenario("SCN-REPO-043", async ({ sut, fakes, given, when, then }) => {
   await given('a repository with the module template and an accepted ADR for the module "demo"', async () => {
     for (const [path, content] of Object.entries(fakes.fromRepository("modules/_template"))) {
       await sut.files.put(`$INPUT/modules/_template/${path}`, content);
@@ -28,7 +28,7 @@ scenario("SCN-REPO-001", async ({ sut, fakes, given, when, then }) => {
     expect(run.exitCode, run.stdout + run.stderr).toBe(0);
   });
 
-  await then('the output contains "SPEC ok"', async () => {
-    expect(run.stdout).toContain("SPEC ok");
+  await then('the output contains "ARCH ok"', async () => {
+    expect(run.stdout).toContain("ARCH ok");
   });
 });

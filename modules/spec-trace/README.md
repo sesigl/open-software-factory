@@ -1,13 +1,14 @@
 ---
-covers: [modules/spec-trace/src/**]
+covers: [modules/spec-trace/src/**, modules/spec-trace/action.yml, modules/spec-trace/action.sh]
 ---
 
 # spec-trace
 
 Requirements traceability for any repository with Gherkin feature files. spec-trace checks that every scenario has
 one ID and one status, that every implemented scenario has exactly one test whose step labels match its steps, and
-that the test passed. It writes one JSON report of every scenario, its test, its result and its evidence. Decision:
-[ADR 0030](../../docs/decisions/0030-spec-trace.md).
+that the test passed. It writes one JSON report of every scenario, its test, its result, its evidence and the
+changes since a base commit, and runs as a GitHub Action. Decisions: [ADR 0030](../../docs/decisions/0030-spec-trace.md),
+[ADR 0031](../../docs/decisions/0031-spec-trace-action-and-dogfood.md).
 
 ## Quick start
 
@@ -53,7 +54,7 @@ finding.
 | Command | What it does |
 | --- | --- |
 | `check [--only <rules>] [--config <file>]` | Check the rules SPEC, TRACE, STEPS and PASS (or the comma-separated --only) on the repository in the current folder. Prints one line per finding and exits 1 when there is one. |
-| `report [--out <file>] [--evidence <bundle>]... [--config <file>]` | Write the JSON report of every scenario, its tests, its result and its evidence in proof bundles to --out ($OUTPUT/spec-trace.json). |
+| `report [--out <file>] [--evidence <bundle>]... [--base <commit>] [--summary <file>] [--config <file>]` | Write the JSON report of every scenario, its tests, its result and its evidence in proof bundles to --out ($OUTPUT/spec-trace.json). --base adds the scenarios added, removed or changed since the commit; --summary adds a Markdown summary to the end of the file. |
 | `next-id <prefix> [--config <file>]` | Print the next free scenario ID of the prefix. |
 
 ## The rules
@@ -92,7 +93,14 @@ exits 0 without findings, 1 with findings and 2 when the configuration or the co
     }
   ],
   "totals": { "scenarios": 1, "planned": 0, "implemented": 1, "deprecated": 0, "tested": 1, "passed": 1 },
-  "findings": []
+  "findings": [],
+  "changes": {
+    "base": "4f1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c",
+    "added": ["SCN-SHOP-002"],
+    "removed": [],
+    "status": [{ "id": "SCN-SHOP-001", "from": "planned", "to": "implemented" }],
+    "steps": []
+  }
 }
 ```
 
@@ -101,6 +109,39 @@ exits 0 without findings, 1 with findings and 2 when the configuration or the co
 of the scenario in the proof bundles given with `--evidence` (each checked against the `evidence-bundle` contract),
 and `null` without them. `findings` holds the findings of SPEC, TRACE and STEPS, and of PASS when there are JUnit
 reports, as objects with `rule`, `file`, `line` and `message`.
+
+`--base <commit>` compares the scenarios with the feature files of a commit, read with Git from the repository in
+the current folder. `changes` lists the scenario IDs `added` and `removed` since then, the `status` changes and the
+IDs whose `steps` changed; it is `null` without `--base`. The output line then ends with
+`since the base: 1 added, 0 removed, 1 with a new status, 0 with new steps`. A base that is not a commit exits 2. The
+changes are for the review: no rule fails on them.
+
+`--summary <file>` adds a Markdown summary to the end of the file: the totals, a table of the changes and a table of
+the findings. In a workflow, `--summary "$GITHUB_STEP_SUMMARY"` shows it on the run's page.
+
+## GitHub Action
+
+```yaml
+- uses: actions/checkout@v5
+  with:
+    fetch-depth: 0 # the base commit of the pull request, for the changes
+# ... run the tests, so the JUnit reports are in reports/junit/ ...
+- uses: sesigl/open-software-factory/modules/spec-trace@spec-trace-v0.1.0
+```
+
+The action writes the report with the job summary, uploads it as the artifact `spec-trace`, then runs
+`spec-trace check`. It fails when a rule has a finding.
+
+| Input | Default | Meaning |
+| --- | --- | --- |
+| `rules` | `SPEC,TRACE,STEPS,PASS` | The rules to check, separated by commas. Empty writes only the report. |
+| `evidence` | none | Folders of proof evidence bundles, one per line. |
+| `base` | the base commit of the pull request | The commit to compare the scenarios with; none on other events. |
+| `out` | `$RUNNER_TEMP/spec-trace/spec-trace.json` | Where to write the JSON report. |
+| `config` | `spec-trace.json` | The settings file. |
+| `command` | `npx --yes @opensoftware/spec-trace@<version of the action>` | The spec-trace command. |
+
+The output `report` is the path of the JSON report.
 
 ## Settings
 
@@ -190,3 +231,18 @@ with a trusted publisher for `publish-spec-trace.yml`. No credential is stored i
 | SCN-TRACE-047 | implemented | next-id starts a new prefix at 001 |
 | SCN-TRACE-048 | implemented | next-id starts a new prefix of a configured pattern |
 | SCN-TRACE-049 | implemented | next-id asks for the first ID by hand when the pattern has no fixed width |
+| SCN-TRACE-050 | implemented | report lists a scenario added since the base commit |
+| SCN-TRACE-051 | implemented | report lists a scenario whose status changed since the base commit |
+| SCN-TRACE-052 | implemented | report lists a scenario whose steps changed since the base commit |
+| SCN-TRACE-053 | implemented | report lists a scenario removed since the base commit |
+| SCN-TRACE-054 | implemented | report without --base has no changes |
+| SCN-TRACE-055 | implemented | report rejects a base that is not a commit of the repository |
+| SCN-TRACE-056 | implemented | The summary shows the totals and the findings |
+| SCN-TRACE-057 | implemented | The summary lists the changes since the base commit |
+| SCN-TRACE-058 | implemented | The summary keeps what the file held before |
+| SCN-TRACE-059 | implemented | The action passes and names the report when every rule passes |
+| SCN-TRACE-060 | implemented | A finding fails the action |
+| SCN-TRACE-061 | implemented | The action checks only the rules of the input "rules" |
+| SCN-TRACE-062 | implemented | On a pull request the action compares with the base commit of the pull request |
+| SCN-TRACE-063 | implemented | The action writes the summary to the job summary |
+| SCN-TRACE-064 | implemented | The action passes the proof bundles of the input "evidence" to the report |

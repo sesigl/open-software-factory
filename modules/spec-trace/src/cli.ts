@@ -11,7 +11,7 @@ const HELP = `Usage: spec-trace <command> [options]
 
 Commands:
   check [--only <rules>] [--config <file>]  Check the rules SPEC, TRACE, STEPS and PASS (or the comma-separated --only) on the repository in the current folder. Prints one line per finding and exits 1 when there is one.
-  report [--out <file>] [--evidence <bundle>]... [--config <file>]  Write the JSON report of every scenario, its tests, its result and its evidence in proof bundles to --out ($OUTPUT/spec-trace.json).
+  report [--out <file>] [--evidence <bundle>]... [--base <commit>] [--summary <file>] [--config <file>]  Write the JSON report of every scenario, its tests, its result and its evidence in proof bundles to --out ($OUTPUT/spec-trace.json). --base adds the scenarios added, removed or changed since the commit; --summary adds a Markdown summary to the end of the file.
   next-id <prefix> [--config <file>]  Print the next free scenario ID of the prefix.
 `;
 
@@ -23,6 +23,8 @@ const { positionals, values } = parseArgs({
     config: { type: "string" },
     out: { type: "string" },
     evidence: { type: "string", multiple: true },
+    base: { type: "string" },
+    summary: { type: "string" },
   },
 });
 const [command, prefix] = positionals;
@@ -35,11 +37,12 @@ const commands: Record<string, () => string> = {
     return lines.join("\n");
   },
   report: () =>
-    writeReport(
-      load(root, values.config),
-      values.out ?? join(process.env.OUTPUT ?? ".", "spec-trace.json"),
-      values.evidence ?? [],
-    ),
+    writeReport(load(root, values.config), root, {
+      out: values.out ?? join(process.env.OUTPUT ?? ".", "spec-trace.json"),
+      bundles: values.evidence ?? [],
+      base: values.base,
+      summary: values.summary,
+    }),
   "next-id": () => next(load(root, values.config), prefix as string),
 };
 const ready = command === "check" || command === "report" || (command === "next-id" && prefix);

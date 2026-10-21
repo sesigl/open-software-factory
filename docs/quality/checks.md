@@ -12,10 +12,11 @@ Scope: SPEC, TRACE, STEPS and PASS apply to `modules/*/features/`, `ports/*/feat
 `tools/features/`, `deploy/features/` and `e2e/features/`. The factory-level requirements in `docs/vision/` are
 source material and are not checked; module scenarios link to them with `@realizes=SCN-FACTORY-...`.
 
-The checks are scripts in `tools/checks/` (TODO item T-00), run with `osf check <ID>`; see
-[`tools/README.md`](../../tools/README.md). BOUNDARY-RUNTIME and NOREAL are guards in the testkit; the testkit also records the coverage REACH reads.
-From phase 2 on, the released `spec-trace` module ([ADR 0030](../decisions/0030-spec-trace.md)) replaces TRACE, STEPS and PASS. It has
-the same cases and messages; until the dogfood slice of T-06, CI runs the scripts.
+SPEC, TRACE, STEPS and PASS run with the module `spec-trace` ([ADR 0030](../decisions/0030-spec-trace.md),
+[ADR 0031](../decisions/0031-spec-trace-action-and-dogfood.md)) and the root `spec-trace.json`: `make check` runs
+`spec-trace check --only SPEC,TRACE,STEPS`, `make verify` runs `spec-trace check`. The other checks are scripts in
+`tools/checks/` (TODO item T-00), run with `osf check <ID>`; see [`tools/README.md`](../../tools/README.md).
+BOUNDARY-RUNTIME and NOREAL are guards in the testkit; the testkit also records the coverage REACH reads.
 
 CI runs `make verify` in `.github/workflows/verify.yml` for every pull request and every push to `main`. It runs
 the three parts of `make verify` as jobs: `verify-static` (lint, typecheck, build) and one `verify-tests` job per
@@ -27,7 +28,10 @@ pull request with `workflow_dispatch`. That run needs no approval. It uses `veri
 request into `main` before it tests, and reports the result as the `verify` commit status on the pull request's head.
 On each pull request from this repository, the `verify` job also runs the proof GitHub Action on the JUnit results of
 every suite ([ADR 0029](../decisions/0029-proof-capture-and-action.md)): one proof comment and the commit status
-`proof`. The `proof` suite's job installs Chromium for the capture scenarios.
+`proof`. The `proof` suite's job installs Chromium for the capture scenarios. The `verify` job also runs the spec-trace
+GitHub Action for its report: the job summary lists the scenarios a pull request adds, removes or changes, and the
+artifact `spec-trace` holds the JSON report. Until `@opensoftware/spec-trace` and `@opensoftware/proof` are on npm,
+both actions run the build of the checkout.
 
 ## Specification and traceability
 
@@ -36,7 +40,7 @@ every suite ([ADR 0029](../decisions/0029-proof-capture-and-action.md)): one pro
 | SPEC | Every scenario has one `@id`, one `@status` (`planned`, `implemented`, `deprecated`), and the ID matches `^SCN-[A-Z][A-Z0-9]*-\d{3}$` with the module's registered prefix. IDs are unique in the repository. | Parse every `.feature` file with the official Gherkin parser. |
 | TRACE | Every `implemented` scenario has exactly one system test; every system test names an existing scenario; `planned` scenarios may have a test that is expected to fail; `deprecated` scenarios have none. `@conformance` scenarios have exactly one test per adapter of the port. | Read `scenario("SCN-...")` calls from the TypeScript AST. Only string literals count. |
 | STEPS | The labels of `given`, `when` and `then` calls match the scenario's steps, in order, word for word. Outline parameters `<name>` match any value. | Compare AST string literals with the parsed steps. |
-| PASS | Every `implemented` scenario's test ran in this CI run and passed. Skipped, todo, retried-to-pass and missing results fail. | Join the JUnit XML results (each test case carries its scenario ID) with the scenario list. |
+| PASS | Every `implemented` scenario's test ran in this CI run and passed. Skipped, todo and missing results fail; FLAKE fails retried-to-pass results. | Join the JUnit XML results (each test case carries its scenario ID) with the scenario list. |
 
 ## Boundaries
 
@@ -57,7 +61,7 @@ every suite ([ADR 0029](../decisions/0029-proof-capture-and-action.md)): one pro
 | NOSKIP | No `.skip`, `.only`, `.todo` or `.fails` in system tests. | AST search. |
 | REACH | A pull request adds no line to a module's `src/` or `bin/` that no system test reaches, and no source file that no system test loads (files of types only are exempt). | The testkit records V8 coverage in every Node process of the module (`reports/coverage/`); `osf check REACH` maps it to source lines with v8-to-istanbul, through source maps for built files, and compares it with the lines added since `OSF_BASE` (ADR 0019). |
 | MUTATION | System tests notice small changes to the code they claim to cover. | Nightly Stryker on a sample of changed files; a falling score opens a ticket. Not a pull request gate, because it is slow. |
-| FLAKE | A test that passed only on retry is a failure. | PASS reads the retry count from the results. |
+| FLAKE | A test that passed only on retry is a failure. | `osf check FLAKE` reads the retry count from the JUnit results. |
 | BUDGET | Each module's system tests finish inside the budget in its `AGENTS.md`. | Timing from the JUnit results; `make verify` runs one suite at a time and CI gives each suite its own runner, so suites do not slow each other. |
 
 ## Contracts and docs
