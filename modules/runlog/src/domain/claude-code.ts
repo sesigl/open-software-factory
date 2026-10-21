@@ -51,13 +51,14 @@ export function claudeCodeSession(lines: Line[]): Session {
   let pending: Message[] = [];
   let previous = first.timestamp as string;
   for (const line of messages) {
-    const content = line.message?.content;
+    const content = line.message.content;
     const blocks: Line[] = Array.isArray(content) ? content : [];
     if (line.type === "user") {
-      const text = textOf(Array.isArray(content) ? blocks.filter((block) => block.type === "text") : content);
+      // Tool results carry their text in `content`, so the text of the line is the prompt alone.
+      const text = textOf(content);
       if (text) pending.push({ role: "user", text });
       for (const block of blocks) {
-        const call = block.type === "tool_result" ? tools.get(block.tool_use_id) : undefined;
+        const call = tools.get(block.tool_use_id);
         if (call) Object.assign(call, { end: line.timestamp, result: textOf(block.content) });
       }
     } else {

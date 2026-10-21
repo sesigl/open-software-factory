@@ -13,12 +13,16 @@ interface OtlpSpan {
   spanId: string;
   parentSpanId?: string;
   name: string;
+  kind: number;
   startTimeUnixNano: string;
   endTimeUnixNano: string;
   attributes?: KeyValue[];
 }
 interface OtlpRequest {
-  resourceSpans: { resource: { attributes: KeyValue[] }; scopeSpans: { spans: OtlpSpan[] }[] }[];
+  resourceSpans: {
+    resource: { attributes: KeyValue[] };
+    scopeSpans: { scope?: { name?: string; version?: string }; spans: OtlpSpan[] }[];
+  }[];
 }
 
 export interface Span {
@@ -26,8 +30,15 @@ export interface Span {
   spanId: string;
   parentSpanId: string | undefined;
   name: string;
+  /** "internal", "client" or another OTLP span kind. */
+  kind: string;
+  /** The start and the end as ISO 8601 times with milliseconds. */
+  start: string;
+  end: string;
   /** Seconds between start and end. */
   seconds: number;
+  /** The instrumentation scope as "<name> <version>". */
+  scope: string;
   attributes: Record<string, unknown>;
   /** The attributes of the resource the span belongs to. */
   resource: Record<string, unknown>;
@@ -45,6 +56,11 @@ function value(any: AnyValue): unknown {
   return any.stringValue ?? any.doubleValue ?? any.boolValue;
 }
 
+// OTLP span kinds: SPAN_KIND_INTERNAL is 1, SPAN_KIND_SERVER 2, SPAN_KIND_CLIENT 3.
+const KINDS = ["unspecified", "internal", "server", "client", "producer", "consumer"];
+
+const iso = (nanos: string): string => new Date(Number(BigInt(nanos) / 1_000_000n)).toISOString();
+
 const record = (attributes: KeyValue[] = []): Record<string, unknown> =>
   Object.fromEntries(attributes.map(({ key, value: any }) => [key, value(any)]));
 
@@ -59,6 +75,10 @@ export function runOf(request: unknown): Run {
         spanId: span.spanId,
         parentSpanId: span.parentSpanId || undefined,
         name: span.name,
+        kind: KINDS[span.kind] ?? String(span.kind),
+        start: iso(span.startTimeUnixNano),
+        end: iso(span.endTimeUnixNano),
+        scope: `${scope.scope?.name} ${scope.scope?.version}`,
         seconds: Number((BigInt(span.endTimeUnixNano) - BigInt(span.startTimeUnixNano)) / 1_000_000_000n),
         attributes: record(span.attributes),
         resource,
@@ -82,4 +102,10 @@ export function runsOf(jsonl: string): Run[] {
 /** The spans below the root span with this name, in order. */
 export function children(run: Run, name: string): Span[] {
   return run.spans.filter((span) => span.parentSpanId === run.root.spanId && span.name === name);
+}
+
+/** The GenAI message JSON of a span attribute such as "gen_ai.input.messages", as [role, text] pairs. */
+export function messagesIn(span: Span | undefined, key: string): [string, string][] {
+  const list = JSON.parse(String(span?.attributes[key])) as { role: string; parts: { content: string }[] }[];
+  return list.map((message) => [message.role, message.parts.map((part) => part.content).join("")]);
 }

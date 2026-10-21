@@ -39,3 +39,16 @@ Feature: Export a Claude Code session
     And the developer ran "runlog export session.jsonl"
     When the developer runs "runlog export session.jsonl" again
     Then "runs.jsonl" has 2 lines with the same trace ID
+
+  @id=SCN-RUN-066 @status=implemented @realizes=SCN-FACTORY-DATA-001
+  Scenario: A Claude Code run has one span for the session, each response and each tool call, and no other span
+    Given a Git repository with one commit and the Claude Code session "5b8e0c7e-1d2a-4f00-9a7e-0d1f2a3b4c5d"
+    When the developer runs "runlog export session.jsonl"
+    Then the spans in "runs.jsonl" are "invoke_agent", 3 "chat claude-sonnet-5-5" and 2 "execute_tool Bash", in this order
+    And the "chat" spans are client spans and the other spans are internal spans
+
+  @id=SCN-RUN-067 @status=implemented
+  Scenario: The spans of a run keep the milliseconds of the session's times
+    Given a Git repository with one commit and a Claude Code session with a prompt at "2026-01-01T10:00:00.250Z" and an answer at "2026-01-01T10:00:01.750Z"
+    When the developer runs "runlog export session.jsonl"
+    Then the root span and the "chat claude-sonnet-5-5" span in "runs.jsonl" start at "2026-01-01T10:00:00.250Z" and end at "2026-01-01T10:00:01.750Z"
