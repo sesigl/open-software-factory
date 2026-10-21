@@ -231,7 +231,7 @@ export function runRecord(
   return `${JSON.stringify(request)}\n`;
 }
 
-/** AGENTS.md of module demo with its quality limits (ADR 0036). */
+/** AGENTS.md of module demo with its quality limits (ADR 0037). */
 export function qualityLimits(options: { duplication?: number; changed?: number; total?: number } = {}): string {
   const { duplication = 3, changed = 70, total = 80 } = options;
   return [
