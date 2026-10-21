@@ -3,7 +3,7 @@ status: accepted
 date: 2026-10-21
 ---
 
-# 0035. Mutation testing with Stryker and duplication limits with jscpd
+# 0036. Mutation testing with Stryker and duplication limits with jscpd
 
 ## Context
 

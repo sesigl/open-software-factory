@@ -34,7 +34,7 @@ Layers, top to bottom, in `architecture.json` (ADR 0014). A file imports only it
 
 ## Quality limits
 
-Checked by DUP (ADR 0035):
+Checked by DUP (ADR 0036):
 
 - Duplication: at most 3% of the source lines.
 

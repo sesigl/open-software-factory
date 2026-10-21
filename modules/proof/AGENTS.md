@@ -36,7 +36,7 @@ forge API and upload to the store;
 
 ## Quality limits
 
-Checked by DUP and MUTATION (ADR 0035):
+Checked by DUP and MUTATION (ADR 0036):
 
 - Duplication: at most 3% of the lines in src/.
 - Mutation score: at least 70% of the mutants in changed lines, 80% in total.

@@ -1,5 +1,5 @@
 {
-  "$comment": "Clones across units that existed when DUP started (ADR 0035). Remove an entry when its clone is gone; never add one.",
+  "$comment": "Clones across units that existed when DUP started (ADR 0036). Remove an entry when its clone is gone; never add one.",
   "clones": [
     ["modules/ledger/src/adapters/files.ts", "modules/scorekit/src/adapters/files.ts"],
     ["modules/ledger/src/cli.ts", "modules/scorekit/src/cli.ts"],

@@ -5,7 +5,7 @@ description: Fix a MUTATION or DUP finding without unit tests or mocks. Use when
 
 # Fix a MUTATION or DUP finding
 
-The checks are in `docs/quality/checks.md`; the reasons are in ADR 0035.
+The checks are in `docs/quality/checks.md`; the reasons are in ADR 0036.
 
 ## A mutant that no test notices
 

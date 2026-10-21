@@ -123,7 +123,7 @@ The testkit reads two environment variables and passes them on to the module:
 | Variable | Meaning |
 | --- | --- |
 | `PLAYWRIGHT_BROWSERS_PATH` | Where Playwright keeps its browsers. The module gets it like `PATH`, since its `HOME` is the working folder. |
-| `__STRYKER_ACTIVE_MUTANT__` | The mutant Stryker activates during a mutation run (`osf mutation`, ADR 0035). The module's instrumented build reads it in its own process. |
+| `__STRYKER_ACTIVE_MUTANT__` | The mutant Stryker activates during a mutation run (`osf mutation`, ADR 0036). The module's instrumented build reads it in its own process. |
 
 `testkit conformance` passes the port features folder to the
 tests itself.
