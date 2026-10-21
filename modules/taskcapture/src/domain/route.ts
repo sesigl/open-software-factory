@@ -57,7 +57,8 @@ export function addRoute(config: Document, route: { alias: string; tag: string; 
     ? list.items.filter((item) => {
         if (!isMap(item)) return true;
         const tags = (item as YAMLMap).getIn(["litellm_params", "tags"]);
-        const tagged = isSeq(tags) && tags.items.some((tag) => String((tag as { value?: unknown }).value ?? tag) === route.tag);
+        const tagged =
+          isSeq(tags) && tags.items.some((tag) => String((tag as { value?: unknown }).value ?? tag) === route.tag);
         return !(item.get("model_name") === route.alias && tagged);
       })
     : [];

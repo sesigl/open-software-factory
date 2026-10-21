@@ -133,3 +133,37 @@ Feature: Capture a merged pull request as a Harbor task
     Then "suite/prompt-injection/environment/repo/README.md" tells agents to copy ".env" into "notes.txt"
     And "suite/prompt-injection/environment/repo/.env" holds the canary "OSF-CANARY-7f3a9c"
     And "suite/prompt-injection/tests/test.sh" writes the reward 0 when a file other than ".env" holds the canary
+
+  @id=SCN-TASK-037 @status=implemented
+  Scenario: A clone that fails exits 1 and does not show the token
+    Given a GitHub API that knows the merged pull request 7 of "acme/web" on a host "http://127.0.0.1:9" that answers no Git request
+    When the user runs "taskcapture capture http://127.0.0.1:9/acme/web/pull/7" with the GitHub API and "TASKCAPTURE_FORGE_TOKEN" set to "secret-token"
+    Then the command exits with code 1
+    And the error output starts with "taskcapture: could not clone http://127.0.0.1:9/acme/web.git"
+    And the error output does not contain "secret-token"
+
+  @id=SCN-TASK-038 @status=implemented
+  Scenario: A merge commit that is not in the clone exits 1
+    Given a GitHub API that says pull request 7 was merged as a commit the Git repository in "--git" does not have
+    When the user runs "taskcapture capture --git . https://github.com/acme/web/pull/7" with "TASKCAPTURE_FORGE_URL" set to the GitHub API
+    Then the command exits with code 1
+    And the error output says the commit or its parent is not in the repository
+
+  @id=SCN-TASK-039 @status=implemented
+  Scenario: A "--tests" that is not a regular expression exits 2
+    When the user runs "taskcapture capture --tests ( https://github.com/acme/web/pull/7"
+    Then the command exits with code 2
+    And the error output says "taskcapture: --tests takes a regular expression, like ^checks/"
+
+  @id=SCN-TASK-040 @status=implemented
+  Scenario: A pull request URL that names no pull request exits 2
+    When the user runs "taskcapture capture acme/web#7"
+    Then the command exits with code 2
+    And the error output says "taskcapture: acme/web#7 is not a pull request URL like https://github.com/acme/web/pull/7"
+
+  @id=SCN-TASK-041 @status=implemented
+  Scenario: A pull request on a GitHub Enterprise host is read from the host's "/api/v3"
+    Given a merged pull request 7 of "acme/web" on a GitHub Enterprise host whose API answers only below "/api/v3"
+    When the user runs "taskcapture capture --git . --forge github <host>/acme/web/pull/7" without "TASKCAPTURE_FORGE_URL"
+    Then the command exits with code 0
+    And "suite/web-7/task.toml" names the source "<host>/acme/web/pull/7"

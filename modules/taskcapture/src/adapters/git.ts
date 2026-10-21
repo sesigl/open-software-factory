@@ -8,15 +8,10 @@ import type { Change } from "../domain/task.ts";
 
 const git = (cwd: string, args: string[], extra: string[] = []): Promise<Buffer> =>
   new Promise((resolve, reject) => {
-    execFile(
-      "git",
-      [...extra, ...args],
-      { cwd, encoding: "buffer", maxBuffer: 1 << 30 },
-      (error, stdout, stderr) => {
-        if (error) reject(new Error(`git ${args[0]} failed: ${stderr.toString().trim() || error.message}`));
-        else resolve(stdout);
-      },
-    );
+    execFile("git", [...extra, ...args], { cwd, encoding: "buffer", maxBuffer: 1 << 30 }, (error, stdout, stderr) => {
+      if (error) reject(new Error(`git ${args[0]} failed: ${stderr.toString().trim() || error.message}`));
+      else resolve(stdout);
+    });
   });
 
 export interface Repository {

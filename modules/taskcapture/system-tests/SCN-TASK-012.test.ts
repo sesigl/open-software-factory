@@ -6,23 +6,39 @@ scenario("SCN-TASK-012", async ({ sut, fakes, given, when, then }) => {
   let pull: Awaited<ReturnType<typeof commitPull>>;
   await given('a merged GitHub pull request 7 of a Python repository that adds "tests/test_sum.py"', async () => {
     pull = await commitPull(sut, {
-      base: { "pyproject.toml": "[project]\nname = \"web\"\n", "web/sum.py": "def sum(a, b):\n    return a - b\n" },
-      change: { "web/sum.py": "def sum(a, b):\n    return a + b\n", "tests/test_sum.py": "from web.sum import sum\n\ndef test_sum():\n    assert sum(2, 3) == 5\n" },
+      base: { "pyproject.toml": '[project]\nname = "web"\n', "web/sum.py": "def sum(a, b):\n    return a - b\n" },
+      change: {
+        "web/sum.py": "def sum(a, b):\n    return a + b\n",
+        "tests/test_sum.py": "from web.sum import sum\n\ndef test_sum():\n    assert sum(2, 3) == 5\n",
+      },
     });
     github = await fakes.http([pull.route]);
   });
 
   let run: Awaited<ReturnType<typeof sut.cli>>;
-  await when('the user runs "taskcapture capture --git . --image python:3.13 --setup \'pip install -e .\' --test-command pytest https://github.com/acme/web/pull/7" with "TASKCAPTURE_FORGE_URL" set to the GitHub API', async () => {
-    run = await capture(sut, github, ["--image", "python:3.13", "--setup", "pip install -e .", "--test-command", "pytest"]);
-  });
+  await when(
+    'the user runs "taskcapture capture --git . --image python:3.13 --setup \'pip install -e .\' --test-command pytest https://github.com/acme/web/pull/7" with "TASKCAPTURE_FORGE_URL" set to the GitHub API',
+    async () => {
+      run = await capture(sut, github, [
+        "--image",
+        "python:3.13",
+        "--setup",
+        "pip install -e .",
+        "--test-command",
+        "pytest",
+      ]);
+    },
+  );
 
-  await then('"suite/web-7/environment/Dockerfile" holds the lines "FROM python:3.13" and "RUN pip install -e ."', async () => {
-    expect(run.exitCode, run.stderr).toBe(0);
-    const lines = (await sut.files.read("$OUTPUT/suite/web-7/environment/Dockerfile")).split("\n");
-    expect(lines[0]).toBe("FROM python:3.13");
-    expect(lines).toContain("RUN pip install -e .");
-  });
+  await then(
+    '"suite/web-7/environment/Dockerfile" holds the lines "FROM python:3.13" and "RUN pip install -e ."',
+    async () => {
+      expect(run.exitCode, run.stderr).toBe(0);
+      const lines = (await sut.files.read("$OUTPUT/suite/web-7/environment/Dockerfile")).split("\n");
+      expect(lines[0]).toBe("FROM python:3.13");
+      expect(lines).toContain("RUN pip install -e .");
+    },
+  );
 
   await then('"suite/web-7/tests/test.sh" holds the line "if pytest; then"', async () => {
     expect((await sut.files.read("$OUTPUT/suite/web-7/tests/test.sh")).split("\n")).toContain("if pytest; then");

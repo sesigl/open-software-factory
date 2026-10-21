@@ -22,7 +22,9 @@ scenario("SCN-TASK-005", async ({ sut, fakes, given, when, then }) => {
   await then(
     '"suite/web-7/instruction.md" holds the title "Fix the sum" and the description "sum(2, 3) returned -1."',
     async () => {
-      expect(await sut.files.read("$OUTPUT/suite/web-7/instruction.md")).toBe("# Fix the sum\n\nsum(2, 3) returned -1.\n");
+      expect(await sut.files.read("$OUTPUT/suite/web-7/instruction.md")).toBe(
+        "# Fix the sum\n\nsum(2, 3) returned -1.\n",
+      );
     },
   );
 });

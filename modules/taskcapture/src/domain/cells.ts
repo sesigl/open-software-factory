@@ -33,7 +33,11 @@ export function trialOf(json: TrialJson, configuration: string, jobPath: string)
     configuration,
     jobPath,
     task: json.task_name,
-    model: info?.name ? (info.provider ? `${info.provider}/${info.name}` : info.name) : (json.agent_info?.name ?? "unknown"),
+    model: info?.name
+      ? info.provider
+        ? `${info.provider}/${info.name}`
+        : info.name
+      : (json.agent_info?.name ?? "unknown"),
     reward: typeof reward === "number" ? reward : null,
     costUsd: typeof json.agent_result?.cost_usd === "number" ? json.agent_result.cost_usd : null,
     error: json.exception_info?.exception_type ?? null,
@@ -92,10 +96,22 @@ export function report(trials: Trial[]): Report {
   );
   const top = <T>(list: T[], better: (a: T, b: T) => boolean): T | null =>
     list.reduce<T | null>((found, item) => (found === null || better(item, found) ? item : found), null);
-  const best = top(priced, (a, b) => a.correctness > b.correctness || (a.correctness === b.correctness && a.costUsdPerTrial < b.costUsdPerTrial));
-  const lowestCost = top(priced, (a, b) => a.costUsdPerTrial < b.costUsdPerTrial || (a.costUsdPerTrial === b.costUsdPerTrial && a.correctness > b.correctness));
+  const best = top(
+    priced,
+    (a, b) =>
+      a.correctness > b.correctness || (a.correctness === b.correctness && a.costUsdPerTrial < b.costUsdPerTrial),
+  );
+  const lowestCost = top(
+    priced,
+    (a, b) =>
+      a.costUsdPerTrial < b.costUsdPerTrial ||
+      (a.costUsdPerTrial === b.costUsdPerTrial && a.correctness > b.correctness),
+  );
   const efficiency = (c: (typeof priced)[number]) => c.correctness / c.costUsdPerTrial;
-  const mostEfficient = top(priced, (a, b) => efficiency(a) > efficiency(b) || (efficiency(a) === efficiency(b) && a.correctness > b.correctness));
+  const mostEfficient = top(
+    priced,
+    (a, b) => efficiency(a) > efficiency(b) || (efficiency(a) === efficiency(b) && a.correctness > b.correctness),
+  );
   const beaten = (c: (typeof priced)[number]) =>
     priced.some(
       (d) =>
@@ -136,7 +152,11 @@ function cell(group: Trial[], tasks: string[]): Cell {
     incomplete: missingTasks.length > 0,
     missingTasks,
     resume: missingTasks.length
-      ? ["harbor job resume --job-path", first.jobPath, ...errors.sort().map((error) => `--filter-error-type ${error}`)].join(" ")
+      ? [
+          "harbor job resume --job-path",
+          first.jobPath,
+          ...errors.sort().map((error) => `--filter-error-type ${error}`),
+        ].join(" ")
       : null,
   };
 }
