@@ -1,7 +1,7 @@
 // The DuckDB database file: the tables of sql/duckdb/tables.sql, filled by ingest, and the views of views.sql.
 import { readFileSync } from "node:fs";
-import { DuckDBInstance, type DuckDBConnection, type DuckDBValue } from "@duckdb/node-api";
-import type { Event, Records } from "../domain/records.ts";
+import { type DuckDBConnection, DuckDBInstance, type DuckDBValue } from "@duckdb/node-api";
+import type { Records } from "../domain/records.ts";
 import { utc } from "../domain/records.ts";
 
 /** The SQL files the package ships in sql/duckdb/, next to dist/. */
@@ -37,66 +37,101 @@ export async function openLedger(path: string): Promise<Ledger> {
 
 /** Inserts the records in one transaction. A record whose key is already there replaces the old one. */
 async function write(connection: DuckDBConnection, records: Records): Promise<void> {
-  const run = (statement: string, values: DuckDBValue[]) => connection.run(statement, values);
-  await connection.run("BEGIN TRANSACTION");
-  for (const row of records.spend)
-    await run("INSERT OR REPLACE INTO spend VALUES ($1, $2::TIMESTAMP, $3, $4, $5)", [
-      row.requestId,
-      row.startedAt,
-      row.usd,
-      row.model,
-      row.runId,
-    ]);
-  for (const span of records.spans)
-    await run("INSERT OR REPLACE INTO spans VALUES ($1, $2, $3)", [span.traceId, span.spanId, span.parentSpanId]);
-  for (const row of records.runs) {
-    await run("INSERT OR REPLACE INTO runs VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::TIMESTAMP, $10::TIMESTAMP, $11)", [
-      row.runId,
-      row.traceId,
-      row.spanId,
-      row.workItemId,
-      row.source,
-      row.requesterId,
-      row.agent,
-      row.model,
-      row.startedAt,
-      row.endedAt,
-      row.costUsd,
-    ]);
-    await run("DELETE FROM run_links WHERE run_id = $1", [row.runId]);
-    for (const url of new Set(row.pullRequests))
-      await run("INSERT INTO run_links VALUES ($1, $2)", [row.runId, url]);
-  }
-  for (const event of records.events) await writeEvent(run, event);
-  await connection.run("COMMIT");
-}
-
-type Run = (statement: string, values: DuckDBValue[]) => Promise<unknown>;
-
-async function writeEvent(run: Run, { type, source, id, time, data }: Event): Promise<void> {
-  const at = utc(time) as string;
   const text = (value: unknown) => (typeof value === "string" ? value : null);
-  if (type === "work.received@v1")
-    await run("INSERT OR REPLACE INTO work_items VALUES ($1, $2::TIMESTAMP)", [String(data.id), at]);
-  if (type === "pr.opened@v1")
-    await run("INSERT OR REPLACE INTO pull_requests VALUES ($1, $2, $3, $4::TIMESTAMP, $5, $6)", [
+  const events = (type: string) => records.events.filter((event) => event.type === type);
+  const runs = records.runs.map((row) => [
+    row.runId,
+    row.traceId,
+    row.spanId,
+    row.workItemId,
+    row.source,
+    row.requesterId,
+    row.agent,
+    row.model,
+    row.startedAt,
+    row.endedAt,
+    row.costUsd,
+  ]);
+  await connection.run("BEGIN TRANSACTION");
+  await upsert(
+    connection,
+    "spend",
+    ["", "TIMESTAMP", "", "", ""],
+    records.spend.map((row) => [row.requestId, row.startedAt, row.usd, row.model, row.runId]),
+  );
+  await upsert(
+    connection,
+    "spans",
+    ["", "", ""],
+    records.spans.map((span) => [span.traceId, span.spanId, span.parentSpanId]),
+    2,
+  );
+  await upsert(connection, "runs", ["", "", "", "", "", "", "", "", "TIMESTAMP", "TIMESTAMP", ""], runs);
+  // A run ingested again keeps only the pull requests it lists now.
+  for (const chunk of chunks(records.runs.map((row) => [row.runId])))
+    await connection.run(
+      `DELETE FROM run_links WHERE run_id IN (${chunk.map((_, index) => `$${index + 1}`).join(", ")})`,
+      chunk.flat(),
+    );
+  const links = records.runs.flatMap((row) => row.pullRequests.map((url) => [row.runId, url]));
+  await upsert(connection, "run_links", ["", ""], links, 2);
+  await upsert(
+    connection,
+    "work_items",
+    ["", "TIMESTAMP"],
+    events("work.received@v1").map(({ time, data }) => [String(data.id), utc(time) as string]),
+  );
+  await upsert(
+    connection,
+    "pull_requests",
+    ["", "", "", "TIMESTAMP", "", ""],
+    events("pr.opened@v1").map(({ time, data }) => [
       String(data.url),
       String(data.title),
       String((data.author as { id: string }).id),
-      at,
+      utc(time) as string,
       text(data.workItemId),
       text(data.runId),
-    ]);
-  if (type === "pr.reviewed@v1")
-    await run("INSERT OR REPLACE INTO reviews VALUES ($1, $2, $3, $4, $5, $6, $7::TIMESTAMP)", [
+    ]),
+  );
+  await upsert(
+    connection,
+    "reviews",
+    ["", "", "", "", "", "", "TIMESTAMP"],
+    events("pr.reviewed@v1").map(({ source, id, time, data }) => [
       source,
       id,
       String(data.url),
       String((data.reviewer as { id: string }).id),
       data.automated === true,
       String(data.state),
-      at,
-    ]);
-  if (type === "pr.closed@v1")
-    await run("INSERT OR REPLACE INTO closes VALUES ($1, $2::TIMESTAMP, $3)", [String(data.url), at, data.merged === true]);
+      utc(time) as string,
+    ]),
+    2,
+  );
+  await upsert(
+    connection,
+    "closes",
+    ["", "TIMESTAMP", ""],
+    events("pr.closed@v1").map(({ time, data }) => [String(data.url), utc(time) as string, data.merged === true]),
+  );
+  await connection.run("COMMIT");
+}
+
+/** INSERT OR REPLACE of many rows, a few hundred per statement. Of rows with the same key, the last one wins. */
+async function upsert(connection: DuckDBConnection, table: string, casts: string[], rows: DuckDBValue[][], keys = 1) {
+  const unique = [...new Map(rows.map((row) => [JSON.stringify(row.slice(0, keys)), row])).values()];
+  for (const chunk of chunks(unique)) {
+    const tuples = chunk.map(
+      (_, row) =>
+        `(${casts.map((cast, column) => `$${row * casts.length + column + 1}${cast && `::${cast}`}`).join(", ")})`,
+    );
+    await connection.run(`INSERT OR REPLACE INTO ${table} VALUES ${tuples.join(", ")}`, chunk.flat());
+  }
+}
+
+function chunks<T>(rows: T[], size = 200): T[][] {
+  return Array.from({ length: Math.ceil(rows.length / size) }, (_, index) =>
+    rows.slice(index * size, (index + 1) * size),
+  );
 }

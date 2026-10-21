@@ -19,11 +19,21 @@ export interface Facts {
   opened: number;
   merged: number;
   perDay: { date: string; opened: number; merged: number }[];
-  cycle: Record<"kickoffToPullRequest" | "kickoffToMerge" | "pullRequestToFirstHumanReview" | "firstHumanReviewToMerge", number | null>;
+  cycle: Record<
+    "kickoffToPullRequest" | "kickoffToMerge" | "pullRequestToFirstHumanReview" | "firstHumanReviewToMerge",
+    number | null
+  >;
   interactions: { perPullRequest: number | null; perDay: { date: string; perPullRequest: number }[] };
   runs: { total: number; topLevel: number; byAgent: { agent: string; total: number; topLevel: number }[] };
   reverts: number;
-  spend: { total: number; unattributed: number; bySource: Slice[]; byUser: Slice[]; byAgent: Slice[]; byModel: Slice[] };
+  spend: {
+    total: number;
+    unattributed: number;
+    bySource: Slice[];
+    byUser: Slice[];
+    byAgent: Slice[];
+    byModel: Slice[];
+  };
   hours: number;
   top: { url: string; title: string; usd: number }[];
 }
@@ -36,7 +46,8 @@ export function buildReport(facts: Facts, options: Options) {
   const compute = facts.hours * options.computeUsdPerHour;
   const total = facts.spend.total + compute + options.platformUsd;
   const perPullRequest = facts.opened ? total / facts.opened : null;
-  const slices = (list: Slice[]) => list.map(({ name, usd }) => ({ name, usd: cents(usd), share: share(usd, facts.spend.total) }));
+  const slices = (list: Slice[]) =>
+    list.map(({ name, usd }) => ({ name, usd: cents(usd), share: share(usd, facts.spend.total) }));
   return {
     period: { since: options.since, until: options.until },
     pullRequests: { opened: facts.opened, merged: facts.merged, perDay: facts.perDay },
@@ -72,7 +83,11 @@ export function buildReport(facts: Facts, options: Options) {
       perDay: facts.interactions.perDay.map((day) => ({ ...day, perPullRequest: hundredths(day.perPullRequest) })),
     },
     runs: facts.runs,
-    revertRate: { rate: facts.merged ? share(facts.reverts, facts.merged) : null, reverts: facts.reverts, merged: facts.merged },
+    revertRate: {
+      rate: facts.merged ? share(facts.reverts, facts.merged) : null,
+      reverts: facts.reverts,
+      merged: facts.merged,
+    },
   };
 }
 
@@ -90,49 +105,77 @@ export function summary(report: Report): string {
 export function markdown(report: Report): string {
   const { since, until } = report.period;
   const table = (head: string[], rows: unknown[][]) =>
-    [`| ${head.join(" | ")} |`, `| ${head.map(() => "---").join(" | ")} |`, ...rows.map((row) => `| ${row.join(" | ")} |`)].join("\n");
+    [
+      `| ${head.join(" | ")} |`,
+      `| ${head.map(() => "---").join(" | ")} |`,
+      ...rows.map((row) => `| ${row.join(" | ")} |`),
+    ].join("\n");
   const slices = (title: string, list: Slice[]) =>
-    `### By ${title}\n\n${table([title, "Spend", "Share"], list.map((slice) => [slice.name, usd(slice.usd), percent(slice.share)]))}`;
+    `### By ${title}\n\n${table(
+      [title, "Spend", "Share"],
+      list.map((slice) => [slice.name, usd(slice.usd), percent(slice.share)]),
+    )}`;
   const cost = report.costPerPullRequest;
   const cycle = report.cycleTime;
   return `${[
     `# Ledger report: ${since ?? "start"} to ${until ?? "end"}`,
     "## Throughput",
-    table(["Measure", "Value"], [
-      ["Pull requests opened", report.pullRequests.opened],
-      ["Pull requests merged", report.pullRequests.merged],
-      ["Human interactions per pull request", report.humanInteractions.perPullRequest ?? "-"],
-      ["Runs", report.runs.total],
-      ["Top-level runs", report.runs.topLevel],
-    ]),
-    table(["Day", "Opened", "Merged"], report.pullRequests.perDay.map((day) => [day.date, day.opened, day.merged])),
+    table(
+      ["Measure", "Value"],
+      [
+        ["Pull requests opened", report.pullRequests.opened],
+        ["Pull requests merged", report.pullRequests.merged],
+        ["Human interactions per pull request", report.humanInteractions.perPullRequest ?? "-"],
+        ["Runs", report.runs.total],
+        ["Top-level runs", report.runs.topLevel],
+      ],
+    ),
+    table(
+      ["Day", "Opened", "Merged"],
+      report.pullRequests.perDay.map((day) => [day.date, day.opened, day.merged]),
+    ),
     "## Cycle time",
-    table(["Segment", "Median"], [
-      ["Kickoff to pull request", hours(cycle.kickoffToPullRequest)],
-      ["Kickoff to merge", hours(cycle.kickoffToMerge)],
-      ["Pull request to first human review", hours(cycle.pullRequestToFirstHumanReview)],
-      ["First human review to merge", hours(cycle.firstHumanReviewToMerge)],
-    ]),
+    table(
+      ["Segment", "Median"],
+      [
+        ["Kickoff to pull request", hours(cycle.kickoffToPullRequest)],
+        ["Kickoff to merge", hours(cycle.kickoffToMerge)],
+        ["Pull request to first human review", hours(cycle.pullRequestToFirstHumanReview)],
+        ["First human review to merge", hours(cycle.firstHumanReviewToMerge)],
+      ],
+    ),
     "## Cost",
-    table(["Measure", "Value"], [
-      ["Cost per pull request", usd(cost?.usd)],
-      ["Inference per pull request", usd(cost?.inference)],
-      ["Compute per pull request", usd(cost?.compute)],
-      ["Platform per pull request", usd(cost?.platform)],
-      ["Target", usd(cost?.target)],
-      ["Gap to target", usd(cost?.gap)],
-    ]),
-    table(["Pull request", "Title", "Cost"], report.topPullRequests.map((pr) => [pr.url, pr.title, usd(pr.usd)])),
+    table(
+      ["Measure", "Value"],
+      [
+        ["Cost per pull request", usd(cost?.usd)],
+        ["Inference per pull request", usd(cost?.inference)],
+        ["Compute per pull request", usd(cost?.compute)],
+        ["Platform per pull request", usd(cost?.platform)],
+        ["Target", usd(cost?.target)],
+        ["Gap to target", usd(cost?.gap)],
+      ],
+    ),
+    table(
+      ["Pull request", "Title", "Cost"],
+      report.topPullRequests.map((pr) => [pr.url, pr.title, usd(pr.usd)]),
+    ),
     "## Spend",
-    table(["Measure", "Value"], [
-      ["Total", usd(report.spend.total)],
-      ["Unattributed", usd(report.spend.unattributed)],
-    ]),
+    table(
+      ["Measure", "Value"],
+      [
+        ["Total", usd(report.spend.total)],
+        ["Unattributed", usd(report.spend.unattributed)],
+      ],
+    ),
     slices("source", report.spend.bySource),
     slices("user", report.spend.byUser),
     slices("agent", report.spend.byAgent),
     slices("model", report.spend.byModel),
     "## Revert rate",
-    table(["Reverts", "Merged", "Rate"], [[report.revertRate.reverts, report.revertRate.merged, percent(report.revertRate.rate)]]),
+    table(
+      ["Reverts", "Merged", "Rate"],
+      [[report.revertRate.reverts, report.revertRate.merged, percent(report.revertRate.rate)]],
+    ),
   ].join("\n\n")}\n`;
 }
