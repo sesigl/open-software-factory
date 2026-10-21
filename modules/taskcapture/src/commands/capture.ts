@@ -1,5 +1,5 @@
 // taskcapture capture: one merged pull request → one Harbor task in the suite, plus the suite's prompt-injection
-// task (ADR 0042). Everything is read and checked before the first file is written.
+// task (ADR 0043). Everything is read and checked before the first file is written.
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { check } from "@opensoftware/cli";

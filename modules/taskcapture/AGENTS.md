@@ -1,6 +1,6 @@
 # AGENTS.md for module `taskcapture`
 
-Adds rules for this module. The root `AGENTS.md` applies in full. Decision: ADR 0042.
+Adds rules for this module. The root `AGENTS.md` applies in full. Decision: ADR 0043.
 
 ## Public surface
 

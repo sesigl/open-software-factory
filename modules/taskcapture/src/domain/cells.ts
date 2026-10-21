@@ -1,5 +1,5 @@
 // Harbor trial results → cells of configuration and model, with correctness, average cost per trial and
-// incomplete scoring, and the best, lowest-cost and most efficient cell and the Pareto front (ADR 0042).
+// incomplete scoring, and the best, lowest-cost and most efficient cell and the Pareto front (ADR 0043).
 
 export interface Trial {
   /** The name of the trial's job folder. */

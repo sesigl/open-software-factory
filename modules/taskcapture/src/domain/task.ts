@@ -1,4 +1,4 @@
-// The files of one Harbor task (ADR 0042): which changed files are tests, and the text of instruction.md,
+// The files of one Harbor task (ADR 0043): which changed files are tests, and the text of instruction.md,
 // task.toml, the Dockerfile, tests/test.sh and solution/solve.sh. The repository snapshot and the changed files'
 // contents are copied by the adapters.
 
