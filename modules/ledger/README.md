@@ -9,7 +9,8 @@ uses agents already has: the spend log of its LLM gateway (LiteLLM), the run rec
 ([runlog](../runlog/README.md)) and its forge's pull request events. It writes them into one DuckDB file and reports
 the cost per pull request, split into inference, compute and platform, the spend by source, user, agent and model,
 the most expensive pull requests, throughput, cycle time, human interactions, runs by agent type and the revert rate.
-Decision: [ADR 0034](../../docs/decisions/0034-ledger.md).
+For a team, it writes to PostgreSQL instead and ships a Grafana dashboard over the same views.
+Decisions: [ADR 0034](../../docs/decisions/0034-ledger.md), [ADR 0035](../../docs/decisions/0035-ledger-postgres-grafana.md).
 
 ## Quick start
 
@@ -40,8 +41,10 @@ It writes `ledger.duckdb` and `$OUTPUT/report.json`, and prints
 
 | Command | What it does |
 | --- | --- |
-| `ledger ingest [--db <file>] <file or folder>...` | Read spend rows, runs and events into the DuckDB file `--db` (default `ledger.duckdb`). Prints `ingested 2 runs, 3 spend rows and 4 events into ledger.duckdb`. |
+| `ledger ingest [--db <file or URL>] <file or folder>...` | Read spend rows, runs and events into the database `--db`. Prints `ingested 2 runs, 3 spend rows and 4 events into ledger.duckdb`. |
 | `ledger report [options] [<file or folder>...]` | Ingest the files named, then write the report of the database to `--out` (`$OUTPUT/report.json`). |
+| `ledger query [--db <file or URL>] <SQL>` | Run one SQL statement, like `SELECT * FROM pr_cost`, and print its rows as JSON Lines. |
+| `ledger dashboard [--out <file>]` | Write the Grafana dashboard to `--out` (`$OUTPUT/ledger-dashboard.json`). See [PostgreSQL and Grafana](#postgresql-and-grafana). |
 
 Options of `report`:
 
@@ -52,7 +55,7 @@ Options of `report`:
 | `--compute-usd-per-hour <usd>` | What one hour of a run costs in compute, for example a sandbox. Default 0. |
 | `--platform-usd <usd>` | What the platform cost in the period: servers, licenses. It is spread over the pull requests. Default 0. |
 | `--markdown <file>` | Also write the report as Markdown tables. |
-| `--db <file>` | The DuckDB file. Default `ledger.duckdb`. |
+| `--db <file or URL>` | The database: a DuckDB file, or a PostgreSQL URL that starts with `postgres://` or `postgresql://`. Default `$LEDGER_DB`, else `ledger.duckdb`. |
 
 A wrong option or input record exits 2 before anything is written, with the file and line.
 
@@ -93,8 +96,9 @@ Amounts are rounded to cents, shares to four digits; durations are medians in ho
 
 ## Views
 
-The database file is yours to query, for example with the DuckDB CLI: `duckdb ledger.duckdb "FROM pr_cost"`. The
-views are the public SQL surface ([`sql/duckdb/views.sql`](sql/duckdb/views.sql)); the tables below them are private.
+The database is yours to query, for example with the DuckDB CLI: `duckdb ledger.duckdb "FROM pr_cost"`, with
+`psql`, or with `ledger query "FROM pr_cost"` on either engine. The views are the public SQL surface ([`sql/duckdb/views.sql`](sql/duckdb/views.sql),
+[`sql/postgres/views.sql`](sql/postgres/views.sql)), the same on both engines; the tables below them are private.
 
 | View | One row per | Columns |
 | --- | --- | --- |
@@ -103,6 +107,29 @@ views are the public SQL surface ([`sql/duckdb/views.sql`](sql/duckdb/views.sql)
 | `pr_runs` | run of a pull request | `pr_url`, `run_id`, `share` |
 | `pr_flow` | pull request | `url`, `title`, `author_id`, `opened_at`, `kickoff_at`, `first_human_review_at`, `merged_at`, `closed_at`, `is_revert`, `human_interactions` |
 | `pr_cost` | pull request | `url`, `title`, `opened_at`, `inference_usd`, `hours` |
+
+## PostgreSQL and Grafana
+
+A team keeps its numbers in PostgreSQL and looks at them in Grafana. Point `--db` or `LEDGER_DB` at a PostgreSQL
+database; set the variable to keep the password off the command line:
+
+```sh
+export LEDGER_DB=postgres://ledger:<password>@db.internal:5432/ledger
+npx @opensoftware/ledger ingest spend/ runs/ events/
+npx @opensoftware/ledger report --markdown report.md
+```
+
+ledger creates the same tables and views in the first schema of the connection's `search_path` (normally `public`),
+and `report` gives the same report as from a DuckDB file. Output shows the URL as `postgres://ledger:***@...`. Run
+`ingest` from a cron job or CI to keep the database current; records already there are replaced, never doubled.
+
+`ledger dashboard` writes `ledger-dashboard.json`. Import it in Grafana (Dashboards, New, Import) and pick a
+PostgreSQL data source for the database. Its panels read only the views: cost per pull request and its split, revert
+rate, human interactions, unattributed spend, pull requests opened and merged per day, spend per day, median cycle
+time by segment, human interactions per day, spend by source, user, agent and model, the 20 most expensive pull
+requests and runs by agent type. The time picker sets the period. The variables `compute_usd_per_hour` and
+`platform_usd` do what `--compute-usd-per-hour` and `--platform-usd` do for `report`; `platform_usd` is the
+platform cost of the period the time picker shows.
 
 ## Report
 
@@ -118,7 +145,7 @@ revert rate: a cheaper pull request is no gain when more of them are reverted.
 
 release-please opens a release pull request from the Conventional Commits under `modules/ledger/`. Merging it
 creates the tag `ledger-v<version>`, and `.github/workflows/publish-ledger.yml` builds `dist/` and publishes
-`@opensoftware/ledger` to npm. The first release is `0.1.0`; until `1.0.0`, a breaking change raises the minor
+`@opensoftware/ledger` to npm with `sql/` and `grafana/`. The first release is `0.1.0`; until `1.0.0`, a breaking change raises the minor
 version. The one-time setup is the same as for contracts ([`contracts/README.md`](../../contracts/README.md#releases)),
 with a trusted publisher for `publish-ledger.yml`. No credential is stored in the repository.
 
@@ -128,7 +155,8 @@ with a trusted publisher for `publish-ledger.yml`. No credential is stored in th
 
 | Variable | Type | Default | Meaning |
 | --- | --- | --- | --- |
-| `OUTPUT` | string | `"."` | Folder of report.json when --out is not given. |
+| `OUTPUT` | string | `"."` | Folder of report.json and ledger-dashboard.json when --out is not given. |
+| `LEDGER_DB` | string | `"ledger.duckdb"` | Default of --db: a DuckDB file, or a PostgreSQL URL like postgres://user:password@host:5432/ledger. Keeps the password off the command line. |
 
 ## Scenarios
 
@@ -165,11 +193,12 @@ with a trusted publisher for `publish-ledger.yml`. No credential is stored in th
 | SCN-LEDGER-027 | implemented | The options "--since" and "--until" limit the period |
 | SCN-LEDGER-028 | implemented | The report is written as Markdown with throughput, cycle time, cost and revert rate |
 | SCN-LEDGER-029 | implemented | Without pull requests the cost per pull request is empty |
-| SCN-LEDGER-030 | planned | Ingest writes into the PostgreSQL database that "LEDGER_DB" names and hides its password |
-| SCN-LEDGER-031 | planned | The report from PostgreSQL equals the report from a DuckDB file |
-| SCN-LEDGER-032 | planned | Ingesting the same file twice into PostgreSQL counts each record once |
-| SCN-LEDGER-033 | planned | The view "pr_cost" in PostgreSQL holds the inference cost of each pull request |
-| SCN-LEDGER-034 | planned | The dashboard asks for a PostgreSQL data source on import |
-| SCN-LEDGER-035 | planned | Every panel of the dashboard reads the views of the database |
-| SCN-LEDGER-036 | planned | The panel "Cost per pull request" shows the cost of the README sample |
-| SCN-LEDGER-037 | planned | The dashboard variables add compute and platform cost |
+| SCN-LEDGER-030 | implemented | Ingest writes into the PostgreSQL database that "LEDGER_DB" names and hides its password |
+| SCN-LEDGER-031 | implemented | The report from PostgreSQL equals the report from a DuckDB file |
+| SCN-LEDGER-032 | implemented | Ingesting the same file twice into PostgreSQL counts each record once |
+| SCN-LEDGER-033 | implemented | "ledger query" prints the rows of the view "pr_cost" in PostgreSQL |
+| SCN-LEDGER-034 | implemented | The dashboard asks for a PostgreSQL data source on import |
+| SCN-LEDGER-035 | implemented | Every panel of the dashboard reads the views of the database |
+| SCN-LEDGER-036 | implemented | The panel "Cost per pull request" shows the cost of the README sample |
+| SCN-LEDGER-037 | implemented | The dashboard variables add compute and platform cost |
+| SCN-LEDGER-038 | implemented | A database that refuses the password exits 1 without printing the password |
