@@ -15,6 +15,7 @@ agents:
     repositories: [sesigl/open-software-factory]
     skills:
       - ./skills/implement-scenario
+      - ./skills/fix-mutation-and-duplication
       - ./skills/keep-docs-evergreen
       - ./skills/new-module
       - ./skills/write-adr

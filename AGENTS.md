@@ -42,10 +42,12 @@ A change is done only when `make verify` passes. `docs/quality/checks.md` lists 
 | BOUNDARY | System tests reach the module only through its public surface. |
 | ISOLATION | No module imports another module. |
 | ARCH | Every module declares its layers in `architecture.json`; no file imports a layer above its own. |
+| DUP | Duplicated source lines stay under each unit's limit; no clone across modules. |
 | CONTRACT | No breaking change to `contracts/` without a major version. |
 | DOCS | Generated docs are current; docs that cover changed code were reviewed. |
 | BUDGET | Each module's system tests finish inside their time budget. |
 | RUNS | An agent's pull request commits the run of its session to `runs/`, without prompt content. |
+| MUTATION | System tests notice mutants in the lines a pull request adds (`make mutation`, its own CI check). |
 
 ## How to work
 
@@ -71,6 +73,8 @@ A new module starts with `skills/new-module`. A new dependency or service starts
 - No real network, model, clock or randomness in system tests. Use the fakes in `@opensoftware/testkit`.
 - Never change the text of an `implemented` scenario to make a test pass. To change behavior on purpose, write
   a new scenario with `@replaces=SCN-...`, mark the old one `deprecated` and delete its test in the same change.
+- Fix a missed mutant or a clone with `skills/fix-mutation-and-duplication`: a scenario, a stricter `then` step,
+  less code or a shared library. Never with a unit test or a mock.
 - Never skip or weaken the test of an `implemented` scenario. To remove behavior, mark the scenario `deprecated`
   and delete its test in the same change.
 - Adopt before you build. Check for an existing open-source project first and record what you found.
@@ -85,6 +89,7 @@ make verify                all checks; required before you report done
 make test-scenario ID=…    run the one system test of a scenario
 make smoke                 the deterministic end-to-end scenarios in e2e/ (minutes)
 make smoke-paid            one real-model run per harness; only when asked
+make mutation              Stryker on the lines changed since OSF_BASE, then MUTATION (minutes)
 make next-id MODULE=proof  print the next free scenario ID for a module
 make new-module NAME=x     create a module from modules/_template
 make docs                  regenerate generated docs

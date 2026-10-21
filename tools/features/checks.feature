@@ -77,6 +77,14 @@ Feature: Repository checks
     Then the command exits with code 1
     And the output contains "ISOLATION modules/demo/src/run.ts:1"
 
+  @id=SCN-REPO-054 @status=implemented
+  Scenario: ISOLATION accepts a module that depends on a library in packages
+    Given a repository with the module "demo" and the library "packages/money" named "@opensoftware/money"
+    And "modules/demo/package.json" depends on "@opensoftware/money"
+    When the developer runs "osf check ISOLATION"
+    Then the command exits with code 0
+    And the output contains "ISOLATION ok"
+
   @id=SCN-REPO-010 @status=implemented
   Scenario: BOUNDARY-ENV rejects an environment variable that the README does not document
     Given a repository with the implemented scenario "SCN-DEMO-001" and its system test

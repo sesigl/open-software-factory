@@ -49,6 +49,7 @@ export function makeLaunch(moduleRoot: string, dirs: Folders, hosts: () => strin
       OSF_TESTKIT_NOREAL_LOG: dirs.noreal,
       OSF_TESTKIT_ALLOWED_HOSTS: hosts().join(","),
       ...coverage,
+      ...mutantEnv(),
     };
     return {
       command: process.execPath,
@@ -71,4 +72,13 @@ function coverageEnv(moduleRoot: string): Record<string, string> {
   }
   const { OSF_TESTKIT_COVERAGE: dir, OSF_TESTKIT_COVERAGE_ROOT: root } = process.env;
   return dir && root ? { OSF_TESTKIT_COVERAGE: dir, OSF_TESTKIT_COVERAGE_ROOT: root } : {};
+}
+
+/**
+ * MUTATION: during a mutation run Stryker names the active mutant in this variable. The module's code reads it in
+ * its own process, so the testkit passes it on.
+ */
+function mutantEnv(): Record<string, string> {
+  const mutant = process.env.__STRYKER_ACTIVE_MUTANT__;
+  return mutant ? { __STRYKER_ACTIVE_MUTANT__: mutant } : {};
 }

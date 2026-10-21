@@ -5,6 +5,7 @@ import { contract } from "./contract.ts";
 import { adr, docsAffected, docsGen, docsLinks } from "./docs.ts";
 import { type Check, Context } from "./lib/context.ts";
 import { type Finding, Repo } from "./lib/repo.ts";
+import { dup, mutation } from "./quality.ts";
 import { reach } from "./reach.ts";
 import { budget, flake } from "./results.ts";
 import { runs } from "./runs.ts";
@@ -17,6 +18,7 @@ export const FAST: Record<string, Check> = {
   "BOUNDARY-ENV": boundaryEnv,
   ISOLATION: isolation,
   ARCH: arch,
+  DUP: dup,
   "DOCS-GEN": docsGen,
   "DOCS-LINKS": docsLinks,
   ADR: adr,
@@ -32,7 +34,12 @@ export const SLOW: Record<string, Check> = {
   RUNS: runs,
 };
 
-const ALL: Record<string, Check> = { ...FAST, ...SLOW };
+/** Checks that read the results of a separate run: MUTATION reads the Stryker reports of `make mutation`. */
+export const SEPARATE: Record<string, Check> = {
+  MUTATION: mutation,
+};
+
+const ALL: Record<string, Check> = { ...FAST, ...SLOW, ...SEPARATE };
 
 /** Checks with parts that run without a base (ADR: modules; CONTRACT: fixtures; RUNS: the records). */
 const PARTLY_BASED = new Set(["ADR", "CONTRACT", "RUNS"]);
@@ -44,8 +51,8 @@ export async function runChecks(root: string, args: string[]): Promise<number> {
     process.stderr.write(`Unknown check: ${unknown.join(", ")}. Known: ${Object.keys(ALL).join(", ")}\n`);
     return 2;
   }
-  const selected = ids.length > 0 ? ids : Object.keys(args.includes("--all") ? ALL : FAST);
-  const context = new Context(new Repo(root), { list: args.includes("--list") });
+  const selected = ids.length > 0 ? ids : Object.keys(args.includes("--all") ? { ...FAST, ...SLOW } : FAST);
+  const context = new Context(new Repo(root), { list: args.includes("--list"), total: args.includes("--total") });
 
   let failed = 0;
   for (const id of selected) {

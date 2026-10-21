@@ -34,6 +34,13 @@ forge API and upload to the store;
   capture scenarios need Chromium (`npx playwright-core install chromium`, and `PLAYWRIGHT_BROWSERS_PATH` when it is
   not in the default folder).
 
+## Quality limits
+
+Checked by DUP and MUTATION (ADR 0035):
+
+- Duplication: at most 3% of the lines in src/.
+- Mutation score: at least 70% of the mutants in changed lines, 80% in total.
+
 ## Scenario prefix
 
 `SCN-PROOF-NNN`

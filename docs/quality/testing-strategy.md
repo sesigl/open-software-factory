@@ -62,7 +62,7 @@ docs/vision/           factory-level requirements; source for module scenarios, 
 | --- | --- | --- |
 | Fast feedback | Many turns spent keeping hundreds of tests in step with refactors | Fast system tests: one artifact start per module, parallel files, fakes, BUDGET check |
 | Edge cases | Tests pin implementation details | Scenario Outlines with examples, from the outside |
-| Confidence that code is exercised | Coverage numbers agents learn to game | REACH (coverage of the running module) and nightly MUTATION |
+| Confidence that code is exercised | Coverage numbers agents learn to game | REACH (coverage of the running module) and MUTATION (the changed lines of each pull request, every line nightly) |
 
 Limits: STEPS proves the test follows the scenario's words, not their meaning. ASSERT, MUTATION and human
 review of the first tests in each module close most of the gap. Edits to implemented scenarios show up in the

@@ -230,3 +230,66 @@ export function runRecord(
   };
   return `${JSON.stringify(request)}\n`;
 }
+
+/** AGENTS.md of module demo with its quality limits (ADR 0035). */
+export function qualityLimits(options: { duplication?: number; changed?: number; total?: number } = {}): string {
+  const { duplication = 3, changed = 70, total = 80 } = options;
+  return [
+    "# demo",
+    "",
+    "## Quality limits",
+    "",
+    `- Duplication: at most ${duplication}% of the lines in src/.`,
+    `- Mutation score: at least ${changed}% of the mutants in changed lines, ${total}% in total.`,
+    "",
+  ].join("\n");
+}
+
+/** A function of more than 50 tokens; two of them with different names are a clone for DUP. */
+export function summingFunction(name: string): string {
+  return [
+    `export function ${name}(rows: { amount: number; currency: string }[], currency: string): number {`,
+    "  let total = 0;",
+    "  for (const row of rows) {",
+    "    if (row.currency !== currency) continue;",
+    '    if (row.amount < 0) throw new Error("negative amount in " + row.currency);',
+    "    total += Math.round(row.amount * 100) / 100;",
+    "  }",
+    "  return Math.round(total * 100) / 100;",
+    "}",
+    "",
+  ].join("\n");
+}
+
+/** package.json of a module with the mutation script of the template. */
+export function mutationPackage(name: string): string {
+  const manifest = {
+    name: `@opensoftware/${name}`,
+    version: "0.1.0",
+    type: "module",
+    scripts: { mutation: "node ../../tools/bin/osf.ts mutation ." },
+  };
+  return `${JSON.stringify(manifest, null, 2)}\n`;
+}
+
+/** A Stryker JSON report of modules/demo/src/run.ts with one mutant per entry. */
+export function mutationReport(mutants: { line: number; status: string; replacement?: string }[]): string {
+  const report = {
+    schemaVersion: "2",
+    thresholds: { high: 80, low: 60 },
+    files: {
+      "src/run.ts": {
+        language: "typescript",
+        source: "",
+        mutants: mutants.map(({ line, status, replacement = "false" }, index) => ({
+          id: String(index + 1),
+          mutatorName: "ConditionalExpression",
+          replacement,
+          status,
+          location: { start: { line, column: 1 }, end: { line, column: 10 } },
+        })),
+      },
+    },
+  };
+  return `${JSON.stringify(report)}\n`;
+}

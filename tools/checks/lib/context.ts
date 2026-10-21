@@ -8,12 +8,15 @@ export class Context {
   readonly repo: Repo;
   /** `osf docs-affected` prints every affected doc, not only the failing ones. */
   readonly list: boolean;
+  /** `osf check MUTATION --total` scores every mutant, not only those in the lines changed since OSF_BASE. */
+  readonly total: boolean;
   readonly notes: string[] = [];
   #features: ParsedFeatures | undefined;
 
-  constructor(repo: Repo, options: { list?: boolean } = {}) {
+  constructor(repo: Repo, options: { list?: boolean; total?: boolean } = {}) {
     this.repo = repo;
     this.list = options.list ?? false;
+    this.total = options.total ?? false;
   }
 
   features(): ParsedFeatures {

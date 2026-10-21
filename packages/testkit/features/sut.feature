@@ -58,6 +58,14 @@ Feature: The sut handle
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-044 @status=implemented
+  Scenario: The module runs the mutant that Stryker activates
+    Given a module whose CLI prints the environment variable "__STRYKER_ACTIVE_MUTANT__"
+    And its system test expects the output "7"
+    When the developer runs "testkit run --junit report.xml" with __STRYKER_ACTIVE_MUTANT__ "7" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-038 @status=implemented
   Scenario: The first failing step ends the action with its exit code
     Given a module whose composite action.yml runs "exit 3" in its first step and "echo second" in its second

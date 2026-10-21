@@ -118,11 +118,12 @@ A `planned` scenario's test must fail; when it passes, the testkit fails it and 
 
 ## Configuration
 
-The testkit reads one environment variable and passes it on to the module:
+The testkit reads two environment variables and passes them on to the module:
 
 | Variable | Meaning |
 | --- | --- |
 | `PLAYWRIGHT_BROWSERS_PATH` | Where Playwright keeps its browsers. The module gets it like `PATH`, since its `HOME` is the working folder. |
+| `__STRYKER_ACTIVE_MUTANT__` | The mutant Stryker activates during a mutation run (`osf mutation`, ADR 0035). The module's instrumented build reads it in its own process. |
 
 `testkit conformance` passes the port features folder to the
 tests itself.
@@ -192,3 +193,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-041 | implemented | sut.action gives the action a job summary and returns its text |
 | SCN-TK-042 | implemented | A scripted reply reports its token usage |
 | SCN-TK-043 | implemented | The fake gives the headers of every request it received |
+| SCN-TK-044 | implemented | The module runs the mutant that Stryker activates |
