@@ -82,7 +82,7 @@ Feature: The sut handle
     Then the command exits with code 1
     And the output contains "sut.action: action.yml has no input \"nmae\""
 
-  @id=SCN-TK-041 @status=planned
+  @id=SCN-TK-041 @status=implemented
   Scenario: sut.action gives the action a job summary and returns its text
     Given a module whose composite action.yml writes "## demo" to the file in "GITHUB_STEP_SUMMARY"
     And its system test runs sut.action and expects the job summary "## demo"

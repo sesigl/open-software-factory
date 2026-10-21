@@ -335,7 +335,7 @@ Feature: Repository checks
     When the developer runs "osf check RUNS" against the base commit
     Then the command exits with code 0
 
-  @id=SCN-REPO-043 @status=planned @replaces=SCN-REPO-001
+  @id=SCN-REPO-043 @status=implemented @replaces=SCN-REPO-001
   Scenario: A module created from the template passes the fast checks of osf
     Given a repository with the module template and an accepted ADR for the module "demo"
     And the developer ran "osf new-module demo"
