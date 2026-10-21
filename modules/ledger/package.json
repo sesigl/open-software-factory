@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/ledger",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "ledger: cost per pull request and flow metrics for teams that use agents, from gateway spend, run records and forge events.",
   "license": "Apache-2.0",
   "repository": {
@@ -14,7 +14,8 @@
   },
   "files": [
     "dist",
-    "sql"
+    "sql",
+    "grafana"
   ],
   "publishConfig": {
     "access": "public"
@@ -28,10 +29,12 @@
     "mutation": "node ../../tools/bin/osf.ts mutation ."
   },
   "devDependencies": {
-    "@opensoftware/testkit": "workspace:*"
+    "@opensoftware/testkit": "workspace:*",
+    "@types/pg": "8.23.1"
   },
   "dependencies": {
     "@duckdb/node-api": "1.5.6-r.1",
-    "@opensoftware/contracts": "workspace:*"
+    "@opensoftware/contracts": "workspace:*",
+    "pg": "8.23.1"
   }
 }
