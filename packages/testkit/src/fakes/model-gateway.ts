@@ -8,6 +8,8 @@ export interface ScriptedReply {
   when: string;
   /** The assistant message the gateway answers with. */
   reply: string;
+  /** The token usage the reply reports. Default: 0 prompt and 0 completion tokens. */
+  usage?: { prompt_tokens: number; completion_tokens: number };
 }
 
 export interface ModelGateway {
@@ -52,7 +54,7 @@ export async function startModelGateway(script: ScriptedReply[]): Promise<Runnin
         created: CREATED,
         model,
         choices: [{ index: 0, message: { role: "assistant", content: match.reply }, finish_reason: "stop" }],
-        usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+        usage: usageOf(match.usage),
       }),
     );
   });
@@ -65,6 +67,10 @@ export async function startModelGateway(script: ScriptedReply[]): Promise<Runnin
       return unscripted;
     },
   };
+}
+
+function usageOf(usage: ScriptedReply["usage"] = { prompt_tokens: 0, completion_tokens: 0 }) {
+  return { ...usage, total_tokens: usage.prompt_tokens + usage.completion_tokens };
 }
 
 function modelOf(body: string): string {

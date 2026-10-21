@@ -69,7 +69,8 @@ Every server, client and subscription stops when the scenario ends, before the f
 - `fakes.fixture(name)`, `fakes.fromRepository(dir)`: fixture files.
 - `fakes.modelGateway([{ when, reply }])`: an OpenAI-compatible endpoint on `127.0.0.1`. Pass its `url` (ending
   in `/v1`) to the module through its documented config. `POST /v1/chat/completions` whose body contains `when`
-  gets `reply`; any other call gets HTTP 500 and fails the scenario with the request shown.
+  gets `reply`, with the token `usage` of the entry when it has one (`{ prompt_tokens, completion_tokens }`, default 0
+  and 0); any other call gets HTTP 500 and fails the scenario with the request shown.
 - `fakes.http([{ method, path, status, body, contentType, times }])`: a scripted JSON API on `127.0.0.1`
   ([ADR 0021](../../docs/decisions/0021-testkit-scripted-http.md)). Pass its `url` to the module through its
   documented config. A request whose method (default `GET`) and exact path with query match a route gets its
@@ -78,7 +79,8 @@ Every server, client and subscription stops when the scenario ends, before the f
   A route with `contentType`, such as `text/html`, answers its `body` text as is, for example a page to capture.
   Any other request gets HTTP 404 and fails the scenario with the request shown. `requests()` lists what it
   received as `METHOD /path`; `received()` lists each request with its `body` (JSON, or text when it is not JSON;
-  a gzip body is unpacked first).
+  a gzip body is unpacked first); `headers()` lists each request with its headers, names in lower case
+  ([ADR 0032](../../docs/decisions/0032-scorekit.md)).
 - `fakes.harness([{ when, edits, reply }])`: a scripted coding agent that speaks ACP on stdio
   ([ADR 0018](../../docs/decisions/0018-testkit-scripted-acp-harness.md)). Start it with its `command` and `args`.
   The first prompt that contains `when` gets the `edits` (files by path below the session's folder) and the
@@ -188,3 +190,5 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-039 | implemented | A run step with a condition fails the test |
 | SCN-TK-040 | implemented | An input the action does not declare fails the test |
 | SCN-TK-041 | implemented | sut.action gives the action a job summary and returns its text |
+| SCN-TK-042 | implemented | A scripted reply reports its token usage |
+| SCN-TK-043 | implemented | The fake gives the headers of every request it received |
