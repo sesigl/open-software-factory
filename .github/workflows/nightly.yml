@@ -1,4 +1,5 @@
-# Slow checks that never gate a pull request: MUTATION and SMOKE-PAID (docs/quality/checks.md).
+# Slow checks that never gate a pull request: MUTATION of every line of every module, and SMOKE-PAID
+# (docs/quality/checks.md). mutation.yml checks the changed lines of each pull request.
 name: nightly
 
 on:
@@ -10,10 +11,69 @@ permissions:
   contents: read
 
 jobs:
-  mutation:
-    name: mutation
+  # Every module that has a mutation script, so a new module joins without a change here.
+  modules:
+    name: modules with a mutation script
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    outputs:
+      packages: ${{ steps.list.outputs.packages }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: list
+        run: |
+          packages=$(node -e '
+            const { readdirSync, readFileSync, existsSync } = require("node:fs");
+            const names = readdirSync("modules")
+              .map((dir) => `modules/${dir}/package.json`)
+              .filter((file) => existsSync(file))
+              .map((file) => JSON.parse(readFileSync(file, "utf8")))
+              .filter((manifest) => manifest.scripts?.mutation)
+              .map((manifest) => manifest.name);
+            console.log(JSON.stringify(names));')
+          echo "packages=$packages" >> "$GITHUB_OUTPUT"
+
+  # One runner per module: a full run of one module takes 45 to 90 minutes.
+  mutation:
+    name: mutation (${{ matrix.package }})
+    needs: modules
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJSON(needs.modules.outputs.packages) }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: make install
+      # Capture scenarios open pages in Chromium: install it when the module depends on playwright-core.
+      - name: Install the browser of a module that captures pages
+        env:
+          PACKAGE: ${{ matrix.package }}
+        run: |
+          if grep -l "\"name\": \"$PACKAGE\"" modules/*/package.json | xargs grep -q '"playwright-core"'; then
+            echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/playwright" >> "$GITHUB_ENV"
+            PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/playwright" \
+              pnpm --filter "$PACKAGE" exec playwright-core install --with-deps chromium
+          fi
+      - run: pnpm exec turbo run mutation --filter="$PACKAGE" -- --all
+        env:
+          PACKAGE: ${{ matrix.package }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mutation-${{ strategy.job-index }}
+          path: reports/mutation/
+
+  mutation-score:
+    name: mutation score
+    needs: mutation
+    if: always() && !cancelled()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     permissions:
       contents: read
       issues: write
@@ -25,9 +85,15 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: make install
-      - run: make mutation
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: mutation-*
+          path: reports/mutation/
+          merge-multiple: true
+      - run: pnpm --silent run osf check MUTATION --total
+      # A run started by hand on another branch only reports.
       - name: Open a ticket when the mutation score falls
-        if: failure()
+        if: failure() && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

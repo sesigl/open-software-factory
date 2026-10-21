@@ -13,7 +13,8 @@
     "lint": "biome check .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test:system": "vitest run",
-    "docs": "node ../../tools/bin/osf.ts docs ."
+    "docs": "node ../../tools/bin/osf.ts docs .",
+    "mutation": "node ../../tools/bin/osf.ts mutation ."
   },
   "devDependencies": {
     "@opensoftware/testkit": "workspace:*"

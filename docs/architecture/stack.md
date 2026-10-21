@@ -58,7 +58,8 @@ publish only the TypeScript package; clients for other languages are not built (
 | Integration | Testcontainers (Postgres, NATS, Temporal, SeaweedFS, Forgejo) |
 | Import boundaries | dependency-cruiser |
 | Coverage of the running module | V8 precise coverage recorded by the testkit, read with v8-to-istanbul (ADR 0019) |
-| Mutation (nightly) | Stryker |
+| Mutation (changed lines per pull request, every line nightly; ADR 0037) | Stryker |
+| Duplication (ADR 0037) | jscpd |
 
 ## Runtime, packaging, supply chain
 

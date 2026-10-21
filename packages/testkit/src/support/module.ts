@@ -42,7 +42,7 @@ export function documentedEnv(moduleRoot: string): Set<string> {
     readFileSync(readme, "utf8")
       .split(/^## /m)
       .find((part) => part.startsWith("Configuration")) ?? "";
-  return new Set([...section.matchAll(/`([A-Z][A-Z0-9_]*)`/g)].map((match) => match[1] as string));
+  return new Set([...section.matchAll(/`([A-Z_][A-Z0-9_]*)`/g)].map((match) => match[1] as string));
 }
 
 /**
