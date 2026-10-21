@@ -267,6 +267,15 @@ read them for ideas, do not copy their company-specific rules.
   with 20 labeled runs; scorer cost is recorded; a scorer pack ships: redundant-tests, change-requested,
   scope-creep, skipped-checks, needless-human-question.
 - **Done when:** our own sessions are scored nightly and the report is linked from the README.
+- **Slices:**
+  - [x] `scorekit score` (hash-based sampling with a seed, the judge cost from the token usage and the scorer's price,
+    reruns skip scored runs), `scorekit calibrate` (agreement, Cohen's kappa and disagreements against `ANNOTATION`
+    labels), `scorekit report` (JSON and Markdown, pass rate per day), `scorekit push` to Langfuse's score API, the
+    scorer file format, the pack of five scorers, the testkit's token usage and request headers, and the npm release
+    (ADR 0032, `SCN-SCORE-001` to `-032`, `SCN-TK-042`, `SCN-TK-043`).
+  - [ ] Export of the scorers as Langfuse LLM-as-a-judge evaluators.
+  - [ ] The dogfood: score this repository's `runs/` nightly with a real judge model and link the report from the
+    README. Needs a paid model call; ask the owner first.
 
 ### [ ] T-08 · ledger
 

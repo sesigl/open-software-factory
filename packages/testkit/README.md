@@ -190,3 +190,5 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-039 | implemented | A run step with a condition fails the test |
 | SCN-TK-040 | implemented | An input the action does not declare fails the test |
 | SCN-TK-041 | implemented | sut.action gives the action a job summary and returns its text |
+| SCN-TK-042 | implemented | A scripted reply reports its token usage |
+| SCN-TK-043 | implemented | The fake gives the headers of every request it received |

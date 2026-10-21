@@ -2,7 +2,7 @@
 Feature: Push scores to Langfuse
   "scorekit push" sends score records to Langfuse's score API. Langfuse keeps one score per ID.
 
-  @id=SCN-SCORE-026 @status=planned
+  @id=SCN-SCORE-026 @status=implemented
   Scenario: Push sends every score to Langfuse with basic auth
     Given "scores.jsonl" with 2 scores of "redundant-tests"
     And a Langfuse API that accepts scores
@@ -11,7 +11,7 @@ Feature: Push scores to Langfuse
     And Langfuse received the 2 scores at "POST /api/public/scores"
     And each request carries the header "authorization" with "Basic cGstbGYtdGVzdDpzay1sZi10ZXN0"
 
-  @id=SCN-SCORE-027 @status=planned
+  @id=SCN-SCORE-027 @status=implemented
   Scenario: A score Langfuse refuses is named and fails the command
     Given "scores.jsonl" with 2 scores of "redundant-tests"
     And a Langfuse API that answers HTTP 401

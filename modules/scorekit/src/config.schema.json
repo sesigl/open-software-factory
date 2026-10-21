@@ -5,7 +5,32 @@
     "OUTPUT": {
       "type": "string",
       "default": ".",
-      "description": "Folder the module writes its results to."
+      "description": "Folder of scores.jsonl, calibration.json and report.json when --out is not given."
+    },
+    "SCOREKIT_INFERENCE_URL": {
+      "type": "string",
+      "description": "Base URL of the OpenAI-compatible gateway of the judge, ending in /v1, for example http://litellm:4000/v1. Required by score and calibrate."
+    },
+    "SCOREKIT_INFERENCE_KEY": {
+      "type": "string",
+      "description": "API key of the gateway, sent as a bearer token. Never write the value into a file."
+    },
+    "LANGFUSE_HOST": {
+      "type": "string",
+      "default": "https://cloud.langfuse.com",
+      "description": "Base URL of Langfuse for push."
+    },
+    "LANGFUSE_PUBLIC_KEY": {
+      "type": "string",
+      "description": "Langfuse public key for push."
+    },
+    "LANGFUSE_SECRET_KEY": {
+      "type": "string",
+      "description": "Langfuse secret key for push. Never write the value into a file."
+    },
+    "OSF_NOW": {
+      "type": "string",
+      "description": "The time of new scores as an ISO 8601 timestamp. Default: the system clock."
     }
   }
 }
