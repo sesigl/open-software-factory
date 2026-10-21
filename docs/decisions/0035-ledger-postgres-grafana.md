@@ -31,7 +31,11 @@ Grafana dashboard over the views.
 - **One report.** `ledger report` sends the same queries to both engines. Where the dialects differ (hours between
   two times, a date as text) the adapter of the engine supplies the SQL fragment. The report of the same input is
   the same on both engines.
-- **Driver:** node-postgres (`pg`), pinned. It is the PostgreSQL client most Node projects use.
+- **Driver:** node-postgres (`pg`) and its types `@types/pg`, pinned. It is the PostgreSQL client most Node projects
+  use. ledger reads `bigint` and `numeric` as numbers and times without a zone as UTC, as DuckDB does.
+- **Query.** `ledger query <SQL>` runs one statement on either engine and prints its rows as JSON Lines. A person
+  reads the views without installing `psql` or the DuckDB CLI, and the system tests read the database only this way
+  (ADR 0016 gives tests no database client).
 - **Dashboard.** `ledger dashboard` writes `ledger-dashboard.json` to `$OUTPUT` (or `--out`): a Grafana dashboard
   for import, with one data source input of type `grafana-postgresql-datasource`. The file ships in the package
   (`grafana/ledger-dashboard.json`). Its panels read only the public views and use only the Grafana macros
@@ -41,8 +45,9 @@ Grafana dashboard over the views.
   request, spend by source, user, agent and model with the unattributed rest, the 20 most expensive pull requests
   and runs by agent type.
 - **Tests.** The PostgreSQL scenarios run against `fakes.postgres` (ADR 0016). The dashboard scenarios run each
-  panel's SQL against that database with the macros and variables filled in as Grafana fills them. They do not
-  start Grafana and do not render the panels.
+  panel's SQL through `ledger query` with the macros and variables filled in as Grafana fills them. They do not
+  start Grafana and do not render the panels. Each scenario starts its own PostgreSQL, so the module's budget grows
+  from 60 to 120 seconds, like the other modules that need Docker.
 
 ## Options considered
 
@@ -60,7 +65,8 @@ Grafana dashboard over the views.
 
 ## Prior art
 
-- node-postgres `pg` (MIT, maintained by Brian Carlson, active, `8.23.1`): adopted as the driver.
+- node-postgres `pg` (MIT, maintained by Brian Carlson, active, `8.23.1`): adopted as the driver, with its types
+  `@types/pg` (MIT, DefinitelyTyped, active, `8.23.1`).
 - Postgres.js `postgres` (Unlicense, active, `3.4.9`): not adopted, see the table.
 - Grafana (AGPL-3.0, Grafana Labs, active) and its built-in PostgreSQL data source: adopted as the dashboard
   runtime. ledger ships only a dashboard JSON file and does not link Grafana code.
