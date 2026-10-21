@@ -1,0 +1,36 @@
+{
+  "name": "@opensoftware/scorekit",
+  "version": "0.0.0",
+  "description": "scorekit: grade agent sessions on concrete failure modes with LLM judges, calibrated against human labels.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "modules/scorekit"
+  },
+  "type": "module",
+  "bin": {
+    "scorekit": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "scorers"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "vitest run",
+    "docs": "node ../../tools/bin/osf.ts docs ."
+  },
+  "devDependencies": {
+    "@opensoftware/testkit": "workspace:*"
+  },
+  "dependencies": {
+    "@opensoftware/contracts": "workspace:*",
+    "yaml": "2.8.1"
+  }
+}

@@ -42,3 +42,11 @@ Feature: Scripted HTTP API
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-043 @status=implemented
+  Scenario: The fake gives the headers of every request it received
+    Given a module whose CLI posts {"n":1} to "/v1/traces" at "DEMO_API_URL" with the header "authorization" set to "Bearer demo"
+    And its system test expects the fake to have received the header "authorization" with "Bearer demo" at "POST /v1/traces"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
