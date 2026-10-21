@@ -231,6 +231,38 @@ export type components = {
             /** @description ID in the source system. */
             externalId?: string;
         };
+        /** @description forge adapters: a pull request was merged or closed without a merge. */
+        PrClosed: {
+            /** @constant */
+            specversion: "1.0";
+            /** @description Unique per source. A consumer that sees the same source and id twice handles the event once. */
+            id: components["schemas"]["Identifier"];
+            /** @description The producing module, for example "/osf/intake". */
+            source: string;
+            /** @constant */
+            type: "pr.closed@v1";
+            /** Format: date-time */
+            time: string;
+            /** @description The ID of the thing the event is about: work item, gate, run, score or pull request. */
+            subject?: string;
+            /** @constant */
+            datacontenttype?: "application/json";
+            /** Format: uri */
+            dataschema?: string;
+            /** @description W3C trace context (CloudEvents distributed tracing extension). */
+            traceparent?: string;
+            data: components["schemas"]["PrClosedData"];
+        };
+        PrClosedData: {
+            /**
+             * Format: uri
+             * @description The pull request.
+             */
+            url: string;
+            /** @description True when the pull request was merged, false when it was closed without a merge. */
+            merged: boolean;
+            mergeCommit?: components["schemas"]["CommitHash"];
+        };
         /** @description forge adapters: the factory opened a pull request. */
         PrOpened: {
             /** @constant */
@@ -266,6 +298,39 @@ export type components = {
             author: components["schemas"]["Actor"];
             workItemId?: components["schemas"]["Identifier"];
             runId?: components["schemas"]["Identifier"];
+        };
+        /** @description forge adapters: a person, an agent or a bot reviewed or commented on a pull request. */
+        PrReviewed: {
+            /** @constant */
+            specversion: "1.0";
+            /** @description Unique per source. A consumer that sees the same source and id twice handles the event once. */
+            id: components["schemas"]["Identifier"];
+            /** @description The producing module, for example "/osf/intake". */
+            source: string;
+            /** @constant */
+            type: "pr.reviewed@v1";
+            /** Format: date-time */
+            time: string;
+            /** @description The ID of the thing the event is about: work item, gate, run, score or pull request. */
+            subject?: string;
+            /** @constant */
+            datacontenttype?: "application/json";
+            /** Format: uri */
+            dataschema?: string;
+            /** @description W3C trace context (CloudEvents distributed tracing extension). */
+            traceparent?: string;
+            data: components["schemas"]["PrReviewedData"];
+        };
+        PrReviewedData: {
+            /**
+             * Format: uri
+             * @description The pull request.
+             */
+            url: string;
+            reviewer: components["schemas"]["Actor"];
+            /** @description True when an agent or a bot wrote the review, not a person. */
+            automated?: boolean;
+            state: components["schemas"]["ReviewState"];
         };
         /** @enum {string} */
         Priority: "urgent" | "high" | "normal" | "low";
@@ -303,6 +368,8 @@ export type components = {
                 [key: string]: components["schemas"]["VersionRange"];
             };
         };
+        /** @enum {string} */
+        ReviewState: "approved" | "changes_requested" | "commented";
         /** @description foreman: a run ended. */
         RunCompleted: {
             /** @constant */

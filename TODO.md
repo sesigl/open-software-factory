@@ -292,6 +292,21 @@ read them for ideas, do not copy their company-specific rules.
   PR events; spend by source, user, agent and model; top 20 PRs by attributed cost; revert rate next to
   throughput; unattributed spend is reported as its own line.
 - **Done when:** our own cost per PR is visible on a dashboard.
+- **Slices:**
+  - [x] `ledger ingest` (LiteLLM spend log rows, runlog's OTLP/JSON runs and the CloudEvents `work.received`,
+    `pr.opened`, `pr.reviewed` and `pr.closed`, each checked against its contract) into a DuckDB file, the views
+    `run_cost`, `spend_attributed`, `pr_runs`, `pr_flow` and `pr_cost`, `ledger report` (cost per pull request split into
+    inference, compute and platform, the gap to a target, spend by source, user, agent and model with the unattributed
+    rest, the 20 most expensive pull requests, throughput, cycle time by segment, human interactions, runs by agent
+    type and the revert rate, as JSON and Markdown), the new events `pr.reviewed@v1` and `pr.closed@v1`, and the npm
+    release (ADR 0034, `SCN-LEDGER-001` to `-029`).
+  - [x] The same tables and views for PostgreSQL (`--db` or `LEDGER_DB` takes a `postgres://` URL, the report is the
+    same on both engines, the password is never printed), `ledger query`, and `ledger dashboard`: a Grafana dashboard
+    JSON over the views with a PostgreSQL data source input (ADR 0035, `SCN-LEDGER-030` to `-038`).
+  - [x] `ledger import`: the pull requests, reviews and comments of a GitHub or Forgejo repository as `pr.opened@v1`,
+    `pr.reviewed@v1` and `pr.closed@v1` events in a JSON Lines file for `ledger ingest`, for teams without forge
+    adapters (ADR 0036, `SCN-LEDGER-039` to `-050`).
+  - [ ] The dogfood: this repository's spend, `runs/` and pull requests in the dashboard, linked from the README.
 
 ---
 

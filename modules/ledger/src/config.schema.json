@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "OUTPUT": {
+      "type": "string",
+      "default": ".",
+      "description": "Folder of report.json and ledger-dashboard.json when --out is not given."
+    },
+    "LEDGER_DB": {
+      "type": "string",
+      "default": "ledger.duckdb",
+      "description": "Default of --db: a DuckDB file, or a PostgreSQL URL like postgres://user:password@host:5432/ledger. Keeps the password off the command line."
+    },
+    "LEDGER_FORGE_URL": {
+      "type": "string",
+      "description": "Base URL of the forge API for import. Default: https://api.github.com for github.com, <origin>/api/v3 for another GitHub host, <origin>/api/v1 for Forgejo."
+    },
+    "LEDGER_FORGE_TOKEN": {
+      "type": "string",
+      "description": "Token that may read the repository's pull requests, for import, for example GITHUB_TOKEN. Without it, import reads a public repository. Never write the value into a file."
+    }
+  }
+}

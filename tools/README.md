@@ -104,3 +104,4 @@ Each failure prints one line: the check ID, `file:line`, and what to fix. Each c
 | SCN-REPO-041 | implemented | RUNS accepts agent commits that add a run record |
 | SCN-REPO-042 | implemented | RUNS asks no run record of commits without an agent trailer |
 | SCN-REPO-043 | implemented | A module created from the template passes the fast checks of osf |
+| SCN-REPO-055 | implemented | DOCS-AFFECTED ignores the version that a release writes into an extra file |
