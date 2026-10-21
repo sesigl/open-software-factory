@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/cli",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "What the command lines of the open software factory's modules share: commands, help, exit codes, usage errors, input files and output files.",
   "license": "Apache-2.0",
   "repository": {
