@@ -1,7 +1,6 @@
 import { scenario } from "@opensoftware/testkit";
 import { lines, readReport, runLine, spendRow } from "./records.ts";
 
-// One report answers all four examples: each "then" checks the example of one dimension.
 scenario("SCN-LEDGER-012", async ({ sut, given, when, then }) => {
   await given(
     'a run with the source "slack", the requester "github:mona", the agent "implementer" and the model "claude-sonnet-5-5" and spend rows of 3.00 USD',
