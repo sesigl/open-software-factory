@@ -44,12 +44,12 @@ const options: ExportOptions = {
   perRun: values["per-run"] ?? false,
 };
 
-/** A command's one line, when it prints one. */
-const line = (text: string | undefined) => ({ lines: text ? [text] : [] });
+/** The one line that export, attach and collector print. */
+const print = (text: string) => ({ lines: [text] });
 const commands: Record<string, Command> = {
   export: async () =>
-    line(await (values.latest ? exportLatest(rest, options) : exportSession(file as string, options))),
-  attach: async () => line(await attachSession(file as string, TRACEPARENT, values.outcome, options)),
+    print(await (values.latest ? exportLatest(rest, options) : exportSession(file as string, options))),
+  attach: async () => print(await attachSession(file as string, TRACEPARENT, values.outcome, options)),
   watch: async () => {
     const watch = {
       idle: Number(values.idle ?? 5),
@@ -58,9 +58,9 @@ const commands: Record<string, Command> = {
       now: () => (OSF_NOW ? Date.parse(OSF_NOW) : Date.now()),
     };
     await watchFolders(rest, watch, options);
-    return line(undefined);
+    return {};
   },
-  collector: async () => line(collectorConfig(file as string, options.output)),
+  collector: async () => print(collectorConfig(file as string, options.output)),
 };
 const chosen = command && file ? commands[command] : undefined;
 process.exitCode = await runProgram({ name: "runlog", usage: HELP, command: chosen, help: values.help });
