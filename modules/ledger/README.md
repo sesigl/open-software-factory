@@ -165,3 +165,11 @@ with a trusted publisher for `publish-ledger.yml`. No credential is stored in th
 | SCN-LEDGER-027 | implemented | The options "--since" and "--until" limit the period |
 | SCN-LEDGER-028 | implemented | The report is written as Markdown with throughput, cycle time, cost and revert rate |
 | SCN-LEDGER-029 | implemented | Without pull requests the cost per pull request is empty |
+| SCN-LEDGER-030 | planned | Ingest writes into the PostgreSQL database that "LEDGER_DB" names and hides its password |
+| SCN-LEDGER-031 | planned | The report from PostgreSQL equals the report from a DuckDB file |
+| SCN-LEDGER-032 | planned | Ingesting the same file twice into PostgreSQL counts each record once |
+| SCN-LEDGER-033 | planned | The view "pr_cost" in PostgreSQL holds the inference cost of each pull request |
+| SCN-LEDGER-034 | planned | The dashboard asks for a PostgreSQL data source on import |
+| SCN-LEDGER-035 | planned | Every panel of the dashboard reads the views of the database |
+| SCN-LEDGER-036 | planned | The panel "Cost per pull request" shows the cost of the README sample |
+| SCN-LEDGER-037 | planned | The dashboard variables add compute and platform cost |
