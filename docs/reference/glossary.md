@@ -31,6 +31,7 @@ Use these terms in scenarios, code, UI text and docs.
 | Replay | Running a captured task again with no side effects: during its run the agent reaches only the model gateway, never a real chat or forge. |
 | Hidden tests | The tests of a captured pull request: the agent never sees them; they decide the task's reward. |
 | Routing rule | A rule in the LLM gateway that picks a model for a class of tasks. |
+| Problem | One scorer that failed many runs, recorded by observer with its count, its reasons and links to the failed runs. |
 | Self-improvement | The loop that turns repeated failures into reviewed changes to the factory definition. |
 | Port | An interface to an outside system. |
 | Adapter | An implementation of a port for one product. |

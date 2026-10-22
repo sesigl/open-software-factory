@@ -11,12 +11,28 @@ export interface PullRequest {
   sha: string;
 }
 
+export interface OpenedPullRequest {
+  number: number;
+  title: string;
+  body: string;
+  /** The branch the pull request merges from. */
+  head: string;
+  /** The branch it merges into. */
+  base: string;
+  state: "open" | "closed";
+  url: string;
+}
+
 export interface Forge {
   /** Base URL of the forge, for example `${url}/api/v1/version`. */
   url: string;
   /** API token of the user `owner`; send it as `Authorization: token <token>`. */
   token: string;
   owner: string;
+  /** Every pull request of the repository, open and closed, newest first. */
+  pullRequests(repository: string): Promise<OpenedPullRequest[]>;
+  /** The text of a file on a branch or at a commit, or undefined when it has no such file. */
+  file(repository: string, path: string, ref: string): Promise<string | undefined>;
   /** Creates a repository of `owner` with one commit on `main` that holds these files. */
   createRepository(name: string, files?: Record<string, string>): Promise<void>;
   /** Commits the files on a new branch and opens a pull request from it into `main`. */
@@ -124,7 +140,39 @@ export async function startForge(track: Track): Promise<Forge> {
       );
       return list.map(({ context, status, description }) => ({ context, state: status, description }));
     },
+    async pullRequests(repository) {
+      const list = await api<PullJson[]>("GET", `/repos/${OWNER}/${repository}/pulls?state=all`);
+      return list.map((pr) => ({
+        number: pr.number,
+        title: pr.title,
+        body: pr.body,
+        head: pr.head.ref,
+        base: pr.base.ref,
+        state: pr.state,
+        url: pr.html_url,
+      }));
+    },
+    async file(repository, path, ref) {
+      const answer = await fetch(
+        `${url}/api/v1/repos/${OWNER}/${repository}/raw/${path.split("/").map(encodeURIComponent).join("/")}?ref=${encodeURIComponent(ref)}`,
+        { headers: { authorization: auth } },
+      );
+      if (answer.status === 404) return undefined;
+      if (!answer.ok) throw new Error(`fakes.forge: reading ${path} at ${ref} returned ${answer.status}`);
+      return answer.text();
+    },
   };
+}
+
+/** The fields of Forgejo's pull request JSON that `pullRequests` gives. */
+interface PullJson {
+  number: number;
+  title: string;
+  body: string;
+  state: "open" | "closed";
+  html_url: string;
+  head: { ref: string };
+  base: { ref: string };
 }
 
 type Api = <T>(method: string, path: string, body?: unknown) => Promise<T>;
