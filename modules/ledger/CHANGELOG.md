@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/sesigl/open-software-factory/compare/ledger-v0.4.0...ledger-v0.5.0) (2026-10-22)
+
+
+### Features
+
+* **ledger:** T-08 dogfood: token prices, a static dashboard page, nightly deploy to Vercel ([#73](https://github.com/sesigl/open-software-factory/issues/73)) ([3eb8710](https://github.com/sesigl/open-software-factory/commit/3eb8710e4d2fba071675e975e1203c62c1af2b3f))
+
 ## [0.4.0](https://github.com/sesigl/open-software-factory/compare/ledger-v0.3.0...ledger-v0.4.0) (2026-10-21)
 
 
