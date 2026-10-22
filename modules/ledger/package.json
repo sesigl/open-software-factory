@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/ledger",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "ledger: cost per pull request and flow metrics for teams that use agents, from gateway spend, run records and forge events.",
   "license": "Apache-2.0",
   "repository": {
