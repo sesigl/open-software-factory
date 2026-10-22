@@ -214,7 +214,7 @@ Feature: Capture a merged pull request as a Harbor task
 
   @id=SCN-TASK-058 @status=implemented
   Scenario: A file that is no run record exits 2
-    Given a file "notes.json" that holds "{}"
+    Given a file "notes.json" that holds "no JSON"
     When the user runs "taskcapture capture --git . --run notes.json"
     Then the command exits with code 2
     And the error output says "taskcapture: notes.json is not a run record (OTLP/JSON with an invoke_agent span)"

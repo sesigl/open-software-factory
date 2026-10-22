@@ -45,7 +45,9 @@ scenario("SCN-TASK-042", async ({ sut, given, when, then }) => {
         expect(flag(call, "--path")).toBe("suite");
         expect(flag(call, "--agent")).toBe("claude-code");
         expect(flags(call, "--model")).toEqual(["model-a", "model-b"]);
+        expect(flag(call, "--jobs-dir")).toBe(sut.files.path("$OUTPUT/jobs"));
         expect(call).toContain("--yes");
+        expect(call).toContain("--quiet");
       }
     },
   );
