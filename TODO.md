@@ -360,6 +360,15 @@ read them for ideas, do not copy their company-specific rules.
   before and after a merged change with a minimum sample size; a proposal touching a protected path is marked
   "needs human".
 - **Done when:** one observer PR to this repository was merged with a measured effect.
+- **Slices:**
+  - [x] `observer analyze` (failed `BOOLEAN` scores grouped by scorer into problems with counts, reasons and run
+    links), `observer propose` (the model's exact-text edits of the instruction files on a branch `observer/*`, a pull
+    request on GitHub or Forgejo with Problem, Solution and Evidence, `[needs human]` for protected paths, never a push
+    to the default branch), `observer check` (failure rate before and after a merge, minimum runs, two-proportion
+    z-test, comment on the pull request), `fakes.forge` showing opened pull requests and branch files, and the npm
+    release (ADR 0046, `SCN-OBS-001` to `-033`, `SCN-TK-050`).
+  - [ ] The dogfood: a nightly job runs `analyze` on this repository's scores and `propose` for the top problem; one
+    merged observer pull request with a measured effect. Needs scorekit's paid dogfood (T-21) and a paid model.
 
 ### [ ] T-11 · gatekeeper
 

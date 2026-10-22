@@ -77,9 +77,12 @@ jobs:
           - suite: ledger
             filter: "@opensoftware/ledger"
             images: postgres forge
+          - suite: observer
+            filter: "@opensoftware/observer"
+            images: forge
           # Every other package, so a new module runs without a change here.
           - suite: rest
-            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger"
+            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer"
     steps:
       - uses: actions/checkout@v5
         with:
