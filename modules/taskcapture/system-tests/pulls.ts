@@ -71,3 +71,54 @@ export async function commitPull(sut: Sut, pull: Pull): Promise<{ route: HttpRou
 /** Runs "taskcapture capture --git . <options> <URL>" with TASKCAPTURE_FORGE_URL set to the GitHub API. */
 export const capture = (sut: Sut, github: FakeHttp, options: string[] = [], env: Record<string, string> = {}) =>
   sut.cli(["capture", "--git", ".", ...options, URL], { env: { TASKCAPTURE_FORGE_URL: github.url, ...env } });
+
+/** A run record the way runlog writes it: one OTLP/JSON trace export request with the run's invoke_agent span. */
+export function runRecord(run: { id: string; pulls: string[]; harness?: string; model?: string; costUsd?: number }) {
+  const str = (key: string, value: string) => ({ key, value: { stringValue: value } });
+  const attributes = [
+    str("gen_ai.operation.name", "invoke_agent"),
+    ...(run.model ? [str("gen_ai.request.model", run.model)] : []),
+    str("osf.outcome", "success"),
+    ...(run.costUsd === undefined ? [] : [{ key: "osf.cost.usd", value: { doubleValue: run.costUsd } }]),
+    {
+      key: "osf.pull_request.urls",
+      value: { arrayValue: { values: run.pulls.map((url) => ({ stringValue: url })) } },
+    },
+  ];
+  return `${JSON.stringify({
+    resourceSpans: [
+      {
+        resource: {
+          attributes: [
+            str("service.name", run.harness ?? "claude-code"),
+            str("osf.run.id", run.id),
+            str("osf.harness.name", run.harness ?? "claude-code"),
+          ],
+        },
+        scopeSpans: [
+          {
+            scope: { name: "@opensoftware/runlog" },
+            spans: [
+              {
+                traceId: "8022d8386bae87fe7cbf27194d9c035e",
+                spanId: "cb2484d6144089e2",
+                name: "invoke_agent",
+                kind: 1,
+                startTimeUnixNano: "1767225600000000000",
+                endTimeUnixNano: "1767229200000000000",
+                attributes,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  })}\n`;
+}
+
+/** The lines of one [section] of a task.toml. */
+export const section = (toml: string, name: string): string[] => {
+  const start = toml.indexOf(`[${name}]`);
+  const end = toml.indexOf("\n[", start + 1);
+  return toml.slice(start, end < 0 ? undefined : end).split("\n");
+};

@@ -313,7 +313,7 @@ read them for ideas, do not copy their company-specific rules.
 
 ## Wave 3 · Improve
 
-### [ ] T-09 · taskcapture
+### [x] T-09 · taskcapture
 
 - **Tier / language / path / prefix:** optional · TypeScript · `modules/taskcapture/` · `SCN-TASK`
 - **Alone:** a private benchmark from a team's merged PRs, with a correctness-versus-cost report.
@@ -338,9 +338,11 @@ read them for ideas, do not copy their company-specific rules.
     and most efficient cell, the Pareto front, Markdown and a Vega-Lite chart), `taskcapture route` (a LiteLLM tag
     routing config), `fakes.forge` merging a pull request in the testkit, and the npm release (ADR 0043,
     `SCN-TASK-001` to `-041`, `SCN-TK-049`).
-  - [ ] `taskcapture run`: the `harbor` CLI as a separate process for a matrix of models and configurations, with the
-    replay fakes for chat and forge (no side effects), and a task from a run record.
-  - [ ] The dogfood: a suite from this repository's pull requests that runs nightly.
+  - [x] `taskcapture run`: the `harbor` CLI as a separate process, one job per configuration with every model, then
+    the report; the agent of a captured task has no network except `--allow-host` (no side effects in a replay);
+    `capture --run` captures the pull request of a run record (ADR 0045, `SCN-TASK-042` to `-058`).
+  - [x] The dogfood: `taskcapture-suite.yml` captures some of this repository's pull requests and runs them nightly
+    with Harbor's `oracle` and `nop` agents, so every task is shown solvable and its tests fail without the change.
 
 ### [ ] T-10 · observer
 
@@ -518,6 +520,8 @@ owner before each slice: which model or service, and its budget.
 - **Slices:**
   - [ ] scorekit (from T-07): score this repository's `runs/` nightly with a real judge model and link the report
     from the README.
+  - [ ] taskcapture (from T-09): run `taskcapture-suite.yml` with real models next to the oracle, publish the report,
+    and route with its pick.
 
 ---
 

@@ -3,11 +3,13 @@
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { check } from "@opensoftware/cli";
-import { replaceFolder } from "../adapters/files.ts";
+import { runSpans } from "@opensoftware/contracts";
+import { readText, replaceFolder } from "../adapters/files.ts";
 import { readPull } from "../adapters/forge.ts";
 import { changesBetween, extractTree, fileAt, hasFile, openRepository, parentOf } from "../adapters/git.ts";
 import { INJECTION_TASK, injectionFiles } from "../domain/injection.ts";
 import { mergedPull, type PullRef } from "../domain/pull.ts";
+import { type SourceRun, sourceRunOf } from "../domain/run.ts";
 import { environment, split, taskFiles } from "../domain/task.ts";
 
 export interface CaptureOptions {
@@ -18,6 +20,21 @@ export interface CaptureOptions {
   image?: string;
   setup?: string;
   testCommand?: string;
+  /** The run the pull request came from (--run). */
+  run?: SourceRun;
+}
+
+/** The run in a run record file (ADR 0045). */
+export function readRun(file: string): SourceRun {
+  let record: unknown;
+  try {
+    record = JSON.parse(readText(file));
+  } catch {
+    record = undefined;
+  }
+  const run = sourceRunOf(runSpans(record));
+  check(run, `${file} is not a run record (OTLP/JSON with an invoke_agent span)`);
+  return run;
 }
 
 export async function capture(ref: PullRef, options: CaptureOptions): Promise<string> {
@@ -32,10 +49,9 @@ export async function capture(ref: PullRef, options: CaptureOptions): Promise<st
     const env = environment(options, await hasFile(dir, parent, "package.json"));
     check(env, "the repository has no package.json; set --test-command");
 
-    const task = { ...taskFiles({ url: ref.url, ...pull, parentCommit: parent }, files, env) } as Record<
-      string,
-      string | Buffer
-    >;
+    const task = {
+      ...taskFiles({ url: ref.url, ...pull, parentCommit: parent, run: options.run }, files, env),
+    } as Record<string, string | Buffer>;
     for (const path of files.tests) task[`tests/files/${path}`] = await fileAt(dir, pull.mergeCommit, path);
     for (const path of files.solution) task[`solution/files/${path}`] = await fileAt(dir, pull.mergeCommit, path);
 
