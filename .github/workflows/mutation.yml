@@ -1,5 +1,6 @@
 # MUTATION on every pull request (docs/quality/checks.md, ADR 0037): Stryker mutates the source lines the pull request
-# adds to each module, and the check fails when too few of those mutants make a system test fail.
+# adds to each module and library, and the check fails when too few of those mutants make a system test fail.
+# One runner per changed unit, like the nightly run: a new module mutates every line, which takes up to 90 minutes.
 name: mutation
 
 on:
@@ -14,10 +15,43 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  mutation:
-    name: mutation
+  # The units with a mutation script whose TypeScript sources in src/ or bin/ the pull request changes.
+  units:
+    name: units to mutate
     runs-on: ubuntu-24.04
-    timeout-minutes: 120
+    outputs:
+      packages: ${{ steps.list.outputs.packages }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: list
+        env:
+          OSF_BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          packages=$(git diff --name-only "$OSF_BASE"...HEAD | node -e '
+            const { existsSync, readFileSync } = require("node:fs");
+            const unit = /^((?:modules|packages)\/[^/]+|adapters\/[^/]+\/[^/]+)\/(?:src|bin)\/.*\.ts$/;
+            const names = new Set();
+            for (const file of readFileSync(0, "utf8").split("\n")) {
+              const dir = unit.exec(file)?.[1];
+              if (!dir || !existsSync(`${dir}/package.json`)) continue;
+              const manifest = JSON.parse(readFileSync(`${dir}/package.json`, "utf8"));
+              if (manifest.scripts?.mutation) names.add(manifest.name);
+            }
+            console.log(JSON.stringify([...names].sort()));')
+          echo "packages=$packages" >> "$GITHUB_OUTPUT"
+
+  unit:
+    name: mutation (${{ matrix.package }})
+    needs: units
+    if: needs.units.outputs.packages != '[]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJSON(needs.units.outputs.packages) }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -28,21 +62,52 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: make install
-      # Capture scenarios open pages in Chromium: install it when a module depends on playwright-core.
-      - name: Install the browser of modules that capture pages
+      # Capture scenarios open pages in Chromium: install it when the unit depends on playwright-core.
+      - name: Install the browser of a unit that captures pages
+        env:
+          PACKAGE: ${{ matrix.package }}
         run: |
-          if grep -q '"playwright-core"' modules/*/package.json; then
+          if grep -l "\"name\": \"$PACKAGE\"" modules/*/package.json packages/*/package.json \
+            | xargs grep -q '"playwright-core"'; then
             echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/playwright" >> "$GITHUB_ENV"
             PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/playwright" \
-              pnpm --filter @opensoftware/proof exec playwright-core install --with-deps chromium
+              pnpm --filter "$PACKAGE" exec playwright-core install --with-deps chromium
           fi
-      - run: make mutation
+      - run: pnpm exec turbo run mutation --filter="$PACKAGE"
         env:
+          PACKAGE: ${{ matrix.package }}
           OSF_BASE: ${{ github.event.pull_request.base.sha }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: mutation
+          name: mutation-${{ strategy.job-index }}
           path: reports/mutation/
           if-no-files-found: ignore
           retention-days: 7
+
+  # The required check: scores the reports of all units. A unit without a report fails it.
+  mutation:
+    name: mutation
+    needs: [units, unit]
+    if: always() && !cancelled()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: make install
+      - uses: actions/download-artifact@v5
+        if: needs.units.outputs.packages != '[]'
+        with:
+          pattern: mutation-*
+          path: reports/mutation/
+          merge-multiple: true
+      - run: pnpm --silent run osf check MUTATION
+        env:
+          OSF_BASE: ${{ github.event.pull_request.base.sha }}
