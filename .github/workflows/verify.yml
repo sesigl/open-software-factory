@@ -80,9 +80,12 @@ jobs:
           - suite: observer
             filter: "@opensoftware/observer"
             images: forge
+          - suite: gatekeeper
+            filter: "@opensoftware/gatekeeper"
+            images: nats
           # Every other package, so a new module runs without a change here.
           - suite: rest
-            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer"
+            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper"
     steps:
       - uses: actions/checkout@v5
         with:

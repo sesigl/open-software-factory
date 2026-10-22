@@ -1,0 +1,48 @@
+# The gatekeeper GitHub Action (ADR 0047): the gate of the pull request of the event, with the commit status
+# "gatekeeper" on its head commit and the record as an artifact.
+name: gatekeeper
+description: Ask the approver groups of a Rego policy on the pull request and set the commit status "gatekeeper".
+inputs:
+  policy:
+    description: The Rego policy, package gatekeeper.
+    required: true
+  groups:
+    description: The groups file, which maps each group to its members.
+    required: true
+  token:
+    description: A token that may comment on the pull request and set commit statuses.
+    default: ${{ github.token }}
+  record:
+    description: Where to write the record. Default $RUNNER_TEMP/gatekeeper/record.json.
+    default: ""
+  command:
+    description: The gatekeeper command. Default npx --yes @opensoftware/gatekeeper@<version of this action>.
+    default: ""
+outputs:
+  decision:
+    description: approved, rejected, expired or pending.
+    value: ${{ steps.gatekeeper.outputs.decision }}
+  record:
+    description: The path of the record, once the gate is decided.
+    value: ${{ steps.gatekeeper.outputs.record }}
+runs:
+  using: composite
+  steps:
+    - uses: open-policy-agent/setup-opa@v2
+      with:
+        version: 1.21.0
+    - id: gatekeeper
+      shell: bash
+      env:
+        GATEKEEPER_INPUT_POLICY: ${{ inputs.policy }}
+        GATEKEEPER_INPUT_GROUPS: ${{ inputs.groups }}
+        GATEKEEPER_INPUT_TOKEN: ${{ inputs.token }}
+        GATEKEEPER_INPUT_RECORD: ${{ inputs.record }}
+        GATEKEEPER_INPUT_COMMAND: ${{ inputs.command }}
+      run: bash "${{ github.action_path }}/action.sh"
+    - uses: actions/upload-artifact@v4
+      if: always() && steps.gatekeeper.outputs.record != ''
+      with:
+        name: gatekeeper-record
+        path: ${{ steps.gatekeeper.outputs.record }}
+        if-no-files-found: ignore
