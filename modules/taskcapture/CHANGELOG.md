@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/sesigl/open-software-factory/compare/taskcapture-v0.1.0...taskcapture-v0.2.0) (2026-10-22)
+
+
+### Features
+
+* **taskcapture:** T-09 run the suite with Harbor, capture a run's pull request, nightly suite check ([#76](https://github.com/sesigl/open-software-factory/issues/76)) ([11a18c9](https://github.com/sesigl/open-software-factory/commit/11a18c90f0220865d46cda2750d7d009c8a74166))
+
 ## 0.1.0 (2026-10-22)
 
 
