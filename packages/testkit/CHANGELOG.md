@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.9.0...testkit-v0.10.0) (2026-10-22)
+
+
+### Features
+
+* **observer:** T-10 group failed scores into problems, propose fixes as pull requests, check the effect (ADR 0046) ([#79](https://github.com/sesigl/open-software-factory/issues/79)) ([0f2cf5a](https://github.com/sesigl/open-software-factory/commit/0f2cf5a11d07f827bebba03774dc079d423d78c2))
+
 ## [0.9.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.8.0...testkit-v0.9.0) (2026-10-22)
 
 
