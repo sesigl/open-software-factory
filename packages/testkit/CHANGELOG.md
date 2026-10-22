@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.8.0...testkit-v0.9.0) (2026-10-22)
+
+
+### Features
+
+* **spec-files:** one library reads feature files and JUnit reports (ADR 0042) ([#67](https://github.com/sesigl/open-software-factory/issues/67)) ([13e53ec](https://github.com/sesigl/open-software-factory/commit/13e53ec857de9753527de491427938298cdb9b9e))
+* **taskcapture:** T-09 capture merged pull requests as Harbor tasks, report correctness against cost, route with LiteLLM (ADR 0043) ([#68](https://github.com/sesigl/open-software-factory/issues/68)) ([dd0ee7d](https://github.com/sesigl/open-software-factory/commit/dd0ee7d3286907374e907fc5fbfbbe57185abd48))
+
 ## [0.8.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.7.0...testkit-v0.8.0) (2026-10-21)
 
 

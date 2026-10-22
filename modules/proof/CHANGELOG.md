@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/sesigl/open-software-factory/compare/proof-v0.3.0...proof-v0.4.0) (2026-10-22)
+
+
+### Features
+
+* **spec-files:** one library reads feature files and JUnit reports (ADR 0042) ([#67](https://github.com/sesigl/open-software-factory/issues/67)) ([13e53ec](https://github.com/sesigl/open-software-factory/commit/13e53ec857de9753527de491427938298cdb9b9e))
+
 ## [0.3.0](https://github.com/sesigl/open-software-factory/compare/proof-v0.2.0...proof-v0.3.0) (2026-10-21)
 
 

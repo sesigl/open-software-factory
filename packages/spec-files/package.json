@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/spec-files",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Read the scenarios of Gherkin feature files and the test cases of JUnit reports, for the open software factory.",
   "license": "Apache-2.0",
   "repository": {
