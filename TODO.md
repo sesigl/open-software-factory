@@ -344,7 +344,7 @@ read them for ideas, do not copy their company-specific rules.
   - [x] The dogfood: `taskcapture-suite.yml` captures some of this repository's pull requests and runs them nightly
     with Harbor's `oracle` and `nop` agents, so every task is shown solvable and its tests fail without the change.
 
-### [ ] T-10 · observer
+### [x] T-10 · observer
 
 - **Tier / language / path / prefix:** optional · TypeScript · `modules/observer/` · `SCN-OBS`
 - **Alone:** point it at session logs and agent instructions; it proposes reviewed fixes and later reports
@@ -359,7 +359,8 @@ read them for ideas, do not copy their company-specific rules.
   on Forgejo with the three sections; it never pushes to the default branch; check compares the failure rate
   before and after a merged change with a minimum sample size; a proposal touching a protected path is marked
   "needs human".
-- **Done when:** one observer PR to this repository was merged with a measured effect.
+- **Done when:** analyze, propose and check are released. The dogfood (one merged observer PR to this repository
+  with a measured effect) needs scores from a paid judge and a paid model, so it moved to T-21.
 - **Slices:**
   - [x] `observer analyze` (failed `BOOLEAN` scores grouped by scorer into problems with counts, reasons and run
     links), `observer propose` (the model's exact-text edits of the instruction files on a branch `observer/*`, a pull
@@ -367,8 +368,6 @@ read them for ideas, do not copy their company-specific rules.
     to the default branch), `observer check` (failure rate before and after a merge, minimum runs, two-proportion
     z-test, comment on the pull request), `fakes.forge` showing opened pull requests and branch files, and the npm
     release (ADR 0046, `SCN-OBS-001` to `-033`, `SCN-TK-050`).
-  - [ ] The dogfood: a nightly job runs `analyze` on this repository's scores and `propose` for the top problem; one
-    merged observer pull request with a measured effect. Needs scorekit's paid dogfood (T-21) and a paid model.
 
 ### [ ] T-11 · gatekeeper
 
@@ -531,6 +530,9 @@ owner before each slice: which model or service, and its budget.
     from the README.
   - [ ] taskcapture (from T-09): run `taskcapture-suite.yml` with real models next to the oracle, publish the report,
     and route with its pick.
+  - [ ] observer (from T-10): a nightly job runs `observer analyze` on the scores of the scorekit slice above and
+    `observer propose` for the top problem with a real model; done when one observer pull request to this repository
+    is merged and `observer check` measures its effect (ADR 0046).
 
 ---
 
