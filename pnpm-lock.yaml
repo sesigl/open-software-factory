@@ -193,6 +193,19 @@ importers:
         specifier: 4.0.3
         version: 4.0.3
 
+  modules/taskcapture:
+    dependencies:
+      '@opensoftware/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
+      yaml:
+        specifier: 2.9.1
+        version: 2.9.1
+    devDependencies:
+      '@opensoftware/testkit':
+        specifier: workspace:*
+        version: link:../../packages/testkit
+
   packages/cli:
     devDependencies:
       '@opensoftware/testkit':

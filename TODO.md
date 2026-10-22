@@ -329,6 +329,17 @@ read them for ideas, do not copy their company-specific rules.
   correctness and cost per cell; incomplete scoring is flagged; `route` writes a LiteLLM rule for the chosen
   model; a prompt-injection task is included in every suite.
 - **Done when:** a suite from this repository's own PRs runs nightly.
+- **Slices:**
+  - [x] `taskcapture capture` (a merged GitHub or Forgejo pull request as a Harbor task: the repository before the
+    merge, the pull request's tests hidden in `tests/`, the rest of its change as the oracle's solution), the
+    `prompt-injection` task in every suite, `taskcapture report` (correctness and average cost per configuration and
+    model from Harbor's trial results, incomplete scoring with the `harbor job resume` command, the best, lowest-cost
+    and most efficient cell, the Pareto front, Markdown and a Vega-Lite chart), `taskcapture route` (a LiteLLM tag
+    routing config), `fakes.forge` merging a pull request in the testkit, and the npm release (ADR 0043,
+    `SCN-TASK-001` to `-041`, `SCN-TK-049`).
+  - [ ] `taskcapture run`: the `harbor` CLI as a separate process for a matrix of models and configurations, with the
+    replay fakes for chat and forge (no side effects), and a task from a run record.
+  - [ ] The dogfood: a suite from this repository's pull requests that runs nightly.
 
 ### [ ] T-10 · observer
 
