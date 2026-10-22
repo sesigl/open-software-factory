@@ -1,5 +1,6 @@
-// `make install` step: the pinned lychee (DOCS-LINKS) and oasdiff (CONTRACT) binaries, checked against their
-// SHA-256, in .tools/bin. Releases exist for Linux x86_64 here; elsewhere put the same versions on PATH.
+// `make install` step: the pinned lychee (DOCS-LINKS), oasdiff (CONTRACT) and opa (gatekeeper's policies, ADR 0047)
+// binaries, checked against their SHA-256, in .tools/bin. Releases exist for Linux x86_64 here; elsewhere put the
+// same versions on PATH.
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
@@ -11,6 +12,8 @@ interface Pinned {
   version: string;
   url: string;
   sha256: string;
+  /** The download is the binary itself, not a .tar.gz archive. */
+  binary?: boolean;
 }
 
 const PINNED: Pinned[] = [
@@ -25,6 +28,13 @@ const PINNED: Pinned[] = [
     version: "1.11.7",
     url: "https://github.com/oasdiff/oasdiff/releases/download/v1.11.7/oasdiff_1.11.7_linux_amd64.tar.gz",
     sha256: "97f1052365f74e6fd6f4d8fa108606e09391aebb8ecbf3b5e7a4059d54327224",
+  },
+  {
+    name: "opa",
+    version: "1.21.0",
+    url: "https://github.com/open-policy-agent/opa/releases/download/v1.21.0/opa_linux_amd64_static",
+    sha256: "5eef70644868bb04d0556bcc795ee42f2ab379e73f51d1bfa30f83e1305bc9b9",
+    binary: true,
   },
 ];
 
@@ -46,8 +56,8 @@ export function installTools(root: string): number {
       run("curl", ["-sSfL", "-o", archive, tool.url]);
       const digest = createHash("sha256").update(readFileSync(archive)).digest("hex");
       if (digest !== tool.sha256) throw new Error(`${tool.name}: checksum ${digest} does not match ${tool.sha256}`);
-      run("tar", ["-xzf", archive, "-C", temp]);
-      copyFileSync(join(temp, tool.name), target);
+      if (!tool.binary) run("tar", ["-xzf", archive, "-C", temp]);
+      copyFileSync(tool.binary ? archive : join(temp, tool.name), target);
       chmodSync(target, 0o755);
       process.stdout.write(`installed ${tool.name} ${tool.version}\n`);
     } finally {

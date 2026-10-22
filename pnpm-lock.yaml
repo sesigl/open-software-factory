@@ -77,6 +77,22 @@ importers:
         specifier: 7.7.1
         version: 7.7.1
 
+  modules/gatekeeper:
+    dependencies:
+      '@nats-io/transport-node':
+        specifier: 3.4.0
+        version: 3.4.0
+      '@opensoftware/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
+      '@opensoftware/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+    devDependencies:
+      '@opensoftware/testkit':
+        specifier: workspace:*
+        version: link:../../packages/testkit
+
   modules/ledger:
     dependencies:
       '@duckdb/node-api':

@@ -18,6 +18,8 @@ export interface FakeSlack {
   url: string;
   /** The bot token the module must send as `Authorization: Bearer <token>`. */
   token: string;
+  /** The bot's user ID, which `auth.test` answers and which every message the module posts carries. */
+  bot: string;
   /** Every message in the channel, oldest first, thread replies included. */
   messages(channel: string): SlackMessage[];
   /** Posts a message as a person; with `deliverTo`, also sends it to the module as an Events API `message` event. */
@@ -33,7 +35,7 @@ export interface RunningSlack {
 
 const TOKEN = "xoxb-testkit";
 const BOT = "U0BOT";
-const METHODS = ["chat.postMessage", "conversations.history", "conversations.replies", "reactions.add"];
+const METHODS = ["auth.test", "chat.postMessage", "conversations.history", "conversations.replies", "reactions.add"];
 
 export async function startSlack(): Promise<RunningSlack> {
   const messages: SlackMessage[] = [];
@@ -64,6 +66,7 @@ export async function startSlack(): Promise<RunningSlack> {
     if (request.headers.authorization !== `Bearer ${TOKEN}` && args.token !== TOKEN) {
       return reply({ ok: false, error: "invalid_auth" });
     }
+    if (method === "auth.test") return reply({ ok: true, user_id: BOT, bot_id: "B0BOT", team_id: "T0TESTKIT" });
     const channel = String(args.channel ?? "");
     if (method === "chat.postMessage") {
       const threadTs = args.thread_ts ? String(args.thread_ts) : undefined;
@@ -93,6 +96,7 @@ export async function startSlack(): Promise<RunningSlack> {
     slack: {
       url: `http://127.0.0.1:${port}/api/`,
       token: TOKEN,
+      bot: BOT,
       messages: (channel) => messages.filter((message) => message.channel === channel),
       async say({ channel, text, user = "U0PERSON", threadTs }) {
         const message = post({ channel, text, user, threadTs });

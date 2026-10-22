@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "OUTPUT": {
+      "type": "string",
+      "default": ".",
+      "description": "Folder of gate.json and record.json when --out and --record are not given."
+    },
+    "OSF_NOW": {
+      "type": "string",
+      "description": "The current time, like 2026-01-01T05:00:00Z, for escalation and expiry. Default: the clock."
+    },
+    "GATEKEEPER_OPA": {
+      "type": "string",
+      "default": "opa",
+      "description": "The OPA 1.x program that evaluates the policy."
+    },
+    "GATEKEEPER_SLACK_URL": {
+      "type": "string",
+      "default": "https://slack.com/api/",
+      "description": "Base URL of the Slack Web API, ending in a slash."
+    },
+    "GATEKEEPER_SLACK_TOKEN": {
+      "type": "string",
+      "description": "Slack bot token with chat:write and channels:history. Required for a slack: channel."
+    },
+    "GATEKEEPER_FORGE_URL": {
+      "type": "string",
+      "description": "Base URL of the forge API. Default: https://api.github.com for github.com, <origin>/api/v1 for Forgejo."
+    },
+    "GATEKEEPER_FORGE_TOKEN": {
+      "type": "string",
+      "description": "Token that may read the pull request, comment on it and set its commit status. Never written to a file."
+    },
+    "GATEKEEPER_SIGNING_KEY": {
+      "type": "string",
+      "description": "Ed25519 private key in PEM that signs each record. Without it the record is unsigned."
+    },
+    "GATEKEEPER_NATS_URL": {
+      "type": "string",
+      "description": "NATS server, like nats://localhost:4222, for the events gate.requested@v1 and gate.decided@v1. Unset: no events."
+    }
+  }
+}
