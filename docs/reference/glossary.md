@@ -27,6 +27,8 @@ Use these terms in scenarios, code, UI text and docs.
 | Scorer | An LLM-judge or code check that grades sampled runs on one dimension. |
 | Score | The result of one scorer on one run. |
 | Benchmark suite | A set of real tasks captured from past work, replayed to compare configurations. |
+| Cell | One configuration and one model in a benchmark report, with its correctness and average cost per trial. |
+| Hidden tests | The tests of a captured pull request: the agent never sees them; they decide the task's reward. |
 | Routing rule | A rule in the LLM gateway that picks a model for a class of tasks. |
 | Self-improvement | The loop that turns repeated failures into reviewed changes to the factory definition. |
 | Port | An interface to an outside system. |
