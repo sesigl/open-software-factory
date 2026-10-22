@@ -31,8 +31,8 @@ On each pull request from this repository, the `verify` job also runs the proof 
 every suite ([ADR 0029](../decisions/0029-proof-capture-and-action.md)): one proof comment and the commit status
 `proof`. The `proof` suite's job installs Chromium for the capture scenarios. The `verify` job also runs the spec-trace
 GitHub Action for its report: the job summary lists the scenarios a pull request adds, removes or changes, and the
-artifact `spec-trace` holds the JSON report. Until `@opensoftware/spec-trace` and `@opensoftware/proof` are on npm,
-both actions run the build of the checkout.
+artifact `spec-trace` holds the JSON report. Both actions run the release from npm at the version of the module's
+`package.json`, so a change to proof or spec-trace reaches this check after its release.
 
 ## Specification and traceability
 
