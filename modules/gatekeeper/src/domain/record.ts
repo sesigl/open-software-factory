@@ -77,12 +77,7 @@ export function signRecord(record: GateRecord, privateKeyPem: string): GateRecor
 
 /** undefined when the signature holds, else why not. */
 export function verifyRecord(record: GateRecord, publicKeyPem: string): string | undefined {
-  let key: KeyObject;
-  try {
-    key = createPublicKey(publicKeyPem);
-  } catch {
-    throw new UsageError("--public-key names no public key in PEM");
-  }
+  const key = createPublicKey(publicKeyPem);
   const { signature } = record;
   if (!signature?.value) return "the record has no signature";
   if (signature.key !== keyId(key)) return "the record was signed with another key";

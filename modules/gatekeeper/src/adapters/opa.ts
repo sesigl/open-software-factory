@@ -25,12 +25,7 @@ export async function evaluate(opa: string, policy: string, input: unknown): Pro
     );
     child.on("close", (exit) => resolve(exit ?? 1));
   });
-  let output: OpaOutput;
-  try {
-    output = JSON.parse(stdout) as OpaOutput;
-  } catch {
-    throw new Error(`${opa} answered no JSON (exit ${code})`);
-  }
+  const output = JSON.parse(stdout || "{}") as OpaOutput;
   if (code !== 0 || output.errors) {
     const errors = (output.errors ?? []).map(({ message, location }) =>
       location ? `${location.file}:${location.row}: ${message}` : message,
