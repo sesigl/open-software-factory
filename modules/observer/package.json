@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/observer",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "observer: groups failed scores into problems, proposes fixes to agent instructions as reviewed pull requests, and checks whether the failure rate fell.",
   "license": "Apache-2.0",
   "repository": {
