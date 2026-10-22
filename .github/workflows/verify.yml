@@ -216,13 +216,14 @@ jobs:
       - run: make verify-checks
 
       # Dogfood of spec-trace (ADR 0031): the report with the scenarios this change adds, removes or changes, as the
-      # job summary and the artifact spec-trace. make verify-checks ran its rules already. The action runs the release
-      # of the version in modules/spec-trace/package.json from npm.
+      # job summary and the artifact spec-trace. make verify-checks built spec-trace and ran its rules already.
       - name: spec-trace
         if: always()
         uses: ./modules/spec-trace
         with:
           rules: ""
+          # Until @opensoftware/spec-trace is on npm, the build of this checkout; then the action's default, the release.
+          command: node modules/spec-trace/dist/cli.js
 
       - name: Lint, typecheck, build and every test suite passed
         env:
@@ -240,13 +241,17 @@ jobs:
           if-no-files-found: ignore
 
       # Dogfood of proof (ADR 0029): the JUnit reports of every suite as evidence, one comment and the commit status
-      # proof on each pull request from this repository. A fork's token may not comment. The action runs the release
-      # of the version in modules/proof/package.json from npm.
+      # proof on each pull request from this repository. A fork's token may not comment.
+      - name: Build proof for its dogfood
+        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: pnpm --filter "@opensoftware/proof..." build
       - name: proof
         if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         uses: ./modules/proof
         with:
           junit: reports/junit/*.xml
+          # Until @opensoftware/proof is on npm, the build of this checkout; then the action's default, the release.
+          command: node modules/proof/dist/cli.js
 
       # A dispatched run belongs to main, so its check does not show on the release pull request: report a status.
       - name: Report the result on the release pull request
