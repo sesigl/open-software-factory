@@ -278,7 +278,7 @@ read them for ideas, do not copy their company-specific rules.
     `evaluators.json` or, with `--push`, created or updated through Langfuse's public API v2 (ADR 0033,
     `SCN-SCORE-033` to `-045`).
 
-### [ ] T-08 · ledger
+### [x] T-08 · ledger
 
 - **Tier / language / path / prefix:** optional · SQL + TypeScript CLI · `modules/ledger/` · `SCN-LEDGER`
 - **Alone:** cost per PR and flow metrics for any team using agents.
@@ -305,7 +305,9 @@ read them for ideas, do not copy their company-specific rules.
   - [x] `ledger import`: the pull requests, reviews and comments of a GitHub or Forgejo repository as `pr.opened@v1`,
     `pr.reviewed@v1` and `pr.closed@v1` events in a JSON Lines file for `ledger ingest`, for teams without forge
     adapters (ADR 0036, `SCN-LEDGER-039` to `-050`).
-  - [ ] The dogfood: this repository's spend, `runs/` and pull requests in the dashboard, linked from the README.
+  - [x] The dogfood: `--prices` (token usage at LiteLLM's list prices), `report --html` (one static dashboard page), a
+    run's cost split only over pull requests in the ledger, and the nightly workflow `ledger-dashboard.yml` that
+    publishes this repository's page on Vercel, linked from the README (ADR 0044, `SCN-LEDGER-051` to `-064`).
 
 ---
 

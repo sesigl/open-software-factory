@@ -29,6 +29,16 @@ function parseLine(line: string): unknown {
   }
 }
 
+/** The JSON value of one file, like a LiteLLM price table; undefined when it is not JSON. */
+export function readJson(file: string): unknown {
+  const [input] = readInputs([file], /\.json$/);
+  try {
+    return JSON.parse(input?.text ?? "");
+  } catch {
+    return undefined;
+  }
+}
+
 /** A file the package ships, like grafana/ledger-dashboard.json, next to dist/. */
 export function packageFile(path: string): string {
   return readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");

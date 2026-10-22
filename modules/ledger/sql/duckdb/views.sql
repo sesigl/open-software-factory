@@ -38,7 +38,8 @@ SELECT r.started_at, r.cost_usd, r.run_id, r.source, r.requester_id, r.agent, co
 FROM runs r
 WHERE r.cost_usd IS NOT NULL AND r.run_id NOT IN (SELECT run_id FROM spend WHERE run_id IS NOT NULL);
 
--- Which runs belong to which pull request, and the share of the run's cost each one carries.
+-- Which runs belong to which pull request, and the share of the run's cost each one carries. A run's cost splits
+-- only over the pull requests in the ledger: a link to a pull request without a pr.opened@v1 event carries none.
 CREATE OR REPLACE VIEW pr_runs AS
 WITH links AS (
   SELECT pr_url, run_id FROM run_links
@@ -47,7 +48,8 @@ WITH links AS (
   UNION
   SELECT p.url, r.run_id FROM pull_requests p JOIN runs r ON r.work_item_id = p.work_item_id
 )
-SELECT pr_url, run_id, 1.0 / count(*) OVER (PARTITION BY run_id) AS share FROM links;
+SELECT pr_url, run_id, 1.0 / count(*) OVER (PARTITION BY run_id) AS share FROM links
+WHERE pr_url IN (SELECT url FROM pull_requests);
 
 -- Each pull request with its kickoff, first human review, merge, revert flag and human interactions.
 CREATE OR REPLACE VIEW pr_flow AS

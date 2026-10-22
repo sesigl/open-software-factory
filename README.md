@@ -44,6 +44,12 @@ open-source project already exists, the factory adopts it and builds only the ad
 Plus `contracts` and `testkit` (core), adapters per port, and the `open-software-factory` distribution
 (Docker Compose and Helm).
 
+## Our own numbers
+
+ledger shows what this repository's pull requests cost and how they flow, from the run records in `runs/` priced at
+list price and the pull requests on GitHub. The workflow [`ledger-dashboard.yml`](.github/workflows/ledger-dashboard.yml)
+builds the page every night and publishes it on Vercel ([ADR 0044](docs/decisions/0044-ledger-dogfood.md)).
+
 ## Working on this repository
 
 Every change, by a person or an agent, follows [`AGENTS.md`](AGENTS.md): Gherkin scenario first, exactly one

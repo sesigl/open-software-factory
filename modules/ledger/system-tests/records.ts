@@ -35,6 +35,8 @@ export interface RunOptions {
   harness?: string;
   model?: string;
   pullRequests?: string[];
+  /** The token usage of the run's invoke_agent span; input includes the cached tokens. */
+  usage?: { input: number; output?: number; cacheRead?: number; cacheWrite?: number };
   /** The trace and span this run's invoke_agent span lies below: a run started by another run. */
   parent?: { run: string; span: string };
 }
@@ -59,6 +61,15 @@ export function runRequest(run: string, options: RunOptions = {}) {
   ];
   if (options.agent) attributes.push(text("gen_ai.agent.name", options.agent));
   if (options.cost !== undefined) attributes.push({ key: "osf.cost.usd", value: { doubleValue: options.cost } });
+  const tokens = (key: string, value: number | undefined) =>
+    value === undefined ? [] : [{ key, value: { intValue: String(value) } }];
+  if (options.usage)
+    attributes.push(
+      ...tokens("gen_ai.usage.input_tokens", options.usage.input),
+      ...tokens("gen_ai.usage.output_tokens", options.usage.output),
+      ...tokens("gen_ai.usage.cache_read.input_tokens", options.usage.cacheRead),
+      ...tokens("gen_ai.usage.cache_write.input_tokens", options.usage.cacheWrite),
+    );
   if (options.pullRequests)
     attributes.push({
       key: "osf.pull_request.urls",
@@ -178,3 +189,32 @@ export const busyWeek = (): string =>
     spendRow("req-1", 5000),
     spendRow("req-2", 351.38),
   );
+
+/** A LiteLLM price table (model_prices_and_context_window.json) with the given entries. */
+export const pricesFile = (entries: Record<string, Record<string, unknown>>): string =>
+  `${JSON.stringify({ sample_spec: { input_cost_per_token: 0, litellm_provider: "openai" }, ...entries }, null, 2)}\n`;
+
+/** The prices of "claude-sonnet-5-5" at 0.000003 USD per input token and 0.000015 per output token. */
+export const sonnetPrices = (extra: Record<string, unknown> = {}): string =>
+  pricesFile({
+    "claude-sonnet-5-5": {
+      input_cost_per_token: 0.000003,
+      output_cost_per_token: 0.000015,
+      litellm_provider: "anthropic",
+      ...extra,
+    },
+  });
+
+/** The text a reader of the page "ledger.html" sees: no tags, entities decoded, white space collapsed. */
+export async function pageText(sut: { files: { read(path: string): Promise<string> } }): Promise<string> {
+  const html = await sut.files.read("$INPUT/ledger.html");
+  return html
+    .replace(/<style[\s\S]*?<\/style>/g, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/\s+/g, " ");
+}
