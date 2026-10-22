@@ -27,6 +27,8 @@ help: ## list the targets
 
 install: ## install dependencies and the pinned lychee and oasdiff binaries
 	pnpm install --frozen-lockfile
+	@# osf imports the libraries in packages/ that tools/ depends on: build them first.
+	@$(TURBO) build --filter=@opensoftware/tools^...
 	@$(OSF) install-tools
 
 check: ## affected lint, typecheck and system tests, then the fast repository checks
