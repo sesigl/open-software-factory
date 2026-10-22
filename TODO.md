@@ -385,6 +385,18 @@ read them for ideas, do not copy their company-specific rules.
   the approver group by risk class; a decision by a person outside the group is refused; the record names
   approver and time; a timeout escalates to a second group.
 - **Done when:** merges to `main` in this repository need a gatekeeper record for factory-made PRs.
+- **Slices:**
+  - [x] `gatekeeper request | status | verify`: a Rego policy evaluated by OPA picks the approver groups by risk, the
+    groups file names their members, Slack threads and pull request comments as channels with the channel as the only
+    store, refusal of anyone outside the groups, escalation after a timeout, expiry, Ed25519-signed records, the events
+    `gate.requested@v1` and `gate.decided@v1` on NATS, the commit status `gatekeeper`, the GitHub Action, the dogfood
+    workflow `gatekeeper.yml` with `.github/gatekeeper/` (factory-made pull requests need a maintainer), fake Slack's
+    `auth.test`, and the npm release (ADR 0047, `SCN-GATE-001` to `-036`, `SCN-TK-051`).
+  - [ ] Require the commit status `gatekeeper` on `main` in the branch protection of this repository (a setting of the
+    owner).
+  - [ ] HTTP API with its OpenAPI in `contracts/` (`gatekeeper serve`): requests over HTTP, Slack's Events API and
+    buttons instead of polling, the Postgres outbox for the events.
+  - [ ] The channel port (T-15) with Vercel Chat SDK in place of the direct Slack and forge calls.
 
 ### [ ] T-12 · harness port and adapters
 

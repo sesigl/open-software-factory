@@ -1,0 +1,47 @@
+# Dogfood of gatekeeper (ADR 0047): every pull request gets the commit status "gatekeeper". A factory-made pull
+# request (branch observer/ or factory/, or the label factory) waits for a maintainer's "/approve" comment; the policy
+# passes the others. Require the status "gatekeeper" on main to block the merge until then.
+name: gatekeeper
+
+on:
+  # pull_request_target runs this file from the default branch, so a pull request cannot change its own gate.
+  pull_request_target:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write # the request and the decision as comments
+  pull-requests: write
+  statuses: write # the commit status gatekeeper
+
+concurrency:
+  group: gatekeeper-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    if: github.event_name == 'pull_request_target' || github.event.issue.pull_request
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      # The default branch, never the pull request's code: the policy, the groups and gatekeeper itself.
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --filter "@opensoftware/gatekeeper..."
+      - run: pnpm --filter "@opensoftware/gatekeeper..." build
+      - uses: ./modules/gatekeeper
+        env:
+          # Unset until the owner adds the secret (gatekeeper keys); the record is then unsigned.
+          GATEKEEPER_SIGNING_KEY: ${{ secrets.GATEKEEPER_SIGNING_KEY }}
+        with:
+          policy: .github/gatekeeper/merge.rego
+          groups: .github/gatekeeper/groups.json
+          command: node modules/gatekeeper/dist/cli.js

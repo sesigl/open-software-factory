@@ -18,7 +18,7 @@ approver groups. The contracts define the events `gate.requested@v1` and `gate.d
 requests that change protected paths with `[needs human]` and leaves the enforcement to gatekeeper (ADR 0046). The
 channel port (T-15) and the HTTP API do not exist yet.
 
-This change is the first slice of T-11: the CLI `request`, `status` and `verify`, Slack and pull request comments as
+This change is the first slice of T-11: the CLI `request`, `status`, `verify` and `keys`, Slack and pull request comments as
 channels, signed records, the events, and the GitHub Action with its dogfood on this repository.
 
 ## Decision
@@ -60,8 +60,8 @@ channels, signed records, the events, and the GitHub Action with its dogfood on 
   request, the policy and the SHA-256 of its text, the risk, the approver groups, the channel, the request time, the
   decision, who decided (absent when the gate expired) and when. With `GATEKEEPER_SIGNING_KEY` (an Ed25519 private
   key in PEM) it carries an Ed25519 signature over its canonical JSON and the SHA-256 of the public key.
-  `gatekeeper verify --public-key <file> <record.json>` checks it. Without the key the record is unsigned and `verify`
-  refuses it.
+  `gatekeeper keys` writes a new key pair, `gatekeeper verify --public-key <file> <record.json>` checks a record.
+  Without the key the record is unsigned and `verify` refuses it.
 - **Events.** With `GATEKEEPER_NATS_URL`, `request` publishes `gate.requested@v1` on `osf.gate.requested.v1` when it
   posts a request, and `status` publishes `gate.decided@v1` on `osf.gate.decided.v1` when it posts the decision. The
   events are plain NATS messages; a JetStream stream on `osf.>` keeps them. The Postgres outbox (ADR 0003) comes
