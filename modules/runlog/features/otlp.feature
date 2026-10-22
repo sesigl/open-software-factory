@@ -27,3 +27,9 @@ Feature: Export to an OTLP endpoint
     When the developer runs "runlog export session.jsonl" with OTEL_EXPORTER_OTLP_ENDPOINT set to the endpoint
     Then the command exits with code 1
     And the output contains "the OTLP endpoint refused the run"
+
+  @id=SCN-RUN-070 @status=implemented
+  Scenario: Every span names runlog and its version as the instrumentation scope
+    Given a Git repository with one commit and the Claude Code session "5b8e0c7e-1d2a-4f00-9a7e-0d1f2a3b4c5d"
+    When the developer runs "runlog export session.jsonl"
+    Then every span in "runs.jsonl" has the instrumentation scope "@opensoftware/runlog" with a version of the form "<major>.<minor>.<patch>"

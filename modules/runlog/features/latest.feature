@@ -41,3 +41,11 @@ Feature: Export the newest session and one file per run
     When the developer runs "runlog export session.jsonl --per-run" with OTEL_RESOURCE_ATTRIBUTES "osf.run.id=team/run:7"
     Then the command exits with code 0
     And "team-run-7.jsonl" has 1 run with "osf.run.id" "team/run:7" on the resource
+
+  @id=SCN-RUN-080 @status=implemented
+  Scenario: --latest exports the latest session also when its file comes last
+    Given a Git repository with one commit and a folder "sessions" with the Claude Code session "5b8e0c7e-1d2a-4f00-9a7e-0d1f2a3b4c5d" that ended at "2026-01-01T10:01:45Z" in "sessions/project"
+    And the Codex session "7f9c2b1a-5d3e-4c8f-9b0a-1e2d3c4b5a69" that ended at "2026-01-01T10:00:20Z" in "sessions/codex"
+    When the developer runs "runlog export --latest sessions"
+    Then the command exits with code 0
+    And "runs.jsonl" has 1 run with "gen_ai.conversation.id" "5b8e0c7e-1d2a-4f00-9a7e-0d1f2a3b4c5d"
