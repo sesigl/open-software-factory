@@ -5,7 +5,23 @@
     "OUTPUT": {
       "type": "string",
       "default": ".",
-      "description": "Folder the module writes its results to."
+      "description": "Folder of problems.json, proposal.json and check.json when --out is not given."
+    },
+    "OBSERVER_INFERENCE_URL": {
+      "type": "string",
+      "description": "Base URL of an OpenAI-compatible gateway for propose, like http://localhost:4000/v1. Required for propose."
+    },
+    "OBSERVER_INFERENCE_KEY": {
+      "type": "string",
+      "description": "Sent to the gateway as a bearer token, when set."
+    },
+    "OBSERVER_FORGE_URL": {
+      "type": "string",
+      "description": "Base URL of the forge API. Default: https://api.github.com for github.com, <origin>/api/v1 for Forgejo."
+    },
+    "OBSERVER_FORGE_TOKEN": {
+      "type": "string",
+      "description": "Token that may push a branch and open a pull request (propose) or read and comment on one (check). Sent to the forge API and to Git, never written to a file."
     }
   }
 }

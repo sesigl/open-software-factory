@@ -91,7 +91,9 @@ Every server, client and subscription stops when the scenario ends, before the f
   scenario ([ADR 0016](../../docs/decisions/0016-testkit-service-fakes.md)). Each gives only what a module needs
   to reach it: a URL, an address or an endpoint with keys. Docker must run.
 - `fakes.forge()`: a real Forgejo with a user and an API token (`url`, `token`, `owner`). The test can
-  `createRepository`, `openPullRequest`, and read a pull request's `comments` and `statuses`.
+  `createRepository`, `openPullRequest` and `mergePullRequest`, read a pull request's `comments` and `statuses`,
+  list the repository's `pullRequests` (title, body, head and base branch, state, URL) a module opened, and read a
+  `file` on a branch ([ADR 0046](../../docs/decisions/0046-observer.md)).
 - `fakes.collector(config)`: the real OpenTelemetry Collector Contrib in a container, running the config text a
   module wrote ([ADR 0025](../../docs/decisions/0025-runlog-collector-config-pack.md)). The config receives OTLP/HTTP
   on `0.0.0.0:4318` and exports to `${env:OTEL_EXPORTER_OTLP_ENDPOINT}`, which the fake points at its own receiver.
@@ -208,3 +210,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-047 | implemented | documentedEnv gives the variables named in the Configuration section |
 | SCN-TK-048 | implemented | readmeSection gives an empty text for a missing section |
 | SCN-TK-049 | implemented | fakes.forge merges a pull request, so a module can read the merge commit |
+| SCN-TK-050 | implemented | fakes.forge shows the pull request a module opens and the files of its branch |

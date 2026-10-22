@@ -99,6 +99,19 @@ importers:
         specifier: 8.23.1
         version: 8.23.1
 
+  modules/observer:
+    dependencies:
+      '@opensoftware/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
+      '@opensoftware/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+    devDependencies:
+      '@opensoftware/testkit':
+        specifier: workspace:*
+        version: link:../../packages/testkit
+
   modules/proof:
     dependencies:
       '@opensoftware/cli':

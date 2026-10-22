@@ -76,7 +76,7 @@ Feature: Services and outside systems
     And the output contains "expected 1 export(s) from the Collector, got 0"
     And the output contains "Collector log:"
 
-  @id=SCN-TK-050 @status=planned
+  @id=SCN-TK-050 @status=implemented
   Scenario: fakes.forge shows the pull request a module opens and the files of its branch
     Given a module whose CLI commits "notes.md" with "hello" on the new branch "fix" and opens a pull request "Fix the notes" into "main" at "DEMO_FORGE_URL"
     And its system test expects that pull request in fakes.forge and "notes.md" with "hello" only on the branch "fix"
