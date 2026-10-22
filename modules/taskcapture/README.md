@@ -122,9 +122,10 @@ the minor version. The one-time setup is the same as for contracts
 
 | Variable | Type | Default | Meaning |
 | --- | --- | --- | --- |
-| `OUTPUT` | string | `"."` | Folder of the suite, report.json and litellm-config.yaml when --suite or --out is not given. |
+| `OUTPUT` | string | `"."` | Folder of the suite, the jobs, report.json and litellm-config.yaml when --suite, --jobs or --out is not given. |
 | `TASKCAPTURE_FORGE_URL` | string |  | Base URL of the forge API for capture. Default: https://api.github.com for github.com, <origin>/api/v3 for another GitHub host, <origin>/api/v1 for Forgejo. |
 | `TASKCAPTURE_FORGE_TOKEN` | string |  | Token that may read the repository, for capture: sent to the forge API and to git clone. Without it, capture reads a public repository. Never written into a task. |
+| `TASKCAPTURE_HARBOR` | string | `"harbor"` | The command that starts Harbor for run: a program and its first words, separated by spaces, like "uvx --from harbor==0.24.0 harbor". |
 
 ## Scenarios
 
@@ -173,20 +174,20 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-TASK-039 | implemented | A "--tests" that is not a regular expression exits 2 |
 | SCN-TASK-040 | implemented | A pull request URL that names no pull request exits 2 |
 | SCN-TASK-041 | implemented | A pull request on a GitHub Enterprise host is read from the host's "/api/v3" |
-| SCN-TASK-042 | planned | A matrix of 2 configurations and 2 models runs one Harbor job per configuration |
-| SCN-TASK-043 | planned | Run reports correctness against cost over the jobs it ran |
-| SCN-TASK-044 | planned | A configuration with a Harbor config file passes the file to its job |
-| SCN-TASK-045 | planned | The option "--allow-host" is the only host the agent may reach |
-| SCN-TASK-046 | planned | Without "--configuration" the one job is named "default" |
-| SCN-TASK-047 | planned | A Harbor job that fails exits 1 and writes no report |
-| SCN-TASK-048 | planned | A Harbor that cannot be started exits 1 and says how to install it |
-| SCN-TASK-049 | planned | Run needs an agent |
-| SCN-TASK-050 | planned | A suite without a task exits 2 |
-| SCN-TASK-051 | planned | A configuration name that is not a folder name exits 2 |
-| SCN-TASK-052 | planned | The agent of a task has no network during its run |
-| SCN-TASK-053 | planned | The pull request of a run becomes a task that names the run |
-| SCN-TASK-054 | planned | A run that names several pull requests needs the one to capture |
-| SCN-TASK-055 | planned | A run captures the pull request named next to it |
-| SCN-TASK-056 | planned | A pull request the run does not name exits 2 |
-| SCN-TASK-057 | planned | A run without a pull request exits 2 |
-| SCN-TASK-058 | planned | A file that is no run record exits 2 |
+| SCN-TASK-042 | implemented | A matrix of 2 configurations and 2 models runs one Harbor job per configuration |
+| SCN-TASK-043 | implemented | Run reports correctness against cost over the jobs it ran |
+| SCN-TASK-044 | implemented | A configuration with a Harbor config file passes the file to its job |
+| SCN-TASK-045 | implemented | The option "--allow-host" is the only host the agent may reach |
+| SCN-TASK-046 | implemented | Without "--configuration" the one job is named "default" |
+| SCN-TASK-047 | implemented | A Harbor job that fails exits 1 and writes no report |
+| SCN-TASK-048 | implemented | A Harbor that cannot be started exits 1 and says how to install it |
+| SCN-TASK-049 | implemented | Run needs an agent |
+| SCN-TASK-050 | implemented | A suite without a task exits 2 |
+| SCN-TASK-051 | implemented | A configuration name that is not a folder name exits 2 |
+| SCN-TASK-052 | implemented | The agent of a task has no network during its run |
+| SCN-TASK-053 | implemented | The pull request of a run becomes a task that names the run |
+| SCN-TASK-054 | implemented | A run that names several pull requests needs the one to capture |
+| SCN-TASK-055 | implemented | A run captures the pull request named next to it |
+| SCN-TASK-056 | implemented | A pull request the run does not name exits 2 |
+| SCN-TASK-057 | implemented | A run without a pull request exits 2 |
+| SCN-TASK-058 | implemented | A file that is no run record exits 2 |
