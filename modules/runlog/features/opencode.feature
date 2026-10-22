@@ -2,7 +2,8 @@
 Feature: Export an OpenCode session
   "runlog export" reads an OpenCode session that "opencode export <session id>" printed as JSON into the same run
   shape as a Claude Code session. The session "ses_4c2e9a1b7f3dQ8mN2pR5tV6wXy" of the system tests has two
-  assistant messages of "claude-sonnet-5-5", an "edit" call and a "bash" call.
+  assistant messages of "claude-sonnet-5-5", an "edit" call, a "bash" call, a "read" call that failed and a
+  "write" call.
 
   @id=SCN-RUN-022 @status=implemented @realizes=SCN-FACTORY-DATA-001
   Scenario: An OpenCode run has the same root span as a Claude Code run
@@ -26,3 +27,9 @@ Feature: Export an OpenCode session
     When the developer runs "runlog export session.json"
     Then "runs.jsonl" has 1 span "execute_tool edit" and 1 span "execute_tool bash" below the root span
     And the "execute_tool bash" span has "gen_ai.tool.call.id" "toolu_oc2" and lasts 9 seconds
+
+  @id=SCN-RUN-069 @status=implemented @realizes=SCN-FACTORY-DATA-001
+  Scenario: An OpenCode run has one span for the session, each assistant message and each tool part, and no other span
+    Given a Git repository with one commit and the OpenCode session "ses_4c2e9a1b7f3dQ8mN2pR5tV6wXy"
+    When the developer runs "runlog export session.json"
+    Then the spans in "runs.jsonl" are "invoke_agent", 2 "chat claude-sonnet-5-5", "execute_tool edit", "execute_tool bash", "execute_tool read" and "execute_tool write", in this order

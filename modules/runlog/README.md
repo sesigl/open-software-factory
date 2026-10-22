@@ -200,7 +200,7 @@ with a trusted publisher for `publish-runlog.yml`. No credential is stored in th
 | SCN-RUN-012 | implemented | A run without launch attributes is attributed to the Git author and the commit of the current folder |
 | SCN-RUN-013 | implemented | A run that breaks the run-record contract is not exported |
 | SCN-RUN-014 | implemented | The run leaves out prompt content by default |
-| SCN-RUN-015 | implemented | --include-content adds the messages and the tool calls |
+| SCN-RUN-015 | deprecated | --include-content adds the messages and the tool calls |
 | SCN-RUN-016 | implemented | The run goes to the configured OTLP endpoint |
 | SCN-RUN-017 | implemented | The export retries after an outage of the OTLP endpoint |
 | SCN-RUN-018 | implemented | An export the OTLP endpoint refuses fails |
@@ -248,3 +248,23 @@ with a trusted publisher for `publish-runlog.yml`. No credential is stored in th
 | SCN-RUN-060 | implemented | export names the run and the file it wrote |
 | SCN-RUN-061 | implemented | A command without its file prints the usage |
 | SCN-RUN-062 | implemented | An error starts with the name of the program |
+| SCN-RUN-063 | implemented | --include-content adds every message and every tool call of a Claude Code run |
+| SCN-RUN-064 | implemented | --include-content adds every message and every tool call of a Codex run |
+| SCN-RUN-065 | implemented | --include-content adds every message and every tool call of an OpenCode run |
+| SCN-RUN-066 | implemented | A Claude Code run has one span for the session, each response and each tool call, and no other span |
+| SCN-RUN-067 | implemented | The spans of a run keep the milliseconds of the session's times |
+| SCN-RUN-068 | implemented | A Codex run has one span for the session, each response and each tool call, and no other span |
+| SCN-RUN-069 | implemented | An OpenCode run has one span for the session, each assistant message and each tool part, and no other span |
+| SCN-RUN-070 | implemented | Every span names runlog and its version as the instrumentation scope |
+| SCN-RUN-071 | implemented | Overlapping and touching ranges of a file are joined, and the files are in the order of their paths |
+| SCN-RUN-072 | implemented | The Agent Trace record names the harness and carries the trace ID of the run |
+| SCN-RUN-073 | implemented | Each block of lines that a Codex patch added is attributed on its own |
+| SCN-RUN-074 | implemented | The lines an OpenCode write call wrote are attributed to its model |
+| SCN-RUN-075 | implemented | Links over http and with numbers of several digits end up on the root span once each |
+| SCN-RUN-076 | implemented | attach refuses a TRACEPARENT whose trace ID is only zeros |
+| SCN-RUN-077 | implemented | attach refuses a TRACEPARENT whose parent span ID is only zeros |
+| SCN-RUN-078 | implemented | attach accepts trace and span IDs that start or end with zeros |
+| SCN-RUN-079 | implemented | A JSON file with messages but without a session ID is refused |
+| SCN-RUN-080 | implemented | --latest exports the latest session also when its file comes last |
+| SCN-RUN-081 | implemented | watch reads .jsonl and .json files and no others |
+| SCN-RUN-082 | implemented | watch names each run it exported |
