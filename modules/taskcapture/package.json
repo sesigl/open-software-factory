@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/taskcapture",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "taskcapture: a private benchmark from a team's merged pull requests as Harbor tasks, with a correctness-versus-cost report and LiteLLM routing.",
   "license": "Apache-2.0",
   "repository": {
