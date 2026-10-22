@@ -144,8 +144,9 @@ reads their status from `ports/<port>/features/` or from the folder `testkit con
 release-please opens a release pull request from the Conventional Commits under `packages/testkit/`. Merging it
 creates the tag `testkit-v<version>`. The workflow `.github/workflows/publish-testkit.yml` then builds `dist/`
 with `pnpm build` and publishes the package to npm. In this repository the package runs from its TypeScript
-sources; `publishConfig` points the published `exports` and `bin` at `dist/`. To publish a tag again, run the
-workflow by hand with the tag. The first release is `0.1.0`; until `1.0.0`, a breaking change raises the minor
+sources; `publishConfig` points the published `exports` and `bin` at `dist/`. When the newest tag is missing on
+npm, the next run of the workflow on `main` publishes it. To publish a tag again, run the workflow by hand with the
+tag. The first release is `0.1.0`; until `1.0.0`, a breaking change raises the minor
 version.
 
 The one-time setup is the same as for contracts ([`contracts/README.md`](../../contracts/README.md#releases)):

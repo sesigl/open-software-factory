@@ -71,8 +71,9 @@ release-please opens a release pull request from the Conventional Commits under 
 the tag `contracts-v<version>`. The release pull request also sets the version in `openapi/openapi.json`, which
 `pnpm build` copies from `package.json`, so the generated file stays current. The workflow `.github/workflows/publish-contracts.yml` then builds the package and
 publishes it to npm as `@opensoftware/contracts`. npm accepts a provenance statement only from a public
-repository, so the workflow adds one only when this repository is public. To publish a tag again, run the
-workflow by hand with the tag. The CONTRACT check and `osf-contracts breaking` compare with the newest `contracts-v*` tag.
+repository, so the workflow adds one only when this repository is public. When the newest tag is missing on npm,
+for example after a failed upload, the next run of the workflow on `main` publishes it. To publish a tag again, run
+the workflow by hand with the tag. The CONTRACT check and `osf-contracts breaking` compare with the newest `contracts-v*` tag.
 
 Only the TypeScript package exists (ADR 0012). A client for another language can be generated from
 `openapi/openapi.json` with any OpenAPI generator when someone needs one.
