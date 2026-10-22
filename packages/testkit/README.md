@@ -206,3 +206,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-046 | implemented | A library without a bin uses sut.files |
 | SCN-TK-047 | implemented | documentedEnv gives the variables named in the Configuration section |
 | SCN-TK-048 | implemented | readmeSection gives an empty text for a missing section |
+| SCN-TK-049 | implemented | fakes.forge merges a pull request, so a module can read the merge commit |
