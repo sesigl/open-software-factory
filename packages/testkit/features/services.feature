@@ -59,6 +59,14 @@ Feature: Services and outside systems
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-051 @status=implemented
+  Scenario: fakes.slack answers auth.test with the user of the module's messages
+    Given a module whose CLI prints the "user_id" of "auth.test" and then the user of the message it posts to "C1"
+    And its system test expects the bot user of fakes.slack twice
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-031 @status=implemented
   Scenario: fakes.collector runs the Collector config a module wrote and shows what it exported
     Given a module whose CLI prints a Collector config that renames the span "work" to "done"

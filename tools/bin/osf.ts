@@ -20,7 +20,7 @@ const USAGE = `Usage: osf <command>
   test-scenario <ID>      run the one system test of a scenario
   mutation <folder> [--all] [--list]
                           Stryker on the lines of a module changed since OSF_BASE (--all: every line)
-  install-tools           download the pinned lychee and oasdiff binaries into .tools/bin
+  install-tools           download the pinned lychee, oasdiff and opa binaries into .tools/bin
 `;
 
 function repositoryRoot(): string {

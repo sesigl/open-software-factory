@@ -1,0 +1,37 @@
+{
+  "name": "@opensoftware/gatekeeper",
+  "version": "0.0.0",
+  "description": "gatekeeper: asks people for approval by a Rego policy in Slack or on a pull request, and writes signed approval records.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "modules/gatekeeper"
+  },
+  "type": "module",
+  "bin": {
+    "gatekeeper": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "vitest run",
+    "docs": "node ../../tools/bin/osf.ts docs .",
+    "mutation": "node ../../tools/bin/osf.ts mutation ."
+  },
+  "devDependencies": {
+    "@opensoftware/testkit": "workspace:*"
+  },
+  "dependencies": {
+    "@nats-io/transport-node": "3.4.0",
+    "@opensoftware/cli": "workspace:*",
+    "@opensoftware/contracts": "workspace:*"
+  }
+}

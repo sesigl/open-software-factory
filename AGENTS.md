@@ -83,7 +83,7 @@ A new module starts with `skills/new-module`. A new dependency or service starts
 ## Commands
 
 ```text
-make install               install dependencies and the pinned lychee and oasdiff binaries
+make install               install dependencies and the pinned lychee, oasdiff and opa binaries
 make check                 lint and the static checks (seconds)
 make verify                all checks; required before you report done
 make test-scenario ID=…    run the one system test of a scenario

@@ -62,6 +62,8 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: make install
+      # The pinned binaries of make install, such as opa for gatekeeper, for the commands that skip make.
+      - run: echo "$GITHUB_WORKSPACE/.tools/bin" >> "$GITHUB_PATH"
       # Capture scenarios open pages in Chromium: install it when the unit depends on playwright-core.
       - name: Install the browser of a unit that captures pages
         env:

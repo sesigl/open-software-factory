@@ -99,8 +99,9 @@ Every server, client and subscription stops when the scenario ends, before the f
   on `0.0.0.0:4318` and exports to `${env:OTEL_EXPORTER_OTLP_ENDPOINT}`, which the fake points at its own receiver.
   `send(request)` posts an OTLP/JSON request to the Collector; `exported({ count, timeoutMs })` waits for the
   requests the Collector exported (JSON encoding) and, on timeout, shows the Collector's log. Docker must run.
-- `fakes.slack()`: a fake Slack Web API (`chat.postMessage`, `conversations.history`, `conversations.replies`,
-  `reactions.add`) at `url` with `token`. The test reads `messages(channel)` and posts as a person with `say`.
+- `fakes.slack()`: a fake Slack Web API (`auth.test`, `chat.postMessage`, `conversations.history`,
+  `conversations.replies`, `reactions.add`) at `url` with `token`. `auth.test` answers the bot's user ID `bot`, which
+  every message the module posts carries. The test reads `messages(channel)` and posts as a person with `say`.
   Any other method fails the scenario.
 
 A `planned` scenario's test must fail; when it passes, the testkit fails it and asks for `@status=implemented`.
@@ -211,3 +212,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-048 | implemented | readmeSection gives an empty text for a missing section |
 | SCN-TK-049 | implemented | fakes.forge merges a pull request, so a module can read the merge commit |
 | SCN-TK-050 | implemented | fakes.forge shows the pull request a module opens and the files of its branch |
+| SCN-TK-051 | implemented | fakes.slack answers auth.test with the user of the module's messages |
