@@ -262,3 +262,6 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-GATE-035 | implemented | The action fails when a maintainer rejects the pull request |
 | SCN-GATE-036 | implemented | The action names the record of an approved pull request |
 | SCN-GATE-037 | implemented | The command "keys" writes a key pair for signing records |
+| SCN-GATE-038 | implemented | A signing key that is no PEM key exits 2 and writes no record |
+| SCN-GATE-039 | implemented | A groups file that is not JSON exits 2 and names the file |
+| SCN-GATE-040 | implemented | A pull request that the forge does not know exits 1 |

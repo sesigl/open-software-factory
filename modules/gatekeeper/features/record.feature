@@ -30,3 +30,12 @@ Feature: Signed approval records
     Then the command exits with code 0
     And the output names the files "$OUTPUT/gatekeeper.pem" and "$OUTPUT/gatekeeper.pub"
     And "$OUTPUT/gatekeeper.pem" holds an Ed25519 private key and "$OUTPUT/gatekeeper.pub" its public key in PEM
+
+  @id=SCN-GATE-038 @status=implemented
+  Scenario: A signing key that is no PEM key exits 2 and writes no record
+    Given the approval request of the README request in the Slack channel "C0GATES"
+    And "slack:U0ADA" of "maintainers" replied "approve" in its thread
+    When the user runs "gatekeeper status" with "GATEKEEPER_SIGNING_KEY" set to "not a key"
+    Then the command exits with code 2
+    And the error output says "GATEKEEPER_SIGNING_KEY is no private key in PEM"
+    And the output folder has no "record.json"

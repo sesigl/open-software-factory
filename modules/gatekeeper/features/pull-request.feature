@@ -44,3 +44,10 @@ Feature: Gate a pull request
     When the user runs "gatekeeper status" for the pull request
     Then the command exits with code 1
     And the head commit of the pull request has the commit status "gatekeeper" with the state "failure"
+
+  @id=SCN-GATE-040 @status=implemented
+  Scenario: A pull request that the forge does not know exits 1
+    Given a forge that answers 404 for the pull request "acme/web#12"
+    When the user runs "gatekeeper request" for the pull request
+    Then the command exits with code 1
+    And the error output says that the forge answered 404 to "GET /repos/acme/web/pulls/12"

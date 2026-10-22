@@ -78,3 +78,11 @@ Feature: Request an approval
     When the user runs "gatekeeper request" for the channel "slack:C0GATES"
     Then the event "gate.requested@v1" arrives on "osf.gate.requested.v1"
     And the event names the stage "merge", the approver group "maintainers" and the policy "policy.rego"
+
+  @id=SCN-GATE-039 @status=implemented
+  Scenario: A groups file that is not JSON exits 2 and names the file
+    Given the README policy and request
+    And a groups file "groups.json" with the text "maintainers: slack:U0ADA"
+    When the user runs "gatekeeper request" for the channel "slack:C0GATES"
+    Then the command exits with code 2
+    And the error output says "groups.json is not JSON"
