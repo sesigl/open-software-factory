@@ -16,7 +16,8 @@ export function sessionFiles(folders: string[]): { file: string; size: number }[
     .map((file) => ({ file, size: statSync(file).size }));
 }
 
-const statePath = (): string => join(resolve(process.env.OSF_DATA ?? ".runlog"), "watch.json");
+const dataFolder = (): string => resolve(process.env.OSF_DATA ?? ".runlog");
+const statePath = (): string => join(dataFolder(), "watch.json");
 
 /** The size of each file watch is done with. */
 export function loadDone(): Record<string, number> {
@@ -25,7 +26,7 @@ export function loadDone(): Record<string, number> {
 }
 
 export function saveDone(done: Record<string, number>): void {
-  mkdirSync(resolve(process.env.OSF_DATA ?? ".runlog"), { recursive: true });
+  mkdirSync(dataFolder(), { recursive: true });
   writeFileSync(statePath(), `${JSON.stringify(done, null, 2)}\n`);
 }
 
