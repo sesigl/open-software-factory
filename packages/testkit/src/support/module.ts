@@ -1,6 +1,7 @@
 // Where a module, its artifact and its documented settings are, read from its files.
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { documentedEnv, readmeSection } from "./readme.ts";
 
 export function findModuleRoot(testFile: string): string {
   for (let dir = dirname(testFile); dir !== dirname(dir); dir = dirname(dir)) {
@@ -35,14 +36,10 @@ export function artifactOf(moduleRoot: string): string {
 }
 
 /** Environment variables named in backticks in the README's Configuration section. */
-export function documentedEnv(moduleRoot: string): Set<string> {
+export function moduleEnv(moduleRoot: string): Set<string> {
   const readme = join(moduleRoot, "README.md");
   if (!existsSync(readme)) return new Set();
-  const section =
-    readFileSync(readme, "utf8")
-      .split(/^## /m)
-      .find((part) => part.startsWith("Configuration")) ?? "";
-  return new Set([...section.matchAll(/`([A-Z_][A-Z0-9_]*)`/g)].map((match) => match[1] as string));
+  return documentedEnv(readFileSync(readme, "utf8"));
 }
 
 /**
@@ -80,10 +77,7 @@ export function listFiles(dir: string): string[] {
 /** The Quick start section of the module's README: the arguments of its `npx` line and the file it promises. */
 export function quickStart(moduleRoot: string): { args: string[]; output: string } {
   const readme = join(moduleRoot, "README.md");
-  const section =
-    (existsSync(readme) ? readFileSync(readme, "utf8") : "")
-      .split(/^## /m)
-      .find((part) => part.startsWith("Quick start")) ?? "";
+  const section = readmeSection(readFileSync(readme, "utf8"), "Quick start");
   const command = /^\s*npx\s+\S+[ \t]*(.*)$/m.exec(section);
   const output = /`\$OUTPUT\/([^`]+)`/.exec(section);
   if (!command || !output) {

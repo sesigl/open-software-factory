@@ -78,7 +78,8 @@ export function scanTypeScript(file: string, text: string, own?: string): TestFi
     if (name) result.imports.push({ name, line: declaration.getStartLineNumber() });
   }
   for (const declaration of source.getImportDeclarations()) {
-    if (own === undefined || declaration.getModuleSpecifierValue() !== own) continue;
+    const specifier = declaration.getModuleSpecifierValue();
+    if (own === undefined || (specifier !== own && !specifier.startsWith(`${own}/`))) continue;
     for (const named of declaration.getNamedImports())
       sources.add((named.getAliasNode() ?? named.getNameNode()).getText());
     const other = declaration.getDefaultImport() ?? declaration.getNamespaceImport();

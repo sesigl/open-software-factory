@@ -17,7 +17,6 @@ const SOURCE = /^(src|bin)\/.+\.(ts|tsx|js|mjs)$/;
 const TOOLS_SOURCE = /^tools\/(bin|checks|scaffold)\/.+\.ts$/;
 const SKIPPED = /(^|\/)__unit__\/|\.d\.ts$/;
 
-export const DUP_BASELINE = "docs/quality/duplication-baseline.json";
 const DUP_LIMIT = /Duplication:\s*at most\s*(\d+(?:\.\d+)?)\s*%/;
 const MUTATION_LIMIT = /Mutation score:\s*at least\s*(\d+(?:\.\d+)?)\s*%[^\n]*?(\d+(?:\.\d+)?)\s*%\s*in total/;
 
@@ -104,8 +103,6 @@ function clones(repo: Repo, files: string[]): Clone[] {
   }
 }
 
-const pairKey = (a: string, b: string): string => [a, b].sort().join(" ");
-
 /** `make new-module` copies the template, so a new module starts as a clone of it. */
 const TEMPLATE = "modules/_template";
 
@@ -150,29 +147,14 @@ export function dup(context: Context): Finding[] {
     for (const clone of local) findings.push(cloneFinding(clone, "extract the shared code into one function"));
   }
 
-  // Across units: none, except the clones the baseline lists. A listed clone that is gone leaves the baseline.
-  const baseline = readBaseline(repo);
-  const seen = new Set<string>();
+  // Across units: none. Only a new module may start as a clone of the template.
   for (const clone of found) {
     const first = unitOf.get(clone.first.file);
     const second = unitOf.get(clone.second.file);
     if (first === second || first === TEMPLATE || second === TEMPLATE) continue;
-    const key = pairKey(clone.first.file, clone.second.file);
-    seen.add(key);
-    if (baseline.has(key)) continue;
     findings.push(
-      cloneFinding(clone, "move the shared code into a package in packages/ or into contracts/ (ADR 0037)"),
+      cloneFinding(clone, "move the shared code into a package in packages/ or into contracts/ (ADR 0039)"),
     );
-  }
-  for (const [key, line] of baseline) {
-    if (!seen.has(key)) {
-      findings.push({
-        check: "DUP",
-        file: DUP_BASELINE,
-        line,
-        message: `the clone between ${key.replace(" ", " and ")} is gone: remove it from the baseline`,
-      });
-    }
   }
   return findings;
 }
@@ -184,16 +166,6 @@ function cloneFinding(clone: Clone, fix: string): Finding {
     line: clone.first.start,
     message: `${clone.lines} lines duplicate ${clone.second.file}:${clone.second.start}: ${fix}`,
   };
-}
-
-/** The file pairs of the cross-unit clones that existed when DUP started, each with its line in the baseline. */
-function readBaseline(repo: Repo): Map<string, number> {
-  const pairs = new Map<string, number>();
-  if (!repo.exists(DUP_BASELINE)) return pairs;
-  const text = repo.read(DUP_BASELINE);
-  const { clones: listed = [] } = JSON.parse(text) as { clones?: [string, string][] };
-  for (const [a, b] of listed) pairs.set(pairKey(a, b), lineOf(text, JSON.stringify(b)));
-  return pairs;
 }
 
 interface Mutant {

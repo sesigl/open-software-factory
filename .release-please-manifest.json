@@ -2,6 +2,7 @@
   "contracts": "1.4.0",
   "packages/testkit": "0.8.0",
   "packages/cli": "0.1.0",
+  "packages/spec-files": "0.0.0",
   "modules/factory-spec": "0.2.0",
   "modules/runlog": "0.4.0",
   "modules/proof": "0.3.0",

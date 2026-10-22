@@ -15,14 +15,13 @@
     "docs": "node bin/osf.ts docs ."
   },
   "dependencies": {
-    "@cucumber/gherkin": "42.0.1",
-    "@cucumber/messages": "34.2.1",
     "@opensoftware/contracts": "workspace:*",
+    "@opensoftware/spec-files": "workspace:*",
+    "@opensoftware/testkit": "workspace:*",
     "@stryker-mutator/core": "10.0.0",
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
     "dependency-cruiser": "18.6.0",
-    "fast-xml-parser": "5.11.2",
     "jscpd": "5.4.1",
     "picomatch": "4.0.7",
     "ts-morph": "28.0.0",
@@ -30,7 +29,6 @@
     "yaml": "2.9.1"
   },
   "devDependencies": {
-    "@opensoftware/testkit": "workspace:*",
     "@types/picomatch": "4.0.3"
   }
 }

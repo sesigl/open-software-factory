@@ -29,6 +29,13 @@
       "initial-version": "0.1.0",
       "bump-minor-pre-major": true
     },
+    "packages/spec-files": {
+      "release-type": "node",
+      "package-name": "@opensoftware/spec-files",
+      "component": "spec-files",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
+    },
     "modules/factory-spec": {
       "release-type": "node",
       "package-name": "@opensoftware/factory-spec",

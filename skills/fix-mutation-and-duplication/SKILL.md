@@ -33,10 +33,11 @@ Then rerun only the changed lines: `make mutation` (with `OSF_BASE` set, as `mak
 - **Inside a unit:** extract the repeated code into one function in the lowest layer both places may import.
 - **Across units:** move the code into a library in `packages/` (no CLI, no state, its own scenarios) or, when it
   reads or writes a shared format, into `contracts/`. Check the existing libraries first: `@opensoftware/cli`
-  (commands, exit codes, input and output files) and `runSpans` in `@opensoftware/contracts` (run records). A new
+  (commands, exit codes, input and output files), `@opensoftware/spec-files` (feature files, JUnit reports),
+  `@opensoftware/testkit/readme` (README rules) and `runSpans` in `@opensoftware/contracts` (run records). A new
   library follows the layout in ADR 0039 (`packages/cli` is an example) and needs its own ADR
-  (`skills/write-adr`). Then delete the copies and the pair's entry in `docs/quality/duplication-baseline.json`.
-- Never add an entry to the baseline.
+  (`skills/write-adr`). Then delete the copies.
+- There is no baseline of allowed clones: DUP fails every clone across units.
 
 ## Keep the tests fast
 

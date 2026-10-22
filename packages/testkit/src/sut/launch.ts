@@ -1,7 +1,7 @@
 // How the testkit starts the module's artifact: one command, one working folder and a checked environment.
 import { extname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
-import { artifactOf, documentedEnv, repoRoot, workspaceOf } from "../support/module.ts";
+import { artifactOf, moduleEnv, repoRoot, workspaceOf } from "../support/module.ts";
 import { baseEnv, FIXED_DATE, FIXED_SEED } from "../support/process.ts";
 import type { Folders } from "./sut.ts";
 
@@ -35,7 +35,7 @@ function builtArtifact(moduleRoot: string): string {
 export function makeLaunch(moduleRoot: string, dirs: Folders, hosts: () => string[]): Launch {
   // A library in packages/ has no bin: its tests never launch it, so the artifact is looked up on the first launch.
   let artifact: string | undefined;
-  const documented = documentedEnv(moduleRoot);
+  const documented = moduleEnv(moduleRoot);
   const coverage = coverageEnv(moduleRoot);
   return (args, env = {}) => {
     artifact ??= builtArtifact(moduleRoot);
