@@ -1,0 +1,83 @@
+# The taskcapture dogfood (ADR 0045): a suite from this repository's merged pull requests, run every night with
+# Harbor's oracle agent (the pull request's own change) and its nop agent (no change). The run fails unless the
+# oracle solves every task and the no-op agent solves none. Neither agent calls a model, so the run costs nothing.
+name: taskcapture suite
+
+on:
+  schedule:
+    - cron: "23 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: taskcapture-suite
+  cancel-in-progress: true
+
+jobs:
+  suite:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # capture reads the merge commits and their parents
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The taskcapture of this commit, so the suite never waits for a release.
+      - run: pnpm exec turbo run build --filter=@opensoftware/taskcapture...
+      - uses: astral-sh/setup-uv@v6
+      - run: uv tool install harbor==0.24.0
+      # Pull requests whose system tests need no Docker, since a Harbor task runs in a container without one.
+      - name: Capture the suite
+        env:
+          TASKCAPTURE_FORGE_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          while read -r number package; do
+            node modules/taskcapture/dist/cli.js capture --git . --suite "$RUNNER_TEMP/suite" \
+              --image node:24-bookworm --setup "corepack enable && pnpm install --frozen-lockfile" \
+              --test-command "pnpm install --frozen-lockfile && pnpm exec turbo run test:system --filter=$package" \
+              "$REPOSITORY/pull/$number"
+          done <<'PULLS'
+          45 @opensoftware/spec-trace
+          47 @opensoftware/spec-trace
+          49 @opensoftware/scorekit
+          52 @opensoftware/scorekit
+          PULLS
+      - name: Run the oracle and the no-op agent
+        run: |
+          for agent in oracle nop; do
+            node modules/taskcapture/dist/cli.js run --suite "$RUNNER_TEMP/suite" --jobs "$RUNNER_TEMP/jobs" \
+              --agent "$agent" --configuration "$agent" --out "$RUNNER_TEMP/$agent.json"
+          done
+      - name: Report
+        run: |
+          node modules/taskcapture/dist/cli.js report --out "$RUNNER_TEMP/report.json" \
+            --markdown "$RUNNER_TEMP/report.md" "$RUNNER_TEMP/jobs/oracle" "$RUNNER_TEMP/jobs/nop"
+          cat "$RUNNER_TEMP/report.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Check that the oracle solves every task and the no-op agent none
+        run: |
+          node -e '
+            const { cells } = require(process.argv[1]);
+            const cell = (agent) => cells.find((c) => c.configuration === agent);
+            const oracle = cell("oracle");
+            const nop = cell("nop");
+            const problems = [];
+            if (!oracle || oracle.incomplete || oracle.correctness !== 1) problems.push("the oracle does not solve every task");
+            if (!nop || nop.incomplete || nop.correctness !== 0) problems.push("the no-op agent solves a task");
+            if (problems.length) { console.error(problems.join("\n")); process.exit(1); }
+          ' "$RUNNER_TEMP/report.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: taskcapture-suite
+          path: |
+            ${{ runner.temp }}/jobs/
+            ${{ runner.temp }}/report.*

@@ -28,6 +28,7 @@ Use these terms in scenarios, code, UI text and docs.
 | Score | The result of one scorer on one run. |
 | Benchmark suite | A set of real tasks captured from past work, replayed to compare configurations. |
 | Cell | One configuration and one model in a benchmark report, with its correctness and average cost per trial. |
+| Replay | Running a captured task again with no side effects: during its run the agent reaches only the model gateway, never a real chat or forge. |
 | Hidden tests | The tests of a captured pull request: the agent never sees them; they decide the task's reward. |
 | Routing rule | A rule in the LLM gateway that picks a model for a class of tasks. |
 | Self-improvement | The loop that turns repeated failures into reviewed changes to the factory definition. |

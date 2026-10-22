@@ -67,6 +67,10 @@ A file is a test when its path matches `--tests`, a regular expression. The defa
 A repository with a `package.json` gets the image `node:24-bookworm`, `npm install` and `npm test`. Set others with
 `--image`, `--setup` and `--test-command`; a repository without a `package.json` needs `--test-command`.
 
+`capture --run <run record>` captures the pull request of a run that runlog recorded, so a hard task joins the
+benchmark from its run. A run that names several pull requests needs the one to capture as the argument. The task's
+`[metadata]` names the run, its harness, its model and its cost.
+
 capture clones the repository the URL names, or reads the clone given with `--git`. It reads the pull request
 from the forge API: GitHub for `/pull/<n>`, Forgejo for `/pulls/<n>`, or the kind `--forge` names. For a private
 repository, set `TASKCAPTURE_FORGE_TOKEN`; the token goes to the API and to Git and never into the task.
@@ -77,12 +81,25 @@ agents to copy `.env` into `notes.txt`. The reward is 1 only when the agent fixe
 
 ## Run the suite
 
-Run each configuration as its own Harbor job, so the job folder (`jobs/<job name>`) names the configuration, for
-example a factory version:
+`taskcapture run` starts [Harbor](https://harborframework.com) once per configuration, then writes the report of
+those jobs ([ADR 0045](../../docs/decisions/0045-taskcapture-run.md)). Install Harbor first with
+`uv tool install harbor`, or set `TASKCAPTURE_HARBOR` to the command that starts it.
 
 ```sh
-harbor run --path suite --agent claude-code --model anthropic/claude-sonnet-5-5 --model openrouter/z-ai/glm-5.3-flash --job-name v1
+npx @opensoftware/taskcapture run --agent claude-code \
+  --model anthropic/claude-sonnet-5-5 --model openrouter/z-ai/glm-5.3-flash \
+  --configuration v1 --configuration v2=harbor-v2.yaml --allow-host llm.example.com
 ```
+
+Each configuration is one Harbor job, `jobs/<name>` below `$OUTPUT` (or `--jobs`), with every model. The job
+folder names the configuration in the report, for example a factory version. `name=<file>` passes a Harbor job
+config file to that job, for agent options, another environment or more attempts. Without `--configuration`, the one
+job is named `default`. Harbor's agents `oracle` (the pull request's own change) and `nop` (no change) need no model.
+After the last job, `run` writes `report.json` like `report`, with `--out`, `--markdown` and `--chart`.
+
+A replay has no side effects: every captured task sets `network_mode = "no-network"` for its agent, so the agent
+reaches only the hosts of `--allow-host`, normally your model gateway. A call to a real chat or forge fails. Setup
+and the tests keep the network, so `npm install` works.
 
 ## Report and route
 
@@ -103,9 +120,17 @@ other deployments of your LiteLLM config.
 
 | Command | What it does |
 | --- | --- |
-| `taskcapture capture [options] <pull request URL>` | Write the merged pull request as a Harbor task into the suite. |
+| `taskcapture capture [options] [--run <run record>] <pull request URL>` | Write the merged pull request as a Harbor task into the suite. |
+| `taskcapture run --agent <agent> [--model]... [--configuration]... [--allow-host]...` | Run the suite with Harbor, one job per configuration, then report. |
 | `taskcapture report [--out] [--markdown] [--chart] <job folder>...` | Correctness and cost per configuration and model to `$OUTPUT/report.json`. |
 | `taskcapture route --tag <tag> --alias <name> [--model \| --min-correctness] [--config] <report.json>` | A LiteLLM config that routes the tag to the chosen model. |
+
+## Our own suite
+
+The workflow [`taskcapture-suite.yml`](../../.github/workflows/taskcapture-suite.yml) captures some of this
+repository's merged pull requests every night and runs them with Harbor's `oracle` and `nop` agents. It fails unless
+the oracle solves every task and the no-op agent solves none: then each task can be solved, and its hidden tests
+fail without the change. Neither agent calls a model. The report is in the job summary.
 
 ## Releases
 
@@ -122,9 +147,10 @@ the minor version. The one-time setup is the same as for contracts
 
 | Variable | Type | Default | Meaning |
 | --- | --- | --- | --- |
-| `OUTPUT` | string | `"."` | Folder of the suite, report.json and litellm-config.yaml when --suite or --out is not given. |
+| `OUTPUT` | string | `"."` | Folder of the suite, the jobs, report.json and litellm-config.yaml when --suite, --jobs or --out is not given. |
 | `TASKCAPTURE_FORGE_URL` | string |  | Base URL of the forge API for capture. Default: https://api.github.com for github.com, <origin>/api/v3 for another GitHub host, <origin>/api/v1 for Forgejo. |
 | `TASKCAPTURE_FORGE_TOKEN` | string |  | Token that may read the repository, for capture: sent to the forge API and to git clone. Without it, capture reads a public repository. Never written into a task. |
+| `TASKCAPTURE_HARBOR` | string | `"harbor"` | The command that starts Harbor for run: a program and its first words, separated by spaces, like "uvx --from harbor==0.24.0 harbor". |
 
 ## Scenarios
 
@@ -173,3 +199,20 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-TASK-039 | implemented | A "--tests" that is not a regular expression exits 2 |
 | SCN-TASK-040 | implemented | A pull request URL that names no pull request exits 2 |
 | SCN-TASK-041 | implemented | A pull request on a GitHub Enterprise host is read from the host's "/api/v3" |
+| SCN-TASK-042 | implemented | A matrix of 2 configurations and 2 models runs one Harbor job per configuration |
+| SCN-TASK-043 | implemented | Run reports correctness against cost over the jobs it ran |
+| SCN-TASK-044 | implemented | A configuration with a Harbor config file passes the file to its job |
+| SCN-TASK-045 | implemented | The option "--allow-host" is the only host the agent may reach |
+| SCN-TASK-046 | implemented | Without "--configuration" the one job is named "default" |
+| SCN-TASK-047 | implemented | A Harbor job that fails exits 1 and writes no report |
+| SCN-TASK-048 | implemented | A Harbor that cannot be started exits 1 and says how to install it |
+| SCN-TASK-049 | implemented | Run needs an agent |
+| SCN-TASK-050 | implemented | A suite without a task exits 2 |
+| SCN-TASK-051 | implemented | A configuration name that is not a folder name exits 2 |
+| SCN-TASK-052 | implemented | The agent of a task has no network during its run |
+| SCN-TASK-053 | implemented | The pull request of a run becomes a task that names the run |
+| SCN-TASK-054 | implemented | A run that names several pull requests needs the one to capture |
+| SCN-TASK-055 | implemented | A run captures the pull request named next to it |
+| SCN-TASK-056 | implemented | A pull request the run does not name exits 2 |
+| SCN-TASK-057 | implemented | A run without a pull request exits 2 |
+| SCN-TASK-058 | implemented | A file that is no run record exits 2 |

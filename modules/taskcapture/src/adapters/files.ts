@@ -31,3 +31,9 @@ export function findFiles(paths: string[], name: string): string[] {
   for (const path of paths) walk(path);
   return found;
 }
+
+/** The folders right below `suite` that hold a task.toml: the tasks of a Harbor suite. */
+export function taskFolders(suite: string): string[] {
+  if (!existsSync(suite)) return [];
+  return readdirSync(suite).filter((entry) => existsSync(join(suite, entry, "task.toml")));
+}

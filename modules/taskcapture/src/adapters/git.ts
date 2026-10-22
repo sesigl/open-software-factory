@@ -3,7 +3,7 @@
 import { execFile } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import type { Change } from "../domain/task.ts";
 
 const git = (cwd: string, args: string[], extra: string[] = []): Promise<Buffer> =>
@@ -69,7 +69,8 @@ export async function hasFile(dir: string, commit: string, path: string): Promis
 
 /** Writes the tree of `commit` into the folder `target`. */
 export async function extractTree(dir: string, commit: string, target: string): Promise<void> {
-  const archive = join(target, "..", ".repo.tar");
+  // Absolute, since git runs in the repository and the target may be relative to the working folder.
+  const archive = resolve(target, "..", ".repo.tar");
   await git(dir, ["archive", "--format=tar", "-o", archive, commit]);
   await new Promise<void>((resolve, reject) =>
     execFile("tar", ["-xf", archive, "-C", target], (error, _out, stderr) =>

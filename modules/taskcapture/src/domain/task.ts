@@ -1,6 +1,7 @@
 // The files of one Harbor task (ADR 0043): which changed files are tests, and the text of instruction.md,
 // task.toml, the Dockerfile, tests/test.sh and solution/solve.sh. The repository snapshot and the changed files'
 // contents are copied by the adapters.
+import type { SourceRun } from "./run.ts";
 
 /** The default of --tests: test folders, *.test.*, *.spec.*, test_*.py and *_test.go. */
 export const TEST_FILES = String.raw`(^|/)(tests?|__tests__|spec|system-tests)/|\.(test|spec)\.[^/]+$|(^|/)test_[^/]+\.py$|_test\.go$`;
@@ -54,6 +55,9 @@ export function environment(
   };
 }
 
+/** During its run the agent reaches no network, except the hosts of `taskcapture run --allow-host` (ADR 0045). */
+export const AGENT_NETWORK = 'network_mode = "no-network"';
+
 const quote = (path: string): string => `'${path.replaceAll("'", `'\\''`)}'`;
 const removals = (paths: string[]): string[] => paths.map((path) => `rm -f -- ${quote(path)}`);
 const toml = (value: string): string => JSON.stringify(value);
@@ -64,6 +68,19 @@ export interface TaskSource {
   body: string;
   mergeCommit: string;
   parentCommit: string;
+  /** The run the task was captured from (capture --run). */
+  run?: SourceRun;
+}
+
+/** The [metadata] lines of the run a task was captured from. */
+function runMetadata(run: SourceRun | undefined): string[] {
+  if (!run) return [];
+  return [
+    `run_id = ${toml(run.id)}`,
+    ...(run.harness ? [`run_harness = ${toml(run.harness)}`] : []),
+    ...(run.model ? [`run_model = ${toml(run.model)}`] : []),
+    ...(run.costUsd === undefined ? [] : [`run_cost_usd = ${run.costUsd}`]),
+  ];
 }
 
 /** The text files of the task, keyed by their path in the task folder. */
@@ -77,6 +94,7 @@ export function taskFiles(source: TaskSource, split: Split, env: Environment): R
       `source = ${toml(source.url)}`,
       `merge_commit = ${toml(source.mergeCommit)}`,
       `parent_commit = ${toml(source.parentCommit)}`,
+      ...runMetadata(source.run),
       'captured_by = "taskcapture"',
       "",
       "[verifier]",
@@ -84,6 +102,7 @@ export function taskFiles(source: TaskSource, split: Split, env: Environment): R
       "",
       "[agent]",
       "timeout_sec = 1800.0",
+      AGENT_NETWORK,
       "",
       "[environment]",
       "build_timeout_sec = 900.0",
