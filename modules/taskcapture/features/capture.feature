@@ -168,13 +168,13 @@ Feature: Capture a merged pull request as a Harbor task
     Then the command exits with code 0
     And "suite/web-7/task.toml" names the source "<host>/acme/web/pull/7"
 
-  @id=SCN-TASK-052 @status=planned @realizes=SCN-FACTORY-BENCH-002
+  @id=SCN-TASK-052 @status=implemented @realizes=SCN-FACTORY-BENCH-002
   Scenario: The agent of a task has no network during its run
     Given a merged GitHub pull request 7 that changes "src/sum.js" from "a - b" to "a + b" and adds "test/sum.test.js"
     When the user runs "taskcapture capture --git . https://github.com/acme/web/pull/7" with "TASKCAPTURE_FORGE_URL" set to the GitHub API
     Then "suite/web-7/task.toml" has in "[agent]" the network mode "no-network"
 
-  @id=SCN-TASK-053 @status=planned @realizes=SCN-FACTORY-BENCH-001
+  @id=SCN-TASK-053 @status=implemented @realizes=SCN-FACTORY-BENCH-001
   Scenario: The pull request of a run becomes a task that names the run
     Given a run record "run-1.json" of the run "run-1" by "claude-code" with the model "claude-sonnet-5-5" for 2.4 USD that names the pull request "https://github.com/acme/web/pull/7"
     And a merged GitHub pull request 7 that changes "src/sum.js" from "a - b" to "a + b" and adds "test/sum.test.js"
@@ -183,14 +183,14 @@ Feature: Capture a merged pull request as a Harbor task
     And the output says "wrote the task web-7 to"
     And "suite/web-7/task.toml" has in "[metadata]" the run "run-1", the harness "claude-code", the model "claude-sonnet-5-5" and the cost 2.4
 
-  @id=SCN-TASK-054 @status=planned
+  @id=SCN-TASK-054 @status=implemented
   Scenario: A run that names several pull requests needs the one to capture
     Given a run record "run-1.json" of the run "run-1" that names the pull requests "https://github.com/acme/web/pull/7" and "https://github.com/acme/web/pull/8"
     When the user runs "taskcapture capture --git . --run run-1.json"
     Then the command exits with code 2
     And the error output says "taskcapture: the run run-1 names 2 pull requests; name one: https://github.com/acme/web/pull/7, https://github.com/acme/web/pull/8"
 
-  @id=SCN-TASK-055 @status=planned
+  @id=SCN-TASK-055 @status=implemented
   Scenario: A run captures the pull request named next to it
     Given a run record "run-1.json" of the run "run-1" that names the pull requests "https://github.com/acme/web/pull/7" and "https://github.com/acme/web/pull/8"
     And a merged GitHub pull request 7 that changes "src/sum.js" from "a - b" to "a + b" and adds "test/sum.test.js"
@@ -198,21 +198,21 @@ Feature: Capture a merged pull request as a Harbor task
     Then the command exits with code 0
     And "suite/web-7/task.toml" has in "[metadata]" the run "run-1"
 
-  @id=SCN-TASK-056 @status=planned
+  @id=SCN-TASK-056 @status=implemented
   Scenario: A pull request the run does not name exits 2
     Given a run record "run-1.json" of the run "run-1" that names the pull requests "https://github.com/acme/web/pull/7" and "https://github.com/acme/web/pull/8"
     When the user runs "taskcapture capture --git . --run run-1.json https://github.com/acme/web/pull/9"
     Then the command exits with code 2
     And the error output says "taskcapture: the run run-1 names no pull request https://github.com/acme/web/pull/9"
 
-  @id=SCN-TASK-057 @status=planned
+  @id=SCN-TASK-057 @status=implemented
   Scenario: A run without a pull request exits 2
     Given a run record "run-1.json" of the run "run-1" that names no pull request
     When the user runs "taskcapture capture --git . --run run-1.json"
     Then the command exits with code 2
     And the error output says "taskcapture: the run run-1 names no pull request"
 
-  @id=SCN-TASK-058 @status=planned
+  @id=SCN-TASK-058 @status=implemented
   Scenario: A file that is no run record exits 2
     Given a file "notes.json" that holds "{}"
     When the user runs "taskcapture capture --git . --run notes.json"
