@@ -1,0 +1,36 @@
+{
+  "name": "@opensoftware/observer",
+  "version": "0.0.0",
+  "description": "observer: groups failed scores into problems, proposes fixes to agent instructions as reviewed pull requests, and checks whether the failure rate fell.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "modules/observer"
+  },
+  "type": "module",
+  "bin": {
+    "observer": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "vitest run",
+    "docs": "node ../../tools/bin/osf.ts docs .",
+    "mutation": "node ../../tools/bin/osf.ts mutation ."
+  },
+  "devDependencies": {
+    "@opensoftware/testkit": "workspace:*"
+  },
+  "dependencies": {
+    "@opensoftware/cli": "workspace:*",
+    "@opensoftware/contracts": "workspace:*"
+  }
+}

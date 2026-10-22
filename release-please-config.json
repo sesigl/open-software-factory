@@ -84,6 +84,13 @@
       "component": "taskcapture",
       "initial-version": "0.1.0",
       "bump-minor-pre-major": true
+    },
+    "modules/observer": {
+      "release-type": "node",
+      "package-name": "@opensoftware/observer",
+      "component": "observer",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
     }
   }
 }
