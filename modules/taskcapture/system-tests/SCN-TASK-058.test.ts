@@ -1,8 +1,8 @@
 import { scenario } from "@opensoftware/testkit";
 
 scenario("SCN-TASK-058", async ({ sut, given, when, then }) => {
-  await given('a file "notes.json" that holds "{}"', async () => {
-    await sut.files.put("$INPUT/notes.json", "{}\n");
+  await given('a file "notes.json" that holds "no JSON"', async () => {
+    await sut.files.put("$INPUT/notes.json", "no JSON\n");
   });
 
   let run: Awaited<ReturnType<typeof sut.cli>>;

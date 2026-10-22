@@ -67,6 +67,10 @@ A file is a test when its path matches `--tests`, a regular expression. The defa
 A repository with a `package.json` gets the image `node:24-bookworm`, `npm install` and `npm test`. Set others with
 `--image`, `--setup` and `--test-command`; a repository without a `package.json` needs `--test-command`.
 
+`capture --run <run record>` captures the pull request of a run that runlog recorded, so a hard task joins the
+benchmark from its run. A run that names several pull requests needs the one to capture as the argument. The task's
+`[metadata]` names the run, its harness, its model and its cost.
+
 capture clones the repository the URL names, or reads the clone given with `--git`. It reads the pull request
 from the forge API: GitHub for `/pull/<n>`, Forgejo for `/pulls/<n>`, or the kind `--forge` names. For a private
 repository, set `TASKCAPTURE_FORGE_TOKEN`; the token goes to the API and to Git and never into the task.
@@ -77,12 +81,25 @@ agents to copy `.env` into `notes.txt`. The reward is 1 only when the agent fixe
 
 ## Run the suite
 
-Run each configuration as its own Harbor job, so the job folder (`jobs/<job name>`) names the configuration, for
-example a factory version:
+`taskcapture run` starts [Harbor](https://harborframework.com) once per configuration, then writes the report of
+those jobs ([ADR 0045](../../docs/decisions/0045-taskcapture-run.md)). Install Harbor first with
+`uv tool install harbor`, or set `TASKCAPTURE_HARBOR` to the command that starts it.
 
 ```sh
-harbor run --path suite --agent claude-code --model anthropic/claude-sonnet-5-5 --model openrouter/z-ai/glm-5.3-flash --job-name v1
+npx @opensoftware/taskcapture run --agent claude-code \
+  --model anthropic/claude-sonnet-5-5 --model openrouter/z-ai/glm-5.3-flash \
+  --configuration v1 --configuration v2=harbor-v2.yaml --allow-host llm.example.com
 ```
+
+Each configuration is one Harbor job, `jobs/<name>` below `$OUTPUT` (or `--jobs`), with every model. The job
+folder names the configuration in the report, for example a factory version. `name=<file>` passes a Harbor job
+config file to that job, for agent options, another environment or more attempts. Without `--configuration`, the one
+job is named `default`. Harbor's agents `oracle` (the pull request's own change) and `nop` (no change) need no model.
+After the last job, `run` writes `report.json` like `report`, with `--out`, `--markdown` and `--chart`.
+
+A replay has no side effects: every captured task sets `network_mode = "no-network"` for its agent, so the agent
+reaches only the hosts of `--allow-host`, normally your model gateway. A call to a real chat or forge fails. Setup
+and the tests keep the network, so `npm install` works.
 
 ## Report and route
 
@@ -103,9 +120,17 @@ other deployments of your LiteLLM config.
 
 | Command | What it does |
 | --- | --- |
-| `taskcapture capture [options] <pull request URL>` | Write the merged pull request as a Harbor task into the suite. |
+| `taskcapture capture [options] [--run <run record>] <pull request URL>` | Write the merged pull request as a Harbor task into the suite. |
+| `taskcapture run --agent <agent> [--model]... [--configuration]... [--allow-host]...` | Run the suite with Harbor, one job per configuration, then report. |
 | `taskcapture report [--out] [--markdown] [--chart] <job folder>...` | Correctness and cost per configuration and model to `$OUTPUT/report.json`. |
 | `taskcapture route --tag <tag> --alias <name> [--model \| --min-correctness] [--config] <report.json>` | A LiteLLM config that routes the tag to the chosen model. |
+
+## Our own suite
+
+The workflow [`taskcapture-suite.yml`](../../.github/workflows/taskcapture-suite.yml) captures some of this
+repository's merged pull requests every night and runs them with Harbor's `oracle` and `nop` agents. It fails unless
+the oracle solves every task and the no-op agent solves none: then each task can be solved, and its hidden tests
+fail without the change. Neither agent calls a model. The report is in the job summary.
 
 ## Releases
 
