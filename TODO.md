@@ -391,7 +391,7 @@ read them for ideas, do not copy their company-specific rules.
     store, refusal of anyone outside the groups, escalation after a timeout, expiry, Ed25519-signed records, the events
     `gate.requested@v1` and `gate.decided@v1` on NATS, the commit status `gatekeeper`, the GitHub Action, the dogfood
     workflow `gatekeeper.yml` with `.github/gatekeeper/` (factory-made pull requests need a maintainer), fake Slack's
-    `auth.test`, and the npm release (ADR 0047, `SCN-GATE-001` to `-036`, `SCN-TK-051`).
+    `auth.test`, and the npm release (ADR 0047, `SCN-GATE-001` to `-040`, `SCN-TK-051`).
   - [ ] Require the commit status `gatekeeper` on `main` in the branch protection of this repository (a setting of the
     owner).
   - [ ] HTTP API with its OpenAPI in `contracts/` (`gatekeeper serve`): requests over HTTP, Slack's Events API and
