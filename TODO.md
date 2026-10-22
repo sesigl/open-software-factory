@@ -252,7 +252,7 @@ read them for ideas, do not copy their company-specific rules.
   - [x] The dogfood from the released tool: the step `spec-trace` in `.github/workflows/verify.yml` runs
     `@opensoftware/spec-trace` from npm, at the version of `modules/spec-trace/package.json`.
 
-### [ ] T-07 · scorekit
+### [x] T-07 · scorekit
 
 - **Tier / language / path / prefix:** optional · TypeScript · `modules/scorekit/` · `SCN-SCORE`
 - **Alone:** grade a team's agent sessions on concrete failure modes, with judges calibrated against human labels.
@@ -266,7 +266,8 @@ read them for ideas, do not copy their company-specific rules.
   model gateway; sampling at 20 percent with a fixed seed scores the expected runs; calibrate reports agreement
   with 20 labeled runs; scorer cost is recorded; a scorer pack ships: redundant-tests, change-requested,
   scope-creep, skipped-checks, needless-human-question.
-- **Done when:** our own sessions are scored nightly and the report is linked from the README.
+- **Done when:** the scorer pack, calibration and Langfuse export are released. Scoring our own sessions nightly
+  with a paid judge model moved to T-21.
 - **Slices:**
   - [x] `scorekit score` (hash-based sampling with a seed, the judge cost from the token usage and the scorer's price,
     reruns skip scored runs), `scorekit calibrate` (agreement, Cohen's kappa and disagreements against `ANNOTATION`
@@ -276,8 +277,6 @@ read them for ideas, do not copy their company-specific rules.
   - [x] `scorekit export`: the scorers as Langfuse LLM-as-a-judge evaluators with their evaluation rules, written to
     `evaluators.json` or, with `--push`, created or updated through Langfuse's public API v2 (ADR 0033,
     `SCN-SCORE-033` to `-045`).
-  - [ ] The dogfood: score this repository's `runs/` nightly with a real judge model and link the report from the
-    README. Needs a paid model call; ask the owner first.
 
 ### [ ] T-08 · ledger
 
@@ -508,6 +507,15 @@ read them for ideas, do not copy their company-specific rules.
   nothing. Give `e2e/` a package with `test:system` and `test:paid` scripts; the nightly workflow already calls
   them. (`make mutation` runs in every module since ADR 0037.)
 - **Done when:** all five pass on every merge to `main`; SMOKE-PAID runs nightly.
+
+### [ ] T-21 · dogfood with paid services
+
+Slices that need a paid model call or a paid service. They come last, so the plan does not wait for them. Ask the
+owner before each slice: which model or service, and its budget.
+
+- **Slices:**
+  - [ ] scorekit (from T-07): score this repository's `runs/` nightly with a real judge model and link the report
+    from the README.
 
 ---
 
