@@ -41,13 +41,16 @@ scenario("SCN-OBS-027", async ({ sut, fakes, given, when, then }) => {
     },
   );
 
-  await then(`the forge got a comment on the pull request 12 that says "${LINE}"`, async () => {
-    expect(forge.received()).toContainEqual({
-      method: "POST",
-      path: "/repos/acme/factory/issues/12/comments",
-      body: { body: LINE },
-    });
-  });
+  await then(
+    'the forge got a comment on the pull request 12 that says "research-skill-used: 75.0% before (30 of 40 runs), 10.0% after (2 of 20 runs): fell"',
+    async () => {
+      expect(forge.received()).toContainEqual({
+        method: "POST",
+        path: "/repos/acme/factory/issues/12/comments",
+        body: { body: LINE },
+      });
+    },
+  );
 
   await then('the comment was sent with the header "authorization: token forge-token"', async () => {
     const sent = forge.headers().find((request) => request.method === "POST");
