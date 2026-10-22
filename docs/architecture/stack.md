@@ -88,6 +88,7 @@ publish only the TypeScript package; clients for other languages are not built (
 | Secrets | OpenBao | Vault moved to the Business Source License |
 | Trace store | Langfuse (full); Arize Phoenix (light) | Langfuse brings ClickHouse, Valkey and S3 |
 | Agent memory | pgvector first | no extra service |
+| Gate policies | OPA (Rego) through its CLI | Cedar answers only allow or deny; the factory definition names Rego (ADR 0047) |
 
 ## Revisit when
 
