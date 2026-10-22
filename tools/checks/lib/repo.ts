@@ -81,9 +81,3 @@ export function isLibrary(repo: Repo, unit: string): boolean {
   if (!/^packages\/[^/]+$/.test(unit) || !repo.exists(manifest)) return false;
   return (JSON.parse(repo.read(manifest)) as { bin?: unknown }).bin === undefined;
 }
-
-/** Environment variables named in backticks in the Configuration section of a README. */
-export function documentedEnv(readme: string): Set<string> {
-  const section = readme.split(/^## /m).find((part) => part.startsWith("Configuration")) ?? "";
-  return new Set([...section.matchAll(/`([A-Z_][A-Z0-9_]*)`/g)].map((match) => match[1] as string));
-}

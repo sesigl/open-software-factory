@@ -103,6 +103,13 @@ Every server, client and subscription stops when the scenario ends, before the f
 
 A `planned` scenario's test must fail; when it passes, the testkit fails it and asks for `@status=implemented`.
 
+## README rules for checks
+
+`@opensoftware/testkit/readme` gives programs the README rules the testkit applies when a test starts a module:
+`documentedEnv(readme)` is the set of variables named in backticks in the Configuration section, and
+`readmeSection(readme, heading)` the text of one `## ` section. The BOUNDARY-ENV check uses them
+([ADR 0042](../../docs/decisions/0042-spec-files-library.md)).
+
 ## Runtime guards
 
 - BOUNDARY-RUNTIME: every surface starts the module's built `bin` in its own process, with `$INPUT` as its
@@ -197,4 +204,6 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-044 | implemented | The module runs the mutant that Stryker activates |
 | SCN-TK-045 | implemented | sut.files.path gives the absolute path of a file in $INPUT |
 | SCN-TK-046 | implemented | A library without a bin uses sut.files |
+| SCN-TK-047 | implemented | documentedEnv gives the variables named in the Configuration section |
+| SCN-TK-048 | implemented | readmeSection gives an empty text for a missing section |
 | SCN-TK-049 | implemented | fakes.forge merges a pull request, so a module can read the merge commit |

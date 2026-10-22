@@ -32,8 +32,8 @@
   "dependencies": {
     "@opensoftware/cli": "workspace:*",
     "@opensoftware/contracts": "workspace:*",
+    "@opensoftware/spec-files": "workspace:*",
     "aws4fetch": "1.0.20",
-    "fast-xml-parser": "5.11.2",
     "playwright-core": "1.56.1"
   }
 }

@@ -134,6 +134,14 @@ Feature: Repository checks
     Then the command exits with code 0
     And the output contains "ASSERT ok"
 
+  @id=SCN-REPO-061 @status=implemented
+  Scenario: ASSERT accepts a then step that asserts on what a subpath export of the package returned
+    Given a repository with the library "packages/money" named "@opensoftware/money" and the implemented scenario "SCN-MONEY-001"
+    And its system test asserts on the value that "cents" from "@opensoftware/money/rates" returned
+    When the developer runs "osf check ASSERT"
+    Then the command exits with code 0
+    And the output contains "ASSERT ok"
+
   @id=SCN-REPO-013 @status=implemented
   Scenario: FLAKE rejects a test that passed only on retry
     Given a repository with the implemented scenario "SCN-DEMO-001" and its system test

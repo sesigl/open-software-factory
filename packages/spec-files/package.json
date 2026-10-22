@@ -1,0 +1,39 @@
+{
+  "name": "@opensoftware/spec-files",
+  "version": "0.0.0",
+  "description": "Read the scenarios of Gherkin feature files and the test cases of JUnit reports, for the open software factory.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "packages/spec-files"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "vitest run",
+    "mutation": "node ../../tools/bin/osf.ts mutation ."
+  },
+  "dependencies": {
+    "@cucumber/gherkin": "42.0.1",
+    "@cucumber/messages": "34.2.1",
+    "fast-xml-parser": "5.11.2"
+  },
+  "devDependencies": {
+    "@opensoftware/testkit": "workspace:*"
+  }
+}

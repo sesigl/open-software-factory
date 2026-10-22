@@ -22,7 +22,7 @@ Feature: Quality limits
     And the output contains "duplicate modules/payroll/src/sum.ts"
     And the output contains "move the shared code into a package in packages/ or into contracts/"
 
-  @id=SCN-REPO-046 @status=implemented
+  @id=SCN-REPO-046 @status=deprecated
   Scenario: DUP rejects a baseline entry whose clone is gone
     Given the modules "billing" and "payroll" with the limit "Duplication: at most 3%" and no clone between them
     And "docs/quality/duplication-baseline.json" lists a clone between their files "src/sum.ts"

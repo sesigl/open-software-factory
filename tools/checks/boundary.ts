@@ -1,7 +1,9 @@
 // BOUNDARY-STATIC, BOUNDARY-ENV, ISOLATION, NOSKIP and ASSERT: how tests and modules reach each other.
+
+import { documentedEnv } from "@opensoftware/testkit/readme";
 import { cruise, type ICruiseResult, type IForbiddenRuleType, type IReporterOutput } from "dependency-cruiser";
 import type { Context } from "./lib/context.ts";
-import { documentedEnv, type Finding, isLibrary, lineOf, moduleRootOf } from "./lib/repo.ts";
+import { type Finding, isLibrary, lineOf, moduleRootOf } from "./lib/repo.ts";
 
 /** What every system test may import besides its own folder. */
 const TEST_IMPORTS = [

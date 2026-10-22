@@ -1,0 +1,95 @@
+# Publishes a spec-files release to npm as @opensoftware/spec-files. The one-time setup is in
+# packages/spec-files/README.md#releases.
+name: publish-spec-files
+
+on:
+  # release-please creates the spec-files-v* release with GITHUB_TOKEN, and such a release starts no `release` or tag
+  # workflow. workflow_run does follow it; the release job below publishes only when the run's commit carries a tag.
+  workflow_run:
+    workflows: [release-please]
+    types: [completed]
+    branches: [main]
+  # Publishes a release again, for example after a failed upload. npm refuses a version it already has.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag, for example spec-files-v1.0.0
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-spec-files
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: tag
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if [ -n "$INPUT_TAG" ]; then
+            tag="$INPUT_TAG"
+          else
+            tag=$(git tag --points-at "$HEAD_SHA" --list 'spec-files-v*' | sort -V | tail -n 1)
+          fi
+          if [ -z "$tag" ]; then
+            echo "No spec-files-v* release on this commit: nothing to publish."
+            exit 0
+          fi
+          if [[ ! "$tag" =~ ^spec-files-v[0-9]+\.[0-9]+\.[0-9]+$ ]] || ! git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "::error::$tag is not a spec-files-v<major>.<minor>.<patch> tag"
+            exit 1
+          fi
+          released=$(git show "$tag:packages/spec-files/package.json" | jq -r .version)
+          if [ "$released" != "${tag#spec-files-v}" ]; then
+            echo "::error::$tag has version $released in packages/spec-files/package.json"
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+  npm:
+    needs: release
+    if: needs.release.outputs.tag != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write # trusted publishing and provenance (public repository only)
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: refs/tags/${{ needs.release.outputs.tag }}
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @opensoftware/spec-files build
+      # pnpm pack replaces workspace: versions with real ones.
+      - run: pnpm --dir packages/spec-files pack --pack-destination "$RUNNER_TEMP/npm"
+      # Trusted publishing needs npm 11.5.1 or later.
+      - run: npm install --global npm@11.21.1
+      - name: Publish
+        env:
+          # Only for the first version, before the trusted publisher exists; unset afterwards (packages/spec-files/README.md#releases).
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # npm accepts provenance only from public repositories; it turns on when this repository is public.
+          PRIVATE: ${{ github.event.repository.private }}
+        run: |
+          provenance=--provenance
+          if [ "$PRIVATE" = "true" ]; then provenance=--no-provenance; fi
+          npm publish "$RUNNER_TEMP"/npm/*.tgz --access public "$provenance"
