@@ -93,9 +93,9 @@ export function buildReport(facts: Facts, options: Options) {
 
 export type Report = ReturnType<typeof buildReport>;
 
-const usd = (value: number | null | undefined): string => (value == null ? "-" : `${value.toFixed(2)} USD`);
-const hours = (value: unknown): string => (value == null ? "-" : `${value} h`);
-const percent = (value: number | null): string => (value === null ? "-" : `${(value * 100).toFixed(1)}%`);
+export const usd = (value: number | null | undefined): string => (value == null ? "-" : `${value.toFixed(2)} USD`);
+export const hours = (value: unknown): string => (value == null ? "-" : `${value} h`);
+export const percent = (value: number | null): string => (value === null ? "-" : `${(value * 100).toFixed(1)}%`);
 
 /** One line for standard output. */
 export function summary(report: Report): string {

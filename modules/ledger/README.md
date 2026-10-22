@@ -9,10 +9,11 @@ uses agents already has: the spend log of its LLM gateway (LiteLLM), the run rec
 ([runlog](../runlog/README.md)) and its forge's pull request events. It writes them into one DuckDB file and reports
 the cost per pull request, split into inference, compute and platform, the spend by source, user, agent and model,
 the most expensive pull requests, throughput, cycle time, human interactions, runs by agent type and the revert rate.
-For a team, it writes to PostgreSQL instead and ships a Grafana dashboard over the same views. A team without forge
-adapters imports its pull requests and reviews from GitHub or Forgejo.
+For a team, it writes to PostgreSQL instead and ships a Grafana dashboard over the same views, or writes one static
+HTML dashboard page. A team without forge adapters imports its pull requests and reviews from GitHub or Forgejo, and a
+team without a gateway prices its runs' tokens with LiteLLM's price table.
 Decisions: [ADR 0034](../../docs/decisions/0034-ledger.md), [ADR 0035](../../docs/decisions/0035-ledger-postgres-grafana.md),
-[ADR 0036](../../docs/decisions/0036-ledger-forge-import.md).
+[ADR 0036](../../docs/decisions/0036-ledger-forge-import.md), [ADR 0044](../../docs/decisions/0044-ledger-dogfood.md).
 
 ## Quick start
 
@@ -43,7 +44,7 @@ It writes `ledger.duckdb` and `$OUTPUT/report.json`, and prints
 
 | Command | What it does |
 | --- | --- |
-| `ledger ingest [--db <file or URL>] <file or folder>...` | Read spend rows, runs and events into the database `--db`. Prints `ingested 2 runs, 3 spend rows and 4 events into ledger.duckdb`. |
+| `ledger ingest [--db <file or URL>] [--prices <file>] <file or folder>...` | Read spend rows, runs and events into the database `--db`. Prints `ingested 2 runs, 3 spend rows and 4 events into ledger.duckdb`. |
 | `ledger report [options] [<file or folder>...]` | Ingest the files named, then write the report of the database to `--out` (`$OUTPUT/report.json`). |
 | `ledger query [--db <file or URL>] <SQL>` | Run one SQL statement, like `SELECT * FROM pr_cost`, and print its rows as JSON Lines. |
 | `ledger dashboard [--out <file>]` | Write the Grafana dashboard to `--out` (`$OUTPUT/ledger-dashboard.json`). See [PostgreSQL and Grafana](#postgresql-and-grafana). |
@@ -58,6 +59,8 @@ Options of `report`:
 | `--compute-usd-per-hour <usd>` | What one hour of a run costs in compute, for example a sandbox. Default 0. |
 | `--platform-usd <usd>` | What the platform cost in the period: servers, licenses. It is spread over the pull requests. Default 0. |
 | `--markdown <file>` | Also write the report as Markdown tables. |
+| `--html <file>` | Also write the report as one HTML page. See [Dashboard page](#dashboard-page). |
+| `--prices <file>` | Price the tokens of runs without cost. See [Prices for token usage](#prices-for-token-usage). `ingest` takes it too. |
 | `--db <file or URL>` | The database: a DuckDB file, or a PostgreSQL URL that starts with `postgres://` or `postgresql://`. Default `$LEDGER_DB`, else `ledger.duckdb`. |
 
 A wrong option or input record exits 2 before anything is written, with the file and line.
@@ -84,7 +87,8 @@ To attribute a gateway call to a run, the launcher sends LiteLLM's metadata with
 - **Inference cost of a run:** the sum of its spend rows, or its `osf.cost.usd` when no spend row names it. A spend
   row without a known run is unattributed and shown as its own line.
 - **Runs of a pull request:** the run lists it in `osf.pull_request.urls`, `pr.opened@v1` names the run, or both
-  share the work item. A run of several pull requests splits its cost evenly.
+  share the work item. A run of several pull requests splits its cost evenly over those that have a `pr.opened@v1`
+  event; a link to any other pull request carries no cost.
 - **Cost per pull request:** the period's inference, compute (run hours times `--compute-usd-per-hour`) and
   platform cost, divided by the pull requests opened in the period.
 - **Agent type:** `gen_ai.agent.name`, else the harness. A run is **top-level** unless its `invoke_agent` span lies
@@ -110,6 +114,33 @@ The database is yours to query, for example with the DuckDB CLI: `duckdb ledger.
 | `pr_runs` | run of a pull request | `pr_url`, `run_id`, `share` |
 | `pr_flow` | pull request | `url`, `title`, `author_id`, `opened_at`, `kickoff_at`, `first_human_review_at`, `merged_at`, `closed_at`, `is_revert`, `human_interactions` |
 | `pr_cost` | pull request | `url`, `title`, `opened_at`, `inference_usd`, `hours` |
+
+## Prices for token usage
+
+Without an LLM gateway, a run's cost can come from its token usage. Download LiteLLM's price table and name it with
+`--prices`:
+
+```sh
+curl -fsSL -o prices.json https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json
+npx @opensoftware/ledger report --prices prices.json runs/
+```
+
+A run with `gen_ai.usage.*` attributes, without spend rows and without `osf.cost.usd` then costs its uncached input,
+cache-read, cache-write and output tokens at its model's `input_cost_per_token`, `cache_read_input_token_cost`,
+`cache_creation_input_token_cost` and `output_cost_per_token`. Input tokens include the cached ones, as runlog writes
+them. Cached tokens of a model without cache prices cost the input price. A model the table lacks is named in the
+output, like `no price in prices.json for the model "claude-mystery-1": 1 run without cost`, and its runs cost 0. A
+price that is no number exits 2 before anything is written. The prices apply to the runs read in the same call; the
+result is the list price of the tokens, not what a subscription bills.
+
+## Dashboard page
+
+`ledger report --html ledger.html` writes the report as one HTML page that needs no server, no database and no
+network: tiles for the cost per pull request, its split, the gap to the target and the revert rate; throughput, runs by
+agent and a bar chart of pull requests opened and merged per day; the median cycle time by segment; the 20 most
+expensive pull requests as links; and the spend by source, user, agent and model. It has no script, and every value
+from the input is shown as text. Put it on any static host. This repository publishes its own page this way: see
+[`ledger-dashboard.yml`](../../.github/workflows/ledger-dashboard.yml).
 
 ## PostgreSQL and Grafana
 
@@ -246,3 +277,17 @@ with a trusted publisher for `publish-ledger.yml`. No credential is stored in th
 | SCN-LEDGER-048 | implemented | A Forgejo repository is read through its API v1 |
 | SCN-LEDGER-049 | implemented | The option "--forge github" reads a GitHub Enterprise repository |
 | SCN-LEDGER-050 | implemented | A URL that names no repository is refused |
+| SCN-LEDGER-051 | implemented | A run without cost costs its token usage at the prices of its model |
+| SCN-LEDGER-052 | implemented | A run's own cost comes before the price table |
+| SCN-LEDGER-053 | implemented | A model the price table does not know is named in the output |
+| SCN-LEDGER-054 | implemented | Cached tokens of a model without cache prices cost the input price |
+| SCN-LEDGER-055 | implemented | A price that is no number is refused before anything is written |
+| SCN-LEDGER-056 | implemented | A run's cost splits only over the pull requests in the ledger |
+| SCN-LEDGER-057 | implemented | The page shows the cost per pull request and its split |
+| SCN-LEDGER-058 | implemented | The page shows the revert rate next to throughput and runs |
+| SCN-LEDGER-059 | implemented | The page charts pull requests opened and merged per day |
+| SCN-LEDGER-060 | implemented | The page links the most expensive pull requests |
+| SCN-LEDGER-061 | implemented | A pull request title is shown as text, never as markup |
+| SCN-LEDGER-062 | implemented | The page shows the spend by source, user, agent and model |
+| SCN-LEDGER-063 | implemented | The page shows the median cycle time by segment and the human interactions |
+| SCN-LEDGER-064 | implemented | A price table that is no JSON is refused |

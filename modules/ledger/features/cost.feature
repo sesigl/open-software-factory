@@ -70,3 +70,10 @@ Feature: Cost per pull request
     Given 326 pull requests opened in the period and spend rows of 5351.38 USD in total
     When the user runs "ledger report --target 15 data.jsonl"
     Then "report.json" shows the target 15.00 USD and the gap 1.42 USD
+
+  @id=SCN-LEDGER-056 @status=implemented
+  Scenario: A run's cost splits only over the pull requests in the ledger
+    Given the run "run-01" with spend rows of 3.00 USD that lists the pull requests "https://github.com/acme/web/pull/1" and "https://github.com/other/app/pull/9"
+    And a "pr.opened@v1" event for "https://github.com/acme/web/pull/1" and none for "https://github.com/other/app/pull/9"
+    When the user runs "ledger report data.jsonl"
+    Then "report.json" lists "https://github.com/acme/web/pull/1" with the cost 3.00 USD

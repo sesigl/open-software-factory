@@ -22,7 +22,16 @@ export interface RunRow {
   startedAt: string;
   endedAt: string;
   costUsd: number | null;
+  /** The token usage of the run, when runlog recorded it; `input` includes the cached tokens. */
+  usage: Usage | null;
   pullRequests: string[];
+}
+
+export interface Usage {
+  input: number;
+  output: number;
+  cacheRead: number;
+  cacheWrite: number;
 }
 
 export interface SpanRow {
@@ -107,6 +116,8 @@ export function utc(time: string): string | undefined {
 
 const text = (value: AttributeValue): string | null => (typeof value === "string" && value ? value : null);
 
+const tokens = (value: AttributeValue): number => (typeof value === "number" ? value : 0);
+
 const nanosToUtc = (nanos: bigint): string => utc(new Date(Number(nanos / 1_000_000n)).toISOString()) as string;
 
 function readTrace(spans: RunSpan[], records: Records): void {
@@ -116,6 +127,7 @@ function readTrace(spans: RunSpan[], records: Records): void {
     if (own["gen_ai.operation.name"] !== "invoke_agent") continue;
     const urls = own["osf.pull_request.urls"];
     const cost = own["osf.cost.usd"];
+    const input = own["gen_ai.usage.input_tokens"];
     records.runs.push({
       runId: String(resource["osf.run.id"] ?? own["gen_ai.conversation.id"] ?? span.spanId),
       traceId: span.traceId,
@@ -128,6 +140,15 @@ function readTrace(spans: RunSpan[], records: Records): void {
       startedAt: nanosToUtc(span.start),
       endedAt: nanosToUtc(span.end),
       costUsd: typeof cost === "number" ? cost : null,
+      usage:
+        typeof input === "number"
+          ? {
+              input,
+              output: tokens(own["gen_ai.usage.output_tokens"]),
+              cacheRead: tokens(own["gen_ai.usage.cache_read.input_tokens"]),
+              cacheWrite: tokens(own["gen_ai.usage.cache_write.input_tokens"]),
+            }
+          : null,
       pullRequests: Array.isArray(urls) ? urls.map(String) : [],
     });
   }

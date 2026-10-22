@@ -1,0 +1,66 @@
+# The ledger dogfood (ADR 0044): this repository's cost per pull request and flow as one static page on Vercel.
+# The cost is the list price of the tokens in runs/, from LiteLLM's price table. Without the Vercel secrets the
+# page is only kept as a workflow artifact and in the job summary.
+name: ledger dashboard
+
+on:
+  schedule:
+    - cron: "41 4 * * *"
+  push:
+    branches: [main]
+    paths: [runs/**]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read # the comments of a pull request
+
+concurrency:
+  group: ledger-dashboard
+  cancel-in-progress: true
+
+jobs:
+  dashboard:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The ledger of this commit, so the page never waits for a release.
+      - run: pnpm exec turbo run build --filter=@opensoftware/ledger...
+      - name: Import the pull requests and reviews
+        env:
+          LEDGER_FORGE_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.server_url }}/${{ github.repository }}
+        run: node modules/ledger/dist/cli.js import --out "$RUNNER_TEMP/pr-events.jsonl" "$REPOSITORY"
+      - name: Download LiteLLM's price table
+        run: >-
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/prices.json"
+          https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json
+      - name: Write the dashboard page
+        run: |
+          node modules/ledger/dist/cli.js report --db "$RUNNER_TEMP/ledger.duckdb" --prices "$RUNNER_TEMP/prices.json" \
+            --out site/report.json --markdown site/report.md --html site/index.html runs "$RUNNER_TEMP/pr-events.jsonl"
+          cat site/report.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ledger-dashboard
+          path: site/
+      - name: Check for the Vercel secrets
+        id: vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: echo "ready=${VERCEL_TOKEN:+yes}" >> "$GITHUB_OUTPUT"
+      - name: Deploy to Vercel
+        if: steps.vercel.outputs.ready == 'yes'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: npx --yes vercel@62.0.0 deploy site --prod --yes --token "$VERCEL_TOKEN"

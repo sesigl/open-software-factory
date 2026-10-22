@@ -1,7 +1,8 @@
-// ledger report: query the views for one period and write report.json and, when asked, Markdown.
+// ledger report: query the views for one period and write report.json and, when asked, Markdown and an HTML page.
 
 import { writeText } from "@opensoftware/cli";
 import type { Ledger, Parameter, Row } from "../adapters/ledger.ts";
+import { page } from "../domain/page.ts";
 import { buildReport, type Facts, markdown, type Options, type Slice, summary } from "../domain/report.ts";
 
 /** The period as [from, to) timestamps; an open end is infinity. */
@@ -15,7 +16,7 @@ const between = (column: string) => `${column} >= $1::TIMESTAMP AND ${column} < 
 export async function report(
   ledger: Ledger,
   options: Options,
-  files: { out: string; markdown: string | undefined },
+  files: { out: string; markdown: string | undefined; html: string | undefined },
 ): Promise<string[]> {
   const period = bounds(options);
   const one = async (statement: string, parameters: Parameter[] = period) =>
@@ -93,6 +94,10 @@ export async function report(
   if (files.markdown) {
     writeText(files.markdown, markdown(built));
     written.push(files.markdown);
+  }
+  if (files.html) {
+    writeText(files.html, page(built));
+    written.push(files.html);
   }
   return [summary(built), `wrote ${written.join(" and ")}`];
 }
