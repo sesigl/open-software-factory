@@ -48,7 +48,8 @@ Plus `contracts` and `testkit` (core), adapters per port, and the `open-software
 
 ledger shows what this repository's pull requests cost and how they flow, from the run records in `runs/` priced at
 list price and the pull requests on GitHub. The workflow [`ledger-dashboard.yml`](.github/workflows/ledger-dashboard.yml)
-builds the page every night and publishes it on Vercel ([ADR 0044](docs/decisions/0044-ledger-dogfood.md)).
+builds the page every night and publishes it on Vercel ([ADR 0044](docs/decisions/0044-ledger-dogfood.md)):
+[the ledger dashboard](https://project-ia65q.vercel.app).
 
 ## Working on this repository
 
