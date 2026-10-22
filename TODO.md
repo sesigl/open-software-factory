@@ -198,7 +198,7 @@ read them for ideas, do not copy their company-specific rules.
   - [x] The dogfood export of this repository's sessions on every PR: `runlog export --latest --per-run`,
     `make run-record` into `runs/`, and the check RUNS (ADR 0027, `SCN-RUN-055` to `-059`, `SCN-REPO-038` to `-042`).
 
-### [ ] T-05 · proof
+### [x] T-05 · proof
 
 - **Tier / language / path / prefix:** core · TS · `modules/proof/` · `SCN-PROOF`
 - **Alone:** any PR shows screenshots, video and test results for each claimed behavior.
@@ -221,14 +221,14 @@ read them for ideas, do not copy their company-specific rules.
     Playwright MCP session), the GitHub Action `modules/proof/action.yml`, `sut.action` in the testkit, and the
     dogfood: a proof check on every pull request of this repository from the build of the checkout (ADR 0029,
     `SCN-PROOF-035` to `-046`, `SCN-TK-033` to `-040`).
-  - [ ] The dogfood from the released tool: once `@opensoftware/proof` is on npm, drop the input `command` of the step
-    `proof` in `.github/workflows/verify.yml`, so the action runs its release.
+  - [x] The dogfood from the released tool: the step `proof` in `.github/workflows/verify.yml` runs
+    `@opensoftware/proof` from npm, at the version of `modules/proof/package.json`.
 
 ---
 
 ## Wave 2 · Measure
 
-### [ ] T-06 · spec-trace
+### [x] T-06 · spec-trace
 
 - **Tier / language / path / prefix:** optional (mandatory here) · TS · `modules/spec-trace/` · `SCN-TRACE`
 - **Alone:** requirements traceability for any repository with feature files.
@@ -249,8 +249,8 @@ read them for ideas, do not copy their company-specific rules.
     since a base commit) and `report --summary`, `sut.action`'s job summary in the testkit, and the dogfood: a root
     `spec-trace.json`, `make check`, `make verify` and CI run spec-trace instead of `tools/checks/` for SPEC, TRACE,
     STEPS and PASS (ADR 0031, `SCN-TRACE-050` to `-064`, `SCN-TK-041`, `SCN-REPO-043`).
-  - [ ] The dogfood from the released tool: once `@opensoftware/spec-trace` is on npm, drop the input `command` of the
-    step `spec-trace` in `.github/workflows/verify.yml`, so the action runs its release.
+  - [x] The dogfood from the released tool: the step `spec-trace` in `.github/workflows/verify.yml` runs
+    `@opensoftware/spec-trace` from npm, at the version of `modules/spec-trace/package.json`.
 
 ### [ ] T-07 · scorekit
 
