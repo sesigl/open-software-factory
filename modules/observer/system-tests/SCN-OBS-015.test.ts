@@ -1,22 +1,17 @@
 import { type Forge, type ModelGateway, scenario } from "@opensoftware/testkit";
-import {
-  FORGEJO_REPOSITORY,
-  factoryRepository,
-  modelAnswering,
-  PROBLEMS,
-  PROPOSE,
-  propose,
-  writeProblems,
-} from "./factory.ts";
+import { factoryRepository, modelAnswering, propose, writeProblems } from "./factory.ts";
 
 const WORKFLOW = "name: research\non: pull_request\n";
 
 scenario("SCN-OBS-015", async ({ sut, fakes, given, when, then }) => {
   let forge: Forge;
-  await given(FORGEJO_REPOSITORY, async () => {
+  await given('a Forgejo repository "tester/factory" whose "AGENTS.md" says "Investigate inline."', async () => {
     forge = await factoryRepository(fakes);
   });
-  await given(PROBLEMS, () => writeProblems(sut));
+  await given(
+    '"problems.json" with the problem "research-skill-used" of 30 failures in 40 runs, the first of them "run-1" with the reason "Investigated inline." and the transcript "https://langfuse.example/trace/1"',
+    () => writeProblems(sut),
+  );
 
   let gateway: ModelGateway;
   await given(
@@ -30,7 +25,7 @@ scenario("SCN-OBS-015", async ({ sut, fakes, given, when, then }) => {
   );
 
   let run: Awaited<ReturnType<typeof sut.cli>>;
-  await when(PROPOSE, async () => {
+  await when('the user runs "observer propose --repo <forge URL>/tester/factory problems.json"', async () => {
     run = await propose(sut, forge, gateway);
   });
 

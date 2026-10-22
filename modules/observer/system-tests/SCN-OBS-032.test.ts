@@ -13,7 +13,7 @@ scenario("SCN-OBS-032", async ({ sut, given, when, then }) => {
 
   let run: Awaited<ReturnType<typeof sut.cli>>;
   await when(
-    `the user runs "observer check --problem research-skill-used --pull-request ${URL} scores.jsonl"`,
+    'the user runs "observer check --problem research-skill-used --pull-request https://github.com/acme/factory/issues/12 scores.jsonl"',
     async () => {
       run = await sut.cli(["check", "--problem", "research-skill-used", "--pull-request", URL, "scores.jsonl"]);
     },
@@ -24,7 +24,7 @@ scenario("SCN-OBS-032", async ({ sut, given, when, then }) => {
   });
 
   await then(
-    `the error output says "observer: ${URL} is not a pull request URL like https://github.com/acme/factory/pull/12"`,
+    'the error output says "observer: https://github.com/acme/factory/issues/12 is not a pull request URL like https://github.com/acme/factory/pull/12"',
     async () => {
       expect(run.stderr).toContain(
         `observer: ${URL} is not a pull request URL like https://github.com/acme/factory/pull/12`,
