@@ -106,8 +106,9 @@ Two probes ran on 2026-10-23 against a scripted gateway on 127.0.0.1, with no ne
 
 - foreman can run Codex and opencode with the same client, rules and run record as Claude Code.
 - Both installs are large (Codex about 250 MB, opencode about 150 MB on linux-x64). They are optional adapters.
-- Codex's read-only sandbox needs Linux Landlock or macOS Seatbelt; a host without them fails sandboxed commands.
-  The sandbox port (T-13) runs the adapter in a container that has them.
+- Codex's read-only sandbox needs a Linux sandbox (bubblewrap or Landlock) or macOS Seatbelt. A host without one, such
+  as a GitHub runner that forbids unprivileged user namespaces, fails every sandboxed command, so the folder stays
+  intact but commands that only read fail too. The sandbox port (T-13) runs the adapter in a container that has one.
 - Neither product reports cost over ACP, so their run records have tokens and no `osf.cost.usd`. The inference
   port (T-14) has the spend log.
 - A Codex session whose tool call the client or the allowlist refused ends with `cancelled`, so its run record has

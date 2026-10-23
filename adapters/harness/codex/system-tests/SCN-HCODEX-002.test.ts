@@ -28,11 +28,8 @@ scenario("SCN-HCODEX-002", async ({ sut, fakes, given, when, then }) => {
     expect(client.permissionRequests()).toEqual([]);
   });
 
-  await then(
-    'Codex sent the model the error "Read-only file system" and "$INPUT/made.txt" does not exist',
-    async () => {
-      expect(toolOutput(gateway, "call_1")).toContain("Read-only file system");
-      await expect(sut.files.read("$INPUT/made.txt")).rejects.toThrow();
-    },
-  );
+  await then('Codex sent the model a failed command and "$INPUT/made.txt" does not exist', async () => {
+    expect(toolOutput(gateway, "call_1")).toMatch(/Process exited with code [1-9]/);
+    await expect(sut.files.read("$INPUT/made.txt")).rejects.toThrow();
+  });
 });
