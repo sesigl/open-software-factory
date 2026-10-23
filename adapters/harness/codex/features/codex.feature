@@ -15,7 +15,7 @@ Feature: What the codex adapter adds to the harness port
     And the adapter runs Codex with that gateway
     When the client sends the prompt "make a file" and approves every tool call
     Then the client was not asked to approve a tool call
-    And Codex sent the model the error "Read-only file system" and "$INPUT/made.txt" does not exist
+    And Codex sent the model a failed command and "$INPUT/made.txt" does not exist
 
   @id=SCN-HCODEX-003 @status=implemented
   Scenario: The run record has the tokens that Codex reported

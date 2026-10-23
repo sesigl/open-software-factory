@@ -39,7 +39,8 @@ It writes `$OUTPUT/run-record.json` and `$OUTPUT/transcript.jsonl`.
 - **Codex asks first.** Every session runs in the mode `read-only`: reads and commands run in a read-only sandbox
   without asking, and Codex asks before each edit (kind `edit`) and each command that leaves the sandbox (kind
   `execute`). A command in the sandbox cannot write. The proxy passes no `session/set_mode` and no
-  `session/set_config_option`, so a client cannot leave that mode. The sandbox needs Linux Landlock or macOS Seatbelt.
+  `session/set_config_option`, so a client cannot leave that mode. The sandbox needs a Linux sandbox (bubblewrap or
+  Landlock) or macOS Seatbelt; without one every sandboxed command fails.
 - **Its own settings.** Codex keeps its settings, logins and sessions in `OSF_DATA/codex`, never in the user's
   `~/.codex`. On each `run` the adapter writes `config.toml` there with one model provider and nothing else.
 - **The model gateway.** Codex calls the Responses API at `OPENAI_BASE_URL` with `OPENAI_API_KEY` and the model
