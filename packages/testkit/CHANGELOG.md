@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.12.0...testkit-v0.13.0) (2026-10-23)
+
+
+### Features
+
+* **harness:** T-12 harness port as ACP on stdio and the generic acp adapter ([#87](https://github.com/sesigl/open-software-factory/issues/87)) ([17d983d](https://github.com/sesigl/open-software-factory/commit/17d983d1c669e9ac1820daa3a1e373d7bd873953))
+
 ## [0.12.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.11.0...testkit-v0.12.0) (2026-10-23)
 
 
