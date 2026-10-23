@@ -14,6 +14,7 @@ adds a row.
 | CLI | cli library | `packages/cli/features/` |
 | SPECFILES | spec-files library | `packages/spec-files/features/` |
 | HPROXY | harness-proxy library | `packages/harness-proxy/features/` |
+| SEGRESS | sandbox-egress library | `packages/sandbox-egress/features/` |
 | FSPEC | factory-spec | `modules/factory-spec/features/` |
 | RUN | runlog | `modules/runlog/features/` |
 | PROOF | proof | `modules/proof/features/` |
@@ -33,6 +34,7 @@ adds a row.
 | HOPENCODE | harness adapter opencode | `adapters/harness/opencode/features/` |
 | SANDBOX | sandbox port | `ports/sandbox/features/` |
 | SDOCKER | sandbox adapter docker | `adapters/sandbox/docker/features/` |
+| SKUBE | sandbox adapter kubernetes | `adapters/sandbox/kubernetes/features/` |
 | CHANNEL | channel port | `ports/channel/features/` |
 | FORGE | forge port | `ports/forge/features/` |
 | INFER | inference port | `ports/inference/features/` |
