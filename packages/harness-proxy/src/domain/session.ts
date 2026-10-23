@@ -1,7 +1,7 @@
-// The session record: one JSON line per event of a session, in the order the adapter saw them (ADR 0050).
-import type { ContentBlock, PromptResponse, SessionUpdate, ToolKind } from "@agentclientprotocol/sdk";
+// The session record: one JSON line per event of a session, in the order the proxy saw them (ADR 0050, ADR 0052).
+import type { ContentBlock, PromptResponse, SessionUpdate, ToolKind, Usage } from "@agentclientprotocol/sdk";
 
-/** What the adapter did with a tool call the agent asked to approve. */
+/** What the proxy did with a tool call the agent asked to approve. */
 export type Decision = "allowed" | "refused" | "refused by the allowlist";
 
 export type SessionLine =
@@ -15,4 +15,4 @@ export type SessionLine =
   | { type: "prompt"; prompt: ContentBlock[] }
   | { type: "update"; update: SessionUpdate }
   | { type: "permission"; title?: string | null; kind?: ToolKind | null; decision: Decision }
-  | { type: "stop"; stopReason: PromptResponse["stopReason"] };
+  | { type: "stop"; stopReason: PromptResponse["stopReason"]; usage?: Usage };

@@ -283,6 +283,9 @@ export function acpClientModule(steps: string[], test: string[]): Record<string,
       '  if (message.method === "session/update") {',
       "    const { update } = message.params;",
       '    if (update.sessionUpdate === "agent_message_chunk") process.stdout.write(`reply ${update.content.text}\\n`);',
+      '    if (update.sessionUpdate === "usage_update" && update.cost) {',
+      "      process.stdout.write(`cost ${update.cost.amount} ${update.cost.currency}\\n`);",
+      "    }",
       '  } else if (message.method === "session/request_permission") {',
       '    const optionId = refuse ? "reject" : "allow";',
       '    send({ id: message.id, result: { outcome: { outcome: "selected", optionId } } });',
@@ -298,9 +301,10 @@ export function acpClientModule(steps: string[], test: string[]): Record<string,
       'const { sessionId } = await request("session/new", { cwd: process.cwd(), mcpServers: [] });',
       "const turns = [];",
       "const prompt = (text) =>",
-      '  request("session/prompt", { sessionId, prompt: [{ type: "text", text }] }).then(({ stopReason }) =>',
-      "    process.stdout.write(`${text}: ${stopReason}\\n`),",
-      "  );",
+      '  request("session/prompt", { sessionId, prompt: [{ type: "text", text }] }).then(({ stopReason, usage }) => {',
+      "    process.stdout.write(`${text}: ${stopReason}\\n`);",
+      "    if (usage) process.stdout.write(`usage ${usage.inputTokens} ${usage.outputTokens} ${usage.totalTokens}\\n`);",
+      "  });",
       "for (const action of actions) {",
       '  const [verb, ...rest] = action.split(":");',
       '  const text = rest.join(":");',
@@ -391,6 +395,38 @@ export function acpAgentModule(steps: string[], test: string[]): Record<string, 
       "",
     ].join("\n"),
     readme: ["# demo", "", "## Configuration", "", "| Variable | Meaning |", "| --- | --- |", ""].join("\n"),
+    steps,
+    test,
+  });
+}
+
+/**
+ * Module demo whose CLI, plain JavaScript in `bin`, calls the Anthropic Messages API at `DEMO_ANTHROPIC_URL`; its
+ * test runs `test` (TypeScript lines) for SCN-DEMO-001 with `steps`.
+ */
+export function messagesModule(bin: string[], steps: string[], test: string[]): Record<string, string> {
+  return demoModule({
+    bin: [
+      "const call = (content, extra = {}) =>",
+      "  fetch(`${process.env.DEMO_ANTHROPIC_URL}/v1/messages`, {",
+      '    method: "POST",',
+      '    headers: { "content-type": "application/json" },',
+      '    body: JSON.stringify({ model: "demo", max_tokens: 100, messages: [{ role: "user", content }], ...extra }),',
+      "    signal: extra.signal,",
+      "  });",
+      ...bin,
+      "",
+    ].join("\n"),
+    readme: [
+      "# demo",
+      "",
+      "## Configuration",
+      "",
+      "| Variable | Meaning |",
+      "| --- | --- |",
+      "| `DEMO_ANTHROPIC_URL` | Base URL of the Anthropic Messages API. |",
+      "",
+    ].join("\n"),
     steps,
     test,
   });

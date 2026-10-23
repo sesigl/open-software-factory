@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "OUTPUT": {
+      "type": "string",
+      "default": ".",
+      "description": "Folder that transcript writes run-record.json and transcript.jsonl to."
+    },
+    "OSF_DATA": {
+      "type": "string",
+      "default": ".harness-claude-code",
+      "description": "Folder where run records every session as sessions/<session ID>.jsonl and Claude Code keeps its settings, in claude/."
+    },
+    "OTEL_RESOURCE_ATTRIBUTES": {
+      "type": "string",
+      "description": "Resource attributes of the run as key=value pairs, set by the launcher, for example osf.run.id=…,osf.work_item.id=…,osf.factory.version=…. run keeps them with each session; transcript writes them into the run record."
+    },
+    "OTEL_SERVICE_NAME": {
+      "type": "string",
+      "description": "The service.name of the run record. Default: harness-claude-code."
+    },
+    "ANTHROPIC_BASE_URL": {
+      "type": "string",
+      "description": "Base URL of the Anthropic Messages API that Claude Code calls, for example the inference gateway. Default: Anthropic's API."
+    },
+    "ANTHROPIC_API_KEY": {
+      "type": "string",
+      "description": "The key Claude Code sends to the model API, for example a gateway key or a placeholder that the egress proxy replaces."
+    },
+    "ANTHROPIC_MODEL": {
+      "type": "string",
+      "description": "The model Claude Code asks for, for example claude-sonnet-5-5. Default: Claude Code's default model."
+    }
+  }
+}

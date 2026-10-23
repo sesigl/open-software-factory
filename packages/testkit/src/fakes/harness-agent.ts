@@ -107,7 +107,14 @@ agent({ name: "testkit-scripted-harness" })
         update: { sessionUpdate: "agent_message_chunk", content: { type: "text", text: turn.reply } },
       });
     }
-    return { stopReason: turn.stopReason ?? "end_turn" };
+    if (turn.costUsd !== undefined) {
+      await client.notify("session/update", {
+        sessionId: params.sessionId,
+        update: { sessionUpdate: "usage_update", used: 0, size: 0, cost: { amount: turn.costUsd, currency: "USD" } },
+      });
+    }
+    const usage = turn.usage && { ...turn.usage, totalTokens: turn.usage.inputTokens + turn.usage.outputTokens };
+    return { stopReason: turn.stopReason ?? "end_turn", ...(usage ? { usage } : {}) };
   })
   .connect(
     ndJsonStream(

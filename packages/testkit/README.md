@@ -72,6 +72,9 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
   the running turn. The client approves every tool call the module asks about, or refuses each one with
   `approve: false`, and lists them in `permissionRequests()`. `exited()` waits for the module to exit and gives its exit code. It
   offers the module no file system and no terminal.
+- `sut.acp.serve(start, { approve })`: the same client for a library that serves ACP in the test's own process, such
+  as `@opensoftware/harness-proxy` ([ADR 0052](../../docs/decisions/0052-harness-claude-code.md)). `start` gets the
+  streams `{ input, output }` to serve on; `exited()` gives 0 when its promise resolved and 1 when it rejected.
 - `sut.events.watch(nats, subjects)`: records the CloudEvents published on a NATS server from now on.
   `received(type, { count, timeoutMs })` waits for them and, on timeout, names what arrived instead;
   `publish(subject, event)` sends an event to the module.
@@ -81,7 +84,14 @@ Every server, client and subscription stops when the scenario ends, before the f
 - `fakes.modelGateway([{ when, reply }])`: an OpenAI-compatible endpoint on `127.0.0.1`. Pass its `url` (ending
   in `/v1`) to the module through its documented config. `POST /v1/chat/completions` whose body contains `when`
   gets `reply`, with the token `usage` of the entry when it has one (`{ prompt_tokens, completion_tokens }`, default 0
-  and 0); any other call gets HTTP 500 and fails the scenario with the request shown.
+  and 0); any other call gets HTTP 500 and fails the scenario with the request shown. The same gateway answers the
+  Anthropic Messages API at `anthropicUrl` (no `/v1`, as `ANTHROPIC_BASE_URL` takes it), as JSON or as a stream
+  when the call asks for one ([ADR 0052](../../docs/decisions/0052-harness-claude-code.md)). A call to
+  `POST /v1/messages` takes the first matching entry that has not answered yet, so a tool loop scripts one entry per
+  model call; after that the last matching entry answers again. An entry may have `tools` (`{ name, input }`, sent
+  as `tool_use` blocks with the ids `toolu_1`, `toolu_2`, ...), a `stopReason` (default `tool_use` with tools,
+  `end_turn` without) and `hangs: true`, which never answers the call. An unscripted Messages call gets HTTP 400.
+  `calls` lists every call with its `path` and `body`.
 - `fakes.http([{ method, path, status, body, contentType, times }])`: a scripted JSON API on `127.0.0.1`
   ([ADR 0021](../../docs/decisions/0021-testkit-scripted-http.md)). Pass its `url` to the module through its
   documented config. A request whose method (default `GET`) and exact path with query match a route gets its
@@ -102,6 +112,8 @@ Every server, client and subscription stops when the scenario ends, before the f
   until the session gets a prompt that contains that text, a steering message, which ends at once with `end_turn`;
   a cancel of the session ends the waiting turn with `cancelled` instead, unless the turn has `ignoresCancel`.
   `stopReason` ends the turn with another stop reason, such as `max_tokens` ([ADR 0050](../../docs/decisions/0050-harness-port.md)).
+  A turn with `usage` (`{ inputTokens, outputTokens }`) reports it in its `session/prompt` answer, and `costUsd`
+  sends a `usage_update` with that cost in USD first ([ADR 0052](../../docs/decisions/0052-harness-claude-code.md)).
 - `fakes.postgres()`: PostgreSQL 18 for this scenario, as PGlite in the test's process behind a small
   wire-protocol server, with no Docker ([ADR 0049](../../docs/decisions/0049-in-memory-stand-ins.md)). The module
   connects to `postgres://test:test@127.0.0.1:<port>/test` with its own driver; a wrong password is refused with
@@ -251,3 +263,10 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-062 | implemented | A scripted turn that ignores cancel keeps running |
 | SCN-TK-063 | implemented | A scripted turn ends with its scripted stop reason |
 | SCN-TK-064 | implemented | sut.acp gives the exit code of a module that exits |
+| SCN-TK-065 | implemented | A scripted Messages API call gets its scripted reply |
+| SCN-TK-066 | implemented | A scripted Messages API reply streams a tool call |
+| SCN-TK-067 | implemented | Messages API calls take the scripted replies in order, and the last one answers again |
+| SCN-TK-068 | implemented | A scripted Messages API call that hangs gets no answer |
+| SCN-TK-069 | implemented | A scripted Messages API reply ends with its scripted stop reason and token usage |
+| SCN-TK-070 | implemented | A scripted turn reports its token usage and the session's cost |
+| SCN-TK-071 | implemented | sut.acp.serve connects to an ACP agent that runs in the test's own process |

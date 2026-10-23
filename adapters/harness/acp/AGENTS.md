@@ -14,10 +14,9 @@ The only ways a system test or another program may use this adapter:
 
 ## Architecture
 
-Layers, top to bottom, in `architecture.json` (ADR 0014): `entry` (`src/cli.ts`) → `adapters` → `domain`. `domain`
-decides tool calls by the allowlist, holds the shape of the session record and builds the run record, without I/O;
-`adapters` run the ACP proxy between the client and the agent process and keep the session records in `OSF_DATA`;
-`entry` parses the command line. The ARCH check enforces the layers.
+One layer in `architecture.json` (ADR 0014): `entry` (`src/cli.ts`) parses the command line and hands the rest to
+`@opensoftware/harness-proxy`, which holds the proxy, the allowlist, the session records and the run record
+(ADR 0052). The ARCH check enforces the layers.
 
 ## Allowed exceptions
 
@@ -26,7 +25,7 @@ decides tool calls by the allowlist, holds the shape of the session record and b
 ## Budget
 
 - System tests: 60 seconds in total on the CI runner. The agent behind the adapter is the testkit's scripted harness;
-  SCN-HARNESS-006 waits the 3 seconds of the cancel deadline.
+  SCN-HARNESS-013 waits 4 seconds after a cancel.
 
 ## Quality limits
 
@@ -37,4 +36,5 @@ Checked by DUP and MUTATION (ADR 0037):
 
 ## Scenario prefix
 
-The `@conformance` scenarios of the port: `SCN-HARNESS-NNN` in `ports/harness/features/`.
+`SCN-HACP-NNN` in `features/`, and the `@conformance` scenarios of the port: `SCN-HARNESS-NNN` in
+`ports/harness/features/`.
