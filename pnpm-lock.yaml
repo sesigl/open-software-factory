@@ -26,21 +26,34 @@ importers:
 
   adapters/harness/acp:
     dependencies:
+      '@opensoftware/cli':
+        specifier: workspace:*
+        version: link:../../../packages/cli
+      '@opensoftware/harness-proxy':
+        specifier: workspace:*
+        version: link:../../../packages/harness-proxy
+    devDependencies:
+      '@opensoftware/contracts':
+        specifier: workspace:*
+        version: link:../../../contracts
+      '@opensoftware/testkit':
+        specifier: workspace:*
+        version: link:../../../packages/testkit
+
+  adapters/harness/claude-code:
+    dependencies:
+      '@agentclientprotocol/claude-agent-acp':
+        specifier: 0.94.0
+        version: 0.94.0(@anthropic-ai/sdk@1.1.0(zod@4.6.7))(@modelcontextprotocol/sdk@1.32.1(zod@4.6.7))
       '@agentclientprotocol/sdk':
         specifier: 1.9.0
         version: 1.9.0(zod@4.6.7)
       '@opensoftware/cli':
         specifier: workspace:*
         version: link:../../../packages/cli
-      '@opentelemetry/api':
-        specifier: 1.9.1
-        version: 1.9.1
-      '@opentelemetry/resources':
-        specifier: 2.12.0
-        version: 2.12.0(@opentelemetry/api@1.9.1)
-      zod:
-        specifier: 4.6.7
-        version: 4.6.7
+      '@opensoftware/harness-proxy':
+        specifier: workspace:*
+        version: link:../../../packages/harness-proxy
     devDependencies:
       '@opensoftware/contracts':
         specifier: workspace:*
@@ -281,6 +294,28 @@ importers:
         specifier: workspace:*
         version: link:../testkit
 
+  packages/harness-proxy:
+    dependencies:
+      '@agentclientprotocol/sdk':
+        specifier: 1.9.0
+        version: 1.9.0(zod@4.6.7)
+      '@opensoftware/cli':
+        specifier: workspace:*
+        version: link:../cli
+      '@opensoftware/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@opentelemetry/api':
+        specifier: 1.9.1
+        version: 1.9.1
+      '@opentelemetry/resources':
+        specifier: 2.12.0
+        version: 2.12.0(@opentelemetry/api@1.9.1)
+    devDependencies:
+      '@opensoftware/testkit':
+        specifier: workspace:*
+        version: link:../testkit
+
   packages/spec-files:
     dependencies:
       '@cucumber/gherkin':
@@ -369,10 +404,77 @@ importers:
 
 packages:
 
+  '@agentclientprotocol/claude-agent-acp@0.94.0':
+    resolution: {integrity: sha512-3quBG9QaMKhETZPF0QaD/Ue2C0UCQDzDztDbzs8AVYM8RQKX93TPL0YzJl7sx06qYPLQvxrCDdiAp5a6cgFfZg==}
+    engines: {node: '>=22'}
+    hasBin: true
+
   '@agentclientprotocol/sdk@1.9.0':
     resolution: {integrity: sha512-saCOTPYBK1iqWqJFAYHXbg3+zCoFXyZZFoqQAwdTWkbrZZPpAETr80QOnYr2l+dzPwL0jpNhn3eDY8MoEIDbUA==}
     peerDependencies:
       zod: ^3.25.0 || ^4.0.0
+
+  '@agentclientprotocol/sdk@2.0.0':
+    resolution: {integrity: sha512-Za5gWOPQ44aBOdegDJZ+OjCAPn7POc0cw8BlFJQ1mmUY1OoUWxRi3+QZT4gdZnyEWgKXyfeGRb0Oo1ag9YkQ1w==}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.0.0
+
+  '@anthropic-ai/claude-agent-sdk-darwin-arm64@0.3.303':
+    resolution: {integrity: sha512-QAWV9Zd7i7FQDaUSwZNVXJirqCS9CSF4aPwbkGwLvLH83qcfFOmnyxWUg1H7dU6tJFLOCyDLQzc3xzUA4dakoA==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@anthropic-ai/claude-agent-sdk-darwin-x64@0.3.303':
+    resolution: {integrity: sha512-o931musaryuq04fMaEjceCEmgsBrLh39WvwsQWmv070h9jXS8EmWRFpdSILv1xrUFXiukRSq8yUDRVzg+FvTug==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@anthropic-ai/claude-agent-sdk-linux-arm64-musl@0.3.303':
+    resolution: {integrity: sha512-a/OsLTEx9ly9hC26cXidg9mtTMA00SQnEiTN9P4IPNj64uSp/7uBnlWl0VeUoVFbgKYYq6XrGRcD6F1ilQsYxg==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@anthropic-ai/claude-agent-sdk-linux-arm64@0.3.303':
+    resolution: {integrity: sha512-c04i9i1BU3j9G3D7XdVzXTdM3/sDpQH+1o8jNcMPnztOTYbNFmH/cacgeX9x3N112r+5VhCEHXGILoe5GxVxeg==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@anthropic-ai/claude-agent-sdk-linux-x64-musl@0.3.303':
+    resolution: {integrity: sha512-yixAa3ZOZd1hiI4mpoukzT9TnuDCzSEHyh7pHcbYTRmdRE2y8bAOmI0eiMFJPivnG4iyGhS2C4XNAe6hAjl30w==}
+    cpu: [x64]
+    os: [linux]
+
+  '@anthropic-ai/claude-agent-sdk-linux-x64@0.3.303':
+    resolution: {integrity: sha512-lsm1sX2+9Wos8glBbn86M8leFuK60LKB1cJdS0b2HiTSwiDCqpUKYRGJNUlW1JdUTwJB5nDv6S8/FOJExm1/tw==}
+    cpu: [x64]
+    os: [linux]
+
+  '@anthropic-ai/claude-agent-sdk-win32-arm64@0.3.303':
+    resolution: {integrity: sha512-AnEseiw5E1JF3XRaGIZN880V/i2OxCaTOQJF9F1+oELleSdvLnCUxCE6/baGvaZjrgvffO9YbYChBpgUKj9j7A==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@anthropic-ai/claude-agent-sdk-win32-x64@0.3.303':
+    resolution: {integrity: sha512-j5kABFEQ6x6T5AB/glmn0r9VwZRbzcH+nSEOWglB69ODNfkZA2btjcz9r794+2BLqJ9QAyswiYWcOX4sDz/RmQ==}
+    cpu: [x64]
+    os: [win32]
+
+  '@anthropic-ai/claude-agent-sdk@0.3.303':
+    resolution: {integrity: sha512-XBql04V40xr+fmGJh8AmIpqRZKFNrs99BzXzzSVlx+uE5NjFCzKmkNKTdMD0DQtDvFJlijOLoh1siaH+au9Psw==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      '@anthropic-ai/sdk': '>=0.93.0'
+      '@modelcontextprotocol/sdk': ^1.29.0
+      zod: ^4.0.0
+
+  '@anthropic-ai/sdk@1.1.0':
+    resolution: {integrity: sha512-Op/fKMsfVwFCfObc87leLOFlORE0RjOvLzRzPCWWLI7Ww6bobpKR6YmYC8ZYgulRh+m2a/3/61VUXoWHFtCXIw==}
+    hasBin: true
+    peerDependencies:
+      zod: ^3.25.0 || ^4.0.0
+    peerDependenciesMeta:
+      zod:
+        optional: true
 
   '@asyncapi/parser@3.6.6':
     resolution: {integrity: sha512-DppE3OStajt6gHc+RsVf9VxRwW9WACagHnFvkOML5rZGwS9hXxtFYTxnsH3mHPRgHom0rClMs6DpbjNY65Y54A==}
@@ -560,6 +662,10 @@ packages:
     engines: {node: ^22.18.0 || >=24.11.0}
     peerDependencies:
       '@babel/core': ^8.0.0
+
+  '@babel/runtime@7.29.10':
+    resolution: {integrity: sha512-NpugTzbKgGrNe45Ui32cN8vCFFMxVtP/9rtfwv0nP5FRDAjvYBxJcLVpYA9mr1jxP6cnIT7x9LUzuDTbWYYNRA==}
+    engines: {node: '>=6.9.0'}
 
   '@babel/template@8.0.0':
     resolution: {integrity: sha512-eAD0QW/AlbamBbw0FeGiwasbCVPq5ncW0HNVyLP3B9czqLyh4gvw+5JTSNt6le9+ziAU7mqDZsKTHf3jTb4chQ==}
@@ -1243,6 +1349,9 @@ packages:
   '@sindresorhus/merge-streams@4.0.0':
     resolution: {integrity: sha512-tlqY9xq5ukxTUZBmoOp+m61cqwQD5pHJtFY3Mn8CA8ps6yghLH/Hw8UPdqg4OLmFW3IFlcXnQNmo/dh8HzXYIQ==}
     engines: {node: '>=18'}
+
+  '@stablelib/base64@1.0.1':
+    resolution: {integrity: sha512-1bnPQqSxSuc3Ii6MhBysoWCg58j97aUjuCSZrGSmDxNqtytIi0k8utUenAwTZN4V5mXXYGsVUI9zeBqy+jBOSQ==}
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
@@ -1956,6 +2065,10 @@ packages:
   diff-match-patch@1.0.5:
     resolution: {integrity: sha512-IayShXAgj/QMXgB0IWmKx+rOPuGMhqm5w6jvFxmVenXKIzRqTAAsbBPT3kWQeGANj3jGgvcvv4yK6SxqYmikgw==}
 
+  diff@9.0.0:
+    resolution: {integrity: sha512-svtcdpS8CgJyqAjEQIXdb3OjhFVVYjzGAPO8WGCmRbrml64SPw/jJD4GoE98aR7r25A0XcgrK3F02yw9R/vhQw==}
+    engines: {node: '>=0.3.1'}
+
   docker-compose@1.5.0:
     resolution: {integrity: sha512-O+eD6c63+BJORUWddXA7uAlI6H1KLDPd/aS14k73nXYpFliM48C3xrrKB3sXsR1Fp/rHUZQe7+fJ+QA7+jepyw==}
     engines: {node: '>= 6.0.0'}
@@ -2116,6 +2229,9 @@ packages:
 
   fast-querystring@1.1.2:
     resolution: {integrity: sha512-g6KuKWmFXc0fID8WWH0jit4g0AGBoJhCkJMb1RmbsSEUNvQ+ZC8D6CUZ+GtF8nMzSPXnhiePyyqqipzNNEnHjg==}
+
+  fast-sha256@1.3.0:
+    resolution: {integrity: sha512-n11RGP/lrWEFI/bWdygLxhI+pVeo1ZYIVwvvPkW7azl/rOy+F3HYRZ2K5zeE9mmkhQppyv9sQFx0JM9UabnpPQ==}
 
   fast-string-truncated-width@3.0.3:
     resolution: {integrity: sha512-0jjjIEL6+0jag3l2XWWizO64/aZVtpiGE3t0Zgqxv0DPuxiMjvB3M24fCyhZUO4KomJQPj3LTSUnDP3GpdwC0g==}
@@ -2572,6 +2688,10 @@ packages:
 
   json-schema-ref-resolver@3.0.1:
     resolution: {integrity: sha512-w+HwgljXpVwZ3IidoUR1qPZxSOQ+NRQWuVe6a5pe8XbHsNZE4UAwVPUvzZagn7yBKbJtt6UJnRFYbNTRPZI45Q==}
+
+  json-schema-to-ts@3.1.1:
+    resolution: {integrity: sha512-+DWg8jCJG2TEnpy7kOm/7/AxaYoaRbjVB4LFZLySZlWn8exGs3A4OLJR966cVvU26N7X9TWxl+Jsw7dzAqKT6g==}
+    engines: {node: '>=16'}
 
   json-schema-traverse@1.0.0:
     resolution: {integrity: sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==}
@@ -3296,6 +3416,9 @@ packages:
   stackback@0.0.2:
     resolution: {integrity: sha512-1XMJE5fQo1jGH6Y/7ebnwPOBEkIEnT4QF32d5R1+VXdXveM0IBMJt8zfaxX1P3QhVwrYe+576+jkANtSS2mBbw==}
 
+  standardwebhooks@1.1.1:
+    resolution: {integrity: sha512-bCbX9ZEyFkWPsRz7Bl3NuQUJohmwGSev/yhr7vhaGPlc4AfIrspIRa6cPTBuI1ItmrTDJ4d/S2hCsfe4+vQGnQ==}
+
   statuses@2.0.2:
     resolution: {integrity: sha512-DvEy55V3DB7uknRo+4iOGT5fP1slR8wQohVdknigZPMpMstaKJQWhwiYBACJE3Ul2pTnATihhBYnRhZQHGBiRw==}
     engines: {node: '>= 0.8'}
@@ -3456,6 +3579,9 @@ packages:
   tree-kill@1.2.2:
     resolution: {integrity: sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==}
     hasBin: true
+
+  ts-algebra@2.0.0:
+    resolution: {integrity: sha512-FPAhNPFMrkwz76P7cdjdmiShwMynZYN6SgOujD1urY4oNm80Ou9oMdmbR45LotcKOXoy7wSmHkRFE6Mxbrhefw==}
 
   ts-morph@28.0.0:
     resolution: {integrity: sha512-Wp3tnZ2bzwxyTZMtgWVzXDfm7lB1Drz+y9DmmYH/L702PQhPyVrp3pkou3yIz4qjS14GY9kcpmLiOOMvl8oG1g==}
@@ -3812,8 +3938,69 @@ packages:
 
 snapshots:
 
+  '@agentclientprotocol/claude-agent-acp@0.94.0(@anthropic-ai/sdk@1.1.0(zod@4.6.7))(@modelcontextprotocol/sdk@1.32.1(zod@4.6.7))':
+    dependencies:
+      '@agentclientprotocol/sdk': 2.0.0(zod@4.6.7)
+      '@anthropic-ai/claude-agent-sdk': 0.3.303(@anthropic-ai/sdk@1.1.0(zod@4.6.7))(@modelcontextprotocol/sdk@1.32.1(zod@4.6.7))(zod@4.6.7)
+      diff: 9.0.0
+      zod: 4.6.7
+    transitivePeerDependencies:
+      - '@anthropic-ai/sdk'
+      - '@modelcontextprotocol/sdk'
+
   '@agentclientprotocol/sdk@1.9.0(zod@4.6.7)':
     dependencies:
+      zod: 4.6.7
+
+  '@agentclientprotocol/sdk@2.0.0(zod@4.6.7)':
+    dependencies:
+      zod: 4.6.7
+
+  '@anthropic-ai/claude-agent-sdk-darwin-arm64@0.3.303':
+    optional: true
+
+  '@anthropic-ai/claude-agent-sdk-darwin-x64@0.3.303':
+    optional: true
+
+  '@anthropic-ai/claude-agent-sdk-linux-arm64-musl@0.3.303':
+    optional: true
+
+  '@anthropic-ai/claude-agent-sdk-linux-arm64@0.3.303':
+    optional: true
+
+  '@anthropic-ai/claude-agent-sdk-linux-x64-musl@0.3.303':
+    optional: true
+
+  '@anthropic-ai/claude-agent-sdk-linux-x64@0.3.303':
+    optional: true
+
+  '@anthropic-ai/claude-agent-sdk-win32-arm64@0.3.303':
+    optional: true
+
+  '@anthropic-ai/claude-agent-sdk-win32-x64@0.3.303':
+    optional: true
+
+  '@anthropic-ai/claude-agent-sdk@0.3.303(@anthropic-ai/sdk@1.1.0(zod@4.6.7))(@modelcontextprotocol/sdk@1.32.1(zod@4.6.7))(zod@4.6.7)':
+    dependencies:
+      '@anthropic-ai/sdk': 1.1.0(zod@4.6.7)
+      '@modelcontextprotocol/sdk': 1.32.1(zod@4.6.7)
+      zod: 4.6.7
+    optionalDependencies:
+      '@anthropic-ai/claude-agent-sdk-darwin-arm64': 0.3.303
+      '@anthropic-ai/claude-agent-sdk-darwin-x64': 0.3.303
+      '@anthropic-ai/claude-agent-sdk-linux-arm64': 0.3.303
+      '@anthropic-ai/claude-agent-sdk-linux-arm64-musl': 0.3.303
+      '@anthropic-ai/claude-agent-sdk-linux-x64': 0.3.303
+      '@anthropic-ai/claude-agent-sdk-linux-x64-musl': 0.3.303
+      '@anthropic-ai/claude-agent-sdk-win32-arm64': 0.3.303
+      '@anthropic-ai/claude-agent-sdk-win32-x64': 0.3.303
+
+  '@anthropic-ai/sdk@1.1.0(zod@4.6.7)':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      json-schema-to-ts: 3.1.1
+      standardwebhooks: 1.1.1
+    optionalDependencies:
       zod: 4.6.7
 
   '@asyncapi/parser@3.6.6':
@@ -4053,6 +4240,8 @@ snapshots:
       '@babel/helper-validator-option': 8.0.0
       '@babel/plugin-transform-modules-commonjs': 8.0.1(@babel/core@8.0.7)
       '@babel/plugin-transform-typescript': 8.0.6(@babel/core@8.0.7)
+
+  '@babel/runtime@7.29.10': {}
 
   '@babel/template@8.0.0':
     dependencies:
@@ -4704,6 +4893,8 @@ snapshots:
   '@sec-ant/readable-stream@0.4.1': {}
 
   '@sindresorhus/merge-streams@4.0.0': {}
+
+  '@stablelib/base64@1.0.1': {}
 
   '@standard-schema/spec@1.1.0': {}
 
@@ -5521,6 +5712,8 @@ snapshots:
 
   diff-match-patch@1.0.5: {}
 
+  diff@9.0.0: {}
+
   docker-compose@1.5.0:
     dependencies:
       yaml: 2.9.1
@@ -5787,6 +5980,8 @@ snapshots:
   fast-querystring@1.1.2:
     dependencies:
       fast-decode-uri-component: 1.0.1
+
+  fast-sha256@1.3.0: {}
 
   fast-string-truncated-width@3.0.3: {}
 
@@ -6230,6 +6425,11 @@ snapshots:
   json-schema-ref-resolver@3.0.1:
     dependencies:
       dequal: 2.0.3
+
+  json-schema-to-ts@3.1.1:
+    dependencies:
+      '@babel/runtime': 7.29.10
+      ts-algebra: 2.0.0
 
   json-schema-traverse@1.0.0: {}
 
@@ -6942,6 +7142,11 @@ snapshots:
 
   stackback@0.0.2: {}
 
+  standardwebhooks@1.1.1:
+    dependencies:
+      '@stablelib/base64': 1.0.1
+      fast-sha256: 1.3.0
+
   statuses@2.0.2: {}
 
   std-env@4.3.0: {}
@@ -7158,6 +7363,8 @@ snapshots:
   tr46@0.0.3: {}
 
   tree-kill@1.2.2: {}
+
+  ts-algebra@2.0.0: {}
 
   ts-morph@28.0.0:
     dependencies:

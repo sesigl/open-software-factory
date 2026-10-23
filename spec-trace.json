@@ -2,6 +2,7 @@
   "features": [
     "modules/*/features/**/*.feature",
     "ports/*/features/**/*.feature",
+    "adapters/*/*/features/**/*.feature",
     "packages/*/features/**/*.feature",
     "contracts/features/**/*.feature",
     "tools/features/**/*.feature",

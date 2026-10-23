@@ -7,6 +7,7 @@ export { type Scenario, statusOf } from "@opensoftware/spec-files";
 const FEATURE_GLOBS = [
   "modules/*/features/**/*.feature",
   "ports/*/features/**/*.feature",
+  "adapters/*/*/features/**/*.feature",
   "packages/*/features/**/*.feature",
   "contracts/features/**/*.feature",
   "tools/features/**/*.feature",

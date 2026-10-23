@@ -1,0 +1,39 @@
+{
+  "name": "@opensoftware/harness-claude-code",
+  "version": "0.0.0",
+  "description": "harness-claude-code: runs Claude Code behind the harness port through its ACP bridge, asking before each edit and command, with a tool allowlist, cancel within 5 seconds and a run record with tokens and cost.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "adapters/harness/claude-code"
+  },
+  "type": "module",
+  "bin": {
+    "harness-claude-code": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "vitest run",
+    "docs": "node ../../../tools/bin/osf.ts docs .",
+    "mutation": "node ../../../tools/bin/osf.ts mutation ."
+  },
+  "devDependencies": {
+    "@opensoftware/contracts": "workspace:*",
+    "@opensoftware/testkit": "workspace:*"
+  },
+  "dependencies": {
+    "@agentclientprotocol/claude-agent-acp": "0.94.0",
+    "@agentclientprotocol/sdk": "1.9.0",
+    "@opensoftware/cli": "workspace:*",
+    "@opensoftware/harness-proxy": "workspace:*"
+  }
+}

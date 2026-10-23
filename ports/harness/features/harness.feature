@@ -43,7 +43,7 @@ Feature: Running a coding agent through a harness adapter
     When the client sends the prompt "add a date" and cancels the session while the turn runs
     Then the turn ends with "cancelled" within 5 seconds
 
-  @id=SCN-HARNESS-006 @status=implemented @conformance
+  @id=SCN-HARNESS-006 @status=deprecated @conformance
   Scenario: Cancel stops a harness that ignores it within 5 seconds
     Given a harness scripted to keep its turn for "add a date" running and to ignore cancel
     And the adapter runs that harness
@@ -51,7 +51,7 @@ Feature: Running a coding agent through a harness adapter
     Then the turn ends with "cancelled" within 5 seconds
     And the adapter exits with code 0
 
-  @id=SCN-HARNESS-007 @status=implemented @conformance @realizes=SCN-FACTORY-ORCH-007
+  @id=SCN-HARNESS-007 @status=deprecated @conformance @realizes=SCN-FACTORY-ORCH-007
   Scenario: The transcript export is a run record that links the session's transcript
     Given the adapter ran a session with the prompt "fix the typo" and the resource attributes "osf.run.id=run-1,osf.work_item.id=wi-1,osf.factory.version=3f2a9c1,osf.requester.kind=person,osf.requester.id=slack:U024BE7LH,osf.source=slack"
     When the developer runs "transcript" with the session's ID
@@ -95,3 +95,11 @@ Feature: Running a coding agent through a harness adapter
     And the adapter runs that harness
     When the client cancels the turn of "add a date", waits 4 seconds and sends the prompt "fix the typo"
     Then the turn ends with "end_turn" and the reply "done"
+
+  @id=SCN-HARNESS-014 @status=implemented @conformance @replaces=SCN-HARNESS-007 @realizes=SCN-FACTORY-ORCH-007
+  Scenario: The transcript export is a run record of the session that links its transcript
+    Given the adapter ran a session with the prompt "fix the typo" and the resource attributes "osf.run.id=run-1,osf.work_item.id=wi-1,osf.factory.version=3f2a9c1,osf.requester.kind=person,osf.requester.id=slack:U024BE7LH,osf.source=slack"
+    When the developer runs "transcript" with the session's ID
+    Then "$OUTPUT/run-record.json" is a valid "run-record" with "osf.run.id" "run-1" and "osf.outcome" "succeeded"
+    And its "gen_ai.conversation.id" is the session's ID
+    And its "osf.transcript.uri" is the file "$OUTPUT/transcript.jsonl", which holds the prompt "fix the typo"

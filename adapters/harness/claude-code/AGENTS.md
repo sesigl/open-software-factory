@@ -1,0 +1,40 @@
+# AGENTS.md for adapter `harness/claude-code`
+
+Adds rules for this adapter. The root `AGENTS.md` applies in full. Decision: ADR 0052.
+
+## Public surface
+
+The only ways a system test or another program may use this adapter:
+
+- ACP on stdio: `harness-claude-code run [--allow <kinds>]` (see `README.md#how-it-behaves`)
+- CLI: `harness-claude-code transcript <session ID>` (see `README.md#commands`)
+- Output: `$OUTPUT/run-record.json` and `$OUTPUT/transcript.jsonl`
+- State: the session records and Claude Code's settings in `OSF_DATA`, private to the adapter
+- Environment variables: the list in `README.md#configuration` (generated from `src/config.schema.json`)
+
+## Architecture
+
+One layer in `architecture.json` (ADR 0014): `entry` (`src/cli.ts`) parses the command line, names Claude Code's
+bridge, its environment and the permission mode of each session, and hands the rest to `@opensoftware/harness-proxy`.
+Code that another harness adapter needs goes into that library, not here. The ARCH check enforces the layers.
+
+## Allowed exceptions
+
+- Unit tests: none.
+
+## Budget
+
+- System tests: 120 seconds in total on the CI runner. Each test starts the real Claude Code (about 1 second) against
+  `fakes.modelGateway`; no test calls a real model.
+
+## Quality limits
+
+Checked by DUP and MUTATION (ADR 0037):
+
+- Duplication: at most 3% of the lines in src/.
+- Mutation score: at least 70% of the mutants in changed lines, 80% in total.
+
+## Scenario prefix
+
+`SCN-HCLAUDE-NNN` in `features/`, and the `@conformance` scenarios of the port: `SCN-HARNESS-NNN` in
+`ports/harness/features/`.

@@ -22,6 +22,7 @@ Use these terms in scenarios, code, UI text and docs.
 | Foreman | The orchestrator that runs the stages of a factory as durable workflows. |
 | Harness | A coding-agent program that runs the inner tool loop, such as Claude Code, Codex or OpenCode. |
 | Harness adapter | A program that runs one harness behind the harness port: it speaks ACP on stdio to its client and adds the tool allowlist, cancel within 5 seconds and the transcript export (ADR 0050). |
+| Harness proxy | The library `@opensoftware/harness-proxy` that every harness adapter runs its agent behind: it passes ACP on, applies the allowlist and the cancel deadline, records each session and exports it as a run record (ADR 0052). |
 | Sandbox | An isolated environment in which one stage's harness runs. |
 | Run | One harness session for one stage of one work item. |
 | Run record | The stored transcript, trace, cost and links of a run, in OpenTelemetry form. |

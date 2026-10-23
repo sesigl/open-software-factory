@@ -27,3 +27,43 @@ Feature: Scripted model gateway
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-065 @status=implemented
+  Scenario: A scripted Messages API call gets its scripted reply
+    Given a module whose CLI sends "Say hello" to the Anthropic Messages endpoint at "DEMO_ANTHROPIC_URL" and prints the text and the stop reason
+    And its system test scripts the reply "Hello, Ada" for a request that contains "Say hello" and expects "Hello, Ada end_turn"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-066 @status=implemented
+  Scenario: A scripted Messages API reply streams a tool call
+    Given a module whose CLI streams a Messages API call that contains "fix the typo" from "DEMO_ANTHROPIC_URL" and prints each tool call and the stop reason
+    And its system test scripts the tool call "Write" with the input "{"file_path":"notes.md"}" and expects "Write {"file_path":"notes.md"} tool_use"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-067 @status=implemented
+  Scenario: Messages API calls take the scripted replies in order, and the last one answers again
+    Given a module whose CLI sends "fix the typo" to the Anthropic Messages endpoint at "DEMO_ANTHROPIC_URL" three times and prints each text
+    And its system test scripts the replies "first" and "second" for requests that contain "fix the typo" and expects "first", "second" and "second"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-068 @status=implemented
+  Scenario: A scripted Messages API call that hangs gets no answer
+    Given a module whose CLI sends "add a date" to the Anthropic Messages endpoint at "DEMO_ANTHROPIC_URL", gives up after 500 milliseconds and prints "gave up"
+    And its system test scripts a reply that hangs for a request that contains "add a date" and expects "gave up"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-069 @status=implemented
+  Scenario: A scripted Messages API reply ends with its scripted stop reason and token usage
+    Given a module whose CLI sends "Say hello" to the Anthropic Messages endpoint at "DEMO_ANTHROPIC_URL" and prints the stop reason and the token usage
+    And its system test scripts the stop reason "refusal" with 1000 prompt tokens and 200 completion tokens and expects "refusal 1000 200"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
