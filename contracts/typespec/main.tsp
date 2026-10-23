@@ -10,3 +10,4 @@ import "./score.tsp";
 import "./events.tsp";
 import "./gatekeeper.tsp";
 import "./gatekeeper-api.tsp";
+import "./sandbox.tsp";
