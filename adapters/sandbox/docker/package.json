@@ -1,0 +1,36 @@
+{
+  "name": "@opensoftware/sandbox-docker",
+  "version": "0.1.0",
+  "description": "sandbox-docker: runs isolated, resource-limited sandboxes on Docker behind an iron-proxy egress proxy that refuses other hosts, puts in the real secrets and allows only the declared MCP tools.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "adapters/sandbox/docker"
+  },
+  "type": "module",
+  "bin": {
+    "sandbox-docker": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "vitest run",
+    "docs": "node ../../../tools/bin/osf.ts docs .",
+    "mutation": "node ../../../tools/bin/osf.ts mutation ."
+  },
+  "devDependencies": {
+    "@opensoftware/testkit": "workspace:*"
+  },
+  "dependencies": {
+    "@opensoftware/cli": "workspace:*",
+    "@opensoftware/contracts": "workspace:*"
+  }
+}

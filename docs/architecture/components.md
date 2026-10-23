@@ -91,10 +91,10 @@ records, `runSpans`, lives in `contracts` (ADR 0041).
 | Need | Adopt | Alternatives | Interface |
 | --- | --- | --- | --- |
 | Coding harness | Claude Code, Codex, OpenCode, Gemini CLI | OpenHands, Goose, Aider | Agent Client Protocol (ACP); Coder's agentapi as fallback |
-| Sandbox | kubernetes-sigs/agent-sandbox with gVisor or Kata | E2B, Daytona; Docker locally | sandbox port |
+| Sandbox | kubernetes-sigs/agent-sandbox with gVisor or Kata; Docker for one machine (ADR 0054) | E2B, Daytona | sandbox port |
 | Secrets out of the sandbox | iron-proxy | agentgateway, Cloak | egress proxy swapping placeholder tokens |
 | Secret storage | OpenBao | Vault, Infisical | secret references |
-| MCP gateway | agentgateway | — | MCP with per-agent allowlists |
+| MCP gateway | iron-proxy's MCP policy in each sandbox (ADR 0054) | agentgateway | MCP with per-agent tool allowlists |
 | Inference gateway | LiteLLM | agentgateway; Bedrock, Vertex behind it | OpenAI-compatible endpoint, routing config |
 | Durable workflows | Temporal | DBOS | workflows and signals |
 | Chat, tracker and forge adapters | Vercel Chat SDK | native webhooks | bot handlers |

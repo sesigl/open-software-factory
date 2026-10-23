@@ -133,6 +133,13 @@
       "component": "harness-opencode",
       "initial-version": "0.1.0",
       "bump-minor-pre-major": true
+    },
+    "adapters/sandbox/docker": {
+      "release-type": "node",
+      "package-name": "@opensoftware/sandbox-docker",
+      "component": "sandbox-docker",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
     }
   }
 }
