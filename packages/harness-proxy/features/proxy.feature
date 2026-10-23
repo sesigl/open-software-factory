@@ -124,5 +124,7 @@ Feature: The ACP proxy of a harness adapter
     Given a harness scripted to keep its turn for "add a date" running until it receives "use the existing date helper"
     And serveProxy runs that harness with the steering request "_session/steering"
     When the client sends the prompt "add a date" and, while the turn runs, sends "use the existing date helper"
+    And the client sends the prompt "add a test" after the turn ended
     Then the harness received "use the existing date helper" as the request "_session/steering"
     And both prompts end with "end_turn"
+    And "add a test" reached the harness as a new turn that ends with "end_turn"

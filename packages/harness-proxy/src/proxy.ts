@@ -113,7 +113,7 @@ export function serveProxy(options: ProxyOptions): Promise<void> {
       turns.set(sessionId, answering);
       const answer = await answering;
       running.set(sessionId, (running.get(sessionId) as number) - 1);
-      if (turns.get(sessionId) === answering) turns.delete(sessionId);
+      turns.delete(sessionId);
       record(sessionId, {
         type: "stop",
         stopReason: answer.stopReason,
