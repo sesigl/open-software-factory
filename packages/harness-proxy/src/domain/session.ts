@@ -1,4 +1,4 @@
-// The session record: one JSON line per event of a session, in the order the proxy saw them (ADR 0050, ADR 0051).
+// The session record: one JSON line per event of a session, in the order the proxy saw them (ADR 0050, ADR 0052).
 import type { ContentBlock, PromptResponse, SessionUpdate, ToolKind, Usage } from "@agentclientprotocol/sdk";
 
 /** What the proxy did with a tool call the agent asked to approve. */

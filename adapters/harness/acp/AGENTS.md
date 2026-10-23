@@ -16,7 +16,7 @@ The only ways a system test or another program may use this adapter:
 
 One layer in `architecture.json` (ADR 0014): `entry` (`src/cli.ts`) parses the command line and hands the rest to
 `@opensoftware/harness-proxy`, which holds the proxy, the allowlist, the session records and the run record
-(ADR 0051). The ARCH check enforces the layers.
+(ADR 0052). The ARCH check enforces the layers.
 
 ## Allowed exceptions
 

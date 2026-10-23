@@ -47,7 +47,7 @@ export interface Acp {
    */
   connect(args?: string[], options?: { env?: Record<string, string>; approve?: boolean }): Promise<AcpClient>;
   /**
-   * Runs an ACP agent in the test's own process, for a library (ADR 0039, ADR 0051): `start` gets the agent's side
+   * Runs an ACP agent in the test's own process, for a library (ADR 0039, ADR 0052): `start` gets the agent's side
    * of a pair of streams and returns a promise that settles when the agent ends. The client is the one `connect`
    * gives; `exited` gives 0 when that promise resolves and 1 when it rejects.
    */

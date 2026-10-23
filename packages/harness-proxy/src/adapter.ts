@@ -1,4 +1,4 @@
-// runAdapter: the command line every harness adapter shares, `run` and `transcript` (ADR 0051). The adapter names
+// runAdapter: the command line every harness adapter shares, `run` and `transcript` (ADR 0052). The adapter names
 // its harness, its usage and the agent it starts; everything else is the same for each adapter.
 import { parseArgs } from "node:util";
 import { type Command, check, type Io, outputPath, runProgram } from "@opensoftware/cli";

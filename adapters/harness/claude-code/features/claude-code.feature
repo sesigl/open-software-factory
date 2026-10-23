@@ -2,7 +2,7 @@
 Feature: What the claude-code adapter adds to the harness port
   The claude-code adapter runs Claude Code through its ACP bridge behind the harness proxy. Every session asks before
   each edit and command, reads no settings of the machine's user, and sends its model calls to the configured gateway
-  (ADR 0051).
+  (ADR 0052).
 
   @id=SCN-HCLAUDE-001 @status=implemented @realizes=SCN-FACTORY-OPEN-002
   Scenario: The run record names the harness "claude-code" and the version of its ACP bridge

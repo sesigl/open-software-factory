@@ -8,7 +8,7 @@ The ACP proxy that every harness adapter runs between its client and the coding 
 sessions, prompts and updates on, refuses tool calls outside the allowlist without asking the client, stops an agent
 that does not end a cancelled turn within 5 seconds, records every session, and exports a session as a run record.
 A library: adapters depend on it, it has no command of its own. Decisions:
-[ADR 0050](../../docs/decisions/0050-harness-port.md), [ADR 0051](../../docs/decisions/0051-harness-claude-code.md).
+[ADR 0050](../../docs/decisions/0050-harness-port.md), [ADR 0052](../../docs/decisions/0052-harness-claude-code.md).
 
 ## Quick start
 

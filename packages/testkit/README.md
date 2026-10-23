@@ -73,7 +73,7 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
   `approve: false`, and lists them in `permissionRequests()`. `exited()` waits for the module to exit and gives its exit code. It
   offers the module no file system and no terminal.
 - `sut.acp.serve(start, { approve })`: the same client for a library that serves ACP in the test's own process, such
-  as `@opensoftware/harness-proxy` ([ADR 0051](../../docs/decisions/0051-harness-claude-code.md)). `start` gets the
+  as `@opensoftware/harness-proxy` ([ADR 0052](../../docs/decisions/0052-harness-claude-code.md)). `start` gets the
   streams `{ input, output }` to serve on; `exited()` gives 0 when its promise resolved and 1 when it rejected.
 - `sut.events.watch(nats, subjects)`: records the CloudEvents published on a NATS server from now on.
   `received(type, { count, timeoutMs })` waits for them and, on timeout, names what arrived instead;
@@ -86,7 +86,7 @@ Every server, client and subscription stops when the scenario ends, before the f
   gets `reply`, with the token `usage` of the entry when it has one (`{ prompt_tokens, completion_tokens }`, default 0
   and 0); any other call gets HTTP 500 and fails the scenario with the request shown. The same gateway answers the
   Anthropic Messages API at `anthropicUrl` (no `/v1`, as `ANTHROPIC_BASE_URL` takes it), as JSON or as a stream
-  when the call asks for one ([ADR 0051](../../docs/decisions/0051-harness-claude-code.md)). A call to
+  when the call asks for one ([ADR 0052](../../docs/decisions/0052-harness-claude-code.md)). A call to
   `POST /v1/messages` takes the first matching entry that has not answered yet, so a tool loop scripts one entry per
   model call; after that the last matching entry answers again. An entry may have `tools` (`{ name, input }`, sent
   as `tool_use` blocks with the ids `toolu_1`, `toolu_2`, ...), a `stopReason` (default `tool_use` with tools,
@@ -113,7 +113,7 @@ Every server, client and subscription stops when the scenario ends, before the f
   a cancel of the session ends the waiting turn with `cancelled` instead, unless the turn has `ignoresCancel`.
   `stopReason` ends the turn with another stop reason, such as `max_tokens` ([ADR 0050](../../docs/decisions/0050-harness-port.md)).
   A turn with `usage` (`{ inputTokens, outputTokens }`) reports it in its `session/prompt` answer, and `costUsd`
-  sends a `usage_update` with that cost in USD first ([ADR 0051](../../docs/decisions/0051-harness-claude-code.md)).
+  sends a `usage_update` with that cost in USD first ([ADR 0052](../../docs/decisions/0052-harness-claude-code.md)).
 - `fakes.postgres()`: PostgreSQL 18 for this scenario, as PGlite in the test's process behind a small
   wire-protocol server, with no Docker ([ADR 0049](../../docs/decisions/0049-in-memory-stand-ins.md)). The module
   connects to `postgres://test:test@127.0.0.1:<port>/test` with its own driver; a wrong password is refused with

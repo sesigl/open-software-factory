@@ -3,7 +3,7 @@ Feature: The ACP proxy of a harness adapter
   serveProxy runs between an ACP client and the ACP agent of a harness: it passes sessions, prompts and updates on,
   answers tool calls outside the allowlist itself, stops an agent that does not end a cancelled turn, and records
   every session. exportTranscript turns a recorded session into a run record. runAdapter is the command line that
-  every adapter shares (ADR 0050, ADR 0051).
+  every adapter shares (ADR 0050, ADR 0052).
 
   @id=SCN-HPROXY-001 @status=implemented
   Scenario: serveProxy passes a prompt to the agent and its reply back to the client

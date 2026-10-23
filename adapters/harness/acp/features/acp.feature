@@ -1,6 +1,6 @@
 @module=harness-acp @owner=maintainers
 Feature: What the acp adapter adds to the harness port
-  The acp adapter runs any ACP agent named on its command line behind the harness proxy (ADR 0050, ADR 0051).
+  The acp adapter runs any ACP agent named on its command line behind the harness proxy (ADR 0050, ADR 0052).
 
   @id=SCN-HACP-001 @status=implemented
   Scenario: The run record names the harness "acp" and the version of the agent

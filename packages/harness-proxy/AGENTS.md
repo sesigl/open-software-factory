@@ -1,7 +1,7 @@
 # AGENTS.md for `packages/harness-proxy`
 
 Adds rules for the harness-proxy library. The root `AGENTS.md` applies in full. Decisions: ADR 0039, ADR 0050,
-ADR 0051.
+ADR 0052.
 
 ## Public surface
 

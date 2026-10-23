@@ -1,5 +1,5 @@
 // A scripted model gateway on 127.0.0.1 with an OpenAI-compatible chat completions API and the Anthropic Messages
-// API (ADR 0051). It answers only the calls its script names; any other call fails the scenario with the request it
+// API (ADR 0052). It answers only the calls its script names; any other call fails the scenario with the request it
 // received.
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";

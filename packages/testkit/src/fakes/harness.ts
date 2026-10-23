@@ -34,7 +34,7 @@ export interface HarnessTurn {
   ignoresCancel?: boolean;
   /** The stop reason that ends the turn; "end_turn" by default. */
   stopReason?: StopReason;
-  /** The token usage the agent reports in its answer to the prompt (ADR 0051). */
+  /** The token usage the agent reports in its answer to the prompt (ADR 0052). */
   usage?: { inputTokens: number; outputTokens: number };
   /** The session's cost so far in USD, which the agent reports in a `usage_update` before the turn ends. */
   costUsd?: number;
