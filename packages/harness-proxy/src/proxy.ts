@@ -28,6 +28,12 @@ export interface ProxyOptions {
   resource?: Record<string, string>;
   /** Changes each `session/new` request of the client before the agent gets it. */
   newSession?: (params: NewSessionRequest) => NewSessionRequest;
+  /**
+   * The request the agent takes a steering message as, for example `_session/steering` for codex-acp (ADR 0053). With
+   * it, a prompt sent while a turn runs goes to the agent as this request and ends with that turn. Without it, the
+   * prompt goes to the agent as a prompt.
+   */
+  steering?: string;
   /** The client's side: the stream the proxy reads the client from and the one it writes to. Default: stdio. */
   io?: { input: Readable; output: Writable };
 }
@@ -45,6 +51,8 @@ export function serveProxy(options: ProxyOptions): Promise<void> {
   const child = spawn(command, args, { stdio: ["pipe", "pipe", "inherit"], env: { ...process.env, ...env } });
   const record = append.bind(undefined, options.data);
   const running = new Map<string, number>();
+  // The answer of the turn that runs in each session, for a steering message to end with.
+  const turns = new Map<string, Promise<PromptResponse>>();
   // Settles every running turn with "cancelled" when the proxy stops an agent that ignored a cancel.
   let stopAgent = (): void => undefined;
   const stopped = new Promise<PromptResponse>((resolve) => {
@@ -95,9 +103,17 @@ export function serveProxy(options: ProxyOptions): Promise<void> {
     .onRequest("session/prompt", async ({ params }) => {
       const { sessionId } = params;
       record(sessionId, { type: "prompt", prompt: params.prompt });
+      const turn = turns.get(sessionId);
+      if (options.steering && turn) {
+        await toAgent.request(options.steering, { sessionId, prompt: params.prompt });
+        return turn;
+      }
       running.set(sessionId, (running.get(sessionId) ?? 0) + 1);
-      const answer = await Promise.race([toAgent.request("session/prompt", params), stopped]);
+      const answering = Promise.race([toAgent.request("session/prompt", params), stopped]);
+      turns.set(sessionId, answering);
+      const answer = await answering;
       running.set(sessionId, (running.get(sessionId) as number) - 1);
+      if (turns.get(sessionId) === answering) turns.delete(sessionId);
       record(sessionId, {
         type: "stop",
         stopReason: answer.stopReason,

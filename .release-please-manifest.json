@@ -14,5 +14,7 @@
   "modules/gatekeeper": "0.2.0",
   "adapters/harness/acp": "0.2.0",
   "packages/harness-proxy": "0.1.0",
-  "adapters/harness/claude-code": "0.1.0"
+  "adapters/harness/claude-code": "0.1.0",
+  "adapters/harness/codex": "0.0.0",
+  "adapters/harness/opencode": "0.0.0"
 }

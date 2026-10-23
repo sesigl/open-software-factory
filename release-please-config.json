@@ -119,6 +119,20 @@
       "component": "harness-claude-code",
       "initial-version": "0.1.0",
       "bump-minor-pre-major": true
+    },
+    "adapters/harness/codex": {
+      "release-type": "node",
+      "package-name": "@opensoftware/harness-codex",
+      "component": "harness-codex",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
+    },
+    "adapters/harness/opencode": {
+      "release-type": "node",
+      "package-name": "@opensoftware/harness-opencode",
+      "component": "harness-opencode",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
     }
   }
 }

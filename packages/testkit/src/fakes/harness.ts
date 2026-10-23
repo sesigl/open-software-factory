@@ -49,14 +49,16 @@ export interface Harness {
   /** Start the agent with this command and these arguments; it speaks ACP on stdin and stdout. */
   command: string;
   args: string[];
-  /** The text of every prompt the agent received, in order. */
+  /** The text of every prompt the agent received, in order, steering messages included. */
   prompts(): string[];
+  /** The text of every steering message the agent received as the request `_session/steering`, in order. */
+  steeringRequests(): string[];
   /** Every tool call the agent asked to approve, with the client's answer, in order. */
   toolCalls(): HarnessToolCall[];
 }
 
 /** One line of the agent's log: a prompt it received or a tool call it asked to approve. */
-export type HarnessLogEntry = { prompt: string; scripted: boolean } | { tool: HarnessToolCall };
+export type HarnessLogEntry = { prompt: string; scripted: boolean; steering?: true } | { tool: HarnessToolCall };
 
 // Next to this file in the source tree and in the built package alike.
 const AGENT = fileURLToPath(new URL(`./harness-agent${extname(fileURLToPath(import.meta.url))}`, import.meta.url));
@@ -79,6 +81,7 @@ export function startHarness(script: HarnessTurn[]): { harness: Harness; close()
       command: process.execPath,
       args: [AGENT, scriptFile, logFile],
       prompts: () => prompts().map((entry) => entry.prompt),
+      steeringRequests: () => prompts().flatMap((entry) => (entry.steering ? [entry.prompt] : [])),
       toolCalls: () => entries().flatMap((entry) => ("tool" in entry ? [entry.tool] : [])),
     },
     async close() {
