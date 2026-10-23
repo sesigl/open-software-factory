@@ -1,12 +1,13 @@
 // The scripted ACP agent that fakes.harness() starts as a process: node harness-agent.ts <script.json> <log.jsonl>.
 // For each prompt it takes the first unused turn whose `when` the prompt contains, asks the client to approve the
 // turn's tool calls, applies its edits, streams the reply and ends the turn. A prompt that a waiting turn waits for
-// is a steering message: it ends at once and lets that turn go on. The agent logs every prompt and tool call so the
-// testkit can show the prompts nobody scripted.
+// is a steering message: it ends at once and lets that turn go on. The agent also takes a steering message as the
+// request `_session/steering`, as codex-acp does (ADR 0053). The agent logs every prompt and tool call so the testkit
+// can show the prompts nobody scripted.
 import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
-import { type AgentContext, agent, ndJsonStream, PROTOCOL_VERSION } from "@agentclientprotocol/sdk";
+import { type AgentContext, agent, type ContentBlock, ndJsonStream, PROTOCOL_VERSION } from "@agentclientprotocol/sdk";
 import type { HarnessLogEntry, HarnessTurn } from "./harness.ts";
 
 const [scriptFile, logFile] = process.argv.slice(2) as [string, string];
@@ -51,6 +52,9 @@ async function approveTools(client: AgentContext, sessionId: string, turn: Harne
   return allowed;
 }
 
+const textOf = (prompt: ContentBlock[]): string =>
+  prompt.map((block) => (block.type === "text" ? block.text : "")).join("\n");
+
 agent({ name: "testkit-scripted-harness" })
   .onRequest("initialize", ({ params }) => {
     writesThroughClient = params.clientCapabilities?.fs?.writeTextFile === true;
@@ -70,8 +74,20 @@ agent({ name: "testkit-scripted-harness" })
     const waiting = sessions.get(params.sessionId)?.waiting;
     if (waiting && !waiting.ignoresCancel) waiting.wake("cancelled");
   })
+  .onRequest(
+    "_session/steering",
+    (params: unknown) => params as { sessionId: string; prompt: ContentBlock[] },
+    ({ params }) => {
+      const prompt = textOf(params.prompt);
+      const waiting = sessions.get(params.sessionId)?.waiting;
+      const injected = waiting !== undefined && prompt.includes(waiting.text);
+      log({ prompt, scripted: injected, steering: true });
+      if (injected) waiting.wake("steered");
+      return { outcome: injected ? "injected" : "failed" };
+    },
+  )
   .onRequest("session/prompt", async ({ params, client }) => {
-    const prompt = params.prompt.map((block) => (block.type === "text" ? block.text : "")).join("\n");
+    const prompt = textOf(params.prompt);
     const session = sessions.get(params.sessionId) ?? { cwd: process.cwd() };
     if (session.waiting && prompt.includes(session.waiting.text)) {
       log({ prompt, scripted: true });

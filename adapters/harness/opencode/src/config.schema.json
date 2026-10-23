@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "OUTPUT": {
+      "type": "string",
+      "default": ".",
+      "description": "Folder that transcript writes run-record.json and transcript.jsonl to."
+    },
+    "OSF_DATA": {
+      "type": "string",
+      "default": ".harness-opencode",
+      "description": "Folder where run records every session as sessions/<session ID>.jsonl and opencode keeps its settings, logins and sessions, in opencode/."
+    },
+    "OTEL_RESOURCE_ATTRIBUTES": {
+      "type": "string",
+      "description": "Resource attributes of the run as key=value pairs, set by the launcher, for example osf.run.id=…,osf.work_item.id=…,osf.factory.version=…. run keeps them with each session; transcript writes them into the run record."
+    },
+    "OTEL_SERVICE_NAME": {
+      "type": "string",
+      "description": "The service.name of the run record. Default: harness-opencode."
+    },
+    "OPENAI_BASE_URL": {
+      "type": "string",
+      "default": "https://api.openai.com/v1",
+      "description": "Base URL of the OpenAI-compatible chat completions API that opencode calls, ending in /v1, for example the inference gateway."
+    },
+    "OPENAI_API_KEY": {
+      "type": "string",
+      "description": "The key opencode sends to the model API, for example a gateway key or a placeholder that the egress proxy replaces."
+    },
+    "OPENAI_MODEL": {
+      "type": "string",
+      "description": "The model opencode asks for, for example gpt-5.5. Required."
+    }
+  }
+}

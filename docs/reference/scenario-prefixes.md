@@ -29,6 +29,8 @@ adds a row.
 | HARNESS | harness port | `ports/harness/features/` |
 | HACP | harness adapter acp | `adapters/harness/acp/features/` |
 | HCLAUDE | harness adapter claude-code | `adapters/harness/claude-code/features/` |
+| HCODEX | harness adapter codex | `adapters/harness/codex/features/` |
+| HOPENCODE | harness adapter opencode | `adapters/harness/opencode/features/` |
 | SANDBOX | sandbox port | `ports/sandbox/features/` |
 | CHANNEL | channel port | `ports/channel/features/` |
 | FORGE | forge port | `ports/forge/features/` |

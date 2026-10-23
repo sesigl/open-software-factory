@@ -1,0 +1,3 @@
+{
+  "layers": [{ "name": "entry", "paths": ["src/cli.ts"] }]
+}

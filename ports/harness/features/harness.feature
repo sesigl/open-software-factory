@@ -65,7 +65,7 @@ Feature: Running a coding agent through a harness adapter
     When the developer runs "transcript" with the session's ID
     Then "$OUTPUT/run-record.json" has "osf.outcome" "cancelled"
 
-  @id=SCN-HARNESS-009 @status=implemented @conformance
+  @id=SCN-HARNESS-009 @status=deprecated @conformance
   Scenario: The run record of a session the harness refused has the outcome "failed"
     Given the adapter ran a session whose turn the harness ended with "refusal"
     When the developer runs "transcript" with the session's ID
