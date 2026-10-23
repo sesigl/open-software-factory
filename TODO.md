@@ -426,7 +426,7 @@ read them for ideas, do not copy their company-specific rules.
     `claude-code` (optional): the pinned `claude-agent-acp` behind the proxy in Claude Code's mode `default`, its
     own settings folder and the model gateway settings; conformance against the real Claude Code with the testkit's
     new Anthropic Messages API (ADR 0051, `SCN-HPROXY-001` to `-017`, `SCN-HCLAUDE-001` to `-004`,
-    `SCN-HARNESS-014`, `SCN-HACP-001`, `SCN-TK-065` to `-071`).
+    `SCN-HARNESS-014`, `SCN-HACP-001` and `-002`, `SCN-TK-065` to `-071`).
   - [ ] `codex`, `opencode` (optional): the products' ACP bridges behind the proxy, their permission modes and model
     gateway settings; conformance against the real CLIs with a scripted gateway for their APIs.
   - [ ] One SMOKE-PAID run each for claude-code, codex and opencode, with the other paid runs of T-21.
