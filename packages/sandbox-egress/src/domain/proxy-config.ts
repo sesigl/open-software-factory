@@ -1,32 +1,21 @@
-// The iron-proxy configuration of one sandbox (ADR 0054): the hosts it may reach, the secrets to swap and the MCP
-// tools it may call. JSON is YAML, so iron-proxy reads it as written.
+// The iron-proxy configuration of one sandbox (ADR 0054, ADR 0055): the hosts it may reach, the secrets to swap
+// and where each comes from, and the MCP tools it may call. JSON is YAML, so iron-proxy reads it as written.
 import type { SandboxSpec } from "@opensoftware/contracts";
-import { placeholder, type SecretFile } from "./spec.ts";
+import { PROXY_DIR, placeholder } from "./names.ts";
+import type { Secret } from "./secrets.ts";
 
-/** Where the proxy keeps its files: the config, its CA and the secrets, one file per variable. */
-export const PROXY_DIR = "/osf";
+export interface ProxyOptions {
+  /** The KV mount of `ref:openbao/...` secrets, OSF_OPENBAO_MOUNT. Default: "secret". */
+  openbaoMount?: string;
+}
 
-/** The proxy's start script: it creates the CA, hands its certificate out in `out/osf/`, then runs iron-proxy. */
-export const START_SCRIPT = `#!/bin/sh
-set -e
-mkdir -p ${PROXY_DIR}/out/osf
-openssl req -x509 -newkey rsa:2048 -nodes -days 365 -subj "/CN=osf sandbox egress" \\
-  -addext "basicConstraints=critical,CA:TRUE" -addext "keyUsage=critical,keyCertSign" \\
-  -keyout ${PROXY_DIR}/ca.key -out ${PROXY_DIR}/ca.crt 2>/dev/null
-cp ${PROXY_DIR}/ca.crt ${PROXY_DIR}/out/osf/egress-ca.crt
-exec iron-proxy -config ${PROXY_DIR}/proxy.yaml
-`;
-
-/** The log line iron-proxy writes when the sandbox can use it. */
-export const READY = "tunnel proxy starting";
-
-export function proxyConfig(spec: SandboxSpec, secrets: SecretFile[]): unknown {
+export function proxyConfig(spec: SandboxSpec, secrets: Secret[], options: ProxyOptions = {}): unknown {
   const egress = spec.egress ?? [];
   const mcp = spec.mcp ?? [];
   const hosts = [...new Set([...egress, ...mcp.map((server) => new URL(server.url).hostname)])];
-  const swaps = secrets.map(({ variable }) => ({
-    source: { type: "file", path: `${PROXY_DIR}/secrets/${variable}` },
-    proxy_value: placeholder(variable),
+  const swaps = secrets.map((secret) => ({
+    source: source(secret, options.openbaoMount ?? "secret"),
+    proxy_value: placeholder(secret.variable),
     match_headers: [],
     rules: egress.map((host) => ({ host })),
   }));
@@ -55,4 +44,11 @@ export function proxyConfig(spec: SandboxSpec, secrets: SecretFile[]): unknown {
       : {}),
     log: { level: "info" },
   };
+}
+
+/** Where iron-proxy reads the secret: a file of the proxy, a variable of the proxy, or OpenBao's KV engine. */
+function source(secret: Secret, mount: string): Record<string, string> {
+  if (secret.provider === "file") return { type: "file", path: `${PROXY_DIR}/secrets/${secret.variable}` };
+  if (secret.provider === "env") return { type: "env", var: secret.name };
+  return { type: "vault_kv", mount, path: secret.path, json_key: "value" };
 }

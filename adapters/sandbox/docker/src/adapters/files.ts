@@ -1,5 +1,5 @@
-// Files on the Docker client's side: what the user names, and a temporary folder for what `docker cp` copies.
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+// Files on the Docker client's side: a temporary folder for what `docker cp` copies.
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
@@ -16,7 +16,3 @@ export async function withFolder<T>(files: Record<string, string>, use: (folder:
     rmSync(folder, { recursive: true, force: true });
   }
 }
-
-export const fileExists = (path: string): boolean => existsSync(path);
-
-export const readText = (file: string): string => readFileSync(file, "utf8");

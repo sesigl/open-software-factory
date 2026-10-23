@@ -89,4 +89,8 @@ builds the package and publishes it to npm as `@opensoftware/sandbox-docker`. Th
 | Variable | Type | Default | Meaning |
 | --- | --- | --- | --- |
 | `OSF_SECRETS_DIR` | string | `"/run/secrets"` | Folder of the secret files: ref:file/<name> in a sandbox spec is the file <name> in it. The Docker CLI copies each into the sandbox's egress proxy; the adapter never reads it. |
+| `OSF_SECRET_*` | string |  | OSF_SECRET_<NAME> holds the value of ref:env/<NAME> in a sandbox spec. The Docker CLI hands it to the sandbox's egress proxy only, as its variable <NAME>. |
+| `OSF_OPENBAO_ADDR` | string |  | OpenBao's address for ref:openbao/<path>, as the egress proxy reaches it. Needed only for such secrets. |
+| `OSF_OPENBAO_TOKEN` | string |  | The token the egress proxy reads OpenBao with. The sandbox never gets it. |
+| `OSF_OPENBAO_MOUNT` | string | `"secret"` | The KV v2 mount of ref:openbao/<path>: the secret's field value at <mount>/data/<path>. |
 | `DOCKER_HOST` | string |  | The Docker daemon to use, as for any docker command. Default: the Docker CLI's current context. |
