@@ -5,6 +5,7 @@ import { type Command, outputPath, check as require, runProgram } from "@opensof
 import { keys } from "./commands/keys.ts";
 import type { Options } from "./commands/load.ts";
 import { request } from "./commands/request.ts";
+import { serve } from "./commands/serve.ts";
 import { status } from "./commands/status.ts";
 import { verify } from "./commands/verify.ts";
 
@@ -17,6 +18,8 @@ Commands:
          Ask the approver groups of the policy in the channel, once per gate. Writes --out ($OUTPUT/gate.json).
   status ${GATE} [--record <file>]
          Decide the gate from the channel: exit 0 approved, 1 rejected or expired, 3 waiting. Writes --record ($OUTPUT/record.json).
+  serve --policy <file.rego> --groups <file.json> --channel slack:<channel>
+         Serve the gate API on PORT: requests over HTTP, Slack events and buttons, events through a PostgreSQL outbox.
   verify --public-key <file.pem> <record.json>
          Check the signature of a record.
   keys [--out <folder>]
@@ -38,10 +41,15 @@ const { positionals, values } = parseArgs({
 });
 const [command, ...files] = positionals;
 
-function gateOptions(): Options {
+function policyAndGroups(): { policy: string; groups: string } {
   const { policy, groups } = values;
   require(policy, "name the policy, like --policy policy.rego");
   require(groups, "name the groups, like --groups groups.json");
+  return { policy, groups };
+}
+
+function gateOptions(): Options {
+  const { policy, groups } = policyAndGroups();
   require(files.length <= 1, "name one request file");
   require(!(files.length && values["pull-request"]), "name a request file or --pull-request, not both");
   return {
@@ -59,6 +67,7 @@ function gateOptions(): Options {
 const commands: Record<string, Command> = {
   request: () => request(gateOptions()),
   status: () => status(gateOptions()),
+  serve: () => serve({ ...policyAndGroups(), channel: values.channel, env: process.env }),
   keys: () => keys(values.out ?? process.env.OUTPUT ?? "."),
   verify: () => {
     const key = values["public-key"];

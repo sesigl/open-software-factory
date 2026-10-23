@@ -11,6 +11,11 @@
       "type": "string",
       "description": "The current time, like 2026-01-01T05:00:00Z, for escalation and expiry. Default: the clock."
     },
+    "PORT": {
+      "type": "string",
+      "default": "8080",
+      "description": "serve: the port the HTTP server listens on."
+    },
     "GATEKEEPER_OPA": {
       "type": "string",
       "default": "opa",
@@ -24,6 +29,10 @@
     "GATEKEEPER_SLACK_TOKEN": {
       "type": "string",
       "description": "Slack bot token with chat:write and channels:history. Required for a slack: channel."
+    },
+    "GATEKEEPER_SLACK_SIGNING_SECRET": {
+      "type": "string",
+      "description": "serve: the signing secret of the Slack app, which checks every request from Slack. Required for serve."
     },
     "GATEKEEPER_FORGE_URL": {
       "type": "string",
@@ -39,7 +48,15 @@
     },
     "GATEKEEPER_NATS_URL": {
       "type": "string",
-      "description": "NATS server, like nats://localhost:4222, for the events gate.requested@v1 and gate.decided@v1. Unset: no events."
+      "description": "NATS server, like nats://localhost:4222, for the events gate.requested@v1 and gate.decided@v1. Unset: no events. serve keeps them in its outbox while NATS is unreachable."
+    },
+    "GATEKEEPER_DATABASE_URL": {
+      "type": "string",
+      "description": "serve: the PostgreSQL database, like postgres://gatekeeper@db/gatekeeper, for the gates and the outbox. Required for serve."
+    },
+    "GATEKEEPER_API_TOKEN": {
+      "type": "string",
+      "description": "serve: the token that callers of the API send as Authorization: Bearer <token>. Required for serve. Never written to a file."
     }
   }
 }

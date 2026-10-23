@@ -7,7 +7,8 @@ covers: [modules/gatekeeper/src/**, modules/gatekeeper/action.yml, modules/gatek
 Ask people for approval before an automation or a CI job goes on. A Rego policy picks the groups that must approve
 a change, for example by its risk. gatekeeper asks them in Slack or on the pull request, reads their answer, refuses
 anyone outside the groups, asks a second group after a timeout, and writes a signed record of who decided what and
-when. Decision: [ADR 0047](../../docs/decisions/0047-gatekeeper.md).
+when. As a server it takes requests over HTTP and decides on Slack's events and buttons without polling. Decisions:
+[ADR 0047](../../docs/decisions/0047-gatekeeper.md), [ADR 0048](../../docs/decisions/0048-gatekeeper-server.md).
 
 ## Quick start
 
@@ -79,6 +80,7 @@ It prints `gate g… approved by slack:U0ADA`, exits 0 and writes the record `$O
 | --- | --- |
 | `gatekeeper request <gate> [--out <file>] [--record <file>]` | Ask the policy's approver groups in the channel, once per gate. Writes `$OUTPUT/gate.json` (or `--out`). |
 | `gatekeeper status <gate> [--record <file>]` | Decide the gate from the channel and write the record `$OUTPUT/record.json` (or `--record`) once it is decided. Exits 0 when approved, 1 when rejected or expired, 3 while it waits. |
+| `gatekeeper serve --policy <file.rego> --groups <file.json> --channel slack:<channel ID>` | Serve the gate API on `PORT` until it gets SIGTERM; see [Server](#server). |
 | `gatekeeper verify --public-key <file.pem> <record.json>` | Check the record's signature. |
 | `gatekeeper keys [--out <folder>]` | Write a new Ed25519 key pair: `gatekeeper.pem` (only its owner may read it) for `GATEKEEPER_SIGNING_KEY` and `gatekeeper.pub` for `verify`. |
 
@@ -169,11 +171,49 @@ succeeds and the commit status stays `pending`. Inputs: `policy`, `groups`, `tok
 `record` and `command` (default `npx --yes @opensoftware/gatekeeper@<version of the action>`). To sign the record, set
 `GATEKEEPER_SIGNING_KEY` from a secret in the step's `env`.
 
+## Server
+
+`gatekeeper serve` keeps the gates in PostgreSQL, so a program asks with one HTTP call and people decide with a
+button or a reply in Slack. Nothing polls: Slack sends each reply and each press to the server.
+
+```sh
+export GATEKEEPER_DATABASE_URL=postgres://gatekeeper@db/gatekeeper
+export GATEKEEPER_API_TOKEN=... GATEKEEPER_SLACK_TOKEN=xoxb-... GATEKEEPER_SLACK_SIGNING_SECRET=...
+npx @opensoftware/gatekeeper serve --policy policy.rego --groups groups.json --channel slack:C0GATES
+curl -H "Authorization: Bearer $GATEKEEPER_API_TOKEN" -H "content-type: application/json" \
+  --data @request.json http://localhost:8080/v1/gates
+```
+
+| Route | What it does |
+| --- | --- |
+| `POST /v1/gates` | Ask for a decision on a request (the JSON of [Request](#request)). 201 with the new gate, 200 with the gate the same request made before, 400 with a problem that names the field. |
+| `GET /v1/gates/{gateId}` | The gate: `state` (`pending`, `approved`, `rejected` or `expired`), `waitingFor`, `requestedAt`, `expiresAt` and, once decided, the `record`. 404 for a gate the server does not know. |
+| `POST /slack/events` | Slack's Events API: a reply in a gate's thread decides like `status`. |
+| `POST /slack/actions` | Slack's interactivity: a press of Approve or Reject decides like a reply `approve` or `reject`. |
+
+The OpenAPI of the `/v1` routes is in [`contracts/openapi/openapi.json`](../../contracts/openapi/openapi.json); the
+TypeScript type `paths` of `@opensoftware/contracts` types a client. The `/v1` routes need `Authorization: Bearer
+<GATEKEEPER_API_TOKEN>`, the Slack routes Slack's signature; both answer 401 otherwise. Errors are
+`application/problem+json` with `title`, `status` and `detail`.
+
+The request message has the buttons Approve and Reject. The rules of [Decisions](#decisions) hold for presses and
+replies alike, and a press after the decision changes nothing. The policy's answer is stored with the gate when it
+is requested; the groups file is read when the server starts. The server checks every pending gate when it starts
+and then every minute, so an escalation or an expiry needs no event.
+
+Set up a Slack app with the bot scopes `chat:write` and `channels:history`, the event `message.channels` with the
+request URL `https://<server>/slack/events`, and interactivity with the request URL `https://<server>/slack/actions`.
+
+With `GATEKEEPER_NATS_URL`, each event is written to the outbox table in the same transaction as the gate's change
+and published right after. While NATS is unreachable the events wait in the outbox and go out once it is back, at
+least once, with the same event IDs.
+
 ## Records
 
 `record.json` has `gate`, `workItem`, `stage`, `summary`, `request` (SHA-256 of the request), `policy`,
 `policyDigest` (SHA-256 of the policy's text), `risk`, `approvers`, `channel`, `requestedAt`, `decision`,
-`decidedBy` (`kind` `person` or `trigger` and `id`; absent when the gate expired), `decidedAt` and `reason`. With
+`decidedBy` (`kind` `person` or `trigger` and `id`; absent when the gate expired), `decidedAt` and `reason`: the
+format [`gate-record`](../../contracts/gate-record/gate-record.schema.json) of the contracts. With
 `GATEKEEPER_SIGNING_KEY` it has a `signature`: Ed25519 over the canonical JSON of the rest, and `key`, the SHA-256 of
 the public key. `gatekeeper keys` makes a key pair; keep `gatekeeper.pem` in a secret store, such as a GitHub Actions
 secret, and publish `gatekeeper.pub`:
@@ -186,8 +226,8 @@ npx @opensoftware/gatekeeper verify --public-key keys/gatekeeper.pub record.json
 
 ## Events
 
-With `GATEKEEPER_NATS_URL`, `request` publishes [`gate.requested@v1`](../../contracts/events/gate-requested/gate-requested.schema.json)
-on `osf.gate.requested.v1` when it posts a request, and `status` publishes
+With `GATEKEEPER_NATS_URL`, `request` (and `POST /v1/gates`) publishes [`gate.requested@v1`](../../contracts/events/gate-requested/gate-requested.schema.json)
+on `osf.gate.requested.v1` when it posts a request, and `status` (and the server) publishes
 [`gate.decided@v1`](../../contracts/events/gate-decided/gate-decided.schema.json) on `osf.gate.decided.v1` when it posts
 the decision. The event ID is the gate's ID with `.requested` or `.decided`.
 
@@ -199,13 +239,17 @@ the decision. The event ID is the gate's ID with `.requested` or `.decided`.
 | --- | --- | --- | --- |
 | `OUTPUT` | string | `"."` | Folder of gate.json and record.json when --out and --record are not given. |
 | `OSF_NOW` | string |  | The current time, like 2026-01-01T05:00:00Z, for escalation and expiry. Default: the clock. |
+| `PORT` | string | `"8080"` | serve: the port the HTTP server listens on. |
 | `GATEKEEPER_OPA` | string | `"opa"` | The OPA 1.x program that evaluates the policy. |
 | `GATEKEEPER_SLACK_URL` | string | `"https://slack.com/api/"` | Base URL of the Slack Web API, ending in a slash. |
 | `GATEKEEPER_SLACK_TOKEN` | string |  | Slack bot token with chat:write and channels:history. Required for a slack: channel. |
+| `GATEKEEPER_SLACK_SIGNING_SECRET` | string |  | serve: the signing secret of the Slack app, which checks every request from Slack. Required for serve. |
 | `GATEKEEPER_FORGE_URL` | string |  | Base URL of the forge API. Default: https://api.github.com for github.com, <origin>/api/v1 for Forgejo. |
 | `GATEKEEPER_FORGE_TOKEN` | string |  | Token that may read the pull request, comment on it and set its commit status. Never written to a file. |
 | `GATEKEEPER_SIGNING_KEY` | string |  | Ed25519 private key in PEM that signs each record. Without it the record is unsigned. |
-| `GATEKEEPER_NATS_URL` | string |  | NATS server, like nats://localhost:4222, for the events gate.requested@v1 and gate.decided@v1. Unset: no events. |
+| `GATEKEEPER_NATS_URL` | string |  | NATS server, like nats://localhost:4222, for the events gate.requested@v1 and gate.decided@v1. Unset: no events. serve keeps them in its outbox while NATS is unreachable. |
+| `GATEKEEPER_DATABASE_URL` | string |  | serve: the PostgreSQL database, like postgres://gatekeeper@db/gatekeeper, for the gates and the outbox. Required for serve. |
+| `GATEKEEPER_API_TOKEN` | string |  | serve: the token that callers of the API send as Authorization: Bearer <token>. Required for serve. Never written to a file. |
 
 ## Releases
 
@@ -265,3 +309,21 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-GATE-038 | implemented | A signing key that is no PEM key exits 2 and writes no record |
 | SCN-GATE-039 | implemented | A groups file that is not JSON exits 2 and names the file |
 | SCN-GATE-040 | implemented | A pull request that the forge does not know exits 1 |
+| SCN-GATE-041 | implemented | A program asks for approval over HTTP and the server asks in Slack with buttons |
+| SCN-GATE-042 | implemented | The same request twice answers the same gate and asks only once |
+| SCN-GATE-043 | implemented | A request without a summary gets the status 400 and names the field |
+| SCN-GATE-044 | implemented | A call without the API token gets the status 401 |
+| SCN-GATE-045 | implemented | A gate the server does not know gets the status 404 |
+| SCN-GATE-046 | implemented | A policy that names no approver group approves a request over HTTP at once |
+| SCN-GATE-047 | implemented | A member of the approver group presses "Approve" |
+| SCN-GATE-048 | implemented | A member rejects with a reason in the thread |
+| SCN-GATE-049 | implemented | A press of "Approve" by a person outside the approver group is refused |
+| SCN-GATE-050 | implemented | A second press after the decision changes nothing |
+| SCN-GATE-051 | implemented | A Slack request with a wrong signature gets the status 401 and decides nothing |
+| SCN-GATE-052 | implemented | Slack's URL verification gets its challenge back |
+| SCN-GATE-053 | implemented | The server asks the escalation group when it starts after the escalation time |
+| SCN-GATE-054 | implemented | The server expires a gate when it starts after "expire_after" |
+| SCN-GATE-055 | implemented | A request over HTTP is published as the event "gate.requested@v1" |
+| SCN-GATE-056 | implemented | A decision in Slack is published as the event "gate.decided@v1" |
+| SCN-GATE-057 | implemented | An event of a time when NATS was unreachable is published once the server reaches NATS |
+| SCN-GATE-058 | implemented | The server without a database exits with code 2 and names the variable |

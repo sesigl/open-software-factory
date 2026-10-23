@@ -47,7 +47,9 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
 - `sut.git`: `$INPUT` is a Git repository with a fixed author and clock.
 - `sut.http.start(args, { env })`: starts the module's `bin` as a server with the same environment as `sut.cli`
   plus `PORT`, waits until it listens on `127.0.0.1:PORT` and returns the base URL. Then `get`, `post` and
-  `request` call it, and `client<paths>()` gives an [openapi-fetch](https://openapi-ts.dev/openapi-fetch/) client
+  `request` call it (the body is parsed for `application/json` and any `+json` type, such as
+  `application/problem+json`), `stop()` stops it so the test can start it again, for example with another
+  environment, and `client<paths>()` gives an [openapi-fetch](https://openapi-ts.dev/openapi-fetch/) client
   typed by the module's generated OpenAPI `paths`. A server that exits first fails the test with its error output.
 - `sut.mcp.connect(args, { env })`: starts the module's `bin` as an MCP server on stdio and returns a connected
   MCP client (`listTools`, `callTool`, ...).
@@ -87,7 +89,12 @@ Every server, client and subscription stops when the scenario ends, before the f
   The first prompt that contains `when` gets the `edits` (files by path below the session's folder) and the
   `reply`, then the turn ends with `end_turn`. Any other prompt ends with `refusal` and fails the scenario with the
   prompt shown. `prompts()` lists what it received.
-- `fakes.postgres()`, `fakes.nats()`, `fakes.temporal()`, `fakes.s3()`: a real service in a container for this
+- `fakes.postgres()`: PostgreSQL 18 for this scenario, as PGlite in the test's process behind a small
+  wire-protocol server, with no Docker ([ADR 0049](../../docs/decisions/0049-in-memory-stand-ins.md)). The module
+  connects to `postgres://test:test@127.0.0.1:<port>/test` with its own driver; a wrong password is refused with
+  SQLSTATE 28P01. Connections run one at a time: a transaction holds the database until it ends, so code must not
+  wait inside a transaction for a second connection of its own.
+- `fakes.nats()`, `fakes.temporal()`, `fakes.s3()`: a real service in a container for this
   scenario ([ADR 0016](../../docs/decisions/0016-testkit-service-fakes.md)). Each gives only what a module needs
   to reach it: a URL, an address or an endpoint with keys. Docker must run.
 - `fakes.forge()`: a real Forgejo with a user and an API token (`url`, `token`, `owner`). The test can
@@ -101,8 +108,13 @@ Every server, client and subscription stops when the scenario ends, before the f
   requests the Collector exported (JSON encoding) and, on timeout, shows the Collector's log. Docker must run.
 - `fakes.slack()`: a fake Slack Web API (`auth.test`, `chat.postMessage`, `conversations.history`,
   `conversations.replies`, `reactions.add`) at `url` with `token`. `auth.test` answers the bot's user ID `bot`, which
-  every message the module posts carries. The test reads `messages(channel)` and posts as a person with `say`.
-  Any other method fails the scenario.
+  every message the module posts carries. The test reads `messages(channel)`, with the `buttons` of each message's
+  `actions` blocks, and posts as a person with `say`. Any other method fails the scenario. `deliverTo(events,
+  interactivity)` names the module's request URLs: `say` then also sends a `message` event, and `press({ channel,
+  ts, actionId, user })` sends a `block_actions` payload for a button of a message. Both are signed like Slack with
+  the fake's `signingSecret` and the fixed clock, so the module checks them as it would check Slack; `sign(body)`
+  gives the same headers for a request the test sends itself
+  ([ADR 0048](../../docs/decisions/0048-gatekeeper-server.md)).
 
 A `planned` scenario's test must fail; when it passes, the testkit fails it and asks for `@status=implemented`.
 
@@ -213,3 +225,7 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-049 | implemented | fakes.forge merges a pull request, so a module can read the merge commit |
 | SCN-TK-050 | implemented | fakes.forge shows the pull request a module opens and the files of its branch |
 | SCN-TK-051 | implemented | fakes.slack answers auth.test with the user of the module's messages |
+| SCN-TK-052 | implemented | fakes.slack delivers a person's reply to the module's Events API signed with its signing secret |
+| SCN-TK-053 | implemented | fakes.slack presses a button of the module's message and delivers the press to its interactivity URL |
+| SCN-TK-054 | implemented | sut.http.stop stops the server so the test can start it again with another environment |
+| SCN-TK-055 | implemented | Pressing a button that the message does not have fails the test with the button shown |

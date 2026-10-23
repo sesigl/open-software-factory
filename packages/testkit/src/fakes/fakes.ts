@@ -8,16 +8,8 @@ import { type Forge, startForge } from "./forge.ts";
 import { type Harness, type HarnessTurn, startHarness } from "./harness.ts";
 import { type FakeHttp, type HttpRoute, startHttp } from "./http.ts";
 import { type ModelGateway, type ScriptedReply, startModelGateway } from "./model-gateway.ts";
-import {
-  type Nats,
-  type Postgres,
-  type S3,
-  startNats,
-  startPostgres,
-  startS3,
-  startTemporal,
-  type Temporal,
-} from "./services.ts";
+import { type Postgres, startPostgres } from "./postgres.ts";
+import { type Nats, type S3, startNats, startS3, startTemporal, type Temporal } from "./services.ts";
 import { type FakeSlack, startSlack } from "./slack.ts";
 
 export interface Fakes {
@@ -91,7 +83,9 @@ export function makeFakes(moduleRoot: string): FakesHandle {
       async harness(script) {
         return (await inProcess(Promise.resolve(startHarness(script)))).harness;
       },
-      postgres: () => startPostgres(track),
+      async postgres() {
+        return (await inProcess(startPostgres())).postgres;
+      },
       nats: () => startNats(track),
       temporal: () => startTemporal(track),
       s3: () => startS3(track),

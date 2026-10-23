@@ -67,6 +67,30 @@ Feature: Services and outside systems
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-052 @status=implemented
+  Scenario: fakes.slack delivers a person's reply to the module's Events API signed with its signing secret
+    Given a module whose server checks the Slack signature with "DEMO_SLACK_SIGNING_SECRET" and keeps the text of each "message" event
+    And its system test passes the signing secret of fakes.slack, says "approve" in "C1" and expects the server to have "approve"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-053 @status=implemented
+  Scenario: fakes.slack presses a button of the module's message and delivers the press to its interactivity URL
+    Given a module whose server posts a message with the button "approve" to "C1" and keeps the action ID and user of each signed press
+    And its system test presses "approve" as "U0ADA" and expects the server to have "approve U0ADA"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-055 @status=implemented
+  Scenario: Pressing a button that the message does not have fails the test with the button shown
+    Given a module whose server posts a message with the button "approve" to "C1" and keeps the action ID and user of each signed press
+    And its system test presses "merge" on that message
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 1
+    And the output contains "has no such button: merge"
+
   @id=SCN-TK-031 @status=implemented
   Scenario: fakes.collector runs the Collector config a module wrote and shows what it exported
     Given a module whose CLI prints a Collector config that renames the span "work" to "done"

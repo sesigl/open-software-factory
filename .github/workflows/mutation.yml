@@ -1,6 +1,7 @@
 # MUTATION on every pull request (docs/quality/checks.md, ADR 0037): Stryker mutates the source lines the pull request
 # adds to each module and library, and the check fails when too few of those mutants make a system test fail.
-# One runner per changed unit, like the nightly run: a new module mutates every line, which takes up to 90 minutes.
+# One runner per shard of about 100 added lines of a changed unit: each mutant reruns the unit's system tests, so a
+# server module with a new file needs several runners to stay under the time limit.
 name: mutation
 
 on:
@@ -15,12 +16,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # The units with a mutation script whose TypeScript sources in src/ or bin/ the pull request changes.
+  # The units with a mutation script whose TypeScript sources in src/ or bin/ the pull request changes, each cut
+  # into shards of about 100 added lines: one runner per shard, so that a large change fits the time limit.
   units:
     name: units to mutate
     runs-on: ubuntu-24.04
     outputs:
-      packages: ${{ steps.list.outputs.packages }}
+      shards: ${{ steps.list.outputs.shards }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -29,29 +31,35 @@ jobs:
         env:
           OSF_BASE: ${{ github.event.pull_request.base.sha }}
         run: |
-          packages=$(git diff --name-only "$OSF_BASE"...HEAD | node -e '
+          shards=$(git diff --numstat --no-renames "$OSF_BASE"...HEAD | node -e '
             const { existsSync, readFileSync } = require("node:fs");
             const unit = /^((?:modules|packages)\/[^/]+|adapters\/[^/]+\/[^/]+)\/(?:src|bin)\/.*\.ts$/;
-            const names = new Set();
-            for (const file of readFileSync(0, "utf8").split("\n")) {
+            const added = new Map();
+            for (const row of readFileSync(0, "utf8").split("\n")) {
+              const [count, , file = ""] = row.split("\t");
               const dir = unit.exec(file)?.[1];
               if (!dir || !existsSync(`${dir}/package.json`)) continue;
               const manifest = JSON.parse(readFileSync(`${dir}/package.json`, "utf8"));
-              if (manifest.scripts?.mutation) names.add(manifest.name);
+              if (!manifest.scripts?.mutation) continue;
+              added.set(manifest.name, (added.get(manifest.name) ?? 0) + (Number(count) || 0));
             }
-            console.log(JSON.stringify([...names].sort()));')
-          echo "packages=$packages" >> "$GITHUB_OUTPUT"
+            const shards = [...added].sort(([a], [b]) => a.localeCompare(b)).flatMap(([name, lines]) => {
+              const count = Math.min(10, Math.max(1, Math.ceil(lines / 100)));
+              return Array.from({ length: count }, (_, index) => ({ package: name, shard: `${index + 1}/${count}` }));
+            });
+            console.log(JSON.stringify(shards));')
+          echo "shards=$shards" >> "$GITHUB_OUTPUT"
 
   unit:
-    name: mutation (${{ matrix.package }})
+    name: mutation (${{ matrix.package }} ${{ matrix.shard }})
     needs: units
-    if: needs.units.outputs.packages != '[]'
+    if: needs.units.outputs.shards != '[]'
     runs-on: ubuntu-24.04
     timeout-minutes: 150
     strategy:
       fail-fast: false
       matrix:
-        package: ${{ fromJSON(needs.units.outputs.packages) }}
+        include: ${{ fromJSON(needs.units.outputs.shards) }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -75,9 +83,10 @@ jobs:
             PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/playwright" \
               pnpm --filter "$PACKAGE" exec playwright-core install --with-deps chromium
           fi
-      - run: pnpm exec turbo run mutation --filter="$PACKAGE"
+      - run: pnpm exec turbo run mutation --filter="$PACKAGE" -- --shard "$SHARD"
         env:
           PACKAGE: ${{ matrix.package }}
+          SHARD: ${{ matrix.shard }}
           OSF_BASE: ${{ github.event.pull_request.base.sha }}
       - uses: actions/upload-artifact@v4
         if: always()
@@ -105,7 +114,7 @@ jobs:
           cache: pnpm
       - run: make install
       - uses: actions/download-artifact@v5
-        if: needs.units.outputs.packages != '[]'
+        if: needs.units.outputs.shards != '[]'
         with:
           pattern: mutation-*
           path: reports/mutation/
