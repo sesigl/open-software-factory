@@ -124,3 +124,4 @@ Each failure prints one line: the check ID, `file:line`, and what to fix. Each c
 | SCN-REPO-059 | implemented | ASSERT accepts a library's then step that asserts on what the library returned |
 | SCN-REPO-060 | implemented | REACH leaves the lines of a library to MUTATION |
 | SCN-REPO-061 | implemented | ASSERT accepts a then step that asserts on what a subpath export of the package returned |
+| SCN-REPO-062 | implemented | REACH leaves code that ran only in a transformed form to MUTATION |

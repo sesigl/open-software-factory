@@ -24,7 +24,7 @@ type Lines = Map<string, Map<number, boolean>>;
 export async function reach(context: Context): Promise<Finding[]> {
   const { repo } = context;
   const base = context.base("REACH");
-  const covered = await coveredLines(repo);
+  const { lines: covered, transformed } = await coveredLines(repo);
   if (!base) return [];
 
   const findings: Finding[] = [];
@@ -34,6 +34,9 @@ export async function reach(context: Context): Promise<Finding[]> {
     SOURCE.test(path) && repo.exists(path) && !isLibrary(repo, (SOURCE.exec(path) as RegExpExecArray)[1] as string);
   for (const file of changedFiles(repo.root, base).filter(checked)) {
     const lines = covered.get(file);
+    // Code that ran only in a transformed form, such as a fake inside a Vitest worker, has no line map: MUTATION
+    // covers it.
+    if (!lines && transformed.has(file)) continue;
     if (!lines) {
       const text = repo.read(file);
       const first = firstRuntimeLine(file, text);
@@ -66,10 +69,15 @@ export async function reach(context: Context): Promise<Finding[]> {
   return findings;
 }
 
-/** Merges every coverage file: a line counts as reached when any process ran it. */
-async function coveredLines(repo: Repo): Promise<Lines> {
+/**
+ * Merges every coverage file: a line counts as reached when any process ran it. A script that is not the file's
+ * text, because a tool such as Vitest transformed it before it ran, cannot be mapped to lines; its file is only
+ * named in `transformed`.
+ */
+async function coveredLines(repo: Repo): Promise<{ lines: Lines; transformed: Set<string> }> {
   const dir = join(repo.root, COVERAGE);
   const lines: Lines = new Map();
+  const transformed = new Set<string>();
   const seen = new Set<string>();
   for (const name of existsSync(dir)
     ? readdirSync(dir)
@@ -80,6 +88,12 @@ async function coveredLines(repo: Repo): Promise<Lines> {
     for (const script of result) {
       const local = root && script.url.startsWith(`${root}/`) ? script.url.slice(root.length + 1) : undefined;
       if (!local || local.includes("/node_modules/") || !repo.exists(local)) continue;
+      // The top-level function spans the whole script; a later, incremental record of a process has none.
+      const top = script.functions[0]?.ranges[0];
+      if (top?.startOffset === 0 && top.endOffset !== repo.read(local).length) {
+        transformed.add(local);
+        continue;
+      }
       // Many processes run the same code the same way; convert each distinct record once.
       const key = `${local}\n${JSON.stringify(script.functions)}`;
       if (seen.has(key)) continue;
@@ -99,7 +113,7 @@ async function coveredLines(repo: Repo): Promise<Lines> {
       converter.destroy();
     }
   }
-  return lines;
+  return { lines, transformed };
 }
 
 /** The first line with code that runs, or undefined for a file of types only. */

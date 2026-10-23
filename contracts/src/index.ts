@@ -9,7 +9,7 @@ import type { components } from "./generated/types.ts";
 
 export { diff as breakingChanges, type Schema } from "./breaking.ts";
 export { FORMATS, type Format, formatNamed } from "./formats.ts";
-export type { components } from "./generated/types.ts";
+export type { components, paths } from "./generated/types.ts";
 export { type AttributeValue, type RunSpan, runSpans, type SpanAttributes } from "./run-record.ts";
 
 type Schemas = components["schemas"];
@@ -26,6 +26,10 @@ export type ScoreRecorded = Schemas["ScoreRecorded"];
 export type PrOpened = Schemas["PrOpened"];
 export type PrReviewed = Schemas["PrReviewed"];
 export type PrClosed = Schemas["PrClosed"];
+export type GateRecord = Schemas["GateRecord"];
+export type GateRequest = Schemas["GateRequest"];
+export type GateView = Schemas["GateView"];
+export type ApiProblem = Schemas["ApiProblem"];
 
 /** One reason a document does not match its format. `path` is a JSON Pointer into the document. */
 export interface Problem {
