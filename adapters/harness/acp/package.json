@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/harness-acp",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "harness-acp: runs any ACP coding agent behind the harness port, with a tool allowlist, cancel within 5 seconds and a run record transcript.",
   "license": "Apache-2.0",
   "repository": {
