@@ -329,6 +329,8 @@ export type components = {
             /** @description The record, once the gate is decided. */
             record?: components["schemas"]["GateRecord"];
         };
+        /** @description A hostname without scheme or port, for example "api.linear.app". */
+        Hostname: string;
         /** @description An identifier chosen by the producer. ULIDs are recommended; consumers treat it as opaque. */
         Identifier: string;
         Link: {
@@ -611,6 +613,42 @@ export type components = {
             memory?: string;
             /** @description Hostnames the sandbox may reach. Everything else is blocked. */
             egress?: string[];
+        };
+        /** @description An MCP server that a sandbox may call over Streamable HTTP. */
+        SandboxMcpServer: {
+            /** @description The name in the egress log, for example "wiki". */
+            name: components["schemas"]["Name"];
+            /** @description The server's endpoint, for example "https://wiki.example.com/mcp". */
+            url: string;
+            /** @description The tools the sandbox may call. A call to any other tool is refused. */
+            tools: string[];
+        };
+        /**
+         * @description The input of a sandbox adapter's `create` (ADR 0054): what one sandbox runs, how much it may use, and what it may
+         *     reach. Realizes SCN-FACTORY-RUNTIME-004, -006 and -007.
+         */
+        SandboxSpec: {
+            /** @description What the sandbox starts from: an image for the docker adapter, a SandboxTemplate for kubernetes, or a snapshot. */
+            template: string;
+            /** @description CPU cores. The smallest unit is 0.001 (one millicore). */
+            cpu?: number;
+            /** @description Kubernetes quantity, for example "8Gi". */
+            memory?: string;
+            /** @description Hostnames the sandbox may reach through its egress proxy. Everything else is refused. */
+            egress?: components["schemas"]["Hostname"][];
+            /** @description Variables of the sandbox's environment that hold no secret. */
+            env?: {
+                [key: string]: string;
+            };
+            /**
+             * @description Secrets by the name of the variable that holds the placeholder in the sandbox. The egress proxy puts the real
+             *     value in on the way out, for the hosts of `egress`.
+             */
+            secrets?: {
+                [key: string]: components["schemas"]["SecretReference"];
+            };
+            /** @description The MCP servers the sandbox may call. A call to any other MCP server is refused. */
+            mcp?: components["schemas"]["SandboxMcpServer"][];
         };
         ScenarioEvidence: {
             id: components["schemas"]["ScenarioId"];

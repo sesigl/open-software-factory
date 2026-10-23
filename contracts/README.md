@@ -43,6 +43,7 @@ Each format has one schema, generated from `typespec/`, and fixtures that CONTRA
 | evidence bundle | `evidence-bundle/evidence-bundle.schema.json` | `EvidenceManifest` | `evidence.json` at the bundle root. |
 | score | `score/score.schema.json` | `Score` | Subset of Langfuse's create-score request; factory fields in `metadata`. |
 | gate record | `gate-record/gate-record.schema.json` | `GateRecord` | gatekeeper's signed approval record (ADR 0047). |
+| sandbox spec | `sandbox-spec/sandbox-spec.schema.json` | `SandboxSpec` | The input of a sandbox adapter's `create` (ADR 0054). Closed objects: an unknown field is an error. |
 | events | `events/<event>/<event>.schema.json`, `events/asyncapi.yaml` | `WorkReceived` … `PrClosed` | CloudEvents 1.0, structured JSON. |
 
 ## HTTP APIs

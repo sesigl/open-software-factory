@@ -32,6 +32,7 @@ adds a row.
 | HCODEX | harness adapter codex | `adapters/harness/codex/features/` |
 | HOPENCODE | harness adapter opencode | `adapters/harness/opencode/features/` |
 | SANDBOX | sandbox port | `ports/sandbox/features/` |
+| SDOCKER | sandbox adapter docker | `adapters/sandbox/docker/features/` |
 | CHANNEL | channel port | `ports/channel/features/` |
 | FORGE | forge port | `ports/forge/features/` |
 | INFER | inference port | `ports/inference/features/` |
