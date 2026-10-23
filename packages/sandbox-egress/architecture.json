@@ -1,0 +1,7 @@
+{
+  "layers": [
+    { "name": "api", "paths": ["src/index.ts"] },
+    { "name": "adapters", "paths": ["src/spec-file.ts"] },
+    { "name": "domain", "paths": ["src/domain/"] }
+  ]
+}

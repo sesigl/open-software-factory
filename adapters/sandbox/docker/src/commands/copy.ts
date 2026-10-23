@@ -1,8 +1,8 @@
 // copy <from> <to>: a file or folder into or out of a sandbox; the sandbox's side is <ID>:<path>.
 import { posix } from "node:path";
 import { check, type Outcome } from "@opensoftware/cli";
+import { WORKSPACE } from "@opensoftware/sandbox-egress";
 import { dockerText } from "../adapters/docker.ts";
-import { WORKSPACE } from "../domain/names.ts";
 import { sandboxContainer } from "./sandbox.ts";
 
 const IN_SANDBOX = /^([0-9a-f]{12}):(.+)$/;

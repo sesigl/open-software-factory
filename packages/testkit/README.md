@@ -292,3 +292,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-076 | implemented | A streamed chat completions call gets its scripted tool call, finish reason and token usage |
 | SCN-TK-077 | implemented | Streamed chat completions calls take the scripted replies in order, with the scripted finish reason |
 | SCN-TK-078 | implemented | A fake for containers answers a request from a container |
+| SCN-TK-079 | implemented | A name with a star in the Configuration section documents every variable with that prefix |

@@ -228,3 +228,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FSPEC-045 | implemented | Render for gh-aw gives the workflow the agent's MCP servers |
 | SCN-FSPEC-046 | implemented | Render for gh-aw refuses a harness gh-aw cannot run |
 | SCN-FSPEC-047 | implemented | Apply shows the forge's answer when it refuses the token |
+| SCN-FSPEC-048 | planned | Render for Kubernetes writes an agent-sandbox SandboxTemplate for the agent's sandbox |

@@ -7,6 +7,23 @@
       "default": "/run/secrets",
       "description": "Folder of the secret files: ref:file/<name> in a sandbox spec is the file <name> in it. The Docker CLI copies each into the sandbox's egress proxy; the adapter never reads it."
     },
+    "OSF_SECRET_*": {
+      "type": "string",
+      "description": "OSF_SECRET_<NAME> holds the value of ref:env/<NAME> in a sandbox spec. The Docker CLI hands it to the sandbox's egress proxy only, as its variable <NAME>."
+    },
+    "OSF_OPENBAO_ADDR": {
+      "type": "string",
+      "description": "OpenBao's address for ref:openbao/<path>, as the egress proxy reaches it. Needed only for such secrets."
+    },
+    "OSF_OPENBAO_TOKEN": {
+      "type": "string",
+      "description": "The token the egress proxy reads OpenBao with. The sandbox never gets it."
+    },
+    "OSF_OPENBAO_MOUNT": {
+      "type": "string",
+      "default": "secret",
+      "description": "The KV v2 mount of ref:openbao/<path>: the secret's field value at <mount>/data/<path>."
+    },
     "DOCKER_HOST": {
       "type": "string",
       "description": "The Docker daemon to use, as for any docker command. Default: the Docker CLI's current context."

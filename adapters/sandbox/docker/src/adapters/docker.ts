@@ -8,10 +8,13 @@ export interface DockerResult {
   stderr: string;
 }
 
-/** Runs `docker <args>` and collects its output; `input` goes to its standard input. */
-export function docker(args: string[], input?: Buffer): Promise<DockerResult> {
+/**
+ * Runs `docker <args>` and collects its output; `input` goes to its standard input, and `env` adds variables to the
+ * Docker CLI's environment.
+ */
+export function docker(args: string[], input?: Buffer, env?: Record<string, string>): Promise<DockerResult> {
   return new Promise((resolve, reject) => {
-    const child = spawn("docker", args, { stdio: ["pipe", "pipe", "pipe"] });
+    const child = spawn("docker", args, { stdio: ["pipe", "pipe", "pipe"], env: { ...process.env, ...env } });
     const stdout: Buffer[] = [];
     const stderr: Buffer[] = [];
     child.stdout.on("data", (chunk: Buffer) => stdout.push(chunk));
@@ -25,8 +28,8 @@ export function docker(args: string[], input?: Buffer): Promise<DockerResult> {
 }
 
 /** Runs `docker <args>` and gives its standard output as text; a failure throws with Docker's error. */
-export async function dockerText(args: string[], input?: Buffer): Promise<string> {
-  const result = await docker(args, input);
+export async function dockerText(args: string[], input?: Buffer, env?: Record<string, string>): Promise<string> {
+  const result = await docker(args, input, env);
   if (result.code !== 0) throw new Error(`docker ${args[0]} failed: ${result.stderr.trim()}`);
   return result.stdout.toString("utf8").trim();
 }
