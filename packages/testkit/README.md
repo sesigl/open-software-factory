@@ -91,7 +91,14 @@ Every server, client and subscription stops when the scenario ends, before the f
   model call; after that the last matching entry answers again. An entry may have `tools` (`{ name, input }`, sent
   as `tool_use` blocks with the ids `toolu_1`, `toolu_2`, ...), a `stopReason` (default `tool_use` with tools,
   `end_turn` without) and `hangs: true`, which never answers the call. An unscripted Messages call gets HTTP 400.
-  `calls` lists every call with its `path` and `body`.
+  The gateway also answers the OpenAI Responses API at `POST /v1/responses` as a stream, and a chat completions call
+  that asks for a stream with a streamed answer ([ADR 0053](../../docs/decisions/0053-harness-codex-opencode.md)).
+  Both take entries in order as the Messages API does, with `tools`, `usage` and `hangs`; an unscripted call gets
+  HTTP 400. On the Responses API a tool with an object `input` is a `function_call` and one with a text `input` a
+  `custom_tool_call`, such as Codex's `apply_patch`; the call IDs are `call_1`, `call_2`, ... A streamed chat answer
+  sends each tool as a `tool_calls` delta and ends with `stopReason` as its `finish_reason` (default `tool_calls`
+  with tools, `stop` without), for example `content_filter`. A chat completions call without a stream keeps the
+  first matching entry. `calls` lists every call with its `path` and `body`.
 - `fakes.http([{ method, path, status, body, contentType, times }])`: a scripted JSON API on `127.0.0.1`
   ([ADR 0021](../../docs/decisions/0021-testkit-scripted-http.md)). Pass its `url` to the module through its
   documented config. A request whose method (default `GET`) and exact path with query match a route gets its
@@ -114,6 +121,10 @@ Every server, client and subscription stops when the scenario ends, before the f
   `stopReason` ends the turn with another stop reason, such as `max_tokens` ([ADR 0050](../../docs/decisions/0050-harness-port.md)).
   A turn with `usage` (`{ inputTokens, outputTokens }`) reports it in its `session/prompt` answer, and `costUsd`
   sends a `usage_update` with that cost in USD first ([ADR 0052](../../docs/decisions/0052-harness-claude-code.md)).
+  The agent also takes a steering message as the request `_session/steering` (`{ sessionId, prompt }`), as
+  codex-acp does: it wakes the waiting turn whose text it contains and answers `{ outcome: "injected" }`, or
+  `{ outcome: "failed" }` when no turn waits for it. `steeringRequests()` lists the texts of those requests
+  ([ADR 0053](../../docs/decisions/0053-harness-codex-opencode.md)).
 - `fakes.postgres()`: PostgreSQL 18 for this scenario, as PGlite in the test's process behind a small
   wire-protocol server, with no Docker ([ADR 0049](../../docs/decisions/0049-in-memory-stand-ins.md)). The module
   connects to `postgres://test:test@127.0.0.1:<port>/test` with its own driver; a wrong password is refused with
@@ -270,3 +281,9 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-069 | implemented | A scripted Messages API reply ends with its scripted stop reason and token usage |
 | SCN-TK-070 | implemented | A scripted turn reports its token usage and the session's cost |
 | SCN-TK-071 | implemented | sut.acp.serve connects to an ACP agent that runs in the test's own process |
+| SCN-TK-072 | implemented | A scripted turn takes a steering message sent as the request "_session/steering" |
+| SCN-TK-073 | implemented | A scripted Responses API call streams its scripted reply and token usage |
+| SCN-TK-074 | implemented | A scripted Responses API reply streams a function call and a custom tool call |
+| SCN-TK-075 | implemented | A scripted Responses API call that hangs gets no answer |
+| SCN-TK-076 | implemented | A streamed chat completions call gets its scripted tool call, finish reason and token usage |
+| SCN-TK-077 | implemented | Streamed chat completions calls take the scripted replies in order, with the scripted finish reason |

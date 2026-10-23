@@ -14,6 +14,8 @@ export interface AdapterOptions {
   agent: (args: string[], data: string) => ProxyOptions["agent"];
   /** Changes each `session/new` request of the client before the agent gets it. */
   newSession?: ProxyOptions["newSession"];
+  /** The request the agent takes a steering message as; see `serveProxy`. */
+  steering?: ProxyOptions["steering"];
 }
 
 export interface AdapterContext {
@@ -47,6 +49,7 @@ export function runAdapter(
       allow: allowlistOf(values.allow),
       data,
       newSession: options.newSession,
+      steering: options.steering,
       io: context.streams,
     });
     return {};
