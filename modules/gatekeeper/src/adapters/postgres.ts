@@ -44,7 +44,9 @@ export interface Press {
 }
 
 /** What one transaction on a gate may do. */
+/** The gate's transaction: its button presses, and its changes. */
 export interface Changes {
+  presses(): Promise<Press[]>;
   update(row: StoredGate): Promise<void>;
   emit(outgoing: Outgoing): Promise<void>;
 }
@@ -57,7 +59,6 @@ export interface Store {
   byThread(channel: string, thread: string): Promise<StoredGate | undefined>;
   pending(): Promise<string[]>;
   press(gate: string, press: Press): Promise<void>;
-  presses(gate: string): Promise<Press[]>;
   /** Runs `work` on the locked gate in one transaction; its changes and events commit together. */
   locked<T>(id: string, work: (row: StoredGate | undefined, changes: Changes) => Promise<T>): Promise<T>;
   /** The events not yet published, oldest first, and a way to mark them published. */
@@ -96,7 +97,11 @@ export async function openStore(url: string): Promise<Store> {
     const { rows } = await pool.query(sql, values);
     return rows[0] ? fromDb(rows[0]) : undefined;
   };
-  const write = (client: pg.PoolClient) => ({
+  const write = (client: pg.PoolClient, gate: string) => ({
+    async presses() {
+      const { rows } = await client.query("SELECT ts, author, action FROM gatekeeper.presses WHERE gate = $1", [gate]);
+      return rows as Press[];
+    },
     async update(row: StoredGate) {
       await client.query(
         "UPDATE gatekeeper.gates SET thread = $2, requested_at = $3, state = $4, waiting_for = $5, record = $6 WHERE id = $1",
@@ -124,7 +129,7 @@ export async function openStore(url: string): Promise<Store> {
             row.record,
           ],
         );
-        if (rowCount && event) await write(client).emit(event);
+        if (rowCount && event) await write(client, row.id).emit(event);
         return Boolean(rowCount);
       }),
     get: (id) => one(`SELECT ${ROW} FROM gatekeeper.gates WHERE id = $1`, [id]),
@@ -145,14 +150,10 @@ export async function openStore(url: string): Promise<Store> {
         [gate, ts, author, action],
       );
     },
-    async presses(gate) {
-      const { rows } = await pool.query("SELECT ts, author, action FROM gatekeeper.presses WHERE gate = $1", [gate]);
-      return rows as Press[];
-    },
     locked: (id, work) =>
       inTransaction(pool, async (client) => {
         const { rows } = await client.query(`SELECT ${ROW} FROM gatekeeper.gates WHERE id = $1 FOR UPDATE`, [id]);
-        return work(rows[0] ? fromDb(rows[0]) : undefined, write(client));
+        return work(rows[0] ? fromDb(rows[0]) : undefined, write(client, id));
       }),
     async unpublished() {
       const { rows } = await pool.query(

@@ -89,7 +89,12 @@ Every server, client and subscription stops when the scenario ends, before the f
   The first prompt that contains `when` gets the `edits` (files by path below the session's folder) and the
   `reply`, then the turn ends with `end_turn`. Any other prompt ends with `refusal` and fails the scenario with the
   prompt shown. `prompts()` lists what it received.
-- `fakes.postgres()`, `fakes.nats()`, `fakes.temporal()`, `fakes.s3()`: a real service in a container for this
+- `fakes.postgres()`: PostgreSQL 18 for this scenario, as PGlite in the test's process behind a small
+  wire-protocol server, with no Docker ([ADR 0049](../../docs/decisions/0049-in-memory-stand-ins.md)). The module
+  connects to `postgres://test:test@127.0.0.1:<port>/test` with its own driver; a wrong password is refused with
+  SQLSTATE 28P01. Connections run one at a time: a transaction holds the database until it ends, so code must not
+  wait inside a transaction for a second connection of its own.
+- `fakes.nats()`, `fakes.temporal()`, `fakes.s3()`: a real service in a container for this
   scenario ([ADR 0016](../../docs/decisions/0016-testkit-service-fakes.md)). Each gives only what a module needs
   to reach it: a URL, an address or an endpoint with keys. Docker must run.
 - `fakes.forge()`: a real Forgejo with a user and an API token (`url`, `token`, `owner`). The test can

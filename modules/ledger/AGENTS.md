@@ -35,7 +35,8 @@ The ARCH check enforces the layers.
 
 ## Budget
 
-- System tests: 120 seconds in total on the CI runner. The PostgreSQL and dashboard scenarios need Docker.
+- System tests: 120 seconds in total on the CI runner. The dashboard scenarios need Docker; the PostgreSQL
+  scenarios run PostgreSQL in process (PGlite, ADR 0049).
 
 ## Quality limits
 
