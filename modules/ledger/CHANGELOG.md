@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/sesigl/open-software-factory/compare/ledger-v0.5.0...ledger-v0.6.0) (2026-10-23)
+
+
+### Features
+
+* **gatekeeper:** T-11 gatekeeper serve with an HTTP API, Slack events and buttons, and a Postgres outbox ([#84](https://github.com/sesigl/open-software-factory/issues/84)) ([d58cfca](https://github.com/sesigl/open-software-factory/commit/d58cfca8009733ff168580fb335a5cbaddf371c3))
+
 ## [0.5.0](https://github.com/sesigl/open-software-factory/compare/ledger-v0.4.0...ledger-v0.5.0) (2026-10-22)
 
 

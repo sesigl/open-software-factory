@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/gatekeeper",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "gatekeeper: asks people for approval by a Rego policy in Slack or on a pull request, and writes signed approval records.",
   "license": "Apache-2.0",
   "repository": {
