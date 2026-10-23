@@ -6,6 +6,8 @@ export default defineConfig({
     include: ["system-tests/**/*.test.ts"],
     globals: true,
     retry: 0,
+    // A worker runs many scenario files and imports the testkit once (ADR 0051).
+    isolate: false,
     testTimeout: 60_000,
     reporters: ["default", ["junit", { outputFile: "../../reports/junit/cli.xml", classnameTemplate: "{filepath}" }]],
   },
