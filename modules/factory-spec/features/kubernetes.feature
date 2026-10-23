@@ -28,3 +28,11 @@ Feature: Render Kubernetes resources
     Then the command exits with code 0
     And "k8s/triage.yaml" in the output folder has a "RemoteMCPServer" "docs" at "https://mcp.acme.example/docs"
     And the Agent "triage" uses the "RemoteMCPServer" "docs"
+
+  @id=SCN-FSPEC-048 @status=implemented @realizes=SCN-FACTORY-RUNTIME-004
+  Scenario: Render for Kubernetes writes an agent-sandbox SandboxTemplate for the agent's sandbox
+    Given a factory.yaml whose agent "triage" runs in a sandbox with the template "node:24", the CPU 2 and the memory "4Gi"
+    When the factory engineer runs "factory render --k8s"
+    Then the command exits with code 0
+    And "k8s/triage.yaml" in the output folder has a "SandboxTemplate" "triage" whose container "sandbox" runs "node:24"
+    And the container requests and is limited to the CPU "2" and the memory "4Gi"

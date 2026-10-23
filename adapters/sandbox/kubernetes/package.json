@@ -1,0 +1,37 @@
+{
+  "name": "@opensoftware/sandbox-kubernetes",
+  "version": "0.1.0",
+  "description": "sandbox-kubernetes: runs isolated, resource-limited sandboxes as kubernetes-sigs/agent-sandbox claims, each reaching out only through its own iron-proxy egress pod that refuses other hosts, puts in the real secrets and allows only the declared MCP tools.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "adapters/sandbox/kubernetes"
+  },
+  "type": "module",
+  "bin": {
+    "sandbox-kubernetes": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "vitest run",
+    "docs": "node ../../../tools/bin/osf.ts docs .",
+    "mutation": "node ../../../tools/bin/osf.ts mutation ."
+  },
+  "devDependencies": {
+    "@opensoftware/testkit": "workspace:*"
+  },
+  "dependencies": {
+    "@opensoftware/cli": "workspace:*",
+    "@opensoftware/contracts": "workspace:*",
+    "@opensoftware/sandbox-egress": "workspace:*"
+  }
+}

@@ -46,8 +46,10 @@ npx @opensoftware/sandbox-docker destroy "$id"
   declared MCP server. It maps `host.docker.internal` to the Docker host, as Docker Desktop does.
 - **Secrets.** Each secret's variable holds `osf-secret-placeholder-<NAME>` in the sandbox. The proxy swaps it in any
   request header for the real value, for the hosts of `egress` only. `ref:file/<name>` is the file `<name>` in
-  `OSF_SECRETS_DIR`; the Docker CLI copies it into the proxy, and the adapter never reads it. Other providers are
-  refused before anything starts.
+  `OSF_SECRETS_DIR`; the Docker CLI copies it into the proxy, and the adapter never reads it. `ref:env/<NAME>` is the
+  adapter's variable `OSF_SECRET_<NAME>`, which the Docker CLI hands to the proxy only. `ref:openbao/<path>` is read
+  by the proxy from OpenBao with `OSF_OPENBAO_ADDR` and `OSF_OPENBAO_TOKEN` (ADR 0055). Other providers, a missing
+  variable and an OpenBao secret without address or token are refused before anything starts.
 - **TLS.** The proxy creates its own CA when it starts and terminates TLS with it, so it can swap secrets in HTTPS
   requests. The sandbox trusts the CA through `SSL_CERT_FILE`, `NODE_EXTRA_CA_CERTS`, `REQUESTS_CA_BUNDLE`,
   `CURL_CA_BUNDLE` and `GIT_SSL_CAINFO`, all `/etc/osf/egress-ca.crt`. The CA's key never leaves the proxy.
@@ -89,4 +91,8 @@ builds the package and publishes it to npm as `@opensoftware/sandbox-docker`. Th
 | Variable | Type | Default | Meaning |
 | --- | --- | --- | --- |
 | `OSF_SECRETS_DIR` | string | `"/run/secrets"` | Folder of the secret files: ref:file/<name> in a sandbox spec is the file <name> in it. The Docker CLI copies each into the sandbox's egress proxy; the adapter never reads it. |
+| `OSF_SECRET_*` | string |  | OSF_SECRET_<NAME> holds the value of ref:env/<NAME> in a sandbox spec. The Docker CLI hands it to the sandbox's egress proxy only, as its variable <NAME>. |
+| `OSF_OPENBAO_ADDR` | string |  | OpenBao's address for ref:openbao/<path>, as the egress proxy reaches it. Needed only for such secrets. |
+| `OSF_OPENBAO_TOKEN` | string |  | The token the egress proxy reads OpenBao with. The sandbox never gets it. |
+| `OSF_OPENBAO_MOUNT` | string | `"secret"` | The KV v2 mount of ref:openbao/<path>: the secret's field value at <mount>/data/<path>. |
 | `DOCKER_HOST` | string |  | The Docker daemon to use, as for any docker command. Default: the Docker CLI's current context. |

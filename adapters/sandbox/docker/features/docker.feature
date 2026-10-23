@@ -9,7 +9,7 @@ Feature: What the docker adapter checks before it starts a sandbox
     When the client runs "create" with the spec
     Then create exits with code 2 and names "/cpu" as invalid
 
-  @id=SCN-SDOCKER-002 @status=implemented
+  @id=SCN-SDOCKER-002 @status=deprecated
   Scenario: A secret from a provider the adapter does not support is refused
     Given a sandbox spec with the secret "LINEAR_TOKEN" from "ref:openbao/linear-token"
     When the client runs "create" with the spec

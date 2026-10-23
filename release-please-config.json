@@ -140,6 +140,20 @@
       "component": "sandbox-docker",
       "initial-version": "0.1.0",
       "bump-minor-pre-major": true
+    },
+    "adapters/sandbox/kubernetes": {
+      "release-type": "node",
+      "package-name": "@opensoftware/sandbox-kubernetes",
+      "component": "sandbox-kubernetes",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
+    },
+    "packages/sandbox-egress": {
+      "release-type": "node",
+      "package-name": "@opensoftware/sandbox-egress",
+      "component": "sandbox-egress",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
     }
   }
 }

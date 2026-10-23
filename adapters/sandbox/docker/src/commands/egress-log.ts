@@ -1,7 +1,7 @@
 // egress-log <ID>: one JSON line per request that left the sandbox, from its egress proxy's audit log.
 import type { Outcome } from "@opensoftware/cli";
+import { egressEntries } from "@opensoftware/sandbox-egress";
 import { docker } from "../adapters/docker.ts";
-import { egressEntries } from "../domain/egress-log.ts";
 import { egressName } from "../domain/names.ts";
 import { sandboxContainer } from "./sandbox.ts";
 

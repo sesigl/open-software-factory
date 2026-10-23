@@ -7,7 +7,7 @@ const HELP = `factory: one factory.yaml rendered for every harness, with lint, p
 
 Commands:
   factory lint                                    Check factory.yaml; print each problem with its file, line and column.
-  factory render [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]   Write AGENTS.md, the MCP servers and the skill links of one agent to $OUTPUT. --harness all writes every declared harness; --k8s adds its kagent resources; --gh-aw adds a gh-aw workflow per GitHub automation.
+  factory render [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]   Write AGENTS.md, the MCP servers and the skill links of one agent to $OUTPUT. --harness all writes every declared harness; --k8s adds its kagent resources and SandboxTemplate; --gh-aw adds a gh-aw workflow per GitHub automation.
   factory plan                                    Pin registry MCP servers in factory.lock; show what apply changes and what drifted, rendered files and webhooks.
   factory apply [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]    Render like render, register the webhooks of forgejo automations, and record what was applied in OSF_DATA.
   factory diff <old> [<new>]                      Show the changes between two versions of factory.yaml, as files or Git revisions.

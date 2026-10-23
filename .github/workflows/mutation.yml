@@ -83,6 +83,10 @@ jobs:
             PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/playwright" \
               pnpm --filter "$PACKAGE" exec playwright-core install --with-deps chromium
           fi
+      # The kubernetes sandbox adapter's tests need a cluster with agent-sandbox (ADR 0055).
+      - name: Start kind with agent-sandbox
+        if: matrix.package == '@opensoftware/sandbox-kubernetes'
+        uses: ./.github/actions/kind-agent-sandbox
       - run: pnpm exec turbo run mutation --filter="$PACKAGE" -- --shard "$SHARD"
         env:
           PACKAGE: ${{ matrix.package }}

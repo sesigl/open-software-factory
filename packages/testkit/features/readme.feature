@@ -14,3 +14,9 @@ Feature: What a README documents
     Given a README with the sections "Usage" and "Configuration"
     When the program asks for the section "Quick start"
     Then it gets an empty text
+
+  @id=SCN-TK-079 @status=implemented
+  Scenario: A name with a star in the Configuration section documents every variable with that prefix
+    Given a README that names `OSF_SECRET_*` under "## Configuration"
+    When the program asks whether "OSF_SECRET_LINEAR_TOKEN" and "OSF_SECRETS_DIR" are documented
+    Then "OSF_SECRET_LINEAR_TOKEN" is documented and "OSF_SECRETS_DIR" is not

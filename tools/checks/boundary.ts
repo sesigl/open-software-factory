@@ -1,6 +1,6 @@
 // BOUNDARY-STATIC, BOUNDARY-ENV, ISOLATION, NOSKIP and ASSERT: how tests and modules reach each other.
 
-import { documentedEnv } from "@opensoftware/testkit/readme";
+import { documentedEnv, isDocumented } from "@opensoftware/testkit/readme";
 import { cruise, type ICruiseResult, type IForbiddenRuleType, type IReporterOutput } from "dependency-cruiser";
 import type { Context } from "./lib/context.ts";
 import { type Finding, isLibrary, lineOf, moduleRootOf } from "./lib/repo.ts";
@@ -146,7 +146,7 @@ export function boundaryEnv(context: Context): Finding[] {
     const readme = `${moduleRootOf(test.file)}/README.md`;
     const documented = context.repo.exists(readme) ? documentedEnv(context.repo.read(readme)) : new Set<string>();
     for (const { name, line } of test.env) {
-      if (!documented.has(name)) {
+      if (!isDocumented(documented, name)) {
         findings.push({
           check: "BOUNDARY-ENV",
           file: test.file,
