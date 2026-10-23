@@ -29,7 +29,7 @@ Feature: Render Kubernetes resources
     And "k8s/triage.yaml" in the output folder has a "RemoteMCPServer" "docs" at "https://mcp.acme.example/docs"
     And the Agent "triage" uses the "RemoteMCPServer" "docs"
 
-  @id=SCN-FSPEC-048 @status=planned @realizes=SCN-FACTORY-RUNTIME-004
+  @id=SCN-FSPEC-048 @status=implemented @realizes=SCN-FACTORY-RUNTIME-004
   Scenario: Render for Kubernetes writes an agent-sandbox SandboxTemplate for the agent's sandbox
     Given a factory.yaml whose agent "triage" runs in a sandbox with the template "node:24", the CPU 2 and the memory "4Gi"
     When the factory engineer runs "factory render --k8s"

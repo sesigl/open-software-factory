@@ -17,7 +17,6 @@ export function documentedEnv(readme: string): Set<string> {
 /** Whether the variable is one of the documented names, or has the prefix of a documented name with `*`. */
 export function isDocumented(documented: Set<string>, name: string): boolean {
   return (
-    documented.has(name) ||
-    [...documented].some((entry) => entry.endsWith("*") && name.startsWith(entry.slice(0, -1)))
+    documented.has(name) || [...documented].some((entry) => entry.endsWith("*") && name.startsWith(entry.slice(0, -1)))
   );
 }

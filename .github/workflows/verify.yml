@@ -88,9 +88,13 @@ jobs:
           - suite: sandbox-docker
             filter: "@opensoftware/sandbox-docker"
             pull: ironsh/iron-proxy:0.54.0 curlimages/curl:8.17.0 hello-world:latest
+          # The same scenarios on kind with agent-sandbox; each sandbox is a claim behind an egress pod (ADR 0055).
+          - suite: sandbox-kubernetes
+            filter: "@opensoftware/sandbox-kubernetes"
+            kind: true
           # Every other package, so a new module runs without a change here.
           - suite: rest
-            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper !@opensoftware/sandbox-docker"
+            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper !@opensoftware/sandbox-docker !@opensoftware/sandbox-kubernetes"
     steps:
       - uses: actions/checkout@v5
         with:
@@ -128,6 +132,10 @@ jobs:
           for image in $PULL; do
             nohup docker pull --quiet "$image" >/dev/null 2>&1 &
           done
+      # A kind cluster with agent-sandbox for the kubernetes sandbox adapter (ADR 0055).
+      - name: Start kind with agent-sandbox
+        if: matrix.kind
+        uses: ./.github/actions/kind-agent-sandbox
       # proof capture opens pages in Chromium (ADR 0029); the testkit hands PLAYWRIGHT_BROWSERS_PATH to the module.
       - name: Install the browser of the capture scenarios
         if: matrix.browser

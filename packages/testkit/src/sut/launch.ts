@@ -2,8 +2,8 @@
 import { extname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { artifactOf, moduleEnv, repoRoot, workspaceOf } from "../support/module.ts";
-import { isDocumented } from "../support/readme.ts";
 import { baseEnv, FIXED_DATE, FIXED_SEED } from "../support/process.ts";
+import { isDocumented } from "../support/readme.ts";
 import type { Folders } from "./sut.ts";
 
 export type Launch = (

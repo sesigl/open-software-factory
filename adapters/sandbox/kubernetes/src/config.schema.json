@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "KUBECONFIG": {
+      "type": "string",
+      "description": "The kubeconfig of the cluster, as for any kubectl command. Default: kubectl's own (~/.kube/config). The cluster needs agent-sandbox with its extensions."
+    },
+    "OSF_SANDBOX_NAMESPACE": {
+      "type": "string",
+      "default": "default",
+      "description": "The namespace of the sandboxes, their egress pods and their Secrets. Give sandboxes a namespace of their own."
+    },
+    "OSF_SECRETS_DIR": {
+      "type": "string",
+      "default": "/run/secrets",
+      "description": "Folder of the secret files: ref:file/<name> in a sandbox spec is the file <name> in it. kubectl puts each into a Secret that only the sandbox's egress pod mounts; the adapter never reads it."
+    },
+    "OSF_SECRET_*": {
+      "type": "string",
+      "description": "OSF_SECRET_<NAME> holds the value of ref:env/<NAME> in a sandbox spec. It goes into a Secret that only the sandbox's egress pod gets, as its variable <NAME>."
+    },
+    "OSF_OPENBAO_ADDR": {
+      "type": "string",
+      "description": "OpenBao's address for ref:openbao/<path>, as the egress pod reaches it. Needed only for such secrets."
+    },
+    "OSF_OPENBAO_TOKEN": {
+      "type": "string",
+      "description": "The token the egress proxy reads OpenBao with. The sandbox never gets it."
+    },
+    "OSF_OPENBAO_MOUNT": {
+      "type": "string",
+      "default": "secret",
+      "description": "The KV v2 mount of ref:openbao/<path>: the secret's field value at <mount>/data/<path>."
+    },
+    "OSF_SANDBOX_HOST_ALIASES": {
+      "type": "string",
+      "description": "Hostnames the egress pod resolves to fixed addresses, as host=ip pairs separated by commas, such as host.docker.internal=172.18.0.1 on kind."
+    },
+    "OSF_SANDBOX_SNAPSHOT_SIZE": {
+      "type": "string",
+      "default": "1Gi",
+      "description": "The size of the PersistentVolumeClaim that snapshot copies /workspace into."
+    }
+  }
+}

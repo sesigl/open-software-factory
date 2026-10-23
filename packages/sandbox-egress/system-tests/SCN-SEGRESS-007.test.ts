@@ -6,7 +6,9 @@ scenario("SCN-SEGRESS-007", async ({ given, when, then }) => {
   await given(
     'a sandbox spec with the variable "CI" set to "true" and the secret "LINEAR_TOKEN" from "ref:file/linear-token"',
     async () => {
-      spec = { template: "alpine", env: { CI: "true" }, secrets: { LINEAR_TOKEN: "ref:file/linear-token" } };
+      // The spec's variables, not the adapter's environment.
+      const variables = { CI: "true" };
+      spec = { template: "alpine", env: variables, secrets: { LINEAR_TOKEN: "ref:file/linear-token" } };
     },
   );
 

@@ -4,7 +4,8 @@ covers: [ports/secrets/**]
 
 # secrets port
 
-How a sandbox uses a secret it never holds. Decision: [ADR 0054](../../docs/decisions/0054-sandbox-port.md).
+How a sandbox uses a secret it never holds. Decisions: [ADR 0054](../../docs/decisions/0054-sandbox-port.md) and
+[ADR 0055](../../docs/decisions/0055-sandbox-kubernetes.md).
 
 ## References
 
@@ -17,10 +18,13 @@ record.
 
 | Provider | Reference | Where the value comes from | Resolved by |
 | --- | --- | --- | --- |
-| `file` | `ref:file/linear-token` | The file `linear-token` in the sandbox adapter's `OSF_SECRETS_DIR`, like Docker's and Kubernetes' secret files | [`sandbox-docker`](../../adapters/sandbox/docker/README.md) |
-| `env` | `ref:env/LINEAR_TOKEN` | Planned: a variable of the egress proxy's environment | — |
-| `openbao` | `ref:openbao/linear-token` | Planned: OpenBao's KV engine, through iron-proxy's `vault_kv` source | — |
+| `file` | `ref:file/linear-token` | The file `linear-token` in the sandbox adapter's `OSF_SECRETS_DIR`, like Docker's and Kubernetes' secret files | [`sandbox-docker`](../../adapters/sandbox/docker/README.md), [`sandbox-kubernetes`](../../adapters/sandbox/kubernetes/README.md) |
+| `env` | `ref:env/LINEAR_TOKEN` | The sandbox adapter's variable `OSF_SECRET_LINEAR_TOKEN`, handed to the egress proxy only | both |
+| `openbao` | `ref:openbao/linear-token` | The field `value` of the KV v2 secret `linear-token` in OpenBao (mount `OSF_OPENBAO_MOUNT`, default `secret`), which the egress proxy reads with `OSF_OPENBAO_ADDR` and `OSF_OPENBAO_TOKEN` through iron-proxy's `vault_kv` source | both |
 
-A sandbox adapter refuses a reference whose provider it does not resolve before it starts anything. The `env` and
-`openbao` providers and this port's own scenarios (prefix `SCN-SECRET`) come with the Kubernetes slice of TODO item
-T-13.
+A sandbox adapter refuses, before it starts anything, a reference to another provider, an `env` reference whose
+variable is not set, and an `openbao` reference without OpenBao's address or token. The `OSF_SECRET_` prefix keeps a
+sandbox spec from naming any other variable of the adapter. The sandbox adapters resolve every provider, so the
+scenarios are the sandbox port's `@conformance` scenarios in
+[`ports/sandbox/features/secrets.feature`](../sandbox/features/secrets.feature). The prefix `SCN-SECRET` stays for a
+secrets adapter of its own.

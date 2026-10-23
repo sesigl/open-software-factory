@@ -92,3 +92,6 @@ The library reads no variable itself. Its caller passes the environment to `reso
 | SCN-SEGRESS-016 | implemented | A secret from the environment whose name is no variable name is refused |
 | SCN-SEGRESS-017 | implemented | A secret from OpenBao without an address and a token is refused |
 | SCN-SEGRESS-018 | implemented | A memory quantity is converted to bytes |
+| SCN-SEGRESS-019 | implemented | A copy into a sandbox names a path below its working folder |
+| SCN-SEGRESS-020 | implemented | A copy out of a sandbox keeps an absolute path |
+| SCN-SEGRESS-021 | implemented | A copy that names a sandbox on both sides is refused |

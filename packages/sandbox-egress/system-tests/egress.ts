@@ -23,3 +23,13 @@ export async function secretsDir(sut: Sut, files: Record<string, string> = {}): 
   for (const [name, text] of Object.entries(files)) await sut.files.put(`$INPUT/secrets/${name}`, text);
   return sut.files.path("$INPUT/secrets");
 }
+
+/** What the call throws, or undefined when it returns. */
+export function catching(call: () => unknown): unknown {
+  try {
+    call();
+  } catch (error) {
+    return error;
+  }
+  return undefined;
+}

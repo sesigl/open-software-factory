@@ -1,4 +1,5 @@
 // @opensoftware/sandbox-egress: what every sandbox adapter shares about the egress proxy (ADR 0054, ADR 0055).
+export { type CopyEnds, copyEnds } from "./domain/copy.ts";
 export { type EgressEntry, egressEntries } from "./domain/egress-log.ts";
 export {
   CA_FILE,

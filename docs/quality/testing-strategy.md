@@ -68,7 +68,8 @@ docs/vision/           factory-level requirements; source for module scenarios, 
   module reaches each through its documented configuration; switching a stand-in changes only the testkit.
 - A sandbox adapter's tests run real sandboxes, since isolation is what they prove. The APIs and MCP servers a
   sandbox calls are `fakes.http(routes, { containers: true })`, which the sandbox reaches at `host.docker.internal`
-  through its egress proxy (ADR 0054).
+  through its egress proxy (ADR 0054). The kubernetes adapter's tests run on kind with agent-sandbox in CI; the egress
+  pod reaches the runner as `host.docker.internal` through `OSF_SANDBOX_HOST_ALIASES` (ADR 0055).
 - Scenario files share Vitest workers (ADR 0051): a worker imports the testkit once and runs many files, so a test
   keeps all its state inside its scenario and never changes the test process's environment or globals.
 - No unit tests by default (ADR 0007). A module's `AGENTS.md` may allow them for a pure algorithm.

@@ -115,3 +115,18 @@ Feature: What every sandbox adapter shares about the egress proxy
   Scenario: A memory quantity is converted to bytes
     When the adapter calls memoryBytes with "256Mi" and "2Gi"
     Then it gives 268435456 and 2147483648
+
+  @id=SCN-SEGRESS-019 @status=implemented
+  Scenario: A copy into a sandbox names a path below its working folder
+    When the adapter calls copyEnds with "notes.md" and "0123456789ab:docs/notes.md"
+    Then it gives the sandbox "0123456789ab", the path "/workspace/docs/notes.md", the client's path "notes.md" and a copy into the sandbox
+
+  @id=SCN-SEGRESS-020 @status=implemented
+  Scenario: A copy out of a sandbox keeps an absolute path
+    When the adapter calls copyEnds with "0123456789ab:/tmp/result.txt" and "result.txt"
+    Then it gives the sandbox "0123456789ab", the path "/tmp/result.txt", the client's path "result.txt" and a copy out of the sandbox
+
+  @id=SCN-SEGRESS-021 @status=implemented
+  Scenario: A copy that names a sandbox on both sides is refused
+    When the adapter calls copyEnds with "0123456789ab:a.txt" and "ba9876543210:b.txt"
+    Then it fails with a usage error that says to name the sandbox on one side only
