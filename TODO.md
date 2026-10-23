@@ -425,7 +425,7 @@ read them for ideas, do not copy their company-specific rules.
   - [x] The proxy library `packages/harness-proxy` with its npm release, usage and cost in the run record, and
     `claude-code` (optional): the pinned `claude-agent-acp` behind the proxy in Claude Code's mode `default`, its
     own settings folder and the model gateway settings; conformance against the real Claude Code with the testkit's
-    new Anthropic Messages API (ADR 0051, `SCN-HPROXY-001` to `-013`, `SCN-HCLAUDE-001` to `-004`,
+    new Anthropic Messages API (ADR 0051, `SCN-HPROXY-001` to `-017`, `SCN-HCLAUDE-001` to `-004`,
     `SCN-HARNESS-014`, `SCN-HACP-001`, `SCN-TK-065` to `-071`).
   - [ ] `codex`, `opencode` (optional): the products' ACP bridges behind the proxy, their permission modes and model
     gateway settings; conformance against the real CLIs with a scripted gateway for their APIs.
