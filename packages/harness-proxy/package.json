@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/harness-proxy",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "The ACP proxy of the open software factory's harness adapters: a tool allowlist, cancel within 5 seconds, session records and the run record transcript.",
   "license": "Apache-2.0",
   "repository": {
