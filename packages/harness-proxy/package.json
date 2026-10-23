@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@agentclientprotocol/sdk": "1.9.0",
+    "@opensoftware/cli": "workspace:*",
     "@opensoftware/contracts": "workspace:*",
     "@opentelemetry/api": "1.9.1",
     "@opentelemetry/resources": "2.12.0"

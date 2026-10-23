@@ -1,4 +1,3 @@
-import { join } from "node:path";
 import { type AcpClient, type Harness, scenario } from "@opensoftware/testkit";
 import { serve } from "./proxy.ts";
 
@@ -12,7 +11,7 @@ scenario("SCN-HPROXY-004", async ({ sut, fakes, given, when, then }) => {
   await given(
     'serveProxy runs that harness with a hook that moves every session into the subfolder "sub"',
     async () => {
-      client = await serve(sut, harness, { newSession: (params) => ({ ...params, cwd: join(params.cwd, "sub") }) });
+      client = await serve(sut, harness, { newSession: (params) => ({ ...params, cwd: `${params.cwd}/sub` }) });
     },
   );
 

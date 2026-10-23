@@ -2,7 +2,8 @@ import { type AcpClient, type ModelGateway, scenario } from "@opensoftware/testk
 import { connect } from "./claude.ts";
 
 scenario("SCN-HCLAUDE-002", async ({ sut, fakes, given, when, then }) => {
-  await given('"$INPUT/.claude/settings.json" sets the default mode "bypassPermissions"', async () => {
+  await given('the settings in the home folder set the default mode "acceptEdits"', async () => {
+    // The testkit runs the module with HOME set to $INPUT.
     await sut.files.put(
       "$INPUT/.claude/settings.json",
       JSON.stringify({ permissions: { defaultMode: "acceptEdits" } }),
