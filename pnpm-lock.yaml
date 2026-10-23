@@ -26,21 +26,12 @@ importers:
 
   adapters/harness/acp:
     dependencies:
-      '@agentclientprotocol/sdk':
-        specifier: 1.9.0
-        version: 1.9.0(zod@4.6.7)
       '@opensoftware/cli':
         specifier: workspace:*
         version: link:../../../packages/cli
-      '@opentelemetry/api':
-        specifier: 1.9.1
-        version: 1.9.1
-      '@opentelemetry/resources':
-        specifier: 2.12.0
-        version: 2.12.0(@opentelemetry/api@1.9.1)
-      zod:
-        specifier: 4.6.7
-        version: 4.6.7
+      '@opensoftware/harness-proxy':
+        specifier: workspace:*
+        version: link:../../../packages/harness-proxy
     devDependencies:
       '@opensoftware/contracts':
         specifier: workspace:*
@@ -276,6 +267,25 @@ importers:
         version: link:../../packages/testkit
 
   packages/cli:
+    devDependencies:
+      '@opensoftware/testkit':
+        specifier: workspace:*
+        version: link:../testkit
+
+  packages/harness-proxy:
+    dependencies:
+      '@agentclientprotocol/sdk':
+        specifier: 1.9.0
+        version: 1.9.0(zod@4.6.7)
+      '@opensoftware/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      '@opentelemetry/api':
+        specifier: 1.9.1
+        version: 1.9.1
+      '@opentelemetry/resources':
+        specifier: 2.12.0
+        version: 2.12.0(@opentelemetry/api@1.9.1)
     devDependencies:
       '@opensoftware/testkit':
         specifier: workspace:*

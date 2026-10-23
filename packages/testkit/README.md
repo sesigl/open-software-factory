@@ -251,3 +251,10 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-062 | implemented | A scripted turn that ignores cancel keeps running |
 | SCN-TK-063 | implemented | A scripted turn ends with its scripted stop reason |
 | SCN-TK-064 | implemented | sut.acp gives the exit code of a module that exits |
+| SCN-TK-065 | implemented | A scripted Messages API call gets its scripted reply |
+| SCN-TK-066 | implemented | A scripted Messages API reply streams a tool call |
+| SCN-TK-067 | implemented | Messages API calls take the scripted replies in order, and the last one answers again |
+| SCN-TK-068 | implemented | A scripted Messages API call that hangs gets no answer |
+| SCN-TK-069 | implemented | A scripted Messages API reply ends with its scripted stop reason and token usage |
+| SCN-TK-070 | implemented | A scripted turn reports its token usage and the session's cost |
+| SCN-TK-071 | implemented | sut.acp.serve connects to an ACP agent that runs in the test's own process |
