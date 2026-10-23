@@ -1,5 +1,5 @@
 ---
-covers: [modules/*/features/**, ports/*/features/**, e2e/features/**]
+covers: [modules/*/features/**, ports/*/features/**, adapters/*/*/features/**, e2e/features/**]
 ---
 
 # Scenario ID prefixes
@@ -13,6 +13,7 @@ adds a row.
 | TK | testkit | `packages/testkit/features/` |
 | CLI | cli library | `packages/cli/features/` |
 | SPECFILES | spec-files library | `packages/spec-files/features/` |
+| HPROXY | harness-proxy library | `packages/harness-proxy/features/` |
 | FSPEC | factory-spec | `modules/factory-spec/features/` |
 | RUN | runlog | `modules/runlog/features/` |
 | PROOF | proof | `modules/proof/features/` |
@@ -26,6 +27,8 @@ adds a row.
 | FORE | foreman | `modules/foreman/features/` |
 | CONSOLE | console | `modules/console/features/` |
 | HARNESS | harness port | `ports/harness/features/` |
+| HACP | harness adapter acp | `adapters/harness/acp/features/` |
+| HCLAUDE | harness adapter claude-code | `adapters/harness/claude-code/features/` |
 | SANDBOX | sandbox port | `ports/sandbox/features/` |
 | CHANNEL | channel port | `ports/channel/features/` |
 | FORGE | forge port | `ports/forge/features/` |
