@@ -1,5 +1,6 @@
 import { readSpec } from "@opensoftware/sandbox-egress";
 import { scenario } from "@opensoftware/testkit";
+import { catching } from "./egress.ts";
 
 scenario("SCN-SEGRESS-011", async ({ sut, given, when, then }) => {
   let file = "";
@@ -18,12 +19,3 @@ scenario("SCN-SEGRESS-011", async ({ sut, given, when, then }) => {
     expect((error as Error).message).toBe(`${file}: /cpu must be number`);
   });
 });
-
-function catching(call: () => unknown): unknown {
-  try {
-    call();
-  } catch (error) {
-    return error;
-  }
-  return undefined;
-}

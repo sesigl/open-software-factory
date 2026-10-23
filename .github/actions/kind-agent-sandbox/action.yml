@@ -1,0 +1,24 @@
+# A kind cluster with agent-sandbox v1.0.8 for the system tests of adapters/sandbox/kubernetes (ADR 0055). kindnet
+# enforces the sandboxes' NetworkPolicies. The test images are pulled into the node while the cluster settles. The
+# tests find the cluster through KUBECONFIG, and the runner, where the testkit's fakes listen, as host.docker.internal.
+name: kind with agent-sandbox
+description: Starts kind with agent-sandbox and sets KUBECONFIG and OSF_SANDBOX_HOST_ALIASES for the next steps.
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        curl -fsSLo "$RUNNER_TEMP/kind" https://github.com/kubernetes-sigs/kind/releases/download/v0.30.0/kind-linux-amd64
+        echo "$(curl -fsSL https://github.com/kubernetes-sigs/kind/releases/download/v0.30.0/kind-linux-amd64.sha256sum | cut -d' ' -f1)  $RUNNER_TEMP/kind" | sha256sum --check
+        chmod +x "$RUNNER_TEMP/kind"
+        export KUBECONFIG="$RUNNER_TEMP/kubeconfig"
+        "$RUNNER_TEMP/kind" create cluster --wait 120s
+        for image in $(node -e 'import("./packages/sandbox-egress/src/domain/names.ts").then(({ EGRESS_IMAGE }) =>
+          console.log(EGRESS_IMAGE))') $(grep -ho '"[a-z/-]*:[0-9a-z.]*@sha256:[0-9a-f]*"' adapters/sandbox/kubernetes/system-tests/sandbox.ts | tr -d '"'); do
+          nohup docker exec kind-control-plane crictl pull "$image" >/dev/null 2>&1 &
+        done
+        kubectl apply -f https://github.com/kubernetes-sigs/agent-sandbox/releases/download/v1.0.8/sandbox-with-extensions.yaml
+        kubectl wait --for=condition=Available deployment --all --all-namespaces --timeout=180s
+        gateway=$(docker network inspect kind --format '{{range .IPAM.Config}}{{.Gateway}} {{end}}' | tr ' ' '\n' | grep -m1 '\.')
+        echo "KUBECONFIG=$KUBECONFIG" >> "$GITHUB_ENV"
+        echo "OSF_SANDBOX_HOST_ALIASES=host.docker.internal=$gateway" >> "$GITHUB_ENV"

@@ -46,8 +46,10 @@ npx @opensoftware/sandbox-docker destroy "$id"
   declared MCP server. It maps `host.docker.internal` to the Docker host, as Docker Desktop does.
 - **Secrets.** Each secret's variable holds `osf-secret-placeholder-<NAME>` in the sandbox. The proxy swaps it in any
   request header for the real value, for the hosts of `egress` only. `ref:file/<name>` is the file `<name>` in
-  `OSF_SECRETS_DIR`; the Docker CLI copies it into the proxy, and the adapter never reads it. Other providers are
-  refused before anything starts.
+  `OSF_SECRETS_DIR`; the Docker CLI copies it into the proxy, and the adapter never reads it. `ref:env/<NAME>` is the
+  adapter's variable `OSF_SECRET_<NAME>`, which the Docker CLI hands to the proxy only. `ref:openbao/<path>` is read
+  by the proxy from OpenBao with `OSF_OPENBAO_ADDR` and `OSF_OPENBAO_TOKEN` (ADR 0055). Other providers, a missing
+  variable and an OpenBao secret without address or token are refused before anything starts.
 - **TLS.** The proxy creates its own CA when it starts and terminates TLS with it, so it can swap secrets in HTTPS
   requests. The sandbox trusts the CA through `SSL_CERT_FILE`, `NODE_EXTRA_CA_CERTS`, `REQUESTS_CA_BUNDLE`,
   `CURL_CA_BUNDLE` and `GIT_SSL_CAINFO`, all `/etc/osf/egress-ca.crt`. The CA's key never leaves the proxy.

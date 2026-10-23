@@ -1,7 +1,15 @@
-// The kagent resources of one agent (ADR 0022): an Agent with the prompt as system message, a ModelConfig that
-// points at the inference gateway, and an MCPServer or RemoteMCPServer per MCP server.
+// The Kubernetes resources of one agent (ADR 0022): an Agent with the prompt as system message, a ModelConfig that
+// points at the inference gateway, an MCPServer or RemoteMCPServer per MCP server, and an agent-sandbox
+// SandboxTemplate for the agent's sandbox (ADR 0055).
 import { stringify } from "yaml";
 import type { McpServer } from "./mcp.ts";
+
+/** The runtime of the agent, as factory.yaml declares it under `sandbox`. */
+export interface SandboxInput {
+  template: string;
+  cpu?: number;
+  memory?: string;
+}
 
 export interface KubernetesInput {
   factory: string;
@@ -11,6 +19,7 @@ export interface KubernetesInput {
   servers: McpServer[];
   /** Base URL of the OpenAI-compatible inference gateway. */
   inference: string;
+  sandbox?: SandboxInput;
 }
 
 export function kagentResources(input: KubernetesInput): string {
@@ -65,6 +74,25 @@ export function kagentResources(input: KubernetesInput): string {
       },
     },
   };
+  const sandbox = input.sandbox ? [sandboxTemplate(input.sandbox, metadata(input.agent))] : [];
   const header = '# Written by "factory render --k8s" from factory.yaml. Do not edit.\n';
-  return header + [model, ...servers, agent].map((resource) => stringify(resource)).join("---\n");
+  return header + [model, ...servers, agent, ...sandbox].map((resource) => stringify(resource)).join("---\n");
+}
+
+/**
+ * The agent-sandbox SandboxTemplate the kubernetes sandbox adapter starts the agent's sandboxes from: one container
+ * with the template as its image, and the CPU and memory as requests and limits (ADR 0055).
+ */
+function sandboxTemplate(sandbox: SandboxInput, metadata: unknown): unknown {
+  const amounts = {
+    ...(sandbox.cpu === undefined ? {} : { cpu: String(sandbox.cpu) }),
+    ...(sandbox.memory === undefined ? {} : { memory: sandbox.memory }),
+  };
+  const resources = Object.keys(amounts).length ? { resources: { requests: amounts, limits: { ...amounts } } } : {};
+  return {
+    apiVersion: "extensions.agents.x-k8s.io/v1beta1",
+    kind: "SandboxTemplate",
+    metadata,
+    spec: { podTemplate: { spec: { containers: [{ name: "sandbox", image: sandbox.template, ...resources }] } } },
+  };
 }

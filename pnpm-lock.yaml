@@ -116,6 +116,22 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/testkit
 
+  adapters/sandbox/kubernetes:
+    dependencies:
+      '@opensoftware/cli':
+        specifier: workspace:*
+        version: link:../../../packages/cli
+      '@opensoftware/contracts':
+        specifier: workspace:*
+        version: link:../../../contracts
+      '@opensoftware/sandbox-egress':
+        specifier: workspace:*
+        version: link:../../../packages/sandbox-egress
+    devDependencies:
+      '@opensoftware/testkit':
+        specifier: workspace:*
+        version: link:../../../packages/testkit
+
   contracts:
     dependencies:
       ajv:

@@ -123,8 +123,11 @@ the factory drops the automation. `factory plan` reports both as drift:
 `factory render --k8s` also writes `k8s/<agent>.yaml` for [kagent](https://kagent.dev): a `ModelConfig` that sends
 the agent's model alias to the inference gateway at `FACTORY_INFERENCE_URL` (the key comes from the secret
 `<factory>-inference`, key `OPENAI_API_KEY`), one `MCPServer` (`npx -y <package>`) or `RemoteMCPServer` per MCP
-server, and an `Agent` with the prompt as system message and those servers as tools. Argo CD or Flux applies the
-folder.
+server, and an `Agent` with the prompt as system message and those servers as tools. An agent with `sandbox` also
+gets an [agent-sandbox](https://github.com/kubernetes-sigs/agent-sandbox) `SandboxTemplate` named after the agent:
+one container `sandbox` with the image `sandbox.template` and the CPU and memory as requests and limits. The
+kubernetes sandbox adapter starts the agent's sandboxes from it
+([ADR 0055](../../docs/decisions/0055-sandbox-kubernetes.md)). Argo CD or Flux applies the folder.
 
 ## GitHub: render --gh-aw
 
@@ -155,7 +158,7 @@ the minor version. The one-time setup is the same as for contracts
 | Command | What it does |
 | --- | --- |
 | `factory lint` | Check factory.yaml; print each problem with its file, line and column. |
-| `factory render [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]` | Write AGENTS.md, the MCP servers and the skill links of one agent to $OUTPUT. --harness all writes every declared harness; --k8s adds its kagent resources; --gh-aw adds a gh-aw workflow per GitHub automation. |
+| `factory render [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]` | Write AGENTS.md, the MCP servers and the skill links of one agent to $OUTPUT. --harness all writes every declared harness; --k8s adds its kagent resources and SandboxTemplate; --gh-aw adds a gh-aw workflow per GitHub automation. |
 | `factory plan` | Pin registry MCP servers in factory.lock; show what apply changes and what drifted, rendered files and webhooks. |
 | `factory apply [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]` | Render like render, register the webhooks of forgejo automations, and record what was applied in OSF_DATA. |
 | `factory diff <old> [<new>]` | Show the changes between two versions of factory.yaml, as files or Git revisions. |
@@ -228,4 +231,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FSPEC-045 | implemented | Render for gh-aw gives the workflow the agent's MCP servers |
 | SCN-FSPEC-046 | implemented | Render for gh-aw refuses a harness gh-aw cannot run |
 | SCN-FSPEC-047 | implemented | Apply shows the forge's answer when it refuses the token |
-| SCN-FSPEC-048 | planned | Render for Kubernetes writes an agent-sandbox SandboxTemplate for the agent's sandbox |
+| SCN-FSPEC-048 | implemented | Render for Kubernetes writes an agent-sandbox SandboxTemplate for the agent's sandbox |

@@ -38,14 +38,16 @@ The spec is the format `sandbox-spec` in [contracts](../../contracts/README.md):
 ## Conformance
 
 The shared behavior is the `@conformance` scenarios in [`features/`](features/sandbox.feature) (prefix
-`SCN-SANDBOX`). Every adapter in `adapters/sandbox/<name>/` has one system test per scenario; what only one adapter
+`SCN-SANDBOX`), with the secret providers in [`features/secrets.feature`](features/secrets.feature). Every adapter in `adapters/sandbox/<name>/` has one system test per scenario; what only one adapter
 does is in its own `features/` folder. A community adapter shows conformance with
 `testkit conformance <its copy of this features folder> --junit report.xml`. The scenarios' APIs and MCP servers are
-`fakes.http(routes, { containers: true })` at `host.docker.internal`.
+`fakes.http(routes, { containers: true })` at `host.docker.internal`. What every adapter shares, the spec, the
+secrets, iron-proxy's configuration and the egress log, is the library
+[`@opensoftware/sandbox-egress`](../../packages/sandbox-egress/README.md) (ADR 0055).
 
 ## Adapters
 
 | Adapter | Tier | What it runs |
 | --- | --- | --- |
 | [`docker`](../../adapters/sandbox/docker/README.md) | core | A container per sandbox behind an iron-proxy container on an internal network |
-| `kubernetes` | optional | Planned: agent-sandbox `SandboxTemplate` and `SandboxClaim`, conformance on kind (TODO T-13) |
+| [`kubernetes`](../../adapters/sandbox/kubernetes/README.md) | optional | An agent-sandbox `SandboxClaim` per sandbox whose NetworkPolicy lets it reach only its iron-proxy egress pod; conformance on kind in CI |

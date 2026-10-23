@@ -1,6 +1,6 @@
 import { resolveSecrets } from "@opensoftware/sandbox-egress";
 import { scenario } from "@opensoftware/testkit";
-import { secretsDir } from "./egress.ts";
+import { catching, secretsDir } from "./egress.ts";
 
 scenario("SCN-SEGRESS-015", async ({ sut, given, when, then }) => {
   let spec = { template: "alpine" } as Parameters<typeof resolveSecrets>[0];
@@ -15,11 +15,7 @@ scenario("SCN-SEGRESS-015", async ({ sut, given, when, then }) => {
 
   let error: unknown;
   await when("the adapter calls resolveSecrets with the spec", async () => {
-    try {
-      resolveSecrets(spec, dir, { OSF_SECRET_OTHER: "x" });
-    } catch (thrown) {
-      error = thrown;
-    }
+    error = catching(() => resolveSecrets(spec, dir, { OSF_SECRET_OTHER: "x" }));
   });
 
   await then(
