@@ -3,8 +3,10 @@
 import { WORKSPACE } from "@opensoftware/sandbox-egress";
 import { snapshotName, VOLUMES } from "./names.ts";
 import type { Container, PodTemplate } from "./pod.ts";
+import { GRACE_SECONDS } from "./resources.ts";
 
-const SNAPSHOT_LABEL = "osf.snapshot.id";
+/** The label of a snapshot's claim, writer pod and template. */
+export const SNAPSHOT_LABEL = "osf.snapshot.id";
 
 /** The writer and the restore container keep each file's owner and mode, which only root may set. */
 const ROOT = { runAsUser: 0, runAsGroup: 0 };
@@ -31,6 +33,7 @@ export function writerPod(id: string, image: string): unknown {
     metadata: { name: writerName(id), labels: { [SNAPSHOT_LABEL]: id } },
     spec: {
       automountServiceAccountToken: false,
+      terminationGracePeriodSeconds: GRACE_SECONDS,
       containers: [
         {
           name: "writer",

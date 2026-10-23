@@ -13,7 +13,7 @@ export interface Kubectl {
   run(args: string[], input?: string): Promise<KubectlResult>;
   /** Runs `kubectl <args>` and gives its standard output as text; a failure throws with kubectl's error. */
   text(args: string[], input?: string): Promise<string>;
-  /** `kubectl get <args> -o json`, or undefined when the object does not exist. */
+  /** `kubectl get <args>` as JSON, or undefined when the object does not exist. */
   get<T>(args: string[]): Promise<T | undefined>;
   /** `kubectl apply -f -` with the objects as JSON. */
   apply(objects: unknown): Promise<void>;
@@ -35,12 +35,8 @@ export function kubectl(namespace: string): Kubectl {
     run,
     text,
     async get<T>(args: string[]) {
-      const result = await run(["get", ...args, "-o", "json"]);
-      if (result.code !== 0) {
-        if (/NotFound|not found/.test(result.stderr)) return undefined;
-        throw new Error(`kubectl get failed: ${result.stderr.trim()}`);
-      }
-      return JSON.parse(result.stdout.toString("utf8")) as T;
+      const json = await text(["get", ...args, "--output", "json", "--ignore-not-found"]);
+      return json ? (JSON.parse(json) as T) : undefined;
     },
     async apply(objects) {
       await text(["apply", "-f", "-"], JSON.stringify(objects));
