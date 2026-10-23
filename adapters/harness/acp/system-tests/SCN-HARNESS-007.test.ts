@@ -1,0 +1,61 @@
+import { fileURLToPath } from "node:url";
+import { validate } from "@opensoftware/contracts";
+import { type CliResult, scenario } from "@opensoftware/testkit";
+
+const RESOURCE =
+  "osf.run.id=run-1,osf.work_item.id=wi-1,osf.factory.version=3f2a9c1,osf.requester.kind=person,osf.requester.id=slack:U024BE7LH,osf.source=slack";
+
+scenario("SCN-HARNESS-007", async ({ sut, fakes, given, when, then }) => {
+  let sessionId = "";
+  await given(
+    `the adapter ran a session with the prompt "fix the typo" and the resource attributes "${RESOURCE}"`,
+    async () => {
+      const harness = await fakes.harness([{ when: "fix the typo", reply: "done" }]);
+      const client = await sut.acp.connect(["run", "--", harness.command, ...harness.args], {
+        env: { OTEL_RESOURCE_ATTRIBUTES: RESOURCE },
+      });
+      const session = await client.newSession();
+      sessionId = session.id;
+      await session.prompt("fix the typo");
+    },
+  );
+
+  let run: CliResult;
+  await when('the developer runs "transcript" with the session\'s ID', async () => {
+    run = await sut.cli(["transcript", sessionId]);
+  });
+
+  let record: { resource: Record<string, unknown>; span: Record<string, unknown> };
+  await then(
+    '"$OUTPUT/run-record.json" is a valid "run-record" with "osf.run.id" "run-1", "osf.harness.name" "acp" and "osf.outcome" "succeeded"',
+    async () => {
+      expect(run.exitCode, run.stderr).toBe(0);
+      record = JSON.parse(await sut.files.read("$OUTPUT/run-record.json"));
+      expect(validate("run-record", record)).toEqual([]);
+      expect(record.resource["service.name"]).toBe("harness-acp");
+      expect(record.resource["osf.run.id"]).toBe("run-1");
+      expect(record.resource["osf.harness.name"]).toBe("acp");
+      expect(record.resource["osf.harness.version"]).toBe("0.0.0");
+      expect(record.span["osf.outcome"]).toBe("succeeded");
+    },
+  );
+
+  await then('its "gen_ai.conversation.id" is the session\'s ID', async () => {
+    expect(record.span["gen_ai.conversation.id"]).toBe(sessionId);
+  });
+
+  await then(
+    'its "osf.transcript.uri" is the file "$OUTPUT/transcript.jsonl", which holds the prompt "fix the typo"',
+    async () => {
+      expect(fileURLToPath(record.span["osf.transcript.uri"] as string)).toBe(
+        sut.files.path("$OUTPUT/transcript.jsonl"),
+      );
+      const lines = (await sut.files.read("$OUTPUT/transcript.jsonl"))
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line));
+      expect(lines).toContainEqual({ type: "prompt", text: "fix the typo" });
+      expect(lines.at(-1)).toEqual({ type: "stop", stopReason: "end_turn" });
+    },
+  );
+});

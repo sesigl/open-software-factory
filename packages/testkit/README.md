@@ -64,6 +64,13 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
   the job summary ([ADR 0031](../../docs/decisions/0031-spec-trace-action-and-dogfood.md)). Only `${{ inputs.<name> }}`, `${{ github.action_path }}` and
   `${{ github.token }}` (`testkit-github-token`) are expanded; any other expression, an `if:` on a `run` step or a
   shell other than bash fails the test. The first failing step ends the run with its exit code.
+- `sut.acp.connect(args, { env, approve })`: starts the module's `bin` as an ACP agent on stdio, such as a harness
+  adapter ([ADR 0050](../../docs/decisions/0050-harness-port.md)), and returns a connected client. `agent` is the name
+  and version the module gave; `newSession(folder)` starts a session in a folder below `$INPUT` or `$OUTPUT` (default
+  `$INPUT`, created when missing) and returns its `id`, `prompt(text)`, which waits for the end of the turn and gives
+  its `stopReason` and the `reply` streamed meanwhile, and `cancel()`. A second `prompt` before the first ends steers
+  the running turn. The client approves every tool call the module asks about, or refuses each one with
+  `approve: false`, and lists them in `permissionRequests()`. It offers the module no file system and no terminal.
 - `sut.events.watch(nats, subjects)`: records the CloudEvents published on a NATS server from now on.
   `received(type, { count, timeoutMs })` waits for them and, on timeout, names what arrived instead;
   `publish(subject, event)` sends an event to the module.
@@ -88,7 +95,12 @@ Every server, client and subscription stops when the scenario ends, before the f
   ([ADR 0018](../../docs/decisions/0018-testkit-scripted-acp-harness.md)). Start it with its `command` and `args`.
   The first prompt that contains `when` gets the `edits` (files by path below the session's folder) and the
   `reply`, then the turn ends with `end_turn`. Any other prompt ends with `refusal` and fails the scenario with the
-  prompt shown. `prompts()` lists what it received.
+  prompt shown. `prompts()` lists what it received. A turn may also have `tools`: tool calls (`title` and ACP
+  `kind`) the agent asks the client to approve before the edits, which it writes only when the client allowed every
+  one; `toolCalls()` lists each with its `outcome`, `allowed` or `refused`. A turn with `waitsFor` keeps running
+  until the session gets a prompt that contains that text, a steering message, which ends at once with `end_turn`;
+  a cancel of the session ends the waiting turn with `cancelled` instead, unless the turn has `ignoresCancel`.
+  `stopReason` ends the turn with another stop reason, such as `max_tokens` ([ADR 0050](../../docs/decisions/0050-harness-port.md)).
 - `fakes.postgres()`: PostgreSQL 18 for this scenario, as PGlite in the test's process behind a small
   wire-protocol server, with no Docker ([ADR 0049](../../docs/decisions/0049-in-memory-stand-ins.md)). The module
   connects to `postgres://test:test@127.0.0.1:<port>/test` with its own driver; a wrong password is refused with
@@ -229,3 +241,11 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-053 | implemented | fakes.slack presses a button of the module's message and delivers the press to its interactivity URL |
 | SCN-TK-054 | implemented | sut.http.stop stops the server so the test can start it again with another environment |
 | SCN-TK-055 | implemented | Pressing a button that the message does not have fails the test with the button shown |
+| SCN-TK-056 | implemented | sut.acp starts the module as an ACP agent and sends a prompt in a session |
+| SCN-TK-057 | implemented | sut.acp refuses the agent's tool calls when asked to and lists them |
+| SCN-TK-058 | implemented | sut.acp cancels the running turn of a session |
+| SCN-TK-059 | implemented | The scripted harness asks to approve its tool calls and writes nothing when one is refused |
+| SCN-TK-060 | implemented | A scripted turn waits for a steering message and then goes on |
+| SCN-TK-061 | implemented | A waiting scripted turn ends with "cancelled" when the session is cancelled |
+| SCN-TK-062 | implemented | A scripted turn that ignores cancel keeps running |
+| SCN-TK-063 | implemented | A scripted turn ends with its scripted stop reason |

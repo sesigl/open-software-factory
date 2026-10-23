@@ -1,0 +1,40 @@
+{
+  "name": "@opensoftware/harness-acp",
+  "version": "0.0.0",
+  "description": "harness-acp: runs any ACP coding agent behind the harness port, with a tool allowlist, cancel within 5 seconds and a run record transcript.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "adapters/harness/acp"
+  },
+  "type": "module",
+  "bin": {
+    "harness-acp": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "vitest run",
+    "docs": "node ../../../tools/bin/osf.ts docs .",
+    "mutation": "node ../../../tools/bin/osf.ts mutation ."
+  },
+  "devDependencies": {
+    "@opensoftware/contracts": "workspace:*",
+    "@opensoftware/testkit": "workspace:*"
+  },
+  "dependencies": {
+    "@agentclientprotocol/sdk": "1.9.0",
+    "@opensoftware/cli": "workspace:*",
+    "@opentelemetry/api": "1.9.1",
+    "@opentelemetry/resources": "2.12.0",
+    "zod": "4.6.7"
+  }
+}

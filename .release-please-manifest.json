@@ -11,5 +11,6 @@
   "modules/ledger": "0.6.0",
   "modules/taskcapture": "0.2.0",
   "modules/observer": "0.1.0",
-  "modules/gatekeeper": "0.2.0"
+  "modules/gatekeeper": "0.2.0",
+  "adapters/harness/acp": "0.0.0"
 }

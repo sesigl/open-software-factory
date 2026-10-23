@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "OUTPUT": {
+      "type": "string",
+      "default": ".",
+      "description": "Folder that transcript writes run-record.json and transcript.jsonl to."
+    },
+    "OSF_DATA": {
+      "type": "string",
+      "default": ".harness-acp",
+      "description": "Folder where run records every session as sessions/<session ID>.jsonl."
+    },
+    "OTEL_RESOURCE_ATTRIBUTES": {
+      "type": "string",
+      "description": "Resource attributes of the run as key=value pairs, set by the launcher, for example osf.run.id=…,osf.work_item.id=…,osf.factory.version=…. run keeps them with each session; transcript writes them into the run record."
+    },
+    "OTEL_SERVICE_NAME": {
+      "type": "string",
+      "description": "The service.name of the run record. Default: harness-acp."
+    }
+  }
+}
