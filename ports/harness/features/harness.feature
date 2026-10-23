@@ -96,7 +96,7 @@ Feature: Running a coding agent through a harness adapter
     When the client cancels the turn of "add a date", waits 4 seconds and sends the prompt "fix the typo"
     Then the turn ends with "end_turn" and the reply "done"
 
-  @id=SCN-HARNESS-014 @status=planned @conformance @replaces=SCN-HARNESS-007 @realizes=SCN-FACTORY-ORCH-007
+  @id=SCN-HARNESS-014 @status=implemented @conformance @replaces=SCN-HARNESS-007 @realizes=SCN-FACTORY-ORCH-007
   Scenario: The transcript export is a run record of the session that links its transcript
     Given the adapter ran a session with the prompt "fix the typo" and the resource attributes "osf.run.id=run-1,osf.work_item.id=wi-1,osf.factory.version=3f2a9c1,osf.requester.kind=person,osf.requester.id=slack:U024BE7LH,osf.source=slack"
     When the developer runs "transcript" with the session's ID

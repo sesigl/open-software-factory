@@ -62,7 +62,7 @@ Feature: Scripted coding agent
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
-  @id=SCN-TK-070 @status=planned
+  @id=SCN-TK-070 @status=implemented
   Scenario: A scripted turn reports its token usage and the session's cost
     Given a module whose CLI is an ACP client of the agent in "DEMO_AGENT_COMMAND" that sends "fix the typo" and prints the turn's usage and the session's cost
     And its system test scripts fakes.harness to report 1000 input tokens, 200 output tokens and a cost of 0.25 USD for "fix the typo", and expects "usage 1000 200 1200" and "cost 0.25 USD"

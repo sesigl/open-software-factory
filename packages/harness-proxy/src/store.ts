@@ -1,20 +1,20 @@
-// The session records in the data folder OSF_DATA (default .harness-acp): sessions/<session ID>.jsonl.
+// The session records in the adapter's data folder: <data>/sessions/<session ID>.jsonl.
 import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { detectResources, envDetector } from "@opentelemetry/resources";
-import type { SessionLine } from "../domain/session.ts";
+import type { SessionLine } from "./domain/session.ts";
 
-const fileOf = (sessionId: string): string =>
-  join(resolve(process.env.OSF_DATA ?? ".harness-acp"), "sessions", `${encodeURIComponent(sessionId)}.jsonl`);
+const fileOf = (data: string, sessionId: string): string =>
+  join(resolve(data), "sessions", `${encodeURIComponent(sessionId)}.jsonl`);
 
-export function append(sessionId: string, line: SessionLine): void {
-  const file = fileOf(sessionId);
+export function append(data: string, sessionId: string, line: SessionLine): void {
+  const file = fileOf(data, sessionId);
   mkdirSync(dirname(file), { recursive: true });
   appendFileSync(file, `${JSON.stringify(line)}\n`);
 }
 
-/** The text of a session's record; a session the adapter never ran is an error. */
-export const readSession = (sessionId: string): string => readFileSync(fileOf(sessionId), "utf8");
+/** The text of a session's record; a session the proxy never ran is an error. */
+export const readSession = (data: string, sessionId: string): string => readFileSync(fileOf(data, sessionId), "utf8");
 
 /** The resource of the run from OTEL_RESOURCE_ATTRIBUTES and OTEL_SERVICE_NAME, as the OpenTelemetry SDK reads them. */
 export function resourceOfEnvironment(): Record<string, string> {

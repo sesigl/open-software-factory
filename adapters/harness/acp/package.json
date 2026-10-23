@@ -31,10 +31,7 @@
     "@opensoftware/testkit": "workspace:*"
   },
   "dependencies": {
-    "@agentclientprotocol/sdk": "1.9.0",
     "@opensoftware/cli": "workspace:*",
-    "@opentelemetry/api": "1.9.1",
-    "@opentelemetry/resources": "2.12.0",
-    "zod": "4.6.7"
+    "@opensoftware/harness-proxy": "workspace:*"
   }
 }

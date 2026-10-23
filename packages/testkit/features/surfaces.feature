@@ -68,7 +68,7 @@ Feature: A module's servers and events
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
-  @id=SCN-TK-071 @status=planned
+  @id=SCN-TK-071 @status=implemented
   Scenario: sut.acp.serve connects to an ACP agent that runs in the test's own process
     Given a library whose exported function serves an ACP agent on the streams it gets and answers "greet Ada" with "hello Ada"
     And its system test serves that function with sut.acp.serve, sends "greet Ada" and expects "end_turn" with the reply "hello Ada"
