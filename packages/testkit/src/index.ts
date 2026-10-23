@@ -3,7 +3,7 @@ export type { Collector } from "./fakes/collector.ts";
 export type { Fakes } from "./fakes/fakes.ts";
 export type { Forge, OpenedPullRequest, PullRequest } from "./fakes/forge.ts";
 export type { Harness, HarnessTool, HarnessToolCall, HarnessTurn } from "./fakes/harness.ts";
-export type { FakeHttp, HttpRequest, HttpRoute } from "./fakes/http.ts";
+export type { FakeHttp, HttpOptions, HttpRequest, HttpRoute } from "./fakes/http.ts";
 export type { ModelGateway, ScriptedReply, ScriptedTool } from "./fakes/model-gateway.ts";
 export type { Postgres } from "./fakes/postgres.ts";
 export type { Nats, S3, Temporal } from "./fakes/services.ts";

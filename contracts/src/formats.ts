@@ -18,6 +18,7 @@ export const FORMATS: readonly Format[] = [
   format("evidence-bundle", "EvidenceManifest"),
   format("score", "Score"),
   format("gate-record", "GateRecord"),
+  format("sandbox-spec", "SandboxSpec"),
   format("events/work-received", "WorkReceived"),
   format("events/run-completed", "RunCompleted"),
   format("events/gate-requested", "GateRequested"),

@@ -21,7 +21,7 @@ covers: [modules/**, adapters/**]
 | gatekeeper | Human gates are a safety property, not an add-on |
 | runlog | Without a record nothing can be measured or improved |
 | proof | Evidence is part of the definition of done |
-| Port adapters: harness `acp` (generic), sandbox `docker`, forge `github` and `forgejo`, inference `litellm`, secrets `env` and `openbao`, telemetry `otlp` | The smallest set that runs one factory end to end, and Forgejo for deterministic tests |
+| Port adapters: harness `acp` (generic), sandbox `docker`, forge `github` and `forgejo`, inference `litellm`, secrets `file`, `env` and `openbao`, telemetry `otlp` | The smallest set that runs one factory end to end, and Forgejo for deterministic tests |
 
 ## Optional (first-party)
 

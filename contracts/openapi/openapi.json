@@ -941,6 +941,11 @@
         ],
         "description": "gatekeeper: a gate as the HTTP API shows it (ADR 0048)."
       },
+      "Hostname": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*$",
+        "description": "A hostname without scheme or port, for example \"api.linear.app\"."
+      },
       "Identifier": {
         "type": "string",
         "minLength": 1,
@@ -1686,6 +1691,90 @@
         "required": [
           "template"
         ],
+        "additionalProperties": false
+      },
+      "SandboxMcpServer": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "$ref": "#/components/schemas/Name",
+            "description": "The name in the egress log, for example \"wiki\"."
+          },
+          "url": {
+            "type": "string",
+            "pattern": "^https?://[^/]+",
+            "description": "The server's endpoint, for example \"https://wiki.example.com/mcp\"."
+          },
+          "tools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "description": "The tools the sandbox may call. A call to any other tool is refused."
+          }
+        },
+        "required": [
+          "name",
+          "url",
+          "tools"
+        ],
+        "description": "An MCP server that a sandbox may call over Streamable HTTP.",
+        "additionalProperties": false
+      },
+      "SandboxSpec": {
+        "type": "object",
+        "properties": {
+          "template": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the sandbox starts from: an image for the docker adapter, a SandboxTemplate for kubernetes, or a snapshot."
+          },
+          "cpu": {
+            "type": "number",
+            "minimum": 0.001,
+            "description": "CPU cores. The smallest unit is 0.001 (one millicore)."
+          },
+          "memory": {
+            "type": "string",
+            "pattern": "^[0-9]+(Ki|Mi|Gi|Ti)?$",
+            "description": "Kubernetes quantity, for example \"8Gi\"."
+          },
+          "egress": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Hostname"
+            },
+            "description": "Hostnames the sandbox may reach through its egress proxy. Everything else is refused."
+          },
+          "env": {
+            "type": "object",
+            "properties": {},
+            "unevaluatedProperties": {
+              "type": "string"
+            },
+            "description": "Variables of the sandbox's environment that hold no secret."
+          },
+          "secrets": {
+            "type": "object",
+            "properties": {},
+            "unevaluatedProperties": {
+              "$ref": "#/components/schemas/SecretReference"
+            },
+            "description": "Secrets by the name of the variable that holds the placeholder in the sandbox. The egress proxy puts the real\nvalue in on the way out, for the hosts of `egress`."
+          },
+          "mcp": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SandboxMcpServer"
+            },
+            "description": "The MCP servers the sandbox may call. A call to any other MCP server is refused."
+          }
+        },
+        "required": [
+          "template"
+        ],
+        "description": "The input of a sandbox adapter's `create` (ADR 0054): what one sandbox runs, how much it may use, and what it may\nreach. Realizes SCN-FACTORY-RUNTIME-004, -006 and -007.",
         "additionalProperties": false
       },
       "ScenarioEvidence": {

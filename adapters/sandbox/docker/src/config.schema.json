@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "OSF_SECRETS_DIR": {
+      "type": "string",
+      "default": "/run/secrets",
+      "description": "Folder of the secret files: ref:file/<name> in a sandbox spec is the file <name> in it. The Docker CLI copies each into the sandbox's egress proxy; the adapter never reads it."
+    },
+    "DOCKER_HOST": {
+      "type": "string",
+      "description": "The Docker daemon to use, as for any docker command. Default: the Docker CLI's current context."
+    }
+  }
+}
