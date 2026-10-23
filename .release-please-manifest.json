@@ -1,6 +1,6 @@
 {
   "contracts": "1.5.0",
-  "packages/testkit": "0.12.0",
+  "packages/testkit": "0.13.0",
   "packages/cli": "0.1.0",
   "packages/spec-files": "0.1.0",
   "modules/factory-spec": "0.2.0",
@@ -12,5 +12,5 @@
   "modules/taskcapture": "0.2.0",
   "modules/observer": "0.1.0",
   "modules/gatekeeper": "0.2.0",
-  "adapters/harness/acp": "0.0.0"
+  "adapters/harness/acp": "0.1.0"
 }
