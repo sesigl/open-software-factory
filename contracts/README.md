@@ -42,7 +42,16 @@ Each format has one schema, generated from `typespec/`, and fixtures that CONTRA
 | run record | `run-record/run-record.schema.json` | `RunRecord` | OTel resource and root-span attributes; pins in `typespec/run-record.tsp`. |
 | evidence bundle | `evidence-bundle/evidence-bundle.schema.json` | `EvidenceManifest` | `evidence.json` at the bundle root. |
 | score | `score/score.schema.json` | `Score` | Subset of Langfuse's create-score request; factory fields in `metadata`. |
+| gate record | `gate-record/gate-record.schema.json` | `GateRecord` | gatekeeper's signed approval record (ADR 0047). |
 | events | `events/<event>/<event>.schema.json`, `events/asyncapi.yaml` | `WorkReceived` … `PrClosed` | CloudEvents 1.0, structured JSON. |
+
+## HTTP APIs
+
+`openapi/openapi.json` also holds the paths of the module APIs, from the operations in `typespec/` (ADR 0048). The
+first is gatekeeper's: `POST /v1/gates` and `GET /v1/gates/{gateId}` with the models `GateRequest`, `GateView` and
+`ApiProblem` (RFC 9457). `pnpm build` compiles the operations with the TypeSpec OpenAPI 3 emitter and copies their
+paths next to the named models; an operation that uses a type that is no model fails the build. The package exports
+the type `paths`, which types a client such as openapi-fetch.
 
 Wire formats (everything but the factory definition) are open: readers ignore fields they do not know, so a minor
 version may add optional fields. Read `factory.yaml` with a YAML 1.2 parser: YAML 1.1 parsers turn the key `on`

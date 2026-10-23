@@ -1,7 +1,7 @@
 // DUP and MUTATION: limits on duplicated code and on mutants that no system test notices (ADR 0037). Each unit
 // declares its limits in its AGENTS.md under "Quality limits".
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join, posix, relative } from "node:path";
@@ -44,9 +44,22 @@ export function mutatedUnits(repo: Repo): Map<string, string[]> {
   return new Map([...units(repo)].filter(([unit]) => MUTATED.test(unit) || isLibrary(repo, unit)));
 }
 
-/** Where `osf mutation` writes the Stryker report of a unit. */
-export function mutationReport(unit: string): string {
-  return `reports/mutation/${unit.replaceAll("/", "-")}.json`;
+/** Where `osf mutation` writes the Stryker report of a unit, or of one shard of it. */
+export function mutationReport(unit: string, shard?: number): string {
+  return `reports/mutation/${unit.replaceAll("/", "-")}${shard === undefined ? "" : `.shard-${shard}`}.json`;
+}
+
+/** The reports of a unit: its whole report and the reports of its shards. */
+function mutationReports(repo: Repo, unit: string): string[] {
+  const whole = mutationReport(unit);
+  const dir = join(repo.root, "reports/mutation");
+  const prefix = posix.basename(whole, ".json");
+  const shards = existsSync(dir)
+    ? readdirSync(dir)
+        .filter((name) => name.startsWith(`${prefix}.shard-`) && /^\d+\.json$/.test(name.slice(prefix.length + 7)))
+        .map((name) => `reports/mutation/${name}`)
+    : [];
+  return [...(repo.exists(whole) ? [whole] : []), ...shards];
 }
 
 interface Limit {
@@ -217,19 +230,22 @@ export function mutation(context: Context): Finding[] {
       if (lines.size === 0) continue;
     }
 
-    const report = mutationReport(unit);
-    if (!repo.exists(report)) {
+    const reports = mutationReports(repo, unit);
+    if (reports.length === 0) {
       findings.push({
         check: "MUTATION",
         file: manifest,
         line: 1,
-        message: `no mutation report ${report}: run make mutation${total ? " ALL=1" : ""}`,
+        message: `no mutation report ${mutationReport(unit)}: run make mutation${total ? " ALL=1" : ""}`,
       });
       continue;
     }
-    const json = JSON.parse(repo.read(report)) as { files?: Record<string, { mutants?: Mutant[] }> };
+    const entries = reports.flatMap((report) => {
+      const json = JSON.parse(repo.read(report)) as { files?: Record<string, { mutants?: Mutant[] }> };
+      return Object.entries(json.files ?? {});
+    });
     const counted: { file: string; mutant: Mutant }[] = [];
-    for (const [path, entry] of Object.entries(json.files ?? {})) {
+    for (const [path, entry] of entries) {
       const file = `${unit}/${path.split("\\").join("/")}`;
       for (const mutant of entry.mutants ?? []) {
         const within = !base || lines.get(file)?.has(mutant.location.start.line);

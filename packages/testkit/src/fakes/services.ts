@@ -2,11 +2,6 @@
 // what a module needs to reach it, never a client for the module's data.
 import { GenericContainer, type StartedTestContainer, Wait } from "testcontainers";
 
-export interface Postgres {
-  /** `postgres://test:test@<host>:<port>/test` */
-  url: string;
-}
-
 export interface Nats {
   /** `nats://<host>:<port>`, with JetStream. */
   url: string;
@@ -29,7 +24,6 @@ export interface S3 {
 }
 
 export const IMAGES = {
-  postgres: "postgres:17.6-alpine",
   nats: "nats:2.11.9-alpine",
   temporal: "temporalio/temporal:1.4.1",
   s3: "chrislusf/seaweedfs:3.97",
@@ -38,18 +32,6 @@ export const IMAGES = {
 } as const;
 
 export type Track = (container: StartedTestContainer) => StartedTestContainer;
-
-export async function startPostgres(track: Track): Promise<Postgres> {
-  const container = track(
-    await new GenericContainer(IMAGES.postgres)
-      .withEnvironment({ POSTGRES_USER: "test", POSTGRES_PASSWORD: "test", POSTGRES_DB: "test" })
-      .withExposedPorts(5432)
-      // The server logs this twice: after initdb, and when it really accepts connections.
-      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-      .start(),
-  );
-  return { url: `postgres://test:test@${address(container, 5432)}/test` };
-}
 
 export async function startNats(track: Track): Promise<Nats> {
   const container = track(

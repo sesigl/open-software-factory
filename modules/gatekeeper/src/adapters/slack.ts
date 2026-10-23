@@ -1,5 +1,5 @@
 // A Slack channel through the Web API: the request is a message, decisions are replies in its thread.
-import type { Channel, Message } from "../domain/gate.ts";
+import type { Button, Channel, Message } from "../domain/gate.ts";
 import { fromSlackTs } from "../domain/time.ts";
 
 interface SlackMessage {
@@ -56,11 +56,29 @@ export function slackChannel(channel: string, api: { url: string; token: string 
       });
       return messages.filter((raw) => raw.ts !== request.id).map((raw) => message(raw, mine));
     },
-    async post(text, marker, request) {
+    async post(text, marker, request, buttons) {
       const args: Record<string, string> = { channel, text: render(text, marker) };
       if (request) args.thread_ts = request.id;
+      if (buttons?.length) args.blocks = JSON.stringify(blocks(args.text as string, buttons));
       const answer = await call<{ ts: string }>("chat.postMessage", args);
       return message({ ts: answer.ts, user: await me(), text: args.text }, await me());
     },
   };
+}
+
+/** The text as a section and the buttons as an actions block; the text stays the message's fallback text. */
+function blocks(text: string, buttons: Button[]): unknown[] {
+  return [
+    { type: "section", text: { type: "mrkdwn", text } },
+    {
+      type: "actions",
+      elements: buttons.map(({ actionId, text: label, value, style }) => ({
+        type: "button",
+        action_id: actionId,
+        text: { type: "plain_text", text: label },
+        value,
+        style,
+      })),
+    },
+  ];
 }

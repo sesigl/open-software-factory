@@ -305,6 +305,15 @@ Feature: Repository checks
     Then the command exits with code 0
     And the output contains "REACH ok"
 
+  @id=SCN-REPO-062 @status=implemented
+  Scenario: REACH leaves code that ran only in a transformed form to MUTATION
+    Given a base commit with "modules/demo/src/run.ts" whose function "used" a system test runs
+    And a change that adds the function "unused", whose body is lines 5 and 6
+    And a coverage report of "run.ts" as a tool like Vitest transformed it, longer than the file
+    When the developer runs "osf check REACH" against the base commit
+    Then the command exits with code 0
+    And the output contains "REACH ok"
+
   @id=SCN-REPO-033 @status=implemented
   Scenario: REACH accepts a change whose lines a system test reaches
     Given a base commit with "modules/demo/src/run.ts" whose function "used" a system test runs

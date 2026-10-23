@@ -1,0 +1,14 @@
+{
+  "gate": "g0123456789abcdef",
+  "workItem": "WI-42",
+  "stage": "spec",
+  "summary": "Approve the specification of the export feature",
+  "request": "sha256:aa1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f9",
+  "policy": "spec.rego",
+  "policyDigest": "sha256:bb1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f9",
+  "approvers": ["reviewers"],
+  "channel": "slack:C0GATES",
+  "requestedAt": "2026-01-01T00:00:00.000001Z",
+  "decision": "maybe",
+  "decidedAt": "2026-01-03T00:00:00.000001Z"
+}
