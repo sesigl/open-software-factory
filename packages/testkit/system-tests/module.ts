@@ -250,3 +250,148 @@ export function actionModule(actionSteps: string[], steps: string[], test: strin
     ].join("\n"),
   };
 }
+
+/**
+ * Module demo whose CLI is an ACP client of the agent in `DEMO_AGENT_COMMAND` (a JSON array of the command and its
+ * arguments). It opens one session in $INPUT and runs its arguments in order: `prompt:<text>` sends a prompt and waits
+ * for its turn, `send:<text>` sends one without waiting, `sleep:<ms>` waits, `cancel` cancels the session, and `kill`
+ * stops the agent and exits. Then it waits for every turn and stops the agent. It prints `<text>: <stop reason>` when a
+ * turn ends and `reply <text>` for each message chunk. `--refuse` as the first argument refuses every tool call; it
+ * allows them otherwise. Its test runs `test` (TypeScript lines) for SCN-DEMO-001 with `steps`.
+ */
+export function acpClientModule(steps: string[], test: string[]): Record<string, string> {
+  return demoModule({
+    bin: [
+      'import { spawn } from "node:child_process";',
+      'import { createInterface } from "node:readline";',
+      "const [command, ...args] = JSON.parse(process.env.DEMO_AGENT_COMMAND);",
+      'const agent = spawn(command, args, { stdio: ["pipe", "pipe", "inherit"] });',
+      "const actions = process.argv.slice(2);",
+      'const refuse = actions[0] === "--refuse";',
+      "if (refuse) actions.shift();",
+      "const pending = new Map();",
+      "let next = 0;",
+      'const send = (message) => agent.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", ...message })}\\n`);',
+      "const request = (method, params) =>",
+      "  new Promise((resolve, reject) => {",
+      "    const id = ++next;",
+      "    pending.set(id, { resolve, reject });",
+      "    send({ id, method, params });",
+      "  });",
+      'createInterface({ input: agent.stdout }).on("line", (line) => {',
+      "  const message = JSON.parse(line);",
+      '  if (message.method === "session/update") {',
+      "    const { update } = message.params;",
+      '    if (update.sessionUpdate === "agent_message_chunk") process.stdout.write(`reply ${update.content.text}\\n`);',
+      '  } else if (message.method === "session/request_permission") {',
+      '    const optionId = refuse ? "reject" : "allow";',
+      '    send({ id: message.id, result: { outcome: { outcome: "selected", optionId } } });',
+      "  } else if (message.method) {",
+      '    send({ id: message.id, error: { code: -32601, message: "not supported" } });',
+      "  } else {",
+      "    const { resolve, reject } = pending.get(message.id);",
+      "    if (message.error) reject(new Error(message.error.message));",
+      "    else resolve(message.result);",
+      "  }",
+      "});",
+      'await request("initialize", { protocolVersion: 1, clientCapabilities: {} });',
+      'const { sessionId } = await request("session/new", { cwd: process.cwd(), mcpServers: [] });',
+      "const turns = [];",
+      "const prompt = (text) =>",
+      '  request("session/prompt", { sessionId, prompt: [{ type: "text", text }] }).then(({ stopReason }) =>',
+      "    process.stdout.write(`${text}: ${stopReason}\\n`),",
+      "  );",
+      "for (const action of actions) {",
+      '  const [verb, ...rest] = action.split(":");',
+      '  const text = rest.join(":");',
+      '  if (verb === "prompt") await prompt(text);',
+      '  else if (verb === "send") turns.push(prompt(text));',
+      '  else if (verb === "sleep") await new Promise((resolve) => setTimeout(resolve, Number(text)));',
+      '  else if (verb === "cancel") send({ method: "session/cancel", params: { sessionId } });',
+      '  else if (verb === "kill") {',
+      "    agent.kill();",
+      "    process.exit(0);",
+      "  }",
+      "}",
+      "await Promise.all(turns);",
+      "agent.kill();",
+      "",
+    ].join("\n"),
+    readme: [
+      "# demo",
+      "",
+      "## Configuration",
+      "",
+      "| Variable | Meaning |",
+      "| --- | --- |",
+      "| `DEMO_AGENT_COMMAND` | The ACP agent to start, as a JSON array of the command and its arguments. |",
+      "",
+    ].join("\n"),
+    steps,
+    test,
+  });
+}
+
+/**
+ * Module demo whose bin is an ACP agent on stdio named "demo" 0.1.0. Its one session is "s1". It answers the prompt
+ * `greet <name>` with the reply "hello <name> from <name of the session's folder>"; for "clean up" it asks the client
+ * to approve the tool "rm -rf build" of kind "execute" and replies with the option the client chose; for "bye" it answers
+ * and exits with code 3; for "wait" it keeps
+ * the turn running until the session is cancelled. Every turn ends with "end_turn", a cancelled one with "cancelled".
+ * Its test runs `test` (TypeScript lines) for SCN-DEMO-001 with `steps`.
+ */
+export function acpAgentModule(steps: string[], test: string[]): Record<string, string> {
+  return demoModule({
+    bin: [
+      'import { basename } from "node:path";',
+      'import { createInterface } from "node:readline";',
+      'const send = (message) => process.stdout.write(`${JSON.stringify({ jsonrpc: "2.0", ...message })}\\n`);',
+      "const chunk = (text) =>",
+      '  send({ method: "session/update", params: { sessionId: "s1", update: { sessionUpdate: "agent_message_chunk", content: { type: "text", text } } } });',
+      'let cwd = "";',
+      "let cancel;",
+      "let approved;",
+      'createInterface({ input: process.stdin }).on("line", (line) => {',
+      "  const message = JSON.parse(line);",
+      '  if (message.method === "initialize") {',
+      '    send({ id: message.id, result: { protocolVersion: 1, agentCapabilities: {}, agentInfo: { name: "demo", version: "0.1.0" }, authMethods: [] } });',
+      '  } else if (message.method === "session/new") {',
+      "    cwd = message.params.cwd;",
+      '    send({ id: message.id, result: { sessionId: "s1" } });',
+      '  } else if (message.method === "session/cancel") {',
+      "    cancel?.();",
+      '  } else if (message.method === "session/prompt") {',
+      "    const text = message.params.prompt[0].text;",
+      '    if (text.startsWith("greet ")) {',
+      '      chunk(`hello ${text.slice("greet ".length)} from ${basename(cwd)}`);',
+      '      send({ id: message.id, result: { stopReason: "end_turn" } });',
+      '    } else if (text === "bye") {',
+      '      send({ id: message.id, result: { stopReason: "end_turn" } });',
+      "      setTimeout(() => process.exit(3), 50);",
+      '    } else if (text === "clean up") {',
+      "      approved = (optionId) => {",
+      "        chunk(optionId);",
+      '        send({ id: message.id, result: { stopReason: "end_turn" } });',
+      "      };",
+      "      const options = [",
+      '        { optionId: "allow", name: "Allow", kind: "allow_once" },',
+      '        { optionId: "reject", name: "Reject", kind: "reject_once" },',
+      "      ];",
+      '      const toolCall = { toolCallId: "t1", title: "rm -rf build", kind: "execute" };',
+      '      send({ id: "p1", method: "session/request_permission", params: { sessionId: "s1", toolCall, options } });',
+      "    } else {",
+      '      cancel = () => send({ id: message.id, result: { stopReason: "cancelled" } });',
+      "    }",
+      '  } else if (message.id === "p1") {',
+      "    approved(message.result.outcome.optionId);",
+      "  } else if (message.id !== undefined) {",
+      '    send({ id: message.id, error: { code: -32601, message: "Method not found" } });',
+      "  }",
+      "});",
+      "",
+    ].join("\n"),
+    readme: ["# demo", "", "## Configuration", "", "| Variable | Meaning |", "| --- | --- |", ""].join("\n"),
+    steps,
+    test,
+  });
+}
