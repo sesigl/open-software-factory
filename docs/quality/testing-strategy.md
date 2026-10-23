@@ -66,13 +66,15 @@ docs/vision/           factory-level requirements; source for module scenarios, 
   real system in memory or in process where one exists (PostgreSQL is PGlite), a small test-only stand-in in the
   testkit where none exists and the real system is slow (Slack, the model gateway), a container otherwise. The
   module reaches each through its documented configuration; switching a stand-in changes only the testkit.
+- Scenario files share Vitest workers (ADR 0051): a worker imports the testkit once and runs many files, so a test
+  keeps all its state inside its scenario and never changes the test process's environment or globals.
 - No unit tests by default (ADR 0007). A module's `AGENTS.md` may allow them for a pure algorithm.
 
 ## Why no unit tests, and what replaces their safety
 
 | Unit tests give | Cost with agents | Replaced by |
 | --- | --- | --- |
-| Fast feedback | Many turns spent keeping hundreds of tests in step with refactors | Fast system tests: one artifact start per module, parallel files, fakes, BUDGET check |
+| Fast feedback | Many turns spent keeping hundreds of tests in step with refactors | Fast system tests: one artifact start per module, parallel files in shared workers, fakes, BUDGET check |
 | Edge cases | Tests pin implementation details | Scenario Outlines with examples, from the outside |
 | Confidence that code is exercised | Coverage numbers agents learn to game | REACH (coverage of the running module) and MUTATION (the changed lines of each pull request, every line nightly) |
 
