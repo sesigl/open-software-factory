@@ -40,7 +40,9 @@ scenario("SCN-REPO-064", async ({ sut, given, when, then }) => {
   await then(
     'the output contains "33.3% of the mutants in changed lines of modules/demo were detected, the limit is 70%"',
     async () => {
-      expect(run.stdout).toContain("33.3% of the mutants in changed lines of modules/demo were detected, the limit is 70%");
+      expect(run.stdout).toContain(
+        "33.3% of the mutants in changed lines of modules/demo were detected, the limit is 70%",
+      );
     },
   );
 });
