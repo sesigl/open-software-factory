@@ -16,5 +16,6 @@
   "packages/harness-proxy": "0.2.0",
   "adapters/harness/claude-code": "0.2.0",
   "adapters/harness/codex": "0.1.0",
-  "adapters/harness/opencode": "0.1.0"
+  "adapters/harness/opencode": "0.1.0",
+  "adapters/sandbox/docker": "0.0.0"
 }

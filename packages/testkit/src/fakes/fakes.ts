@@ -6,7 +6,7 @@ import { listFiles, repoRoot } from "../support/module.ts";
 import { type Collector, startCollector } from "./collector.ts";
 import { type Forge, startForge } from "./forge.ts";
 import { type Harness, type HarnessTurn, startHarness } from "./harness.ts";
-import { type FakeHttp, type HttpRoute, startHttp } from "./http.ts";
+import { type FakeHttp, type HttpOptions, type HttpRoute, startHttp } from "./http.ts";
 import { type ModelGateway, type ScriptedReply, startModelGateway } from "./model-gateway.ts";
 import { type Postgres, startPostgres } from "./postgres.ts";
 import { type Nats, type S3, startNats, startS3, startTemporal, type Temporal } from "./services.ts";
@@ -20,7 +20,7 @@ export interface Fakes {
   /** Starts a scripted model gateway. An unscripted call fails the scenario with the request shown. */
   modelGateway(script: ScriptedReply[]): Promise<ModelGateway>;
   /** Starts a scripted JSON API. A request no route names fails the scenario with the request shown. */
-  http(routes: HttpRoute[]): Promise<FakeHttp>;
+  http(routes: HttpRoute[], options?: HttpOptions): Promise<FakeHttp>;
   /** A scripted coding agent that speaks ACP on stdio. A prompt no turn matches fails the scenario. */
   harness(script: HarnessTurn[]): Promise<Harness>;
   /** PostgreSQL in a container. */
@@ -77,8 +77,8 @@ export function makeFakes(moduleRoot: string): FakesHandle {
       async modelGateway(script) {
         return (await inProcess(startModelGateway(script))).gateway;
       },
-      async http(routes) {
-        return (await inProcess(startHttp(routes))).http;
+      async http(routes, options) {
+        return (await inProcess(startHttp(routes, options))).http;
       },
       async harness(script) {
         return (await inProcess(Promise.resolve(startHarness(script)))).harness;

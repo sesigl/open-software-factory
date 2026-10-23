@@ -1,4 +1,4 @@
-// A scripted JSON API on 127.0.0.1 (ADR 0021). It answers only the routes its script names; any other request gets
+// A scripted JSON API on 127.0.0.1 (ADR 0021), or on every interface for containers (ADR 0054). It answers only the routes its script names; any other request gets
 // HTTP 404 and fails the scenario with the method and path it received.
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -28,9 +28,22 @@ export interface HttpRequest {
   body: unknown;
 }
 
+export interface HttpOptions {
+  /**
+   * Also answer containers: listen on every interface instead of 127.0.0.1 and give `containerUrl` (ADR 0054).
+   * Default false.
+   */
+  containers?: boolean;
+}
+
 export interface FakeHttp {
   /** Base URL without a trailing slash; pass it to the module through its documented config. */
   url: string;
+  /**
+   * With `containers: true`, the same fake as a container reaches it: `http://host.docker.internal:<port>`. Docker
+   * Desktop maps that host to the Docker host; on Linux a container needs `--add-host host.docker.internal:host-gateway`.
+   */
+  containerUrl?: string;
   /** Every request the fake received, in order, as `METHOD /path`. */
   requests(): string[];
   /** Every request the fake received, in order, with its body. */
@@ -45,7 +58,7 @@ export interface RunningHttp {
   close(): Promise<string[]>;
 }
 
-export async function startHttp(routes: HttpRoute[]): Promise<RunningHttp> {
+export async function startHttp(routes: HttpRoute[], options: HttpOptions = {}): Promise<RunningHttp> {
   const received: HttpRequest[] = [];
   const headers: { method: string; path: string; headers: Record<string, string> }[] = [];
   const unscripted: string[] = [];
@@ -76,11 +89,12 @@ export async function startHttp(routes: HttpRoute[]): Promise<RunningHttp> {
       else response.end(JSON.stringify(route ? route.body : { error: `unscripted HTTP request: ${line}` }));
     });
   });
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  await new Promise<void>((resolve) => server.listen(0, options.containers ? "0.0.0.0" : "127.0.0.1", resolve));
   const { port } = server.address() as AddressInfo;
   return {
     http: {
       url: `http://127.0.0.1:${port}`,
+      ...(options.containers ? { containerUrl: `http://host.docker.internal:${port}` } : {}),
       requests: () => received.map((entry) => `${entry.method} ${entry.path}`),
       received: () => received.map((entry) => ({ ...entry })),
       headers: () => headers.map((entry) => ({ ...entry, headers: { ...entry.headers } })),

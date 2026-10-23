@@ -62,6 +62,7 @@ jobs:
           - suite: testkit
             filter: "@opensoftware/testkit"
             images: postgres nats temporal s3 forge
+            pull: curlimages/curl:8.17.0
           - suite: factory-spec
             filter: "@opensoftware/factory-spec"
             images: forge
@@ -83,9 +84,13 @@ jobs:
           - suite: gatekeeper
             filter: "@opensoftware/gatekeeper"
             images: nats
+          # Each scenario starts sandboxes of the test template behind iron-proxy (ADR 0054).
+          - suite: sandbox-docker
+            filter: "@opensoftware/sandbox-docker"
+            pull: ironsh/iron-proxy:0.54.0 curlimages/curl:8.17.0 hello-world:latest
           # Every other package, so a new module runs without a change here.
           - suite: rest
-            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper"
+            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper !@opensoftware/sandbox-docker"
     steps:
       - uses: actions/checkout@v5
         with:
@@ -112,6 +117,15 @@ jobs:
         run: |
           for image in $(node -e 'import("./packages/testkit/src/fakes/services.ts").then(({ IMAGES: all }) =>
             console.log(process.env.IMAGES.split(" ").map((name) => all[name]).join(" ")))'); do
+            nohup docker pull --quiet "$image" >/dev/null 2>&1 &
+          done
+      # Images a suite needs besides the testkit's fakes, named in full.
+      - name: Pull the suite's own images in the background
+        if: matrix.pull
+        env:
+          PULL: ${{ matrix.pull }}
+        run: |
+          for image in $PULL; do
             nohup docker pull --quiet "$image" >/dev/null 2>&1 &
           done
       # proof capture opens pages in Chromium (ADR 0029); the testkit hands PLAYWRIGHT_BROWSERS_PATH to the module.
