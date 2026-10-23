@@ -36,9 +36,9 @@ ARCH check enforces the layers.
 
 ## Budget
 
-- System tests: 180 seconds in total on the CI runner. SCN-GATE-012, -025 and the server scenarios SCN-GATE-041 to
-  -057 need Docker (PostgreSQL and NATS, a few seconds each); the others use fake Slack, a scripted forge API and the
-  pinned `opa` of `make install`.
+- System tests: 180 seconds in total on the CI runner. SCN-GATE-012, -025 and -055 to -057 need Docker for NATS;
+  the server scenarios SCN-GATE-041 to -058 run PostgreSQL in process (PGlite, ADR 0049); all use fake Slack, a
+  scripted forge API and the pinned `opa` of `make install`.
 
 ## Quality limits
 

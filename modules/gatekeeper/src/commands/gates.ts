@@ -89,7 +89,7 @@ export function gates(config: GatesConfig, store: Store) {
       if (!stored?.thread || stored.state !== "pending") return;
       const gate = gateOf(stored, parseGroups(config.groups, config.groupsFile, stored.rules), policy);
       const request: Message = { id: stored.thread, author: "", time: stored.requestedAt, text: "", mine: true };
-      const presses = (await store.presses(id)).map((press) =>
+      const presses = (await changes.presses()).map((press) =>
         pressMessage({ actionId: press.action, author: press.author, ts: press.ts, time: fromSlackTs(press.ts) }),
       );
       const thread = [...(await channel.thread(request)), ...presses].sort((a, b) => a.time - b.time);
