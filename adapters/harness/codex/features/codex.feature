@@ -38,3 +38,20 @@ Feature: What the codex adapter adds to the harness port
     And the adapter runs Codex with that gateway
     When the client sends the prompt "fix the typo"
     Then the scripted model gateway answered the call and the second one received none
+
+  @id=SCN-HCODEX-006 @status=implemented
+  Scenario: run with an agent command is a usage error
+    When the developer runs "run echo hi"
+    Then the command exits with code 2 and writes "harness-codex: harness-codex run takes no agent command; it runs Codex" to standard error
+
+  @id=SCN-HCODEX-007 @status=implemented
+  Scenario: --help names the adapter's commands
+    When the developer runs "--help"
+    Then the command exits with code 0 and prints "harness-codex run [--allow <kinds>]" and "harness-codex transcript <session ID>"
+
+  @id=SCN-HCODEX-008 @status=implemented
+  Scenario: Codex runs with its analytics off
+    Given a model gateway scripted to reply "done" when the prompt says "fix the typo"
+    And the adapter runs Codex with that gateway
+    When the client sends the prompt "fix the typo"
+    Then the Responses API call's turn metadata says "analytics_enabled" false
