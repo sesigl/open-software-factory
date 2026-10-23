@@ -34,7 +34,7 @@ has no `paths`.
 - **The OpenAPI lives in `contracts/`.** `typespec/gatekeeper-api.tsp` declares the operations with `@typespec/http`.
   `pnpm build` compiles them with `@typespec/openapi3` and copies only their `paths` into `openapi/openapi.json`,
   next to the named models of the JSON Schema bundle; a `$ref` in a path that names no model fails the build. The
-  models `GateRequest`, `Gate`, `GateRecord` and `Problem` are new formats of the contracts. `GateRecord` is the
+  models `GateRequest`, `GateView`, `GateRecord` and `ApiProblem` are new formats of the contracts. `GateRecord` is the
   record that the CLI already writes. openapi-typescript generates the `paths` type, which the system tests use with
   the typed client of the testkit. Adding paths and models is not breaking, so contracts get a minor version.
 - **Slack.** The request message has two buttons, Approve and Reject, next to the text that says how to reply.
