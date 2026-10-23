@@ -299,6 +299,9 @@ importers:
       '@agentclientprotocol/sdk':
         specifier: 1.9.0
         version: 1.9.0(zod@4.6.7)
+      '@opensoftware/cli':
+        specifier: workspace:*
+        version: link:../cli
       '@opensoftware/contracts':
         specifier: workspace:*
         version: link:../../contracts
