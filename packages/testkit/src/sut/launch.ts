@@ -3,6 +3,7 @@ import { extname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { artifactOf, moduleEnv, repoRoot, workspaceOf } from "../support/module.ts";
 import { baseEnv, FIXED_DATE, FIXED_SEED } from "../support/process.ts";
+import { isDocumented } from "../support/readme.ts";
 import type { Folders } from "./sut.ts";
 
 export type Launch = (
@@ -40,7 +41,7 @@ export function makeLaunch(moduleRoot: string, dirs: Folders, hosts: () => strin
   return (args, env = {}) => {
     artifact ??= builtArtifact(moduleRoot);
     for (const name of Object.keys(env)) {
-      if (!documented.has(name)) {
+      if (!isDocumented(documented, name)) {
         throw new Error(
           `BOUNDARY-ENV: ${name} is not documented in ${relative(repoRoot(), join(moduleRoot, "README.md"))}#configuration`,
         );

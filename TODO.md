@@ -437,7 +437,7 @@ read them for ideas, do not copy their company-specific rules.
     `-077`).
   - [x] The SMOKE-PAID runs for claude-code, codex and opencode moved to T-21.
 
-### [ ] T-13 · sandbox port, egress and MCP gateway wiring
+### [x] T-13 · sandbox port, egress and MCP gateway wiring
 
 - **Tier / language / path / prefix:** core (`docker`) and optional (`kubernetes`) · TS ·
   `ports/sandbox/`, `adapters/sandbox/<name>/`, `ports/secrets/` · `SCN-SANDBOX`, `SCN-SECRET`
@@ -461,9 +461,13 @@ read them for ideas, do not copy their company-specific rules.
     secret placeholders (`ref:file/...` from `OSF_SECRETS_DIR`) and allows only the declared MCP tools; the secrets
     port's reference scheme; `fakes.http` for containers in the testkit (ADR 0054, `SCN-SANDBOX-001` to `-015`,
     `SCN-SDOCKER-001` to `-005`, `SCN-TK-078`).
-  - [ ] `kubernetes` (optional): agent-sandbox `SandboxTemplate` and `SandboxClaim`, iron-proxy beside each sandbox,
-    conformance on kind in CI; the secret providers `env` and `openbao` with the secrets port's scenarios
-    (`SCN-SECRET`); `factory render --k8s` writes the `SandboxTemplate`.
+  - [x] `kubernetes` (optional) with its npm release: an agent-sandbox `SandboxTemplate`, `SandboxWarmPool` and
+    `SandboxClaim` per sandbox, whose NetworkPolicy lets it reach only its own iron-proxy egress pod, conformance on
+    kind in CI; the library `sandbox-egress` with what both adapters share; the secret providers `env`
+    (`OSF_SECRET_<NAME>`) and `openbao` (KV v2 through iron-proxy's `vault_kv`) in both adapters as `@conformance`
+    scenarios of the sandbox port; `factory render --k8s` writes a `SandboxTemplate` per agent sandbox; testkit
+    documents a variable prefix as `OSF_SECRET_*` (ADR 0055, `SCN-SANDBOX-016` to `-022`, `SCN-SEGRESS-001` to
+    `-021`, `SCN-SKUBE-001` to `-003`, `SCN-FSPEC-048`, `SCN-TK-079`; `SCN-SDOCKER-002` deprecated).
 
 ### [ ] T-14 · inference port
 

@@ -27,7 +27,7 @@
     "test:system": {
       "dependsOn": ["build", "^build"],
       "cache": false,
-      "passThroughEnv": ["PLAYWRIGHT_BROWSERS_PATH"]
+      "passThroughEnv": ["PLAYWRIGHT_BROWSERS_PATH", "KUBECONFIG", "OSF_SANDBOX_HOST_ALIASES"]
     },
     "docs": {
       "inputs": ["$TURBO_DEFAULT$"],
@@ -40,7 +40,7 @@
     "mutation": {
       "dependsOn": ["build", "^build"],
       "cache": false,
-      "passThroughEnv": ["OSF_BASE", "PLAYWRIGHT_BROWSERS_PATH"]
+      "passThroughEnv": ["OSF_BASE", "PLAYWRIGHT_BROWSERS_PATH", "KUBECONFIG", "OSF_SANDBOX_HOST_ALIASES"]
     }
   }
 }

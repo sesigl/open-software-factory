@@ -108,6 +108,25 @@ importers:
       '@opensoftware/contracts':
         specifier: workspace:*
         version: link:../../../contracts
+      '@opensoftware/sandbox-egress':
+        specifier: workspace:*
+        version: link:../../../packages/sandbox-egress
+    devDependencies:
+      '@opensoftware/testkit':
+        specifier: workspace:*
+        version: link:../../../packages/testkit
+
+  adapters/sandbox/kubernetes:
+    dependencies:
+      '@opensoftware/cli':
+        specifier: workspace:*
+        version: link:../../../packages/cli
+      '@opensoftware/contracts':
+        specifier: workspace:*
+        version: link:../../../contracts
+      '@opensoftware/sandbox-egress':
+        specifier: workspace:*
+        version: link:../../../packages/sandbox-egress
     devDependencies:
       '@opensoftware/testkit':
         specifier: workspace:*
@@ -362,6 +381,19 @@ importers:
       '@opentelemetry/resources':
         specifier: 2.12.0
         version: 2.12.0(@opentelemetry/api@1.9.1)
+    devDependencies:
+      '@opensoftware/testkit':
+        specifier: workspace:*
+        version: link:../testkit
+
+  packages/sandbox-egress:
+    dependencies:
+      '@opensoftware/cli':
+        specifier: workspace:*
+        version: link:../cli
+      '@opensoftware/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
     devDependencies:
       '@opensoftware/testkit':
         specifier: workspace:*

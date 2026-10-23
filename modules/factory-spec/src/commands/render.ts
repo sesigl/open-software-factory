@@ -12,7 +12,7 @@ export interface RenderOptions {
   agent?: string;
   /** A harness name, or "all" for every harness under providers.harness. Default: the agent's harness. */
   harness?: string;
-  /** Also write the kagent resources to k8s/<agent>.yaml. */
+  /** Also write the kagent resources and the agent's SandboxTemplate to k8s/<agent>.yaml. */
   k8s?: boolean;
   /** Also write a gh-aw workflow per automation GitHub starts. */
   ghAw?: boolean;
@@ -38,7 +38,16 @@ export function render(factory: Factory, output: string, options: RenderOptions)
   if (options.ghAw) Object.assign(files, ghAwWorkflows(definition, agent.harness, prompt, mcp));
   if (options.k8s) {
     const inference = process.env.FACTORY_INFERENCE_URL ?? "http://litellm:4000/v1";
-    const input = { factory: definition.factory, agent: name, model: agent.model, prompt, servers: mcp, inference };
+    const { sandbox } = agent;
+    const input = {
+      factory: definition.factory,
+      agent: name,
+      model: agent.model,
+      prompt,
+      servers: mcp,
+      inference,
+      sandbox,
+    };
     files[`k8s/${name}.yaml`] = kagentResources(input);
   }
   const written = writeFiles(output, files);

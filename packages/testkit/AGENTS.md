@@ -36,7 +36,9 @@ Layers, top to bottom, in `architecture.json` (ADR 0014). A file imports only it
 
 ## Budget
 
-- System tests: 240 seconds in total on the CI runner.
+- System tests: 300 seconds in total on the CI runner. Most scenarios run `testkit run` on a demo module, which
+  starts a nested vitest: about 2.5 seconds each, of which recording coverage for REACH is 0.3. With 79 scenarios
+  the total passed 240 seconds on main.
 
 ## Quality limits
 

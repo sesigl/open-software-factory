@@ -12,6 +12,8 @@ export const TEMPLATE =
 export const OUTSIDE = "api.example.invalid";
 
 export interface Sandboxes {
+  /** Writes the spec to $INPUT/spec.json and runs create with it. */
+  run(spec: Record<string, unknown>): ReturnType<Sut["cli"]>;
   /** Writes the spec to $INPUT/spec.json, creates the sandbox and gives its ID. */
   create(spec: Record<string, unknown>): Promise<string>;
   /** Runs `sh -c <script>` in the sandbox. */
@@ -25,6 +27,10 @@ export interface Sandboxes {
 export function sandboxes(sut: Sut, env: Record<string, string> = {}): Sandboxes {
   const created: string[] = [];
   return {
+    async run(spec) {
+      await sut.files.put("$INPUT/spec.json", JSON.stringify(spec));
+      return sut.cli(["create", "spec.json"], { env });
+    },
     async create(spec) {
       await sut.files.put("$INPUT/spec.json", JSON.stringify(spec));
       const run = await sut.cli(["create", "spec.json"], { env });

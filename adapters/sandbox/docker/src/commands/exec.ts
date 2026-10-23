@@ -1,7 +1,7 @@
 // exec <ID> -- <command>...: runs the command in the sandbox's working folder and exits with its code.
 import { check, type Outcome } from "@opensoftware/cli";
+import { WORKSPACE } from "@opensoftware/sandbox-egress";
 import { dockerAttached } from "../adapters/docker.ts";
-import { WORKSPACE } from "../domain/names.ts";
 import { sandboxContainer } from "./sandbox.ts";
 
 export async function exec(id: string | undefined, command: string[]): Promise<Outcome> {
