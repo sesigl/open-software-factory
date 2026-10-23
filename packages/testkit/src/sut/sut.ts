@@ -1,9 +1,10 @@
-// The handle on the module under test: its CLI, HTTP API, MCP server and events, its input and output folders and
+// The handle on the module under test: its CLI, HTTP API, MCP server, ACP agent and events, its input and output folders and
 // the Git repository in $INPUT.
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { listFiles, quickStart } from "../support/module.ts";
 import { type CliResult, mustRun, run } from "../support/process.ts";
+import { type Acp, makeAcp } from "./acp.ts";
 import { type Action, makeAction } from "./action.ts";
 import { type Events, makeEvents } from "./events.ts";
 import { type Http, makeHttp } from "./http.ts";
@@ -26,6 +27,8 @@ export interface Sut {
   http: Http;
   /** The module as an MCP server on stdio. It gets the same environment as `cli`. */
   mcp: Mcp;
+  /** The module as an ACP agent on stdio, such as a harness adapter. It gets the same environment as `cli`. */
+  acp: Acp;
   /** The CloudEvents the module publishes on NATS, and events sent to it. */
   events: Events;
   /**
@@ -109,6 +112,7 @@ export function makeSut(moduleRoot: string, dirs: Folders, hosts: () => string[]
     action: makeAction(moduleRoot, dirs, launch),
     http: makeHttp(launch, onStop),
     mcp: makeMcp(launch, onStop),
+    acp: makeAcp(launch, onStop, inside),
     events: makeEvents(onStop),
     files: {
       async put(path, content) {

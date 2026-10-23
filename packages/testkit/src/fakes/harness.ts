@@ -4,6 +4,14 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "no
 import { tmpdir } from "node:os";
 import { extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { StopReason, ToolKind } from "@agentclientprotocol/sdk";
+
+export interface HarnessTool {
+  /** The title of the tool call, for example "rm -rf build". */
+  title: string;
+  /** Its ACP tool kind, for example "execute" or "edit". */
+  kind: ToolKind;
+}
 
 export interface HarnessTurn {
   /** The turn matches the first prompt whose text contains this. Each turn answers once. */
@@ -12,6 +20,25 @@ export interface HarnessTurn {
   edits?: Record<string, string>;
   /** Text the agent streams as its message before it ends the turn. */
   reply?: string;
+  /**
+   * Tool calls the agent asks the client to approve, in order, before the edits (ADR 0050). The edits are written
+   * only when the client allowed every one.
+   */
+  tools?: HarnessTool[];
+  /**
+   * The turn keeps running until the session gets a prompt that contains this text, a steering message, which ends
+   * at once. Then the turn goes on. A cancel of the session ends the waiting turn with "cancelled".
+   */
+  waitsFor?: string;
+  /** The waiting turn ignores a cancel of the session and keeps running. */
+  ignoresCancel?: boolean;
+  /** The stop reason that ends the turn; "end_turn" by default. */
+  stopReason?: StopReason;
+}
+
+export interface HarnessToolCall extends HarnessTool {
+  /** Whether the client allowed the tool call or refused it. */
+  outcome: "allowed" | "refused";
 }
 
 export interface Harness {
@@ -20,7 +47,12 @@ export interface Harness {
   args: string[];
   /** The text of every prompt the agent received, in order. */
   prompts(): string[];
+  /** Every tool call the agent asked to approve, with the client's answer, in order. */
+  toolCalls(): HarnessToolCall[];
 }
+
+/** One line of the agent's log: a prompt it received or a tool call it asked to approve. */
+export type HarnessLogEntry = { prompt: string; scripted: boolean } | { tool: HarnessToolCall };
 
 // Next to this file in the source tree and in the built package alike.
 const AGENT = fileURLToPath(new URL(`./harness-agent${extname(fileURLToPath(import.meta.url))}`, import.meta.url));
@@ -30,21 +62,23 @@ export function startHarness(script: HarnessTurn[]): { harness: Harness; close()
   const scriptFile = join(dir, "script.json");
   const logFile = join(dir, "log.jsonl");
   writeFileSync(scriptFile, JSON.stringify(script));
-  const entries = (): { prompt: string; scripted: boolean }[] =>
+  const entries = (): HarnessLogEntry[] =>
     existsSync(logFile)
       ? readFileSync(logFile, "utf8")
           .split("\n")
           .filter(Boolean)
           .map((line) => JSON.parse(line))
       : [];
+  const prompts = () => entries().flatMap((entry) => ("prompt" in entry ? [entry] : []));
   return {
     harness: {
       command: process.execPath,
       args: [AGENT, scriptFile, logFile],
-      prompts: () => entries().map((entry) => entry.prompt),
+      prompts: () => prompts().map((entry) => entry.prompt),
+      toolCalls: () => entries().flatMap((entry) => ("tool" in entry ? [entry.tool] : [])),
     },
     async close() {
-      const problems = entries()
+      const problems = prompts()
         .filter((entry) => !entry.scripted)
         .map((entry) => `unscripted harness prompt:\n${entry.prompt}`);
       rmSync(dir, { recursive: true, force: true });

@@ -36,6 +36,38 @@ Feature: A module's servers and events
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-056 @status=implemented
+  Scenario: sut.acp starts the module as an ACP agent and sends a prompt in a session
+    Given a module whose ACP agent on stdio answers "greet Ada" with "hello Ada from" and the name of the session's folder
+    And its system test starts a session in "$INPUT/work" with sut.acp, sends "greet Ada" and expects "end_turn" with the reply "hello Ada from work"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-057 @status=implemented
+  Scenario: sut.acp refuses the agent's tool calls when asked to and lists them
+    Given a module whose ACP agent asks to approve the tool "rm -rf build" for "clean up" and replies with the option the client chose
+    And its system test connects with sut.acp and "approve: false", sends "clean up" and expects the reply "reject" and one request for "rm -rf build"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-058 @status=implemented
+  Scenario: sut.acp cancels the running turn of a session
+    Given a module whose ACP agent keeps the turn of "wait" running until the session is cancelled
+    And its system test sends "wait" with sut.acp, cancels the session and expects "cancelled"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-064 @status=implemented
+  Scenario: sut.acp gives the exit code of a module that exits
+    Given a module whose ACP agent exits with code 3 after its answer to the prompt "bye"
+    And its system test sends "bye" with sut.acp and expects the exit code 3
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-017 @status=implemented
   Scenario: sut.events records the CloudEvent a module publishes on NATS
     Given a module whose CLI publishes a "pr.opened" CloudEvent on "osf.events" at "DEMO_NATS_URL"

@@ -1,19 +1,55 @@
 // The scripted ACP agent that fakes.harness() starts as a process: node harness-agent.ts <script.json> <log.jsonl>.
-// For each prompt it applies the edits of the first unused turn whose `when` the prompt contains, streams the reply
-// and ends the turn. It logs every prompt so the testkit can show the ones nobody scripted.
+// For each prompt it takes the first unused turn whose `when` the prompt contains, asks the client to approve the
+// turn's tool calls, applies its edits, streams the reply and ends the turn. A prompt that a waiting turn waits for
+// is a steering message: it ends at once and lets that turn go on. The agent logs every prompt and tool call so the
+// testkit can show the prompts nobody scripted.
 import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
-import { agent, ndJsonStream, PROTOCOL_VERSION } from "@agentclientprotocol/sdk";
-import type { HarnessTurn } from "./harness.ts";
+import { type AgentContext, agent, ndJsonStream, PROTOCOL_VERSION } from "@agentclientprotocol/sdk";
+import type { HarnessLogEntry, HarnessTurn } from "./harness.ts";
 
 const [scriptFile, logFile] = process.argv.slice(2) as [string, string];
 const script = JSON.parse(readFileSync(scriptFile, "utf8")) as HarnessTurn[];
 const used = new Set<number>();
-const sessions = new Map<string, string>();
+
+interface Session {
+  cwd: string;
+  /** The turn that waits for a steering message: the text it waits for and how to wake it. */
+  waiting?: { text: string; wake(how: "steered" | "cancelled"): void; ignoresCancel: boolean };
+}
+const sessions = new Map<string, Session>();
 let writesThroughClient = false;
-const log = (entry: { prompt: string; scripted: boolean }): void =>
-  appendFileSync(logFile, `${JSON.stringify(entry)}\n`);
+let toolCalls = 0;
+const log = (entry: HarnessLogEntry): void => appendFileSync(logFile, `${JSON.stringify(entry)}\n`);
+
+/** Asks the client to approve each tool call of the turn; true when it allowed every one. */
+async function approveTools(client: AgentContext, sessionId: string, turn: HarnessTurn): Promise<boolean> {
+  let allowed = true;
+  for (const tool of turn.tools ?? []) {
+    const toolCallId = `tool-${++toolCalls}`;
+    await client.notify("session/update", {
+      sessionId,
+      update: { sessionUpdate: "tool_call", toolCallId, title: tool.title, kind: tool.kind, status: "pending" },
+    });
+    const { outcome } = await client.request("session/request_permission", {
+      sessionId,
+      toolCall: { toolCallId, title: tool.title, kind: tool.kind },
+      options: [
+        { optionId: "allow", name: "Allow", kind: "allow_once" },
+        { optionId: "reject", name: "Reject", kind: "reject_once" },
+      ],
+    });
+    const ok = outcome.outcome === "selected" && outcome.optionId === "allow";
+    log({ tool: { ...tool, outcome: ok ? "allowed" : "refused" } });
+    await client.notify("session/update", {
+      sessionId,
+      update: { sessionUpdate: "tool_call_update", toolCallId, status: ok ? "completed" : "failed" },
+    });
+    allowed &&= ok;
+  }
+  return allowed;
+}
 
 agent({ name: "testkit-scripted-harness" })
   .onRequest("initialize", ({ params }) => {
@@ -27,19 +63,37 @@ agent({ name: "testkit-scripted-harness" })
   })
   .onRequest("session/new", ({ params }) => {
     const sessionId = `session-${sessions.size + 1}`;
-    sessions.set(sessionId, params.cwd);
+    sessions.set(sessionId, { cwd: params.cwd });
     return { sessionId };
+  })
+  .onNotification("session/cancel", ({ params }) => {
+    const waiting = sessions.get(params.sessionId)?.waiting;
+    if (waiting && !waiting.ignoresCancel) waiting.wake("cancelled");
   })
   .onRequest("session/prompt", async ({ params, client }) => {
     const prompt = params.prompt.map((block) => (block.type === "text" ? block.text : "")).join("\n");
+    const session = sessions.get(params.sessionId) ?? { cwd: process.cwd() };
+    if (session.waiting && prompt.includes(session.waiting.text)) {
+      log({ prompt, scripted: true });
+      session.waiting.wake("steered");
+      return { stopReason: "end_turn" };
+    }
     const index = script.findIndex((turn, at) => !used.has(at) && prompt.includes(turn.when));
     log({ prompt, scripted: index >= 0 });
     const turn = script[index];
     if (!turn) return { stopReason: "refusal" };
     used.add(index);
-    const cwd = sessions.get(params.sessionId) ?? process.cwd();
-    for (const [path, content] of Object.entries(turn.edits ?? {})) {
-      const full = isAbsolute(path) ? path : resolve(cwd, path);
+    const allowed = await approveTools(client, params.sessionId, turn);
+    if (turn.waitsFor !== undefined) {
+      const text = turn.waitsFor;
+      const how = await new Promise<string>((wake) => {
+        session.waiting = { text, wake, ignoresCancel: turn.ignoresCancel === true };
+      });
+      session.waiting = undefined;
+      if (how === "cancelled") return { stopReason: "cancelled" };
+    }
+    for (const [path, content] of Object.entries(allowed ? (turn.edits ?? {}) : {})) {
+      const full = isAbsolute(path) ? path : resolve(session.cwd, path);
       if (writesThroughClient) {
         await client.request("fs/write_text_file", { sessionId: params.sessionId, path: full, content });
       } else {
@@ -53,7 +107,7 @@ agent({ name: "testkit-scripted-harness" })
         update: { sessionUpdate: "agent_message_chunk", content: { type: "text", text: turn.reply } },
       });
     }
-    return { stopReason: "end_turn" };
+    return { stopReason: turn.stopReason ?? "end_turn" };
   })
   .connect(
     ndJsonStream(
