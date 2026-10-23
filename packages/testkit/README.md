@@ -70,7 +70,8 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
   `$INPUT`, created when missing) and returns its `id`, `prompt(text)`, which waits for the end of the turn and gives
   its `stopReason` and the `reply` streamed meanwhile, and `cancel()`. A second `prompt` before the first ends steers
   the running turn. The client approves every tool call the module asks about, or refuses each one with
-  `approve: false`, and lists them in `permissionRequests()`. It offers the module no file system and no terminal.
+  `approve: false`, and lists them in `permissionRequests()`. `exited()` waits for the module to exit and gives its exit code. It
+  offers the module no file system and no terminal.
 - `sut.events.watch(nats, subjects)`: records the CloudEvents published on a NATS server from now on.
   `received(type, { count, timeoutMs })` waits for them and, on timeout, names what arrived instead;
   `publish(subject, event)` sends an event to the module.
@@ -249,3 +250,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-061 | implemented | A waiting scripted turn ends with "cancelled" when the session is cancelled |
 | SCN-TK-062 | implemented | A scripted turn that ignores cancel keeps running |
 | SCN-TK-063 | implemented | A scripted turn ends with its scripted stop reason |
+| SCN-TK-064 | implemented | sut.acp gives the exit code of a module that exits |

@@ -49,6 +49,7 @@ Feature: Running a coding agent through a harness adapter
     And the adapter runs that harness
     When the client sends the prompt "add a date" and cancels the session while the turn runs
     Then the turn ends with "cancelled" within 5 seconds
+    And the adapter exits with code 0
 
   @id=SCN-HARNESS-007 @status=implemented @conformance @realizes=SCN-FACTORY-ORCH-007
   Scenario: The transcript export is a run record that links the session's transcript
@@ -75,3 +76,22 @@ Feature: Running a coding agent through a harness adapter
     Given the adapter with the allowlist "read,edit" refused the tool "rm -rf build" of kind "execute" in a session
     When the developer runs "transcript" with the session's ID
     Then "$OUTPUT/transcript.jsonl" has the permission decision "refused by the allowlist" for "rm -rf build"
+
+  @id=SCN-HARNESS-011 @status=implemented @conformance
+  Scenario: A tool call the client refuses is in the transcript
+    Given the adapter ran a session in which the client refused the tool "Edit notes.md" of kind "edit"
+    When the developer runs "transcript" with the session's ID
+    Then "$OUTPUT/transcript.jsonl" has the permission decision "refused" for "Edit notes.md"
+
+  @id=SCN-HARNESS-012 @status=implemented @conformance
+  Scenario: A tool call the client approves is in the transcript
+    Given the adapter ran a session in which the client approved the tool "Edit notes.md" of kind "edit"
+    When the developer runs "transcript" with the session's ID
+    Then "$OUTPUT/transcript.jsonl" has the permission decision "allowed" for "Edit notes.md"
+
+  @id=SCN-HARNESS-013 @status=implemented @conformance
+  Scenario: A session whose turn was cancelled takes the next prompt
+    Given a harness scripted to keep its turn for "add a date" running until it receives "never", and to reply "done" to "fix the typo"
+    And the adapter runs that harness
+    When the client cancels the turn of "add a date", waits 4 seconds and sends the prompt "fix the typo"
+    Then the turn ends with "end_turn" and the reply "done"

@@ -22,7 +22,7 @@ flowchart LR
     D[(database, data folder)]
   end
   K -->|CLI args, exit code, stdout| A
-  K -->|HTTP API, MCP via generated clients| A
+  K -->|HTTP API, MCP, ACP via generated clients| A
   A -->|published events| K
   K -->|$INPUT / $OUTPUT folders| A
   A -->|calls| F[fakes: scripted model gateway, scripted ACP harness, fake Slack, Forgejo, Postgres, NATS, Temporal, S3, OTel Collector, fixed clock]

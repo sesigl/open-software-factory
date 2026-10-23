@@ -16,24 +16,28 @@ const streamOf = (output: Writable, input: Readable) =>
     Readable.toWeb(input) as ReadableStream<Uint8Array>,
   );
 
-/** Runs the agent `command` behind the proxy until the agent exits. */
-export function runProxy(command: string[], allowlist: Allowlist): Promise<void> {
-  const [program = "", ...args] = command;
+/** Runs the agent `command` behind the proxy; the process exits when the agent does. */
+export function runProxy(command: string[], allowlist: Allowlist): Promise<never> {
+  const [program, ...args] = command as [string, ...string[]];
   const child = spawn(program, args, { stdio: ["pipe", "pipe", "inherit"] });
   const running = new Map<string, number>();
-  const cancelling = new Set<string>();
+  // Settles every running turn with "cancelled" when the adapter stops an agent that ignored a cancel.
+  let stopAgent = (): void => undefined;
+  const stopped = new Promise<PromptResponse>((resolve) => {
+    stopAgent = () => resolve({ stopReason: "cancelled" });
+  });
   const resource = resourceOfEnvironment();
   let agentInfo: { name?: string; version?: string } = {};
   let upstream: AgentConnection | undefined;
 
-  const downstream = client({ name: "harness-acp" })
+  const downstream = client()
     .onNotification("session/update", async ({ params }) => {
       append(params.sessionId, { type: "update", update: params.update });
-      await upstream?.client.notify("session/update", params);
+      await (upstream as AgentConnection).client.notify("session/update", params);
     })
     .onRequest("session/request_permission", async ({ params }) => {
       const { title, kind } = params.toolCall;
-      const line = { type: "permission", title: title ?? "", kind: kind ?? "other" } as const;
+      const line = { type: "permission", title, kind } as const;
       if (!permits(allowlist, kind)) {
         append(params.sessionId, { ...line, decision: "refused by the allowlist" });
         return { outcome: refusal(params.options) };
@@ -45,11 +49,11 @@ export function runProxy(command: string[], allowlist: Allowlist): Promise<void>
     .connect(streamOf(child.stdin, child.stdout));
   const toAgent = downstream.agent;
 
-  upstream = agent({ name: "harness-acp" })
+  upstream = agent()
     .onRequest("initialize", async ({ params }) => {
       // The agent works in its folder itself: the adapter offers it no client file system and no terminal.
       const answer = await toAgent.request("initialize", { ...params, clientCapabilities: {} });
-      agentInfo = { name: answer.agentInfo?.name, version: answer.agentInfo?.version };
+      agentInfo = answer.agentInfo ?? {};
       return answer;
     })
     .onRequest("session/new", async ({ params }) => {
@@ -65,16 +69,10 @@ export function runProxy(command: string[], allowlist: Allowlist): Promise<void>
     })
     .onRequest("session/prompt", async ({ params }) => {
       const { sessionId } = params;
-      append(sessionId, {
-        type: "prompt",
-        text: params.prompt.map((block) => (block.type === "text" ? block.text : "")).join("\n"),
-      });
+      append(sessionId, { type: "prompt", prompt: params.prompt });
       running.set(sessionId, (running.get(sessionId) ?? 0) + 1);
-      const answer: PromptResponse = await toAgent.request("session/prompt", params).catch((error: unknown) => {
-        if (cancelling.has(sessionId)) return { stopReason: "cancelled" };
-        throw error;
-      });
-      running.set(sessionId, (running.get(sessionId) ?? 1) - 1);
+      const answer = await Promise.race([toAgent.request("session/prompt", params), stopped]);
+      running.set(sessionId, (running.get(sessionId) as number) - 1);
       append(sessionId, { type: "stop", stopReason: answer.stopReason });
       return answer;
     })
@@ -82,20 +80,15 @@ export function runProxy(command: string[], allowlist: Allowlist): Promise<void>
       await toAgent.notify("session/cancel", params);
       setTimeout(() => {
         if (!running.get(params.sessionId)) return;
-        cancelling.add(params.sessionId);
+        stopAgent();
         child.kill("SIGKILL");
       }, CANCEL_DEADLINE_MS).unref();
     })
     .connect(streamOf(process.stdout, process.stdin));
 
-  return new Promise((done) => {
-    child.on("exit", () => {
-      // Let the answers to cancelled turns reach the client, then stop reading it.
-      setTimeout(() => {
-        upstream?.close();
-        process.stdin.destroy();
-        done();
-      }, 100);
-    });
-  });
+  // A client that hangs up ends the session: the agent stops, and so does the adapter.
+  void upstream.closed.then(() => child.kill());
+  // The adapter ends with its agent, after the answers to cancelled turns reached the client.
+  child.on("exit", () => setTimeout(() => process.exit(0), 100));
+  return new Promise<never>(() => undefined);
 }

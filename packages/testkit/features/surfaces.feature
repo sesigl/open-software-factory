@@ -60,6 +60,14 @@ Feature: A module's servers and events
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-064 @status=implemented
+  Scenario: sut.acp gives the exit code of a module that exits
+    Given a module whose ACP agent exits with code 3 after its answer to the prompt "bye"
+    And its system test sends "bye" with sut.acp and expects the exit code 3
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-017 @status=implemented
   Scenario: sut.events records the CloudEvent a module publishes on NATS
     Given a module whose CLI publishes a "pr.opened" CloudEvent on "osf.events" at "DEMO_NATS_URL"

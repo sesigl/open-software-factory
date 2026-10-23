@@ -13,19 +13,20 @@ export function outcomeOf(stopReason: StopReason | undefined): RunRecord["span"]
 
 /** The run record of a session. Its resource is complete when the launcher set the required attributes. */
 export function runRecordOf(lines: SessionLine[], transcriptUri: string): RunRecord {
-  const start = lines.find((line) => line.type === "session");
-  const stops = lines.flatMap((line) => (line.type === "stop" ? [line.stopReason] : []));
+  // The first line starts the session; the last one of a finished session is its last stop.
+  const start = lines[0] as Extract<SessionLine, { type: "session" }>;
+  const last = lines.at(-1) as { stopReason?: StopReason };
   return {
     resource: {
       "service.name": "harness-acp",
-      ...start?.resource,
+      ...start.resource,
       "osf.harness.name": "acp",
-      "osf.harness.version": start?.agent.version,
+      "osf.harness.version": start.agent.version,
     } as RunRecord["resource"],
     span: {
       "gen_ai.operation.name": "invoke_agent",
-      "gen_ai.conversation.id": start?.sessionId,
-      "osf.outcome": outcomeOf(stops.at(-1)),
+      "gen_ai.conversation.id": start.sessionId,
+      "osf.outcome": outcomeOf(last.stopReason),
       "osf.transcript.uri": transcriptUri,
     },
   };
