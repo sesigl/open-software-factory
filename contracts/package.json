@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/contracts",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "The shared formats of the open software factory: JSON Schemas, TypeScript types and the osf-contracts CLI.",
   "license": "Apache-2.0",
   "repository": {
