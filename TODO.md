@@ -369,7 +369,7 @@ read them for ideas, do not copy their company-specific rules.
     z-test, comment on the pull request), `fakes.forge` showing opened pull requests and branch files, and the npm
     release (ADR 0046, `SCN-OBS-001` to `-033`, `SCN-TK-050`).
 
-### [ ] T-11 · gatekeeper
+### [x] T-11 · gatekeeper
 
 - **Tier / language / path / prefix:** core · TS · `modules/gatekeeper/` · `SCN-GATE`
 - **Alone:** rule-based human approvals for any automation or CI job.
@@ -392,13 +392,13 @@ read them for ideas, do not copy their company-specific rules.
     `gate.requested@v1` and `gate.decided@v1` on NATS, the commit status `gatekeeper`, the GitHub Action, the dogfood
     workflow `gatekeeper.yml` with `.github/gatekeeper/` (factory-made pull requests need a maintainer), fake Slack's
     `auth.test`, and the npm release (ADR 0047, `SCN-GATE-001` to `-040`, `SCN-TK-051`).
-  - [ ] Require the commit status `gatekeeper` on `main` in the branch protection of this repository (a setting of the
+  - [x] Require the commit status `gatekeeper` on `main` in the branch protection of this repository (a setting of the
     owner).
   - [x] HTTP API with its OpenAPI in `contracts/` (`gatekeeper serve`): requests over HTTP, Slack's Events API and
     buttons instead of polling, the Postgres outbox for the events, `fakes.slack` signing and pressing buttons,
     `sut.http.stop`, and the `gate-record` format (ADR 0048, `SCN-GATE-041` to `-058`, `SCN-TK-052` to `-055`,
     `SCN-REPO-062`).
-  - [ ] The channel port (T-15) with Vercel Chat SDK in place of the direct Slack and forge calls.
+  - Moved: the channel port with Vercel Chat SDK in place of the direct Slack and forge calls, to T-15.
 
 ### [ ] T-12 · harness port and adapters
 
@@ -463,6 +463,8 @@ read them for ideas, do not copy their company-specific rules.
 - **Done when:** forgejo and github forge adapters and slack and github channels pass conformance.
 - **From T-03:** factory-spec registers the webhooks of `github.*` automations through the forge port, as it does
   for Forgejo today (ADR 0022).
+- **From T-11:** gatekeeper asks for approvals and posts its records through the channel and forge ports (Vercel
+  Chat SDK) in place of its direct Slack and forge calls (ADR 0047, ADR 0048).
 
 ### [ ] T-16 · intake
 
