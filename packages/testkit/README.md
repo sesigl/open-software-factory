@@ -108,7 +108,11 @@ Every server, client and subscription stops when the scenario ends, before the f
   Any other request gets HTTP 404 and fails the scenario with the request shown. `requests()` lists what it
   received as `METHOD /path`; `received()` lists each request with its `body` (JSON, or text when it is not JSON;
   a gzip body is unpacked first); `headers()` lists each request with its headers, names in lower case
-  ([ADR 0032](../../docs/decisions/0032-scorekit.md)).
+  ([ADR 0032](../../docs/decisions/0032-scorekit.md)). `fakes.http(routes, { containers: true })` listens on every
+  interface instead and also gives `containerUrl`, `http://host.docker.internal:<port>`, for a module that reaches the
+  fake from a container, such as a sandbox's egress proxy. Docker Desktop maps that host to the Docker host; on Linux
+  the container needs `--add-host host.docker.internal:host-gateway`
+  ([ADR 0054](../../docs/decisions/0054-sandbox-port.md)).
 - `fakes.harness([{ when, edits, reply }])`: a scripted coding agent that speaks ACP on stdio
   ([ADR 0018](../../docs/decisions/0018-testkit-scripted-acp-harness.md)). Start it with its `command` and `args`.
   The first prompt that contains `when` gets the `edits` (files by path below the session's folder) and the
@@ -287,3 +291,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-075 | implemented | A scripted Responses API call that hangs gets no answer |
 | SCN-TK-076 | implemented | A streamed chat completions call gets its scripted tool call, finish reason and token usage |
 | SCN-TK-077 | implemented | Streamed chat completions calls take the scripted replies in order, with the scripted finish reason |
+| SCN-TK-078 | implemented | A fake for containers answers a request from a container |

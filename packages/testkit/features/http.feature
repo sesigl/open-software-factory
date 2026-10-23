@@ -50,3 +50,11 @@ Feature: Scripted HTTP API
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-078 @status=implemented
+  Scenario: A fake for containers answers a request from a container
+    Given a module whose CLI runs curl in a container for "/v0.1/servers?search=tracker" at "DEMO_API_URL" and prints the body
+    And its system test scripts {"count":1} for that path on a fake for containers and passes its container URL
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

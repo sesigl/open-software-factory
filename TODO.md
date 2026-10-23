@@ -454,6 +454,16 @@ read them for ideas, do not copy their company-specific rules.
 - **Done when:** docker and kubernetes adapters pass conformance (kubernetes on kind in CI).
 - **From T-03:** `factory render --k8s` also writes an agent-sandbox `SandboxTemplate` for `agents.<name>.sandbox`
   (ADR 0022).
+- **Slices:**
+  - [x] The port as a command line (`create | exec | copy | snapshot | destroy | list | egress-log`), its fifteen
+    `@conformance` scenarios, the `sandbox-spec` format in contracts, and the `docker` adapter with its npm release:
+    a container per sandbox on an internal network behind an iron-proxy container that refuses other hosts, swaps
+    secret placeholders (`ref:file/...` from `OSF_SECRETS_DIR`) and allows only the declared MCP tools; the secrets
+    port's reference scheme; `fakes.http` for containers in the testkit (ADR 0054, `SCN-SANDBOX-001` to `-015`,
+    `SCN-SDOCKER-001` to `-005`, `SCN-TK-078`).
+  - [ ] `kubernetes` (optional): agent-sandbox `SandboxTemplate` and `SandboxClaim`, iron-proxy beside each sandbox,
+    conformance on kind in CI; the secret providers `env` and `openbao` with the secrets port's scenarios
+    (`SCN-SECRET`); `factory render --k8s` writes the `SandboxTemplate`.
 
 ### [ ] T-14 · inference port
 

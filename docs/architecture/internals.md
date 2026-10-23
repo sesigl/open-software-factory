@@ -17,12 +17,12 @@ an adapter.
 | Port | Interface | Example adapters |
 | --- | --- | --- |
 | harness | ACP on stdio (ADR 0050): start · send · stream events · approve tool · cancel; plus a tool allowlist, cancel within 5 seconds and the transcript export as a run record | **acp** (generic, any agent in the ACP Registry; an ACP proxy, `adapters/harness/acp`); **claude-code** (the ACP bridge `claude-agent-acp` behind the proxy library `packages/harness-proxy`, mode `default`, its own settings folder, tokens and cost from ACP; ADR 0052); **codex** (the ACP bridge `codex-acp` behind the proxy library, mode `read-only`, its own `CODEX_HOME`, steering by `_session/steering`, tokens from ACP; ADR 0053); **opencode** (`opencode acp` behind the proxy library, every tool but reading asks, its own XDG folders, no folder config, tokens from ACP; ADR 0053); **agentapi** fallback for terminal-only agents; **scripted** (the testkit's scripted agent behind `acp`, deterministic; ADR 0052) |
-| sandbox | create(template, resources, network policy) · exec · copy · snapshot · destroy | **docker**; **kubernetes** (agent-sandbox SandboxTemplate, SandboxClaim, WarmPool; gVisor or Kata); e2b, daytona (community); macOS VM runner |
+| sandbox | a command line (ADR 0054): create(sandbox spec) · exec · copy · snapshot · destroy · list · egress log; every request leaves through the sandbox's egress proxy, iron-proxy, which refuses other hosts, swaps secret placeholders and allows only the declared MCP tools | **docker** (a container on an internal network behind an iron-proxy container, `adapters/sandbox/docker`; ADR 0054); **kubernetes** (agent-sandbox SandboxTemplate, SandboxClaim, WarmPool; gVisor or Kata); e2b, daytona (community); macOS VM runner |
 | channel | receive → WorkItem · reply(thread, message or card) · ask(approval) → decision | **slack** (threads, Block Kit), **teams** (Adaptive Cards, tenant consent), **github** (comments, labels, checks), **linear** (agent sessions); all through Vercel Chat SDK; jira and sentry through webhooks |
 | tracker | create · update state · link PR · comment | github issues, linear, jira |
 | forge | branch · PR · checks · comments · merge rules · PR events (`pr.opened`, `pr.reviewed`, `pr.closed`) | **github**, **forgejo** (also the deterministic test forge), gitlab |
 | inference | OpenAI-compatible endpoint + spend log | **litellm** in front of any provider |
-| secrets | resolve(reference) at the egress proxy, never in the sandbox | **env**, **openbao**, vault, infisical |
+| secrets | resolve(reference) at the egress proxy, never in the sandbox (`ports/secrets/README.md`) | **file** (`OSF_SECRETS_DIR`, resolved by sandbox-docker; ADR 0054), **env**, **openbao**, vault, infisical |
 | telemetry | OTLP | **otlp** via the OpenTelemetry Collector to any backend |
 | policy | decide(input) → allow, deny or gate | **opa**, cedar |
 | benchmark environment | Harbor environment | docker, daytona, modal, e2b (all in Harbor) |
