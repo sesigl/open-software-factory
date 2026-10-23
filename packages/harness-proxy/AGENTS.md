@@ -7,7 +7,7 @@ ADR 0051.
 
 The only way a system test or another program may use the library:
 
-- Library: the exports of `src/index.ts` (`serveProxy`, `allowlistOf`, `exportTranscript`), imported as
+- Library: the exports of `src/index.ts` (`runAdapter`, `serveProxy`, `allowlistOf`, `exportTranscript`), imported as
   `@opensoftware/harness-proxy`
 
 The library's system tests import it by its package name and call it in their own process (ADR 0039): `sut.acp.serve`
@@ -21,7 +21,7 @@ Layers, top to bottom, in `architecture.json` (ADR 0014). A file imports only it
 | Layer | Paths | Holds |
 | --- | --- | --- |
 | api | `src/index.ts` | the public exports |
-| adapters | `src/proxy.ts`, `src/transcript.ts`, `src/store.ts` | the ACP connections, the agent process, the session files |
+| adapters | `src/adapter.ts`, `src/proxy.ts`, `src/transcript.ts`, `src/store.ts` | the adapters' command line, the ACP connections, the agent process, the session files |
 | domain | `src/domain/` | the allowlist, the shape of the session record, the run record; no I/O |
 
 Only code that two or more harness adapters need belongs here. What one product needs stays in its adapter.

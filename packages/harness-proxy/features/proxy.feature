@@ -2,7 +2,8 @@
 Feature: The ACP proxy of a harness adapter
   serveProxy runs between an ACP client and the ACP agent of a harness: it passes sessions, prompts and updates on,
   answers tool calls outside the allowlist itself, stops an agent that does not end a cancelled turn, and records
-  every session. exportTranscript turns a recorded session into a run record (ADR 0050, ADR 0051).
+  every session. exportTranscript turns a recorded session into a run record. runAdapter is the command line that
+  every adapter shares (ADR 0050, ADR 0051).
 
   @id=SCN-HPROXY-001 @status=implemented
   Scenario: serveProxy passes a prompt to the agent and its reply back to the client
@@ -92,3 +93,28 @@ Feature: The ACP proxy of a harness adapter
     Given serveProxy runs a session whose turn for "add a date" is still running
     When the adapter exports the transcript of the session into "$OUTPUT"
     Then "$OUTPUT/run-record.json" has "osf.outcome" "failed"
+
+  @id=SCN-HPROXY-014 @status=implemented
+  Scenario: runAdapter's "run" starts the agent the adapter names, with the allowlist of "--allow"
+    Given a harness scripted to run the tool "rm -rf build" of kind "execute" when the prompt says "clean up"
+    And runAdapter runs "run --allow read,edit" for an adapter whose agent is the harness named after "--"
+    When the client sends the prompt "clean up"
+    Then the harness's tool call "rm -rf build" was refused
+    And the client was not asked to approve a tool call
+
+  @id=SCN-HPROXY-015 @status=implemented
+  Scenario: runAdapter's "transcript" writes the session's run record to OUTPUT with the adapter's harness name
+    Given runAdapter "run" for the adapter "demo" with OSF_DATA "$OUTPUT/data" ran a session with the prompt "fix the typo"
+    When runAdapter runs "transcript" with the session's ID, OSF_DATA "$OUTPUT/data" and OUTPUT "$OUTPUT/out"
+    Then it gives 0 and prints "wrote $OUTPUT/out/run-record.json" and "wrote $OUTPUT/out/transcript.jsonl"
+    And "$OUTPUT/out/run-record.json" has "service.name" "harness-demo" and "osf.harness.name" "demo"
+
+  @id=SCN-HPROXY-016 @status=implemented
+  Scenario: runAdapter's "transcript" without a session ID is a usage error
+    When runAdapter runs "transcript" for the adapter "demo"
+    Then it gives 2 and writes "harness-demo: name the session ID" to standard error
+
+  @id=SCN-HPROXY-017 @status=implemented
+  Scenario: runAdapter prints the adapter's usage for "--help"
+    When runAdapter runs "--help" for an adapter with the usage "Usage: demo"
+    Then it gives 0 and prints "Usage: demo"

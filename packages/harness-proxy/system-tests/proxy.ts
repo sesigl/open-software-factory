@@ -1,5 +1,11 @@
 // What the library's tests share: serveProxy in the test's own process, with the scripted harness as its agent.
-import { exportTranscript, type ProxyOptions, serveProxy } from "@opensoftware/harness-proxy";
+import {
+  type AdapterContext,
+  exportTranscript,
+  type ProxyOptions,
+  runAdapter,
+  serveProxy,
+} from "@opensoftware/harness-proxy";
 import type { AcpClient, Harness, Sut } from "@opensoftware/testkit";
 
 /** The data folder the tests record sessions in. */
@@ -48,3 +54,24 @@ export async function ranSession(
   await session.prompt(prompt);
   return session.id;
 }
+
+/** The adapter "demo" of runAdapter: its agent is the command after "--". */
+export const demoAdapter = {
+  harness: "demo",
+  usage: "Usage: demo\n",
+  agent: ([command, ...args]: string[]) => ({ command: command as string, args }),
+};
+
+/** Output and errors written to strings, for the `io` of runAdapter. */
+export function captured(): { stdout: string; stderr: string; io: NonNullable<AdapterContext["io"]> } {
+  const out = { stdout: "", stderr: "" };
+  const io = {
+    stdout: { write: (text: string) => (out.stdout += text) },
+    stderr: { write: (text: string) => (out.stderr += text) },
+  };
+  return Object.assign(out, { io });
+}
+
+/** Starts runAdapter "run" for the adapter "demo" with `args` and connects a client to it. */
+export const serveDemo = (sut: Sut, args: string[], env: AdapterContext["env"] = {}): Promise<AcpClient> =>
+  sut.acp.serve((streams) => runAdapter(demoAdapter, { args: ["run", ...args], env, streams }));

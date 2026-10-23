@@ -31,9 +31,9 @@ Three facts shape the next step:
   testkit. The TODO slice is done by this decision.
 - **The proxy moves into the library `packages/harness-proxy`** (`@opensoftware/harness-proxy`, prefix
   `SCN-HPROXY`). It exports `serveProxy` (the proxy between a client and an agent process, on given streams or on
-  stdio), `exportTranscript` (the run record and the transcript), and `allowlistOf`. An adapter gives the harness
-  name, the agent command and environment, and a hook that changes `session/new` before the agent sees it. The
-  library's tests run the proxy in their own process with `sut.acp.serve` (new in the testkit) and the scripted
+  stdio), `exportTranscript` (the run record and the transcript), `allowlistOf`, and `runAdapter`, the command line
+  `run` and `transcript` that every adapter shares. An adapter gives the harness name, its usage, the agent
+  command and environment, and a hook that changes `session/new` before the agent sees it. The library's tests run the proxy in their own process with `sut.acp.serve` (new in the testkit) and the scripted
   agent behind it. The behavior of SCN-HARNESS-006 moves there.
 - **The run record carries the usage the agent reports.** The proxy records the `usage` of each `session/prompt`
   answer. The run record sums them into `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`,

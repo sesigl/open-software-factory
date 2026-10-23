@@ -12,24 +12,27 @@ A library: adapters depend on it, it has no command of its own. Decisions:
 
 ## Quick start
 
-The `cli.ts` of an adapter names its agent and hands the rest to the library:
+The `cli.ts` of an adapter names its harness, its usage and its agent, and hands the rest to the library:
 
 ```ts
-import { allowlistOf, exportTranscript, serveProxy } from "@opensoftware/harness-proxy";
+import { runAdapter } from "@opensoftware/harness-proxy";
 
-const data = process.env.OSF_DATA ?? ".harness-demo";
-if (process.argv[2] === "run") {
-  await serveProxy({ agent: { command: "npx", args: ["demo-acp-agent"] }, allow: allowlistOf("read,edit"), data });
-  process.exit(0);
-}
-// harness-demo transcript <session ID>: writes $OUTPUT/run-record.json and $OUTPUT/transcript.jsonl
-exportTranscript({ sessionId: process.argv[3], data, output: process.env.OUTPUT ?? ".", harness: "demo" });
+const code = await runAdapter({
+  harness: "demo",
+  usage: "Usage:\n  harness-demo run [--allow <kinds>]\n  harness-demo transcript <session ID>\n",
+  agent: () => ({ command: "npx", args: ["demo-acp-agent"] }),
+});
+process.exit(code);
 ```
+
+`harness-demo run --allow read,edit` then serves ACP on stdio with the agent behind the proxy, and
+`harness-demo transcript <session ID>` writes `$OUTPUT/run-record.json` and `$OUTPUT/transcript.jsonl`.
 
 ## API
 
 | Export | What it does |
 | --- | --- |
+| `runAdapter({ harness, usage, agent, newSession }, { args, env, streams, io })` | The command line of the adapter `harness-<harness>`. `run [--allow <kinds>] [-- <args>]` calls `agent(args, data)` for the agent to start (it may throw a usage error) and runs `serveProxy` on `streams` (default: stdio); `transcript <session ID>` runs `exportTranscript` into `OUTPUT` (default: the current folder). The data folder is `OSF_DATA`, default `.harness-<harness>`. The context defaults to the process's arguments and environment, and output and errors go to `io` (default: stdout and stderr). Gives the exit code: 0, 1 when the command failed, 2 for a usage error. |
 | `serveProxy({ agent, allow, data, resource, newSession, io })` | Starts `agent` (`{ command, args, env }`) and speaks ACP to the client on `io` (default: stdin and stdout) and to the agent on its stdio. The promise resolves when the agent has exited. |
 | `allowlistOf(text)` | The tool kinds of `--allow read,edit` as a list; `undefined` without the option. |
 | `exportTranscript({ sessionId, data, output, harness })` | Writes the session's run record to `<output>/run-record.json` and its record to `<output>/transcript.jsonl`, and gives `{ recordFile, transcriptFile }`. A session the proxy never recorded is an error. |
@@ -95,3 +98,7 @@ the GitHub environment `npm`, a token only for the first version, then a trusted
 | SCN-HPROXY-011 | implemented | The transcript has the decisions of the client and of the allowlist |
 | SCN-HPROXY-012 | implemented | The transcript has a tool call the client refused |
 | SCN-HPROXY-013 | implemented | The run record of a session that is still in a turn has the outcome "failed" |
+| SCN-HPROXY-014 | implemented | runAdapter's "run" starts the agent the adapter names, with the allowlist of "--allow" |
+| SCN-HPROXY-015 | implemented | runAdapter's "transcript" writes the session's run record to OUTPUT with the adapter's harness name |
+| SCN-HPROXY-016 | implemented | runAdapter's "transcript" without a session ID is a usage error |
+| SCN-HPROXY-017 | implemented | runAdapter prints the adapter's usage for "--help" |
