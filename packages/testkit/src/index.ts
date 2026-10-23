@@ -2,7 +2,7 @@
 export type { Collector } from "./fakes/collector.ts";
 export type { Fakes } from "./fakes/fakes.ts";
 export type { Forge, OpenedPullRequest, PullRequest } from "./fakes/forge.ts";
-export type { Harness, HarnessTurn } from "./fakes/harness.ts";
+export type { Harness, HarnessTool, HarnessToolCall, HarnessTurn } from "./fakes/harness.ts";
 export type { FakeHttp, HttpRequest, HttpRoute } from "./fakes/http.ts";
 export type { ModelGateway, ScriptedReply } from "./fakes/model-gateway.ts";
 export type { Postgres } from "./fakes/postgres.ts";
@@ -10,6 +10,7 @@ export type { Nats, S3, Temporal } from "./fakes/services.ts";
 export type { FakeSlack, SlackMessage } from "./fakes/slack.ts";
 export { type ScenarioContext, type StepFn, scenario } from "./scenario.ts";
 export type { CliResult } from "./support/process.ts";
+export type { Acp, AcpClient, AcpPermissionRequest, AcpSession, AcpTurn } from "./sut/acp.ts";
 export type { Action, ActionOptions, ActionResult } from "./sut/action.ts";
 export type { CloudEvent, EventLog, Events } from "./sut/events.ts";
 export type { Http, HttpResponse } from "./sut/http.ts";
