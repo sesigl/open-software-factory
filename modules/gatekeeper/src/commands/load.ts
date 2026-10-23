@@ -1,15 +1,15 @@
 // What request and status share: the request, the policy's answer, the groups and the channel.
 import { UsageError } from "@opensoftware/cli";
-import type { GateDecided, GateRequested } from "@opensoftware/contracts";
 import { readJson, readText, writeJson } from "../adapters/files.ts";
 import { type Forge, forgeApi, pullRequestChannel, readPull, setStatus } from "../adapters/forge.ts";
 import { publish } from "../adapters/nats.ts";
 import { evaluate } from "../adapters/opa.ts";
 import { slackChannel } from "../adapters/slack.ts";
+import { decidedEvent, requestedEvent } from "../domain/events.ts";
 import type { Channel, Decided, Gate, Outcome } from "../domain/gate.ts";
 import { parseGroups, parseRules } from "../domain/policy.ts";
 import { type PullRequest, parsePullRequest, requestOf } from "../domain/pull-request.ts";
-import { buildRecord, signRecord } from "../domain/record.ts";
+import { buildRecord, signWith } from "../domain/record.ts";
 import { gateId, parseRequest } from "../domain/request.ts";
 import { fromIso, toIso } from "../domain/time.ts";
 
@@ -70,7 +70,7 @@ function channelOf(options: Options, pr: Loaded["pr"]): Channel {
   });
 }
 
-const nowOf = (text: string | undefined): number => (text ? fromIso(text) : Date.now() * 1000);
+export const nowOf = (text: string | undefined): number => (text ? fromIso(text) : Date.now() * 1000);
 
 const STATES = { pending: "pending", approved: "success", rejected: "failure", expired: "failure" } as const;
 
@@ -94,57 +94,20 @@ export function writeRecord(loaded: Loaded, options: Options, outcome: Decided, 
     outcome,
   );
   const key = options.env.GATEKEEPER_SIGNING_KEY;
-  writeJson(options.record, key ? signRecord(record, key) : record);
+  writeJson(options.record, signWith(record, key));
   return key ? [] : ["the record is not signed: set GATEKEEPER_SIGNING_KEY"];
 }
 
-const event = (type: string, gate: string, now: number, data: unknown) => ({
-  specversion: "1.0",
-  id: `${gate}.${type.split(".")[1]?.split("@")[0]}`,
-  source: "/osf/gatekeeper",
-  type,
-  time: toIso(now),
-  subject: gate,
-  datacontenttype: "application/json",
-  data,
-});
-
 export async function publishRequested(loaded: Loaded, env: Options["env"], requestedAt: number): Promise<void> {
   if (!env.GATEKEEPER_NATS_URL) return;
-  const { gate } = loaded;
-  const { expireAfter } = gate.rules;
-  const data: GateRequested["data"] = {
-    gateId: gate.id,
-    workItemId: gate.request.workItem,
-    stage: gate.request.stage,
-    policy: gate.policy,
-    approvers: gate.rules.approvers,
-    summary: gate.request.summary,
-    links: gate.request.links.length ? gate.request.links : undefined,
-    expiresAt: expireAfter === undefined ? undefined : toIso(requestedAt + expireAfter),
-  };
-  await publish(
-    env.GATEKEEPER_NATS_URL,
-    "osf.gate.requested.v1",
-    event("gate.requested@v1", gate.id, loaded.now, data),
-  );
+  const { subject, event } = requestedEvent(loaded.gate, requestedAt, loaded.now);
+  await publish(env.GATEKEEPER_NATS_URL, subject, event);
 }
 
 export async function publishDecided(loaded: Loaded, env: Options["env"], outcome: Decided): Promise<void> {
   if (!env.GATEKEEPER_NATS_URL) return;
-  const { gate } = loaded;
-  const data: GateDecided["data"] = {
-    gateId: gate.id,
-    workItemId: gate.request.workItem,
-    decision: outcome.state,
-    decidedBy:
-      outcome.state === "expired"
-        ? undefined
-        : { kind: outcome.by.startsWith("policy:") ? "trigger" : "person", id: outcome.by },
-    decidedAt: toIso(outcome.at),
-    reason: outcome.state === "rejected" ? outcome.reason : undefined,
-  };
-  await publish(env.GATEKEEPER_NATS_URL, "osf.gate.decided.v1", event("gate.decided@v1", gate.id, loaded.now, data));
+  const { subject, event } = decidedEvent(loaded.gate, outcome, loaded.now);
+  await publish(env.GATEKEEPER_NATS_URL, subject, event);
 }
 
 /** A policy without approver groups approves at once, by the policy. */

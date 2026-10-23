@@ -8,3 +8,5 @@ import "./run-record.tsp";
 import "./evidence-bundle.tsp";
 import "./score.tsp";
 import "./events.tsp";
+import "./gatekeeper.tsp";
+import "./gatekeeper-api.tsp";

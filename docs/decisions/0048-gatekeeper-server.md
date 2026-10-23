@@ -61,7 +61,8 @@ has no `paths`.
   out later: at least once, with the same event IDs as the CLI (`<gate>.requested`, `<gate>.decided`), so a
   consumer can drop a duplicate.
 - **Testkit.** `fakes.slack` signs what it sends with its `signingSecret`, keeps the buttons of a message, and
-  `press` sends a button press to the module's interactivity URL. `sut.http.stop` stops the server, so a test can
+  `press` sends a button press to the module's interactivity URL; `sign` gives the headers Slack would send with a
+  body. `sut.http.stop` stops the server, so a test can
   start it again with another time or another NATS server.
 
 ## Options considered
@@ -88,7 +89,8 @@ has no `paths`.
 - `pg-transactional-outbox` (MIT, 0.6 of October 2026, maintained by one person): checked, not adopted; see the
   options.
 - TypeSpec HTTP and OpenAPI 3 emitters (`@typespec/http`, `@typespec/openapi3`, MIT, Microsoft, 1.17, active):
-  adopted as build dependencies of the contracts, at the version of the compiler.
+  adopted as build dependencies of the contracts, at the version of the compiler, with `@typespec/openapi`, which
+  the OpenAPI 3 emitter needs.
 - `pg` (node-postgres, MIT, active): already used by ledger (ADR 0035); adopted here too.
 - HumanLayer and trstringer/manual-approval were checked in ADR 0047; neither has a self-hosted server with a
   policy and a record.

@@ -20,6 +20,14 @@ Feature: A module's servers and events
     And the output contains "the server exited with code 1 before it listened on PORT"
     And the output contains "port is taken"
 
+  @id=SCN-TK-054 @status=implemented
+  Scenario: sut.http.stop stops the server so the test can start it again with another environment
+    Given a module whose server answers "GET /greeting" with the JSON text of "DEMO_GREETING"
+    And its system test starts it with "DEMO_GREETING" "hello", stops it, starts it with "hi" and expects "hi"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-016 @status=implemented
   Scenario: sut.mcp connects to the module's MCP server and calls a tool
     Given a module whose MCP server on stdio has the tool "greet" that answers "hello Ada"

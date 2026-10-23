@@ -394,8 +394,10 @@ read them for ideas, do not copy their company-specific rules.
     `auth.test`, and the npm release (ADR 0047, `SCN-GATE-001` to `-040`, `SCN-TK-051`).
   - [ ] Require the commit status `gatekeeper` on `main` in the branch protection of this repository (a setting of the
     owner).
-  - [ ] HTTP API with its OpenAPI in `contracts/` (`gatekeeper serve`): requests over HTTP, Slack's Events API and
-    buttons instead of polling, the Postgres outbox for the events.
+  - [x] HTTP API with its OpenAPI in `contracts/` (`gatekeeper serve`): requests over HTTP, Slack's Events API and
+    buttons instead of polling, the Postgres outbox for the events, `fakes.slack` signing and pressing buttons,
+    `sut.http.stop`, and the `gate-record` format (ADR 0048, `SCN-GATE-041` to `-058`, `SCN-TK-052` to `-055`,
+    `SCN-REPO-062`).
   - [ ] The channel port (T-15) with Vercel Chat SDK in place of the direct Slack and forge calls.
 
 ### [ ] T-12 · harness port and adapters

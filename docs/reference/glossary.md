@@ -17,6 +17,7 @@ Use these terms in scenarios, code, UI text and docs.
 | Stage | One step of the delivery loop: triage, spec, implement, review, verify, ship, monitor. |
 | Gate | A point where work waits for a deterministic check or a human decision. |
 | Approval record | What gatekeeper writes when a gate is decided: the request, the policy, who decided, what and when; signed with Ed25519. |
+| Outbox | A table where a server writes its events in the same transaction as the change they report; a relay publishes them to NATS later, so no event is lost (ADR 0003, ADR 0048). |
 | Human touchpoint | A gate where a person reviews the spec, the code or the product. |
 | Foreman | The orchestrator that runs the stages of a factory as durable workflows. |
 | Harness | A coding-agent program that runs the inner tool loop, such as Claude Code, Codex or OpenCode. |

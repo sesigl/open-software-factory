@@ -6,7 +6,7 @@ import type { Launch } from "./launch.ts";
 export interface HttpResponse {
   status: number;
   headers: Record<string, string>;
-  /** Parsed JSON when the response says `application/json`, else the text. */
+  /** Parsed JSON when the response says `application/json` or a `+json` type, else the text. */
   body: unknown;
 }
 
@@ -16,6 +16,8 @@ export interface Http {
    * listens on 127.0.0.1:PORT. Returns the base URL. The server stops when the scenario ends.
    */
   start(args?: string[], options?: { env?: Record<string, string> }): Promise<string>;
+  /** Stops the server, if it runs, so the test can start it again, for example with another environment. */
+  stop(): Promise<void>;
   request(
     method: string,
     path: string,
@@ -42,6 +44,11 @@ export function makeHttp(launch: Launch, onStop: (stop: () => Promise<unknown>) 
       onStop(() => started.stop());
       return base();
     },
+    async stop() {
+      const running = server;
+      server = undefined;
+      await running?.stop();
+    },
     async request(method, path, options = {}) {
       const response = await fetch(new URL(path, base()), {
         method,
@@ -52,7 +59,7 @@ export function makeHttp(launch: Launch, onStop: (stop: () => Promise<unknown>) 
         body: options.body === undefined ? undefined : JSON.stringify(options.body),
       });
       const text = await response.text();
-      const json = response.headers.get("content-type")?.includes("application/json");
+      const json = /^application\/(?:[\w.-]+\+)?json/.test(response.headers.get("content-type") ?? "");
       return {
         status: response.status,
         headers: Object.fromEntries(response.headers),

@@ -2,30 +2,13 @@
 // changed it afterwards; anyone with the public key checks it.
 import { createPrivateKey, createPublicKey, generateKeyPairSync, type KeyObject, sign, verify } from "node:crypto";
 import { UsageError } from "@opensoftware/cli";
+import type { GateRecord } from "@opensoftware/contracts";
+import { deciderOf } from "./events.ts";
 import type { Decided, Gate } from "./gate.ts";
 import { canonical, sha256 } from "./json.ts";
 import { toIso } from "./time.ts";
 
-export interface GateRecord {
-  gate: string;
-  workItem: string;
-  stage: string;
-  summary: string;
-  /** SHA-256 of the canonical request: what was approved. */
-  request: string;
-  policy: string;
-  /** SHA-256 of the policy's text: the rules that picked the approvers. */
-  policyDigest: string;
-  risk?: string;
-  approvers: string[];
-  channel: string;
-  requestedAt: string;
-  decision: "approved" | "rejected" | "expired";
-  decidedBy?: { kind: "person" | "trigger"; id: string };
-  decidedAt: string;
-  reason?: string;
-  signature?: { algorithm: "Ed25519"; key: string; value: string };
-}
+export type { GateRecord };
 
 export function buildRecord(
   gate: Gate,
@@ -46,10 +29,7 @@ export function buildRecord(
     channel: context.channel,
     requestedAt: toIso(context.requestedAt),
     decision: outcome.state,
-    decidedBy:
-      outcome.state === "expired"
-        ? undefined
-        : { kind: outcome.by.startsWith("policy:") ? "trigger" : "person", id: outcome.by },
+    decidedBy: outcome.state === "expired" ? undefined : deciderOf(outcome.by),
     decidedAt: toIso(outcome.at),
     reason: outcome.state === "rejected" ? outcome.reason : undefined,
   };
@@ -62,6 +42,10 @@ const signedText = (record: GateRecord): Buffer => {
   const { signature: _, ...rest } = record;
   return Buffer.from(canonical(rest));
 };
+
+/** The record signed with the key, or as it is without a key. */
+export const signWith = (record: GateRecord, key: string | undefined): GateRecord =>
+  key ? signRecord(record, key) : record;
 
 export function signRecord(record: GateRecord, privateKeyPem: string): GateRecord {
   let key: KeyObject;

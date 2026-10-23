@@ -137,5 +137,30 @@ export interface Channel extends Speech {
   /** The messages after the request, oldest first. */
   thread(request: Message): Promise<Message[]>;
   /** Posts the text with the marker: in the request's thread when given, else as a new message. */
-  post(text: string, marker: string, request?: Message): Promise<Message>;
+  post(text: string, marker: string, request?: Message, buttons?: Button[]): Promise<Message>;
 }
+
+/** A button under a message; a press decides like a reply with its verb (ADR 0048). */
+export interface Button {
+  /** "gatekeeper.approve" or "gatekeeper.reject". */
+  actionId: string;
+  text: string;
+  /** The gate's ID. */
+  value: string;
+  style: "primary" | "danger";
+}
+
+const VERBS: Record<string, string> = { "gatekeeper.approve": "approve", "gatekeeper.reject": "reject" };
+
+export const decisionButtons = (gate: string): Button[] => [
+  { actionId: "gatekeeper.approve", text: "Approve", value: gate, style: "primary" },
+  { actionId: "gatekeeper.reject", text: "Reject", value: gate, style: "danger" },
+];
+
+/** A press of a decision button, as the message a reply with its verb would be. */
+export function pressMessage(press: { actionId: string; author: string; ts: string; time: number }): Message {
+  return { id: press.ts, author: press.author, time: press.time, text: VERBS[press.actionId] ?? "", mine: false };
+}
+
+/** The verb of a decision button, or undefined for any other action. */
+export const isDecisionButton = (actionId: string): boolean => Object.hasOwn(VERBS, actionId);
