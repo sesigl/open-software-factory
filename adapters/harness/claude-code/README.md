@@ -8,7 +8,7 @@ Runs Claude Code behind the factory's harness port. The client talks ACP to `har
 the adapter starts Claude Code through its ACP bridge `@agentclientprotocol/claude-agent-acp` behind the harness
 proxy. Every session asks before each edit and command, a tool allowlist holds whatever the agent tries, a cancelled
 turn ends within 5 seconds, and each session exports as a run record with the tokens and the cost Claude Code
-reported. Decision: [ADR 0051](../../../docs/decisions/0051-harness-claude-code.md). The port's scenarios are in
+reported. Decision: [ADR 0052](../../../docs/decisions/0052-harness-claude-code.md). The port's scenarios are in
 [`ports/harness/features/`](../../../ports/harness/features/harness.feature).
 
 ## Quick start

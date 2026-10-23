@@ -1,6 +1,6 @@
 # AGENTS.md for adapter `harness/claude-code`
 
-Adds rules for this adapter. The root `AGENTS.md` applies in full. Decision: ADR 0051.
+Adds rules for this adapter. The root `AGENTS.md` applies in full. Decision: ADR 0052.
 
 ## Public surface
 

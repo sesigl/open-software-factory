@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// harness-acp <command>: runs the ACP agent named on its command line behind the harness proxy (ADR 0050, ADR 0051).
+// harness-acp <command>: runs the ACP agent named on its command line behind the harness proxy (ADR 0050, ADR 0052).
 import { check } from "@opensoftware/cli";
 import { runAdapter } from "@opensoftware/harness-proxy";
 

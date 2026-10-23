@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// harness-claude-code <command>: runs Claude Code through its ACP bridge behind the harness proxy (ADR 0051).
+// harness-claude-code <command>: runs Claude Code through its ACP bridge behind the harness proxy (ADR 0052).
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { NewSessionRequest } from "@agentclientprotocol/sdk";

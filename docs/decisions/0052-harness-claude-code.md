@@ -3,7 +3,7 @@ status: accepted
 date: 2026-10-23
 ---
 
-# 0051. The harness proxy becomes a library, Claude Code is the second adapter, and the scripted harness stays in the testkit
+# 0052. The harness proxy becomes a library, Claude Code is the second adapter, and the scripted harness stays in the testkit
 
 ## Context
 

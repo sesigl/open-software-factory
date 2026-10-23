@@ -420,12 +420,12 @@ read them for ideas, do not copy their company-specific rules.
     the transcript export as a run record with its outcomes, the allowlist's and the client's decisions in the transcript), the generic adapter
     `adapters/harness/acp` with its npm release, `sut.acp` and the scripted harness's tool calls, steering, cancel and
     stop reasons in the testkit (ADR 0050, `SCN-HARNESS-001` to `-013`, `SCN-TK-056` to `-064`).
-  - [x] `scripted` (core): done by ADR 0051. The scripted harness is the `acp` adapter with the testkit's scripted
+  - [x] `scripted` (core): done by ADR 0052. The scripted harness is the `acp` adapter with the testkit's scripted
     agent behind it; a separate package would copy the testkit or depend on it in a cycle.
   - [x] The proxy library `packages/harness-proxy` with its npm release, usage and cost in the run record, and
     `claude-code` (optional): the pinned `claude-agent-acp` behind the proxy in Claude Code's mode `default`, its
     own settings folder and the model gateway settings; conformance against the real Claude Code with the testkit's
-    new Anthropic Messages API (ADR 0051, `SCN-HPROXY-001` to `-017`, `SCN-HCLAUDE-001` to `-004`,
+    new Anthropic Messages API (ADR 0052, `SCN-HPROXY-001` to `-017`, `SCN-HCLAUDE-001` to `-004`,
     `SCN-HARNESS-014`, `SCN-HACP-001` and `-002`, `SCN-TK-065` to `-071`).
   - [ ] `codex`, `opencode` (optional): the products' ACP bridges behind the proxy, their permission modes and model
     gateway settings; conformance against the real CLIs with a scripted gateway for their APIs.

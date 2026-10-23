@@ -5,7 +5,7 @@ covers: [ports/harness/**]
 # harness port
 
 How the factory runs a coding agent headless: one protocol for every harness. Decisions:
-[ADR 0050](../../docs/decisions/0050-harness-port.md), [ADR 0051](../../docs/decisions/0051-harness-claude-code.md).
+[ADR 0050](../../docs/decisions/0050-harness-port.md), [ADR 0052](../../docs/decisions/0052-harness-claude-code.md).
 
 ## The interface
 
@@ -41,4 +41,4 @@ shows conformance with `testkit conformance <its copy of this features folder> -
 | [`claude-code`](../../adapters/harness/claude-code/README.md) | optional | Claude Code through its ACP bridge, asking before each edit and command |
 | `codex`, `opencode` | optional | The products' ACP bridges with their own settings (planned, T-12) |
 
-The scripted harness for deterministic runs is `acp` with the testkit's scripted agent (ADR 0051).
+The scripted harness for deterministic runs is `acp` with the testkit's scripted agent (ADR 0052).

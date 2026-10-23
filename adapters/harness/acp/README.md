@@ -8,7 +8,7 @@ Runs any coding agent that speaks the Agent Client Protocol (ACP) behind the fac
 talks ACP to `harness-acp` as to the agent itself; the adapter adds a tool allowlist the agent cannot get around,
 ends a cancelled turn within 5 seconds, exits with its agent, and exports each session as a run record. It runs the shared
 [`harness-proxy`](../../../packages/harness-proxy/README.md). Decisions:
-[ADR 0050](../../../docs/decisions/0050-harness-port.md), [ADR 0051](../../../docs/decisions/0051-harness-claude-code.md). The port's scenarios are in
+[ADR 0050](../../../docs/decisions/0050-harness-port.md), [ADR 0052](../../../docs/decisions/0052-harness-claude-code.md). The port's scenarios are in
 [`ports/harness/features/`](../../../ports/harness/features/harness.feature).
 
 ## Quick start
@@ -85,4 +85,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 
 The adapter passes every `@conformance` scenario of the harness port (`testkit conformance ../../../ports/harness/features`)
 and its own scenario in `features/`. The scripted harness for deterministic runs is this adapter with the testkit's
-scripted agent: `harness-acp run -- <fakes.harness() command>` (ADR 0051).
+scripted agent: `harness-acp run -- <fakes.harness() command>` (ADR 0052).
