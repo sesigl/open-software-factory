@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.14.0...testkit-v0.15.0) (2026-10-23)
+
+
+### Features
+
+* **harness:** T-12 the codex and opencode adapters ([#93](https://github.com/sesigl/open-software-factory/issues/93)) ([8faf29d](https://github.com/sesigl/open-software-factory/commit/8faf29d504e36eae031ca6237268ba6db0760096))
+
 ## [0.14.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.13.0...testkit-v0.14.0) (2026-10-23)
 
 
