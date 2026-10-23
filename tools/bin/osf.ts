@@ -18,7 +18,7 @@ const USAGE = `Usage: osf <command>
   new-module <name> [--prefix PREFIX]
   next-id <module>        print the next free scenario ID of a module or prefix
   test-scenario <ID>      run the one system test of a scenario
-  mutation <folder> [--all] [--list]
+  mutation <folder> [--all] [--list] [--shard i/n]
                           Stryker on the lines of a module changed since OSF_BASE (--all: every line)
   install-tools           download the pinned lychee, oasdiff and opa binaries into .tools/bin
 `;
