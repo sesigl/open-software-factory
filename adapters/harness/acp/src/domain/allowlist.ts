@@ -6,11 +6,11 @@ export type Allowlist = ReadonlySet<string> | undefined;
 
 /** The kinds of `--allow read,edit`, or no allowlist when the option is missing. */
 export const allowlistOf = (text: string | undefined): Allowlist =>
-  text === undefined ? undefined : new Set(text.split(",").map((kind) => kind.trim()));
+  text === undefined ? undefined : new Set(text.split(","));
 
-/** Whether the client may be asked to approve a tool call of this kind. A tool call without a kind is "other". */
+/** Whether the client may be asked to approve a tool call of this kind. An allowlist refuses one without a kind. */
 export const permits = (allowlist: Allowlist, kind: ToolKind | null | undefined): boolean =>
-  allowlist === undefined || allowlist.has(kind ?? "other");
+  allowlist === undefined || allowlist.has(kind as string);
 
 /** The answer the adapter gives itself for a tool call the allowlist refuses: the agent's reject option. */
 export function refusal(options: PermissionOption[]): RequestPermissionOutcome {
@@ -18,9 +18,9 @@ export function refusal(options: PermissionOption[]): RequestPermissionOutcome {
   return reject ? { outcome: "selected", optionId: reject.optionId } : { outcome: "cancelled" };
 }
 
-/** What the client's answer means for the tool call. */
+/** What the client's answer means for the tool call: only an allow option allows it. */
 export function decisionOf(options: PermissionOption[], outcome: RequestPermissionOutcome): Decision {
-  if (outcome.outcome === "cancelled") return "cancelled";
+  if (outcome.outcome !== "selected") return "refused";
   const chosen = options.find((option) => option.optionId === outcome.optionId);
   return chosen?.kind.startsWith("allow") ? "allowed" : "refused";
 }

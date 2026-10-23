@@ -21,10 +21,9 @@ const { positionals, values } = parseArgs({
 });
 const [name, ...rest] = positionals;
 
-const run = async () => {
+const run = () => {
   check(rest.length > 0, "name the ACP agent to run after --");
-  await runProxy(rest, allowlistOf(values.allow));
-  return { lines: [] };
+  return runProxy(rest, allowlistOf(values.allow));
 };
 
 const transcript = () => {
@@ -46,6 +45,6 @@ const commands: Record<string, Command> = { run, transcript };
 process.exitCode = await runProgram({
   name: "harness-acp",
   usage: USAGE,
-  command: name === undefined ? undefined : commands[name],
+  command: commands[name as string],
   help: values.help,
 });

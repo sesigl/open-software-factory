@@ -1,4 +1,3 @@
-import { fileURLToPath } from "node:url";
 import { validate } from "@opensoftware/contracts";
 import { type CliResult, scenario } from "@opensoftware/testkit";
 
@@ -8,7 +7,7 @@ const RESOURCE =
 scenario("SCN-HARNESS-007", async ({ sut, fakes, given, when, then }) => {
   let sessionId = "";
   await given(
-    `the adapter ran a session with the prompt "fix the typo" and the resource attributes "${RESOURCE}"`,
+    'the adapter ran a session with the prompt "fix the typo" and the resource attributes "osf.run.id=run-1,osf.work_item.id=wi-1,osf.factory.version=3f2a9c1,osf.requester.kind=person,osf.requester.id=slack:U024BE7LH,osf.source=slack"',
     async () => {
       const harness = await fakes.harness([{ when: "fix the typo", reply: "done" }]);
       const client = await sut.acp.connect(["run", "--", harness.command, ...harness.args], {
@@ -30,6 +29,10 @@ scenario("SCN-HARNESS-007", async ({ sut, fakes, given, when, then }) => {
     '"$OUTPUT/run-record.json" is a valid "run-record" with "osf.run.id" "run-1", "osf.harness.name" "acp" and "osf.outcome" "succeeded"',
     async () => {
       expect(run.exitCode, run.stderr).toBe(0);
+      const written = ["run-record.json", "transcript.jsonl"].map(
+        (file) => `wrote ${sut.files.path(`$OUTPUT/${file}`)}`,
+      );
+      expect(run.stdout).toBe(`${written.join("\n")}\n`);
       record = JSON.parse(await sut.files.read("$OUTPUT/run-record.json"));
       expect(validate("run-record", record)).toEqual([]);
       expect(record.resource["service.name"]).toBe("harness-acp");
@@ -47,14 +50,18 @@ scenario("SCN-HARNESS-007", async ({ sut, fakes, given, when, then }) => {
   await then(
     'its "osf.transcript.uri" is the file "$OUTPUT/transcript.jsonl", which holds the prompt "fix the typo"',
     async () => {
-      expect(fileURLToPath(record.span["osf.transcript.uri"] as string)).toBe(
-        sut.files.path("$OUTPUT/transcript.jsonl"),
-      );
+      const uri = new URL(record.span["osf.transcript.uri"] as string);
+      expect(uri.protocol).toBe("file:");
+      expect(decodeURIComponent(uri.pathname)).toBe(sut.files.path("$OUTPUT/transcript.jsonl"));
       const lines = (await sut.files.read("$OUTPUT/transcript.jsonl"))
         .trim()
         .split("\n")
         .map((line) => JSON.parse(line));
-      expect(lines).toContainEqual({ type: "prompt", text: "fix the typo" });
+      expect(lines).toContainEqual({ type: "prompt", prompt: [{ type: "text", text: "fix the typo" }] });
+      expect(lines).toContainEqual({
+        type: "update",
+        update: { sessionUpdate: "agent_message_chunk", content: { type: "text", text: "done" } },
+      });
       expect(lines.at(-1)).toEqual({ type: "stop", stopReason: "end_turn" });
     },
   );

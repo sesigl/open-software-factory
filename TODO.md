@@ -415,11 +415,11 @@ read them for ideas, do not copy their company-specific rules.
 - **Done when:** all five adapters pass conformance; claude-code, codex and opencode also in SMOKE-PAID.
 - **From T-03:** `factory plan` pins harnesses by ACP Registry ID in `factory.lock` (ADR 0022).
 - **Slices:**
-  - [x] The port as ACP on stdio with adapters as ACP proxies, its ten `@conformance` scenarios (session in a working
-    folder, allowlist refusal and client approval, steering, cancel within 5 seconds also for an agent that ignores it,
-    the transcript export as a run record with its outcomes, the refusal in the transcript), the generic adapter
+  - [x] The port as ACP on stdio with adapters as ACP proxies, its thirteen `@conformance` scenarios (session in a working
+    folder, allowlist refusal and client approval, steering, cancel within 5 seconds also for an agent that ignores it, the next prompt after a cancel,
+    the transcript export as a run record with its outcomes, the allowlist's and the client's decisions in the transcript), the generic adapter
     `adapters/harness/acp` with its npm release, `sut.acp` and the scripted harness's tool calls, steering, cancel and
-    stop reasons in the testkit (ADR 0050, `SCN-HARNESS-001` to `-010`, `SCN-TK-056` to `-063`).
+    stop reasons in the testkit (ADR 0050, `SCN-HARNESS-001` to `-013`, `SCN-TK-056` to `-064`).
   - [ ] `scripted` (core): the scripted agent of the testkit behind the proxy for the deterministic smoke runs (T-20);
     move the proxy into a library in `packages/` when this second adapter needs it.
   - [ ] `claude-code`, `codex`, `opencode` (optional): the products' ACP bridges behind the proxy, their permission

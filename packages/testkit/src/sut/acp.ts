@@ -1,5 +1,6 @@
 // sut.acp: the module as an ACP agent over stdio, driven by the official ACP client (ADR 0050).
 import { spawn } from "node:child_process";
+import { once } from "node:events";
 import { mkdirSync } from "node:fs";
 import { Readable, Writable } from "node:stream";
 import { client, ndJsonStream, PROTOCOL_VERSION, type StopReason, type ToolKind } from "@agentclientprotocol/sdk";
@@ -34,6 +35,8 @@ export interface AcpClient {
   newSession(cwd?: string): Promise<AcpSession>;
   /** Every tool call the agent asked the client to approve, in order. */
   permissionRequests(): AcpPermissionRequest[];
+  /** Waits until the module's process exits and gives its exit code. */
+  exited(): Promise<number | null>;
 }
 
 export interface Acp {
@@ -54,6 +57,7 @@ export function makeAcp(
     async connect(args = [], options = {}) {
       const { command, argv, cwd, env } = launch(args, options.env);
       const child = spawn(command, argv, { cwd, env, stdio: ["pipe", "pipe", "pipe"] });
+      const exit = once(child, "exit").then(([code]) => code as number | null);
       let stderr = "";
       child.stderr.on("data", (chunk) => (stderr += chunk));
       const listeners = new Map<string, Set<(text: string) => void>>();
@@ -77,8 +81,11 @@ export function makeAcp(
             Readable.toWeb(child.stdout) as ReadableStream<Uint8Array>,
           ),
         );
+      // Hang up first and give the module a second to stop on its own, as a client that ends would.
       onStop(async () => {
         connection.close();
+        child.stdin.end();
+        await Promise.race([exit, new Promise((resolve) => setTimeout(resolve, 1000))]);
         child.kill();
       });
       const { agent } = connection;
@@ -92,6 +99,7 @@ export function makeAcp(
       return {
         agent: { name: initialized.agentInfo?.name, version: initialized.agentInfo?.version },
         permissionRequests: () => [...requests],
+        exited: () => exit,
         async newSession(folder = "$INPUT") {
           const sessionCwd = inside(folder);
           mkdirSync(sessionCwd, { recursive: true });

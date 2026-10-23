@@ -27,4 +27,8 @@ scenario("SCN-HARNESS-006", async ({ sut, fakes, given, when, then }) => {
     expect(turn.stopReason).toBe("cancelled");
     expect(seconds).toBeLessThan(5);
   });
+
+  await then("the adapter exits with code 0", async () => {
+    expect(await client.exited()).toBe(0);
+  });
 });

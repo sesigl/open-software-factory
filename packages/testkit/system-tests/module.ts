@@ -335,7 +335,8 @@ export function acpClientModule(steps: string[], test: string[]): Record<string,
 /**
  * Module demo whose bin is an ACP agent on stdio named "demo" 0.1.0. Its one session is "s1". It answers the prompt
  * `greet <name>` with the reply "hello <name> from <name of the session's folder>"; for "clean up" it asks the client
- * to approve the tool "rm -rf build" of kind "execute" and replies with the option the client chose; for "wait" it keeps
+ * to approve the tool "rm -rf build" of kind "execute" and replies with the option the client chose; for "bye" it answers
+ * and exits with code 3; for "wait" it keeps
  * the turn running until the session is cancelled. Every turn ends with "end_turn", a cancelled one with "cancelled".
  * Its test runs `test` (TypeScript lines) for SCN-DEMO-001 with `steps`.
  */
@@ -364,6 +365,9 @@ export function acpAgentModule(steps: string[], test: string[]): Record<string, 
       '    if (text.startsWith("greet ")) {',
       '      chunk(`hello ${text.slice("greet ".length)} from ${basename(cwd)}`);',
       '      send({ id: message.id, result: { stopReason: "end_turn" } });',
+      '    } else if (text === "bye") {',
+      '      send({ id: message.id, result: { stopReason: "end_turn" } });',
+      "      setTimeout(() => process.exit(3), 50);",
       '    } else if (text === "clean up") {',
       "      approved = (optionId) => {",
       "        chunk(optionId);",

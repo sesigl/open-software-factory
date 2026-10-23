@@ -6,7 +6,7 @@ covers: [adapters/harness/acp/src/**]
 
 Runs any coding agent that speaks the Agent Client Protocol (ACP) behind the factory's harness port. The client
 talks ACP to `harness-acp` as to the agent itself; the adapter adds a tool allowlist the agent cannot get around,
-ends a cancelled turn within 5 seconds, and exports each session as a run record. Decision:
+ends a cancelled turn within 5 seconds, exits with its agent, and exports each session as a run record. Decision:
 [ADR 0050](../../../docs/decisions/0050-harness-port.md). The port's scenarios are in
 [`ports/harness/features/`](../../../ports/harness/features/harness.feature).
 
@@ -35,18 +35,18 @@ It writes `$OUTPUT/run-record.json` and `$OUTPUT/transcript.jsonl`.
 - **The agent works in its folder itself.** The adapter offers it no client file system and no terminal, whatever
   the client offers.
 - **The allowlist.** With `--allow <kinds>`, a permission request for a tool call of an ACP tool kind outside the list
-  (`read`, `edit`, `delete`, `move`, `search`, `execute`, `think`, `fetch`, `switch_mode`, `other`; no kind counts as
-  `other`) gets the agent's reject option from the adapter, and the client is never asked. Without `--allow`, the
+  (`read`, `edit`, `delete`, `move`, `search`, `execute`, `think`, `fetch`, `switch_mode`, `other`; a tool call without
+  a kind is outside every list) gets the agent's reject option from the adapter, and the client is never asked. Without `--allow`, the
   client decides every tool call. The allowlist only sees tool calls the agent asks about.
 - **Cancel.** `session/cancel` goes to the agent. When the turn has not ended 3 seconds later, the adapter stops the
-  agent, ends the turn with `cancelled` and exits.
-- **The session record.** Every prompt, update, permission decision (`allowed`, `refused`, `refused by the allowlist`,
-  `cancelled`) and stop reason is one JSON line in `OSF_DATA/sessions/<session ID>.jsonl`, after a first line with the
+  agent, ends the turn with `cancelled` and exits. The adapter always exits when its agent does,
+  and stops the agent when the client hangs up.
+- **The session record.** Every prompt, update, permission decision (`allowed`, `refused` or `refused by the allowlist`) and stop reason is one JSON line in `OSF_DATA/sessions/<session ID>.jsonl`, after a first line with the
   folder, the agent's name and version, and the resource attributes of the run.
 - **The run record.** `transcript` writes a valid `run-record` (contracts): the resource of the session with
   `osf.harness.name` `acp` and `osf.harness.version` the agent's version, `gen_ai.conversation.id` the session ID,
   `osf.outcome` from the last stop reason (`end_turn` is `succeeded`, `cancelled` is `cancelled`, anything else is
-  `failed`), and `osf.transcript.uri` the `file:` URL of `transcript.jsonl`, a copy of the session record.
+  `failed`, and so is a session that is still in a turn), and `osf.transcript.uri` the `file:` URL of `transcript.jsonl`, a copy of the session record.
 
 ## Commands
 

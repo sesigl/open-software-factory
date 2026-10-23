@@ -1,6 +1,6 @@
 // The session records in the data folder OSF_DATA (default .harness-acp): sessions/<session ID>.jsonl.
 import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { detectResources, envDetector } from "@opentelemetry/resources";
 import type { SessionLine } from "../domain/session.ts";
 
@@ -9,7 +9,7 @@ const fileOf = (sessionId: string): string =>
 
 export function append(sessionId: string, line: SessionLine): void {
   const file = fileOf(sessionId);
-  mkdirSync(resolve(file, ".."), { recursive: true });
+  mkdirSync(dirname(file), { recursive: true });
   appendFileSync(file, `${JSON.stringify(line)}\n`);
 }
 
