@@ -94,3 +94,4 @@ the GitHub environment `npm`, a token only for the first version, then a trusted
 | SCN-HPROXY-010 | implemented | The run record sums the tokens of the turns and takes the session's last cost |
 | SCN-HPROXY-011 | implemented | The transcript has the decisions of the client and of the allowlist |
 | SCN-HPROXY-012 | implemented | The transcript has a tool call the client refused |
+| SCN-HPROXY-013 | implemented | The run record of a session that is still in a turn has the outcome "failed" |

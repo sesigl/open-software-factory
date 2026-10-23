@@ -43,12 +43,13 @@ Three facts shape the next step:
 - **The adapter `adapters/harness/claude-code`** (`@opensoftware/harness-claude-code`, optional, prefix
   `SCN-HCLAUDE`): `harness-claude-code run [--allow <kinds>]` starts the pinned `claude-agent-acp` behind the proxy.
   - **Permission mode.** Every session starts in Claude Code's mode `default`, which asks before each edit and
-    command, with `allowDangerouslySkipPermissions` off. A `defaultMode` in the folder's `.claude/settings.json`
-    does not change it, and the proxy passes no `session/set_mode`, so a client cannot switch the mode either.
-    Allow rules in the folder's settings still run their tools without asking; that is the repository's choice.
-  - **Settings.** `CLAUDE_CONFIG_DIR` is `OSF_DATA/claude`, so no user settings, logins or memory of the machine
-    reach the session. `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` is `1`, so Claude Code calls nothing but the
-    model.
+    command. The adapter turns `allowDangerouslySkipPermissions` off in each `session/new`, and the proxy passes no
+    `session/set_mode`, so a client cannot leave that mode. Claude Code itself ignores a `defaultMode` in the
+    folder's settings that would ask less. Allow rules in the folder's settings still run their tools without
+    asking; that is the repository's choice, and the allowlist does not see those calls.
+  - **Settings.** `CLAUDE_CONFIG_DIR` is `OSF_DATA/claude`, so the user settings, logins and memory of the machine
+    never reach the session; user settings could otherwise raise the mode. `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`
+    is `1`, so Claude Code calls nothing but the model.
   - **Model gateway.** `ANTHROPIC_BASE_URL`, `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` pass through. The inference
     port (T-14) gives the URL of its Anthropic-compatible endpoint and a gateway key; the sandbox (T-13) replaces
     placeholders with real secrets at the egress proxy.
@@ -73,7 +74,8 @@ Three facts shape the next step:
 
 - `@agentclientprotocol/claude-agent-acp` 0.94.0 (Apache-2.0, ACP project, released weekly, active): adopted as
   the agent behind the `claude-code` adapter. It runs Claude Code through `@anthropic-ai/claude-agent-sdk` 0.3.303
-  ("SEE LICENSE IN README.md": Anthropic's terms; its platform package carries the Claude Code binary), which it installs.
+  (license "SEE LICENSE IN README.md", Anthropic's terms; its platform package carries the Claude Code binary),
+  which it installs.
 - `@agentclientprotocol/sdk` (Apache-2.0, ACP project, active): kept at 1.9.0 for the proxy; it speaks ACP v1 with
   the bridge, which uses 2.0.0. An upgrade is its own change.
 - acpx (MIT, openclaw, alpha) and Zed's ACP client (GPL-3.0, active): clients, checked again; neither gives the
@@ -90,7 +92,8 @@ Three facts shape the next step:
 
 - foreman runs Claude Code with the same client and rules as any ACP agent, and the run record gets tokens and
   cost without product-specific code.
-- The `claude-code` adapter's install is large: the Claude Agent SDK brings the Claude Code binary (about 270 MB on linux-x64).
+- The `claude-code` adapter's install is large: the Claude Agent SDK brings the Claude Code binary (about 270 MB on
+  linux-x64).
   It is an optional adapter.
 - Claude Code's own messages, system prompt and request shape change with each bridge version. The conformance
   tests match prompts by text and tool calls by name, so a bridge upgrade is a normal pull request that runs them.

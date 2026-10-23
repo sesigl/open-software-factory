@@ -105,6 +105,20 @@
       "component": "harness-acp",
       "initial-version": "0.1.0",
       "bump-minor-pre-major": true
+    },
+    "packages/harness-proxy": {
+      "release-type": "node",
+      "package-name": "@opensoftware/harness-proxy",
+      "component": "harness-proxy",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
+    },
+    "adapters/harness/claude-code": {
+      "release-type": "node",
+      "package-name": "@opensoftware/harness-claude-code",
+      "component": "harness-claude-code",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
     }
   }
 }

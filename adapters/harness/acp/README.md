@@ -6,8 +6,9 @@ covers: [adapters/harness/acp/src/**]
 
 Runs any coding agent that speaks the Agent Client Protocol (ACP) behind the factory's harness port. The client
 talks ACP to `harness-acp` as to the agent itself; the adapter adds a tool allowlist the agent cannot get around,
-ends a cancelled turn within 5 seconds, exits with its agent, and exports each session as a run record. Decision:
-[ADR 0050](../../../docs/decisions/0050-harness-port.md). The port's scenarios are in
+ends a cancelled turn within 5 seconds, exits with its agent, and exports each session as a run record. It runs the shared
+[`harness-proxy`](../../../packages/harness-proxy/README.md). Decisions:
+[ADR 0050](../../../docs/decisions/0050-harness-port.md), [ADR 0051](../../../docs/decisions/0051-harness-claude-code.md). The port's scenarios are in
 [`ports/harness/features/`](../../../ports/harness/features/harness.feature).
 
 ## Quick start
@@ -46,7 +47,9 @@ It writes `$OUTPUT/run-record.json` and `$OUTPUT/transcript.jsonl`.
 - **The run record.** `transcript` writes a valid `run-record` (contracts): the resource of the session with
   `osf.harness.name` `acp` and `osf.harness.version` the agent's version, `gen_ai.conversation.id` the session ID,
   `osf.outcome` from the last stop reason (`end_turn` is `succeeded`, `cancelled` is `cancelled`, anything else is
-  `failed`, and so is a session that is still in a turn), and `osf.transcript.uri` the `file:` URL of `transcript.jsonl`, a copy of the session record.
+  `failed`, and so is a session that is still in a turn), the tokens and the cost the agent reported, if any, in
+  `gen_ai.usage.*` and `osf.cost.usd`, and `osf.transcript.uri` the `file:` URL of `transcript.jsonl`, a copy of the
+  session record.
 
 ## Commands
 
@@ -80,4 +83,6 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 
 ## Scenarios
 
-The adapter passes every `@conformance` scenario of the harness port: `testkit conformance ../../../ports/harness/features`.
+The adapter passes every `@conformance` scenario of the harness port (`testkit conformance ../../../ports/harness/features`)
+and its own scenario in `features/`. The scripted harness for deterministic runs is this adapter with the testkit's
+scripted agent: `harness-acp run -- <fakes.harness() command>` (ADR 0051).
