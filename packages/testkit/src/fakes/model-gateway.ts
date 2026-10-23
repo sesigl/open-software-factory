@@ -1,14 +1,14 @@
-// A scripted model gateway on 127.0.0.1 with an OpenAI-compatible chat completions API and the Anthropic Messages
-// API (ADR 0052). It answers only the calls its script names; any other call fails the scenario with the request it
-// received.
+// A scripted model gateway on 127.0.0.1 with an OpenAI-compatible chat completions API, the OpenAI Responses API and
+// the Anthropic Messages API (ADR 0052, ADR 0053). It answers only the calls its script names; any other call fails the
+// scenario with the request it received.
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 
 export interface ScriptedTool {
   /** The name of the tool the model calls, for example "Write". */
   name: string;
-  /** The input of the call. */
-  input: Record<string, unknown>;
+  /** The input of the call. On the Responses API a text input is a custom tool call, such as Codex's apply_patch. */
+  input: Record<string, unknown> | string;
 }
 
 export interface ScriptedReply {
@@ -18,11 +18,14 @@ export interface ScriptedReply {
   reply: string;
   /** The token usage the reply reports. Default: 0 prompt and 0 completion tokens. */
   usage?: { prompt_tokens: number; completion_tokens: number };
-  /** Messages API: the tool calls the model asks for after its text, in order. */
+  /** Streamed calls: the tool calls the model asks for after its text, in order. */
   tools?: ScriptedTool[];
-  /** Messages API: the stop reason; by default "tool_use" with tool calls and "end_turn" without. */
+  /**
+   * Messages API and streamed chat completions: the stop reason, for example "refusal" or "content_filter". By default
+   * "tool_use" or "tool_calls" with tool calls, and "end_turn" or "stop" without.
+   */
   stopReason?: string;
-  /** Messages API: the gateway never answers the call, so the caller has to give up. */
+  /** Streamed calls: the gateway never answers the call, so the caller has to give up. */
   hangs?: boolean;
 }
 
@@ -47,10 +50,11 @@ const CREATED = 1_767_225_600;
 export async function startModelGateway(script: ScriptedReply[]): Promise<RunningGateway> {
   const calls: ModelGateway["calls"] = [];
   const unscripted: string[] = [];
-  // A Messages call takes the first matching entry that has not answered one yet, so a tool loop scripts one entry
-  // per model call. When every matching entry has answered, the last of them answers again.
+  // A streamed call (Messages, Responses, streamed chat completions) takes the first matching entry that has not
+  // answered one yet, so a tool loop scripts one entry per model call. When every matching entry has answered, the
+  // last of them answers again.
   const answered = new Set<ScriptedReply>();
-  const messagesReply = (body: string): ScriptedReply | undefined => {
+  const nextReply = (body: string): ScriptedReply | undefined => {
     const matching = script.filter((entry) => body.includes(entry.when));
     const next = matching.find((entry) => !answered.has(entry)) ?? matching.at(-1);
     if (next) answered.add(next);
@@ -62,11 +66,12 @@ export async function startModelGateway(script: ScriptedReply[]): Promise<Runnin
     const path = request.url ?? "/";
     calls.push({ path, body });
     const route = request.method === "POST" ? path.split("?")[0] : undefined;
-    if (route === "/v1/messages") {
-      const match = messagesReply(body);
+    const answer = route && streamedAnswers[route];
+    if (answer && (route !== "/v1/chat/completions" || streams(body))) {
+      const match = nextReply(body);
       if (!match) {
         unscripted.push(`unscripted model call: ${request.method} ${path}\n${body}`);
-        // 400, not 500: an Anthropic client retries a server error, but not a request it got wrong.
+        // 400, not 500: an Anthropic or OpenAI client retries a server error, but not a request it got wrong.
         response.writeHead(400, { "content-type": "application/json" });
         response.end(
           JSON.stringify({ type: "error", error: { type: "invalid_request_error", message: "unscripted" } }),
@@ -74,7 +79,7 @@ export async function startModelGateway(script: ScriptedReply[]): Promise<Runnin
         return;
       }
       if (match.hangs) return;
-      answerMessages(response, body, match, `msg_${calls.length}`, () => `toolu_${++toolCalls}`);
+      answer(response, body, match, `${calls.length}`, () => `${++toolCalls}`);
       return;
     }
     const match = route === "/v1/chat/completions" ? script.find((entry) => body.includes(entry.when)) : undefined;
@@ -109,23 +114,25 @@ export async function startModelGateway(script: ScriptedReply[]): Promise<Runnin
   };
 }
 
+/** Answers one scripted call: the response, the call's body, the entry, a number for the reply's ID, tool call IDs. */
+type Answer = (response: ServerResponse, body: string, entry: ScriptedReply, id: string, toolId: () => string) => void;
+
 type Block = { type: "text"; text: string } | { type: "tool_use"; id: string; name: string; input: unknown };
 
+/** Writes one server-sent event; `named` adds the event's type as its `event:` line. */
+function sse(response: ServerResponse, data: Record<string, unknown>, named = true): void {
+  response.write(`${named ? `event: ${data.type}\n` : ""}data: ${JSON.stringify(data)}\n\n`);
+}
+
 /** Answers a Messages API call with the entry's text and tool calls, as a stream when the call asks for one. */
-function answerMessages(
-  response: ServerResponse,
-  body: string,
-  entry: ScriptedReply,
-  id: string,
-  toolId: () => string,
-): void {
+const answerMessages: Answer = (response, body, entry, id, toolId) => {
   const blocks: Block[] = [
     ...(entry.reply ? [{ type: "text" as const, text: entry.reply }] : []),
-    ...(entry.tools ?? []).map((tool) => ({ type: "tool_use" as const, id: toolId(), ...tool })),
+    ...(entry.tools ?? []).map((tool) => ({ type: "tool_use" as const, id: `toolu_${toolId()}`, ...tool })),
   ];
   const stopReason = entry.stopReason ?? (entry.tools?.length ? "tool_use" : "end_turn");
   const { prompt_tokens: input, completion_tokens: output } = entry.usage ?? { prompt_tokens: 0, completion_tokens: 0 };
-  const message = { id, type: "message", role: "assistant", model: modelOf(body) };
+  const message = { id: `msg_${id}`, type: "message", role: "assistant", model: modelOf(body) };
   if (!streams(body)) {
     response.writeHead(200, { "content-type": "application/json" });
     response.end(
@@ -140,9 +147,7 @@ function answerMessages(
     return;
   }
   response.writeHead(200, { "content-type": "text/event-stream" });
-  const event = (type: string, data: Record<string, unknown>): void => {
-    response.write(`event: ${type}\ndata: ${JSON.stringify({ type, ...data })}\n\n`);
-  };
+  const event = (type: string, data: Record<string, unknown>): void => sse(response, { type, ...data });
   event("message_start", {
     message: {
       ...message,
@@ -168,7 +173,91 @@ function answerMessages(
   event("message_delta", { delta: { stop_reason: stopReason, stop_sequence: null }, usage: { output_tokens: output } });
   event("message_stop", {});
   response.end();
-}
+};
+
+/**
+ * Answers a Responses API call as a stream: the entry's text as a message, then a function call for each tool with an
+ * object input and a custom tool call for each tool with a text input, then the usage.
+ */
+const answerResponses: Answer = (response, _body, entry, id, toolId) => {
+  const output: Record<string, unknown>[] = [
+    ...(entry.reply
+      ? [
+          {
+            type: "message",
+            id: `msg_${id}`,
+            role: "assistant",
+            content: [{ type: "output_text", text: entry.reply, annotations: [] }],
+          },
+        ]
+      : []),
+    ...(entry.tools ?? []).map((tool) => {
+      const n = toolId();
+      return typeof tool.input === "string"
+        ? { type: "custom_tool_call", id: `ctc_${n}`, call_id: `call_${n}`, name: tool.name, input: tool.input }
+        : {
+            type: "function_call",
+            id: `fc_${n}`,
+            call_id: `call_${n}`,
+            name: tool.name,
+            arguments: JSON.stringify(tool.input),
+          };
+    }),
+  ];
+  const { prompt_tokens: input, completion_tokens: outputTokens } = entry.usage ?? {
+    prompt_tokens: 0,
+    completion_tokens: 0,
+  };
+  response.writeHead(200, { "content-type": "text/event-stream" });
+  sse(response, { type: "response.created", response: { id: `resp_${id}` } });
+  output.forEach((item, index) => {
+    const message = item.type === "message";
+    sse(response, {
+      type: "response.output_item.added",
+      output_index: index,
+      item: message ? { ...item, content: [] } : item,
+    });
+    // A client shows a message's text from its deltas.
+    if (message) {
+      const delta = { item_id: item.id, output_index: index, content_index: 0, delta: entry.reply };
+      sse(response, { type: "response.output_text.delta", ...delta });
+    }
+    sse(response, { type: "response.output_item.done", output_index: index, item });
+  });
+  const usage = {
+    input_tokens: input,
+    output_tokens: outputTokens,
+    total_tokens: input + outputTokens,
+    input_tokens_details: { cached_tokens: 0 },
+    output_tokens_details: { reasoning_tokens: 0 },
+  };
+  sse(response, { type: "response.completed", response: { id: `resp_${id}`, output, usage } });
+  response.end();
+};
+
+/** Answers a streamed chat completions call with the entry's text, its tool calls, the finish reason and the usage. */
+const answerChat: Answer = (response, body, entry, id, toolId) => {
+  const base = { id: `chatcmpl-${id}`, object: "chat.completion.chunk", created: CREATED, model: modelOf(body) };
+  const chunk = (delta: Record<string, unknown>, finish: string | null = null): void =>
+    sse(response, { ...base, choices: [{ index: 0, delta, finish_reason: finish }] }, false);
+  response.writeHead(200, { "content-type": "text/event-stream" });
+  chunk({ role: "assistant", content: entry.reply });
+  (entry.tools ?? []).forEach((tool, index) => {
+    const call = { name: tool.name, arguments: JSON.stringify(tool.input) };
+    chunk({ tool_calls: [{ index, id: `call_${toolId()}`, type: "function", function: call }] });
+  });
+  chunk({}, entry.stopReason ?? (entry.tools?.length ? "tool_calls" : "stop"));
+  sse(response, { ...base, choices: [], usage: usageOf(entry.usage) }, false);
+  response.write("data: [DONE]\n\n");
+  response.end();
+};
+
+/** The routes whose calls take the next unanswered entry; chat completions only when the call streams. */
+const streamedAnswers: Record<string, Answer> = {
+  "/v1/messages": answerMessages,
+  "/v1/responses": answerResponses,
+  "/v1/chat/completions": answerChat,
+};
 
 function usageOf(usage: ScriptedReply["usage"] = { prompt_tokens: 0, completion_tokens: 0 }) {
   return { ...usage, total_tokens: usage.prompt_tokens + usage.completion_tokens };

@@ -69,3 +69,11 @@ Feature: Scripted coding agent
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-072 @status=implemented
+  Scenario: A scripted turn takes a steering message sent as the request "_session/steering"
+    Given a module whose CLI is an ACP client of the agent in "DEMO_AGENT_COMMAND" that sends "add a date" and, while the turn runs, the request "_session/steering" with "use the existing date helper"
+    And its system test scripts fakes.harness to keep the turn of "add a date" running until it receives "use the existing date helper", and expects "steered injected", "add a date: end_turn" and the steering request "use the existing date helper"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

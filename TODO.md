@@ -400,7 +400,7 @@ read them for ideas, do not copy their company-specific rules.
     `SCN-REPO-062`).
   - Moved: the channel port with Vercel Chat SDK in place of the direct Slack and forge calls, to T-15.
 
-### [ ] T-12 · harness port and adapters
+### [x] T-12 · harness port and adapters
 
 - **Tier / language / path / prefix:** core (`acp`, `scripted`) and optional (`claude-code`, `codex`,
   `opencode`) · TS · `ports/harness/`, `adapters/harness/<name>/` · `SCN-HARNESS`
@@ -412,7 +412,9 @@ read them for ideas, do not copy their company-specific rules.
 - **First scenarios (`@conformance`):** a session starts in a working folder and edits a file on request; a tool
   call outside the allowlist is refused; a steering message reaches a running session; cancel stops the session
   within 5 seconds; the transcript export matches the run record shape.
-- **Done when:** all five adapters pass conformance; claude-code, codex and opencode also in SMOKE-PAID.
+- **Done when:** all five adapters pass conformance; claude-code, codex and opencode also in SMOKE-PAID. Done:
+  `acp` (with the scripted harness, ADR 0052), `claude-code`, `codex` and `opencode` pass conformance; the
+  SMOKE-PAID runs moved to T-21.
 - **From T-03:** `factory plan` pins harnesses by ACP Registry ID in `factory.lock` (ADR 0022).
 - **Slices:**
   - [x] The port as ACP on stdio with adapters as ACP proxies, its thirteen `@conformance` scenarios (session in a working
@@ -427,9 +429,13 @@ read them for ideas, do not copy their company-specific rules.
     own settings folder and the model gateway settings; conformance against the real Claude Code with the testkit's
     new Anthropic Messages API (ADR 0052, `SCN-HPROXY-001` to `-017`, `SCN-HCLAUDE-001` to `-004`,
     `SCN-HARNESS-014`, `SCN-HACP-001` and `-002`, `SCN-TK-065` to `-071`).
-  - [ ] `codex`, `opencode` (optional): the products' ACP bridges behind the proxy, their permission modes and model
-    gateway settings; conformance against the real CLIs with a scripted gateway for their APIs.
-  - [ ] One SMOKE-PAID run each for claude-code, codex and opencode, with the other paid runs of T-21.
+  - [x] `codex`, `opencode` (optional): Codex through `codex-acp` in its mode `read-only` with its own `CODEX_HOME`
+    and steering by `_session/steering`, and opencode through `opencode acp` with every tool but reading asking, above
+    any folder settings; conformance against the real CLIs with the testkit's new Responses API and streamed chat
+    completions; SCN-HARNESS-009 leaves the port, since Codex never ends a turn with `refusal` (ADR 0053,
+    `SCN-HCODEX-001` to `-005`, `SCN-HOPENCODE-001` to `-006`, `SCN-HCLAUDE-005`, `SCN-HPROXY-018`, `SCN-TK-072` to
+    `-077`).
+  - [x] The SMOKE-PAID runs for claude-code, codex and opencode moved to T-21.
 
 ### [ ] T-13 · sandbox port, egress and MCP gateway wiring
 
@@ -565,6 +571,8 @@ owner before each slice: which model or service, and its budget.
   - [ ] observer (from T-10): a nightly job runs `observer analyze` on the scores of the scorekit slice above and
     `observer propose` for the top problem with a real model; done when one observer pull request to this repository
     is merged and `observer check` measures its effect (ADR 0046).
+  - [ ] harness (from T-12): one SMOKE-PAID run each for claude-code, codex and opencode with a real model; done when
+    `make smoke-paid` passes for the three adapters (ADR 0052, ADR 0053).
 
 ---
 

@@ -21,14 +21,21 @@ Two probes ran on 2026-10-23 against a scripted gateway on 127.0.0.1, with no ne
   request of kind `edit`, and a command that asks to leave the sandbox asked with kind `execute`. A turn took 0.4
   seconds. The token usage of each turn is in the `session/prompt` answer; there is no cost. Codex reads its
   model provider from `config.toml` in `CODEX_HOME`; a provider given only in `CODEX_CONFIG` does not pass its
-  authentication check.
+  authentication check. A second `session/prompt` while a turn runs steers the turn, but the first prompt never
+  gets its answer; codex-acp's own request `_session/steering` steers it and both end. Codex ends a turn only with
+  `end_turn` or `cancelled`, never with `refusal`, and a refused tool call ends the turn with `cancelled`. A
+  folder's `.codex/config.toml` may change the model, not the model provider. Codex also syncs a plugin repository
+  from GitHub and sends analytics unless its configuration turns both off.
 - **opencode.** `opencode-ai` 1.19.4 speaks ACP itself (`opencode acp`). It calls an OpenAI-compatible chat
   completions API (`POST /v1/chat/completions`, a stream) through the AI SDK provider
   `@ai-sdk/openai-compatible`, with the tools `read`, `edit`, `write`, `bash` and others. With the permissions
   `edit` and `bash` set to `ask` it asked before each edit (kind `edit`) and command (kind `execute`). A folder's
   `opencode.json` that allows both ran them without asking, unless `OPENCODE_DISABLE_PROJECT_CONFIG` is set. Each
   session also asks the model for a title with the prompt in it, unless the agent `title` is disabled. A turn took
-  1 second after a start of 1.3 seconds. Usage is in the `session/prompt` answer; there is no cost.
+  1 second after a start of 1.3 seconds. Usage is in the `session/prompt` answer; there is no cost. A model answer
+  with the finish reason `content_filter` ends the turn with `refusal`. A folder's `.opencode/opencode.json` is read
+  even with `OPENCODE_DISABLE_PROJECT_CONFIG`, and its agent permissions win over the global ones. A few seconds
+  after the start opencode installs `@opencode-ai/plugin` from the npm registry into its config folder.
 
 ## Decision
 
@@ -38,23 +45,40 @@ Two probes ran on 2026-10-23 against a scripted gateway on 127.0.0.1, with no ne
     leaves the read-only sandbox. The proxy passes no `session/set_mode` and no `session/set_config_option`, so a
     client cannot switch a session to `agent-full-access`.
   - **Settings.** `CODEX_HOME` is `OSF_DATA/codex`. On each `run` the adapter writes `config.toml` there with one
-    model provider `osf` and nothing else, so the user's `~/.codex` never reaches the session.
+    model provider `osf`, no analytics, no web search, no update check, and the features off that call another
+    service (plugins, apps, browsers, computer use, image generation, updates). The user's `~/.codex` never
+    reaches the session.
   - **Model gateway.** The provider `osf` calls `OPENAI_BASE_URL` (default `https://api.openai.com/v1`) with the
-    Responses API and the key in `OPENAI_API_KEY`; `OPENAI_MODEL` names the model.
+    Responses API and the key in `OPENAI_API_KEY`. `OPENAI_MODEL` goes into `CODEX_CONFIG`, the session's own
+    settings, so it wins over a folder's `.codex/config.toml`.
+  - **Steering.** The proxy library gets the option `steering`: the request an agent takes a steering message as.
+    With it, a prompt sent while a turn runs goes to the agent as that request, and its answer is the running
+    turn's answer. The codex adapter names `_session/steering`; the testkit's scripted harness takes it too.
 - **The adapter `adapters/harness/opencode`** (`@opensoftware/harness-opencode`, optional, prefix
   `SCN-HOPENCODE`): `harness-opencode run [--allow <kinds>]` starts the pinned `opencode acp --pure` behind the proxy.
-  - **Permission mode.** The adapter's configuration sets every permission to `ask` and `webfetch` to `deny`, and
-    `OPENCODE_DISABLE_PROJECT_CONFIG` keeps a folder's `opencode.json` from asking less.
+  - **Permission mode.** The adapter's configuration lets reading, searching and the todo list run, sets every
+    other permission to `ask` and web fetch and web search to `deny`, for the top level and for each built-in agent
+    (`build`, `plan`, `general`, `explore`), with `default_agent` `build`. `OPENCODE_CONFIG_CONTENT` is read last,
+    so these win over a folder's `.opencode/opencode.json`, and `OPENCODE_DISABLE_PROJECT_CONFIG` skips its
+    `opencode.json`.
   - **Settings.** The configuration is in `OPENCODE_CONFIG_CONTENT`. `XDG_CONFIG_HOME`, `XDG_DATA_HOME`,
     `XDG_CACHE_HOME` and `XDG_STATE_HOME` are under `OSF_DATA/opencode`, so the user's settings, logins and
-    sessions never reach the session. Auto update, the models.dev fetch, LSP downloads and the title call are off.
+    sessions never reach the session. Auto update, the models.dev fetch, LSP downloads, Claude Code's settings and
+    skills, external plugins (`--pure`), sharing and the title call are off. npm runs offline with a cache of its
+    own, so the plugin install calls no registry.
+  - **Binary.** `opencode-ai` installs its binary in a postinstall script, which pnpm does not run. The adapter
+    runs the binary of the platform package `opencode-<platform>-<arch>` that `opencode-ai` depends on.
   - **Model gateway.** One provider `osf` with `@ai-sdk/openai-compatible` calls `OPENAI_BASE_URL` with
-    `OPENAI_API_KEY` and the model `OPENAI_MODEL`.
+    `OPENAI_API_KEY` and the model `OPENAI_MODEL`, which `run` requires.
 - **The testkit's model gateway** grows the OpenAI Responses API (text, function calls, custom tool calls, usage,
   calls it never answers) and a streamed chat completions answer with tool calls. Both take the next unanswered
   matching entry of the script, as the Messages API does.
-- **Conformance.** Both adapters run the port's twelve implemented `@conformance` scenarios against the real CLI and
-  state their name and version in a scenario of their own (ADR 0052).
+- **Conformance.** Both adapters run the port's implemented `@conformance` scenarios against the real CLI and state
+  their name and version in a scenario of their own (ADR 0052). Each product names its tool calls itself
+  (`Edit files` for Codex, the file's path for opencode); the tests match a tool call by its kind and file.
+- **SCN-HARNESS-009 is deprecated.** A turn that the harness ends with `refusal` cannot happen with Codex. The proxy
+  library keeps the behavior (SCN-HPROXY-009); claude-code (SCN-HCLAUDE-005) and opencode (SCN-HOPENCODE-005) keep
+  it with the real product.
 - **The SMOKE-PAID runs** of all three product adapters stay with T-21.
 
 ## Options considered
@@ -86,4 +110,9 @@ Two probes ran on 2026-10-23 against a scripted gateway on 127.0.0.1, with no ne
   The sandbox port (T-13) runs the adapter in a container that has them.
 - Neither product reports cost over ACP, so their run records have tokens and no `osf.cost.usd`. The inference
   port (T-14) has the spend log.
+- A Codex session whose tool call the client or the allowlist refused ends with `cancelled`, so its run record has
+  the outcome `cancelled`. A failed model call ends a Codex turn with `end_turn`; the run record shows it as
+  `succeeded`. Revisit with codex-acp's session failure extension.
+- A folder can still bring opencode commands and agents in `.opencode/`; a call of such an agent goes through the
+  `task` tool, which asks.
 - Revisit when ACP standardizes permission modes, or when a bridge upgrade changes the tools the scripts name.

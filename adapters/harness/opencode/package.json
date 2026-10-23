@@ -1,0 +1,38 @@
+{
+  "name": "@opensoftware/harness-opencode",
+  "version": "0.1.0",
+  "description": "harness-opencode: runs opencode behind the harness port through its own ACP server, asking before each edit and command, with a tool allowlist, cancel within 5 seconds and a run record with tokens.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "adapters/harness/opencode"
+  },
+  "type": "module",
+  "bin": {
+    "harness-opencode": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "vitest run",
+    "docs": "node ../../../tools/bin/osf.ts docs .",
+    "mutation": "node ../../../tools/bin/osf.ts mutation ."
+  },
+  "devDependencies": {
+    "@opensoftware/contracts": "workspace:*",
+    "@opensoftware/testkit": "workspace:*"
+  },
+  "dependencies": {
+    "@opensoftware/cli": "workspace:*",
+    "@opensoftware/harness-proxy": "workspace:*",
+    "opencode-ai": "1.19.4"
+  }
+}

@@ -8,7 +8,8 @@ The ACP proxy that every harness adapter runs between its client and the coding 
 sessions, prompts and updates on, refuses tool calls outside the allowlist without asking the client, stops an agent
 that does not end a cancelled turn within 5 seconds, records every session, and exports a session as a run record.
 A library: adapters depend on it, it has no command of its own. Decisions:
-[ADR 0050](../../docs/decisions/0050-harness-port.md), [ADR 0052](../../docs/decisions/0052-harness-claude-code.md).
+[ADR 0050](../../docs/decisions/0050-harness-port.md), [ADR 0052](../../docs/decisions/0052-harness-claude-code.md),
+[ADR 0053](../../docs/decisions/0053-harness-codex-opencode.md).
 
 ## Quick start
 
@@ -32,16 +33,18 @@ process.exit(code);
 
 | Export | What it does |
 | --- | --- |
-| `runAdapter({ harness, usage, agent, newSession }, { args, env, streams, io })` | The command line of the adapter `harness-<harness>`. `run [--allow <kinds>] [-- <args>]` calls `agent(args, data)` for the agent to start (it may throw a usage error) and runs `serveProxy` on `streams` (default: stdio); `transcript <session ID>` runs `exportTranscript` into `OUTPUT` (default: the current folder). The data folder is `OSF_DATA`, default `.harness-<harness>`. The context defaults to the process's arguments and environment, and output and errors go to `io` (default: stdout and stderr). Gives the exit code: 0, 1 when the command failed, 2 for a usage error. |
-| `serveProxy({ agent, allow, data, resource, newSession, io })` | Starts `agent` (`{ command, args, env }`) and speaks ACP to the client on `io` (default: stdin and stdout) and to the agent on its stdio. The promise resolves when the agent has exited. |
+| `runAdapter({ harness, usage, agent, newSession, steering }, { args, env, streams, io })` | The command line of the adapter `harness-<harness>`. `run [--allow <kinds>] [-- <args>]` calls `agent(args, data)` for the agent to start (it may throw a usage error) and runs `serveProxy` on `streams` (default: stdio); `transcript <session ID>` runs `exportTranscript` into `OUTPUT` (default: the current folder). The data folder is `OSF_DATA`, default `.harness-<harness>`. The context defaults to the process's arguments and environment, and output and errors go to `io` (default: stdout and stderr). Gives the exit code: 0, 1 when the command failed, 2 for a usage error. |
+| `serveProxy({ agent, allow, data, resource, newSession, steering, io })` | Starts `agent` (`{ command, args, env }`) and speaks ACP to the client on `io` (default: stdin and stdout) and to the agent on its stdio. The promise resolves when the agent has exited. |
 | `allowlistOf(text)` | The tool kinds of `--allow read,edit` as a list; `undefined` without the option. |
 | `exportTranscript({ sessionId, data, output, harness })` | Writes the session's run record to `<output>/run-record.json` and its record to `<output>/transcript.jsonl`, and gives `{ recordFile, transcriptFile }`. A session the proxy never recorded is an error. |
 
 How `serveProxy` behaves:
 
 - **Sessions and prompts** pass through. A prompt sent while a turn runs is a steering message and reaches the
-  agent at once. `newSession` changes each `session/new` request before the agent gets it, for example to set the
-  product's permission mode.
+  agent at once. With `steering`, it reaches the agent as that request instead, with the session ID and the prompt,
+  and its answer is the answer of the running turn; codex-acp takes steering as `_session/steering` (ADR 0053).
+  `newSession` changes each `session/new` request before the agent gets it, for example to set the product's
+  permission mode.
 - **The agent works in its folder itself.** The proxy offers it no client file system and no terminal.
 - **The allowlist.** With `allow`, a permission request for a tool call of an ACP tool kind outside the list gets the
   agent's reject option from the proxy, and the client is never asked. A tool call without a kind is outside every
@@ -102,3 +105,4 @@ the GitHub environment `npm`, a token only for the first version, then a trusted
 | SCN-HPROXY-015 | implemented | runAdapter's "transcript" writes the session's run record to OUTPUT with the adapter's harness name |
 | SCN-HPROXY-016 | implemented | runAdapter's "transcript" without a session ID is a usage error |
 | SCN-HPROXY-017 | implemented | runAdapter prints the adapter's usage for "--help" |
+| SCN-HPROXY-018 | implemented | A prompt sent while a turn runs reaches the agent as the steering request the adapter names |

@@ -67,3 +67,43 @@ Feature: Scripted model gateway
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-073 @status=implemented
+  Scenario: A scripted Responses API call streams its scripted reply and token usage
+    Given a module whose CLI streams a Responses API call that contains "Say hello" from "DEMO_MODEL_URL" and prints the text and the token usage
+    And its system test scripts the reply "Hello, Ada" with 1000 prompt tokens and 200 completion tokens and expects "Hello, Ada 1000 200"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-074 @status=implemented
+  Scenario: A scripted Responses API reply streams a function call and a custom tool call
+    Given a module whose CLI streams a Responses API call that contains "fix the typo" from "DEMO_MODEL_URL" and prints each output item
+    And its system test scripts the tool "exec_command" with the input "{"cmd":"cat notes.md"}" and the tool "apply_patch" with the text input "*** Begin Patch", and expects "function_call exec_command {"cmd":"cat notes.md"}" and "custom_tool_call apply_patch *** Begin Patch"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-075 @status=implemented
+  Scenario: A scripted Responses API call that hangs gets no answer
+    Given a module whose CLI sends "add a date" to the Responses API at "DEMO_MODEL_URL", gives up after 500 milliseconds and prints "gave up"
+    And its system test scripts a reply that hangs for a request that contains "add a date" and expects "gave up"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-076 @status=implemented
+  Scenario: A streamed chat completions call gets its scripted tool call, finish reason and token usage
+    Given a module whose CLI streams a chat completions call that contains "fix the typo" from "DEMO_MODEL_URL" and prints each tool call, the finish reason and the token usage
+    And its system test scripts the tool "edit" with the input "{"filePath":"notes.md"}" and 1000 prompt tokens and 200 completion tokens, and expects "edit {"filePath":"notes.md"} tool_calls 1000 200"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-077 @status=implemented
+  Scenario: Streamed chat completions calls take the scripted replies in order, with the scripted finish reason
+    Given a module whose CLI streams a chat completions call that contains "fix the typo" from "DEMO_MODEL_URL" twice and prints each text and finish reason
+    And its system test scripts the reply "first" and the reply "second" with the finish reason "content_filter" for requests that contain "fix the typo", and expects "first stop" and "second content_filter"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

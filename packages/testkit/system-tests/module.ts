@@ -254,8 +254,9 @@ export function actionModule(actionSteps: string[], steps: string[], test: strin
 /**
  * Module demo whose CLI is an ACP client of the agent in `DEMO_AGENT_COMMAND` (a JSON array of the command and its
  * arguments). It opens one session in $INPUT and runs its arguments in order: `prompt:<text>` sends a prompt and waits
- * for its turn, `send:<text>` sends one without waiting, `sleep:<ms>` waits, `cancel` cancels the session, and `kill`
- * stops the agent and exits. Then it waits for every turn and stops the agent. It prints `<text>: <stop reason>` when a
+ * for its turn, `send:<text>` sends one without waiting, `steer:<text>` sends the request `_session/steering` with the
+ * text and prints `steered <outcome>`, `sleep:<ms>` waits, `cancel` cancels the session, and `kill` stops the agent and
+ * exits. Then it waits for every turn and stops the agent. It prints `<text>: <stop reason>` when a
  * turn ends and `reply <text>` for each message chunk. `--refuse` as the first argument refuses every tool call; it
  * allows them otherwise. Its test runs `test` (TypeScript lines) for SCN-DEMO-001 with `steps`.
  */
@@ -310,6 +311,10 @@ export function acpClientModule(steps: string[], test: string[]): Record<string,
       '  const text = rest.join(":");',
       '  if (verb === "prompt") await prompt(text);',
       '  else if (verb === "send") turns.push(prompt(text));',
+      '  else if (verb === "steer") {',
+      '    const { outcome } = await request("_session/steering", { sessionId, prompt: [{ type: "text", text }] });',
+      "    process.stdout.write(`steered ${outcome}\\n`);",
+      "  }",
       '  else if (verb === "sleep") await new Promise((resolve) => setTimeout(resolve, Number(text)));',
       '  else if (verb === "cancel") send({ method: "session/cancel", params: { sessionId } });',
       '  else if (verb === "kill") {',
@@ -425,6 +430,44 @@ export function messagesModule(bin: string[], steps: string[], test: string[]): 
       "| Variable | Meaning |",
       "| --- | --- |",
       "| `DEMO_ANTHROPIC_URL` | Base URL of the Anthropic Messages API. |",
+      "",
+    ].join("\n"),
+    steps,
+    test,
+  });
+}
+
+/**
+ * Module demo whose CLI, plain JavaScript in `bin`, calls the OpenAI-compatible API at `DEMO_MODEL_URL`: `call(path,
+ * body)` posts the JSON body to the path below the URL, and `events(response)` gives the data of each server-sent event
+ * of a streamed answer. Its test runs `test` (TypeScript lines) for SCN-DEMO-001 with `steps`.
+ */
+export function openaiModule(bin: string[], steps: string[], test: string[]): Record<string, string> {
+  return demoModule({
+    bin: [
+      "const call = (path, body, signal) =>",
+      "  fetch(`${process.env.DEMO_MODEL_URL}${path}`, {",
+      '    method: "POST",',
+      '    headers: { "content-type": "application/json" },',
+      '    body: JSON.stringify({ model: "demo", stream: true, ...body }),',
+      "    signal,",
+      "  });",
+      "const events = async (response) =>",
+      "  (await response.text())",
+      '    .split("\\n")',
+      '    .filter((line) => line.startsWith("data: ") && line !== "data: [DONE]")',
+      "    .map((line) => JSON.parse(line.slice(6)));",
+      ...bin,
+      "",
+    ].join("\n"),
+    readme: [
+      "# demo",
+      "",
+      "## Configuration",
+      "",
+      "| Variable | Meaning |",
+      "| --- | --- |",
+      "| `DEMO_MODEL_URL` | Base URL of the OpenAI-compatible API, ending in `/v1`. |",
       "",
     ].join("\n"),
     steps,
