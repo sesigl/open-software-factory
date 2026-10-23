@@ -8,7 +8,7 @@ Every check is deterministic: the same commit gives the same result, with no mod
 `make check` runs the fast checks for changed modules. `make verify` runs all of them. Each failure prints its
 check ID and the file and line to fix.
 
-Scope: SPEC, TRACE, STEPS and PASS apply to `modules/*/features/`, `ports/*/features/`, `packages/*/features/`,
+Scope: SPEC, TRACE, STEPS and PASS apply to `modules/*/features/`, `ports/*/features/`, `adapters/*/*/features/`, `packages/*/features/`,
 `tools/features/`, `deploy/features/` and `e2e/features/`. The factory-level requirements in `docs/vision/` are
 source material and are not checked; module scenarios link to them with `@realizes=SCN-FACTORY-...`.
 

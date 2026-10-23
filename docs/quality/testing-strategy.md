@@ -60,7 +60,8 @@ docs/vision/           factory-level requirements; source for module scenarios, 
 - Exactly one system test per implemented scenario; `given`, `when`, `then` labels repeat the steps.
 - Every module's `-001` is its README quick start.
 - No real network, model, clock or randomness. The forge in tests is a real Forgejo container; the harness is
-  the scripted ACP agent from the testkit; models come from the scripted gateway, which fails on unscripted calls.
+  the scripted ACP agent from the testkit, or a real harness such as Claude Code against the scripted gateway
+  (ADR 0051); models come from the scripted gateway, which fails on unscripted calls.
 - Outside systems in tests are fast stand-ins that the module cannot tell from the real system (ADR 0049): the
   real system in memory or in process where one exists (PostgreSQL is PGlite), a small test-only stand-in in the
   testkit where none exists and the real system is slow (Slack, the model gateway), a container otherwise. The

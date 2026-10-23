@@ -36,11 +36,11 @@ It writes `$OUTPUT/run-record.json` and `$OUTPUT/transcript.jsonl`.
   the client, a cancelled turn that has not ended after 3 seconds is stopped, and each session is recorded
   ([`harness-proxy`](../../../packages/harness-proxy/README.md)).
 - **Claude Code asks first.** Every session runs in Claude Code's permission mode `default`, which asks before each
-  edit and each command, with skipping permissions turned off. A `defaultMode` in the folder's `.claude/settings.json`
-  or in the client's `_meta` does not change it, and the adapter passes no `session/set_mode`. Reads inside the folder
-  and tools that the folder's settings allow run without asking, so the allowlist does not see them.
-- **Its own settings.** Claude Code keeps its settings, logins and memory in `OSF_DATA/claude`, never in the user's
-  home, and sends no traffic but its model calls.
+  edit and each command. The adapter turns skipping permissions off for each session and passes no
+  `session/set_mode`, and Claude Code ignores a folder's `defaultMode` that would ask less. Reads inside the folder
+  and tools that the folder's `.claude/settings.json` allows run without asking, so the allowlist does not see them.
+- **Its own settings.** Claude Code reads and keeps its user settings, logins and memory in `OSF_DATA/claude`, never
+  in the user's home, and sends no traffic but its model calls.
 - **The model gateway.** Claude Code calls `ANTHROPIC_BASE_URL` with `ANTHROPIC_API_KEY` and the model
   `ANTHROPIC_MODEL`.
 - **The run record** has `osf.harness.name` `claude-code`, `osf.harness.version` the bridge's version, the tokens of
