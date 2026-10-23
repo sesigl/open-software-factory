@@ -6,7 +6,14 @@ import { WORKSPACE } from "@opensoftware/sandbox-egress";
 import { BASE_ANNOTATION, sandboxName, snapshotName } from "../domain/names.ts";
 import type { PodTemplate } from "../domain/pod.ts";
 import { list } from "../domain/resources.ts";
-import { SNAPSHOT_DIR, snapshotTemplate, snapshotVolume, writerName, writerPod } from "../domain/snapshot.ts";
+import {
+  SNAPSHOT_DIR,
+  SNAPSHOT_LABEL,
+  snapshotTemplate,
+  snapshotVolume,
+  writerName,
+  writerPod,
+} from "../domain/snapshot.ts";
 import { type PodStatus, podProblem } from "../domain/status.ts";
 import { type Context, sandboxPod, waitFor } from "./sandbox.ts";
 
@@ -23,6 +30,8 @@ export async function snapshot(context: Context, id: string | undefined): Promis
   const image = base.spec.containers[0]?.image as string;
   const snap = randomBytes(6).toString("hex");
   const writer = writerName(snap);
+  // The writer goes in any case; a snapshot that was not saved takes its claim and template with it.
+  let saved = false;
   try {
     await kube.apply(list([snapshotVolume(snap, settings.snapshotSize), writerPod(snap, image)]));
     await waitFor("the snapshot's writer did not start", WRITER_TIMEOUT_MS, async () => {
@@ -36,11 +45,10 @@ export async function snapshot(context: Context, id: string | undefined): Promis
       ["exec", "--stdin", writer, "--", "tar", "-xf", "-", "-C", SNAPSHOT_DIR],
     );
     await kube.apply(snapshotTemplate(snap, base));
-  } catch (error) {
-    await kube.run(["delete", "pod,pvc,sandboxtemplate", "--selector", `osf.snapshot.id=${snap}`, "--wait=false"]);
-    throw error;
+    saved = true;
   } finally {
-    await kube.run(["delete", "pod", writer, "--wait=false", "--ignore-not-found"]);
+    const kinds = saved ? "pod" : "pod,pvc,sandboxtemplate";
+    await kube.run(["delete", kinds, "--selector", `${SNAPSHOT_LABEL}=${snap}`, "--wait=false"]);
   }
   return { lines: [snapshotName(snap)] };
 }

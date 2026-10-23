@@ -16,6 +16,12 @@ import type { Settings } from "./settings.ts";
 
 const EXTENSIONS = "extensions.agents.x-k8s.io/v1beta1";
 
+/**
+ * How long a pod of a sandbox may take to stop. `sleep` as the first process ignores SIGTERM, so Kubernetes' default of
+ * 30 seconds would hold every destroy; a sandbox keeps nothing that needs a clean stop.
+ */
+export const GRACE_SECONDS = 1;
+
 /** Where the egress pod mounts its ConfigMap; the start script copies the configuration into PROXY_DIR. */
 const CONFIG_DIR = "/osf-config";
 
@@ -60,6 +66,7 @@ export function egressPod(id: string, settings: Settings, files: string | undefi
     spec: {
       ...(settings.hostAliases.length ? { hostAliases: settings.hostAliases } : {}),
       automountServiceAccountToken: false,
+      terminationGracePeriodSeconds: GRACE_SECONDS,
       containers: [
         {
           name: "egress",
@@ -146,6 +153,7 @@ export function sandboxTemplate(id: string, spec: SandboxSpec, base: PodTemplate
         spec: {
           ...base.spec,
           automountServiceAccountToken: false,
+          terminationGracePeriodSeconds: GRACE_SECONDS,
           containers: [container, ...others],
           volumes: [
             ...volumes.filter((volume) => volume.name !== VOLUMES.ca),
