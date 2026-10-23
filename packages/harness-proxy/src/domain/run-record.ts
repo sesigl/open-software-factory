@@ -37,11 +37,20 @@ export function usageOf(lines: SessionLine[]): Partial<Span> {
   return usage;
 }
 
+/**
+ * The stop reason of the session's last turn: the last stop after the last prompt. The agent may send updates after
+ * it; a session whose last prompt has no stop yet is still in a turn and has none.
+ */
+function lastStopOf(lines: SessionLine[]): StopReason | undefined {
+  const lastPrompt = lines.findLastIndex((line) => line.type === "prompt");
+  const stop = lines.slice(lastPrompt).findLast((line) => line.type === "stop");
+  return stop?.type === "stop" ? stop.stopReason : undefined;
+}
+
 /** The run record of a session of the harness `harness`. Its resource is complete when the launcher set it. */
 export function runRecordOf(lines: SessionLine[], harness: string, transcriptUri: string): RunRecord {
-  // The first line starts the session; the last one of a finished session is its last stop.
+  // The first line starts the session.
   const start = lines[0] as Extract<SessionLine, { type: "session" }>;
-  const last = lines.at(-1) as { stopReason?: StopReason };
   return {
     resource: {
       "service.name": `harness-${harness}`,
@@ -53,7 +62,7 @@ export function runRecordOf(lines: SessionLine[], harness: string, transcriptUri
       "gen_ai.operation.name": "invoke_agent",
       "gen_ai.conversation.id": start.sessionId,
       ...usageOf(lines),
-      "osf.outcome": outcomeOf(last.stopReason),
+      "osf.outcome": outcomeOf(lastStopOf(lines)),
       "osf.transcript.uri": transcriptUri,
     },
   };

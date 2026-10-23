@@ -86,3 +86,9 @@ Feature: The ACP proxy of a harness adapter
     Given serveProxy ran a session in which the client refused "Edit notes.md" of kind "edit"
     When the adapter exports the transcript of the session into "$OUTPUT"
     Then "$OUTPUT/transcript.jsonl" has the permission decision "refused" for "Edit notes.md"
+
+  @id=SCN-HPROXY-013 @status=implemented
+  Scenario: The run record of a session that is still in a turn has the outcome "failed"
+    Given serveProxy runs a session whose turn for "add a date" is still running
+    When the adapter exports the transcript of the session into "$OUTPUT"
+    Then "$OUTPUT/run-record.json" has "osf.outcome" "failed"
