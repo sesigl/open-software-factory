@@ -1,6 +1,6 @@
 {
   "contracts": "1.6.0",
-  "packages/testkit": "0.16.0",
+  "packages/testkit": "0.17.0",
   "packages/cli": "0.1.0",
   "packages/spec-files": "0.1.0",
   "modules/factory-spec": "0.3.0",
@@ -20,6 +20,6 @@
   "adapters/sandbox/docker": "0.1.0",
   "adapters/sandbox/kubernetes": "0.1.0",
   "packages/sandbox-egress": "0.1.0",
-  "adapters/inference/litellm": "0.0.0",
-  "adapters/forge/forgejo": "0.0.0"
+  "adapters/inference/litellm": "0.1.0",
+  "adapters/forge/forgejo": "0.1.0"
 }

@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/inference-litellm",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "inference-litellm: one OpenAI-compatible model endpoint for every harness, with routing aliases, budgets per run and a spend log, run as LiteLLM with PostgreSQL on Docker.",
   "license": "Apache-2.0",
   "repository": {
