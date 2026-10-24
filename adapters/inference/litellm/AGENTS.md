@@ -27,9 +27,11 @@ layers.
 
 ## Budget
 
-- System tests: 300 seconds in total on the CI runner. Each conformance scenario starts its own gateway, a LiteLLM
-  and a PostgreSQL container, which takes about 25 seconds, so Docker must run. The images are pulled before the
-  tests in CI.
+- System tests: 450 seconds in total on the CI runner, counted as the sum of the scenarios' times. Ten of the eleven
+  scenarios start their own gateway, a LiteLLM and a PostgreSQL container, which takes 25 to 30 seconds while LiteLLM
+  applies its database migrations; SCN-INFER-004 and -005 also wait eight seconds for the spend log. Vitest runs the
+  files side by side, so the suite ends in about 90 seconds. Docker must run; the images are pulled before the tests
+  in CI.
 
 ## Quality limits
 
