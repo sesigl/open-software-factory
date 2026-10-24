@@ -68,3 +68,11 @@ Feature: A fake of GitHub's REST API
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-095 @status=planned
+  Scenario: fakes.github removes the webhook a module deletes
+    Given a module whose CLI registers a webhook for "push" events and then deletes it at "DEMO_GITHUB_URL"
+    And its system test only runs it and expects that fakes.github lists no webhook of the repository
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
