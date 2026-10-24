@@ -161,6 +161,13 @@
       "component": "inference-litellm",
       "initial-version": "0.1.0",
       "bump-minor-pre-major": true
+    },
+    "adapters/forge/forgejo": {
+      "release-type": "node",
+      "package-name": "@opensoftware/forge-forgejo",
+      "component": "forge-forgejo",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
     }
   }
 }

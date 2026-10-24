@@ -50,6 +50,11 @@ export interface FakeHttp {
   received(): HttpRequest[];
   /** Every request the fake received, in order, with its headers; names are lower case. */
   headers(): { method: string; path: string; headers: Record<string, string> }[];
+  /**
+   * Every request the fake received, in order, with the text of its body as it arrived, for a signature over the
+   * body's bytes; `text` is empty for an empty body. A gzip body is unpacked.
+   */
+  texts(): { method: string; path: string; text: string }[];
 }
 
 export interface RunningHttp {
@@ -60,6 +65,7 @@ export interface RunningHttp {
 
 export async function startHttp(routes: HttpRoute[], options: HttpOptions = {}): Promise<RunningHttp> {
   const received: HttpRequest[] = [];
+  const texts: { method: string; path: string; text: string }[] = [];
   const headers: { method: string; path: string; headers: Record<string, string> }[] = [];
   const unscripted: string[] = [];
   const scripted = routes.map((route) => ({ route, answered: 0 }));
@@ -71,6 +77,7 @@ export async function startHttp(routes: HttpRoute[], options: HttpOptions = {}):
       const raw = Buffer.concat(chunks);
       const body = request.headers["content-encoding"] === "gzip" ? gunzipSync(raw) : raw;
       received.push({ method: request.method ?? "", path: request.url ?? "", body: parse(body) });
+      texts.push({ method: request.method ?? "", path: request.url ?? "", text: body.toString("utf8") });
       headers.push({
         method: request.method ?? "",
         path: request.url ?? "",
@@ -98,6 +105,7 @@ export async function startHttp(routes: HttpRoute[], options: HttpOptions = {}):
       requests: () => received.map((entry) => `${entry.method} ${entry.path}`),
       received: () => received.map((entry) => ({ ...entry })),
       headers: () => headers.map((entry) => ({ ...entry, headers: { ...entry.headers } })),
+      texts: () => texts.map((entry) => ({ ...entry })),
     },
     async close() {
       server.closeAllConnections();

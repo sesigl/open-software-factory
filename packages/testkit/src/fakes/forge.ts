@@ -1,4 +1,5 @@
-// A real Forgejo in a container (ADR 0016), with an admin user, an API token and the few calls a test needs.
+// A real Forgejo in a container (ADR 0016), with an admin user, an API token and the few calls a test needs. Its
+// webhooks reach a fake for containers at host.docker.internal (ADR 0057).
 import { randomUUID } from "node:crypto";
 import { GenericContainer, Wait } from "testcontainers";
 import { address, IMAGES, type Track } from "./services.ts";
@@ -46,9 +47,24 @@ export interface Forge {
   comments(pr: PullRequest): Promise<string[]>;
   /** The commit statuses of the pull request's head commit. */
   statuses(pr: PullRequest): Promise<{ context: string; state: string; description: string }[]>;
+  /** Commits the files on a new branch from `main` (or `from`) and returns the branch's head commit. */
+  createBranch(
+    repository: string,
+    change: { branch: string; files: Record<string, string>; from?: string },
+  ): Promise<string>;
+  /** The repository's branches with their head commits, sorted by name. */
+  branches(repository: string): Promise<{ name: string; sha: string }[]>;
+  /** The repository's webhooks with their URL, their events sorted, and whether they are active. */
+  hooks(repository: string): Promise<{ url: string; events: string[]; active: boolean }[]>;
+  /**
+   * Reviews the pull request as the person `reviewer`, a second user who may write to the repository:
+   * `APPROVED`, `REQUEST_CHANGES` or `COMMENT`.
+   */
+  review(pr: PullRequest, state: "APPROVED" | "REQUEST_CHANGES" | "COMMENT", body?: string): Promise<void>;
 }
 
 const OWNER = "tester";
+const REVIEWER = "reviewer";
 
 export async function startForge(track: Track): Promise<Forge> {
   // A fresh password per forge: it lives only as long as the container.
@@ -60,42 +76,50 @@ export async function startForge(track: Track): Promise<Forge> {
         FORGEJO__database__DB_TYPE: "sqlite3",
         FORGEJO__repository__DEFAULT_BRANCH: "main",
         FORGEJO__service__DISABLE_REGISTRATION: "true",
+        // Webhooks may reach the test's fakes on the Docker host, which Forgejo blocks by default as a private address.
+        FORGEJO__webhook__ALLOWED_HOST_LIST: "*",
       })
+      .withExtraHosts([{ host: "host.docker.internal", ipAddress: "host-gateway" }])
       .withExposedPorts(3000)
       .withWaitStrategy(Wait.forHttp("/api/healthz", 3000))
       .start(),
   );
-  const created = await container.exec(
-    [
-      "forgejo",
-      "admin",
-      "user",
-      "create",
-      "--admin",
-      "--username",
-      OWNER,
-      "--password",
-      password,
-      "--email",
-      "tester@example.invalid",
-      "--must-change-password=false",
-    ],
-    { user: "git" },
-  );
-  if (created.exitCode !== 0) throw new Error(`fakes.forge could not create its user: ${created.output}`);
-
   const url = `http://${address(container, 3000)}`;
-  const basic = `Basic ${Buffer.from(`${OWNER}:${password}`).toString("base64")}`;
-  const issued = await call<{ sha1: string }>(url, basic, "POST", `/users/${OWNER}/tokens`, {
-    name: "testkit",
-    scopes: ["write:repository", "write:issue", "write:user"],
-  });
-  const auth = `token ${issued.sha1}`;
+  /** Creates a user with the forge's password and gives its API token. */
+  const user = async (name: string, admin: boolean): Promise<string> => {
+    const created = await container.exec(
+      [
+        "forgejo",
+        "admin",
+        "user",
+        "create",
+        ...(admin ? ["--admin"] : []),
+        "--username",
+        name,
+        "--password",
+        password,
+        "--email",
+        `${name}@example.invalid`,
+        "--must-change-password=false",
+      ],
+      { user: "git" },
+    );
+    if (created.exitCode !== 0) throw new Error(`fakes.forge could not create the user ${name}: ${created.output}`);
+    const basic = `Basic ${Buffer.from(`${name}:${password}`).toString("base64")}`;
+    const issued = await call<{ sha1: string }>(url, basic, "POST", `/users/${name}/tokens`, {
+      name: "testkit",
+      scopes: ["write:repository", "write:issue", "write:user"],
+    });
+    return issued.sha1;
+  };
+  const token = await user(OWNER, true);
+  const auth = `token ${token}`;
   const api = <T>(method: string, path: string, body?: unknown): Promise<T> => call<T>(url, auth, method, path, body);
+  let reviewerAuth: string | undefined;
 
   return {
     url,
-    token: issued.sha1,
+    token,
     owner: OWNER,
     async createRepository(name, files = {}) {
       await api("POST", "/user/repos", { name, auto_init: true, default_branch: "main", private: false });
@@ -139,6 +163,37 @@ export async function startForge(track: Track): Promise<Forge> {
         `/repos/${OWNER}/${pr.repository}/commits/${pr.sha}/statuses`,
       );
       return list.map(({ context, status, description }) => ({ context, state: status, description }));
+    },
+    async createBranch(repository, change) {
+      await commit(api, repository, change.branch, change.from ?? "main", `change ${change.branch}`, change.files);
+      return (await api<{ commit: { id: string } }>("GET", `/repos/${OWNER}/${repository}/branches/${change.branch}`))
+        .commit.id;
+    },
+    async branches(repository) {
+      const list = await api<{ name: string; commit: { id: string } }[]>(
+        "GET",
+        `/repos/${OWNER}/${repository}/branches`,
+      );
+      return list
+        .map((branch) => ({ name: branch.name, sha: branch.commit.id }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    },
+    async hooks(repository) {
+      const list = await api<{ config: { url: string }; events: string[]; active: boolean }[]>(
+        "GET",
+        `/repos/${OWNER}/${repository}/hooks`,
+      );
+      return list.map((hook) => ({ url: hook.config.url, events: [...hook.events].sort(), active: hook.active }));
+    },
+    async review(pr, state, body = "") {
+      if (!reviewerAuth) {
+        reviewerAuth = `token ${await user(REVIEWER, false)}`;
+      }
+      await api("PUT", `/repos/${OWNER}/${pr.repository}/collaborators/${REVIEWER}`, { permission: "write" });
+      await call(url, reviewerAuth, "POST", `/repos/${OWNER}/${pr.repository}/pulls/${pr.number}/reviews`, {
+        event: state,
+        body,
+      });
     },
     async pullRequests(repository) {
       const list = await api<PullJson[]>("GET", `/repos/${OWNER}/${repository}/pulls?state=all`);
