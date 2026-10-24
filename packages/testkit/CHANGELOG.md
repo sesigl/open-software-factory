@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.18.0...testkit-v0.19.0) (2026-10-24)
+
+
+### Features
+
+* **channel:** T-15 the channel port with the slack and github channels ([#103](https://github.com/sesigl/open-software-factory/issues/103)) ([dddee76](https://github.com/sesigl/open-software-factory/commit/dddee7666fab7d60eda91b407e0fab1a20122ae0))
+
 ## [0.18.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.17.0...testkit-v0.18.0) (2026-10-24)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/channel-kit",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "What the channel adapters of the open software factory share: the receive, reply and ask commands of the channel port around a chat's webhook and its post call.",
   "license": "Apache-2.0",
   "repository": {
