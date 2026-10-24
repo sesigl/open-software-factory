@@ -1,9 +1,9 @@
 {
   "contracts": "1.6.0",
-  "packages/testkit": "0.19.0",
+  "packages/testkit": "0.20.0",
   "packages/cli": "0.1.0",
   "packages/spec-files": "0.1.0",
-  "modules/factory-spec": "0.3.0",
+  "modules/factory-spec": "0.4.0",
   "modules/runlog": "0.4.0",
   "modules/proof": "0.4.0",
   "modules/spec-trace": "0.3.0",
@@ -21,8 +21,8 @@
   "adapters/sandbox/kubernetes": "0.1.0",
   "packages/sandbox-egress": "0.1.0",
   "adapters/inference/litellm": "0.1.0",
-  "adapters/forge/forgejo": "0.1.0",
-  "adapters/forge/github": "0.1.0",
+  "adapters/forge/forgejo": "0.2.0",
+  "adapters/forge/github": "0.2.0",
   "adapters/channel/slack": "0.1.0",
   "adapters/channel/github": "0.1.0",
   "packages/channel-kit": "0.1.0"
