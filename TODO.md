@@ -532,7 +532,8 @@ read them for ideas, do not copy their company-specific rules.
     their npm releases: Slack's buttons, and on GitHub a card in a pull request's conversation answered with
     `/<choice>`; the library `channel-kit` holds their shared commands; `fakes.slack` answers `users.info` and `chat.getPermalink`, and `fakes.github` answers `GET /user`,
     lists a pull request's comments and lets a person `say` a comment (ADR 0059, `SCN-CHANNEL-001` to `-009`,
-    `SCN-CSLACK-001`, `SCN-CKIT-001` to `-007`, `SCN-TK-090` to `-092`). vercel-labs/emulate was checked again: no signed interactivity.
+    `SCN-CSLACK-001`, `SCN-CKIT-001` to `-007`, `SCN-TK-090` to `-092`).
+    vercel-labs/emulate was checked again: no signed interactivity.
   - [ ] factory-spec's webhooks and gatekeeper's approvals and records through the ports.
 
 ### [ ] T-16 · intake
