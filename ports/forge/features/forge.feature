@@ -3,8 +3,9 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
   A forge adapter is a program with the commands branch, open-pr, pr, check, comment, protect, merge, webhook and
   event. It reaches the forge at FORGE_URL with the token FORGE_TOKEN, and signs and checks webhooks with
   FORGE_WEBHOOK_SECRET. A repository is "<owner>/<name>". event turns one webhook delivery into a pr.opened@v1,
-  pr.reviewed@v1 or pr.closed@v1 CloudEvent from contracts (ADR 0057). The test forge is a real Forgejo with the user
-  "tester" and the repository "tester/web", whose branch "main" holds one commit.
+  pr.reviewed@v1 or pr.closed@v1 CloudEvent from contracts (ADR 0057). The test forge has the user "tester" and the
+  repository "tester/web", whose branch "main" holds one commit: a real Forgejo for the forgejo adapter, and the
+  testkit's fake GitHub for the github adapter (ADR 0058).
 
   @id=SCN-FORGE-001 @status=implemented @conformance
   Scenario: A branch starts at the head commit of the default branch

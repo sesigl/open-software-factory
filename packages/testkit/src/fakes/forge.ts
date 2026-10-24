@@ -25,9 +25,12 @@ export interface OpenedPullRequest {
 }
 
 export interface Forge {
-  /** Base URL of the forge, for example `${url}/api/v1/version`. */
+  /**
+   * Base URL of the forge: Forgejo's, for example `${url}/api/v1/version`, or for `fakes.github` the API's base, for
+   * example `${url}/repos/tester/web`.
+   */
   url: string;
-  /** API token of the user `owner`; send it as `Authorization: token <token>`. */
+  /** API token of the user `owner`; send it as `Authorization: token <token>` (GitHub also takes `Bearer <token>`). */
   token: string;
   owner: string;
   /** Every pull request of the repository, open and closed, newest first. */
