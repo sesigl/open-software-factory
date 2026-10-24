@@ -41,8 +41,9 @@ npx @opensoftware/forge-github event delivery.json                # a pr.opened@
 - **Merge.** When GitHub refuses, `merge` exits 1 with `the forge refused to merge #<number>: <GitHub's reason>`,
   for example `Required status check "verify" is failing.`; a pull request that conflicts with its base gives
   `it conflicts with its base`.
-- **Webhooks** are repository webhooks with JSON content, the events `pull_request`, `pull_request_review` and
-  `issue_comment`, and the secret `FORGE_WEBHOOK_SECRET`. A second `webhook` for the same URL updates that webhook.
+- **Webhooks** are repository webhooks with JSON content, the events of `--event` or else `pull_request`,
+  `pull_request_review` and `issue_comment`, and the secret `FORGE_WEBHOOK_SECRET`. A second `webhook` for the same
+  URL updates that webhook and replaces its events.
 - **Events.** `event` reads `{"headers": {...}, "body": "<the body as it arrived>"}`. With `FORGE_WEBHOOK_SECRET`
   set, `X-Hub-Signature-256` must be `sha256=` and the HMAC-SHA256 of the body. The type comes from
   `X-GitHub-Event`: `pull_request` with the action `opened` is `pr.opened@v1`, with `closed` it is `pr.closed@v1`;
@@ -51,6 +52,9 @@ npx @opensoftware/forge-github event delivery.json                # a pr.opened@
   `ping` or a comment, prints nothing.
 
 ## Commands
+
+`--event` takes the port's names (ADR 0060) and maps them to GitHub's events: `issue` and `issue.<action>` are
+`issues`, and an action never changes the event, so `pull_request.labeled` is `pull_request`.
 
 | Command | What it does |
 | --- | --- |
@@ -61,7 +65,9 @@ npx @opensoftware/forge-github event delivery.json                # a pr.opened@
 | `forge-github comment <repo> <number> <text>` | Comment on a pull request; print `{"id", "url"}`. |
 | `forge-github protect <repo> <branch> [--check <name>]... [--approvals <n>]` | Replace the branch's protection. |
 | `forge-github merge <repo> <number> [--method merge\|squash\|rebase]` | Merge; print `{"sha"}` of the merge commit. |
-| `forge-github webhook <repo> <url>` | Register one webhook for pull request events; print `{"id", "url"}`. |
+| `forge-github webhook <repo> <url> [--event <name>]...` | Register one webhook for the port's events, by default pull requests; print `{"id", "url", "events", "active"}`. |
+| `forge-github hooks <repo>` | Print each webhook of the repository as `{"id", "url", "events", "active"}`. |
+| `forge-github unhook <repo> <id>` | Remove a webhook; print `{"id", "removed"}`, with `removed` false when it had none. |
 | `forge-github event <delivery.json>` | Print the delivery's pull request CloudEvent, or nothing. |
 
 ## Tests

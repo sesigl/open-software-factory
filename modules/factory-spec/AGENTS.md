@@ -1,6 +1,6 @@
 # AGENTS.md for module `factory-spec`
 
-Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0020, ADR 0022.
+Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0020, ADR 0022, ADR 0060.
 
 ## Public surface
 
@@ -11,15 +11,17 @@ The only ways a system test or another program may use this module:
 - Input: `factory.yaml` (the `factory-definition` contract), its prompts and skills, and `factory.lock`, in the
   current folder (`$INPUT` in tests)
 - Output folder: `$OUTPUT`; state folder: `OSF_DATA`
-- Outside systems: the MCP Registry at `FACTORY_MCP_REGISTRY`, only in `factory plan`; the Forgejo API at
-  `FACTORY_FORGE_URL`, in `factory plan` and `factory apply` when the factory has forgejo automations
+- Outside systems: the MCP Registry at `FACTORY_MCP_REGISTRY`, only in `factory plan`; the forge port's adapters
+  (`FACTORY_FORGEJO_ADAPTER`, `FACTORY_GITHUB_ADAPTER`) as separate processes, in `factory plan` and `factory apply`
+  when the factory has forgejo or github automations. The system tests pass the built adapters of this repository
+  with `sut.adapter`, so `turbo.json` builds them first.
 - Environment variables: the list in `README.md#configuration` (generated from `src/config.schema.json`)
 
 ## Architecture
 
 Layers, top to bottom, in `architecture.json` (ADR 0014): `entry` (`src/cli.ts`, `src/index.ts`) → `commands` →
 `adapters` → `domain`. `domain` holds the pure rules (lint, resolve, render, diff); `adapters` read and write
-files, the registry, the forge, Git and the state; `commands` join them. The ARCH check enforces this.
+files, the registry, the forge adapters, Git and the state; `commands` join them. The ARCH check enforces this.
 
 ## Allowed exceptions
 

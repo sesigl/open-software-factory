@@ -1,14 +1,14 @@
 // The applied state: what the last "factory apply" rendered, kept in the state folder OSF_DATA (ADR 0020).
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { Hook } from "./forgejo.ts";
+import type { Hook } from "./forge.ts";
 
 export interface AppliedState {
   /** The resolved definition and the prompt hashes that were applied. */
   model: Record<string, unknown>;
   /** The hash of every rendered file, by its path below the output folder. */
   files: Record<string, string>;
-  /** The webhook apply registered, by repository. */
+  /** The webhook apply registered, by repository: "<owner>/<name>" on Forgejo, "github:<owner>/<name>" on GitHub. */
   hooks?: Record<string, Hook>;
 }
 

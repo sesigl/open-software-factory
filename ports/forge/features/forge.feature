@@ -157,32 +157,32 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     And merge exits with code 1 and an error that names the conflict
     And the pull request is still open on the test forge
 
-  @id=SCN-FORGE-022 @status=planned @conformance @realizes=SCN-FACTORY-AUTO-002
+  @id=SCN-FORGE-022 @status=implemented @conformance @realizes=SCN-FACTORY-AUTO-002
   Scenario: A webhook is registered for the events the client names
     When the client runs "webhook tester/web http://intake.example/forge --event issue.labeled --event push"
     Then the test forge has one active webhook of "tester/web" to "http://intake.example/forge" for the label events of issues and for pushes
     And webhook prints the webhook's ID, its URL, the forge's names of these events and that it is active
 
-  @id=SCN-FORGE-023 @status=planned @conformance
+  @id=SCN-FORGE-023 @status=implemented @conformance
   Scenario: Registering a webhook URL again with other events replaces its events
     Given the client ran "webhook tester/web http://intake.example/forge --event push"
     When the client runs "webhook tester/web http://intake.example/forge --event issue_comment"
     Then the test forge has one webhook of "tester/web" to "http://intake.example/forge" for comment events only
 
-  @id=SCN-FORGE-024 @status=planned @conformance
+  @id=SCN-FORGE-024 @status=implemented @conformance
   Scenario: hooks lists the webhooks of a repository
     Given the client ran "webhook tester/web http://intake.example/forge --event push"
     When the client runs "hooks tester/web"
     Then hooks prints one line with the same ID, URL, events and active flag that webhook printed
 
-  @id=SCN-FORGE-025 @status=planned @conformance
+  @id=SCN-FORGE-025 @status=implemented @conformance
   Scenario: unhook removes a webhook
     Given the client ran "webhook tester/web http://intake.example/forge"
     When the client runs "unhook" with the ID that webhook printed
     Then unhook prints the ID and "removed" true
     And the test forge has no webhook of "tester/web"
 
-  @id=SCN-FORGE-026 @status=planned @conformance
+  @id=SCN-FORGE-026 @status=implemented @conformance
   Scenario: Removing a webhook the repository does not have is not an error
     Given the repository "tester/web" without webhooks
     When the client runs "unhook tester/web 424242"
