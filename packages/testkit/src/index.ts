@@ -2,6 +2,7 @@
 export type { Collector } from "./fakes/collector.ts";
 export type { Fakes } from "./fakes/fakes.ts";
 export type { Forge, OpenedPullRequest, PullRequest } from "./fakes/forge.ts";
+export type { FakeGitHub, GitHubComment } from "./fakes/github.ts";
 export type { Harness, HarnessTool, HarnessToolCall, HarnessTurn } from "./fakes/harness.ts";
 export type { FakeHttp, HttpOptions, HttpRequest, HttpRoute } from "./fakes/http.ts";
 export type { ModelGateway, ScriptedReply, ScriptedTool } from "./fakes/model-gateway.ts";
