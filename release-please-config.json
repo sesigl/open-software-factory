@@ -154,6 +154,13 @@
       "component": "sandbox-egress",
       "initial-version": "0.1.0",
       "bump-minor-pre-major": true
+    },
+    "adapters/inference/litellm": {
+      "release-type": "node",
+      "package-name": "@opensoftware/inference-litellm",
+      "component": "inference-litellm",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
     }
   }
 }

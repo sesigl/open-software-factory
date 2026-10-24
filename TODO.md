@@ -469,7 +469,7 @@ read them for ideas, do not copy their company-specific rules.
     documents a variable prefix as `OSF_SECRET_*` (ADR 0055, `SCN-SANDBOX-016` to `-022`, `SCN-SEGRESS-001` to
     `-021`, `SCN-SKUBE-001` to `-003`, `SCN-FSPEC-048`, `SCN-TK-079`; `SCN-SDOCKER-002` deprecated).
 
-### [ ] T-14 · inference port
+### [x] T-14 · inference port
 
 - **Tier / language / path / prefix:** core · TypeScript + LiteLLM config · `ports/inference/`, `adapters/inference/litellm/`
   · `SCN-INFER`
@@ -479,7 +479,18 @@ read them for ideas, do not copy their company-specific rules.
 - **First scenarios:** a request with a routing alias reaches the configured model; a run over its budget is
   stopped with a clear error; every call writes a spend log line with `osf.run.id`; a bring-your-own gateway URL is
   used instead of the bundled one.
-- **Done when:** taskcapture's `route` output is applied by this adapter in E2E-004.
+- **Done when:** taskcapture's `route` output is applied by this adapter in E2E-004. Done: the `litellm` adapter
+  passes the port's conformance, SCN-INFER-003 runs a gateway from a config in the shape `route` writes; E2E-004 itself
+  moved to T-20, which builds the end-to-end suite.
+- **Slices:**
+  - [x] The port as a command line (`start | key | spend-log | stop | list`) plus the gateway's OpenAI-compatible
+    chat completions API, its eleven `@conformance` scenarios (alias routing, a fine-tuned model, one alias per agent,
+    tag routing, a budget per run, spend rows with `osf.run.id`, unknown keys and aliases, provider keys from
+    `OSF_SECRET_*`, stop), and the `litellm` adapter with its npm release: the LiteLLM proxy with PostgreSQL on Docker,
+    a virtual key with `max_budget` per run, `GET /spend/logs` rows as the spend log (ADR 0056, `SCN-INFER-001` to
+    `-011`). A bring-your-own gateway is a provider of the config, or the harnesses' own base URL with no adapter.
+  - [x] The Messages and Responses APIs (Claude Code, Codex) through the gateway moved to T-17, which starts harnesses
+    against it.
 
 ---
 
@@ -533,6 +544,9 @@ read them for ideas, do not copy their company-specific rules.
   gate waits until a `gate.decided` event arrives; a failing CI check stops the ship stage; a steering signal
   reaches the running stage; a crash of the worker resumes the workflow from history; every run carries the
   factory version hash.
+- **From T-14:** foreman starts one gateway per factory with the inference port, asks for a key per run with
+  the run's budget, and hands the URL and key to the harness. Claude Code calls the Messages API and Codex the
+  Responses API: add `@conformance` scenarios for both to the inference port (ADR 0056).
 - **Done when:** E2E-001 passes and this repository's `factory` issues are implemented by the foreman (phase 3).
 
 ### [ ] T-18 · console
@@ -570,6 +584,8 @@ read them for ideas, do not copy their company-specific rules.
 - **From T-00:** `make smoke` and `make smoke-paid` run Turborepo tasks that no package defines yet, so they run
   nothing. Give `e2e/` a package with `test:system` and `test:paid` scripts; the nightly workflow already calls
   them. (`make mutation` runs in every module since ADR 0037.)
+- **From T-14:** E2E-004 starts the gateway with `inference-litellm start` on the config `taskcapture route` wrote
+  and checks that a call for the alias with the tag reaches the cheaper model (ADR 0056).
 - **Done when:** all five pass on every merge to `main`; SMOKE-PAID runs nightly.
 
 ### [ ] T-21 · dogfood with paid services
