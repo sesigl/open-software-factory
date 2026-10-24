@@ -15,6 +15,7 @@ adds a row.
 | SPECFILES | spec-files library | `packages/spec-files/features/` |
 | HPROXY | harness-proxy library | `packages/harness-proxy/features/` |
 | SEGRESS | sandbox-egress library | `packages/sandbox-egress/features/` |
+| CKIT | channel-kit library | `packages/channel-kit/features/` |
 | FSPEC | factory-spec | `modules/factory-spec/features/` |
 | RUN | runlog | `modules/runlog/features/` |
 | PROOF | proof | `modules/proof/features/` |

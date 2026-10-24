@@ -42,6 +42,9 @@ Use these terms in scenarios, code, UI text and docs.
 | Run key | The key a run calls the inference gateway with: its spend rows name the run, and the gateway refuses its calls over the run's budget (ADR 0056). |
 | Delivery | One webhook request a forge sent, kept as its headers and its body as it arrived, so its signature can be checked; the forge port's `event` turns it into a `pr.*` CloudEvent (ADR 0057). |
 | Merge rules | What a branch requires before a pull request merges into it: checks that passed and a number of approvals; the forge port's `protect` sets them (ADR 0057). |
+| Channel | A chat where people talk with the factory, such as Slack or the conversation of a GitHub pull request; a channel adapter turns its messages into work items and decisions (ADR 0059). |
+| Thread | One conversation in a channel, named by Vercel Chat SDK's thread ID, for example `slack:C0WEB:1767225600.000001`; the factory replies in the thread of the work item it came from. |
+| Approval card | A message in a thread that asks a person a question with choices, such as `approve` and `reject`; the person's choice is a decision with their identity (ADR 0059). |
 | Problem | One scorer that failed many runs, recorded by observer with its count, its reasons and links to the failed runs. |
 | Self-improvement | The loop that turns repeated failures into reviewed changes to the factory definition. |
 | Port | An interface to an outside system. |

@@ -14,10 +14,9 @@ The only ways a system test or another program may use this adapter:
 
 ## Architecture
 
-Layers, top to bottom, in `architecture.json` (ADR 0014): `entry` (`src/cli.ts`) → `commands` → `adapters` →
-`domain`. `domain` checks Slack's signature and builds the work item and the decision, without I/O; `adapters`
-builds the Chat SDK's `Chat` with its Slack adapter and names a refused token; `commands` join them. The ARCH check
-enforces the layers.
+Layers, top to bottom, in `architecture.json` (ADR 0014): `entry` (`src/cli.ts`) → `adapters` → `domain`. The entry
+hands the adapter's channel to `runChannel` of `@opensoftware/channel-kit`, which reads the command line and the
+delivery file. `domain` checks Slack's signature and builds the work item and the decision, without I/O; `adapters` builds the Chat SDK's `Chat` with its Slack adapter, registers its handlers, posts and names a refused token. The ARCH check enforces the layers.
 
 ## Allowed exceptions
 

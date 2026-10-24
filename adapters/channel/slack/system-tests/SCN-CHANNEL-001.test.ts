@@ -1,5 +1,5 @@
-import { scenario } from "@opensoftware/testkit";
 import { validate } from "@opensoftware/contracts";
+import { scenario } from "@opensoftware/testkit";
 import { CHANNEL, mention, PERSON, setup } from "./channel.ts";
 
 scenario("SCN-CHANNEL-001", async ({ sut, fakes, given, when, then }) => {
