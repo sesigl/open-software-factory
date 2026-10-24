@@ -21,7 +21,7 @@ an adapter.
 | channel | receive → WorkItem · reply(thread, message or card) · ask(approval) → decision | **slack** (threads, Block Kit), **teams** (Adaptive Cards, tenant consent), **github** (comments, labels, checks), **linear** (agent sessions); all through Vercel Chat SDK; jira and sentry through webhooks |
 | tracker | create · update state · link PR · comment | github issues, linear, jira |
 | forge | branch · PR · checks · comments · merge rules · PR events (`pr.opened`, `pr.reviewed`, `pr.closed`) | **github**, **forgejo** (also the deterministic test forge), gitlab |
-| inference | OpenAI-compatible endpoint + spend log | **litellm** in front of any provider |
+| inference | a command line (ADR 0056): start(config) · key(run, budget) · spend log · stop · list; the gateway's OpenAI-compatible chat completions API routes aliases and tags to models, refuses a run over its budget and logs every call with `osf.run.id` | **litellm** (the LiteLLM proxy with PostgreSQL on Docker in front of any provider, `adapters/inference/litellm`; ADR 0056) |
 | secrets | resolve(reference) at the egress proxy, never in the sandbox (`ports/secrets/README.md`) | **file** (`OSF_SECRETS_DIR`; ADR 0054), **env** (`OSF_SECRET_<NAME>`), **openbao** (KV v2), all resolved by both sandbox adapters (ADR 0055); vault, infisical |
 | telemetry | OTLP | **otlp** via the OpenTelemetry Collector to any backend |
 | policy | decide(input) → allow, deny or gate | **opa**, cedar |

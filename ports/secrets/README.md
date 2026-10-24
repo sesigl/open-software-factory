@@ -28,3 +28,7 @@ sandbox spec from naming any other variable of the adapter. The sandbox adapters
 scenarios are the sandbox port's `@conformance` scenarios in
 [`ports/sandbox/features/secrets.feature`](../sandbox/features/secrets.feature). The prefix `SCN-SECRET` stays for a
 secrets adapter of its own.
+
+The inference adapter [`litellm`](../../adapters/inference/litellm/README.md) uses the same prefix for provider
+keys: a LiteLLM config names them as `os.environ/OSF_SECRET_<NAME>`, and the adapter hands only those variables to
+the gateway (ADR 0056).

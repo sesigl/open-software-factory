@@ -92,9 +92,13 @@ jobs:
           - suite: sandbox-kubernetes
             filter: "@opensoftware/sandbox-kubernetes"
             kind: true
+          # Each scenario starts its own gateway: LiteLLM and PostgreSQL containers (ADR 0056).
+          - suite: inference-litellm
+            filter: "@opensoftware/inference-litellm"
+            pull: ghcr.io/berriai/litellm:v1.106.2 postgres:18-alpine
           # Every other package, so a new module runs without a change here.
           - suite: rest
-            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper !@opensoftware/sandbox-docker !@opensoftware/sandbox-kubernetes"
+            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper !@opensoftware/sandbox-docker !@opensoftware/sandbox-kubernetes !@opensoftware/inference-litellm"
     steps:
       - uses: actions/checkout@v5
         with:
