@@ -5,6 +5,7 @@ import type { StartedTestContainer } from "testcontainers";
 import { listFiles, repoRoot } from "../support/module.ts";
 import { type Collector, startCollector } from "./collector.ts";
 import { type Forge, startForge } from "./forge.ts";
+import { startGitHub } from "./github.ts";
 import { type Harness, type HarnessTurn, startHarness } from "./harness.ts";
 import { type FakeHttp, type HttpOptions, type HttpRoute, startHttp } from "./http.ts";
 import { type ModelGateway, type ScriptedReply, startModelGateway } from "./model-gateway.ts";
@@ -33,6 +34,11 @@ export interface Fakes {
   s3(): Promise<S3>;
   /** A Forgejo forge in a container, with a user and an API token. */
   forge(): Promise<Forge>;
+  /**
+   * An in-process fake of GitHub's REST API with the same interface as `forge()`: the user `tester` and its token,
+   * repositories, branches, pull requests, statuses, reviews, branch protection and signed webhooks (ADR 0058).
+   */
+  github(): Promise<Forge>;
   /** A fake of the Slack Web API. An unsupported method fails the scenario. */
   slack(): Promise<FakeSlack>;
   /** The OpenTelemetry Collector in a container, running `config`; it exports to OTEL_EXPORTER_OTLP_ENDPOINT. */
@@ -90,6 +96,9 @@ export function makeFakes(moduleRoot: string): FakesHandle {
       temporal: () => startTemporal(track),
       s3: () => startS3(track),
       forge: () => startForge(track),
+      async github() {
+        return (await inProcess(startGitHub())).github;
+      },
       async slack() {
         return (await inProcess(startSlack())).slack;
       },

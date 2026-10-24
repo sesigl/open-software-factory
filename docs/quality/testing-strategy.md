@@ -25,7 +25,7 @@ flowchart LR
   K -->|HTTP API, MCP, ACP via generated clients| A
   A -->|published events| K
   K -->|$INPUT / $OUTPUT folders| A
-  A -->|calls| F[fakes: scripted model gateway, scripted ACP harness, fake Slack, Forgejo, Postgres, NATS, Temporal, S3, OTel Collector, fixed clock]
+  A -->|calls| F[fakes: scripted model gateway, scripted ACP harness, fake Slack, fake GitHub, Forgejo, Postgres, NATS, Temporal, S3, OTel Collector, fixed clock]
   T -. "✕ import from src/ (BOUNDARY-STATIC)" .-> S
   T -. "✕ read or write its data (BOUNDARY-RUNTIME)" .-> D
 ```
@@ -59,7 +59,8 @@ docs/vision/           factory-level requirements; source for module scenarios, 
 - One Gherkin scenario per behavior, with `@id=SCN-<PREFIX>-NNN` and `@status`.
 - Exactly one system test per implemented scenario; `given`, `when`, `then` labels repeat the steps.
 - Every module's `-001` is its README quick start.
-- No real network, model, clock or randomness. The forge in tests is a real Forgejo container; the harness is
+- No real network, model, clock or randomness. The forge in tests is a real Forgejo container, or for GitHub the
+  testkit's in-process fake of its REST API (ADR 0058); the harness is
   the scripted ACP agent from the testkit, or a real harness such as Claude Code against the scripted gateway
   (ADR 0052); models come from the scripted gateway, which fails on unscripted calls.
 - Outside systems in tests are fast stand-ins that the module cannot tell from the real system (ADR 0049): the

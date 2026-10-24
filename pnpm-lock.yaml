@@ -37,6 +37,19 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/testkit
 
+  adapters/forge/github:
+    dependencies:
+      '@opensoftware/cli':
+        specifier: workspace:*
+        version: link:../../../packages/cli
+    devDependencies:
+      '@opensoftware/contracts':
+        specifier: workspace:*
+        version: link:../../../contracts
+      '@opensoftware/testkit':
+        specifier: workspace:*
+        version: link:../../../packages/testkit
+
   adapters/harness/acp:
     dependencies:
       '@opensoftware/cli':

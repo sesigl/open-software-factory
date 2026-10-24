@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "FORGE_URL": {
+      "type": "string",
+      "default": "https://api.github.com",
+      "description": "The base URL of GitHub's REST API; for GitHub Enterprise Server https://<host>/api/v3."
+    },
+    "FORGE_TOKEN": {
+      "type": "string",
+      "description": "A GitHub token that may write contents, pull requests, commit statuses and the repository's administration (branch protection, webhooks). Required by every command but event."
+    },
+    "FORGE_WEBHOOK_SECRET": {
+      "type": "string",
+      "description": "The secret of the webhooks that webhook registers. When it is set, event refuses a delivery whose X-Hub-Signature-256 does not match."
+    }
+  }
+}
