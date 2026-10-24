@@ -5,7 +5,7 @@ import type { StartedTestContainer } from "testcontainers";
 import { listFiles, repoRoot } from "../support/module.ts";
 import { type Collector, startCollector } from "./collector.ts";
 import { type Forge, startForge } from "./forge.ts";
-import { startGitHub } from "./github.ts";
+import { type FakeGitHub, startGitHub } from "./github.ts";
 import { type Harness, type HarnessTurn, startHarness } from "./harness.ts";
 import { type FakeHttp, type HttpOptions, type HttpRoute, startHttp } from "./http.ts";
 import { type ModelGateway, type ScriptedReply, startModelGateway } from "./model-gateway.ts";
@@ -36,9 +36,10 @@ export interface Fakes {
   forge(): Promise<Forge>;
   /**
    * An in-process fake of GitHub's REST API with the same interface as `forge()`: the user `tester` and its token,
-   * repositories, branches, pull requests, statuses, reviews, branch protection and signed webhooks (ADR 0058).
+   * repositories, branches, pull requests, statuses, reviews, branch protection and signed webhooks (ADR 0058), and
+   * a person's comments in a pull request's conversation (ADR 0059).
    */
-  github(): Promise<Forge>;
+  github(): Promise<FakeGitHub>;
   /** A fake of the Slack Web API. An unsupported method fails the scenario. */
   slack(): Promise<FakeSlack>;
   /** The OpenTelemetry Collector in a container, running `config`; it exports to OTEL_EXPORTER_OTLP_ENDPOINT. */
