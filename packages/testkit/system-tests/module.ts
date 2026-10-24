@@ -498,3 +498,29 @@ export const FORGE_API = [
   "    body: body && JSON.stringify(body),",
   "  }).then((response) => response.json());",
 ];
+
+export const GITHUB_README = [
+  "# demo",
+  "",
+  "## Configuration",
+  "",
+  "| Variable | Meaning |",
+  "| --- | --- |",
+  "| `DEMO_GITHUB_URL` | GitHub API base URL. |",
+  "| `DEMO_GITHUB_TOKEN` | GitHub API token. |",
+  "",
+].join("\n");
+
+/**
+ * The CLI's first lines: `api(method, path, body)` calls GitHub's REST API below `/repos/<first argument>` and gives
+ * `{ status, json }`.
+ */
+export const GITHUB_API = [
+  "const [repository, ...rest] = process.argv.slice(2);",
+  "const api = (method, path, body) =>",
+  "  fetch(`${process.env.DEMO_GITHUB_URL}/repos/${repository}${path}`, {",
+  "    method,",
+  '    headers: { authorization: `Bearer ${process.env.DEMO_GITHUB_TOKEN}`, "content-type": "application/json" },',
+  "    body: body && JSON.stringify(body),",
+  "  }).then(async (response) => ({ status: response.status, json: await response.json() }));",
+];

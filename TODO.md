@@ -520,7 +520,11 @@ read them for ideas, do not copy their company-specific rules.
     with its npm release; `fakes.forge` delivers webhooks to a fake for containers, creates branches, lists branches
     and webhooks and reviews as `reviewer`, and `fakes.http` gives each body's text (ADR 0057, `SCN-FORGE-001` to
     `-021`, `SCN-TK-080` to `-083`).
-  - [ ] The `github` forge adapter against the same conformance scenarios.
+  - [x] The `github` forge adapter with its npm release, against the same conformance scenarios: GitHub's REST API
+    with `fetch`, branches as refs, checks as commit statuses, branch protection with `enforce_admins`, webhooks for
+    `pull_request`, `pull_request_review` and `issue_comment` signed with `X-Hub-Signature-256`; the testkit's
+    `fakes.github`, an in-process fake of GitHub's REST API with the `Forge` interface (ADR 0058, `SCN-FORGE-001` to
+    `-021`, `SCN-TK-084` to `-089`). vercel-labs/emulate was checked: no commit statuses, no conflicts.
   - [ ] The channel port with Vercel Chat SDK, its `slack` and `github` channels.
   - [ ] factory-spec's webhooks and gatekeeper's approvals and records through the ports.
 

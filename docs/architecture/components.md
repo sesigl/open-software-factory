@@ -98,7 +98,7 @@ records, `runSpans`, lives in `contracts` (ADR 0041).
 | Inference gateway | LiteLLM with PostgreSQL, run by the `litellm` inference adapter (ADR 0056) | agentgateway; Bedrock, Vertex behind it | OpenAI-compatible endpoint, routing config, keys with budgets, spend rows |
 | Durable workflows | Temporal | DBOS | workflows and signals |
 | Chat and tracker adapters | Vercel Chat SDK | native webhooks | bot handlers |
-| Forge | Forgejo's REST API v1 through the `forgejo` forge adapter (ADR 0057); GitHub next | GitLab | forge port; commit statuses as checks; webhook deliveries as `pr.*` events |
+| Forge | Forgejo's REST API v1 through the `forgejo` forge adapter (ADR 0057); GitHub's REST API through the `github` forge adapter (ADR 0058) | GitLab | forge port; commit statuses as checks; webhook deliveries as `pr.*` events |
 | Trace store and judges | Langfuse | Arize Phoenix | OTLP, score API |
 | Benchmark runner | Harbor | Inspect | Harbor task format and CLI; optional Python agent plugin (ADR 0009) |
 | Code attribution | Agent Trace | — | trace records |
