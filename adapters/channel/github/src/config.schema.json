@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "CHANNEL_API_URL": {
+      "type": "string",
+      "default": "https://api.github.com",
+      "description": "The base URL of GitHub's REST API; for GitHub Enterprise Server https://<host>/api/v3."
+    },
+    "CHANNEL_TOKEN": {
+      "type": "string",
+      "description": "A GitHub token of the bot's user that may read and write the comments of pull requests. Required by every command."
+    },
+    "CHANNEL_SIGNING_SECRET": {
+      "type": "string",
+      "description": "The secret of the webhook that sends issue_comment events. receive refuses a delivery whose X-Hub-Signature-256 does not match."
+    }
+  }
+}

@@ -33,6 +33,7 @@
   "dependencies": {
     "@chat-adapter/slack": "4.43.0",
     "@chat-adapter/state-memory": "4.43.0",
+    "@opensoftware/channel-kit": "workspace:*",
     "@opensoftware/cli": "workspace:*",
     "chat": "4.43.0"
   }

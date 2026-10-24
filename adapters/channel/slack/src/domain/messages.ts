@@ -2,12 +2,6 @@
 // bot as a work item, and a press of an approval card's button as a decision.
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-/** One webhook request as the receiver got it: its headers and its body's text. */
-export interface Delivery {
-  headers: Record<string, string>;
-  body: string;
-}
-
 /** Slack refuses requests signed more than five minutes before or after now; so does the adapter. */
 const TOLERANCE_SECONDS = 5 * 60;
 

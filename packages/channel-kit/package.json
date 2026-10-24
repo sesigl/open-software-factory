@@ -1,0 +1,37 @@
+{
+  "name": "@opensoftware/channel-kit",
+  "version": "0.0.0",
+  "description": "What the channel adapters of the open software factory share: the receive, reply and ask commands of the channel port around a chat's webhook and its post call.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "packages/channel-kit"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "vitest run",
+    "mutation": "node ../../tools/bin/osf.ts mutation ."
+  },
+  "dependencies": {
+    "@opensoftware/cli": "workspace:*"
+  },
+  "devDependencies": {
+    "@opensoftware/testkit": "workspace:*"
+  }
+}

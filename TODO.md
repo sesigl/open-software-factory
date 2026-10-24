@@ -525,7 +525,14 @@ read them for ideas, do not copy their company-specific rules.
     `pull_request`, `pull_request_review` and `issue_comment` signed with `X-Hub-Signature-256`; the testkit's
     `fakes.github`, an in-process fake of GitHub's REST API with the `Forge` interface (ADR 0058, `SCN-FORGE-001` to
     `-021`, `SCN-TK-084` to `-089`). vercel-labs/emulate was checked: no commit statuses, no conflicts.
-  - [ ] The channel port with Vercel Chat SDK, its `slack` and `github` channels.
+  - [x] The channel port as a command line (`receive | reply | ask`) on Vercel Chat SDK, its nine `@conformance`
+    scenarios (a mention as a work item with a link to the message, no work from a message without a mention or from
+    the bot, a refused signature, a reply and an approval card in the thread, a choice as a decision with the
+    person's identity, a choice the card does not offer, a refused token), and the `slack` and `github` channels with
+    their npm releases: Slack's buttons, and on GitHub a card in a pull request's conversation answered with
+    `/<choice>`; the library `channel-kit` holds their shared commands; `fakes.slack` answers `users.info` and `chat.getPermalink`, and `fakes.github` answers `GET /user`,
+    lists a pull request's comments and lets a person `say` a comment (ADR 0059, `SCN-CHANNEL-001` to `-009`,
+    `SCN-CSLACK-001`, `SCN-CKIT-001` to `-007`, `SCN-TK-090` to `-092`). vercel-labs/emulate was checked again: no signed interactivity.
   - [ ] factory-spec's webhooks and gatekeeper's approvals and records through the ports.
 
 ### [ ] T-16 · intake

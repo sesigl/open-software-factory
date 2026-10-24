@@ -1,0 +1,7 @@
+{
+  "layers": [
+    { "name": "api", "paths": ["src/index.ts"] },
+    { "name": "program", "paths": ["src/program.ts"] },
+    { "name": "commands", "paths": ["src/commands.ts"] }
+  ]
+}

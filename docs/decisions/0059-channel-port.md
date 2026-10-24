@@ -46,6 +46,11 @@ and `fakes.github` (ADR 0058).
   no state between runs. `receive` turns the delivery into a `Request` and hands it to the SDK's webhook handler; its
   `onNewMention` and `onAction` handlers give the work item and the decision. `reply` and `ask` post through the SDK's
   thread. A card is the SDK's `Card` with one button per choice.
+- **The library `packages/channel-kit`** (`@opensoftware/channel-kit`, ADR 0039) holds what both adapters share:
+  the command line, reading the delivery file, handing it to the chat's webhook and waiting for its handlers, the
+  signature error on a 401, a handler's error as the command's error, and the checks and output of `reply` and
+  `ask`. It does not depend on the SDK: an adapter gives it the SDK's webhook and a `post` function. A new channel
+  is its adapter's connection, handlers and card.
 - **The first adapters are `adapters/channel/slack`** (`@opensoftware/channel-slack`) **and
   `adapters/channel/github`** (`@opensoftware/channel-github`), both optional.
   - slack: a delivery is an Events API callback or an interactivity payload. The adapter checks Slack's `v0`
@@ -72,6 +77,7 @@ and `fakes.github` (ADR 0058).
 | Direct calls to each chat's API, as gatekeeper does | No dependency | Every chat's events, signatures, mentions and cards by hand; the TODO item names the SDK |
 | A decision as a text reply on Slack too | One rule for both chats | Slack has buttons that name the person and the card; gatekeeper already uses them (ADR 0048) |
 | The decision in a new contract | A typed format | It is the port's output, like the forge port's JSON lines; the work item is already a contract |
+| Each adapter with its own command line and receive code | No library | The two adapters were the same code but for the chat; DUP refuses clones across units |
 
 ## Prior art
 
