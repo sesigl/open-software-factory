@@ -19,7 +19,12 @@ scenario("SCN-FORGE-011", async ({ sut, fakes, when, then }) => {
           events: ["issue_comment", "pull_request", "pull_request_review"],
         },
       ]);
-      expect(printed).toEqual({ id: expect.any(Number), url: "http://intake.example/forge" });
+      expect(printed).toEqual({
+        id: expect.any(Number),
+        url: "http://intake.example/forge",
+        events: ["issue_comment", "pull_request", "pull_request_review"],
+        active: true,
+      });
     },
   );
 });

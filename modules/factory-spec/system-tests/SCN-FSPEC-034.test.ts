@@ -13,7 +13,7 @@ scenario("SCN-FSPEC-034", async ({ sut, fakes, given, when, then }) => {
 
   let run: Awaited<ReturnType<typeof sut.cli>>;
   await when('the factory engineer runs "factory plan"', async () => {
-    run = await sut.cli(["plan"], { env: forgeEnv(forge) });
+    run = await sut.cli(["plan"], { env: forgeEnv(sut, forge) });
   });
 
   await then("the command exits with code 0", async () => {

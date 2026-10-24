@@ -534,7 +534,13 @@ read them for ideas, do not copy their company-specific rules.
     lists a pull request's comments and lets a person `say` a comment (ADR 0059, `SCN-CHANNEL-001` to `-009`,
     `SCN-CSLACK-001`, `SCN-CKIT-001` to `-007`, `SCN-TK-090` to `-092`).
     vercel-labs/emulate was checked again: no signed interactivity.
-  - [ ] factory-spec's webhooks and gatekeeper's approvals and records through the ports.
+  - [x] factory-spec's webhooks of `forgejo.*` and `github.*` automations through the forge port: `webhook` takes the
+    port's event names with `--event`, and the new commands `hooks` and `unhook` list and remove webhooks, in both
+    adapters; factory-spec runs the adapter named in `FACTORY_FORGEJO_ADAPTER` or `FACTORY_GITHUB_ADAPTER` and
+    signs webhooks with `FACTORY_WEBHOOK_SECRET`; `sut.adapter` gives a module's test the built adapter, and
+    `fakes.github` deletes webhooks (ADR 0060, `SCN-FORGE-022` to `-026`, `SCN-FSPEC-049` to `-056`, `SCN-TK-093` to
+    `-095`).
+  - [ ] gatekeeper's approvals and records through the channel and forge ports.
 
 ### [ ] T-16 · intake
 
