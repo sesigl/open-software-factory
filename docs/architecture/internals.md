@@ -10,6 +10,10 @@ Each module defines a small interface (a port) for every outside system. An adap
 one product and must pass the port's `@conformance` scenarios in `ports/<port>/features/`. Abstract only where
 users really differ: the workflow engine (Temporal) stays fixed.
 
+A module never imports an adapter (ISOLATION). Where a port is a command line, the module runs the adapter as a
+program whose command a documented variable names, with the port's variables, and reads its JSON lines, as
+factory-spec does with the forge adapters (ADR 0060).
+
 Inside a module, `architecture.json` lists its layers from top to bottom, and the ARCH check keeps every import
 pointing down (ADR 0014). The template starts with `entry` → `adapters` → `domain`, so domain code never imports
 an adapter.
@@ -20,7 +24,7 @@ an adapter.
 | sandbox | a command line (ADR 0054): create(sandbox spec) · exec · copy · snapshot · destroy · list · egress log; every request leaves through the sandbox's egress proxy, iron-proxy, which refuses other hosts, swaps secret placeholders and allows only the declared MCP tools | **docker** (a container on an internal network behind an iron-proxy container, `adapters/sandbox/docker`; ADR 0054); **kubernetes** (an agent-sandbox SandboxClaim behind an iron-proxy egress pod, `adapters/sandbox/kubernetes`; ADR 0055; gVisor or Kata through the template); e2b, daytona (community); macOS VM runner |
 | channel | a command line (ADR 0059): receive (a delivery as a work item or a decision) · reply(thread, text) · ask(thread, question, choices) → an approval card | **slack** (threads, Block Kit buttons, `adapters/channel/slack`), **github** (the conversation of a pull request, a card answered with `/<choice>`, `adapters/channel/github`); both through Vercel Chat SDK; teams (Adaptive Cards, tenant consent), linear (agent sessions); jira and sentry through webhooks |
 | tracker | create · update state · link PR · comment | github issues, linear, jira |
-| forge | a command line (ADR 0057): branch · open-pr · pr (merge state) · check (a commit status) · comment · protect (merge rules) · merge · webhook · event (a delivery as `pr.opened`, `pr.reviewed` or `pr.closed`) | **forgejo** (Forgejo's REST API v1, `adapters/forge/forgejo`; also the deterministic test forge; ADR 0057); **github** (GitHub's REST API, `adapters/forge/github`, tested against the testkit's `fakes.github`; ADR 0058); gitlab |
+| forge | a command line (ADR 0057): branch · open-pr · pr (merge state) · check (a commit status) · comment · protect (merge rules) · merge · webhook for the port's events · hooks · unhook (ADR 0060) · event (a delivery as `pr.opened`, `pr.reviewed` or `pr.closed`) | **forgejo** (Forgejo's REST API v1, `adapters/forge/forgejo`; also the deterministic test forge; ADR 0057); **github** (GitHub's REST API, `adapters/forge/github`, tested against the testkit's `fakes.github`; ADR 0058); gitlab |
 | inference | a command line (ADR 0056): start(config) · key(run, budget) · spend log · stop · list; the gateway's OpenAI-compatible chat completions API routes aliases and tags to models, refuses a run over its budget and logs every call with `osf.run.id` | **litellm** (the LiteLLM proxy with PostgreSQL on Docker in front of any provider, `adapters/inference/litellm`; ADR 0056) |
 | secrets | resolve(reference) at the egress proxy, never in the sandbox (`ports/secrets/README.md`) | **file** (`OSF_SECRETS_DIR`; ADR 0054), **env** (`OSF_SECRET_<NAME>`), **openbao** (KV v2), all resolved by both sandbox adapters (ADR 0055); vault, infisical |
 | telemetry | OTLP | **otlp** via the OpenTelemetry Collector to any backend |

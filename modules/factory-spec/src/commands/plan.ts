@@ -66,7 +66,7 @@ export async function apply(loaded: Factory, output: string, options: RenderOpti
   const factory = await pin(loaded);
   const files = render(factory, output, options);
   const applied = model(factory);
-  const hooks = await applyWebhooks(factory.definition, readState()?.hooks);
+  const hooks = await applyWebhooks(factory.definition, readState()?.hooks, options.ghAw);
   writeState({ model: applied, files, hooks });
   return `Applied factory ${factory.definition.factory}, digest ${sha256(JSON.stringify(applied))}`;
 }

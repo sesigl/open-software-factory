@@ -18,29 +18,35 @@ export function parseFilter(filter: string): EventFilter {
   return { source, object, action, argument };
 }
 
-/** Forgejo webhook events by "<object>.<action>" or "<object>"; any other object is the event's own name. */
-const FORGEJO_EVENTS: Record<string, string> = {
-  "issue.labeled": "issue_label",
-  issue: "issues",
-  issue_comment: "issue_comment",
-  "pull_request.labeled": "pull_request_label",
-  pull_request: "pull_request",
-  push: "push",
-};
+/** The forges whose automations factory-spec registers webhooks for. */
+export type WebhookSource = "forgejo" | "github";
 
-/** The webhook the forgejo automations need: its events, on every repository the agents operate on. */
-export function forgejoWebhook(definition: FactoryDefinition): { repositories: string[]; events: string[] } {
-  const filters = (definition.automations ?? [])
-    .flatMap((automation) => (automation.on ? [parseFilter(automation.on)] : []))
-    .filter((filter) => filter.source === "forgejo");
-  const events = filters.map(
-    ({ object, action }) => FORGEJO_EVENTS[`${object}.${action}`] ?? FORGEJO_EVENTS[object] ?? object,
+/** One webhook a forge needs: the repository and the port's events, "<object>[.<action>]" (ADR 0060). */
+export interface WebhookTarget {
+  source: WebhookSource;
+  repository: string;
+  events: string[];
+}
+
+/**
+ * The webhooks the automations need: for each forge with automations, one per repository the agents operate on.
+ * GitHub starts the automations of gh-aw workflows itself, so `ghAw` leaves GitHub out.
+ */
+export function webhookTargets(definition: FactoryDefinition, ghAw: boolean): WebhookTarget[] {
+  const filters = (definition.automations ?? []).flatMap((automation) =>
+    automation.on ? [parseFilter(automation.on)] : [],
   );
-  const repositories = Object.values(definition.agents).flatMap((agent) => agent.repositories ?? []);
-  return {
-    repositories: events.length > 0 ? [...new Set(repositories)].sort() : [],
-    events: [...new Set(events)].sort(),
-  };
+  const repositories = [
+    ...new Set(Object.values(definition.agents).flatMap((agent) => agent.repositories ?? [])),
+  ].sort();
+  const sources: WebhookSource[] = ghAw ? ["forgejo"] : ["forgejo", "github"];
+  return sources.flatMap((source) => {
+    const names = filters
+      .filter((filter) => filter.source === source)
+      .map(({ object, action }) => (action ? `${object}.${action}` : object));
+    const events = [...new Set(names)].sort();
+    return events.length === 0 ? [] : repositories.map((repository) => ({ source, repository, events }));
+  });
 }
 
 /** GitHub Actions events by object; other objects keep their name. */

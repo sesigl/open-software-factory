@@ -1,11 +1,12 @@
 @port=forge @owner=maintainers
 Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
-  A forge adapter is a program with the commands branch, open-pr, pr, check, comment, protect, merge, webhook and
-  event. It reaches the forge at FORGE_URL with the token FORGE_TOKEN, and signs and checks webhooks with
+  A forge adapter is a program with the commands branch, open-pr, pr, check, comment, protect, merge, webhook, hooks,
+  unhook and event. It reaches the forge at FORGE_URL with the token FORGE_TOKEN, and signs and checks webhooks with
   FORGE_WEBHOOK_SECRET. A repository is "<owner>/<name>". event turns one webhook delivery into a pr.opened@v1,
   pr.reviewed@v1 or pr.closed@v1 CloudEvent from contracts (ADR 0057). The test forge has the user "tester" and the
   repository "tester/web", whose branch "main" holds one commit: a real Forgejo for the forgejo adapter, and the
-  testkit's fake GitHub for the github adapter (ADR 0058).
+  testkit's fake GitHub for the github adapter (ADR 0058). webhook takes the port's event names, such as
+  "issue.labeled" or "push", and each adapter maps them to its forge's events (ADR 0060).
 
   @id=SCN-FORGE-001 @status=implemented @conformance
   Scenario: A branch starts at the head commit of the default branch
@@ -155,3 +156,34 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     Then pr prints "mergeable" false
     And merge exits with code 1 and an error that names the conflict
     And the pull request is still open on the test forge
+
+  @id=SCN-FORGE-022 @status=implemented @conformance @realizes=SCN-FACTORY-AUTO-002
+  Scenario: A webhook is registered for the events the client names
+    When the client runs "webhook tester/web http://intake.example/forge --event issue.labeled --event push"
+    Then the test forge has one active webhook of "tester/web" to "http://intake.example/forge" for the label events of issues and for pushes
+    And webhook prints the webhook's ID, its URL, the forge's names of these events and that it is active
+
+  @id=SCN-FORGE-023 @status=implemented @conformance
+  Scenario: Registering a webhook URL again with other events replaces its events
+    Given the client ran "webhook tester/web http://intake.example/forge --event push"
+    When the client runs "webhook tester/web http://intake.example/forge --event issue_comment"
+    Then the test forge has one webhook of "tester/web" to "http://intake.example/forge" for comment events only
+
+  @id=SCN-FORGE-024 @status=implemented @conformance
+  Scenario: hooks lists the webhooks of a repository
+    Given the client ran "webhook tester/web http://intake.example/forge --event push"
+    When the client runs "hooks tester/web"
+    Then hooks prints one line with the same ID, URL, events and active flag that webhook printed
+
+  @id=SCN-FORGE-025 @status=implemented @conformance
+  Scenario: unhook removes a webhook
+    Given the client ran "webhook tester/web http://intake.example/forge"
+    When the client runs "unhook" with the ID that webhook printed
+    Then unhook prints the ID and "removed" true
+    And the test forge has no webhook of "tester/web"
+
+  @id=SCN-FORGE-026 @status=implemented @conformance
+  Scenario: Removing a webhook the repository does not have is not an error
+    Given the repository "tester/web" without webhooks
+    When the client runs "unhook tester/web 424242"
+    Then unhook exits with code 0 and prints the ID 424242 and "removed" false
