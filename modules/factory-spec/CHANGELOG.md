@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/sesigl/open-software-factory/compare/factory-spec-v0.3.0...factory-spec-v0.4.0) (2026-10-24)
+
+
+### Features
+
+* **factory-spec:** T-15 webhooks of forgejo and github automations through the forge port ([#105](https://github.com/sesigl/open-software-factory/issues/105)) ([ba795ad](https://github.com/sesigl/open-software-factory/commit/ba795ad58af71f66174310c1e580d98593139564))
+
 ## [0.3.0](https://github.com/sesigl/open-software-factory/compare/factory-spec-v0.2.0...factory-spec-v0.3.0) (2026-10-23)
 
 

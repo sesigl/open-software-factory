@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/forge-forgejo",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "forge-forgejo: branches, pull requests, checks, comments, merge rules, webhooks and pull request events on Forgejo, behind the factory's forge port.",
   "license": "Apache-2.0",
   "repository": {
