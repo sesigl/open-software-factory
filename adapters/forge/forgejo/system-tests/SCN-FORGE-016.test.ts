@@ -1,10 +1,10 @@
 import { scenario } from "@opensoftware/testkit";
-import { delivery, openPullRequest, receiver, SECRET, setup } from "./forge.ts";
+import { delivery, openPullRequest, receiver, setup } from "./forge.ts";
 
 scenario("SCN-FORGE-016", async ({ sut, fakes, given, when, then }) => {
   let box: Awaited<ReturnType<typeof setup>>;
   let file = "";
-  await given(`a delivery the receiver got from a webhook with the secret "${SECRET}"`, async () => {
+  await given('a delivery the receiver got from a webhook with the secret "whsec-51c2"', async () => {
     box = await setup(sut, fakes);
     const hooks = await receiver(fakes);
     await box.json(["webhook", "tester/web", hooks.url]);

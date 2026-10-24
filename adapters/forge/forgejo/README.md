@@ -30,9 +30,13 @@ npx @opensoftware/forge-forgejo event delivery.json                # a pr.opened
 - **Checks** are commit statuses with the check's name as their context. `pr` lists the latest status per name.
 - **Merge rules** are one branch protection rule named after the branch: the required status checks and the number
   of approvals. `protect` replaces the rule's checks and approvals each time.
-- **Merge.** Forgejo checks whether a new pull request can merge in the background and answers "Please try again
-  later" until it knows; `merge` waits for that up to 10 seconds. When the merge rules refuse it, `merge` exits 1
-  with `the forge refused to merge #<number>: <Forgejo's reason>`.
+- **Merge state.** Forgejo checks whether a new pull request can merge in the background and reports it as not
+  mergeable until it knows. `pr` waits up to 10 seconds for an open pull request to become mergeable, so a pull
+  request that conflicts with its base takes 10 seconds to read.
+- **Merge.** Forgejo answers "Please try again later" while it checks, and also for a pull request that conflicts with
+  its base; `merge` tries again for up to 10 seconds and then exits 1 with `the forge refused to merge #<number>: it
+  conflicts with its base, or the forge is still checking it`. When the merge rules refuse it, `merge` exits 1 with
+  `the forge refused to merge #<number>: <Forgejo's reason>`.
 - **Webhooks** are of type `forgejo` with JSON content, the events `pull_request`, `pull_request_review_approved`,
   `pull_request_review_rejected` and `pull_request_review_comment`, and the secret `FORGE_WEBHOOK_SECRET`. A second
   `webhook` for the same URL updates that webhook.

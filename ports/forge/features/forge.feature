@@ -136,3 +136,21 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
   Scenario: A repository the forge does not have is named in the error
     When the client runs "branch tester/shop fix-checkout"
     Then branch exits with code 1 and the error "no repository tester/shop"
+
+  @id=SCN-FORGE-020 @status=implemented @conformance
+  Scenario: Setting the merge rules of a branch again replaces them
+    Given the client ran "protect tester/web main --check verify"
+    And an open pull request in "tester/web" whose head commit has the status "verify" with "failure"
+    When the client runs "protect tester/web main" with no check
+    And the client runs "merge" for the pull request
+    Then merge prints the merge commit
+
+  @id=SCN-FORGE-021 @status=implemented @conformance
+  Scenario: A pull request that conflicts with its base is not mergeable and is not merged
+    Given the branch "fix-checkout" of "tester/web" that creates "checkout.js"
+    And a person merged another pull request into "main" that creates "checkout.js" with other content
+    And the client opened a pull request from "fix-checkout"
+    When the client runs "pr" and "merge" for it
+    Then pr prints "mergeable" false
+    And merge exits with code 1 and an error that names the conflict
+    And the pull request is still open on the test forge

@@ -32,31 +32,26 @@ export function repository(repo: string, env: NodeJS.ProcessEnv = process.env): 
     if (response.status === 401) throw new Error("the forge refused the token");
     throw new ForgeError(response.status, message(text));
   };
+  /** Whether the repository exists, asked after a 404 that may be about the repository or about something in it. */
+  const exists = () =>
+    call("GET", "").then(
+      () => true,
+      (error: unknown) => !(error instanceof ForgeError && error.status === 404) && Promise.reject(error),
+    );
   return {
     async call<T>(method: string, path: string, body?: unknown): Promise<T> {
       try {
         return await call<T>(method, path, body);
       } catch (error) {
-        // A missing repository and a missing pull request both answer 404; only the first is named.
-        if (error instanceof ForgeError && error.status === 404 && path !== "") {
-          await call("GET", "").catch((missing: unknown) => {
-            throw missing instanceof ForgeError && missing.status === 404
-              ? new Error(`no repository ${repo}`)
-              : missing;
-          });
-        } else if (error instanceof ForgeError && error.status === 404) {
+        if (error instanceof ForgeError && error.status === 404 && !(await exists()))
           throw new Error(`no repository ${repo}`);
-        }
         throw error;
       }
     },
   };
 }
 
+/** The message of Forgejo's error answer, or the whole answer when it has none. */
 function message(text: string): string {
-  try {
-    return (JSON.parse(text) as { message?: string }).message ?? text;
-  } catch {
-    return text;
-  }
+  return /"message":\s*"([^"]*)"/.exec(text)?.[1] ?? text;
 }

@@ -1,12 +1,12 @@
 import { isValid } from "@opensoftware/contracts";
 import { scenario } from "@opensoftware/testkit";
-import { delivery, openPullRequest, receiver, SECRET, setup } from "./forge.ts";
+import { delivery, openPullRequest, receiver, setup } from "./forge.ts";
 
 scenario("SCN-FORGE-014", async ({ sut, fakes, given, when, then }) => {
   let box: Awaited<ReturnType<typeof setup>>;
   let hooks: Awaited<ReturnType<typeof receiver>>;
   await given(
-    `a webhook the client registered for "tester/web" at a receiver with the secret "${SECRET}"`,
+    'a webhook the client registered for "tester/web" at a receiver with the secret "whsec-51c2"',
     async () => {
       box = await setup(sut, fakes);
       hooks = await receiver(fakes);

@@ -40,7 +40,8 @@ Every adapter reads three variables:
 - A branch that exists is refused; a token the forge refuses exits 1 with `the forge refused the token`; a repository
   the forge does not have exits 1 with `no repository <repo>`.
 - A check is a commit status with the check's name as its context, which is what the merge rules require.
-- `merge` exits 1 with an error that names the pull request when the merge rules refuse it, and leaves it open.
+- `merge` exits 1 with an error that names the pull request when the merge rules refuse it or it conflicts with its
+  base, and leaves it open. `protect` replaces the branch's rules each time.
 - `webhook` keeps one webhook per URL: a second call for the same URL updates it.
 - `event` reads a delivery as a JSON file `{"headers": {...}, "body": "<the body as it arrived>"}`. With
   `FORGE_WEBHOOK_SECRET` set, a delivery whose signature does not match exits 1 and prints no event. A delivery about

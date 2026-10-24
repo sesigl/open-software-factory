@@ -1,6 +1,6 @@
 // pr <repo> <number>: the merge state of a pull request with the checks of its head commit.
 import type { Outcome } from "@opensoftware/cli";
-import { forge, line, type Pull, pullNumber } from "./forge.ts";
+import { forge, line, type Pull, pullNumber, settle } from "./forge.ts";
 
 interface Status {
   context: string;
@@ -11,7 +11,12 @@ interface Status {
 
 export async function pr(repo: string | undefined, number: string | undefined): Promise<Outcome> {
   const api = forge(repo);
-  const pull = await api.call<Pull>("GET", `/pulls/${pullNumber(number)}`);
+  const path = `/pulls/${pullNumber(number)}`;
+  // An open pull request is not mergeable while Forgejo still checks it, so pr waits a moment for a true answer.
+  const pull = await settle(
+    () => api.call<Pull>("GET", path),
+    (answer) => answer.mergeable || answer.state !== "open",
+  );
   const combined = await api.call<{ statuses: Status[] | null }>("GET", `/commits/${pull.head.sha}/status`);
   return line({
     number: pull.number,
