@@ -1,4 +1,3 @@
-import type { ScenarioContext } from "@opensoftware/testkit";
 // Text builders for the small modules the system tests create. They only build strings; the tests put them into
 // $INPUT through sut.files.
 
@@ -499,22 +498,3 @@ export const FORGE_API = [
   "    body: body && JSON.stringify(body),",
   "  }).then((response) => response.json());",
 ];
-
-/** The developer runs `testkit run` in the module, which passes SCN-DEMO-001. */
-export async function expectDemoPasses({ sut, when, then }: Pick<ScenarioContext, "sut" | "when" | "then">) {
-  let run: Awaited<ReturnType<typeof sut.cli>>;
-  await when('the developer runs "testkit run --junit report.xml" in the module', async () => {
-    run = await sut.cli(["run", "--junit", "report.xml"]);
-  });
-
-  await then("the command exits with code 0", async () => {
-    expect(run.exitCode, run.stdout + run.stderr).toBe(0);
-  });
-
-  await then('"report.xml" has the passed test case "SCN-DEMO-001"', async () => {
-    expect(testCases(await sut.files.read("$INPUT/report.xml"))).toContainEqual({
-      name: "SCN-DEMO-001",
-      failed: false,
-    });
-  });
-}

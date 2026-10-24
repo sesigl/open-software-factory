@@ -39,3 +39,18 @@ export interface Pull {
   head: { ref: string; sha: string };
   base: { ref: string };
 }
+
+/** Forgejo checks whether a new pull request can merge in the background; the commands wait this long for it. */
+const SETTLE_MS = 10_000;
+const PAUSE_MS = 250;
+
+/** Calls `read` until `settled` holds for its answer or 10 seconds passed, and gives the last answer. */
+export async function settle<T>(read: () => Promise<T>, settled: (answer: T) => boolean): Promise<T> {
+  const started = Date.now();
+  let answer = await read();
+  while (!settled(answer) && Date.now() - started < SETTLE_MS) {
+    await new Promise((resolve) => setTimeout(resolve, PAUSE_MS));
+    answer = await read();
+  }
+  return answer;
+}

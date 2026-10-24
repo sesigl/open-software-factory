@@ -51,7 +51,8 @@ library call, as for the sandbox and inference ports (ADR 0054, ADR 0056). The t
   with a context name works on both and is what branch protection checks.
 - **The first adapter is `adapters/forge/forgejo`** (`@opensoftware/forge-forgejo`, core): Forgejo's REST API v1
   with `fetch`, no client library. Forgejo checks whether a new pull request can merge in the background and answers
-  405 until it knows; `merge` waits for that, up to 10 seconds, and then reports the forge's reason. A webhook is a
+  405 until it knows; `pr` and `merge` wait for that, up to 10 seconds. A pull request that conflicts with its base
+  gets the same answer, so it takes 10 seconds to report. A webhook is a
   Forgejo webhook of type `forgejo` with JSON content, the events `pull_request` and the three review events, and the
   secret. Its signature is the header `X-Forgejo-Signature`, an HMAC-SHA256 of the body.
 - **The testkit's test forge** reaches a fake for containers at `host.docker.internal`, so a scenario registers a
@@ -93,7 +94,8 @@ library call, as for the sandbox and inference ports (ADR 0054, ADR 0056). The t
   `pr.*` events for ledger with `event`, whatever the forge.
 - factory-spec, taskcapture, observer and gatekeeper keep their own forge calls until they move to this port; that
   is listed in T-15 and in their items.
-- `merge` may wait up to 10 seconds on a new pull request while Forgejo checks it.
+- `pr` and `merge` may wait up to 10 seconds on a new pull request while Forgejo checks it, and always on one with a
+  conflict.
 - A community adapter (GitLab, Bitbucket) is any program that passes `ports/forge/features/` with `testkit
   conformance` against a forge it brings.
 - Revisit when a forge needs a check API that statuses cannot express, or when GitHub's adapter needs a GitHub App.

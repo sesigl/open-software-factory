@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { demoModule, expectDemoPasses, FORGE_API, FORGE_README } from "./module.ts";
+import { demoModule, FORGE_API, FORGE_README, testCases } from "./module.ts";
 
 scenario("SCN-TK-080", async ({ sut, given, when, then }) => {
   let bin = "";
@@ -48,5 +48,19 @@ scenario("SCN-TK-080", async ({ sut, given, when, then }) => {
     },
   );
 
-  await expectDemoPasses({ sut, when, then });
+  let run: Awaited<ReturnType<typeof sut.cli>>;
+  await when('the developer runs "testkit run --junit report.xml" in the module', async () => {
+    run = await sut.cli(["run", "--junit", "report.xml"]);
+  });
+
+  await then("the command exits with code 0", async () => {
+    expect(run.exitCode, run.stdout + run.stderr).toBe(0);
+  });
+
+  await then('"report.xml" has the passed test case "SCN-DEMO-001"', async () => {
+    expect(testCases(await sut.files.read("$INPUT/report.xml"))).toContainEqual({
+      name: "SCN-DEMO-001",
+      failed: false,
+    });
+  });
 });
