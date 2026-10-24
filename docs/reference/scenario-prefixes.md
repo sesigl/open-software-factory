@@ -36,6 +36,7 @@ adds a row.
 | SDOCKER | sandbox adapter docker | `adapters/sandbox/docker/features/` |
 | SKUBE | sandbox adapter kubernetes | `adapters/sandbox/kubernetes/features/` |
 | CHANNEL | channel port | `ports/channel/features/` |
+| CSLACK | channel adapter slack | `adapters/channel/slack/features/` |
 | FORGE | forge port | `ports/forge/features/` |
 | INFER | inference port | `ports/inference/features/` |
 | SECRET | secrets port | `ports/secrets/features/` |

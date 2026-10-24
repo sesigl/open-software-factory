@@ -107,6 +107,14 @@ Feature: Services and outside systems
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-090 @status=implemented
+  Scenario: fakes.slack answers users.info with the person's name and chat.getPermalink with a link to the message
+    Given a module whose CLI prints the "real_name" of "users.info" for "U0PERSON" and the "permalink" of the message it posts to "C1"
+    And its system test expects "Varun https://testkit.slack.com/archives/C1/p1767225600000001"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-055 @status=implemented
   Scenario: Pressing a button that the message does not have fails the test with the button shown
     Given a module whose server posts a message with the button "approve" to "C1" and keeps the action ID and user of each signed press

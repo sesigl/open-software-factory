@@ -9,8 +9,26 @@ import { FIXED_DATE } from "../support/process.ts";
 import type { Forge, OpenedPullRequest, PullRequest } from "./forge.ts";
 import { Commits, type Files } from "./github-repository.ts";
 
+/** A comment on a pull request's conversation, with its author. */
+export interface GitHubComment {
+  id: number;
+  user: string;
+  body: string;
+}
+
+/** fakes.github: the Forge interface, and the pull request's conversation as a chat surface (ADR 0059). */
+export interface FakeGitHub extends Forge {
+  /**
+   * Comments on the pull request as a person, `reviewer` by default, and delivers the `issue_comment` event to the
+   * webhooks, like a person who writes in the conversation.
+   */
+  say(pr: PullRequest, text: string, as?: string): Promise<GitHubComment>;
+  /** The comments of the pull request's conversation with their authors, oldest first. */
+  conversation(pr: PullRequest): Promise<GitHubComment[]>;
+}
+
 export interface RunningGitHub {
-  github: Forge;
+  github: FakeGitHub;
   close(): Promise<string[]>;
 }
 
@@ -73,7 +91,7 @@ interface Repository {
   branches: Map<string, string>;
   pulls: Pull[];
   statuses: Status[];
-  comments: { id: number; number: number; body: string; user: string }[];
+  comments: { id: number; number: number; body: string; user: string; createdAt: string }[];
   reviews: { id: number; number: number; user: string; state: string; body: string }[];
   rules: Map<string, Rule>;
   hooks: Hook[];
@@ -299,15 +317,18 @@ export async function startGitHub(): Promise<RunningGitHub> {
     });
   };
 
+  const commentJson = (repo: Repository, pr: Pull, stored: Repository["comments"][number]) => ({
+    id: stored.id,
+    body: stored.body,
+    user: userJson(stored.user),
+    html_url: `${pullUrl(repo, pr)}#issuecomment-${stored.id}`,
+    created_at: stored.createdAt,
+    updated_at: stored.createdAt,
+  });
   const comment = (repo: Repository, pr: Pull, user: string, body: string) => {
-    const stored = { id: nextId(), number: pr.number, body, user };
+    const stored = { id: nextId(), number: pr.number, body, user, createdAt: now() };
     repo.comments.push(stored);
-    const json = {
-      id: stored.id,
-      body,
-      user: userJson(user),
-      html_url: `${pullUrl(repo, pr)}#issuecomment-${stored.id}`,
-    };
+    const json = commentJson(repo, pr, stored);
     deliver(repo, "issue_comment", {
       action: "created",
       issue: {
@@ -491,6 +512,17 @@ export async function startGitHub(): Promise<RunningGitHub> {
       },
     ],
     [
+      "GET",
+      /^\/issues\/(\d+)\/comments$/,
+      (repo, [number = ""]) => {
+        const pr = pull(repo, Number(number));
+        return [
+          200,
+          repo.comments.filter((entry) => entry.number === pr.number).map((entry) => commentJson(repo, pr, entry)),
+        ];
+      },
+    ],
+    [
       "POST",
       /^\/issues\/(\d+)\/comments$/,
       (repo, [number = ""], body, user) => {
@@ -567,6 +599,7 @@ export async function startGitHub(): Promise<RunningGitHub> {
     const version = request.headers["x-github-api-version"];
     if (version !== undefined && !API_VERSIONS.includes(String(version)))
       return send(400, { message: `API version ${version} is not supported.`, status: "400" });
+    if (method === "GET" && path === "/user") return send(200, userJson(user));
     const repoMatch = new RegExp(`^/repos/${OWNER}/([^/]+)(.*)$`).exec(path);
     const route = repoMatch && routes.find(([verb, pattern]) => verb === method && pattern.test(repoMatch[2] ?? ""));
     if (!repoMatch || !route) {
@@ -604,7 +637,7 @@ export async function startGitHub(): Promise<RunningGitHub> {
     sha: tip(repo, pr.head),
   });
 
-  const github: Forge = {
+  const github: FakeGitHub = {
     url,
     token: OWNER_TOKEN,
     owner: OWNER,
@@ -636,6 +669,16 @@ export async function startGitHub(): Promise<RunningGitHub> {
       return ref(pr)
         .repo.comments.filter((entry) => entry.number === pr.number)
         .map((entry) => entry.body);
+    },
+    async say(pr, text, as = REVIEWER) {
+      const found = ref(pr);
+      const posted = comment(found.repo, found.pr, as, text);
+      return { id: posted.id, user: as, body: text };
+    },
+    async conversation(pr) {
+      return ref(pr)
+        .repo.comments.filter((entry) => entry.number === pr.number)
+        .map(({ id, user, body }) => ({ id, user, body }));
     },
     async statuses(pr) {
       const { repo, pr: found } = ref(pr);
