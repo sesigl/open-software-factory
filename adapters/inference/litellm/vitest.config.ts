@@ -5,6 +5,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     include: ["system-tests/**/*.test.ts"],
+    globalSetup: ["vitest.setup.ts"],
     globals: true,
     retry: 0,
     // A worker runs many scenario files and imports the testkit once (ADR 0051).

@@ -32,6 +32,10 @@ layers.
   applies its database migrations; SCN-INFER-004 and -005 also wait eight seconds for the spend log. Vitest runs the
   files side by side, so the suite ends in about 90 seconds. Docker must run; the images are pulled before the tests
   in CI.
+- `vitest.setup.ts` removes the containers and networks of gateways that a run started more than four minutes ago,
+  before the tests start. A mutant that breaks `stop`, or a test that times out, leaves its gateway behind; without
+  the cleanup a mutation run fills the runner's memory. Four minutes is longer than a test may run (180 seconds), so
+  it never removes the gateway of a test that is still running.
 
 ## Quality limits
 
