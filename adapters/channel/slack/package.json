@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/channel-slack",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "channel-slack: Slack mentions as work items, replies and approval cards with buttons, behind the factory's channel port, on Vercel Chat SDK.",
   "license": "Apache-2.0",
   "repository": {
