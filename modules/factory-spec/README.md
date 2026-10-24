@@ -7,7 +7,7 @@ covers: [modules/factory-spec/src/**]
 One `factory.yaml` rendered for every harness. Claude Code, Codex and OpenCode read the same prompt, skills and MCP
 servers, and `factory plan` shows what a change does before `factory apply` writes it. It also registers the forge
 webhooks of automations and writes kagent and gh-aw files. Decisions:
-[ADR 0020](../../docs/decisions/0020-factory-spec.md) and [ADR 0022](../../docs/decisions/0022-factory-spec-automations-and-targets.md). The format is the `factory-definition` contract
+[ADR 0020](../../docs/decisions/0020-factory-spec.md), [ADR 0022](../../docs/decisions/0022-factory-spec-automations-and-targets.md) and [ADR 0060](../../docs/decisions/0060-factory-spec-forge-port.md). The format is the `factory-definition` contract
 ([`contracts/`](../../contracts/README.md)).
 
 ## Quick start
@@ -93,9 +93,9 @@ const definition = resolveFactory("factory.yaml"); // a FactoryDefinition with d
 
 ## Forge webhooks
 
-An automation `forgejo.<object>.<action>(...)` needs the forge to send its events to intake. `factory apply`
-registers one webhook on every repository the agents operate on (`repositories: [<owner>/<name>]`) and records it
-in the state:
+An automation `forgejo.<object>.<action>(...)` or `github.<object>.<action>(...)` needs the forge to send its events
+to intake. `factory apply` registers one webhook on every repository the agents operate on
+(`repositories: [<owner>/<name>]`) and records it in the state:
 
 ```yaml
 agents:
@@ -106,17 +106,30 @@ automations:
   - on: forgejo.issue.labeled(auto-implement)
 ```
 
-Set `FACTORY_FORGE_URL`, `FACTORY_FORGE_TOKEN` (a Forgejo token that may write repositories) and
-`FACTORY_INTAKE_URL`. Apply updates a webhook someone changed, recreates a deleted one and removes the webhook when
-the factory drops the automation. `factory plan` reports both as drift:
+factory-spec has no forge client of its own: it runs the [forge port](../../ports/forge/README.md)'s adapter for the
+forge, `npx -y @opensoftware/forge-forgejo` or `npx -y @opensoftware/forge-github` unless
+`FACTORY_FORGEJO_ADAPTER` or `FACTORY_GITHUB_ADAPTER` names another command. Set `FACTORY_INTAKE_URL`,
+`FACTORY_WEBHOOK_SECRET` (the forge signs every delivery with it) and, for each forge:
+
+| Forge | Variables |
+| --- | --- |
+| Forgejo | `FACTORY_FORGE_URL` and `FACTORY_FORGE_TOKEN`, a token that may write the repositories |
+| GitHub | `FACTORY_GITHUB_TOKEN`, a token with administration of the repositories; `FACTORY_GITHUB_URL` for GitHub Enterprise Server |
+
+`factory apply --gh-aw` registers no GitHub webhook: GitHub starts those automations itself.
+
+Apply updates a webhook someone changed, recreates a deleted one and removes the webhook when the factory drops the
+automation. `factory plan` reports both as drift. A GitHub repository is named `github:<owner>/<name>`:
 
 ```text
 ! webhook acme/web.url: "https://intake.acme.example/webhooks/forge" -> "http://elsewhere.example/hook"
-! webhook acme/web was deleted outside "factory apply"
+! webhook github:acme/web was deleted outside "factory apply"
 ```
 
-`issue.labeled` registers the event `issue_label`, `issue` registers `issues`, `pull_request.labeled` registers
-`pull_request_label`. The label in parentheses is not a webhook setting: intake filters on it.
+factory-spec passes the automation's `<object>[.<action>]` to the adapter, which maps it to the forge's events: on
+Forgejo `issue.labeled` is `issue_label` and `issue` is `issues`; on GitHub both are `issues`. The label in
+parentheses is not a webhook setting: intake filters on it. When the adapter fails, apply and plan exit 1 with its
+message, such as `the forge refused the token`.
 
 ## Kubernetes: render --k8s
 
@@ -160,7 +173,7 @@ the minor version. The one-time setup is the same as for contracts
 | `factory lint` | Check factory.yaml; print each problem with its file, line and column. |
 | `factory render [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]` | Write AGENTS.md, the MCP servers and the skill links of one agent to $OUTPUT. --harness all writes every declared harness; --k8s adds its kagent resources and SandboxTemplate; --gh-aw adds a gh-aw workflow per GitHub automation. |
 | `factory plan` | Pin registry MCP servers in factory.lock; show what apply changes and what drifted, rendered files and webhooks. |
-| `factory apply [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]` | Render like render, register the webhooks of forgejo automations, and record what was applied in OSF_DATA. |
+| `factory apply [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]` | Render like render, register the webhooks of forgejo and github automations (github ones not with --gh-aw), and record what was applied in OSF_DATA. |
 | `factory diff <old> [<new>]` | Show the changes between two versions of factory.yaml, as files or Git revisions. |
 | `factory resolve` | Print the resolved definition as JSON: defaults filled in, registry servers pinned. |
 
@@ -175,7 +188,12 @@ the minor version. The one-time setup is the same as for contracts
 | `FACTORY_MCP_REGISTRY` | string | `"https://registry.modelcontextprotocol.io"` | Base URL of the MCP Registry that plan reads to pin registry servers in factory.lock. |
 | `FACTORY_FORGE_URL` | string |  | Base URL of the Forgejo forge that holds the webhooks of forgejo automations, for example https://code.example.org. |
 | `FACTORY_FORGE_TOKEN` | string |  | Forgejo API token that may manage the webhooks of the agents' repositories. |
-| `FACTORY_INTAKE_URL` | string |  | The address that receives the webhooks of forgejo automations, usually intake. |
+| `FACTORY_FORGEJO_ADAPTER` | string | `"npx -y @opensoftware/forge-forgejo"` | Command line of the forge port's forgejo adapter, which manages the webhooks of forgejo automations. |
+| `FACTORY_GITHUB_URL` | string | `"https://api.github.com"` | Base URL of GitHub's REST API for the webhooks of github automations; GitHub Enterprise Server is https://<host>/api/v3. |
+| `FACTORY_GITHUB_TOKEN` | string |  | GitHub token that may manage the webhooks of the agents' repositories, for github automations. |
+| `FACTORY_GITHUB_ADAPTER` | string | `"npx -y @opensoftware/forge-github"` | Command line of the forge port's github adapter, which manages the webhooks of github automations. |
+| `FACTORY_INTAKE_URL` | string |  | The address that receives the webhooks of forgejo and github automations, usually intake. |
+| `FACTORY_WEBHOOK_SECRET` | string |  | The secret that signs the deliveries of the webhooks apply registers; intake checks it. |
 | `FACTORY_INFERENCE_URL` | string | `"http://litellm:4000/v1"` | Base URL of the OpenAI-compatible inference gateway that the kagent ModelConfig of render --k8s points at. |
 
 ## Scenarios
@@ -230,5 +248,13 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FSPEC-044 | implemented | Render for gh-aw writes a scheduled workflow for a cron automation |
 | SCN-FSPEC-045 | implemented | Render for gh-aw gives the workflow the agent's MCP servers |
 | SCN-FSPEC-046 | implemented | Render for gh-aw refuses a harness gh-aw cannot run |
-| SCN-FSPEC-047 | implemented | Apply shows the forge's answer when it refuses the token |
+| SCN-FSPEC-047 | deprecated | Apply shows the forge's answer when it refuses the token |
 | SCN-FSPEC-048 | implemented | Render for Kubernetes writes an agent-sandbox SandboxTemplate for the agent's sandbox |
+| SCN-FSPEC-049 | implemented | Apply shows the forge adapter's error when the forge refuses the token |
+| SCN-FSPEC-050 | implemented | Apply registers a webhook on the GitHub repository of a github automation |
+| SCN-FSPEC-051 | implemented | Plan reports a webhook changed on GitHub as drift |
+| SCN-FSPEC-052 | implemented | Apply restores a webhook changed on GitHub |
+| SCN-FSPEC-053 | implemented | Apply asks for the GitHub token when a github automation needs a webhook |
+| SCN-FSPEC-054 | implemented | Apply with gh-aw workflows registers no GitHub webhook |
+| SCN-FSPEC-055 | implemented | Apply asks for the webhook secret when an automation needs a webhook |
+| SCN-FSPEC-056 | implemented | Apply names the forge adapter it cannot start |

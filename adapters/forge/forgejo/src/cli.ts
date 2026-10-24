@@ -10,7 +10,7 @@ import { merge } from "./commands/merge.ts";
 import { openPr } from "./commands/open-pr.ts";
 import { pr } from "./commands/pr.ts";
 import { protect } from "./commands/protect.ts";
-import { webhook } from "./commands/webhook.ts";
+import { hooks, unhook, webhook } from "./commands/webhook.ts";
 
 const USAGE = `Usage: forge-forgejo <command>
 
@@ -25,7 +25,10 @@ Commands:
   protect <repo> <branch> [--check <name>]... [--approvals <n>]
                                                          Set the branch's merge rules.
   merge <repo> <number> [--method merge|squash|rebase]   Merge; print {"sha"} of the merge commit.
-  webhook <repo> <url>                                   Register one webhook for pull request events.
+  webhook <repo> <url> [--event <name>]...               Register one webhook for the events, by default pull requests;
+                                                         print {"id", "url", "events", "active"}.
+  hooks <repo>                                           Print each webhook of the repository.
+  unhook <repo> <id>                                     Remove a webhook; print {"id", "removed"}.
   event <delivery.json>                                  Print the delivery's pull request CloudEvent, if any.
 
 A repository is <owner>/<name>.
@@ -44,6 +47,7 @@ const { positionals, values } = parseArgs({
     check: { type: "string", multiple: true },
     approvals: { type: "string" },
     method: { type: "string" },
+    event: { type: "string", multiple: true },
   },
 });
 const [name, first, second, third, fourth, fifth] = positionals;
@@ -56,7 +60,9 @@ const commands: Record<string, Command> = {
   comment: () => comment(first, second, third),
   protect: () => protect(first, second, values.check ?? [], values.approvals),
   merge: () => merge(first, second, values.method),
-  webhook: () => webhook(first, second),
+  webhook: () => webhook(first, second, values.event ?? []),
+  hooks: () => hooks(first),
+  unhook: () => unhook(first, second),
   event: () => event(first),
 };
 

@@ -1,7 +1,7 @@
 import { scenario } from "@opensoftware/testkit";
 import { forgeEnv, putForgeFactory } from "./forge.ts";
 
-scenario("SCN-FSPEC-047", async ({ sut, fakes, given, when, then }) => {
+scenario("SCN-FSPEC-049", async ({ sut, fakes, given, when, then }) => {
   const forge = await fakes.forge();
   await given('a Forgejo repository "tester/web"', async () => {
     await forge.createRepository("web");
@@ -16,14 +16,15 @@ scenario("SCN-FSPEC-047", async ({ sut, fakes, given, when, then }) => {
 
   let run: Awaited<ReturnType<typeof sut.cli>>;
   await when('the factory engineer runs "factory apply" with the token "not-a-token"', async () => {
-    run = await sut.cli(["apply"], { env: forgeEnv(forge, "not-a-token") });
+    run = await sut.cli(["apply"], { env: forgeEnv(sut, forge, "not-a-token") });
   });
 
   await then("the command exits with code 1", async () => {
     expect(run.exitCode).toBe(1);
   });
 
-  await then('the output contains "Forgejo answered 401 to POST tester/web/hooks"', async () => {
-    expect(run.stderr).toContain("Forgejo answered 401 to POST tester/web/hooks");
+  await then('the output contains "the forge refused the token"', async () => {
+    expect(run.stderr).toContain("hooks tester/web:");
+    expect(run.stderr).toContain("the forge refused the token");
   });
 });
