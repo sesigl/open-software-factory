@@ -53,7 +53,8 @@ Every adapter reads three variables:
 
 The shared behavior is the `@conformance` scenarios in [`features/`](features/forge.feature) (prefix `SCN-FORGE`).
 Every adapter in `adapters/forge/<name>/` has one system test per scenario. The test forge is the testkit's
-`fakes.forge`, a real Forgejo, and the webhook receiver is `fakes.http(routes, { containers: true })`. A community
+`fakes.forge`, a real Forgejo, for `forgejo`, and `fakes.github`, the testkit's fake of GitHub's REST API, for
+`github` (ADR 0058). The webhook receiver is `fakes.http`. A community
 adapter shows conformance with `testkit conformance <its copy of this features folder> --junit report.xml` against a
 forge it brings.
 
@@ -62,3 +63,4 @@ forge it brings.
 | Adapter | Tier | What it calls |
 | --- | --- | --- |
 | [`forgejo`](../../adapters/forge/forgejo/README.md) | core | Forgejo's REST API v1, for example Codeberg |
+| [`github`](../../adapters/forge/github/README.md) | core | GitHub's REST API, on github.com or GitHub Enterprise Server |

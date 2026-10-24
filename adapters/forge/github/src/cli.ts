@@ -1,0 +1,61 @@
+#!/usr/bin/env node
+// forge-github <command>: the entry layer only reads the command line and calls a command (ADR 0058).
+import { parseArgs } from "node:util";
+import { type Command, runProgram } from "@opensoftware/cli";
+import { branch, openPr } from "./commands/branches.ts";
+import { event, webhook } from "./commands/hooks.ts";
+import { check, comment, merge, pr, protect } from "./commands/pulls.ts";
+
+const USAGE = `Usage: forge-github <command>
+
+Commands:
+  branch <repo> <branch> [--from <ref>]                  Create a branch; print {"branch", "sha"}.
+  open-pr <repo> <head> --title <text> [--body <text>] [--base <branch>]
+                                                         Open a pull request; print {"number", "url", "head", "base", "sha"}.
+  pr <repo> <number>                                     Print the pull request's merge state and checks.
+  check <repo> <sha> <name> <pending|success|failure|error> [--description <text>] [--url <url>]
+                                                         Post a check (a commit status) on a commit.
+  comment <repo> <number> <text>                         Comment on a pull request; print {"id", "url"}.
+  protect <repo> <branch> [--check <name>]... [--approvals <n>]
+                                                         Replace the branch's protection.
+  merge <repo> <number> [--method merge|squash|rebase]   Merge; print {"sha"} of the merge commit.
+  webhook <repo> <url>                                   Register one webhook for pull request events.
+  event <delivery.json>                                  Print the delivery's pull request CloudEvent, if any.
+
+A repository is <owner>/<name>. FORGE_URL is GitHub's API, by default https://api.github.com.
+`;
+
+const text = { type: "string" } as const;
+const { positionals: words, values: flags } = parseArgs({
+  allowPositionals: true,
+  options: {
+    help: { type: "boolean" },
+    check: { type: "string", multiple: true },
+    ...Object.fromEntries(
+      ["from", "title", "body", "base", "description", "url", "approvals", "method"].map((name) => [name, text]),
+    ),
+  },
+});
+const option = (name: string) => flags[name as keyof typeof flags] as string | undefined;
+const [name, ...rest] = words;
+const [a, b, c, d] = rest;
+
+const commands: Record<string, [arity: number, Command]> = {
+  branch: [2, () => branch(a, b, option("from"))],
+  "open-pr": [2, () => openPr(a, b, { title: option("title"), body: option("body"), base: option("base") })],
+  pr: [2, () => pr(a, b)],
+  check: [4, () => check(a, b, c, d, { description: option("description"), url: option("url") })],
+  comment: [3, () => comment(a, b, c)],
+  protect: [2, () => protect(a, b, (flags.check as string[] | undefined) ?? [], option("approvals"))],
+  merge: [2, () => merge(a, b, option("method"))],
+  webhook: [2, () => webhook(a, b)],
+  event: [1, () => event(a)],
+};
+const chosen = name === undefined ? undefined : commands[name];
+
+process.exitCode = await runProgram({
+  name: "forge-github",
+  usage: USAGE,
+  command: chosen && rest.length <= chosen[0] ? chosen[1] : undefined,
+  help: flags.help as boolean | undefined,
+});

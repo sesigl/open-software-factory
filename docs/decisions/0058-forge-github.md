@@ -25,8 +25,8 @@ answers fixed routes only (ADR 0021). So the testkit needs a GitHub that keeps s
   - Checks are commit statuses (ADR 0057). `pr` reads the combined status of the head commit.
   - GitHub computes whether a pull request can merge in the background and answers `mergeable: null` until it knows;
     `pr` asks again for up to 10 seconds.
-  - `protect` replaces the branch protection: the required status checks, the required approving reviews (none for
-    `--approvals 0`), and `enforce_admins`, so the rules hold for the factory's token too, even an admin's.
+  - `protect` replaces the branch protection: the required status checks, the number of required approving
+    reviews, and `enforce_admins`, so the rules hold for the factory's token too, even an admin's.
   - `merge` names GitHub's reason when it refuses: a failing required check, a missing approval, or `Pull Request is
     not mergeable` for a conflict.
   - A webhook has the events `pull_request`, `pull_request_review` and `issue_comment`, JSON content and the secret

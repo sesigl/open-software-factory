@@ -146,6 +146,15 @@ Every server, client and subscription stops when the scenario ends, before the f
   pull request as the person `reviewer` (`APPROVED`, `REQUEST_CHANGES` or `COMMENT`). Its webhooks reach a fake for
   containers at `host.docker.internal`, so a test receives a real delivery
   ([ADR 0057](../../docs/decisions/0057-forge-port.md)).
+- `fakes.github()`: an in-process fake of the part of GitHub's REST API a forge client calls, with the same interface
+  as `fakes.forge()` and no Docker ([ADR 0058](../../docs/decisions/0058-forge-github.md)). `url` is the API's base,
+  `token` the token of the user `tester`, sent as `Bearer` or `token`; any other token gets 401 `Bad credentials`.
+  It keeps commits with their files, refs, pull requests numbered per repository (`mergeable` is `null` on the first
+  read), three-way merges with conflicts, commit statuses and the combined status, comments, reviews, branch
+  protection that holds for admins only with `enforce_admins`, and webhooks: a signed `ping` when one is created, then
+  `pull_request`, `pull_request_review` and `issue_comment` deliveries with `X-Hub-Signature-256`, sent only to URLs on
+  `127.0.0.1` or `localhost`. IDs, SHAs and times come from counters and the fixed clock. A call it does not know
+  answers 404 and fails the scenario.
 - `fakes.collector(config)`: the real OpenTelemetry Collector Contrib in a container, running the config text a
   module wrote ([ADR 0025](../../docs/decisions/0025-runlog-collector-config-pack.md)). The config receives OTLP/HTTP
   on `0.0.0.0:4318` and exports to `${env:OTEL_EXPORTER_OTLP_ENDPOINT}`, which the fake points at its own receiver.
@@ -302,3 +311,9 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-081 | implemented | fakes.forge creates a branch with a commit and lists the branches and webhooks of a repository |
 | SCN-TK-082 | implemented | fakes.forge reviews a pull request as the person "reviewer" |
 | SCN-TK-083 | implemented | The fake gives the text of each request body as it arrived |
+| SCN-TK-084 | implemented | fakes.github shows the pull request, the status and the comment a module posts |
+| SCN-TK-085 | implemented | fakes.github squashes a pull request into "main" with the files of its branch |
+| SCN-TK-086 | implemented | fakes.github refuses a merge that the branch protection of "main" forbids |
+| SCN-TK-087 | implemented | fakes.github delivers a signed ping and a pull request event to a webhook a module registers |
+| SCN-TK-088 | implemented | fakes.github answers 401 to a token it did not issue |
+| SCN-TK-089 | implemented | A GitHub call fakes.github does not support fails the test with the call shown |

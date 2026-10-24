@@ -21,5 +21,6 @@
   "adapters/sandbox/kubernetes": "0.1.0",
   "packages/sandbox-egress": "0.1.0",
   "adapters/inference/litellm": "0.1.0",
-  "adapters/forge/forgejo": "0.1.0"
+  "adapters/forge/forgejo": "0.1.0",
+  "adapters/forge/github": "0.0.0"
 }
