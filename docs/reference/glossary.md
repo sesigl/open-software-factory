@@ -40,6 +40,8 @@ Use these terms in scenarios, code, UI text and docs.
 | Routing rule | A rule in the LLM gateway that picks a model for a class of tasks. |
 | Routing alias | The model name an agent calls, such as `routes/triage`; the inference gateway's config routes it to a model of a provider (ADR 0056). |
 | Run key | The key a run calls the inference gateway with: its spend rows name the run, and the gateway refuses its calls over the run's budget (ADR 0056). |
+| Delivery | One webhook request a forge sent, kept as its headers and its body as it arrived, so its signature can be checked; the forge port's `event` turns it into a `pr.*` CloudEvent (ADR 0057). |
+| Merge rules | What a branch requires before a pull request merges into it: checks that passed and a number of approvals; the forge port's `protect` sets them (ADR 0057). |
 | Problem | One scorer that failed many runs, recorded by observer with its count, its reasons and links to the failed runs. |
 | Self-improvement | The loop that turns repeated failures into reviewed changes to the factory definition. |
 | Port | An interface to an outside system. |

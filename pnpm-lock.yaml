@@ -24,6 +24,19 @@ importers:
         specifier: 4.1.12
         version: 4.1.12(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(vite@8.3.4(@types/node@24.19.2)(yaml@2.9.1))
 
+  adapters/forge/forgejo:
+    dependencies:
+      '@opensoftware/cli':
+        specifier: workspace:*
+        version: link:../../../packages/cli
+    devDependencies:
+      '@opensoftware/contracts':
+        specifier: workspace:*
+        version: link:../../../contracts
+      '@opensoftware/testkit':
+        specifier: workspace:*
+        version: link:../../../packages/testkit
+
   adapters/harness/acp:
     dependencies:
       '@opensoftware/cli':
