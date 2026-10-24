@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.17.0...testkit-v0.18.0) (2026-10-24)
+
+
+### Features
+
+* **forge:** T-15 the github forge adapter and fakes.github ([#101](https://github.com/sesigl/open-software-factory/issues/101)) ([e8cd07c](https://github.com/sesigl/open-software-factory/commit/e8cd07ce9411c635f668a5558febcecf998681b7))
+
 ## [0.17.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.16.0...testkit-v0.17.0) (2026-10-24)
 
 
