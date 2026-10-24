@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/forge-github",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "forge-github: branches, pull requests, checks, comments, merge rules, webhooks and pull request events on GitHub, behind the factory's forge port.",
   "license": "Apache-2.0",
   "repository": {
