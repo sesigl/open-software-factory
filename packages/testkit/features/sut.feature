@@ -112,3 +112,19 @@ Feature: The sut handle
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-093 @status=planned
+  Scenario: sut.adapter gives the command of a port adapter that the module runs
+    Given a module beside the built adapter "adapters/demo/echo", whose program prints "echo" and its arguments
+    And its system test passes sut.adapter("demo/echo") to the module as "DEMO_ADAPTER", and the module runs it with "hi" and prints what it printed
+    And its system test expects the output "echo hi"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-094 @status=planned
+  Scenario: sut.adapter names an adapter the repository does not have
+    Given a module whose system test calls sut.adapter("demo/missing")
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 1
+    And the output contains "no adapter adapters/demo/missing above"
