@@ -96,9 +96,13 @@ jobs:
           - suite: inference-litellm
             filter: "@opensoftware/inference-litellm"
             pull: ghcr.io/berriai/litellm:v1.106.2 postgres:18-alpine
+          # Each scenario starts its own Forgejo; the webhook scenarios wait for its deliveries (ADR 0057).
+          - suite: forge-forgejo
+            filter: "@opensoftware/forge-forgejo"
+            images: forge
           # Every other package, so a new module runs without a change here.
           - suite: rest
-            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper !@opensoftware/sandbox-docker !@opensoftware/sandbox-kubernetes !@opensoftware/inference-litellm"
+            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper !@opensoftware/sandbox-docker !@opensoftware/sandbox-kubernetes !@opensoftware/inference-litellm !@opensoftware/forge-forgejo"
     steps:
       - uses: actions/checkout@v5
         with:

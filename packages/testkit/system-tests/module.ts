@@ -1,3 +1,4 @@
+import type { ScenarioContext } from "@opensoftware/testkit";
 // Text builders for the small modules the system tests create. They only build strings; the tests put them into
 // $INPUT through sut.files.
 
@@ -472,5 +473,48 @@ export function openaiModule(bin: string[], steps: string[], test: string[]): Re
     ].join("\n"),
     steps,
     test,
+  });
+}
+
+/** README of module demo whose CLI reaches a forge at `DEMO_FORGE_URL` with the token `DEMO_FORGE_TOKEN`. */
+export const FORGE_README = [
+  "# demo",
+  "",
+  "## Configuration",
+  "",
+  "| Variable | Meaning |",
+  "| --- | --- |",
+  "| `DEMO_FORGE_URL` | Forge base URL. |",
+  "| `DEMO_FORGE_TOKEN` | Forge API token. |",
+  "",
+].join("\n");
+
+/** The CLI's first lines: `api(method, path, body)` calls the forge's API v1 below `/repos/<first argument>`. */
+export const FORGE_API = [
+  "const [repository, ...rest] = process.argv.slice(2);",
+  "const api = (method, path, body) =>",
+  "  fetch(`${process.env.DEMO_FORGE_URL}/api/v1/repos/${repository}${path}`, {",
+  "    method,",
+  '    headers: { authorization: `token ${process.env.DEMO_FORGE_TOKEN}`, "content-type": "application/json" },',
+  "    body: body && JSON.stringify(body),",
+  "  }).then((response) => response.json());",
+];
+
+/** The developer runs `testkit run` in the module, which passes SCN-DEMO-001. */
+export async function expectDemoPasses({ sut, when, then }: Pick<ScenarioContext, "sut" | "when" | "then">) {
+  let run: Awaited<ReturnType<typeof sut.cli>>;
+  await when('the developer runs "testkit run --junit report.xml" in the module', async () => {
+    run = await sut.cli(["run", "--junit", "report.xml"]);
+  });
+
+  await then("the command exits with code 0", async () => {
+    expect(run.exitCode, run.stdout + run.stderr).toBe(0);
+  });
+
+  await then('"report.xml" has the passed test case "SCN-DEMO-001"', async () => {
+    expect(testCases(await sut.files.read("$INPUT/report.xml"))).toContainEqual({
+      name: "SCN-DEMO-001",
+      failed: false,
+    });
   });
 }

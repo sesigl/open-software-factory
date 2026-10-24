@@ -1,0 +1,68 @@
+#!/usr/bin/env node
+// forge-forgejo <command>: the entry layer only parses arguments and calls the commands (ADR 0057).
+import { parseArgs } from "node:util";
+import { type Command, runProgram } from "@opensoftware/cli";
+import { branch } from "./commands/branch.ts";
+import { check } from "./commands/check.ts";
+import { comment } from "./commands/comment.ts";
+import { event } from "./commands/event.ts";
+import { merge } from "./commands/merge.ts";
+import { openPr } from "./commands/open-pr.ts";
+import { pr } from "./commands/pr.ts";
+import { protect } from "./commands/protect.ts";
+import { webhook } from "./commands/webhook.ts";
+
+const USAGE = `Usage: forge-forgejo <command>
+
+Commands:
+  branch <repo> <branch> [--from <ref>]                  Create a branch; print {"branch", "sha"}.
+  open-pr <repo> <head> --title <text> [--body <text>] [--base <branch>]
+                                                         Open a pull request; print {"number", "url", "head", "base", "sha"}.
+  pr <repo> <number>                                     Print the pull request's merge state and checks.
+  check <repo> <sha> <name> <pending|success|failure|error> [--description <text>] [--url <url>]
+                                                         Post a check on a commit.
+  comment <repo> <number> <text>                         Comment on a pull request; print {"id", "url"}.
+  protect <repo> <branch> [--check <name>]... [--approvals <n>]
+                                                         Set the branch's merge rules.
+  merge <repo> <number> [--method merge|squash|rebase]   Merge; print {"sha"} of the merge commit.
+  webhook <repo> <url>                                   Register one webhook for pull request events.
+  event <delivery.json>                                  Print the delivery's pull request CloudEvent, if any.
+
+A repository is <owner>/<name>.
+`;
+
+const { positionals, values } = parseArgs({
+  allowPositionals: true,
+  options: {
+    help: { type: "boolean" },
+    from: { type: "string" },
+    title: { type: "string" },
+    body: { type: "string" },
+    base: { type: "string" },
+    description: { type: "string" },
+    url: { type: "string" },
+    check: { type: "string", multiple: true },
+    approvals: { type: "string" },
+    method: { type: "string" },
+  },
+});
+const [name, first, second, third, fourth, fifth] = positionals;
+
+const commands: Record<string, Command> = {
+  branch: () => branch(first, second, values.from),
+  "open-pr": () => openPr(first, second, values),
+  pr: () => pr(first, second),
+  check: () => check(first, second, third, fourth, values),
+  comment: () => comment(first, second, third),
+  protect: () => protect(first, second, values.check ?? [], values.approvals),
+  merge: () => merge(first, second, values.method),
+  webhook: () => webhook(first, second),
+  event: () => event(first),
+};
+
+process.exitCode = await runProgram({
+  name: "forge-forgejo",
+  usage: USAGE,
+  command: name === undefined || fifth !== undefined ? undefined : commands[name],
+  help: values.help,
+});

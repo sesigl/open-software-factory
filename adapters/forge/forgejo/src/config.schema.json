@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "FORGE_URL": {
+      "type": "string",
+      "description": "The Forgejo's base URL, for example https://codeberg.org. Required by every command but event."
+    },
+    "FORGE_TOKEN": {
+      "type": "string",
+      "description": "A Forgejo API token with the scopes write:repository and write:issue. Required by every command but event."
+    },
+    "FORGE_WEBHOOK_SECRET": {
+      "type": "string",
+      "description": "The secret of the webhooks that webhook registers. When it is set, event refuses a delivery whose X-Forgejo-Signature does not match."
+    }
+  }
+}

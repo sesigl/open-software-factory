@@ -512,6 +512,17 @@ read them for ideas, do not copy their company-specific rules.
   for Forgejo today (ADR 0022).
 - **From T-11:** gatekeeper asks for approvals and posts its records through the channel and forge ports (Vercel
   Chat SDK) in place of its direct Slack and forge calls (ADR 0047, ADR 0048).
+- **Slices:**
+  - [x] The forge port as a command line (`branch | open-pr | pr | check | comment | protect | merge | webhook |
+    event`), its nineteen `@conformance` scenarios (branches, pull requests, checks as commit statuses, comments, merge
+    state, merge rules for checks and approvals, one webhook per URL, deliveries as `pr.opened`, `pr.reviewed` and
+    `pr.closed` CloudEvents with a checked signature, a refused token, a missing repository), and the `forgejo` adapter
+    with its npm release; `fakes.forge` delivers webhooks to a fake for containers, creates branches, lists branches
+    and webhooks and reviews as `reviewer`, and `fakes.http` gives each body's text (ADR 0057, `SCN-FORGE-001` to
+    `-019`, `SCN-TK-080` to `-083`).
+  - [ ] The `github` forge adapter against the same conformance scenarios.
+  - [ ] The channel port with Vercel Chat SDK, its `slack` and `github` channels.
+  - [ ] factory-spec's webhooks and gatekeeper's approvals and records through the ports.
 
 ### [ ] T-16 · intake
 

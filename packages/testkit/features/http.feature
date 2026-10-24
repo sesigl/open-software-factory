@@ -59,10 +59,10 @@ Feature: Scripted HTTP API
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
-  @id=SCN-TK-083 @status=planned
+  @id=SCN-TK-083 @status=implemented
   Scenario: The fake gives the text of each request body as it arrived
     Given a module whose CLI posts the body '{ "n": 1 }' with its spaces to "/v1/hooks" at "DEMO_API_URL"
-    And its system test expects the fake to give the text '{ "n": 1 }' and the body {"n":1} for that request
+    And its system test expects "texts" of the fake to give '{ "n": 1 }' for that request
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
