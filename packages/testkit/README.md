@@ -108,7 +108,8 @@ Every server, client and subscription stops when the scenario ends, before the f
   Any other request gets HTTP 404 and fails the scenario with the request shown. `requests()` lists what it
   received as `METHOD /path`; `received()` lists each request with its `body` (JSON, or text when it is not JSON;
   a gzip body is unpacked first); `headers()` lists each request with its headers, names in lower case
-  ([ADR 0032](../../docs/decisions/0032-scorekit.md)). `fakes.http(routes, { containers: true })` listens on every
+  ([ADR 0032](../../docs/decisions/0032-scorekit.md)); `texts()` lists each request with the text of its body as it
+  arrived, for a signature over its bytes ([ADR 0057](../../docs/decisions/0057-forge-port.md)). `fakes.http(routes, { containers: true })` listens on every
   interface instead and also gives `containerUrl`, `http://host.docker.internal:<port>`, for a module that reaches the
   fake from a container, such as a sandbox's egress proxy. Docker Desktop maps that host to the Docker host; on Linux
   the container needs `--add-host host.docker.internal:host-gateway`
@@ -140,7 +141,11 @@ Every server, client and subscription stops when the scenario ends, before the f
 - `fakes.forge()`: a real Forgejo with a user and an API token (`url`, `token`, `owner`). The test can
   `createRepository`, `openPullRequest` and `mergePullRequest`, read a pull request's `comments` and `statuses`,
   list the repository's `pullRequests` (title, body, head and base branch, state, URL) a module opened, and read a
-  `file` on a branch ([ADR 0046](../../docs/decisions/0046-observer.md)).
+  `file` on a branch ([ADR 0046](../../docs/decisions/0046-observer.md)). It can `createBranch` with a commit of
+  files, list the `branches` with their head commits and the `hooks` with their URL, events and state, and `review` a
+  pull request as the person `reviewer` (`APPROVED`, `REQUEST_CHANGES` or `COMMENT`). Its webhooks reach a fake for
+  containers at `host.docker.internal`, so a test receives a real delivery
+  ([ADR 0057](../../docs/decisions/0057-forge-port.md)).
 - `fakes.collector(config)`: the real OpenTelemetry Collector Contrib in a container, running the config text a
   module wrote ([ADR 0025](../../docs/decisions/0025-runlog-collector-config-pack.md)). The config receives OTLP/HTTP
   on `0.0.0.0:4318` and exports to `${env:OTEL_EXPORTER_OTLP_ENDPOINT}`, which the fake points at its own receiver.
@@ -293,3 +298,7 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-077 | implemented | Streamed chat completions calls take the scripted replies in order, with the scripted finish reason |
 | SCN-TK-078 | implemented | A fake for containers answers a request from a container |
 | SCN-TK-079 | implemented | A name with a star in the Configuration section documents every variable with that prefix |
+| SCN-TK-080 | implemented | fakes.forge delivers a pull request's webhook to a fake for containers |
+| SCN-TK-081 | implemented | fakes.forge creates a branch with a commit and lists the branches and webhooks of a repository |
+| SCN-TK-082 | implemented | fakes.forge reviews a pull request as the person "reviewer" |
+| SCN-TK-083 | implemented | The fake gives the text of each request body as it arrived |
