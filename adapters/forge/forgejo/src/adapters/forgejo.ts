@@ -33,11 +33,7 @@ export function repository(repo: string, env: NodeJS.ProcessEnv = process.env): 
     throw new ForgeError(response.status, message(text));
   };
   /** Whether the repository exists, asked after a 404 that may be about the repository or about something in it. */
-  const exists = () =>
-    call("GET", "").then(
-      () => true,
-      (error: unknown) => !(error instanceof ForgeError && error.status === 404) && Promise.reject(error),
-    );
+  const exists = () => found(call("GET", ""));
   return {
     async call<T>(method: string, path: string, body?: unknown): Promise<T> {
       try {
@@ -49,6 +45,14 @@ export function repository(repo: string, env: NodeJS.ProcessEnv = process.env): 
       }
     },
   };
+}
+
+/** True when the call answered, false when the forge answered 404; any other error stays an error. */
+export function found(answer: Promise<unknown>): Promise<boolean> {
+  return answer.then(
+    () => true,
+    (error: unknown) => !(error instanceof ForgeError && error.status === 404) && Promise.reject(error),
+  );
 }
 
 /** The message of Forgejo's error answer, or the whole answer when it has none. */
