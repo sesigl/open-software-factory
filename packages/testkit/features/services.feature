@@ -51,6 +51,30 @@ Feature: Services and outside systems
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-080 @status=planned
+  Scenario: fakes.forge delivers a pull request's webhook to a fake for containers
+    Given a module whose CLI registers a webhook for pull request events of a repository at "DEMO_FORGE_URL" to the URL it is given
+    And its system test passes the container URL of a fake for containers, opens a pull request in fakes.forge and expects a delivery with the event "pull_request"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-081 @status=planned
+  Scenario: fakes.forge creates a branch with a commit and lists the branches and webhooks of a repository
+    Given a module whose CLI creates the branch "release" from "main" and a webhook to "http://intake.example/forge" at "DEMO_FORGE_URL"
+    And its system test creates the branch "fix" with "notes.md" in fakes.forge and expects the branches "fix", "main" and "release" with their head commits and that webhook
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-082 @status=planned
+  Scenario: fakes.forge reviews a pull request as the person "reviewer"
+    Given a module whose CLI prints the user and state of each review of a pull request at "DEMO_FORGE_URL"
+    And its system test approves a pull request in fakes.forge and expects "reviewer APPROVED"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-013 @status=implemented
   Scenario: fakes.slack shows the message a module posts
     Given a module whose CLI posts "hello from demo" to the channel "C1" through the Slack Web API at "DEMO_SLACK_URL"
