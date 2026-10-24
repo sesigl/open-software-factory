@@ -581,6 +581,16 @@ export async function startGitHub(): Promise<RunningGitHub> {
         return [200, hookJson(hook)];
       },
     ],
+    [
+      "DELETE",
+      /^\/hooks\/(\d+)$/,
+      (repo, [id = ""]) => {
+        const index = repo.hooks.findIndex((candidate) => candidate.id === Number(id));
+        if (index < 0) throw new Answer(404, "Not Found");
+        repo.hooks.splice(index, 1);
+        return [204, undefined];
+      },
+    ],
   ];
 
   const handle = async (request: IncomingMessage, response: ServerResponse) => {

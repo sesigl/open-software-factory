@@ -3,7 +3,7 @@
 import { parseArgs } from "node:util";
 import { type Command, runProgram } from "@opensoftware/cli";
 import { branch, openPr } from "./commands/branches.ts";
-import { event, webhook } from "./commands/hooks.ts";
+import { event, hooks, unhook, webhook } from "./commands/hooks.ts";
 import { check, comment, merge, pr, protect } from "./commands/pulls.ts";
 
 const USAGE = `Usage: forge-github <command>
@@ -19,7 +19,10 @@ Commands:
   protect <repo> <branch> [--check <name>]... [--approvals <n>]
                                                          Replace the branch's protection.
   merge <repo> <number> [--method merge|squash|rebase]   Merge; print {"sha"} of the merge commit.
-  webhook <repo> <url>                                   Register one webhook for pull request events.
+  webhook <repo> <url> [--event <name>]...               Register one webhook for the events, by default pull requests;
+                                                         print {"id", "url", "events", "active"}.
+  hooks <repo>                                           Print each webhook of the repository.
+  unhook <repo> <id>                                     Remove a webhook; print {"id", "removed"}.
   event <delivery.json>                                  Print the delivery's pull request CloudEvent, if any.
 
 A repository is <owner>/<name>. FORGE_URL is GitHub's API, by default https://api.github.com.
@@ -31,6 +34,7 @@ const { positionals: words, values: flags } = parseArgs({
   options: {
     help: { type: "boolean" },
     check: { type: "string", multiple: true },
+    event: { type: "string", multiple: true },
     ...Object.fromEntries(
       ["from", "title", "body", "base", "description", "url", "approvals", "method"].map((name) => [name, text]),
     ),
@@ -48,7 +52,9 @@ const commands: Record<string, [arity: number, Command]> = {
   comment: [3, () => comment(a, b, c)],
   protect: [2, () => protect(a, b, (flags.check as string[] | undefined) ?? [], option("approvals"))],
   merge: [2, () => merge(a, b, option("method"))],
-  webhook: [2, () => webhook(a, b)],
+  webhook: [2, () => webhook(a, b, (flags.event as string[] | undefined) ?? [])],
+  hooks: [1, () => hooks(a)],
+  unhook: [2, () => unhook(a, b)],
   event: [1, () => event(a)],
 };
 const chosen = name === undefined ? undefined : commands[name];

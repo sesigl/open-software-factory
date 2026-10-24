@@ -37,9 +37,9 @@ npx @opensoftware/forge-forgejo event delivery.json                # a pr.opened
   its base; `merge` tries again for up to 10 seconds and then exits 1 with `the forge refused to merge #<number>: it
   conflicts with its base, or the forge is still checking it`. When the merge rules refuse it, `merge` exits 1 with
   `the forge refused to merge #<number>: <Forgejo's reason>`.
-- **Webhooks** are of type `forgejo` with JSON content, the events `pull_request`, `pull_request_review_approved`,
-  `pull_request_review_rejected` and `pull_request_review_comment`, and the secret `FORGE_WEBHOOK_SECRET`. A second
-  `webhook` for the same URL updates that webhook.
+- **Webhooks** are of type `forgejo` with JSON content, the events of `--event` or else `pull_request`,
+  `pull_request_review_approved`, `pull_request_review_rejected` and `pull_request_review_comment`, and the secret
+  `FORGE_WEBHOOK_SECRET`. A second `webhook` for the same URL updates that webhook and replaces its events.
 - **Events.** `event` reads `{"headers": {...}, "body": "<the body as it arrived>"}`. With `FORGE_WEBHOOK_SECRET`
   set, `X-Forgejo-Signature` must be the HMAC-SHA256 of the body. The event type comes from `X-Forgejo-Event-Type`:
   `pull_request` with the action `opened` is `pr.opened@v1`, with `closed` it is `pr.closed@v1`; the three review
@@ -47,6 +47,10 @@ npx @opensoftware/forge-forgejo event delivery.json                # a pr.opened
   `X-Forgejo-Delivery`, and a person is `forgejo:<login>`. Any other delivery prints nothing.
 
 ## Commands
+
+`--event` takes the port's names (ADR 0060) and maps them to Forgejo's events: `issue` is `issues`, `issue.labeled`
+is `issue_label`, `pull_request.labeled` is `pull_request_label`, and `pull_request_review` is the three review events.
+Forgejo answers `pull_request` with all of its pull request events.
 
 | Command | What it does |
 | --- | --- |
@@ -57,7 +61,9 @@ npx @opensoftware/forge-forgejo event delivery.json                # a pr.opened
 | `forge-forgejo comment <repo> <number> <text>` | Comment on a pull request; print `{"id", "url"}`. |
 | `forge-forgejo protect <repo> <branch> [--check <name>]... [--approvals <n>]` | Set the branch's merge rules. |
 | `forge-forgejo merge <repo> <number> [--method merge\|squash\|rebase]` | Merge; print `{"sha"}` of the merge commit. |
-| `forge-forgejo webhook <repo> <url>` | Register one webhook for pull request events; print `{"id", "url"}`. |
+| `forge-forgejo webhook <repo> <url> [--event <name>]...` | Register one webhook for the port's events, by default pull requests; print `{"id", "url", "events", "active"}`. |
+| `forge-forgejo hooks <repo>` | Print each webhook of the repository as `{"id", "url", "events", "active"}`. |
+| `forge-forgejo unhook <repo> <id>` | Remove a webhook; print `{"id", "removed"}`, with `removed` false when it had none. |
 | `forge-forgejo event <delivery.json>` | Print the delivery's pull request CloudEvent, or nothing. |
 
 ## Releases
