@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "DOCKER_HOST": {
+      "type": "string",
+      "description": "The Docker daemon to use, as for any docker command. Default: the Docker CLI's current context."
+    },
+    "OSF_SECRET_*": {
+      "type": "string",
+      "description": "OSF_SECRET_<NAME> holds a value the config names as os.environ/OSF_SECRET_<NAME>, such as a provider key. The Docker CLI hands it to the LiteLLM container only; it is never in the config."
+    }
+  }
+}
