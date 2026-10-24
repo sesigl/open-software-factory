@@ -52,3 +52,19 @@ Feature: A fake of GitHub's REST API
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 1
     And the output contains "fake GitHub: GET /repos/tester/demo/issues is not supported"
+
+  @id=SCN-TK-091 @status=implemented
+  Scenario: fakes.github delivers a person's comment in a pull request's conversation to a module's webhook
+    Given a module whose CLI registers a webhook for "issue_comment" events to the URL it is given at "DEMO_GITHUB_URL"
+    And its system test passes the URL of fakes.http, has "reviewer" say "@tester fix the typo" on a pull request and expects an "issue_comment" delivery with that author and text
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-092 @status=implemented
+  Scenario: fakes.github answers the token's user and the comments of a pull request's conversation
+    Given a module whose CLI prints the "login" of "GET /user" and the author and text of each comment of pull request 1 at "DEMO_GITHUB_URL"
+    And its system test has "reviewer" say "@tester fix the typo" on pull request 1 and expects "tester reviewer:@tester fix the typo"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

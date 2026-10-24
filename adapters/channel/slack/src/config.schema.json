@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "CHANNEL_API_URL": {
+      "type": "string",
+      "default": "https://slack.com/api/",
+      "description": "The base URL of Slack's Web API, ending in a slash."
+    },
+    "CHANNEL_TOKEN": {
+      "type": "string",
+      "description": "The Slack bot token (xoxb-...) with chat:write, users:read and channels:history. Required by every command."
+    },
+    "CHANNEL_SIGNING_SECRET": {
+      "type": "string",
+      "description": "The signing secret of the Slack app. receive refuses a delivery whose X-Slack-Signature does not match, or that Slack signed more than 5 minutes from now."
+    },
+    "OSF_NOW": {
+      "type": "string",
+      "description": "The current time, like 2026-01-01T00:00:00Z, that receive compares with X-Slack-Request-Timestamp. Default: the clock."
+    }
+  }
+}

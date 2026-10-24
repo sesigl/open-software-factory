@@ -1,0 +1,40 @@
+{
+  "name": "@opensoftware/channel-github",
+  "version": "0.0.0",
+  "description": "channel-github: mentions in a pull request's conversation as work items, replies and approval cards, behind the factory's channel port, on Vercel Chat SDK.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "adapters/channel/github"
+  },
+  "type": "module",
+  "bin": {
+    "channel-github": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "vitest run",
+    "docs": "node ../../../tools/bin/osf.ts docs .",
+    "mutation": "node ../../../tools/bin/osf.ts mutation ."
+  },
+  "devDependencies": {
+    "@opensoftware/contracts": "workspace:*",
+    "@opensoftware/testkit": "workspace:*"
+  },
+  "dependencies": {
+    "@chat-adapter/github": "4.43.0",
+    "@chat-adapter/state-memory": "4.43.0",
+    "@opensoftware/channel-kit": "workspace:*",
+    "@opensoftware/cli": "workspace:*",
+    "chat": "4.43.0"
+  }
+}

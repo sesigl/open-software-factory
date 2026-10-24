@@ -154,14 +154,19 @@ Every server, client and subscription stops when the scenario ends, before the f
   protection that holds for admins only with `enforce_admins`, and webhooks: a signed `ping` when one is created, then
   `pull_request`, `pull_request_review` and `issue_comment` deliveries with `X-Hub-Signature-256`, sent only to URLs on
   `127.0.0.1` or `localhost`. IDs, SHAs and times come from counters and the fixed clock. A call it does not know
-  answers 404 and fails the scenario.
+  answers 404 and fails the scenario. For a chat client, `GET /user` answers the token's user, a pull request's
+  comments can be listed, `say(pr, text, as)` comments as a person (`reviewer` by default) and delivers the
+  `issue_comment` event, and `conversation(pr)` gives each comment with its author
+  ([ADR 0059](../../docs/decisions/0059-channel-port.md)).
 - `fakes.collector(config)`: the real OpenTelemetry Collector Contrib in a container, running the config text a
   module wrote ([ADR 0025](../../docs/decisions/0025-runlog-collector-config-pack.md)). The config receives OTLP/HTTP
   on `0.0.0.0:4318` and exports to `${env:OTEL_EXPORTER_OTLP_ENDPOINT}`, which the fake points at its own receiver.
   `send(request)` posts an OTLP/JSON request to the Collector; `exported({ count, timeoutMs })` waits for the
   requests the Collector exported (JSON encoding) and, on timeout, shows the Collector's log. Docker must run.
-- `fakes.slack()`: a fake Slack Web API (`auth.test`, `chat.postMessage`, `conversations.history`,
-  `conversations.replies`, `reactions.add`) at `url` with `token`. `auth.test` answers the bot's user ID `bot`, which
+- `fakes.slack()`: a fake Slack Web API (`auth.test`, `chat.getPermalink`, `chat.postMessage`,
+  `conversations.history`, `conversations.replies`, `reactions.add`, `users.info`) at `url` with `token`.
+  `users.info` knows the bot as `factory` and the default person `U0PERSON` as `Varun`; `chat.getPermalink` links a
+  message as `https://testkit.slack.com/archives/<channel>/p<ts>` (ADR 0059). `auth.test` answers the bot's user ID `bot`, which
   every message the module posts carries. The test reads `messages(channel)`, with the `buttons` of each message's
   `actions` blocks, and posts as a person with `say`. Any other method fails the scenario. `deliverTo(events,
   interactivity)` names the module's request URLs: `say` then also sends a `message` event, and `press({ channel,
@@ -317,3 +322,6 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-087 | implemented | fakes.github delivers a signed ping and a pull request event to a webhook a module registers |
 | SCN-TK-088 | implemented | fakes.github answers 401 to a token it did not issue |
 | SCN-TK-089 | implemented | A GitHub call fakes.github does not support fails the test with the call shown |
+| SCN-TK-090 | implemented | fakes.slack answers users.info with the person's name and chat.getPermalink with a link to the message |
+| SCN-TK-091 | implemented | fakes.github delivers a person's comment in a pull request's conversation to a module's webhook |
+| SCN-TK-092 | implemented | fakes.github answers the token's user and the comments of a pull request's conversation |

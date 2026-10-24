@@ -175,6 +175,27 @@
       "component": "forge-github",
       "initial-version": "0.1.0",
       "bump-minor-pre-major": true
+    },
+    "packages/channel-kit": {
+      "release-type": "node",
+      "package-name": "@opensoftware/channel-kit",
+      "component": "channel-kit",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
+    },
+    "adapters/channel/slack": {
+      "release-type": "node",
+      "package-name": "@opensoftware/channel-slack",
+      "component": "channel-slack",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
+    },
+    "adapters/channel/github": {
+      "release-type": "node",
+      "package-name": "@opensoftware/channel-github",
+      "component": "channel-github",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
     }
   }
 }

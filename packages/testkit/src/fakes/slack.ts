@@ -59,7 +59,19 @@ const BOT = "U0BOT";
 const SIGNING_SECRET = "testkit-signing-secret";
 // Slack signs with the time of the request; the fake uses the fixed clock that the module gets as OSF_NOW.
 const SIGNED_AT = String(Date.parse(FIXED_DATE) / 1000);
-const METHODS = ["auth.test", "chat.postMessage", "conversations.history", "conversations.replies", "reactions.add"];
+const METHODS = [
+  "auth.test",
+  "chat.getPermalink",
+  "chat.postMessage",
+  "conversations.history",
+  "conversations.replies",
+  "reactions.add",
+  "users.info",
+];
+/** The people `users.info` knows: the bot and the default person (ADR 0059). */
+const PEOPLE: Record<string, string> = { [BOT]: "factory", U0PERSON: "Varun" };
+/** The workspace's address in the links of `chat.getPermalink`. */
+const WORKSPACE = "https://testkit.slack.com";
 
 export async function startSlack(): Promise<RunningSlack> {
   const messages: SlackMessage[] = [];
@@ -97,7 +109,22 @@ export async function startSlack(): Promise<RunningSlack> {
       return reply({ ok: false, error: "invalid_auth" });
     }
     if (method === "auth.test") return reply({ ok: true, user_id: BOT, bot_id: "B0BOT", team_id: "T0TESTKIT" });
+    if (method === "users.info") {
+      const id = String(args.user ?? "");
+      const name = PEOPLE[id];
+      if (!name) return reply({ ok: false, error: "user_not_found" });
+      const profile = { real_name: name, display_name: name };
+      return reply({ ok: true, user: { id, name: name.toLowerCase(), real_name: name, is_bot: id === BOT, profile } });
+    }
     const channel = String(args.channel ?? "");
+    if (method === "chat.getPermalink") {
+      const ts = String(args.message_ts ?? "");
+      const found = messages.find((message) => message.channel === channel && message.ts === ts);
+      if (!found) return reply({ ok: false, error: "message_not_found" });
+      const link = `${WORKSPACE}/archives/${channel}/p${ts.replace(".", "")}`;
+      const thread = found.threadTs === ts ? "" : `?thread_ts=${found.threadTs}&cid=${channel}`;
+      return reply({ ok: true, channel, permalink: `${link}${thread}` });
+    }
     if (method === "chat.postMessage") {
       const threadTs = args.thread_ts ? String(args.thread_ts) : undefined;
       const message = post({ channel, user: BOT, text: String(args.text ?? ""), threadTs, buttons: buttonsOf(args) });
