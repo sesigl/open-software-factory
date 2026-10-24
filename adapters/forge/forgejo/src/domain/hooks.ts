@@ -20,14 +20,14 @@ export function forgeEvents(names: string[]): string[] {
   return [...new Set(events)].sort();
 }
 
-/** The fields of Forgejo's webhook JSON that the port prints. */
+/** What the port prints of a Forgejo webhook. */
 export interface HookJson {
-  id: number;
+  active: boolean;
   config: { url: string };
   events: string[];
-  active: boolean;
+  id: number;
 }
 
-export function hookLine(hook: HookJson) {
-  return { id: hook.id, url: hook.config.url, events: [...hook.events].sort(), active: hook.active };
-}
+/** One line of `webhook` or `hooks`: the webhook's ID, URL, events sorted, and whether it is active. */
+export const hookLine = ({ id, config, events, active }: HookJson): string =>
+  JSON.stringify({ id, url: config.url, events: [...events].sort(), active });
