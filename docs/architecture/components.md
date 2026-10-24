@@ -95,7 +95,7 @@ records, `runSpans`, lives in `contracts` (ADR 0041).
 | Secrets out of the sandbox | iron-proxy | agentgateway, Cloak | egress proxy swapping placeholder tokens |
 | Secret storage | OpenBao | Vault, Infisical | secret references |
 | MCP gateway | iron-proxy's MCP policy in each sandbox (ADR 0054) | agentgateway | MCP with per-agent tool allowlists |
-| Inference gateway | LiteLLM | agentgateway; Bedrock, Vertex behind it | OpenAI-compatible endpoint, routing config |
+| Inference gateway | LiteLLM with PostgreSQL, run by the `litellm` inference adapter (ADR 0056) | agentgateway; Bedrock, Vertex behind it | OpenAI-compatible endpoint, routing config, keys with budgets, spend rows |
 | Durable workflows | Temporal | DBOS | workflows and signals |
 | Chat, tracker and forge adapters | Vercel Chat SDK | native webhooks | bot handlers |
 | Trace store and judges | Langfuse | Arize Phoenix | OTLP, score API |

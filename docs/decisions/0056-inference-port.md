@@ -44,7 +44,7 @@ gateway and get a key per run without a library call, as for the sandbox port (A
   - **Keys and budgets:** `key` makes a LiteLLM virtual key with `max_budget` and the key metadata
     `spend_logs_metadata: {"osf.run.id": <run ID>}`, so every spend row of the key names the run.
   - **Spend log:** `spend-log` prints the rows of `GET /spend/logs`, the format ledger already reads. LiteLLM
-    writes rows in batches every one to six seconds, so the command waits seven seconds before it reads.
+    writes rows in batches every one to six seconds, so the command waits eight seconds before it reads.
   - **Provider keys:** the config names them as LiteLLM does, `os.environ/<NAME>`. The adapter hands each named
     variable from its own environment to the proxy's container; the value is never on a command line.
   - **Tags:** a call's `tags` pick the deployment of an alias with that tag (LiteLLM's `enable_tag_filtering`), as
@@ -87,6 +87,8 @@ gateway and get a key per run without a library call, as for the sandbox port (A
   the config `taskcapture route` wrote.
 - The gateway holds the provider keys. It runs outside every sandbox; a sandbox reaches it through its egress proxy,
   which puts in the run's key for the gateway's host.
-- `spend-log` takes seven seconds. A caller reads it at the end of a run, not per call.
+- A budget is a limit on the spend LiteLLM has counted. It counts a call's spend just after the answer, so calls sent
+  at the same moment as the one that crosses the budget may still pass. A run overshoots by at most those calls.
+- `spend-log` takes eight seconds. A caller reads it at the end of a run, not per call.
 - A community adapter is any program that passes `ports/inference/features/` with `testkit conformance`.
 - Revisit when LiteLLM writes spend rows on request, or when a second adapter needs a config format the port shares.
