@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.16.0...testkit-v0.17.0) (2026-10-24)
+
+
+### Features
+
+* **forge:** T-15 forge port and the forgejo adapter ([#100](https://github.com/sesigl/open-software-factory/issues/100)) ([b823155](https://github.com/sesigl/open-software-factory/commit/b823155e852ba1219f7145017895f7aae7d84b90))
+
 ## [0.16.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.15.0...testkit-v0.16.0) (2026-10-23)
 
 
