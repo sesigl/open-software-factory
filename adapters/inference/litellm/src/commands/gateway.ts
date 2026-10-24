@@ -4,9 +4,14 @@ import { docker } from "../adapters/docker.ts";
 import type { Gateway } from "../adapters/litellm.ts";
 import { gatewayName, ID, PROXY_PORT } from "../domain/names.ts";
 
+/** An ID of the wrong form is a usage error. */
+export function checkId(id: string | undefined): void {
+  check(id && ID.test(id), "name a gateway by the 12 hex digits start printed");
+}
+
 /** An ID of the wrong form is a usage error, an unknown one an error. */
 export async function findGateway(id: string | undefined): Promise<Gateway> {
-  check(id && ID.test(id), "name a gateway by the 12 hex digits start printed");
+  checkId(id);
   const name = gatewayName(id as string);
   const env = await docker(["container", "inspect", "--format", "{{json .Config.Env}}", name]).catch(() => {
     throw new Error(`no gateway ${id}`);
