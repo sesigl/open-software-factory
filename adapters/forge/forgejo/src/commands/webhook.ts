@@ -16,19 +16,17 @@ export async function webhook(repo: string | undefined, url: string | undefined,
   const saved = existing
     ? await api.call<HookJson>("PATCH", `/hooks/${existing.id}`, hook)
     : await api.call<HookJson>("POST", "/hooks", { type: "forgejo", ...hook });
-  return line(hookLine(saved));
+  return { lines: [hookLine(saved)] };
 }
 
 /** hooks <repo>: one line per webhook of the repository. */
 export async function hooks(repo: string | undefined): Promise<Outcome> {
-  const list = await forge(repo).call<HookJson[]>("GET", "/hooks");
-  return { lines: list.map((hook) => JSON.stringify(hookLine(hook))) };
+  return { lines: (await forge(repo).call<HookJson[]>("GET", "/hooks")).map(hookLine) };
 }
 
 /** unhook <repo> <id>: removes the webhook; "removed" is false when the repository has no such webhook. */
 export async function unhook(repo: string | undefined, text: string | undefined): Promise<Outcome> {
-  const api = forge(repo);
   const id = Number(text);
   check(Number.isInteger(id) && id > 0, "name the webhook by its ID, like unhook tester/web 7");
-  return line({ id, removed: await found(api.call("DELETE", `/hooks/${id}`)) });
+  return line({ id, removed: await found(forge(repo).call("DELETE", `/hooks/${id}`)) });
 }
