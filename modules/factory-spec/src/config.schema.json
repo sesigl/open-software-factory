@@ -25,9 +25,32 @@
       "type": "string",
       "description": "Forgejo API token that may manage the webhooks of the agents' repositories."
     },
+    "FACTORY_FORGEJO_ADAPTER": {
+      "type": "string",
+      "default": "npx -y @opensoftware/forge-forgejo",
+      "description": "Command line of the forge port's forgejo adapter, which manages the webhooks of forgejo automations."
+    },
+    "FACTORY_GITHUB_URL": {
+      "type": "string",
+      "default": "https://api.github.com",
+      "description": "Base URL of GitHub's REST API for the webhooks of github automations; GitHub Enterprise Server is https://<host>/api/v3."
+    },
+    "FACTORY_GITHUB_TOKEN": {
+      "type": "string",
+      "description": "GitHub token that may manage the webhooks of the agents' repositories, for github automations."
+    },
+    "FACTORY_GITHUB_ADAPTER": {
+      "type": "string",
+      "default": "npx -y @opensoftware/forge-github",
+      "description": "Command line of the forge port's github adapter, which manages the webhooks of github automations."
+    },
     "FACTORY_INTAKE_URL": {
       "type": "string",
-      "description": "The address that receives the webhooks of forgejo automations, usually intake."
+      "description": "The address that receives the webhooks of forgejo and github automations, usually intake."
+    },
+    "FACTORY_WEBHOOK_SECRET": {
+      "type": "string",
+      "description": "The secret that signs the deliveries of the webhooks apply registers; intake checks it."
     },
     "FACTORY_INFERENCE_URL": {
       "type": "string",

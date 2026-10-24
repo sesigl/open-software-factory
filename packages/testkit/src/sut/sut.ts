@@ -8,7 +8,7 @@ import { type Acp, makeAcp } from "./acp.ts";
 import { type Action, makeAction } from "./action.ts";
 import { type Events, makeEvents } from "./events.ts";
 import { type Http, makeHttp } from "./http.ts";
-import { makeLaunch } from "./launch.ts";
+import { adapterCommand, makeLaunch } from "./launch.ts";
 import { type Mcp, makeMcp } from "./mcp.ts";
 
 export interface Sut {
@@ -45,6 +45,12 @@ export interface Sut {
     /** The absolute path of a file or folder in $INPUT or $OUTPUT, for a library whose functions take paths. */
     path(path: string): string;
   };
+  /**
+   * The command line of the port adapter `adapters/<port>/<name>/` of this repository, found in the module's folder
+   * or a folder above it: Node and the adapter's built bin, like "node /repo/adapters/forge/forgejo/dist/cli.js".
+   * Pass it to the module in its documented variable; the adapter runs as the module's child, with its network guard.
+   */
+  adapter(name: string): string;
   /** What the module's README promises in its Quick start section. */
   readme: {
     /** The arguments of the first `npx <package> ...` line. */
@@ -135,6 +141,7 @@ export function makeSut(moduleRoot: string, dirs: Folders, hosts: () => string[]
       },
       path: inside,
     },
+    adapter: (name) => adapterCommand(moduleRoot, name),
     readme: {
       quickStartArgs: () => quickStart(moduleRoot).args,
       quickStartOutput: () => quickStart(moduleRoot).output,

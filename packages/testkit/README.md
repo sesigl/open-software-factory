@@ -78,6 +78,10 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
 - `sut.events.watch(nats, subjects)`: records the CloudEvents published on a NATS server from now on.
   `received(type, { count, timeoutMs })` waits for them and, on timeout, names what arrived instead;
   `publish(subject, event)` sends an event to the module.
+- `sut.adapter("<port>/<name>")`: the command line of a port adapter of this repository, `adapters/<port>/<name>/` in
+  the module's folder or above it: Node and the adapter's built `bin`. Pass it to a module that runs adapters as
+  programs in its documented variable; the adapter runs as the module's child, with its network guard. The adapter
+  must be built: name its build in the module's `turbo.json` ([ADR 0060](../../docs/decisions/0060-factory-spec-forge-port.md)).
 
 Every server, client and subscription stops when the scenario ends, before the fakes.
 - `fakes.fixture(name)`, `fakes.fromRepository(dir)`: fixture files.
@@ -151,7 +155,8 @@ Every server, client and subscription stops when the scenario ends, before the f
   `token` the token of the user `tester`, sent as `Bearer` or `token`; any other token gets 401 `Bad credentials`.
   It keeps commits with their files, refs, pull requests numbered per repository (`mergeable` is `null` on the first
   read), three-way merges with conflicts, commit statuses and the combined status, comments, reviews, branch
-  protection that holds for admins only with `enforce_admins`, and webhooks: a signed `ping` when one is created, then
+  protection that holds for admins only with `enforce_admins`, and webhooks, which it lists, updates and deletes: a
+  signed `ping` when one is created, then
   `pull_request`, `pull_request_review` and `issue_comment` deliveries with `X-Hub-Signature-256`, sent only to URLs on
   `127.0.0.1` or `localhost`. IDs, SHAs and times come from counters and the fixed clock. A call it does not know
   answers 404 and fails the scenario. For a chat client, `GET /user` answers the token's user, a pull request's
@@ -325,3 +330,6 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-090 | implemented | fakes.slack answers users.info with the person's name and chat.getPermalink with a link to the message |
 | SCN-TK-091 | implemented | fakes.github delivers a person's comment in a pull request's conversation to a module's webhook |
 | SCN-TK-092 | implemented | fakes.github answers the token's user and the comments of a pull request's conversation |
+| SCN-TK-093 | implemented | sut.adapter gives the command of a port adapter that the module runs |
+| SCN-TK-094 | implemented | sut.adapter names an adapter the repository does not have |
+| SCN-TK-095 | implemented | fakes.github removes the webhook a module deletes |

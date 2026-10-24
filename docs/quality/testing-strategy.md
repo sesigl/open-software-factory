@@ -68,6 +68,8 @@ docs/vision/           factory-level requirements; source for module scenarios, 
   real system in memory or in process where one exists (PostgreSQL is PGlite), a small test-only stand-in in the
   testkit where none exists and the real system is slow (Slack, the model gateway), a container otherwise. The
   module reaches each through its documented configuration; switching a stand-in changes only the testkit.
+- A module that runs a port adapter as a program gets the built adapter of this repository with `sut.adapter`, so its
+  tests prove the module and the adapter together against the same fakes (ADR 0060).
 - A sandbox adapter's tests run real sandboxes, since isolation is what they prove. The APIs and MCP servers a
   sandbox calls are `fakes.http(routes, { containers: true })`, which the sandbox reaches at `host.docker.internal`
   through its egress proxy (ADR 0054). The kubernetes adapter's tests run on kind with agent-sandbox in CI; the egress

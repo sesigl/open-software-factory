@@ -1,5 +1,6 @@
 // How the testkit starts the module's artifact: one command, one working folder and a checked environment.
-import { extname, join, relative } from "node:path";
+import { existsSync } from "node:fs";
+import { dirname, extname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { artifactOf, moduleEnv, repoRoot, workspaceOf } from "../support/module.ts";
 import { baseEnv, FIXED_DATE, FIXED_SEED } from "../support/process.ts";
@@ -27,6 +28,18 @@ function builtArtifact(moduleRoot: string): string {
     );
   }
   return artifact;
+}
+
+/** Node and the built bin of the adapter `adapters/<name>/` in the module's folder or the nearest folder above it. */
+export function adapterCommand(moduleRoot: string, name: string): string {
+  for (let dir = moduleRoot; dir !== dirname(dir); dir = dirname(dir)) {
+    const adapter = join(dir, "adapters", name);
+    if (!existsSync(join(adapter, "package.json"))) continue;
+    const artifact = builtArtifact(adapter);
+    if (!existsSync(artifact)) throw new Error(`the adapter adapters/${name} is not built: build it before the tests`);
+    return `${process.execPath} ${artifact}`;
+  }
+  throw new Error(`no adapter adapters/${name} above ${moduleRoot}`);
 }
 
 /**
