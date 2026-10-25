@@ -81,6 +81,14 @@ Feature: The sut handle
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-096 @status=implemented
+  Scenario: The module records for its scenario the mutants its process ran
+    Given a module whose CLI counts the mutant "7" in Stryker's coverage global
+    And its system test runs the CLI
+    When the developer runs "testkit run --junit report.xml" with OSF_TESTKIT_MUTANTS "$OUTPUT/mutants" in the module
+    Then the command exits with code 0
+    And a file in "$OUTPUT/mutants/SCN-DEMO-001" lists the mutant "7"
+
   @id=SCN-TK-038 @status=implemented
   Scenario: The first failing step ends the action with its exit code
     Given a module whose composite action.yml runs "exit 3" in its first step and "echo second" in its second

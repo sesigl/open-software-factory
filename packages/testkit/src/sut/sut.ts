@@ -94,8 +94,8 @@ export interface SutHandle {
   close(): Promise<string[]>;
 }
 
-export function makeSut(moduleRoot: string, dirs: Folders, hosts: () => string[] = () => []): SutHandle {
-  const launch = makeLaunch(moduleRoot, dirs, hosts);
+export function makeSut(moduleRoot: string, dirs: Folders, hosts: () => string[] = () => [], scenario = ""): SutHandle {
+  const launch = makeLaunch(moduleRoot, dirs, hosts, scenario);
   const stops: (() => Promise<unknown>)[] = [];
   const onStop = (stop: () => Promise<unknown>): void => {
     stops.push(stop);
