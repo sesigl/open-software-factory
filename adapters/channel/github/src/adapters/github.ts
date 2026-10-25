@@ -102,6 +102,6 @@ export const github: Channel = {
   async history(thread) {
     const { adapter, bot } = await connect();
     const { messages } = await adapter.fetchMessages(thread, { direction: "forward", limit: 100 });
-    return messages.map((message) => said(message.raw, bot));
+    return messages.map((message) => ({ ...said(message.raw, bot), thread }));
   },
 };

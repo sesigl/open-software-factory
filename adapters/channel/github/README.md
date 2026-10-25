@@ -22,7 +22,9 @@ npx @opensoftware/channel-github reply github:acme/web:12 "On it: run 7 started"
 npx @opensoftware/channel-github ask github:acme/web:12 "Merge pull request 12 into main?"
 # A person comments "/approve", received as a delivery:
 npx @opensoftware/channel-github receive delivery.json
-# {"kind":"decision","thread":"github:acme/web:12","card":"4412","choice":"approve","person":"github:varun"}
+# {"kind":"decision","thread":"github:acme/web:12","card":"4412","choice":"approve","time":"...","person":"github:varun"}
+npx @opensoftware/channel-github history github:acme/web:12
+# One line per comment of the conversation, oldest first.
 ```
 
 ## How it behaves
@@ -40,15 +42,19 @@ npx @opensoftware/channel-github receive delivery.json
   newest card of the bot in that conversation that offers the choice; a choice no card offers prints nothing.
   `receive` reads the conversation's last 100 comments to find the card.
 - **Threads** are `github:<owner>/<repo>:<number>`, the conversation of a pull request. `reply` and `ask` comment
-  there.
+  there, and `history` lists its first 100 comments.
+- **Followed threads.** `receive --thread <thread>` prints a person's comment in that conversation as a message line,
+  as well as its work item or decision (ADR 0061).
+- **Times** are the comments' `created_at`, in UTC.
 
 ## Commands
 
 | Command | What it does |
 | --- | --- |
-| `channel-github receive <delivery.json>` | Print the delivery's work item or decision, or nothing. |
-| `channel-github reply <thread> <text>` | Comment the text; print `{"thread", "id"}`. |
-| `channel-github ask <thread> <question> [--choice <name>]...` | Comment an approval card, by default with `approve` and `reject`; print `{"thread", "id"}`. |
+| `channel-github receive <delivery.json> [--thread <thread>]...` | Print the delivery's work item, decision or message in a followed thread, or nothing. |
+| `channel-github reply <thread> <text>` | Comment the text; print `{"thread", "id", "time"}`. |
+| `channel-github ask <thread> <question> [--choice <name>]...` | Comment an approval card, by default with `approve` and `reject`; print `{"thread", "id", "time"}`. |
+| `channel-github history <thread>` | Print the conversation's comments, oldest first. |
 
 ## Tests
 

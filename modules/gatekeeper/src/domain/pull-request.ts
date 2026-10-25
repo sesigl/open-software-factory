@@ -1,16 +1,16 @@
-// A pull request as a gate: its URL, its forge API and the request built from it.
+// A pull request as a gate: its URL, its forge and the request built from what the forge port's "pr" prints.
 import { UsageError } from "@opensoftware/cli";
 import type { GateRequest } from "./request.ts";
 
 export interface PullRequest {
   url: string;
-  owner: string;
-  repo: string;
+  /** "<owner>/<name>", as the forge port names a repository. */
+  repository: string;
   number: number;
-  /** Base URL of the forge API, without a trailing slash. */
+  /** The forge and its adapter: "github" on github.com, else "forgejo". Also the prefix of its identities. */
+  forge: "github" | "forgejo";
+  /** The forge's URL as its adapter takes it in FORGE_URL: GitHub's API, or the Forgejo's base URL. */
   api: string;
-  /** Prefix of the identities on this forge: "github" on github.com, else "forgejo". */
-  forge: string;
 }
 
 /** GitHub writes /<owner>/<repo>/pull/<n>, Forgejo /<owner>/<repo>/pulls/<n>. */
@@ -19,43 +19,46 @@ export function parsePullRequest(url: string, api: string | undefined): PullRequ
   if (!match) throw new UsageError(`${url} is not a pull request URL like https://github.com/acme/web/pull/12`);
   const { host, origin } = new URL(url);
   const github = host === "github.com";
+  // gatekeeper 0.2 took Forgejo's API URL, which ends in /api/v1; the adapter adds that itself.
+  const given = api?.replace(/\/+$/, "").replace(/\/api\/v1$/, "");
   return {
     url,
-    owner: match[1] as string,
-    repo: match[2] as string,
+    repository: `${match[1]}/${match[2]}`,
     number: Number(match[3]),
-    api: (api || (github ? "https://api.github.com" : `${origin}/api/v1`)).replace(/\/+$/, ""),
     forge: github ? "github" : "forgejo",
+    api: given || (github ? "https://api.github.com" : origin),
   };
 }
 
-/** The fields of the forge's pull request JSON that the request uses. */
+/** What the forge port's "pr" prints that the request uses. */
 export interface PullJson {
-  html_url: string;
+  url: string;
   title: string;
-  draft?: boolean;
-  user: { login: string };
-  head: { ref: string; sha: string };
-  base: { ref: string };
-  labels?: { name: string }[];
+  author: string;
+  head: string;
+  sha: string;
+  base: string;
+  labels: string[];
+  draft: boolean;
+  paths: string[];
 }
 
-export function requestOf(pr: PullRequest, pull: PullJson, paths: string[]): GateRequest {
+export function requestOf(pr: PullRequest, pull: PullJson): GateRequest {
   return {
-    workItem: pull.html_url,
+    workItem: pull.url,
     stage: "merge",
     summary: `Merge ${pull.title}`,
-    links: [{ url: pull.html_url, title: "Pull request" }],
+    links: [{ url: pull.url, title: "Pull request" }],
     change: {
-      repository: `${pr.owner}/${pr.repo}`,
+      repository: pr.repository,
       number: pr.number,
-      author: `${pr.forge}:${pull.user.login}`,
-      head: pull.head.ref,
-      sha: pull.head.sha,
-      base: pull.base.ref,
-      labels: (pull.labels ?? []).map((label) => label.name),
-      draft: pull.draft ?? false,
-      paths,
+      author: pull.author,
+      head: pull.head,
+      sha: pull.sha,
+      base: pull.base,
+      labels: pull.labels,
+      draft: pull.draft,
+      paths: pull.paths,
     },
   };
 }

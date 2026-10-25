@@ -45,9 +45,16 @@ Feature: Gate a pull request
     Then the command exits with code 1
     And the head commit of the pull request has the commit status "gatekeeper" with the state "failure"
 
-  @id=SCN-GATE-040 @status=implemented
+  @id=SCN-GATE-040 @status=deprecated
   Scenario: A pull request that the forge does not know exits 1
     Given a forge that answers 404 for the pull request "acme/web#12"
     When the user runs "gatekeeper request" for the pull request
     Then the command exits with code 1
     And the error output says that the forge answered 404 to "GET /repos/acme/web/pulls/12"
+
+  @id=SCN-GATE-059 @status=implemented @replaces=SCN-GATE-040
+  Scenario: A pull request on a repository that the forge does not have exits 1 and names the repository
+    Given a forge that answers 404 for the pull request "acme/web#12" and for the repository "acme/web"
+    When the user runs "gatekeeper request" for the pull request
+    Then the command exits with code 1
+    And the error output says that the forge adapter has no repository "acme/web"

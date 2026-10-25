@@ -16,6 +16,8 @@ export interface Gate {
 /** A message in a channel. `mine` marks the messages gatekeeper posted. */
 export interface Message {
   id: string;
+  /** The channel port's thread of the message, for a message that starts one. */
+  thread?: string;
   author: string;
   /** Microseconds since 1970. */
   time: number;
@@ -136,31 +138,24 @@ export interface Channel extends Speech {
   find(marker: string): Promise<Message | undefined>;
   /** The messages after the request, oldest first. */
   thread(request: Message): Promise<Message[]>;
-  /** Posts the text with the marker: in the request's thread when given, else as a new message. */
-  post(text: string, marker: string, request?: Message, buttons?: Button[]): Promise<Message>;
+  /**
+   * Posts the text with the marker: in the request's thread when given, else as a new message. With `choices`, the
+   * message is an approval card with a button per choice (ADR 0048, ADR 0061).
+   */
+  post(text: string, marker: string, request?: Message, choices?: string[]): Promise<Message>;
 }
 
-/** A button under a message; a press decides like a reply with its verb (ADR 0048). */
-export interface Button {
-  /** "gatekeeper.approve" or "gatekeeper.reject". */
-  actionId: string;
-  text: string;
-  /** The gate's ID. */
-  value: string;
-  style: "primary" | "danger";
+/** The buttons of a request in server mode; a press decides like a reply with its verb. */
+export const CHOICES = ["Approve", "Reject"];
+
+/** A press of a decision button, as the message a reply with its verb would be; its ID is its time. */
+export function pressMessage(press: { choice: string; author: string; time: number }): Message {
+  const known = CHOICES.some((choice) => choice.toLowerCase() === press.choice.toLowerCase());
+  return {
+    id: String(press.time),
+    author: press.author,
+    time: press.time,
+    text: known ? press.choice : "",
+    mine: false,
+  };
 }
-
-const VERBS: Record<string, string> = { "gatekeeper.approve": "approve", "gatekeeper.reject": "reject" };
-
-export const decisionButtons = (gate: string): Button[] => [
-  { actionId: "gatekeeper.approve", text: "Approve", value: gate, style: "primary" },
-  { actionId: "gatekeeper.reject", text: "Reject", value: gate, style: "danger" },
-];
-
-/** A press of a decision button, as the message a reply with its verb would be. */
-export function pressMessage(press: { actionId: string; author: string; ts: string; time: number }): Message {
-  return { id: press.ts, author: press.author, time: press.time, text: VERBS[press.actionId] ?? "", mine: false };
-}
-
-/** The verb of a decision button, or undefined for any other action. */
-export const isDecisionButton = (actionId: string): boolean => Object.hasOwn(VERBS, actionId);

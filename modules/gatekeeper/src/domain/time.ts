@@ -14,12 +14,6 @@ export function toIso(micros: number): string {
   return `${new Date(seconds * 1000).toISOString().slice(0, 19)}.${fraction}Z`;
 }
 
-/** A Slack message time like "1767225600.000002". */
-export const fromSlackTs = (ts: string): number => {
-  const [seconds = "0", fraction = ""] = ts.split(".");
-  return Number(seconds) * 1_000_000 + Number(fraction.padEnd(6, "0"));
-};
-
 const UNITS: Record<string, number> = { s: 1, m: 60, h: 3600, d: 86_400 };
 
 /** A duration like "30m", "4h" or "2d", in microseconds. */

@@ -23,6 +23,13 @@ scenario("SCN-CHANNEL-007", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then('receive prints the decision "approve" on that card in that thread by the person', async () => {
-    expect(printed).toEqual({ kind: "decision", thread: id, card, choice: "approve", time: expect.stringMatching(/Z$/), person: `slack:${PERSON}` });
+    expect(printed).toEqual({
+      kind: "decision",
+      thread: id,
+      card,
+      choice: "approve",
+      time: expect.stringMatching(/Z$/),
+      person: `slack:${PERSON}`,
+    });
   });
 });

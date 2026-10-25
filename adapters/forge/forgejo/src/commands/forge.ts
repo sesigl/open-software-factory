@@ -32,15 +32,15 @@ export interface Pull {
   number: number;
   title: string;
   html_url: string;
+  user: { login: string };
+  draft?: boolean;
+  labels?: { name: string }[] | null;
   state: "open" | "closed";
   merged: boolean;
   mergeable: boolean;
   merge_commit_sha: string | null;
   head: { ref: string; sha: string };
   base: { ref: string };
-  user: { login: string };
-  draft?: boolean;
-  labels?: { name: string }[] | null;
 }
 
 /** Forgejo checks whether a new pull request can merge in the background; the commands wait this long for it. */

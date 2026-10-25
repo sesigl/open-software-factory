@@ -84,3 +84,11 @@ Feature: A fake of GitHub's REST API
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-099 @status=implemented
+  Scenario: fakes.github gives a GitHub Actions token that acts as github-actions[bot] and may not read the token's user
+    Given a module whose CLI prints the status of "GET /user" and the author of the comment it posts on pull request 1 at "DEMO_GITHUB_URL"
+    And its system test runs it with the "actionsToken" of fakes.github and expects "403 github-actions[bot]"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

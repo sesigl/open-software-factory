@@ -10,7 +10,7 @@ import { decision, followed, said, signed, slackTime, workItem } from "../domain
 /** The SDK logs to the console; the program's output is its JSON lines only. */
 const QUIET = new ConsoleLogger("silent");
 
-async function connect(follow: string[] = [], env: NodeJS.ProcessEnv = process.env) {
+function connect(env: NodeJS.ProcessEnv = process.env) {
   const token = env.CHANNEL_TOKEN;
   check(token, "set CHANNEL_TOKEN to the Slack bot token");
   const secret = env.CHANNEL_SIGNING_SECRET ?? "";
@@ -22,12 +22,9 @@ async function connect(follow: string[] = [], env: NodeJS.ProcessEnv = process.e
     webhookVerifier: (request, body) => signed(request.headers, body, secret, now),
     logger: QUIET,
   });
-  // The client keeps the threads it follows; the memory state holds them for this one run (ADR 0061).
   const state = createMemoryState();
-  await state.connect();
-  for (const thread of follow) await state.subscribe(thread);
   const chat = new Chat({ userName: "factory", adapters: { slack: adapter }, state, logger: QUIET });
-  return { chat, adapter };
+  return { chat, adapter, state };
 }
 
 /** Runs a call to Slack and names a token that Slack refuses. */
@@ -67,7 +64,10 @@ export const slack: Channel = {
   channel: { form: "slack:<channel>", pattern: CHANNEL },
   api: "CHANNEL_API_URL is Slack's Web API, by default https://slack.com/api/.",
   async receive(keep, follow) {
-    const { chat, adapter } = await connect(follow);
+    const { chat, adapter, state } = connect();
+    // The client keeps the threads it follows; the memory state holds them for this one run (ADR 0061).
+    await state.connect();
+    await Promise.all(follow.map((thread) => state.subscribe(thread)));
     chat.onNewMention((thread, message) => keep(mentioned(adapter, thread.id, message)));
     // A person's message in a followed thread, then what it would print in any other thread.
     chat.onSubscribedMessage(async (thread, message) => {
@@ -91,7 +91,7 @@ export const slack: Channel = {
     return (request, options) => chat.webhooks.slack(request, options);
   },
   async post(target, post) {
-    const { chat } = await connect();
+    const { chat } = connect();
     // The question is the card's text, so the message's text is the question as the client gave it.
     const message =
       "text" in post
@@ -109,13 +109,13 @@ export const slack: Channel = {
     return { id: sent.id, thread: sent.threadId, time: slackTime(sent.id) };
   },
   async history(target) {
-    const { chat, adapter } = await connect();
+    const { chat, adapter } = connect();
     const { messages } = await calling(async () => {
       await chat.initialize();
       return CHANNEL.test(target)
         ? adapter.fetchChannelMessages(target, { limit: 200 })
         : adapter.fetchMessages(target, { direction: "forward", limit: 1000 });
     });
-    return messages.map((message) => said(message.raw, adapter.botUserId ?? ""));
+    return messages.map((message) => ({ ...said(message.raw, adapter.botUserId ?? ""), thread: message.threadId }));
   },
 };

@@ -2,7 +2,7 @@ import { scenario } from "@opensoftware/testkit";
 import { GATE, putReadme, slackEnv } from "./gate.ts";
 
 scenario("SCN-GATE-008", async ({ sut, fakes, given, when, then }) => {
-  const { slack, env } = await slackEnv(fakes);
+  const { slack, env } = await slackEnv(sut, fakes);
   await given('a policy that names the approver group "security"', async () => {
     await putReadme(sut, fakes, { "policy.rego": 'package gatekeeper\n\napprovers contains "security"\n' });
   });

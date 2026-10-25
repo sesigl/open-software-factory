@@ -20,7 +20,11 @@ npx @opensoftware/channel-slack reply slack:C0WEB:1767225600.000001 "On it: run 
 npx @opensoftware/channel-slack ask slack:C0WEB:1767225600.000001 "Merge pull request 12 into main?"
 # A press of "approve" on that card, received as a delivery:
 npx @opensoftware/channel-slack receive delivery.json
-# {"kind":"decision","thread":"slack:C0WEB:1767225600.000001","card":"1767225600.000003","choice":"approve","person":"slack:U0PERSON"}
+# {"kind":"decision","thread":"slack:C0WEB:1767225600.000001","card":"1767225600.000003","choice":"approve","time":"...","person":"slack:U0PERSON"}
+npx @opensoftware/channel-slack history slack:C0WEB:1767225600.000001
+# One line per message of the thread, oldest first.
+npx @opensoftware/channel-slack reply slack:C0WEB "Approval needed from maintainers"
+# {"thread":"slack:C0WEB:1767225600.000004","id":"1767225600.000004","time":"2026-01-01T00:00:00.000004Z"}
 ```
 
 ## How it behaves
@@ -34,18 +38,25 @@ npx @opensoftware/channel-slack receive delivery.json
 - **Work items.** A person's message that mentions the bot (`<@bot>`) is a work item. Its title is the text's first
   line without the mention, its requester `slack:<user ID>` with the name `users.info` gives, and its origin links to
   the message with `chat.getPermalink`. The bot's own messages and messages without a mention print nothing.
-- **Approval cards** are Block Kit messages with the question and one button per choice; a button's action ID is
-  its choice. A press is a decision on that card. A text reply in the thread is not a decision.
+- **Approval cards** are Block Kit messages with the question as text and one button per choice; a button's action
+  ID is its choice. The message's text is the question as the client gave it. A press is a decision on that card,
+  with the time of Slack's `action_ts`. A text reply in the thread is not a decision.
 - **Threads** are `slack:<channel>:<ts of the thread's first message>`. `reply` and `ask` post in that thread.
+- **Channels** are `slack:<channel>`. `reply` and `ask` to a channel start a new thread and print it; `history` of a
+  channel lists the messages that start its threads, newest 200 (ADR 0061).
+- **Followed threads.** `receive --thread <thread>` prints a person's message in that thread as a message line, as
+  well as the work item of a mention. A thread that is not named prints nothing for a message without a mention.
+- **Times** come from Slack's `ts`, with all six fraction digits: `2026-01-01T00:00:00.000001Z`.
 - A token Slack refuses exits 1 with `the channel refused the token`.
 
 ## Commands
 
 | Command | What it does |
 | --- | --- |
-| `channel-slack receive <delivery.json>` | Print the delivery's work item or decision, or nothing. |
-| `channel-slack reply <thread> <text>` | Post the text in the thread; print `{"thread", "id"}`. |
-| `channel-slack ask <thread> <question> [--choice <name>]...` | Post an approval card, by default with `approve` and `reject`; print `{"thread", "id"}`. |
+| `channel-slack receive <delivery.json> [--thread <thread>]...` | Print the delivery's work item, decision or message in a followed thread, or nothing. |
+| `channel-slack reply <thread or channel> <text>` | Post the text in the thread, or start a thread in the channel; print `{"thread", "id", "time"}`. |
+| `channel-slack ask <thread or channel> <question> [--choice <name>]...` | Post an approval card, by default with `approve` and `reject`; print `{"thread", "id", "time"}`. |
+| `channel-slack history <thread or channel>` | Print the messages of the thread, or the messages that start the channel's threads, oldest first. |
 
 ## Tests
 

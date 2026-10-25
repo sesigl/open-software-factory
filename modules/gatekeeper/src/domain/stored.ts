@@ -12,7 +12,7 @@ export interface StoredGate {
   /** The policy's answer when the gate was requested: a later change of the policy leaves an open gate alone. */
   rules: Rules;
   channel: string;
-  /** The ID of the request message, once it is posted. */
+  /** The channel port's thread of the request, like slack:C0GATES:1767225600.000001, once it is posted. */
   thread: string | null;
   /** Microseconds since 1970. */
   requestedAt: number;

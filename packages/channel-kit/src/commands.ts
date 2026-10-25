@@ -31,6 +31,8 @@ export interface Posted {
 /** A message of a thread or a channel, as history prints it. */
 export interface Said {
   id: string;
+  /** The thread of the message, which a message in a channel's history starts. */
+  thread: string;
   /** `<adapter>:<user ID>`. */
   person: string;
   /** RFC 3339 in UTC. */
@@ -127,5 +129,9 @@ export async function post(
 /** history <target>: one line per message, oldest first. */
 export async function history(channel: Channel, name: string | undefined): Promise<Outcome> {
   const said = await channel.history(target(channel, name));
-  return { lines: said.map(({ id, person, time, text, mine }) => JSON.stringify({ id, person, time, text, mine })) };
+  return {
+    lines: said.map(({ id, thread, person, time, text, mine }) =>
+      JSON.stringify({ id, thread, person, time, text, mine }),
+    ),
+  };
 }

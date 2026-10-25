@@ -496,7 +496,7 @@ read them for ideas, do not copy their company-specific rules.
 
 ## Wave 4 · Automate
 
-### [ ] T-15 · channel and forge ports
+### [x] T-15 · channel and forge ports
 
 - **Tier / language / path / prefix:** core (`github`, `forgejo` forge) and optional (`slack`, `teams`,
   `github`, `linear` channels) · TS · `ports/channel/`, `ports/forge/`, `adapters/…` · `SCN-CHANNEL`, `SCN-FORGE`
@@ -540,7 +540,15 @@ read them for ideas, do not copy their company-specific rules.
     signs webhooks with `FACTORY_WEBHOOK_SECRET`; `sut.adapter` gives a module's test the built adapter, and
     `fakes.github` deletes webhooks (ADR 0060, `SCN-FORGE-022` to `-026`, `SCN-FSPEC-049` to `-056`, `SCN-TK-093` to
     `-095`).
-  - [ ] gatekeeper's approvals and records through the channel and forge ports.
+  - [x] gatekeeper's approvals and records through the channel and forge ports: the channel port's `history`,
+    `receive --thread` and times, the slack adapter's `slack:<channel>` posts and history, the forge port's `comments`
+    and the author, draft flag, labels and changed files of `pr`; gatekeeper runs the adapters named in
+    `GATEKEEPER_SLACK_ADAPTER`, `GATEKEEPER_GITHUB_ADAPTER` and `GATEKEEPER_FORGEJO_ADAPTER` and has no Slack or forge
+    client of its own; `runAdapter` in `@opensoftware/cli` runs adapters for factory-spec and gatekeeper;
+    `fakes.slack` lists a channel's threads, `fakes.github` lists a pull request's files and gives a GitHub Actions
+    token, and `fakes.forge` comments as `reviewer` (ADR 0061, `SCN-CHANNEL-010` to `-013`, `SCN-CSLACK-002` to
+    `-004`, `SCN-FORGE-027`, `-028`, `SCN-FGITHUB-001`, `SCN-CKIT-008` to `-011`, `SCN-CLI-017` to `-020`,
+    `SCN-GATE-059`, `SCN-TK-096` to `-099`).
 
 ### [ ] T-16 · intake
 

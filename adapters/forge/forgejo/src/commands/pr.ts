@@ -28,10 +28,6 @@ export async function pr(repo: string | undefined, number: string | undefined): 
     head: pull.head.ref,
     base: pull.base.ref,
     sha: pull.head.sha,
-    author: `forgejo:${pull.user.login}`,
-    draft: pull.draft === true,
-    labels: (pull.labels ?? []).map((label) => label.name),
-    paths: files.map((file) => file.filename),
     mergeCommit: pull.merged ? pull.merge_commit_sha : null,
     checks: (combined.statuses ?? []).map((status) => ({
       name: status.context,
@@ -39,5 +35,9 @@ export async function pr(repo: string | undefined, number: string | undefined): 
       description: status.description,
       url: status.target_url,
     })),
+    author: `forgejo:${pull.user.login}`,
+    draft: pull.draft === true,
+    labels: (pull.labels ?? []).map((label) => label.name),
+    paths: files.map((file) => file.filename),
   });
 }

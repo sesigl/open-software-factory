@@ -1,5 +1,7 @@
 // The files gatekeeper reads and writes.
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { UsageError, writeText } from "@opensoftware/cli";
 
 export function readText(file: string): string {
@@ -17,3 +19,15 @@ export function readJson(file: string): unknown {
 }
 
 export const writeJson = (file: string, value: unknown): void => writeText(file, `${JSON.stringify(value, null, 2)}\n`);
+
+/** Writes the delivery to a file of its own for the channel port's receive, runs `work` on it and removes it. */
+export async function withDelivery<T>(delivery: unknown, work: (file: string) => Promise<T>): Promise<T> {
+  const folder = mkdtempSync(join(tmpdir(), "gatekeeper-"));
+  const file = join(folder, "delivery.json");
+  try {
+    writeFileSync(file, JSON.stringify(delivery), { mode: 0o600 });
+    return await work(file);
+  } finally {
+    rmSync(folder, { recursive: true, force: true });
+  }
+}

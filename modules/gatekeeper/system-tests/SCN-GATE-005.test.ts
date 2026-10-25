@@ -2,7 +2,7 @@ import { scenario } from "@opensoftware/testkit";
 import { GATE, putReadme, request, slackEnv } from "./gate.ts";
 
 scenario("SCN-GATE-005", async ({ sut, fakes, given, when, then }) => {
-  const { slack, env } = await slackEnv(fakes);
+  const { slack, env } = await slackEnv(sut, fakes);
   await given('the README policy, which gives the risk "low" to a change outside "contracts/"', async () => {
     await putReadme(sut, fakes);
   });

@@ -18,7 +18,7 @@ scenario("SCN-GATE-051", async ({ sut, fakes, given, when, then }) => {
 
   await then("the answer has the status 401", async () => {
     expect(answer.status).toBe(401);
-    expect(answer.body).toMatchObject({ status: 401, detail: "the Slack signature does not match" });
+    expect(answer.body).toMatchObject({ status: 401, detail: expect.stringMatching(/signature does not match/) });
   });
 
   await then('"/v1/gates/<gate>" shows the state "pending" that waits for "maintainers"', async () => {

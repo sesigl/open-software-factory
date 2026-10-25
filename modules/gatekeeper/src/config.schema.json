@@ -34,13 +34,28 @@
       "type": "string",
       "description": "serve: the signing secret of the Slack app, which checks every request from Slack. Required for serve."
     },
+    "GATEKEEPER_SLACK_ADAPTER": {
+      "type": "string",
+      "default": "npx -y @opensoftware/channel-slack",
+      "description": "The command line of the channel port's slack adapter. It gets GATEKEEPER_SLACK_URL, GATEKEEPER_SLACK_TOKEN and GATEKEEPER_SLACK_SIGNING_SECRET as CHANNEL_API_URL, CHANNEL_TOKEN and CHANNEL_SIGNING_SECRET."
+    },
     "GATEKEEPER_FORGE_URL": {
       "type": "string",
-      "description": "Base URL of the forge API. Default: https://api.github.com for github.com, <origin>/api/v1 for Forgejo."
+      "description": "The forge's URL as its forge adapter takes it in FORGE_URL: GitHub's API (default https://api.github.com for github.com), or the Forgejo's base URL (default the pull request's origin)."
     },
     "GATEKEEPER_FORGE_TOKEN": {
       "type": "string",
-      "description": "Token that may read the pull request, comment on it and set its commit status. Never written to a file."
+      "description": "Token that may read the pull request, comment on it and set its commit status; the forge adapter gets it as FORGE_TOKEN. Never written to a file."
+    },
+    "GATEKEEPER_GITHUB_ADAPTER": {
+      "type": "string",
+      "default": "npx -y @opensoftware/forge-github",
+      "description": "The command line of the forge port's github adapter, for a pull request on github.com."
+    },
+    "GATEKEEPER_FORGEJO_ADAPTER": {
+      "type": "string",
+      "default": "npx -y @opensoftware/forge-forgejo",
+      "description": "The command line of the forge port's forgejo adapter, for a pull request on any other forge."
     },
     "GATEKEEPER_SIGNING_KEY": {
       "type": "string",

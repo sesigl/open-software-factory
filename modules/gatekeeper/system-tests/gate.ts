@@ -33,14 +33,27 @@ export const request = (paths: string[]): string =>
     change: { paths },
   });
 
-export async function slackEnv(fakes: Fakes) {
+/** fakes.slack, and the variables that name it and the channel port's slack adapter of this repository. */
+export async function slackEnv(sut: Sut, fakes: Fakes) {
   const slack = await fakes.slack();
-  return { slack, env: { GATEKEEPER_SLACK_URL: slack.url, GATEKEEPER_SLACK_TOKEN: slack.token } };
+  const env = {
+    GATEKEEPER_SLACK_URL: slack.url,
+    GATEKEEPER_SLACK_TOKEN: slack.token,
+    GATEKEEPER_SLACK_ADAPTER: sut.adapter("channel/slack"),
+  };
+  return { slack, env };
 }
+
+/** The variables that name the scripted forge API and the forge port's github adapter of this repository. */
+export const forgeEnv = (sut: Sut, url: string): Record<string, string> => ({
+  GATEKEEPER_FORGE_URL: url,
+  GATEKEEPER_FORGE_TOKEN: "ghp_testkit_gatekeeper",
+  GATEKEEPER_GITHUB_ADAPTER: sut.adapter("forge/github"),
+});
 
 /** The README's request, asked in C0GATES; returns the fake Slack, the environment and the request message. */
 export async function requested(sut: Sut, fakes: Fakes, env: Record<string, string> = {}) {
-  const { slack, env: slackVars } = await slackEnv(fakes);
+  const { slack, env: slackVars } = await slackEnv(sut, fakes);
   await putReadme(sut, fakes);
   const run = await sut.cli(["request", ...GATE], { env: { ...slackVars, ...env } });
   if (run.exitCode !== 0) throw new Error(`gatekeeper request failed: ${run.stderr}`);
@@ -90,14 +103,21 @@ export function forge(fakes: Fakes, branch: string, comments: Comment[] = [], be
     {
       path: `${base}/pulls/12`,
       body: {
+        number: 12,
         html_url: PR,
         title: "Fix the research skill",
+        state: "open",
+        merged: false,
+        mergeable: true,
+        merge_commit_sha: null,
+        draft: false,
         user: { login: "observer-bot" },
         head: { ref: branch, sha: SHA },
         base: { ref: "main" },
         labels: [],
       },
     },
+    { path: `${base}/commits/${SHA}/status`, body: { statuses: [] } },
     { path: `${base}/pulls/12/files?per_page=100`, body: [{ filename: "AGENTS.md" }] },
     { path: "/user", body: { login: "gatekeeper-bot" } },
     ...(before ? [{ path: `${base}/issues/12/comments?per_page=100`, body: before.map(commentJson), times: 1 }] : []),
@@ -127,7 +147,7 @@ export async function requestComment(sut: Sut, fakes: Fakes, branch: string): Pr
       "--out",
       "first.json",
     ],
-    { env: { GATEKEEPER_FORGE_URL: first.url } },
+    { env: forgeEnv(sut, first.url) },
   );
   const posted = first.received().find((call) => call.method === "POST" && call.path.endsWith("/comments"));
   if (run.exitCode !== 0 || !posted) throw new Error(`gatekeeper request posted no comment: ${run.stderr}`);
