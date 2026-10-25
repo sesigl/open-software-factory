@@ -308,7 +308,7 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-GATE-037 | implemented | The command "keys" writes a key pair for signing records |
 | SCN-GATE-038 | implemented | A signing key that is no PEM key exits 2 and writes no record |
 | SCN-GATE-039 | implemented | A groups file that is not JSON exits 2 and names the file |
-| SCN-GATE-040 | implemented | A pull request that the forge does not know exits 1 |
+| SCN-GATE-040 | deprecated | A pull request that the forge does not know exits 1 |
 | SCN-GATE-041 | implemented | A program asks for approval over HTTP and the server asks in Slack with buttons |
 | SCN-GATE-042 | implemented | The same request twice answers the same gate and asks only once |
 | SCN-GATE-043 | implemented | A request without a summary gets the status 400 and names the field |
@@ -327,3 +327,6 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-GATE-056 | implemented | A decision in Slack is published as the event "gate.decided@v1" |
 | SCN-GATE-057 | implemented | An event of a time when NATS was unreachable is published once the server reaches NATS |
 | SCN-GATE-058 | implemented | The server without a database exits with code 2 and names the variable |
+| SCN-GATE-059 | planned | A Slack token that the channel refuses exits 1 with the channel's error |
+| SCN-GATE-060 | planned | A forge token that the forge refuses exits 1 with the forge's error |
+| SCN-GATE-061 | planned | A pull request that the forge does not have exits 1 and names it |

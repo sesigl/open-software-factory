@@ -333,3 +333,6 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-093 | implemented | sut.adapter gives the command of a port adapter that the module runs |
 | SCN-TK-094 | implemented | sut.adapter names an adapter the repository does not have |
 | SCN-TK-095 | implemented | fakes.github removes the webhook a module deletes |
+| SCN-TK-096 | planned | fakes.forge comments on a pull request as the person "reviewer" |
+| SCN-TK-097 | planned | fakes.github answers the changed files, the labels and the draft flag of a pull request |
+| SCN-TK-098 | planned | fakes.github has a token like a GitHub Actions token that may not read its user |
