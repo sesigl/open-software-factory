@@ -2,7 +2,7 @@
 Feature: Quick start
   The five-minute quick start from the README: submit work over HTTP and read it back, with no database.
 
-  @id=SCN-INTAKE-001 @status=planned @realizes=SCN-FACTORY-LOOP-001 @realizes=SCN-FACTORY-ACCESS-002
+  @id=SCN-INTAKE-001 @status=implemented @realizes=SCN-FACTORY-LOOP-001 @realizes=SCN-FACTORY-ACCESS-002
   Scenario: A program submits work over HTTP and reads it back
     Given "intake serve" runs with the README's "INTAKE_API_TOKEN" and no database
     When a program posts the README's "work.json" to "/v1/work-items" with the API token

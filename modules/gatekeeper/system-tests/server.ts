@@ -10,6 +10,11 @@ export const AUTH = { authorization: `Bearer ${API_TOKEN}` };
 export const readmeRequest = (fakes: Fakes): GateRequest =>
   JSON.parse(readmeFiles(fakes)["request.json"] as string) as GateRequest;
 
+const postGate = (sut: Sut, fakes: Fakes) =>
+  sut.http.client<paths>().POST("/v1/gates", { body: readmeRequest(fakes), headers: AUTH });
+/** The answer to POST /v1/gates; the client's POST without a path would be the union of every API's answers. */
+export type GateAnswer = Awaited<ReturnType<typeof postGate>>;
+
 /** Starts the server on a new database with the README's files, changed by `change`. */
 export async function serving(
   sut: Sut,

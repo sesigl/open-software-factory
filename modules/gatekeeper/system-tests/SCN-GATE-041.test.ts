@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { AUTH, readmeRequest, serving } from "./server.ts";
+import { AUTH, type GateAnswer, readmeRequest, serving } from "./server.ts";
 
 scenario("SCN-GATE-041", async ({ sut, fakes, given, when, then }) => {
   let server: Awaited<ReturnType<typeof serving>>;
@@ -7,7 +7,7 @@ scenario("SCN-GATE-041", async ({ sut, fakes, given, when, then }) => {
     server = await serving(sut, fakes);
   });
 
-  let answer: Awaited<ReturnType<ReturnType<typeof server.api>["POST"]>>;
+  let answer: GateAnswer;
   await when('a program posts the README request to "/v1/gates" with the API token', async () => {
     answer = await server.api().POST("/v1/gates", { body: readmeRequest(fakes), headers: AUTH });
   });
