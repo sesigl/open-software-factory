@@ -39,6 +39,7 @@ adds a row.
 | CHANNEL | channel port | `ports/channel/features/` |
 | CSLACK | channel adapter slack | `adapters/channel/slack/features/` |
 | FORGE | forge port | `ports/forge/features/` |
+| FGITHUB | forge adapter github | `adapters/forge/github/features/` |
 | INFER | inference port | `ports/inference/features/` |
 | SECRET | secrets port | `ports/secrets/features/` |
 | DIST | distribution | `deploy/features/` |

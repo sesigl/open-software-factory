@@ -76,3 +76,19 @@ Feature: A fake of GitHub's REST API
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-097 @status=planned
+  Scenario: fakes.github answers the changed files, the labels and the draft flag of a pull request
+    Given a module whose CLI prints the files of pull request 1 and its labels and "draft" at "DEMO_GITHUB_URL"
+    And its system test opens a pull request in fakes.github that changes "checkout.js" and expects "checkout.js [] false"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-098 @status=planned
+  Scenario: fakes.github has a token like a GitHub Actions token that may not read its user
+    Given a module whose CLI prints the status of "GET /user" and comments on pull request 1 with the token in "DEMO_GITHUB_TOKEN" at "DEMO_GITHUB_URL"
+    And its system test passes the actions token of fakes.github and expects the status 403 and a comment by "github-actions[bot]"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

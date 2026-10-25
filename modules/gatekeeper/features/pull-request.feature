@@ -1,7 +1,8 @@
 @module=gatekeeper @owner=maintainers
 Feature: Gate a pull request
   With "--pull-request", the request is the pull request, the channel is its comments and the result is the commit
-  status "gatekeeper" of its head commit.
+  status "gatekeeper" of its head commit. gatekeeper reads and writes them through the forge adapter in
+  GATEKEEPER_FORGE_ADAPTER (ADR 0061).
 
   @id=SCN-GATE-029 @status=implemented @realizes=SCN-FACTORY-IMPROVE-003
   Scenario: A factory-made pull request asks "maintainers" in a comment
@@ -45,9 +46,24 @@ Feature: Gate a pull request
     Then the command exits with code 1
     And the head commit of the pull request has the commit status "gatekeeper" with the state "failure"
 
-  @id=SCN-GATE-040 @status=implemented
+  @id=SCN-GATE-040 @status=deprecated
   Scenario: A pull request that the forge does not know exits 1
     Given a forge that answers 404 for the pull request "acme/web#12"
     When the user runs "gatekeeper request" for the pull request
     Then the command exits with code 1
     And the error output says that the forge answered 404 to "GET /repos/acme/web/pulls/12"
+
+  @id=SCN-GATE-060 @status=planned
+  Scenario: A forge token that the forge refuses exits 1 with the forge's error
+    Given the pull request "acme/web#12" from the branch "observer/research-skill-used-1a2b3c4d" on the forge
+    And a policy that asks "maintainers" for a pull request from a branch "observer/"
+    When the user runs "gatekeeper request" for the pull request with a token the forge refuses
+    Then the command exits with code 1
+    And the error output says "the forge refused the token"
+
+  @id=SCN-GATE-061 @status=planned @replaces=SCN-GATE-040
+  Scenario: A pull request that the forge does not have exits 1 and names it
+    Given a forge whose repository "acme/web" has no pull request 12
+    When the user runs "gatekeeper request" for the pull request
+    Then the command exits with code 1
+    And the error output says "no pull request acme/web#12"
