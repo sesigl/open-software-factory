@@ -93,3 +93,10 @@ Feature: Request an approval
     When the user runs the quick start command from the README with "GATEKEEPER_SLACK_TOKEN" set to "xoxb-not-a-token"
     Then the command exits with code 1
     And the error output says "the channel refused the token"
+
+  @id=SCN-GATE-062 @status=implemented
+  Scenario: A channel adapter that prints no JSON exits 1 and names the adapter
+    Given the policy, the groups and the request from the README
+    When the user runs the quick start command from the README with "GATEKEEPER_SLACK_ADAPTER" set to "echo hello"
+    Then the command exits with code 1
+    And the error output says 'the adapter "echo hello" printed a line that is not JSON'
