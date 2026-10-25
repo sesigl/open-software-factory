@@ -21,6 +21,7 @@ scenario("SCN-FORGE-005", async ({ sut, fakes, given, when, then }) => {
   await then("comment prints the comment's ID and URL", async () => {
     expect(printed).toEqual({
       id: expect.any(Number),
+      time: expect.stringMatching(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/),
       url: expect.stringMatching(new RegExp(`/tester/web/pulls/1#issuecomment-${printed.id}$`)),
     });
   });

@@ -18,6 +18,7 @@ export async function pr(repo: string | undefined, number: string | undefined): 
     (answer) => answer.mergeable || answer.state !== "open",
   );
   const combined = await api.call<{ statuses: Status[] | null }>("GET", `/commits/${pull.head.sha}/status`);
+  const files = await api.call<{ filename: string }[]>("GET", `${path}/files?limit=100`);
   return line({
     number: pull.number,
     url: pull.html_url,
@@ -27,6 +28,10 @@ export async function pr(repo: string | undefined, number: string | undefined): 
     head: pull.head.ref,
     base: pull.base.ref,
     sha: pull.head.sha,
+    author: `forgejo:${pull.user.login}`,
+    draft: pull.draft === true,
+    labels: (pull.labels ?? []).map((label) => label.name),
+    paths: files.map((file) => file.filename),
     mergeCommit: pull.merged ? pull.merge_commit_sha : null,
     checks: (combined.statuses ?? []).map((status) => ({
       name: status.context,

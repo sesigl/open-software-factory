@@ -38,6 +38,9 @@ export interface Pull {
   merge_commit_sha: string | null;
   head: { ref: string; sha: string };
   base: { ref: string };
+  user: { login: string };
+  draft?: boolean;
+  labels?: { name: string }[] | null;
 }
 
 /** Forgejo checks whether a new pull request can merge in the background; the commands wait this long for it. */

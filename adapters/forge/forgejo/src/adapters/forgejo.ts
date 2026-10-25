@@ -13,6 +13,8 @@ export class ForgeError extends Error {
 export interface Repository {
   /** Calls `path` below `/api/v1/repos/<repo>` and gives the JSON answer, or undefined for an empty one. */
   call<T>(method: string, path: string, body?: unknown): Promise<T>;
+  /** The login of the token's user. */
+  me(): Promise<string>;
 }
 
 export function repository(repo: string, env: NodeJS.ProcessEnv = process.env): Repository {
@@ -21,8 +23,8 @@ export function repository(repo: string, env: NodeJS.ProcessEnv = process.env): 
   check(url, "set FORGE_URL to the forge's base URL");
   check(token, "set FORGE_TOKEN to an API token of the forge");
   const base = url.replace(/\/$/, "");
-  const call = async <T>(method: string, path: string, body?: unknown): Promise<T> => {
-    const response = await fetch(`${base}/api/v1/repos/${repo}${path}`, {
+  const call = async <T>(method: string, path: string, body?: unknown, under = `/repos/${repo}`): Promise<T> => {
+    const response = await fetch(`${base}/api/v1${under}${path}`, {
       method,
       headers: { authorization: `token ${token}`, "content-type": "application/json", accept: "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body),
@@ -43,6 +45,9 @@ export function repository(repo: string, env: NodeJS.ProcessEnv = process.env): 
           throw new Error(`no repository ${repo}`);
         throw error;
       }
+    },
+    async me() {
+      return (await call<{ login: string }>("GET", "/user", undefined, "")).login;
     },
   };
 }

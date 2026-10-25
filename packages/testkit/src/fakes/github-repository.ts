@@ -67,4 +67,12 @@ export class Commits {
     }
     return files;
   }
+
+  /** The paths that `head` added, changed or removed since its merge base with `base`, sorted. */
+  changed(base: string, head: string): string[] {
+    const theirs = this.bySha.get(head)?.files ?? {};
+    const ancestor = this.mergeBase(base, head)?.files ?? {};
+    const paths = new Set([...Object.keys(ancestor), ...Object.keys(theirs)]);
+    return [...paths].filter((path) => ancestor[path] !== theirs[path]).sort();
+  }
 }
