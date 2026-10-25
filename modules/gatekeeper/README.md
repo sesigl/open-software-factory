@@ -343,3 +343,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-GATE-059 | implemented | A Slack token that the channel refuses exits 1 with the channel's error |
 | SCN-GATE-060 | implemented | A forge token that the forge refuses exits 1 with the forge's error |
 | SCN-GATE-061 | implemented | A pull request that the forge does not have exits 1 and names it |
+| SCN-GATE-062 | implemented | A channel adapter that prints no JSON exits 1 and names the adapter |
