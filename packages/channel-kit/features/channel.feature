@@ -59,13 +59,13 @@ Feature: The commands of a channel adapter around a chat
     And standard error is "demo: name the thread as demo:<number>"
     And the channel posted nothing
 
-  @id=SCN-CKIT-008 @status=planned
+  @id=SCN-CKIT-008 @status=implemented
   Scenario: messages prints one line per message of the thread
     Given the channel "demo" whose thread "demo:7" holds the messages "On it" and "Done"
     When the adapter runs "messages demo:7"
     Then standard output is two JSON lines with the texts "On it" and "Done" in that order
 
-  @id=SCN-CKIT-009 @status=planned
+  @id=SCN-CKIT-009 @status=implemented
   Scenario: reply to a channel prints the new thread that the post started
     Given the channel "demo" whose channels have the form "demo" and whose post starts the thread "demo:8" with the ID "m-3"
     When the adapter runs 'reply demo "Deploy 42?"'

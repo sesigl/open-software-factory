@@ -86,4 +86,20 @@ export const github: Channel = {
     await chat.initialize();
     return (await chat.thread(thread).post(message)).id;
   },
+  async messages(thread) {
+    const { adapter } = await connect();
+    // GitHub answers at most 100 comments a page; the SDK reads one page.
+    const { messages } = await adapter.fetchMessages(thread, { direction: "forward", limit: 100 });
+    return messages.map((message) => {
+      const { comment } = message.raw as { comment: { body: string; created_at: string; user: { login: string } } };
+      return {
+        id: message.id,
+        thread,
+        author: `github:${comment.user.login}`,
+        time: comment.created_at,
+        text: comment.body,
+        mine: message.author.isMe === true,
+      };
+    });
+  },
 };

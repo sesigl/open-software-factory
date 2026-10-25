@@ -67,7 +67,7 @@ Feature: Work items, replies and approvals in any chat
     When the client runs "reply" on its thread with "CHANNEL_TOKEN" set to "not-a-token"
     Then reply exits with code 1 and the error "the channel refused the token"
 
-  @id=SCN-CHANNEL-010 @status=planned @conformance
+  @id=SCN-CHANNEL-010 @status=implemented @conformance
   Scenario: messages lists the messages of a thread, oldest first
     Given a work item that receive printed for the person's message
     And the client ran "reply" on its thread with "On it: run 7 started"
