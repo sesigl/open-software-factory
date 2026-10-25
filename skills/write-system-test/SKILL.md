@@ -57,6 +57,9 @@ is tested with this same testkit through its CLI or API.
   and S3.
 - Keep all state inside the scenario. Scenario files share a Vitest worker (ADR 0051), so a test never changes
   `process.env`, the working directory or a global of the test process.
+- Keep the scenario cheap: each mutant of a line it reaches reruns it (ADR 0061). Set state up through `$INPUT`
+  or a fake, start module processes only through `sut`, inside the scenario, and never wait for time to pass. The
+  rules are under "Test speed" in `docs/quality/testing-strategy.md`.
 - Every `given`, `when` and `then` label repeats the scenario's step text exactly. `And` steps use the keyword
   of the step before them.
 - Each `then` must assert on something the module produced. An assertion on a value the test created itself
