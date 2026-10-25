@@ -18,10 +18,10 @@ export async function request(options: Options) {
   });
   const mark = marker(gate.id, "requested");
   if (await channel.find(mark)) return { lines: [`gate ${gate.id} already requested in ${channel.name}`] };
-  const posted = await channel.post(requestText(gate, channel), mark);
+  const posted = await channel.ask(requestText(gate, channel), mark);
   const waiting = { state: "pending", waitingFor: gate.rules.approvers } as const;
   await report(loaded, waiting, `waiting for ${gate.rules.approvers.join(", ")}`);
-  await publishRequested(loaded, options.env, posted.time);
+  await publishRequested(loaded, options.env, posted.time ?? loaded.now);
   const risk = gate.rules.risk === undefined ? "" : ` (risk ${gate.rules.risk})`;
   return { lines: [`gate ${gate.id} asks ${gate.rules.approvers.join(", ")} in ${channel.name}${risk}`] };
 }

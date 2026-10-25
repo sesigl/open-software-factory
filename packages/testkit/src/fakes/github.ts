@@ -25,6 +25,8 @@ export interface FakeGitHub extends Forge {
   say(pr: PullRequest, text: string, as?: string): Promise<GitHubComment>;
   /** The comments of the pull request's conversation with their authors, oldest first. */
   conversation(pr: PullRequest): Promise<GitHubComment[]>;
+  /** A token like a GitHub Actions token: its user is "github-actions[bot]", and GET /user answers 403 (ADR 0062). */
+  actionsToken: string;
 }
 
 export interface RunningGitHub {
@@ -34,7 +36,13 @@ export interface RunningGitHub {
 
 const OWNER = "tester";
 const REVIEWER = "reviewer";
-const TOKENS: Record<string, string> = { ghp_testkit_tester: OWNER, ghp_testkit_reviewer: REVIEWER };
+const ACTIONS = "github-actions[bot]";
+const ACTIONS_TOKEN = "ghs_testkit_actions";
+const TOKENS: Record<string, string> = {
+  ghp_testkit_tester: OWNER,
+  ghp_testkit_reviewer: REVIEWER,
+  [ACTIONS_TOKEN]: ACTIONS,
+};
 const OWNER_TOKEN = "ghp_testkit_tester";
 const CHECK_STATES = ["pending", "success", "failure", "error"];
 /** The REST API versions the fake takes in X-GitHub-Api-Version; a request without the header gets the first. */
@@ -179,7 +187,18 @@ export async function startGitHub(): Promise<RunningGitHub> {
       merge_commit_sha: pr.merged ? pr.mergeCommit : canMerge ? testMerge(headSha) : null,
       head: { label: `${OWNER}:${pr.head}`, ref: pr.head, sha: headSha },
       base: { label: `${OWNER}:${pr.base}`, ref: pr.base, sha: repo.branches.get(pr.base) ?? "" },
+      labels: [],
+      draft: false,
     };
+  };
+  /** The files whose text differs between the tips of the pull request's base and head, sorted by path. */
+  const changedFiles = (repo: Repository, pr: Pull) => {
+    const base = commits.get(tip(repo, pr.base))?.files ?? {};
+    const head = commits.get(tip(repo, pr.head))?.files ?? {};
+    return [...new Set([...Object.keys(base), ...Object.keys(head)])]
+      .filter((path) => base[path] !== head[path])
+      .sort()
+      .map((filename) => ({ filename, status: head[filename] === undefined ? "removed" : "modified" }));
   };
 
   /** Sends the event to each active hook of the repository that takes it, signed with the hook's secret. */
@@ -492,6 +511,7 @@ export async function startGitHub(): Promise<RunningGitHub> {
       },
     ],
     ["GET", /^\/pulls\/(\d+)$/, (repo, [number = ""]) => [200, pullJson(repo, pull(repo, Number(number)), true)]],
+    ["GET", /^\/pulls\/(\d+)\/files$/, (repo, [number = ""]) => [200, changedFiles(repo, pull(repo, Number(number)))]],
     [
       "PUT",
       /^\/pulls\/(\d+)\/merge$/,
@@ -609,7 +629,11 @@ export async function startGitHub(): Promise<RunningGitHub> {
     const version = request.headers["x-github-api-version"];
     if (version !== undefined && !API_VERSIONS.includes(String(version)))
       return send(400, { message: `API version ${version} is not supported.`, status: "400" });
-    if (method === "GET" && path === "/user") return send(200, userJson(user));
+    if (method === "GET" && path === "/user") {
+      // GitHub does not let an Actions token read its user.
+      if (user === ACTIONS) return send(403, { message: "Resource not accessible by integration", status: "403" });
+      return send(200, userJson(user));
+    }
     const repoMatch = new RegExp(`^/repos/${OWNER}/([^/]+)(.*)$`).exec(path);
     const route = repoMatch && routes.find(([verb, pattern]) => verb === method && pattern.test(repoMatch[2] ?? ""));
     if (!repoMatch || !route) {
@@ -650,6 +674,7 @@ export async function startGitHub(): Promise<RunningGitHub> {
   const github: FakeGitHub = {
     url,
     token: OWNER_TOKEN,
+    actionsToken: ACTIONS_TOKEN,
     owner: OWNER,
     async createRepository(name, files = {}) {
       const initial = Object.keys(files).length > 0 ? files : { "README.md": `# ${name}\n` };

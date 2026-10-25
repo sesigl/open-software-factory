@@ -25,6 +25,10 @@ export function demo(
     handle?: (request: Request, keep: Parameters<Channel["receive"]>[0]) => Promise<void>;
     status?: number;
     id?: string;
+    /** The texts of each thread's messages. */
+    threads?: Record<string, string[]>;
+    /** Channels like "demo", where a post starts this thread. */
+    starts?: string;
   } = {},
 ): Demo {
   const posts: Demo["posts"] = [];
@@ -43,7 +47,18 @@ export function demo(
       posts.push({ thread, post });
       return options.id ?? "m-0";
     },
+    async messages(thread) {
+      return (options.threads?.[thread] ?? []).map((text, index) => ({ id: `m-${index}`, thread, text }));
+    },
   };
+  const { starts } = options;
+  if (starts) {
+    channel.channel = { form: "demo", pattern: /^demo$/ };
+    channel.start = async (name, post) => {
+      posts.push({ thread: name, post });
+      return { thread: starts, id: options.id ?? "m-0" };
+    };
+  }
   return { channel, posts };
 }
 

@@ -32,6 +32,10 @@ scenario("SCN-FORGE-006", async ({ sut, fakes, given, when, then }) => {
         base: "main",
         sha: pr.sha,
         mergeCommit: null,
+        author: "github:tester",
+        labels: [],
+        draft: false,
+        paths: ["checkout.js"],
         checks: [{ name: "verify", state: "success", description: "all passed", url: "https://ci.example/runs/7" }],
       });
     },

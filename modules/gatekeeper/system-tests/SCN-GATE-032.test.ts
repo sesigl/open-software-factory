@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { forge, PULL_GATE, putMergeFiles, requestComment, statuses } from "./gate.ts";
+import { forge, forgeEnv, PULL_GATE, putMergeFiles, requestComment, statuses } from "./gate.ts";
 
 const BRANCH = "observer/research-skill-used-1a2b3c4d";
 
@@ -21,7 +21,7 @@ scenario("SCN-GATE-032", async ({ sut, fakes, given, when, then }) => {
 
   let run: Awaited<ReturnType<typeof sut.cli>>;
   await when('the user runs "gatekeeper status" for the pull request', async () => {
-    run = await sut.cli(["status", ...PULL_GATE], { env: { GATEKEEPER_FORGE_URL: http.url } });
+    run = await sut.cli(["status", ...PULL_GATE], { env: forgeEnv(sut, http) });
   });
 
   await then("the command exits with code 3", async () => {

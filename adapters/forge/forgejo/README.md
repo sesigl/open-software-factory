@@ -56,9 +56,10 @@ Forgejo answers `pull_request` with all of its pull request events.
 | --- | --- |
 | `forge-forgejo branch <repo> <branch> [--from <ref>]` | Create a branch from the default branch or the ref; print `{"branch", "sha"}`. |
 | `forge-forgejo open-pr <repo> <head> --title <text> [--body <text>] [--base <branch>]` | Open a pull request; print `{"number", "url", "head", "base", "sha"}`. |
-| `forge-forgejo pr <repo> <number>` | Print the pull request's state, `mergeable`, head and merge commit, and checks. |
+| `forge-forgejo pr <repo> <number>` | Print the pull request's state, `mergeable`, head and merge commit, author, labels, draft, first 100 changed paths, and checks. |
 | `forge-forgejo check <repo> <sha> <name> <pending\|success\|failure\|error> [--description <text>] [--url <url>]` | Post a check on a commit. |
 | `forge-forgejo comment <repo> <number> <text>` | Comment on a pull request; print `{"id", "url"}`. |
+| `forge-forgejo comments <repo> <number>` | Print the comments of the conversation, oldest first, as `{"id", "url", "author", "time", "text", "mine"}`. |
 | `forge-forgejo protect <repo> <branch> [--check <name>]... [--approvals <n>]` | Set the branch's merge rules. |
 | `forge-forgejo merge <repo> <number> [--method merge\|squash\|rebase]` | Merge; print `{"sha"}` of the merge commit. |
 | `forge-forgejo webhook <repo> <url> [--event <name>]...` | Register one webhook for the port's events, by default pull requests; print `{"id", "url", "events", "active"}`. |

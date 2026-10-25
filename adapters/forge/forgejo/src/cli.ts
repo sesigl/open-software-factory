@@ -4,7 +4,7 @@ import { parseArgs } from "node:util";
 import { type Command, runProgram } from "@opensoftware/cli";
 import { branch } from "./commands/branch.ts";
 import { check } from "./commands/check.ts";
-import { comment } from "./commands/comment.ts";
+import { comment, comments } from "./commands/comment.ts";
 import { event } from "./commands/event.ts";
 import { merge } from "./commands/merge.ts";
 import { openPr } from "./commands/open-pr.ts";
@@ -22,6 +22,7 @@ Commands:
   check <repo> <sha> <name> <pending|success|failure|error> [--description <text>] [--url <url>]
                                                          Post a check on a commit.
   comment <repo> <number> <text>                         Comment on a pull request; print {"id", "url"}.
+  comments <repo> <number>                               Print each comment of the pull request, oldest first.
   protect <repo> <branch> [--check <name>]... [--approvals <n>]
                                                          Set the branch's merge rules.
   merge <repo> <number> [--method merge|squash|rebase]   Merge; print {"sha"} of the merge commit.
@@ -58,6 +59,7 @@ const commands: Record<string, Command> = {
   pr: () => pr(first, second),
   check: () => check(first, second, third, fourth, values),
   comment: () => comment(first, second, third),
+  comments: () => comments(first, second),
   protect: () => protect(first, second, values.check ?? [], values.approvals),
   merge: () => merge(first, second, values.method),
   webhook: () => webhook(first, second, values.event ?? []),

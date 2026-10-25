@@ -21,26 +21,34 @@
       "default": "opa",
       "description": "The OPA 1.x program that evaluates the policy."
     },
+    "GATEKEEPER_SLACK_ADAPTER": {
+      "type": "string",
+      "default": "npx -y @opensoftware/channel-slack",
+      "description": "The command line of the channel port's slack adapter, which reaches Slack for a slack: channel (ADR 0062)."
+    },
     "GATEKEEPER_SLACK_URL": {
       "type": "string",
-      "default": "https://slack.com/api/",
-      "description": "Base URL of the Slack Web API, ending in a slash."
+      "description": "Base URL of the Slack Web API, ending in a slash: the adapter's CHANNEL_API_URL. Default: the adapter's, https://slack.com/api/."
     },
     "GATEKEEPER_SLACK_TOKEN": {
       "type": "string",
-      "description": "Slack bot token with chat:write and channels:history. Required for a slack: channel."
+      "description": "Slack bot token with chat:write and channels:history: the adapter's CHANNEL_TOKEN. Required for a slack: channel."
     },
     "GATEKEEPER_SLACK_SIGNING_SECRET": {
       "type": "string",
-      "description": "serve: the signing secret of the Slack app, which checks every request from Slack. Required for serve."
+      "description": "serve: the signing secret of the Slack app, the adapter's CHANNEL_SIGNING_SECRET, which checks every request from Slack. Required for serve."
+    },
+    "GATEKEEPER_FORGE_ADAPTER": {
+      "type": "string",
+      "description": "The command line of the forge port's adapter for --pull-request (ADR 0062). Default: npx -y @opensoftware/forge-github for github.com, npx -y @opensoftware/forge-forgejo for any other host."
     },
     "GATEKEEPER_FORGE_URL": {
       "type": "string",
-      "description": "Base URL of the forge API. Default: https://api.github.com for github.com, <origin>/api/v1 for Forgejo."
+      "description": "The forge adapter's FORGE_URL. Default: https://api.github.com for github.com, the pull request's origin for Forgejo."
     },
     "GATEKEEPER_FORGE_TOKEN": {
       "type": "string",
-      "description": "Token that may read the pull request, comment on it and set its commit status. Never written to a file."
+      "description": "The forge adapter's FORGE_TOKEN: a token that may read the pull request, comment on it and set its commit status. Never written to a file."
     },
     "GATEKEEPER_SIGNING_KEY": {
       "type": "string",

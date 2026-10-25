@@ -6,7 +6,8 @@ covers: [ports/forge/**]
 
 How the factory works with the company's code forge: branches, pull requests, checks, comments, merge rules,
 webhooks, and the pull request events that come back. Decisions: [ADR 0057](../../docs/decisions/0057-forge-port.md),
-[ADR 0060](../../docs/decisions/0060-factory-spec-forge-port.md) (event names, `hooks`, `unhook`).
+[ADR 0060](../../docs/decisions/0060-factory-spec-forge-port.md) (event names, `hooks`, `unhook`),
+[ADR 0062](../../docs/decisions/0062-gatekeeper-ports.md) (`comments`, the author, labels, draft and paths of `pr`).
 
 ## The interface
 
@@ -17,9 +18,10 @@ command line. A repository is `<owner>/<name>`; every command prints JSON lines.
 | --- | --- |
 | branch | `<adapter> branch <repo> <branch> [--from <ref>]` prints `{"branch", "sha"}`; the default `--from` is the default branch |
 | open a pull request | `<adapter> open-pr <repo> <head> --title <text> [--body <text>] [--base <branch>]` prints `{"number", "url", "head", "base", "sha"}` |
-| merge state | `<adapter> pr <repo> <number>` prints `{"number", "url", "title", "state", "mergeable", "head", "base", "sha", "mergeCommit", "checks"}` |
+| merge state | `<adapter> pr <repo> <number>` prints `{"number", "url", "title", "state", "mergeable", "head", "base", "sha", "mergeCommit", "author", "labels", "draft", "paths", "checks"}` |
 | checks | `<adapter> check <repo> <sha> <name> <pending\|success\|failure\|error> [--description <text>] [--url <url>]` |
-| comments | `<adapter> comment <repo> <number> <text>` prints `{"id", "url"}` |
+| comment | `<adapter> comment <repo> <number> <text>` prints `{"id", "url"}` |
+| comments | `<adapter> comments <repo> <number>` prints one `{"id", "url", "author", "time", "text", "mine"}` per comment of the conversation, oldest first |
 | merge rules | `<adapter> protect <repo> <branch> [--check <name>]... [--approvals <n>]` |
 | merge | `<adapter> merge <repo> <number> [--method merge\|squash\|rebase]` prints `{"sha"}` |
 | webhooks | `<adapter> webhook <repo> <url> [--event <name>]...` registers one webhook for the events, by default pull requests and their reviews; prints `{"id", "url", "events", "active"}` |
@@ -28,7 +30,9 @@ command line. A repository is `<owner>/<name>`; every command prints JSON lines.
 | pull request events | `<adapter> event <delivery.json>` prints a `pr.opened@v1`, `pr.reviewed@v1` or `pr.closed@v1` CloudEvent |
 
 `state` is `open`, `closed` or `merged`; `mergeable` is true when the pull request has no conflict with its base;
-`checks` lists `{"name", "state", "description", "url"}` of the head commit, one per name.
+`checks` lists `{"name", "state", "description", "url"}` of the head commit, one per name. `author` is
+`<adapter>:<login>`, `labels` lists the label names, and `paths` holds the first 100 changed files. In `comments`,
+`time` is ISO 8601 and `mine` is true for the comments of the token's user.
 
 An event name is the port's, `<object>[.<action>]` as in an automation of `factory.yaml`: `pull_request`,
 `pull_request.labeled`, `pull_request_review`, `issue`, `issue.labeled`, `issue_comment` or `push`. Each adapter maps
@@ -46,7 +50,8 @@ Every adapter reads three variables:
 ## What every adapter guarantees
 
 - A branch that exists is refused; a token the forge refuses exits 1 with `the forge refused the token`; a repository
-  the forge does not have exits 1 with `no repository <repo>`.
+  the forge does not have exits 1 with `no repository <repo>`; `pr`, `comments` and `comment` on a pull request the
+  repository does not have exit 1 with `no pull request <repo>#<number>`.
 - A check is a commit status with the check's name as its context, which is what the merge rules require.
 - `merge` exits 1 with an error that names the pull request when the merge rules refuse it or it conflicts with its
   base, and leaves it open. `protect` replaces the branch's rules each time.
