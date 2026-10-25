@@ -76,6 +76,20 @@ counts a mutant as detected that the full suite would miss.
   After, four failed a scenario and one survived: it drops a sort whose result is sorted again. The old count was
   too kind, not the new one. In `factory-spec`, two mutants that survived before are NoCoverage after; both count
   as missed either way.
+
+  On CI, the same lines of #105 mutated again on the head of #105 plus this change (draft pull request #111),
+  against #105's own run, step "turbo run mutation" of each shard:
+
+  | Shard | #105 | #111 |
+  | --- | --- | --- |
+  | `forge-forgejo` 1/1 | 24 min 45 s | 16 min 6 s |
+  | `factory-spec` 2/2 | 18 min 38 s | 6 min 5 s |
+  | `factory-spec` 1/2 | 8 min 28 s | 7 min 39 s |
+  | `forge-github` 1/1 | 3 min 28 s | 2 min 20 s |
+  | Whole check, start to end | 26 min 4 s | 18 min 16 s |
+  | Runner minutes of the four shards | 55 min | 32 min |
+
+  MUTATION passed on both.
 - Mutants in code that every process runs when it loads, such as a constant table, still rerun every scenario. They
   are the rest of the time.
 - The first run is the normal suite once, plus one small file per module process.
