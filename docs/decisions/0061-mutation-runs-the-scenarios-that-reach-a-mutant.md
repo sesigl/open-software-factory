@@ -64,8 +64,20 @@ counts a mutant as detected that the full suite would miss.
 
 ## Consequences
 
-- A mutant's run costs the time of the scenarios that reach it, not of the whole suite. Before against after on the
-  `forge-forgejo` change of pull request #105 is in the pull request that adds this ADR.
+- A mutant's run costs the time of the scenarios that reach it, not of the whole suite. Measured on the changes of
+  pull request #105, on a 4-core machine with the same commit and base, one run after the other:
+
+  | Unit | Mutants | Before | After | Detected before | Detected after |
+  | --- | --- | --- | --- | --- | --- |
+  | `forge-forgejo` (26 scenarios) | 65 | 39 min 48 s | 24 min 10 s | 51 (5 of them timeouts) | 50 |
+  | `factory-spec`, shard 2/2 (55 scenarios) | 94 | 24 min 41 s | 12 min 17 s | 72 | 72 |
+
+  The five timeouts before were mutants that ran into the whole suite's time limit without a failing scenario.
+  After, four failed a scenario and one survived: it drops a sort whose result is sorted again. The old count was
+  too kind, not the new one. In `factory-spec`, two mutants that survived before are NoCoverage after; both count
+  as missed either way.
+- Mutants in code that every process runs when it loads, such as a constant table, still rerun every scenario. They
+  are the rest of the time.
 - The first run is the normal suite once, plus one small file per module process.
 - A scenario's cost now matters for each mutant it reaches. Many small scenarios are cheaper than a few broad ones,
   and a module that does its work in its own processes, on the host, is cheaper than one that does it in a container.
