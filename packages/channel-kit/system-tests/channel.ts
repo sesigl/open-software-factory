@@ -1,6 +1,6 @@
 // The channel "demo" of the scenarios, whose webhook and post the test chooses, and a run of runChannel that keeps
 // what it writes.
-import type { Channel, Post, runChannel, Webhook } from "@opensoftware/channel-kit";
+import type { Channel, Post, Posted, runChannel, Said, Webhook } from "@opensoftware/channel-kit";
 
 type Io = NonNullable<Parameters<typeof runChannel>[2]>;
 
@@ -14,25 +14,34 @@ export interface Demo {
   channel: Channel;
   /** Every post, with its thread, in order. */
   posts: { thread: string; post: Post }[];
+  /** The threads that receive was asked to follow. */
+  followed: string[][];
 }
 
 /**
  * The channel "demo" with threads like "demo:7". `handle` gets the request and `keep`; its webhook answers 200
- * unless `status` says otherwise. `post` gives the ID `id`.
+ * unless `status` says otherwise. `post` gives the ID `id`, or the whole `posted`; `history` gives `said`. With
+ * `channels`, a channel is "demo".
  */
 export function demo(
   options: {
     handle?: (request: Request, keep: Parameters<Channel["receive"]>[0]) => Promise<void>;
     status?: number;
     id?: string;
+    posted?: Posted;
+    said?: Said[];
+    channels?: boolean;
   } = {},
 ): Demo {
   const posts: Demo["posts"] = [];
+  const followed: string[][] = [];
   const channel: Channel = {
     name: "demo",
     thread: { form: "demo:<number>", pattern: /^demo:\d+$/ },
+    ...(options.channels && { channel: { form: "demo", pattern: /^demo$/ } }),
     api: "The demo has no API.",
-    async receive(keep) {
+    async receive(keep, follow) {
+      followed.push(follow);
       const webhook: Webhook = async (request, { waitUntil }) => {
         if (options.handle) waitUntil(options.handle(request, keep));
         return new Response("ok", { status: options.status ?? 200 });
@@ -41,10 +50,13 @@ export function demo(
     },
     async post(thread, post) {
       posts.push({ thread, post });
-      return options.id ?? "m-0";
+      return options.posted ?? { id: options.id ?? "m-0" };
+    },
+    async history() {
+      return options.said ?? [];
     },
   };
-  return { channel, posts };
+  return { channel, posts, followed };
 }
 
 /** Runs `run` with an io that keeps standard output and error. */
