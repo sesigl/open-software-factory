@@ -29,6 +29,8 @@ npx @opensoftware/forge-github event delivery.json                # a pr.opened@
   requests and commit statuses, and administration of the repository for `protect` and `webhook`. A token GitHub
   refuses exits 1 with `the forge refused the token`; a repository it does not show exits 1 with
   `no repository <repo>`.
+- **Comments.** `comments` marks the token's own comments as `mine` with its user from `GET /user`. GitHub refuses
+  that call for a GitHub Actions token; its user is then `github-actions[bot]`, who writes its comments.
 - **Branches** are refs: `branch` creates `refs/heads/<branch>` at the commit of `--from` or of the default branch.
 - **Checks** are commit statuses with the check's name as their context; GitHub Apps' check runs are not used.
   `pr` lists the latest status per name from the combined status of the head commit.
@@ -60,9 +62,10 @@ npx @opensoftware/forge-github event delivery.json                # a pr.opened@
 | --- | --- |
 | `forge-github branch <repo> <branch> [--from <ref>]` | Create a branch from the default branch or the ref; print `{"branch", "sha"}`. |
 | `forge-github open-pr <repo> <head> --title <text> [--body <text>] [--base <branch>]` | Open a pull request; print `{"number", "url", "head", "base", "sha"}`. |
-| `forge-github pr <repo> <number>` | Print the pull request's state, `mergeable`, head and merge commit, and checks. |
+| `forge-github pr <repo> <number>` | Print the pull request's state, `mergeable`, head and merge commit, author, labels, draft, first 100 changed paths, and checks. |
 | `forge-github check <repo> <sha> <name> <pending\|success\|failure\|error> [--description <text>] [--url <url>]` | Post a check on a commit. |
 | `forge-github comment <repo> <number> <text>` | Comment on a pull request; print `{"id", "url"}`. |
+| `forge-github comments <repo> <number>` | Print the first 100 comments of the conversation, oldest first, as `{"id", "url", "author", "time", "text", "mine"}`. |
 | `forge-github protect <repo> <branch> [--check <name>]... [--approvals <n>]` | Replace the branch's protection. |
 | `forge-github merge <repo> <number> [--method merge\|squash\|rebase]` | Merge; print `{"sha"}` of the merge commit. |
 | `forge-github webhook <repo> <url> [--event <name>]...` | Register one webhook for the port's events, by default pull requests; print `{"id", "url", "events", "active"}`. |

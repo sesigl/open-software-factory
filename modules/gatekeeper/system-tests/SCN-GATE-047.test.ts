@@ -16,7 +16,7 @@ scenario("SCN-GATE-047", async ({ sut, fakes, given, when, then }) => {
     await server.slack.press({
       channel: "C0GATES",
       ts: server.message.ts,
-      actionId: "gatekeeper.approve",
+      actionId: "Approve",
       user: "U0ADA",
     });
   });
@@ -31,7 +31,7 @@ scenario("SCN-GATE-047", async ({ sut, fakes, given, when, then }) => {
         gate: server.id,
         decision: "approved",
         decidedBy: { kind: "person", id: "slack:U0ADA" },
-        decidedAt: "2026-01-01T00:00:00.000002Z",
+        decidedAt: "2026-01-01T00:00:00.000001Z",
         signature: { algorithm: "Ed25519" },
       });
     },
@@ -41,7 +41,7 @@ scenario("SCN-GATE-047", async ({ sut, fakes, given, when, then }) => {
     await sut.files.put("$INPUT/record.json", JSON.stringify(gate?.record));
     const run = await sut.cli(["verify", "--public-key", "gatekeeper.pub", "record.json"]);
     expect(run.exitCode, run.stderr).toBe(0);
-    expect(run.stdout).toBe("record.json verified: approved by slack:U0ADA at 2026-01-01T00:00:00.000002Z\n");
+    expect(run.stdout).toBe("record.json verified: approved by slack:U0ADA at 2026-01-01T00:00:00.000001Z\n");
   });
 
   await then('the thread has the reply "Approved by <@U0ADA>."', async () => {

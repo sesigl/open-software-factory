@@ -109,10 +109,9 @@ export async function comments(repo: string | undefined, number: string | undefi
   const list = await about(repo as string, issue, () =>
     api.request<CommentJson[]>("GET", `/issues/${issue}/comments?per_page=100`),
   );
-  const me = await api.user().catch((error: unknown) => {
-    if (error instanceof GitHubError && error.status === 403) return ACTIONS_USER;
-    throw error;
-  });
+  const actions = (error: unknown) =>
+    error instanceof GitHubError && error.status === 403 ? ACTIONS_USER : Promise.reject(error);
+  const me = await api.user().catch(actions);
   return { lines: list.map((entry) => JSON.stringify(commentLine(entry, me))) };
 }
 

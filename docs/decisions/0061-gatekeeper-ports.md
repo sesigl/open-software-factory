@@ -50,7 +50,7 @@ The ports cannot do all of that yet:
     with `CHANNEL_API_URL`, `CHANNEL_TOKEN` and `CHANNEL_SIGNING_SECRET` from `GATEKEEPER_SLACK_URL`,
     `GATEKEEPER_SLACK_TOKEN` and `GATEKEEPER_SLACK_SIGNING_SECRET`. `request` finds an earlier request with
     `messages <channel>` and posts with `reply <channel>`; `status` reads `messages <thread>` and answers with
-    `reply <thread>`. The server asks with `ask <channel>`, so the card has the choices `approve` and `reject`.
+    `reply <thread>`. The server asks with `ask <channel> --choice Approve --choice Reject`, so the card keeps its buttons.
   - A pull request runs the adapter in `GATEKEEPER_FORGE_ADAPTER`, by default `npx -y @opensoftware/forge-github`
     for a pull request on github.com and `npx -y @opensoftware/forge-forgejo` for any other host, with `FORGE_URL`
     and `FORGE_TOKEN` from `GATEKEEPER_FORGE_URL` and `GATEKEEPER_FORGE_TOKEN`. `GATEKEEPER_FORGE_URL` is now the
@@ -103,4 +103,6 @@ The ports cannot do all of that yet:
 - A gate that an older server stored keeps Slack's `ts` as its thread, which the port cannot read. Gates pending at
   the upgrade are asked again with a new request.
 - `GATEKEEPER_FORGE_URL` for Forgejo is the forge's origin now. A setup that named `<origin>/api/v1` changes it.
+- The server answers Slack after `receive` has run, a process start of its own. Slack wants an answer within 3
+  seconds; a slow host may see Slack retry a delivery, which decides nothing twice because a gate decides once.
 - Revisit when a third module runs adapters: then the spawning and parsing may move into a library (ADR 0060).

@@ -8,7 +8,8 @@ Ask people for approval before an automation or a CI job goes on. A Rego policy 
 a change, for example by its risk. gatekeeper asks them in Slack or on the pull request, reads their answer, refuses
 anyone outside the groups, asks a second group after a timeout, and writes a signed record of who decided what and
 when. As a server it takes requests over HTTP and decides on Slack's events and buttons without polling. Decisions:
-[ADR 0047](../../docs/decisions/0047-gatekeeper.md), [ADR 0048](../../docs/decisions/0048-gatekeeper-server.md).
+[ADR 0047](../../docs/decisions/0047-gatekeeper.md), [ADR 0048](../../docs/decisions/0048-gatekeeper-server.md),
+[ADR 0061](../../docs/decisions/0061-gatekeeper-ports.md).
 
 ## Quick start
 
@@ -125,6 +126,15 @@ Times are like `30m`, `4h` or `2d`. The groups file maps each group to its membe
 - Each message of gatekeeper ends with a marker like `[gatekeeper g… requested]`. Only markers by gatekeeper's own
   user count, so a person cannot fake a request or an escalation.
 
+## Channels and forges
+
+gatekeeper talks to Slack and to forges through the [channel port](../../ports/channel/README.md) and the
+[forge port](../../ports/forge/README.md): it runs an adapter as a program for each call and reads the JSON lines it
+prints. A `slack:` channel runs `GATEKEEPER_SLACK_ADAPTER`, by default `npx -y @opensoftware/channel-slack`. A pull
+request runs `GATEKEEPER_FORGE_ADAPTER`, by default `npx -y @opensoftware/forge-github` on github.com and
+`npx -y @opensoftware/forge-forgejo` on any other host. gatekeeper passes the adapter its token and URL, and prints
+the adapter's error when a call fails, like `the channel refused the token` or `no pull request acme/web#12`.
+
 ## Pull requests
 
 ```sh
@@ -137,7 +147,8 @@ The request is built from the pull request: the work item is its URL, the stage 
 100 changed files). The request is a comment; a decision is a later comment `/approve` or `/reject <reason>`. Each run
 sets the commit status `gatekeeper` of the head commit: `pending`, `success` or `failure`. A new commit is a new gate,
 so an approval of an older commit does not count. Require the status `gatekeeper` in a branch protection rule to
-block the merge until the gate is approved.
+block the merge until the gate is approved. On Forgejo, `GATEKEEPER_FORGE_URL` is the forge's origin, like
+`https://forge.example`, not its `/api/v1`.
 
 ## GitHub Action
 
@@ -188,7 +199,7 @@ curl -H "Authorization: Bearer $GATEKEEPER_API_TOKEN" -H "content-type: applicat
 | --- | --- |
 | `POST /v1/gates` | Ask for a decision on a request (the JSON of [Request](#request)). 201 with the new gate, 200 with the gate the same request made before, 400 with a problem that names the field. |
 | `GET /v1/gates/{gateId}` | The gate: `state` (`pending`, `approved`, `rejected` or `expired`), `waitingFor`, `requestedAt`, `expiresAt` and, once decided, the `record`. 404 for a gate the server does not know. |
-| `POST /slack/events` | Slack's Events API: a reply in a gate's thread decides like `status`. |
+| `POST /slack/events` | Slack's Events API: a message in the channel makes the server read the threads of its pending gates, so a reply decides like `status`. |
 | `POST /slack/actions` | Slack's interactivity: a press of Approve or Reject decides like a reply `approve` or `reject`. |
 
 The OpenAPI of the `/v1` routes is in [`contracts/openapi/openapi.json`](../../contracts/openapi/openapi.json); the
@@ -197,7 +208,7 @@ TypeScript type `paths` of `@opensoftware/contracts` types a client. The `/v1` r
 `application/problem+json` with `title`, `status` and `detail`.
 
 The request message has the buttons Approve and Reject. The rules of [Decisions](#decisions) hold for presses and
-replies alike, and a press after the decision changes nothing. The policy's answer is stored with the gate when it
+replies alike, and a press after the decision changes nothing. A press counts at the server's time when it arrives. The policy's answer is stored with the gate when it
 is requested; the groups file is read when the server starts. The server checks every pending gate when it starts
 and then every minute, so an escalation or an expiry needs no event.
 
@@ -241,11 +252,13 @@ the decision. The event ID is the gate's ID with `.requested` or `.decided`.
 | `OSF_NOW` | string |  | The current time, like 2026-01-01T05:00:00Z, for escalation and expiry. Default: the clock. |
 | `PORT` | string | `"8080"` | serve: the port the HTTP server listens on. |
 | `GATEKEEPER_OPA` | string | `"opa"` | The OPA 1.x program that evaluates the policy. |
-| `GATEKEEPER_SLACK_URL` | string | `"https://slack.com/api/"` | Base URL of the Slack Web API, ending in a slash. |
-| `GATEKEEPER_SLACK_TOKEN` | string |  | Slack bot token with chat:write and channels:history. Required for a slack: channel. |
-| `GATEKEEPER_SLACK_SIGNING_SECRET` | string |  | serve: the signing secret of the Slack app, which checks every request from Slack. Required for serve. |
-| `GATEKEEPER_FORGE_URL` | string |  | Base URL of the forge API. Default: https://api.github.com for github.com, <origin>/api/v1 for Forgejo. |
-| `GATEKEEPER_FORGE_TOKEN` | string |  | Token that may read the pull request, comment on it and set its commit status. Never written to a file. |
+| `GATEKEEPER_SLACK_ADAPTER` | string | `"npx -y @opensoftware/channel-slack"` | The command line of the channel port's slack adapter, which reaches Slack for a slack: channel (ADR 0061). |
+| `GATEKEEPER_SLACK_URL` | string |  | Base URL of the Slack Web API, ending in a slash: the adapter's CHANNEL_API_URL. Default: the adapter's, https://slack.com/api/. |
+| `GATEKEEPER_SLACK_TOKEN` | string |  | Slack bot token with chat:write and channels:history: the adapter's CHANNEL_TOKEN. Required for a slack: channel. |
+| `GATEKEEPER_SLACK_SIGNING_SECRET` | string |  | serve: the signing secret of the Slack app, the adapter's CHANNEL_SIGNING_SECRET, which checks every request from Slack. Required for serve. |
+| `GATEKEEPER_FORGE_ADAPTER` | string |  | The command line of the forge port's adapter for --pull-request (ADR 0061). Default: npx -y @opensoftware/forge-github for github.com, npx -y @opensoftware/forge-forgejo for any other host. |
+| `GATEKEEPER_FORGE_URL` | string |  | The forge adapter's FORGE_URL. Default: https://api.github.com for github.com, the pull request's origin for Forgejo. |
+| `GATEKEEPER_FORGE_TOKEN` | string |  | The forge adapter's FORGE_TOKEN: a token that may read the pull request, comment on it and set its commit status. Never written to a file. |
 | `GATEKEEPER_SIGNING_KEY` | string |  | Ed25519 private key in PEM that signs each record. Without it the record is unsigned. |
 | `GATEKEEPER_NATS_URL` | string |  | NATS server, like nats://localhost:4222, for the events gate.requested@v1 and gate.decided@v1. Unset: no events. serve keeps them in its outbox while NATS is unreachable. |
 | `GATEKEEPER_DATABASE_URL` | string |  | serve: the PostgreSQL database, like postgres://gatekeeper@db/gatekeeper, for the gates and the outbox. Required for serve. |
@@ -327,6 +340,6 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-GATE-056 | implemented | A decision in Slack is published as the event "gate.decided@v1" |
 | SCN-GATE-057 | implemented | An event of a time when NATS was unreachable is published once the server reaches NATS |
 | SCN-GATE-058 | implemented | The server without a database exits with code 2 and names the variable |
-| SCN-GATE-059 | planned | A Slack token that the channel refuses exits 1 with the channel's error |
-| SCN-GATE-060 | planned | A forge token that the forge refuses exits 1 with the forge's error |
-| SCN-GATE-061 | planned | A pull request that the forge does not have exits 1 and names it |
+| SCN-GATE-059 | implemented | A Slack token that the channel refuses exits 1 with the channel's error |
+| SCN-GATE-060 | implemented | A forge token that the forge refuses exits 1 with the forge's error |
+| SCN-GATE-061 | implemented | A pull request that the forge does not have exits 1 and names it |

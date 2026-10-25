@@ -33,14 +33,20 @@ export const request = (paths: string[]): string =>
     change: { paths },
   });
 
-export async function slackEnv(fakes: Fakes) {
+/** Fake Slack and the variables that point gatekeeper's channel adapter at it. */
+export async function slackEnv(sut: Sut, fakes: Fakes) {
   const slack = await fakes.slack();
-  return { slack, env: { GATEKEEPER_SLACK_URL: slack.url, GATEKEEPER_SLACK_TOKEN: slack.token } };
+  const env = {
+    GATEKEEPER_SLACK_URL: slack.url,
+    GATEKEEPER_SLACK_TOKEN: slack.token,
+    GATEKEEPER_SLACK_ADAPTER: sut.adapter("channel/slack"),
+  };
+  return { slack, env };
 }
 
 /** The README's request, asked in C0GATES; returns the fake Slack, the environment and the request message. */
 export async function requested(sut: Sut, fakes: Fakes, env: Record<string, string> = {}) {
-  const { slack, env: slackVars } = await slackEnv(fakes);
+  const { slack, env: slackVars } = await slackEnv(sut, fakes);
   await putReadme(sut, fakes);
   const run = await sut.cli(["request", ...GATE], { env: { ...slackVars, ...env } });
   if (run.exitCode !== 0) throw new Error(`gatekeeper request failed: ${run.stderr}`);
@@ -85,20 +91,33 @@ export interface Comment {
  */
 export function forge(fakes: Fakes, branch: string, comments: Comment[] = [], before?: Comment[]): Promise<FakeHttp> {
   const base = "/repos/acme/web";
-  const commentJson = ({ id, body, login, at }: Comment) => ({ id, body, created_at: at, user: { login } });
+  const commentJson = ({ id, body, login, at }: Comment) => ({
+    id,
+    body,
+    html_url: `${PR}#issuecomment-${id}`,
+    created_at: at,
+    user: { login },
+  });
   return fakes.http([
     {
       path: `${base}/pulls/12`,
       body: {
+        number: 12,
         html_url: PR,
         title: "Fix the research skill",
+        state: "open",
+        merged: false,
+        mergeable: true,
+        merge_commit_sha: null,
         user: { login: "observer-bot" },
         head: { ref: branch, sha: SHA },
         base: { ref: "main" },
         labels: [],
+        draft: false,
       },
     },
     { path: `${base}/pulls/12/files?per_page=100`, body: [{ filename: "AGENTS.md" }] },
+    { path: `${base}/commits/${SHA}/status`, body: { statuses: [] } },
     { path: "/user", body: { login: "gatekeeper-bot" } },
     ...(before ? [{ path: `${base}/issues/12/comments?per_page=100`, body: before.map(commentJson), times: 1 }] : []),
     { path: `${base}/issues/12/comments?per_page=100`, body: comments.map(commentJson) },
@@ -110,6 +129,13 @@ export function forge(fakes: Fakes, branch: string, comments: Comment[] = [], be
     { method: "POST", path: `${base}/statuses/${SHA}`, body: {} },
   ]);
 }
+
+/** The variables that point gatekeeper's forge adapter at the scripted GitHub API. */
+export const forgeEnv = (sut: Sut, http: FakeHttp): Record<string, string> => ({
+  GATEKEEPER_FORGE_URL: http.url,
+  GATEKEEPER_FORGE_ADAPTER: sut.adapter("forge/github"),
+  GATEKEEPER_FORGE_TOKEN: "scripted-token",
+});
 
 /** The body of the request comment that gatekeeper posts for the pull request from this branch. */
 export async function requestComment(sut: Sut, fakes: Fakes, branch: string): Promise<string> {
@@ -127,7 +153,7 @@ export async function requestComment(sut: Sut, fakes: Fakes, branch: string): Pr
       "--out",
       "first.json",
     ],
-    { env: { GATEKEEPER_FORGE_URL: first.url } },
+    { env: forgeEnv(sut, first) },
   );
   const posted = first.received().find((call) => call.method === "POST" && call.path.endsWith("/comments"));
   if (run.exitCode !== 0 || !posted) throw new Error(`gatekeeper request posted no comment: ${run.stderr}`);

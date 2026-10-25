@@ -11,7 +11,7 @@ export async function status(options: Options) {
   if (!request)
     throw new Error(`${channel.name} has no request for the gate ${gate.id}: run "gatekeeper request" first`);
   const { outcome, posts } = decide(gate, request.time, await channel.thread(request), loaded.now, channel);
-  for (const post of posts) await channel.post(post.text, post.marker, request);
+  for (const post of posts) await channel.answer(request, post.text, post.marker);
   const line = describe(outcome);
   await report(loaded, outcome, line);
   if (outcome.state === "pending") return { lines: [`gate ${gate.id} ${line}`], exitCode: 3 };

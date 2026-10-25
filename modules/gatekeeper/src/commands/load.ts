@@ -1,14 +1,15 @@
 // What request and status share: the request, the policy's answer, the groups and the channel.
 import { UsageError } from "@opensoftware/cli";
 import { readJson, readText, writeJson } from "../adapters/files.ts";
-import { type Forge, forgeApi, pullRequestChannel, readPull, setStatus } from "../adapters/forge.ts";
+import { type Forge, pullRequestForge } from "../adapters/forge.ts";
 import { publish } from "../adapters/nats.ts";
 import { evaluate } from "../adapters/opa.ts";
+import { type Program, program } from "../adapters/program.ts";
 import { slackChannel } from "../adapters/slack.ts";
 import { decidedEvent, requestedEvent } from "../domain/events.ts";
 import type { Channel, Decided, Gate, Outcome } from "../domain/gate.ts";
 import { parseGroups, parseRules } from "../domain/policy.ts";
-import { type PullRequest, parsePullRequest, requestOf } from "../domain/pull-request.ts";
+import { defaultForgeAdapter, parsePullRequest, requestOf } from "../domain/pull-request.ts";
 import { buildRecord, signWith } from "../domain/record.ts";
 import { gateId, parseRequest } from "../domain/request.ts";
 import { fromIso, toIso } from "../domain/time.ts";
@@ -30,7 +31,7 @@ export interface Loaded {
   gate: Gate;
   policyText: string;
   channel: Channel;
-  pr?: { ref: PullRequest; forge: Forge; sha: string };
+  pr?: { forge: Forge; sha: string; channel: Channel };
   now: number;
 }
 
@@ -39,11 +40,15 @@ export async function load(options: Options): Promise<Loaded> {
   let request: Gate["request"];
   let pr: Loaded["pr"];
   if (options.pullRequest) {
-    const ref = parsePullRequest(options.pullRequest, env.GATEKEEPER_FORGE_URL || undefined);
-    const forge = forgeApi(ref, env.GATEKEEPER_FORGE_TOKEN || undefined);
-    const { pull, paths } = await readPull(ref, forge);
-    request = requestOf(ref, pull, paths);
-    pr = { ref, forge, sha: pull.head.sha };
+    const ref = parsePullRequest(options.pullRequest);
+    const run = program(env.GATEKEEPER_FORGE_ADAPTER || defaultForgeAdapter(ref), {
+      FORGE_URL: env.GATEKEEPER_FORGE_URL || ref.forgeUrl,
+      FORGE_TOKEN: env.GATEKEEPER_FORGE_TOKEN || undefined,
+    });
+    const forge = pullRequestForge(ref, run);
+    const pull = await forge.read();
+    request = requestOf(ref, pull);
+    pr = { forge, sha: pull.sha, channel: forge.channel(pull) };
   } else {
     if (!options.file) throw new UsageError("name a request file, or use --pull-request");
     request = parseRequest(readJson(options.file), options.file);
@@ -59,15 +64,22 @@ function channelOf(options: Options, pr: Loaded["pr"]): Channel {
   const { channel, env } = options;
   if (channel === undefined) {
     if (!pr) throw new UsageError("name the channel, like --channel slack:C0GATES");
-    return pullRequestChannel(pr.ref, pr.forge);
+    return pr.channel;
   }
+  return slackOf(channel, env);
+}
+
+/** A slack: channel through the channel adapter in GATEKEEPER_SLACK_ADAPTER, and that adapter (ADR 0061). */
+export function slackOf(channel: string, env: Options["env"]): Channel & { run: Program } {
   const slack = /^slack:([A-Z0-9]+)$/.exec(channel);
   if (!slack) throw new UsageError(`${channel} is no channel like slack:C0GATES`);
   if (!env.GATEKEEPER_SLACK_TOKEN) throw new UsageError("set GATEKEEPER_SLACK_TOKEN for a slack: channel");
-  return slackChannel(slack[1] as string, {
-    url: env.GATEKEEPER_SLACK_URL || "https://slack.com/api/",
-    token: env.GATEKEEPER_SLACK_TOKEN,
+  const run = program(env.GATEKEEPER_SLACK_ADAPTER || "npx -y @opensoftware/channel-slack", {
+    CHANNEL_API_URL: env.GATEKEEPER_SLACK_URL || undefined,
+    CHANNEL_TOKEN: env.GATEKEEPER_SLACK_TOKEN,
+    CHANNEL_SIGNING_SECRET: env.GATEKEEPER_SLACK_SIGNING_SECRET || undefined,
   });
+  return { ...slackChannel(slack[1] as string, run), run };
 }
 
 export const nowOf = (text: string | undefined): number => (text ? fromIso(text) : Date.now() * 1000);
@@ -76,7 +88,7 @@ const STATES = { pending: "pending", approved: "success", rejected: "failure", e
 
 /** The commit status "gatekeeper" of a pull request's head commit. */
 export async function report(loaded: Loaded, outcome: Outcome, description: string): Promise<void> {
-  if (loaded.pr) await setStatus(loaded.pr.ref, loaded.pr.forge, loaded.pr.sha, STATES[outcome.state], description);
+  if (loaded.pr) await loaded.pr.forge.status(loaded.pr.sha, STATES[outcome.state], description);
 }
 
 export function describe(outcome: Outcome): string {
