@@ -47,3 +47,24 @@ export function workItem(mention: Mention): Record<string, unknown> {
 export function decision(thread: string, card: string, choice: string, user: string): Record<string, unknown> {
   return { kind: "decision", thread, card, choice, person: `slack:${user}` };
 }
+
+/** A message as the port's messages command prints it: the time has the microseconds of Slack's ts (ADR 0061). */
+export function line(message: {
+  id: string;
+  thread: string;
+  user: string;
+  ts: string;
+  text: string;
+  mine: boolean;
+}): Record<string, unknown> {
+  const [seconds = "0", fraction = ""] = message.ts.split(".");
+  const time = `${new Date(Number(seconds) * 1000).toISOString().slice(0, 19)}.${fraction.padEnd(6, "0")}Z`;
+  return {
+    id: message.id,
+    thread: message.thread,
+    author: `slack:${message.user}`,
+    time,
+    text: message.text,
+    mine: message.mine,
+  };
+}

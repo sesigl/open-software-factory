@@ -2,10 +2,10 @@
 // program keeps nothing between runs. CHANNEL_API_URL names the Web API, CHANNEL_TOKEN is the bot token.
 import { createSlackAdapter, type SlackAdapter } from "@chat-adapter/slack";
 import { createMemoryState } from "@chat-adapter/state-memory";
-import type { Channel } from "@opensoftware/channel-kit";
+import type { Channel, Post } from "@opensoftware/channel-kit";
 import { check } from "@opensoftware/cli";
 import { Actions, Button, Card, Chat, ConsoleLogger, type Message } from "chat";
-import { decision, signed, workItem } from "../domain/messages.ts";
+import { decision, line, signed, workItem } from "../domain/messages.ts";
 
 /** The SDK logs to the console; the program's output is its JSON lines only. */
 const QUIET = new ConsoleLogger("silent");
@@ -53,9 +53,35 @@ async function mentioned(adapter: SlackAdapter, thread: string, message: Message
   });
 }
 
+/** The SDK's form of a post: the text, or a card with one button per choice. */
+function postable(post: Post) {
+  return "text" in post
+    ? post.text
+    : Card({
+        title: post.question,
+        children: [Actions(post.choices.map((name) => Button({ id: name, label: name, value: name })))],
+      });
+}
+
+/** The most messages that messages reads of a thread, and of the top of a channel. */
+const THREAD_LIMIT = 1000;
+const CHANNEL_LIMIT = 200;
+
+/** A message as messages prints it, with the time from its ts. */
+const printed = (message: Message) =>
+  line({
+    id: message.id,
+    thread: message.threadId,
+    user: message.author.userId,
+    ts: (message.raw as { ts: string }).ts,
+    text: (message.raw as { text?: string }).text ?? "",
+    mine: message.author.isMe,
+  });
+
 export const slack: Channel = {
   name: "channel-slack",
   thread: { form: "slack:<channel>:<ts>", pattern: /^slack:[^:]+:\d+\.\d+$/ },
+  channel: { form: "slack:<channel>", pattern: /^slack:[^:]+$/ },
   api: "CHANNEL_API_URL is Slack's Web API, by default https://slack.com/api/.",
   async receive(keep) {
     const { chat, adapter } = connect();
@@ -68,17 +94,34 @@ export const slack: Channel = {
   },
   async post(thread, post) {
     const { chat } = connect();
-    const message =
-      "text" in post
-        ? post.text
-        : Card({
-            title: post.question,
-            children: [Actions(post.choices.map((name) => Button({ id: name, label: name, value: name })))],
-          });
     const sent = await calling(async () => {
       await chat.initialize();
-      return chat.thread(thread).post(message);
+      return chat.thread(thread).post(postable(post));
     });
     return sent.id;
+  },
+  async start(channel, post) {
+    const { chat } = connect();
+    const sent = await calling(async () => {
+      await chat.initialize();
+      return chat.channel(channel).post(postable(post));
+    });
+    return { thread: sent.threadId, id: sent.id };
+  },
+  async messages(target) {
+    const { chat, adapter } = connect();
+    await calling(() => chat.initialize());
+    if (slack.channel?.pattern.test(target)) {
+      const page = await calling(() => adapter.fetchChannelMessages(target, { limit: CHANNEL_LIMIT }));
+      return page.messages.map(printed);
+    }
+    const all: Message[] = [];
+    let cursor: string | undefined;
+    do {
+      const page = await calling(() => adapter.fetchMessages(target, { direction: "forward", limit: 200, cursor }));
+      all.push(...page.messages);
+      cursor = page.nextCursor;
+    } while (cursor && all.length < THREAD_LIMIT);
+    return all.map(printed);
   },
 };

@@ -9,19 +9,19 @@ Feature: Slack's own rules for the channel port
     When the client runs "receive" on it with "OSF_NOW" set to "2026-01-01T00:05:01Z"
     Then receive exits with code 1 and an error that names the signature
 
-  @id=SCN-CSLACK-002 @status=planned
+  @id=SCN-CSLACK-002 @status=implemented
   Scenario: A reply to a channel starts a new thread
     When the client runs "reply slack:C0WEB" with "Deploy 42 waits for approval"
     Then the test chat shows the bot's message "Deploy 42 waits for approval" at the top of the channel "C0WEB"
     And reply prints the thread of that message and its ID
 
-  @id=SCN-CSLACK-003 @status=planned
+  @id=SCN-CSLACK-003 @status=implemented
   Scenario: An approval card asked in a channel starts a new thread
     When the client runs "ask slack:C0WEB" with "Deploy 42 to production?"
     Then the test chat shows the bot's card with "Deploy 42 to production?" and the choices "approve" and "reject" at the top of the channel "C0WEB"
     And ask prints the thread of that card and its ID
 
-  @id=SCN-CSLACK-004 @status=planned
+  @id=SCN-CSLACK-004 @status=implemented
   Scenario: messages lists the messages at the top of a channel, each with its own thread
     Given the bot's message "Deploy 42 waits for approval" at the top of the channel "C0WEB"
     And the person's message "Lunch at noon?" after it
