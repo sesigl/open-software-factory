@@ -1,6 +1,6 @@
 @port=channel @owner=maintainers
 Feature: Work items, replies and approvals in any chat
-  A channel adapter is a program with the commands receive, reply and ask. It reaches the chat at CHANNEL_API_URL
+  A channel adapter is a program with the commands receive, reply, ask and messages. It reaches the chat at CHANNEL_API_URL
   with the bot's token CHANNEL_TOKEN, and checks deliveries with CHANNEL_SIGNING_SECRET. receive turns one webhook
   delivery into a work item from contracts or a decision on an approval card; a thread is Vercel Chat SDK's thread ID
   (ADR 0059). The test chat has a bot and a person: the testkit's fake Slack with the channel "C0WEB" for the slack
@@ -66,3 +66,13 @@ Feature: Work items, replies and approvals in any chat
     Given a work item that receive printed for the person's message
     When the client runs "reply" on its thread with "CHANNEL_TOKEN" set to "not-a-token"
     Then reply exits with code 1 and the error "the channel refused the token"
+
+  @id=SCN-CHANNEL-010 @status=planned @conformance
+  Scenario: messages lists the messages of a thread, oldest first
+    Given a work item that receive printed for the person's message
+    And the client ran "reply" on its thread with "On it: run 7 started"
+    When the client runs "messages" on that thread
+    Then messages prints the person's message and then the bot's message "On it: run 7 started"
+    And the person's message has the person as its author and "mine" false
+    And the bot's message has "mine" true
+    And each message has its ID, the thread and its time
