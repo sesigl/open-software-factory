@@ -3,7 +3,7 @@ status: accepted
 date: 2026-10-24
 ---
 
-# 0061. gatekeeper asks and reports through the channel and forge ports
+# 0062. gatekeeper asks and reports through the channel and forge ports
 
 ## Context
 

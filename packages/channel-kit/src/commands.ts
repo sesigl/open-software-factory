@@ -1,4 +1,4 @@
-// The channel port's commands around a chat (ADR 0059, ADR 0061): receive hands a delivery to the chat's webhook and
+// The channel port's commands around a chat (ADR 0059, ADR 0062): receive hands a delivery to the chat's webhook and
 // prints what its handlers keep; reply and ask post in a thread, or start one in a channel, and print the message's
 // ID; messages prints the messages of a thread or a channel.
 import { check, type Outcome, readInputs } from "@opensoftware/cli";

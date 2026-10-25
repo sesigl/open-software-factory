@@ -56,7 +56,7 @@ export interface CommentJson {
   user: { login: string };
 }
 
-/** A comment as `comments` prints it; `me` is the login of the token's user (ADR 0061). */
+/** A comment as `comments` prints it; `me` is the login of the token's user (ADR 0062). */
 export function commentLine(comment: CommentJson, me: string) {
   return {
     id: comment.id,

@@ -7,7 +7,7 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
   repository "tester/web", whose branch "main" holds one commit: a real Forgejo for the forgejo adapter, and the
   testkit's fake GitHub for the github adapter (ADR 0058). webhook takes the port's event names, such as
   "issue.labeled" or "push", and each adapter maps them to its forge's events (ADR 0060). pr names the author,
-  labels and changed files, and comments lists a pull request's conversation, which gatekeeper reads (ADR 0061).
+  labels and changed files, and comments lists a pull request's conversation, which gatekeeper reads (ADR 0062).
 
   @id=SCN-FORGE-001 @status=implemented @conformance
   Scenario: A branch starts at the head commit of the default branch

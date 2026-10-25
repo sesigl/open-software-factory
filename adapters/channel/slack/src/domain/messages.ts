@@ -48,7 +48,7 @@ export function decision(thread: string, card: string, choice: string, user: str
   return { kind: "decision", thread, card, choice, person: `slack:${user}` };
 }
 
-/** A message as the port's messages command prints it: the time has the microseconds of Slack's ts (ADR 0061). */
+/** A message as the port's messages command prints it: the time has the microseconds of Slack's ts (ADR 0062). */
 export function line(message: {
   id: string;
   thread: string;

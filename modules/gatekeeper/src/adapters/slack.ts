@@ -1,4 +1,4 @@
-// A Slack channel through the channel port (ADR 0061): the request is a message at the top of the channel, decisions
+// A Slack channel through the channel port (ADR 0062): the request is a message at the top of the channel, decisions
 // are replies in its thread or presses of its buttons. The adapter program talks to Slack.
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";

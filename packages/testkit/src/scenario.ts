@@ -34,7 +34,7 @@ export function scenario(id: string, body: (context: ScenarioContext) => Promise
     try {
       const dirs = folders(workspace);
       initGit(dirs.input);
-      sut = makeSut(moduleRoot, dirs, () => handle.hosts());
+      sut = makeSut(moduleRoot, dirs, () => handle.hosts(), id);
       const context = makeContext(sut, handle);
       if (status !== "planned") return await runBody(body, context, sut, handle);
       // A planned scenario's test is expected to fail until the behavior exists.

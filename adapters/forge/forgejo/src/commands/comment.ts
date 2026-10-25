@@ -24,7 +24,7 @@ export async function comment(
   return line({ id: posted.id, url: posted.html_url });
 }
 
-/** One line per comment, oldest first; `mine` marks the comments of the token's user (ADR 0061). */
+/** One line per comment, oldest first; `mine` marks the comments of the token's user (ADR 0062). */
 export async function comments(repo: string | undefined, number: string | undefined): Promise<Outcome> {
   const api = forge(repo);
   const issue = pullNumber(number);

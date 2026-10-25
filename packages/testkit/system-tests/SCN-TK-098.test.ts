@@ -4,41 +4,38 @@ import { demoModule, GITHUB_README, testCases } from "./module.ts";
 scenario("SCN-TK-098", async ({ sut, given, when, then }) => {
   let bin = "";
   await given(
-    'a module whose CLI prints the status of "GET /user" and comments on pull request 1 with the token in "DEMO_GITHUB_TOKEN" at "DEMO_GITHUB_URL"',
+    'a module whose CLI prints the files of pull request 1 and its labels and "draft" at "DEMO_GITHUB_URL"',
     async () => {
       bin = [
-        "const call = (method, path, body) =>",
+        "const api = (path) =>",
         "  fetch(`${process.env.DEMO_GITHUB_URL}${path}`, {",
-        "    method,",
-        '    headers: { authorization: `Bearer ${process.env.DEMO_GITHUB_TOKEN}`, "content-type": "application/json" },',
-        "    body: body && JSON.stringify(body),",
-        "  });",
-        'const user = await call("GET", "/user");',
-        'await call("POST", "/repos/tester/demo/issues/1/comments", { body: "Evidence attached" });',
-        "process.stdout.write(String(user.status));",
+        "    headers: { authorization: `Bearer ${process.env.DEMO_GITHUB_TOKEN}` },",
+        "  }).then((response) => response.json());",
+        'const files = await api("/repos/tester/demo/pulls/1/files");',
+        'const pull = await api("/repos/tester/demo/pulls/1");',
+        'process.stdout.write(`${files.map((file) => file.filename).join(",")} ${JSON.stringify(pull.labels)} ${pull.draft}`);',
         "",
       ].join("\n");
     },
   );
 
   await given(
-    'its system test passes the actions token of fakes.github and expects the status 403 and a comment by "github-actions[bot]"',
+    'its system test opens a pull request in fakes.github that changes "checkout.js" and expects "checkout.js [] false"',
     async () => {
       const module = demoModule({
         bin,
         readme: GITHUB_README,
-        steps: ['When the user runs "demo"', 'Then the output is "403" and the comment is by "github-actions[bot]"'],
+        steps: ['When the user runs "demo"', 'Then the output is "checkout.js [] false"'],
         test: [
           "const github = await fakes.github();",
           'await github.createRepository("demo");',
-          'const pr = await github.openPullRequest("demo", { branch: "fix", title: "Fix the typo", files: { "notes.md": "hi\\n" } });',
+          'await github.openPullRequest("demo", { branch: "fix", title: "Fix checkout", files: { "checkout.js": "fixed\\n" } });',
           "let run: Awaited<ReturnType<typeof sut.cli>>;",
           "await when('the user runs \"demo\"', async () => {",
-          "  run = await sut.cli([], { env: { DEMO_GITHUB_URL: github.url, DEMO_GITHUB_TOKEN: github.actionsToken } });",
+          "  run = await sut.cli([], { env: { DEMO_GITHUB_URL: github.url, DEMO_GITHUB_TOKEN: github.token } });",
           "});",
-          'await then(\'the output is "403" and the comment is by "github-actions[bot]"\', async () => {',
-          '  expect(run.stdout).toBe("403");',
-          '  expect(await github.conversation(pr)).toEqual([{ id: expect.any(Number), user: "github-actions[bot]", body: "Evidence attached" }]);',
+          "await then('the output is \"checkout.js [] false\"', async () => {",
+          '  expect(run.stdout).toBe("checkout.js [] false");',
           "});",
         ],
       });

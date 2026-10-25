@@ -7,7 +7,7 @@ covers: [ports/forge/**]
 How the factory works with the company's code forge: branches, pull requests, checks, comments, merge rules,
 webhooks, and the pull request events that come back. Decisions: [ADR 0057](../../docs/decisions/0057-forge-port.md),
 [ADR 0060](../../docs/decisions/0060-factory-spec-forge-port.md) (event names, `hooks`, `unhook`),
-[ADR 0061](../../docs/decisions/0061-gatekeeper-ports.md) (`comments`, the author, labels, draft and paths of `pr`).
+[ADR 0062](../../docs/decisions/0062-gatekeeper-ports.md) (`comments`, the author, labels, draft and paths of `pr`).
 
 ## The interface
 

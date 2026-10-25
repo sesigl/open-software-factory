@@ -1,4 +1,4 @@
-// A pull request as a gate: its URL, the forge adapter that reaches it, and the request built from it (ADR 0061).
+// A pull request as a gate: its URL, the forge adapter that reaches it, and the request built from it (ADR 0062).
 import { UsageError } from "@opensoftware/cli";
 import type { GateRequest } from "./request.ts";
 

@@ -1,59 +1,48 @@
 import { scenario } from "@opensoftware/testkit";
-import { demoModule, FORGE_API, FORGE_README, testCases } from "./module.ts";
+import { demoModule, testCases } from "./module.ts";
 
 scenario("SCN-TK-096", async ({ sut, given, when, then }) => {
-  let bin = "";
-  await given(
-    'a module whose CLI prints the user and text of each comment of a pull request at "DEMO_FORGE_URL"',
-    async () => {
-      bin = [
-        ...FORGE_API,
-        'const comments = await api("GET", `/issues/${rest[0]}/comments`);',
-        'process.stdout.write(comments.map((comment) => `${comment.user.login} ${comment.body}`).join("\\n"));',
-        "",
-      ].join("\n");
-    },
-  );
+  let module: Record<string, string> = {};
+  await given(`a module whose CLI counts the mutant "7" in Stryker's coverage global`, async () => {
+    module = demoModule({
+      bin: 'globalThis.__stryker__ = { mutantCoverage: { static: { "7": 1 }, perTest: {} } };\n',
+      steps: ['When the user runs "demo"', "Then the command exits with code 0"],
+      test: [
+        "let run: Awaited<ReturnType<typeof sut.cli>>;",
+        "await when('the user runs \"demo\"', async () => {",
+        "  run = await sut.cli([]);",
+        "});",
+        "await then('the command exits with code 0', async () => {",
+        "  expect(run.exitCode).toBe(0);",
+        "});",
+      ],
+    });
+  });
 
-  await given(
-    'its system test has "reviewer" say "Looks good" on a pull request in fakes.forge and expects "reviewer Looks good"',
-    async () => {
-      const module = demoModule({
-        bin,
-        readme: FORGE_README,
-        steps: ['When the user runs "demo"', 'Then the output is "reviewer Looks good"'],
-        test: [
-          "const forge = await fakes.forge();",
-          'await forge.createRepository("demo");',
-          'const pr = await forge.openPullRequest("demo", { branch: "fix", title: "Fix the typo", files: { "notes.md": "hi\\n" } });',
-          'await forge.say(pr, "Looks good");',
-          "let run: Awaited<ReturnType<typeof sut.cli>>;",
-          "await when('the user runs \"demo\"', async () => {",
-          "  const env = { DEMO_FORGE_URL: forge.url, DEMO_FORGE_TOKEN: forge.token };",
-          "  run = await sut.cli([`${forge.owner}/demo`, String(pr.number)], { env });",
-          "});",
-          "await then('the output is \"reviewer Looks good\"', async () => {",
-          '  expect(run.stdout, run.stderr).toBe("reviewer Looks good");',
-          "});",
-        ],
-      });
-      for (const [path, content] of Object.entries(module)) await sut.files.put(path, content);
-    },
-  );
+  await given("its system test runs the CLI", async () => {
+    for (const [path, content] of Object.entries(module)) await sut.files.put(path, content);
+  });
 
   let run: Awaited<ReturnType<typeof sut.cli>>;
-  await when('the developer runs "testkit run --junit report.xml" in the module', async () => {
-    run = await sut.cli(["run", "--junit", "report.xml"]);
-  });
+  await when(
+    'the developer runs "testkit run --junit report.xml" with OSF_TESTKIT_MUTANTS "$OUTPUT/mutants" in the module',
+    async () => {
+      const mutants = sut.files.path("$OUTPUT/mutants");
+      run = await sut.cli(["run", "--junit", "report.xml"], { env: { OSF_TESTKIT_MUTANTS: mutants } });
+    },
+  );
 
   await then("the command exits with code 0", async () => {
     expect(run.exitCode, run.stdout + run.stderr).toBe(0);
-  });
-
-  await then('"report.xml" has the passed test case "SCN-DEMO-001"', async () => {
     expect(testCases(await sut.files.read("$INPUT/report.xml"))).toContainEqual({
       name: "SCN-DEMO-001",
       failed: false,
     });
+  });
+
+  await then('a file in "$OUTPUT/mutants/SCN-DEMO-001" lists the mutant "7"', async () => {
+    const files = await sut.files.list("$OUTPUT/mutants/SCN-DEMO-001");
+    const lists = await Promise.all(files.map((file) => sut.files.read(`$OUTPUT/mutants/SCN-DEMO-001/${file}`)));
+    expect(lists.map((list) => JSON.parse(list))).toContainEqual(["7"]);
   });
 });

@@ -1,4 +1,4 @@
-// A pull request through the forge port (ADR 0061): the request is a comment, decisions are later comments, and the
+// A pull request through the forge port (ADR 0062): the request is a comment, decisions are later comments, and the
 // result is the check "gatekeeper", a commit status of the head commit. The adapter program talks to the forge.
 import type { Channel, Message } from "../domain/gate.ts";
 import { forgeOf, type PullLine, type PullRequest } from "../domain/pull-request.ts";

@@ -23,7 +23,7 @@ any command line. Every command prints JSON lines.
 A thread is Vercel Chat SDK's thread ID, for example `slack:C0WEB:1767225600.000001` or `github:acme/web:12`. A
 client keeps it as it is and passes it back to `reply`, `ask` and `messages`.
 
-An adapter whose chat has channels also takes a channel, like `slack:C0WEB` (ADR 0061). `messages <channel>` prints
+An adapter whose chat has channels also takes a channel, like `slack:C0WEB` (ADR 0062). `messages <channel>` prints
 the newest 200 messages at the top of the channel, oldest first, each with its own thread. `reply` and `ask` on a
 channel start a new thread with the message and print that thread. In `messages`, `author` is `<adapter>:<user ID>`,
 `time` is ISO 8601 as precise as the chat keeps it, and `mine` is true for the bot's own messages.
