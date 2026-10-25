@@ -28,6 +28,6 @@ scenario("SCN-CHANNEL-006", async ({ sut, fakes, given, when, then }) => {
   );
 
   await then("ask prints the thread and the card's ID", async () => {
-    expect(printed).toEqual({ thread: id, id: box.slack.messages(CHANNEL)[1]?.ts });
+    expect(printed).toEqual({ thread: id, time: expect.stringMatching(/Z$/), id: box.slack.messages(CHANNEL)[1]?.ts });
   });
 });

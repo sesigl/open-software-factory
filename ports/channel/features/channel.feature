@@ -66,3 +66,33 @@ Feature: Work items, replies and approvals in any chat
     Given a work item that receive printed for the person's message
     When the client runs "reply" on its thread with "CHANNEL_TOKEN" set to "not-a-token"
     Then reply exits with code 1 and the error "the channel refused the token"
+
+  @id=SCN-CHANNEL-010 @status=implemented @conformance
+  Scenario: history lists the thread's messages oldest first and marks the bot's own
+    Given a work item that receive printed for the person's message
+    And the client ran "reply" on its thread with "On it: run 7 started"
+    When the client runs "history" on its thread
+    Then history prints the person's message and then the bot's message "On it: run 7 started"
+    And the person's message names the person and has "mine" false, and the bot's message has "mine" true
+    And the bot's message has the ID and the time that reply printed
+
+  @id=SCN-CHANNEL-011 @status=implemented @conformance
+  Scenario: A person's message in a thread that the client follows is a message
+    Given a work item that receive printed for the person's message
+    And a delivery of the person's message "approve" in its thread
+    When the client runs "receive" on it with "--thread" naming that thread
+    Then receive prints the message "approve" in that thread by the person with its ID and time
+
+  @id=SCN-CHANNEL-012 @status=implemented @conformance
+  Scenario: A person's message in a thread that the client does not follow prints nothing
+    Given a work item that receive printed for the person's message
+    And a delivery of the person's message "approve" in its thread
+    When the client runs "receive" on it
+    Then receive exits with code 0 and prints nothing
+
+  @id=SCN-CHANNEL-013 @status=implemented @conformance
+  Scenario: A decision has the time of the person's choice
+    Given the client ran "ask" on a thread with "Merge pull request 12 into main?"
+    And a delivery of the person choosing "approve" on that card
+    When the client runs "receive" on it
+    Then the decision's time is an RFC 3339 time in UTC that is not before the card's time

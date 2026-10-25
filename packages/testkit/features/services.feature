@@ -147,3 +147,11 @@ Feature: Services and outside systems
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-096 @status=implemented
+  Scenario: fakes.slack's conversations.history lists the messages that start a thread, newest first, as Slack does
+    Given a module whose CLI posts "first" to "C1", "reply" in its thread and "second" to "C1", and prints the texts of "conversations.history" of "C1"
+    And its system test expects "second first"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

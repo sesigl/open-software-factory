@@ -49,3 +49,24 @@ export function workItem(mention: Mention): Record<string, unknown> {
   const workItem = { id, type: "task", title: title.trim().slice(0, 300), description: said, requester, origin };
   return { kind: "work", workItem: { ...workItem, dedupeKey: mention.thread } };
 }
+
+/** A comment as GitHub's REST API gives it, inside the SDK's raw message. */
+interface Raw {
+  comment: { id: number; body: string; created_at: string; user: { login: string } };
+}
+
+/** A comment of history: its text as GitHub keeps it, and whether the bot wrote it. */
+export function said(
+  raw: unknown,
+  bot: string,
+): { id: string; person: string; time: string; text: string; mine: boolean } {
+  const { comment } = raw as Raw;
+  const time = new Date(comment.created_at).toISOString().replace(".000Z", "Z");
+  return {
+    id: String(comment.id),
+    person: `github:${comment.user.login}`,
+    time,
+    text: comment.body,
+    mine: comment.user.login === bot,
+  };
+}
