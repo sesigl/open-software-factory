@@ -4,7 +4,7 @@ import { createSlackAdapter, type SlackAdapter } from "@chat-adapter/slack";
 import { createMemoryState } from "@chat-adapter/state-memory";
 import type { Channel, Post } from "@opensoftware/channel-kit";
 import { check } from "@opensoftware/cli";
-import { Actions, Button, Card, Chat, ConsoleLogger, type Message } from "chat";
+import { Actions, Button, Card, CardText, Chat, ConsoleLogger, type Message } from "chat";
 import { decision, line, signed, workItem } from "../domain/messages.ts";
 
 /** The SDK logs to the console; the program's output is its JSON lines only. */
@@ -53,13 +53,18 @@ async function mentioned(adapter: SlackAdapter, thread: string, message: Message
   });
 }
 
-/** The SDK's form of a post: the text, or a card with one button per choice. */
+/**
+ * The SDK's form of a post: the text, or a card with one button per choice. The question is the card's text, not its
+ * title: Slack cuts a title after 150 characters, and a question may hold links and lines (ADR 0061).
+ */
 function postable(post: Post) {
   return "text" in post
     ? post.text
     : Card({
-        title: post.question,
-        children: [Actions(post.choices.map((name) => Button({ id: name, label: name, value: name })))],
+        children: [
+          CardText(post.question),
+          Actions(post.choices.map((name) => Button({ id: name, label: name, value: name }))),
+        ],
       });
 }
 

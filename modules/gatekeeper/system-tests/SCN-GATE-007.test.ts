@@ -2,7 +2,7 @@ import { scenario } from "@opensoftware/testkit";
 import { GATE, putReadme, request, slackEnv } from "./gate.ts";
 
 scenario("SCN-GATE-007", async ({ sut, fakes, given, when, then }) => {
-  const { slack, env } = await slackEnv(fakes);
+  const { slack, env } = await slackEnv(sut, fakes);
   await given('a policy whose "approvers" is empty for a change of "docs/guide.md"', async () => {
     await putReadme(sut, fakes, {
       "policy.rego": [

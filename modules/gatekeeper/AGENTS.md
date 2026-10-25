@@ -11,8 +11,8 @@ The only ways a system test or another program may use this module:
 - HTTP API of `gatekeeper serve` on `PORT`: `/v1/gates` (OpenAPI in `contracts/openapi/openapi.json`), and
   `/slack/events` and `/slack/actions` for Slack (see `README.md#server`)
 - Input: the request file, the Rego policy and the groups file named on the command line; a Slack channel through the
-  Web API at `GATEKEEPER_SLACK_URL`; a pull request on GitHub or Forgejo through the forge API; `opa` as a separate
-  process
+  channel port's adapter in `GATEKEEPER_SLACK_ADAPTER`; a pull request on GitHub or Forgejo through the forge port's
+  adapter in `GATEKEEPER_FORGE_ADAPTER` (ADR 0061); `opa` as a separate process
 - Output: `$OUTPUT/gate.json` (or `--out`) and `$OUTPUT/record.json` (or `--record`); messages in the Slack channel;
   comments and the commit status `gatekeeper` on the pull request
 - Server state: the schema `gatekeeper` in the PostgreSQL database at `GATEKEEPER_DATABASE_URL`, private to the module
@@ -23,9 +23,9 @@ The only ways a system test or another program may use this module:
 
 Layers, top to bottom, in `architecture.json` (ADR 0014): `entry` (`src/cli.ts`) → `commands` → `adapters` →
 `domain`. `domain` checks the request and the policy's answer, derives the gate ID, decides the gate from the
-messages of its thread, writes the message texts and the buttons, checks Slack's signatures, builds the events and
-the API's view of a gate, and builds, signs and verifies records, without I/O; `adapters` run OPA, call Slack and the
-forge API, publish to NATS, keep the server's gates and outbox in PostgreSQL, and read and write files; `commands`
+messages of its thread, writes the message texts and the choices, builds the events and the API's view of a gate,
+and builds, signs and verifies records, without I/O; `adapters` run OPA, run the channel and forge adapters as
+programs, publish to NATS, keep the server's gates and outbox in PostgreSQL, and read and write files; `commands`
 join them, and `serve` runs the Fastify server. The CLI keeps no state between commands: the channel holds the
 request and the decisions. The server keeps its gates in PostgreSQL and decides with the same domain function. The
 ARCH check enforces the layers.
@@ -38,7 +38,8 @@ ARCH check enforces the layers.
 
 - System tests: 180 seconds in total on the CI runner. SCN-GATE-012, -025 and -055 to -057 need Docker for NATS;
   the server scenarios SCN-GATE-041 to -058 run PostgreSQL in process (PGlite, ADR 0049); all use fake Slack, a
-  scripted forge API and the pinned `opa` of `make install`.
+  scripted forge API and the pinned `opa` of `make install`. The tests run the built `channel-slack` and
+  `forge-github` adapters (`sut.adapter`); `turbo.json` builds them before the tests.
 
 ## Quality limits
 

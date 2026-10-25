@@ -16,7 +16,7 @@ scenario("SCN-GATE-056", async ({ sut, fakes, given, when, then }) => {
     await server.slack.press({
       channel: "C0GATES",
       ts: server.message.ts,
-      actionId: "gatekeeper.approve",
+      actionId: "Approve",
       user: "U0ADA",
     });
   });
@@ -30,7 +30,7 @@ scenario("SCN-GATE-056", async ({ sut, fakes, given, when, then }) => {
         gateId: server.id,
         decision: "approved",
         decidedBy: { kind: "person", id: "slack:U0ADA" },
-        decidedAt: "2026-01-01T00:00:00.000002Z",
+        decidedAt: "2026-01-01T00:00:00.000001Z",
       });
     },
   );

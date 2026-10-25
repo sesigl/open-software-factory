@@ -33,13 +33,14 @@ scenario("SCN-CSLACK-004", async ({ sut, fakes, given, when, then }) => {
   );
 
   await then('each message\'s thread is "slack:C0WEB:" and its ID', async () => {
-    for (const line of lines) expect(line.thread).toBe(`slack:${CHANNEL}:${line.id}`);
+    expect(lines.map(({ thread }) => thread)).toEqual(lines.map(({ id }) => `slack:${CHANNEL}:${id}`));
   });
 
   await then("each message's time has the microseconds of its ID", async () => {
-    for (const line of lines) {
-      const [seconds, fraction] = String(line.id).split(".");
-      expect(line.time).toBe(`${new Date(Number(seconds) * 1000).toISOString().slice(0, 19)}.${fraction}Z`);
-    }
+    const time = (id: unknown) => {
+      const [seconds, fraction] = String(id).split(".");
+      return `${new Date(Number(seconds) * 1000).toISOString().slice(0, 19)}.${fraction}Z`;
+    };
+    expect(lines.map((line) => line.time)).toEqual(lines.map(({ id }) => time(id)));
   });
 });

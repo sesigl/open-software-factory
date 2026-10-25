@@ -49,6 +49,7 @@ npx @opensoftware/channel-github receive delivery.json
 | `channel-github receive <delivery.json>` | Print the delivery's work item or decision, or nothing. |
 | `channel-github reply <thread> <text>` | Comment the text; print `{"thread", "id"}`. |
 | `channel-github ask <thread> <question> [--choice <name>]...` | Comment an approval card, by default with `approve` and `reject`; print `{"thread", "id"}`. |
+| `channel-github messages <thread>` | Print the conversation's first 100 comments, oldest first, as `{"id", "thread", "author", "time", "text", "mine"}`. |
 
 ## Tests
 

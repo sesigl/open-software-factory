@@ -1,84 +1,66 @@
-// A Slack channel through the Web API: the request is a message, decisions are replies in its thread.
-import type { Button, Channel, Message } from "../domain/gate.ts";
-import { fromSlackTs } from "../domain/time.ts";
+// A Slack channel through the channel port (ADR 0061): the request is a message at the top of the channel, decisions
+// are replies in its thread or presses of its buttons. The adapter program talks to Slack.
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import type { Channel, Message } from "../domain/gate.ts";
+import { fromIso } from "../domain/time.ts";
+import type { Program } from "./program.ts";
 
-interface SlackMessage {
-  ts: string;
-  thread_ts?: string;
-  user?: string;
-  text?: string;
-}
+/** A line of the port's `messages`; a request's ID is its thread, so status and serve read and answer there. */
+const message = (line: Record<string, unknown>, id = String(line.id)): Message => ({
+  id,
+  author: String(line.author),
+  time: fromIso(String(line.time)),
+  text: String(line.text ?? ""),
+  mine: line.mine === true,
+});
 
-export function slackChannel(channel: string, api: { url: string; token: string }): Channel {
-  // Form bodies: Slack's read methods take no JSON.
-  const call = async <T>(method: string, args: Record<string, string>): Promise<T> => {
-    const response = await fetch(`${api.url}${method}`, {
-      method: "POST",
-      headers: { authorization: `Bearer ${api.token}`, "content-type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams(args),
-    });
-    const answer = (await response.json()) as { ok: boolean; error?: string } & T;
-    if (!answer.ok) throw new Error(`Slack ${method} failed: ${answer.error ?? response.status}`);
-    return answer;
-  };
-  let bot: Promise<string> | undefined;
-  const me = (): Promise<string> => {
-    bot ??= call<{ user_id: string }>("auth.test", {}).then((answer) => answer.user_id);
-    return bot;
-  };
-  const message = (raw: SlackMessage, mine: string): Message => ({
-    id: raw.ts,
-    author: `slack:${raw.user ?? ""}`,
-    time: fromSlackTs(raw.ts),
-    text: raw.text ?? "",
-    mine: raw.user === mine,
-  });
+export function slackChannel(channel: string, run: Program): Channel {
+  const name = `slack:${channel}`;
   const render = (text: string, marker: string): string => `${text}\n[${marker}]`;
-
   return {
-    name: `slack:${channel}`,
+    name,
     mention: (identity) => (identity.startsWith("slack:") ? `<@${identity.slice(6)}>` : identity),
     howToDecide: 'Reply "approve" or "reject <reason>" in this thread.',
     async find(marker) {
-      const mine = await me();
-      const { messages } = await call<{ messages: SlackMessage[] }>("conversations.history", { channel, limit: "200" });
-      const found = messages.find(
-        (raw) => (raw.thread_ts ?? raw.ts) === raw.ts && raw.user === mine && (raw.text ?? "").includes(`[${marker}]`),
+      const found = (await run(["messages", name])).find(
+        (line) => line.mine === true && String(line.text).includes(`[${marker}]`),
       );
-      return found && message(found, mine);
+      return found && message(found, String(found.thread));
     },
     async thread(request) {
-      const mine = await me();
-      const { messages } = await call<{ messages: SlackMessage[] }>("conversations.replies", {
-        channel,
-        ts: request.id,
-        limit: "1000",
-      });
-      return messages.filter((raw) => raw.ts !== request.id).map((raw) => message(raw, mine));
+      // The port lists the thread from its first message, the request.
+      return (await run(["messages", request.id])).slice(1).map((line) => message(line));
     },
-    async post(text, marker, request, buttons) {
-      const args: Record<string, string> = { channel, text: render(text, marker) };
-      if (request) args.thread_ts = request.id;
-      if (buttons?.length) args.blocks = JSON.stringify(blocks(args.text as string, buttons));
-      const answer = await call<{ ts: string }>("chat.postMessage", args);
-      return message({ ts: answer.ts, user: await me(), text: args.text }, await me());
+    async ask(text, marker, choices = []) {
+      const body = render(text, marker);
+      const [posted] = choices.length
+        ? await run(["ask", name, body, ...choices.flatMap((choice) => ["--choice", choice])])
+        : await run(["reply", name, body]);
+      const thread = String(posted?.thread);
+      const [first] = await run(["messages", thread]);
+      if (!first) throw new Error(`${name} shows no message in the new thread ${thread}`);
+      return message(first, thread);
+    },
+    async answer(request, text, marker) {
+      await run(["reply", request.id, render(text, marker)]);
     },
   };
 }
 
-/** The text as a section and the buttons as an actions block; the text stays the message's fallback text. */
-function blocks(text: string, buttons: Button[]): unknown[] {
-  return [
-    { type: "section", text: { type: "mrkdwn", text } },
-    {
-      type: "actions",
-      elements: buttons.map(({ actionId, text: label, value, style }) => ({
-        type: "button",
-        action_id: actionId,
-        text: { type: "plain_text", text: label },
-        value,
-        style,
-      })),
-    },
-  ];
+/** What the adapter's `receive` makes of one request from Slack; a signature it refuses is undefined. */
+export async function receive(
+  run: Program,
+  delivery: { headers: Record<string, string>; body: string },
+): Promise<Record<string, unknown>[] | undefined> {
+  const folder = await mkdtemp(join(tmpdir(), "gatekeeper-"));
+  try {
+    const file = join(folder, "delivery.json");
+    await writeFile(file, JSON.stringify(delivery));
+    const refused = (error: Error) => (error.message.includes("signature") ? undefined : Promise.reject(error));
+    return await run(["receive", file]).catch(refused);
+  } finally {
+    await rm(folder, { recursive: true, force: true });
+  }
 }

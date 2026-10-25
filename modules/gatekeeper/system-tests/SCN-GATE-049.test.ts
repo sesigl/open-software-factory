@@ -12,7 +12,7 @@ scenario("SCN-GATE-049", async ({ sut, fakes, given, when, then }) => {
     await server.slack.press({
       channel: "C0GATES",
       ts: server.message.ts,
-      actionId: "gatekeeper.approve",
+      actionId: "Approve",
       user: "U0BEN",
     });
   });

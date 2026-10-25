@@ -75,5 +75,5 @@ credential is stored in the repository.
 | SCN-CKIT-005 | implemented | reply posts the text in the thread and prints the message's ID |
 | SCN-CKIT-006 | implemented | ask without choices posts an approval card with "approve" and "reject" |
 | SCN-CKIT-007 | implemented | A thread that does not have the channel's form is a usage error |
-| SCN-CKIT-008 | planned | messages prints one line per message of the thread |
-| SCN-CKIT-009 | planned | reply to a channel prints the new thread that the post started |
+| SCN-CKIT-008 | implemented | messages prints one line per message of the thread |
+| SCN-CKIT-009 | implemented | reply to a channel prints the new thread that the post started |

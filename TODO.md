@@ -496,7 +496,7 @@ read them for ideas, do not copy their company-specific rules.
 
 ## Wave 4 · Automate
 
-### [ ] T-15 · channel and forge ports
+### [x] T-15 · channel and forge ports
 
 - **Tier / language / path / prefix:** core (`github`, `forgejo` forge) and optional (`slack`, `teams`,
   `github`, `linear` channels) · TS · `ports/channel/`, `ports/forge/`, `adapters/…` · `SCN-CHANNEL`, `SCN-FORGE`
@@ -540,7 +540,13 @@ read them for ideas, do not copy their company-specific rules.
     signs webhooks with `FACTORY_WEBHOOK_SECRET`; `sut.adapter` gives a module's test the built adapter, and
     `fakes.github` deletes webhooks (ADR 0060, `SCN-FORGE-022` to `-026`, `SCN-FSPEC-049` to `-056`, `SCN-TK-093` to
     `-095`).
-  - [ ] gatekeeper's approvals and records through the channel and forge ports.
+  - [x] gatekeeper's approvals and records through the channel and forge ports: the channel port reads a thread or a
+    channel with `messages` and starts a thread in a channel; the forge port's `pr` names the author, labels, draft
+    and changed paths, and `comments` lists a pull request's conversation; gatekeeper runs the adapters named in
+    `GATEKEEPER_SLACK_ADAPTER` and `GATEKEEPER_FORGE_ADAPTER` and keeps no Slack or forge client of its own;
+    `fakes.github` lists changed files and has an Actions token, and `fakes.slack` lists a channel's top-level
+    messages newest first (ADR 0061, `SCN-CHANNEL-010`, `SCN-CSLACK-002` to `-004`, `SCN-CKIT-008` to `-009`,
+    `SCN-FORGE-027` to `-029`, `SCN-FGITHUB-001`, `SCN-GATE-059` to `-061`, `SCN-TK-096` to `-099`).
 
 ### [ ] T-16 · intake
 

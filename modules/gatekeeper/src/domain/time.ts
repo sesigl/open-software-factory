@@ -1,4 +1,5 @@
-// Times as microseconds since 1970: Slack's message times have six digits after the second.
+// Times as microseconds since 1970: Slack's message times have six digits after the second, and the channel port
+// prints them so (ADR 0061).
 import { UsageError } from "@opensoftware/cli";
 
 export function fromIso(text: string): number {
@@ -13,12 +14,6 @@ export function toIso(micros: number): string {
   const fraction = String(micros % 1_000_000).padStart(6, "0");
   return `${new Date(seconds * 1000).toISOString().slice(0, 19)}.${fraction}Z`;
 }
-
-/** A Slack message time like "1767225600.000002". */
-export const fromSlackTs = (ts: string): number => {
-  const [seconds = "0", fraction = ""] = ts.split(".");
-  return Number(seconds) * 1_000_000 + Number(fraction.padEnd(6, "0"));
-};
 
 const UNITS: Record<string, number> = { s: 1, m: 60, h: 3600, d: 86_400 };
 

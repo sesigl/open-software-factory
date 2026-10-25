@@ -22,6 +22,7 @@ export async function serving(
     GATEKEEPER_SLACK_URL: slack.url,
     GATEKEEPER_SLACK_TOKEN: slack.token,
     GATEKEEPER_SLACK_SIGNING_SECRET: slack.signingSecret,
+    GATEKEEPER_SLACK_ADAPTER: sut.adapter("channel/slack"),
     GATEKEEPER_DATABASE_URL: db.url,
     GATEKEEPER_API_TOKEN: API_TOKEN,
     ...options.env,
