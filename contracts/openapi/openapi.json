@@ -116,6 +116,113 @@
           }
         }
       }
+    },
+    "/v1/work-items": {
+      "post": {
+        "operationId": "IntakeApi_submitWork",
+        "description": "Put work into the inbox. A submission with the dedupe key of a work item answers that work item.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkItemView"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "The request has succeeded and a new resource has been created as a result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkItemView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The server could not understand the request due to invalid syntax.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Access is unauthorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkSubmission"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/work-items/{workItemId}": {
+      "get": {
+        "operationId": "IntakeApi_getWorkItem",
+        "description": "A work item, its status and every request that asked for it.",
+        "parameters": [
+          {
+            "name": "workItemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkItemView"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Access is unauthorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The server cannot find the requested resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "security": [
@@ -2104,6 +2211,13 @@
         ],
         "description": "One unit of requested work: the `data` of a `work.received@v1` CloudEvent."
       },
+      "WorkItemStatus": {
+        "type": "string",
+        "enum": [
+          "received"
+        ],
+        "description": "Where a work item stands."
+      },
       "WorkItemType": {
         "type": "string",
         "enum": [
@@ -2112,6 +2226,36 @@
           "task",
           "automation"
         ]
+      },
+      "WorkItemView": {
+        "type": "object",
+        "properties": {
+          "workItem": {
+            "$ref": "#/components/schemas/WorkItem",
+            "description": "Its ID is \"wi_\" and 20 hex digits of the SHA-256 of its dedupe key."
+          },
+          "status": {
+            "$ref": "#/components/schemas/WorkItemStatus"
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "requests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkRequest"
+            },
+            "description": "Every submission that asked for the work item, oldest first; one per origin."
+          }
+        },
+        "required": [
+          "workItem",
+          "status",
+          "receivedAt",
+          "requests"
+        ],
+        "description": "intake: a work item as the HTTP API shows it (ADR 0063)."
       },
       "WorkReceived": {
         "type": "object",
@@ -2166,6 +2310,70 @@
           "data"
         ],
         "description": "intake: a work item was accepted."
+      },
+      "WorkRequest": {
+        "type": "object",
+        "properties": {
+          "requester": {
+            "$ref": "#/components/schemas/Actor"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/Origin"
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "requester",
+          "origin",
+          "receivedAt"
+        ],
+        "description": "intake: one submission that asked for a work item."
+      },
+      "WorkSubmission": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/WorkItemType",
+            "description": "Default: task."
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "description": {
+            "type": "string"
+          },
+          "requester": {
+            "$ref": "#/components/schemas/Actor"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/Origin"
+          },
+          "dedupeKey": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Requests with the same key become one work item. Default: the origin's url, else \"<source>:<externalId>\"."
+          },
+          "surface": {
+            "type": "string"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            }
+          }
+        },
+        "required": [
+          "title",
+          "requester",
+          "origin"
+        ],
+        "description": "intake: work to put into the inbox, a work item without its ID (ADR 0063)."
       }
     },
     "securitySchemes": {

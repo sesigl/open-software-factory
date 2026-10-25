@@ -50,7 +50,8 @@ Each format has one schema, generated from `typespec/`, and fixtures that CONTRA
 
 `openapi/openapi.json` also holds the paths of the module APIs, from the operations in `typespec/` (ADR 0048). The
 first is gatekeeper's: `POST /v1/gates` and `GET /v1/gates/{gateId}` with the models `GateRequest`, `GateView` and
-`ApiProblem` (RFC 9457). `pnpm build` compiles the operations with the TypeSpec OpenAPI 3 emitter and copies their
+`ApiProblem` (RFC 9457). The second is intake's (ADR 0063): `POST /v1/work-items` and
+`GET /v1/work-items/{workItemId}` with the models `WorkSubmission`, `WorkItemView` and `WorkRequest`. `pnpm build` compiles the operations with the TypeSpec OpenAPI 3 emitter and copies their
 paths next to the named models; an operation that uses a type that is no model fails the build. The package exports
 the type `paths`, which types a client such as openapi-fetch.
 

@@ -30,6 +30,9 @@ export type GateRecord = Schemas["GateRecord"];
 export type GateRequest = Schemas["GateRequest"];
 export type GateView = Schemas["GateView"];
 export type ApiProblem = Schemas["ApiProblem"];
+export type WorkSubmission = Schemas["WorkSubmission"];
+export type WorkItemView = Schemas["WorkItemView"];
+export type WorkRequest = Schemas["WorkRequest"];
 export type SandboxSpec = Schemas["SandboxSpec"];
 
 /** One reason a document does not match its format. `path` is a JSON Pointer into the document. */
