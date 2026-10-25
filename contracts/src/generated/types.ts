@@ -34,6 +34,40 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/v1/work-items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Put work into the inbox. A submission with the dedupe key of a work item answers that work item. */
+        post: operations["IntakeApi_submitWork"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/work-items/{workItemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A work item, its status and every request that asked for it. */
+        get: operations["IntakeApi_getWorkItem"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 };
 export type webhooks = Record<string, never>;
 export type components = {
@@ -766,8 +800,23 @@ export type components = {
             /** @description Related material: an error report, a change, a document. */
             links?: components["schemas"]["Link"][];
         };
+        /**
+         * @description Where a work item stands.
+         * @enum {string}
+         */
+        WorkItemStatus: "received";
         /** @enum {string} */
         WorkItemType: "idea" | "bug" | "task" | "automation";
+        /** @description intake: a work item as the HTTP API shows it (ADR 0063). */
+        WorkItemView: {
+            /** @description Its ID is "wi_" and 20 hex digits of the SHA-256 of its dedupe key. */
+            workItem: components["schemas"]["WorkItem"];
+            status: components["schemas"]["WorkItemStatus"];
+            /** Format: date-time */
+            receivedAt: string;
+            /** @description Every submission that asked for the work item, oldest first; one per origin. */
+            requests: components["schemas"]["WorkRequest"][];
+        };
         /** @description intake: a work item was accepted. */
         WorkReceived: {
             /** @constant */
@@ -789,6 +838,26 @@ export type components = {
             /** @description W3C trace context (CloudEvents distributed tracing extension). */
             traceparent?: string;
             data: components["schemas"]["WorkItem"];
+        };
+        /** @description intake: one submission that asked for a work item. */
+        WorkRequest: {
+            requester: components["schemas"]["Actor"];
+            origin: components["schemas"]["Origin"];
+            /** Format: date-time */
+            receivedAt: string;
+        };
+        /** @description intake: work to put into the inbox, a work item without its ID (ADR 0063). */
+        WorkSubmission: {
+            /** @description Default: task. */
+            type?: components["schemas"]["WorkItemType"];
+            title: string;
+            description?: string;
+            requester: components["schemas"]["Actor"];
+            origin: components["schemas"]["Origin"];
+            /** @description Requests with the same key become one work item. Default: the origin's url, else "<source>:<externalId>". */
+            dedupeKey?: string;
+            surface?: string;
+            links?: components["schemas"]["Link"][];
         };
     };
     responses: never;
@@ -868,6 +937,97 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GateView"];
+                };
+            };
+            /** @description Access is unauthorized. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    IntakeApi_submitWork: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkSubmission"];
+            };
+        };
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkItemView"];
+                };
+            };
+            /** @description The request has succeeded and a new resource has been created as a result. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkItemView"];
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Access is unauthorized. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    IntakeApi_getWorkItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workItemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkItemView"];
                 };
             };
             /** @description Access is unauthorized. */
