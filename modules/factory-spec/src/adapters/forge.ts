@@ -1,6 +1,6 @@
 // The forge port's adapter as a program (ADR 0060): factory-spec starts its command line with the port's variables
 // and reads the JSON lines it prints. The adapter talks to the forge.
-import { execFile } from "node:child_process";
+import { runAdapter } from "@opensoftware/cli";
 
 /** A webhook as the port prints it and factory-spec records and compares it. */
 export interface Hook {
@@ -27,7 +27,6 @@ export interface ForgeSettings {
 }
 
 export function forgeAdapter(settings: ForgeSettings): Forge {
-  const [program = "", ...words] = settings.command.trim().split(/\s+/);
   const env = {
     ...process.env,
     FORGE_URL: settings.url,
@@ -35,23 +34,7 @@ export function forgeAdapter(settings: ForgeSettings): Forge {
     ...(settings.secret !== undefined && { FORGE_WEBHOOK_SECRET: settings.secret }),
   };
   const run = (args: string[]): Promise<unknown[]> =>
-    new Promise((resolve, reject) =>
-      execFile(program, [...words, ...args], { env, encoding: "utf8" }, (error, stdout, stderr) => {
-        const code = (error as NodeJS.ErrnoException | null)?.code;
-        if (typeof code === "string") {
-          reject(new Error(`could not start the forge adapter ${settings.command} (${code})`));
-        } else if (error) {
-          reject(new Error(`${args.slice(0, 2).join(" ")}: ${stderr.trim() || error.message}`));
-        } else {
-          resolve(
-            stdout
-              .split("\n")
-              .filter(Boolean)
-              .map((line) => JSON.parse(line) as unknown),
-          );
-        }
-      }),
-    );
+    runAdapter({ name: "forge adapter", command: settings.command, env }, args);
   return {
     async hooks(repository) {
       return (await run(["hooks", repository])) as Hook[];

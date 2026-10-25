@@ -58,3 +58,31 @@ Feature: The commands of a channel adapter around a chat
     Then the exit code is 2
     And standard error is "demo: name the thread as demo:<number>"
     And the channel posted nothing
+
+  @id=SCN-CKIT-008 @status=implemented
+  Scenario: history prints one JSON line per message of the thread, in the channel's order
+    Given the channel "demo" whose history of "demo:7" gives the messages "m-1" of "demo:U1" and "m-2" of the bot
+    When the adapter runs "history demo:7"
+    Then standard output is the JSON lines of "m-1" and "m-2" in this order, "m-2" with "mine" true
+
+  @id=SCN-CKIT-009 @status=implemented
+  Scenario: receive hands the threads named with --thread to the channel
+    Given the channel "demo"
+    And the delivery file "delivery.json" with the body "hello"
+    When the adapter runs "receive delivery.json --thread demo:7 --thread demo:8"
+    Then the channel was asked to follow "demo:7" and "demo:8"
+
+  @id=SCN-CKIT-010 @status=implemented
+  Scenario: reply to a channel prints the thread that the post started and the message's time
+    Given the channel "demo" with the channel "demo", whose post gives the ID "m-3" in the new thread "demo:9" at "2026-01-01T00:00:00.000001Z"
+    When the adapter runs 'reply demo "Approval needed"'
+    Then the channel posted the text "Approval needed" in "demo"
+    And standard output is the JSON line {"thread": "demo:9", "id": "m-3", "time": "2026-01-01T00:00:00.000001Z"}
+
+  @id=SCN-CKIT-011 @status=implemented
+  Scenario: A channel is a usage error for a chat without channels
+    Given the channel "demo" whose threads have the form "demo:<number>" and that has no channels
+    When the adapter runs 'reply demo "On it"'
+    Then the exit code is 2
+    And standard error is "demo: name the thread as demo:<number>"
+    And the channel posted nothing

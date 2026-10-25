@@ -266,6 +266,9 @@ importers:
 
   modules/factory-spec:
     dependencies:
+      '@opensoftware/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
       '@opensoftware/contracts':
         specifier: workspace:*
         version: link:../../contracts

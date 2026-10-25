@@ -33,6 +33,7 @@
     "mutation": "node ../../tools/bin/osf.ts mutation ."
   },
   "dependencies": {
+    "@opensoftware/cli": "workspace:*",
     "@opensoftware/contracts": "workspace:*",
     "semver": "7.7.3",
     "yaml": "2.8.1"
