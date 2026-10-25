@@ -64,6 +64,8 @@ export interface Forge {
    * `APPROVED`, `REQUEST_CHANGES` or `COMMENT`.
    */
   review(pr: PullRequest, state: "APPROVED" | "REQUEST_CHANGES" | "COMMENT", body?: string): Promise<void>;
+  /** Comments on the pull request's conversation as the person `reviewer` (ADR 0061). */
+  say(pr: PullRequest, text: string): Promise<{ id: number; user: string; body: string }>;
 }
 
 const OWNER = "tester";
@@ -119,6 +121,12 @@ export async function startForge(track: Track): Promise<Forge> {
   const auth = `token ${token}`;
   const api = <T>(method: string, path: string, body?: unknown): Promise<T> => call<T>(url, auth, method, path, body);
   let reviewerAuth: string | undefined;
+  /** The token of `reviewer`, a person who may write to the pull request's repository. */
+  const reviewer = async (pr: PullRequest): Promise<string> => {
+    reviewerAuth ??= `token ${await user(REVIEWER, false)}`;
+    await api("PUT", `/repos/${OWNER}/${pr.repository}/collaborators/${REVIEWER}`, { permission: "write" });
+    return reviewerAuth;
+  };
 
   return {
     url,
@@ -189,14 +197,15 @@ export async function startForge(track: Track): Promise<Forge> {
       return list.map((hook) => ({ url: hook.config.url, events: [...hook.events].sort(), active: hook.active }));
     },
     async review(pr, state, body = "") {
-      if (!reviewerAuth) {
-        reviewerAuth = `token ${await user(REVIEWER, false)}`;
-      }
-      await api("PUT", `/repos/${OWNER}/${pr.repository}/collaborators/${REVIEWER}`, { permission: "write" });
-      await call(url, reviewerAuth, "POST", `/repos/${OWNER}/${pr.repository}/pulls/${pr.number}/reviews`, {
+      await call(url, await reviewer(pr), "POST", `/repos/${OWNER}/${pr.repository}/pulls/${pr.number}/reviews`, {
         event: state,
         body,
       });
+    },
+    async say(pr, text) {
+      const path = `/repos/${OWNER}/${pr.repository}/issues/${pr.number}/comments`;
+      const posted = await call<{ id: number }>(url, await reviewer(pr), "POST", path, { body: text });
+      return { id: posted.id, user: REVIEWER, body: text };
     },
     async pullRequests(repository) {
       const list = await api<PullJson[]>("GET", `/repos/${OWNER}/${repository}/pulls?state=all`);

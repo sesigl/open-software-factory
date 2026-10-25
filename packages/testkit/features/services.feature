@@ -148,7 +148,7 @@ Feature: Services and outside systems
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
-  @id=SCN-TK-096 @status=planned
+  @id=SCN-TK-096 @status=implemented
   Scenario: fakes.forge comments on a pull request as the person "reviewer"
     Given a module whose CLI prints the user and text of each comment of a pull request at "DEMO_FORGE_URL"
     And its system test has "reviewer" say "Looks good" on a pull request in fakes.forge and expects "reviewer Looks good"

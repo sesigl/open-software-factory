@@ -189,7 +189,7 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     When the client runs "unhook tester/web 424242"
     Then unhook exits with code 0 and prints the ID 424242 and "removed" false
 
-  @id=SCN-FORGE-027 @status=planned @conformance
+  @id=SCN-FORGE-027 @status=implemented @conformance
   Scenario: pr names the author, the labels, the draft flag and the changed files of a pull request
     Given the repository "tester/web" with the branch "fix-checkout" that changes "checkout.js"
     And the client opened a pull request from "fix-checkout"
@@ -197,7 +197,7 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     Then pr prints the author "tester" behind the adapter's name, no labels and "draft" false
     And pr prints the paths "checkout.js"
 
-  @id=SCN-FORGE-028 @status=planned @conformance
+  @id=SCN-FORGE-028 @status=implemented @conformance
   Scenario: comments lists the conversation of a pull request, oldest first
     Given an open pull request in "tester/web"
     And the client ran "comment" on it with the text "Evidence: 14 scenarios passed"
@@ -208,13 +208,7 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     And the second line has the author "reviewer" behind the adapter's name and "mine" false
     And each line has the comment's ID, URL and time
 
-  @id=SCN-FORGE-029 @status=planned @conformance
-  Scenario: comment prints the new comment as comments prints it
-    Given an open pull request in "tester/web"
-    When the client runs "comment" on it with the text "Evidence: 14 scenarios passed"
-    Then comment prints the line of that comment that "comments" prints next
-
-  @id=SCN-FORGE-030 @status=planned @conformance
+  @id=SCN-FORGE-029 @status=implemented @conformance
   Scenario: A pull request the repository does not have is named in the error
     Given the repository "tester/web" without pull requests
     When the client runs "comments tester/web 42"

@@ -1,7 +1,7 @@
 // What the system tests of this adapter share: the testkit's fake GitHub with the repository "tester/web", the
 // adapter's CLI with the API's URL and token, and a receiver for webhook deliveries. Each helper only calls the
 // adapter's CLI through sut, or the testkit's fakes.
-import type { Forge, ScenarioContext } from "@opensoftware/testkit";
+import type { FakeGitHub, ScenarioContext } from "@opensoftware/testkit";
 
 type Sut = ScenarioContext["sut"];
 type Fakes = ScenarioContext["fakes"];
@@ -9,7 +9,7 @@ type Fakes = ScenarioContext["fakes"];
 export const SECRET = "whsec-51c2";
 
 export interface Setup {
-  forge: Forge;
+  forge: FakeGitHub;
   repo: string;
   /** Runs the adapter with the API's URL, the token and the webhook secret; `env` adds or replaces variables. */
   run(args: string[], env?: Record<string, string>): ReturnType<Sut["cli"]>;
@@ -36,7 +36,7 @@ export async function setup(sut: Sut, fakes: Fakes): Promise<Setup> {
 }
 
 /** A pull request from "fix-checkout" into "main" that changes "checkout.js". */
-export function openPullRequest(forge: Forge) {
+export function openPullRequest(forge: FakeGitHub) {
   return forge.openPullRequest("web", {
     branch: "fix-checkout",
     title: "Fix checkout button on Safari",

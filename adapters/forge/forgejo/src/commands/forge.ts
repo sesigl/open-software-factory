@@ -1,6 +1,6 @@
 // What the commands share: the repository named on the command line and the forge's answers they read.
 import { check, type Outcome } from "@opensoftware/cli";
-import { type Repository, repository } from "../adapters/forgejo.ts";
+import { ForgeError, type Repository, repository } from "../adapters/forgejo.ts";
 import { repositoryName } from "../domain/repository.ts";
 
 /** The forge's API for the repository named "<owner>/<name>". */
@@ -38,6 +38,17 @@ export interface Pull {
   merge_commit_sha: string | null;
   head: { ref: string; sha: string };
   base: { ref: string };
+  user: { login: string };
+  labels?: { name: string }[] | null;
+  draft?: boolean;
+}
+
+/** Runs a call about the pull request and names a pull request the repository does not have. */
+export async function about<T>(repo: string, number: number, call: () => Promise<T>): Promise<T> {
+  return call().catch((error: unknown) => {
+    if (error instanceof ForgeError && error.status === 404) throw new Error(`no pull request ${repo}#${number}`);
+    throw error;
+  });
 }
 
 /** Forgejo checks whether a new pull request can merge in the background; the commands wait this long for it. */

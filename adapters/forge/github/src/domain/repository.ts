@@ -46,3 +46,24 @@ export function protection(checks: string[], approvals: number) {
     restrictions: null,
   };
 }
+
+/** The fields of GitHub's comment JSON that the port prints. */
+export interface CommentJson {
+  id: number;
+  html_url: string;
+  body: string;
+  created_at: string;
+  user: { login: string };
+}
+
+/** A comment as `comments` prints it; `me` is the login of the token's user (ADR 0061). */
+export function commentLine(comment: CommentJson, me: string) {
+  return {
+    id: comment.id,
+    url: comment.html_url,
+    author: `github:${comment.user.login}`,
+    time: comment.created_at,
+    text: comment.body,
+    mine: comment.user.login === me,
+  };
+}

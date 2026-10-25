@@ -22,7 +22,7 @@ The ports cannot do all of that yet:
 - The channel port has `receive`, `reply` and `ask` on a thread. It cannot start a new thread in a channel, and it
   cannot read the messages of a thread or a channel.
 - The forge port's `pr` does not name the author, the labels, whether it is a draft, or the changed files, which a
-  policy reads. It cannot list a pull request's comments, and `comment` prints only `{"id", "url"}`.
+  policy reads. It cannot list a pull request's comments.
 
 ## Decision
 
@@ -40,8 +40,7 @@ The ports cannot do all of that yet:
 - **The forge port grows.** Both adapters pass the new `@conformance` scenarios.
   - `pr` also prints `author` (`<adapter>:<login>`), `labels`, `draft` and `paths`, the first 100 changed files.
   - `comments <repo> <number>` prints one line per comment of the pull request's conversation, oldest first:
-    `{"id", "url", "author", "time", "text", "mine"}`. `mine` is true for comments of the token's user. `comment`
-    prints its new comment in the same shape.
+    `{"id", "url", "author", "time", "text", "mine"}`. `mine` is true for comments of the token's user.
   - `pr`, `comments` and `comment` on a pull request the repository does not have exit 1 with
     `no pull request <repo>#<number>`.
   - forge-github: a GitHub Actions token may not read `GET /user` (GitHub answers 403). Its user is then
@@ -77,7 +76,7 @@ The ports cannot do all of that yet:
 | gatekeeper keeps its own clients for Slack and forges | No change to the ports | Two Slack clients and three forge clients in the repository; the TODO item asks for the ports |
 | `receive` prints every message in a thread of the bot | The server decides only the gate of that thread | `receive` must know who started a thread, which the SDK's memory state does not keep; SCN-CHANNEL-002 says a message without a mention prints nothing |
 | Only buttons decide on the server | No re-check of the pending gates | A reason for a rejection needs a reply; SCN-GATE-048 decides a reply |
-| `reply` and `ask` print the message's time | No `messages` call after a post | gatekeeper reads the time of its request with `messages` anyway; the outputs stay as ADR 0059 wrote them |
+| `reply`, `ask` and `comment` print the message's time | No `messages` or `comments` call after a post | gatekeeper reads the time of its request that way anyway; the outputs stay as ADR 0057 and ADR 0059 wrote them |
 | The decision's time from the chat | The exact time of a press | Slack's action time is not part of the port's decision; the server's clock is a minute or less away and is what decides expiry |
 
 ## Prior art

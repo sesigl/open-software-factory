@@ -4,7 +4,7 @@ import { parseArgs } from "node:util";
 import { type Command, runProgram } from "@opensoftware/cli";
 import { branch, openPr } from "./commands/branches.ts";
 import { event, hooks, unhook, webhook } from "./commands/hooks.ts";
-import { check, comment, merge, pr, protect } from "./commands/pulls.ts";
+import { check, comment, comments, merge, pr, protect } from "./commands/pulls.ts";
 
 const USAGE = `Usage: forge-github <command>
 
@@ -16,6 +16,7 @@ Commands:
   check <repo> <sha> <name> <pending|success|failure|error> [--description <text>] [--url <url>]
                                                          Post a check (a commit status) on a commit.
   comment <repo> <number> <text>                         Comment on a pull request; print {"id", "url"}.
+  comments <repo> <number>                               Print each comment of the pull request, oldest first.
   protect <repo> <branch> [--check <name>]... [--approvals <n>]
                                                          Replace the branch's protection.
   merge <repo> <number> [--method merge|squash|rebase]   Merge; print {"sha"} of the merge commit.
@@ -50,6 +51,7 @@ const commands: Record<string, [arity: number, Command]> = {
   pr: [2, () => pr(a, b)],
   check: [4, () => check(a, b, c, d, { description: option("description"), url: option("url") })],
   comment: [3, () => comment(a, b, c)],
+  comments: [2, () => comments(a, b)],
   protect: [2, () => protect(a, b, (flags.check as string[] | undefined) ?? [], option("approvals"))],
   merge: [2, () => merge(a, b, option("method"))],
   webhook: [2, () => webhook(a, b, (flags.event as string[] | undefined) ?? [])],
