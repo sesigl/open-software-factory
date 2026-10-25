@@ -2,7 +2,7 @@
 Feature: Gate a pull request
   With "--pull-request", the request is the pull request, the channel is its comments and the result is the commit
   status "gatekeeper" of its head commit. gatekeeper reads and writes them through the forge adapter in
-  GATEKEEPER_FORGE_ADAPTER (ADR 0061).
+  GATEKEEPER_FORGE_ADAPTER (ADR 0062).
 
   @id=SCN-GATE-029 @status=implemented @realizes=SCN-FACTORY-IMPROVE-003
   Scenario: A factory-made pull request asks "maintainers" in a comment

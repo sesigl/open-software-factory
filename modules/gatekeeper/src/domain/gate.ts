@@ -128,7 +128,7 @@ export function decide(
   return { outcome: { state: "pending", waitingFor: deciders(escalated) }, posts };
 }
 
-/** Where gatekeeper asks and people decide: a Slack channel or the comments of a pull request (ADR 0061). */
+/** Where gatekeeper asks and people decide: a Slack channel or the comments of a pull request (ADR 0062). */
 export interface Channel extends Speech {
   /** For example "slack:C0GATES" or the pull request's URL. */
   name: string;

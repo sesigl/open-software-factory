@@ -69,7 +69,7 @@ function channelOf(options: Options, pr: Loaded["pr"]): Channel {
   return slackOf(channel, env);
 }
 
-/** A slack: channel through the channel adapter in GATEKEEPER_SLACK_ADAPTER, and that adapter (ADR 0061). */
+/** A slack: channel through the channel adapter in GATEKEEPER_SLACK_ADAPTER, and that adapter (ADR 0062). */
 export function slackOf(channel: string, env: Options["env"]): Channel & { run: Program } {
   const slack = /^slack:([A-Z0-9]+)$/.exec(channel);
   if (!slack) throw new UsageError(`${channel} is no channel like slack:C0GATES`);

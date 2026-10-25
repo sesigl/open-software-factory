@@ -545,8 +545,8 @@ read them for ideas, do not copy their company-specific rules.
     and changed paths, and `comments` lists a pull request's conversation; gatekeeper runs the adapters named in
     `GATEKEEPER_SLACK_ADAPTER` and `GATEKEEPER_FORGE_ADAPTER` and keeps no Slack or forge client of its own;
     `fakes.github` lists changed files and has an Actions token, and `fakes.slack` lists a channel's top-level
-    messages newest first (ADR 0061, `SCN-CHANNEL-010`, `SCN-CSLACK-002` to `-004`, `SCN-CKIT-008` to `-009`,
-    `SCN-FORGE-027` to `-029`, `SCN-FGITHUB-001`, `SCN-GATE-059` to `-061`, `SCN-TK-096` to `-099`).
+    messages newest first (ADR 0062, `SCN-CHANNEL-010`, `SCN-CSLACK-002` to `-004`, `SCN-CKIT-008` to `-009`,
+    `SCN-FORGE-027` to `-029`, `SCN-FGITHUB-001`, `SCN-GATE-059` to `-061`, `SCN-TK-097` to `-100`).
 
 ### [ ] T-16 · intake
 

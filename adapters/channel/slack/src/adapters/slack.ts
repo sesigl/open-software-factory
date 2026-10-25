@@ -55,7 +55,7 @@ async function mentioned(adapter: SlackAdapter, thread: string, message: Message
 
 /**
  * The SDK's form of a post: the text, or a card with one button per choice. The question is the card's text, not its
- * title: Slack cuts a title after 150 characters, and a question may hold links and lines (ADR 0061).
+ * title: Slack cuts a title after 150 characters, and a question may hold links and lines (ADR 0062).
  */
 function postable(post: Post) {
   return "text" in post

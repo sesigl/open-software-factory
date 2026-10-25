@@ -1,4 +1,4 @@
-// A port adapter as a program (ADR 0060, ADR 0061): gatekeeper runs its command line with the port's variables and
+// A port adapter as a program (ADR 0060, ADR 0062): gatekeeper runs its command line with the port's variables and
 // reads the JSON lines it prints. The adapter talks to the chat or the forge.
 import { spawn } from "node:child_process";
 

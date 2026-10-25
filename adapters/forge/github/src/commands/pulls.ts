@@ -11,7 +11,7 @@ const PAUSE_MS = 250;
 /** GitHub's answer for a pull request that conflicts with its base. */
 const CONFLICT = "Pull Request is not mergeable";
 
-/** The first 100 files a pull request changes, the most a policy reads (ADR 0061). */
+/** The first 100 files a pull request changes, the most a policy reads (ADR 0062). */
 const PATHS = 100;
 /** The user of an Actions token, which GitHub does not let read GET /user. */
 const ACTIONS_USER = "github-actions[bot]";

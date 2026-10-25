@@ -205,12 +205,13 @@ A `planned` scenario's test must fail; when it passes, the testkit fails it and 
 
 ## Configuration
 
-The testkit reads two environment variables and passes them on to the module:
+The testkit reads three environment variables and passes them on to the module:
 
 | Variable | Meaning |
 | --- | --- |
 | `PLAYWRIGHT_BROWSERS_PATH` | Where Playwright keeps its browsers. The module gets it like `PATH`, since its `HOME` is the working folder. |
 | `__STRYKER_ACTIVE_MUTANT__` | The mutant Stryker activates during a mutation run (`osf mutation`, ADR 0037). The module's instrumented build reads it in its own process. |
+| `OSF_TESTKIT_MUTANTS` | A folder, set by `osf mutation` for its first test run ([ADR 0061](../../docs/decisions/0061-mutation-runs-the-scenarios-that-reach-a-mutant.md)). Each process of the module writes the IDs of the mutants it ran to `<folder>/<scenario ID>/` when it exits. |
 
 `testkit conformance` passes the port features folder to the
 tests itself.
@@ -333,7 +334,8 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-093 | implemented | sut.adapter gives the command of a port adapter that the module runs |
 | SCN-TK-094 | implemented | sut.adapter names an adapter the repository does not have |
 | SCN-TK-095 | implemented | fakes.github removes the webhook a module deletes |
-| SCN-TK-096 | implemented | fakes.forge comments on a pull request as the person "reviewer" |
-| SCN-TK-097 | implemented | fakes.github answers the changed files, the labels and the draft flag of a pull request |
-| SCN-TK-098 | implemented | fakes.github has a token like a GitHub Actions token that may not read its user |
-| SCN-TK-099 | implemented | fakes.slack lists the messages at the top of a channel newest first, without the replies in threads |
+| SCN-TK-096 | implemented | The module records for its scenario the mutants its process ran |
+| SCN-TK-097 | implemented | fakes.forge comments on a pull request as the person "reviewer" |
+| SCN-TK-098 | implemented | fakes.github answers the changed files, the labels and the draft flag of a pull request |
+| SCN-TK-099 | implemented | fakes.github has a token like a GitHub Actions token that may not read its user |
+| SCN-TK-100 | implemented | fakes.slack lists the messages at the top of a channel newest first, without the replies in threads |

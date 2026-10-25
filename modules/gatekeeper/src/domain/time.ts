@@ -1,5 +1,5 @@
 // Times as microseconds since 1970: Slack's message times have six digits after the second, and the channel port
-// prints them so (ADR 0061).
+// prints them so (ADR 0062).
 import { UsageError } from "@opensoftware/cli";
 
 export function fromIso(text: string): number {

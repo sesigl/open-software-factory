@@ -64,7 +64,7 @@ export interface Forge {
    * `APPROVED`, `REQUEST_CHANGES` or `COMMENT`.
    */
   review(pr: PullRequest, state: "APPROVED" | "REQUEST_CHANGES" | "COMMENT", body?: string): Promise<void>;
-  /** Comments on the pull request's conversation as the person `reviewer` (ADR 0061). */
+  /** Comments on the pull request's conversation as the person `reviewer` (ADR 0062). */
   say(pr: PullRequest, text: string): Promise<{ id: number; user: string; body: string }>;
 }
 

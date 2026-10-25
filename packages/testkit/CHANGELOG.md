@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.20.0...testkit-v0.21.0) (2026-10-25)
+
+
+### Features
+
+* **tools:** mutation reruns only the scenarios that ran the mutant ([#110](https://github.com/sesigl/open-software-factory/issues/110)) ([06f228a](https://github.com/sesigl/open-software-factory/commit/06f228ab6771bd8134d8833118b0b55dbe57a2db))
+
 ## [0.20.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.19.0...testkit-v0.20.0) (2026-10-24)
 
 

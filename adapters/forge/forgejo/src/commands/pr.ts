@@ -9,7 +9,7 @@ interface Status {
   target_url: string;
 }
 
-/** The first 100 files a pull request changes, the most a policy reads (ADR 0061). */
+/** The first 100 files a pull request changes, the most a policy reads (ADR 0062). */
 const PATHS = 100;
 
 export async function pr(repo: string | undefined, number: string | undefined): Promise<Outcome> {

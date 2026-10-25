@@ -25,7 +25,7 @@ export interface FakeGitHub extends Forge {
   say(pr: PullRequest, text: string, as?: string): Promise<GitHubComment>;
   /** The comments of the pull request's conversation with their authors, oldest first. */
   conversation(pr: PullRequest): Promise<GitHubComment[]>;
-  /** A token like a GitHub Actions token: its user is "github-actions[bot]", and GET /user answers 403 (ADR 0061). */
+  /** A token like a GitHub Actions token: its user is "github-actions[bot]", and GET /user answers 403 (ADR 0062). */
   actionsToken: string;
 }
 

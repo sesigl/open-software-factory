@@ -12,7 +12,7 @@ The only ways a system test or another program may use this module:
   `/slack/events` and `/slack/actions` for Slack (see `README.md#server`)
 - Input: the request file, the Rego policy and the groups file named on the command line; a Slack channel through the
   channel port's adapter in `GATEKEEPER_SLACK_ADAPTER`; a pull request on GitHub or Forgejo through the forge port's
-  adapter in `GATEKEEPER_FORGE_ADAPTER` (ADR 0061); `opa` as a separate process
+  adapter in `GATEKEEPER_FORGE_ADAPTER` (ADR 0062); `opa` as a separate process
 - Output: `$OUTPUT/gate.json` (or `--out`) and `$OUTPUT/record.json` (or `--record`); messages in the Slack channel;
   comments and the commit status `gatekeeper` on the pull request
 - Server state: the schema `gatekeeper` in the PostgreSQL database at `GATEKEEPER_DATABASE_URL`, private to the module

@@ -1,5 +1,5 @@
 // The gates of server mode: request, decide on a press or a message, check the pending gates, and relay the outbox
-// to NATS (ADR 0048, ADR 0061). The decision is the same domain function as "gatekeeper status".
+// to NATS (ADR 0048, ADR 0062). The decision is the same domain function as "gatekeeper status".
 import { publishAll } from "../adapters/nats.ts";
 import { evaluate } from "../adapters/opa.ts";
 import type { Store } from "../adapters/postgres.ts";

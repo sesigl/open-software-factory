@@ -1,5 +1,5 @@
 // gatekeeper serve: the gate API over HTTP, Slack's Events API and button presses through the channel adapter, and a
-// check of the pending gates every minute (ADR 0048, ADR 0061). It runs until SIGTERM or SIGINT.
+// check of the pending gates every minute (ADR 0048, ADR 0062). It runs until SIGTERM or SIGINT.
 import { timingSafeEqual } from "node:crypto";
 import { UsageError } from "@opensoftware/cli";
 import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";

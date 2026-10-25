@@ -1,41 +1,39 @@
 import { scenario } from "@opensoftware/testkit";
-import { demoModule, GITHUB_README, testCases } from "./module.ts";
+import { demoModule, FORGE_API, FORGE_README, testCases } from "./module.ts";
 
 scenario("SCN-TK-097", async ({ sut, given, when, then }) => {
   let bin = "";
   await given(
-    'a module whose CLI prints the files of pull request 1 and its labels and "draft" at "DEMO_GITHUB_URL"',
+    'a module whose CLI prints the user and text of each comment of a pull request at "DEMO_FORGE_URL"',
     async () => {
       bin = [
-        "const api = (path) =>",
-        "  fetch(`${process.env.DEMO_GITHUB_URL}${path}`, {",
-        "    headers: { authorization: `Bearer ${process.env.DEMO_GITHUB_TOKEN}` },",
-        "  }).then((response) => response.json());",
-        'const files = await api("/repos/tester/demo/pulls/1/files");',
-        'const pull = await api("/repos/tester/demo/pulls/1");',
-        'process.stdout.write(`${files.map((file) => file.filename).join(",")} ${JSON.stringify(pull.labels)} ${pull.draft}`);',
+        ...FORGE_API,
+        'const comments = await api("GET", `/issues/${rest[0]}/comments`);',
+        'process.stdout.write(comments.map((comment) => `${comment.user.login} ${comment.body}`).join("\\n"));',
         "",
       ].join("\n");
     },
   );
 
   await given(
-    'its system test opens a pull request in fakes.github that changes "checkout.js" and expects "checkout.js [] false"',
+    'its system test has "reviewer" say "Looks good" on a pull request in fakes.forge and expects "reviewer Looks good"',
     async () => {
       const module = demoModule({
         bin,
-        readme: GITHUB_README,
-        steps: ['When the user runs "demo"', 'Then the output is "checkout.js [] false"'],
+        readme: FORGE_README,
+        steps: ['When the user runs "demo"', 'Then the output is "reviewer Looks good"'],
         test: [
-          "const github = await fakes.github();",
-          'await github.createRepository("demo");',
-          'await github.openPullRequest("demo", { branch: "fix", title: "Fix checkout", files: { "checkout.js": "fixed\\n" } });',
+          "const forge = await fakes.forge();",
+          'await forge.createRepository("demo");',
+          'const pr = await forge.openPullRequest("demo", { branch: "fix", title: "Fix the typo", files: { "notes.md": "hi\\n" } });',
+          'await forge.say(pr, "Looks good");',
           "let run: Awaited<ReturnType<typeof sut.cli>>;",
           "await when('the user runs \"demo\"', async () => {",
-          "  run = await sut.cli([], { env: { DEMO_GITHUB_URL: github.url, DEMO_GITHUB_TOKEN: github.token } });",
+          "  const env = { DEMO_FORGE_URL: forge.url, DEMO_FORGE_TOKEN: forge.token };",
+          "  run = await sut.cli([`${forge.owner}/demo`, String(pr.number)], { env });",
           "});",
-          "await then('the output is \"checkout.js [] false\"', async () => {",
-          '  expect(run.stdout).toBe("checkout.js [] false");',
+          "await then('the output is \"reviewer Looks good\"', async () => {",
+          '  expect(run.stdout, run.stderr).toBe("reviewer Looks good");',
           "});",
         ],
       });
