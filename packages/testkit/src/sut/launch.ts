@@ -1,6 +1,6 @@
 // How the testkit starts the module's artifact: one command, one working folder and a checked environment.
 import { existsSync } from "node:fs";
-import { dirname, extname, join, relative } from "node:path";
+import { dirname, extname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { artifactOf, moduleEnv, repoRoot, workspaceOf } from "../support/module.ts";
 import { baseEnv, FIXED_DATE, FIXED_SEED } from "../support/process.ts";
@@ -46,7 +46,7 @@ export function adapterCommand(moduleRoot: string, name: string): string {
  * Starts the built artifact (BOUNDARY-RUNTIME) with the network guard (NOREAL) and refuses environment variables
  * the module's README does not document (BOUNDARY-ENV). `hosts` are the hosts of the running containers.
  */
-export function makeLaunch(moduleRoot: string, dirs: Folders, hosts: () => string[]): Launch {
+export function makeLaunch(moduleRoot: string, dirs: Folders, hosts: () => string[], scenario = ""): Launch {
   // A library in packages/ has no bin: its tests never launch it, so the artifact is looked up on the first launch.
   let artifact: string | undefined;
   const documented = moduleEnv(moduleRoot);
@@ -70,7 +70,7 @@ export function makeLaunch(moduleRoot: string, dirs: Folders, hosts: () => strin
       OSF_TESTKIT_NOREAL_LOG: dirs.noreal,
       OSF_TESTKIT_ALLOWED_HOSTS: hosts().join(","),
       ...coverage,
-      ...mutantEnv(),
+      ...mutantEnv(scenario),
     };
     return {
       command: process.execPath,
@@ -97,9 +97,13 @@ function coverageEnv(moduleRoot: string): Record<string, string> {
 
 /**
  * MUTATION: during a mutation run Stryker names the active mutant in this variable. The module's code reads it in
- * its own process, so the testkit passes it on.
+ * its own process, so the testkit passes it on. During the first run of a mutation run, `osf mutation` sets
+ * OSF_TESTKIT_MUTANTS: each module process writes the mutants it ran into the folder of its scenario there.
  */
-function mutantEnv(): Record<string, string> {
-  const mutant = process.env.__STRYKER_ACTIVE_MUTANT__;
-  return mutant ? { __STRYKER_ACTIVE_MUTANT__: mutant } : {};
+function mutantEnv(scenario: string): Record<string, string> {
+  const { __STRYKER_ACTIVE_MUTANT__: mutant, OSF_TESTKIT_MUTANTS: mutants } = process.env;
+  return {
+    ...(mutant ? { __STRYKER_ACTIVE_MUTANT__: mutant } : {}),
+    ...(mutants && scenario ? { OSF_TESTKIT_MUTANTS: join(resolve(mutants), scenario) } : {}),
+  };
 }
