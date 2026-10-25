@@ -3,15 +3,14 @@
 import { timingSafeEqual } from "node:crypto";
 import { UsageError } from "@opensoftware/cli";
 import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
-import { readJson, readText } from "../adapters/files.ts";
+import { readJson, readText, withDelivery } from "../adapters/files.ts";
+import { slackChannel } from "../adapters/ports.ts";
 import { openStore } from "../adapters/postgres.ts";
-import { slackChannel } from "../adapters/slack.ts";
 import { buildRecord, signWith } from "../domain/record.ts";
 import { parseRequest } from "../domain/request.ts";
-import { slackSignatureProblem } from "../domain/slack-signature.ts";
 import { viewOf } from "../domain/stored.ts";
-import { gates, type SlackActions, type SlackMessageEvent } from "./gates.ts";
-import { nowOf } from "./load.ts";
+import { gates } from "./gates.ts";
+import { nowOf, slackAdapter, slackName } from "./load.ts";
 
 export interface ServeOptions {
   policy: string;
@@ -34,12 +33,13 @@ const problem = (reply: FastifyReply, status: number, title: string, detail?: st
 
 export async function serve(options: ServeOptions) {
   const { env } = options;
-  const slack = /^slack:([A-Z0-9]+)$/.exec(options.channel ?? "");
-  if (!slack) throw new UsageError("serve needs a Slack channel, like --channel slack:C0GATES");
+  if (!/^slack:/.test(options.channel ?? ""))
+    throw new UsageError("serve needs a Slack channel, like --channel slack:C0GATES");
+  const name = slackName(options.channel);
   const database = required(env, "GATEKEEPER_DATABASE_URL", "the PostgreSQL database of the gates");
   const apiToken = required(env, "GATEKEEPER_API_TOKEN", "the token that callers of the API send");
-  const slackToken = required(env, "GATEKEEPER_SLACK_TOKEN", "the Slack bot token");
-  const secret = required(env, "GATEKEEPER_SLACK_SIGNING_SECRET", "the signing secret of the Slack app");
+  required(env, "GATEKEEPER_SLACK_TOKEN", "the Slack bot token");
+  required(env, "GATEKEEPER_SLACK_SIGNING_SECRET", "the signing secret of the Slack app");
   const policyText = readText(options.policy);
   const groups = readJson(options.groups);
   const now = () => nowOf(env.OSF_NOW);
@@ -47,10 +47,7 @@ export async function serve(options: ServeOptions) {
   checkKey(signingKey);
 
   const store = await openStore(database);
-  const channel = slackChannel(slack[1] as string, {
-    url: env.GATEKEEPER_SLACK_URL || "https://slack.com/api/",
-    token: slackToken,
-  });
+  const channel = slackChannel(name, slackAdapter(env));
   const service = gates(
     {
       policy: options.policy,
@@ -98,30 +95,36 @@ export async function serve(options: ServeOptions) {
     // Slack signs the raw body, so these routes read it as text.
     hooks.removeAllContentTypeParsers();
     hooks.addContentTypeParser("*", { parseAs: "string" }, (_request, body, done) => done(null, body));
-    const signed = (request: FastifyRequest, reply: FastifyReply): string | undefined => {
+    /**
+     * Hands Slack's request to the channel port's receive, which checks its signature; a refused signature gets 401.
+     * Gives the body once receive took it.
+     */
+    const received = async (request: FastifyRequest, reply: FastifyReply): Promise<string | undefined> => {
       const body = String(request.body ?? "");
-      const headers = {
-        timestamp: request.headers["x-slack-request-timestamp"] as string | undefined,
-        signature: request.headers["x-slack-signature"] as string | undefined,
-      };
-      const refused = slackSignatureProblem(secret, headers, body, now());
-      if (!refused) return body;
-      problem(reply, 401, "Unauthorized", refused);
-      return undefined;
+      const headers = Object.fromEntries(
+        Object.entries(request.headers).map(([key, value]) => [
+          key,
+          Array.isArray(value) ? value.join(", ") : String(value),
+        ]),
+      );
+      try {
+        await withDelivery({ headers, body }, (file) => service.delivery(file));
+        return body;
+      } catch (error) {
+        if (!/signature/.test((error as Error).message)) throw error;
+        problem(reply, 401, "Unauthorized", (error as Error).message);
+        return undefined;
+      }
     };
     hooks.post("/slack/events", async (request, reply) => {
-      const body = signed(request, reply);
+      const body = await received(request, reply);
       if (body === undefined) return reply;
-      const payload = JSON.parse(body) as { type?: string; challenge?: string; event?: SlackMessageEvent };
+      const payload = JSON.parse(body) as { type?: string; challenge?: string };
       if (payload.type === "url_verification") return { challenge: payload.challenge };
-      if (payload.type === "event_callback" && payload.event) await service.message(payload.event);
       return reply.code(200).send();
     });
     hooks.post("/slack/actions", async (request, reply) => {
-      const body = signed(request, reply);
-      if (body === undefined) return reply;
-      const payload = new URLSearchParams(body).get("payload");
-      if (payload) await service.actions(JSON.parse(payload) as SlackActions);
+      if ((await received(request, reply)) === undefined) return reply;
       return reply.code(200).send();
     });
   });

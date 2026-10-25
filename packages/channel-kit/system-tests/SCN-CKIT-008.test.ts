@@ -3,8 +3,8 @@ import { scenario } from "@opensoftware/testkit";
 import { capture, demo, type Ran } from "./channel.ts";
 
 const SAID: Said[] = [
-  { id: "m-1", person: "demo:U1", time: "2026-01-01T00:00:00Z", text: "approve", mine: false },
-  { id: "m-2", person: "demo:BOT", time: "2026-01-01T00:01:00Z", text: "Approved.", mine: true },
+  { id: "m-1", thread: "demo:7", person: "demo:U1", time: "2026-01-01T00:00:00Z", text: "approve", mine: false },
+  { id: "m-2", thread: "demo:7", person: "demo:BOT", time: "2026-01-01T00:01:00Z", text: "Approved.", mine: true },
 ];
 
 scenario("SCN-CKIT-008", async ({ given, when, then }) => {

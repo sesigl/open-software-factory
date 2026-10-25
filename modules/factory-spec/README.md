@@ -108,7 +108,8 @@ automations:
 
 factory-spec has no forge client of its own: it runs the [forge port](../../ports/forge/README.md)'s adapter for the
 forge, `npx -y @opensoftware/forge-forgejo` or `npx -y @opensoftware/forge-github` unless
-`FACTORY_FORGEJO_ADAPTER` or `FACTORY_GITHUB_ADAPTER` names another command. Set `FACTORY_INTAKE_URL`,
+`FACTORY_FORGEJO_ADAPTER` or `FACTORY_GITHUB_ADAPTER` names another command, with `runAdapter` of
+[`@opensoftware/cli`](../../packages/cli/README.md) (ADR 0061). Set `FACTORY_INTAKE_URL`,
 `FACTORY_WEBHOOK_SECRET` (the forge signs every delivery with it) and, for each forge:
 
 | Forge | Variables |

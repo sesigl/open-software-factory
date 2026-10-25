@@ -43,6 +43,7 @@ process.exitCode = await runProgram({
 | `writeText(path, text)` | Writes the file and creates its folder. |
 | `outputPath(file, out?)` | `out` when the user gave `--out`, else `file` in `$OUTPUT`, else `file` in the current folder. |
 | `packageVersion(url)` | The version in a `package.json`, for example `new URL("../package.json", import.meta.url)`. |
+| `runAdapter({ name, command, env }, args)` | Runs a port's adapter: the command line `command` with the arguments and only the variables in `env`, and gives the JSON value of each line it prints. An adapter that cannot start throws `could not start the <name> <command> (<code>)`; one that fails throws its first two arguments and its standard error ([ADR 0061](../../docs/decisions/0061-gatekeeper-ports.md)). |
 
 ## Releases
 
@@ -84,3 +85,7 @@ the GitHub environment `npm`, a token only for the first version, then a trusted
 | SCN-CLI-014 | implemented | packageVersion reads the version of a package.json |
 | SCN-CLI-015 | implemented | check lets the command go on when its condition holds |
 | SCN-CLI-016 | implemented | outputPath puts the file into the current folder without $OUTPUT |
+| SCN-CLI-017 | implemented | runAdapter gives the JSON lines that the adapter prints, in order |
+| SCN-CLI-018 | implemented | runAdapter gives the adapter the variables that the module names |
+| SCN-CLI-019 | implemented | runAdapter names the command and the adapter's message when the adapter fails |
+| SCN-CLI-020 | implemented | runAdapter names the command line of an adapter that cannot start |

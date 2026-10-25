@@ -24,15 +24,12 @@ scenario("SCN-CHANNEL-010", async ({ sut, fakes, given, when, then }) => {
       .map((line) => JSON.parse(line) as Record<string, unknown>);
   });
 
-  await then(
-    'history prints the person\'s message and then the bot\'s message "On it: run 7 started"',
-    async () => {
-      expect(lines.map((line) => line.text)).toEqual([
-        `<@${box.slack.bot}> Fix the checkout button on Safari`,
-        "On it: run 7 started",
-      ]);
-    },
-  );
+  await then("history prints the person's message and then the bot's message \"On it: run 7 started\"", async () => {
+    expect(lines.map((line) => line.text)).toEqual([
+      `<@${box.slack.bot}> Fix the checkout button on Safari`,
+      "On it: run 7 started",
+    ]);
+  });
 
   await then(
     'the person\'s message names the person and has "mine" false, and the bot\'s message has "mine" true',

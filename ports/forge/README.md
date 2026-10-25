@@ -6,7 +6,8 @@ covers: [ports/forge/**]
 
 How the factory works with the company's code forge: branches, pull requests, checks, comments, merge rules,
 webhooks, and the pull request events that come back. Decisions: [ADR 0057](../../docs/decisions/0057-forge-port.md),
-[ADR 0060](../../docs/decisions/0060-factory-spec-forge-port.md) (event names, `hooks`, `unhook`).
+[ADR 0060](../../docs/decisions/0060-factory-spec-forge-port.md) (event names, `hooks`, `unhook`),
+[ADR 0061](../../docs/decisions/0061-gatekeeper-ports.md) (`comments`, and the author, labels and files of `pr`).
 
 ## The interface
 
@@ -17,9 +18,10 @@ command line. A repository is `<owner>/<name>`; every command prints JSON lines.
 | --- | --- |
 | branch | `<adapter> branch <repo> <branch> [--from <ref>]` prints `{"branch", "sha"}`; the default `--from` is the default branch |
 | open a pull request | `<adapter> open-pr <repo> <head> --title <text> [--body <text>] [--base <branch>]` prints `{"number", "url", "head", "base", "sha"}` |
-| merge state | `<adapter> pr <repo> <number>` prints `{"number", "url", "title", "state", "mergeable", "head", "base", "sha", "mergeCommit", "checks"}` |
+| merge state | `<adapter> pr <repo> <number>` prints `{"number", "url", "title", "state", "mergeable", "head", "base", "sha", "author", "draft", "labels", "paths", "mergeCommit", "checks"}` |
 | checks | `<adapter> check <repo> <sha> <name> <pending\|success\|failure\|error> [--description <text>] [--url <url>]` |
-| comments | `<adapter> comment <repo> <number> <text>` prints `{"id", "url"}` |
+| comment | `<adapter> comment <repo> <number> <text>` prints `{"id", "url", "time"}` |
+| comments | `<adapter> comments <repo> <number>` prints one line per comment of the conversation, oldest first: `{"id", "person", "time", "text", "mine"}` |
 | merge rules | `<adapter> protect <repo> <branch> [--check <name>]... [--approvals <n>]` |
 | merge | `<adapter> merge <repo> <number> [--method merge\|squash\|rebase]` prints `{"sha"}` |
 | webhooks | `<adapter> webhook <repo> <url> [--event <name>]...` registers one webhook for the events, by default pull requests and their reviews; prints `{"id", "url", "events", "active"}` |
@@ -28,7 +30,9 @@ command line. A repository is `<owner>/<name>`; every command prints JSON lines.
 | pull request events | `<adapter> event <delivery.json>` prints a `pr.opened@v1`, `pr.reviewed@v1` or `pr.closed@v1` CloudEvent |
 
 `state` is `open`, `closed` or `merged`; `mergeable` is true when the pull request has no conflict with its base;
-`checks` lists `{"name", "state", "description", "url"}` of the head commit, one per name.
+`checks` lists `{"name", "state", "description", "url"}` of the head commit, one per name. `author` and a comment's
+`person` are `<adapter>:<login>`, `labels` are the labels' names and `paths` the first 100 changed files. `mine` is
+true for the comments of the token's user. Times are RFC 3339 in UTC.
 
 An event name is the port's, `<object>[.<action>]` as in an automation of `factory.yaml`: `pull_request`,
 `pull_request.labeled`, `pull_request_review`, `issue`, `issue.labeled`, `issue_comment` or `push`. Each adapter maps

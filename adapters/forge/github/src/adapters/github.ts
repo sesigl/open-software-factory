@@ -55,10 +55,8 @@ export function github(repo: string, env: NodeJS.ProcessEnv = process.env): GitH
     async me() {
       return send<{ login: string }>("GET", "/user", undefined, "").then(
         (user) => user.login,
-        (error) => {
-          if (error instanceof GitHubError) return ACTIONS_BOT;
-          throw error;
-        },
+        // An Actions GITHUB_TOKEN may not read its user, which is then the Actions bot.
+        (error) => (error instanceof GitHubError && error.status === 403 ? ACTIONS_BOT : Promise.reject(error)),
       );
     },
   };

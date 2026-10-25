@@ -7,7 +7,7 @@ const TIME = "2026-01-01T00:00:00.000001Z";
 scenario("SCN-CKIT-010", async ({ given, when, then }) => {
   let box: ReturnType<typeof demo>;
   await given(
-    `the channel "demo" with the channel "demo", whose post gives the ID "m-3" in the new thread "demo:9" at "${TIME}"`,
+    'the channel "demo" with the channel "demo", whose post gives the ID "m-3" in the new thread "demo:9" at "2026-01-01T00:00:00.000001Z"',
     async () => {
       box = demo({ channels: true, posted: { id: "m-3", thread: "demo:9", time: TIME } });
     },
@@ -23,7 +23,10 @@ scenario("SCN-CKIT-010", async ({ given, when, then }) => {
     expect(box.posts).toEqual([{ thread: "demo", post: { text: "Approval needed" } }]);
   });
 
-  await then(`standard output is the JSON line {"thread": "demo:9", "id": "m-3", "time": "${TIME}"}`, async () => {
-    expect(ran.stdout).toBe(`${JSON.stringify({ thread: "demo:9", id: "m-3", time: TIME })}\n`);
-  });
+  await then(
+    'standard output is the JSON line {"thread": "demo:9", "id": "m-3", "time": "2026-01-01T00:00:00.000001Z"}',
+    async () => {
+      expect(ran.stdout).toBe(`${JSON.stringify({ thread: "demo:9", id: "m-3", time: TIME })}\n`);
+    },
+  );
 });

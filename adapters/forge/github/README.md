@@ -28,7 +28,8 @@ npx @opensoftware/forge-github event delivery.json                # a pr.opened@
 - **The token** is sent as a bearer token with the API version `2022-11-28`. It needs write access to contents, pull
   requests and commit statuses, and administration of the repository for `protect` and `webhook`. A token GitHub
   refuses exits 1 with `the forge refused the token`; a repository it does not show exits 1 with
-  `no repository <repo>`.
+  `no repository <repo>`. `comments` asks `GET /user` for the token's user; a GitHub Actions `GITHUB_TOKEN` may not
+  read it, and then the token's user is `github-actions[bot]`.
 - **Branches** are refs: `branch` creates `refs/heads/<branch>` at the commit of `--from` or of the default branch.
 - **Checks** are commit statuses with the check's name as their context; GitHub Apps' check runs are not used.
   `pr` lists the latest status per name from the combined status of the head commit.
@@ -60,9 +61,10 @@ npx @opensoftware/forge-github event delivery.json                # a pr.opened@
 | --- | --- |
 | `forge-github branch <repo> <branch> [--from <ref>]` | Create a branch from the default branch or the ref; print `{"branch", "sha"}`. |
 | `forge-github open-pr <repo> <head> --title <text> [--body <text>] [--base <branch>]` | Open a pull request; print `{"number", "url", "head", "base", "sha"}`. |
-| `forge-github pr <repo> <number>` | Print the pull request's state, `mergeable`, head and merge commit, and checks. |
+| `forge-github pr <repo> <number>` | Print the pull request's state, `mergeable`, head and merge commit, author, draft flag, labels, changed files and checks. |
 | `forge-github check <repo> <sha> <name> <pending\|success\|failure\|error> [--description <text>] [--url <url>]` | Post a check on a commit. |
-| `forge-github comment <repo> <number> <text>` | Comment on a pull request; print `{"id", "url"}`. |
+| `forge-github comment <repo> <number> <text>` | Comment on a pull request; print `{"id", "url", "time"}`. |
+| `forge-github comments <repo> <number>` | Print the first 100 comments of the pull request's conversation, oldest first, with `mine` for the token's user. |
 | `forge-github protect <repo> <branch> [--check <name>]... [--approvals <n>]` | Replace the branch's protection. |
 | `forge-github merge <repo> <number> [--method merge\|squash\|rebase]` | Merge; print `{"sha"}` of the merge commit. |
 | `forge-github webhook <repo> <url> [--event <name>]...` | Register one webhook for the port's events, by default pull requests; print `{"id", "url", "events", "active"}`. |
@@ -72,7 +74,8 @@ npx @opensoftware/forge-github event delivery.json                # a pr.opened@
 
 ## Tests
 
-The system tests run the port's `@conformance` scenarios against `fakes.github()`, the testkit's in-process fake of
+The system tests run the port's `@conformance` scenarios and this adapter's own scenarios in
+[`features/`](features/github.feature) against `fakes.github()`, the testkit's in-process fake of
 GitHub's REST API (ADR 0058). No real GitHub is called.
 
 ## Releases

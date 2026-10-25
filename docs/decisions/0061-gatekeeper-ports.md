@@ -30,8 +30,8 @@ ADR 0060 said a library should run adapters once a second module runs them. gate
 ## Decision
 
 - **The channel port grows three things.** Both channel adapters pass them as `@conformance` scenarios.
-  - `history <thread>` prints one line per message of the thread, oldest first: `{"id", "person", "time", "text",
-    "mine"}`. `person` is `<adapter>:<user ID>`, `time` is RFC 3339 in UTC with as many fraction digits as the chat
+  - `history <thread>` prints one line per message of the thread, oldest first: `{"id", "thread", "person", "time",
+    "text", "mine"}`. `person` is `<adapter>:<user ID>`, `time` is RFC 3339 in UTC with as many fraction digits as the chat
     keeps (Slack keeps microseconds), and `mine` is true for the bot's own messages. The SDK's `fetchMessages` reads
     them.
   - `receive <delivery.json> --thread <thread>...` follows the named threads: a person's message in one of them prints
@@ -47,10 +47,10 @@ ADR 0060 said a library should run adapters once a second module runs them. gate
   - `pr` also prints `author` (`<adapter>:<login>`), `draft`, `labels` (their names) and `paths` (up to 100 changed
     files).
   - `comments <repo> <number>` prints one line per comment of the pull request's conversation, oldest first: `{"id",
-    "person", "time", "text", "mine"}`, the same shape as the channel port's history. `mine` is true for the token's
+    "person", "time", "text", "mine"}`, the channel port's history without `thread`. `mine` is true for the token's
     user. A GitHub Actions token may not read `GET /user`; then the token's user is `github-actions[bot]`.
   - `comment` also prints `time`.
-- **`@opensoftware/cli` runs adapters.** `adapter(command, env)` gives a function that runs the command line with the
+- **`@opensoftware/cli` runs adapters.** `runAdapter({ name, command, env }, args)` runs the command line with the
   arguments and the environment and gives its JSON lines. An adapter that cannot start is named with the command; an
   adapter that fails is named with its message. factory-spec and gatekeeper use it.
 - **gatekeeper runs the adapters as programs.**
@@ -72,7 +72,8 @@ ADR 0060 said a library should run adapters once a second module runs them. gate
   - gatekeeper has no Slack or forge client and no check of Slack's signature of its own. Messages, scenarios and
     records stay as they are.
   - The server's database keeps a gate's thread as the port's thread ID, such as `slack:C0GATES:1767225600.000001`.
-    A thread that gatekeeper 0.2 kept as Slack's `ts` alone is read as a thread of the server's channel.
+    gatekeeper 0.2 kept Slack's `ts` alone, and the `ts` of a press; the server rewrites both to the port's thread ID
+    and time when it starts, so a gate left pending is decided as before.
 - **The testkit:** `fakes.github` lists the changed files of a pull request and answers its `draft` and `labels`, so
   both forge adapters and gatekeeper's tests run against it. gatekeeper's tests run the built adapters with
   `sut.adapter`, and its `turbo.json` builds them first.

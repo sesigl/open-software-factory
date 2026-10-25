@@ -32,7 +32,13 @@ CREATE TABLE IF NOT EXISTS gatekeeper.outbox (
   subject text NOT NULL,
   event jsonb NOT NULL,
   published_at timestamptz
-);`;
+);
+-- gatekeeper 0.2 kept Slack's ts of a thread and of a press; since ADR 0061 they are the port's thread ID and time.
+UPDATE gatekeeper.gates SET thread = channel || ':' || thread WHERE thread ~ '^[0-9]+[.][0-9]+$';
+UPDATE gatekeeper.presses
+SET ts = to_char(to_timestamp(split_part(ts, '.', 1)::bigint) AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS')
+  || '.' || split_part(ts, '.', 2) || 'Z'
+WHERE ts ~ '^[0-9]+[.][0-9]+$';`;
 
 /** Any number: only one server creates the tables at a time. */
 const SCHEMA_LOCK = 4_715_048;
@@ -57,7 +63,8 @@ export interface Store {
   get(id: string): Promise<StoredGate | undefined>;
   remove(id: string): Promise<void>;
   byThread(channel: string, thread: string): Promise<StoredGate | undefined>;
-  pending(): Promise<string[]>;
+  /** The pending gates that have a thread, oldest first. */
+  pending(): Promise<{ id: string; thread: string }[]>;
   press(gate: string, press: Press): Promise<void>;
   /** Runs `work` on the locked gate in one transaction; its changes and events commit together. */
   locked<T>(id: string, work: (row: StoredGate | undefined, changes: Changes) => Promise<T>): Promise<T>;
@@ -140,9 +147,9 @@ export async function openStore(url: string): Promise<Store> {
       one(`SELECT ${ROW} FROM gatekeeper.gates WHERE channel = $1 AND thread = $2`, [channel, thread]),
     async pending() {
       const { rows } = await pool.query(
-        "SELECT id FROM gatekeeper.gates WHERE state = 'pending' AND thread IS NOT NULL ORDER BY requested_at",
+        "SELECT id, thread FROM gatekeeper.gates WHERE state = 'pending' AND thread IS NOT NULL ORDER BY requested_at",
       );
-      return rows.map((row) => row.id as string);
+      return rows.map((row) => ({ id: row.id as string, thread: row.thread as string }));
     },
     async press(gate, { ts, author, action }) {
       await pool.query(
