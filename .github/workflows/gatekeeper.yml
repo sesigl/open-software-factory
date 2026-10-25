@@ -35,12 +35,14 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
-      - run: pnpm install --frozen-lockfile --filter "@opensoftware/gatekeeper..."
-      - run: pnpm --filter "@opensoftware/gatekeeper..." build
+      - run: pnpm install --frozen-lockfile --filter "@opensoftware/gatekeeper..." --filter "@opensoftware/forge-github..."
+      - run: pnpm --filter "@opensoftware/gatekeeper..." --filter "@opensoftware/forge-github..." build
       - uses: ./modules/gatekeeper
         env:
           # Unset until the owner adds the secret (gatekeeper keys); the record is then unsigned.
           GATEKEEPER_SIGNING_KEY: ${{ secrets.GATEKEEPER_SIGNING_KEY }}
+          # The forge adapter of this commit, like gatekeeper itself: the published one may lag the port (ADR 0062).
+          GATEKEEPER_FORGE_ADAPTER: node adapters/forge/github/dist/cli.js
         with:
           policy: .github/gatekeeper/merge.rego
           groups: .github/gatekeeper/groups.json
