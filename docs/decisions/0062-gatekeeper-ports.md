@@ -100,9 +100,13 @@ The ports cannot do all of that yet:
   is quiet, so this stays a few calls; revisit when a channel holds many pending gates.
 - A press's time is the server's time, not Slack's: a press in the last minute before expiry counts when it reaches
   the server before the expiry.
-- A gate that an older server stored keeps Slack's `ts` as its thread, which the port cannot read. Gates pending at
-  the upgrade are asked again with a new request.
+- A gate that gatekeeper 0.2's server stored keeps Slack's `ts` as its thread, Slack's action time as a press's time
+  and the button's action ID as its choice. On start, the server rewrites them to the port's thread ID, microseconds
+  and the card's choice, so a gate left pending at the upgrade is still decided. No scenario covers this: a system
+  test may not write the module's database, and no test can start gatekeeper 0.2.
 - `GATEKEEPER_FORGE_URL` for Forgejo is the forge's origin now. A setup that named `<origin>/api/v1` changes it.
 - The server answers Slack after `receive` has run, a process start of its own. Slack wants an answer within 3
   seconds; a slow host may see Slack retry a delivery, which decides nothing twice because a gate decides once.
-- Revisit when a third module runs adapters: then the spawning and parsing may move into a library (ADR 0060).
+- gatekeeper is the second module that runs adapters, which is when ADR 0060 said the spawning and parsing may move
+  into a library. They stay in each module for now: the two differ in what they pass and how they report a failure,
+  and DUP finds no clone. Move them when a third module runs adapters.

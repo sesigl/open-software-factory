@@ -32,7 +32,14 @@ CREATE TABLE IF NOT EXISTS gatekeeper.outbox (
   subject text NOT NULL,
   event jsonb NOT NULL,
   published_at timestamptz
-);`;
+);
+-- gatekeeper 0.2 kept Slack's ts as a gate's thread and a press's time, and a button's action ID as its choice.
+-- Since ADR 0062 they are the port's thread ID, microseconds and the card's choice, so a pending gate still decides.
+UPDATE gatekeeper.gates SET thread = channel || ':' || thread WHERE thread ~ '^[0-9]+[.][0-9]+$';
+UPDATE gatekeeper.presses
+SET ts = (split_part(ts, '.', 1)::bigint * 1000000 + rpad(split_part(ts, '.', 2), 6, '0')::bigint)::text
+WHERE ts ~ '^[0-9]+[.][0-9]+$';
+UPDATE gatekeeper.presses SET action = initcap(substr(action, 12)) WHERE action LIKE 'gatekeeper.%';`;
 
 /** Any number: only one server creates the tables at a time. */
 const SCHEMA_LOCK = 4_715_048;

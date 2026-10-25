@@ -20,7 +20,12 @@ export function program(command: string, variables: Record<string, string | unde
       child.on("error", (error) => reject(new Error(`cannot start the adapter "${command}": ${error.message}`)));
       child.on("close", (code) => {
         if (code !== 0) return reject(new Error(err.trim() || `${command} ${args[0]} exited with code ${code}`));
-        resolve(out.split("\n").flatMap((line) => (line.trim() ? [JSON.parse(line) as Record<string, unknown>] : [])));
+        const lines = out.split("\n").filter((line) => line.trim());
+        try {
+          resolve(lines.map((line) => JSON.parse(line) as Record<string, unknown>));
+        } catch {
+          reject(new Error(`the adapter "${command}" printed a line that is not JSON`));
+        }
       });
     });
 }
