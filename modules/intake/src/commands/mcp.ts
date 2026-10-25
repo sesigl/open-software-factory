@@ -68,9 +68,7 @@ export async function mcp(env: Env) {
   });
 
   const transport = new StdioServerTransport();
-  const closed = new Promise<void>((resolve) => {
-    transport.onclose = resolve;
-  });
+  const closed = new Promise<void>((resolve) => process.stdin.once("end", resolve));
   await server.connect(transport);
   await closed;
   return { lines: [] };
