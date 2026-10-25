@@ -5,6 +5,7 @@
 import { spawnSync } from "node:child_process";
 import { availableParallelism } from "node:os";
 import { join, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { addedLines, baseCommit, changedFiles } from "../checks/lib/git.ts";
 import { Repo } from "../checks/lib/repo.ts";
 import { mutatedUnits, mutationReport } from "../checks/quality.ts";
@@ -39,10 +40,8 @@ export async function mutation(root: string, args: string[]): Promise<number> {
   const stryker = new Stryker({
     mutate: local,
     inPlace: true,
-    testRunner: "command",
-    commandRunner: { command: "pnpm exec vitest run --bail=1 --reporter=dot" },
+    ...runner(unit),
     buildCommand: "pnpm run build",
-    coverageAnalysis: "off",
     // Only the sources: tsc builds them with the instrumented code, which does not type-check.
     disableTypeChecks: "src/**/*.ts",
     concurrency: Math.max(1, Math.floor(availableParallelism() / 2)),
@@ -62,6 +61,28 @@ export async function mutation(root: string, args: string[]): Promise<number> {
     spawnSync("pnpm", ["run", "build"], { cwd, stdio: "inherit" });
   }
   return 0;
+}
+
+/**
+ * How Stryker runs the tests of a mutant (ADR 0061). The tests of a module or an adapter reach its code only in the
+ * processes of its built bin, which record the mutants they ran: each mutant reruns only the scenarios that ran it.
+ * A library's tests run its code in the test process, which records nothing: each mutant reruns all its tests.
+ */
+function runner(unit: string): Record<string, unknown> {
+  if (unit.startsWith("packages/")) {
+    return {
+      testRunner: "command",
+      commandRunner: { command: "pnpm exec vitest run --bail=1 --reporter=dot" },
+      coverageAnalysis: "off",
+    };
+  }
+  return {
+    plugins: [fileURLToPath(new URL("mutation-runner.ts", import.meta.url))],
+    testRunner: "osf-scenarios",
+    coverageAnalysis: "perTest",
+    // A mutant's run starts Vitest for a few scenarios; their time in the first run leaves out that start.
+    timeoutMS: 60_000,
+  };
 }
 
 interface Shard {
