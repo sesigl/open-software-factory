@@ -19,23 +19,23 @@ export interface Channel {
 }
 
 export function channelAdapter(settings: ChannelSettings): Channel {
-  const [file = "", ...prefix] = settings.command.trim().split(/\s+/);
-  const env: NodeJS.ProcessEnv = {
+  const [file = "", ...prefix] = settings.command.split(" ");
+  const env = {
     ...process.env,
+    CHANNEL_API_URL: settings.apiUrl,
     CHANNEL_TOKEN: settings.token,
     CHANNEL_SIGNING_SECRET: settings.signingSecret,
   };
-  if (settings.apiUrl) env.CHANNEL_API_URL = settings.apiUrl;
   const lines = (out: string) =>
     out
       .split("\n")
-      .filter((line) => line.trim() !== "")
+      .filter((line) => line !== "")
       .map((line) => JSON.parse(line) as Record<string, unknown>);
   /** The lines the command printed; a command that fails rejects with what the adapter wrote to its error output. */
   const run = (args: string[]) =>
     new Promise<Record<string, unknown>[]>((done, fail) => {
       execFile(file, [...prefix, ...args], { env, encoding: "utf8" }, (error, out, err) =>
-        error ? fail(new Error(`${settings.command} ${args[0]}: ${err.trim() || error.message}`)) : done(lines(out)),
+        error ? fail(new Error(`${settings.command} ${args[0]}: ${err}`)) : done(lines(out)),
       );
     });
   return {
