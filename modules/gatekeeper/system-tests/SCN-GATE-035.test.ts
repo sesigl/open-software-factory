@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { forge, PR, putMergeFiles, requestComment } from "./gate.ts";
+import { forge, forgeEnv, PR, putMergeFiles, requestComment } from "./gate.ts";
 
 const BRANCH = "observer/research-skill-used-1a2b3c4d";
 
@@ -30,7 +30,7 @@ scenario("SCN-GATE-035", async ({ sut, fakes, given, when, then }) => {
           comment: { body: "/reject Breaks the release" },
         },
         eventName: "issue_comment",
-        env: { GATEKEEPER_FORGE_URL: http.url },
+        env: forgeEnv(sut, http),
       },
     );
   });

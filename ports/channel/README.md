@@ -11,16 +11,22 @@ replies in its thread, and it asks a person for an approval with a card. Decisio
 ## The interface
 
 A channel adapter is a program with these commands. Its client (intake, gatekeeper, a script, a test) runs them as
-any command line. Every command prints one JSON line.
+any command line. Every command prints JSON lines.
 
 | Port operation | Command |
 | --- | --- |
 | receive | `<adapter> receive <delivery.json>` prints `{"kind": "work", "workItem"}`, `{"kind": "decision", "thread", "card", "choice", "person"}`, or nothing |
 | reply | `<adapter> reply <thread> <text>` prints `{"thread", "id"}` |
 | ask | `<adapter> ask <thread> <question> [--choice <name>]...` posts an approval card and prints `{"thread", "id"}`; the choices are `approve` and `reject` when none is given |
+| messages | `<adapter> messages <thread>` prints one `{"id", "thread", "author", "time", "text", "mine"}` per message of the thread, the first one included, oldest first |
 
 A thread is Vercel Chat SDK's thread ID, for example `slack:C0WEB:1767225600.000001` or `github:acme/web:12`. A
-client keeps it as it is and passes it back to `reply` and `ask`.
+client keeps it as it is and passes it back to `reply`, `ask` and `messages`.
+
+An adapter whose chat has channels also takes a channel, like `slack:C0WEB` (ADR 0062). `messages <channel>` prints
+the newest 200 messages at the top of the channel, oldest first, each with its own thread. `reply` and `ask` on a
+channel start a new thread with the message and print that thread. In `messages`, `author` is `<adapter>:<user ID>`,
+`time` is ISO 8601 as precise as the chat keeps it, and `mine` is true for the bot's own messages.
 
 Every adapter reads three variables:
 

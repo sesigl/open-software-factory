@@ -12,11 +12,11 @@ scenario("SCN-GATE-050", async ({ sut, fakes, given, when, then }) => {
     server.slack.press({ channel: "C0GATES", ts: server.message.ts, actionId, user: "U0ADA" });
 
   await given('"slack:U0ADA" of "maintainers" pressed "Approve" on the request', async () => {
-    await press("gatekeeper.approve");
+    await press("Approve");
   });
 
   await when('"slack:U0ADA" presses "Reject" on the request', async () => {
-    await press("gatekeeper.reject");
+    await press("Reject");
   });
 
   await then('"/v1/gates/<gate>" shows the state "approved"', async () => {

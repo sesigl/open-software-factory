@@ -128,39 +128,31 @@ export function decide(
   return { outcome: { state: "pending", waitingFor: deciders(escalated) }, posts };
 }
 
-/** Where gatekeeper asks and people decide: a Slack channel or the comments of a pull request. */
+/** Where gatekeeper asks and people decide: a Slack channel or the comments of a pull request (ADR 0062). */
 export interface Channel extends Speech {
   /** For example "slack:C0GATES" or the pull request's URL. */
   name: string;
-  /** gatekeeper's own message that carries the marker, if the channel has one. */
+  /** gatekeeper's own request that carries the marker, if the channel has one; its ID is its thread. */
   find(marker: string): Promise<Message | undefined>;
   /** The messages after the request, oldest first. */
   thread(request: Message): Promise<Message[]>;
-  /** Posts the text with the marker: in the request's thread when given, else as a new message. */
-  post(text: string, marker: string, request?: Message, buttons?: Button[]): Promise<Message>;
+  /**
+   * Asks with the text and the marker as a new request, with the choices as buttons when given. Gives the request's
+   * ID, which is its thread, and its time when the channel tells it.
+   */
+  ask(text: string, marker: string, choices?: string[]): Promise<{ id: string; time?: number }>;
+  /** Answers in the request's thread with the text and the marker. */
+  answer(request: Message, text: string, marker: string): Promise<void>;
 }
 
-/** A button under a message; a press decides like a reply with its verb (ADR 0048). */
-export interface Button {
-  /** "gatekeeper.approve" or "gatekeeper.reject". */
-  actionId: string;
-  text: string;
-  /** The gate's ID. */
-  value: string;
-  style: "primary" | "danger";
-}
+/** The choices on the server's request card; a press decides like a reply with its verb (ADR 0048). */
+export const DECISION_CHOICES = ["Approve", "Reject"];
 
-const VERBS: Record<string, string> = { "gatekeeper.approve": "approve", "gatekeeper.reject": "reject" };
-
-export const decisionButtons = (gate: string): Button[] => [
-  { actionId: "gatekeeper.approve", text: "Approve", value: gate, style: "primary" },
-  { actionId: "gatekeeper.reject", text: "Reject", value: gate, style: "danger" },
-];
+/** Whether a choice on a card is one of gatekeeper's decisions. */
+export const isDecisionChoice = (choice: string): boolean => DECISION_CHOICES.includes(choice);
 
 /** A press of a decision button, as the message a reply with its verb would be. */
-export function pressMessage(press: { actionId: string; author: string; ts: string; time: number }): Message {
-  return { id: press.ts, author: press.author, time: press.time, text: VERBS[press.actionId] ?? "", mine: false };
+export function pressMessage(press: { choice: string; author: string; id: string; time: number }): Message {
+  const text = isDecisionChoice(press.choice) ? press.choice.toLowerCase() : "";
+  return { id: press.id, author: press.author, time: press.time, text, mine: false };
 }
-
-/** The verb of a decision button, or undefined for any other action. */
-export const isDecisionButton = (actionId: string): boolean => Object.hasOwn(VERBS, actionId);

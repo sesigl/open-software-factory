@@ -137,10 +137,14 @@ export async function startSlack(): Promise<RunningSlack> {
       return reply({ ok: true });
     }
     const inChannel = messages.filter((message) => message.channel === channel);
+    // Like Slack: replies gives a thread oldest first; history gives the top of the channel newest first.
     const list =
       method === "conversations.replies"
         ? inChannel.filter((message) => message.threadTs === String(args.ts))
-        : inChannel;
+        : inChannel
+            .filter((message) => message.threadTs === message.ts)
+            .reverse()
+            .slice(0, Number(args.limit ?? 100));
     return reply({
       ok: true,
       messages: list.map(({ ts, threadTs, user, text }) => ({ type: "message", ts, thread_ts: threadTs, user, text })),

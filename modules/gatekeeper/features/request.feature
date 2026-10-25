@@ -86,3 +86,10 @@ Feature: Request an approval
     When the user runs "gatekeeper request" for the channel "slack:C0GATES"
     Then the command exits with code 2
     And the error output says "groups.json is not JSON"
+
+  @id=SCN-GATE-059 @status=implemented
+  Scenario: A Slack token that the channel refuses exits 1 with the channel's error
+    Given the policy, the groups and the request from the README
+    When the user runs the quick start command from the README with "GATEKEEPER_SLACK_TOKEN" set to "xoxb-not-a-token"
+    Then the command exits with code 1
+    And the error output says "the channel refused the token"

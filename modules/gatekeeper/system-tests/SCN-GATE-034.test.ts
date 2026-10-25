@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { forge, PR, putMergeFiles, requestComment, statuses } from "./gate.ts";
+import { forge, forgeEnv, PR, putMergeFiles, requestComment, statuses } from "./gate.ts";
 
 scenario("SCN-GATE-034", async ({ sut, fakes, given, when, then }) => {
   let http: Awaited<ReturnType<typeof forge>>;
@@ -21,7 +21,7 @@ scenario("SCN-GATE-034", async ({ sut, fakes, given, when, then }) => {
   await when("a pull request workflow runs the action", async () => {
     run = await sut.action(
       { policy: "merge.rego", groups: "groups.json" },
-      { event: { pull_request: { html_url: PR, number: 12 } }, env: { GATEKEEPER_FORGE_URL: http.url } },
+      { event: { pull_request: { html_url: PR, number: 12 } }, env: forgeEnv(sut, http) },
     );
   });
 

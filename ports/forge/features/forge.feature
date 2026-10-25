@@ -1,12 +1,13 @@
 @port=forge @owner=maintainers
 Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
   A forge adapter is a program with the commands branch, open-pr, pr, check, comment, protect, merge, webhook, hooks,
-  unhook and event. It reaches the forge at FORGE_URL with the token FORGE_TOKEN, and signs and checks webhooks with
+  unhook, comments and event. It reaches the forge at FORGE_URL with the token FORGE_TOKEN, and signs and checks webhooks with
   FORGE_WEBHOOK_SECRET. A repository is "<owner>/<name>". event turns one webhook delivery into a pr.opened@v1,
   pr.reviewed@v1 or pr.closed@v1 CloudEvent from contracts (ADR 0057). The test forge has the user "tester" and the
   repository "tester/web", whose branch "main" holds one commit: a real Forgejo for the forgejo adapter, and the
   testkit's fake GitHub for the github adapter (ADR 0058). webhook takes the port's event names, such as
-  "issue.labeled" or "push", and each adapter maps them to its forge's events (ADR 0060).
+  "issue.labeled" or "push", and each adapter maps them to its forge's events (ADR 0060). pr names the author,
+  labels and changed files, and comments lists a pull request's conversation, which gatekeeper reads (ADR 0062).
 
   @id=SCN-FORGE-001 @status=implemented @conformance
   Scenario: A branch starts at the head commit of the default branch
@@ -187,3 +188,28 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     Given the repository "tester/web" without webhooks
     When the client runs "unhook tester/web 424242"
     Then unhook exits with code 0 and prints the ID 424242 and "removed" false
+
+  @id=SCN-FORGE-027 @status=implemented @conformance
+  Scenario: pr names the author, the labels, the draft flag and the changed files of a pull request
+    Given the repository "tester/web" with the branch "fix-checkout" that changes "checkout.js"
+    And the client opened a pull request from "fix-checkout"
+    When the client runs "pr" for it
+    Then pr prints the author "tester" behind the adapter's name, no labels and "draft" false
+    And pr prints the paths "checkout.js"
+
+  @id=SCN-FORGE-028 @status=implemented @conformance
+  Scenario: comments lists the conversation of a pull request, oldest first
+    Given an open pull request in "tester/web"
+    And the client ran "comment" on it with the text "Evidence: 14 scenarios passed"
+    And the person "reviewer" commented "Looks good" on it later
+    When the client runs "comments" for it
+    Then comments prints two lines with the texts "Evidence: 14 scenarios passed" and "Looks good" in that order
+    And the first line has the author "tester" behind the adapter's name and "mine" true
+    And the second line has the author "reviewer" behind the adapter's name and "mine" false
+    And each line has the comment's ID, URL and time
+
+  @id=SCN-FORGE-029 @status=implemented @conformance
+  Scenario: A pull request the repository does not have is named in the error
+    Given the repository "tester/web" without pull requests
+    When the client runs "comments tester/web 42"
+    Then comments exits with code 1 and the error "no pull request tester/web#42"

@@ -1,92 +1,64 @@
-// A pull request on GitHub or Forgejo: the request is a comment, decisions are later comments, and the result is
-// the commit status "gatekeeper" of the head commit. Both forges answer these calls alike.
+// A pull request through the forge port (ADR 0062): the request is a comment, decisions are later comments, and the
+// result is the check "gatekeeper", a commit status of the head commit. The adapter program talks to the forge.
 import type { Channel, Message } from "../domain/gate.ts";
-import type { PullJson, PullRequest } from "../domain/pull-request.ts";
+import { forgeOf, type PullLine, type PullRequest } from "../domain/pull-request.ts";
 import { fromIso } from "../domain/time.ts";
+import type { Program } from "./program.ts";
 
-interface CommentJson {
-  id: number;
-  body: string;
-  created_at: string;
-  user: { login: string };
+export interface Forge {
+  /** The pull request as the port's `pr` prints it. */
+  read(): Promise<PullLine>;
+  /** Sets the check "gatekeeper" of the commit. */
+  status(sha: string, state: "pending" | "success" | "failure", description: string): Promise<void>;
+  /** The pull request's comments as the channel of its gate. */
+  channel(pull: PullLine): Channel;
 }
 
-export type Forge = <T>(method: string, path: string, body?: unknown) => Promise<T>;
-
-export function forgeApi(pr: PullRequest, token: string | undefined): Forge {
-  const headers: Record<string, string> = { accept: "application/json", "content-type": "application/json" };
-  if (token) headers.authorization = `token ${token}`;
-  return async <T>(method: string, path: string, body?: unknown): Promise<T> => {
-    const init: RequestInit = { method, headers };
-    if (body !== undefined) init.body = JSON.stringify(body);
-    const response = await fetch(`${pr.api}${path}`, init);
-    if (response.ok) return (await response.json()) as T;
-    throw new Error(`${method} ${path}: the forge answered ${response.status}`);
-  };
-}
-
-const base = (pr: PullRequest): string => `/repos/${pr.owner}/${pr.repo}`;
-
-export async function readPull(pr: PullRequest, forge: Forge): Promise<{ pull: PullJson; paths: string[] }> {
-  const pull = await forge<PullJson>("GET", `${base(pr)}/pulls/${pr.number}`);
-  const files = await forge<{ filename: string }[]>("GET", `${base(pr)}/pulls/${pr.number}/files?per_page=100`);
-  return { pull, paths: files.map((file) => file.filename) };
-}
-
-export async function setStatus(
-  pr: PullRequest,
-  forge: Forge,
-  sha: string,
-  state: "pending" | "success" | "failure",
-  description: string,
-): Promise<void> {
-  await forge("POST", `${base(pr)}/statuses/${sha}`, {
-    state,
-    context: "gatekeeper",
-    description: description.slice(0, 140),
-    target_url: pr.url,
-  });
-}
-
-export function pullRequestChannel(pr: PullRequest, forge: Forge): Channel {
-  let login: Promise<string> | undefined;
-  // A GitHub Actions token may not read /user; its comments are by github-actions[bot].
-  const me = (): Promise<string> => {
-    login ??= forge<{ login: string }>("GET", "/user").then(
-      (user) => user.login,
-      () => "github-actions[bot]",
-    );
-    return login;
-  };
-  const message = (raw: CommentJson, mine: string): Message => ({
-    id: String(raw.id),
-    author: `${pr.forge}:${raw.user.login}`,
-    time: fromIso(raw.created_at),
-    text: raw.body,
-    mine: raw.user.login === mine,
-  });
-  const comments = async (): Promise<Message[]> => {
-    const mine = await me();
-    const list = await forge<CommentJson[]>("GET", `${base(pr)}/issues/${pr.number}/comments?per_page=100`);
-    return list.map((raw) => message(raw, mine));
+export function pullRequestForge(pr: PullRequest, run: Program): Forge {
+  const repo = `${pr.owner}/${pr.repo}`;
+  const number = String(pr.number);
+  const comments = async (): Promise<Message[]> =>
+    (await run(["comments", repo, number])).map((line) => ({
+      id: String(line.id),
+      author: String(line.author),
+      time: fromIso(String(line.time)),
+      text: String(line.text ?? ""),
+      mine: line.mine === true,
+    }));
+  const comment = async (text: string, marker: string): Promise<string> => {
+    const [posted] = await run(["comment", repo, number, `${text}\n\n<!-- ${marker} -->`]);
+    return String(posted?.id);
   };
 
   return {
-    name: pr.url,
-    mention: (identity) => (identity.startsWith(`${pr.forge}:`) ? `@${identity.slice(pr.forge.length + 1)}` : identity),
-    howToDecide: 'Comment "/approve" or "/reject <reason>".',
-    async find(marker) {
-      return (await comments()).find((comment) => comment.mine && comment.text.includes(`<!-- ${marker} -->`));
+    async read() {
+      const [line] = await run(["pr", repo, number]);
+      return line as unknown as PullLine;
     },
-    async thread(request) {
-      const all = await comments();
-      return all.slice(all.findIndex((comment) => comment.id === request.id) + 1);
+    async status(sha, state, description) {
+      const args = ["check", repo, sha, "gatekeeper", state, "--description", description.slice(0, 140)];
+      await run([...args, "--url", pr.url]);
     },
-    async post(text, marker) {
-      const raw = await forge<CommentJson>("POST", `${base(pr)}/issues/${pr.number}/comments`, {
-        body: `${text}\n\n<!-- ${marker} -->`,
-      });
-      return message(raw, await me());
+    channel(pull) {
+      const prefix = `${forgeOf(pull)}:`;
+      return {
+        name: pr.url,
+        mention: (identity) => (identity.startsWith(prefix) ? `@${identity.slice(prefix.length)}` : identity),
+        howToDecide: 'Comment "/approve" or "/reject <reason>".',
+        async find(marker) {
+          return (await comments()).find((entry) => entry.mine && entry.text.includes(`<!-- ${marker} -->`));
+        },
+        async thread(request) {
+          const all = await comments();
+          return all.slice(all.findIndex((entry) => entry.id === request.id) + 1);
+        },
+        async ask(text, marker) {
+          return { id: await comment(text, marker) };
+        },
+        async answer(_request, text, marker) {
+          await comment(text, marker);
+        },
+      };
     },
   };
 }

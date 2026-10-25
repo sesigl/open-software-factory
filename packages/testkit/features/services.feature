@@ -147,3 +147,19 @@ Feature: Services and outside systems
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-097 @status=implemented
+  Scenario: fakes.forge comments on a pull request as the person "reviewer"
+    Given a module whose CLI prints the user and text of each comment of a pull request at "DEMO_FORGE_URL"
+    And its system test has "reviewer" say "Looks good" on a pull request in fakes.forge and expects "reviewer Looks good"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-100 @status=implemented
+  Scenario: fakes.slack lists the messages at the top of a channel newest first, without the replies in threads
+    Given a module whose CLI posts "first" and "second" to "C1", replies "in thread" to "first" and prints the texts of "conversations.history"
+    And its system test expects "second first"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

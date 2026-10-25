@@ -37,6 +37,9 @@ npx @opensoftware/channel-slack receive delivery.json
 - **Approval cards** are Block Kit messages with the question and one button per choice; a button's action ID is
   its choice. A press is a decision on that card. A text reply in the thread is not a decision.
 - **Threads** are `slack:<channel>:<ts of the thread's first message>`. `reply` and `ask` post in that thread.
+- **Channels** are `slack:<channel>`. `reply` and `ask` on a channel start a new thread; `messages` on a channel
+  reads its newest 200 top-level messages (`conversations.history`), and on a thread all its messages, up to 1000.
+  A message's `time` keeps Slack's microseconds.
 - A token Slack refuses exits 1 with `the channel refused the token`.
 
 ## Commands
@@ -46,6 +49,7 @@ npx @opensoftware/channel-slack receive delivery.json
 | `channel-slack receive <delivery.json>` | Print the delivery's work item or decision, or nothing. |
 | `channel-slack reply <thread> <text>` | Post the text in the thread; print `{"thread", "id"}`. |
 | `channel-slack ask <thread> <question> [--choice <name>]...` | Post an approval card, by default with `approve` and `reject`; print `{"thread", "id"}`. |
+| `channel-slack messages <thread or channel>` | Print each message, oldest first, as `{"id", "thread", "author", "time", "text", "mine"}`. |
 
 ## Tests
 
