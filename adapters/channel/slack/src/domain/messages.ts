@@ -43,7 +43,42 @@ export function workItem(mention: Mention): Record<string, unknown> {
   };
 }
 
-/** The decision of a person who pressed the button `choice` of the card `card`. */
-export function decision(thread: string, card: string, choice: string, user: string): Record<string, unknown> {
-  return { kind: "decision", thread, card, choice, person: `slack:${user}` };
+/** The decision of a person who pressed the button `choice` of the card `card` at `time`. */
+export function decision(
+  thread: string,
+  card: string,
+  choice: string,
+  user: string,
+  time: string,
+): Record<string, unknown> {
+  return { kind: "decision", thread, card, choice, person: `slack:${user}`, time };
+}
+
+/** A Slack message as the Web API gives it. */
+export interface Raw {
+  ts?: string;
+  user?: string;
+  text?: string;
+}
+
+/** Slack's `ts`, seconds and microseconds, as RFC 3339 in UTC with all six digits. */
+export function slackTime(ts: string): string {
+  const [seconds = "0", fraction = ""] = ts.split(".");
+  const whole = new Date(Number(seconds) * 1000).toISOString().slice(0, 19);
+  return `${whole}.${fraction.padEnd(6, "0").slice(0, 6)}Z`;
+}
+
+/** A message of history: the text as Slack keeps it, and whether the bot wrote it. */
+export function said(
+  raw: unknown,
+  bot: string,
+): { id: string; person: string; time: string; text: string; mine: boolean } {
+  const { ts = "", user = "", text = "" } = raw as Raw;
+  return { id: ts, person: `slack:${user}`, time: slackTime(ts), text, mine: user === bot };
+}
+
+/** A person's message in a thread that the client follows. */
+export function followed(thread: string, raw: unknown): Record<string, unknown> {
+  const { mine: _, ...message } = said(raw, "");
+  return { kind: "message", thread, ...message };
 }

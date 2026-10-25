@@ -25,6 +25,6 @@ scenario("SCN-CHANNEL-005", async ({ sut, fakes, given, when, then }) => {
 
   await then("reply prints the thread and the message's ID", async () => {
     const [, posted] = await box.github.conversation(box.pr);
-    expect(printed).toEqual({ thread: id, id: String(posted?.id) });
+    expect(printed).toEqual({ thread: id, time: expect.stringMatching(/Z$/), id: String(posted?.id) });
   });
 });
