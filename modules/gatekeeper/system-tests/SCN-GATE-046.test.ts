@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { AUTH, serving } from "./server.ts";
+import { AUTH, type GateAnswer, serving } from "./server.ts";
 
 scenario("SCN-GATE-046", async ({ sut, fakes, given, when, then }) => {
   let server: Awaited<ReturnType<typeof serving>>;
@@ -9,7 +9,7 @@ scenario("SCN-GATE-046", async ({ sut, fakes, given, when, then }) => {
     });
   });
 
-  let answer: Awaited<ReturnType<ReturnType<typeof server.api>["POST"]>>;
+  let answer: GateAnswer;
   await when('a program posts a request for a change of "docs/guide.md" to "/v1/gates"', async () => {
     answer = await server.api().POST("/v1/gates", {
       body: { workItem: "WI-7", stage: "merge", summary: "Fix a typo", change: { paths: ["docs/guide.md"] } },

@@ -561,6 +561,17 @@ read them for ideas, do not copy their company-specific rules.
   error; a local agent submits work through the Factory MCP server; every work item event is delivered once even
   when NATS restarts.
 - **Done when:** issues labeled `factory` in this repository create work items.
+- **Slices:**
+  - [x] The inbox (ADR 0063, `SCN-INTAKE-001` to `-020`): `intake serve` with `POST /v1/work-items` and
+    `GET /v1/work-items/{id}` in `contracts/`, one work item per dedupe key with every request and origin, PostgreSQL or
+    an embedded PGlite, `work.received@v1` through a PostgreSQL outbox to NATS, Slack mentions through the channel
+    port's `slack` adapter with a reply in the thread, and `intake mcp`, the Factory MCP server with `submit_work`
+    and `work_status`.
+  - [ ] GitHub issues labeled `factory` become work items, with the issue's URL as the dedupe key, and this
+    repository's issues reach intake (the "Done when").
+  - [ ] One work item across surfaces: a Slack mention that links a GitHub issue and the label on that issue meet.
+  - [ ] A Sentry fatal webhook becomes a `bug` work item linked to the error and the change.
+  - [ ] The Factory MCP server fetches a run's evidence, once the foreman (T-17) records runs.
 
 ### [ ] T-17 · foreman
 
