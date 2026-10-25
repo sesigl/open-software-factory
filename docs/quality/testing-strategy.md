@@ -78,6 +78,46 @@ docs/vision/           factory-level requirements; source for module scenarios, 
   keeps all its state inside its scenario and never changes the test process's environment or globals.
 - No unit tests by default (ADR 0007). A module's `AGENTS.md` may allow them for a pure algorithm.
 
+## Test speed
+
+System tests are the only tests, so their speed is the speed of every pull request. Speed comes from how the
+tests run and how scenarios are written, never from testing less: no unit tests, mocks, skipped scenarios or
+affected-only `verify` (PASS needs every implemented scenario to run in each run).
+
+Where the time went, and what each step changed:
+
+| When | Cost | Change |
+| --- | --- | --- |
+| ADR 0026 | `make verify` ran every suite one after the other | CI runs each suite on its own runner, side by side |
+| ADR 0049 | Containers for systems that have a fast stand-in | PGlite, in-process fakes of Slack, GitHub and the model gateway |
+| ADR 0051 | Every scenario file imported the testkit again, 0.7 s each | Files share Vitest workers |
+| ADR 0061 | Every mutant reran the whole suite: 25 minutes for one forge adapter change of 65 mutants | Each mutant reruns only the scenarios whose module processes ran it |
+
+In October 2026 a full pull request run took about 4 minutes for `verify`. The longest suites were
+inference-litellm (each scenario starts LiteLLM and PostgreSQL), sandbox-kubernetes (kind) and the catch-all
+`rest` job, each about 160 seconds on one runner. MUTATION was the slowest check, so it is where speed matters
+most.
+
+Rules for new scenarios, tests and test tooling:
+
+- A mutant reruns every scenario that reached its line. A scenario that starts the module only to set up state
+  for another behavior reaches that code too, so keep scenarios small and set state up through the cheapest
+  surface (files in `$INPUT`, a fake's state), not through a long chain of module commands.
+- Do the module's work in its own Node processes on the host, started by the testkit inside the scenario. The
+  testkit records coverage (REACH) and mutants (MUTATION) only there. Code that runs only in a container, or in a
+  process started without the module's environment, counts as never reached: REACH fails its lines and its
+  mutants count as missed.
+- Never share a module process across scenarios, for example a server started in a Vitest `globalSetup`. Its
+  coverage and its mutants belong to no scenario.
+- Use the fastest stand-in the port allows (ADR 0049). A container start of 20 to 30 seconds is paid again for
+  each mutant of the lines it reaches.
+- Never wait for time to pass. When a module flushes or polls on an interval, make the interval configurable and
+  short in the test's config, or wait for the result the module produces.
+- A new suite's time counts against its `AGENTS.md` budget (BUDGET). When a suite gets close to it, split slow
+  scenarios or find a faster stand-in before raising the budget.
+- Measure before you change how tests run: the JUnit times in `reports/junit/` show each scenario, and the
+  `verify` job list shows each suite.
+
 ## Why no unit tests, and what replaces their safety
 
 | Unit tests give | Cost with agents | Replaced by |
