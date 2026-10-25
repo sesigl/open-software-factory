@@ -14,6 +14,9 @@ export interface PullJson {
   merge_commit_sha: string | null;
   head: { ref: string; sha: string };
   base: { ref: string };
+  user: { login: string };
+  draft?: boolean;
+  labels?: { name: string }[];
 }
 
 /** branch <repo> <branch> [--from <ref>]: the ref refs/heads/<branch> at the commit of the ref or the default branch. */

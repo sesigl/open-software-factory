@@ -16,14 +16,18 @@ export class GitHubError extends Error {
 export interface GitHub {
   /** Calls `path` below `/repos/<owner>/<name>` and gives the JSON answer. */
   request<T>(method: string, path: string, body?: unknown): Promise<T>;
+  /** The token's user. A GitHub Actions token may not read `GET /user`; its user is `github-actions[bot]`. */
+  me(): Promise<string>;
 }
+
+const ACTIONS_BOT = "github-actions[bot]";
 
 export function github(repo: string, env: NodeJS.ProcessEnv = process.env): GitHub {
   const token = env.FORGE_TOKEN;
   check(token, "set FORGE_TOKEN to a GitHub token");
   const root = (env.FORGE_URL || "https://api.github.com").replace(/\/+$/, "");
-  const send = async <T>(method: string, path: string, body?: unknown): Promise<T> => {
-    const response = await fetch(`${root}/repos/${repo}${path}`, {
+  const send = async <T>(method: string, path: string, body?: unknown, under = `/repos/${repo}`): Promise<T> => {
+    const response = await fetch(`${root}${under}${path}`, {
       method,
       headers: {
         authorization: `Bearer ${token}`,
@@ -47,6 +51,15 @@ export function github(repo: string, env: NodeJS.ProcessEnv = process.env): GitH
         if (missing && !(await send("GET", "").then(Boolean, () => false))) throw new Error(`no repository ${repo}`);
         throw error;
       }
+    },
+    async me() {
+      return send<{ login: string }>("GET", "/user", undefined, "").then(
+        (user) => user.login,
+        (error) => {
+          if (error instanceof GitHubError) return ACTIONS_BOT;
+          throw error;
+        },
+      );
     },
   };
 }

@@ -177,6 +177,8 @@ export async function startGitHub(): Promise<RunningGitHub> {
       mergeable_state: open && !computed ? "unknown" : canMerge ? "clean" : "dirty",
       // While a pull request is open, GitHub names the commit of a test merge here.
       merge_commit_sha: pr.merged ? pr.mergeCommit : canMerge ? testMerge(headSha) : null,
+      draft: false,
+      labels: [],
       head: { label: `${OWNER}:${pr.head}`, ref: pr.head, sha: headSha },
       base: { label: `${OWNER}:${pr.base}`, ref: pr.base, sha: repo.branches.get(pr.base) ?? "" },
     };
@@ -492,6 +494,15 @@ export async function startGitHub(): Promise<RunningGitHub> {
       },
     ],
     ["GET", /^\/pulls\/(\d+)$/, (repo, [number = ""]) => [200, pullJson(repo, pull(repo, Number(number)), true)]],
+    [
+      "GET",
+      /^\/pulls\/(\d+)\/files$/,
+      (repo, [number = ""]) => {
+        const pr = pull(repo, Number(number));
+        const [base, head] = [repo.branches.get(pr.base) ?? "", repo.branches.get(pr.head) ?? ""];
+        return [200, commits.changed(base, head).map((filename) => ({ filename, status: "modified" }))];
+      },
+    ],
     [
       "PUT",
       /^\/pulls\/(\d+)\/merge$/,

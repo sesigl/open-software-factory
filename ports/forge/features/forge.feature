@@ -187,3 +187,18 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     Given the repository "tester/web" without webhooks
     When the client runs "unhook tester/web 424242"
     Then unhook exits with code 0 and prints the ID 424242 and "removed" false
+
+  @id=SCN-FORGE-027 @status=implemented @conformance
+  Scenario: pr prints the author, the draft flag, the labels and the changed files of a pull request
+    Given an open pull request in "tester/web" from "fix-checkout" that adds "checkout.js"
+    When the client runs "pr" for it
+    Then pr prints the author "tester" with the adapter's name, "draft" false, no labels and the paths "checkout.js"
+
+  @id=SCN-FORGE-028 @status=implemented @conformance
+  Scenario: comments lists a pull request's comments oldest first and marks the token user's own
+    Given an open pull request in "tester/web"
+    And the client ran "comment" on it with the text "Evidence attached"
+    And the person "reviewer" commented "Looks good" on it
+    When the client runs "comments" for it
+    Then comments prints "Evidence attached" by "tester" with "mine" true and then "Looks good" by "reviewer" with "mine" false
+    And the first comment has the ID and the time that comment printed

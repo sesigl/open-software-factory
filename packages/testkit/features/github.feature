@@ -76,3 +76,11 @@ Feature: A fake of GitHub's REST API
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-097 @status=implemented
+  Scenario: fakes.github lists the files that a pull request changes
+    Given a module whose CLI prints the "filename" of each file of pull request 1 at "DEMO_GITHUB_URL"
+    And its system test opens pull request 1 that adds "notes.md" and changes "README.md" and expects "README.md notes.md"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

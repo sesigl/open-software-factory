@@ -28,6 +28,7 @@ export async function pr(repo: string | undefined, number: string | undefined): 
   const status = await api.request<{
     statuses: { context: string; state: string; description: string | null; target_url: string | null }[];
   }>("GET", `/commits/${pull.head.sha}/status`);
+  const files = await api.request<{ filename: string }[]>("GET", `/pulls/${pull.number}/files?per_page=100`);
   return print({
     number: pull.number,
     url: pull.html_url,
@@ -37,6 +38,10 @@ export async function pr(repo: string | undefined, number: string | undefined): 
     head: pull.head.ref,
     base: pull.base.ref,
     sha: pull.head.sha,
+    author: `github:${pull.user.login}`,
+    draft: pull.draft === true,
+    labels: (pull.labels ?? []).map((label) => label.name),
+    paths: files.map((file) => file.filename),
     // While it is open, GitHub's merge_commit_sha is a test merge, not a commit on the base branch.
     mergeCommit: pull.merged ? pull.merge_commit_sha : null,
     checks: status.statuses.map((entry) => ({
@@ -77,10 +82,40 @@ export async function comment(
   const api = connect(repo);
   const issue = numberOf(number);
   ensure(text, "give the comment's text, like comment tester/web 7 'Evidence attached'");
-  const posted = await api.request<{ id: number; html_url: string }>("POST", `/issues/${issue}/comments`, {
-    body: text,
-  });
-  return print({ id: posted.id, url: posted.html_url });
+  const posted = await api.request<CommentJson>("POST", `/issues/${issue}/comments`, { body: text });
+  return print({ id: posted.id, url: posted.html_url, time: timeOf(posted) });
+}
+
+interface CommentJson {
+  id: number;
+  html_url: string;
+  body: string;
+  created_at: string;
+  user: { login: string };
+}
+
+/** GitHub's time of a comment, as RFC 3339 in UTC. */
+const timeOf = (comment: CommentJson): string => new Date(comment.created_at).toISOString().replace(".000Z", "Z");
+
+/** comments <repo> <number>: the comments of the pull request's conversation, oldest first. */
+export async function comments(repo: string | undefined, number: string | undefined): Promise<Outcome> {
+  const api = connect(repo);
+  const issue = numberOf(number);
+  const [me, list] = await Promise.all([
+    api.me(),
+    api.request<CommentJson[]>("GET", `/issues/${issue}/comments?per_page=100`),
+  ]);
+  return {
+    lines: list.map((comment) =>
+      JSON.stringify({
+        id: comment.id,
+        person: `github:${comment.user.login}`,
+        time: timeOf(comment),
+        text: comment.body,
+        mine: comment.user.login === me,
+      }),
+    ),
+  };
 }
 
 /** protect <repo> <branch> [--check <name>]... [--approvals <n>]: replaces the branch protection of the branch. */
