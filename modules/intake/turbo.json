@@ -1,0 +1,12 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "test:system": {
+      "dependsOn": ["$TURBO_EXTENDS$", "@opensoftware/channel-slack#build"]
+    },
+    "mutation": {
+      "dependsOn": ["$TURBO_EXTENDS$", "@opensoftware/channel-slack#build"]
+    }
+  }
+}

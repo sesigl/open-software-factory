@@ -75,6 +75,15 @@ Feature: Services and outside systems
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-101 @status=implemented
+  Scenario: fakes.forge gives a later scenario the same forge without the repositories of the earlier one
+    Given a module whose CLI prints the number of pull requests of a repository at "DEMO_FORGE_URL"
+    And its two scenarios in one test file each create the repository "demo" in fakes.forge, open a pull request and expect "1"
+    And its second scenario expects the forge URL of the first
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test cases "SCN-DEMO-001" and "SCN-DEMO-002"
+
   @id=SCN-TK-013 @status=implemented
   Scenario: fakes.slack shows the message a module posts
     Given a module whose CLI posts "hello from demo" to the channel "C1" through the Slack Web API at "DEMO_SLACK_URL"

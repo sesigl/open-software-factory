@@ -1,0 +1,42 @@
+{
+  "name": "@opensoftware/intake",
+  "version": "0.0.0",
+  "description": "intake: one deduplicated inbox for agent work from HTTP, Slack and a local agent over MCP, with links back to the origin.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "modules/intake"
+  },
+  "type": "module",
+  "bin": {
+    "intake": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "vitest run",
+    "docs": "node ../../tools/bin/osf.ts docs .",
+    "mutation": "node ../../tools/bin/osf.ts mutation ."
+  },
+  "devDependencies": {
+    "@opensoftware/testkit": "workspace:*",
+    "@types/pg": "8.23.1"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.11",
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "@nats-io/transport-node": "3.4.0",
+    "@opensoftware/cli": "workspace:*",
+    "@opensoftware/contracts": "workspace:*",
+    "fastify": "5.12.7",
+    "pg": "8.23.1"
+  }
+}

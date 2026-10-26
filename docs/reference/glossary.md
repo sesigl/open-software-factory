@@ -14,6 +14,7 @@ Use these terms in scenarios, code, UI text and docs.
 | Lock file | `factory.lock` next to `factory.yaml`: the exact version of each MCP server from a registry, pinned by `factory plan`. |
 | Product surface | A part of a product with its own factory, for example "web" or "server". |
 | Work item | One unit of requested work (idea, bug, automated trigger) as a CloudEvent. |
+| Dedupe key | The key that makes requests one work item: intake keeps one work item per key and lists every request that sent it. |
 | Stage | One step of the delivery loop: triage, spec, implement, review, verify, ship, monitor. |
 | Gate | A point where work waits for a deterministic check or a human decision. |
 | Approval record | What gatekeeper writes when a gate is decided: the request, the policy, who decided, what and when; signed with Ed25519. |

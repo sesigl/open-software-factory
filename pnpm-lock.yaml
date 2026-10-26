@@ -308,6 +308,37 @@ importers:
         specifier: 8.23.1
         version: 8.23.1
 
+  modules/intake:
+    dependencies:
+      '@electric-sql/pglite':
+        specifier: 0.5.11
+        version: 0.5.11
+      '@modelcontextprotocol/sdk':
+        specifier: 1.32.1
+        version: 1.32.1(zod@4.6.7)
+      '@nats-io/transport-node':
+        specifier: 3.4.0
+        version: 3.4.0
+      '@opensoftware/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
+      '@opensoftware/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      fastify:
+        specifier: 5.12.7
+        version: 5.12.7
+      pg:
+        specifier: 8.23.1
+        version: 8.23.1
+    devDependencies:
+      '@opensoftware/testkit':
+        specifier: workspace:*
+        version: link:../../packages/testkit
+      '@types/pg':
+        specifier: 8.23.1
+        version: 8.23.1
+
   modules/ledger:
     dependencies:
       '@duckdb/node-api':

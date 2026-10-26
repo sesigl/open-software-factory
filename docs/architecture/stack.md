@@ -89,6 +89,7 @@ publish only the TypeScript package; clients for other languages are not built (
 | Trace store | Langfuse (full); Arize Phoenix (light) | Langfuse brings ClickHouse, Valkey and S3 |
 | Agent memory | pgvector first | no extra service |
 | Gate policies | OPA (Rego) through its CLI | Cedar answers only allow or deny; the factory definition names Rego (ADR 0047) |
+| A server's store on a laptop | PGlite, PostgreSQL in process, in the data folder (intake, ADR 0063) | SQLite would be a second SQL dialect beside PostgreSQL |
 
 ## Revisit when
 

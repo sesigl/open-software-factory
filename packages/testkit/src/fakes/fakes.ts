@@ -32,7 +32,10 @@ export interface Fakes {
   temporal(): Promise<Temporal>;
   /** An S3 API (SeaweedFS) in a container. */
   s3(): Promise<S3>;
-  /** A Forgejo forge in a container, with a user and an API token. */
+  /**
+   * A Forgejo forge in a container, with a user and an API token. The test process starts one; each scenario gets it
+   * without the repositories of the scenarios before (ADR 0064).
+   */
   forge(): Promise<Forge>;
   /**
    * An in-process fake of GitHub's REST API with the same interface as `forge()`: the user `tester` and its token,
@@ -96,7 +99,7 @@ export function makeFakes(moduleRoot: string): FakesHandle {
       nats: () => startNats(track),
       temporal: () => startTemporal(track),
       s3: () => startS3(track),
-      forge: () => startForge(track),
+      forge: () => startForge((container) => hosts.add(container.getHost())),
       async github() {
         return (await inProcess(startGitHub())).github;
       },
