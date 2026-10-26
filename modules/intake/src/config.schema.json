@@ -45,6 +45,28 @@
       "type": "string",
       "description": "serve: the signing secret of the Slack app, the adapter's CHANNEL_SIGNING_SECRET. Required with INTAKE_SLACK_TOKEN."
     },
+    "INTAKE_WEBHOOK_SECRET": {
+      "type": "string",
+      "description": "serve: the secret the forge signs its webhook deliveries with, the forge adapter's FORGE_WEBHOOK_SECRET. Set, the server takes the forge's deliveries at /forge/events."
+    },
+    "INTAKE_FORGE_ADAPTER": {
+      "type": "string",
+      "default": "npx -y @opensoftware/forge-github",
+      "description": "serve: the command line of the forge port's adapter, whose event command checks and reads the forge's deliveries (ADR 0065)."
+    },
+    "INTAKE_FORGE_LABEL": {
+      "type": "string",
+      "default": "factory",
+      "description": "serve: the label that makes an issue a work item."
+    },
+    "INTAKE_SENTRY_SECRET": {
+      "type": "string",
+      "description": "serve: the client secret of the Sentry integration, which signs its deliveries. Set, the server takes Sentry's alerts at /sentry/events."
+    },
+    "INTAKE_SENTRY_CHANGE_URL": {
+      "type": "string",
+      "description": "serve: the link to the change of a Sentry alert, with {release} for the event's release, like https://github.com/acme/web/commit/{release}. Unset: no link to the change."
+    },
     "INTAKE_URL": {
       "type": "string",
       "description": "mcp: the base URL of intake serve, like http://localhost:8080. Required."

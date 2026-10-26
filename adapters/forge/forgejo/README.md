@@ -65,7 +65,7 @@ Forgejo answers `pull_request` with all of its pull request events.
 | `forge-forgejo webhook <repo> <url> [--event <name>]...` | Register one webhook for the port's events, by default pull requests; print `{"id", "url", "events", "active"}`. |
 | `forge-forgejo hooks <repo>` | Print each webhook of the repository as `{"id", "url", "events", "active"}`. |
 | `forge-forgejo unhook <repo> <id>` | Remove a webhook; print `{"id", "removed"}`, with `removed` false when it had none. |
-| `forge-forgejo event <delivery.json>` | Print the delivery's pull request CloudEvent, or nothing. |
+| `forge-forgejo event <delivery.json>` | Print the delivery's pull request or issue label CloudEvent, or nothing. |
 
 ## Releases
 

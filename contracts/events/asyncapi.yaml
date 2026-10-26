@@ -61,6 +61,12 @@ channels:
     messages:
       PrClosed:
         $ref: '#/components/messages/PrClosed'
+  issue-labeled:
+    address: osf.issue.labeled.v1
+    description: A label was added to an issue.
+    messages:
+      IssueLabeled:
+        $ref: '#/components/messages/IssueLabeled'
 operations:
   publishWorkReceived:
     action: send
@@ -118,6 +124,13 @@ operations:
       $ref: '#/channels/pr-closed'
     messages:
       - $ref: '#/channels/pr-closed/messages/PrClosed'
+  publishIssueLabeled:
+    action: send
+    summary: Published by forge adapters.
+    channel:
+      $ref: '#/channels/issue-labeled'
+    messages:
+      - $ref: '#/channels/issue-labeled/messages/IssueLabeled'
 components:
   messages:
     WorkReceived:
@@ -184,3 +197,11 @@ components:
         schemaFormat: application/schema+json;version=draft-2020-12
         schema:
           $ref: './pr-closed/pr-closed.schema.json'
+    IssueLabeled:
+      name: issue.labeled@v1
+      title: issue.labeled@v1
+      contentType: application/cloudevents+json
+      payload:
+        schemaFormat: application/schema+json;version=draft-2020-12
+        schema:
+          $ref: './issue-labeled/issue-labeled.schema.json'

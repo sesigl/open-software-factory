@@ -7,7 +7,8 @@ covers: [ports/forge/**]
 How the factory works with the company's code forge: branches, pull requests, checks, comments, merge rules,
 webhooks, and the pull request events that come back. Decisions: [ADR 0057](../../docs/decisions/0057-forge-port.md),
 [ADR 0060](../../docs/decisions/0060-factory-spec-forge-port.md) (event names, `hooks`, `unhook`),
-[ADR 0062](../../docs/decisions/0062-gatekeeper-ports.md) (`comments`, the author, labels, draft and paths of `pr`).
+[ADR 0062](../../docs/decisions/0062-gatekeeper-ports.md) (`comments`, the author, labels, draft and paths of `pr`),
+[ADR 0065](../../docs/decisions/0065-intake-issues-and-alerts.md) (`issue.labeled@v1`).
 
 ## The interface
 
@@ -27,7 +28,7 @@ command line. A repository is `<owner>/<name>`; every command prints JSON lines.
 | webhooks | `<adapter> webhook <repo> <url> [--event <name>]...` registers one webhook for the events, by default pull requests and their reviews; prints `{"id", "url", "events", "active"}` |
 | list webhooks | `<adapter> hooks <repo>` prints one such line per webhook |
 | remove a webhook | `<adapter> unhook <repo> <id>` prints `{"id", "removed"}` |
-| pull request events | `<adapter> event <delivery.json>` prints a `pr.opened@v1`, `pr.reviewed@v1` or `pr.closed@v1` CloudEvent |
+| pull request and issue events | `<adapter> event <delivery.json>` prints a `pr.opened@v1`, `pr.reviewed@v1`, `pr.closed@v1` or `issue.labeled@v1` CloudEvent |
 
 `state` is `open`, `closed` or `merged`; `mergeable` is true when the pull request has no conflict with its base;
 `checks` lists `{"name", "state", "description", "url"}` of the head commit, one per name. `author` is
@@ -60,8 +61,10 @@ Every adapter reads three variables:
 - `event` reads a delivery as a JSON file `{"headers": {...}, "body": "<the body as it arrived>"}`. With
   `FORGE_WEBHOOK_SECRET` set, a delivery whose signature does not match exits 1 and prints no event. A delivery about
   an opened, reviewed or closed pull request prints one CloudEvent that the contract accepts: its `id` is the forge's
-  delivery ID, its `source` `/osf/forge`, and a person is `<adapter>:<login>`. Any other delivery prints nothing and
-  exits 0.
+  delivery ID, its `source` `/osf/forge`, and a person is `<adapter>:<login>`. A delivery about a label added to an
+  issue prints one `issue.labeled@v1` with the issue's link, number, title, body, author and every label after the
+  change; `label` names the one added when the forge says which (GitHub does, Forgejo does not, and Forgejo also
+  sends it when a label is removed). Any other delivery prints nothing and exits 0.
 
 ## Conformance
 

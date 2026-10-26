@@ -1,12 +1,15 @@
-// intake serve: the work item API, Slack's events through the channel adapter, and the relay of the outbox every
-// minute (ADR 0063). It runs until SIGTERM or SIGINT.
+// intake serve: the work item API, the webhooks of Slack, the forge and Sentry, and the relay of the outbox every
+// minute (ADR 0063, ADR 0065). It runs until SIGTERM or SIGINT.
 import { timingSafeEqual } from "node:crypto";
 import { UsageError } from "@opensoftware/cli";
 import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
 import { type Channel, channelAdapter } from "../adapters/channel.ts";
+import { forgeAdapter } from "../adapters/forge.ts";
 import { openStore } from "../adapters/store.ts";
 import { nowOf } from "../domain/time.ts";
+import { workItemId } from "../domain/work-item.ts";
 import { type Env, required } from "./env.ts";
+import { forgeHook, problem, sentryHook, slackHook } from "./hooks.ts";
 import { type Inbox, inbox } from "./inbox.ts";
 
 const RELAY_EVERY_MS = 60_000;
@@ -18,10 +21,6 @@ function bearerMatches(header: string | undefined, token: string): boolean {
   return sent.length === wanted.length && timingSafeEqual(sent, wanted);
 }
 
-/** An error answer in the shape of RFC 9457. */
-const problem = (reply: FastifyReply, status: number, title: string, detail: string) =>
-  reply.code(status).type("application/problem+json").send({ title, status, detail });
-
 async function workItemRoutes(app: FastifyInstance, work: Inbox, apiToken: string): Promise<void> {
   await app.register(async (api) => {
     api.addHook("onRequest", async (request, reply) => {
@@ -32,34 +31,17 @@ async function workItemRoutes(app: FastifyInstance, work: Inbox, apiToken: strin
       const { created, view } = await work.submit(request.body);
       return reply.code(created ? 201 : 200).send(view);
     });
+    api.get<{ Querystring: { dedupeKey?: string } }>("/v1/work-items", async (request, reply) => {
+      const key = request.query.dedupeKey;
+      if (!key) return problem(reply, 400, "No dedupe key", "name the work item with ?dedupeKey=<key>");
+      const found = await work.view(workItemId(key));
+      if (!found) return problem(reply, 404, "No such work item", `the server has no work item with the key ${key}`);
+      return found;
+    });
     api.get<{ Params: { id: string } }>("/v1/work-items/:id", async (request, reply) => {
       const found = await work.view(request.params.id);
       if (!found) return problem(reply, 404, "No such work item", `the server has no work item ${request.params.id}`);
       return found;
-    });
-  });
-}
-
-/** Slack signs the raw body, so this route reads it as text and hands it to the adapter's receive as it came. */
-async function slackRoutes(app: FastifyInstance, work: Inbox, channel: Channel): Promise<void> {
-  await app.register(async (hooks) => {
-    hooks.removeAllContentTypeParsers();
-    hooks.addContentTypeParser("*", { parseAs: "string" }, (_request, body, done) => done(null, body));
-    hooks.post("/slack/events", async (request, reply) => {
-      const body = String(request.body ?? "");
-      const headers: Record<string, string> = {};
-      for (const [name, value] of Object.entries(request.headers)) if (typeof value === "string") headers[name] = value;
-      const lines = await channel.receive({ headers, body });
-      if (!lines) return problem(reply, 401, "Unauthorized", "the Slack signature does not match");
-      const payload = JSON.parse(body) as { type?: string; challenge?: string };
-      if (payload.type === "url_verification") return { challenge: payload.challenge };
-      for (const line of lines) {
-        if (line.kind !== "work") continue;
-        const { created, view } = await work.submit(line.workItem);
-        const thread = view.workItem.origin.externalId;
-        if (created && thread) await channel.reply(thread, `Received as work item ${view.workItem.id}.`);
-      }
-      return reply.code(200).send();
     });
   });
 }
@@ -93,7 +75,14 @@ export async function serve(env: Env) {
   const app = Fastify({ logger: false });
   app.setErrorHandler(answerError);
   await workItemRoutes(app, work, apiToken);
-  if (channel) await slackRoutes(app, work, channel);
+  if (channel) await slackHook(app, work, channel);
+  const webhookSecret = env.INTAKE_WEBHOOK_SECRET;
+  if (webhookSecret) {
+    const forge = forgeAdapter(env.INTAKE_FORGE_ADAPTER || "npx -y @opensoftware/forge-github", webhookSecret);
+    await forgeHook(app, work, forge, env.INTAKE_FORGE_LABEL || "factory");
+  }
+  if (env.INTAKE_SENTRY_SECRET)
+    await sentryHook(app, work, env.INTAKE_SENTRY_SECRET, env.INTAKE_SENTRY_CHANGE_URL || undefined);
 
   const port = Number(env.PORT || 8080);
   await app.listen({ port, host: "0.0.0.0" });

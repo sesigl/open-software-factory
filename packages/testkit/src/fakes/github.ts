@@ -1,12 +1,12 @@
 // An in-process fake of the part of GitHub's REST API that a forge client calls (ADR 0058), with the same Forge
 // interface as fakes.forge. It keeps repositories with their commits and files, branches, pull requests, commit
-// statuses, comments, reviews, branch protection and webhooks. Webhooks deliver signed events to URLs on the local
+// statuses, comments, reviews, branch protection, issues with labels and webhooks. Webhooks deliver signed events to URLs on the local
 // host. IDs, SHAs and times come from counters and the fixed clock. A call it does not know fails the scenario.
 import { createHmac } from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import { FIXED_DATE } from "../support/process.ts";
-import type { Forge, OpenedPullRequest, PullRequest } from "./forge.ts";
+import type { Forge, Issue, OpenedPullRequest, PullRequest } from "./forge.ts";
 import { Commits, type Files } from "./github-repository.ts";
 
 /** A comment on a pull request's conversation, with its author. */
@@ -67,6 +67,16 @@ interface Pull {
   closedAt: string | null;
 }
 
+interface IssueEntry {
+  number: number;
+  title: string;
+  body: string;
+  user: string;
+  labels: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface Status {
   id: number;
   sha: string;
@@ -94,10 +104,11 @@ interface Hook {
 
 interface Repository {
   name: string;
-  /** The last number of a pull request: GitHub numbers them per repository from 1. */
+  /** The last number of a pull request or an issue: GitHub numbers both per repository from 1. */
   numbered: number;
   branches: Map<string, string>;
   pulls: Pull[];
+  issues: IssueEntry[];
   statuses: Status[];
   comments: { id: number; number: number; body: string; user: string; createdAt: string }[];
   reviews: { id: number; number: number; user: string; state: string; body: string }[];
@@ -161,6 +172,24 @@ export async function startGitHub(): Promise<RunningGitHub> {
     default_branch: "main",
   });
   const pullUrl = (repo: Repository, pr: Pull) => `${url}/${OWNER}/${repo.name}/pull/${pr.number}`;
+  const issueUrl = (repo: Repository, issue: IssueEntry) => `${url}/${OWNER}/${repo.name}/issues/${issue.number}`;
+  const issueJson = (repo: Repository, issue: IssueEntry) => ({
+    url: `${url}/repos/${OWNER}/${repo.name}/issues/${issue.number}`,
+    html_url: issueUrl(repo, issue),
+    number: issue.number,
+    state: "open",
+    title: issue.title,
+    body: issue.body || null,
+    user: userJson(issue.user),
+    labels: issue.labels.map((name) => ({ name })),
+    created_at: issue.createdAt,
+    updated_at: issue.updatedAt,
+  });
+  const issue = (repo: Repository, number: number): IssueEntry => {
+    const found = repo.issues.find((candidate) => candidate.number === number);
+    if (!found) throw new Answer(404, "Not Found");
+    return found;
+  };
   const pullJson = (repo: Repository, pr: Pull, read = false) => {
     const open = pr.state === "open";
     const computed = pr.computed;
@@ -575,6 +604,7 @@ export async function startGitHub(): Promise<RunningGitHub> {
         ];
       },
     ],
+    ["GET", /^\/issues\/(\d+)$/, (repo, [number = ""]) => [200, issueJson(repo, issue(repo, Number(number)))]],
     ["GET", /^\/hooks$/, (repo) => [200, repo.hooks.map(hookJson)]],
     [
       "POST",
@@ -684,6 +714,7 @@ export async function startGitHub(): Promise<RunningGitHub> {
         numbered: 0,
         branches: new Map([["main", sha]]),
         pulls: [],
+        issues: [],
         statuses: [],
         comments: [],
         reviews: [],
@@ -695,6 +726,30 @@ export async function startGitHub(): Promise<RunningGitHub> {
       const repo = repository(name);
       commitOn(repo, change.branch, "main", change.title, change.files);
       return opened(repo, openPull(repo, OWNER, { head: change.branch, base: "main", title: change.title, body: "" }));
+    },
+    async openIssue(name, fields): Promise<Issue> {
+      const repo = repository(name);
+      const time = now();
+      const entry: IssueEntry = {
+        number: ++repo.numbered,
+        title: fields.title,
+        body: fields.body ?? "",
+        user: OWNER,
+        labels: [],
+        createdAt: time,
+        updatedAt: time,
+      };
+      repo.issues.push(entry);
+      deliver(repo, "issues", { action: "opened", issue: issueJson(repo, entry) });
+      return { repository: name, number: entry.number, url: issueUrl(repo, entry) };
+    },
+    async label(name, number, label) {
+      const repo = repository(name);
+      const entry = issue(repo, number);
+      if (entry.labels.includes(label)) return;
+      entry.labels.push(label);
+      entry.updatedAt = now();
+      deliver(repo, "issues", { action: "labeled", issue: issueJson(repo, entry), label: { name: label } });
     },
     async mergePullRequest(pr) {
       const found = ref(pr);
