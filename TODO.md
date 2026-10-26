@@ -574,7 +574,7 @@ read them for ideas, do not copy their company-specific rules.
     into a `bug` that links the error and the change; `fakes.github` and `fakes.forge` open and label issues.
   - [ ] This repository's issues reach intake (the "Done when"): an intake with a public URL, and the webhook of
     `sesigl/open-software-factory` for `issue.labeled` to its `/forge/events`. Ask the owner where intake runs.
-  - [ ] The Factory MCP server fetches a run's evidence, once the foreman (T-17) records runs.
+  - Moved: the Factory MCP server fetches a run's evidence, to T-17, because only the foreman records runs.
 
 ### [ ] T-17 · foreman
 
@@ -596,6 +596,8 @@ read them for ideas, do not copy their company-specific rules.
 - **From T-14:** foreman starts one gateway per factory with the inference port, asks for a key per run with
   the run's budget, and hands the URL and key to the harness. Claude Code calls the Messages API and Codex the
   Responses API: add `@conformance` scenarios for both to the inference port (ADR 0056).
+- **From T-16:** the Factory MCP server (`intake mcp`) gets a tool that fetches a run's evidence, once the foreman
+  records runs (ADR 0063).
 - **Done when:** E2E-001 passes and this repository's `factory` issues are implemented by the foreman (phase 3).
 
 ### [ ] T-18 · console
