@@ -6,8 +6,9 @@ covers: [modules/foreman/src/**, modules/foreman/scripts/**]
 
 Run the factory's workflow for each work item: the stages of `factory.yaml` one after the other, each with its agent
 through the harness port, with human gates, steering and cancel, on Temporal. A run survives a restart of the
-foreman, and Temporal's UI shows its history. Decision: [ADR 0067](../../docs/decisions/0067-foreman.md), on
-[ADR 0004](../../docs/decisions/0004-temporal.md).
+foreman, and Temporal's UI shows its history. Decisions: [ADR 0067](../../docs/decisions/0067-foreman.md), on
+[ADR 0004](../../docs/decisions/0004-temporal.md), and [ADR 0068](../../docs/decisions/0068-foreman-sandboxes.md) for
+sandboxes.
 
 ## Quick start
 
@@ -76,6 +77,65 @@ curl -H "Authorization: Bearer dev-token" http://localhost:8080/v1/runs/run_…
 The first call answers 201 with the run `run_…` in the state `running`. Once both agents ended their turns, the run is
 `complete` and both stages are `succeeded`. Temporal's UI at http://localhost:8233 shows the workflow `run_…`.
 
+## Sandboxes
+
+The quick start runs both agents on your machine. Run an agent you do not trust with that machine in a sandbox: give
+it `sandbox` in `factory.yaml`. This factory runs both stages on Docker, each in a fresh sandbox with 2 CPUs and 4 GiB,
+that may reach only npm and Anthropic's API:
+
+```yaml sandboxed/factory.yaml
+version: 1
+factory: hello
+providers:
+  harness:
+    acp: "^0"
+  sandbox:
+    docker: "^0"
+agents:
+  plan:
+    harness: acp
+    model: routes/default
+    prompt: ./agents/plan.md
+    secrets: [ref:file/anthropic-api-key]
+    sandbox:
+      template: node:24
+      cpu: 2
+      memory: 4Gi
+      egress: [registry.npmjs.org, api.anthropic.com]
+  implement:
+    harness: acp
+    model: routes/default
+    prompt: ./agents/implement.md
+    secrets: [ref:file/anthropic-api-key]
+    sandbox:
+      template: node:24
+      cpu: 2
+      memory: 4Gi
+      egress: [registry.npmjs.org, api.anthropic.com]
+workflow:
+  - stage: plan
+  - stage: implement
+```
+
+Put your Anthropic API key in the file `secrets/anthropic-api-key` and serve the foreman as in the quick start, with
+`export OSF_SECRETS_DIR=$PWD/secrets` for the [docker sandbox adapter](../../adapters/sandbox/docker/README.md). Each
+stage then goes like this:
+
+1. The foreman creates a sandbox with the adapter that the factory names under `providers.sandbox` (`docker` when it
+   names none) from the agent's `sandbox`. The spec holds each secret as a reference under a variable,
+   `ref:file/anthropic-api-key` as `ANTHROPIC_API_KEY`, and `OTEL_RESOURCE_ATTRIBUTES` with the run. The sandbox gets
+   a placeholder; its egress proxy puts the key in on the way to `api.anthropic.com`
+   ([sandbox port](../../ports/sandbox/README.md)). The foreman never reads a secret.
+2. It copies the run's folder into the sandbox, below the sandbox's working folder, as `<run ID>`.
+3. It runs the harness adapter's command line from `FOREMAN_HARNESSES` in the sandbox with the adapter's `exec`, and
+   speaks ACP to it. The template must hold that program; `node:24` holds `npx`.
+4. When the turn ended, it copies the folder back into the run's folder, so the next stage finds the files.
+5. It destroys the sandbox, also when the stage failed or was cancelled.
+
+`FOREMAN_SANDBOXES` maps an adapter's name to its command line; an adapter it does not name runs
+`npx -y @opensoftware/sandbox-<name>`. A factory names at most one sandbox adapter. An agent without `sandbox` runs on
+the foreman's machine in the run's folder. A sandboxed agent reaches no MCP server yet.
+
 ## Commands
 
 | Command | What it does |
@@ -106,7 +166,8 @@ A run's ID is `run_` and 20 hex digits of the SHA-256 of the work item's ID, so 
   stage's agent is declared; a wrong file exits 2 with the path in the file. Each run reads the file again when it
   starts and keeps that version until it ends. Its `factoryVersion` is the commit of the repository that holds the
   file.
-- **Stages.** The stages run in the order of `workflow`, each in the run's folder `OSF_DATA/runs/<run ID>`. The foreman
+- **Stages.** The stages run in the order of `workflow`, each in the run's folder `OSF_DATA/runs/<run ID>`, or in a
+  sandbox when the stage's agent declares one ([Sandboxes](#sandboxes)). The foreman
   starts the stage's harness adapter from `FOREMAN_HARNESSES`, speaks ACP to it, opens a session and sends one prompt:
   the agent's prompt file, then the work item's ID, title and description. It allows the tool calls the adapter asks
   about; limit them with the adapter's `--allow`. A turn that ends with `end_turn` succeeds the stage; any other end
@@ -155,6 +216,7 @@ the minor version. The one-time setup is the same as for contracts
 | `FOREMAN_TEMPORAL_NAMESPACE` | string | `"default"` | serve: the Temporal namespace of the runs. |
 | `FOREMAN_TASK_QUEUE` | string | `"foreman"` | serve: the Temporal task queue of the runs' workflows and activities. |
 | `FOREMAN_HARNESSES` | string | `"{}"` | serve: a JSON object from harness name to the command line of its adapter. A harness it does not name runs npx -y @opensoftware/harness-<name> run. |
+| `FOREMAN_SANDBOXES` | string | `"{}"` | serve: a JSON object from sandbox adapter name to the command line of the adapter. An adapter it does not name runs npx -y @opensoftware/sandbox-<name>. The factory names its adapter under providers.sandbox, docker by default. |
 | `FOREMAN_POLL_MS` | string | `"1000"` | serve: how often a running stage looks for steering messages and a cancel, in milliseconds. |
 | `FOREMAN_GATEKEEPER_URL` | string |  | serve: the URL of gatekeeper serve, which a stage with a gate asks for a decision. Required for a factory with gates. |
 | `FOREMAN_GATEKEEPER_TOKEN` | string |  | serve: gatekeeper's API token, GATEKEEPER_API_TOKEN. |
@@ -197,3 +259,13 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-029 | implemented | A run that fails publishes the outcome "failed" and the stage that failed |
 | SCN-FORE-030 | implemented | A cancelled run publishes the outcome "cancelled" |
 | SCN-FORE-031 | implemented | Two steering messages reach the agent once each, in order |
+| SCN-FORE-032 | implemented | A stage whose agent declares a sandbox runs in a sandbox created from it |
+| SCN-FORE-033 | implemented | The sandbox spec holds the agent's secret as a reference under its variable |
+| SCN-FORE-034 | implemented | A stage's sandbox carries the run in its environment |
+| SCN-FORE-035 | implemented | A file a stage writes in its sandbox reaches the run's folder and the next stage's sandbox |
+| SCN-FORE-036 | implemented | Each stage's sandbox is destroyed when the stage ends |
+| SCN-FORE-037 | implemented | A cancel destroys the sandbox of the running stage |
+| SCN-FORE-038 | implemented | A sandbox the adapter cannot create fails the run |
+| SCN-FORE-039 | implemented | The sandbox adapter is the one the factory names under "providers.sandbox" |
+| SCN-FORE-040 | implemented | A factory that names two sandbox adapters stops the server at the start |
+| SCN-FORE-041 | implemented | A stage whose agent declares no sandbox runs on the foreman's machine |

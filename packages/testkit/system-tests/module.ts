@@ -524,3 +524,43 @@ export const GITHUB_API = [
   "    body: body && JSON.stringify(body),",
   "  }).then(async (response) => ({ status: response.status, json: await response.json() }));",
 ];
+
+/**
+ * Module demo whose CLI runs `bin` (JavaScript lines) with `sandbox(...args)`, which runs the sandbox adapter in
+ * `DEMO_SANDBOX_COMMAND` and returns its result; its test starts `fakes.sandbox(<options>)` and runs `expectations`
+ * (TypeScript lines with `run` and `sandbox`) in the step "Then the fake sandbox answered as scripted".
+ */
+export function sandboxModule(bin: string[], expectations: string[], options = ""): Record<string, string> {
+  return demoModule({
+    bin: [
+      'import { spawnSync } from "node:child_process";',
+      'import { mkdirSync, writeFileSync } from "node:fs";',
+      "const [command, ...args] = JSON.parse(process.env.DEMO_SANDBOX_COMMAND);",
+      'const sandbox = (...rest) => spawnSync(command, [...args, ...rest], { encoding: "utf8" });',
+      ...bin,
+      "",
+    ].join("\n"),
+    readme: [
+      "# demo",
+      "",
+      "## Configuration",
+      "",
+      "| Variable | Meaning |",
+      "| --- | --- |",
+      "| `DEMO_SANDBOX_COMMAND` | The sandbox adapter, as a JSON array of the command and its arguments. |",
+      "",
+    ].join("\n"),
+    steps: ['When the user runs "demo"', "Then the fake sandbox answered as scripted"],
+    test: [
+      `const sandbox = await fakes.sandbox(${options});`,
+      "const adapter = JSON.stringify([sandbox.command, ...sandbox.args]);",
+      "let run: Awaited<ReturnType<typeof sut.cli>>;",
+      "await when('the user runs \"demo\"', async () => {",
+      "  run = await sut.cli([], { env: { DEMO_SANDBOX_COMMAND: adapter } });",
+      "});",
+      "await then('the fake sandbox answered as scripted', async () => {",
+      ...expectations.map((line) => `  ${line}`),
+      "});",
+    ],
+  });
+}

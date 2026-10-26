@@ -94,6 +94,7 @@ export async function serve(env: Env) {
       bus,
       gatekeeper: gatekeeper(env.FOREMAN_GATEKEEPER_URL, env.FOREMAN_GATEKEEPER_TOKEN),
       harnesses: JSON.parse(env.FOREMAN_HARNESSES || "{}") as Record<string, string>,
+      sandboxes: JSON.parse(env.FOREMAN_SANDBOXES || "{}") as Record<string, string>,
       data: resolve(env.OSF_DATA || ".foreman"),
       pollMs,
       steering: (runId) => work.steering(runId),
