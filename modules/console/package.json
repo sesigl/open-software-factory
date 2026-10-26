@@ -1,12 +1,22 @@
 {
   "name": "@opensoftware/console",
   "version": "0.0.0",
-  "private": true,
-  "description": "console: one sentence from the README.",
+  "description": "console: a read-only web view of a factory: its runs with their origin and evidence, and its configuration with links to Git.",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "modules/console"
+  },
   "type": "module",
   "bin": {
     "console": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

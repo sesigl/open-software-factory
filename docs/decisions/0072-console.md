@@ -85,11 +85,11 @@ branch prefix and an ADR for that port change.
 
 ## Prior art
 
-- Preact 11 (MIT, very active; 11.0 released in September 2026) with `preact-render-to-string` 6.8 (MIT, active):
-  adopted for rendering components to HTML on the server.
-- htm 3.1 (Apache-2.0, stable, last release 2022, maintained by the Preact team): adopted for JSX-like templates in
+- `preact` 11 (MIT, very active; 11.0 released in September 2026) with `preact-render-to-string` 6.8 (MIT,
+  active): adopted for rendering components to HTML on the server.
+- `htm` 3.1 (Apache-2.0, stable, last release 2022, maintained by the Preact team): adopted for JSX-like templates in
   plain TypeScript.
-- Pico CSS 2.1 (MIT, active): adopted to style semantic HTML without classes.
+- Pico CSS, `@picocss/pico` 2.1 (MIT, active): adopted to style semantic HTML without classes.
 - Fastify 5 (MIT, very active): already the server of intake, foreman and gatekeeper; adopted at the same version.
 - `yaml` 2.9 (ISC, active): already used by foreman and factory-spec; reads `factory.yaml`.
 - Temporal UI (MIT), Langfuse (MIT core) and Arize Phoenix (Elastic License 2.0): their UIs stay the place for

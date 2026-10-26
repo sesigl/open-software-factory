@@ -6,7 +6,8 @@
     "rootDir": "src",
     "rewriteRelativeImportExtensions": true,
     "types": ["node"],
-    "sourceMap": true
+    "sourceMap": true,
+    "lib": ["es2024", "dom", "dom.iterable"]
   },
   "include": ["src/**/*.ts"]
 }

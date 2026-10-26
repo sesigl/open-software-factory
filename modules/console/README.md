@@ -4,24 +4,52 @@ covers: [modules/console/src/**]
 
 # console
 
-One sentence: the one problem this module solves on its own. `make new-module` copies this working module; replace
-the `hello` command with the module's first real command and keep its quick start green.
+A read-only web view of a factory. It shows every run of every foreman with its state, origin, requester, pull
+request and age; one run's requests, stages, gates, checks, transcripts and trace; and the factory definition with
+a link to the file in Git, where it changes. It keeps no state: each page asks the foreman's, intake's and
+gatekeeper's APIs when it is opened. Temporal, the trace store and the dashboards keep their own UIs; the console
+links to them. Decision: [ADR 0072](../../docs/decisions/0072-console.md).
 
 ## Quick start
 
-This quick start is scenario `SCN-CONSOLE-001` and is tested on every change.
+This quick start is scenario `SCN-CONSOLE-001` and is tested on every change. It needs a running foreman
+([`modules/foreman`](../foreman/README.md)) with the API token `dev-token`, here on port 8081:
 
 ```sh
-npx @opensoftware/console hello Ada
+export CONSOLE_FOREMAN_URL=http://localhost:8081 CONSOLE_FOREMAN_TOKEN=dev-token
+npx @opensoftware/console serve
 ```
 
-It writes `$OUTPUT/hello.txt` with the text `Hello, Ada`.
+Open <http://localhost:8080>. The page lists the foreman's runs, the running ones first, and reloads itself every
+10 seconds.
 
 ## Commands
 
 | Command | What it does |
 | --- | --- |
-| `console hello <name>` | Write a greeting for `<name>` to `$OUTPUT/hello.txt`. |
+| `console serve` | Serve the pages below on `PORT`. Exits 2 without `CONSOLE_FOREMAN_URL`. |
+
+## Pages
+
+| Page | What it shows |
+| --- | --- |
+| `/` | The runs of every foreman: title, factory, state, source, requester, pull request and age. Runs that have not ended come first, the one that started last first, then the ended runs, the one that ended last first. A foreman that does not answer is named above the list. |
+| `/?state=<state>` | Only the runs in the state `running`, `blocked`, `complete`, `failed` or `cancelled`, as the foremen filter them. Another state answers 400. |
+| `/runs/<runId>` | One run: its state, factory and factory version, age, pull request, trace and Temporal history; its origin, or with `CONSOLE_INTAKE_URL` every request of its work item; and its stages as its evidence, each with its agent, state, transcript, gate, checks and the reason it failed. 404 when no foreman knows the run. |
+| `/factory` | The factory definition in `CONSOLE_FACTORY`: its name, description, providers and agents with their harness and model. |
+| `/factory/agents/<name>` | One agent's configuration, and the link to the file on the branch where it changes. 404 for an agent the factory does not declare. |
+
+Every page links the runs, the factory and the dashboards in `CONSOLE_LINKS`. The runs pages reload themselves every
+`CONSOLE_REFRESH` seconds. The console is read-only: it has no forms, and any method but `GET` and `HEAD` answers 405.
+It shows what the foreman and intake show, so run it behind your sign-in proxy, such as oauth2-proxy.
+
+Several factories: list each foreman in `CONSOLE_FOREMAN_URL`, comma-separated, and their tokens in the same order in
+`CONSOLE_FOREMAN_TOKEN`, or one token for all.
+
+Links: `CONSOLE_TRACE_URL` and `CONSOLE_SESSION_URL` are URL templates of the trace store, such as Langfuse or
+Phoenix, with `{runId}` and `{sessionId}`. The foreman sets the run's ID as `osf.run.id` on every run's traces
+([runlog](../runlog/README.md)), and a stage's harness session is its transcript. `CONSOLE_TEMPORAL_URL` links the
+run's history: `<url>/namespaces/<CONSOLE_TEMPORAL_NAMESPACE>/workflows/<runId>`.
 
 ## Configuration
 
@@ -29,7 +57,36 @@ It writes `$OUTPUT/hello.txt` with the text `Hello, Ada`.
 
 | Variable | Type | Default | Meaning |
 | --- | --- | --- | --- |
-| `OUTPUT` | string | `"."` | Folder the module writes its results to. |
+| `PORT` | string | `"8080"` | serve: the port the web pages are served on. |
+| `OSF_NOW` | string |  | The current time, like 2026-01-01T00:00:00Z, for the age of a run. Default: the clock. |
+| `CONSOLE_FOREMAN_URL` | string |  | serve: the base URL of a foreman's API, or several, comma-separated, one per factory. Required. |
+| `CONSOLE_FOREMAN_TOKEN` | string |  | serve: the foreman's FOREMAN_API_TOKEN, sent as Authorization: Bearer <token>; several, comma-separated, in the order of CONSOLE_FOREMAN_URL, or one for all. |
+| `CONSOLE_INTAKE_URL` | string |  | serve: the base URL of intake's API. Set, a run's page lists every request of its work item. |
+| `CONSOLE_INTAKE_TOKEN` | string |  | serve: intake's INTAKE_API_TOKEN. |
+| `CONSOLE_GATEKEEPER_URL` | string |  | serve: the base URL of gatekeeper's API. Set, a run's page shows each gate's state and who it waits for. |
+| `CONSOLE_GATEKEEPER_TOKEN` | string |  | serve: gatekeeper's GATEKEEPER_API_TOKEN. |
+| `CONSOLE_TRACE_URL` | string |  | serve: the link to a run's trace in the trace store, with {runId}, like https://langfuse.acme.dev/traces?run={runId}. |
+| `CONSOLE_SESSION_URL` | string |  | serve: the link to a stage's transcript, with {sessionId}, like https://langfuse.acme.dev/sessions/{sessionId}. |
+| `CONSOLE_TEMPORAL_URL` | string |  | serve: the base URL of the Temporal UI. Set, a run's page links its history. |
+| `CONSOLE_TEMPORAL_NAMESPACE` | string | `"default"` | serve: the Temporal namespace of the runs, the foreman's FOREMAN_TEMPORAL_NAMESPACE. |
+| `CONSOLE_LINKS` | string |  | serve: the dashboards every page links, as name=url, comma-separated, like Grafana=https://grafana.acme.dev. |
+| `CONSOLE_REFRESH` | string | `"10"` | serve: the seconds after which the browser reloads the runs pages. |
+| `CONSOLE_FACTORY` | string | `"factory.yaml"` | serve: the factory definition that /factory shows, read-only. |
+| `CONSOLE_FACTORY_PATH` | string | `"factory.yaml"` | serve: the path of the factory definition in its Git repository. |
+| `CONSOLE_REPOSITORY_URL` | string |  | serve: the web URL of the factory's Git repository, like https://github.com/acme/factory. Set, the configuration pages link the file. |
+| `CONSOLE_BRANCH` | string | `"main"` | serve: the branch where the factory definition changes. |
+
+## Releases
+
+release-please opens a release pull request from the Conventional Commits under `modules/console/`. Merging it
+creates the tag `console-v<version>`. The workflow `.github/workflows/publish-console.yml` then builds the package
+and publishes it to npm as `@opensoftware/console`. When the newest tag is missing on npm, the next run of the
+workflow on `main` publishes it. To publish a tag again, run the workflow by hand with the tag. The first release is
+`0.1.0`; until `1.0.0`, a breaking change raises the minor version.
+
+The one-time setup is the same as for contracts ([`contracts/README.md`](../../contracts/README.md#releases)): the
+GitHub environment `npm`, a token only for the first version, then a trusted publisher for the workflow
+`publish-console.yml`. No credential is stored in the repository.
 
 ## Scenarios
 
@@ -37,7 +94,31 @@ It writes `$OUTPUT/hello.txt` with the text `Hello, Ada`.
 
 | ID | Status | Scenario |
 | --- | --- | --- |
-| SCN-CONSOLE-001 | implemented | A new user runs the quick start |
-| SCN-CONSOLE-002 | implemented | The greeting names the user |
-| SCN-CONSOLE-003 | implemented | A greeting without a name shows the usage |
-| SCN-CONSOLE-004 | implemented | An unknown command shows the usage |
+| SCN-CONSOLE-001 | implemented | A new user opens the runs page of the quick start |
+| SCN-CONSOLE-002 | implemented | The help lists every command |
+| SCN-CONSOLE-003 | implemented | An unknown command shows the usage |
+| SCN-CONSOLE-004 | implemented | Serve without a foreman exits 2 and names the variable |
+| SCN-CONSOLE-005 | implemented | A run's row shows its title, source, requester, pull request and age |
+| SCN-CONSOLE-006 | implemented | The runs page lists the runs of two factories |
+| SCN-CONSOLE-007 | implemented | Runs that have not ended come first, the newest first |
+| SCN-CONSOLE-008 | implemented | A person filters the runs by the state "failed" |
+| SCN-CONSOLE-009 | implemented | The runs page links a filter for each of the five states |
+| SCN-CONSOLE-010 | implemented | An unknown state answers 400 and names the five states |
+| SCN-CONSOLE-011 | implemented | A foreman that does not answer is named, and the other foreman's runs are listed |
+| SCN-CONSOLE-012 | implemented | The runs page reloads itself every 10 seconds |
+| SCN-CONSOLE-013 | implemented | The console calls each foreman with its token |
+| SCN-CONSOLE-014 | implemented | A title with HTML is shown as text |
+| SCN-CONSOLE-015 | implemented | The run page shows the stages with their agent and state |
+| SCN-CONSOLE-016 | implemented | The run page links its Slack origin and its pull request |
+| SCN-CONSOLE-017 | implemented | With intake, the run page lists every request of the work item |
+| SCN-CONSOLE-018 | implemented | The run page links its trace and each stage's transcript |
+| SCN-CONSOLE-019 | implemented | The run page links its history in the Temporal UI |
+| SCN-CONSOLE-020 | implemented | The run page shows a stage's gate with its state and who it waits for |
+| SCN-CONSOLE-021 | implemented | The run page shows the checks a stage waits for and why a stage failed |
+| SCN-CONSOLE-022 | implemented | A run that no foreman knows answers 404 |
+| SCN-CONSOLE-023 | implemented | The factory page lists the agents with their harness and model |
+| SCN-CONSOLE-024 | implemented | An agent's page is read-only and links to the file and the branch in Git |
+| SCN-CONSOLE-025 | implemented | An agent that the factory does not declare answers 404 |
+| SCN-CONSOLE-026 | implemented | A POST to the console answers 405 |
+| SCN-CONSOLE-027 | implemented | Every page links the dashboards in "CONSOLE_LINKS" |
+| SCN-CONSOLE-028 | implemented | A foreman that cannot be reached is named on the runs page |

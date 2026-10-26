@@ -2,6 +2,7 @@
 // console <command>: the entry layer only parses arguments and calls the commands.
 import { parseArgs } from "node:util";
 import { type Command, runProgram } from "@opensoftware/cli";
+import { serve } from "./commands/serve.ts";
 
 const HELP = `Usage: console <command>
 
@@ -11,6 +12,5 @@ Commands:
 `;
 
 const { positionals, values } = parseArgs({ allowPositionals: true, options: { help: { type: "boolean" } } });
-const commands: Record<string, Command> = {};
-const chosen = positionals[0] ? commands[positionals[0]] : undefined;
-process.exitCode = await runProgram({ name: "console", usage: HELP, command: chosen, help: values.help });
+const serving: Command | undefined = positionals[0] === "serve" ? () => serve(process.env) : undefined;
+process.exitCode = await runProgram({ name: "console", usage: HELP, command: serving, help: values.help });
