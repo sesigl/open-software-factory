@@ -46,8 +46,8 @@ with the same work item.
 
 | Command | What it does |
 | --- | --- |
-| `intake serve` | Serve the work item API on `PORT`, Slack's events with `INTAKE_SLACK_TOKEN`, the forge's with `INTAKE_WEBHOOK_SECRET`, Sentry's with `INTAKE_SENTRY_SECRET`, and publish `work.received@v1` with `INTAKE_NATS_URL`. |
-| `intake mcp` | Serve the Factory MCP server on stdio for a local agent: the tools `submit_work` and `work_status` call the server at `INTAKE_URL`. |
+| `intake serve` | Serve the work item API on `PORT`, Slack's events with `INTAKE_SLACK_TOKEN`, the forge's with `INTAKE_WEBHOOK_SECRET`, Sentry's with `INTAKE_SENTRY_SECRET`, and, with `INTAKE_NATS_URL`, publish `work.received@v1` and follow the foreman's run events. |
+| `intake mcp` | Serve the Factory MCP server on stdio for a local agent: the tools `submit_work` and `work_status` call the server at `INTAKE_URL`, and `run_evidence` also the foreman at `INTAKE_FOREMAN_URL`. |
 
 ## API
 
@@ -55,7 +55,7 @@ with the same work item.
 | --- | --- |
 | `POST /v1/work-items` | Submit work: a work item without its `id`. 201 with the new work item, 200 with the work item that has the same dedupe key, 400 with a problem that names the field. |
 | `GET /v1/work-items?dedupeKey=<key>` | The work item with this dedupe key, such as an issue's link or `sentry:<issue ID>`. 404 when there is none, 400 without the key. |
-| `GET /v1/work-items/{workItemId}` | The work item, its `status` (`received`), `receivedAt`, and `requests`: the requester, origin and time of each submission, oldest first. 404 for a work item the server does not know. |
+| `GET /v1/work-items/{workItemId}` | The work item, its `status` ([Events](#events)), its `runId` once the foreman started its run, `receivedAt`, and `requests`: the requester, origin and time of each submission, oldest first. 404 for a work item the server does not know. |
 | `POST /slack/events` | Slack's Events API, with `INTAKE_SLACK_TOKEN`: a message that mentions the bot becomes a work item. |
 | `POST /forge/events` | The forge's webhook, with `INTAKE_WEBHOOK_SECRET`: an issue that gets the label `factory` becomes a work item. |
 | `POST /sentry/events` | Sentry's webhook, with `INTAKE_SENTRY_SECRET`: an alert about a fatal error becomes a `bug`. |
@@ -148,7 +148,13 @@ looks like this:
     "factory": {
       "command": "npx",
       "args": ["-y", "@opensoftware/intake", "mcp"],
-      "env": { "INTAKE_URL": "http://localhost:8080", "INTAKE_API_TOKEN": "dev-token", "INTAKE_REQUESTER": "github:varun" }
+      "env": {
+        "INTAKE_URL": "http://localhost:8080",
+        "INTAKE_API_TOKEN": "dev-token",
+        "INTAKE_REQUESTER": "github:varun",
+        "INTAKE_FOREMAN_URL": "http://localhost:8081",
+        "INTAKE_FOREMAN_TOKEN": "dev-token"
+      }
     }
   }
 }
@@ -158,8 +164,12 @@ looks like this:
 | --- | --- | --- |
 | `submit_work` | `title`, optional `description`, `type` (`idea`, `bug`, `task`, `automation`) and `dedupeKey` | The work item's view, as for `GET /v1/work-items/{id}`. The requester is the person in `INTAKE_REQUESTER`, the origin's source `mcp`, the default dedupe key `mcp:<requester>:<title>`. |
 | `work_status` | `id` | The work item's view. |
+| `run_evidence` | `id` | What the foreman recorded of the work item's run, its view from [`GET /v1/runs/{runId}`](../foreman/README.md#api): the run's state, factory version, pull request, and each stage with its agent, state, harness session, gate, checks and reason. |
 
 An answer of the server other than 200 or 201 is a tool error that names the status and the problem's detail.
+`run_evidence` reads the work item's `runId` from the server, then the run from the foreman at `INTAKE_FOREMAN_URL` with
+`INTAKE_FOREMAN_TOKEN`. A work item without a run, a foreman's answer other than 200, and a missing `INTAKE_FOREMAN_URL`
+are tool errors; the other tools work without it.
 
 ## Events
 
@@ -168,6 +178,20 @@ With `INTAKE_NATS_URL`, a new work item is written to the outbox table in the sa
 event's `id` is the work item's ID and its `data` the work item. While NATS is unreachable the events wait in the
 outbox and go out once it is back: after the next commit, when the server starts, or within a minute. A second
 request for the same work item publishes nothing.
+
+With `INTAKE_NATS_URL` the server also listens for the foreman's
+[`run.started@v1`](../../contracts/events/run-started/run-started.schema.json) on `osf.run.started.v1` and
+[`run.completed@v1`](../../contracts/events/run-completed/run-completed.schema.json) on `osf.run.completed.v1`, and the
+work item of a run follows it (ADR 0071):
+
+| Event | The work item's `status` |
+| --- | --- |
+| none yet | `received` |
+| `run.started@v1` | `running`, with the run's `runId` |
+| `run.completed@v1` with the outcome `succeeded`, `failed` or `cancelled` | `complete`, `failed` or `cancelled` |
+
+A `run.started@v1` that arrives after its run completed changes nothing. The subjects are core NATS: run events
+published while the server is down do not reach it. While NATS is unreachable the server tries again every 2 seconds.
 
 ## Configuration
 
@@ -180,7 +204,7 @@ request for the same work item publishes nothing.
 | `OSF_NOW` | string |  | The current time, like 2026-01-01T00:00:00Z, for the time a work item and a request were received. Default: the clock. |
 | `INTAKE_API_TOKEN` | string |  | serve: the token that callers of /v1 send as Authorization: Bearer <token>. Required. mcp: the token it sends to the server. Required. |
 | `INTAKE_DATABASE_URL` | string |  | serve: the PostgreSQL database of the work items, schema intake. Default: an embedded PostgreSQL in OSF_DATA. |
-| `INTAKE_NATS_URL` | string |  | serve: the NATS server for work.received@v1 on osf.work.received.v1. Unset: no events. |
+| `INTAKE_NATS_URL` | string |  | serve: the NATS server for work.received@v1 on osf.work.received.v1, and for the foreman's run.started@v1 and run.completed@v1, which move a work item's status (ADR 0071). Unset: no events. |
 | `INTAKE_SLACK_ADAPTER` | string | `"npx -y @opensoftware/channel-slack"` | serve: the command line of the channel port's slack adapter, which reads Slack's deliveries and replies (ADR 0063). |
 | `INTAKE_SLACK_URL` | string |  | serve: base URL of the Slack Web API, ending in a slash: the adapter's CHANNEL_API_URL. Default: the adapter's, https://slack.com/api/. |
 | `INTAKE_SLACK_TOKEN` | string |  | serve: Slack bot token with chat:write, the adapter's CHANNEL_TOKEN. Set, the server takes Slack's events at /slack/events. |
@@ -192,6 +216,8 @@ request for the same work item publishes nothing.
 | `INTAKE_SENTRY_CHANGE_URL` | string |  | serve: the link to the change of a Sentry alert, with {release} for the event's release, like https://github.com/acme/web/commit/{release}. Unset: no link to the change. |
 | `INTAKE_URL` | string |  | mcp: the base URL of intake serve, like http://localhost:8080. Required. |
 | `INTAKE_REQUESTER` | string |  | mcp: the person the agent works for, <source>:<id> like github:varun, the requester of its work. Required. |
+| `INTAKE_FOREMAN_URL` | string |  | mcp: the base URL of foreman serve, like http://localhost:8081, for the tool run_evidence (ADR 0071). Unset: run_evidence is an error that names it. |
+| `INTAKE_FOREMAN_TOKEN` | string |  | mcp: the token of foreman serve's API, its FOREMAN_API_TOKEN, sent with INTAKE_FOREMAN_URL. |
 
 ## Releases
 
@@ -239,3 +265,10 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-INTAKE-027 | implemented | A Sentry alert about an error that is not fatal makes no work item |
 | SCN-INTAKE-028 | implemented | A Sentry delivery with a wrong signature gets the status 401 |
 | SCN-INTAKE-029 | implemented | A work item is found by its dedupe key |
+| SCN-INTAKE-030 | implemented | A work item whose run started is running |
+| SCN-INTAKE-031 | implemented | A work item whose run succeeded is complete |
+| SCN-INTAKE-032 | implemented | A work item whose run failed is failed |
+| SCN-INTAKE-033 | implemented | A late "run.started@v1" leaves a completed work item complete |
+| SCN-INTAKE-034 | implemented | A local agent fetches the evidence of a work item's run through the Factory MCP server |
+| SCN-INTAKE-035 | implemented | The evidence of a work item without a run is a tool error |
+| SCN-INTAKE-036 | implemented | The evidence tool without the foreman's URL is a tool error that names the variable |

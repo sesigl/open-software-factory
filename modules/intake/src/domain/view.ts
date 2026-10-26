@@ -1,5 +1,5 @@
 // What the API shows of a work item, and the event a new one publishes.
-import type { WorkItem, WorkItemView, WorkReceived } from "@opensoftware/contracts";
+import { isValid, type WorkItem, type WorkItemView, type WorkReceived } from "@opensoftware/contracts";
 import { isoOf } from "./time.ts";
 
 /** One submission that asked for a work item. */
@@ -9,8 +9,12 @@ export interface Request {
   at: number;
 }
 
+export type Status = WorkItemView["status"];
+
 export interface Stored {
   workItem: WorkItem;
+  status: Status;
+  runId?: string;
   receivedAt: number;
   requests: Request[];
 }
@@ -18,7 +22,8 @@ export interface Stored {
 export function viewOf(stored: Stored): WorkItemView {
   return {
     workItem: stored.workItem,
-    status: "received",
+    status: stored.status,
+    ...(stored.runId ? { runId: stored.runId } : {}),
     receivedAt: isoOf(stored.receivedAt),
     requests: stored.requests.map(({ requester, origin, at }) => ({ requester, origin, receivedAt: isoOf(at) })),
   };
@@ -37,3 +42,24 @@ export const receivedEvent = (workItem: WorkItem, at: number): WorkReceived => (
   datacontenttype: "application/json",
   data: workItem,
 });
+
+/** The foreman's run events that move a work item on (ADR 0071). */
+export const RUN_SUBJECTS = ["osf.run.started.v1", "osf.run.completed.v1"];
+
+/** What a run event says about its work item: its run, and the status it moves to. */
+export interface RunFact {
+  workItemId: string;
+  runId: string;
+  status: Exclude<Status, "received">;
+}
+
+type RunEvent = { data: { runId: string; workItemId: string; outcome?: "succeeded" | "failed" | "cancelled" } };
+
+/** The fact of a "run.started@v1" or "run.completed@v1", or a problem for any other message. */
+export function runFactOf(event: unknown): RunFact | string {
+  const type = (event as { type?: unknown } | undefined)?.type;
+  const format = type === "run.started@v1" ? "run-started" : type === "run.completed@v1" ? "run-completed" : undefined;
+  if (!format || !isValid(format, event)) return `not a run.started@v1 or run.completed@v1: ${JSON.stringify(event)}`;
+  const { runId, workItemId, outcome } = (event as RunEvent).data;
+  return { workItemId, runId, status: !outcome ? "running" : outcome === "succeeded" ? "complete" : outcome };
+}
