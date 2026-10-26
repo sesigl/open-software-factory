@@ -606,7 +606,10 @@ read them for ideas, do not copy their company-specific rules.
     `gate.decided@v1`, steering and cancel, recovery after a restart, `work.received@v1` in and the new
     `run.started@v1` and `run.completed@v1` out; the factory version is the commit of `factory.yaml`. The testkit runs
     Temporal and NATS as pinned binaries without Docker.
-  - [ ] Sandboxes: each stage runs in a sandbox through the sandbox port (the quick start "on Docker").
+  - [x] Sandboxes (ADR 0068, `SCN-FORE-032` to `-041`, `SCN-TK-105` to `-108`): a stage whose agent declares `sandbox`
+    runs in a fresh sandbox of the adapter under `providers.sandbox` (`docker` by default, `FOREMAN_SANDBOXES`), built
+    from the agent's sandbox and secrets; the run's folder is copied in and out, the harness runs with `exec`, and the
+    sandbox is destroyed when the stage ends. `fakes.sandbox()` runs the port's commands on host folders.
   - [ ] A failing CI check stops the ship stage: the forge port's checks before a stage named in the definition.
   - [ ] The inference gateway per run (from T-14 above) and a person takes over a run (ORCH-007).
   - [ ] Runs listed and filtered by state (ORCH-008), and intake's work item status follows its run.

@@ -15,8 +15,27 @@ interface Running<T> {
 }
 
 const START_TIMEOUT_MS = 30_000;
+const START_ATTEMPTS = 3;
 
-export async function startTemporal(): Promise<Running<Temporal>> {
+/**
+ * Starts a server on free ports, and again on new ones when another process took a port between the pick and the
+ * bind: scenarios in parallel workers pick ports at the same time.
+ */
+async function onFreePorts<T>(attempt: () => Promise<Running<T>>): Promise<Running<T>> {
+  for (let tries = 1; ; tries++) {
+    try {
+      return await attempt();
+    } catch (error) {
+      if (tries >= START_ATTEMPTS || !/address already in use/.test((error as Error).message)) throw error;
+    }
+  }
+}
+
+export function startTemporal(): Promise<Running<Temporal>> {
+  return onFreePorts(startTemporalOnce);
+}
+
+async function startTemporalOnce(): Promise<Running<Temporal>> {
   const [port, httpPort, metricsPort] = [await freePort(), await freePort(), await freePort()];
   const httpUrl = `http://127.0.0.1:${httpPort}`;
   return start(
@@ -30,7 +49,11 @@ export async function startTemporal(): Promise<Running<Temporal>> {
   );
 }
 
-export async function startNats(): Promise<Running<Nats>> {
+export function startNats(): Promise<Running<Nats>> {
+  return onFreePorts(startNatsOnce);
+}
+
+async function startNatsOnce(): Promise<Running<Nats>> {
   const [port, monitorPort] = [await freePort(), await freePort()];
   return start(
     "nats-server",

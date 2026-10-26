@@ -1,6 +1,6 @@
 // A stage's agent through the harness port (ADR 0050, ADR 0067): the adapter runs as a program that speaks ACP on
 // stdio, and the foreman is its client. One session per stage, in the run's folder, with one prompt; a prompt sent
-// while the turn runs is a steering message.
+// while the turn runs is a steering message. In a sandbox, the program is the sandbox adapter's exec (ADR 0068).
 import { spawn } from "node:child_process";
 import { Readable, Writable } from "node:stream";
 import { client, ndJsonStream, PROTOCOL_VERSION } from "@agentclientprotocol/sdk";
@@ -16,15 +16,18 @@ export interface HarnessTurn {
 }
 
 export interface TurnOptions {
-  /** The adapter's command line. */
-  command: string;
+  /** The program and its arguments. */
+  command: string[];
+  /** The folder the program starts in. */
   cwd: string;
+  /** The session's folder, as the agent sees it. */
+  folder: string;
   env: Record<string, string | undefined>;
   prompt: string;
 }
 
 export async function startTurn(options: TurnOptions): Promise<HarnessTurn> {
-  const [file, ...args] = options.command.split(" ") as [string, ...string[]];
+  const [file, ...args] = options.command as [string, ...string[]];
   // The adapter's own messages go to the foreman's standard error.
   const child = spawn(file, args, { cwd: options.cwd, env: options.env, stdio: ["pipe", "pipe", "inherit"] });
   const exited = new Promise<string>((resolve) => {
@@ -53,10 +56,10 @@ export async function startTurn(options: TurnOptions): Promise<HarnessTurn> {
   try {
     const handshake = (async () => {
       await agent.request("initialize", { protocolVersion: PROTOCOL_VERSION, clientCapabilities: {} });
-      return agent.request("session/new", { cwd: options.cwd, mcpServers: [] });
+      return agent.request("session/new", { cwd: options.folder, mcpServers: [] });
     })();
     const answer = await Promise.race([handshake, exited]);
-    if (typeof answer === "string") throw new Error(`the harness ${options.command} exited`);
+    if (typeof answer === "string") throw new Error(`the harness ${options.command.join(" ")} exited`);
     const { sessionId } = answer;
     const send = (text: string) => agent.request("session/prompt", { sessionId, prompt: [{ type: "text", text }] });
     const turn = send(options.prompt).then(
