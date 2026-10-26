@@ -9,7 +9,7 @@ import {
 } from "@temporalio/client";
 import type { Factory } from "../adapters/factory.ts";
 import { firstView, type GateDecision, hasEnded, type RunView, runIdOf, signalOf } from "../domain/run.ts";
-import { factoryRun, gateSignal, steerSignal, steeringQuery, viewQuery } from "../workflows/run.ts";
+import { factoryRun, gateSignal, steeringQuery, steerSignal, viewQuery } from "../workflows/run.ts";
 
 export class Conflict extends Error {}
 
@@ -41,14 +41,10 @@ export function runs(options: {
 }): Runs {
   const { client, taskQueue } = options;
   const handle = (runId: string) => client.workflow.getHandle(runId);
-  const view = async (runId: string): Promise<RunView | undefined> => {
-    try {
-      return await handle(runId).query(viewQuery);
-    } catch (error) {
-      if (error instanceof WorkflowNotFoundError) return undefined;
-      throw error;
-    }
-  };
+  const view = (runId: string): Promise<RunView | undefined> =>
+    handle(runId)
+      .query(viewQuery)
+      .catch((error: Error) => (error instanceof WorkflowNotFoundError ? undefined : Promise.reject(error)));
   return {
     async start(document) {
       const workItem = checked<WorkItem>("work-item", document, "the body is not a work item");
@@ -86,11 +82,7 @@ export function runs(options: {
       return handle(runId).query(steeringQuery);
     },
     async decided(workItemId, decision) {
-      try {
-        await handle(runIdOf(workItemId)).signal(gateSignal, decision);
-      } catch (error) {
-        if (!(error instanceof WorkflowNotFoundError)) throw error;
-      }
+      await handle(runIdOf(workItemId)).signal(gateSignal, decision);
     },
   };
 }

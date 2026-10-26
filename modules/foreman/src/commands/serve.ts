@@ -108,16 +108,9 @@ export async function serve(env: Env) {
   const port = Number(env.PORT || 8080);
   await app.listen({ port, host: "0.0.0.0" });
   process.stdout.write(`foreman serves the run API on port ${port}, task queue ${taskQueue} at ${address}\n`);
-  await Promise.race([
-    running,
-    new Promise<void>((done) => {
-      process.once("SIGTERM", done);
-      process.once("SIGINT", done);
-    }),
-  ]);
-  await app.close();
-  worker.shutdown();
+  // Temporal's runtime stops the worker on SIGTERM and SIGINT; the server stops with it.
   await running;
+  await app.close();
   await bus?.close();
   return { lines: [] };
 }

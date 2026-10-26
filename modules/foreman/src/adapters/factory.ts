@@ -19,12 +19,7 @@ export interface Factory {
 export async function readFactory(path: string): Promise<Factory> {
   const file = resolve(path);
   const name = basename(file);
-  let document: unknown;
-  try {
-    document = parse(readFileSync(file, "utf8"));
-  } catch (error) {
-    throw new UsageError(`${name}: ${error instanceof Error ? error.message : String(error)}`);
-  }
+  const document: unknown = parse(readFileSync(file, "utf8"));
   const contract = validate("factory-definition", document);
   const problems = contract.length ? contract : stageProblems(document as FactoryDefinition);
   if (problems.length)

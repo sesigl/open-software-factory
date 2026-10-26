@@ -189,3 +189,7 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-021 | implemented | A run goes on from its history after the foreman restarts |
 | SCN-FORE-022 | implemented | A work item from intake starts a run |
 | SCN-FORE-023 | implemented | A run that ends publishes its outcome and its factory version |
+| SCN-FORE-024 | implemented | The foreman allows a tool call that the stage's agent asks about |
+| SCN-FORE-025 | implemented | A stage whose harness does not start fails the run |
+| SCN-FORE-026 | implemented | A factory outside a Git repository stops the server at the start |
+| SCN-FORE-027 | implemented | An event without a valid work item starts no run |

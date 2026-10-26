@@ -12,8 +12,10 @@ Commands:
 `;
 
 const { positionals, values } = parseArgs({ allowPositionals: true, options: { help: { type: "boolean" } } });
-const commands: Record<string, Command> = {
-  serve: () => serve(process.env),
-};
-const chosen = positionals[0] ? commands[positionals[0]] : undefined;
-process.exitCode = await runProgram({ name: "foreman", usage: HELP, command: chosen, help: values.help });
+const serving: Command = () => serve(process.env);
+process.exitCode = await runProgram({
+  name: "foreman",
+  usage: HELP,
+  command: positionals[0] === "serve" ? serving : undefined,
+  help: values.help,
+});

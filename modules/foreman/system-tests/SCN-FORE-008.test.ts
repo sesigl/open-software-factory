@@ -4,7 +4,7 @@ import { committed, readmeWork, servingCommit } from "./foreman.ts";
 scenario("SCN-FORE-008", async ({ sut, fakes, given, when, then }) => {
   let server: Awaited<ReturnType<typeof servingCommit>>;
   let commit = "";
-  await given('the README\'s "factory.yaml" is committed in the factory\'s repository', async () => {
+  await given("the README's \"factory.yaml\" is committed in the factory's repository", async () => {
     commit = await committed(sut, fakes);
   });
   await given('"foreman serve" runs it with a scripted harness that ends every turn', async () => {

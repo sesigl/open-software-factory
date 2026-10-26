@@ -92,6 +92,13 @@
       "initial-version": "0.1.0",
       "bump-minor-pre-major": true
     },
+    "modules/foreman": {
+      "release-type": "node",
+      "package-name": "@opensoftware/foreman",
+      "component": "foreman",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
+    },
     "modules/intake": {
       "release-type": "node",
       "package-name": "@opensoftware/intake",
