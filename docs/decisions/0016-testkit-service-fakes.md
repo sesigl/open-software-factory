@@ -17,6 +17,7 @@ documented configuration, never a database client.
 
 - The testkit depends on `testcontainers` 12.2.0. `fakes.postgres()`, `fakes.nats()`, `fakes.temporal()`,
   `fakes.s3()` and `fakes.forge()` each start one container for the scenario and stop it when the scenario ends.
+  Since ADR 0064, `fakes.forge()` starts one container per test process instead.
 - Pinned images:
 
   | Helper | Image | Started as |
