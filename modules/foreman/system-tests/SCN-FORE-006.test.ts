@@ -14,6 +14,10 @@ scenario("SCN-FORE-006", async ({ sut, fakes, given, when, then }) => {
 
   await then("the answer has the status 401", async () => {
     expect(answer.response.status).toBe(401);
+    expect(answer.error).toMatchObject({
+      title: "Unauthorized",
+      detail: "send Authorization: Bearer <FOREMAN_API_TOKEN>",
+    });
     expect(server.harness.prompts()).toEqual([]);
   });
 });

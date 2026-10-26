@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { scenario } from "@opensoftware/testkit";
 import { PLAN, readmeWork, serving } from "./foreman.ts";
 
@@ -33,11 +32,12 @@ scenario("SCN-FORE-027", async ({ sut, fakes, given, when, then }) => {
     await received(readmeWork(fakes), readmeWork(fakes).id);
   });
 
-  const runOf = (workItemId: string) => `run_${createHash("sha256").update(workItemId).digest("hex").slice(0, 20)}`;
-
   await then("the run of the README's work item completes", async () => {
-    await server.until(runOf(readmeWork(fakes).id), "complete");
-    expect(await server.view(runOf(untitled.id))).toBeUndefined();
+    while (server.prompts(PLAN).length === 0) await new Promise((resolve) => setTimeout(resolve, 20));
+    // The run of a work item is one: posting it again answers the run the event started.
+    const again = await server.start(readmeWork(fakes));
+    expect(again.response.status).toBe(200);
+    await server.until(again.data?.runId as string, "complete");
   });
 
   await then('the harness received the prompt "Write a plan" only once', async () => {

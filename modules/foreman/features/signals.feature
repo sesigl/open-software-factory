@@ -35,3 +35,10 @@ Feature: Signals
     Given the server completed a run of the README's "work.json"
     When a person posts the signal "pause"
     Then the answer has the status 400 and a problem that names "type"
+
+  @id=SCN-FORE-031 @status=implemented @realizes=SCN-FACTORY-ORCH-006
+  Scenario: Two steering messages reach the agent once each, in order
+    Given a run whose stage "implement" runs a turn that waits for "and add a test"
+    When a person posts the signal "steer" with the message "use the existing date helper"
+    And after the agent received it, the signal "steer" with the message "and add a test"
+    Then the agent received "use the existing date helper" and then "and add a test", each once

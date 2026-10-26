@@ -1,5 +1,7 @@
 // The Temporal workflow of a run (ADR 0004, ADR 0067). It runs in Temporal's sandbox, so it only asks the local
 // activity `next` for each step, waits, and hands each fact to `apply`; the logic is in the domain.
+// Stryker disable all: this file runs in Temporal's workflow sandbox, a V8 context of its own that Stryker's mutant
+// switch and coverage never reach; every mutant here would count as not run (ADR 0067).
 import {
   ActivityCancellationType,
   CancellationScope,

@@ -193,3 +193,7 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-025 | implemented | A stage whose harness does not start fails the run |
 | SCN-FORE-026 | implemented | A factory outside a Git repository stops the server at the start |
 | SCN-FORE-027 | implemented | An event without a valid work item starts no run |
+| SCN-FORE-028 | implemented | A stage's harness session carries the run |
+| SCN-FORE-029 | implemented | A run that fails publishes the outcome "failed" and the stage that failed |
+| SCN-FORE-030 | implemented | A cancelled run publishes the outcome "cancelled" |
+| SCN-FORE-031 | implemented | Two steering messages reach the agent once each, in order |

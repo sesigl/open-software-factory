@@ -60,9 +60,9 @@ export const hasEnded = (view: RunView): boolean => ENDED.has(view.state);
 
 export function nextStep(view: RunView, definition: Definition): Step {
   if (hasEnded(view)) return { kind: "end" };
+  // A run whose last stage succeeded is complete, so a run that goes on has a stage that did not succeed.
   const index = view.stages.findIndex((stage) => stage.state !== "succeeded");
-  const stage = view.stages[index];
-  if (!stage) return { kind: "end" };
+  const stage = view.stages[index] as StageView;
   if (stage.state === "blocked" && stage.gateId) return { kind: "await-gate", index, gateId: stage.gateId };
   if (definition.stages[index]?.gate && !stage.gateId) return { kind: "request-gate", index };
   return { kind: "run-stage", index };
@@ -77,7 +77,7 @@ export function apply(view: RunView, fact: Fact, at: string): RunView {
       return gate(next, fact, end);
     case "stage-started": {
       Object.assign(next.stages[fact.index] as StageView, { state: "running", startedAt: at });
-      return { ...next, state: "running" };
+      return next;
     }
     case "stage-ended": {
       const state = stageStateOf(fact.stopReason);

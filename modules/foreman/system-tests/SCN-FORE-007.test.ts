@@ -15,7 +15,7 @@ scenario("SCN-FORE-007", async ({ sut, fakes, given, when, then }) => {
 
   await then('the answer has the status 400 and a problem that names "title"', async () => {
     expect(answer.response.status).toBe(400);
-    expect(answer.error).toMatchObject({ status: 400, detail: expect.stringContaining("title") });
+    expect(answer.error).toMatchObject({ title: "Bad request", status: 400, detail: expect.stringContaining("title") });
     expect(server.harness.prompts()).toEqual([]);
   });
 });

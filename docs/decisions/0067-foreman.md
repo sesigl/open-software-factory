@@ -89,6 +89,10 @@ come in later slices; `TODO.md` lists them.
   the Temporal workflow API, because it runs in Temporal's sandbox.
 - **The workflow bundle.** `pnpm build` bundles the workflow code once with the SDK's `bundleWorkflowCode` into
   `dist/workflows.bundle.js`; the worker loads it instead of bundling at each start, which takes seconds.
+  The workflow file runs in the sandbox's own V8 context, where Stryker's mutant switch and coverage do not reach,
+  so it disables mutation for itself (`// Stryker disable all`) and keeps no logic: the order of steps, the result
+  of each fact and the events are in `domain`, which the local activities `next` and `apply` run in the worker's
+  thread, where mutation testing reaches them.
 - **Temporal and NATS in tests run as binaries on the host.** `fakes.temporal()` starts `temporal server start-dev`
   (Temporal CLI 1.4.1, in-memory SQLite) and `fakes.nats()` starts `nats-server -js` (2.11.9), each as a process on
   127.0.0.1 with free ports and a temporary folder, stopped at the end of the scenario. `make install` downloads both,
