@@ -548,7 +548,7 @@ read them for ideas, do not copy their company-specific rules.
     messages newest first (ADR 0062, `SCN-CHANNEL-010`, `SCN-CSLACK-002` to `-004`, `SCN-CKIT-008` to `-009`,
     `SCN-FORGE-027` to `-029`, `SCN-FGITHUB-001`, `SCN-GATE-059` to `-062`, `SCN-TK-097` to `-100`).
 
-### [ ] T-16 · intake
+### [x] T-16 · intake
 
 - **Tier / language / path / prefix:** optional · TS · `modules/intake/` · `SCN-INTAKE`
 - **Alone:** one deduplicated inbox for agent work from all tools, with links back to the origin.
@@ -572,8 +572,8 @@ read them for ideas, do not copy their company-specific rules.
     `INTAKE_FORGE_ADAPTER`, and an issue labeled `factory` becomes a work item with the issue's link as its dedupe key;
     a Slack mention that links an issue joins that issue's work item; `POST /sentry/events` turns a fatal Sentry alert
     into a `bug` that links the error and the change; `fakes.github` and `fakes.forge` open and label issues.
-  - [ ] This repository's issues reach intake (the "Done when"): an intake with a public URL, and the webhook of
-    `sesigl/open-software-factory` for `issue.labeled` to its `/forge/events`. Ask the owner where intake runs.
+  - Moved: this repository's issues reach intake (the "Done when"), to T-21, because it needs intake at a public
+    URL, and the owner chose to defer hosting until the foreman acts on work items.
   - Moved: the Factory MCP server fetches a run's evidence, to T-17, because only the foreman records runs.
 
 ### [ ] T-17 · foreman
@@ -652,6 +652,9 @@ owner before each slice: which model or service, and its budget.
   - [ ] observer (from T-10): a nightly job runs `observer analyze` on the scores of the scorekit slice above and
     `observer propose` for the top problem with a real model; done when one observer pull request to this repository
     is merged and `observer check` measures its effect (ADR 0046).
+  - [ ] intake (from T-16): run `intake serve` at a public URL and point the `issues` webhook of
+    `sesigl/open-software-factory` at its `/forge/events`; done when an issue labeled `factory` here creates a work
+    item (ADR 0065). Ask the owner where intake runs.
   - [ ] harness (from T-12): one SMOKE-PAID run each for claude-code, codex and opencode with a real model; done when
     `make smoke-paid` passes for the three adapters (ADR 0052, ADR 0053).
 
