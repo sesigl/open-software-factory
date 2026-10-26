@@ -41,3 +41,16 @@ Feature: Runs
     Given "foreman serve" runs the README's "factory.yaml"
     When a program posts the README's "work.json" without "title" to "/v1/runs" with the API token
     Then the answer has the status 400 and a problem that names "title"
+
+  @id=SCN-FORE-024 @status=implemented
+  Scenario: The foreman allows a tool call that the stage's agent asks about
+    Given "foreman serve" runs the README's "factory.yaml" with a scripted harness whose "plan" turn asks to edit "plan.md"
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then the harness shows the tool call "edit plan.md" allowed
+    And the run's folder holds the "plan.md" the agent wrote
+
+  @id=SCN-FORE-025 @status=implemented
+  Scenario: A stage whose harness does not start fails the run
+    Given "foreman serve" runs the README's "factory.yaml" with "FOREMAN_HARNESSES" naming a program that does not exist
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then "/v1/runs/<id>" shows the state "failed" with the stage "plan" "failed" and the stage "implement" "pending"

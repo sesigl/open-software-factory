@@ -3,8 +3,9 @@
 import { type ChildProcess, spawn } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { repoRoot } from "../support/module.ts";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { repoRoot, workspaceOf } from "../support/module.ts";
 import { freePort } from "../support/server.ts";
 import type { Nats, Temporal } from "./services.ts";
 
@@ -39,9 +40,10 @@ export async function startNats(): Promise<Running<Nats>> {
   );
 }
 
+/** The pinned binary of the workspace that runs the scenario or holds the testkit, else the name for PATH. */
 function program(name: string): string {
-  const pinned = join(repoRoot(), ".tools", "bin", name);
-  return existsSync(pinned) ? pinned : name;
+  const roots = [repoRoot(), workspaceOf(dirname(fileURLToPath(import.meta.url))) ?? repoRoot()];
+  return roots.map((root) => join(root, ".tools", "bin", name)).find(existsSync) ?? name;
 }
 
 async function start<T>(

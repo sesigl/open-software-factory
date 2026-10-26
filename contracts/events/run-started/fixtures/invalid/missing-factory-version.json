@@ -10,10 +10,7 @@
     "runId": "run_6e0f4c4b9d2a1f3e5c7b",
     "workItemId": "wi_3c5e7a9b1d2f4a6c8e0b",
     "factory": "hello",
-    "stages": [
-      "plan",
-      "implement"
-    ],
+    "stages": ["plan", "implement"],
     "startedAt": "2026-10-19T08:10:00Z",
     "requester": {
       "kind": "person",

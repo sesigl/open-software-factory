@@ -30,3 +30,10 @@ Feature: Factory definition
     When the user runs "foreman serve" without "FOREMAN_API_TOKEN"
     Then the command exits with code 2
     And the output contains "FOREMAN_API_TOKEN"
+
+  @id=SCN-FORE-026 @status=implemented
+  Scenario: A factory outside a Git repository stops the server at the start
+    Given the README's "factory.yaml" and its prompts in a folder outside any Git repository
+    When the user runs "foreman serve" with "FOREMAN_FACTORY" set to that "factory.yaml"
+    Then the command exits with code 2
+    And the output contains "factory.yaml: commit it in a Git repository"

@@ -11,7 +11,7 @@ export const SUBJECTS = {
 
 export interface Bus {
   publish(subject: string, event: unknown): Promise<void>;
-  /** Calls `handle` with each message's JSON on the subject; a message that is not JSON is skipped. */
+  /** Calls `handle` with each message's JSON on the subject; a message that is not JSON or fails is a warning. */
   subscribe(subject: string, handle: (event: unknown) => Promise<void>): void;
   close(): Promise<void>;
 }
@@ -25,17 +25,10 @@ export async function openBus(url: string, warn: (text: string) => void): Promis
     },
     subscribe(subject, handle) {
       connection.subscribe(subject, {
-        callback: (error, message) => {
-          if (error) return;
-          let event: unknown;
-          try {
-            event = message.json();
-          } catch {
-            return warn(`${subject}: a message that is not JSON`);
-          }
-          handle(event).catch((failure: unknown) =>
-            warn(`${subject}: ${failure instanceof Error ? failure.message : String(failure)}`),
-          );
+        callback: (_error, message) => {
+          Promise.resolve()
+            .then(() => handle(message.json()))
+            .catch((failure: Error) => warn(`${subject}: ${failure.message}`));
         },
       });
     },

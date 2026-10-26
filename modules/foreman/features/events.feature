@@ -15,3 +15,11 @@ Feature: Events
     Given "foreman serve" runs the committed README's "factory.yaml" with "FOREMAN_NATS_URL" set to a NATS server
     When a program posts the README's "work.json" to "/v1/runs" with the API token
     Then the server publishes "run.completed@v1" with the outcome "succeeded", the requester and that commit as the factory version
+
+  @id=SCN-FORE-027 @status=implemented
+  Scenario: An event without a valid work item starts no run
+    Given "foreman serve" runs the README's "factory.yaml" with "FOREMAN_NATS_URL" set to a NATS server
+    When intake publishes "work.received@v1" with a work item without a title
+    And then "work.received@v1" with the README's "work.json"
+    Then the run of the README's work item completes
+    And the harness received the prompt "Write a plan" only once

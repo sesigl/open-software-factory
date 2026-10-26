@@ -113,8 +113,10 @@ come in later slices; `TODO.md` lists them.
 
 ## Prior art
 
-- Temporal (server and TypeScript SDK `@temporalio/*` 1.24, MIT, Temporal Technologies, very active): adopted, as
-  ADR 0004 decided. The Temporal CLI 1.4.1 (MIT) runs the dev server in tests.
+- Temporal (server and TypeScript SDK 1.24, MIT, Temporal Technologies, very active): adopted, as ADR 0004 decided:
+  `@temporalio/client` starts, queries and signals runs, `@temporalio/worker` runs the workflow and its activities and
+  bundles the workflow code, `@temporalio/workflow` is the workflow's API, and `@temporalio/activity` gives an
+  activity its heartbeat and cancel. The Temporal CLI 1.4.1 (MIT) runs the dev server in tests.
 - OpenHands (MIT, very active): an agent platform with its own controller. Checked, not adopted as the core, as T-17
   says; it can join later as one more harness.
 - Argo Workflows and Tekton (Apache-2.0, active): pipelines on Kubernetes. Checked, not adopted: no human gates or

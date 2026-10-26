@@ -90,7 +90,8 @@ export function apply(view: RunView, fact: Fact, at: string): RunView {
     case "error": {
       const stopped: StageState = fact.kind === "cancelled" ? "cancelled" : "failed";
       for (const stage of next.stages)
-        if (stage.state === "running" || stage.state === "blocked") Object.assign(stage, { state: stopped, endedAt: at });
+        if (stage.state === "running" || stage.state === "blocked")
+          Object.assign(stage, { state: stopped, endedAt: at });
       return hasEnded(view) ? view : end(fact.kind === "cancelled" ? "cancelled" : "failed");
     }
   }

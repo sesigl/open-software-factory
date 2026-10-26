@@ -9,7 +9,10 @@ scenario("SCN-FORE-009", async ({ sut, fakes, given, when, then }) => {
 
   await given('a new commit adds the stage "review" to "factory.yaml"', async () => {
     const reviewed = gatedFactory(fakes)
-      .replace("workflow:\n", "  review:\n    harness: acp\n    model: routes/default\n    prompt: ./agents/implement.md\nworkflow:\n")
+      .replace(
+        "workflow:\n",
+        "  review:\n    harness: acp\n    model: routes/default\n    prompt: ./agents/implement.md\nworkflow:\n",
+      )
       .concat("  - stage: review\n");
     await sut.files.put("$INPUT/factory.yaml", reviewed);
     await sut.git.commit("a review stage");

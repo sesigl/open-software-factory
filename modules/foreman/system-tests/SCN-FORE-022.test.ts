@@ -34,12 +34,13 @@ scenario("SCN-FORE-022", async ({ sut, fakes, given, when, then }) => {
         source: "/osf/foreman",
         data: { workItemId: readmeWork(fakes).id, factory: "hello", stages: ["plan", "implement"] },
       });
-      runId = (started?.data as { runId: string }).runId;
+      runId = (started?.data as { runId: string } | undefined)?.runId as string;
       expect(started?.id).toBe(`${runId}.started`);
     },
   );
 
   await then('"/v1/runs/<id>" of that run shows the state "complete"', async () => {
-    await server.until(runId, "complete");
+    const view = await server.until(runId, "complete");
+    expect(view.workItem.id).toBe(readmeWork(fakes).id);
   });
 });

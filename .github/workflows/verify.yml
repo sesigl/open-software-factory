@@ -85,6 +85,9 @@ jobs:
             filter: "@opensoftware/gatekeeper"
           - suite: intake
             filter: "@opensoftware/intake"
+          # Each scenario starts the Temporal dev server and runs the scripted harness behind harness-acp (ADR 0067).
+          - suite: foreman
+            filter: "@opensoftware/foreman"
           # Each scenario starts sandboxes of the test template behind iron-proxy (ADR 0054).
           - suite: sandbox-docker
             filter: "@opensoftware/sandbox-docker"
@@ -103,7 +106,7 @@ jobs:
             images: forge
           # Every other package, so a new module runs without a change here.
           - suite: rest
-            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper !@opensoftware/intake !@opensoftware/sandbox-docker !@opensoftware/sandbox-kubernetes !@opensoftware/inference-litellm !@opensoftware/forge-forgejo"
+            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper !@opensoftware/intake !@opensoftware/foreman !@opensoftware/sandbox-docker !@opensoftware/sandbox-kubernetes !@opensoftware/inference-litellm !@opensoftware/forge-forgejo"
     steps:
       - uses: actions/checkout@v5
         with:
