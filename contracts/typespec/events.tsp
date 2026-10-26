@@ -60,6 +60,9 @@ model PrReviewed is CloudEvent<"pr.reviewed@v1", PrReviewedData>;
 /** forge adapters: a pull request was merged or closed without a merge. */
 model PrClosed is CloudEvent<"pr.closed@v1", PrClosedData>;
 
+/** forge adapters: a label was added to an issue. */
+model IssueLabeled is CloudEvent<"issue.labeled@v1", IssueLabeledData>;
+
 model RunCompletedData {
   runId: Identifier;
   workItemId: Identifier;
@@ -165,4 +168,28 @@ model PrClosedData {
   merged: boolean;
 
   mergeCommit?: CommitHash;
+}
+
+model IssueLabeledData {
+  /** The issue. */
+  url: url;
+
+  repository: url;
+
+  @minValue(1)
+  number: safeint;
+
+  @minLength(1)
+  title: string;
+
+  body?: string;
+
+  /** The person who opened the issue. */
+  author: Actor;
+
+  /** Every label of the issue after the change. */
+  labels: string[];
+
+  /** The label that was added, when the forge names it. */
+  label?: string;
 }

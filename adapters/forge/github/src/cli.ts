@@ -24,7 +24,7 @@ Commands:
                                                          print {"id", "url", "events", "active"}.
   hooks <repo>                                           Print each webhook of the repository.
   unhook <repo> <id>                                     Remove a webhook; print {"id", "removed"}.
-  event <delivery.json>                                  Print the delivery's pull request CloudEvent, if any.
+  event <delivery.json>                                  Print the delivery's pull request or issue CloudEvent.
 
 A repository is <owner>/<name>. FORGE_URL is GitHub's API, by default https://api.github.com.
 `;

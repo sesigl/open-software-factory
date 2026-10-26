@@ -27,6 +27,7 @@ export const FORMATS: readonly Format[] = [
   format("events/pr-opened", "PrOpened"),
   format("events/pr-reviewed", "PrReviewed"),
   format("events/pr-closed", "PrClosed"),
+  format("events/issue-labeled", "IssueLabeled"),
 ];
 
 export function formatNamed(name: string): Format | undefined {

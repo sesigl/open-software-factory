@@ -149,7 +149,9 @@ Every server, client and subscription stops when the scenario ends, before the f
   list the repository's `pullRequests` (title, body, head and base branch, state, URL) a module opened, and read a
   `file` on a branch ([ADR 0046](../../docs/decisions/0046-observer.md)). It can `createBranch` with a commit of
   files, list the `branches` with their head commits and the `hooks` with their URL, events and state, and `review` a
-  pull request as the person `reviewer` (`APPROVED`, `REQUEST_CHANGES` or `COMMENT`). Its webhooks reach a fake for
+  pull request as the person `reviewer` (`APPROVED`, `REQUEST_CHANGES` or `COMMENT`). It can `openIssue` and `label`
+  an issue, which creates the label when the repository has none of that name
+  ([ADR 0065](../../docs/decisions/0065-intake-issues-and-alerts.md)). Its webhooks reach a fake for
   containers at `host.docker.internal`, so a test receives a real delivery
   ([ADR 0057](../../docs/decisions/0057-forge-port.md)).
 - `fakes.github()`: an in-process fake of the part of GitHub's REST API a forge client calls, with the same interface
@@ -159,12 +161,19 @@ Every server, client and subscription stops when the scenario ends, before the f
   read), three-way merges with conflicts, commit statuses and the combined status, comments, reviews, branch
   protection that holds for admins only with `enforce_admins`, and webhooks, which it lists, updates and deletes: a
   signed `ping` when one is created, then
-  `pull_request`, `pull_request_review` and `issue_comment` deliveries with `X-Hub-Signature-256`, sent only to URLs on
+  `pull_request`, `pull_request_review`, `issue_comment` and `issues` (`opened`, `labeled`) deliveries with
+  `X-Hub-Signature-256`, sent only to URLs on
   `127.0.0.1` or `localhost`. IDs, SHAs and times come from counters and the fixed clock. A call it does not know
   answers 404 and fails the scenario. For a chat client, `GET /user` answers the token's user, a pull request's
   comments can be listed, `say(pr, text, as)` comments as a person (`reviewer` by default) and delivers the
   `issue_comment` event, and `conversation(pr)` gives each comment with its author
-  ([ADR 0059](../../docs/decisions/0059-channel-port.md)).
+  ([ADR 0059](../../docs/decisions/0059-channel-port.md)). `openIssue` and `label` keep issues numbered with the pull
+  requests, and `GET /repos/{owner}/{repo}/issues/{number}` answers one with its labels (ADR 0065).
+- `fakes.sentry()`: a fake of Sentry's integration platform with a `clientSecret`. `alert(url, {title, level,
+  release, rule})` sends the URL an `event_alert` of the rule (default "Fatal errors") signed in
+  `Sentry-Hook-Signature` with the client secret, or with a third argument instead, and gives the Sentry issue's ID,
+  the event's link and the webhook's status. IDs come from a counter; it sends only to `127.0.0.1` or `localhost`
+  ([ADR 0065](../../docs/decisions/0065-intake-issues-and-alerts.md)).
 - `fakes.collector(config)`: the real OpenTelemetry Collector Contrib in a container, running the config text a
   module wrote ([ADR 0025](../../docs/decisions/0025-runlog-collector-config-pack.md)). The config receives OTLP/HTTP
   on `0.0.0.0:4318` and exports to `${env:OTEL_EXPORTER_OTLP_ENDPOINT}`, which the fake points at its own receiver.
@@ -342,3 +351,6 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-099 | implemented | fakes.github has a token like a GitHub Actions token that may not read its user |
 | SCN-TK-100 | implemented | fakes.slack lists the messages at the top of a channel newest first, without the replies in threads |
 | SCN-TK-101 | implemented | fakes.forge gives a later scenario the same forge without the repositories of the earlier one |
+| SCN-TK-102 | implemented | fakes.github answers an issue that a test opened and labeled |
+| SCN-TK-103 | implemented | fakes.forge opens an issue and adds a label to it |
+| SCN-TK-104 | implemented | fakes.sentry sends a module's webhook an alert signed with the integration's client secret |

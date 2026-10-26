@@ -24,6 +24,15 @@ namespace IntakeApi {
     | GatekeeperApi.Failure<400>
     | GatekeeperApi.Failure<401>;
 
+  /** The work item with this dedupe key, such as an issue's link (ADR 0065). */
+  @route("/v1/work-items")
+  @get
+  op findWorkItem(@query dedupeKey: string):
+    | WorkItemView
+    | GatekeeperApi.Failure<400>
+    | GatekeeperApi.Failure<401>
+    | GatekeeperApi.Failure<404>;
+
   /** A work item, its status and every request that asked for it. */
   @route("/v1/work-items/{workItemId}")
   @get

@@ -52,7 +52,11 @@ What exists:
   `sentry` with the event's link and the Sentry issue's ID, and the dedupe key `sentry:<issue ID>`. Its links are the
   error in Sentry and, with `INTAKE_SENTRY_CHANGE_URL`, the change: that template with `{release}` replaced by the
   event's release. Any other delivery gets 200 and makes nothing.
-- **The testkit** gets issues: `openIssue(repository, {title, body})` and `label(repository, number, name)` on both
+- **`GET /v1/work-items?dedupeKey=<key>`** answers the work item with that key, or 404, so a client that knows an
+  issue's link or a Sentry issue finds its work item without knowing how the ID is made. The operation is added to
+  `contracts/typespec/intake-api.tsp`; a new path is not breaking.
+- **The testkit** gets `fakes.sentry()`, which sends a webhook the `event_alert` of a rule, signed with its client
+  secret, with issue IDs from a counter. It also gets issues: `openIssue(repository, {title, body})` and `label(repository, number, name)` on both
   fakes. `fakes.github` answers `GET /repos/{owner}/{repo}/issues/{number}` and delivers `issues` with the action
   `labeled`; `fakes.forge` calls Forgejo, which delivers `issue_label` itself.
 
