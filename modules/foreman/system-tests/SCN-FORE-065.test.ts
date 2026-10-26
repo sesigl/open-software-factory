@@ -35,5 +35,8 @@ scenario("SCN-FORE-065", async ({ sut, fakes, given, when, then }) => {
     expect(answer.data?.runs.map(({ runId, state, workItem }) => ({ runId, state, title: workItem.title }))).toEqual([
       { runId: failed, state: "failed", title: "Import reports from CSV" },
     ]);
+    // The other states are known too, and no run is in them.
+    for (const state of ["running", "blocked", "cancelled"])
+      expect(await server.list(state).then(({ response, data }) => [response.status, data?.runs])).toEqual([200, []]);
   });
 });

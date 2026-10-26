@@ -8,6 +8,13 @@ import { packageVersion } from "@opensoftware/cli";
 import { type Answer, type Api, foremanRun, intakeApi } from "../adapters/api.ts";
 import { type Env, required } from "./env.ts";
 
+/** The input of the tools that read one work item. */
+const BY_ID = {
+  type: "object" as const,
+  properties: { id: { type: "string", description: "The work item's ID, like wi_…" } },
+  required: ["id"],
+};
+
 const TOOLS = [
   {
     name: "submit_work",
@@ -27,22 +34,14 @@ const TOOLS = [
   {
     name: "work_status",
     description: "The state of a work item and every request that asked for it.",
-    inputSchema: {
-      type: "object" as const,
-      properties: { id: { type: "string", description: "The work item's ID, like wi_…" } },
-      required: ["id"],
-    },
+    inputSchema: BY_ID,
   },
   {
     name: "run_evidence",
     description:
       "What the foreman recorded of a work item's run: its state, factory version, pull request, and each stage with " +
       "its agent, state, harness session, gate, checks and reason.",
-    inputSchema: {
-      type: "object" as const,
-      properties: { id: { type: "string", description: "The work item's ID, like wi_…" } },
-      required: ["id"],
-    },
+    inputSchema: BY_ID,
   },
 ];
 
@@ -63,7 +62,7 @@ async function evidence(api: Api, env: Env, id: string) {
   if (answer.status !== 200) return toolResult(answer);
   const { runId } = answer.body as { runId?: string };
   if (!runId) return toolError(`work item ${id} has no run yet`);
-  return toolResult(await foremanRun(foreman, env.INTAKE_FOREMAN_TOKEN ?? "", runId), "the foreman");
+  return toolResult(await foremanRun(foreman, `${env.INTAKE_FOREMAN_TOKEN}`, runId), "the foreman");
 }
 
 export async function mcp(env: Env) {

@@ -25,10 +25,8 @@ scenario("SCN-FORE-064", async ({ sut, fakes, given, when, then }) => {
 
   await then('the answer lists both runs in the state "complete", each with its work item\'s title', async () => {
     expect(started.map(({ title }) => title)).toEqual([TITLE, "Import reports from CSV"]);
-    // Both runs started at the testkit's fixed time, so their run IDs order them.
-    const expected = started
-      .map((run) => ({ ...run, state: "complete" }))
-      .sort((a, b) => a.runId.localeCompare(b.runId));
+    // The run that ended last comes first.
+    const expected = started.map((run) => ({ ...run, state: "complete" })).reverse();
     expect(runs.map(({ runId, state, workItem }) => ({ runId, title: workItem.title, state }))).toEqual(expected);
   });
 });

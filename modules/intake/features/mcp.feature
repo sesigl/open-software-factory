@@ -47,3 +47,9 @@ Feature: The Factory MCP server
     Given the server received the README's "work.json" and "intake mcp" is connected to it without "INTAKE_FOREMAN_URL"
     When the agent calls the tool "run_evidence" with the work item's ID
     Then the tool answers an error that says "set INTAKE_FOREMAN_URL"
+
+  @id=SCN-INTAKE-037 @status=implemented
+  Scenario: The Factory MCP server lists the tool "run_evidence"
+    Given the server runs and "intake mcp" is connected to it as "github:varun"
+    When the agent lists the tools
+    Then the tools are "submit_work", "work_status" and "run_evidence", which takes the work item's "id"

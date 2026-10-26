@@ -26,8 +26,8 @@ What exists:
 
 ### foreman: the run list
 
-- **`GET /v1/runs`** answers `{ "runs": [RunView, ...] }`: every run of the server's task queue, newest first by
-  `startedAt`, then by `runId`. `?state=` with one of `running`, `blocked`, `complete`, `failed` and `cancelled`
+- **`GET /v1/runs`** answers `{ "runs": [RunView, ...] }`: every run of the server's task queue in the order of
+  Temporal's visibility: running runs first, then the runs that ended, the one that ended last first. `?state=` with one of `running`, `blocked`, `complete`, `failed` and `cancelled`
   keeps the runs in that state. Another value answers 400 with a problem that names `state`.
 - **From Temporal's visibility.** The server lists the workflows of the type `factoryRun` on its task queue with
   Temporal's list API. A workflow that closed returns its last view as its result, so the server reads that result;
