@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/sesigl/open-software-factory/compare/foreman-v0.1.0...foreman-v0.2.0) (2026-10-26)
+
+
+### Features
+
+* **foreman:** T-17 a failing CI check stops the stage that waits for it ([#124](https://github.com/sesigl/open-software-factory/issues/124)) ([dbb239b](https://github.com/sesigl/open-software-factory/commit/dbb239b86ccaa2f9b8dfafd1191666d8ea6003e6))
+
 ## 0.1.0 (2026-10-26)
 
 

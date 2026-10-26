@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/sesigl/open-software-factory/compare/contracts-v1.7.0...contracts-v1.8.0) (2026-10-26)
+
+
+### Features
+
+* **foreman:** T-17 a failing CI check stops the stage that waits for it ([#124](https://github.com/sesigl/open-software-factory/issues/124)) ([dbb239b](https://github.com/sesigl/open-software-factory/commit/dbb239b86ccaa2f9b8dfafd1191666d8ea6003e6))
+
 ## [1.7.0](https://github.com/sesigl/open-software-factory/compare/contracts-v1.6.0...contracts-v1.7.0) (2026-10-26)
 
 
