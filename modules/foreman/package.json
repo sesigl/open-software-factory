@@ -1,0 +1,34 @@
+{
+  "name": "@opensoftware/foreman",
+  "version": "0.0.0",
+  "private": true,
+  "description": "foreman: one sentence from the README.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "foreman": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "vitest run",
+    "docs": "node ../../tools/bin/osf.ts docs .",
+    "mutation": "node ../../tools/bin/osf.ts mutation ."
+  },
+  "devDependencies": {
+    "@opensoftware/testkit": "workspace:*"
+  },
+  "dependencies": {
+    "@agentclientprotocol/sdk": "1.9.0",
+    "@nats-io/transport-node": "3.4.0",
+    "@opensoftware/cli": "workspace:*",
+    "@opensoftware/contracts": "workspace:*",
+    "@temporalio/activity": "1.24.0",
+    "@temporalio/client": "1.24.0",
+    "@temporalio/worker": "1.24.0",
+    "@temporalio/workflow": "1.24.0",
+    "fastify": "5.12.7",
+    "yaml": "2.9.1"
+  }
+}
