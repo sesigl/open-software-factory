@@ -9,6 +9,8 @@ export const GATE = "g0a1b2c3d4e5f6a7b";
 export const PLAN = "Write a plan";
 export const IMPLEMENT = "Implement plan.md";
 export const TITLE = "Export reports as CSV";
+/** How long a scenario waits for a run or an event; a run takes seconds, a busy runner (a mutation run) longer. */
+export const WAIT_MS = 45_000;
 
 /** The fenced blocks of the README that name a file, like ```json work.json. */
 export function readmeFiles(fakes: Fakes): Record<string, string> {
@@ -105,7 +107,7 @@ export async function servingCommit(sut: Sut, fakes: Fakes, commit: string, setu
         headers: AUTH,
       }),
     /** Reads the run until it is in the state, and returns that view. */
-    async until(runId: string, state: RunView["state"], timeoutMs = 20_000): Promise<RunView> {
+    async until(runId: string, state: RunView["state"], timeoutMs = WAIT_MS): Promise<RunView> {
       const deadline = Date.now() + timeoutMs;
       for (;;) {
         const view = await server.view(runId);
@@ -116,7 +118,7 @@ export async function servingCommit(sut: Sut, fakes: Fakes, commit: string, setu
       }
     },
     /** Reads the run until its stage at `index` is in the state. */
-    async untilStage(runId: string, index: number, state: string, timeoutMs = 20_000): Promise<RunView> {
+    async untilStage(runId: string, index: number, state: string, timeoutMs = WAIT_MS): Promise<RunView> {
       const deadline = Date.now() + timeoutMs;
       for (;;) {
         const view = await server.view(runId);

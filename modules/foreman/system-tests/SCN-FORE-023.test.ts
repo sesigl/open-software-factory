@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { readmeWork, serving } from "./foreman.ts";
+import { readmeWork, serving, WAIT_MS } from "./foreman.ts";
 
 scenario("SCN-FORE-023", async ({ sut, fakes, given, when, then }) => {
   let server: Awaited<ReturnType<typeof serving>>;
@@ -13,13 +13,13 @@ scenario("SCN-FORE-023", async ({ sut, fakes, given, when, then }) => {
   );
 
   await when('a program posts the README\'s "work.json" to "/v1/runs" with the API token', async () => {
-    await server.start(readmeWork(fakes));
+    expect((await server.start(readmeWork(fakes))).response.status).toBe(201);
   });
 
   await then(
     'the server publishes "run.completed@v1" with the outcome "succeeded", the requester and that commit as the factory version',
     async () => {
-      const [completed] = await events.received("run.completed@v1");
+      const [completed] = await events.received("run.completed@v1", { timeoutMs: WAIT_MS });
       expect(completed?.data).toMatchObject({
         workItemId: readmeWork(fakes).id,
         stage: "implement",

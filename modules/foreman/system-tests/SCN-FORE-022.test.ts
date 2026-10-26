@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { readmeWork, serving } from "./foreman.ts";
+import { readmeWork, serving, WAIT_MS } from "./foreman.ts";
 
 scenario("SCN-FORE-022", async ({ sut, fakes, given, when, then }) => {
   let server: Awaited<ReturnType<typeof serving>>;
@@ -29,7 +29,7 @@ scenario("SCN-FORE-022", async ({ sut, fakes, given, when, then }) => {
   await then(
     'the server publishes "run.started@v1" for the work item with the stages "plan" and "implement"',
     async () => {
-      const [started] = await events.received("run.started@v1");
+      const [started] = await events.received("run.started@v1", { timeoutMs: WAIT_MS });
       expect(started).toMatchObject({
         source: "/osf/foreman",
         data: { workItemId: readmeWork(fakes).id, factory: "hello", stages: ["plan", "implement"] },
