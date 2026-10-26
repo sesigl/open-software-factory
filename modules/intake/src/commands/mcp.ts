@@ -1,11 +1,19 @@
-// intake mcp: the Factory MCP server on stdio for a local coding agent, a client of the API (ADR 0063).
+// intake mcp: the Factory MCP server on stdio for a local coding agent, a client of the API (ADR 0063), and of the
+// foreman's API for a run's evidence (ADR 0071).
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { packageVersion } from "@opensoftware/cli";
-import { type Answer, intakeApi } from "../adapters/api.ts";
+import { type Answer, type Api, foremanRun, intakeApi } from "../adapters/api.ts";
 import { type Env, required } from "./env.ts";
+
+/** The input of the tools that read one work item. */
+const BY_ID = {
+  type: "object" as const,
+  properties: { id: { type: "string", description: "The work item's ID, like wi_…" } },
+  required: ["id"],
+};
 
 const TOOLS = [
   {
@@ -26,20 +34,35 @@ const TOOLS = [
   {
     name: "work_status",
     description: "The state of a work item and every request that asked for it.",
-    inputSchema: {
-      type: "object" as const,
-      properties: { id: { type: "string", description: "The work item's ID, like wi_…" } },
-      required: ["id"],
-    },
+    inputSchema: BY_ID,
+  },
+  {
+    name: "run_evidence",
+    description:
+      "What the foreman recorded of a work item's run: its state, factory version, pull request, and each stage with " +
+      "its agent, state, harness session, gate, checks and reason.",
+    inputSchema: BY_ID,
   },
 ];
 
 /** A view as the tool's text; any status but 200 and 201 is a tool error with the problem's detail. */
-function toolResult({ status, body }: Answer) {
+function toolResult({ status, body }: Answer, server = "the intake server") {
   if (status === 200 || status === 201) return { content: [{ type: "text", text: JSON.stringify(body) }] };
   const detail = (body as { detail?: string } | undefined)?.detail;
-  const text = `the intake server answered ${status}${detail ? `: ${detail}` : ""}`;
-  return { isError: true, content: [{ type: "text", text }] };
+  return toolError(`${server} answered ${status}${detail ? `: ${detail}` : ""}`);
+}
+
+const toolError = (text: string) => ({ isError: true, content: [{ type: "text", text }] });
+
+/** The run view of the work item's run, from the foreman at INTAKE_FOREMAN_URL. */
+async function evidence(api: Api, env: Env, id: string) {
+  const foreman = env.INTAKE_FOREMAN_URL;
+  if (!foreman) return toolError("set INTAKE_FOREMAN_URL: the base URL of foreman serve, for run_evidence");
+  const answer = await api.workItem(id);
+  if (answer.status !== 200) return toolResult(answer);
+  const { runId } = answer.body as { runId?: string };
+  if (!runId) return toolError(`work item ${id} has no run yet`);
+  return toolResult(await foremanRun(foreman, `${env.INTAKE_FOREMAN_TOKEN}`, runId), "the foreman");
 }
 
 export async function mcp(env: Env) {
@@ -64,6 +87,7 @@ export async function mcp(env: Env) {
     });
   server.setRequestHandler(CallToolRequestSchema, async ({ params }) => {
     const input = (params.arguments ?? {}) as Record<string, string | undefined>;
+    if (params.name === "run_evidence") return evidence(api, env, String(input.id));
     return toolResult(await (params.name === "work_status" ? api.workItem(String(input.id)) : submit(input)));
   });
 

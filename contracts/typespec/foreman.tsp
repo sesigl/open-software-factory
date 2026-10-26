@@ -101,6 +101,11 @@ model RunView {
   stages: StageView[];
 }
 
+/** foreman: the runs of the server, running runs first, then the runs that ended, the one that ended last first, as `GET /v1/runs` answers them (ADR 0071). */
+model RunList {
+  runs: RunView[];
+}
+
 /** foreman: what a person tells a run. */
 enum RunSignalType {
   steer,

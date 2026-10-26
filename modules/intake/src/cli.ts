@@ -9,8 +9,9 @@ const HELP = `Usage: intake <command>
 
 Commands:
   serve  Serve the work item API on PORT, Slack's events with INTAKE_SLACK_TOKEN, and publish work.received@v1
-         with INTAKE_NATS_URL.
-  mcp    Serve the Factory MCP server on stdio: submit_work and work_status call the server at INTAKE_URL.
+         and follow the runs' events with INTAKE_NATS_URL.
+  mcp    Serve the Factory MCP server on stdio: submit_work and work_status call the server at INTAKE_URL,
+         run_evidence also the foreman at INTAKE_FOREMAN_URL.
 `;
 
 const { positionals, values } = parseArgs({ allowPositionals: true, options: { help: { type: "boolean" } } });
