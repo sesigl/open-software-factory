@@ -57,3 +57,9 @@ Feature: The run page
     Given a foreman that answers 404 for the run "run_00000000000000000000"
     When a person opens "/runs/run_00000000000000000000"
     Then the page answers 404 and says "no run run_00000000000000000000"
+
+  @id=SCN-CONSOLE-029 @status=implemented
+  Scenario: An origin link that is not http or https is shown as text
+    Given a foreman with a run whose origin is "javascript:alert(1)"
+    When a person opens the run's page
+    Then the page shows "slack asked by Varun" without a link to "javascript:alert(1)"

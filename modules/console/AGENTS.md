@@ -29,7 +29,7 @@ Fastify server. The ARCH check enforces the layers.
 
 ## Budget
 
-- System tests: 60 seconds in total on the CI runner (28 scenarios; each starts one server, and the foremen, intake
+- System tests: 60 seconds in total on the CI runner (29 scenarios; each starts one server, and the foremen, intake
   and gatekeeper are `fakes.http`).
 
 ## Quality limits

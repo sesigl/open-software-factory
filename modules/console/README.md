@@ -122,3 +122,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-026 | implemented | A POST to the console answers 405 |
 | SCN-CONSOLE-027 | implemented | Every page links the dashboards in "CONSOLE_LINKS" |
 | SCN-CONSOLE-028 | implemented | A foreman that cannot be reached is named on the runs page |
+| SCN-CONSOLE-029 | implemented | An origin link that is not http or https is shown as text |

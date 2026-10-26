@@ -644,7 +644,7 @@ read them for ideas, do not copy their company-specific rules.
   lists observer PRs by state.
 - **Done when:** a maintainer can follow all factory work in this repository without opening Temporal directly.
 - **Slices:**
-  - [x] Runs, run pages and configuration (ADR 0072, `SCN-CONSOLE-001` to `-028`): `console serve` renders HTML on the
+  - [x] Runs, run pages and configuration (ADR 0072, `SCN-CONSOLE-001` to `-029`): `console serve` renders HTML on the
     server with Preact and htm. `/` lists the runs of every foreman in `CONSOLE_FOREMAN_URL` with title, factory,
     state, source, requester, pull request and age, filters them by state and reloads itself; `/runs/<runId>` shows the
     origin, every request from intake, the stages with their transcript, gate from gatekeeper, checks and reason, and
