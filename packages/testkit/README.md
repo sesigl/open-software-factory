@@ -370,3 +370,7 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-106 | implemented | A folder copied into the fake sandbox and out again keeps its files |
 | SCN-TK-107 | implemented | A destroyed fake sandbox leaves the list and refuses commands |
 | SCN-TK-108 | implemented | The fake sandbox refuses a template outside its list |
+| SCN-TK-109 | implemented | The scripted harness records each session's folder and model variables |
+| SCN-TK-110 | implemented | The fake inference adapter starts a gateway from a config and prints its ID and URL |
+| SCN-TK-111 | implemented | The fake inference adapter makes one key per call and forgets a stopped gateway |
+| SCN-TK-112 | implemented | The fake inference adapter fails every command with its message |

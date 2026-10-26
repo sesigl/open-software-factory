@@ -9,6 +9,7 @@ import { type Forge, startForge } from "./forge.ts";
 import { type FakeGitHub, startGitHub } from "./github.ts";
 import { type Harness, type HarnessTurn, startHarness } from "./harness.ts";
 import { type FakeHttp, type HttpOptions, type HttpRoute, startHttp } from "./http.ts";
+import { type Inference, type InferenceOptions, startInference } from "./inference.ts";
 import { type ModelGateway, type ScriptedReply, startModelGateway } from "./model-gateway.ts";
 import { type Postgres, startPostgres } from "./postgres.ts";
 import { type Sandbox, type SandboxOptions, startSandbox } from "./sandbox.ts";
@@ -29,6 +30,8 @@ export interface Fakes {
   harness(script: HarnessTurn[]): Promise<Harness>;
   /** A sandbox adapter whose sandboxes are folders on the host; it records what the module asked of it (ADR 0068). */
   sandbox(options?: SandboxOptions): Promise<Sandbox>;
+  /** An inference adapter that serves no gateway; it records the configs and keys a module asked for (ADR 0070). */
+  inference(options?: InferenceOptions): Promise<Inference>;
   /** PostgreSQL in a container. */
   postgres(): Promise<Postgres>;
   /** NATS with JetStream, as a process on the host (ADR 0067). */
@@ -102,6 +105,9 @@ export function makeFakes(moduleRoot: string): FakesHandle {
       },
       async sandbox(options) {
         return (await inProcess(Promise.resolve(startSandbox(options)))).sandbox;
+      },
+      async inference(options) {
+        return (await inProcess(Promise.resolve(startInference(options)))).inference;
       },
       async postgres() {
         return (await inProcess(startPostgres())).postgres;

@@ -258,9 +258,10 @@ export function actionModule(actionSteps: string[], steps: string[], test: strin
  * text and prints `steered <outcome>`, `sleep:<ms>` waits, `cancel` cancels the session, and `kill` stops the agent and
  * exits. Then it waits for every turn and stops the agent. It prints `<text>: <stop reason>` when a
  * turn ends and `reply <text>` for each message chunk. `--refuse` as the first argument refuses every tool call; it
- * allows them otherwise. Its test runs `test` (TypeScript lines) for SCN-DEMO-001 with `steps`.
+ * allows them otherwise. Its README documents `variables` too. Its test runs `test` (TypeScript lines) for SCN-DEMO-001
+ * with `steps`.
  */
-export function acpClientModule(steps: string[], test: string[]): Record<string, string> {
+export function acpClientModule(steps: string[], test: string[], variables: string[] = []): Record<string, string> {
   return demoModule({
     bin: [
       'import { spawn } from "node:child_process";',
@@ -334,6 +335,7 @@ export function acpClientModule(steps: string[], test: string[]): Record<string,
       "| Variable | Meaning |",
       "| --- | --- |",
       "| `DEMO_AGENT_COMMAND` | The ACP agent to start, as a JSON array of the command and its arguments. |",
+      ...variables.map((name) => `| \`${name}\` | Passed on to the agent. |`),
       "",
     ].join("\n"),
     steps,
@@ -559,6 +561,46 @@ export function sandboxModule(bin: string[], expectations: string[], options = "
       "  run = await sut.cli([], { env: { DEMO_SANDBOX_COMMAND: adapter } });",
       "});",
       "await then('the fake sandbox answered as scripted', async () => {",
+      ...expectations.map((line) => `  ${line}`),
+      "});",
+    ],
+  });
+}
+
+/**
+ * Module demo whose CLI, plain JavaScript in `bin`, runs the inference adapter in `DEMO_INFERENCE_COMMAND` (a JSON array
+ * of the command and its arguments) with `inference(...args)`; its test starts fakes.inference with `options` and runs
+ * `expectations` (TypeScript lines) on the run and the fake.
+ */
+export function inferenceModule(bin: string[], expectations: string[], options = ""): Record<string, string> {
+  return demoModule({
+    bin: [
+      'import { spawnSync } from "node:child_process";',
+      'import { writeFileSync } from "node:fs";',
+      "const [command, ...args] = JSON.parse(process.env.DEMO_INFERENCE_COMMAND);",
+      'const inference = (...rest) => spawnSync(command, [...args, ...rest], { encoding: "utf8" });',
+      ...bin,
+      "",
+    ].join("\n"),
+    readme: [
+      "# demo",
+      "",
+      "## Configuration",
+      "",
+      "| Variable | Meaning |",
+      "| --- | --- |",
+      "| `DEMO_INFERENCE_COMMAND` | The inference adapter, as a JSON array of the command and its arguments. |",
+      "",
+    ].join("\n"),
+    steps: ['When the user runs "demo"', "Then the fake inference adapter answered as scripted"],
+    test: [
+      `const inference = await fakes.inference(${options});`,
+      "const adapter = JSON.stringify([inference.command, ...inference.args]);",
+      "let run: Awaited<ReturnType<typeof sut.cli>>;",
+      "await when('the user runs \"demo\"', async () => {",
+      "  run = await sut.cli([], { env: { DEMO_INFERENCE_COMMAND: adapter } });",
+      "});",
+      "await then('the fake inference adapter answered as scripted', async () => {",
       ...expectations.map((line) => `  ${line}`),
       "});",
     ],
