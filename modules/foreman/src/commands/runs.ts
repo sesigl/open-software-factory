@@ -1,4 +1,5 @@
-// The runs of the foreman as Temporal workflows (ADR 0067): start one per work item, read its view, signal it.
+// The runs of the foreman as Temporal workflows (ADR 0067): start one per work item, read its view, signal it: steer,
+// cancel, take over and hand back (ADR 0070).
 import { UsageError } from "@opensoftware/cli";
 import { validate, type WorkItem } from "@opensoftware/contracts";
 import {
@@ -8,10 +9,34 @@ import {
   WorkflowNotFoundError,
 } from "@temporalio/client";
 import type { Factory } from "../adapters/factory.ts";
-import { firstView, type GateDecision, hasEnded, type RunView, runIdOf, signalOf } from "../domain/run.ts";
-import { factoryRun, gateSignal, steeringQuery, steerSignal, viewQuery } from "../workflows/run.ts";
+import {
+  type Control,
+  firstView,
+  type GateDecision,
+  hasEnded,
+  type RunView,
+  runIdOf,
+  signalOf,
+} from "../domain/run.ts";
+import {
+  controlQuery,
+  factoryRun,
+  gateSignal,
+  handBackSignal,
+  steerSignal,
+  takeOverSignal,
+  viewQuery,
+} from "../workflows/run.ts";
 
-export class Conflict extends Error {}
+export class Conflict extends Error {
+  readonly title: string;
+  constructor(message: string, title = "The run ended") {
+    super(message);
+    this.title = title;
+  }
+}
+
+const NOT_NOW = "The signal does not fit the run's state";
 
 export interface Runs {
   /** Starts the run of the work item, or finds the one it started before. */
@@ -19,7 +44,8 @@ export interface Runs {
   view(runId: string): Promise<RunView | undefined>;
   /** The run's view after the signal, or undefined for an unknown run; a run that ended is a conflict. */
   signal(runId: string, signal: unknown): Promise<RunView | undefined>;
-  steering(runId: string): Promise<string[]>;
+  /** The run's steering messages and the stage a person takes over, for its running stage. */
+  control(runId: string): Promise<Control>;
   /** Hands a gate's decision to the run of its work item. */
   decided(workItemId: string, decision: GateDecision): Promise<void>;
 }
@@ -73,13 +99,21 @@ export function runs(options: {
       if (hasEnded(current)) throw new Conflict(`${runId} is ${current.state}`);
       if (signal.type === "steer") {
         await handle(runId).signal(steerSignal, signal.message);
+      } else if (signal.type === "take-over") {
+        const index = current.stages.findIndex((stage) => stage.state === "running");
+        if (index < 0) throw new Conflict(`no stage of ${runId} is running`, NOT_NOW);
+        await handle(runId).signal(takeOverSignal, index);
+      } else if (signal.type === "hand-back") {
+        if (!current.stages.some((stage) => stage.state === "blocked" && stage.takenOverAt))
+          throw new Conflict(`nobody took over ${runId}`, NOT_NOW);
+        await handle(runId).signal(handBackSignal);
       } else {
         await handle(runId).cancel();
       }
       return current;
     },
-    async steering(runId) {
-      return handle(runId).query(steeringQuery);
+    async control(runId) {
+      return handle(runId).query(controlQuery);
     },
     async decided(workItemId, decision) {
       await handle(runIdOf(workItemId)).signal(gateSignal, decision);

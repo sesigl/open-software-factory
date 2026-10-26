@@ -8,7 +8,8 @@ Run the factory's workflow for each work item: the stages of `factory.yaml` one 
 through the harness port, with human gates, steering and cancel, on Temporal. A run survives a restart of the
 foreman, and Temporal's UI shows its history. Decisions: [ADR 0067](../../docs/decisions/0067-foreman.md), on
 [ADR 0004](../../docs/decisions/0004-temporal.md), [ADR 0068](../../docs/decisions/0068-foreman-sandboxes.md) for
-sandboxes, and [ADR 0069](../../docs/decisions/0069-foreman-checks.md) for checks.
+sandboxes, [ADR 0069](../../docs/decisions/0069-foreman-checks.md) for checks, and
+[ADR 0070](../../docs/decisions/0070-foreman-gateway-and-take-over.md) for the inference gateway and take over.
 
 ## Quick start
 
@@ -198,6 +199,82 @@ The forge adapter is the one the factory names under `providers.forge`; a factor
 `npx -y @opensoftware/forge-<name>`. It gets `FORGE_URL` and `FORGE_TOKEN` from `FOREMAN_FORGE_URL` and
 `FOREMAN_FORGE_TOKEN`.
 
+## Inference gateway
+
+Give the factory's agents one model endpoint with a budget per run: name an
+[inference adapter](../../ports/inference/README.md) under `providers.inference` and its config under `inference`.
+This factory runs the [LiteLLM gateway](../../adapters/inference/litellm/README.md) on Docker and lets a run spend at
+most 5 USD:
+
+```yaml gateway/factory.yaml
+version: 1
+factory: hello
+providers:
+  harness:
+    acp: "^0"
+  inference:
+    litellm: "^0"
+inference:
+  config: ./inference/litellm.yaml
+  budget: 5
+agents:
+  plan:
+    harness: acp
+    model: routes/default
+    prompt: ./agents/plan.md
+  implement:
+    harness: acp
+    model: routes/default
+    prompt: ./agents/implement.md
+workflow:
+  - stage: plan
+  - stage: implement
+```
+
+```yaml inference/litellm.yaml
+model_list:
+  - model_name: routes/default
+    litellm_params:
+      model: anthropic/claude-sonnet-5-5
+      api_key: os.environ/OSF_SECRET_ANTHROPIC_API_KEY
+```
+
+Serve it as in the quick start, with `export OSF_SECRET_ANTHROPIC_API_KEY=…` for the adapter. Then:
+
+1. `foreman serve` runs the adapter's `start` with the config, a path relative to `factory.yaml`, before it takes work,
+   and `stop` when it stops. A `start` that fails stops the server with exit code 1 and the adapter's message.
+2. Before a run's first stage, the foreman asks the adapter for the run's key: `key <gateway> <run ID> --budget 5`. The
+   gateway refuses the run's calls once it spent its budget. The key stays in the foreman's memory, not in Temporal.
+3. Each stage's harness adapter gets the gateway in the variables that the harness adapters read: `OPENAI_BASE_URL`
+   (the URL `start` printed) and `ANTHROPIC_BASE_URL` (the same without `/v1`), `OPENAI_API_KEY` and
+   `ANTHROPIC_API_KEY` (the run's key), and `OPENAI_MODEL` and `ANTHROPIC_MODEL` (the agent's `model`, a routing
+   alias of the config). A sandboxed stage gets them in its sandbox's environment.
+
+`FOREMAN_INFERENCES` maps an adapter's name to its command line; an adapter it does not name runs
+`npx -y @opensoftware/inference-<name>`. A factory names at most one inference adapter. Without one, the foreman sets
+none of these variables, and each harness adapter calls the model API it is configured for.
+
+## Take over
+
+A person can take a running stage over from its agent and hand the run back later
+([ADR 0070](../../docs/decisions/0070-foreman-gateway-and-take-over.md)):
+
+```sh
+curl -H "Authorization: Bearer dev-token" -H "content-type: application/json" \
+  --data '{"type": "take-over"}' http://localhost:8080/v1/runs/run_…/signals
+```
+
+1. The running stage's agent ends its turn within `FOREMAN_POLL_MS`. A sandboxed stage copies its files out and
+   destroys its sandbox, as after every turn.
+2. The stage is `blocked` with `takenOverAt`, and the run is `blocked` with `folder`: the run's folder on the foreman's
+   machine, which holds the stage's files. The stage's `sessionId`, the run's `pullRequest` and the work item are the
+   rest of the context.
+3. The person works in that folder, then posts `{"type": "hand-back"}`. The stage is `succeeded`, and the next stage
+   starts from the files in the folder, or the run is `complete` after the last stage.
+
+A take-over needs a running stage, and a hand-back a stage that a person took over; otherwise the answer is 409. A
+cancel ends a run that a person took over.
+
 ## Commands
 
 | Command | What it does |
@@ -209,18 +286,18 @@ The forge adapter is the one the factory names under `providers.forge`; a factor
 | Route | What it does |
 | --- | --- |
 | `POST /v1/runs` | Start the run of a work item (the [work item](../../contracts/work-item/work-item.schema.json) format). 201 with the new run, 200 with the run the same work item started before, 400 with a problem that names the field. |
-| `GET /v1/runs/{runId}` | The run: `state`, `factory`, `factoryVersion`, `pullRequest`, `startedAt`, `endedAt` and its `stages`. 404 for a run the server does not know. |
-| `POST /v1/runs/{runId}/signals` | `{ "type": "steer", "message": "…" }` sends the message to the running stage's agent; `{ "type": "cancel" }` cancels the run. 202 with the run, 409 when the run ended. |
+| `GET /v1/runs/{runId}` | The run: `state`, `factory`, `factoryVersion`, `pullRequest`, `folder`, `startedAt`, `endedAt` and its `stages`. 404 for a run the server does not know. |
+| `POST /v1/runs/{runId}/signals` | `{ "type": "steer", "message": "…" }` sends the message to the running stage's agent; `{ "type": "cancel" }` cancels the run; `{ "type": "take-over" }` and `{ "type": "hand-back" }` hand the running stage to a person and back ([Take over](#take-over)). 202 with the run, 409 when the run ended or the signal does not fit its state. |
 
 The OpenAPI of the routes is in [`contracts/openapi/openapi.json`](../../contracts/openapi/openapi.json); the
 TypeScript type `paths` of `@opensoftware/contracts` types a client. Every route needs `Authorization: Bearer
 <FOREMAN_API_TOKEN>`, else 401. Errors are `application/problem+json` with `title`, `status` and `detail`.
 
 A run's ID is `run_` and 20 hex digits of the SHA-256 of the work item's ID, so a work item has one run. A run is
-`running`, `blocked` (at a gate or waiting for checks), `complete`, `failed` or `cancelled`. A stage is `pending`,
+`running`, `blocked` (at a gate, waiting for checks, or taken over by a person), `complete`, `failed` or `cancelled`. A stage is `pending`,
 `blocked`, `running`, `succeeded`, `failed`, `rejected` (by its gate) or `cancelled`; it has its harness `sessionId` once
-it started, its `gateId` once its gate was asked, its `checks` once they were read, and a `reason` when it failed for a
-reason the foreman knows.
+it started, its `gateId` once its gate was asked, its `checks` once they were read, its `takenOverAt` once a person
+took it over, and a `reason` when it failed for a reason the foreman knows.
 
 ## How a run goes
 
@@ -235,7 +312,8 @@ reason the foreman knows.
   the agent's prompt file, then the work item's ID, title and description. It allows the tool calls the adapter asks
   about; limit them with the adapter's `--allow`. A turn that ends with `end_turn` succeeds the stage; any other end
   fails or cancels it, ends the run, and leaves the later stages `pending`. The adapter gets
-  `OTEL_RESOURCE_ATTRIBUTES` with `osf.run.id`, `osf.work_item.id`, `osf.stage` and `osf.factory.version`.
+  `OTEL_RESOURCE_ATTRIBUTES` with `osf.run.id`, `osf.work_item.id`, `osf.stage` and `osf.factory.version`, and the
+  factory's inference gateway with the run's key and the agent's model ([Inference gateway](#inference-gateway)).
 - **Checks.** Before a stage with `checks` starts, the foreman waits until those checks succeeded on the run's pull
   request; a failing one fails the run ([Checks](#checks)).
 - **Gates.** Before a stage with a `gate` starts, the foreman asks gatekeeper at `FOREMAN_GATEKEEPER_URL`
@@ -244,7 +322,8 @@ reason the foreman knows.
   `gate.decided@v1` for that gate arrives on NATS. `approved` starts the stage; `rejected` or `expired` fails the run.
 - **Signals.** A steering message reaches the running stage's agent within `FOREMAN_POLL_MS` as a prompt in its
   session, which the harness port treats as steering. A cancel ends the agent's turn, or the wait at a gate, and the
-  run is `cancelled`.
+  run is `cancelled`. A person takes a running stage over and hands the run back with the signals `take-over` and
+  `hand-back` ([Take over](#take-over)).
 - **Restarts.** The runs live in Temporal's history. A foreman that stops and starts again goes on with them; a stage
   that ran when it stopped runs again, up to 3 times.
 
@@ -283,6 +362,7 @@ the minor version. The one-time setup is the same as for contracts
 | `FOREMAN_HARNESSES` | string | `"{}"` | serve: a JSON object from harness name to the command line of its adapter. A harness it does not name runs npx -y @opensoftware/harness-<name> run. |
 | `FOREMAN_SANDBOXES` | string | `"{}"` | serve: a JSON object from sandbox adapter name to the command line of the adapter. An adapter it does not name runs npx -y @opensoftware/sandbox-<name>. The factory names its adapter under providers.sandbox, docker by default. |
 | `FOREMAN_FORGES` | string | `"{}"` | serve: a JSON object from forge adapter name to the command line of the adapter. An adapter it does not name runs npx -y @opensoftware/forge-<name>. The factory names its adapter under providers.forge. |
+| `FOREMAN_INFERENCES` | string | `"{}"` | serve: a JSON object from inference adapter name to the command line of the adapter. An adapter it does not name runs npx -y @opensoftware/inference-<name>. The factory names its adapter under providers.inference. |
 | `FOREMAN_FORGE_URL` | string |  | serve: the forge adapter's FORGE_URL, for a factory whose stages have checks. Default: the adapter's own default. |
 | `FOREMAN_FORGE_TOKEN` | string |  | serve: the forge adapter's FORGE_TOKEN: a token that may read the pull requests and their checks. Never written to a file. |
 | `FOREMAN_CHECK_POLL_MS` | string | `"30000"` | serve: how long a stage that waits for pending checks waits before it reads them again, in milliseconds. |
@@ -346,3 +426,17 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-047 | implemented | A run shows its pull request and publishes it when it ends |
 | SCN-FORE-048 | implemented | A cancel ends a run that waits for a check |
 | SCN-FORE-049 | implemented | A factory with checks but without a forge adapter stops the server at the start |
+| SCN-FORE-050 | implemented | A stage's agent calls the factory's gateway with the run's key |
+| SCN-FORE-051 | implemented | Each stage's agent calls the gateway with its own model |
+| SCN-FORE-052 | implemented | The foreman starts one gateway from the factory's inference config |
+| SCN-FORE-053 | implemented | Each run gets its own key with the factory's budget |
+| SCN-FORE-054 | implemented | A sandboxed stage gets the gateway in its sandbox's environment |
+| SCN-FORE-055 | implemented | The foreman stops the gateway when it stops serving |
+| SCN-FORE-056 | implemented | A gateway that does not start stops the server at the start |
+| SCN-FORE-057 | implemented | A factory with an inference adapter but without its config stops the server at the start |
+| SCN-FORE-058 | implemented | A person takes over the running stage |
+| SCN-FORE-059 | implemented | The next stage starts from the files of the person who handed the run back |
+| SCN-FORE-060 | implemented | A take-over destroys the stage's sandbox and keeps its files |
+| SCN-FORE-061 | implemented | A take-over of a run without a running stage is refused |
+| SCN-FORE-062 | implemented | A hand-back of a run nobody took over is refused |
+| SCN-FORE-063 | implemented | A cancel ends a run a person took over |

@@ -838,6 +838,10 @@
             "$ref": "#/components/schemas/Providers",
             "description": "Adapters per port with a version range, pinned in `factory.lock` by `factory plan`."
           },
+          "inference": {
+            "$ref": "#/components/schemas/Inference",
+            "description": "The inference gateway of the adapter under `providers.inference` (ADR 0070)."
+          },
           "agents": {
             "type": "object",
             "properties": {},
@@ -1331,6 +1335,26 @@
         "minLength": 1,
         "maxLength": 128,
         "description": "An identifier chosen by the producer. ULIDs are recommended; consumers treat it as opaque."
+      },
+      "Inference": {
+        "type": "object",
+        "properties": {
+          "config": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Path to the inference adapter's config, for example a LiteLLM proxy config."
+          },
+          "budget": {
+            "type": "number",
+            "minimum": 0,
+            "description": "The most a run may spend on model calls, in USD."
+          }
+        },
+        "required": [
+          "config"
+        ],
+        "description": "The inference gateway: the adapter's config and the most a run may spend (ADR 0070).",
+        "additionalProperties": false
       },
       "IssueLabeled": {
         "type": "object",
@@ -2069,13 +2093,15 @@
         "required": [
           "type"
         ],
-        "description": "foreman: a signal to a run: \"steer\" with a message for the running stage's agent, or \"cancel\"."
+        "description": "foreman: a signal to a run: \"steer\" with a message for the running stage's agent, \"cancel\", \"take-over\" of the running\nstage by a person, or \"hand-back\" of that stage (ADR 0070)."
       },
       "RunSignalType": {
         "type": "string",
         "enum": [
           "steer",
-          "cancel"
+          "cancel",
+          "take-over",
+          "hand-back"
         ],
         "description": "foreman: what a person tells a run."
       },
@@ -2305,6 +2331,11 @@
             "type": "string",
             "format": "uri",
             "description": "The last pull request link that an agent of the run wrote (ADR 0069)."
+          },
+          "folder": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The run's folder on the foreman's machine, where a person who took over a stage goes on (ADR 0070)."
           },
           "startedAt": {
             "type": "string",
@@ -2750,6 +2781,11 @@
               "$ref": "#/components/schemas/CheckView"
             },
             "description": "The checks the stage waits for, once the foreman read them (ADR 0069)."
+          },
+          "takenOverAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When a person took the stage over from its agent (ADR 0070)."
           },
           "reason": {
             "type": "string",

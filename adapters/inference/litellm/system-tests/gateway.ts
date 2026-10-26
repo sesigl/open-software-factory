@@ -94,3 +94,49 @@ export async function call(url: string, key: string, body: Record<string, unknow
   });
   return { status: response.status, body: (await response.json()) as Record<string, unknown> };
 }
+
+/** One call to the gateway at `url` with the headers: its status and JSON answer. */
+export async function post(url: string, headers: Record<string, string>, body: Record<string, unknown>) {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { ...headers, "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return { status: response.status, body: (await response.json()) as Record<string, unknown> };
+}
+
+/**
+ * The test provider of the OpenAI Responses API, which LiteLLM calls for an OpenAI model on its Messages and Responses
+ * routes: it answers one call with `reply`, 1000 input tokens and 200 output tokens.
+ */
+export function responsesProvider(fakes: Fakes, reply: string) {
+  const output = [
+    {
+      type: "message",
+      id: "msg-1",
+      status: "completed",
+      role: "assistant",
+      content: [{ type: "output_text", text: reply, annotations: [] }],
+    },
+  ];
+  return fakes.http(
+    [
+      { path: "/v1/models", body: { object: "list", data: [] } },
+      {
+        method: "POST",
+        path: "/v1/responses",
+        times: 1,
+        body: {
+          id: "resp-1",
+          object: "response",
+          created_at: 1_767_225_600,
+          status: "completed",
+          model: "provider",
+          output,
+          usage: { input_tokens: 1000, output_tokens: 200, total_tokens: 1200 },
+        },
+      },
+    ],
+    { containers: true },
+  );
+}

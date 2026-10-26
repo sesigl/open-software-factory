@@ -14,13 +14,16 @@ import {
   setHandler,
   sleep,
 } from "@temporalio/workflow";
-import type { Fact, GateDecision, RunInput, RunView } from "../domain/run.ts";
+import type { Control, Fact, GateDecision, RunInput, RunView } from "../domain/run.ts";
 import type { Activities } from "./activities.ts";
 
 export const viewQuery = defineQuery<RunView>("view");
-export const steeringQuery = defineQuery<string[]>("steering");
+export const controlQuery = defineQuery<Control>("control");
 export const steerSignal = defineSignal<[string]>("steer");
 export const gateSignal = defineSignal<[GateDecision]>("gate");
+/** A person takes over the stage at this index (ADR 0070). */
+export const takeOverSignal = defineSignal<[number]>("take-over");
+export const handBackSignal = defineSignal("hand-back");
 
 const local = proxyLocalActivities<Activities>({ startToCloseTimeout: "1 minute" });
 const remote = proxyActivities<Activities>({
@@ -34,10 +37,18 @@ export async function factoryRun({ view, definition }: RunInput): Promise<RunVie
   let run = view;
   const steering: string[] = [];
   const decisions: GateDecision[] = [];
+  let takeOver: number | undefined;
+  let handedBack = false;
   setHandler(viewQuery, () => run);
-  setHandler(steeringQuery, () => steering);
+  setHandler(controlQuery, () => ({ steering, ...(takeOver === undefined ? {} : { takeOver }) }));
   setHandler(steerSignal, (message) => void steering.push(message));
   setHandler(gateSignal, (decision) => void decisions.push(decision));
+  setHandler(takeOverSignal, (index) => {
+    takeOver = index;
+  });
+  setHandler(handBackSignal, () => {
+    handedBack = true;
+  });
   const settle = async (fact: Fact) => {
     run = await CancellationScope.nonCancellable(() => local.apply(run, fact));
   };
@@ -55,6 +66,10 @@ export async function factoryRun({ view, definition }: RunInput): Promise<RunVie
         await condition(() => decisions.some((decision) => decision.gateId === gateId));
         const decision = decisions.find((candidate) => candidate.gateId === gateId) as GateDecision;
         run = await local.apply(run, { kind: "gate", index, ...decision });
+      } else if (step.kind === "await-hand-back") {
+        await condition(() => handedBack);
+        [handedBack, takeOver] = [false, undefined];
+        run = await local.apply(run, { kind: "handed-back", index });
       } else {
         run = await local.apply(run, { kind: "stage-started", index });
         await settle(await remote.runStage(run, definition, index, steering.length));

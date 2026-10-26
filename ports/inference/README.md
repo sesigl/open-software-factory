@@ -28,6 +28,9 @@ proxy config, the format `taskcapture route` writes. An unknown gateway ID exits
 
 - `POST <url>/chat/completions` with a routing alias as `model` reaches the model the config routes the alias to.
   Each alias keeps its own model, and a call's `tags` pick the alias's model for that tag.
+- The same aliases and keys serve the Anthropic Messages API at `POST <url without /v1>/v1/messages`, with the key as
+  `x-api-key`, which Claude Code calls, and the OpenAI Responses API at `POST <url>/responses`, which Codex calls
+  ([ADR 0070](../../docs/decisions/0070-foreman-gateway-and-take-over.md)).
 - A call needs a key from `key`: another key gets 401. An alias the config does not route gets 400 with its name.
 - A run's calls are refused with a 4xx status and the error type `budget_exceeded` once its spend passed its budget.
   The gateway counts a call's spend just after its answer, so a call sent at that moment may still pass; by the time

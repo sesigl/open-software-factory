@@ -1,8 +1,8 @@
 // Shared setup of the foreman scenarios: the README's factory and work item, Temporal, the scripted harness behind the
-// built harness-acp adapter, a fake sandbox adapter, a scripted gatekeeper, the fake GitHub with the built forge-github
-// adapter, and the server with its token.
+// built harness-acp adapter, a fake sandbox adapter, a fake inference adapter, a scripted gatekeeper, the fake GitHub
+// with the built forge-github adapter, and the server with its token.
 import type { paths, RunView, WorkItem } from "@opensoftware/contracts";
-import type { Fakes, HarnessTurn, SandboxOptions, Sut } from "@opensoftware/testkit";
+import type { Fakes, HarnessTurn, InferenceOptions, SandboxOptions, Sut } from "@opensoftware/testkit";
 
 export const API_TOKEN = "testkit-api-token";
 export const AUTH = { authorization: `Bearer ${API_TOKEN}` };
@@ -25,6 +25,14 @@ export function readmeFiles(fakes: Fakes): Record<string, string> {
 
 export const readmeWork = (fakes: Fakes): WorkItem => JSON.parse(readmeFiles(fakes)["work.json"] as string);
 
+/** A second work item, besides the README's. */
+export const otherWork = (fakes: Fakes): WorkItem => ({
+  ...readmeWork(fakes),
+  id: "wi_0a1b2c3d4e5f60718293",
+  title: "Import reports from CSV",
+  dedupeKey: "idea:import-csv",
+});
+
 /** The README's factory with a gate before the stage "implement". */
 export const gatedFactory = (fakes: Fakes): string =>
   (readmeFiles(fakes)["factory.yaml"] as string).replace(
@@ -34,6 +42,16 @@ export const gatedFactory = (fakes: Fakes): string =>
 
 /** The README's factory whose agents run in sandboxes. */
 export const sandboxedFactory = (fakes: Fakes): string => readmeFiles(fakes)["sandboxed/factory.yaml"] as string;
+
+/** The README's factory with the LiteLLM gateway. */
+export const gatewayFactory = (fakes: Fakes): string => readmeFiles(fakes)["gateway/factory.yaml"] as string;
+
+/** "foreman serve" on the README's "gateway/factory.yaml", or this text of it, with a fake inference adapter. */
+export const servingGateway = (sut: Sut, fakes: Fakes, setup: Setup = {}) =>
+  serving(sut, fakes, { factory: gatewayFactory(fakes), inference: {}, ...setup });
+
+/** The harness sessions in the order the agent opened them. */
+export type Sessions = ReturnType<Awaited<ReturnType<typeof serving>>["harness"]["sessions"]>;
 
 /** Turns that end at once, for the prompts of both stages. */
 export const endingTurns: HarnessTurn[] = [
@@ -54,6 +72,8 @@ export interface Setup {
   sandbox?: SandboxOptions;
   /** The name of the fake sandbox adapter; default "docker". */
   sandboxAs?: string;
+  /** A fake inference adapter, in FOREMAN_INFERENCES under the name "litellm". */
+  inference?: InferenceOptions;
   env?: Record<string, string>;
 }
 
@@ -66,6 +86,7 @@ export async function committed(sut: Sut, fakes: Fakes, factory?: string): Promi
     "agents/implement.md",
     "agents/implement-pr.md",
     "agents/ship.md",
+    "inference/litellm.yaml",
   ])
     await sut.files.put(`$INPUT/${name}`, files[name] as string);
   if (factory) await sut.files.put("$INPUT/factory.yaml", factory);
@@ -93,6 +114,7 @@ export async function servingCommit(sut: Sut, fakes: Fakes, commit: string, setu
     : undefined;
   const nats = setup.nats ? await fakes.nats() : undefined;
   const sandbox = setup.sandbox ? await fakes.sandbox(setup.sandbox) : undefined;
+  const inference = setup.inference ? await fakes.inference(setup.inference) : undefined;
   const env = {
     FOREMAN_API_TOKEN: API_TOKEN,
     FOREMAN_TEMPORAL_ADDRESS: temporal.address,
@@ -109,6 +131,9 @@ export async function servingCommit(sut: Sut, fakes: Fakes, commit: string, setu
           }),
         }
       : {}),
+    ...(inference
+      ? { FOREMAN_INFERENCES: JSON.stringify({ litellm: [inference.command, ...inference.args].join(" ") }) }
+      : {}),
     ...setup.env,
   };
   await sut.http.start(["serve"], { env });
@@ -119,6 +144,7 @@ export async function servingCommit(sut: Sut, fakes: Fakes, commit: string, setu
     gatekeeper,
     nats,
     sandbox,
+    inference,
     api,
     start: (work: unknown, headers: Record<string, string> = AUTH) =>
       api().POST("/v1/runs", { body: work as WorkItem, headers }),

@@ -133,7 +133,9 @@ Every server, client and subscription stops when the scenario ends, before the f
   The agent also takes a steering message as the request `_session/steering` (`{ sessionId, prompt }`), as
   codex-acp does: it wakes the waiting turn whose text it contains and answers `{ outcome: "injected" }`, or
   `{ outcome: "failed" }` when no turn waits for it. `steeringRequests()` lists the texts of those requests
-  ([ADR 0053](../../docs/decisions/0053-harness-codex-opencode.md)).
+  ([ADR 0053](../../docs/decisions/0053-harness-codex-opencode.md)). `sessions()` lists each session the agent opened,
+  with its `cwd` and the variables `OPENAI_*` and `ANTHROPIC_*` the agent got in `env`, so a test sees which model
+  gateway, key and model a module handed the harness ([ADR 0070](../../docs/decisions/0070-foreman-gateway-and-take-over.md)).
 - `fakes.sandbox({ templates })`: a sandbox adapter with the commands `create`, `exec`, `copy`, `destroy` and `list`
   of the [sandbox port](../../ports/sandbox/README.md), whose sandboxes are folders on the host, for a module that
   drives the port without Docker ([ADR 0068](../../docs/decisions/0068-foreman-sandboxes.md)). Run it with its
@@ -142,6 +144,15 @@ Every server, client and subscription stops when the scenario ends, before the f
   to that folder. With `templates`, `create` refuses another template with `no template <name>` and exit code 1.
   `created()` lists each sandbox's ID and spec, `execs()` each command with the files in the folder when it started,
   and `list()` the sandboxes that exist. It isolates nothing.
+- `fakes.inference({ url, fails })`: an inference adapter with the commands `start`, `key`, `spend-log`, `stop` and
+  `list` of the [inference port](../../ports/inference/README.md), for a module that drives the port without LiteLLM
+  and Docker ([ADR 0070](../../docs/decisions/0070-foreman-gateway-and-take-over.md)). Run it with its `command` and
+  `args`, then the port's command. `start <config>` prints `{"id", "url"}` with the IDs `000000000001` and on and the
+  `url` of the options (default `http://127.0.0.1:4000/v1`); it serves nothing there, so pass the URL of
+  `fakes.modelGateway` when a test needs answers. `key <ID> <run ID> [--budget <USD>]` prints `sk-fake-1` and on;
+  `spend-log` prints nothing; `stop` removes the gateway. With `fails`, every command exits 1 with that message.
+  `started()` lists each gateway's ID and the text of its config, `keys()` each key with its `gateway`, `run` and
+  `budget`, and `list()` the gateways that exist.
 - `fakes.postgres()`: PostgreSQL 18 for this scenario, as PGlite in the test's process behind a small
   wire-protocol server, with no Docker ([ADR 0049](../../docs/decisions/0049-in-memory-stand-ins.md)). The module
   connects to `postgres://test:test@127.0.0.1:<port>/test` with its own driver; a wrong password is refused with
@@ -370,3 +381,7 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-106 | implemented | A folder copied into the fake sandbox and out again keeps its files |
 | SCN-TK-107 | implemented | A destroyed fake sandbox leaves the list and refuses commands |
 | SCN-TK-108 | implemented | The fake sandbox refuses a template outside its list |
+| SCN-TK-109 | implemented | The scripted harness records each session's folder and model variables |
+| SCN-TK-110 | implemented | The fake inference adapter starts a gateway from a config and prints its ID and URL |
+| SCN-TK-111 | implemented | The fake inference adapter makes one key per call and forgets a stopped gateway |
+| SCN-TK-112 | implemented | The fake inference adapter fails every command with its message |
