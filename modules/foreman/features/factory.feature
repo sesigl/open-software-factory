@@ -22,7 +22,7 @@ Feature: Factory definition
     Given a "factory.yaml" whose stage "review" names the agent "reviewer", which the factory does not declare
     When the user runs "foreman serve"
     Then the command exits with code 2
-    And the output contains "factory.yaml: workflow[0]: no agent \"reviewer\""
+    And the output contains "factory.yaml: /workflow/0/agent: no agent \"reviewer\""
 
   @id=SCN-FORE-011 @status=planned
   Scenario: The server needs an API token

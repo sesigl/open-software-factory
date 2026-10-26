@@ -1,13 +1,19 @@
 #!/usr/bin/env node
-// foreman <command>: the entry layer only parses arguments and calls the layers below it.
-import { writeOutput } from "./adapters/output-folder.ts";
-import { greeting } from "./domain/greeting.ts";
+// foreman <command>: the entry layer only parses arguments and calls the commands.
+import { parseArgs } from "node:util";
+import { type Command, runProgram } from "@opensoftware/cli";
+import { serve } from "./commands/serve.ts";
 
-const [command, name] = process.argv.slice(2);
-if (command === "hello" && name) {
-  const file = writeOutput("hello.txt", `${greeting(name)}\n`);
-  process.stdout.write(`wrote ${file}\n`);
-} else {
-  process.stderr.write("usage: foreman hello <name>\n");
-  process.exitCode = 2;
-}
+const HELP = `Usage: foreman <command>
+
+Commands:
+  serve  Serve the run API on PORT and run the factory's workflow in FOREMAN_FACTORY on Temporal at
+         FOREMAN_TEMPORAL_ADDRESS.
+`;
+
+const { positionals, values } = parseArgs({ allowPositionals: true, options: { help: { type: "boolean" } } });
+const commands: Record<string, Command> = {
+  serve: () => serve(process.env),
+};
+const chosen = positionals[0] ? commands[positionals[0]] : undefined;
+process.exitCode = await runProgram({ name: "foreman", usage: HELP, command: chosen, help: values.help });

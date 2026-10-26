@@ -1,15 +1,25 @@
 {
   "name": "@opensoftware/foreman",
   "version": "0.0.0",
-  "private": true,
-  "description": "foreman: one sentence from the README.",
+  "description": "foreman: runs the factory's workflow of agents for each work item on Temporal, with gates, steering and cancel.",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "modules/foreman"
+  },
   "type": "module",
   "bin": {
     "foreman": "dist/cli.js"
   },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node scripts/bundle-workflows.ts",
     "lint": "biome check .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test:system": "vitest run",
