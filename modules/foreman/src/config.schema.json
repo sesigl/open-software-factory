@@ -50,6 +50,24 @@
       "default": "{}",
       "description": "serve: a JSON object from sandbox adapter name to the command line of the adapter. An adapter it does not name runs npx -y @opensoftware/sandbox-<name>. The factory names its adapter under providers.sandbox, docker by default."
     },
+    "FOREMAN_FORGES": {
+      "type": "string",
+      "default": "{}",
+      "description": "serve: a JSON object from forge adapter name to the command line of the adapter. An adapter it does not name runs npx -y @opensoftware/forge-<name>. The factory names its adapter under providers.forge."
+    },
+    "FOREMAN_FORGE_URL": {
+      "type": "string",
+      "description": "serve: the forge adapter's FORGE_URL, for a factory whose stages have checks. Default: the adapter's own default."
+    },
+    "FOREMAN_FORGE_TOKEN": {
+      "type": "string",
+      "description": "serve: the forge adapter's FORGE_TOKEN: a token that may read the pull requests and their checks. Never written to a file."
+    },
+    "FOREMAN_CHECK_POLL_MS": {
+      "type": "string",
+      "default": "30000",
+      "description": "serve: how long a stage that waits for pending checks waits before it reads them again, in milliseconds."
+    },
     "FOREMAN_POLL_MS": {
       "type": "string",
       "default": "1000",

@@ -696,6 +696,37 @@
         "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$))[^\\\\]+$",
         "description": "A path inside the bundle: relative, forward slashes, no \"..\"."
       },
+      "CheckName": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The name of a check on the forge: a commit status context."
+      },
+      "CheckState": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "success",
+          "failure",
+          "error"
+        ],
+        "description": "foreman: the state of a check on the forge (forge port)."
+      },
+      "CheckView": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "$ref": "#/components/schemas/CheckName"
+          },
+          "state": {
+            "$ref": "#/components/schemas/CheckState"
+          }
+        },
+        "required": [
+          "name",
+          "state"
+        ],
+        "description": "foreman: a check that a stage waits for, as the foreman last read it on the run's pull request (ADR 0069)."
+      },
       "CommitHash": {
         "type": "string",
         "pattern": "^[0-9a-f]{7,40}$",
@@ -2270,6 +2301,11 @@
           "state": {
             "$ref": "#/components/schemas/RunState"
           },
+          "pullRequest": {
+            "type": "string",
+            "format": "uri",
+            "description": "The last pull request link that an agent of the run wrote (ADR 0069)."
+          },
           "startedAt": {
             "type": "string",
             "format": "date-time"
@@ -2656,6 +2692,13 @@
             "$ref": "#/components/schemas/Gate",
             "description": "The stage waits for a decision before it starts."
           },
+          "checks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CheckName"
+            },
+            "description": "Checks that must succeed on the run's pull request before the stage starts, by their names on the forge, for\nexample \"verify\" (ADR 0069)."
+          },
           "evidence": {
             "$ref": "#/components/schemas/EvidenceRequirement",
             "description": "Whether the stage must produce an evidence bundle."
@@ -2700,6 +2743,18 @@
             "type": "string",
             "pattern": "^g[0-9a-f]{16}$",
             "description": "The gate that decides whether the stage starts, once it was requested."
+          },
+          "checks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CheckView"
+            },
+            "description": "The checks the stage waits for, once the foreman read them (ADR 0069)."
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Why the stage ended without success, when the foreman knows."
           },
           "startedAt": {
             "type": "string",

@@ -126,9 +126,19 @@ model Stage {
   /** The stage waits for a decision before it starts. */
   gate?: Gate;
 
+  /**
+   * Checks that must succeed on the run's pull request before the stage starts, by their names on the forge, for
+   * example "verify" (ADR 0069).
+   */
+  checks?: CheckName[];
+
   /** Whether the stage must produce an evidence bundle. */
   evidence?: EvidenceRequirement;
 }
+
+/** The name of a check on the forge: a commit status context. */
+@minLength(1)
+scalar CheckName extends string;
 
 enum EvidenceRequirement {
   required,

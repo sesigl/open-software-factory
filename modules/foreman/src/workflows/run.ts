@@ -12,6 +12,7 @@ import {
   proxyActivities,
   proxyLocalActivities,
   setHandler,
+  sleep,
 } from "@temporalio/workflow";
 import type { Fact, GateDecision, RunInput, RunView } from "../domain/run.ts";
 import type { Activities } from "./activities.ts";
@@ -44,7 +45,10 @@ export async function factoryRun({ view, definition }: RunInput): Promise<RunVie
     await remote.publishStarted(run);
     for (let step = await local.next(run, definition); step.kind !== "end"; step = await local.next(run, definition)) {
       const { index } = step;
-      if (step.kind === "request-gate") {
+      if (step.kind === "read-checks") {
+        if (step.delayMs) await sleep(step.delayMs);
+        run = await local.apply(run, await remote.readChecks(run, definition, index));
+      } else if (step.kind === "request-gate") {
         run = await local.apply(run, await remote.requestGate(run, definition, index));
       } else if (step.kind === "await-gate") {
         const { gateId } = step;
