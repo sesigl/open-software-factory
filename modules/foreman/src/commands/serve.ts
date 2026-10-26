@@ -30,7 +30,7 @@ function authorized(header: string | undefined, token: string): boolean {
 }
 
 function api(work: Runs, token: string) {
-  const app = Fastify({ logger: false });
+  const app = Fastify();
   app.setErrorHandler((error: Error & { statusCode?: number }, _request, reply) => {
     if (error instanceof UsageError) return problem(reply, 400, "Bad request", error.message);
     if (error instanceof Conflict) return problem(reply, 409, "The run ended", error.message);
@@ -76,7 +76,8 @@ export async function serve(env: Env) {
   const now = () => isoNow(env.OSF_NOW);
   const warn = (text: string) => process.stderr.write(`foreman: ${text}\n`);
   const address = env.FOREMAN_TEMPORAL_ADDRESS || "localhost:7233";
-  const namespace = env.FOREMAN_TEMPORAL_NAMESPACE || "default";
+  // Unset, the client and the worker use the namespace "default".
+  const namespace = env.FOREMAN_TEMPORAL_NAMESPACE;
   const taskQueue = env.FOREMAN_TASK_QUEUE || "foreman";
   const pollMs = Number(env.FOREMAN_POLL_MS || 1000);
   const bus = env.FOREMAN_NATS_URL ? await openBus(env.FOREMAN_NATS_URL, warn) : undefined;

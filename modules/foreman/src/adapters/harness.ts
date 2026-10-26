@@ -24,10 +24,9 @@ export interface TurnOptions {
 }
 
 export async function startTurn(options: TurnOptions): Promise<HarnessTurn> {
-  const [file = "", ...args] = options.command.split(" ").filter(Boolean);
-  const child = spawn(file, args, { cwd: options.cwd, env: options.env, stdio: ["pipe", "pipe", "pipe"] });
-  let stderr = "";
-  child.stderr.on("data", (chunk) => (stderr += chunk));
+  const [file, ...args] = options.command.split(" ") as [string, ...string[]];
+  // The adapter's own messages go to the foreman's standard error.
+  const child = spawn(file, args, { cwd: options.cwd, env: options.env, stdio: ["pipe", "pipe", "inherit"] });
   const exited = new Promise<string>((resolve) => {
     child.on("exit", () => resolve("exited"));
     child.on("error", () => resolve("exited"));
@@ -57,7 +56,7 @@ export async function startTurn(options: TurnOptions): Promise<HarnessTurn> {
       return agent.request("session/new", { cwd: options.cwd, mcpServers: [] });
     })();
     const answer = await Promise.race([handshake, exited]);
-    if (typeof answer === "string") throw new Error(`the harness ${options.command} exited: ${stderr.trim()}`);
+    if (typeof answer === "string") throw new Error(`the harness ${options.command} exited`);
     const { sessionId } = answer;
     const send = (text: string) => agent.request("session/prompt", { sessionId, prompt: [{ type: "text", text }] });
     const turn = send(options.prompt).then(

@@ -54,3 +54,10 @@ Feature: Runs
     Given "foreman serve" runs the README's "factory.yaml" with "FOREMAN_HARNESSES" naming a program that does not exist
     When a program posts the README's "work.json" to "/v1/runs" with the API token
     Then "/v1/runs/<id>" shows the state "failed" with the stage "plan" "failed" and the stage "implement" "pending"
+
+  @id=SCN-FORE-028 @status=implemented @realizes=SCN-FACTORY-LOOP-011
+  Scenario: A stage's harness session carries the run
+    Given "foreman serve" runs the README's "factory.yaml" with "OSF_DATA" set to "$OUTPUT/foreman"
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then the harness adapter's record of the "plan" session has the run's folder "$OUTPUT/foreman/runs/<id>"
+    And its resource attributes name the run, the work item, the stage "plan" and the factory version

@@ -15,7 +15,11 @@ scenario("SCN-FORE-005", async ({ sut, fakes, given, when, then }) => {
   await then('the answer has the status 404 and a problem that names "run_00000000000000000000"', async () => {
     expect(answer.status).toBe(404);
     expect(answer.headers["content-type"]).toContain("application/problem+json");
-    expect(answer.body).toMatchObject({ status: 404, detail: expect.stringContaining("run_00000000000000000000") });
+    expect(answer.body).toMatchObject({
+      title: "No such run",
+      status: 404,
+      detail: expect.stringContaining("run_00000000000000000000"),
+    });
     expect(server.harness.prompts()).toEqual([]);
   });
 });

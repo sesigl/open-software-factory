@@ -15,6 +15,6 @@ scenario("SCN-FORE-019", async ({ sut, fakes, given, when, then }) => {
 
   await then('the answer has the status 409 and a problem that names the state "complete"', async () => {
     expect(answer.response.status).toBe(409);
-    expect(answer.error).toMatchObject({ status: 409, detail: `${run.runId} is complete` });
+    expect(answer.error).toMatchObject({ title: "The run ended", status: 409, detail: `${run.runId} is complete` });
   });
 });
