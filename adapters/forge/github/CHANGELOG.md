@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/sesigl/open-software-factory/compare/forge-github-v0.3.0...forge-github-v0.4.0) (2026-10-26)
+
+
+### Features
+
+* **intake:** T-16 issues labeled factory, one work item across surfaces, Sentry alerts ([#118](https://github.com/sesigl/open-software-factory/issues/118)) ([024c559](https://github.com/sesigl/open-software-factory/commit/024c55986a2c4f4a565e72f3272105d973d0a1ea))
+
 ## [0.3.0](https://github.com/sesigl/open-software-factory/compare/forge-github-v0.2.0...forge-github-v0.3.0) (2026-10-25)
 
 
