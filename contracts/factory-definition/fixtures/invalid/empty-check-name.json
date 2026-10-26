@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "factory": "web",
+  "agents": {
+    "ship": {
+      "harness": "claude-code",
+      "model": "routes/default",
+      "prompt": "./agents/ship.md"
+    }
+  },
+  "workflow": [
+    {
+      "stage": "ship",
+      "checks": [""]
+    }
+  ]
+}

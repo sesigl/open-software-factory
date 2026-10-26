@@ -7,8 +7,8 @@ covers: [modules/foreman/src/**, modules/foreman/scripts/**]
 Run the factory's workflow for each work item: the stages of `factory.yaml` one after the other, each with its agent
 through the harness port, with human gates, steering and cancel, on Temporal. A run survives a restart of the
 foreman, and Temporal's UI shows its history. Decisions: [ADR 0067](../../docs/decisions/0067-foreman.md), on
-[ADR 0004](../../docs/decisions/0004-temporal.md), and [ADR 0068](../../docs/decisions/0068-foreman-sandboxes.md) for
-sandboxes.
+[ADR 0004](../../docs/decisions/0004-temporal.md), [ADR 0068](../../docs/decisions/0068-foreman-sandboxes.md) for
+sandboxes, and [ADR 0069](../../docs/decisions/0069-foreman-checks.md) for checks.
 
 ## Quick start
 
@@ -136,6 +136,68 @@ stage then goes like this:
 `npx -y @opensoftware/sandbox-<name>`. A factory names at most one sandbox adapter. An agent without `sandbox` runs on
 the foreman's machine in the run's folder. A sandboxed agent reaches no MCP server yet.
 
+## Checks
+
+A stage can wait for CI: give it `checks`, the names of the checks that must succeed on the run's pull request before
+it starts ([ADR 0069](../../docs/decisions/0069-foreman-checks.md)). This factory merges the pull request only when
+its check `verify` succeeded:
+
+```yaml checks/factory.yaml
+version: 1
+factory: hello
+providers:
+  harness:
+    acp: "^0"
+  forge:
+    github: "^0"
+agents:
+  plan:
+    harness: acp
+    model: routes/default
+    prompt: ./agents/plan.md
+  implement:
+    harness: acp
+    model: routes/default
+    prompt: ./agents/implement-pr.md
+  ship:
+    harness: acp
+    model: routes/default
+    prompt: ./agents/ship.md
+workflow:
+  - stage: plan
+  - stage: implement
+  - stage: ship
+    checks: [verify]
+```
+
+```markdown agents/implement-pr.md
+Implement plan.md on a new branch, push it and open a pull request. End with the pull request's link.
+```
+
+```markdown agents/ship.md
+Merge the pull request.
+```
+
+Serve it as in the quick start, with the forge adapter's token: `export FOREMAN_FORGE_TOKEN=…`. Then:
+
+1. The run's pull request is the last pull request link that an agent of an earlier stage wrote, in its messages or
+   in its tool calls' output: `https://<host>/<owner>/<name>/pull/<n>` (GitHub) or `…/pulls/<n>` (Forgejo). The run
+   shows it as `pullRequest`, every later stage's prompt ends with `Pull request: <link>`, and `run.completed@v1` lists
+   it in `pullRequests`.
+2. Before the stage `ship` starts, and before its gate if it has one, the foreman runs the
+   [forge adapter](../../ports/forge/README.md)'s `pr <owner>/<name> <n>` and reads the named checks. The stage lists
+   them under `checks`, each with `name` and `state`.
+3. Every check `success`: the stage starts. A check `failure` or `error`: the stage is `failed` without running its
+   agent, with the `reason` `the check verify ended with failure`, and the run is `failed`. A check `pending`, or one
+   the pull request does not have yet: the run and the stage are `blocked`, and the foreman reads the checks again
+   every `FOREMAN_CHECK_POLL_MS`. A cancel ends the wait.
+4. Without a pull request link, the stage is `failed` with the reason `no earlier stage linked a pull request`.
+
+The forge adapter is the one the factory names under `providers.forge`; a factory with `checks` names exactly one.
+`FOREMAN_FORGES` maps an adapter's name to its command line; an adapter it does not name runs
+`npx -y @opensoftware/forge-<name>`. It gets `FORGE_URL` and `FORGE_TOKEN` from `FOREMAN_FORGE_URL` and
+`FOREMAN_FORGE_TOKEN`.
+
 ## Commands
 
 | Command | What it does |
@@ -147,7 +209,7 @@ the foreman's machine in the run's folder. A sandboxed agent reaches no MCP serv
 | Route | What it does |
 | --- | --- |
 | `POST /v1/runs` | Start the run of a work item (the [work item](../../contracts/work-item/work-item.schema.json) format). 201 with the new run, 200 with the run the same work item started before, 400 with a problem that names the field. |
-| `GET /v1/runs/{runId}` | The run: `state`, `factory`, `factoryVersion`, `startedAt`, `endedAt` and its `stages`. 404 for a run the server does not know. |
+| `GET /v1/runs/{runId}` | The run: `state`, `factory`, `factoryVersion`, `pullRequest`, `startedAt`, `endedAt` and its `stages`. 404 for a run the server does not know. |
 | `POST /v1/runs/{runId}/signals` | `{ "type": "steer", "message": "…" }` sends the message to the running stage's agent; `{ "type": "cancel" }` cancels the run. 202 with the run, 409 when the run ended. |
 
 The OpenAPI of the routes is in [`contracts/openapi/openapi.json`](../../contracts/openapi/openapi.json); the
@@ -155,9 +217,10 @@ TypeScript type `paths` of `@opensoftware/contracts` types a client. Every route
 <FOREMAN_API_TOKEN>`, else 401. Errors are `application/problem+json` with `title`, `status` and `detail`.
 
 A run's ID is `run_` and 20 hex digits of the SHA-256 of the work item's ID, so a work item has one run. A run is
-`running`, `blocked` (at a gate), `complete`, `failed` or `cancelled`. A stage is `pending`, `blocked`, `running`,
-`succeeded`, `failed`, `rejected` (by its gate) or `cancelled`; it has its harness `sessionId` once it started and its
-`gateId` once its gate was asked.
+`running`, `blocked` (at a gate or waiting for checks), `complete`, `failed` or `cancelled`. A stage is `pending`,
+`blocked`, `running`, `succeeded`, `failed`, `rejected` (by its gate) or `cancelled`; it has its harness `sessionId` once
+it started, its `gateId` once its gate was asked, its `checks` once they were read, and a `reason` when it failed for a
+reason the foreman knows.
 
 ## How a run goes
 
@@ -173,6 +236,8 @@ A run's ID is `run_` and 20 hex digits of the SHA-256 of the work item's ID, so 
   about; limit them with the adapter's `--allow`. A turn that ends with `end_turn` succeeds the stage; any other end
   fails or cancels it, ends the run, and leaves the later stages `pending`. The adapter gets
   `OTEL_RESOURCE_ATTRIBUTES` with `osf.run.id`, `osf.work_item.id`, `osf.stage` and `osf.factory.version`.
+- **Checks.** Before a stage with `checks` starts, the foreman waits until those checks succeeded on the run's pull
+  request; a failing one fails the run ([Checks](#checks)).
 - **Gates.** Before a stage with a `gate` starts, the foreman asks gatekeeper at `FOREMAN_GATEKEEPER_URL`
   ([gatekeeper](../gatekeeper/README.md#server)): the work item's ID, the stage, the summary `<title>: start the
   stage <stage>`, the origin's link, and the gate's `policy` and `approvers` in `change`. The run is `blocked` until a
@@ -217,6 +282,10 @@ the minor version. The one-time setup is the same as for contracts
 | `FOREMAN_TASK_QUEUE` | string | `"foreman"` | serve: the Temporal task queue of the runs' workflows and activities. |
 | `FOREMAN_HARNESSES` | string | `"{}"` | serve: a JSON object from harness name to the command line of its adapter. A harness it does not name runs npx -y @opensoftware/harness-<name> run. |
 | `FOREMAN_SANDBOXES` | string | `"{}"` | serve: a JSON object from sandbox adapter name to the command line of the adapter. An adapter it does not name runs npx -y @opensoftware/sandbox-<name>. The factory names its adapter under providers.sandbox, docker by default. |
+| `FOREMAN_FORGES` | string | `"{}"` | serve: a JSON object from forge adapter name to the command line of the adapter. An adapter it does not name runs npx -y @opensoftware/forge-<name>. The factory names its adapter under providers.forge. |
+| `FOREMAN_FORGE_URL` | string |  | serve: the forge adapter's FORGE_URL, for a factory whose stages have checks. Default: the adapter's own default. |
+| `FOREMAN_FORGE_TOKEN` | string |  | serve: the forge adapter's FORGE_TOKEN: a token that may read the pull requests and their checks. Never written to a file. |
+| `FOREMAN_CHECK_POLL_MS` | string | `"30000"` | serve: how long a stage that waits for pending checks waits before it reads them again, in milliseconds. |
 | `FOREMAN_POLL_MS` | string | `"1000"` | serve: how often a running stage looks for steering messages and a cancel, in milliseconds. |
 | `FOREMAN_GATEKEEPER_URL` | string |  | serve: the URL of gatekeeper serve, which a stage with a gate asks for a decision. Required for a factory with gates. |
 | `FOREMAN_GATEKEEPER_TOKEN` | string |  | serve: gatekeeper's API token, GATEKEEPER_API_TOKEN. |
@@ -269,3 +338,11 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-039 | implemented | The sandbox adapter is the one the factory names under "providers.sandbox" |
 | SCN-FORE-040 | implemented | A factory that names two sandbox adapters stops the server at the start |
 | SCN-FORE-041 | implemented | A stage whose agent declares no sandbox runs on the foreman's machine |
+| SCN-FORE-042 | implemented | A failing check stops the stage that waits for it |
+| SCN-FORE-043 | implemented | A stage starts when its checks succeeded |
+| SCN-FORE-044 | implemented | A pending check holds the stage until it succeeds |
+| SCN-FORE-045 | implemented | A check the pull request does not have yet holds the stage |
+| SCN-FORE-046 | implemented | A stage with checks fails when no earlier stage linked a pull request |
+| SCN-FORE-047 | implemented | A run shows its pull request and publishes it when it ends |
+| SCN-FORE-048 | implemented | A cancel ends a run that waits for a check |
+| SCN-FORE-049 | implemented | A factory with checks but without a forge adapter stops the server at the start |

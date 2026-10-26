@@ -3,10 +3,10 @@
   "extends": ["//"],
   "tasks": {
     "test:system": {
-      "dependsOn": ["$TURBO_EXTENDS$", "@opensoftware/harness-acp#build"]
+      "dependsOn": ["$TURBO_EXTENDS$", "@opensoftware/harness-acp#build", "@opensoftware/forge-github#build"]
     },
     "mutation": {
-      "dependsOn": ["$TURBO_EXTENDS$", "@opensoftware/harness-acp#build"]
+      "dependsOn": ["$TURBO_EXTENDS$", "@opensoftware/harness-acp#build", "@opensoftware/forge-github#build"]
     }
   }
 }

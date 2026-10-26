@@ -2,10 +2,10 @@
 // how each fact changes the view, and the events it publishes. The workflow asks for each step and applies each fact
 // through local activities, so this code runs in the worker's own thread, not in Temporal's sandbox.
 import { createHash } from "node:crypto";
-import type { RunCompleted, RunStarted, RunView, StageView, WorkItem } from "@opensoftware/contracts";
+import type { CheckView, RunCompleted, RunStarted, RunView, StageView, WorkItem } from "@opensoftware/contracts";
 import type { Definition } from "./definition.ts";
 
-export type { RunView, StageView };
+export type { CheckView, RunView, StageView };
 export type RunState = RunView["state"];
 export type StageState = StageView["state"];
 
@@ -18,6 +18,8 @@ export interface RunInput {
 /** What the workflow does next for the stage at `index`. */
 export type Step =
   | { kind: "request-gate"; index: number }
+  /** Read the stage's checks on the run's pull request, after `delayMs` when they were read before (ADR 0069). */
+  | { kind: "read-checks"; index: number; delayMs: number }
   | { kind: "await-gate"; index: number; gateId: string }
   | { kind: "run-stage"; index: number }
   | { kind: "end" };
@@ -33,8 +35,9 @@ export interface GateDecision {
 /** Something that happened to a run. Each fact moves the view on. */
 export type Fact =
   | ({ kind: "gate"; index: number } & GateDecision)
+  | { kind: "checks"; index: number; checks: CheckView[]; reason?: string }
   | { kind: "stage-started"; index: number }
-  | { kind: "stage-ended"; index: number; stopReason: string; sessionId?: string }
+  | { kind: "stage-ended"; index: number; stopReason: string; sessionId?: string; pullRequest?: string }
   | { kind: "cancelled" }
   | { kind: "error"; message: string };
 
@@ -58,13 +61,18 @@ export function firstView(workItem: WorkItem, definition: Definition, version: s
 
 export const hasEnded = (view: RunView): boolean => ENDED.has(view.state);
 
-export function nextStep(view: RunView, definition: Definition): Step {
+/** The next step; a stage whose checks are pending reads them again after `checkPollMs`. */
+export function nextStep(view: RunView, definition: Definition, checkPollMs: number): Step {
   if (hasEnded(view)) return { kind: "end" };
   // A run whose last stage succeeded is complete, so a run that goes on has a stage that did not succeed.
   const index = view.stages.findIndex((stage) => stage.state !== "succeeded");
   const stage = view.stages[index] as StageView;
+  const plan = definition.stages[index];
   if (stage.state === "blocked" && stage.gateId) return { kind: "await-gate", index, gateId: stage.gateId };
-  if (definition.stages[index]?.gate && !stage.gateId) return { kind: "request-gate", index };
+  // Checks come before the gate: nobody is asked to approve a change whose checks fail.
+  if (plan?.checks?.length && !stage.checks?.every((check) => check.state === "success"))
+    return { kind: "read-checks", index, delayMs: stage.checks ? checkPollMs : 0 };
+  if (plan?.gate && !stage.gateId) return { kind: "request-gate", index };
   return { kind: "run-stage", index };
 }
 
@@ -75,6 +83,8 @@ export function apply(view: RunView, fact: Fact, at: string): RunView {
   switch (fact.kind) {
     case "gate":
       return gate(next, fact, end);
+    case "checks":
+      return checks(next, fact, end);
     case "stage-started": {
       Object.assign(next.stages[fact.index] as StageView, { state: "running", startedAt: at });
       return next;
@@ -83,6 +93,7 @@ export function apply(view: RunView, fact: Fact, at: string): RunView {
       const state = stageStateOf(fact.stopReason);
       const stage = next.stages[fact.index] as StageView;
       Object.assign(stage, { state, endedAt: at }, fact.sessionId ? { sessionId: fact.sessionId } : {});
+      if (fact.pullRequest) next.pullRequest = fact.pullRequest;
       if (state !== "succeeded") return end(state === "cancelled" ? "cancelled" : "failed");
       return fact.index === next.stages.length - 1 ? end("complete") : next;
     }
@@ -112,6 +123,43 @@ function gate(next: RunView, fact: GateDecision & { index: number }, end: (state
   return end("failed");
 }
 
+function checks(next: RunView, fact: Extract<Fact, { kind: "checks" }>, end: (state: RunState) => RunView): RunView {
+  const stage = next.stages[fact.index] as StageView;
+  if (fact.checks.length) stage.checks = fact.checks;
+  const failed = fact.checks.find((check) => check.state === "failure" || check.state === "error");
+  const reason = fact.reason ?? (failed && `the check ${failed.name} ended with ${failed.state}`);
+  if (reason) {
+    Object.assign(stage, { state: "failed", reason });
+    return end("failed");
+  }
+  if (fact.checks.every((check) => check.state === "success")) {
+    stage.state = "pending";
+    return { ...next, state: "running" };
+  }
+  stage.state = "blocked";
+  return { ...next, state: "blocked" };
+}
+
+/** The states of the named checks in what the forge port's `pr` printed; a check it does not list is pending. */
+export function checksOf(names: string[], printed: { name: string; state: string }[]): CheckView[] {
+  return names.map((name) => {
+    const state = printed.find((check) => check.name === name)?.state;
+    return { name, state: state === "success" || state === "failure" || state === "error" ? state : "pending" };
+  });
+}
+
+// A pull request's page on GitHub (/pull/<n>) or Forgejo (/pulls/<n>), as runlog finds it.
+const PULL_REQUEST = /https?:\/\/[^\s"'<>()]+\/([^/\s"'<>()]+)\/([^/\s"'<>()]+)\/pulls?\/(\d+)/g;
+
+/** The last pull request link in the text. */
+export const lastPullRequestIn = (text: string): string | undefined => [...text.matchAll(PULL_REQUEST)].pop()?.[0];
+
+/** The repository `<owner>/<name>` and number of a pull request link. */
+export function pullRequestOf(url: string): { repo: string; number: string } {
+  const [, owner, name, number] = [...url.matchAll(PULL_REQUEST)][0] as RegExpMatchArray;
+  return { repo: `${owner}/${name}`, number: number as string };
+}
+
 /** How a turn's stop reason ends its stage (harness port): only `end_turn` succeeds. */
 export function stageStateOf(stopReason: string): StageState {
   if (stopReason === "end_turn") return "succeeded";
@@ -119,10 +167,11 @@ export function stageStateOf(stopReason: string): StageState {
   return "failed";
 }
 
-/** The prompt of a stage: the agent's prompt, then the work item. */
-export function promptOf(agentPrompt: string, workItem: WorkItem): string {
+/** The prompt of a stage: the agent's prompt, then the work item and the run's pull request. */
+export function promptOf(agentPrompt: string, workItem: WorkItem, pullRequest?: string): string {
   const description = workItem.description ? `\n\n${workItem.description}` : "";
-  return `${agentPrompt.trimEnd()}\n\n# Work item ${workItem.id}\n\n${workItem.title}${description}\n`;
+  const link = pullRequest ? `\n\nPull request: ${pullRequest}` : "";
+  return `${agentPrompt.trimEnd()}\n\n# Work item ${workItem.id}\n\n${workItem.title}${description}${link}\n`;
 }
 
 export type Signal = { type: "steer"; message: string } | { type: "cancel" };
@@ -185,6 +234,7 @@ export function runCompleted(view: RunView): RunCompleted {
       endedAt,
       requester: view.workItem.requester,
       source: view.workItem.origin.source,
+      ...(view.pullRequest ? { pullRequests: [view.pullRequest] } : {}),
     },
   };
 }
