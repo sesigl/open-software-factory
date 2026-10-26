@@ -3,7 +3,7 @@ status: accepted
 date: 2026-10-26
 ---
 
-# 0065. Mutation shards deal out mutants, and a shard reuses its report when only runs/ changed
+# 0066. Mutation shards deal out mutants, and a shard reuses its report when only runs/ changed
 
 ## Context
 

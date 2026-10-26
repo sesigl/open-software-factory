@@ -2,7 +2,7 @@
 // run runs every scenario once with OSF_TESTKIT_MUTANTS, so each process of the module writes the mutants it ran
 // into the folder of its scenario (testkit, support/coverage.ts). Stryker then reruns, for each mutant, only the
 // scenarios that ran it, and marks a mutant no scenario ran as NoCoverage. With the option `osfShard` ("i/n"), it
-// tests only every n-th mutant (ADR 0065). Stryker loads this file by its path in each of its test runner processes,
+// tests only every n-th mutant (ADR 0066). Stryker loads this file by its path in each of its test runner processes,
 // so it imports nothing but Node.
 import { spawn } from "node:child_process";
 import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
@@ -127,7 +127,7 @@ function ranBy(folder: string): Record<string, number> {
 
 /** The option of `osf mutation` for this runner, so that Stryker accepts it. */
 export const strykerValidationSchema = {
-  properties: { osfShard: { type: "string", description: "Test only every n-th mutant: i/n (ADR 0065)." } },
+  properties: { osfShard: { type: "string", description: "Test only every n-th mutant: i/n (ADR 0066)." } },
 };
 
 export const strykerPlugins = [{ kind: "TestRunner", name: "osf-scenarios", injectableClass: ScenarioRunner }];

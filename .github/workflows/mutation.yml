@@ -2,7 +2,7 @@
 # adds to each module and library, and the check fails when too few of those mutants make a system test fail.
 # One runner per shard of about 100 added lines of a changed unit: each mutant reruns the unit's system tests, so a
 # server module with a new file needs several runners to stay under the time limit. Each shard tests every n-th mutant
-# of all the added lines, and reuses its report of an earlier push when nothing but runs/ changed (ADR 0065).
+# of all the added lines, and reuses its report of an earlier push when nothing but runs/ changed (ADR 0066).
 name: mutation
 
 on:
