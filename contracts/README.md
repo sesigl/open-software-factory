@@ -44,14 +44,16 @@ Each format has one schema, generated from `typespec/`, and fixtures that CONTRA
 | score | `score/score.schema.json` | `Score` | Subset of Langfuse's create-score request; factory fields in `metadata`. |
 | gate record | `gate-record/gate-record.schema.json` | `GateRecord` | gatekeeper's signed approval record (ADR 0047). |
 | sandbox spec | `sandbox-spec/sandbox-spec.schema.json` | `SandboxSpec` | The input of a sandbox adapter's `create` (ADR 0054). Closed objects: an unknown field is an error. |
-| events | `events/<event>/<event>.schema.json`, `events/asyncapi.yaml` | `WorkReceived` … `IssueLabeled` | CloudEvents 1.0, structured JSON. |
+| events | `events/<event>/<event>.schema.json`, `events/asyncapi.yaml` | `WorkReceived`, `RunStarted` … `IssueLabeled` | CloudEvents 1.0, structured JSON. |
 
 ## HTTP APIs
 
 `openapi/openapi.json` also holds the paths of the module APIs, from the operations in `typespec/` (ADR 0048). The
 first is gatekeeper's: `POST /v1/gates` and `GET /v1/gates/{gateId}` with the models `GateRequest`, `GateView` and
 `ApiProblem` (RFC 9457). The second is intake's (ADR 0063): `POST /v1/work-items` and
-`GET /v1/work-items/{workItemId}` with the models `WorkSubmission`, `WorkItemView` and `WorkRequest`. `pnpm build` compiles the operations with the TypeSpec OpenAPI 3 emitter and copies their
+`GET /v1/work-items/{workItemId}` with the models `WorkSubmission`, `WorkItemView` and `WorkRequest`. The third is the
+foreman's (ADR 0067): `POST /v1/runs`, `GET /v1/runs/{runId}` and `POST /v1/runs/{runId}/signals` with the models
+`RunView`, `StageView` and `RunSignal`. `pnpm build` compiles the operations with the TypeSpec OpenAPI 3 emitter and copies their
 paths next to the named models; an operation that uses a type that is no model fails the build. The package exports
 the type `paths`, which types a client such as openapi-fetch.
 
