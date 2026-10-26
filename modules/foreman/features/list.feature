@@ -19,3 +19,9 @@ Feature: The run list
     Given "foreman serve" runs the README's "factory.yaml"
     When a program reads "/v1/runs?state=done" with the API token
     Then the answer has the status 400 and a problem that names "state"
+
+  @id=SCN-FORE-067 @status=implemented @realizes=SCN-FACTORY-ORCH-008
+  Scenario: A run that waits at its gate is listed as blocked
+    Given a run of the README's "work.json" waits at the gate before "implement"
+    When a program reads "/v1/runs?state=blocked" with the API token
+    Then the answer lists the run in the state "blocked" with the stage "implement" "blocked"

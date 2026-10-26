@@ -621,7 +621,7 @@ read them for ideas, do not copy their company-specific rules.
     hands each stage's agent the URL, the key and the agent's `model` as `OPENAI_*` and `ANTHROPIC_*` variables. The
     port's scenarios cover the Messages and Responses APIs. The signals `take-over` and `hand-back` let a person take
     the running stage over in the run's `folder` and hand the run back. `fakes.inference()` fakes the port.
-  - [x] Runs listed and filtered by state, work item status and evidence (ADR 0071, `SCN-FORE-064` to `-066`,
+  - [x] Runs listed and filtered by state, work item status and evidence (ADR 0071, `SCN-FORE-064` to `-067`,
     `SCN-INTAKE-030` to `-038`): `GET /v1/runs` lists the runs, running ones first, and `?state=` filters them (ORCH-008);
     `intake serve` follows `run.started@v1` and `run.completed@v1`, so a work item shows `running`, `complete`,
     `failed` or `cancelled` and its `runId`; the Factory MCP server's tool `run_evidence` fetches the run's view from the
