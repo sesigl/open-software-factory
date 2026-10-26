@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/sesigl/open-software-factory/compare/intake-v0.1.0...intake-v0.2.0) (2026-10-26)
+
+
+### Features
+
+* **foreman:** T-17 runs listed by state, work item status follows its run, and the evidence tool ([#128](https://github.com/sesigl/open-software-factory/issues/128)) ([3e6fea6](https://github.com/sesigl/open-software-factory/commit/3e6fea63d297e818f06c25a2370a9408172d872c))
+
 ## 0.1.0 (2026-10-26)
 
 
