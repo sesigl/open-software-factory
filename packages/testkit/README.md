@@ -142,7 +142,9 @@ Every server, client and subscription stops when the scenario ends, before the f
 - `fakes.nats()`, `fakes.temporal()`, `fakes.s3()`: a real service in a container for this
   scenario ([ADR 0016](../../docs/decisions/0016-testkit-service-fakes.md)). Each gives only what a module needs
   to reach it: a URL, an address or an endpoint with keys. Docker must run.
-- `fakes.forge()`: a real Forgejo with a user and an API token (`url`, `token`, `owner`). The test can
+- `fakes.forge()`: a real Forgejo with a user and an API token (`url`, `token`, `owner`). The test process starts one
+  and gives each scenario that asks for it the forge without the repositories of the scenarios before
+  ([ADR 0064](../../docs/decisions/0064-shared-forge-per-test-process.md)). The test can
   `createRepository`, `openPullRequest` and `mergePullRequest`, read a pull request's `comments` and `statuses`,
   list the repository's `pullRequests` (title, body, head and base branch, state, URL) a module opened, and read a
   `file` on a branch ([ADR 0046](../../docs/decisions/0046-observer.md)). It can `createBranch` with a commit of
@@ -339,3 +341,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-098 | implemented | fakes.github answers the changed files, the labels and the draft flag of a pull request |
 | SCN-TK-099 | implemented | fakes.github has a token like a GitHub Actions token that may not read its user |
 | SCN-TK-100 | implemented | fakes.slack lists the messages at the top of a channel newest first, without the replies in threads |
+| SCN-TK-101 | implemented | fakes.forge gives a later scenario the same forge without the repositories of the earlier one |

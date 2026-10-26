@@ -1,8 +1,9 @@
 // A real Forgejo in a container (ADR 0016), with an admin user, an API token and the few calls a test needs. Its
-// webhooks reach a fake for containers at host.docker.internal (ADR 0057).
+// webhooks reach a fake for containers at host.docker.internal (ADR 0057). A test process starts one Forgejo and
+// gives each scenario that asks for it the forge without the repositories of the scenarios before (ADR 0064).
 import { randomUUID } from "node:crypto";
-import { GenericContainer, Wait } from "testcontainers";
-import { address, IMAGES, type Track } from "./services.ts";
+import { GenericContainer, type StartedTestContainer, Wait } from "testcontainers";
+import { address, IMAGES } from "./services.ts";
 
 export interface PullRequest {
   repository: string;
@@ -71,26 +72,58 @@ export interface Forge {
 const OWNER = "tester";
 const REVIEWER = "reviewer";
 
-export async function startForge(track: Track): Promise<Forge> {
+/** The Forgejo of this test process: its container, URL and the users' tokens. */
+interface Forgejo {
+  container: StartedTestContainer;
+  url: string;
+  /** The API token of `owner`. */
+  token: string;
+  /** Creates a user with the forge's password and gives its API token. */
+  user(name: string, admin: boolean): Promise<string>;
+  /** The authorization of `reviewer`, once the first review created the user. */
+  reviewer?: Promise<string>;
+}
+
+/** Started by the first scenario of this process that asks for a forge; Ryuk stops it when the process ends. */
+let running: Promise<Forgejo> | undefined;
+
+/**
+ * The forge of this process, started on the first call, without a repository of an earlier scenario. `seen` gets
+ * its container, so the scenario counts its host as a container's.
+ */
+export async function startForge(seen: (container: StartedTestContainer) => void): Promise<Forge> {
+  running ??= startForgejo().catch((error: unknown) => {
+    running = undefined;
+    throw error;
+  });
+  const forgejo = await running;
+  seen(forgejo.container);
+  const auth = `token ${forgejo.token}`;
+  const api = <T>(method: string, path: string, body?: unknown): Promise<T> =>
+    call<T>(forgejo.url, auth, method, path, body);
+  for (const repository of await api<{ name: string }[]>("GET", "/user/repos?limit=50")) {
+    await api("DELETE", `/repos/${OWNER}/${repository.name}`);
+  }
+  return forgeOf(forgejo, api);
+}
+
+async function startForgejo(): Promise<Forgejo> {
   // A fresh password per forge: it lives only as long as the container.
   const password = randomUUID();
-  const container = track(
-    await new GenericContainer(IMAGES.forge)
-      .withEnvironment({
-        FORGEJO__security__INSTALL_LOCK: "true",
-        FORGEJO__database__DB_TYPE: "sqlite3",
-        FORGEJO__repository__DEFAULT_BRANCH: "main",
-        FORGEJO__service__DISABLE_REGISTRATION: "true",
-        // Webhooks may reach the test's fakes on the Docker host, which Forgejo blocks by default as a private address.
-        FORGEJO__webhook__ALLOWED_HOST_LIST: "*",
-      })
-      .withExtraHosts([{ host: "host.docker.internal", ipAddress: "host-gateway" }])
-      .withExposedPorts(3000)
-      .withWaitStrategy(Wait.forHttp("/api/healthz", 3000))
-      .start(),
-  );
+  const container = await new GenericContainer(IMAGES.forge)
+    .withEnvironment({
+      FORGEJO__security__INSTALL_LOCK: "true",
+      FORGEJO__database__DB_TYPE: "sqlite3",
+      FORGEJO__repository__DEFAULT_BRANCH: "main",
+      FORGEJO__service__DISABLE_REGISTRATION: "true",
+      // Webhooks may reach the test's fakes on the Docker host, which Forgejo blocks by default as a private address.
+      FORGEJO__webhook__ALLOWED_HOST_LIST: "*",
+    })
+    .withExtraHosts([{ host: "host.docker.internal", ipAddress: "host-gateway" }])
+    .withExposedPorts(3000)
+    .withWaitStrategy(Wait.forHttp("/api/healthz", 3000))
+    .start();
   const url = `http://${address(container, 3000)}`;
-  /** Creates a user with the forge's password and gives its API token. */
   const user = async (name: string, admin: boolean): Promise<string> => {
     const created = await container.exec(
       [
@@ -117,15 +150,19 @@ export async function startForge(track: Track): Promise<Forge> {
     });
     return issued.sha1;
   };
-  const token = await user(OWNER, true);
+  return { container, url, token: await user(OWNER, true), user };
+}
+
+/** The calls of a test on the forge, with `api` as the owner. */
+function forgeOf(forgejo: Forgejo, api: Api): Forge {
+  const { url, token } = forgejo;
   const auth = `token ${token}`;
-  const api = <T>(method: string, path: string, body?: unknown): Promise<T> => call<T>(url, auth, method, path, body);
-  let reviewerAuth: string | undefined;
   /** The token of `reviewer`, a person who may write to the pull request's repository. */
   const reviewer = async (pr: PullRequest): Promise<string> => {
-    reviewerAuth ??= `token ${await user(REVIEWER, false)}`;
+    forgejo.reviewer ??= forgejo.user(REVIEWER, false).then((issued) => `token ${issued}`);
+    const authorization = await forgejo.reviewer;
     await api("PUT", `/repos/${OWNER}/${pr.repository}/collaborators/${REVIEWER}`, { permission: "write" });
-    return reviewerAuth;
+    return authorization;
   };
 
   return {
