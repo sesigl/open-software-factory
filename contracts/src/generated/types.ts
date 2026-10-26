@@ -41,7 +41,7 @@ export type paths = {
             path?: never;
             cookie?: never;
         };
-        /** @description The runs of the server, newest first; with `state`, only the runs in that state (ADR 0071). */
+        /** @description The runs of the server, running runs first, then the runs that ended, the one that ended last first; with `state`, only the runs in that state (ADR 0071). */
         get: operations["ForemanApi_listRuns"];
         put?: never;
         /** @description Start a run of the factory's workflow for a work item. The same work item again answers the run it started. */
@@ -686,7 +686,7 @@ export type components = {
             /** Format: uri */
             evidenceBundle?: string;
         };
-        /** @description foreman: the runs of the server, newest first, as `GET /v1/runs` answers them (ADR 0071). */
+        /** @description foreman: the runs of the server, running runs first, then the runs that ended, the one that ended last first, as `GET /v1/runs` answers them (ADR 0071). */
         RunList: {
             runs: components["schemas"]["RunView"][];
         };

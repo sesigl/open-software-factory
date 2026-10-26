@@ -26,3 +26,9 @@ Feature: A work item follows its run
     Given the server knows that the run of the README's "work.json" completed with the outcome "succeeded"
     When the foreman's "run.started@v1" for that run arrives after it
     Then "/v1/work-items/<id>" still shows the status "complete"
+
+  @id=SCN-INTAKE-038 @status=implemented
+  Scenario: A "run.completed@v1" that breaks its contract changes nothing
+    Given the server, with "INTAKE_NATS_URL" set to a NATS server, received the README's "work.json"
+    When the foreman publishes "run.completed@v1" for the work item with the outcome "merged"
+    Then "/v1/work-items/<id>" still shows the status "received"

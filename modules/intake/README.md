@@ -272,3 +272,5 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-INTAKE-034 | implemented | A local agent fetches the evidence of a work item's run through the Factory MCP server |
 | SCN-INTAKE-035 | implemented | The evidence of a work item without a run is a tool error |
 | SCN-INTAKE-036 | implemented | The evidence tool without the foreman's URL is a tool error that names the variable |
+| SCN-INTAKE-037 | implemented | The Factory MCP server lists the tool "run_evidence" |
+| SCN-INTAKE-038 | implemented | A "run.completed@v1" that breaks its contract changes nothing |
