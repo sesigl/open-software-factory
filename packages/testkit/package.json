@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/testkit",
-  "version": "0.22.0",
+  "version": "0.23.0",
   "description": "The only way system tests touch a module: scenario(), the sut handle, fakes and the testkit CLI.",
   "license": "Apache-2.0",
   "repository": {

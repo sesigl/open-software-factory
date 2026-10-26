@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.0](https://github.com/sesigl/open-software-factory/compare/gatekeeper-v0.3.0...gatekeeper-v0.4.0) (2026-10-26)
+
+
+### Features
+
+* **foreman:** T-17 runs of the factory's workflow on Temporal, with gates, steering and cancel ([#122](https://github.com/sesigl/open-software-factory/issues/122)) ([b62d1af](https://github.com/sesigl/open-software-factory/commit/b62d1af7eb33d52db64973a34b8050d69d8adb1d))
+* **intake:** T-16 one inbox for agent work over HTTP, Slack and MCP ([#117](https://github.com/sesigl/open-software-factory/issues/117)) ([c4c27bf](https://github.com/sesigl/open-software-factory/commit/c4c27bf5b8c64c88f01005067c35cd030e9684b8))
+
+
+### Bug Fixes
+
+* **gatekeeper:** decide gates that 0.2 left pending; reject adapter output that is not JSON ([#116](https://github.com/sesigl/open-software-factory/issues/116)) ([c8f12ae](https://github.com/sesigl/open-software-factory/commit/c8f12aed791cfa8957b80731f9d55c00260e8827))
+
 ## [0.3.0](https://github.com/sesigl/open-software-factory/compare/gatekeeper-v0.2.0...gatekeeper-v0.3.0) (2026-10-25)
 
 
