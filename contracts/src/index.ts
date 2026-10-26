@@ -19,6 +19,7 @@ export type RunRecord = Schemas["RunRecord"];
 export type EvidenceManifest = Schemas["EvidenceManifest"];
 export type Score = Schemas["Score"];
 export type WorkReceived = Schemas["WorkReceived"];
+export type RunStarted = Schemas["RunStarted"];
 export type RunCompleted = Schemas["RunCompleted"];
 export type GateRequested = Schemas["GateRequested"];
 export type GateDecided = Schemas["GateDecided"];
@@ -34,6 +35,9 @@ export type ApiProblem = Schemas["ApiProblem"];
 export type WorkSubmission = Schemas["WorkSubmission"];
 export type WorkItemView = Schemas["WorkItemView"];
 export type WorkRequest = Schemas["WorkRequest"];
+export type RunView = Schemas["RunView"];
+export type StageView = Schemas["StageView"];
+export type RunSignal = Schemas["RunSignal"];
 export type SandboxSpec = Schemas["SandboxSpec"];
 
 /** One reason a document does not match its format. `path` is a JSON Pointer into the document. */

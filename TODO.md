@@ -599,6 +599,18 @@ read them for ideas, do not copy their company-specific rules.
 - **From T-16:** the Factory MCP server (`intake mcp`) gets a tool that fetches a run's evidence, once the foreman
   records runs (ADR 0063).
 - **Done when:** E2E-001 passes and this repository's `factory` issues are implemented by the foreman (phase 3).
+- **Slices:**
+  - [x] Runs, gates and signals (ADR 0067, `SCN-FORE-001` to `-023`): `foreman serve` with `POST /v1/runs`,
+    `GET /v1/runs/{runId}` and `POST /v1/runs/{runId}/signals` in `contracts/`, one Temporal workflow per work item
+    whose stages run their agents through the harness port, gates requested at gatekeeper and decided by
+    `gate.decided@v1`, steering and cancel, recovery after a restart, `work.received@v1` in and the new
+    `run.started@v1` and `run.completed@v1` out; the factory version is the commit of `factory.yaml`. The testkit runs
+    Temporal and NATS as pinned binaries without Docker.
+  - [ ] Sandboxes: each stage runs in a sandbox through the sandbox port (the quick start "on Docker").
+  - [ ] A failing CI check stops the ship stage: the forge port's checks before a stage named in the definition.
+  - [ ] The inference gateway per run (from T-14 above) and a person takes over a run (ORCH-007).
+  - [ ] Runs listed and filtered by state (ORCH-008), and intake's work item status follows its run.
+  - [ ] The evidence tool of the Factory MCP server (from T-16 above).
 
 ### [ ] T-18 · console
 

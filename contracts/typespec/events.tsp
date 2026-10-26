@@ -39,6 +39,9 @@ model CloudEvent<Type extends string, Data> {
 /** intake: a work item was accepted. */
 model WorkReceived is CloudEvent<"work.received@v1", WorkItem>;
 
+/** foreman: a run started (ADR 0067). */
+model RunStarted is CloudEvent<"run.started@v1", RunStartedData>;
+
 /** foreman: a run ended. */
 model RunCompleted is CloudEvent<"run.completed@v1", RunCompletedData>;
 
@@ -62,6 +65,23 @@ model PrClosed is CloudEvent<"pr.closed@v1", PrClosedData>;
 
 /** forge adapters: a label was added to an issue. */
 model IssueLabeled is CloudEvent<"issue.labeled@v1", IssueLabeledData>;
+
+model RunStartedData {
+  runId: Identifier;
+  workItemId: Identifier;
+
+  /** The name of the factory. */
+  factory: Name;
+
+  factoryVersion: CommitHash;
+
+  /** The stages of the run's workflow, in order. */
+  stages: Name[];
+
+  startedAt: utcDateTime;
+  requester: Actor;
+  source: Name;
+}
 
 model RunCompletedData {
   runId: Identifier;

@@ -61,7 +61,7 @@ jobs:
         include:
           - suite: testkit
             filter: "@opensoftware/testkit"
-            images: postgres nats temporal s3 forge
+            images: s3 forge
             pull: curlimages/curl:8.17.0
           - suite: factory-spec
             filter: "@opensoftware/factory-spec"
@@ -83,10 +83,11 @@ jobs:
             images: forge
           - suite: gatekeeper
             filter: "@opensoftware/gatekeeper"
-            images: nats
           - suite: intake
             filter: "@opensoftware/intake"
-            images: nats
+          # Each scenario starts the Temporal dev server and runs the scripted harness behind harness-acp (ADR 0067).
+          - suite: foreman
+            filter: "@opensoftware/foreman"
           # Each scenario starts sandboxes of the test template behind iron-proxy (ADR 0054).
           - suite: sandbox-docker
             filter: "@opensoftware/sandbox-docker"
@@ -105,7 +106,7 @@ jobs:
             images: forge
           # Every other package, so a new module runs without a change here.
           - suite: rest
-            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper !@opensoftware/intake !@opensoftware/sandbox-docker !@opensoftware/sandbox-kubernetes !@opensoftware/inference-litellm !@opensoftware/forge-forgejo"
+            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper !@opensoftware/intake !@opensoftware/foreman !@opensoftware/sandbox-docker !@opensoftware/sandbox-kubernetes !@opensoftware/inference-litellm !@opensoftware/forge-forgejo"
     steps:
       - uses: actions/checkout@v5
         with:

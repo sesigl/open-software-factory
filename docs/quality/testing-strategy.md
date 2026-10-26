@@ -90,6 +90,7 @@ Where the time went, and what each step changed:
 | --- | --- | --- |
 | ADR 0026 | `make verify` ran every suite one after the other | CI runs each suite on its own runner, side by side |
 | ADR 0049 | Containers for systems that have a fast stand-in | PGlite, in-process fakes of Slack, GitHub and the model gateway |
+| ADR 0067 | NATS and Temporal containers, about 5 s each | The same servers as pinned binaries on the host, about 1 s each |
 | ADR 0051 | Every scenario file imported the testkit again, 0.7 s each | Files share Vitest workers |
 | ADR 0061 | Every mutant reran the whole suite: 25 minutes for one forge adapter change of 65 mutants | Each mutant reruns only the scenarios whose module processes ran it |
 

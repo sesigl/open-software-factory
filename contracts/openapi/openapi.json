@@ -117,6 +117,191 @@
         }
       }
     },
+    "/v1/runs": {
+      "post": {
+        "operationId": "ForemanApi_startRun",
+        "description": "Start a run of the factory's workflow for a work item. The same work item again answers the run it started.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunView"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "The request has succeeded and a new resource has been created as a result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The server could not understand the request due to invalid syntax.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Access is unauthorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkItem"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/runs/{runId}": {
+      "get": {
+        "operationId": "ForemanApi_getRun",
+        "description": "A run: its state and the state of each stage.",
+        "parameters": [
+          {
+            "name": "runId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunView"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Access is unauthorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The server cannot find the requested resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/runs/{runId}/signals": {
+      "post": {
+        "operationId": "ForemanApi_signalRun",
+        "description": "Steer the running stage's agent, or cancel the run.",
+        "parameters": [
+          {
+            "name": "runId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "The request has been accepted for processing, but processing has not yet completed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The server could not understand the request due to invalid syntax.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Access is unauthorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The server cannot find the requested resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state of the server.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunSignal"
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/work-items": {
       "post": {
         "operationId": "IntakeApi_submitWork",
@@ -1838,6 +2023,31 @@
         ],
         "description": "Set at launch through OTEL_RESOURCE_ATTRIBUTES, so it is on every span of the run."
       },
+      "RunSignal": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/RunSignalType"
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The steering message. Required with \"steer\"."
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "description": "foreman: a signal to a run: \"steer\" with a message for the running stage's agent, or \"cancel\"."
+      },
+      "RunSignalType": {
+        "type": "string",
+        "enum": [
+          "steer",
+          "cancel"
+        ],
+        "description": "foreman: what a person tells a run."
+      },
       "RunSpan": {
         "type": "object",
         "properties": {
@@ -1927,6 +2137,165 @@
           "osf.outcome"
         ],
         "description": "Attributes of the root span of the run. GenAI names where a convention exists."
+      },
+      "RunStarted": {
+        "type": "object",
+        "properties": {
+          "specversion": {
+            "type": "string",
+            "const": "1.0"
+          },
+          "id": {
+            "$ref": "#/components/schemas/Identifier",
+            "description": "Unique per source. A consumer that sees the same source and id twice handles the event once."
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The producing module, for example \"/osf/intake\"."
+          },
+          "type": {
+            "type": "string",
+            "const": "run.started@v1"
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The ID of the thing the event is about: work item, gate, run, score or pull request."
+          },
+          "datacontenttype": {
+            "type": "string",
+            "const": "application/json"
+          },
+          "dataschema": {
+            "type": "string",
+            "format": "uri"
+          },
+          "traceparent": {
+            "type": "string",
+            "description": "W3C trace context (CloudEvents distributed tracing extension)."
+          },
+          "data": {
+            "$ref": "#/components/schemas/RunStartedData"
+          }
+        },
+        "required": [
+          "specversion",
+          "id",
+          "source",
+          "type",
+          "time",
+          "data"
+        ],
+        "description": "foreman: a run started (ADR 0067)."
+      },
+      "RunStartedData": {
+        "type": "object",
+        "properties": {
+          "runId": {
+            "$ref": "#/components/schemas/Identifier"
+          },
+          "workItemId": {
+            "$ref": "#/components/schemas/Identifier"
+          },
+          "factory": {
+            "$ref": "#/components/schemas/Name",
+            "description": "The name of the factory."
+          },
+          "factoryVersion": {
+            "$ref": "#/components/schemas/CommitHash"
+          },
+          "stages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Name"
+            },
+            "description": "The stages of the run's workflow, in order."
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "requester": {
+            "$ref": "#/components/schemas/Actor"
+          },
+          "source": {
+            "$ref": "#/components/schemas/Name"
+          }
+        },
+        "required": [
+          "runId",
+          "workItemId",
+          "factory",
+          "factoryVersion",
+          "stages",
+          "startedAt",
+          "requester",
+          "source"
+        ]
+      },
+      "RunState": {
+        "type": "string",
+        "enum": [
+          "running",
+          "blocked",
+          "complete",
+          "failed",
+          "cancelled"
+        ],
+        "description": "foreman: where a run stands (vision scenario ORCH-008)."
+      },
+      "RunView": {
+        "type": "object",
+        "properties": {
+          "runId": {
+            "type": "string",
+            "pattern": "^run_[0-9a-f]{20}$",
+            "description": "\"run_\" and 20 hex digits of the SHA-256 of the work item's ID."
+          },
+          "workItem": {
+            "$ref": "#/components/schemas/WorkItem"
+          },
+          "factory": {
+            "$ref": "#/components/schemas/Name",
+            "description": "The name of the factory."
+          },
+          "factoryVersion": {
+            "$ref": "#/components/schemas/CommitHash",
+            "description": "The commit of the factory definition the run started with."
+          },
+          "state": {
+            "$ref": "#/components/schemas/RunState"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "stages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StageView"
+            },
+            "description": "The stages of the workflow, in order."
+          }
+        },
+        "required": [
+          "runId",
+          "workItem",
+          "factory",
+          "factoryVersion",
+          "state",
+          "startedAt",
+          "stages"
+        ],
+        "description": "foreman: a run of the factory's workflow for one work item, as the HTTP API shows it (ADR 0067)."
       },
       "Sandbox": {
         "type": "object",
@@ -2296,6 +2665,57 @@
           "stage"
         ],
         "additionalProperties": false
+      },
+      "StageState": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "blocked",
+          "running",
+          "succeeded",
+          "failed",
+          "rejected",
+          "cancelled"
+        ],
+        "description": "foreman: where a stage of a run stands."
+      },
+      "StageView": {
+        "type": "object",
+        "properties": {
+          "stage": {
+            "$ref": "#/components/schemas/Name"
+          },
+          "agent": {
+            "$ref": "#/components/schemas/Name",
+            "description": "The agent that runs the stage."
+          },
+          "state": {
+            "$ref": "#/components/schemas/StageState"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "The harness session of the stage's agent, once it started."
+          },
+          "gateId": {
+            "type": "string",
+            "pattern": "^g[0-9a-f]{16}$",
+            "description": "The gate that decides whether the stage starts, once it was requested."
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "stage",
+          "agent",
+          "state"
+        ],
+        "description": "foreman: one stage of a run (ADR 0067)."
       },
       "TraceId": {
         "type": "string",

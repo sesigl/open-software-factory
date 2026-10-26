@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { StartedTestContainer } from "testcontainers";
 import { listFiles, repoRoot } from "../support/module.ts";
+import { startNats, startTemporal } from "./binaries.ts";
 import { type Collector, startCollector } from "./collector.ts";
 import { type Forge, startForge } from "./forge.ts";
 import { type FakeGitHub, startGitHub } from "./github.ts";
@@ -11,7 +12,7 @@ import { type FakeHttp, type HttpOptions, type HttpRoute, startHttp } from "./ht
 import { type ModelGateway, type ScriptedReply, startModelGateway } from "./model-gateway.ts";
 import { type Postgres, startPostgres } from "./postgres.ts";
 import { type FakeSentry, startSentry } from "./sentry.ts";
-import { type Nats, type S3, startNats, startS3, startTemporal, type Temporal } from "./services.ts";
+import { type Nats, type S3, startS3, type Temporal } from "./services.ts";
 import { type FakeSlack, startSlack } from "./slack.ts";
 
 export interface Fakes {
@@ -27,9 +28,9 @@ export interface Fakes {
   harness(script: HarnessTurn[]): Promise<Harness>;
   /** PostgreSQL in a container. */
   postgres(): Promise<Postgres>;
-  /** NATS with JetStream in a container. */
+  /** NATS with JetStream, as a process on the host (ADR 0067). */
   nats(): Promise<Nats>;
-  /** A Temporal dev server in a container. */
+  /** The Temporal dev server of the Temporal CLI, as a process on the host with an in-memory database (ADR 0067). */
   temporal(): Promise<Temporal>;
   /** An S3 API (SeaweedFS) in a container. */
   s3(): Promise<S3>;
@@ -99,8 +100,12 @@ export function makeFakes(moduleRoot: string): FakesHandle {
       async postgres() {
         return (await inProcess(startPostgres())).postgres;
       },
-      nats: () => startNats(track),
-      temporal: () => startTemporal(track),
+      async nats() {
+        return (await inProcess(startNats())).service;
+      },
+      async temporal() {
+        return (await inProcess(startTemporal())).service;
+      },
       s3: () => startS3(track),
       forge: () => startForge((container) => hosts.add(container.getHost())),
       async github() {

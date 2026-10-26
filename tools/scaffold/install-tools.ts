@@ -1,5 +1,5 @@
-// `make install` step: the pinned lychee (DOCS-LINKS), oasdiff (CONTRACT) and opa (gatekeeper's policies, ADR 0047)
-// binaries, checked against their SHA-256, in .tools/bin. Releases exist for Linux x86_64 here; elsewhere put the
+// `make install` step: the pinned lychee (DOCS-LINKS), oasdiff (CONTRACT), opa (gatekeeper's policies, ADR 0047),
+// temporal and nats-server (the servers of `fakes.temporal()` and `fakes.nats()`, ADR 0067) binaries, checked against their SHA-256, in .tools/bin. Releases exist for Linux x86_64 here; elsewhere put the
 // same versions on PATH.
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -14,6 +14,8 @@ interface Pinned {
   sha256: string;
   /** The download is the binary itself, not a .tar.gz archive. */
   binary?: boolean;
+  /** The binary's path inside the archive, when it is not `name` at its top. */
+  member?: string;
 }
 
 const PINNED: Pinned[] = [
@@ -36,6 +38,19 @@ const PINNED: Pinned[] = [
     sha256: "5eef70644868bb04d0556bcc795ee42f2ab379e73f51d1bfa30f83e1305bc9b9",
     binary: true,
   },
+  {
+    name: "temporal",
+    version: "1.4.1",
+    url: "https://github.com/temporalio/cli/releases/download/v1.4.1/temporal_cli_1.4.1_linux_amd64.tar.gz",
+    sha256: "e2063feade24d90cec1590dd9a46b0ccf838433b013738a348af1c01a9cb3874",
+  },
+  {
+    name: "nats-server",
+    version: "2.11.9",
+    url: "https://github.com/nats-io/nats-server/releases/download/v2.11.9/nats-server-v2.11.9-linux-amd64.tar.gz",
+    sha256: "3eef83faa048d3879937a6871f59ae5d9c3bbf5900905b7a9ff996a894d755ab",
+    member: "nats-server-v2.11.9-linux-amd64/nats-server",
+  },
 ];
 
 export function installTools(root: string): number {
@@ -57,7 +72,7 @@ export function installTools(root: string): number {
       const digest = createHash("sha256").update(readFileSync(archive)).digest("hex");
       if (digest !== tool.sha256) throw new Error(`${tool.name}: checksum ${digest} does not match ${tool.sha256}`);
       if (!tool.binary) run("tar", ["-xzf", archive, "-C", temp]);
-      copyFileSync(tool.binary ? archive : join(temp, tool.name), target);
+      copyFileSync(tool.binary ? archive : join(temp, tool.member ?? tool.name), target);
       chmodSync(target, 0o755);
       process.stdout.write(`installed ${tool.name} ${tool.version}\n`);
     } finally {
