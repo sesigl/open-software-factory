@@ -1,7 +1,7 @@
 import { scenario } from "@opensoftware/testkit";
 import { addLines, demoBase } from "./mutation.ts";
 
-scenario("SCN-REPO-063", async ({ sut, given, when, then }) => {
+scenario("SCN-REPO-065", async ({ sut, given, when, then }) => {
   let base = "";
   await given(
     'a base commit with module "demo", the limit "at least 70% of the mutants in changed lines" and "src/run.ts" of 5 lines',
@@ -23,7 +23,7 @@ scenario("SCN-REPO-063", async ({ sut, given, when, then }) => {
     expect(run.exitCode, run.stdout + run.stderr).toBe(0);
   });
 
-  await then('the output is "src/run.ts:6-6" and "src/run.ts:9-9", one per line', async () => {
-    expect(run.stdout).toBe("src/run.ts:6-6\nsrc/run.ts:9-9\n");
+  await then('the output is "src/run.ts:4-6" and "src/run.ts:9-9", one per line', async () => {
+    expect(run.stdout).toBe("src/run.ts:4-6\nsrc/run.ts:9-9\n");
   });
 });

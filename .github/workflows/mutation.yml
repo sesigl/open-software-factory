@@ -1,7 +1,8 @@
 # MUTATION on every pull request (docs/quality/checks.md, ADR 0037): Stryker mutates the source lines the pull request
 # adds to each module and library, and the check fails when too few of those mutants make a system test fail.
 # One runner per shard of about 100 added lines of a changed unit: each mutant reruns the unit's system tests, so a
-# server module with a new file needs several runners to stay under the time limit.
+# server module with a new file needs several runners to stay under the time limit. Each shard tests every n-th mutant
+# of all the added lines, and reuses its report of an earlier push when nothing but runs/ changed (ADR 0066).
 name: mutation
 
 on:
@@ -64,16 +65,38 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+      # The report of a shard depends on the files of the checkout and on the base: the changed lines come from the
+      # diff to it. runs/ holds the session records of agents (ADR 0027), which no build or test reads, so a push
+      # that only records a session reuses the report of the push before it.
+      - name: Key of the shard's report
+        id: key
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          PACKAGE: ${{ matrix.package }}
+          SHARD: ${{ matrix.shard }}
+        run: |
+          tree=$(git ls-tree -r HEAD | grep -v $'\truns/' | sha256sum | cut -c1-40)
+          echo "key=mutation-v1-${PACKAGE//\//-}-${SHARD/\//-of-}-$BASE-$tree" >> "$GITHUB_OUTPUT"
+      - id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: reports/mutation/
+          key: ${{ steps.key.outputs.key }}
       - uses: pnpm/action-setup@v4
+        if: steps.cache.outputs.cache-hit != 'true'
       - uses: actions/setup-node@v5
+        if: steps.cache.outputs.cache-hit != 'true'
         with:
           node-version-file: .nvmrc
           cache: pnpm
       - run: make install
+        if: steps.cache.outputs.cache-hit != 'true'
       # The pinned binaries of make install, such as opa for gatekeeper, for the commands that skip make.
       - run: echo "$GITHUB_WORKSPACE/.tools/bin" >> "$GITHUB_PATH"
+        if: steps.cache.outputs.cache-hit != 'true'
       # Capture scenarios open pages in Chromium: install it when the unit depends on playwright-core.
       - name: Install the browser of a unit that captures pages
+        if: steps.cache.outputs.cache-hit != 'true'
         env:
           PACKAGE: ${{ matrix.package }}
         run: |
@@ -85,13 +108,20 @@ jobs:
           fi
       # The kubernetes sandbox adapter's tests need a cluster with agent-sandbox (ADR 0055).
       - name: Start kind with agent-sandbox
-        if: matrix.package == '@opensoftware/sandbox-kubernetes'
+        if: steps.cache.outputs.cache-hit != 'true' && matrix.package == '@opensoftware/sandbox-kubernetes'
         uses: ./.github/actions/kind-agent-sandbox
       - run: pnpm exec turbo run mutation --filter="$PACKAGE" -- --shard "$SHARD"
+        if: steps.cache.outputs.cache-hit != 'true'
         env:
           PACKAGE: ${{ matrix.package }}
           SHARD: ${{ matrix.shard }}
           OSF_BASE: ${{ github.event.pull_request.base.sha }}
+      # Only the report of a finished run: a run that failed or was cancelled leaves nothing to reuse.
+      - uses: actions/cache/save@v4
+        if: steps.cache.outputs.cache-hit != 'true' && hashFiles('reports/mutation/*.json') != ''
+        with:
+          path: reports/mutation/
+          key: ${{ steps.key.outputs.key }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
