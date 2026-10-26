@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.24.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.23.0...testkit-v0.24.0) (2026-10-26)
+
+
+### Features
+
+* **foreman:** T-17 an inference gateway per factory, and a person takes over a run ([#126](https://github.com/sesigl/open-software-factory/issues/126)) ([f5a672e](https://github.com/sesigl/open-software-factory/commit/f5a672e6a25cd42b0c1afcbc08d7bde1b6114394))
+
 ## [0.23.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.22.0...testkit-v0.23.0) (2026-10-26)
 
 
