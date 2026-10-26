@@ -28,3 +28,22 @@ Feature: The Factory MCP server
     When the user runs "intake mcp" without "INTAKE_URL"
     Then the command exits with code 2
     And the error output says "set INTAKE_URL"
+
+  @id=SCN-INTAKE-034 @status=planned @realizes=SCN-FACTORY-ACCESS-002
+  Scenario: A local agent fetches the evidence of a work item's run through the Factory MCP server
+    Given the server knows the run "run_5d41402abc4b2a76b971" of the README's "work.json"
+    And "intake mcp" is connected to it with "INTAKE_FOREMAN_URL" set to a foreman that has that run
+    When the agent calls the tool "run_evidence" with the work item's ID
+    Then the tool answers the run with its state, factory version, pull request and stages
+
+  @id=SCN-INTAKE-035 @status=planned
+  Scenario: The evidence of a work item without a run is a tool error
+    Given the server received the README's "work.json" and "intake mcp" is connected to it with a foreman
+    When the agent calls the tool "run_evidence" with the work item's ID
+    Then the tool answers an error that says "has no run yet"
+
+  @id=SCN-INTAKE-036 @status=planned
+  Scenario: The evidence tool without the foreman's URL is a tool error that names the variable
+    Given the server received the README's "work.json" and "intake mcp" is connected to it without "INTAKE_FOREMAN_URL"
+    When the agent calls the tool "run_evidence" with the work item's ID
+    Then the tool answers an error that says "set INTAKE_FOREMAN_URL"
