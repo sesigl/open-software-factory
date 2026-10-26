@@ -5,13 +5,13 @@ const MESSAGE = "use the existing date helper";
 
 scenario("SCN-FORE-016", async ({ sut, fakes, given, when, then }) => {
   let run: Awaited<ReturnType<typeof started>>;
-  await given(`a run whose stage "implement" runs a turn that waits for "${MESSAGE}"`, async () => {
+  await given('a run whose stage "implement" runs a turn that waits for "use the existing date helper"', async () => {
     run = await started(sut, fakes, { turns: [{ when: PLAN }, { when: IMPLEMENT, waitsFor: MESSAGE }] });
     await run.untilStage(run.runId, 1, "running");
   });
 
   let answer: Awaited<ReturnType<typeof run.signal>>;
-  await when(`a person posts the signal "steer" with the message "${MESSAGE}"`, async () => {
+  await when('a person posts the signal "steer" with the message "use the existing date helper"', async () => {
     answer = await run.signal(run.runId, { type: "steer", message: MESSAGE });
   });
 
@@ -20,7 +20,7 @@ scenario("SCN-FORE-016", async ({ sut, fakes, given, when, then }) => {
     expect(answer.data?.runId).toBe(run.runId);
   });
 
-  await then(`the agent received the steering message "${MESSAGE}"`, async () => {
+  await then('the agent received the steering message "use the existing date helper"', async () => {
     await run.until(run.runId, "complete");
     expect(run.harness.prompts().at(-1)).toBe(MESSAGE);
   });
