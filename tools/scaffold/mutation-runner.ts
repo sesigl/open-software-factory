@@ -13,10 +13,17 @@ interface Vitest {
   output: string;
 }
 
-/** Runs Vitest on the system tests in the unit's folder, all of them without `files`. */
+/**
+ * Runs Vitest on the system tests in the unit's folder, all of them without `files`. Vitest runs in its own process
+ * group, which is killed when it ends: a run that stops at its first failure (`--bail`) leaves the module's servers of
+ * its other tests running, and over many mutants they fill the runner's memory.
+ */
 function vitest(args: string[], env: Record<string, string>): Promise<Vitest> {
   return new Promise((done) => {
-    const child = spawn("pnpm", ["exec", "vitest", "run", ...args], { env: { ...process.env, ...env } });
+    const child = spawn("pnpm", ["exec", "vitest", "run", ...args], {
+      env: { ...process.env, ...env },
+      detached: true,
+    });
     let output = "";
     child.stdout.on("data", (chunk) => {
       output += chunk;
@@ -24,8 +31,18 @@ function vitest(args: string[], env: Record<string, string>): Promise<Vitest> {
     child.stderr.on("data", (chunk) => {
       output += chunk;
     });
-    child.on("close", (code) => done({ exitCode: code ?? 1, output }));
+    child.on("close", (code) => {
+      killGroup(child.pid);
+      done({ exitCode: code ?? 1, output });
+    });
   });
+}
+
+/** Kills what is left of a process group; a group whose processes all ended is no error. */
+function killGroup(pid: number | undefined): void {
+  try {
+    if (pid) process.kill(-pid, "SIGKILL");
+  } catch {}
 }
 
 interface Report {

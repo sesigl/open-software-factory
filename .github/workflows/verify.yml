@@ -84,6 +84,9 @@ jobs:
           - suite: gatekeeper
             filter: "@opensoftware/gatekeeper"
             images: nats
+          - suite: intake
+            filter: "@opensoftware/intake"
+            images: nats
           # Each scenario starts sandboxes of the test template behind iron-proxy (ADR 0054).
           - suite: sandbox-docker
             filter: "@opensoftware/sandbox-docker"
@@ -102,7 +105,7 @@ jobs:
             images: forge
           # Every other package, so a new module runs without a change here.
           - suite: rest
-            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper !@opensoftware/sandbox-docker !@opensoftware/sandbox-kubernetes !@opensoftware/inference-litellm !@opensoftware/forge-forgejo"
+            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper !@opensoftware/intake !@opensoftware/sandbox-docker !@opensoftware/sandbox-kubernetes !@opensoftware/inference-litellm !@opensoftware/forge-forgejo"
     steps:
       - uses: actions/checkout@v5
         with:
