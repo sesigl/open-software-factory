@@ -26,6 +26,7 @@ export type ScoreRecorded = Schemas["ScoreRecorded"];
 export type PrOpened = Schemas["PrOpened"];
 export type PrReviewed = Schemas["PrReviewed"];
 export type PrClosed = Schemas["PrClosed"];
+export type IssueLabeled = Schemas["IssueLabeled"];
 export type GateRecord = Schemas["GateRecord"];
 export type GateRequest = Schemas["GateRequest"];
 export type GateView = Schemas["GateView"];

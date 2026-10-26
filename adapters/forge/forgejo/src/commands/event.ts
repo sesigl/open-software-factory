@@ -1,4 +1,4 @@
-// event <delivery.json>: one webhook delivery as a pull request CloudEvent, or nothing for any other delivery.
+// event <delivery.json>: one webhook delivery as a pull request or issue label CloudEvent, or nothing.
 import { check, type Outcome, readInputs } from "@opensoftware/cli";
 import { type Delivery, pullRequestEvent, signedWith } from "../domain/events.ts";
 

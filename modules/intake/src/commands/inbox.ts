@@ -38,14 +38,14 @@ export function inbox(store: Store, config: InboxConfig) {
   return {
     relay,
     view,
-    /** The work item of the submission, and whether this submission created it. */
-    async submit(submission: unknown): Promise<{ created: boolean; view: WorkItemView }> {
+    /** The work item of the submission, whether this submission created it, and whether it added its request. */
+    async submit(submission: unknown): Promise<{ created: boolean; added: boolean; view: WorkItemView }> {
       const workItem = workItemOf(submission);
       const at = config.now();
       const event = config.nats ? { subject: SUBJECT, event: receivedEvent(workItem, at) } : undefined;
-      const created = await store.submit(workItem, at, event);
+      const { created, added } = await store.submit(workItem, at, event);
       if (created) await relay();
-      return { created, view: (await view(workItem.id)) as WorkItemView };
+      return { created, added, view: (await view(workItem.id)) as WorkItemView };
     },
   };
 }

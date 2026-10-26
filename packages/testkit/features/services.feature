@@ -172,3 +172,19 @@ Feature: Services and outside systems
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-103 @status=implemented
+  Scenario: fakes.forge opens an issue and adds a label to it
+    Given a module whose CLI prints the title and the label names of issue 1 of a repository at "DEMO_FORGE_URL"
+    And its system test opens the issue "Export reports as CSV" in fakes.forge, adds the label "factory" and expects "Export reports as CSV factory"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-104 @status=implemented
+  Scenario: fakes.sentry sends a module's webhook an alert signed with the integration's client secret
+    Given a module whose server keeps the title and level of each alert whose Sentry-Hook-Signature matches "DEMO_SENTRY_SECRET"
+    And its system test has fakes.sentry send the alert "TypeError: total is undefined" of level "fatal" and expects "TypeError: total is undefined fatal"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
