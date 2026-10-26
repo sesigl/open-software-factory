@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/intake",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "intake: one deduplicated inbox for agent work from HTTP, Slack and a local agent over MCP, with links back to the origin.",
   "license": "Apache-2.0",
   "repository": {

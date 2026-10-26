@@ -1,5 +1,5 @@
 {
-  "contracts": "1.9.0",
+  "contracts": "1.10.0",
   "packages/testkit": "0.24.0",
   "packages/cli": "0.1.0",
   "packages/spec-files": "0.1.0",
@@ -26,6 +26,6 @@
   "adapters/channel/slack": "0.2.0",
   "adapters/channel/github": "0.2.0",
   "packages/channel-kit": "0.2.0",
-  "modules/intake": "0.1.0",
-  "modules/foreman": "0.3.0"
+  "modules/intake": "0.2.0",
+  "modules/foreman": "0.4.0"
 }
