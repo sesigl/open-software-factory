@@ -174,6 +174,63 @@
             }
           }
         }
+      },
+      "get": {
+        "operationId": "IntakeApi_findWorkItem",
+        "description": "The work item with this dedupe key, such as an issue's link (ADR 0065).",
+        "parameters": [
+          {
+            "name": "dedupeKey",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkItemView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The server could not understand the request due to invalid syntax.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Access is unauthorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The server cannot find the requested resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/v1/work-items/{workItemId}": {
@@ -1058,6 +1115,108 @@
         "minLength": 1,
         "maxLength": 128,
         "description": "An identifier chosen by the producer. ULIDs are recommended; consumers treat it as opaque."
+      },
+      "IssueLabeled": {
+        "type": "object",
+        "properties": {
+          "specversion": {
+            "type": "string",
+            "const": "1.0"
+          },
+          "id": {
+            "$ref": "#/components/schemas/Identifier",
+            "description": "Unique per source. A consumer that sees the same source and id twice handles the event once."
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The producing module, for example \"/osf/intake\"."
+          },
+          "type": {
+            "type": "string",
+            "const": "issue.labeled@v1"
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The ID of the thing the event is about: work item, gate, run, score or pull request."
+          },
+          "datacontenttype": {
+            "type": "string",
+            "const": "application/json"
+          },
+          "dataschema": {
+            "type": "string",
+            "format": "uri"
+          },
+          "traceparent": {
+            "type": "string",
+            "description": "W3C trace context (CloudEvents distributed tracing extension)."
+          },
+          "data": {
+            "$ref": "#/components/schemas/IssueLabeledData"
+          }
+        },
+        "required": [
+          "specversion",
+          "id",
+          "source",
+          "type",
+          "time",
+          "data"
+        ],
+        "description": "forge adapters: a label was added to an issue."
+      },
+      "IssueLabeledData": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "The issue."
+          },
+          "repository": {
+            "type": "string",
+            "format": "uri"
+          },
+          "number": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "body": {
+            "type": "string"
+          },
+          "author": {
+            "$ref": "#/components/schemas/Actor",
+            "description": "The person who opened the issue."
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Every label of the issue after the change."
+          },
+          "label": {
+            "type": "string",
+            "description": "The label that was added, when the forge names it."
+          }
+        },
+        "required": [
+          "url",
+          "repository",
+          "number",
+          "title",
+          "author",
+          "labels"
+        ]
       },
       "Link": {
         "type": "object",

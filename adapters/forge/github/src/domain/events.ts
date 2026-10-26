@@ -1,5 +1,5 @@
-// A GitHub webhook delivery as a pull request CloudEvent from contracts/ (ADR 0058): pr.opened@v1, pr.reviewed@v1 or
-// pr.closed@v1, or none for any other delivery.
+// A GitHub webhook delivery as a CloudEvent from contracts/ (ADR 0058, ADR 0065): pr.opened@v1, pr.reviewed@v1,
+// pr.closed@v1 or issue.labeled@v1, or none for any other delivery.
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 /** A delivery as the receiver wrote it: its headers and its body as it arrived. */
@@ -31,6 +31,21 @@ interface PullRequestPayload {
   review: { state: string; user: Account; submitted_at: string };
 }
 
+interface IssuesPayload {
+  action?: string;
+  repository: { html_url: string };
+  issue: {
+    html_url: string;
+    number: number;
+    title: string;
+    body: string | null;
+    user: Account;
+    updated_at: string;
+    labels: { name: string }[];
+  };
+  label?: { name: string };
+}
+
 /** The value of a header, whatever the case of its name. */
 export function header(delivery: Delivery, name: string): string | undefined {
   return Object.entries(delivery.headers).find(([key]) => key.toLowerCase() === name)?.[1];
@@ -45,22 +60,15 @@ export function verified(delivery: Delivery, secret: string): boolean {
   return given.length === wanted.length && timingSafeEqual(given, wanted);
 }
 
-/** The CloudEvent of a delivery about an opened, reviewed or closed pull request, or undefined. */
+/** The CloudEvent of a delivery about an opened, reviewed or closed pull request or a labeled issue, or undefined. */
 export function toCloudEvent(delivery: Delivery): Record<string, unknown> | undefined {
   const kind = header(delivery, "x-github-event");
+  if (kind === "issues") return labeledIssue(delivery);
   if (kind !== "pull_request" && kind !== "pull_request_review") return undefined;
   const payload = JSON.parse(delivery.body) as PullRequestPayload;
   const pull = payload.pull_request;
-  const envelope = (type: string, time: string | null, data: Record<string, unknown>) => ({
-    specversion: "1.0",
-    id: header(delivery, "x-github-delivery"),
-    source: "/osf/forge",
-    type,
-    time,
-    subject: pull.html_url,
-    datacontenttype: "application/json",
-    data: { url: pull.html_url, ...data },
-  });
+  const envelope = (type: string, time: string | null, data: Record<string, unknown>) =>
+    cloudEvent(delivery, type, time, pull.html_url, data);
   if (kind === "pull_request_review") {
     const review = payload.review;
     if (payload.action !== "submitted") return undefined;
@@ -81,6 +89,36 @@ export function toCloudEvent(delivery: Delivery): Record<string, unknown> | unde
   return payload.action === "closed"
     ? envelope("pr.closed@v1", pull.closed_at, { merged: pull.merged, ...merge })
     : undefined;
+}
+
+/** The issue.labeled@v1 event of an `issues` delivery with the action `labeled`; GitHub names the label added. */
+function labeledIssue(delivery: Delivery): Record<string, unknown> | undefined {
+  const payload = JSON.parse(delivery.body) as IssuesPayload;
+  if (payload.action !== "labeled") return undefined;
+  const { issue, label } = payload;
+  return cloudEvent(delivery, "issue.labeled@v1", issue.updated_at, issue.html_url, {
+    repository: payload.repository.html_url,
+    number: issue.number,
+    title: issue.title,
+    ...(issue.body ? { body: issue.body } : {}),
+    author: person(issue.user),
+    labels: issue.labels.map(({ name }) => name),
+    ...(label ? { label: label.name } : {}),
+  });
+}
+
+/** The CloudEvent of a delivery about the pull request or issue at `url`: its ID is GitHub's delivery ID. */
+function cloudEvent(delivery: Delivery, type: string, time: string | null, url: string, data: Record<string, unknown>) {
+  return {
+    specversion: "1.0",
+    id: header(delivery, "x-github-delivery"),
+    source: "/osf/forge",
+    type,
+    time,
+    subject: url,
+    datacontenttype: "application/json",
+    data: { url, ...data },
+  };
 }
 
 /** A GitHub account as a person of the contracts: GitHub's payloads carry the login, not the name. */

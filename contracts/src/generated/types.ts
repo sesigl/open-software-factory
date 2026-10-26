@@ -41,7 +41,8 @@ export type paths = {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** @description The work item with this dedupe key, such as an issue's link (ADR 0065). */
+        get: operations["IntakeApi_findWorkItem"];
         put?: never;
         /** @description Put work into the inbox. A submission with the dedupe key of a work item answers that work item. */
         post: operations["IntakeApi_submitWork"];
@@ -367,6 +368,46 @@ export type components = {
         Hostname: string;
         /** @description An identifier chosen by the producer. ULIDs are recommended; consumers treat it as opaque. */
         Identifier: string;
+        /** @description forge adapters: a label was added to an issue. */
+        IssueLabeled: {
+            /** @constant */
+            specversion: "1.0";
+            /** @description Unique per source. A consumer that sees the same source and id twice handles the event once. */
+            id: components["schemas"]["Identifier"];
+            /** @description The producing module, for example "/osf/intake". */
+            source: string;
+            /** @constant */
+            type: "issue.labeled@v1";
+            /** Format: date-time */
+            time: string;
+            /** @description The ID of the thing the event is about: work item, gate, run, score or pull request. */
+            subject?: string;
+            /** @constant */
+            datacontenttype?: "application/json";
+            /** Format: uri */
+            dataschema?: string;
+            /** @description W3C trace context (CloudEvents distributed tracing extension). */
+            traceparent?: string;
+            data: components["schemas"]["IssueLabeledData"];
+        };
+        IssueLabeledData: {
+            /**
+             * Format: uri
+             * @description The issue.
+             */
+            url: string;
+            /** Format: uri */
+            repository: string;
+            number: number;
+            title: string;
+            body?: string;
+            /** @description The person who opened the issue. */
+            author: components["schemas"]["Actor"];
+            /** @description Every label of the issue after the change. */
+            labels: string[];
+            /** @description The label that was added, when the forge names it. */
+            label?: string;
+        };
         Link: {
             /** Format: uri */
             url: string;
@@ -937,6 +978,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GateView"];
+                };
+            };
+            /** @description Access is unauthorized. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    IntakeApi_findWorkItem: {
+        parameters: {
+            query: {
+                dedupeKey: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkItemView"];
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
                 };
             };
             /** @description Access is unauthorized. */

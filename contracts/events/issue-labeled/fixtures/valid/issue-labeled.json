@@ -1,0 +1,19 @@
+{
+  "specversion": "1.0",
+  "source": "/osf/forge",
+  "time": "2026-10-19T14:00:00Z",
+  "subject": "https://github.com/acme/web/issues/42",
+  "datacontenttype": "application/json",
+  "id": "01JABCDEVT00000000000000009",
+  "type": "issue.labeled@v1",
+  "data": {
+    "url": "https://github.com/acme/web/issues/42",
+    "repository": "https://github.com/acme/web",
+    "number": 42,
+    "title": "Export reports as CSV",
+    "body": "Finance needs the monthly report as CSV",
+    "author": { "kind": "person", "id": "github:varun", "displayName": "varun" },
+    "labels": ["factory"],
+    "label": "factory"
+  }
+}

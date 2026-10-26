@@ -1,5 +1,5 @@
-// A Forgejo webhook delivery as a pull request CloudEvent from contracts/ (ADR 0057): pr.opened@v1, pr.reviewed@v1 or
-// pr.closed@v1, or none for any other delivery.
+// A Forgejo webhook delivery as a CloudEvent from contracts/ (ADR 0057, ADR 0065): pr.opened@v1, pr.reviewed@v1,
+// pr.closed@v1 or issue.labeled@v1, or none for any other delivery.
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 /** A delivery as the receiver wrote it: its headers and its body as it arrived. */
@@ -32,6 +32,20 @@ interface Payload {
   };
 }
 
+interface IssuePayload {
+  action?: string;
+  repository: { html_url: string };
+  issue: {
+    number: number;
+    title: string;
+    body: string;
+    html_url: string;
+    user: User;
+    updated_at: string;
+    labels: { name: string }[] | null;
+  };
+}
+
 /** The review state of each Forgejo review event type. */
 const REVIEWS: Record<string, string> = {
   pull_request_review_approved: "approved",
@@ -52,21 +66,14 @@ export function signedWith(delivery: Delivery, secret: string): boolean {
   return given.length === expected.length && timingSafeEqual(given, expected);
 }
 
-/** The CloudEvent of the delivery, or undefined when it is not about an opened, reviewed or closed pull request. */
+/** The CloudEvent of the delivery, or undefined when it is not about a pull request or a labeled issue. */
 export function pullRequestEvent(delivery: Delivery): Record<string, unknown> | undefined {
   const type = header(delivery, "x-forgejo-event-type") ?? "";
+  if (type === "issue_label") return labeledIssue(delivery);
   const payload = JSON.parse(delivery.body) as Payload;
   const pr = payload.pull_request;
-  const event = (name: string, time: string, data: Record<string, unknown>) => ({
-    specversion: "1.0",
-    id: header(delivery, "x-forgejo-delivery"),
-    source: "/osf/forge",
-    type: `${name}@v1`,
-    time,
-    subject: pr.html_url,
-    datacontenttype: "application/json",
-    data: { url: pr.html_url, ...data },
-  });
+  const event = (name: string, time: string, data: Record<string, unknown>) =>
+    envelope(delivery, name, time, pr.html_url, data);
   if (type === "pull_request" && payload.action === "opened") {
     return event("pr.opened", pr.created_at, {
       repository: payload.repository.html_url,
@@ -85,6 +92,40 @@ export function pullRequestEvent(delivery: Delivery): Record<string, unknown> | 
   const state = REVIEWS[type];
   if (state) return event("pr.reviewed", pr.updated_at, { reviewer: person(payload.sender), state });
   return undefined;
+}
+
+/**
+ * The issue.labeled@v1 event of an `issue_label` delivery. Forgejo sends `label_updated` with the labels after the
+ * change and does not name the label added, so the event has no `label`.
+ */
+function labeledIssue(delivery: Delivery): Record<string, unknown> | undefined {
+  const payload = JSON.parse(delivery.body) as IssuePayload;
+  if (payload.action !== "label_updated") return undefined;
+  const { issue } = payload;
+  const body = issue.body ? { body: issue.body } : {};
+  const labels = (issue.labels ?? []).map((label) => label.name);
+  return envelope(delivery, "issue.labeled", issue.updated_at, issue.html_url, {
+    repository: payload.repository.html_url,
+    number: issue.number,
+    title: issue.title,
+    ...body,
+    author: person(issue.user),
+    labels,
+  });
+}
+
+/** The `<name>@v1` CloudEvent about the pull request or issue at `url`, with Forgejo's delivery ID as its ID. */
+function envelope(delivery: Delivery, name: string, time: string, url: string, data: Record<string, unknown>) {
+  return {
+    specversion: "1.0",
+    id: header(delivery, "x-forgejo-delivery"),
+    source: "/osf/forge",
+    type: `${name}@v1`,
+    time,
+    subject: url,
+    datacontenttype: "application/json",
+    data: { url, ...data },
+  };
 }
 
 function person(user: User): { kind: "person"; id: string; displayName: string } {

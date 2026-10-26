@@ -13,6 +13,14 @@ export interface PullRequest {
   sha: string;
 }
 
+/** An issue a test opened. */
+export interface Issue {
+  repository: string;
+  number: number;
+  /** The issue's page, like `<forge>/tester/web/issues/1`. */
+  url: string;
+}
+
 export interface OpenedPullRequest {
   number: number;
   title: string;
@@ -45,6 +53,13 @@ export interface Forge {
     repository: string,
     change: { branch: string; title: string; files: Record<string, string> },
   ): Promise<PullRequest>;
+  /** Opens an issue as `owner`. */
+  openIssue(repository: string, issue: { title: string; body?: string }): Promise<Issue>;
+  /**
+   * Adds the label to the issue as `owner`, and creates the label in the repository when it has none of that name.
+   * The forge delivers the label event to the webhooks (ADR 0065).
+   */
+  label(repository: string, number: number, name: string): Promise<void>;
   /** Merges the pull request into `main` with a merge commit and returns that commit. */
   mergePullRequest(pr: PullRequest): Promise<string>;
   /** The bodies of the pull request's comments, oldest first. */
@@ -181,6 +196,21 @@ function forgeOf(forgejo: Forgejo, api: Api): Forge {
         { base: "main", head: change.branch, title: change.title },
       );
       return { repository, number: pr.number, url: pr.html_url, sha: pr.head.sha };
+    },
+    async openIssue(repository, issue) {
+      const opened = await api<{ number: number; html_url: string }>("POST", `/repos/${OWNER}/${repository}/issues`, {
+        title: issue.title,
+        body: issue.body ?? "",
+      });
+      return { repository, number: opened.number, url: opened.html_url };
+    },
+    async label(repository, number, name) {
+      const labels = `/repos/${OWNER}/${repository}/labels`;
+      const known = (await api<{ id: number; name: string }[]>("GET", `${labels}?limit=50`)).find(
+        (label) => label.name === name,
+      );
+      const label = known ?? (await api<{ id: number }>("POST", labels, { name, color: "#0075ca" }));
+      await api("POST", `/repos/${OWNER}/${repository}/issues/${number}/labels`, { labels: [label.id] });
     },
     async mergePullRequest(pr) {
       const path = `/repos/${OWNER}/${pr.repository}/pulls/${pr.number}`;

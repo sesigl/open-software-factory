@@ -4,9 +4,10 @@ covers: [modules/intake/src/**]
 
 # intake
 
-One inbox for agent work. A program, a Slack mention or a local coding agent puts work in; intake turns requests with
-the same dedupe key into one work item, keeps a link back to every origin, and publishes `work.received@v1` for the
-foreman. Decision: [ADR 0063](../../docs/decisions/0063-intake.md).
+One inbox for agent work. A program, a Slack mention, an issue labeled `factory`, a Sentry alert or a local coding
+agent puts work in; intake turns requests with the same dedupe key into one work item, keeps a link back to every
+origin, and publishes `work.received@v1` for the foreman. Decisions: [ADR 0063](../../docs/decisions/0063-intake.md),
+[ADR 0065](../../docs/decisions/0065-intake-issues-and-alerts.md).
 
 ## Quick start
 
@@ -45,7 +46,7 @@ with the same work item.
 
 | Command | What it does |
 | --- | --- |
-| `intake serve` | Serve the work item API on `PORT`, Slack's events with `INTAKE_SLACK_TOKEN`, and publish `work.received@v1` with `INTAKE_NATS_URL`. |
+| `intake serve` | Serve the work item API on `PORT`, Slack's events with `INTAKE_SLACK_TOKEN`, the forge's with `INTAKE_WEBHOOK_SECRET`, Sentry's with `INTAKE_SENTRY_SECRET`, and publish `work.received@v1` with `INTAKE_NATS_URL`. |
 | `intake mcp` | Serve the Factory MCP server on stdio for a local agent: the tools `submit_work` and `work_status` call the server at `INTAKE_URL`. |
 
 ## API
@@ -53,12 +54,15 @@ with the same work item.
 | Route | What it does |
 | --- | --- |
 | `POST /v1/work-items` | Submit work: a work item without its `id`. 201 with the new work item, 200 with the work item that has the same dedupe key, 400 with a problem that names the field. |
+| `GET /v1/work-items?dedupeKey=<key>` | The work item with this dedupe key, such as an issue's link or `sentry:<issue ID>`. 404 when there is none, 400 without the key. |
 | `GET /v1/work-items/{workItemId}` | The work item, its `status` (`received`), `receivedAt`, and `requests`: the requester, origin and time of each submission, oldest first. 404 for a work item the server does not know. |
 | `POST /slack/events` | Slack's Events API, with `INTAKE_SLACK_TOKEN`: a message that mentions the bot becomes a work item. |
+| `POST /forge/events` | The forge's webhook, with `INTAKE_WEBHOOK_SECRET`: an issue that gets the label `factory` becomes a work item. |
+| `POST /sentry/events` | Sentry's webhook, with `INTAKE_SENTRY_SECRET`: an alert about a fatal error becomes a `bug`. |
 
 The OpenAPI of the `/v1` routes is in [`contracts/openapi/openapi.json`](../../contracts/openapi/openapi.json); the
 TypeScript type `paths` of `@opensoftware/contracts` types a client. The `/v1` routes need `Authorization: Bearer
-<INTAKE_API_TOKEN>`, the Slack route Slack's signature; both answer 401 otherwise. Errors are
+<INTAKE_API_TOKEN>`, the webhook routes their sender's signature; all answer 401 otherwise. Errors are
 `application/problem+json` with `title`, `status` and `detail`.
 
 A submission has the fields of a [work item](../../contracts/work-item/work-item.schema.json) without `id`. `type`
@@ -79,6 +83,60 @@ thread is the same work item and gets no reply.
 
 Set up a Slack app with the bot scope `chat:write`, the events `app_mention` or `message.channels`, and the request
 URL `https://<server>/slack/events`.
+
+## Issues on the forge
+
+With `INTAKE_WEBHOOK_SECRET`, the server hands each request to `/forge/events` to the forge port's adapter in
+`INTAKE_FORGE_ADAPTER` ([`ports/forge`](../../ports/forge/README.md)), which checks the signature and prints the
+delivery's event. An `issue.labeled@v1` whose issue has the label in `INTAKE_FORGE_LABEL` (default `factory`) becomes
+a `task` with the issue's title and body. Its requester is the issue's author, like `github:varun`; its origin is the
+forge with the issue's link and `<owner>/<name>#<number>`; its dedupe key is the issue's link, so labeling the issue
+again adds nothing. Any other delivery gets 200 and makes nothing. One server reads one forge: for Forgejo, set
+`INTAKE_FORGE_ADAPTER` to `npx -y @opensoftware/forge-forgejo`.
+
+Register the webhook with the adapter, or let factory-spec register it for a `github.issue.labeled` automation:
+
+```sh
+FORGE_TOKEN=… FORGE_WEBHOOK_SECRET=$INTAKE_WEBHOOK_SECRET \
+  npx -y @opensoftware/forge-github webhook acme/web https://<server>/forge/events --event issue.labeled
+```
+
+## One work item across surfaces
+
+A Slack mention whose text links an issue, like `https://github.com/acme/web/issues/42`, takes the issue's link as its
+dedupe key instead of the thread. So the mention and the label on that issue are one work item, whichever comes
+first, and the work item lists both requests. A mention that joins a work item from another surface gets the reply
+`Added to work item <id>.`; only the first link of the form `<base>/<owner>/<name>/issues/<number>` counts.
+
+## Sentry
+
+With `INTAKE_SENTRY_SECRET`, the client secret of a Sentry internal integration, the server reads Sentry's alerts at
+`/sentry/events`. A delivery whose `Sentry-Hook-Signature` is not the HMAC-SHA256 of its body with the secret gets 401.
+An `event_alert` about an event of level `fatal` becomes a `bug` with the event's title. Its requester is the trigger
+`sentry:<the alert rule>`, its origin `sentry` with the event's link and the Sentry issue's ID, its dedupe key
+`sentry:<issue ID>`, so later alerts about the same issue add nothing. It links the error and, with
+`INTAKE_SENTRY_CHANGE_URL`, the change: the template with `{release}` replaced by the event's release. Any other
+delivery gets 200 and makes nothing.
+
+In Sentry, create an internal integration with the webhook URL `https://<server>/sentry/events` and "Alert Rule
+Action" on, then an alert rule "The event's level is equal to fatal" that sends a notification to it. A delivery
+looks like this:
+
+```json sentry-alert.json
+{
+  "action": "triggered",
+  "data": {
+    "triggered_rule": "Fatal errors",
+    "event": {
+      "title": "TypeError: total is undefined",
+      "level": "fatal",
+      "issue_id": "1117540176",
+      "release": "4c5d6e7",
+      "web_url": "https://acme.sentry.io/issues/1117540176/events/9fac2ceed9344f2bbfdd1fdacb0ed9b1/"
+    }
+  }
+}
+```
 
 ## Factory MCP server
 
@@ -127,6 +185,11 @@ request for the same work item publishes nothing.
 | `INTAKE_SLACK_URL` | string |  | serve: base URL of the Slack Web API, ending in a slash: the adapter's CHANNEL_API_URL. Default: the adapter's, https://slack.com/api/. |
 | `INTAKE_SLACK_TOKEN` | string |  | serve: Slack bot token with chat:write, the adapter's CHANNEL_TOKEN. Set, the server takes Slack's events at /slack/events. |
 | `INTAKE_SLACK_SIGNING_SECRET` | string |  | serve: the signing secret of the Slack app, the adapter's CHANNEL_SIGNING_SECRET. Required with INTAKE_SLACK_TOKEN. |
+| `INTAKE_WEBHOOK_SECRET` | string |  | serve: the secret the forge signs its webhook deliveries with, the forge adapter's FORGE_WEBHOOK_SECRET. Set, the server takes the forge's deliveries at /forge/events. |
+| `INTAKE_FORGE_ADAPTER` | string | `"npx -y @opensoftware/forge-github"` | serve: the command line of the forge port's adapter, whose event command checks and reads the forge's deliveries (ADR 0065). |
+| `INTAKE_FORGE_LABEL` | string | `"factory"` | serve: the label that makes an issue a work item. |
+| `INTAKE_SENTRY_SECRET` | string |  | serve: the client secret of the Sentry integration, which signs its deliveries. Set, the server takes Sentry's alerts at /sentry/events. |
+| `INTAKE_SENTRY_CHANGE_URL` | string |  | serve: the link to the change of a Sentry alert, with {release} for the event's release, like https://github.com/acme/web/commit/{release}. Unset: no link to the change. |
 | `INTAKE_URL` | string |  | mcp: the base URL of intake serve, like http://localhost:8080. Required. |
 | `INTAKE_REQUESTER` | string |  | mcp: the person the agent works for, <source>:<id> like github:varun, the requester of its work. Required. |
 
@@ -167,3 +230,12 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-INTAKE-018 | implemented | A local agent reads the state of a work item through the Factory MCP server |
 | SCN-INTAKE-019 | implemented | A tool call that the server refuses is a tool error with the server's reason |
 | SCN-INTAKE-020 | implemented | The MCP server without the server's URL exits with code 2 and names the variable |
+| SCN-INTAKE-021 | implemented | A GitHub issue labeled "factory" becomes a work item with a link to the issue |
+| SCN-INTAKE-022 | implemented | An issue labeled with another label makes no work item |
+| SCN-INTAKE-023 | implemented | A forge delivery with a wrong signature gets the status 401 and makes no work item |
+| SCN-INTAKE-024 | implemented | A Slack mention that links a labeled issue joins the issue's work item |
+| SCN-INTAKE-025 | implemented | The label on an issue that a Slack mention linked joins the mention's work item |
+| SCN-INTAKE-026 | implemented | A Sentry alert about a fatal error becomes a bug work item that links the error and the change |
+| SCN-INTAKE-027 | implemented | A Sentry alert about an error that is not fatal makes no work item |
+| SCN-INTAKE-028 | implemented | A Sentry delivery with a wrong signature gets the status 401 |
+| SCN-INTAKE-029 | implemented | A work item is found by its dedupe key |
