@@ -95,6 +95,12 @@ export async function serve(env: Env) {
       gatekeeper: gatekeeper(env.FOREMAN_GATEKEEPER_URL, env.FOREMAN_GATEKEEPER_TOKEN),
       harnesses: JSON.parse(env.FOREMAN_HARNESSES || "{}") as Record<string, string>,
       sandboxes: JSON.parse(env.FOREMAN_SANDBOXES || "{}") as Record<string, string>,
+      forges: JSON.parse(env.FOREMAN_FORGES || "{}") as Record<string, string>,
+      forgeEnv: {
+        ...(env.FOREMAN_FORGE_URL ? { FORGE_URL: env.FOREMAN_FORGE_URL } : {}),
+        ...(env.FOREMAN_FORGE_TOKEN ? { FORGE_TOKEN: env.FOREMAN_FORGE_TOKEN } : {}),
+      },
+      checkPollMs: Number(env.FOREMAN_CHECK_POLL_MS || 30_000),
       data: resolve(env.OSF_DATA || ".foreman"),
       pollMs,
       steering: (runId) => work.steering(runId),

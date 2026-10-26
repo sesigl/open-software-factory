@@ -1,5 +1,6 @@
 // Shared setup of the foreman scenarios: the README's factory and work item, Temporal, the scripted harness behind the
-// built harness-acp adapter, a fake sandbox adapter, a scripted gatekeeper, and the server with its token.
+// built harness-acp adapter, a fake sandbox adapter, a scripted gatekeeper, the fake GitHub with the built forge-github
+// adapter, and the server with its token.
 import type { paths, RunView, WorkItem } from "@opensoftware/contracts";
 import type { Fakes, HarnessTurn, SandboxOptions, Sut } from "@opensoftware/testkit";
 
@@ -8,6 +9,7 @@ export const AUTH = { authorization: `Bearer ${API_TOKEN}` };
 export const GATE = "g0a1b2c3d4e5f6a7b";
 export const PLAN = "Write a plan";
 export const IMPLEMENT = "Implement plan.md";
+export const SHIP = "Merge the pull request";
 export const TITLE = "Export reports as CSV";
 /** How long a scenario waits for a run or an event; a run takes seconds, a busy runner (a mutation run) longer. */
 export const WAIT_MS = 45_000;
@@ -58,7 +60,13 @@ export interface Setup {
 /** Commits the README's factory, or this text of factory.yaml with the README's prompts; returns the commit. */
 export async function committed(sut: Sut, fakes: Fakes, factory?: string): Promise<string> {
   const files = readmeFiles(fakes);
-  for (const name of ["factory.yaml", "agents/plan.md", "agents/implement.md"])
+  for (const name of [
+    "factory.yaml",
+    "agents/plan.md",
+    "agents/implement.md",
+    "agents/implement-pr.md",
+    "agents/ship.md",
+  ])
     await sut.files.put(`$INPUT/${name}`, files[name] as string);
   if (factory) await sut.files.put("$INPUT/factory.yaml", factory);
   return sut.git.commit("the hello factory");
@@ -186,4 +194,60 @@ export async function waitingAtGate(sut: Sut, fakes: Fakes, setup: Setup = {}) {
       },
     });
   return { ...run, events, decide };
+}
+
+export interface ChecksSetup {
+  /** The state of the check "verify" of the pull request; none: the pull request has no check. */
+  check?: "pending" | "success" | "failure";
+  /** Whether the "implement" turn replies with the pull request's link; default true. */
+  linked?: boolean;
+  nats?: boolean;
+}
+
+/**
+ * "foreman serve" on the README's "checks/factory.yaml", with the fake GitHub, whose repository "tester/web" has the
+ * pull request 1, and the built forge-github adapter.
+ */
+export async function servingChecks(sut: Sut, fakes: Fakes, setup: ChecksSetup = {}) {
+  const github = await fakes.github();
+  await github.createRepository("web", { "README.md": "# web\n" });
+  const pr = await github.openPullRequest("web", {
+    branch: "export-csv",
+    title: TITLE,
+    files: { "export.ts": "export const csv = true;\n" },
+  });
+  /** Sets the check "verify" of the pull request's head commit, as CI does. */
+  const check = async (state: string) => {
+    const response = await fetch(`${github.url}/repos/${github.owner}/web/statuses/${pr.sha}`, {
+      method: "POST",
+      headers: { authorization: `token ${github.token}`, "content-type": "application/json" },
+      body: JSON.stringify({ state, context: "verify" }),
+    });
+    if (response.status !== 201) throw new Error(`the fake GitHub answered ${response.status} to the check`);
+  };
+  if (setup.check) await check(setup.check);
+  const server = await serving(sut, fakes, {
+    factory: readmeFiles(fakes)["checks/factory.yaml"] as string,
+    turns: [
+      { when: PLAN, reply: "plan.md is written" },
+      { when: IMPLEMENT, reply: setup.linked === false ? "done" : `Opened ${pr.url} for review.` },
+      { when: SHIP, reply: "merged" },
+    ],
+    nats: setup.nats,
+    env: {
+      FOREMAN_FORGES: JSON.stringify({ github: sut.adapter("forge/github") }),
+      FOREMAN_FORGE_URL: github.url,
+      FOREMAN_FORGE_TOKEN: github.token,
+      FOREMAN_CHECK_POLL_MS: "100",
+    },
+  });
+  return { ...server, github, pr, check };
+}
+
+/** A run of the README's "checks/factory.yaml" that waits for the pending check "verify"; returns the run's ID too. */
+export async function waitingForCheck(sut: Sut, fakes: Fakes) {
+  const server = await servingChecks(sut, fakes, { check: "pending" });
+  const runId = (await server.start(readmeWork(fakes))).data?.runId as string;
+  await server.untilStage(runId, 2, "blocked");
+  return { ...server, runId };
 }

@@ -247,6 +247,15 @@
             "additionalProperties": false,
             "description": "The stage waits for a decision before it starts."
           },
+          "checks": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The name of a check on the forge: a commit status context."
+            },
+            "description": "Checks that must succeed on the run's pull request before the stage starts, by their names on the forge, for\nexample \"verify\" (ADR 0069)."
+          },
           "evidence": {
             "type": "string",
             "enum": [

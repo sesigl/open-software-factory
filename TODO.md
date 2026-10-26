@@ -610,7 +610,11 @@ read them for ideas, do not copy their company-specific rules.
     runs in a fresh sandbox of the adapter under `providers.sandbox` (`docker` by default, `FOREMAN_SANDBOXES`), built
     from the agent's sandbox and secrets; the run's folder is copied in and out, the harness runs with `exec`, and the
     sandbox is destroyed when the stage ends. `fakes.sandbox()` runs the port's commands on host folders.
-  - [ ] A failing CI check stops the ship stage: the forge port's checks before a stage named in the definition.
+  - [x] Checks (ADR 0069, `SCN-FORE-042` to `-049`): a stage with `checks` in `factory.yaml` starts only when those
+    checks succeeded on the run's pull request, the last pull request link an agent of an earlier stage wrote. The
+    foreman reads them with the forge adapter under `providers.forge` (`FOREMAN_FORGES`); a failing check fails the
+    stage and the run, a pending one blocks the run until it succeeds. The run shows `pullRequest`, later prompts name
+    it, and `run.completed@v1` lists it.
   - [ ] The inference gateway per run (from T-14 above) and a person takes over a run (ORCH-007).
   - [ ] Runs listed and filtered by state (ORCH-008), and intake's work item status follows its run.
   - [ ] The evidence tool of the Factory MCP server (from T-16 above).
