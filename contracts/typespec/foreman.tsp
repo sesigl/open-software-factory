@@ -60,6 +60,9 @@ model StageView {
   /** The checks the stage waits for, once the foreman read them (ADR 0069). */
   checks?: CheckView[];
 
+  /** When a person took the stage over from its agent (ADR 0070). */
+  takenOverAt?: utcDateTime;
+
   /** Why the stage ended without success, when the foreman knows. */
   @minLength(1)
   reason?: string;
@@ -87,6 +90,10 @@ model RunView {
   /** The last pull request link that an agent of the run wrote (ADR 0069). */
   pullRequest?: url;
 
+  /** The run's folder on the foreman's machine, where a person who took over a stage goes on (ADR 0070). */
+  @minLength(1)
+  folder?: string;
+
   startedAt: utcDateTime;
   endedAt?: utcDateTime;
 
@@ -98,9 +105,14 @@ model RunView {
 enum RunSignalType {
   steer,
   cancel,
+  `take-over`,
+  `hand-back`,
 }
 
-/** foreman: a signal to a run: "steer" with a message for the running stage's agent, or "cancel". */
+/**
+ * foreman: a signal to a run: "steer" with a message for the running stage's agent, "cancel", "take-over" of the running
+ * stage by a person, or "hand-back" of that stage (ADR 0070).
+ */
 model RunSignal {
   type: RunSignalType;
 

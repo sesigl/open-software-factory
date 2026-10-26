@@ -96,7 +96,7 @@ agent-sandbox templates; Argo CD or Flux applies them). An OpenTofu provider can
 | Loop | Time scale | Engine | Steps |
 | --- | --- | --- | --- |
 | Inner (harness) | seconds to minutes | the harness | build context → model answers with text or tool calls → permission check → run tools (read, edit, shell, MCP) → results into context, compact when large → repeat until done, budget or interruption |
-| Outer (delivery) | hours | foreman on Temporal | each stage is an activity that starts an inner loop in a fresh sandbox; deterministic checks between stages; gates wait for gatekeeper signals; steering and handoff are signals; sub-agents are child workflows |
+| Outer (delivery) | hours | foreman on Temporal | each stage is an activity that starts an inner loop in a fresh sandbox; deterministic checks between stages; gates wait for gatekeeper signals; steering, take over and hand back are signals (ADR 0070); each run gets its own key of the factory's inference gateway; sub-agents are child workflows |
 | Meta (improvement) | days | scorekit, observer, taskcapture | score sampled runs → group repeated failures → PR to the factory → benchmark it → person merges → foreman loads new version → same scorer checks the effect |
 
 ### OpenTelemetry support of harnesses (October 2026)

@@ -59,6 +59,10 @@ the model the benchmark chose.
 - **The spend log** is LiteLLM's spend rows as `GET /spend/logs` returns them, one JSON line each, oldest first: the
   format ledger reads. `metadata.spend_logs_metadata."osf.run.id"` names the run. LiteLLM writes rows every one to
   six seconds, so `spend-log` waits eight seconds before it reads.
+- **Three APIs, one key.** Besides chat completions, the gateway serves the Anthropic Messages API at
+  `<URL without /v1>/v1/messages` (the key as `x-api-key`), which Claude Code calls, and the OpenAI Responses API at
+  `<URL>/responses`, which Codex calls. LiteLLM translates them for the provider; for an `openai/` model it calls the
+  provider's Responses API.
 - **A company gateway** is a provider like any other: its URL as `api_base` and its key as
   `os.environ/OSF_SECRET_<NAME>`. A company that wants no bundled gateway points the harnesses at its own URL instead.
 - **No state of its own.** `stop` removes both containers, the database's volume and the network.

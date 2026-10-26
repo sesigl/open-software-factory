@@ -615,7 +615,12 @@ read them for ideas, do not copy their company-specific rules.
     foreman reads them with the forge adapter under `providers.forge` (`FOREMAN_FORGES`); a failing check fails the
     stage and the run, a pending one blocks the run until it succeeds. The run shows `pullRequest`, later prompts name
     it, and `run.completed@v1` lists it.
-  - [ ] The inference gateway per run (from T-14 above) and a person takes over a run (ORCH-007).
+  - [x] Inference gateway and take over (ADR 0070, `SCN-FORE-050` to `-063`, `SCN-INFER-012` and `-013`, `SCN-TK-109`
+    to `-112`): a factory names its inference adapter under `providers.inference` and its config and run budget under
+    `inference` (`FOREMAN_INFERENCES`); `foreman serve` starts one gateway, makes one key per run with the budget, and
+    hands each stage's agent the URL, the key and the agent's `model` as `OPENAI_*` and `ANTHROPIC_*` variables. The
+    port's scenarios cover the Messages and Responses APIs. The signals `take-over` and `hand-back` let a person take
+    the running stage over in the run's `folder` and hand the run back. `fakes.inference()` fakes the port.
   - [ ] Runs listed and filtered by state (ORCH-008), and intake's work item status follows its run.
   - [ ] The evidence tool of the Factory MCP server (from T-16 above).
 

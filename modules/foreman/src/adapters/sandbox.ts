@@ -1,10 +1,10 @@
 // A stage's sandbox through the sandbox port (ADR 0054, ADR 0068). The adapter is a program; the foreman creates a
 // sandbox from the spec, copies the run's folder in, runs the harness with exec, copies the folder out and destroys it.
-import { execFile } from "node:child_process";
 import { cpSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, posix } from "node:path";
 import type { SandboxSpec } from "@opensoftware/contracts";
+import { adapterRun, lastLine } from "./program.ts";
 
 export interface StageSandbox {
   /** Copies the run's folder into the sandbox; returns where it is there. */
@@ -14,18 +14,6 @@ export interface StageSandbox {
   /** Puts the files of the sandbox's folder in the run's folder. */
   copyOut(): Promise<void>;
   destroy(): Promise<void>;
-}
-
-/** Runs one command of the adapter; a failure names the command and what the adapter wrote to standard error. */
-function adapterRun(adapter: string[], env: Record<string, string | undefined>) {
-  const [file, ...args] = adapter as [string, ...string[]];
-  return (...command: string[]) =>
-    new Promise<string>((resolve, reject) => {
-      execFile(file, [...args, ...command], { env }, (error, stdout, stderr) => {
-        if (error) reject(new Error(`the sandbox adapter's ${command[0]} failed: ${stderr.trim() || error.message}`));
-        else resolve(stdout.trim());
-      });
-    });
 }
 
 /**
@@ -39,12 +27,12 @@ export async function createSandbox(
   name: string,
   env: Record<string, string | undefined>,
 ): Promise<StageSandbox> {
-  const run = adapterRun(adapter, env);
+  const run = adapterRun("sandbox", adapter, env);
   const temporary = mkdtempSync(join(tmpdir(), "foreman-sandbox-"));
   let id: string;
   try {
     writeFileSync(join(temporary, "spec.json"), JSON.stringify(spec));
-    id = (await run("create", join(temporary, "spec.json"))).split("\n").pop() as string;
+    id = lastLine(await run("create", join(temporary, "spec.json")));
   } finally {
     rmSync(temporary, { recursive: true, force: true });
   }

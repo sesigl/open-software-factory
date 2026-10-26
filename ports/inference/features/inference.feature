@@ -5,7 +5,8 @@ Feature: One model endpoint for every harness, with routing, budgets and spend l
   completions API with a routing alias as the model and a key per run; the gateway routes the alias to a model of a
   provider, stops a run at its budget and logs the spend of every call with the run's ID (ADR 0056). The test
   provider is an OpenAI-compatible API at "host.docker.internal" that answers each call with 1000 prompt tokens and
-  200 completion tokens.
+  200 completion tokens. Claude Code calls the Anthropic Messages API and Codex the OpenAI Responses API of the same
+  gateway, with the same keys and aliases (ADR 0070); for those, the test provider answers the OpenAI Responses API.
 
   @id=SCN-INFER-001 @status=implemented @conformance @realizes=SCN-FACTORY-OPEN-004
   Scenario: A call with a routing alias reaches the configured model
@@ -81,3 +82,19 @@ Feature: One model endpoint for every harness, with routing, budgets and spend l
     When the client runs "start" with the config
     Then start exits with code 1 and names the gateway that "did not start and was removed"
     And list does not print that gateway's ID
+
+  @id=SCN-INFER-012 @status=implemented @conformance
+  Scenario: A Messages API call with a routing alias reaches the configured model
+    Given a gateway started from a config that routes "routes/triage" to the test provider's model "ft:triage-2026-10"
+    When a run calls the Messages API at the gateway's URL without "/v1" with "routes/triage" and its key as "x-api-key"
+    Then the test provider received a call for the model "ft:triage-2026-10"
+    And the run gets a Messages answer with the text "triaged"
+    And the same call with the key "sk-unknown" gets the status 401
+
+  @id=SCN-INFER-013 @status=implemented @conformance
+  Scenario: A Responses API call with a routing alias reaches the configured model
+    Given a gateway started from a config that routes "routes/triage" to the test provider's model "ft:triage-2026-10"
+    When a run calls the Responses API at the gateway's URL with "routes/triage" and its key
+    Then the test provider received a call for the model "ft:triage-2026-10"
+    And the run gets a Responses answer with the output text "triaged"
+    And the same call with the key "sk-unknown" gets the status 401
