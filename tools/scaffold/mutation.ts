@@ -1,7 +1,7 @@
 // `osf mutation <unit>`: Stryker on the source lines of one module that changed since OSF_BASE, or on every line
 // with --all (ADR 0037). The module's `mutation` script calls it; `osf check MUTATION` scores the report.
 // `--shard i/n` mutates the same lines in each of n runners, and each runner tests every n-th of their mutants
-// (ADR 0065), so that n runners share a large change.
+// (ADR 0066), so that n runners share a large change.
 import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { availableParallelism } from "node:os";
