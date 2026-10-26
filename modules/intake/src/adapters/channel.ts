@@ -1,9 +1,5 @@
-// The channel port's adapter as a program (ADR 0059, ADR 0063): intake runs `receive` on each delivery and `reply`
-// in a thread, with the port's variables, and reads the JSON lines the adapter prints.
-import { execFile } from "node:child_process";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+// The channel port's adapter (ADR 0059, ADR 0063): intake runs `receive` on each delivery and `reply` in a thread.
+import { type Delivery, type Lines, program } from "./program.ts";
 
 export interface ChannelSettings {
   command: string;
@@ -14,42 +10,20 @@ export interface ChannelSettings {
 
 export interface Channel {
   /** The lines `receive` prints for a delivery; undefined when the adapter refuses its signature. */
-  receive(delivery: { headers: Record<string, string>; body: string }): Promise<Record<string, unknown>[] | undefined>;
+  receive(delivery: Delivery): Promise<Lines | undefined>;
   reply(thread: string, text: string): Promise<void>;
 }
 
 export function channelAdapter(settings: ChannelSettings): Channel {
-  const [file = "", ...prefix] = settings.command.split(" ");
-  const env = {
-    ...process.env,
+  const adapter = program(settings.command, {
     CHANNEL_API_URL: settings.apiUrl,
     CHANNEL_TOKEN: settings.token,
     CHANNEL_SIGNING_SECRET: settings.signingSecret,
-  };
-  const lines = (out: string) =>
-    out
-      .split("\n")
-      .filter((line) => line !== "")
-      .map((line) => JSON.parse(line) as Record<string, unknown>);
-  /** The lines the command printed; a command that fails rejects with what the adapter wrote to its error output. */
-  const run = (args: string[]) =>
-    new Promise<Record<string, unknown>[]>((done, fail) => {
-      execFile(file, [...prefix, ...args], { env, encoding: "utf8" }, (error, out, err) =>
-        error ? fail(new Error(`${settings.command} ${args[0]}: ${err}`)) : done(lines(out)),
-      );
-    });
+  });
   return {
-    async receive(delivery) {
-      const folder = await mkdtemp(join(tmpdir(), "intake-"));
-      const path = join(folder, "delivery.json");
-      await writeFile(path, JSON.stringify(delivery));
-      const refused = (error: Error) => (/signature/i.test(error.message) ? undefined : Promise.reject(error));
-      return run(["receive", path])
-        .catch(refused)
-        .finally(() => rm(folder, { recursive: true, force: true }));
-    },
+    receive: (delivery) => adapter.deliver("receive", delivery),
     async reply(thread, text) {
-      await run(["reply", thread, text]);
+      await adapter.run(["reply", thread, text]);
     },
   };
 }

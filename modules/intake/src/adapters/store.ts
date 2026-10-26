@@ -37,8 +37,15 @@ export interface Outgoing {
 }
 
 export interface Store {
-  /** Keeps the work item unless one with its ID exists, and the request; true when this call kept the work item. */
-  submit(workItem: WorkItem, at: number, event?: { subject: string; event: WorkReceived }): Promise<boolean>;
+  /**
+   * Keeps the work item unless one with its ID exists, and the request unless its origin is listed: `created` when this
+   * call kept the work item, `added` when it kept the request.
+   */
+  submit(
+    workItem: WorkItem,
+    at: number,
+    event?: { subject: string; event: WorkReceived },
+  ): Promise<{ created: boolean; added: boolean }>;
   get(id: string): Promise<Stored | undefined>;
   /** The events not yet published, oldest first. */
   unpublished(): Promise<Outgoing[]>;
@@ -46,12 +53,13 @@ export interface Store {
   close(): Promise<void>;
 }
 
-async function addRequest(sql: Sql, workItem: WorkItem, at: number): Promise<void> {
-  await sql.query(
+async function addRequest(sql: Sql, workItem: WorkItem, at: number): Promise<boolean> {
+  const { rows } = await sql.query(
     `INSERT INTO intake.requests (work_item, origin_key, requester, origin, received_at) VALUES ($1, $2, $3, $4, $5)
-     ON CONFLICT (work_item, origin_key) DO NOTHING`,
+     ON CONFLICT (work_item, origin_key) DO NOTHING RETURNING seq`,
     [workItem.id, originKey(workItem.origin), workItem.requester, workItem.origin, at],
   );
+  return rows.length === 1;
 }
 
 export async function openStore(url: string | undefined, folder: string): Promise<Store> {
@@ -71,11 +79,11 @@ export async function openStore(url: string | undefined, folder: string): Promis
           "INSERT INTO intake.work_items (id, item, received_at) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING RETURNING id",
           [workItem.id, workItem, at],
         );
-        await addRequest(sql, workItem, at);
+        const added = await addRequest(sql, workItem, at);
         const created = rows.length === 1;
         if (created && event)
           await sql.query("INSERT INTO intake.outbox (subject, event) VALUES ($1, $2)", [event.subject, event.event]);
-        return created;
+        return { created, added };
       }),
     async get(id) {
       const { rows } = await db.query<{ item: WorkItem; received_at: string }>(

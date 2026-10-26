@@ -52,3 +52,9 @@ Feature: The work item API
     When the user runs "intake serve" without "INTAKE_API_TOKEN"
     Then the command exits with code 2
     And the error output says "set INTAKE_API_TOKEN"
+
+  @id=SCN-INTAKE-029 @status=implemented
+  Scenario: A work item is found by its dedupe key
+    Given the server received the README's "work.json"
+    When a program gets "/v1/work-items?dedupeKey=idea:export-csv"
+    Then the answer has the status 200 and the work item with the title "Export reports as CSV"
