@@ -20,6 +20,7 @@ Use these terms in scenarios, code, UI text and docs.
 | Approval record | What gatekeeper writes when a gate is decided: the request, the policy, who decided, what and when; signed with Ed25519. |
 | Outbox | A table where a server writes its events in the same transaction as the change they report; a relay publishes them to NATS later, so no event is lost (ADR 0003, ADR 0048). |
 | Human touchpoint | A gate where a person reviews the spec, the code or the product. |
+| Take over | A person ends the running stage's turn and goes on with the work in the run's folder; a hand back lets the run go on from there (ADR 0070). |
 | Foreman | The orchestrator that runs the stages of a factory as durable workflows. |
 | Harness | A coding-agent program that runs the inner tool loop, such as Claude Code, Codex or OpenCode. |
 | Harness adapter | A program that runs one harness behind the harness port: it speaks ACP on stdio to its client and adds the tool allowlist, cancel within 5 seconds and the transcript export (ADR 0050). |
