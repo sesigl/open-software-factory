@@ -19,6 +19,12 @@ channels:
     messages:
       WorkReceived:
         $ref: '#/components/messages/WorkReceived'
+  run-started:
+    address: osf.run.started.v1
+    description: A run started.
+    messages:
+      RunStarted:
+        $ref: '#/components/messages/RunStarted'
   run-completed:
     address: osf.run.completed.v1
     description: A run ended.
@@ -75,6 +81,13 @@ operations:
       $ref: '#/channels/work-received'
     messages:
       - $ref: '#/channels/work-received/messages/WorkReceived'
+  publishRunStarted:
+    action: send
+    summary: Published by foreman.
+    channel:
+      $ref: '#/channels/run-started'
+    messages:
+      - $ref: '#/channels/run-started/messages/RunStarted'
   publishRunCompleted:
     action: send
     summary: Published by foreman.
@@ -141,6 +154,14 @@ components:
         schemaFormat: application/schema+json;version=draft-2020-12
         schema:
           $ref: './work-received/work-received.schema.json'
+    RunStarted:
+      name: run.started@v1
+      title: run.started@v1
+      contentType: application/cloudevents+json
+      payload:
+        schemaFormat: application/schema+json;version=draft-2020-12
+        schema:
+          $ref: './run-started/run-started.schema.json'
     RunCompleted:
       name: run.completed@v1
       title: run.completed@v1

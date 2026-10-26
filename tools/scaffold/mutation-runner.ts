@@ -47,7 +47,10 @@ function killGroup(pid: number | undefined): void {
 }
 
 interface Report {
-  testResults: { name: string; assertionResults: { title: string; status: string; duration?: number }[] }[];
+  testResults: {
+    name: string;
+    assertionResults: { title: string; status: string; duration?: number; failureMessages?: string[] }[];
+  }[];
 }
 
 class ScenarioRunner {
@@ -83,7 +86,7 @@ class ScenarioRunner {
             name: test.title,
             timeSpentMs: test.duration ?? 0,
             status: failed ? 1 : 0,
-            failureMessage: run.output,
+            failureMessage: (test.failureMessages ?? []).join("\n").slice(0, 3000) || run.output,
           });
           perTest[id] = { ...perTest[id], ...ranBy(join(mutants, test.title)) };
         }

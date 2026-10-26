@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "PORT": {
+      "type": "string",
+      "default": "8080",
+      "description": "serve: the port the HTTP server listens on."
+    },
+    "OSF_DATA": {
+      "type": "string",
+      "default": ".foreman",
+      "description": "serve: the folder of the runs' working folders, runs/<run ID>, and of the harness adapters' session records."
+    },
+    "OSF_NOW": {
+      "type": "string",
+      "description": "The current time, like 2026-01-01T00:00:00Z, for the times of runs and stages. Default: the clock."
+    },
+    "FOREMAN_API_TOKEN": {
+      "type": "string",
+      "description": "serve: the token that callers of /v1 send as Authorization: Bearer <token>. Required."
+    },
+    "FOREMAN_FACTORY": {
+      "type": "string",
+      "default": "factory.yaml",
+      "description": "serve: the factory definition. Its folder must be in a Git repository: a run's factory version is its commit."
+    },
+    "FOREMAN_TEMPORAL_ADDRESS": {
+      "type": "string",
+      "default": "localhost:7233",
+      "description": "serve: the gRPC address of the Temporal server."
+    },
+    "FOREMAN_TEMPORAL_NAMESPACE": {
+      "type": "string",
+      "default": "default",
+      "description": "serve: the Temporal namespace of the runs."
+    },
+    "FOREMAN_TASK_QUEUE": {
+      "type": "string",
+      "default": "foreman",
+      "description": "serve: the Temporal task queue of the runs' workflows and activities."
+    },
+    "FOREMAN_HARNESSES": {
+      "type": "string",
+      "default": "{}",
+      "description": "serve: a JSON object from harness name to the command line of its adapter. A harness it does not name runs npx -y @opensoftware/harness-<name> run."
+    },
+    "FOREMAN_POLL_MS": {
+      "type": "string",
+      "default": "1000",
+      "description": "serve: how often a running stage looks for steering messages and a cancel, in milliseconds."
+    },
+    "FOREMAN_GATEKEEPER_URL": {
+      "type": "string",
+      "description": "serve: the URL of gatekeeper serve, which a stage with a gate asks for a decision. Required for a factory with gates."
+    },
+    "FOREMAN_GATEKEEPER_TOKEN": {
+      "type": "string",
+      "description": "serve: gatekeeper's API token, GATEKEEPER_API_TOKEN."
+    },
+    "FOREMAN_NATS_URL": {
+      "type": "string",
+      "description": "serve: the NATS server for work.received@v1 and gate.decided@v1 in, and run.started@v1 and run.completed@v1 out. Unset: no events."
+    }
+  },
+  "additionalProperties": false
+}

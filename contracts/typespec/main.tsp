@@ -12,4 +12,6 @@ import "./gatekeeper.tsp";
 import "./gatekeeper-api.tsp";
 import "./intake.tsp";
 import "./intake-api.tsp";
+import "./foreman.tsp";
+import "./foreman-api.tsp";
 import "./sandbox.tsp";

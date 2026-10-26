@@ -1,4 +1,5 @@
-// Real services in containers (ADR 0016). Each helper starts one container for the scenario; the test gets only
+// Real services in containers (ADR 0016); Temporal and NATS run on the host instead (binaries.ts, ADR 0067).
+// Each helper starts one container for the scenario; the test gets only
 // what a module needs to reach it, never a client for the module's data.
 import { GenericContainer, type StartedTestContainer, Wait } from "testcontainers";
 
@@ -24,40 +25,12 @@ export interface S3 {
 }
 
 export const IMAGES = {
-  nats: "nats:2.11.9-alpine",
-  temporal: "temporalio/temporal:1.4.1",
   s3: "chrislusf/seaweedfs:3.97",
   forge: "code.forgejo.org/forgejo/forgejo:11",
   collector: "otel/opentelemetry-collector-contrib:0.148.0",
 } as const;
 
 export type Track = (container: StartedTestContainer) => StartedTestContainer;
-
-export async function startNats(track: Track): Promise<Nats> {
-  const container = track(
-    await new GenericContainer(IMAGES.nats)
-      .withCommand(["-js"])
-      .withExposedPorts(4222)
-      .withWaitStrategy(Wait.forLogMessage(/Server is ready/))
-      .start(),
-  );
-  return { url: `nats://${address(container, 4222)}` };
-}
-
-export async function startTemporal(track: Track): Promise<Temporal> {
-  const container = track(
-    await new GenericContainer(IMAGES.temporal)
-      .withCommand(["server", "start-dev", "--ip", "0.0.0.0", "--http-port", "7243", "--headless"])
-      .withExposedPorts(7233, 7243)
-      .withWaitStrategy(Wait.forHttp("/api/v1/namespaces", 7243))
-      .start(),
-  );
-  return {
-    address: address(container, 7233),
-    namespace: "default",
-    httpUrl: `http://${address(container, 7243)}`,
-  };
-}
 
 export async function startS3(track: Track): Promise<S3> {
   const container = track(

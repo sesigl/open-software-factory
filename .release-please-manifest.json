@@ -26,5 +26,6 @@
   "adapters/channel/slack": "0.2.0",
   "adapters/channel/github": "0.2.0",
   "packages/channel-kit": "0.2.0",
-  "modules/intake": "0.0.0"
+  "modules/intake": "0.0.0",
+  "modules/foreman": "0.0.0"
 }

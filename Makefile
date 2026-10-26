@@ -25,7 +25,7 @@ AFFECTED := $(if $(OSF_BASE),--filter=...[$(OSF_BASE)])
 help: ## list the targets
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-16s %s\n", $$1, $$2}'
 
-install: ## install dependencies and the pinned lychee, oasdiff and opa binaries
+install: ## install dependencies and the pinned lychee, oasdiff, opa, temporal and nats-server binaries
 	pnpm install --frozen-lockfile
 	@# osf imports the libraries in packages/ that tools/ depends on: build them first.
 	@$(TURBO) build --filter=@opensoftware/tools^...

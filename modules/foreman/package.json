@@ -1,0 +1,44 @@
+{
+  "name": "@opensoftware/foreman",
+  "version": "0.0.0",
+  "description": "foreman: runs the factory's workflow of agents for each work item on Temporal, with gates, steering and cancel.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "modules/foreman"
+  },
+  "type": "module",
+  "bin": {
+    "foreman": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node scripts/bundle-workflows.ts",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "vitest run",
+    "docs": "node ../../tools/bin/osf.ts docs .",
+    "mutation": "node ../../tools/bin/osf.ts mutation ."
+  },
+  "devDependencies": {
+    "@opensoftware/testkit": "workspace:*"
+  },
+  "dependencies": {
+    "@agentclientprotocol/sdk": "1.9.0",
+    "@nats-io/transport-node": "3.4.0",
+    "@opensoftware/cli": "workspace:*",
+    "@opensoftware/contracts": "workspace:*",
+    "@temporalio/activity": "1.24.0",
+    "@temporalio/client": "1.24.0",
+    "@temporalio/worker": "1.24.0",
+    "@temporalio/workflow": "1.24.0",
+    "fastify": "5.12.7",
+    "yaml": "2.9.1"
+  }
+}
