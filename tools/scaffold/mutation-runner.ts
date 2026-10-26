@@ -1,8 +1,9 @@
 // The Stryker test runner of `osf mutation` for a unit whose system tests start its built bin (ADR 0061). The first
 // run runs every scenario once with OSF_TESTKIT_MUTANTS, so each process of the module writes the mutants it ran
 // into the folder of its scenario (testkit, support/coverage.ts). Stryker then reruns, for each mutant, only the
-// scenarios that ran it, and marks a mutant no scenario ran as NoCoverage. Stryker loads this file by its path in
-// each of its test runner processes, so it imports nothing but Node.
+// scenarios that ran it, and marks a mutant no scenario ran as NoCoverage. With the option `osfShard` ("i/n"), it
+// tests only every n-th mutant (ADR 0066). Stryker loads this file by its path in each of its test runner processes,
+// so it imports nothing but Node.
 import { spawn } from "node:child_process";
 import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -50,7 +51,14 @@ interface Report {
 }
 
 class ScenarioRunner {
-  static inject = [] as const;
+  static inject = ["options"] as const;
+
+  private readonly shard?: { index: number; count: number };
+
+  constructor(options: { osfShard?: string }) {
+    const [index = 1, count = 1] = options.osfShard?.split("/").map(Number) ?? [];
+    this.shard = options.osfShard ? { index, count } : undefined;
+  }
 
   capabilities() {
     return { reloadEnvironment: true };
@@ -90,6 +98,10 @@ class ScenarioRunner {
 
   async mutantRun(options: { activeMutant: { id: string }; testFilter?: string[] }) {
     const files = options.testFilter ?? [];
+    // A mutant of another shard passes without a test; osf mutation removes it from this shard's report.
+    if (this.shard && Number(options.activeMutant.id) % this.shard.count !== this.shard.index - 1) {
+      return { status: "survived", nrOfTests: 0 };
+    }
     const run = await vitest(["--bail=1", "--reporter=dot", ...files], {
       __STRYKER_ACTIVE_MUTANT__: options.activeMutant.id,
     });
@@ -112,5 +124,10 @@ function ranBy(folder: string): Record<string, number> {
   }
   return ran;
 }
+
+/** The option of `osf mutation` for this runner, so that Stryker accepts it. */
+export const strykerValidationSchema = {
+  properties: { osfShard: { type: "string", description: "Test only every n-th mutant: i/n (ADR 0066)." } },
+};
 
 export const strykerPlugins = [{ kind: "TestRunner", name: "osf-scenarios", injectableClass: ScenarioRunner }];
