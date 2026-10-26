@@ -213,3 +213,12 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     Given the repository "tester/web" without pull requests
     When the client runs "comments tester/web 42"
     Then comments exits with code 1 and the error "no pull request tester/web#42"
+
+  @id=SCN-FORGE-030 @status=planned @conformance @realizes=SCN-FACTORY-ACCESS-001
+  Scenario: A delivery of a label on an issue becomes an issue.labeled event
+    Given a webhook the client registered for "tester/web" with "--event issue.labeled" at a receiver with the secret "whsec-51c2"
+    And the issue "Export reports as CSV" in "tester/web" with the body "Finance needs the monthly report as CSV"
+    When "tester" adds the label "factory" to the issue
+    And the client runs "event" on the delivery of the label
+    Then event prints an "issue.labeled@v1" CloudEvent that the contract accepts
+    And its data names the issue's link, number, title, body, the author "tester" and the labels "factory"

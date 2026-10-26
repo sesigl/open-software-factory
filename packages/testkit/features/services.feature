@@ -172,3 +172,11 @@ Feature: Services and outside systems
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-103 @status=planned
+  Scenario: fakes.forge opens an issue and adds a label to it
+    Given a module whose CLI prints the title and the label names of issue 1 of a repository at "DEMO_FORGE_URL"
+    And its system test opens the issue "Export reports as CSV" in fakes.forge, adds the label "factory" and expects "Export reports as CSV factory"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
