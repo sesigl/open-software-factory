@@ -91,8 +91,8 @@ What exists:
 ## Consequences
 
 - An issue labeled `factory` on a repository whose webhook points at intake becomes a work item. For this
-  repository that needs a running intake with a public URL; that is the T-16 "Done when", which waits until intake
-  runs somewhere (T-19 gives the Compose profile).
+  repository that needs a running intake with a public URL; that was the T-16 "Done when". The owner deferred hosting
+  until the foreman acts on work items, so it is a slice of T-21 now.
 - Work that a person mentions in Slack and labels on GitHub shows both requests on one work item.
 - A fatal error in production starts the same loop as an idea or a bug report. Errors of lower levels make
   nothing; a Sentry alert rule picks what reaches intake.
