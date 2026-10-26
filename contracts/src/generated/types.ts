@@ -41,7 +41,8 @@ export type paths = {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** @description The runs of the server, running runs first, then the runs that ended, the one that ended last first; with `state`, only the runs in that state (ADR 0071). */
+        get: operations["ForemanApi_listRuns"];
         put?: never;
         /** @description Start a run of the factory's workflow for a work item. The same work item again answers the run it started. */
         post: operations["ForemanApi_startRun"];
@@ -685,6 +686,10 @@ export type components = {
             /** Format: uri */
             evidenceBundle?: string;
         };
+        /** @description foreman: the runs of the server, running runs first, then the runs that ended, the one that ended last first, as `GET /v1/runs` answers them (ADR 0071). */
+        RunList: {
+            runs: components["schemas"]["RunView"][];
+        };
         /**
          * @description How a run ended.
          * @enum {string}
@@ -1026,10 +1031,10 @@ export type components = {
             links?: components["schemas"]["Link"][];
         };
         /**
-         * @description Where a work item stands.
+         * @description Where a work item stands: received, then as its run in the foreman goes (ADR 0071).
          * @enum {string}
          */
-        WorkItemStatus: "received";
+        WorkItemStatus: "received" | "running" | "complete" | "failed" | "cancelled";
         /** @enum {string} */
         WorkItemType: "idea" | "bug" | "task" | "automation";
         /** @description intake: a work item as the HTTP API shows it (ADR 0063). */
@@ -1037,6 +1042,8 @@ export type components = {
             /** @description Its ID is "wi_" and 20 hex digits of the SHA-256 of its dedupe key. */
             workItem: components["schemas"]["WorkItem"];
             status: components["schemas"]["WorkItemStatus"];
+            /** @description The foreman's run of the work item, once it started (ADR 0071). */
+            runId?: string;
             /** Format: date-time */
             receivedAt: string;
             /** @description Every submission that asked for the work item, oldest first; one per origin. */
@@ -1175,6 +1182,46 @@ export interface operations {
             };
             /** @description The server cannot find the requested resource. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    ForemanApi_listRuns: {
+        parameters: {
+            query?: {
+                state?: components["schemas"]["RunState"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunList"];
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Access is unauthorized. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -150,6 +150,12 @@ export async function servingCommit(sut: Sut, fakes: Fakes, commit: string, setu
       api().POST("/v1/runs", { body: work as WorkItem, headers }),
     view: async (runId: string) =>
       (await api().GET("/v1/runs/{runId}", { params: { path: { runId } }, headers: AUTH })).data as RunView,
+    /** The answer of GET /v1/runs, with `?state=` when a state is given. */
+    list: (state?: string) =>
+      api().GET("/v1/runs", {
+        params: { query: state ? { state: state as RunView["state"] } : {} },
+        headers: AUTH,
+      }),
     signal: (runId: string, body: unknown) =>
       api().POST("/v1/runs/{runId}/signals", {
         params: { path: { runId } },

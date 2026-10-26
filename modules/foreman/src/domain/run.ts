@@ -53,6 +53,14 @@ export type Fact =
   | { kind: "error"; message: string };
 
 const ENDED: ReadonlySet<RunState> = new Set(["complete", "failed", "cancelled"]);
+const STATES: ReadonlySet<string> = new Set(["running", "blocked", ...ENDED]);
+
+/** Whether the text is one of the states a run can be in (vision scenario ORCH-008). */
+export const isRunState = (text: string): text is RunState => STATES.has(text);
+
+/** The runs in the state, or all of them, in their order (ADR 0071). */
+export const listed = (views: RunView[], state?: RunState): RunView[] =>
+  views.filter((view) => !state || view.state === state);
 
 /** "run_" and 20 hex digits of the SHA-256 of the work item's ID: one run per work item. */
 export const runIdOf = (workItemId: string): string =>

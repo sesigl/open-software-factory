@@ -27,9 +27,13 @@ model WorkSubmission {
   links?: Link[];
 }
 
-/** Where a work item stands. */
+/** Where a work item stands: received, then as its run in the foreman goes (ADR 0071). */
 enum WorkItemStatus {
   received,
+  running,
+  complete,
+  failed,
+  cancelled,
 }
 
 /** intake: one submission that asked for a work item. */
@@ -45,6 +49,11 @@ model WorkItemView {
   workItem: WorkItem;
 
   status: WorkItemStatus;
+
+  /** The foreman's run of the work item, once it started (ADR 0071). */
+  @minLength(1)
+  runId?: string;
+
   receivedAt: utcDateTime;
 
   /** Every submission that asked for the work item, oldest first; one per origin. */

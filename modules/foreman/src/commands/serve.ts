@@ -48,6 +48,9 @@ function api(work: Runs, token: string) {
     const { created, view } = await work.start(request.body);
     return reply.code(created ? 201 : 200).send(view);
   });
+  app.get<{ Querystring: { state?: string } }>("/v1/runs", async (request) => ({
+    runs: await work.list(request.query.state),
+  }));
   app.get<{ Params: { runId: string } }>("/v1/runs/:runId", async (request, reply) => {
     const view = await work.view(request.params.runId);
     return view ?? unknown(reply, request.params.runId);

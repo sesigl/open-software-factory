@@ -576,7 +576,7 @@ read them for ideas, do not copy their company-specific rules.
     URL, and the owner chose to defer hosting until the foreman acts on work items.
   - Moved: the Factory MCP server fetches a run's evidence, to T-17, because only the foreman records runs.
 
-### [ ] T-17 · foreman
+### [x] T-17 · foreman
 
 - **Tier / language / path / prefix:** core · TS · `modules/foreman/` · `SCN-FORE`
 - **Alone:** run any declared multi-agent pipeline with retries, pauses and human gates, without writing workflow
@@ -621,8 +621,14 @@ read them for ideas, do not copy their company-specific rules.
     hands each stage's agent the URL, the key and the agent's `model` as `OPENAI_*` and `ANTHROPIC_*` variables. The
     port's scenarios cover the Messages and Responses APIs. The signals `take-over` and `hand-back` let a person take
     the running stage over in the run's `folder` and hand the run back. `fakes.inference()` fakes the port.
-  - [ ] Runs listed and filtered by state (ORCH-008), and intake's work item status follows its run.
-  - [ ] The evidence tool of the Factory MCP server (from T-16 above).
+  - [x] Runs listed and filtered by state, work item status and evidence (ADR 0071, `SCN-FORE-064` to `-067`,
+    `SCN-INTAKE-030` to `-038`): `GET /v1/runs` lists the runs, running ones first, and `?state=` filters them (ORCH-008);
+    `intake serve` follows `run.started@v1` and `run.completed@v1`, so a work item shows `running`, `complete`,
+    `failed` or `cancelled` and its `runId`; the Factory MCP server's tool `run_evidence` fetches the run's view from the
+    foreman at `INTAKE_FOREMAN_URL`.
+  - Moved: E2E-001 (the "Done when"), to T-20, whose smoke suite runs it against the Compose profile.
+  - Moved: this repository's `factory` issues implemented by the foreman, to T-21, because it needs intake at a
+    public URL (T-21's intake slice) and a real model.
 
 ### [ ] T-18 · console
 
@@ -676,6 +682,8 @@ owner before each slice: which model or service, and its budget.
   - [ ] observer (from T-10): a nightly job runs `observer analyze` on the scores of the scorekit slice above and
     `observer propose` for the top problem with a real model; done when one observer pull request to this repository
     is merged and `observer check` measures its effect (ADR 0046).
+  - [ ] foreman (from T-17): run `foreman serve` with a real harness and model next to the public intake below; done
+    when an issue labeled `factory` in this repository is implemented by the foreman (phase 3).
   - [ ] intake (from T-16): run `intake serve` at a public URL and point the `issues` webhook of
     `sesigl/open-software-factory` at its `/forge/events`; done when an issue labeled `factory` here creates a work
     item (ADR 0065). Ask the owner where intake runs.

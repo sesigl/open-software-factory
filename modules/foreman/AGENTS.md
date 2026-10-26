@@ -1,6 +1,6 @@
 # AGENTS.md for module `foreman`
 
-Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0004, ADR 0067, ADR 0068, ADR 0069, ADR 0070.
+Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0004, ADR 0067, ADR 0068, ADR 0069, ADR 0070, ADR 0071.
 
 ## Public surface
 
@@ -38,7 +38,7 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
 
 ## Budget
 
-- System tests: 290 seconds in total on the CI runner (63 scenarios; each starts the Temporal dev server and NATS as
+- System tests: 290 seconds in total on the CI runner (67 scenarios; each starts the Temporal dev server and NATS as
   pinned binaries on the host, ADR 0067, and the built `harness-acp` adapter with the testkit's scripted agent, which
   `turbo.json` builds before the tests; sandboxed stages use the testkit's fake sandbox adapter, ADR 0068; checks use
   `fakes.github` and the built `forge-github` adapter, ADR 0069; the gateway uses the testkit's fake inference adapter,
