@@ -26,7 +26,7 @@
     },
     "INTAKE_NATS_URL": {
       "type": "string",
-      "description": "serve: the NATS server for work.received@v1 on osf.work.received.v1. Unset: no events."
+      "description": "serve: the NATS server for work.received@v1 on osf.work.received.v1, and for the foreman's run.started@v1 and run.completed@v1, which move a work item's status (ADR 0071). Unset: no events."
     },
     "INTAKE_SLACK_ADAPTER": {
       "type": "string",
@@ -74,6 +74,14 @@
     "INTAKE_REQUESTER": {
       "type": "string",
       "description": "mcp: the person the agent works for, <source>:<id> like github:varun, the requester of its work. Required."
+    },
+    "INTAKE_FOREMAN_URL": {
+      "type": "string",
+      "description": "mcp: the base URL of foreman serve, like http://localhost:8081, for the tool run_evidence (ADR 0071). Unset: run_evidence is an error that names it."
+    },
+    "INTAKE_FOREMAN_TOKEN": {
+      "type": "string",
+      "description": "mcp: the token of foreman serve's API, its FOREMAN_API_TOKEN, sent with INTAKE_FOREMAN_URL."
     }
   }
 }

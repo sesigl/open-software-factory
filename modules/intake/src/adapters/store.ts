@@ -1,6 +1,6 @@
 // The work items, the requests that asked for them, and the event outbox, in the schema "intake" (ADR 0063).
 import type { WorkItem, WorkReceived } from "@opensoftware/contracts";
-import type { Request, Stored } from "../domain/view.ts";
+import type { Request, RunFact, Status, Stored } from "../domain/view.ts";
 import { originKey } from "../domain/work-item.ts";
 import { openDatabase, type Sql } from "./database.ts";
 
@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS intake.work_items (
   item jsonb NOT NULL,
   received_at bigint NOT NULL
 );
+ALTER TABLE intake.work_items ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'received';
+ALTER TABLE intake.work_items ADD COLUMN IF NOT EXISTS run_id text;
 CREATE TABLE IF NOT EXISTS intake.requests (
   seq bigserial PRIMARY KEY,
   work_item text NOT NULL REFERENCES intake.work_items (id),
@@ -47,6 +49,8 @@ export interface Store {
     event?: { subject: string; event: WorkReceived },
   ): Promise<{ created: boolean; added: boolean }>;
   get(id: string): Promise<Stored | undefined>;
+  /** Moves the work item to the run's status; "running" only moves a work item that is still "received". */
+  followRun(fact: RunFact): Promise<void>;
   /** The events not yet published, oldest first. */
   unpublished(): Promise<Outgoing[]>;
   published(seqs: number[]): Promise<void>;
@@ -86,8 +90,8 @@ export async function openStore(url: string | undefined, folder: string): Promis
         return { created, added };
       }),
     async get(id) {
-      const { rows } = await db.query<{ item: WorkItem; received_at: string }>(
-        "SELECT item, received_at FROM intake.work_items WHERE id = $1",
+      const { rows } = await db.query<{ item: WorkItem; status: Status; run_id: string | null; received_at: string }>(
+        "SELECT item, status, run_id, received_at FROM intake.work_items WHERE id = $1",
         [id],
       );
       const [row] = rows;
@@ -98,9 +102,17 @@ export async function openStore(url: string | undefined, folder: string): Promis
       );
       return {
         workItem: row.item,
+        status: row.status,
+        ...(row.run_id ? { runId: row.run_id } : {}),
         receivedAt: Number(row.received_at),
         requests: requests.rows.map((request) => ({ ...request, at: Number(request.at) })),
       };
+    },
+    async followRun({ workItemId, runId, status }) {
+      await db.query(
+        "UPDATE intake.work_items SET status = $3, run_id = $2 WHERE id = $1 AND (status = 'received' OR $3 <> 'running')",
+        [workItemId, runId, status],
+      );
     },
     async unpublished() {
       const { rows } = await db.query<{ seq: string; subject: string; event: WorkReceived }>(

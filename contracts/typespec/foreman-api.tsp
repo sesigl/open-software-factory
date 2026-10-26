@@ -25,6 +25,11 @@ namespace ForemanApi {
     | GatekeeperApi.Failure<400>
     | GatekeeperApi.Failure<401>;
 
+  /** The runs of the server, newest first; with `state`, only the runs in that state (ADR 0071). */
+  @route("/v1/runs")
+  @get
+  op listRuns(@query state?: RunState): RunList | GatekeeperApi.Failure<400> | GatekeeperApi.Failure<401>;
+
   /** A run: its state and the state of each stage. */
   @route("/v1/runs/{runId}")
   @get

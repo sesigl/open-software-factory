@@ -1,8 +1,9 @@
-// The inbox of the server: submit and read work items, and relay the outbox to NATS (ADR 0063).
+// The inbox of the server: submit and read work items, relay the outbox to NATS (ADR 0063), and move a work item on
+// with its run's events (ADR 0071).
 import type { WorkItemView } from "@opensoftware/contracts";
 import { publishToNats } from "../adapters/nats.ts";
 import type { Store } from "../adapters/store.ts";
-import { receivedEvent, SUBJECT, viewOf } from "../domain/view.ts";
+import { receivedEvent, runFactOf, SUBJECT, viewOf } from "../domain/view.ts";
 import { workItemOf } from "../domain/work-item.ts";
 
 export interface InboxConfig {
@@ -38,6 +39,12 @@ export function inbox(store: Store, config: InboxConfig) {
   return {
     relay,
     view,
+    /** Moves the work item of a run event to the run's status; a message that is not a run event is an error. */
+    async followRun(event: unknown): Promise<void> {
+      const fact = runFactOf(event);
+      if (typeof fact === "string") throw new Error(fact);
+      await store.followRun(fact);
+    },
     /** The work item of the submission, whether this submission created it, and whether it added its request. */
     async submit(submission: unknown): Promise<{ created: boolean; added: boolean; view: WorkItemView }> {
       const workItem = workItemOf(submission);

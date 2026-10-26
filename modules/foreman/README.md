@@ -286,6 +286,7 @@ cancel ends a run that a person took over.
 | Route | What it does |
 | --- | --- |
 | `POST /v1/runs` | Start the run of a work item (the [work item](../../contracts/work-item/work-item.schema.json) format). 201 with the new run, 200 with the run the same work item started before, 400 with a problem that names the field. |
+| `GET /v1/runs` | The runs of the server, newest first: `{ "runs": [...] }`, each as `GET /v1/runs/{runId}` shows it. `?state=` with `running`, `blocked`, `complete`, `failed` or `cancelled` lists only the runs in that state; another state is 400. |
 | `GET /v1/runs/{runId}` | The run: `state`, `factory`, `factoryVersion`, `pullRequest`, `folder`, `startedAt`, `endedAt` and its `stages`. 404 for a run the server does not know. |
 | `POST /v1/runs/{runId}/signals` | `{ "type": "steer", "message": "…" }` sends the message to the running stage's agent; `{ "type": "cancel" }` cancels the run; `{ "type": "take-over" }` and `{ "type": "hand-back" }` hand the running stage to a person and back ([Take over](#take-over)). 202 with the run, 409 when the run ended or the signal does not fit its state. |
 
@@ -440,3 +441,6 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-061 | implemented | A take-over of a run without a running stage is refused |
 | SCN-FORE-062 | implemented | A hand-back of a run nobody took over is refused |
 | SCN-FORE-063 | implemented | A cancel ends a run a person took over |
+| SCN-FORE-064 | implemented | A person lists the runs of the server |
+| SCN-FORE-065 | implemented | A person filters the runs by state |
+| SCN-FORE-066 | implemented | A state that no run can have is refused |

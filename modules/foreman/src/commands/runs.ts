@@ -1,5 +1,5 @@
-// The runs of the foreman as Temporal workflows (ADR 0067): start one per work item, read its view, signal it: steer,
-// cancel, take over and hand back (ADR 0070).
+// The runs of the foreman as Temporal workflows (ADR 0067): start one per work item, read its view, list them by state
+// (ADR 0071), signal them: steer, cancel, take over and hand back (ADR 0070).
 import { UsageError } from "@opensoftware/cli";
 import { validate, type WorkItem } from "@opensoftware/contracts";
 import {
@@ -14,6 +14,8 @@ import {
   firstView,
   type GateDecision,
   hasEnded,
+  isRunState,
+  listed,
   type RunView,
   runIdOf,
   signalOf,
@@ -42,6 +44,8 @@ export interface Runs {
   /** Starts the run of the work item, or finds the one it started before. */
   start(workItem: unknown): Promise<{ created: boolean; view: RunView }>;
   view(runId: string): Promise<RunView | undefined>;
+  /** The runs of the task queue, newest first; with a state, only the runs in it. Another state is a usage error. */
+  list(state?: string): Promise<RunView[]>;
   /** The run's view after the signal, or undefined for an unknown run; a run that ended is a conflict. */
   signal(runId: string, signal: unknown): Promise<RunView | undefined>;
   /** The run's steering messages and the stage a person takes over, for its running stage. */
@@ -91,6 +95,21 @@ export function runs(options: {
       }
     },
     view,
+    async list(state) {
+      if (state !== undefined && !isRunState(state))
+        throw new UsageError(`state: no run is "${state}"; ask for running, blocked, complete, failed or cancelled`);
+      const views: RunView[] = [];
+      const query = `WorkflowType = '${factoryRun.name}' AND TaskQueue = '${taskQueue}'`;
+      // A closed run's result is its last view; a running one answers the view query.
+      for await (const run of client.workflow.list({ query })) {
+        const found =
+          run.status.name === "COMPLETED"
+            ? ((await handle(run.workflowId).result()) as RunView)
+            : await view(run.workflowId);
+        if (found) views.push(found);
+      }
+      return listed(views, state);
+    },
     async signal(runId, document) {
       const signal = signalOf(document);
       if (typeof signal === "string") throw new UsageError(`the body is not a signal: ${signal}`);

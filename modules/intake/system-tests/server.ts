@@ -75,9 +75,33 @@ export async function slackServing(sut: Sut, fakes: Fakes, env: Record<string, s
   return { ...server, slack, replies };
 }
 
-/** "intake mcp" connected to the server as the person "github:varun". */
-export const connectMcp = (sut: Sut, url: string, token = API_TOKEN) =>
-  sut.mcp.connect(["mcp"], { env: { INTAKE_URL: url, INTAKE_API_TOKEN: token, INTAKE_REQUESTER: "github:varun" } });
+/** "intake mcp" connected to the server as the person "github:varun", with these variables. */
+export const connectMcp = (sut: Sut, url: string, token = API_TOKEN, env: Record<string, string> = {}) =>
+  sut.mcp.connect(["mcp"], {
+    env: { INTAKE_URL: url, INTAKE_API_TOKEN: token, INTAKE_REQUESTER: "github:varun", ...env },
+  });
+
+export const FOREMAN_TOKEN = "testkit-foreman-token";
+
+/** A foreman's API that has the run RUN of the work item, with its pull request and two stages. */
+export async function foremanWith(fakes: Fakes, workItem: WorkItemView["workItem"]) {
+  const run = {
+    runId: RUN,
+    workItem,
+    factory: "hello",
+    factoryVersion: "0a1b2c3",
+    state: "complete",
+    pullRequest: "https://github.com/acme/web/pull/7",
+    startedAt: "2026-01-01T00:00:00.000Z",
+    endedAt: "2026-01-01T00:05:00.000Z",
+    stages: [
+      { stage: "plan", agent: "plan", state: "succeeded", sessionId: "sess-plan" },
+      { stage: "implement", agent: "implement", state: "succeeded", sessionId: "sess-implement" },
+    ],
+  };
+  const http = await fakes.http([{ path: `/v1/runs/${RUN}`, body: run }]);
+  return { ...http, run, env: { INTAKE_FOREMAN_URL: http.url, INTAKE_FOREMAN_TOKEN: FOREMAN_TOKEN } };
+}
 
 /** The text of a tool's answer. */
 export const toolText = (result: unknown): string =>
@@ -155,4 +179,59 @@ export async function deliveries(fakes: Fakes) {
 export async function eventually(server: Awaited<ReturnType<typeof serving>>, dedupeKey: string) {
   await expect.poll(async () => (await server.byKey(dedupeKey)).status, { timeout: 10_000, interval: 50 }).toBe(200);
   return (await server.byKey(dedupeKey)).view as WorkItemView;
+}
+
+export const RUN = "run_5d41402abc4b2a76b971";
+
+/** The foreman's "run.started@v1" for the work item, or with an outcome its "run.completed@v1". */
+export function runEvent(workItemId: string, outcome?: "succeeded" | "failed" | "cancelled") {
+  const data = {
+    runId: RUN,
+    workItemId,
+    factoryVersion: "0a1b2c3",
+    startedAt: "2026-01-01T00:00:00Z",
+    requester: { kind: "person", id: "slack:U024BE7LH", displayName: "Varun" },
+    source: "slack",
+  };
+  return outcome
+    ? {
+        specversion: "1.0",
+        id: `${RUN}.completed`,
+        source: "/osf/foreman",
+        type: "run.completed@v1",
+        time: "2026-01-01T00:05:00Z",
+        subject: RUN,
+        data: { ...data, outcome, endedAt: "2026-01-01T00:05:00Z" },
+      }
+    : {
+        specversion: "1.0",
+        id: `${RUN}.started`,
+        source: "/osf/foreman",
+        type: "run.started@v1",
+        time: "2026-01-01T00:00:00Z",
+        subject: RUN,
+        data: { ...data, factory: "hello", stages: ["plan", "implement"] },
+      };
+}
+
+/**
+ * The server, with NATS, received the README's work; `publish` sends a run event of its work item as the foreman does,
+ * and `until` reads the work item until it has the status.
+ */
+export async function following(sut: Sut, fakes: Fakes, env: Record<string, string> = {}) {
+  const nats = await fakes.nats();
+  const server = await received(sut, fakes, { INTAKE_NATS_URL: nats.url, ...env });
+  const events = await sut.events.watch(nats);
+  const subjects = { "run.started@v1": "osf.run.started.v1", "run.completed@v1": "osf.run.completed.v1" };
+  return {
+    ...server,
+    publish: (event: ReturnType<typeof runEvent>) =>
+      events.publish(subjects[event.type as keyof typeof subjects], event as never),
+    async until(status: WorkItemView["status"]) {
+      await expect
+        .poll(async () => (await server.workItem(server.id))?.status, { timeout: 10_000, interval: 50 })
+        .toBe(status);
+      return (await server.workItem(server.id)) as WorkItemView;
+    },
+  };
 }

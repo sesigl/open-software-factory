@@ -1,12 +1,15 @@
-// intake serve: the work item API, the webhooks of Slack, the forge and Sentry, and the relay of the outbox every
-// minute (ADR 0063, ADR 0065). It runs until SIGTERM or SIGINT.
+// intake serve: the work item API, the webhooks of Slack, the forge and Sentry, the relay of the outbox every minute
+// (ADR 0063, ADR 0065), and the foreman's run events, which move a work item on (ADR 0071). It runs until SIGTERM or
+// SIGINT.
 import { timingSafeEqual } from "node:crypto";
 import { UsageError } from "@opensoftware/cli";
 import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
 import { type Channel, channelAdapter } from "../adapters/channel.ts";
 import { forgeAdapter } from "../adapters/forge.ts";
+import { subscribeToNats } from "../adapters/nats.ts";
 import { openStore } from "../adapters/store.ts";
 import { nowOf } from "../domain/time.ts";
+import { RUN_SUBJECTS } from "../domain/view.ts";
 import { workItemId } from "../domain/work-item.ts";
 import { type Env, required } from "./env.ts";
 import { forgeHook, problem, sentryHook, slackHook } from "./hooks.ts";
@@ -69,8 +72,10 @@ export async function serve(env: Env) {
   const now = () => nowOf(env.OSF_NOW);
   const store = await openStore(env.INTAKE_DATABASE_URL || undefined, env.OSF_DATA || ".intake");
   const warn = (text: string) => process.stderr.write(`intake: ${text}\n`);
-  const work = inbox(store, { nats: env.INTAKE_NATS_URL || undefined, now, warn });
+  const nats = env.INTAKE_NATS_URL || undefined;
+  const work = inbox(store, { nats, now, warn });
   await work.relay();
+  const unsubscribe = nats ? await subscribeToNats(nats, RUN_SUBJECTS, work.followRun, warn) : undefined;
 
   const app = Fastify({ logger: false });
   app.setErrorHandler(answerError);
@@ -93,6 +98,7 @@ export async function serve(env: Env) {
     process.once("SIGINT", resolve);
   });
   clearInterval(timer);
+  await unsubscribe?.();
   await app.close();
   await work.relay();
   await store.close();
