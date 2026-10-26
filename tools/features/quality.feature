@@ -98,13 +98,21 @@ Feature: Quality limits
     Then the command exits with code 0
     And the output is "src/run.ts:4-6" and "src/run.ts:9-9", one per line
 
-  @id=SCN-REPO-063 @status=implemented
+  @id=SCN-REPO-063 @status=deprecated
   Scenario: osf mutation with --shard lists its part of the line ranges a change adds
     Given a base commit with module "demo", the limit "at least 70% of the mutants in changed lines" and "src/run.ts" of 5 lines
     And a change that adds lines 4 to 6 and line 9 to "src/run.ts"
     When the developer runs "osf mutation modules/demo --list --shard 2/2" against the base commit
     Then the command exits with code 0
     And the output is "src/run.ts:6-6" and "src/run.ts:9-9", one per line
+
+  @id=SCN-REPO-065 @status=implemented @replaces=SCN-REPO-063
+  Scenario: osf mutation with --shard lists every line range a change adds
+    Given a base commit with module "demo", the limit "at least 70% of the mutants in changed lines" and "src/run.ts" of 5 lines
+    And a change that adds lines 4 to 6 and line 9 to "src/run.ts"
+    When the developer runs "osf mutation modules/demo --list --shard 2/2" against the base commit
+    Then the command exits with code 0
+    And the output is "src/run.ts:4-6" and "src/run.ts:9-9", one per line
 
   @id=SCN-REPO-064 @status=implemented
   Scenario: MUTATION scores the reports of all shards of a module together
