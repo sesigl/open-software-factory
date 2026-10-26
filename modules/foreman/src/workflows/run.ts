@@ -51,7 +51,7 @@ export async function factoryRun({ view, definition }: RunInput): Promise<RunVie
         run = await local.apply(run, { kind: "gate", index, ...decision });
       } else {
         run = await local.apply(run, { kind: "stage-started", index });
-        await settle(await remote.runStage(run, definition, index));
+        await settle(await remote.runStage(run, definition, index, steering.length));
       }
     }
   } catch (error) {

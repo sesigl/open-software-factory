@@ -167,25 +167,25 @@ the minor version. The one-time setup is the same as for contracts
 | ID | Status | Scenario |
 | --- | --- | --- |
 | SCN-FORE-001 | implemented | A program starts a run of the README's factory and it completes |
-| SCN-FORE-002 | planned | Each stage's agent gets its prompt and the work item |
-| SCN-FORE-003 | planned | The same work item again is the same run |
-| SCN-FORE-004 | planned | A stage whose turn ends with "refusal" fails the run |
-| SCN-FORE-005 | planned | A run the server does not know is 404 |
-| SCN-FORE-006 | planned | A call without the API token is refused |
-| SCN-FORE-007 | planned | A work item without a title is refused |
-| SCN-FORE-008 | planned | A run carries the commit of the factory definition |
-| SCN-FORE-009 | planned | A run keeps its factory version when the factory changes during the run |
-| SCN-FORE-010 | planned | A stage that names an unknown agent stops the server at the start |
-| SCN-FORE-011 | planned | The server needs an API token |
-| SCN-FORE-012 | planned | A stage with a gate asks gatekeeper and the run waits |
-| SCN-FORE-013 | planned | An approval of the gate starts the stage |
-| SCN-FORE-014 | planned | A rejection of the gate fails the run |
-| SCN-FORE-015 | planned | A decision for another gate leaves the run waiting |
-| SCN-FORE-016 | planned | A steering message reaches the running stage's agent |
-| SCN-FORE-017 | planned | A cancel ends the running stage's turn and the run |
-| SCN-FORE-018 | planned | A cancel ends a run that waits at a gate |
-| SCN-FORE-019 | planned | A signal to a run that ended is refused |
-| SCN-FORE-020 | planned | An unknown signal is refused |
-| SCN-FORE-021 | planned | A run goes on from its history after the foreman restarts |
-| SCN-FORE-022 | planned | A work item from intake starts a run |
-| SCN-FORE-023 | planned | A run that ends publishes its outcome and its factory version |
+| SCN-FORE-002 | implemented | Each stage's agent gets its prompt and the work item |
+| SCN-FORE-003 | implemented | The same work item again is the same run |
+| SCN-FORE-004 | implemented | A stage whose turn ends with "refusal" fails the run |
+| SCN-FORE-005 | implemented | A run the server does not know is 404 |
+| SCN-FORE-006 | implemented | A call without the API token is refused |
+| SCN-FORE-007 | implemented | A work item without a title is refused |
+| SCN-FORE-008 | implemented | A run carries the commit of the factory definition |
+| SCN-FORE-009 | implemented | A run keeps its factory version when the factory changes during the run |
+| SCN-FORE-010 | implemented | A stage that names an unknown agent stops the server at the start |
+| SCN-FORE-011 | implemented | The server needs an API token |
+| SCN-FORE-012 | implemented | A stage with a gate asks gatekeeper and the run waits |
+| SCN-FORE-013 | implemented | An approval of the gate starts the stage |
+| SCN-FORE-014 | implemented | A rejection of the gate fails the run |
+| SCN-FORE-015 | implemented | A decision for another gate does not start the stage |
+| SCN-FORE-016 | implemented | A steering message reaches the running stage's agent |
+| SCN-FORE-017 | implemented | A cancel ends the running stage's turn and the run |
+| SCN-FORE-018 | implemented | A cancel ends a run that waits at a gate |
+| SCN-FORE-019 | implemented | A signal to a run that ended is refused |
+| SCN-FORE-020 | implemented | An unknown signal is refused |
+| SCN-FORE-021 | implemented | A run goes on from its history after the foreman restarts |
+| SCN-FORE-022 | implemented | A work item from intake starts a run |
+| SCN-FORE-023 | implemented | A run that ends publishes its outcome and its factory version |

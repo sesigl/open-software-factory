@@ -62,7 +62,8 @@ export function activities(deps: ActivityDeps) {
       });
       return { kind: "gate", index, gateId: gate.id, state: gate.state };
     },
-    async runStage(view: RunView, definition: Definition, index: number): Promise<Fact> {
+    /** Runs the stage's agent; steering messages from the `steered`-th on are for it. */
+    async runStage(view: RunView, definition: Definition, index: number, steered: number): Promise<Fact> {
       const plan = definition.stages[index];
       if (!plan) throw new Error(`no stage ${index}`);
       const cwd = join(deps.data, "runs", view.runId);
@@ -87,7 +88,7 @@ export function activities(deps: ActivityDeps) {
       });
       const context = Context.current();
       context.cancellationSignal.addEventListener("abort", () => turn.cancel());
-      let sent = (await deps.steering(view.runId)).length;
+      let sent = steered;
       const watch = setInterval(() => {
         context.heartbeat();
         deps.steering(view.runId).then(

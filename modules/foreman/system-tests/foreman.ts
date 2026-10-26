@@ -46,13 +46,22 @@ export interface Setup {
   env?: Record<string, string>;
 }
 
-/** Commits the factory, starts Temporal and "foreman serve" with the scripted harness. */
-export async function serving(sut: Sut, fakes: Fakes, setup: Setup = {}) {
+/** Commits the README's factory, or this text of factory.yaml with the README's prompts; returns the commit. */
+export async function committed(sut: Sut, fakes: Fakes, factory?: string): Promise<string> {
   const files = readmeFiles(fakes);
   for (const name of ["factory.yaml", "agents/plan.md", "agents/implement.md"])
     await sut.files.put(`$INPUT/${name}`, files[name] as string);
-  if (setup.factory) await sut.files.put("$INPUT/factory.yaml", setup.factory);
-  const commit = await sut.git.commit("the hello factory");
+  if (factory) await sut.files.put("$INPUT/factory.yaml", factory);
+  return sut.git.commit("the hello factory");
+}
+
+/** Commits the factory, starts Temporal and "foreman serve" with the scripted harness. */
+export async function serving(sut: Sut, fakes: Fakes, setup: Setup = {}) {
+  return servingCommit(sut, fakes, await committed(sut, fakes, setup.factory), setup);
+}
+
+/** Starts Temporal and "foreman serve" with the scripted harness on the committed factory. */
+export async function servingCommit(sut: Sut, fakes: Fakes, commit: string, setup: Setup = {}) {
   const temporal = await fakes.temporal();
   const harness = await fakes.harness(setup.turns ?? endingTurns);
   const gatekeeper = setup.gatekeeper
@@ -103,6 +112,17 @@ export async function serving(sut: Sut, fakes: Fakes, setup: Setup = {}) {
         if (view?.state === state) return view;
         if (Date.now() > deadline)
           throw new Error(`run ${runId} is not ${state} after ${timeoutMs} ms: ${JSON.stringify(view)}`);
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+    },
+    /** Reads the run until its stage at `index` is in the state. */
+    async untilStage(runId: string, index: number, state: string, timeoutMs = 20_000): Promise<RunView> {
+      const deadline = Date.now() + timeoutMs;
+      for (;;) {
+        const view = await server.view(runId);
+        if (view?.stages[index]?.state === state) return view;
+        if (Date.now() > deadline)
+          throw new Error(`stage ${index} of ${runId} is not ${state} after ${timeoutMs} ms: ${JSON.stringify(view)}`);
         await new Promise((resolve) => setTimeout(resolve, 50));
       }
     },

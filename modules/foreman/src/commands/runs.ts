@@ -1,7 +1,12 @@
 // The runs of the foreman as Temporal workflows (ADR 0067): start one per work item, read its view, signal it.
 import { UsageError } from "@opensoftware/cli";
 import { validate, type WorkItem } from "@opensoftware/contracts";
-import { type Client, WorkflowExecutionAlreadyStartedError, WorkflowNotFoundError } from "@temporalio/client";
+import {
+  type Client,
+  WorkflowExecutionAlreadyStartedError,
+  WorkflowIdReusePolicy,
+  WorkflowNotFoundError,
+} from "@temporalio/client";
 import type { Factory } from "../adapters/factory.ts";
 import { firstView, type GateDecision, hasEnded, type RunView, runIdOf, signalOf } from "../domain/run.ts";
 import { factoryRun, gateSignal, steerSignal, steeringQuery, viewQuery } from "../workflows/run.ts";
@@ -53,6 +58,8 @@ export function runs(options: {
         await client.workflow.start(factoryRun, {
           workflowId: first.runId,
           taskQueue,
+          // One run per work item, also after it ended.
+          workflowIdReusePolicy: WorkflowIdReusePolicy.REJECT_DUPLICATE,
           args: [{ view: first, definition }],
         });
         return { created: true, view: first };
