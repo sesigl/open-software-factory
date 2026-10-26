@@ -34,7 +34,7 @@ MCP server. The ARCH check enforces the layers.
 ## Budget
 
 - System tests: 180 seconds in total on the CI runner (29 scenarios; most start a server with a fresh embedded
-  PostgreSQL, whose first start takes about 2 seconds). SCN-INTAKE-010 to -012 need Docker for NATS; SCN-INTAKE-008
+  PostgreSQL, whose first start takes about 2 seconds). SCN-INTAKE-010 to -012 start NATS on the host (ADR 0067); SCN-INTAKE-008
   runs PostgreSQL in process (PGlite, ADR 0049); the other server scenarios use the embedded PGlite. The Slack
   scenarios run the built `channel-slack` adapter and the forge scenarios the built `forge-github` adapter against
   `fakes.github` (`sut.adapter`); `turbo.json` builds both before the tests.

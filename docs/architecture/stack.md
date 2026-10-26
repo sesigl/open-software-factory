@@ -55,7 +55,7 @@ publish only the TypeScript package; clients for other languages are not built (
 | Format and lint | Biome; typescript-eslint only for type-aware rules |
 | Types | `tsc --strict`; Zod or TypeBox at boundaries |
 | Tests | Vitest |
-| Integration | Testcontainers (Postgres, NATS, Temporal, SeaweedFS, Forgejo) |
+| Integration | PGlite for PostgreSQL; NATS and the Temporal dev server as pinned binaries; Testcontainers (SeaweedFS, Forgejo) |
 | Import boundaries | dependency-cruiser |
 | Coverage of the running module | V8 precise coverage recorded by the testkit, read with v8-to-istanbul (ADR 0019) |
 | Mutation (changed lines per pull request, every line nightly; ADR 0037) | Stryker |

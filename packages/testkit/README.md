@@ -139,8 +139,12 @@ Every server, client and subscription stops when the scenario ends, before the f
   connects to `postgres://test:test@127.0.0.1:<port>/test` with its own driver; a wrong password is refused with
   SQLSTATE 28P01. Connections run one at a time: a transaction holds the database until it ends, so code must not
   wait inside a transaction for a second connection of its own.
-- `fakes.nats()`, `fakes.temporal()`, `fakes.s3()`: a real service in a container for this
-  scenario ([ADR 0016](../../docs/decisions/0016-testkit-service-fakes.md)). Each gives only what a module needs
+- `fakes.nats()`, `fakes.temporal()`: NATS with JetStream and the Temporal CLI's dev server for this scenario, each
+  the real server as a process on the host with its data in a temporary folder, with no Docker
+  ([ADR 0067](../../docs/decisions/0067-foreman.md)). `make install` pins `nats-server` 2.11.9 and `temporal` 1.4.1 in
+  `.tools/bin`; on other platforms put the same versions on PATH. Each starts in about a second.
+- `fakes.s3()`: a real service in a container for this scenario
+  ([ADR 0016](../../docs/decisions/0016-testkit-service-fakes.md)). Each fake gives only what a module needs
   to reach it: a URL, an address or an endpoint with keys. Docker must run.
 - `fakes.forge()`: a real Forgejo with a user and an API token (`url`, `token`, `owner`). The test process starts one
   and gives each scenario that asks for it the forge without the repositories of the scenarios before

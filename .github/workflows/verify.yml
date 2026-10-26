@@ -61,7 +61,7 @@ jobs:
         include:
           - suite: testkit
             filter: "@opensoftware/testkit"
-            images: postgres nats temporal s3 forge
+            images: s3 forge
             pull: curlimages/curl:8.17.0
           - suite: factory-spec
             filter: "@opensoftware/factory-spec"
@@ -83,10 +83,8 @@ jobs:
             images: forge
           - suite: gatekeeper
             filter: "@opensoftware/gatekeeper"
-            images: nats
           - suite: intake
             filter: "@opensoftware/intake"
-            images: nats
           # Each scenario starts sandboxes of the test template behind iron-proxy (ADR 0054).
           - suite: sandbox-docker
             filter: "@opensoftware/sandbox-docker"
