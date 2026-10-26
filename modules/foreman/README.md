@@ -444,3 +444,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-064 | implemented | A person lists the runs of the server |
 | SCN-FORE-065 | implemented | A person filters the runs by state |
 | SCN-FORE-066 | implemented | A state that no run can have is refused |
+| SCN-FORE-067 | implemented | A run that waits at its gate is listed as blocked |
