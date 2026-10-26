@@ -1,8 +1,8 @@
 // foreman serve: the run API on PORT and a Temporal worker that runs the factory's workflow (ADR 0067). With
-// FOREMAN_NATS_URL it also starts runs for work.received@v1 and passes gate.decided@v1 to the waiting runs. It runs
-// until SIGTERM or SIGINT.
+// FOREMAN_NATS_URL it also starts runs for work.received@v1 and passes gate.decided@v1 to the waiting runs. A factory
+// with an inference adapter gets its gateway while the server runs (ADR 0070). It runs until SIGTERM or SIGINT.
 import { timingSafeEqual } from "node:crypto";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { UsageError } from "@opensoftware/cli";
 import type { GateDecided, WorkItem } from "@opensoftware/contracts";
@@ -11,7 +11,9 @@ import { NativeConnection, Worker } from "@temporalio/worker";
 import Fastify, { type FastifyReply } from "fastify";
 import { readFactory } from "../adapters/factory.ts";
 import { gatekeeper } from "../adapters/gatekeeper.ts";
+import { type Gateway, startGateway } from "../adapters/inference.ts";
 import { type Bus, openBus, SUBJECTS } from "../adapters/nats.ts";
+import type { Definition } from "../domain/definition.ts";
 import { isoNow } from "../domain/time.ts";
 import { activities } from "../workflows/activities.ts";
 import { Conflict, type Runs, runs } from "./runs.ts";
@@ -33,7 +35,7 @@ function api(work: Runs, token: string) {
   const app = Fastify();
   app.setErrorHandler((error: Error & { statusCode?: number }, _request, reply) => {
     if (error instanceof UsageError) return problem(reply, 400, "Bad request", error.message);
-    if (error instanceof Conflict) return problem(reply, 409, "The run ended", error.message);
+    if (error instanceof Conflict) return problem(reply, 409, error.title, error.message);
     return problem(reply, error.statusCode ?? 500, "The request failed", error.message);
   });
   app.addHook("onRequest", async (request, reply) => {
@@ -72,7 +74,7 @@ export async function serve(env: Env) {
   const token = env.FOREMAN_API_TOKEN;
   if (!token) throw new UsageError("set FOREMAN_API_TOKEN: the token that callers of the API send");
   const factoryPath = resolve(env.FOREMAN_FACTORY || "factory.yaml");
-  await readFactory(factoryPath);
+  const { definition } = await readFactory(factoryPath);
   const now = () => isoNow(env.OSF_NOW);
   const warn = (text: string) => process.stderr.write(`foreman: ${text}\n`);
   const address = env.FOREMAN_TEMPORAL_ADDRESS || "localhost:7233";
@@ -82,43 +84,58 @@ export async function serve(env: Env) {
   const pollMs = Number(env.FOREMAN_POLL_MS || 1000);
   const bus = env.FOREMAN_NATS_URL ? await openBus(env.FOREMAN_NATS_URL, warn) : undefined;
 
-  const client = new Client({ connection: await Connection.connect({ address }), namespace });
-  const work = runs({ client, taskQueue, factory: () => readFactory(factoryPath), now });
-  const worker = await Worker.create({
-    connection: await NativeConnection.connect({ address }),
-    namespace,
-    taskQueue,
-    workflowBundle: { codePath: BUNDLE },
-    activities: activities({
-      now,
-      bus,
-      gatekeeper: gatekeeper(env.FOREMAN_GATEKEEPER_URL, env.FOREMAN_GATEKEEPER_TOKEN),
-      harnesses: JSON.parse(env.FOREMAN_HARNESSES || "{}") as Record<string, string>,
-      sandboxes: JSON.parse(env.FOREMAN_SANDBOXES || "{}") as Record<string, string>,
-      forges: JSON.parse(env.FOREMAN_FORGES || "{}") as Record<string, string>,
-      forgeEnv: {
-        ...(env.FOREMAN_FORGE_URL ? { FORGE_URL: env.FOREMAN_FORGE_URL } : {}),
-        ...(env.FOREMAN_FORGE_TOKEN ? { FORGE_TOKEN: env.FOREMAN_FORGE_TOKEN } : {}),
-      },
-      checkPollMs: Number(env.FOREMAN_CHECK_POLL_MS || 30_000),
-      data: resolve(env.OSF_DATA || ".foreman"),
-      pollMs,
-      steering: (runId) => work.steering(runId),
-      env,
-    }),
-    maxHeartbeatThrottleInterval: pollMs,
-    defaultHeartbeatThrottleInterval: pollMs,
-  });
-  const running = worker.run();
-  if (bus) listen(bus, work);
+  const gateway = await gatewayOf(definition.inference, dirname(factoryPath), env);
+  // A gateway stops with the server, also when the server cannot start.
+  try {
+    const client = new Client({ connection: await Connection.connect({ address }), namespace });
+    const work = runs({ client, taskQueue, factory: () => readFactory(factoryPath), now });
+    const worker = await Worker.create({
+      connection: await NativeConnection.connect({ address }),
+      namespace,
+      taskQueue,
+      workflowBundle: { codePath: BUNDLE },
+      activities: activities({
+        now,
+        bus,
+        gatekeeper: gatekeeper(env.FOREMAN_GATEKEEPER_URL, env.FOREMAN_GATEKEEPER_TOKEN),
+        harnesses: JSON.parse(env.FOREMAN_HARNESSES || "{}") as Record<string, string>,
+        sandboxes: JSON.parse(env.FOREMAN_SANDBOXES || "{}") as Record<string, string>,
+        forges: JSON.parse(env.FOREMAN_FORGES || "{}") as Record<string, string>,
+        forgeEnv: {
+          ...(env.FOREMAN_FORGE_URL ? { FORGE_URL: env.FOREMAN_FORGE_URL } : {}),
+          ...(env.FOREMAN_FORGE_TOKEN ? { FORGE_TOKEN: env.FOREMAN_FORGE_TOKEN } : {}),
+        },
+        checkPollMs: Number(env.FOREMAN_CHECK_POLL_MS || 30_000),
+        data: resolve(env.OSF_DATA || ".foreman"),
+        pollMs,
+        control: (runId) => work.control(runId),
+        ...(gateway ? { gateway } : {}),
+        env,
+      }),
+      maxHeartbeatThrottleInterval: pollMs,
+      defaultHeartbeatThrottleInterval: pollMs,
+    });
+    const running = worker.run();
+    if (bus) listen(bus, work);
 
-  const app = api(work, token);
-  const port = Number(env.PORT || 8080);
-  await app.listen({ port, host: "0.0.0.0" });
-  process.stdout.write(`foreman serves the run API on port ${port}, task queue ${taskQueue} at ${address}\n`);
-  // Temporal's runtime stops the worker on SIGTERM and SIGINT; the server stops with it.
-  await running;
-  await app.close();
-  await bus?.close();
+    const app = api(work, token);
+    const port = Number(env.PORT || 8080);
+    await app.listen({ port, host: "0.0.0.0" });
+    process.stdout.write(`foreman serves the run API on port ${port}, task queue ${taskQueue} at ${address}\n`);
+    // Temporal's runtime stops the worker on SIGTERM and SIGINT; the server stops with it.
+    await running;
+    await app.close();
+    await bus?.close();
+  } finally {
+    await gateway?.stop();
+  }
   return { lines: [] };
+}
+
+/** Starts the gateway of the factory's inference adapter from its config, a path relative to the factory's folder. */
+async function gatewayOf(inference: Definition["inference"], folder: string, env: Env): Promise<Gateway | undefined> {
+  if (!inference) return undefined;
+  const lines = JSON.parse(env.FOREMAN_INFERENCES || "{}") as Record<string, string>;
+  const adapter = lines[inference.adapter] ?? `npx -y @opensoftware/inference-${inference.adapter}`;
+  return startGateway(adapter.split(" "), resolve(folder, inference.config), env);
 }

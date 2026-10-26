@@ -77,3 +77,11 @@ Feature: Scripted coding agent
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-109 @status=implemented
+  Scenario: The scripted harness records each session's folder and model variables
+    Given a module whose CLI is an ACP client of the agent in "DEMO_AGENT_COMMAND" that opens a session in its folder and sends "fix the typo"
+    And its system test starts the module with "OPENAI_MODEL" set to "routes/default" and "ANTHROPIC_BASE_URL" set to "http://127.0.0.1:4000", and expects one session with that folder and those variables
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

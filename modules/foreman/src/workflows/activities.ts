@@ -1,16 +1,19 @@
 // The activities of a run (ADR 0067). `next` and `apply` are local activities around the domain, so a run's logic runs
-// in the worker's thread; the others reach outside: the sandbox, the harness, the forge, gatekeeper and NATS.
+// in the worker's thread; the others reach outside: the sandbox, the harness, the forge, gatekeeper and NATS. Each
+// stage's agent gets the factory's inference gateway with the run's key (ADR 0070).
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { Context } from "@temporalio/activity";
 import { pullRequestChecks } from "../adapters/forge.ts";
 import type { Gatekeeper } from "../adapters/gatekeeper.ts";
 import { type HarnessTurn, startTurn } from "../adapters/harness.ts";
+import type { Gateway } from "../adapters/inference.ts";
 import { type Bus, SUBJECTS } from "../adapters/nats.ts";
 import { createSandbox } from "../adapters/sandbox.ts";
 import type { Definition } from "../domain/definition.ts";
 import {
   apply,
+  type Control,
   checksOf,
   type Fact,
   gateSummaryOf,
@@ -42,8 +45,10 @@ export interface ActivityDeps {
   data: string;
   /** How often a running stage looks for steering messages and reports that it lives. */
   pollMs: number;
-  /** The steering messages the workflow of the run received so far. */
-  steering(runId: string): Promise<string[]>;
+  /** The steering messages the workflow of the run received so far, and the stage a person takes over. */
+  control(runId: string): Promise<Control>;
+  /** The factory's inference gateway, when it names an inference adapter. */
+  gateway?: Gateway;
   env: Record<string, string | undefined>;
 }
 
@@ -54,23 +59,59 @@ const commandLine = (lines: Record<string, string>, name: string, otherwise: str
   (lines[name] ?? otherwise).split(" ");
 
 export function activities(deps: ActivityDeps) {
-  /** The turn's stop reason; meanwhile it sends the run's new steering messages and reports that the stage lives. */
-  async function untilDone(turn: HarnessTurn, runId: string, steered: number): Promise<string> {
+  /** Each run's key of the gateway, made once per run while this worker lives; never in Temporal's history. */
+  const keys = new Map<string, Promise<string>>();
+  const keyOf = (gateway: Gateway, runId: string, budget?: number): Promise<string> => {
+    const key = keys.get(runId) ?? gateway.key(runId, budget);
+    keys.set(runId, key);
+    return key;
+  };
+
+  /** The variables of the gateway that every harness adapter finds its own in (ADR 0070); none without a gateway. */
+  async function gatewayEnv(view: RunView, definition: Definition, model: string): Promise<Record<string, string>> {
+    const { gateway } = deps;
+    if (!gateway) return {};
+    const key = await keyOf(gateway, view.runId, definition.inference?.budget);
+    return {
+      OPENAI_BASE_URL: gateway.url,
+      OPENAI_API_KEY: key,
+      OPENAI_MODEL: model,
+      ANTHROPIC_BASE_URL: gateway.url.replace(/\/v1\/?$/, ""),
+      ANTHROPIC_API_KEY: key,
+      ANTHROPIC_MODEL: model,
+    };
+  }
+
+  /**
+   * The turn's stop reason, and whether a person took the stage over; meanwhile it sends the run's new steering
+   * messages, ends the turn when a person takes the stage at `index` over, and reports that the stage lives.
+   */
+  async function untilDone(
+    turn: HarnessTurn,
+    runId: string,
+    index: number,
+    steered: number,
+  ): Promise<{ stopReason: string; takenOver: boolean }> {
     const context = Context.current();
     context.cancellationSignal.addEventListener("abort", () => turn.cancel());
     let sent = steered;
+    let takenOver = false;
     const watch = setInterval(() => {
       context.heartbeat();
-      deps.steering(runId).then(
-        (messages) => {
-          for (const message of messages.slice(sent)) turn.steer(message);
-          sent = Math.max(sent, messages.length);
+      deps.control(runId).then(
+        ({ steering, takeOver }) => {
+          for (const message of steering.slice(sent)) turn.steer(message);
+          sent = Math.max(sent, steering.length);
+          if (takeOver === index && !takenOver) {
+            takenOver = true;
+            turn.cancel();
+          }
         },
         () => undefined,
       );
     }, deps.pollMs);
     try {
-      return await turn.done;
+      return { stopReason: await turn.done, takenOver };
     } finally {
       clearInterval(watch);
       await turn.close();
@@ -134,10 +175,11 @@ export function activities(deps: ActivityDeps) {
         .join(",");
       const harness = commandLine(deps.harnesses, plan.harness, `npx -y @opensoftware/harness-${plan.harness} run`);
       const adapter = definition.sandboxAdapter;
+      const model = await gatewayEnv(view, definition, plan.model);
       const sandbox = plan.sandbox
         ? await createSandbox(
             commandLine(deps.sandboxes, adapter, `npx -y @opensoftware/sandbox-${adapter}`),
-            { ...plan.sandbox, env: { OTEL_RESOURCE_ATTRIBUTES: resource } },
+            { ...plan.sandbox, env: { OTEL_RESOURCE_ATTRIBUTES: resource, ...model } },
             cwd,
             view.runId,
             deps.env,
@@ -156,11 +198,12 @@ export function activities(deps: ActivityDeps) {
                   ...deps.env,
                   OSF_DATA: join(deps.data, "harness", plan.harness),
                   OTEL_RESOURCE_ATTRIBUTES: resource,
+                  ...model,
                 },
                 prompt,
               },
         );
-        const stopReason = await untilDone(turn, view.runId, steered);
+        const { stopReason, takenOver } = await untilDone(turn, view.runId, index, steered);
         await sandbox?.copyOut();
         const pullRequest = lastPullRequestIn(turn.transcript());
         return {
@@ -169,6 +212,7 @@ export function activities(deps: ActivityDeps) {
           stopReason,
           sessionId: turn.sessionId,
           ...(pullRequest ? { pullRequest } : {}),
+          ...(takenOver ? { takenOver: { folder: cwd } } : {}),
         };
       } finally {
         await sandbox?.destroy();

@@ -29,6 +29,9 @@ model FactoryDefinition {
   /** Adapters per port with a version range, pinned in `factory.lock` by `factory plan`. */
   providers?: Providers;
 
+  /** The inference gateway of the adapter under `providers.inference` (ADR 0070). */
+  inference?: Inference;
+
   /** Agents by name. */
   @minProperties(1)
   agents: Record<Agent>;
@@ -62,6 +65,18 @@ model Providers {
   secrets?: Record<VersionRange>;
   telemetry?: Record<VersionRange>;
   policy?: Record<VersionRange>;
+}
+
+/** The inference gateway: the adapter's config and the most a run may spend (ADR 0070). */
+@extension("additionalProperties", Json<false>)
+model Inference {
+  /** Path to the inference adapter's config, for example a LiteLLM proxy config. */
+  @minLength(1)
+  config: string;
+
+  /** The most a run may spend on model calls, in USD. */
+  @minValue(0)
+  budget?: float64;
 }
 
 /** A reference to a secret, resolved at the egress proxy, never in the sandbox: "ref:<provider>/<name>". */

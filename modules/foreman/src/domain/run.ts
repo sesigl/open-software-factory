@@ -1,4 +1,4 @@
-// A run of the factory's workflow for one work item, without I/O (ADR 0067): its ID, its first view, the next step,
+// A run of the factory's workflow for one work item, without I/O (ADR 0067, ADR 0070): its ID, its first view, the next step,
 // how each fact changes the view, and the events it publishes. The workflow asks for each step and applies each fact
 // through local activities, so this code runs in the worker's own thread, not in Temporal's sandbox.
 import { createHash } from "node:crypto";
@@ -21,6 +21,8 @@ export type Step =
   /** Read the stage's checks on the run's pull request, after `delayMs` when they were read before (ADR 0069). */
   | { kind: "read-checks"; index: number; delayMs: number }
   | { kind: "await-gate"; index: number; gateId: string }
+  /** Wait until the person who took the stage over hands the run back (ADR 0070). */
+  | { kind: "await-hand-back"; index: number }
   | { kind: "run-stage"; index: number }
   | { kind: "end" };
 
@@ -37,7 +39,16 @@ export type Fact =
   | ({ kind: "gate"; index: number } & GateDecision)
   | { kind: "checks"; index: number; checks: CheckView[]; reason?: string }
   | { kind: "stage-started"; index: number }
-  | { kind: "stage-ended"; index: number; stopReason: string; sessionId?: string; pullRequest?: string }
+  | {
+      kind: "stage-ended";
+      index: number;
+      stopReason: string;
+      sessionId?: string;
+      pullRequest?: string;
+      /** A person took the stage over; the run's files are in `folder`. */
+      takenOver?: { folder: string };
+    }
+  | { kind: "handed-back"; index: number }
   | { kind: "cancelled" }
   | { kind: "error"; message: string };
 
@@ -68,6 +79,7 @@ export function nextStep(view: RunView, definition: Definition, checkPollMs: num
   const index = view.stages.findIndex((stage) => stage.state !== "succeeded");
   const stage = view.stages[index] as StageView;
   const plan = definition.stages[index];
+  if (stage.state === "blocked" && stage.takenOverAt) return { kind: "await-hand-back", index };
   if (stage.state === "blocked" && stage.gateId) return { kind: "await-gate", index, gateId: stage.gateId };
   // Checks come before the gate: nobody is asked to approve a change whose checks fail.
   if (plan?.checks?.length && !stage.checks?.every((check) => check.state === "success"))
@@ -90,13 +102,17 @@ export function apply(view: RunView, fact: Fact, at: string): RunView {
       return next;
     }
     case "stage-ended": {
-      const state = stageStateOf(fact.stopReason);
       const stage = next.stages[fact.index] as StageView;
-      Object.assign(stage, { state, endedAt: at }, fact.sessionId ? { sessionId: fact.sessionId } : {});
+      if (fact.sessionId) stage.sessionId = fact.sessionId;
       if (fact.pullRequest) next.pullRequest = fact.pullRequest;
-      if (state !== "succeeded") return end(state === "cancelled" ? "cancelled" : "failed");
-      return fact.index === next.stages.length - 1 ? end("complete") : next;
+      if (fact.takenOver) {
+        Object.assign(stage, { state: "blocked", takenOverAt: at });
+        return { ...next, state: "blocked", folder: fact.takenOver.folder };
+      }
+      return stageEnded(next, fact.index, stageStateOf(fact.stopReason), at);
     }
+    case "handed-back":
+      return stageEnded({ ...next, state: "running" }, fact.index, "succeeded", at);
     case "cancelled":
     case "error": {
       const stopped: StageState = fact.kind === "cancelled" ? "cancelled" : "failed";
@@ -106,6 +122,13 @@ export function apply(view: RunView, fact: Fact, at: string): RunView {
       return hasEnded(view) ? view : end(fact.kind === "cancelled" ? "cancelled" : "failed");
     }
   }
+}
+
+/** The view after the stage at `index` ended in `state`: a stage that did not succeed ends the run. */
+function stageEnded(next: RunView, index: number, state: StageState, at: string): RunView {
+  Object.assign(next.stages[index] as StageView, { state, endedAt: at });
+  if (state !== "succeeded") return { ...next, state: state === "cancelled" ? "cancelled" : "failed", endedAt: at };
+  return index === next.stages.length - 1 ? { ...next, state: "complete", endedAt: at } : next;
 }
 
 function gate(next: RunView, fact: GateDecision & { index: number }, end: (state: RunState) => RunView): RunView {
@@ -174,13 +197,19 @@ export function promptOf(agentPrompt: string, workItem: WorkItem, pullRequest?: 
   return `${agentPrompt.trimEnd()}\n\n# Work item ${workItem.id}\n\n${workItem.title}${description}${link}\n`;
 }
 
-export type Signal = { type: "steer"; message: string } | { type: "cancel" };
+/** What a running stage asks its run for: the steering messages so far, and the stage a person takes over. */
+export interface Control {
+  steering: string[];
+  takeOver?: number;
+}
+
+export type Signal = { type: "steer"; message: string } | { type: "cancel" | "take-over" | "hand-back" };
 
 /** The signal in a request's body, or the problem with it as "<JSON Pointer>: <what is wrong>". */
 export function signalOf(body: unknown): Signal | string {
   const { type, message } = (typeof body === "object" && body !== null ? body : {}) as Record<string, unknown>;
-  if (type === "cancel") return { type };
-  if (type !== "steer") return `/type: must be "steer" or "cancel"`;
+  if (type === "cancel" || type === "take-over" || type === "hand-back") return { type };
+  if (type !== "steer") return `/type: must be "steer", "cancel", "take-over" or "hand-back"`;
   if (typeof message !== "string" || message === "") return "/message: a steering message needs the text";
   return { type, message };
 }

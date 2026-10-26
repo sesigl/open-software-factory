@@ -112,6 +112,26 @@
       "description": "Adapters per port with a version range, pinned in `factory.lock` by `factory plan`.",
       "additionalProperties": false
     },
+    "inference": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path to the inference adapter's config, for example a LiteLLM proxy config."
+        },
+        "budget": {
+          "type": "number",
+          "minimum": 0,
+          "description": "The most a run may spend on model calls, in USD."
+        }
+      },
+      "required": [
+        "config"
+      ],
+      "description": "The inference gateway of the adapter under `providers.inference` (ADR 0070).",
+      "additionalProperties": false
+    },
     "agents": {
       "type": "object",
       "properties": {},

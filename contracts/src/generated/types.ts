@@ -253,6 +253,8 @@ export type components = {
             description?: string;
             /** @description Adapters per port with a version range, pinned in `factory.lock` by `factory plan`. */
             providers?: components["schemas"]["Providers"];
+            /** @description The inference gateway of the adapter under `providers.inference` (ADR 0070). */
+            inference?: components["schemas"]["Inference"];
             /** @description Agents by name. */
             agents: {
                 [key: string]: components["schemas"]["Agent"];
@@ -431,6 +433,13 @@ export type components = {
         Hostname: string;
         /** @description An identifier chosen by the producer. ULIDs are recommended; consumers treat it as opaque. */
         Identifier: string;
+        /** @description The inference gateway: the adapter's config and the most a run may spend (ADR 0070). */
+        Inference: {
+            /** @description Path to the inference adapter's config, for example a LiteLLM proxy config. */
+            config: string;
+            /** @description The most a run may spend on model calls, in USD. */
+            budget?: number;
+        };
         /** @description forge adapters: a label was added to an issue. */
         IssueLabeled: {
             /** @constant */
@@ -708,7 +717,10 @@ export type components = {
             "osf.harness.name": components["schemas"]["Name"];
             "osf.harness.version"?: string;
         };
-        /** @description foreman: a signal to a run: "steer" with a message for the running stage's agent, or "cancel". */
+        /**
+         * @description foreman: a signal to a run: "steer" with a message for the running stage's agent, "cancel", "take-over" of the running
+         *     stage by a person, or "hand-back" of that stage (ADR 0070).
+         */
         RunSignal: {
             type: components["schemas"]["RunSignalType"];
             /** @description The steering message. Required with "steer". */
@@ -718,7 +730,7 @@ export type components = {
          * @description foreman: what a person tells a run.
          * @enum {string}
          */
-        RunSignalType: "steer" | "cancel";
+        RunSignalType: "steer" | "cancel" | "take-over" | "hand-back";
         /** @description Attributes of the root span of the run. GenAI names where a convention exists. */
         RunSpan: {
             /** @constant */
@@ -808,6 +820,8 @@ export type components = {
              * @description The last pull request link that an agent of the run wrote (ADR 0069).
              */
             pullRequest?: string;
+            /** @description The run's folder on the foreman's machine, where a person who took over a stage goes on (ADR 0070). */
+            folder?: string;
             /** Format: date-time */
             startedAt: string;
             /** Format: date-time */
@@ -974,6 +988,11 @@ export type components = {
             gateId?: string;
             /** @description The checks the stage waits for, once the foreman read them (ADR 0069). */
             checks?: components["schemas"]["CheckView"][];
+            /**
+             * Format: date-time
+             * @description When a person took the stage over from its agent (ADR 0070).
+             */
+            takenOverAt?: string;
             /** @description Why the stage ended without success, when the foreman knows. */
             reason?: string;
             /** Format: date-time */
