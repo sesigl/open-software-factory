@@ -3,7 +3,8 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
   A forge adapter is a program with the commands branch, open-pr, pr, check, comment, protect, merge, webhook, hooks,
   unhook, comments and event. It reaches the forge at FORGE_URL with the token FORGE_TOKEN, and signs and checks webhooks with
   FORGE_WEBHOOK_SECRET. A repository is "<owner>/<name>". event turns one webhook delivery into a pr.opened@v1,
-  pr.reviewed@v1 or pr.closed@v1 CloudEvent from contracts (ADR 0057). The test forge has the user "tester" and the
+  pr.reviewed@v1 or pr.closed@v1 CloudEvent from contracts (ADR 0057), and a label added to an issue into an
+  issue.labeled@v1 (ADR 0065). The test forge has the user "tester" and the
   repository "tester/web", whose branch "main" holds one commit: a real Forgejo for the forgejo adapter, and the
   testkit's fake GitHub for the github adapter (ADR 0058). webhook takes the port's event names, such as
   "issue.labeled" or "push", and each adapter maps them to its forge's events (ADR 0060). pr names the author,
@@ -214,7 +215,7 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     When the client runs "comments tester/web 42"
     Then comments exits with code 1 and the error "no pull request tester/web#42"
 
-  @id=SCN-FORGE-030 @status=planned @conformance @realizes=SCN-FACTORY-ACCESS-001
+  @id=SCN-FORGE-030 @status=implemented @conformance @realizes=SCN-FACTORY-ACCESS-001
   Scenario: A delivery of a label on an issue becomes an issue.labeled event
     Given a webhook the client registered for "tester/web" with "--event issue.labeled" at a receiver with the secret "whsec-51c2"
     And the issue "Export reports as CSV" in "tester/web" with the body "Finance needs the monthly report as CSV"

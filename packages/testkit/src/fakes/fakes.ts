@@ -10,6 +10,7 @@ import { type Harness, type HarnessTurn, startHarness } from "./harness.ts";
 import { type FakeHttp, type HttpOptions, type HttpRoute, startHttp } from "./http.ts";
 import { type ModelGateway, type ScriptedReply, startModelGateway } from "./model-gateway.ts";
 import { type Postgres, startPostgres } from "./postgres.ts";
+import { type FakeSentry, startSentry } from "./sentry.ts";
 import { type Nats, type S3, startNats, startS3, startTemporal, type Temporal } from "./services.ts";
 import { type FakeSlack, startSlack } from "./slack.ts";
 
@@ -45,6 +46,8 @@ export interface Fakes {
   github(): Promise<FakeGitHub>;
   /** A fake of the Slack Web API. An unsupported method fails the scenario. */
   slack(): Promise<FakeSlack>;
+  /** A fake of Sentry that sends a webhook a signed alert about an event (ADR 0065). */
+  sentry(): Promise<FakeSentry>;
   /** The OpenTelemetry Collector in a container, running `config`; it exports to OTEL_EXPORTER_OTLP_ENDPOINT. */
   collector(config: string): Promise<Collector>;
 }
@@ -102,6 +105,9 @@ export function makeFakes(moduleRoot: string): FakesHandle {
       forge: () => startForge((container) => hosts.add(container.getHost())),
       async github() {
         return (await inProcess(startGitHub())).github;
+      },
+      async sentry() {
+        return startSentry();
       },
       async slack() {
         return (await inProcess(startSlack())).slack;

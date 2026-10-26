@@ -1,4 +1,4 @@
-// webhook, hooks, unhook and event: one webhook per URL, and its deliveries as pull request CloudEvents.
+// webhook, hooks, unhook and event: one webhook per URL, and its deliveries as pull request or issue CloudEvents.
 import { check, type Outcome, readInputs } from "@opensoftware/cli";
 import { GitHubError } from "../adapters/github.ts";
 import { type Delivery, toCloudEvent, verified } from "../domain/events.ts";
@@ -41,7 +41,7 @@ export async function unhook(repo: string | undefined, text: string | undefined)
   return print({ id, removed });
 }
 
-/** event <delivery.json>: the pull request CloudEvent of one delivery, or nothing. */
+/** event <delivery.json>: the pull request or issue label CloudEvent of one delivery, or nothing. */
 export function event(file: string | undefined): Outcome {
   check(file, "name the delivery file, like event delivery.json");
   const [input] = readInputs([file], /./);

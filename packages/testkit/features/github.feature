@@ -93,7 +93,7 @@ Feature: A fake of GitHub's REST API
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
-  @id=SCN-TK-102 @status=planned
+  @id=SCN-TK-102 @status=implemented
   Scenario: fakes.github answers an issue that a test opened and labeled
     Given a module whose CLI prints the title and the label names of issue 1 at "DEMO_GITHUB_URL"
     And its system test opens the issue "Export reports as CSV" in fakes.github, adds the label "factory" and expects "Export reports as CSV factory"
