@@ -11,6 +11,7 @@ import { type Harness, type HarnessTurn, startHarness } from "./harness.ts";
 import { type FakeHttp, type HttpOptions, type HttpRoute, startHttp } from "./http.ts";
 import { type ModelGateway, type ScriptedReply, startModelGateway } from "./model-gateway.ts";
 import { type Postgres, startPostgres } from "./postgres.ts";
+import { type Sandbox, type SandboxOptions, startSandbox } from "./sandbox.ts";
 import { type FakeSentry, startSentry } from "./sentry.ts";
 import { type Nats, type S3, startS3, type Temporal } from "./services.ts";
 import { type FakeSlack, startSlack } from "./slack.ts";
@@ -26,6 +27,8 @@ export interface Fakes {
   http(routes: HttpRoute[], options?: HttpOptions): Promise<FakeHttp>;
   /** A scripted coding agent that speaks ACP on stdio. A prompt no turn matches fails the scenario. */
   harness(script: HarnessTurn[]): Promise<Harness>;
+  /** A sandbox adapter whose sandboxes are folders on the host; it records what the module asked of it (ADR 0068). */
+  sandbox(options?: SandboxOptions): Promise<Sandbox>;
   /** PostgreSQL in a container. */
   postgres(): Promise<Postgres>;
   /** NATS with JetStream, as a process on the host (ADR 0067). */
@@ -96,6 +99,9 @@ export function makeFakes(moduleRoot: string): FakesHandle {
       },
       async harness(script) {
         return (await inProcess(Promise.resolve(startHarness(script)))).harness;
+      },
+      async sandbox(options) {
+        return (await inProcess(Promise.resolve(startSandbox(options)))).sandbox;
       },
       async postgres() {
         return (await inProcess(startPostgres())).postgres;

@@ -1,11 +1,12 @@
 // The activities of a run (ADR 0067). `next` and `apply` are local activities around the domain, so a run's logic runs
-// in the worker's thread; the others reach outside: the harness, gatekeeper and NATS.
+// in the worker's thread; the others reach outside: the sandbox, the harness, gatekeeper and NATS.
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { Context } from "@temporalio/activity";
 import type { Gatekeeper } from "../adapters/gatekeeper.ts";
-import { startTurn } from "../adapters/harness.ts";
+import { type HarnessTurn, startTurn } from "../adapters/harness.ts";
 import { type Bus, SUBJECTS } from "../adapters/nats.ts";
+import { createSandbox } from "../adapters/sandbox.ts";
 import type { Definition } from "../domain/definition.ts";
 import {
   apply,
@@ -25,6 +26,8 @@ export interface ActivityDeps {
   gatekeeper: Gatekeeper;
   /** The adapter's command line per harness name; others run `npx -y @opensoftware/harness-<name> run`. */
   harnesses: Record<string, string>;
+  /** The adapter's command line per sandbox adapter name; others run `npx -y @opensoftware/sandbox-<name>`. */
+  sandboxes: Record<string, string>;
   /** The foreman's data folder: each run works in `runs/<run ID>`. */
   data: string;
   /** How often a running stage looks for steering messages and reports that it lives. */
@@ -36,7 +39,34 @@ export interface ActivityDeps {
 
 export type Activities = ReturnType<typeof activities>;
 
+/** The command line of an adapter by its name, as program and arguments. */
+const commandLine = (lines: Record<string, string>, name: string, otherwise: string): string[] =>
+  (lines[name] ?? otherwise).split(" ");
+
 export function activities(deps: ActivityDeps) {
+  /** The turn's stop reason; meanwhile it sends the run's new steering messages and reports that the stage lives. */
+  async function untilDone(turn: HarnessTurn, runId: string, steered: number): Promise<string> {
+    const context = Context.current();
+    context.cancellationSignal.addEventListener("abort", () => turn.cancel());
+    let sent = steered;
+    const watch = setInterval(() => {
+      context.heartbeat();
+      deps.steering(runId).then(
+        (messages) => {
+          for (const message of messages.slice(sent)) turn.steer(message);
+          sent = Math.max(sent, messages.length);
+        },
+        () => undefined,
+      );
+    }, deps.pollMs);
+    try {
+      return await turn.done;
+    } finally {
+      clearInterval(watch);
+      await turn.close();
+    }
+  }
+
   return {
     async next(view: RunView, definition: Definition): Promise<Step> {
       return nextStep(view, definition);
@@ -62,7 +92,7 @@ export function activities(deps: ActivityDeps) {
       });
       return { kind: "gate", index, gateId: gate.id, state: gate.state };
     },
-    /** Runs the stage's agent; steering messages from the `steered`-th on are for it. */
+    /** Runs the stage's agent, in a sandbox when it declares one; steering messages from the `steered`-th on are for it. */
     async runStage(view: RunView, definition: Definition, index: number, steered: number): Promise<Fact> {
       const plan = definition.stages[index];
       if (!plan) throw new Error(`no stage ${index}`);
@@ -74,36 +104,42 @@ export function activities(deps: ActivityDeps) {
         "osf.stage": plan.stage,
         "osf.factory.version": view.factoryVersion,
       };
-      const turn = await startTurn({
-        command: deps.harnesses[plan.harness] ?? `npx -y @opensoftware/harness-${plan.harness} run`,
-        cwd,
-        env: {
-          ...deps.env,
-          OSF_DATA: join(deps.data, "harness", plan.harness),
-          OTEL_RESOURCE_ATTRIBUTES: Object.entries(attributes)
-            .map(([key, value]) => `${key}=${value}`)
-            .join(","),
-        },
-        prompt: promptOf(plan.prompt, view.workItem),
-      });
-      const context = Context.current();
-      context.cancellationSignal.addEventListener("abort", () => turn.cancel());
-      let sent = steered;
-      const watch = setInterval(() => {
-        context.heartbeat();
-        deps.steering(view.runId).then(
-          (messages) => {
-            for (const message of messages.slice(sent)) turn.steer(message);
-            sent = Math.max(sent, messages.length);
-          },
-          () => undefined,
-        );
-      }, deps.pollMs);
+      const resource = Object.entries(attributes)
+        .map(([key, value]) => `${key}=${value}`)
+        .join(",");
+      const harness = commandLine(deps.harnesses, plan.harness, `npx -y @opensoftware/harness-${plan.harness} run`);
+      const adapter = definition.sandboxAdapter;
+      const sandbox = plan.sandbox
+        ? await createSandbox(
+            commandLine(deps.sandboxes, adapter, `npx -y @opensoftware/sandbox-${adapter}`),
+            { ...plan.sandbox, env: { OTEL_RESOURCE_ATTRIBUTES: resource } },
+            cwd,
+            view.runId,
+            deps.env,
+          )
+        : undefined;
       try {
-        return { kind: "stage-ended", index, stopReason: await turn.done, sessionId: turn.sessionId };
+        const prompt = promptOf(plan.prompt, view.workItem);
+        const turn = await startTurn(
+          sandbox
+            ? { command: sandbox.exec(harness), cwd, folder: await sandbox.copyIn(), env: deps.env, prompt }
+            : {
+                command: harness,
+                cwd,
+                folder: cwd,
+                env: {
+                  ...deps.env,
+                  OSF_DATA: join(deps.data, "harness", plan.harness),
+                  OTEL_RESOURCE_ATTRIBUTES: resource,
+                },
+                prompt,
+              },
+        );
+        const stopReason = await untilDone(turn, view.runId, steered);
+        await sandbox?.copyOut();
+        return { kind: "stage-ended", index, stopReason, sessionId: turn.sessionId };
       } finally {
-        clearInterval(watch);
-        await turn.close();
+        await sandbox?.destroy();
       }
     },
   };

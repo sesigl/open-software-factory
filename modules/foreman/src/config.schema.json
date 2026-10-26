@@ -45,6 +45,11 @@
       "default": "{}",
       "description": "serve: a JSON object from harness name to the command line of its adapter. A harness it does not name runs npx -y @opensoftware/harness-<name> run."
     },
+    "FOREMAN_SANDBOXES": {
+      "type": "string",
+      "default": "{}",
+      "description": "serve: a JSON object from sandbox adapter name to the command line of the adapter. An adapter it does not name runs npx -y @opensoftware/sandbox-<name>. The factory names its adapter under providers.sandbox, docker by default."
+    },
     "FOREMAN_POLL_MS": {
       "type": "string",
       "default": "1000",
