@@ -1,7 +1,7 @@
 // Shared setup of the foreman scenarios: the README's factory and work item, Temporal, the scripted harness behind the
-// built harness-acp adapter, a scripted gatekeeper, and the server with its token.
+// built harness-acp adapter, a fake sandbox adapter, a scripted gatekeeper, and the server with its token.
 import type { paths, RunView, WorkItem } from "@opensoftware/contracts";
-import type { Fakes, HarnessTurn, Sut } from "@opensoftware/testkit";
+import type { Fakes, HarnessTurn, SandboxOptions, Sut } from "@opensoftware/testkit";
 
 export const API_TOKEN = "testkit-api-token";
 export const AUTH = { authorization: `Bearer ${API_TOKEN}` };
@@ -30,6 +30,9 @@ export const gatedFactory = (fakes: Fakes): string =>
     "  - stage: implement\n    gate:\n      policy: ./policies/implement.rego\n      approvers: [maintainers]\n",
   );
 
+/** The README's factory whose agents run in sandboxes. */
+export const sandboxedFactory = (fakes: Fakes): string => readmeFiles(fakes)["sandboxed/factory.yaml"] as string;
+
 /** Turns that end at once, for the prompts of both stages. */
 export const endingTurns: HarnessTurn[] = [
   { when: PLAN, reply: "plan.md is written" },
@@ -45,6 +48,10 @@ export interface Setup {
   gatekeeper?: boolean;
   /** NATS for the events. */
   nats?: boolean;
+  /** A fake sandbox adapter, in FOREMAN_SANDBOXES under the name `sandboxAs`. */
+  sandbox?: SandboxOptions;
+  /** The name of the fake sandbox adapter; default "docker". */
+  sandboxAs?: string;
   env?: Record<string, string>;
 }
 
@@ -77,6 +84,7 @@ export async function servingCommit(sut: Sut, fakes: Fakes, commit: string, setu
       ])
     : undefined;
   const nats = setup.nats ? await fakes.nats() : undefined;
+  const sandbox = setup.sandbox ? await fakes.sandbox(setup.sandbox) : undefined;
   const env = {
     FOREMAN_API_TOKEN: API_TOKEN,
     FOREMAN_TEMPORAL_ADDRESS: temporal.address,
@@ -86,6 +94,13 @@ export async function servingCommit(sut: Sut, fakes: Fakes, commit: string, setu
     FOREMAN_POLL_MS: "100",
     ...(gatekeeper ? { FOREMAN_GATEKEEPER_URL: gatekeeper.url, FOREMAN_GATEKEEPER_TOKEN: "gatekeeper-token" } : {}),
     ...(nats ? { FOREMAN_NATS_URL: nats.url } : {}),
+    ...(sandbox
+      ? {
+          FOREMAN_SANDBOXES: JSON.stringify({
+            [setup.sandboxAs ?? "docker"]: [sandbox.command, ...sandbox.args].join(" "),
+          }),
+        }
+      : {}),
     ...setup.env,
   };
   await sut.http.start(["serve"], { env });
@@ -95,6 +110,7 @@ export async function servingCommit(sut: Sut, fakes: Fakes, commit: string, setu
     harness,
     gatekeeper,
     nats,
+    sandbox,
     api,
     start: (work: unknown, headers: Record<string, string> = AUTH) =>
       api().POST("/v1/runs", { body: work as WorkItem, headers }),

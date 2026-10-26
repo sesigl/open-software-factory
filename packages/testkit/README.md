@@ -134,6 +134,14 @@ Every server, client and subscription stops when the scenario ends, before the f
   codex-acp does: it wakes the waiting turn whose text it contains and answers `{ outcome: "injected" }`, or
   `{ outcome: "failed" }` when no turn waits for it. `steeringRequests()` lists the texts of those requests
   ([ADR 0053](../../docs/decisions/0053-harness-codex-opencode.md)).
+- `fakes.sandbox({ templates })`: a sandbox adapter with the commands `create`, `exec`, `copy`, `destroy` and `list`
+  of the [sandbox port](../../ports/sandbox/README.md), whose sandboxes are folders on the host, for a module that
+  drives the port without Docker ([ADR 0068](../../docs/decisions/0068-foreman-sandboxes.md)). Run it with its
+  `command` and `args`, then the port's command. Its IDs are `000000000001` and on. `exec` runs the command in the
+  sandbox's folder with the spec's `env` and `osf-secret-placeholder-<NAME>` for each secret; `copy` maps `<ID>:<path>`
+  to that folder. With `templates`, `create` refuses another template with `no template <name>` and exit code 1.
+  `created()` lists each sandbox's ID and spec, `execs()` each command with the files in the folder when it started,
+  and `list()` the sandboxes that exist. It isolates nothing.
 - `fakes.postgres()`: PostgreSQL 18 for this scenario, as PGlite in the test's process behind a small
   wire-protocol server, with no Docker ([ADR 0049](../../docs/decisions/0049-in-memory-stand-ins.md)). The module
   connects to `postgres://test:test@127.0.0.1:<port>/test` with its own driver; a wrong password is refused with
@@ -358,3 +366,7 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-102 | implemented | fakes.github answers an issue that a test opened and labeled |
 | SCN-TK-103 | implemented | fakes.forge opens an issue and adds a label to it |
 | SCN-TK-104 | implemented | fakes.sentry sends a module's webhook an alert signed with the integration's client secret |
+| SCN-TK-105 | implemented | The fake sandbox runs a command in its folder with the spec's variables and a placeholder for each secret |
+| SCN-TK-106 | implemented | A folder copied into the fake sandbox and out again keeps its files |
+| SCN-TK-107 | implemented | A destroyed fake sandbox leaves the list and refuses commands |
+| SCN-TK-108 | implemented | The fake sandbox refuses a template outside its list |
