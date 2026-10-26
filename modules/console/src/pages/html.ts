@@ -46,8 +46,11 @@ export function page(frame: Frame, content: VNode | VNode[]): string {
   return `<!doctype html>${renderToString(body)}`;
 }
 
-/** A link, or a dash when there is no URL. */
-export const linkOr = (url: string | undefined, text: string) => (url ? html`<a href=${url}>${text}</a>` : "—");
+/** A link to an http or https URL; any other URL, such as "javascript:", gives the text, and no URL a dash. */
+export const linkOr = (url: string | undefined, text: string) => {
+  if (!url) return "—";
+  return /^https?:\/\//i.test(url) ? html`<a href=${url}>${text}</a>` : text;
+};
 
 /** The content of a page for a request the console cannot answer, with the reason. */
 export const problem = (title: string, detail: string) => html`<h1>${title}</h1>
