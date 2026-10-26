@@ -1,12 +1,15 @@
 // A stage's agent through the harness port (ADR 0050, ADR 0067): the adapter runs as a program that speaks ACP on
 // stdio, and the foreman is its client. One session per stage, in the run's folder, with one prompt; a prompt sent
-// while the turn runs is a steering message. In a sandbox, the program is the sandbox adapter's exec (ADR 0068).
+// while the turn runs is a steering message. In a sandbox, the program is the sandbox adapter's exec (ADR 0068). The
+// foreman keeps what the agent wrote, to find the run's pull request in it (ADR 0069).
 import { spawn } from "node:child_process";
 import { Readable, Writable } from "node:stream";
 import { client, ndJsonStream, PROTOCOL_VERSION } from "@agentclientprotocol/sdk";
 
 export interface HarnessTurn {
   sessionId: string;
+  /** What the agent wrote so far: its messages, and its tool calls as JSON. */
+  transcript(): string;
   /** The turn's stop reason, or "exited" when the adapter ended before the turn did. */
   done: Promise<string>;
   steer(text: string): void;
@@ -34,7 +37,15 @@ export async function startTurn(options: TurnOptions): Promise<HarnessTurn> {
     child.on("exit", () => resolve("exited"));
     child.on("error", () => resolve("exited"));
   });
+  let transcript = "";
   const connection = client({ name: "opensoftware-foreman" })
+    .onNotification("session/update", ({ params }) => {
+      const { update } = params;
+      // Message chunks join, so a link split across chunks stays whole.
+      if (update.sessionUpdate === "agent_message_chunk" && update.content.type === "text")
+        transcript += update.content.text;
+      else if (update.sessionUpdate.startsWith("tool_call")) transcript += `\n${JSON.stringify(update)}\n`;
+    })
     // The adapter refuses tool kinds outside its --allow list itself; the foreman allows the rest (ADR 0067).
     .onRequest("session/request_permission", ({ params }) => {
       const allow = params.options.find((option) => option.kind.startsWith("allow"));
@@ -68,6 +79,7 @@ export async function startTurn(options: TurnOptions): Promise<HarnessTurn> {
     );
     return {
       sessionId,
+      transcript: () => transcript,
       done: Promise.race([turn, exited]),
       steer: (text) => void send(text).catch(() => undefined),
       cancel: () => void agent.notify("session/cancel", { sessionId }).catch(() => undefined),

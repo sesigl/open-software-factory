@@ -1,8 +1,9 @@
 // The activities of a run (ADR 0067). `next` and `apply` are local activities around the domain, so a run's logic runs
-// in the worker's thread; the others reach outside: the sandbox, the harness, gatekeeper and NATS.
+// in the worker's thread; the others reach outside: the sandbox, the harness, the forge, gatekeeper and NATS.
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { Context } from "@temporalio/activity";
+import { pullRequestChecks } from "../adapters/forge.ts";
 import type { Gatekeeper } from "../adapters/gatekeeper.ts";
 import { type HarnessTurn, startTurn } from "../adapters/harness.ts";
 import { type Bus, SUBJECTS } from "../adapters/nats.ts";
@@ -10,10 +11,13 @@ import { createSandbox } from "../adapters/sandbox.ts";
 import type { Definition } from "../domain/definition.ts";
 import {
   apply,
+  checksOf,
   type Fact,
   gateSummaryOf,
+  lastPullRequestIn,
   nextStep,
   promptOf,
+  pullRequestOf,
   type RunView,
   runCompleted,
   runStarted,
@@ -28,6 +32,12 @@ export interface ActivityDeps {
   harnesses: Record<string, string>;
   /** The adapter's command line per sandbox adapter name; others run `npx -y @opensoftware/sandbox-<name>`. */
   sandboxes: Record<string, string>;
+  /** The adapter's command line per forge adapter name; others run `npx -y @opensoftware/forge-<name>`. */
+  forges: Record<string, string>;
+  /** FORGE_URL and FORGE_TOKEN of the forge adapter. */
+  forgeEnv: Record<string, string | undefined>;
+  /** How long a stage waits before it reads pending checks again. */
+  checkPollMs: number;
   /** The foreman's data folder: each run works in `runs/<run ID>`. */
   data: string;
   /** How often a running stage looks for steering messages and reports that it lives. */
@@ -69,7 +79,7 @@ export function activities(deps: ActivityDeps) {
 
   return {
     async next(view: RunView, definition: Definition): Promise<Step> {
-      return nextStep(view, definition);
+      return nextStep(view, definition, deps.checkPollMs);
     },
     async apply(view: RunView, fact: Fact): Promise<RunView> {
       return apply(view, fact, deps.now());
@@ -91,6 +101,21 @@ export function activities(deps: ActivityDeps) {
         change: { factory: definition.factory, policy: plan?.gate?.policy, approvers: plan?.gate?.approvers ?? [] },
       });
       return { kind: "gate", index, gateId: gate.id, state: gate.state };
+    },
+    /** The stage's checks on the run's pull request, through the forge adapter that the factory names. */
+    async readChecks(view: RunView, definition: Definition, index: number): Promise<Fact> {
+      const names = definition.stages[index]?.checks ?? [];
+      if (!view.pullRequest)
+        return { kind: "checks", index, checks: [], reason: "no earlier stage linked a pull request" };
+      const { repo, number } = pullRequestOf(view.pullRequest);
+      const adapter = definition.forgeAdapter as string;
+      const printed = await pullRequestChecks(
+        commandLine(deps.forges, adapter, `npx -y @opensoftware/forge-${adapter}`),
+        { ...deps.env, ...deps.forgeEnv },
+        repo,
+        number,
+      );
+      return { kind: "checks", index, checks: checksOf(names, printed) };
     },
     /** Runs the stage's agent, in a sandbox when it declares one; steering messages from the `steered`-th on are for it. */
     async runStage(view: RunView, definition: Definition, index: number, steered: number): Promise<Fact> {
@@ -119,7 +144,7 @@ export function activities(deps: ActivityDeps) {
           )
         : undefined;
       try {
-        const prompt = promptOf(plan.prompt, view.workItem);
+        const prompt = promptOf(plan.prompt, view.workItem, view.pullRequest);
         const turn = await startTurn(
           sandbox
             ? { command: sandbox.exec(harness), cwd, folder: await sandbox.copyIn(), env: deps.env, prompt }
@@ -137,7 +162,14 @@ export function activities(deps: ActivityDeps) {
         );
         const stopReason = await untilDone(turn, view.runId, steered);
         await sandbox?.copyOut();
-        return { kind: "stage-ended", index, stopReason, sessionId: turn.sessionId };
+        const pullRequest = lastPullRequestIn(turn.transcript());
+        return {
+          kind: "stage-ended",
+          index,
+          stopReason,
+          sessionId: turn.sessionId,
+          ...(pullRequest ? { pullRequest } : {}),
+        };
       } finally {
         await sandbox?.destroy();
       }

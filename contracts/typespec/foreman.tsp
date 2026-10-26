@@ -1,6 +1,7 @@
 import "@typespec/json-schema";
 import "./common.tsp";
 import "./work-item.tsp";
+import "./factory-definition.tsp";
 
 using TypeSpec.JsonSchema;
 
@@ -26,6 +27,20 @@ enum StageState {
   cancelled,
 }
 
+/** foreman: the state of a check on the forge (forge port). */
+enum CheckState {
+  pending,
+  success,
+  failure,
+  error,
+}
+
+/** foreman: a check that a stage waits for, as the foreman last read it on the run's pull request (ADR 0069). */
+model CheckView {
+  name: CheckName;
+  state: CheckState;
+}
+
 /** foreman: one stage of a run (ADR 0067). */
 model StageView {
   stage: Name;
@@ -41,6 +56,13 @@ model StageView {
   /** The gate that decides whether the stage starts, once it was requested. */
   @pattern("^g[0-9a-f]{16}$")
   gateId?: string;
+
+  /** The checks the stage waits for, once the foreman read them (ADR 0069). */
+  checks?: CheckView[];
+
+  /** Why the stage ended without success, when the foreman knows. */
+  @minLength(1)
+  reason?: string;
 
   startedAt?: utcDateTime;
   endedAt?: utcDateTime;
@@ -61,6 +83,10 @@ model RunView {
   factoryVersion: CommitHash;
 
   state: RunState;
+
+  /** The last pull request link that an agent of the run wrote (ADR 0069). */
+  pullRequest?: url;
+
   startedAt: utcDateTime;
   endedAt?: utcDateTime;
 

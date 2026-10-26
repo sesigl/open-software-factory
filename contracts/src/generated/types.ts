@@ -194,6 +194,18 @@ export type components = {
         };
         /** @description A path inside the bundle: relative, forward slashes, no "..". */
         BundlePath: string;
+        /** @description The name of a check on the forge: a commit status context. */
+        CheckName: string;
+        /**
+         * @description foreman: the state of a check on the forge (forge port).
+         * @enum {string}
+         */
+        CheckState: "pending" | "success" | "failure" | "error";
+        /** @description foreman: a check that a stage waits for, as the foreman last read it on the run's pull request (ADR 0069). */
+        CheckView: {
+            name: components["schemas"]["CheckName"];
+            state: components["schemas"]["CheckState"];
+        };
         /** @description A Git commit hash, abbreviated (7+) or full. The factory version is the commit of the factory definition. */
         CommitHash: string;
         /**
@@ -791,6 +803,11 @@ export type components = {
             /** @description The commit of the factory definition the run started with. */
             factoryVersion: components["schemas"]["CommitHash"];
             state: components["schemas"]["RunState"];
+            /**
+             * Format: uri
+             * @description The last pull request link that an agent of the run wrote (ADR 0069).
+             */
+            pullRequest?: string;
             /** Format: date-time */
             startedAt: string;
             /** Format: date-time */
@@ -932,6 +949,11 @@ export type components = {
             agent?: components["schemas"]["Name"];
             /** @description The stage waits for a decision before it starts. */
             gate?: components["schemas"]["Gate"];
+            /**
+             * @description Checks that must succeed on the run's pull request before the stage starts, by their names on the forge, for
+             *     example "verify" (ADR 0069).
+             */
+            checks?: components["schemas"]["CheckName"][];
             /** @description Whether the stage must produce an evidence bundle. */
             evidence?: components["schemas"]["EvidenceRequirement"];
         };
@@ -950,6 +972,10 @@ export type components = {
             sessionId?: string;
             /** @description The gate that decides whether the stage starts, once it was requested. */
             gateId?: string;
+            /** @description The checks the stage waits for, once the foreman read them (ADR 0069). */
+            checks?: components["schemas"]["CheckView"][];
+            /** @description Why the stage ended without success, when the foreman knows. */
+            reason?: string;
             /** Format: date-time */
             startedAt?: string;
             /** Format: date-time */

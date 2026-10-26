@@ -59,6 +59,7 @@
     {
       "stage": "verify",
       "agent": "implement",
+      "checks": ["verify"],
       "evidence": "required"
     }
   ],
