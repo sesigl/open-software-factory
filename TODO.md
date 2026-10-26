@@ -643,6 +643,16 @@ read them for ideas, do not copy their company-specific rules.
   Slack origin, trace and evidence; configuration pages are read-only with a link to the file in Git; the inbox
   lists observer PRs by state.
 - **Done when:** a maintainer can follow all factory work in this repository without opening Temporal directly.
+- **Slices:**
+  - [x] Runs, run pages and configuration (ADR 0072, `SCN-CONSOLE-001` to `-028`): `console serve` renders HTML on the
+    server with Preact and htm. `/` lists the runs of every foreman in `CONSOLE_FOREMAN_URL` with title, factory,
+    state, source, requester, pull request and age, filters them by state and reloads itself; `/runs/<runId>` shows the
+    origin, every request from intake, the stages with their transcript, gate from gatekeeper, checks and reason, and
+    links the trace and the Temporal history; `/factory` and `/factory/agents/<name>` show `factory.yaml` read-only
+    with the link to the file and branch in Git; every page links the dashboards in `CONSOLE_LINKS`.
+  - [ ] The self-improvement inbox (IMPROVE-004): observer's pull requests with their age and the state "needs
+    review" or "approved". Needs a forge port operation that lists pull requests by branch prefix with their review
+    state, in both forge adapters, and an ADR for that port change.
 
 ### [ ] T-19 · distribution
 
