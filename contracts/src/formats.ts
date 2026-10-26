@@ -20,6 +20,7 @@ export const FORMATS: readonly Format[] = [
   format("gate-record", "GateRecord"),
   format("sandbox-spec", "SandboxSpec"),
   format("events/work-received", "WorkReceived"),
+  format("events/run-started", "RunStarted"),
   format("events/run-completed", "RunCompleted"),
   format("events/gate-requested", "GateRequested"),
   format("events/gate-decided", "GateDecided"),

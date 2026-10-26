@@ -34,6 +34,57 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/v1/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Start a run of the factory's workflow for a work item. The same work item again answers the run it started. */
+        post: operations["ForemanApi_startRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/runs/{runId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A run: its state and the state of each stage. */
+        get: operations["ForemanApi_getRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/runs/{runId}/signals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Steer the running stage's agent, or cancel the run. */
+        post: operations["ForemanApi_signalRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/work-items": {
         parameters: {
             query?: never;
@@ -645,6 +696,17 @@ export type components = {
             "osf.harness.name": components["schemas"]["Name"];
             "osf.harness.version"?: string;
         };
+        /** @description foreman: a signal to a run: "steer" with a message for the running stage's agent, or "cancel". */
+        RunSignal: {
+            type: components["schemas"]["RunSignalType"];
+            /** @description The steering message. Required with "steer". */
+            message?: string;
+        };
+        /**
+         * @description foreman: what a person tells a run.
+         * @enum {string}
+         */
+        RunSignalType: "steer" | "cancel";
         /** @description Attributes of the root span of the run. GenAI names where a convention exists. */
         RunSpan: {
             /** @constant */
@@ -678,6 +740,63 @@ export type components = {
              * @description Agent Trace record with line attribution of the run's changes.
              */
             "osf.agent_trace.uri"?: string;
+        };
+        /** @description foreman: a run started (ADR 0067). */
+        RunStarted: {
+            /** @constant */
+            specversion: "1.0";
+            /** @description Unique per source. A consumer that sees the same source and id twice handles the event once. */
+            id: components["schemas"]["Identifier"];
+            /** @description The producing module, for example "/osf/intake". */
+            source: string;
+            /** @constant */
+            type: "run.started@v1";
+            /** Format: date-time */
+            time: string;
+            /** @description The ID of the thing the event is about: work item, gate, run, score or pull request. */
+            subject?: string;
+            /** @constant */
+            datacontenttype?: "application/json";
+            /** Format: uri */
+            dataschema?: string;
+            /** @description W3C trace context (CloudEvents distributed tracing extension). */
+            traceparent?: string;
+            data: components["schemas"]["RunStartedData"];
+        };
+        RunStartedData: {
+            runId: components["schemas"]["Identifier"];
+            workItemId: components["schemas"]["Identifier"];
+            /** @description The name of the factory. */
+            factory: components["schemas"]["Name"];
+            factoryVersion: components["schemas"]["CommitHash"];
+            /** @description The stages of the run's workflow, in order. */
+            stages: components["schemas"]["Name"][];
+            /** Format: date-time */
+            startedAt: string;
+            requester: components["schemas"]["Actor"];
+            source: components["schemas"]["Name"];
+        };
+        /**
+         * @description foreman: where a run stands (vision scenario ORCH-008).
+         * @enum {string}
+         */
+        RunState: "running" | "blocked" | "complete" | "failed" | "cancelled";
+        /** @description foreman: a run of the factory's workflow for one work item, as the HTTP API shows it (ADR 0067). */
+        RunView: {
+            /** @description "run_" and 20 hex digits of the SHA-256 of the work item's ID. */
+            runId: string;
+            workItem: components["schemas"]["WorkItem"];
+            /** @description The name of the factory. */
+            factory: components["schemas"]["Name"];
+            /** @description The commit of the factory definition the run started with. */
+            factoryVersion: components["schemas"]["CommitHash"];
+            state: components["schemas"]["RunState"];
+            /** Format: date-time */
+            startedAt: string;
+            /** Format: date-time */
+            endedAt?: string;
+            /** @description The stages of the workflow, in order. */
+            stages: components["schemas"]["StageView"][];
         };
         Sandbox: {
             /** @description Sandbox template name, for example "node-24". */
@@ -815,6 +934,26 @@ export type components = {
             gate?: components["schemas"]["Gate"];
             /** @description Whether the stage must produce an evidence bundle. */
             evidence?: components["schemas"]["EvidenceRequirement"];
+        };
+        /**
+         * @description foreman: where a stage of a run stands.
+         * @enum {string}
+         */
+        StageState: "pending" | "blocked" | "running" | "succeeded" | "failed" | "rejected" | "cancelled";
+        /** @description foreman: one stage of a run (ADR 0067). */
+        StageView: {
+            stage: components["schemas"]["Name"];
+            /** @description The agent that runs the stage. */
+            agent: components["schemas"]["Name"];
+            state: components["schemas"]["StageState"];
+            /** @description The harness session of the stage's agent, once it started. */
+            sessionId?: string;
+            /** @description The gate that decides whether the stage starts, once it was requested. */
+            gateId?: string;
+            /** Format: date-time */
+            startedAt?: string;
+            /** Format: date-time */
+            endedAt?: string;
         };
         /** @description An OpenTelemetry trace ID: 32 lowercase hex characters. */
         TraceId: string;
@@ -991,6 +1130,159 @@ export interface operations {
             };
             /** @description The server cannot find the requested resource. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    ForemanApi_startRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkItem"];
+            };
+        };
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunView"];
+                };
+            };
+            /** @description The request has succeeded and a new resource has been created as a result. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunView"];
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Access is unauthorized. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    ForemanApi_getRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunView"];
+                };
+            };
+            /** @description Access is unauthorized. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    ForemanApi_signalRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunSignal"];
+            };
+        };
+        responses: {
+            /** @description The request has been accepted for processing, but processing has not yet completed. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunView"];
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Access is unauthorized. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
