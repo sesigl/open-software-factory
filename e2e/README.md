@@ -51,6 +51,7 @@ The scenario writes these values into its `.env`, next to the profile's own valu
 | `E2E_FORGE_TOKEN` | Its API token, for factory, observer and taskcapture. |
 | `E2E_WEBHOOK_SECRET` | The secret of the webhooks that `factory apply` creates. |
 | `E2E_WORK_DIR` | The folder that observer and taskcapture see as `/work`. Default: `./work`. |
+| `E2E_USER` | The user and group that observer and taskcapture run as, `<uid>:<gid>`: the scenario's own, so it owns and removes what they write. Default: `node`. |
 | `E2E_MODEL_URL` | The scripted model gateway as containers reach it, ending in `/v1`: observer's model, LiteLLM's OpenAI base URL and the scripted Harbor's model. |
 | `E2E_HARBOR` | taskcapture's `TASKCAPTURE_HARBOR`. Default: `harbor`. |
 | `E2E_LITELLM_CONFIG` | The LiteLLM config file the profile's gateway serves. The scenario copies the profile's config unless it names another. |
