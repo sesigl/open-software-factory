@@ -264,6 +264,51 @@ importers:
         specifier: workspace:*
         version: link:../packages/testkit
 
+  e2e:
+    devDependencies:
+      '@opensoftware/channel-slack':
+        specifier: workspace:*
+        version: link:../adapters/channel/slack
+      '@opensoftware/console':
+        specifier: workspace:*
+        version: link:../modules/console
+      '@opensoftware/factory-spec':
+        specifier: workspace:*
+        version: link:../modules/factory-spec
+      '@opensoftware/foreman':
+        specifier: workspace:*
+        version: link:../modules/foreman
+      '@opensoftware/forge-forgejo':
+        specifier: workspace:*
+        version: link:../adapters/forge/forgejo
+      '@opensoftware/forge-github':
+        specifier: workspace:*
+        version: link:../adapters/forge/github
+      '@opensoftware/gatekeeper':
+        specifier: workspace:*
+        version: link:../modules/gatekeeper
+      '@opensoftware/harness-acp':
+        specifier: workspace:*
+        version: link:../adapters/harness/acp
+      '@opensoftware/inference-litellm':
+        specifier: workspace:*
+        version: link:../adapters/inference/litellm
+      '@opensoftware/intake':
+        specifier: workspace:*
+        version: link:../modules/intake
+      '@opensoftware/observer':
+        specifier: workspace:*
+        version: link:../modules/observer
+      '@opensoftware/proof':
+        specifier: workspace:*
+        version: link:../modules/proof
+      '@opensoftware/taskcapture':
+        specifier: workspace:*
+        version: link:../modules/taskcapture
+      '@opensoftware/testkit':
+        specifier: workspace:*
+        version: link:../packages/testkit
+
   modules/_template:
     devDependencies:
       '@opensoftware/testkit':

@@ -12,7 +12,7 @@ Feature: Key use cases across modules
     And the pull request has a check named "proof" with the result "success"
     And the fake Slack thread links the pull request
 
-  @id=SCN-E2E-002 @status=planned
+  @id=SCN-E2E-002 @status=implemented
   Scenario: Approval at a human gate releases the waiting work
     Given a factory whose "spec" stage needs approval by the group "maintainers"
     And work waits at the "spec" gate with an approval request in the fake Slack channel

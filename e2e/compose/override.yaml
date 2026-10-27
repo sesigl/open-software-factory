@@ -1,0 +1,55 @@
+# What the end-to-end scenarios change in the Compose profile (ADR 0076): every module runs from the image
+# osf-e2e:workspace that scripts/images.ts builds from this workspace, with the fixed clock of the tests. Slack is the
+# testkit's fake, the harness its scripted agent and the forge its Forgejo, all on the Docker host. The scenario's
+# .env holds the E2E_ values (README.md#configuration).
+x-workspace: &workspace
+  image: osf-e2e:workspace
+  pull_policy: never
+  build: !reset null
+  extra_hosts: ["host.docker.internal:host-gateway"]
+
+x-clock: &clock
+  OSF_NOW: "2026-01-01T00:00:00Z"
+
+services:
+  factory-repo: *workspace
+
+  gatekeeper:
+    <<: *workspace
+    environment:
+      <<: *clock
+      GATEKEEPER_SLACK_ADAPTER: channel-slack
+      GATEKEEPER_SLACK_URL: ${E2E_SLACK_URL:?set E2E_SLACK_URL in .env}
+
+  intake:
+    <<: *workspace
+    environment:
+      <<: *clock
+      INTAKE_SLACK_URL: ${E2E_SLACK_URL:?set E2E_SLACK_URL in .env}
+      INTAKE_SLACK_TOKEN: ${GATEKEEPER_SLACK_TOKEN:?set GATEKEEPER_SLACK_TOKEN in .env}
+      INTAKE_SLACK_SIGNING_SECRET: ${GATEKEEPER_SLACK_SIGNING_SECRET:?set GATEKEEPER_SLACK_SIGNING_SECRET in .env}
+
+  foreman:
+    <<: *workspace
+    environment:
+      <<: *clock
+      FOREMAN_HARNESSES: ${E2E_HARNESSES:?set E2E_HARNESSES in .env}
+      FOREMAN_POLL_MS: "200"
+    # The scripted agent's code with its dependencies, and its script and log, at the paths of the host.
+    volumes:
+      - ${E2E_AGENT_DIR:?set E2E_AGENT_DIR in .env}:${E2E_AGENT_DIR}:ro
+      - ${E2E_HARNESS_DIR:?set E2E_HARNESS_DIR in .env}:${E2E_HARNESS_DIR}
+
+  console:
+    <<: *workspace
+    environment:
+      <<: *clock
+
+  factory:
+    <<: *workspace
+    environment:
+      FACTORY_FORGE_URL: ${E2E_FORGE_URL:-}
+      FACTORY_FORGE_TOKEN: ${E2E_FORGE_TOKEN:-}
+      FACTORY_FORGEJO_ADAPTER: forge-forgejo
+      FACTORY_INTAKE_URL: http://intake:8080/forge/events
+      FACTORY_WEBHOOK_SECRET: ${E2E_WEBHOOK_SECRET:-}

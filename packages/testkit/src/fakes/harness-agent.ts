@@ -1,9 +1,10 @@
 // The scripted ACP agent that fakes.harness() starts as a process: node harness-agent.ts <script.json> <log.jsonl>.
 // For each prompt it takes the first unused turn whose `when` the prompt contains, asks the client to approve the
-// turn's tool calls, applies its edits, streams the reply and ends the turn. A prompt that a waiting turn waits for
+// turn's tool calls, applies its edits, runs its commands, streams the reply and ends the turn. A prompt that a waiting turn waits for
 // is a steering message: it ends at once and lets that turn go on. The agent also takes a steering message as the
 // request `_session/steering`, as codex-acp does (ADR 0053). The agent logs every prompt and tool call so the testkit
 // can show the prompts nobody scripted, and each session it opens with the model variables it got (ADR 0070).
+import { spawnSync } from "node:child_process";
 import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
@@ -50,6 +51,20 @@ async function approveTools(client: AgentContext, sessionId: string, turn: Harne
     allowed &&= ok;
   }
   return allowed;
+}
+
+/** Runs the turn's commands one after the other in the folder; their output, and whether every one exited with 0. */
+function runCommands(commands: string[], cwd: string): { output: string; ok: boolean } {
+  let output = "";
+  for (const command of commands) {
+    const run = spawnSync("sh", ["-c", command], { cwd, encoding: "utf8" });
+    const exitCode = run.status ?? 1;
+    const text = `${run.stdout ?? ""}${run.stderr ?? ""}${run.error ? run.error.message : ""}`;
+    log({ command: { command, exitCode, output: text } });
+    output += run.stdout ?? "";
+    if (exitCode !== 0) return { output, ok: false };
+  }
+  return { output, ok: true };
 }
 
 const textOf = (prompt: ContentBlock[]): string =>
@@ -119,12 +134,15 @@ agent({ name: "testkit-scripted-harness" })
         writeFileSync(full, content);
       }
     }
-    if (turn.reply) {
+    const commands = runCommands(allowed ? (turn.commands ?? []) : [], session.cwd);
+    const reply = `${commands.output}${turn.reply ?? ""}`;
+    if (reply) {
       await client.notify("session/update", {
         sessionId: params.sessionId,
-        update: { sessionUpdate: "agent_message_chunk", content: { type: "text", text: turn.reply } },
+        update: { sessionUpdate: "agent_message_chunk", content: { type: "text", text: reply } },
       });
     }
+    if (!commands.ok) return { stopReason: "refusal" };
     if (turn.costUsd !== undefined) {
       await client.notify("session/update", {
         sessionId: params.sessionId,

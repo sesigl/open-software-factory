@@ -25,9 +25,22 @@ export interface SlackMessage {
   buttons: SlackButton[];
 }
 
+export interface SlackOptions {
+  /**
+   * Also answer containers: listen on every interface instead of 127.0.0.1 and give `containerUrl` (ADR 0076).
+   * Default false.
+   */
+  containers?: boolean;
+}
+
 export interface FakeSlack {
   /** Base URL of the Web API, ending in `/api/`, for example `${url}chat.postMessage`. */
   url: string;
+  /**
+   * With `containers: true`, the same base URL as a container reaches it: `http://host.docker.internal:<port>/api/`.
+   * On Linux the container needs `--add-host host.docker.internal:host-gateway`.
+   */
+  containerUrl?: string;
   /** The bot token the module must send as `Authorization: Bearer <token>`. */
   token: string;
   /** The bot's user ID, which `auth.test` answers and which every message the module posts carries. */
@@ -73,7 +86,7 @@ const PEOPLE: Record<string, string> = { [BOT]: "factory", U0PERSON: "Varun" };
 /** The workspace's address in the links of `chat.getPermalink`. */
 const WORKSPACE = "https://testkit.slack.com";
 
-export async function startSlack(): Promise<RunningSlack> {
+export async function startSlack(options: SlackOptions = {}): Promise<RunningSlack> {
   const messages: SlackMessage[] = [];
   const problems: string[] = [];
   let events: string | undefined;
@@ -150,7 +163,7 @@ export async function startSlack(): Promise<RunningSlack> {
       messages: list.map(({ ts, threadTs, user, text }) => ({ type: "message", ts, thread_ts: threadTs, user, text })),
     });
   });
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  await new Promise<void>((resolve) => server.listen(0, options.containers ? "0.0.0.0" : "127.0.0.1", resolve));
   const { port } = server.address() as AddressInfo;
 
   /** Posts a signed request to the module like Slack does, and records an answer other than 2xx. */
@@ -166,6 +179,7 @@ export async function startSlack(): Promise<RunningSlack> {
   return {
     slack: {
       url: `http://127.0.0.1:${port}/api/`,
+      ...(options.containers ? { containerUrl: `http://host.docker.internal:${port}/api/` } : {}),
       token: TOKEN,
       bot: BOT,
       signingSecret: SIGNING_SECRET,
