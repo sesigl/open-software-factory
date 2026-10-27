@@ -140,7 +140,9 @@ Five deterministic scenarios in [`e2e/features/smoke.feature`](../../e2e/feature
 profile, plus `SMOKE-PAID`: one small real task per first-party harness with a real model, nightly and before
 releases, never on pull requests. The profile's own scenarios in [`deploy/features/`](../../deploy/features/compose.feature)
 start it with `sut.compose`, each as a Compose project of its own, and check that every service is healthy and wired
-(ADR 0074).
+(ADR 0074). The Helm chart's scenarios install it with `sut.helm` on kind, each release in a namespace of its own, and
+check the same subset: every workload ready, the console wired to foreman, and `helm test` planning the reference
+factory (ADR 0075).
 
 ## Evergreen docs
 

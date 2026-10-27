@@ -1,0 +1,10 @@
+# The Helm chart of the factory for platform teams (ADR 0075): gatekeeper, intake, foreman and console with the
+# reference factory, and PostgreSQL, NATS and Temporal unless the values name the team's own.
+apiVersion: v2
+name: osf
+description: The open software factory on Kubernetes, installed with one command.
+type: application
+version: 0.1.0
+home: https://github.com/sesigl/open-software-factory
+sources:
+  - https://github.com/sesigl/open-software-factory/tree/main/deploy/helm/osf

@@ -6,6 +6,9 @@ ARG NODE_IMAGE=node:24.11.1-bookworm-slim
 FROM openpolicyagent/opa:1.21.0-static AS opa
 
 FROM ${NODE_IMAGE} AS module
+# GHCR links the published image to its repository through this label (ADR 0075).
+LABEL org.opencontainers.image.source="https://github.com/sesigl/open-software-factory" \
+  org.opencontainers.image.licenses="Apache-2.0"
 # foreman reads a run's factory version from Git; the forge adapters push with it.
 RUN apt-get update \
   && apt-get install --yes --no-install-recommends ca-certificates git \

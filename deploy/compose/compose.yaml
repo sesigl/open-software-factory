@@ -1,7 +1,8 @@
 # The Compose profile of the factory: one command installs a complete factory on one machine (ADR 0074).
 #   cp .env.example .env    # then set every value in it
 #   docker compose up --detach --wait
-# The modules come from npm at the versions below; the services are pinned images. Every port listens on OSF_HOST,
+# The module images are published to GHCR, signed, from npm at the versions below (ADR 0075); Compose builds one
+# itself only when the registry does not have it. The services are pinned images. Every port listens on OSF_HOST,
 # 127.0.0.1 unless you set it.
 name: osf
 
@@ -63,6 +64,8 @@ services:
       temporal-schema:
         condition: service_completed_successfully
     environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
       POSTGRES_USER: osf
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       TEMPORAL_SERVER_CONFIG_FILE_PATH: /etc/temporal/osf/config.yaml
@@ -170,14 +173,13 @@ services:
 
   # Copies FACTORY_DIR into the volume factory and commits it there: foreman reads a run's factory version from Git.
   factory-repo:
-    image: osf/factory-spec:0.4.0
-    pull_policy: build
+    image: ghcr.io/sesigl/open-software-factory/factory-spec:0.5.0
     build: &factory-spec
       context: ../images
       target: module
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/factory-spec@0.4.0"
+        PACKAGES: "@opensoftware/factory-spec@0.5.0"
     volumes:
       - ${FACTORY_DIR:-./factory}:/source:ro
       - factory:/factory
@@ -195,8 +197,7 @@ services:
 
   gatekeeper:
     <<: *module
-    image: osf/gatekeeper:0.4.0
-    pull_policy: build
+    image: ghcr.io/sesigl/open-software-factory/gatekeeper:0.4.0
     build:
       context: ../images
       target: gatekeeper
@@ -227,8 +228,7 @@ services:
 
   intake:
     <<: *module
-    image: osf/intake:0.2.0
-    pull_policy: build
+    image: ghcr.io/sesigl/open-software-factory/intake:0.2.0
     build:
       context: ../images
       target: module
@@ -253,8 +253,7 @@ services:
 
   foreman:
     <<: *module
-    image: osf/foreman:0.4.0
-    pull_policy: build
+    image: ghcr.io/sesigl/open-software-factory/foreman:0.4.0
     build:
       context: ../images
       target: module
@@ -284,6 +283,8 @@ services:
       FOREMAN_GATEKEEPER_TOKEN: ${GATEKEEPER_API_TOKEN:?set GATEKEEPER_API_TOKEN in .env}
       FOREMAN_HARNESSES: '{"claude-code": "harness-claude-code run"}'
       FOREMAN_FORGES: '{"github": "forge-github", "forgejo": "forge-forgejo"}'
+      # A token that may read pull requests and their checks, for the verify stage's check "verify". Optional.
+      FOREMAN_FORGE_TOKEN: ${FOREMAN_FORGE_TOKEN:-}
     volumes:
       - factory:/factory:ro
       - foreman:/home/node/data
@@ -292,8 +293,7 @@ services:
 
   console:
     <<: *module
-    image: osf/console:0.2.0
-    pull_policy: build
+    image: ghcr.io/sesigl/open-software-factory/console:0.2.0
     build:
       context: ../images
       target: module
@@ -327,8 +327,7 @@ services:
 
   # factory-spec on the factory in the volume, for the commands of factory: docker compose run --rm factory plan
   factory:
-    image: osf/factory-spec:0.4.0
-    pull_policy: build
+    image: ghcr.io/sesigl/open-software-factory/factory-spec:0.5.0
     build: *factory-spec
     profiles: [tools]
     depends_on:

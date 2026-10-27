@@ -1,0 +1,8 @@
+The factory {{ .Release.Name }} runs in the namespace {{ .Release.Namespace }}.
+
+Open the console:
+  kubectl --namespace {{ .Release.Namespace }} port-forward service/{{ .Release.Name }}-console 8080:8080
+  then http://127.0.0.1:8080
+
+Plan the factory definition:
+  helm test {{ .Release.Name }} --namespace {{ .Release.Namespace }} --logs

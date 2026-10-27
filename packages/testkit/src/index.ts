@@ -18,6 +18,7 @@ export type { Acp, AcpClient, AcpPermissionRequest, AcpSession, AcpStreams, AcpT
 export type { Action, ActionOptions, ActionResult } from "./sut/action.ts";
 export type { Compose, ComposeService } from "./sut/compose.ts";
 export type { CloudEvent, EventLog, Events } from "./sut/events.ts";
+export type { Helm } from "./sut/helm.ts";
 export type { Http, HttpResponse } from "./sut/http.ts";
 export type { Mcp, McpClient } from "./sut/mcp.ts";
 export type { Sut } from "./sut/sut.ts";

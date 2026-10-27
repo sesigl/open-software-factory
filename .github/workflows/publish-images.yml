@@ -1,0 +1,102 @@
+# Publishes the module images of deploy/compose/compose.yaml and the Helm chart deploy/helm/osf to GHCR, signed, with
+# SBOMs and SLSA provenance (ADR 0075). A tag that GHCR already has is never built again. The one-time setup is in
+# deploy/README.md#releases.
+name: publish-images
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - deploy/compose/compose.yaml
+      - deploy/images/**
+      - deploy/helm/osf/**
+      - .github/workflows/publish-images.yml
+  # Publishes what is missing again, for example after a failed push.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-images
+  cancel-in-progress: false
+
+jobs:
+  images:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write # push to ghcr.io/sesigl/open-software-factory
+      id-token: write # keyless signatures with cosign
+    env:
+      REGISTRY: ghcr.io/sesigl/open-software-factory
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: v2.6.1
+      - uses: azure/setup-helm@v4
+        with:
+          version: v4.3.1
+      - name: Log in to GHCR
+        env:
+          TOKEN: ${{ github.token }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          echo "$TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
+          echo "$TOKEN" | helm registry login ghcr.io --username "$ACTOR" --password-stdin
+
+      # compose.yaml refuses to load without its secrets; building needs none of them.
+      - name: The targets of compose.yaml that GHCR does not have
+        id: targets
+        working-directory: deploy/compose
+        run: |
+          grep -o '\${[A-Z_]*:?' compose.yaml | sort -u | sed 's/^\${\(.*\):?$/\1=unused/' > .env
+          targets=""
+          while read -r target image; do
+            case "$image" in "$REGISTRY"/*) ;; *) continue ;; esac
+            if docker buildx imagetools inspect "$image" >/dev/null 2>&1; then
+              echo "$image is published"
+            else
+              targets="$targets $target"
+            fi
+          done < <(docker buildx bake --file compose.yaml --print 2>/dev/null |
+            jq -r '.target | to_entries[] | select(.key != "factory-repo") | "\(.key) \(.value.tags[0])"')
+          echo "targets=$targets" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push the images for amd64 and arm64, with SBOM and provenance
+        if: steps.targets.outputs.targets != ''
+        working-directory: deploy/compose
+        env:
+          TARGETS: ${{ steps.targets.outputs.targets }}
+        run: |
+          # shellcheck disable=SC2086
+          # The images' build context and the CA secret are in ../images.
+          docker buildx bake --allow=fs.read=../images --file compose.yaml $TARGETS --push \
+            --set '*.platform=linux/amd64,linux/arm64' \
+            --set '*.attest=type=sbom' \
+            --set '*.attest=type=provenance,mode=max' \
+            --metadata-file "$RUNNER_TEMP/bake.json"
+
+      - name: Sign the images
+        if: steps.targets.outputs.targets != ''
+        run: |
+          jq -r 'to_entries[] | "\(.value."image.name" | split(",")[0])@\(.value."containerimage.digest")"' \
+            "$RUNNER_TEMP/bake.json" | sort -u | while read -r image; do
+            cosign sign --yes "${image%%:*}@${image##*@}"
+          done
+
+      - name: Push and sign the chart
+        run: |
+          version=$(sed -n 's/^version: *//p' deploy/helm/osf/Chart.yaml)
+          if helm show chart "oci://$REGISTRY/charts/osf" --version "$version" >/dev/null 2>&1; then
+            echo "osf $version is published"
+            exit 0
+          fi
+          helm package deploy/helm/osf --destination "$RUNNER_TEMP/chart"
+          helm push "$RUNNER_TEMP/chart/osf-$version.tgz" "oci://$REGISTRY/charts" 2>&1 | tee "$RUNNER_TEMP/push.log"
+          digest=$(sed -n 's/^Digest: *//p' "$RUNNER_TEMP/push.log")
+          cosign sign --yes "$REGISTRY/charts/osf@$digest"

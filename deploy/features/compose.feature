@@ -46,3 +46,17 @@ Feature: The Compose profile installs a complete factory with one command
     When the operator runs "docker compose run --rm factory plan"
     Then the command exits with code 0
     And the output contains "No changes."
+
+  @id=SCN-DIST-012 @status=implemented
+  Scenario: The verify stage of the reference factory waits for the check "verify"
+    Given the Compose profile with every value of ".env.example" set in ".env"
+    When the operator runs "docker compose run --rm factory resolve"
+    Then the command exits with code 0
+    And the stage "verify" of the resolved factory has the checks ["verify"] and the evidence "required"
+
+  @id=SCN-DIST-013 @status=implemented
+  Scenario: The Compose profile takes the module images from the factory's registry
+    Given the Compose profile with every value of ".env.example" set in ".env"
+    When the operator runs "docker compose config --images"
+    Then the command exits with code 0
+    And the output lists the images "gatekeeper", "intake", "foreman", "console" and "factory-spec" as "ghcr.io/sesigl/open-software-factory/<name>:<version>"

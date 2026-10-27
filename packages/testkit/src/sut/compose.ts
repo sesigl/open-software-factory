@@ -28,6 +28,9 @@ export interface Compose {
   url(service: string, port: number): Promise<string>;
 }
 
+/** Docker's error when the host port it picked for a published port is taken by another process. */
+const PORT_TAKEN = /failed to bind host port .* address already in use/;
+
 export function makeCompose(
   moduleRoot: string,
   dirs: Folders,
@@ -57,7 +60,7 @@ export function makeCompose(
       );
     }
     return {
-      run(args, options = {}) {
+      async run(args, options = {}) {
         for (const name of Object.keys(options.env ?? {})) {
           if (!isDocumented(documented, name)) {
             throw new Error(
@@ -65,7 +68,13 @@ export function makeCompose(
             );
           }
         }
-        return compose(args, options.env);
+        // Docker picks a published port from the ephemeral range, where the fakes and outgoing connections of
+        // parallel scenarios also land; when another process took it first, `up` again picks a new one.
+        let result = await compose(args, options.env);
+        for (let retry = 0; retry < 3 && args[0] === "up" && PORT_TAKEN.test(result.stderr); retry++) {
+          result = await compose(args, options.env);
+        }
+        return result;
       },
       async services() {
         const result = await compose(["ps", "--all", "--format", "json"]);

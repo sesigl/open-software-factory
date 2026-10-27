@@ -1,6 +1,7 @@
 // `make install` step: the pinned lychee (DOCS-LINKS), oasdiff (CONTRACT), opa (gatekeeper's policies, ADR 0047),
-// temporal and nats-server (the servers of `fakes.temporal()` and `fakes.nats()`, ADR 0067) binaries, checked against their SHA-256, in .tools/bin. Releases exist for Linux x86_64 here; elsewhere put the
-// same versions on PATH.
+// temporal and nats-server (the servers of `fakes.temporal()` and `fakes.nats()`, ADR 0067), and helm, kubectl and
+// kind (the Helm chart's scenarios, ADR 0075) binaries, checked against their SHA-256, in .tools/bin. Releases exist
+// for Linux x86_64 here; elsewhere put the same versions on PATH.
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
@@ -50,6 +51,27 @@ const PINNED: Pinned[] = [
     url: "https://github.com/nats-io/nats-server/releases/download/v2.11.9/nats-server-v2.11.9-linux-amd64.tar.gz",
     sha256: "3eef83faa048d3879937a6871f59ae5d9c3bbf5900905b7a9ff996a894d755ab",
     member: "nats-server-v2.11.9-linux-amd64/nats-server",
+  },
+  {
+    name: "helm",
+    version: "4.3.1",
+    url: "https://get.helm.sh/helm-v4.3.1-linux-amd64.tar.gz",
+    sha256: "0403a88ae20913d11b10a2467b50087721fea7581736da6b9d3992f5357fe54b",
+    member: "linux-amd64/helm",
+  },
+  {
+    name: "kubectl",
+    version: "1.34.1",
+    url: "https://dl.k8s.io/release/v1.34.1/bin/linux/amd64/kubectl",
+    sha256: "7721f265e18709862655affba5343e85e1980639395d5754473dafaadcaa69e3",
+    binary: true,
+  },
+  {
+    name: "kind",
+    version: "0.30.0",
+    url: "https://github.com/kubernetes-sigs/kind/releases/download/v0.30.0/kind-linux-amd64",
+    sha256: "517ab7fc89ddeed5fa65abf71530d90648d9638ef0c4cde22c2c11f8097b8889",
+    binary: true,
   },
 ];
 
