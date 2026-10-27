@@ -1,3 +1,4 @@
+// @ts-nocheck
 // The variables of a command: a missing one is a usage error that names it and says what it is for.
 import { UsageError } from "@opensoftware/cli";
 

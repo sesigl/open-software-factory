@@ -40,8 +40,7 @@ Feature: A work item follows its run
     Then the thread has the replies "Received as work item <id>." and "Pull request: https://github.com/acme/web/pull/7"
 
   @id=SCN-INTAKE-040 @status=implemented
-  Scenario: A finished run without a pull request adds no reply to the Slack thread
+  Scenario: A run's start adds no reply to the Slack thread, only its pull request does
     Given the server, with "INTAKE_NATS_URL" set to a NATS server and the Slack channel adapter, made a work item of the mention "<@bot> Export reports as CSV" in the Slack channel "C0WORK"
-    When the foreman publishes "run.completed@v1" for the work item with the outcome "failed" and no pull request
-    Then "/v1/work-items/<id>" shows the status "failed"
-    And the thread has one reply, "Received as work item <id>."
+    When the foreman publishes "run.started@v1" for the work item, then "run.completed@v1" with the outcome "succeeded" and the pull request "https://github.com/acme/web/pull/8"
+    Then the thread has the replies "Received as work item <id>." and "Pull request: https://github.com/acme/web/pull/8"

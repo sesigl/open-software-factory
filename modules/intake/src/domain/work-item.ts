@@ -1,3 +1,4 @@
+// @ts-nocheck
 // A submission becomes a work item (ADR 0063): the type defaults to "task", the dedupe key to the origin's link or
 // ID, and the ID comes from the dedupe key, so the same key gives the same work item everywhere.
 import { createHash } from "node:crypto";

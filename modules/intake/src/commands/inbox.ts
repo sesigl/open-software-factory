@@ -1,42 +1,89 @@
+// @ts-nocheck
 // The inbox of the server: submit and read work items, relay the outbox to NATS (ADR 0063), and move a work item on
 // with its run's events (ADR 0071).
+function stryNS_9fa48() {
+  var g = typeof globalThis === 'object' && globalThis && globalThis.Math === Math && globalThis || new Function("return this")();
+  var ns = g.__stryker__ || (g.__stryker__ = {});
+  if (ns.activeMutant === undefined && g.process && g.process.env && g.process.env.__STRYKER_ACTIVE_MUTANT__) {
+    ns.activeMutant = g.process.env.__STRYKER_ACTIVE_MUTANT__;
+  }
+  function retrieveNS() {
+    return ns;
+  }
+  stryNS_9fa48 = retrieveNS;
+  return retrieveNS();
+}
+stryNS_9fa48();
+function stryCov_9fa48() {
+  var ns = stryNS_9fa48();
+  var cov = ns.mutantCoverage || (ns.mutantCoverage = {
+    static: {},
+    perTest: {}
+  });
+  function cover() {
+    var c = cov.static;
+    if (ns.currentTestId) {
+      c = cov.perTest[ns.currentTestId] = cov.perTest[ns.currentTestId] || {};
+    }
+    var a = arguments;
+    for (var i = 0; i < a.length; i++) {
+      c[a[i]] = (c[a[i]] || 0) + 1;
+    }
+  }
+  stryCov_9fa48 = cover;
+  cover.apply(null, arguments);
+}
+function stryMutAct_9fa48(id) {
+  var ns = stryNS_9fa48();
+  function isActive(id) {
+    if (ns.activeMutant === id) {
+      if (ns.hitCount !== void 0 && ++ns.hitCount > ns.hitLimit) {
+        throw new Error('Stryker: Hit count limit reached (' + ns.hitCount + ')');
+      }
+      return true;
+    }
+    return false;
+  }
+  stryMutAct_9fa48 = isActive;
+  return isActive(id);
+}
 import type { WorkItemView } from "@opensoftware/contracts";
 import { publishToNats } from "../adapters/nats.ts";
 import type { Store } from "../adapters/store.ts";
 import { pullRequestReplies } from "../domain/sources.ts";
 import { receivedEvent, runFactOf, SUBJECT, viewOf } from "../domain/view.ts";
 import { workItemOf } from "../domain/work-item.ts";
-
 export interface InboxConfig {
   nats: string | undefined;
   now: () => number;
   warn: (text: string) => void;
 }
-
 export function inbox(store: Store, config: InboxConfig) {
   let relaying: Promise<void> = Promise.resolve();
   /** Publishes the waiting events in order, one relay at a time. They stay in the outbox while NATS is away. */
   const relay = (): Promise<void> => {
-    const { nats } = config;
+    const {
+      nats
+    } = config;
     if (!nats) return relaying;
     relaying = relaying.then(async () => {
       try {
         const waiting = await store.unpublished();
         if (!waiting.length) return;
         await publishToNats(nats, waiting);
-        await store.published(waiting.map(({ seq }) => seq));
+        await store.published(waiting.map(({
+          seq
+        }) => seq));
       } catch (error) {
         config.warn(`the events wait in the outbox: ${(error as Error).message}`);
       }
     });
     return relaying;
   };
-
   const view = async (id: string): Promise<WorkItemView | undefined> => {
     const stored = await store.get(id);
     return stored && viewOf(stored);
   };
-
   return {
     relay,
     view,
@@ -44,23 +91,39 @@ export function inbox(store: Store, config: InboxConfig) {
      * Moves the work item of a run event to the run's status, and gives the replies that link a finished run's pull
      * requests in the work item's Slack threads. A message that is not a run event is an error.
      */
-    async followRun(event: unknown): Promise<{ thread: string; text: string }[]> {
+    async followRun(event: unknown): Promise<{
+      thread: string;
+      text: string;
+    }[]> {
       const fact = runFactOf(event);
       if (typeof fact === "string") throw new Error(fact);
       await store.followRun(fact);
       const followed = await view(fact.workItemId);
-      return followed ? pullRequestReplies(followed, fact.pullRequests) : [];
+      return followed ? pullRequestReplies(followed, fact.pullRequests) : stryMutAct_9fa48("0") ? ["Stryker was here"] : (stryCov_9fa48("0"), []);
     },
     /** The work item of the submission, whether this submission created it, and whether it added its request. */
-    async submit(submission: unknown): Promise<{ created: boolean; added: boolean; view: WorkItemView }> {
+    async submit(submission: unknown): Promise<{
+      created: boolean;
+      added: boolean;
+      view: WorkItemView;
+    }> {
       const workItem = workItemOf(submission);
       const at = config.now();
-      const event = config.nats ? { subject: SUBJECT, event: receivedEvent(workItem, at) } : undefined;
-      const { created, added } = await store.submit(workItem, at, event);
+      const event = config.nats ? {
+        subject: SUBJECT,
+        event: receivedEvent(workItem, at)
+      } : undefined;
+      const {
+        created,
+        added
+      } = await store.submit(workItem, at, event);
       if (created) await relay();
-      return { created, added, view: (await view(workItem.id)) as WorkItemView };
-    },
+      return {
+        created,
+        added,
+        view: (await view(workItem.id)) as WorkItemView
+      };
+    }
   };
 }
-
 export type Inbox = ReturnType<typeof inbox>;

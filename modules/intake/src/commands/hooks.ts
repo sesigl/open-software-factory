@@ -1,3 +1,4 @@
+// @ts-nocheck
 // The webhook endpoints of intake serve (ADR 0063, ADR 0065): Slack through the channel adapter, the forge through the
 // forge adapter, and Sentry. Each reads the raw body, because its sender signs the body as it was sent.
 import type { IssueLabeled } from "@opensoftware/contracts";
