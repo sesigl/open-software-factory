@@ -6,3 +6,4 @@ packages:
   - ports/*
   - adapters/*/*
   - e2e
+  - deploy

@@ -1,0 +1,44 @@
+# The reference factory of the Compose profile (ADR 0074): triage, spec behind a gate, implement, review, verify
+# with evidence, ship. Copy this folder, change the prompts and the repositories, and point FACTORY_DIR at it.
+version: 1
+factory: reference
+description: Turns a request into a reviewed, verified pull request, with a person's approval of the spec.
+providers:
+  harness:
+    claude-code: "^2"
+  # The forge that holds the repositories and the checks of the verify stage.
+  forge:
+    github: "^0.5"
+agents:
+  triage:
+    harness: claude-code
+    model: routes/triage
+    prompt: ./agents/triage.md
+  spec:
+    harness: claude-code
+    model: routes/spec
+    prompt: ./agents/spec.md
+  implement:
+    harness: claude-code
+    model: routes/implement
+    prompt: ./agents/implement.md
+  review:
+    harness: claude-code
+    model: routes/review
+    prompt: ./agents/review.md
+  ship:
+    harness: claude-code
+    model: routes/ship
+    prompt: ./agents/ship.md
+workflow:
+  - stage: triage
+  - stage: spec
+    gate:
+      policy: ./policy/spec.rego
+      approvers: [maintainers]
+  - stage: implement
+  - stage: review
+  - stage: verify
+    agent: implement
+    evidence: required
+  - stage: ship
