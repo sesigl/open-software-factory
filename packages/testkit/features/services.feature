@@ -92,6 +92,14 @@ Feature: Services and outside systems
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-116 @status=implemented
+  Scenario: fakes.slack for containers shows the message a module posts from a container
+    Given a module whose CLI runs curl in a container that posts "hello from a container" to the channel "C1" through the Slack Web API at "DEMO_SLACK_URL"
+    And its system test passes the container URL and token of fakes.slack for containers and expects that message in "C1"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-051 @status=implemented
   Scenario: fakes.slack answers auth.test with the user of the module's messages
     Given a module whose CLI prints the "user_id" of "auth.test" and then the user of the message it posts to "C1"

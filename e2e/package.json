@@ -1,0 +1,30 @@
+{
+  "name": "@opensoftware/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The end-to-end smoke scenarios of the factory on the Compose profile, with the modules of this workspace.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "node scripts/images.ts && vitest run"
+  },
+  "devDependencies": {
+    "@opensoftware/channel-slack": "workspace:*",
+    "@opensoftware/console": "workspace:*",
+    "@opensoftware/contracts": "workspace:*",
+    "@opensoftware/factory-spec": "workspace:*",
+    "@opensoftware/foreman": "workspace:*",
+    "@opensoftware/forge-forgejo": "workspace:*",
+    "@opensoftware/forge-github": "workspace:*",
+    "@opensoftware/gatekeeper": "workspace:*",
+    "@opensoftware/harness-acp": "workspace:*",
+    "@opensoftware/inference-litellm": "workspace:*",
+    "@opensoftware/intake": "workspace:*",
+    "@opensoftware/observer": "workspace:*",
+    "@opensoftware/proof": "workspace:*",
+    "@opensoftware/taskcapture": "workspace:*",
+    "@opensoftware/testkit": "workspace:*"
+  }
+}

@@ -79,7 +79,9 @@ With `INTAKE_SLACK_TOKEN` and `INTAKE_SLACK_SIGNING_SECRET`, the server hands ea
 channel port's adapter in `INTAKE_SLACK_ADAPTER` ([`ports/channel`](../../ports/channel/README.md)). A message that
 mentions the bot becomes a work item whose dedupe key is the thread, whose requester is the person and whose origin
 links the message. A new work item gets the reply `Received as work item <id>.` in the thread; another mention in the
-thread is the same work item and gets no reply.
+thread is the same work item and gets no reply. When the work item's run completes with pull requests, each thread
+of a Slack request for it gets one reply `Pull request: <link>` per pull request (needs `INTAKE_NATS_URL`,
+see [Events](#events)).
 
 Set up a Slack app with the bot scope `chat:write`, the events `app_mention` or `message.channels`, and the request
 URL `https://<server>/slack/events`.
@@ -190,7 +192,8 @@ work item of a run follows it (ADR 0071):
 | `run.started@v1` | `running`, with the run's `runId` |
 | `run.completed@v1` with the outcome `succeeded`, `failed` or `cancelled` | `complete`, `failed` or `cancelled` |
 
-A `run.started@v1` that arrives after its run completed changes nothing. The subjects are core NATS: run events
+A `run.completed@v1` that lists `pullRequests` also links them in the Slack threads of the work item, as described in
+[Slack](#slack). A `run.started@v1` that arrives after its run completed changes nothing. The subjects are core NATS: run events
 published while the server is down do not reach it. While NATS is unreachable the server tries again every 2 seconds.
 
 ## Configuration
@@ -274,3 +277,5 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-INTAKE-036 | implemented | The evidence tool without the foreman's URL is a tool error that names the variable |
 | SCN-INTAKE-037 | implemented | The Factory MCP server lists the tool "run_evidence" |
 | SCN-INTAKE-038 | implemented | A "run.completed@v1" that breaks its contract changes nothing |
+| SCN-INTAKE-039 | implemented | The Slack thread of a work item links the pull request of its finished run |
+| SCN-INTAKE-040 | implemented | A run's start adds no reply to the Slack thread, only its pull request does |

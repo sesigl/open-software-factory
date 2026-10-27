@@ -1,0 +1,5 @@
+# The Compose profile of deploy/ with the changes of the end-to-end scenarios in override.yaml (ADR 0076).
+include:
+  - path:
+      - ../../deploy/compose/compose.yaml
+      - ./override.yaml

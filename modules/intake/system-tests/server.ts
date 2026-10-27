@@ -183,8 +183,11 @@ export async function eventually(server: Awaited<ReturnType<typeof serving>>, de
 
 export const RUN = "run_5d41402abc4b2a76b971";
 
-/** The foreman's "run.started@v1" for the work item, or with an outcome its "run.completed@v1". */
-export function runEvent(workItemId: string, outcome?: "succeeded" | "failed" | "cancelled") {
+/**
+ * The foreman's "run.started@v1" for the work item, or with an outcome its "run.completed@v1", which lists the pull
+ * requests when there are some.
+ */
+export function runEvent(workItemId: string, outcome?: "succeeded" | "failed" | "cancelled", pullRequests?: string[]) {
   const data = {
     runId: RUN,
     workItemId,
@@ -201,7 +204,7 @@ export function runEvent(workItemId: string, outcome?: "succeeded" | "failed" | 
         type: "run.completed@v1",
         time: "2026-01-01T00:05:00Z",
         subject: RUN,
-        data: { ...data, outcome, endedAt: "2026-01-01T00:05:00Z" },
+        data: { ...data, outcome, endedAt: "2026-01-01T00:05:00Z", ...(pullRequests ? { pullRequests } : {}) },
       }
     : {
         specversion: "1.0",
@@ -214,6 +217,12 @@ export function runEvent(workItemId: string, outcome?: "succeeded" | "failed" | 
       };
 }
 
+/** The NATS subject of each run event. */
+const SUBJECTS: Record<string, string> = {
+  "run.started@v1": "osf.run.started.v1",
+  "run.completed@v1": "osf.run.completed.v1",
+};
+
 /**
  * The server, with NATS, received the README's work; `publish` sends a run event of its work item as the foreman does,
  * and `until` reads the work item until it has the status.
@@ -222,16 +231,33 @@ export async function following(sut: Sut, fakes: Fakes, env: Record<string, stri
   const nats = await fakes.nats();
   const server = await received(sut, fakes, { INTAKE_NATS_URL: nats.url, ...env });
   const events = await sut.events.watch(nats);
-  const subjects = { "run.started@v1": "osf.run.started.v1", "run.completed@v1": "osf.run.completed.v1" };
   return {
     ...server,
-    publish: (event: ReturnType<typeof runEvent>) =>
-      events.publish(subjects[event.type as keyof typeof subjects], event as never),
+    publish: (event: ReturnType<typeof runEvent>) => events.publish(SUBJECTS[event.type] as string, event as never),
     async until(status: WorkItemView["status"]) {
       await expect
         .poll(async () => (await server.workItem(server.id))?.status, { timeout: 10_000, interval: 50 })
         .toBe(status);
       return (await server.workItem(server.id)) as WorkItemView;
     },
+  };
+}
+
+/**
+ * The server, with NATS and the Slack channel adapter, made a work item of a mention in CHANNEL; `publish` sends a run
+ * event of its work item as the foreman does.
+ */
+export async function slackFollowing(sut: Sut, fakes: Fakes) {
+  const nats = await fakes.nats();
+  const server = await slackServing(sut, fakes, { INTAKE_NATS_URL: nats.url });
+  const events = await sut.events.watch(nats);
+  const ts = (await server.slack.say({ channel: CHANNEL, text: `<@${server.slack.bot}> Export reports as CSV` })).ts;
+  await expect.poll(() => server.replies().length, { timeout: 10_000, interval: 50 }).toBe(1);
+  const id = /wi_[0-9a-f]{20}/.exec(server.replies()[0]?.text ?? "")?.[0] as string;
+  return {
+    ...server,
+    id,
+    ts,
+    publish: (event: ReturnType<typeof runEvent>) => events.publish(SUBJECTS[event.type] as string, event as never),
   };
 }

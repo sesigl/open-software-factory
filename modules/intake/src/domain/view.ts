@@ -46,20 +46,24 @@ export const receivedEvent = (workItem: WorkItem, at: number): WorkReceived => (
 /** The foreman's run events that move a work item on (ADR 0071). */
 export const RUN_SUBJECTS = ["osf.run.started.v1", "osf.run.completed.v1"];
 
-/** What a run event says about its work item: its run, and the status it moves to. */
+/** What a run event says about its work item: its run, the status it moves to, and the run's pull requests. */
 export interface RunFact {
   workItemId: string;
   runId: string;
   status: Exclude<Status, "received">;
+  pullRequests: string[];
 }
 
-type RunEvent = { data: { runId: string; workItemId: string; outcome?: "succeeded" | "failed" | "cancelled" } };
+type RunEvent = {
+  data: { runId: string; workItemId: string; outcome?: "succeeded" | "failed" | "cancelled"; pullRequests?: string[] };
+};
 
 /** The fact of a "run.started@v1" or "run.completed@v1", or a problem for any other message. */
 export function runFactOf(event: unknown): RunFact | string {
   const type = (event as { type?: unknown } | undefined)?.type;
   const format = type === "run.started@v1" ? "run-started" : type === "run.completed@v1" ? "run-completed" : undefined;
   if (!format || !isValid(format, event)) return `not a run.started@v1 or run.completed@v1: ${JSON.stringify(event)}`;
-  const { runId, workItemId, outcome } = (event as RunEvent).data;
-  return { workItemId, runId, status: !outcome ? "running" : outcome === "succeeded" ? "complete" : outcome };
+  const { runId, workItemId, outcome, pullRequests = [] } = (event as RunEvent).data;
+  const status = !outcome ? "running" : outcome === "succeeded" ? "complete" : outcome;
+  return { workItemId, runId, status, pullRequests };
 }
