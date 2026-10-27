@@ -8,7 +8,8 @@ How the factory works with the company's code forge: branches, pull requests, ch
 webhooks, and the pull request events that come back. Decisions: [ADR 0057](../../docs/decisions/0057-forge-port.md),
 [ADR 0060](../../docs/decisions/0060-factory-spec-forge-port.md) (event names, `hooks`, `unhook`),
 [ADR 0062](../../docs/decisions/0062-gatekeeper-ports.md) (`comments`, the author, labels, draft and paths of `pr`),
-[ADR 0065](../../docs/decisions/0065-intake-issues-and-alerts.md) (`issue.labeled@v1`).
+[ADR 0065](../../docs/decisions/0065-intake-issues-and-alerts.md) (`issue.labeled@v1`),
+[ADR 0073](../../docs/decisions/0073-forge-prs-and-console-inbox.md) (`prs`).
 
 ## The interface
 
@@ -20,6 +21,7 @@ command line. A repository is `<owner>/<name>`; every command prints JSON lines.
 | branch | `<adapter> branch <repo> <branch> [--from <ref>]` prints `{"branch", "sha"}`; the default `--from` is the default branch |
 | open a pull request | `<adapter> open-pr <repo> <head> --title <text> [--body <text>] [--base <branch>]` prints `{"number", "url", "head", "base", "sha"}` |
 | merge state | `<adapter> pr <repo> <number>` prints `{"number", "url", "title", "state", "mergeable", "head", "base", "sha", "mergeCommit", "author", "labels", "draft", "paths", "checks"}` |
+| list pull requests | `<adapter> prs <repo> [--head <prefix>] [--state open\|closed\|all]` prints one `{"number", "url", "title", "state", "head", "base", "author", "created", "draft", "review"}` per pull request, the highest number first |
 | checks | `<adapter> check <repo> <sha> <name> <pending\|success\|failure\|error> [--description <text>] [--url <url>]` |
 | comment | `<adapter> comment <repo> <number> <text>` prints `{"id", "url"}` |
 | comments | `<adapter> comments <repo> <number>` prints one `{"id", "url", "author", "time", "text", "mine"}` per comment of the conversation, oldest first |
@@ -33,7 +35,10 @@ command line. A repository is `<owner>/<name>`; every command prints JSON lines.
 `state` is `open`, `closed` or `merged`; `mergeable` is true when the pull request has no conflict with its base;
 `checks` lists `{"name", "state", "description", "url"}` of the head commit, one per name. `author` is
 `<adapter>:<login>`, `labels` lists the label names, and `paths` holds the first 100 changed files. In `comments`,
-`time` is ISO 8601 and `mine` is true for the comments of the token's user.
+`time` is ISO 8601 and `mine` is true for the comments of the token's user. In `prs`, `--head` keeps the pull
+requests whose branch starts with the prefix, `--state` is `open` by default (`closed` holds the merged ones),
+`created` is ISO 8601, and `review` is `changes_requested` when the latest review of some reviewer asks for changes,
+else `approved` when one approves, else `none`; comments and dismissed reviews do not count.
 
 An event name is the port's, `<object>[.<action>]` as in an automation of `factory.yaml`: `pull_request`,
 `pull_request.labeled`, `pull_request_review`, `issue`, `issue.labeled`, `issue_comment` or `push`. Each adapter maps

@@ -5,10 +5,12 @@ covers: [modules/console/src/**]
 # console
 
 A read-only web view of a factory. It shows every run of every foreman with its state, origin, requester, pull
-request and age; one run's requests, stages, gates, checks, transcripts and trace; and the factory definition with
-a link to the file in Git, where it changes. It keeps no state: each page asks the foreman's, intake's and
-gatekeeper's APIs when it is opened. Temporal, the trace store and the dashboards keep their own UIs; the console
-links to them. Decision: [ADR 0072](../../docs/decisions/0072-console.md).
+request and age; one run's requests, stages, gates, checks, transcripts and trace; the factory definition with
+a link to the file in Git, where it changes; and the self-improvement inbox of observer's open proposals. It keeps no
+state: each page asks the foreman's, intake's and gatekeeper's APIs, or the forge port's adapter, when it is opened.
+Temporal, the trace store and the dashboards keep their own UIs; the console links to them. Decisions:
+[ADR 0072](../../docs/decisions/0072-console.md), [ADR 0073](../../docs/decisions/0073-forge-prs-and-console-inbox.md)
+(the inbox).
 
 ## Quick start
 
@@ -38,6 +40,7 @@ Open <http://localhost:8080>. The page lists the foreman's runs, the running one
 | `/runs/<runId>` | One run: its state, factory and factory version, age, pull request, trace and Temporal history; its origin, or with `CONSOLE_INTAKE_URL` every request of its work item; and its stages as its evidence, each with its agent, state, transcript, gate, checks and the reason it failed. 404 when no foreman knows the run. |
 | `/factory` | The factory definition in `CONSOLE_FACTORY`: its name, description, providers and agents with their harness and model. |
 | `/factory/agents/<name>` | One agent's configuration, and the link to the file on the branch where it changes. 404 for an agent the factory does not declare. |
+| `/inbox` | The self-improvement inbox: the open pull requests of `CONSOLE_INBOX_REPOSITORY` whose branch starts with `CONSOLE_INBOX_PREFIX` (default `observer/`), newest first, each with its link, branch, author, state ("approved", "changes requested" or "needs review") and age. A forge adapter that fails is named above the list. 404 without `CONSOLE_INBOX_REPOSITORY`. |
 
 Every page links the runs, the factory and the dashboards in `CONSOLE_LINKS`. The runs pages reload themselves every
 `CONSOLE_REFRESH` seconds. The console is read-only: it has no forms, and any method but `GET` and `HEAD` answers 405.
@@ -45,6 +48,12 @@ It shows what the foreman and intake show, so run it behind your sign-in proxy, 
 
 Several factories: list each foreman in `CONSOLE_FOREMAN_URL`, comma-separated, and their tokens in the same order in
 `CONSOLE_FOREMAN_TOKEN`, or one token for all.
+
+The inbox: observer opens each proposal as a pull request from a branch `observer/<problem>-<hash>`
+([observer](../observer/README.md)). The console runs the forge port's adapter in `CONSOLE_FORGE_ADAPTER` with
+`prs <repo> --head <prefix>` ([forge port](../../ports/forge/README.md)), with `CONSOLE_FORGE_URL` and
+`CONSOLE_FORGE_TOKEN` as its `FORGE_URL` and `FORGE_TOKEN`. A token that may read pull requests is enough. For a
+Forgejo, such as Codeberg, set `CONSOLE_FORGE_ADAPTER=npx -y @opensoftware/forge-forgejo` and its URL.
 
 Links: `CONSOLE_TRACE_URL` and `CONSOLE_SESSION_URL` are URL templates of the trace store, such as Langfuse or
 Phoenix, with `{runId}` and `{sessionId}`. The foreman sets the run's ID as `osf.run.id` on every run's traces
@@ -75,6 +84,11 @@ run's history: `<url>/namespaces/<CONSOLE_TEMPORAL_NAMESPACE>/workflows/<runId>`
 | `CONSOLE_FACTORY_PATH` | string | `"factory.yaml"` | serve: the path of the factory definition in its Git repository. |
 | `CONSOLE_REPOSITORY_URL` | string |  | serve: the web URL of the factory's Git repository, like https://github.com/acme/factory. Set, the configuration pages link the file. |
 | `CONSOLE_BRANCH` | string | `"main"` | serve: the branch where the factory definition changes. |
+| `CONSOLE_INBOX_REPOSITORY` | string |  | serve: the repository of observer's pull requests, as <owner>/<name>, like acme/factory. Set, /inbox lists its open proposals. |
+| `CONSOLE_INBOX_PREFIX` | string | `"observer/"` | serve: the start of the branch names that /inbox lists. |
+| `CONSOLE_FORGE_ADAPTER` | string | `"npx -y @opensoftware/forge-github"` | serve: the command line of the forge port's adapter that /inbox runs with prs (ADR 0073). |
+| `CONSOLE_FORGE_URL` | string |  | serve: the forge's API, the adapter's FORGE_URL, like https://codeberg.org for forge-forgejo. Default: the adapter's own. |
+| `CONSOLE_FORGE_TOKEN` | string |  | serve: the adapter's FORGE_TOKEN; a token that may read pull requests is enough. |
 
 ## Releases
 
@@ -123,3 +137,9 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-027 | implemented | Every page links the dashboards in "CONSOLE_LINKS" |
 | SCN-CONSOLE-028 | implemented | A foreman that cannot be reached is named on the runs page |
 | SCN-CONSOLE-029 | implemented | An origin link that is not http or https is shown as text |
+| SCN-CONSOLE-030 | implemented | The inbox lists observer's open pull requests, the newest first |
+| SCN-CONSOLE-031 | implemented | A proposal shows its age and the state "needs review" or "approved" |
+| SCN-CONSOLE-032 | implemented | A proposal a reviewer asked to change shows "changes requested" |
+| SCN-CONSOLE-033 | implemented | The inbox lists the branches of the prefix in "CONSOLE_INBOX_PREFIX" |
+| SCN-CONSOLE-034 | implemented | A forge that refuses the token is named on the inbox |
+| SCN-CONSOLE-035 | implemented | Without a repository the inbox answers 404 and names the variable |

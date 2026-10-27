@@ -7,9 +7,11 @@ import type { GateView, RunView, WorkItemView, WorkRequest } from "@opensoftware
 import Fastify, { type FastifyReply } from "fastify";
 import { type Api, getJson } from "../adapters/apis.ts";
 import { readFactory } from "../adapters/factory-file.ts";
+import { proposals } from "../adapters/forge.ts";
 import { fill, isState, list, namedLinks, orderRuns, STATES } from "../domain/runs.ts";
 import { agentPage, factoryPage, type Source } from "../pages/factory.ts";
 import { type Frame, page, problem } from "../pages/html.ts";
+import { inboxPage } from "../pages/inbox.ts";
 import { runPage } from "../pages/run.ts";
 import { runsPage } from "../pages/runs.ts";
 
@@ -40,17 +42,24 @@ export async function serve(env: Env) {
   const branch = env.CONSOLE_BRANCH || "main";
   const repository = env.CONSOLE_REPOSITORY_URL?.replace(/\/$/, "");
   const source: Source = { path, branch, url: repository && `${repository}/blob/${branch}/${path}` };
+  const inbox = env.CONSOLE_INBOX_REPOSITORY;
+  const prefix = env.CONSOLE_INBOX_PREFIX || "observer/";
+  const forge = {
+    command: env.CONSOLE_FORGE_ADAPTER || "npx -y @opensoftware/forge-github",
+    url: env.CONSOLE_FORGE_URL || undefined,
+    token: env.CONSOLE_FORGE_TOKEN,
+  };
 
   const send = (
     reply: FastifyReply,
     status: number,
-    frame: Omit<Frame, "links">,
+    frame: Omit<Frame, "links" | "inbox">,
     content: Parameters<typeof page>[1],
   ) =>
     reply
       .code(status)
       .type("text/html; charset=utf-8")
-      .send(page({ ...frame, links }, content));
+      .send(page({ ...frame, links, inbox: Boolean(inbox) }, content));
 
   const app = Fastify({ logger: false });
   app.get("/pico.css", (_request, reply) => reply.type("text/css").send(PICO));
@@ -111,6 +120,19 @@ export async function serve(env: Env) {
     const agent = readFactory(factoryFile).agents?.[name];
     if (!agent) return send(reply, 404, { title: name }, problem("Not found", `no agent ${name} in ${path}`));
     return send(reply, 200, { title: name }, agentPage(name, agent, source));
+  });
+
+  app.get("/inbox", async (_request, reply) => {
+    if (!inbox)
+      return send(
+        reply,
+        404,
+        { title: "Inbox" },
+        problem("No inbox", "no inbox: set CONSOLE_INBOX_REPOSITORY to the repository of observer's pull requests"),
+      );
+    const answer = await proposals(forge, inbox, prefix);
+    const notes = answer.ok ? [] : [answer.note];
+    return send(reply, 200, { title: "Inbox", notes }, inboxPage(inbox, answer.ok ? answer.body : [], now()));
   });
 
   // Read-only: any method but GET and HEAD answers 405.

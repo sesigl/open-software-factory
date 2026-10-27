@@ -63,6 +63,7 @@ npx @opensoftware/forge-github event delivery.json                # a pr.opened@
 | `forge-github branch <repo> <branch> [--from <ref>]` | Create a branch from the default branch or the ref; print `{"branch", "sha"}`. |
 | `forge-github open-pr <repo> <head> --title <text> [--body <text>] [--base <branch>]` | Open a pull request; print `{"number", "url", "head", "base", "sha"}`. |
 | `forge-github pr <repo> <number>` | Print the pull request's state, `mergeable`, head and merge commit, author, labels, draft, first 100 changed paths, and checks. |
+| `forge-github prs <repo> [--head <prefix>] [--state open\|closed\|all]` | Print each pull request whose branch starts with the prefix, the highest number first, as `{"number", "url", "title", "state", "head", "base", "author", "created", "draft", "review"}`; `review` is `approved`, `changes_requested` or `none` (ADR 0073). |
 | `forge-github check <repo> <sha> <name> <pending\|success\|failure\|error> [--description <text>] [--url <url>]` | Post a check on a commit. |
 | `forge-github comment <repo> <number> <text>` | Comment on a pull request; print `{"id", "url"}`. |
 | `forge-github comments <repo> <number>` | Print the first 100 comments of the conversation, oldest first, as `{"id", "url", "author", "time", "text", "mine"}`. |

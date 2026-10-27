@@ -26,6 +26,9 @@
     "docs": "node ../../../tools/bin/osf.ts docs .",
     "mutation": "node ../../../tools/bin/osf.ts mutation ."
   },
+  "osf": {
+    "mutationLinesPerShard": 25
+  },
   "devDependencies": {
     "@opensoftware/contracts": "workspace:*",
     "@opensoftware/testkit": "workspace:*"
