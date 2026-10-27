@@ -1,0 +1,46 @@
+{{- $ctx := dict "root" . "component" "intake" }}
+{{- include "osf.moduleService" $ctx }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "osf.name" $ctx }}
+  labels:
+    {{- include "osf.labels" $ctx | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "osf.selector" $ctx | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "osf.labels" $ctx | nindent 8 }}
+    spec:
+      {{- include "osf.podSecurity" . | nindent 6 }}
+      initContainers:
+        {{- include "osf.databasesInit" (dict "root" . "databases" (list "intake")) | nindent 8 }}
+      containers:
+        - name: intake
+          image: {{ include "osf.image" (dict "root" . "name" "intake" "tag" .Values.images.intake) }}
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          args: [intake, serve]
+          env:
+            {{- include "osf.secretEnv" (dict "root" . "name" "POSTGRES_PASSWORD" "key" "postgres-password") | nindent 12 }}
+            {{- include "osf.secretEnv" (dict "root" . "name" "INTAKE_API_TOKEN" "key" "intake-api-token") | nindent 12 }}
+            - name: INTAKE_DATABASE_URL
+              value: {{ include "osf.databaseUrl" (dict "root" . "database" "intake") | quote }}
+            - name: INTAKE_NATS_URL
+              value: {{ include "osf.natsUrl" . | quote }}
+            - name: INTAKE_SLACK_ADAPTER
+              value: channel-slack
+            - name: INTAKE_FORGE_ADAPTER
+              value: {{ .Values.intake.forgeAdapter | quote }}
+          ports:
+            - name: http
+              containerPort: 8080
+          {{- include "osf.moduleProbe" "/v1/work-items/none" | nindent 10 }}
+          {{- with .Values.intake.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}

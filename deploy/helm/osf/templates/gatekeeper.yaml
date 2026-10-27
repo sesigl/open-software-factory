@@ -1,0 +1,56 @@
+{{- $ctx := dict "root" . "component" "gatekeeper" }}
+{{- include "osf.moduleService" $ctx }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "osf.name" $ctx }}
+  labels:
+    {{- include "osf.labels" $ctx | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "osf.selector" $ctx | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "osf.labels" $ctx | nindent 8 }}
+      annotations:
+        checksum/factory: {{ include "osf.factoryFiles" . | sha256sum }}
+    spec:
+      {{- include "osf.podSecurity" . | nindent 6 }}
+      initContainers:
+        {{- include "osf.databasesInit" (dict "root" . "databases" (list "gatekeeper")) | nindent 8 }}
+      containers:
+        - name: gatekeeper
+          image: {{ include "osf.image" (dict "root" . "name" "gatekeeper" "tag" .Values.images.gatekeeper) }}
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          args: [gatekeeper, serve, --policy, /factory/policy/spec.rego, --groups, /factory/groups.json, --channel, {{ printf "slack:%s" .Values.gatekeeper.slackChannel | quote }}]
+          env:
+            {{- include "osf.secretEnv" (dict "root" . "name" "POSTGRES_PASSWORD" "key" "postgres-password") | nindent 12 }}
+            {{- include "osf.secretEnv" (dict "root" . "name" "GATEKEEPER_API_TOKEN" "key" "gatekeeper-api-token") | nindent 12 }}
+            {{- include "osf.secretEnv" (dict "root" . "name" "GATEKEEPER_SLACK_TOKEN" "key" "gatekeeper-slack-token") | nindent 12 }}
+            {{- include "osf.secretEnv" (dict "root" . "name" "GATEKEEPER_SLACK_SIGNING_SECRET" "key" "gatekeeper-slack-signing-secret") | nindent 12 }}
+            - name: GATEKEEPER_DATABASE_URL
+              value: {{ include "osf.databaseUrl" (dict "root" . "database" "gatekeeper") | quote }}
+            - name: GATEKEEPER_NATS_URL
+              value: {{ include "osf.natsUrl" . | quote }}
+            - name: GATEKEEPER_SLACK_ADAPTER
+              value: channel-slack
+            - name: GATEKEEPER_FORGE_ADAPTER
+              value: {{ .Values.gatekeeper.forgeAdapter | quote }}
+          ports:
+            - name: http
+              containerPort: 8080
+          {{- include "osf.moduleProbe" "/v1/gates/none" | nindent 10 }}
+          {{- with .Values.gatekeeper.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: factory-source
+              mountPath: /factory
+              readOnly: true
+      volumes:
+        {{- include "osf.factoryVolume" . | nindent 8 }}

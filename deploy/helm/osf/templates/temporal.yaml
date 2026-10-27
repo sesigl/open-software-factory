@@ -1,0 +1,100 @@
+{{- if .Values.temporal.enabled }}
+{{- $name := include "osf.name" (dict "root" . "component" "temporal") }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "osf.labels" (dict "root" . "component" "temporal") | nindent 4 }}
+data:
+  # The same configuration as the Compose profile's: Temporal fills in the environment itself.
+  config.yaml: {{ .Files.Get "files/temporal/config.yaml" | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "osf.labels" (dict "root" . "component" "temporal") | nindent 4 }}
+spec:
+  selector:
+    {{- include "osf.selector" (dict "root" . "component" "temporal") | nindent 4 }}
+  ports:
+    - name: grpc
+      port: 7233
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "osf.labels" (dict "root" . "component" "temporal") | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "osf.selector" (dict "root" . "component" "temporal") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "osf.labels" (dict "root" . "component" "temporal") | nindent 8 }}
+      annotations:
+        checksum/config: {{ .Files.Get "files/temporal/config.yaml" | sha256sum }}
+    spec:
+      {{- include "osf.podSecurity" . | nindent 6 }}
+      initContainers:
+        {{- include "osf.databasesInit" (dict "root" . "databases" (list "temporal" "temporal_visibility")) | nindent 8 }}
+        # The schema of both databases, set up or updated to the server's version, as the Compose profile does.
+        - name: schema
+          image: {{ .Values.temporal.adminToolsImage }}
+          command: [sh, -c]
+          args:
+            - |
+              set -eu
+              schema=/etc/temporal/schema/postgresql/v12
+              for db in temporal temporal_visibility; do
+                dir=$schema/temporal/versioned
+                [ "$db" = temporal_visibility ] && dir=$schema/visibility/versioned
+                temporal-sql-tool --plugin postgres12 --ep "$SQL_HOST" -p "$SQL_PORT" -u "$SQL_USER" --db "$db" setup-schema -v 0.0
+                temporal-sql-tool --plugin postgres12 --ep "$SQL_HOST" -p "$SQL_PORT" -u "$SQL_USER" --db "$db" update-schema -d "$dir"
+              done
+          env:
+            - name: SQL_HOST
+              value: {{ include "osf.postgresHost" . | quote }}
+            - name: SQL_PORT
+              value: {{ include "osf.postgresPort" . | quote }}
+            - name: SQL_USER
+              value: {{ include "osf.postgresUser" . | quote }}
+            {{- include "osf.secretEnv" (dict "root" . "name" "SQL_PASSWORD" "key" "postgres-password") | nindent 12 }}
+      containers:
+        - name: temporal
+          image: {{ .Values.temporal.image }}
+          env:
+            - name: POSTGRES_HOST
+              value: {{ include "osf.postgresHost" . | quote }}
+            - name: POSTGRES_PORT
+              value: {{ include "osf.postgresPort" . | quote }}
+            - name: POSTGRES_USER
+              value: {{ include "osf.postgresUser" . | quote }}
+            {{- include "osf.secretEnv" (dict "root" . "name" "POSTGRES_PASSWORD" "key" "postgres-password") | nindent 12 }}
+            - name: BIND_ON_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: TEMPORAL_SERVER_CONFIG_FILE_PATH
+              value: /etc/temporal/osf/config.yaml
+          ports:
+            - name: grpc
+              containerPort: 7233
+          readinessProbe:
+            tcpSocket:
+              port: 7233
+            periodSeconds: 2
+          volumeMounts:
+            - name: config
+              mountPath: /etc/temporal/osf
+      volumes:
+        - name: config
+          configMap:
+            name: {{ $name }}
+{{- end }}

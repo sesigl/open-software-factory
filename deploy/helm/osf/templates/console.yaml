@@ -1,0 +1,65 @@
+{{- $ctx := dict "root" . "component" "console" }}
+{{- include "osf.moduleService" $ctx }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "osf.name" $ctx }}
+  labels:
+    {{- include "osf.labels" $ctx | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "osf.selector" $ctx | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "osf.labels" $ctx | nindent 8 }}
+      annotations:
+        checksum/factory: {{ include "osf.factoryFiles" . | sha256sum }}
+    spec:
+      {{- include "osf.podSecurity" . | nindent 6 }}
+      containers:
+        - name: console
+          image: {{ include "osf.image" (dict "root" . "name" "console" "tag" .Values.images.console) }}
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          args: [console, serve]
+          env:
+            {{- include "osf.secretEnv" (dict "root" . "name" "CONSOLE_FOREMAN_TOKEN" "key" "foreman-api-token") | nindent 12 }}
+            {{- include "osf.secretEnv" (dict "root" . "name" "CONSOLE_INTAKE_TOKEN" "key" "intake-api-token") | nindent 12 }}
+            {{- include "osf.secretEnv" (dict "root" . "name" "CONSOLE_GATEKEEPER_TOKEN" "key" "gatekeeper-api-token") | nindent 12 }}
+            - name: CONSOLE_FOREMAN_URL
+              value: {{ printf "http://%s:8080" (include "osf.name" (dict "root" . "component" "foreman")) | quote }}
+            - name: CONSOLE_INTAKE_URL
+              value: {{ printf "http://%s:8080" (include "osf.name" (dict "root" . "component" "intake")) | quote }}
+            - name: CONSOLE_GATEKEEPER_URL
+              value: {{ printf "http://%s:8080" (include "osf.name" (dict "root" . "component" "gatekeeper")) | quote }}
+            - name: CONSOLE_FACTORY
+              value: /factory/factory.yaml
+            - name: CONSOLE_TEMPORAL_NAMESPACE
+              value: {{ .Values.temporalNamespace | quote }}
+            - name: CONSOLE_FORGE_ADAPTER
+              value: {{ .Values.console.forgeAdapter | quote }}
+            {{- with .Values.console.temporalUrl }}
+            - name: CONSOLE_TEMPORAL_URL
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.console.links }}
+            - name: CONSOLE_LINKS
+              value: {{ . | quote }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: 8080
+          {{- include "osf.moduleProbe" "/factory" | nindent 10 }}
+          {{- with .Values.console.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: factory-source
+              mountPath: /factory
+              readOnly: true
+      volumes:
+        {{- include "osf.factoryVolume" . | nindent 8 }}

@@ -38,7 +38,9 @@ workflow:
       approvers: [maintainers]
   - stage: implement
   - stage: review
+  # Starts when the check "verify" of the run's pull request succeeded, and must produce evidence.
   - stage: verify
     agent: implement
+    checks: [verify]
     evidence: required
   - stage: ship

@@ -1,0 +1,59 @@
+{{- if .Values.nats.enabled }}
+{{- $name := include "osf.name" (dict "root" . "component" "nats") }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "osf.labels" (dict "root" . "component" "nats") | nindent 4 }}
+spec:
+  selector:
+    {{- include "osf.selector" (dict "root" . "component" "nats") | nindent 4 }}
+  ports:
+    - name: client
+      port: 4222
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "osf.labels" (dict "root" . "component" "nats") | nindent 4 }}
+spec:
+  serviceName: {{ $name }}
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "osf.selector" (dict "root" . "component" "nats") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "osf.labels" (dict "root" . "component" "nats") | nindent 8 }}
+    spec:
+      containers:
+        - name: nats
+          image: {{ .Values.nats.image }}
+          args: [--jetstream, --store_dir=/data, --http_port=8222]
+          ports:
+            - name: client
+              containerPort: 4222
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8222
+            periodSeconds: 2
+          volumeMounts:
+            - name: data
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        {{- with .Values.nats.persistence.storageClass }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.nats.persistence.size }}
+{{- end }}
