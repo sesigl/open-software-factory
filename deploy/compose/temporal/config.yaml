@@ -1,0 +1,91 @@
+# enable-template
+# The Temporal server of the Compose profile on PostgreSQL (ADR 0004, ADR 0074). The first line makes Temporal read
+# this file as a Go template, so the password comes from the environment and is never written here.
+log:
+  stdout: true
+  level: warn
+
+persistence:
+  defaultStore: default
+  visibilityStore: visibility
+  numHistoryShards: 4
+  datastores:
+    default:
+      sql:
+        pluginName: postgres12
+        databaseName: temporal
+        connectAddr: postgres:5432
+        connectProtocol: tcp
+        user: {{ env "POSTGRES_USER" }}
+        password: {{ env "POSTGRES_PASSWORD" }}
+        maxConns: 20
+        maxIdleConns: 20
+        maxConnLifetime: 1h
+    visibility:
+      sql:
+        pluginName: postgres12
+        databaseName: temporal_visibility
+        connectAddr: postgres:5432
+        connectProtocol: tcp
+        user: {{ env "POSTGRES_USER" }}
+        password: {{ env "POSTGRES_PASSWORD" }}
+        maxConns: 10
+        maxIdleConns: 10
+        maxConnLifetime: 1h
+
+global:
+  membership:
+    maxJoinDuration: 30s
+    broadcastAddress: {{ env "BIND_ON_IP" }}
+
+services:
+  frontend:
+    rpc:
+      grpcPort: 7233
+      membershipPort: 6933
+      bindOnIP: 0.0.0.0
+      httpPort: 7243
+  matching:
+    rpc:
+      grpcPort: 7235
+      membershipPort: 6935
+      bindOnIP: {{ env "BIND_ON_IP" }}
+  history:
+    rpc:
+      grpcPort: 7234
+      membershipPort: 6934
+      bindOnIP: {{ env "BIND_ON_IP" }}
+  worker:
+    rpc:
+      grpcPort: 7239
+      membershipPort: 6939
+      bindOnIP: {{ env "BIND_ON_IP" }}
+
+clusterMetadata:
+  enableGlobalNamespace: false
+  failoverVersionIncrement: 10
+  masterClusterName: active
+  currentClusterName: active
+  clusterInformation:
+    active:
+      enabled: true
+      initialFailoverVersion: 1
+      rpcName: frontend
+      rpcAddress: 127.0.0.1:7233
+      httpAddress: 127.0.0.1:7243
+
+dcRedirectionPolicy:
+  policy: noop
+
+archival:
+  history:
+    state: disabled
+  visibility:
+    state: disabled
+
+namespaceDefaults:
+  archival:
+    history:
+      state: disabled
+    visibility:
+      state: disabled
