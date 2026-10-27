@@ -26,6 +26,16 @@ export function replyTo(thread: string, outcome: { created: boolean; added: bool
   return outcome.added && fromThread.length === 1 ? `Added to work item ${id}.` : undefined;
 }
 
+/** The replies that link a finished run's pull requests, one in the thread of each Slack request of its work item. */
+export function pullRequestReplies(view: WorkItemView, pullRequests: string[]): { thread: string; text: string }[] {
+  if (!pullRequests.length) return [];
+  const threads = view.requests.flatMap(({ origin }) =>
+    origin.source === "slack" && origin.externalId ? [origin.externalId] : [],
+  );
+  const text = pullRequests.map((url) => `Pull request: ${url}`).join("\n");
+  return [...new Set(threads)].map((thread) => ({ thread, text }));
+}
+
 /** The task of an issue that carries the label, with the issue's link as its key; undefined for any other issue. */
 export function issueWork(event: IssueLabeled, label: string): Submission | undefined {
   const { data } = event;

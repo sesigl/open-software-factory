@@ -7,7 +7,7 @@ import { startNats, startTemporal } from "./binaries.ts";
 import { type Collector, startCollector } from "./collector.ts";
 import { type Forge, startForge } from "./forge.ts";
 import { type FakeGitHub, startGitHub } from "./github.ts";
-import { type Harness, type HarnessTurn, startHarness } from "./harness.ts";
+import { type Harness, type HarnessOptions, type HarnessTurn, startHarness } from "./harness.ts";
 import { type FakeHttp, type HttpOptions, type HttpRoute, startHttp } from "./http.ts";
 import { type Inference, type InferenceOptions, startInference } from "./inference.ts";
 import { type ModelGateway, type ScriptedReply, startModelGateway } from "./model-gateway.ts";
@@ -15,7 +15,7 @@ import { type Postgres, startPostgres } from "./postgres.ts";
 import { type Sandbox, type SandboxOptions, startSandbox } from "./sandbox.ts";
 import { type FakeSentry, startSentry } from "./sentry.ts";
 import { type Nats, type S3, startS3, type Temporal } from "./services.ts";
-import { type FakeSlack, startSlack } from "./slack.ts";
+import { type FakeSlack, type SlackOptions, startSlack } from "./slack.ts";
 
 export interface Fakes {
   /** A fixture file from the module's `system-tests/fixtures/` folder. */
@@ -26,8 +26,11 @@ export interface Fakes {
   modelGateway(script: ScriptedReply[]): Promise<ModelGateway>;
   /** Starts a scripted JSON API. A request no route names fails the scenario with the request shown. */
   http(routes: HttpRoute[], options?: HttpOptions): Promise<FakeHttp>;
-  /** A scripted coding agent that speaks ACP on stdio. A prompt no turn matches fails the scenario. */
-  harness(script: HarnessTurn[]): Promise<Harness>;
+  /**
+   * A scripted coding agent that speaks ACP on stdio. A prompt no turn matches fails the scenario, as does a command
+   * of a turn that fails. With `containers: true`, a module runs it in a container (ADR 0076).
+   */
+  harness(script: HarnessTurn[], options?: HarnessOptions): Promise<Harness>;
   /** A sandbox adapter whose sandboxes are folders on the host; it records what the module asked of it (ADR 0068). */
   sandbox(options?: SandboxOptions): Promise<Sandbox>;
   /** An inference adapter that serves no gateway; it records the configs and keys a module asked for (ADR 0070). */
@@ -51,8 +54,11 @@ export interface Fakes {
    * a person's comments in a pull request's conversation (ADR 0059).
    */
   github(): Promise<FakeGitHub>;
-  /** A fake of the Slack Web API. An unsupported method fails the scenario. */
-  slack(): Promise<FakeSlack>;
+  /**
+   * A fake of the Slack Web API. An unsupported method fails the scenario. With `containers: true`, a container
+   * reaches it at `containerUrl` (ADR 0076).
+   */
+  slack(options?: SlackOptions): Promise<FakeSlack>;
   /** A fake of Sentry that sends a webhook a signed alert about an event (ADR 0065). */
   sentry(): Promise<FakeSentry>;
   /** The OpenTelemetry Collector in a container, running `config`; it exports to OTEL_EXPORTER_OTLP_ENDPOINT. */
@@ -100,8 +106,8 @@ export function makeFakes(moduleRoot: string): FakesHandle {
       async http(routes, options) {
         return (await inProcess(startHttp(routes, options))).http;
       },
-      async harness(script) {
-        return (await inProcess(Promise.resolve(startHarness(script)))).harness;
+      async harness(script, options) {
+        return (await inProcess(Promise.resolve(startHarness(script, options)))).harness;
       },
       async sandbox(options) {
         return (await inProcess(Promise.resolve(startSandbox(options)))).sandbox;
@@ -126,8 +132,8 @@ export function makeFakes(moduleRoot: string): FakesHandle {
       async sentry() {
         return startSentry();
       },
-      async slack() {
-        return (await inProcess(startSlack())).slack;
+      async slack(options) {
+        return (await inProcess(startSlack(options))).slack;
       },
       async collector(config) {
         return (await inProcess(startCollector(config, track))).collector;
