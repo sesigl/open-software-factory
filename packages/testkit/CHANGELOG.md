@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.27.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.26.0...testkit-v0.27.0) (2026-10-27)
+
+
+### Features
+
+* **deploy:** T-19 the Helm chart on kind and the published, signed module images ([#136](https://github.com/sesigl/open-software-factory/issues/136)) ([9245d25](https://github.com/sesigl/open-software-factory/commit/9245d25ea1af2bd7b6a46933d7eee709c247429e))
+* **e2e:** T-20 the end-to-end smoke suite on the Compose profile ([#138](https://github.com/sesigl/open-software-factory/issues/138)) ([3d5f563](https://github.com/sesigl/open-software-factory/commit/3d5f563ff52c62626295efc49d4d61616a3bdbed))
+
 ## [0.26.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.25.0...testkit-v0.26.0) (2026-10-27)
 
 

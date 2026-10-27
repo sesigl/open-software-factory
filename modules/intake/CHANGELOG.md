@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/sesigl/open-software-factory/compare/intake-v0.2.0...intake-v0.3.0) (2026-10-27)
+
+
+### Features
+
+* **e2e:** T-20 the end-to-end smoke suite on the Compose profile ([#138](https://github.com/sesigl/open-software-factory/issues/138)) ([3d5f563](https://github.com/sesigl/open-software-factory/commit/3d5f563ff52c62626295efc49d4d61616a3bdbed))
+
 ## [0.2.0](https://github.com/sesigl/open-software-factory/compare/intake-v0.1.0...intake-v0.2.0) (2026-10-26)
 
 
