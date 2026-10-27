@@ -1,0 +1,42 @@
+{
+  "name": "@opensoftware/console",
+  "version": "0.0.0",
+  "description": "console: a read-only web view of a factory: its runs with their origin and evidence, and its configuration with links to Git.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "modules/console"
+  },
+  "type": "module",
+  "bin": {
+    "console": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "vitest run",
+    "docs": "node ../../tools/bin/osf.ts docs .",
+    "mutation": "node ../../tools/bin/osf.ts mutation ."
+  },
+  "devDependencies": {
+    "@opensoftware/testkit": "workspace:*"
+  },
+  "dependencies": {
+    "@opensoftware/cli": "workspace:*",
+    "@opensoftware/contracts": "workspace:*",
+    "@picocss/pico": "2.1.1",
+    "fastify": "5.12.7",
+    "htm": "3.1.1",
+    "preact": "11.0.1",
+    "preact-render-to-string": "6.8.0",
+    "yaml": "2.9.1"
+  }
+}

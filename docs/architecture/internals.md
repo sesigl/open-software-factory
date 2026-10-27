@@ -142,6 +142,8 @@ flowchart LR
   H -->|OTLP| OC[OTel Collector] --> T[trace store]
   T -->|REST: runs, scores| SK
   OB -->|PR| R[factory repo]
+  P -->|browser| CO[console]
+  CO -->|REST: runs, work items, gates| FO
   U[upstream registries: MCP, ACP, OCI] -->|pinned at plan time| R
 ```
 

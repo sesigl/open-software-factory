@@ -106,6 +106,13 @@
       "initial-version": "0.1.0",
       "bump-minor-pre-major": true
     },
+    "modules/console": {
+      "release-type": "node",
+      "package-name": "@opensoftware/console",
+      "component": "console",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
+    },
     "modules/gatekeeper": {
       "release-type": "node",
       "package-name": "@opensoftware/gatekeeper",
