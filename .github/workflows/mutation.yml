@@ -113,6 +113,10 @@ jobs:
       - name: Start kind with agent-sandbox
         if: steps.cache.outputs.cache-hit != 'true' && matrix.package == '@opensoftware/sandbox-kubernetes'
         uses: ./.github/actions/kind-agent-sandbox
+      # The testkit's sut.helm installs a chart on kind (ADR 0075).
+      - name: Start kind
+        if: steps.cache.outputs.cache-hit != 'true' && matrix.package == '@opensoftware/testkit'
+        uses: ./.github/actions/kind
       - run: pnpm exec turbo run mutation --filter="$PACKAGE" -- --shard "$SHARD"
         if: steps.cache.outputs.cache-hit != 'true'
         env:
