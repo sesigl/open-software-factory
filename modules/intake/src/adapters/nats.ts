@@ -1,4 +1,3 @@
-// @ts-nocheck
 // The outbox's events to NATS as plain messages, in order, on one connection; a JetStream stream on "osf.>" keeps them.
 // And the foreman's run events from NATS, on a connection that waits for NATS and connects again (ADR 0071).
 import { connect, type NatsConnection } from "@nats-io/transport-node";

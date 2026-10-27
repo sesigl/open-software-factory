@@ -1,4 +1,3 @@
-// @ts-nocheck
 // The work items, the requests that asked for them, and the event outbox, in the schema "intake" (ADR 0063).
 import type { WorkItem, WorkReceived } from "@opensoftware/contracts";
 import type { Request, RunFact, Status, Stored } from "../domain/view.ts";
