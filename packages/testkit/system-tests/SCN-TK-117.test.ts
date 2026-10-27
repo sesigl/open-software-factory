@@ -22,7 +22,7 @@ scenario("SCN-TK-117", async ({ sut, given, when, then }) => {
           "  const env = { DEMO_AGENT_COMMAND: JSON.stringify([harness.command, ...harness.args]) };",
           '  run = await sut.cli(["prompt:open a pull request"], { env });',
           "});",
-          "await then('the output is the reply \"fixed\" and the link, and \"open a pull request: end_turn\"', async () => {",
+          'await then(\'the output is the reply "fixed" and the link, and "open a pull request: end_turn"\', async () => {',
           "  expect(run.stdout, run.stderr).toBe(`reply fixed\\n${link}\\n\\nopen a pull request: end_turn\\n`);",
           "});",
           "await then('the agent ran both commands with the exit code 0', async () => {",

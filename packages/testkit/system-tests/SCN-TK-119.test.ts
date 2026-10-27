@@ -7,7 +7,10 @@ scenario("SCN-TK-119", async ({ sut, given, when, then }) => {
     'a module whose CLI is an ACP client of the agent in "DEMO_AGENT_COMMAND" that sends "fix the typo"',
     async () => {
       module = acpClientModule(
-        ['When the user runs "demo prompt:fix the typo"', 'Then the output is "reply done" and "fix the typo: end_turn"'],
+        [
+          'When the user runs "demo prompt:fix the typo"',
+          'Then the output is "reply done" and "fix the typo: end_turn"',
+        ],
         [
           "const harness = await fakes.harness([{ when: 'fix the typo', reply: 'done' }], { containers: true });",
           "const mounts = (harness.mounts ?? []).flatMap((folder) => ['--volume', `${folder}:${folder}`]);",
@@ -17,7 +20,7 @@ scenario("SCN-TK-119", async ({ sut, given, when, then }) => {
           "  const env = { DEMO_AGENT_COMMAND: JSON.stringify([...docker, harness.command, ...harness.args]) };",
           '  run = await sut.cli(["prompt:fix the typo"], { env });',
           "});",
-          "await then('the output is \"reply done\" and \"fix the typo: end_turn\"', async () => {",
+          'await then(\'the output is "reply done" and "fix the typo: end_turn"\', async () => {',
           '  expect(run.stdout, run.stderr).toBe("reply done\\nfix the typo: end_turn\\n");',
           "  expect(harness.prompts()).toEqual(['fix the typo']);",
           "});",
