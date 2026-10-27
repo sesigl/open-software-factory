@@ -24,11 +24,13 @@ interface ListedPull {
 /** Every pull request in the state, newest first, page by page. */
 async function everyPull(api: GitHub, state: string): Promise<ListedPull[]> {
   const pulls: ListedPull[] = [];
-  for (let page = 1; ; page++) {
-    const batch = await api.request<ListedPull[]>("GET", `/pulls?state=${state}&per_page=${PAGE}&page=${page}`);
+  let page = 0;
+  let batch: ListedPull[];
+  do {
+    batch = await api.request<ListedPull[]>("GET", `/pulls?state=${state}&per_page=${PAGE}&page=${++page}`);
     pulls.push(...batch);
-    if (batch.length < PAGE) return pulls;
-  }
+  } while (batch.length === PAGE);
+  return pulls;
 }
 
 /** prs <repo> [--head <prefix>] [--state open|closed|all]: one line per pull request, the highest number first. */
