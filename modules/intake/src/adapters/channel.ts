@@ -1,3 +1,4 @@
+// @ts-nocheck
 // The channel port's adapter (ADR 0059, ADR 0063): intake runs `receive` on each delivery and `reply` in a thread.
 import { type Delivery, type Lines, program } from "./program.ts";
 

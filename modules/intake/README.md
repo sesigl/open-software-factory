@@ -80,7 +80,7 @@ channel port's adapter in `INTAKE_SLACK_ADAPTER` ([`ports/channel`](../../ports/
 mentions the bot becomes a work item whose dedupe key is the thread, whose requester is the person and whose origin
 links the message. A new work item gets the reply `Received as work item <id>.` in the thread; another mention in the
 thread is the same work item and gets no reply. When the work item's run completes with pull requests, each thread
-of a Slack request for it gets the reply `Pull request: <link>`, one line per pull request (needs `INTAKE_NATS_URL`,
+of a Slack request for it gets one reply `Pull request: <link>` per pull request (needs `INTAKE_NATS_URL`,
 see [Events](#events)).
 
 Set up a Slack app with the bot scope `chat:write`, the events `app_mention` or `message.channels`, and the request

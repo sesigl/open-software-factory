@@ -1,6 +1,5 @@
 // The factory of a smoke scenario on the Compose profile (ADR 0076): the e2e factory with the scenario's factory.yaml
 // in $INPUT/factory, the fake Slack and the scripted agent for containers, and the profile's .env with every value set.
-import { chmodSync } from "node:fs";
 import type { Compose, FakeSlack, Fakes, Forge, Harness, HarnessTurn, Sut } from "@opensoftware/testkit";
 
 export const FOREMAN_TOKEN = "foreman-token-1";
@@ -67,12 +66,10 @@ export function factoryYaml(
 export const fromContainer = (url: string): string =>
   url.replace(/\/\/(localhost|127\.0\.0\.1):/, "//host.docker.internal:");
 
-/** The scenario's folder that the tools of the profile see as /work; their user may write it. */
+/** The scenario's folder that the tools of the profile see as /work; `smoke` lets their user write it. */
 export async function workFolder(sut: Sut, files: Record<string, string>): Promise<string> {
   for (const [path, content] of Object.entries(files)) await sut.files.put(`$INPUT/work/${path}`, content);
-  const folder = sut.files.path("$INPUT/work");
-  chmodSync(folder, 0o777);
-  return folder;
+  return sut.files.path("$INPUT/work");
 }
 
 export interface Smoke {
@@ -135,6 +132,24 @@ export async function smoke(
   const lines = [...Object.entries(values), ...[...ports, "LITELLM_PORT"].map((name) => [name, "0"])];
   await sut.files.put("$INPUT/.env", `${lines.map(([name, value]) => `${name}=${value}`).join("\n")}\n`);
   const compose = sut.compose("compose/compose.yaml");
+  if (more.E2E_WORK_DIR) {
+    // The tools run as the image's user node, who does not own the scenario's folder: root opens it to them.
+    const words = [
+      "run",
+      "--rm",
+      "--no-deps",
+      "--user",
+      "root",
+      "--entrypoint",
+      "chmod",
+      "observer",
+      "-R",
+      "a+rwX",
+      "/work",
+    ];
+    const opened = await compose.run(words);
+    expect(opened.exitCode, `${opened.stdout}${opened.stderr}`).toBe(0);
+  }
   return {
     compose,
     slack,

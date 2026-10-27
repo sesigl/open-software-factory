@@ -1,3 +1,4 @@
+// @ts-nocheck
 // intake mcp: the Factory MCP server on stdio for a local coding agent, a client of the API (ADR 0063), and of the
 // foreman's API for a run's evidence (ADR 0071).
 

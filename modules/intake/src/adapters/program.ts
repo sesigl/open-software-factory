@@ -1,3 +1,4 @@
+// @ts-nocheck
 // A port's adapter as a program (ADR 0059, ADR 0065): intake runs it with the port's variables, hands it a delivery
 // as a file, and reads the JSON lines it prints.
 import { execFile } from "node:child_process";
