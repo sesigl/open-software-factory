@@ -67,3 +67,19 @@ export function commentLine(comment: CommentJson, me: string) {
     mine: comment.user.login === me,
   };
 }
+
+/** The states `prs` takes in --state; GitHub's list takes the same three. */
+export const LIST_STATES = ["open", "closed", "all"] as const;
+
+/**
+ * A pull request's review state from its reviews, oldest first (ADR 0073): the latest approval or request for changes
+ * of each reviewer counts. GitHub marks a dismissed review DISMISSED and refuses an author's review of their own.
+ */
+export function reviewState(reviews: { user: { login: string }; state: string }[]) {
+  const latest = new Map<string, string>();
+  for (const { user, state } of reviews)
+    if (state === "APPROVED" || state === "CHANGES_REQUESTED") latest.set(user.login, state);
+  const states = [...latest.values()];
+  if (states.includes("CHANGES_REQUESTED")) return "changes_requested";
+  return states.includes("APPROVED") ? "approved" : "none";
+}

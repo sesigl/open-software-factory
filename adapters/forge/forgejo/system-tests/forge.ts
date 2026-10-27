@@ -74,3 +74,21 @@ export async function delivery(
   await sut.files.put("$INPUT/delivery.json", JSON.stringify({ headers, body }));
   return "delivery.json";
 }
+
+/** A pull request from the branch into "main" titled "Change <branch>", that adds one file. */
+export function openFrom(forge: Setup["forge"], branch: string) {
+  return forge.openPullRequest("web", {
+    branch,
+    title: `Change ${branch}`,
+    files: { [`${branch.replace(/\W/g, "-")}.md`]: `${branch}\n` },
+  });
+}
+
+/** The JSON lines a command printed; it must have exited with code 0. */
+export function lines(run: { exitCode: number; stdout: string; stderr: string }): Record<string, unknown>[] {
+  expect(run.exitCode, run.stderr).toBe(0);
+  return run.stdout
+    .split("\n")
+    .filter((line) => line.trim())
+    .map((line) => JSON.parse(line) as Record<string, unknown>);
+}

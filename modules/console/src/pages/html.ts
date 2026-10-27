@@ -13,6 +13,8 @@ export interface Frame {
   /** Seconds after which the browser reloads the page. */
   refresh?: number;
   notes?: string[];
+  /** Whether the navigation links the inbox: only when it has a repository. */
+  inbox?: boolean;
 }
 
 /** The whole document: head, the navigation with the dashboards, the notes, and the page's content. */
@@ -32,6 +34,7 @@ export function page(frame: Frame, content: VNode | VNode[]): string {
             <li><strong>console</strong></li>
             <li><a href="/">Runs</a></li>
             <li><a href="/factory">Factory</a></li>
+            ${frame.inbox ? html`<li><a href="/inbox">Inbox</a></li>` : null}
           </ul>
           <ul>
             ${frame.links.map((link) => html`<li><a href=${link.url}>${link.name}</a></li>`)}

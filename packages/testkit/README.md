@@ -181,8 +181,8 @@ Every server, client and subscription stops when the scenario ends, before the f
   as `fakes.forge()` and no Docker ([ADR 0058](../../docs/decisions/0058-forge-github.md)). `url` is the API's base,
   `token` the token of the user `tester`, sent as `Bearer` or `token`; any other token gets 401 `Bad credentials`.
   It keeps commits with their files, refs, pull requests numbered per repository (`mergeable` is `null` on the first
-  read), three-way merges with conflicts, commit statuses and the combined status, comments, reviews, branch
-  protection that holds for admins only with `enforce_admins`, and webhooks, which it lists, updates and deletes: a
+  read), which it lists by state and page, three-way merges with conflicts, commit statuses and the combined status,
+  comments, reviews, which it lists per pull request, branch protection that holds for admins only with `enforce_admins`, and webhooks, which it lists, updates and deletes: a
   signed `ping` when one is created, then
   `pull_request`, `pull_request_review`, `issue_comment` and `issues` (`opened`, `labeled`) deliveries with
   `X-Hub-Signature-256`, sent only to URLs on

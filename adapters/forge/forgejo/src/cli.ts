@@ -10,6 +10,7 @@ import { merge } from "./commands/merge.ts";
 import { openPr } from "./commands/open-pr.ts";
 import { pr } from "./commands/pr.ts";
 import { protect } from "./commands/protect.ts";
+import { prs } from "./commands/prs.ts";
 import { hooks, unhook, webhook } from "./commands/webhook.ts";
 
 const USAGE = `Usage: forge-forgejo <command>
@@ -19,6 +20,8 @@ Commands:
   open-pr <repo> <head> --title <text> [--body <text>] [--base <branch>]
                                                          Open a pull request; print {"number", "url", "head", "base", "sha"}.
   pr <repo> <number>                                     Print the pull request's merge state and checks.
+  prs <repo> [--head <prefix>] [--state open|closed|all] Print each pull request whose branch starts with the prefix,
+                                                         newest first, with its review state.
   check <repo> <sha> <name> <pending|success|failure|error> [--description <text>] [--url <url>]
                                                          Post a check on a commit.
   comment <repo> <number> <text>                         Comment on a pull request; print {"id", "url"}.
@@ -49,6 +52,8 @@ const { positionals, values } = parseArgs({
     approvals: { type: "string" },
     method: { type: "string" },
     event: { type: "string", multiple: true },
+    head: { type: "string" },
+    state: { type: "string" },
   },
 });
 const [name, first, second, third, fourth, fifth] = positionals;
@@ -57,6 +62,7 @@ const commands: Record<string, Command> = {
   branch: () => branch(first, second, values.from),
   "open-pr": () => openPr(first, second, values),
   pr: () => pr(first, second),
+  prs: () => prs(first, values.head, values.state),
   check: () => check(first, second, third, fourth, values),
   comment: () => comment(first, second, third),
   comments: () => comments(first, second),
