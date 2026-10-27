@@ -422,11 +422,17 @@ export async function startGitHub(): Promise<RunningGitHub> {
     if (!hook.url) throw new Answer(422, "Validation Failed: url cannot be blank");
   };
 
-  /** The routes below /repos/tester/<name>, matched against the path without its query. */
+  /** The routes below /repos/tester/<name>, matched against the path without its query, which comes as `query`. */
   const routes: [
     string,
     RegExp,
-    (repo: Repository, match: string[], body: Record<string, unknown>, user: string) => [number, unknown],
+    (
+      repo: Repository,
+      match: string[],
+      body: Record<string, unknown>,
+      user: string,
+      query: URLSearchParams,
+    ) => [number, unknown],
   ][] = [
     ["GET", /^$/, (repo) => [200, repoJson(repo)]],
     [
@@ -537,6 +543,33 @@ export async function startGitHub(): Promise<RunningGitHub> {
           body: String(body.body ?? ""),
         });
         return [201, pullJson(repo, pr)];
+      },
+    ],
+    [
+      "GET",
+      /^\/pulls$/,
+      (repo, _match, _body, _user, query) => {
+        // GitHub lists the newest first, 30 to a page unless per_page asks for up to 100.
+        const state = query.get("state") ?? "open";
+        if (!["open", "closed", "all"].includes(state))
+          throw new Answer(422, "Validation Failed: state is not included in the list");
+        const size = Math.min(Number(query.get("per_page") ?? 30), 100);
+        const page = Number(query.get("page") ?? 1);
+        const listed = [...repo.pulls].reverse().filter((pr) => state === "all" || pr.state === state);
+        return [200, listed.slice((page - 1) * size, page * size).map((pr) => pullJson(repo, pr))];
+      },
+    ],
+    [
+      "GET",
+      /^\/pulls\/(\d+)\/reviews$/,
+      (repo, [number = ""]) => {
+        const pr = pull(repo, Number(number));
+        return [
+          200,
+          repo.reviews
+            .filter((entry) => entry.number === pr.number)
+            .map((entry) => ({ id: entry.id, user: userJson(entry.user), body: entry.body, state: entry.state })),
+        ];
       },
     ],
     ["GET", /^\/pulls\/(\d+)$/, (repo, [number = ""]) => [200, pullJson(repo, pull(repo, Number(number)), true)]],
@@ -650,7 +683,7 @@ export async function startGitHub(): Promise<RunningGitHub> {
       response.end(JSON.stringify(value));
     };
     const method = request.method ?? "GET";
-    const path = (request.url ?? "").split("?")[0] ?? "";
+    const [path = "", search = ""] = (request.url ?? "").split("?");
     let text = "";
     for await (const chunk of request) text += chunk;
     const token = /^(?:Bearer|token) (.+)$/i.exec(request.headers.authorization ?? "")?.[1] ?? "";
@@ -673,7 +706,8 @@ export async function startGitHub(): Promise<RunningGitHub> {
     try {
       const body = (text ? JSON.parse(text) : {}) as Record<string, unknown>;
       const match = (route[1].exec(repoMatch[2] ?? "") ?? []).slice(1);
-      const [status, value] = route[2](repository(repoMatch[1] ?? ""), match, body, user);
+      const query = new URLSearchParams(search);
+      const [status, value] = route[2](repository(repoMatch[1] ?? ""), match, body, user, query);
       send(status, value);
     } catch (error) {
       if (!(error instanceof Answer)) throw error;

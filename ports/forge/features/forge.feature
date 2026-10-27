@@ -1,14 +1,16 @@
 @port=forge @owner=maintainers
 Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
-  A forge adapter is a program with the commands branch, open-pr, pr, check, comment, protect, merge, webhook, hooks,
-  unhook, comments and event. It reaches the forge at FORGE_URL with the token FORGE_TOKEN, and signs and checks webhooks with
+  A forge adapter is a program with the commands branch, open-pr, pr, prs, check, comment, protect, merge, webhook,
+  hooks, unhook, comments and event. It reaches the forge at FORGE_URL with the token FORGE_TOKEN, and signs and checks webhooks with
   FORGE_WEBHOOK_SECRET. A repository is "<owner>/<name>". event turns one webhook delivery into a pr.opened@v1,
   pr.reviewed@v1 or pr.closed@v1 CloudEvent from contracts (ADR 0057), and a label added to an issue into an
   issue.labeled@v1 (ADR 0065). The test forge has the user "tester" and the
   repository "tester/web", whose branch "main" holds one commit: a real Forgejo for the forgejo adapter, and the
   testkit's fake GitHub for the github adapter (ADR 0058). webhook takes the port's event names, such as
   "issue.labeled" or "push", and each adapter maps them to its forge's events (ADR 0060). pr names the author,
-  labels and changed files, and comments lists a pull request's conversation, which gatekeeper reads (ADR 0062).
+  labels and changed files, and comments lists a pull request's conversation, which gatekeeper reads (ADR 0062). prs
+  lists the pull requests whose branch starts with a prefix, with their review state, which the console's inbox reads
+  (ADR 0073).
 
   @id=SCN-FORGE-001 @status=implemented @conformance
   Scenario: A branch starts at the head commit of the default branch
@@ -223,3 +225,25 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     And the client runs "event" on the delivery of the label
     Then event prints an "issue.labeled@v1" CloudEvent that the contract accepts
     And its data names the issue's link, number, title, body, the author "tester" and the labels "factory"
+
+  @id=SCN-FORGE-031 @status=implemented @conformance
+  Scenario: prs lists the open pull requests whose branch starts with a prefix, newest first
+    Given open pull requests in "tester/web" from "observer/triage-inline-1a2b3c4d", "fix-checkout" and "observer/review-scope-5e6f7a8b" in this order
+    When the client runs "prs tester/web --head observer/"
+    Then prs prints two lines with the branches "observer/review-scope-5e6f7a8b" and "observer/triage-inline-1a2b3c4d" in that order
+    And each line has the pull request's number, URL, title, base "main", the state "open", "draft" false and the author "tester" behind the adapter's name
+    And each line has the time the pull request was opened
+
+  @id=SCN-FORGE-032 @status=implemented @conformance
+  Scenario: prs names the review state of each pull request
+    Given open pull requests in "tester/web" from "observer/triage-inline-1a2b3c4d", "observer/review-scope-5e6f7a8b" and "observer/ship-notes-9c0d1e2f"
+    And the person "reviewer" approved the first, then commented on it, and asked for changes on the second
+    When the client runs "prs tester/web --head observer/"
+    Then prs prints the review "approved" for the first, "changes_requested" for the second and "none" for the third
+
+  @id=SCN-FORGE-033 @status=implemented @conformance
+  Scenario: A merged pull request is listed only with "--state all"
+    Given a pull request in "tester/web" from "observer/triage-inline-1a2b3c4d" that a person merged
+    When the client runs "prs tester/web" and "prs tester/web --state all"
+    Then the first prints nothing
+    And the second prints the pull request with the state "merged"
