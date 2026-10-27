@@ -35,8 +35,9 @@ What exists:
   page of the list and keeps the pull requests whose head branch starts with it. Without `--head` it keeps all.
 - **`--state` defaults to `open`.** `closed` lists closed and merged pull requests; `all` lists every one.
 - **`review` is the review state:** `changes_requested` when the latest review of some reviewer asks for changes,
-  else `approved` when the latest review of some reviewer approves, else `none`. Only the latest review of each
-  reviewer counts, comments and dismissed reviews do not count, and the author's own reviews do not count. The
+  else `approved` when the latest review of some reviewer approves, else `none`. Only the latest verdict of each
+  reviewer counts; comments and dismissed reviews do not count. Both forges refuse an author's verdict on their own
+  pull request. The
   adapter reads the reviews of each listed pull request.
 - Its shared behavior is the conformance scenarios `SCN-FORGE-031` to `-033`; both adapters, forgejo and github,
   implement it. The fake GitHub of the testkit answers `GET /repos/<repo>/pulls` and

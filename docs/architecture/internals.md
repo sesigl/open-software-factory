@@ -144,6 +144,7 @@ flowchart LR
   OB -->|PR| R[factory repo]
   P -->|browser| CO[console]
   CO -->|REST: runs, work items, gates| FO
+  CO -->|forge port: prs, the inbox| R
   U[upstream registries: MCP, ACP, OCI] -->|pinned at plan time| R
 ```
 

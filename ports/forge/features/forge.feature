@@ -226,7 +226,7 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     Then event prints an "issue.labeled@v1" CloudEvent that the contract accepts
     And its data names the issue's link, number, title, body, the author "tester" and the labels "factory"
 
-  @id=SCN-FORGE-031 @status=planned @conformance
+  @id=SCN-FORGE-031 @status=implemented @conformance
   Scenario: prs lists the open pull requests whose branch starts with a prefix, newest first
     Given open pull requests in "tester/web" from "observer/triage-inline-1a2b3c4d", "fix-checkout" and "observer/review-scope-5e6f7a8b" in this order
     When the client runs "prs tester/web --head observer/"
@@ -234,14 +234,14 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     And each line has the pull request's number, URL, title, base "main", the state "open", "draft" false and the author "tester" behind the adapter's name
     And each line has the time the pull request was opened
 
-  @id=SCN-FORGE-032 @status=planned @conformance
+  @id=SCN-FORGE-032 @status=implemented @conformance
   Scenario: prs names the review state of each pull request
     Given open pull requests in "tester/web" from "observer/triage-inline-1a2b3c4d", "observer/review-scope-5e6f7a8b" and "observer/ship-notes-9c0d1e2f"
-    And the person "reviewer" approved the first and asked for changes on the second
+    And the person "reviewer" approved the first, then commented on it, and asked for changes on the second
     When the client runs "prs tester/web --head observer/"
     Then prs prints the review "approved" for the first, "changes_requested" for the second and "none" for the third
 
-  @id=SCN-FORGE-033 @status=planned @conformance
+  @id=SCN-FORGE-033 @status=implemented @conformance
   Scenario: A merged pull request is listed only with "--state all"
     Given a pull request in "tester/web" from "observer/triage-inline-1a2b3c4d" that a person merged
     When the client runs "prs tester/web" and "prs tester/web --state all"

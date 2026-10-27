@@ -630,7 +630,7 @@ read them for ideas, do not copy their company-specific rules.
   - Moved: this repository's `factory` issues implemented by the foreman, to T-21, because it needs intake at a
     public URL (T-21's intake slice) and a real model.
 
-### [ ] T-18 · console
+### [x] T-18 · console
 
 - **Tier / language / path / prefix:** optional · TS (web) · `modules/console/` · `SCN-CONSOLE`
 - **Alone:** a read-only web view of a factory: live runs, their origin and evidence, the self-improvement
@@ -650,9 +650,10 @@ read them for ideas, do not copy their company-specific rules.
     origin, every request from intake, the stages with their transcript, gate from gatekeeper, checks and reason, and
     links the trace and the Temporal history; `/factory` and `/factory/agents/<name>` show `factory.yaml` read-only
     with the link to the file and branch in Git; every page links the dashboards in `CONSOLE_LINKS`.
-  - [ ] The self-improvement inbox (IMPROVE-004): observer's pull requests with their age and the state "needs
-    review" or "approved". Needs a forge port operation that lists pull requests by branch prefix with their review
-    state, in both forge adapters, and an ADR for that port change.
+  - [x] The self-improvement inbox (ADR 0073, `SCN-CONSOLE-030` to `-035`, `SCN-FORGE-031` to `-033`): the forge
+    port's `prs <repo> [--head <prefix>] [--state open|closed|all]` lists pull requests by branch prefix with their
+    review state, in both forge adapters; `/inbox` lists the open pull requests of `CONSOLE_INBOX_REPOSITORY` from
+    `observer/` branches with their age and the state "needs review", "approved" or "changes requested".
 
 ### [ ] T-19 · distribution
 

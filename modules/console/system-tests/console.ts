@@ -97,3 +97,35 @@ export async function factoryEnv(sut: Sut): Promise<Record<string, string>> {
   await sut.files.put("$INPUT/factory.yaml", FACTORY_YAML);
   return { CONSOLE_FACTORY: sut.files.path("$INPUT/factory.yaml") };
 }
+
+/** The testkit's fake GitHub with the repository "tester/web" and an open pull request per branch, in this order. */
+export async function proposalForge(fakes: Fakes, pulls: { branch: string; title: string }[]) {
+  const forge = await fakes.github();
+  await forge.createRepository("web");
+  const opened = [];
+  for (const { branch, title } of pulls)
+    opened.push(
+      await forge.openPullRequest("web", { branch, title, files: { [`${branch.replace(/\W/g, "-")}.md`]: title } }),
+    );
+  return { forge, opened };
+}
+
+/** Starts "console serve" with the inbox of "tester/web" on the fake GitHub through forge-github. */
+export async function servingInbox(
+  sut: Sut,
+  fakes: Fakes,
+  forge: Awaited<ReturnType<Fakes["github"]>>,
+  env: Record<string, string> = {},
+) {
+  const api = await foreman(fakes, []);
+  await serving(sut, [api.url], {
+    CONSOLE_INBOX_REPOSITORY: "tester/web",
+    CONSOLE_FORGE_ADAPTER: sut.adapter("forge/github"),
+    CONSOLE_FORGE_URL: forge.url,
+    CONSOLE_FORGE_TOKEN: forge.token,
+    ...env,
+  });
+}
+
+/** The links of the page's navigation. */
+export const navLinks = (html: string) => links(/<header[\s\S]*?<\/header>/.exec(html)?.[0] ?? "");

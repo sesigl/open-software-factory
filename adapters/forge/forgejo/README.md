@@ -57,6 +57,7 @@ Forgejo answers `pull_request` with all of its pull request events.
 | `forge-forgejo branch <repo> <branch> [--from <ref>]` | Create a branch from the default branch or the ref; print `{"branch", "sha"}`. |
 | `forge-forgejo open-pr <repo> <head> --title <text> [--body <text>] [--base <branch>]` | Open a pull request; print `{"number", "url", "head", "base", "sha"}`. |
 | `forge-forgejo pr <repo> <number>` | Print the pull request's state, `mergeable`, head and merge commit, author, labels, draft, first 100 changed paths, and checks. |
+| `forge-forgejo prs <repo> [--head <prefix>] [--state open\|closed\|all]` | Print each pull request whose branch starts with the prefix, the highest number first, as `{"number", "url", "title", "state", "head", "base", "author", "created", "draft", "review"}`; `review` is `approved`, `changes_requested` or `none` (ADR 0073). |
 | `forge-forgejo check <repo> <sha> <name> <pending\|success\|failure\|error> [--description <text>] [--url <url>]` | Post a check on a commit. |
 | `forge-forgejo comment <repo> <number> <text>` | Comment on a pull request; print `{"id", "url"}`. |
 | `forge-forgejo comments <repo> <number>` | Print the comments of the conversation, oldest first, as `{"id", "url", "author", "time", "text", "mine"}`. |

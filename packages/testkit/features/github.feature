@@ -100,3 +100,11 @@ Feature: A fake of GitHub's REST API
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-113 @status=implemented
+  Scenario: fakes.github lists the open pull requests and the reviews of a pull request
+    Given a module whose CLI prints the head branch of each open pull request and the review states of each at "DEMO_GITHUB_URL"
+    And its system test opens pull requests from "fix" and "docs" in fakes.github, merges "docs", approves "fix" as "reviewer" and expects "fix APPROVED"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
