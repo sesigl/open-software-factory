@@ -32,7 +32,8 @@ What exists:
   "draft", "review"}`. `state` is `open`, `closed` or `merged`, `author` is `<adapter>:<login>`, `created` is ISO
   8601.
 - **`--head` is a prefix of the branch.** Neither GitHub nor Forgejo filters by a prefix, so the adapter reads every
-  page of the list and keeps the pull requests whose head branch starts with it. Without `--head` it keeps all.
+  page of the list, at most 20 pages (2,000 pull requests on GitHub, 1,000 on Forgejo), and keeps the pull
+  requests whose head branch starts with it. Without `--head` it keeps all.
 - **`--state` defaults to `open`.** `closed` lists closed and merged pull requests; `all` lists every one.
 - **`review` is the review state:** `changes_requested` when the latest review of some reviewer asks for changes,
   else `approved` when the latest review of some reviewer approves, else `none`. Only the latest verdict of each
