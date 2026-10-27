@@ -66,7 +66,7 @@ export function factoryYaml(
 export const fromContainer = (url: string): string =>
   url.replace(/\/\/(localhost|127\.0\.0\.1):/, "//host.docker.internal:");
 
-/** The scenario's folder that the tools of the profile see as /work; `smoke` lets their user write it. */
+/** The scenario's folder that the tools of the profile see as /work; they run as the scenario's user. */
 export async function workFolder(sut: Sut, files: Record<string, string>): Promise<string> {
   for (const [path, content] of Object.entries(files)) await sut.files.put(`$INPUT/work/${path}`, content);
   return sut.files.path("$INPUT/work");
@@ -124,6 +124,7 @@ export async function smoke(
     E2E_HARNESS_DIR: harnessDir,
     ...(forge ? { E2E_FORGE_URL: fromContainer(forge.url), E2E_FORGE_TOKEN: forge.token } : {}),
     E2E_WEBHOOK_SECRET: WEBHOOK_SECRET,
+    E2E_USER: `${process.getuid?.() ?? 1000}:${process.getgid?.() ?? 1000}`,
     E2E_LITELLM_CONFIG: sut.files.path("$INPUT/litellm/config.yaml"),
     ...more,
   };
@@ -132,24 +133,6 @@ export async function smoke(
   const lines = [...Object.entries(values), ...[...ports, "LITELLM_PORT"].map((name) => [name, "0"])];
   await sut.files.put("$INPUT/.env", `${lines.map(([name, value]) => `${name}=${value}`).join("\n")}\n`);
   const compose = sut.compose("compose/compose.yaml");
-  if (more.E2E_WORK_DIR) {
-    // The tools run as the image's user node, who does not own the scenario's folder: root opens it to them.
-    const words = [
-      "run",
-      "--rm",
-      "--no-deps",
-      "--user",
-      "root",
-      "--entrypoint",
-      "chmod",
-      "observer",
-      "-R",
-      "a+rwX",
-      "/work",
-    ];
-    const opened = await compose.run(words);
-    expect(opened.exitCode, `${opened.stdout}${opened.stderr}`).toBe(0);
-  }
   return {
     compose,
     slack,

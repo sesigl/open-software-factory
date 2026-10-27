@@ -67,10 +67,12 @@ services:
   observer:
     <<: *workspace
     profiles: [tools]
-    # umask 0: the scenario's user may remove what the tool writes into /work.
-    entrypoint: [sh, -c, 'umask 0000 && exec observer "$$@"', observer]
+    # The scenario's user, who owns /work and removes it after the scenario.
+    user: ${E2E_USER:-node}
+    entrypoint: [observer]
     working_dir: /work
     environment:
+      HOME: /tmp
       OUTPUT: /work
       OBSERVER_INFERENCE_URL: ${E2E_MODEL_URL:-}
       OBSERVER_FORGE_TOKEN: ${E2E_FORGE_TOKEN:-}
@@ -81,9 +83,11 @@ services:
   taskcapture:
     <<: *workspace
     profiles: [tools]
-    entrypoint: [sh, -c, 'umask 0000 && exec taskcapture "$$@"', taskcapture]
+    user: ${E2E_USER:-node}
+    entrypoint: [taskcapture]
     working_dir: /work
     environment:
+      HOME: /tmp
       OUTPUT: /work
       TASKCAPTURE_FORGE_TOKEN: ${E2E_FORGE_TOKEN:-}
       TASKCAPTURE_HARBOR: ${E2E_HARBOR:-harbor}
