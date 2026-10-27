@@ -85,3 +85,28 @@ Feature: Scripted coding agent
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-117 @status=implemented
+  Scenario: A scripted turn runs its commands in the session's folder and replies with their output
+    Given a module whose CLI is an ACP client of the agent in "DEMO_AGENT_COMMAND" that sends "open a pull request"
+    And its system test scripts fakes.harness to write "fixed" to "notes.md" and run "cat notes.md" and "echo https://forge.example/acme/web/pulls/1" for "open a pull request", and expects the reply "fixed" and the link, and both commands with the exit code 0
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-118 @status=implemented
+  Scenario: A scripted command that fails ends the turn with "refusal" and fails the scenario with its output
+    Given a module whose CLI is an ACP client of the agent in "DEMO_AGENT_COMMAND" that sends "push the branch"
+    And its system test scripts fakes.harness to run "echo no remote >&2; exit 3" for "push the branch"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 1
+    And the output contains "harness command failed with 3: echo no remote >&2; exit 3"
+    And the output contains "no remote"
+
+  @id=SCN-TK-119 @status=implemented
+  Scenario: A scripted harness for containers answers a module that runs it in a container
+    Given a module whose CLI is an ACP client of the agent in "DEMO_AGENT_COMMAND" that sends "fix the typo"
+    And its system test scripts fakes.harness for containers to reply "done" for "fix the typo" and runs it with "docker run" as the user 1000 with the folders it names
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

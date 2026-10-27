@@ -75,7 +75,11 @@ export async function serve(env: Env) {
   const nats = env.INTAKE_NATS_URL || undefined;
   const work = inbox(store, { nats, now, warn });
   await work.relay();
-  const unsubscribe = nats ? await subscribeToNats(nats, RUN_SUBJECTS, work.followRun, warn) : undefined;
+  // A finished run's pull requests are linked in the Slack threads of its work item.
+  const follow = async (event: unknown) => {
+    for (const { thread, text } of await work.followRun(event)) await channel?.reply(thread, text);
+  };
+  const unsubscribe = nats ? await subscribeToNats(nats, RUN_SUBJECTS, follow, warn) : undefined;
 
   const app = Fastify({ logger: false });
   app.setErrorHandler(answerError);

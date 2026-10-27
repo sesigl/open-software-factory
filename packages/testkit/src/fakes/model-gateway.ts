@@ -1,4 +1,4 @@
-// A scripted model gateway on 127.0.0.1 with an OpenAI-compatible chat completions API, the OpenAI Responses API and
+// A scripted model gateway on 127.0.0.1, or on every interface for containers (ADR 0054), with an OpenAI-compatible chat completions API, the OpenAI Responses API and
 // the Anthropic Messages API (ADR 0052, ADR 0053). It answers only the calls its script names; any other call fails the
 // scenario with the request it received.
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
@@ -34,8 +34,18 @@ export interface ModelGateway {
   url: string;
   /** Base URL of the Anthropic Messages API, without `/v1`, as `ANTHROPIC_BASE_URL` takes it. */
   anthropicUrl: string;
+  /**
+   * With `containers: true`, the OpenAI-compatible base URL as a container reaches it:
+   * `http://host.docker.internal:<port>/v1`. On Linux a container needs `--add-host host.docker.internal:host-gateway`.
+   */
+  containerUrl?: string;
   /** Every call the gateway received, in order. */
   calls: { path: string; body: string }[];
+}
+
+export interface ModelGatewayOptions {
+  /** Also answer containers: listen on every interface instead of 127.0.0.1 and give `containerUrl`. Default false. */
+  containers?: boolean;
 }
 
 export interface RunningGateway {
@@ -47,7 +57,10 @@ export interface RunningGateway {
 /** The fixed `created` time of every reply: 2026-01-01T00:00:00Z. */
 const CREATED = 1_767_225_600;
 
-export async function startModelGateway(script: ScriptedReply[]): Promise<RunningGateway> {
+export async function startModelGateway(
+  script: ScriptedReply[],
+  options: ModelGatewayOptions = {},
+): Promise<RunningGateway> {
   const calls: ModelGateway["calls"] = [];
   const unscripted: string[] = [];
   // A streamed call (Messages, Responses, streamed chat completions) takes the first matching entry that has not
@@ -101,10 +114,11 @@ export async function startModelGateway(script: ScriptedReply[]): Promise<Runnin
       }),
     );
   });
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  await new Promise<void>((resolve) => server.listen(0, options.containers ? "0.0.0.0" : "127.0.0.1", resolve));
   const { port } = server.address() as AddressInfo;
+  const containerUrl = options.containers ? { containerUrl: `http://host.docker.internal:${port}/v1` } : {};
   return {
-    gateway: { url: `http://127.0.0.1:${port}/v1`, anthropicUrl: `http://127.0.0.1:${port}`, calls },
+    gateway: { url: `http://127.0.0.1:${port}/v1`, anthropicUrl: `http://127.0.0.1:${port}`, ...containerUrl, calls },
     async close() {
       // A call that hangs keeps its connection open; close it, or the server never closes.
       server.closeAllConnections();

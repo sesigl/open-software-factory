@@ -683,17 +683,16 @@ read them for ideas, do not copy their company-specific rules.
     cosign, and the Compose profile pulls them. The verify stage of the reference factory waits for the check
     `verify` (factory-spec 0.5.0).
 
-### [ ] T-20 · end-to-end smoke suite
+### [x] T-20 · end-to-end smoke suite
 
 - **Path / prefix:** `e2e/` · `SCN-E2E`
 - **Build:** implement the five scenarios in `e2e/features/smoke.feature` against the Compose profile with the
   testkit fakes; add `SMOKE-PAID` (one small real task per first-party harness with a real model, nightly).
-- **From T-00:** `make smoke` and `make smoke-paid` run Turborepo tasks that no package defines yet, so they run
-  nothing. Give `e2e/` a package with `test:system` and `test:paid` scripts; the nightly workflow already calls
-  them. (`make mutation` runs in every module since ADR 0037.)
-- **From T-14:** E2E-004 starts the gateway with `inference-litellm start` on the config `taskcapture route` wrote
-  and checks that a call for the alias with the tag reaches the cheaper model (ADR 0056).
-- **Done when:** all five pass on every merge to `main`; SMOKE-PAID runs nightly.
+- **Done (ADR 0076):** `e2e/` is the package `@opensoftware/e2e`; its `test:system` builds one image of the workspace
+  and runs the five scenarios on the profile with the fakes, as the suite `e2e` of `make verify` on every pull
+  request and every merge to `main`. E2E-004 uses the profile's LiteLLM with the config `taskcapture route` wrote,
+  not `inference-litellm start`. `SMOKE-PAID` and the package's `test:paid` need paid model calls: they are the
+  harness slice of T-21.
 
 ### [ ] T-21 · dogfood with paid services
 
@@ -713,8 +712,9 @@ owner before each slice: which model or service, and its budget.
   - [ ] intake (from T-16): run `intake serve` at a public URL and point the `issues` webhook of
     `sesigl/open-software-factory` at its `/forge/events`; done when an issue labeled `factory` here creates a work
     item (ADR 0065). Ask the owner where intake runs.
-  - [ ] harness (from T-12): one SMOKE-PAID run each for claude-code, codex and opencode with a real model; done when
-    `make smoke-paid` passes for the three adapters (ADR 0052, ADR 0053).
+  - [ ] harness (from T-12, T-20): give `e2e/` a `test:paid` script and one SMOKE-PAID run each for claude-code,
+    codex and opencode with a real model; done when `make smoke-paid` passes for the three adapters (ADR 0052,
+    ADR 0053, ADR 0076).
 
 ---
 

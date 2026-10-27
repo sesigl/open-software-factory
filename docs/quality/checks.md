@@ -82,5 +82,5 @@ artifact `spec-trace` holds the JSON report. Both actions run the release from n
 
 | ID | What it checks | How |
 | --- | --- | --- |
-| SMOKE | The scenarios in `e2e/features/` pass against the Compose profile with fakes. | `make smoke` in CI on every merge to `main` and before every release. |
+| SMOKE | The scenarios in `e2e/features/` pass against the Compose profile with fakes. | `make smoke`; in CI the suite `e2e` of `make verify` on every pull request and every merge to `main` (ADR 0076). |
 | SMOKE-PAID | One real-model run per first-party harness completes a small task. | `make smoke-paid`, nightly and before a release; never on pull requests. |

@@ -112,7 +112,9 @@ Every server, client and subscription stops when the scenario ends, before the f
   `custom_tool_call`, such as Codex's `apply_patch`; the call IDs are `call_1`, `call_2`, ... A streamed chat answer
   sends each tool as a `tool_calls` delta and ends with `stopReason` as its `finish_reason` (default `tool_calls`
   with tools, `stop` without), for example `content_filter`. A chat completions call without a stream keeps the
-  first matching entry. `calls` lists every call with its `path` and `body`.
+  first matching entry. `calls` lists every call with its `path` and `body`. `fakes.modelGateway(script,
+  { containers: true })` listens on every interface and also gives `containerUrl`,
+  `http://host.docker.internal:<port>/v1`, as `fakes.http` does ([ADR 0076](../../docs/decisions/0076-e2e-smoke-suite.md)).
 - `fakes.http([{ method, path, status, body, contentType, times }])`: a scripted JSON API on `127.0.0.1`
   ([ADR 0021](../../docs/decisions/0021-testkit-scripted-http.md)). Pass its `url` to the module through its
   documented config. A request whose method (default `GET`) and exact path with query match a route gets its
@@ -146,6 +148,12 @@ Every server, client and subscription stops when the scenario ends, before the f
   ([ADR 0053](../../docs/decisions/0053-harness-codex-opencode.md)). `sessions()` lists each session the agent opened,
   with its `cwd` and the variables `OPENAI_*` and `ANTHROPIC_*` the agent got in `env`, so a test sees which model
   gateway, key and model a module handed the harness ([ADR 0070](../../docs/decisions/0070-foreman-gateway-and-take-over.md)).
+  A turn with `commands` runs each with `sh -c` in the session's folder after its edits, as a coding agent's tools
+  do; their output comes before the `reply`. A command that exits with another code than 0 ends the turn with
+  `refusal` and fails the scenario with its output; `commands()` lists each with its `exitCode` and `output`.
+  `fakes.harness(script, { containers: true })` lets a module run the agent in a container: `command` is then `node`
+  and `mounts` names the agent's code folder and its script folder, which the container mounts at the same paths
+  ([ADR 0076](../../docs/decisions/0076-e2e-smoke-suite.md)).
 - `fakes.sandbox({ templates })`: a sandbox adapter with the commands `create`, `exec`, `copy`, `destroy` and `list`
   of the [sandbox port](../../ports/sandbox/README.md), whose sandboxes are folders on the host, for a module that
   drives the port without Docker ([ADR 0068](../../docs/decisions/0068-foreman-sandboxes.md)). Run it with its
@@ -223,6 +231,8 @@ Every server, client and subscription stops when the scenario ends, before the f
   the fake's `signingSecret` and the fixed clock, so the module checks them as it would check Slack; `sign(body)`
   gives the same headers for a request the test sends itself
   ([ADR 0048](../../docs/decisions/0048-gatekeeper-server.md)).
+  `fakes.slack({ containers: true })` listens on every interface and also gives `containerUrl`,
+  `http://host.docker.internal:<port>/api/`, for a module in a container ([ADR 0076](../../docs/decisions/0076-e2e-smoke-suite.md)).
 
 A `planned` scenario's test must fail; when it passes, the testkit fails it and asks for `@status=implemented`.
 
@@ -399,3 +409,8 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-113 | implemented | fakes.github lists the open pull requests and the reviews of a pull request |
 | SCN-TK-114 | implemented | sut.compose starts a Compose file of the module and reaches the port a service publishes |
 | SCN-TK-115 | implemented | sut.helm installs a chart of the module in the scenario's namespace and reaches the port of a service |
+| SCN-TK-116 | implemented | fakes.slack for containers shows the message a module posts from a container |
+| SCN-TK-117 | implemented | A scripted turn runs its commands in the session's folder and replies with their output |
+| SCN-TK-118 | implemented | A scripted command that fails ends the turn with "refusal" and fails the scenario with its output |
+| SCN-TK-119 | implemented | A scripted harness for containers answers a module that runs it in a container |
+| SCN-TK-120 | implemented | The model gateway for containers answers a call from a container |
