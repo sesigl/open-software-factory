@@ -29,7 +29,13 @@ scenario("SCN-E2E-003", async ({ sut, fakes, given, when, then }) => {
     const work = await workFolder(sut, { "scores.jsonl": `${scores.join("\n")}\n` });
     const content = JSON.stringify(FIX);
     const model = await fakes.http(
-      [{ method: "POST", path: "/v1/chat/completions", body: { choices: [{ message: { role: "assistant", content } }] } }],
+      [
+        {
+          method: "POST",
+          path: "/v1/chat/completions",
+          body: { choices: [{ message: { role: "assistant", content } }] },
+        },
+      ],
       { containers: true },
     );
     profile = await smoke(sut, fakes, factoryYaml(["triage"]), [], forge, {

@@ -27,7 +27,7 @@ Feature: Key use cases across modules
     Then a pull request to the factory repository exists
     And its description contains the sections "Problem", "Solution" and "Evidence"
 
-  @id=SCN-E2E-004 @status=planned
+  @id=SCN-E2E-004 @status=implemented
   Scenario: A benchmark result becomes a routing rule
     Given a benchmark suite with 3 tasks captured from merged pull requests
     And the scripted model gateway answers as two models with different cost and correctness

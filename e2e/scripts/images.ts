@@ -38,9 +38,15 @@ interface Manifest {
 /** Every package of the workspace by name, with its folder. */
 function workspace(): Map<string, { dir: string; manifest: Manifest }> {
   const packages = new Map<string, { dir: string; manifest: Manifest }>();
-  const folders = ["modules", "packages", "contracts", ...readdirSync(join(root, "adapters")).map((p) => `adapters/${p}`)];
+  const folders = [
+    "modules",
+    "packages",
+    "contracts",
+    ...readdirSync(join(root, "adapters")).map((p) => `adapters/${p}`),
+  ];
   for (const folder of folders) {
-    const dirs = folder === "contracts" ? [join(root, folder)] : readdirSync(join(root, folder)).map((d) => join(root, folder, d));
+    const dirs =
+      folder === "contracts" ? [join(root, folder)] : readdirSync(join(root, folder)).map((d) => join(root, folder, d));
     for (const dir of dirs) {
       try {
         const manifest = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as Manifest;
@@ -92,8 +98,11 @@ export function buildImage(): void {
   );
   execFileSync(
     "docker",
-    ["build", "--quiet", "--network", "host", "--secret", `id=ca,src=${ca}`, ...proxy, "--tag", IMAGE]
-      .concat(["--file", join(e2e, "images/Dockerfile"), context]),
+    ["build", "--quiet", "--network", "host", "--secret", `id=ca,src=${ca}`, ...proxy, "--tag", IMAGE].concat([
+      "--file",
+      join(e2e, "images/Dockerfile"),
+      context,
+    ]),
     { stdio: ["ignore", "ignore", "inherit"] },
   );
 }

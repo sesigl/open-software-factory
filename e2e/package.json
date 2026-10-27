@@ -13,6 +13,7 @@
   "devDependencies": {
     "@opensoftware/channel-slack": "workspace:*",
     "@opensoftware/console": "workspace:*",
+    "@opensoftware/contracts": "workspace:*",
     "@opensoftware/factory-spec": "workspace:*",
     "@opensoftware/foreman": "workspace:*",
     "@opensoftware/forge-forgejo": "workspace:*",

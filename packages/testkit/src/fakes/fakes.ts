@@ -10,7 +10,7 @@ import { type FakeGitHub, startGitHub } from "./github.ts";
 import { type Harness, type HarnessOptions, type HarnessTurn, startHarness } from "./harness.ts";
 import { type FakeHttp, type HttpOptions, type HttpRoute, startHttp } from "./http.ts";
 import { type Inference, type InferenceOptions, startInference } from "./inference.ts";
-import { type ModelGateway, type ScriptedReply, startModelGateway } from "./model-gateway.ts";
+import { type ModelGateway, type ModelGatewayOptions, type ScriptedReply, startModelGateway } from "./model-gateway.ts";
 import { type Postgres, startPostgres } from "./postgres.ts";
 import { type Sandbox, type SandboxOptions, startSandbox } from "./sandbox.ts";
 import { type FakeSentry, startSentry } from "./sentry.ts";
@@ -22,8 +22,11 @@ export interface Fakes {
   fixture(name: string): string;
   /** A read-only copy of a folder of this repository, for example `modules/_template`. */
   fromRepository(dir: string): Record<string, string>;
-  /** Starts a scripted model gateway. An unscripted call fails the scenario with the request shown. */
-  modelGateway(script: ScriptedReply[]): Promise<ModelGateway>;
+  /**
+   * Starts a scripted model gateway. An unscripted call fails the scenario with the request shown. `containers: true`
+   * also answers containers at `containerUrl`.
+   */
+  modelGateway(script: ScriptedReply[], options?: ModelGatewayOptions): Promise<ModelGateway>;
   /** Starts a scripted JSON API. A request no route names fails the scenario with the request shown. */
   http(routes: HttpRoute[], options?: HttpOptions): Promise<FakeHttp>;
   /**
@@ -100,8 +103,8 @@ export function makeFakes(moduleRoot: string): FakesHandle {
         for (const file of listFiles(root)) tree[relative(root, file)] = readFileSync(file, "utf8");
         return tree;
       },
-      async modelGateway(script) {
-        return (await inProcess(startModelGateway(script))).gateway;
+      async modelGateway(script, options) {
+        return (await inProcess(startModelGateway(script, options))).gateway;
       },
       async http(routes, options) {
         return (await inProcess(startHttp(routes, options))).http;

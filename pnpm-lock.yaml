@@ -272,6 +272,9 @@ importers:
       '@opensoftware/console':
         specifier: workspace:*
         version: link:../modules/console
+      '@opensoftware/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       '@opensoftware/factory-spec':
         specifier: workspace:*
         version: link:../modules/factory-spec
