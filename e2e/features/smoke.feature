@@ -3,7 +3,7 @@ Feature: Key use cases across modules
   Deterministic end-to-end scenarios on the Compose profile. Outside systems are fakes, except the forge,
   which is a real Forgejo container. The harness is the scripted ACP agent from the testkit.
 
-  @id=SCN-E2E-001 @status=planned
+  @id=SCN-E2E-001 @status=implemented
   Scenario: A request in chat becomes a pull request with evidence
     Given a factory with the stages "triage", "implement" and "verify"
     And the scripted harness changes "README.md" when asked to implement
@@ -34,7 +34,7 @@ Feature: Key use cases across modules
     When the factory engineer runs the benchmark and accepts the cheaper model
     Then the LLM gateway configuration routes those tasks to the cheaper model
 
-  @id=SCN-E2E-005 @status=planned
+  @id=SCN-E2E-005 @status=implemented
   Scenario: A manual change to a running factory is reported as drift
     Given a factory applied from "factory.yaml"
     When a person changes a webhook directly in Forgejo

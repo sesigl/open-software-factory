@@ -26,23 +26,25 @@ export const WORK = {
 
 /**
  * factory.yaml of the e2e factory with an agent and a stage for each name; the stage "spec" waits for the gate of
- * "maintainers". `providers` and `agent` add lines below `providers:` and to each agent; `tail` adds lines at the end.
+ * "maintainers". The agents run on the harness `acp`, which foreman starts as the scripted agent, or on `harness`.
+ * `providers` and `agent` add lines below `providers:` and to each agent; `tail` adds lines at the end.
  */
 export function factoryYaml(
   stages: string[],
-  more: { providers?: string[]; agent?: string[]; tail?: string[] } = {},
+  more: { harness?: string; providers?: string[]; agent?: string[]; tail?: string[] } = {},
 ): string {
+  const harness = more.harness ?? "acp";
   return [
     "version: 1",
     "factory: smoke",
     "providers:",
     "  harness:",
-    '    acp: "^0"',
+    `    ${harness}: "^0"`,
     ...(more.providers ?? []).map((line) => `  ${line}`),
     "agents:",
     ...stages.flatMap((stage) => [
       `  ${stage}:`,
-      "    harness: acp",
+      `    harness: ${harness}`,
       `    model: routes/${stage}`,
       `    prompt: ./agents/${stage}.md`,
       ...(more.agent ?? []).map((line) => `    ${line}`),
