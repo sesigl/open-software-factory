@@ -11,7 +11,7 @@ and the root `spec-trace.json` ([ADR 0031](../docs/decisions/0031-spec-trace-act
 ## Quick start
 
 ```sh
-make install     # pnpm dependencies and the pinned lychee, oasdiff, opa, temporal and nats-server binaries
+make install     # pnpm dependencies and the pinned lychee, oasdiff, opa, temporal, nats-server, helm, kubectl and kind binaries
 make check       # lint and the static checks, in seconds
 make verify      # everything: lint, types, all system tests, all checks
 ```
@@ -31,7 +31,7 @@ make verify      # everything: lint, types, all system tests, all checks
 | `osf new-module <name>` | `make new-module NAME=x` | Copy the working module `modules/_template` without `node_modules/` and `dist/`, rename it and register the scenario prefix (ADR 0015). |
 | `osf next-id <module>` | `make next-id MODULE=x` | Print the next free scenario ID of a module or prefix. |
 | `osf test-scenario <ID>` | `make test-scenario ID=…` | Run the one system test of a scenario. |
-| `osf install-tools` | `make install` | Download the checksum-pinned lychee, oasdiff, opa, temporal and nats-server into `.tools/bin/`. |
+| `osf install-tools` | `make install` | Download the checksum-pinned lychee, oasdiff, opa, temporal, nats-server, helm, kubectl and kind into `.tools/bin/`. |
 
 `make run-record` builds `modules/runlog` and runs `runlog export --latest --per-run` with `OUTPUT=runs` on the
 Claude Code project folder of this checkout and `~/.codex/sessions` (ADR 0027). `RUN_SESSIONS=<folder>` overrides
