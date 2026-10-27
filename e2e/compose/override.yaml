@@ -45,6 +45,15 @@ services:
     environment:
       <<: *clock
 
+  # The LLM gateway sends OpenAI models to the scripted model gateway, with the config of E2E_LITELLM_CONFIG.
+  litellm:
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    environment:
+      OPENAI_API_BASE: ${E2E_MODEL_URL:-}
+      OPENAI_API_KEY: sk-e2e-unused
+    volumes:
+      - ${E2E_LITELLM_CONFIG:?set E2E_LITELLM_CONFIG in .env}:/etc/litellm/config.yaml:ro
+
   factory:
     <<: *workspace
     environment:
@@ -64,5 +73,19 @@ services:
       OUTPUT: /work
       OBSERVER_INFERENCE_URL: ${E2E_MODEL_URL:-}
       OBSERVER_FORGE_TOKEN: ${E2E_FORGE_TOKEN:-}
+    volumes:
+      - ${E2E_WORK_DIR:-./work}:/work
+
+  # The benchmark's tool, for "docker compose run --rm taskcapture <command>"; Harbor is the command E2E_HARBOR names.
+  taskcapture:
+    <<: *workspace
+    profiles: [tools]
+    entrypoint: [taskcapture]
+    working_dir: /work
+    environment:
+      OUTPUT: /work
+      TASKCAPTURE_FORGE_TOKEN: ${E2E_FORGE_TOKEN:-}
+      TASKCAPTURE_HARBOR: ${E2E_HARBOR:-harbor}
+      E2E_MODEL_URL: ${E2E_MODEL_URL:-}
     volumes:
       - ${E2E_WORK_DIR:-./work}:/work

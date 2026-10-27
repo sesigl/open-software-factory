@@ -107,3 +107,11 @@ Feature: Scripted model gateway
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-120 @status=implemented
+  Scenario: The model gateway for containers answers a call from a container
+    Given a module whose CLI runs curl in a container that sends "hello from a container" to the chat completions API at "DEMO_MODEL_URL" and prints the answer
+    And its system test scripts the reply "hello back" for that call, passes the container URL of the model gateway for containers and expects "hello back"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
