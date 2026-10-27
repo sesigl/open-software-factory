@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1
 # The image of one module of the factory and its adapters, installed from npm at the versions the Compose profile
 # pins (ADR 0074). Build it with the build argument PACKAGES, the packages separated by spaces, like
 # "@opensoftware/foreman@0.4.0 @opensoftware/forge-github@0.5.0". The target gatekeeper adds OPA.
