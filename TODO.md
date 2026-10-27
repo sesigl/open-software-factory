@@ -655,7 +655,7 @@ read them for ideas, do not copy their company-specific rules.
     review state, in both forge adapters; `/inbox` lists the open pull requests of `CONSOLE_INBOX_REPOSITORY` from
     `observer/` branches with their age and the state "needs review", "approved" or "changes requested".
 
-### [ ] T-19 · distribution
+### [x] T-19 · distribution
 
 - **Tier / language / path / prefix:** optional · YAML · `deploy/compose/`, `deploy/helm/` · `SCN-DIST`
 - **Alone:** install a complete factory with one command.
@@ -666,7 +666,8 @@ read them for ideas, do not copy their company-specific rules.
 - **Realizes:** OPEN-006, DATA-006, RUNTIME-001, LOOP-013.
 - **First scenarios:** `docker compose up` reaches a healthy state within the budget; the reference factory
   plans and applies cleanly; `helm install` on kind passes the same smoke subset.
-- **Done when:** `make smoke` runs against the Compose profile.
+- **Done when:** the Compose profile and the Helm chart pass their scenarios. `make smoke` against the profile is
+  T-20's: it needs the `e2e/` package.
 - **Slices:**
   - [x] The Compose profile and the reference factory (ADR 0074, `SCN-DIST-001` to `-006`, `SCN-TK-114`):
     `deploy/compose/compose.yaml` starts PostgreSQL with pgvector, Temporal on it, NATS, SeaweedFS, Phoenix, LiteLLM,
@@ -674,9 +675,13 @@ read them for ideas, do not copy their company-specific rules.
     from npm releases by `deploy/images/Dockerfile`; `.env` holds every secret and a missing one is named;
     `deploy/compose/factory/` is the reference factory, and `docker compose run --rm factory plan` and `apply` run on
     it. The testkit's `sut.compose` drives the profile, and the CI suite `deploy` runs it.
-  - [ ] Helm chart on kind with the same smoke subset; published, signed multi-arch images with SBOMs and SLSA
-    provenance, which the Compose profile then pulls; the verify stage of the reference factory names its checks once
-    a factory-spec release pins a contracts version that knows them.
+  - [x] The Helm chart and the published images (ADR 0075, `SCN-DIST-007` to `-013`, `SCN-TK-115`): `deploy/helm/osf/`
+    installs gatekeeper, intake, foreman and console with the reference factory, and PostgreSQL, NATS and Temporal
+    unless the values name the team's own; secrets come from the values or an existing Secret; `helm test` plans the
+    factory. The testkit's `sut.helm` drives it on kind in CI. The workflow `publish-images` publishes the module
+    images of `compose.yaml` to GHCR for amd64 and arm64 with SBOMs and SLSA provenance, signs them and the chart with
+    cosign, and the Compose profile pulls them. The verify stage of the reference factory waits for the check
+    `verify` (factory-spec 0.5.0).
 
 ### [ ] T-20 · end-to-end smoke suite
 

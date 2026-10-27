@@ -83,6 +83,11 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
   scenario's own project with `$INPUT/.env` as its `.env`; `services()` lists each service's state, health and exit
   code; `url(service, port)` is where the project publishes that container port. The project and its volumes are
   removed when the scenario ends.
+- `sut.helm("<chart>")`: a Helm chart of the unit, like `helm/osf` of `deploy/`
+  ([ADR 0075](../../docs/decisions/0075-helm-chart-and-images.md)), on the cluster of `KUBECONFIG`. `chart` is the
+  chart's absolute path; `run(args)` runs `helm <args>` and `kubectl(args)` runs `kubectl <args>`, both in a namespace
+  of the scenario, with $INPUT as the current directory; `url(service, port)` forwards a local port to that port of
+  the service. The namespace is deleted when the scenario ends. `make install` pins helm, kubectl and kind.
 - `sut.adapter("<port>/<name>")`: the command line of a port adapter of this repository, `adapters/<port>/<name>/` in
   the module's folder or above it: Node and the adapter's built `bin`. Pass it to a module that runs adapters as
   programs in its documented variable; the adapter runs as the module's child, with its network guard. The adapter
@@ -244,12 +249,13 @@ A `planned` scenario's test must fail; when it passes, the testkit fails it and 
 
 ## Configuration
 
-The testkit reads three environment variables and passes them on to the module:
+The testkit reads these environment variables:
 
 | Variable | Meaning |
 | --- | --- |
 | `PLAYWRIGHT_BROWSERS_PATH` | Where Playwright keeps its browsers. The module gets it like `PATH`, since its `HOME` is the working folder. |
 | `__STRYKER_ACTIVE_MUTANT__` | The mutant Stryker activates during a mutation run (`osf mutation`, ADR 0037). The module's instrumented build reads it in its own process. |
+| `KUBECONFIG` | The cluster where `sut.helm` installs charts, as for any `kubectl` command. Default: kubectl's own (`~/.kube/config`). The module does not get it unless the test passes it on. |
 | `OSF_TESTKIT_MUTANTS` | A folder, set by `osf mutation` for its first test run ([ADR 0061](../../docs/decisions/0061-mutation-runs-the-scenarios-that-reach-a-mutant.md)). Each process of the module writes the IDs of the mutants it ran to `<folder>/<scenario ID>/` when it exits. |
 
 `testkit conformance` passes the port features folder to the
@@ -392,3 +398,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-112 | implemented | The fake inference adapter fails every command with its message |
 | SCN-TK-113 | implemented | fakes.github lists the open pull requests and the reviews of a pull request |
 | SCN-TK-114 | implemented | sut.compose starts a Compose file of the module and reaches the port a service publishes |
+| SCN-TK-115 | implemented | sut.helm installs a chart of the module in the scenario's namespace and reaches the port of a service |

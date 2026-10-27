@@ -63,6 +63,8 @@ jobs:
             filter: "@opensoftware/testkit"
             images: s3 forge
             pull: curlimages/curl:8.17.0 nats:2.11.9-alpine
+            # sut.helm installs a chart on kind (ADR 0075).
+            cluster: kind
           - suite: factory-spec
             filter: "@opensoftware/factory-spec"
             images: forge
@@ -104,9 +106,12 @@ jobs:
           - suite: forge-forgejo
             filter: "@opensoftware/forge-forgejo"
             images: forge
-          # Each scenario starts the Compose profile as its own project; the first builds the module images (ADR 0074).
+          # Each scenario starts the Compose profile as its own project (ADR 0074), or installs the Helm chart in a
+          # namespace of its own on kind, which gets the images of the chart first (ADR 0075).
           - suite: deploy
             filter: "@opensoftware/deploy"
+            cluster: kind
+            kind-images: true
             pull: >-
               pgvector/pgvector:0.8.7-pg17-trixie temporalio/admin-tools:1.31.4 temporalio/server:1.31.4
               temporalio/ui:2.57.0 nats:2.11.9-alpine chrislusf/seaweedfs:3.97 arizephoenix/phoenix:version-20.26.1
@@ -155,6 +160,14 @@ jobs:
       - name: Start kind with agent-sandbox
         if: matrix.kind
         uses: ./.github/actions/kind-agent-sandbox
+      # A kind cluster for the scenarios that install a Helm chart (ADR 0075).
+      - name: Start kind
+        if: matrix.cluster == 'kind'
+        uses: ./.github/actions/kind
+      # The images of the chart osf, pulled from GHCR or built at the pins of compose.yaml, loaded into kind.
+      - name: Load the images of the Helm chart into kind
+        if: matrix.kind-images
+        run: deploy/helm/kind-images.sh
       # proof capture opens pages in Chromium (ADR 0029); the testkit hands PLAYWRIGHT_BROWSERS_PATH to the module.
       - name: Install the browser of the capture scenarios
         if: matrix.browser

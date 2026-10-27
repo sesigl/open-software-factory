@@ -1,0 +1,98 @@
+# The values of the chart osf (ADR 0075). deploy/README.md#helm-values describes each one.
+
+# Every secret of the factory. Set each value, or name a Secret with the same keys in existingSecret, for example one
+# that OpenBao fills through its operator or the External Secrets Operator. The keys: postgres-password,
+# foreman-api-token, intake-api-token, gatekeeper-api-token, gatekeeper-slack-token, gatekeeper-slack-signing-secret
+# and, optional, forge-token.
+secrets:
+  existingSecret: ""
+  postgresPassword: ""
+  foremanApiToken: ""
+  intakeApiToken: ""
+  gatekeeperApiToken: ""
+  gatekeeperSlackToken: ""
+  gatekeeperSlackSigningSecret: ""
+  # A token that may read pull requests and their checks, for stages with checks. Optional.
+  forgeToken: ""
+
+# The module images, published and signed by the workflow publish-images. The tags equal the pins in
+# deploy/compose/compose.yaml.
+images:
+  registry: ghcr.io/sesigl/open-software-factory
+  pullPolicy: IfNotPresent
+  gatekeeper: "0.4.0"
+  intake: "0.2.0"
+  foreman: "0.4.0"
+  console: "0.2.0"
+  factorySpec: "0.5.0"
+
+# The factory definition with its prompts, policy and groups, as path: content. Empty: the reference factory in
+# files/factory/. foreman commits the files into Git, so a run's factory version is a commit.
+factory:
+  files: {}
+
+gatekeeper:
+  # The Slack channel where gatekeeper asks for decisions, like C0GATES.
+  slackChannel: C0GATES
+  forgeAdapter: forge-github
+  resources: {}
+
+intake:
+  forgeAdapter: forge-github
+  resources: {}
+
+foreman:
+  harnesses: '{"claude-code": "harness-claude-code run"}'
+  forges: '{"github": "forge-github", "forgejo": "forge-forgejo"}'
+  persistence:
+    size: 1Gi
+    storageClass: ""
+  resources: {}
+
+console:
+  forgeAdapter: forge-github
+  # The base URL of the Temporal UI, for the link to a run's history. Optional.
+  temporalUrl: ""
+  # The dashboards every page links, as name=url, comma-separated, like Langfuse=https://langfuse.acme.dev.
+  links: ""
+  resources: {}
+
+# PostgreSQL with pgvector in the cluster. Set enabled to false and fill externalDatabase for a managed PostgreSQL.
+postgresql:
+  enabled: true
+  image: pgvector/pgvector:0.8.7-pg17-trixie
+  persistence:
+    size: 8Gi
+    storageClass: ""
+
+# A PostgreSQL the team runs. Every pod creates its database when it is missing, so the user needs CREATEDB, or
+# create the databases gatekeeper, intake, temporal and temporal_visibility yourself.
+externalDatabase:
+  host: ""
+  port: 5432
+  user: osf
+  # The database psql connects to while it creates the others.
+  adminDatabase: postgres
+
+# NATS with JetStream in the cluster. Set enabled to false and externalNats.url for the team's own.
+nats:
+  enabled: true
+  image: nats:2.11.9-alpine
+  persistence:
+    size: 1Gi
+    storageClass: ""
+
+externalNats:
+  url: ""
+
+# Temporal on the PostgreSQL above. Set enabled to false and externalTemporal.address for the team's own.
+temporal:
+  enabled: true
+  image: temporalio/server:1.31.4
+  adminToolsImage: temporalio/admin-tools:1.31.4
+
+externalTemporal:
+  address: ""
+
+# The namespace of the runs; foreman creates it when it is missing.
+temporalNamespace: default

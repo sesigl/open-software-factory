@@ -1,0 +1,82 @@
+{{- if .Values.postgresql.enabled }}
+{{- $name := include "osf.name" (dict "root" . "component" "postgres") }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}-init
+  labels:
+    {{- include "osf.labels" (dict "root" . "component" "postgres") | nindent 4 }}
+data:
+  # Agent memory starts with pgvector in the factory's own database (docs/architecture/stack.md).
+  init.sql: CREATE EXTENSION IF NOT EXISTS vector;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "osf.labels" (dict "root" . "component" "postgres") | nindent 4 }}
+spec:
+  selector:
+    {{- include "osf.selector" (dict "root" . "component" "postgres") | nindent 4 }}
+  ports:
+    - name: postgres
+      port: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "osf.labels" (dict "root" . "component" "postgres") | nindent 4 }}
+spec:
+  serviceName: {{ $name }}
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "osf.selector" (dict "root" . "component" "postgres") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "osf.labels" (dict "root" . "component" "postgres") | nindent 8 }}
+    spec:
+      containers:
+        - name: postgres
+          image: {{ .Values.postgresql.image }}
+          env:
+            - name: POSTGRES_USER
+              value: osf
+            - name: POSTGRES_DB
+              value: factory
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            {{- include "osf.secretEnv" (dict "root" . "name" "POSTGRES_PASSWORD" "key" "postgres-password") | nindent 12 }}
+          ports:
+            - name: postgres
+              containerPort: 5432
+          readinessProbe:
+            # Over TCP: while init.sql runs, PostgreSQL listens only on its socket.
+            exec:
+              command: [pg_isready, --host=127.0.0.1, --username=osf, --dbname=factory]
+            periodSeconds: 2
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: init
+          configMap:
+            name: {{ $name }}-init
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        {{- with .Values.postgresql.persistence.storageClass }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.postgresql.persistence.size }}
+{{- end }}

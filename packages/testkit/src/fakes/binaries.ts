@@ -64,7 +64,7 @@ async function startNatsOnce(): Promise<Running<Nats>> {
 }
 
 /** The pinned binary of the workspace that runs the scenario or holds the testkit, else the name for PATH. */
-function program(name: string): string {
+export function program(name: string): string {
   const roots = [repoRoot(), workspaceOf(dirname(fileURLToPath(import.meta.url))) ?? repoRoot()];
   return roots.map((root) => join(root, ".tools", "bin", name)).find(existsSync) ?? name;
 }
