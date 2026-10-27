@@ -54,7 +54,7 @@ jobs:
   tests:
     name: tests (${{ matrix.suite }})
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: ${{ matrix.timeout || 20 }}
     strategy:
       fail-fast: false
       matrix:
@@ -112,6 +112,8 @@ jobs:
             filter: "@opensoftware/deploy"
             cluster: kind
             kind-images: true
+            # Four scenarios install the whole chart, each with PostgreSQL, NATS and Temporal of its own.
+            timeout: 40
             pull: >-
               pgvector/pgvector:0.8.7-pg17-trixie temporalio/admin-tools:1.31.4 temporalio/server:1.31.4
               temporalio/ui:2.57.0 nats:2.11.9-alpine chrislusf/seaweedfs:3.97 arizephoenix/phoenix:version-20.26.1
@@ -180,6 +182,18 @@ jobs:
       - run: make verify-tests FILTER="$FILTER"
         env:
           FILTER: ${{ matrix.filter }}
+      # A release that did not get ready: the pods of every namespace and why they wait, for the log.
+      - name: Show the state of the kind cluster
+        if: (failure() || cancelled()) && matrix.cluster == 'kind'
+        run: |
+          kubectl=.tools/bin/kubectl
+          $kubectl get pods --all-namespaces --output wide || true
+          $kubectl get events --all-namespaces --sort-by=.lastTimestamp | tail -n 80 || true
+          $kubectl get pods --all-namespaces --no-headers | awk '$4 !~ /Running|Completed/ || $3 ~ /^0\//' |
+            while read -r namespace pod _; do
+              $kubectl describe pod --namespace "$namespace" "$pod" | tail -n 30
+              $kubectl logs --namespace "$namespace" "$pod" --all-containers --tail 30 || true
+            done
       # Coverage files are named after the process ID, which repeats across runners: prefix them with the suite.
       - name: Name the coverage files after the suite
         if: always()
