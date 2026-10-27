@@ -62,7 +62,7 @@ jobs:
           - suite: testkit
             filter: "@opensoftware/testkit"
             images: s3 forge
-            pull: curlimages/curl:8.17.0
+            pull: curlimages/curl:8.17.0 nats:2.11.9-alpine
           - suite: factory-spec
             filter: "@opensoftware/factory-spec"
             images: forge
@@ -104,9 +104,16 @@ jobs:
           - suite: forge-forgejo
             filter: "@opensoftware/forge-forgejo"
             images: forge
+          # Each scenario starts the Compose profile as its own project; the first builds the module images (ADR 0074).
+          - suite: deploy
+            filter: "@opensoftware/deploy"
+            pull: >-
+              pgvector/pgvector:0.8.7-pg17-trixie temporalio/admin-tools:1.31.4 temporalio/server:1.31.4
+              temporalio/ui:2.57.0 nats:2.11.9-alpine chrislusf/seaweedfs:3.97 arizephoenix/phoenix:version-20.26.1
+              ghcr.io/berriai/litellm:v1.106.2 openpolicyagent/opa:1.21.0-static node:24.11.1-bookworm-slim
           # Every other package, so a new module runs without a change here.
           - suite: rest
-            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper !@opensoftware/intake !@opensoftware/foreman !@opensoftware/sandbox-docker !@opensoftware/sandbox-kubernetes !@opensoftware/inference-litellm !@opensoftware/forge-forgejo"
+            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper !@opensoftware/intake !@opensoftware/foreman !@opensoftware/sandbox-docker !@opensoftware/sandbox-kubernetes !@opensoftware/inference-litellm !@opensoftware/forge-forgejo !@opensoftware/deploy"
     steps:
       - uses: actions/checkout@v5
         with:

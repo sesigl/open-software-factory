@@ -75,6 +75,7 @@ profile, so the profile must start the same way in CI as on an operator's machin
 - A new module release changes nothing in the profile until its pin in `compose.yaml` moves. The pins move by hand
   in the change that needs them, until Renovate watches them.
 - factory-spec 0.4.0 pins `@opensoftware/contracts` 1.6.0, which does not know a stage's `checks`. The reference
-  factory's verify stage asks for evidence but names no checks until a factory-spec release pins a newer contracts.
+  factory's verify stage asks for evidence but names no checks until the profile pins a factory-spec release with a
+  newer contracts. `SCN-FSPEC-057` proves that factory-spec accepts a stage's checks, so its next release carries one.
 - Revisit when the images are published: Compose then pulls the signed images, and the Dockerfile builds them in the
   publish workflow instead.

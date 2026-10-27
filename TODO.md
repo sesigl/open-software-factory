@@ -667,6 +667,16 @@ read them for ideas, do not copy their company-specific rules.
 - **First scenarios:** `docker compose up` reaches a healthy state within the budget; the reference factory
   plans and applies cleanly; `helm install` on kind passes the same smoke subset.
 - **Done when:** `make smoke` runs against the Compose profile.
+- **Slices:**
+  - [x] The Compose profile and the reference factory (ADR 0074, `SCN-DIST-001` to `-006`, `SCN-TK-114`):
+    `deploy/compose/compose.yaml` starts PostgreSQL with pgvector, Temporal on it, NATS, SeaweedFS, Phoenix, LiteLLM,
+    gatekeeper, intake, foreman and console with one `docker compose up --detach --wait`; the module images are built
+    from npm releases by `deploy/images/Dockerfile`; `.env` holds every secret and a missing one is named;
+    `deploy/compose/factory/` is the reference factory, and `docker compose run --rm factory plan` and `apply` run on
+    it. The testkit's `sut.compose` drives the profile, and the CI suite `deploy` runs it.
+  - [ ] Helm chart on kind with the same smoke subset; published, signed multi-arch images with SBOMs and SLSA
+    provenance, which the Compose profile then pulls; the verify stage of the reference factory names its checks once
+    a factory-spec release pins a contracts version that knows them.
 
 ### [ ] T-20 · end-to-end smoke suite
 
