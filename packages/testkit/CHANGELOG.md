@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.26.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.25.0...testkit-v0.26.0) (2026-10-27)
+
+
+### Features
+
+* **deploy:** T-19 the Compose profile installs a complete factory with one command ([#134](https://github.com/sesigl/open-software-factory/issues/134)) ([4a10330](https://github.com/sesigl/open-software-factory/commit/4a103303cf00df906a1cf632f000eec749011147))
+
 ## [0.25.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.24.0...testkit-v0.25.0) (2026-10-27)
 
 
