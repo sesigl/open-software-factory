@@ -1,0 +1,3 @@
+# The operator's values and a proxy's CA stay on the machine.
+compose/.env
+images/local-ca.pem

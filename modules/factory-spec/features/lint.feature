@@ -10,6 +10,13 @@ Feature: Lint a factory definition
     Then the command exits with code 0
     And the output is "factory.yaml: no problems"
 
+  @id=SCN-FSPEC-057 @status=implemented
+  Scenario: Lint accepts a stage that waits for the check "verify" and asks for evidence
+    Given a factory.yaml whose stage "verify" names the checks ["verify"], the evidence "required" and the forge "github"
+    When the factory engineer runs "factory lint"
+    Then the command exits with code 0
+    And the output is "factory.yaml: no problems"
+
   @id=SCN-FSPEC-003 @status=implemented @realizes=SCN-FACTORY-CODE-001
   Scenario: Lint names the line of a secret whose provider is not declared
     Given a factory.yaml whose agent "triage" has the secret "ref:vault/linear-token" on line 14

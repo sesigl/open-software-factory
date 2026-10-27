@@ -1,0 +1,11 @@
+# The LLM gateway of the Compose profile (ADR 0056, ADR 0074). Each model_name is a routing alias that agents name as
+# their model, like routes/implement in factory/factory.yaml. Add your models here; the keys come from the
+# environment, like os.environ/ANTHROPIC_API_KEY, never from this file.
+model_list: []
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  database_url: os.environ/DATABASE_URL
+
+litellm_settings:
+  drop_params: true

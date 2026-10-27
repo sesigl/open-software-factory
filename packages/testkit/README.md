@@ -78,6 +78,11 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
 - `sut.events.watch(nats, subjects)`: records the CloudEvents published on a NATS server from now on.
   `received(type, { count, timeoutMs })` waits for them and, on timeout, names what arrived instead;
   `publish(subject, event)` sends an event to the module.
+- `sut.compose("<file>")`: a Compose file of the unit, like `compose/compose.yaml` of `deploy/`
+  ([ADR 0074](../../docs/decisions/0074-compose-profile.md)). `run(args, { env })` runs `docker compose <args>` as the
+  scenario's own project with `$INPUT/.env` as its `.env`; `services()` lists each service's state, health and exit
+  code; `url(service, port)` is where the project publishes that container port. The project and its volumes are
+  removed when the scenario ends.
 - `sut.adapter("<port>/<name>")`: the command line of a port adapter of this repository, `adapters/<port>/<name>/` in
   the module's folder or above it: Node and the adapter's built `bin`. Pass it to a module that runs adapters as
   programs in its documented variable; the adapter runs as the module's child, with its network guard. The adapter
@@ -386,3 +391,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-111 | implemented | The fake inference adapter makes one key per call and forgets a stopped gateway |
 | SCN-TK-112 | implemented | The fake inference adapter fails every command with its message |
 | SCN-TK-113 | implemented | fakes.github lists the open pull requests and the reviews of a pull request |
+| SCN-TK-114 | implemented | sut.compose starts a Compose file of the module and reaches the port a service publishes |

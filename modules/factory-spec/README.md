@@ -258,3 +258,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FSPEC-054 | implemented | Apply with gh-aw workflows registers no GitHub webhook |
 | SCN-FSPEC-055 | implemented | Apply asks for the webhook secret when an automation needs a webhook |
 | SCN-FSPEC-056 | implemented | Apply names the forge adapter it cannot start |
+| SCN-FSPEC-057 | implemented | Lint accepts a stage that waits for the check "verify" and asks for evidence |
