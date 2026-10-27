@@ -23,9 +23,12 @@ scenario("SCN-TK-118", async ({ sut, given, when, then }) => {
     },
   );
 
-  await given('its system test scripts fakes.harness to run "echo no remote >&2; exit 3" for "push the branch"', async () => {
-    for (const [path, content] of Object.entries(module)) await sut.files.put(path, content);
-  });
+  await given(
+    'its system test scripts fakes.harness to run "echo no remote >&2; exit 3" for "push the branch"',
+    async () => {
+      for (const [path, content] of Object.entries(module)) await sut.files.put(path, content);
+    },
+  );
 
   let run: Awaited<ReturnType<typeof sut.cli>>;
   await when('the developer runs "testkit run --junit report.xml" in the module', async () => {
