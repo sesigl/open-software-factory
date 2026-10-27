@@ -385,3 +385,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-110 | implemented | The fake inference adapter starts a gateway from a config and prints its ID and URL |
 | SCN-TK-111 | implemented | The fake inference adapter makes one key per call and forgets a stopped gateway |
 | SCN-TK-112 | implemented | The fake inference adapter fails every command with its message |
+| SCN-TK-113 | implemented | fakes.github lists the open pull requests and the reviews of a pull request |

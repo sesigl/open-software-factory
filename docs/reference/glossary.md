@@ -48,6 +48,7 @@ Use these terms in scenarios, code, UI text and docs.
 | Thread | One conversation in a channel, named by Vercel Chat SDK's thread ID, for example `slack:C0WEB:1767225600.000001`; the factory replies in the thread of the work item it came from. |
 | Approval card | A message in a thread that asks a person a question with choices, such as `approve` and `reject`; the person's choice is a decision with their identity (ADR 0059). |
 | Problem | One scorer that failed many runs, recorded by observer with its count, its reasons and links to the failed runs. |
+| Self-improvement inbox | The console's page `/inbox`: observer's open proposals, the pull requests from `observer/` branches, with their age and the state "needs review", "approved" or "changes requested" from the forge port's `prs` (ADR 0073). |
 | Self-improvement | The loop that turns repeated failures into reviewed changes to the factory definition. |
 | Port | An interface to an outside system. |
 | Adapter | An implementation of a port for one product. |
