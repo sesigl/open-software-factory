@@ -1,4 +1,3 @@
-// @ts-nocheck
 // One SQL interface over PostgreSQL (node-postgres) and the embedded PostgreSQL PGlite (ADR 0063): the server runs
 // the same statements on both.
 import { mkdirSync } from "node:fs";

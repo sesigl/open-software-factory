@@ -1,4 +1,3 @@
-// @ts-nocheck
 // The Factory MCP server's way to the inbox and to the runs: the HTTP APIs of "intake serve" (ADR 0063) and of
 // "foreman serve" (ADR 0071), each with its token.
 
