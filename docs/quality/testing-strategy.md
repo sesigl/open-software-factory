@@ -138,7 +138,9 @@ pull request diff, where the review catches them.
 
 Five deterministic scenarios in [`e2e/features/smoke.feature`](../../e2e/features/smoke.feature) on the Compose
 profile, plus `SMOKE-PAID`: one small real task per first-party harness with a real model, nightly and before
-releases, never on pull requests.
+releases, never on pull requests. The profile's own scenarios in [`deploy/features/`](../../deploy/features/compose.feature)
+start it with `sut.compose`, each as a Compose project of its own, and check that every service is healthy and wired
+(ADR 0074).
 
 ## Evergreen docs
 

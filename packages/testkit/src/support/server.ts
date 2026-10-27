@@ -8,16 +8,24 @@ export interface Server {
   stop(): Promise<{ stdout: string; stderr: string }>;
 }
 
-/** A port that was free a moment ago on 127.0.0.1. */
-export function freePort(): Promise<number> {
-  return new Promise((resolvePromise, reject) => {
+// Below the kernel's range of ephemeral ports (32768 and up on Linux), where the fakes, Docker and every port 0 land.
+// A port the OS hands out there could be taken by a fake of a parallel scenario between this check and the module's
+// listen, and the module's readiness check would then reach the fake.
+const MODULE_PORTS = { from: 20_000, to: 32_767 };
+
+/** A port that was free a moment ago on 127.0.0.1, outside the ephemeral range. */
+export async function freePort(): Promise<number> {
+  for (;;) {
+    const port = MODULE_PORTS.from + Math.floor(Math.random() * (MODULE_PORTS.to - MODULE_PORTS.from + 1));
+    if (await bindable(port)) return port;
+  }
+}
+
+function bindable(port: number): Promise<boolean> {
+  return new Promise((resolvePromise) => {
     const server = createServer();
-    server.on("error", reject);
-    server.listen(0, "127.0.0.1", () => {
-      const address = server.address();
-      const port = typeof address === "object" && address ? address.port : 0;
-      server.close(() => resolvePromise(port));
-    });
+    server.once("error", () => resolvePromise(false));
+    server.listen(port, "127.0.0.1", () => server.close(() => resolvePromise(true)));
   });
 }
 

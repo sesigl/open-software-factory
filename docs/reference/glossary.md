@@ -12,6 +12,8 @@ Use these terms in scenarios, code, UI text and docs.
 | Factory definition | `factory.yaml` plus prompts, skills and policies in Git; the desired state of a factory. |
 | Factory version | The commit hash of the factory definition a run used. |
 | Lock file | `factory.lock` next to `factory.yaml`: the exact version of each MCP server from a registry, pinned by `factory plan`. |
+| Compose profile | `deploy/compose/`: the factory with all its services on one machine, started with one `docker compose up` (ADR 0074). |
+| Reference factory | The factory definition in `deploy/compose/factory/` that the Compose profile runs unless `FACTORY_DIR` names another. |
 | Product surface | A part of a product with its own factory, for example "web" or "server". |
 | Work item | One unit of requested work (idea, bug, automated trigger) as a CloudEvent. |
 | Dedupe key | The key that makes requests one work item: intake keeps one work item per key and lists every request that sent it. |

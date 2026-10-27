@@ -6,6 +6,7 @@ import { listFiles, quickStart } from "../support/module.ts";
 import { type CliResult, mustRun, run } from "../support/process.ts";
 import { type Acp, makeAcp } from "./acp.ts";
 import { type Action, makeAction } from "./action.ts";
+import { type Compose, makeCompose } from "./compose.ts";
 import { type Events, makeEvents } from "./events.ts";
 import { type Http, makeHttp } from "./http.ts";
 import { adapterCommand, makeLaunch } from "./launch.ts";
@@ -31,6 +32,11 @@ export interface Sut {
   acp: Acp;
   /** The CloudEvents the module publishes on NATS, and events sent to it. */
   events: Events;
+  /**
+   * A Compose file of the unit, like "compose/compose.yaml", run with `docker compose` as the scenario's own project
+   * (ADR 0074). Every call for the same scenario uses the same project.
+   */
+  compose(file: string): Compose;
   /**
    * The module's input and output folders. Every path starts with `$INPUT/` or `$OUTPUT/` and stays inside that
    * folder; the module gets them as the environment variables `INPUT` and `OUTPUT`.
@@ -120,6 +126,7 @@ export function makeSut(moduleRoot: string, dirs: Folders, hosts: () => string[]
     mcp: makeMcp(launch, onStop),
     acp: makeAcp(launch, onStop, inside),
     events: makeEvents(onStop),
+    compose: makeCompose(moduleRoot, dirs, onStop),
     files: {
       async put(path, content) {
         const full = inside(path);
