@@ -54,7 +54,8 @@ spec:
             - name: NAMESPACE
               value: {{ .Values.temporalNamespace | quote }}
         # foreman reads a run's factory version from Git: the files go into a repository with a fixed author and
-        # date, so equal files give the same commit after every restart.
+        # date, so equal files give the same commit after every restart. The repository is a folder that the pod's
+        # user creates: Git refuses the root of the volume, which belongs to root.
         - name: factory
           image: {{ include "osf.image" (dict "root" . "name" "foreman" "tag" .Values.images.foreman) }}
           imagePullPolicy: {{ .Values.images.pullPolicy }}
@@ -62,7 +63,8 @@ spec:
           args:
             - |
               set -eu
-              cd /factory
+              mkdir -p /factory/repo
+              cd /factory/repo
               find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
               find /factory-source -mindepth 1 -maxdepth 1 ! -name '..*' -exec cp -RL {} . \;
               [ -d .git ] || git init -q -b main
@@ -104,7 +106,7 @@ spec:
             - name: OSF_DATA
               value: /home/node/data
             - name: FOREMAN_FACTORY
-              value: /factory/factory.yaml
+              value: /factory/repo/factory.yaml
             - name: FOREMAN_TEMPORAL_ADDRESS
               value: {{ include "osf.temporalAddress" . | quote }}
             - name: FOREMAN_TEMPORAL_NAMESPACE
