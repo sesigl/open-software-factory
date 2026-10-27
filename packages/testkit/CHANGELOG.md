@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.25.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.24.0...testkit-v0.25.0) (2026-10-27)
+
+
+### Features
+
+* **console:** T-18 the self-improvement inbox and the forge port's prs ([#132](https://github.com/sesigl/open-software-factory/issues/132)) ([8b5cab2](https://github.com/sesigl/open-software-factory/commit/8b5cab270c70391422af414a9907b776904e8076))
+
 ## [0.24.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.23.0...testkit-v0.24.0) (2026-10-26)
 
 
