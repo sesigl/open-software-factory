@@ -5,7 +5,7 @@ export const LIST_STATES = ["open", "closed", "all"];
 
 /** A review as Forgejo lists it. */
 export interface Review {
-  user: { login: string } | null;
+  user: { login: string };
   state: string;
   dismissed?: boolean;
 }
@@ -19,7 +19,7 @@ export function reviewOf(reviews: Review[]): "changes_requested" | "approved" | 
   const verdicts = new Map<string, string>();
   for (const review of reviews)
     if (!review.dismissed && (review.state === "APPROVED" || review.state === "REQUEST_CHANGES"))
-      verdicts.set(review.user?.login ?? "", review.state);
+      verdicts.set(review.user.login, review.state);
   const all = new Set(verdicts.values());
   if (all.has("REQUEST_CHANGES")) return "changes_requested";
   return all.has("APPROVED") ? "approved" : "none";

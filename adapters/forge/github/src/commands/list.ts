@@ -6,6 +6,8 @@ import { connect } from "./shared.ts";
 
 /** The most pull requests GitHub gives on one page. */
 const PAGE = 100;
+/** The most pages prs reads: 2,000 pull requests. */
+const PAGES = 20;
 
 /** The fields of GitHub's list of pull requests that prs prints. */
 interface ListedPull {
@@ -24,12 +26,11 @@ interface ListedPull {
 /** Every pull request in the state, newest first, page by page. */
 async function everyPull(api: GitHub, state: string): Promise<ListedPull[]> {
   const pulls: ListedPull[] = [];
-  let page = 0;
-  let batch: ListedPull[];
-  do {
-    batch = await api.request<ListedPull[]>("GET", `/pulls?state=${state}&per_page=${PAGE}&page=${++page}`);
+  for (let page = 1; page <= PAGES; page++) {
+    const batch = await api.request<ListedPull[]>("GET", `/pulls?state=${state}&per_page=${PAGE}&page=${page}`);
     pulls.push(...batch);
-  } while (batch.length === PAGE);
+    if (batch.length < PAGE) break;
+  }
   return pulls;
 }
 

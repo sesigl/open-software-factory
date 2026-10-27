@@ -10,16 +10,18 @@ const LIMIT = 50;
 
 type Listed = Pull & { created_at: string };
 
+/** The most pages prs reads of one list: 1,000 pull requests, or 1,000 reviews of one. */
+const PAGES = 20;
+
 /** Forgejo pages its answers; this reads pages until one is not full. */
 async function pages<T>(api: Repository, path: string): Promise<T[]> {
   const all: T[] = [];
-  let page = 1;
-  let batch: T[];
-  do {
-    const joiner = path.includes("?") ? "&" : "?";
-    batch = (await api.call<T[] | undefined>("GET", `${path}${joiner}limit=${LIMIT}&page=${page++}`)) ?? [];
+  const joiner = path.includes("?") ? "&" : "?";
+  for (let page = 1; page <= PAGES; page++) {
+    const batch = await api.call<T[]>("GET", `${path}${joiner}limit=${LIMIT}&page=${page}`);
     all.push(...batch);
-  } while (batch.length === LIMIT);
+    if (batch.length < LIMIT) break;
+  }
   return all;
 }
 
