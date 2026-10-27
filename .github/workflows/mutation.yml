@@ -1,7 +1,8 @@
 # MUTATION on every pull request (docs/quality/checks.md, ADR 0037): Stryker mutates the source lines the pull request
 # adds to each module and library, and the check fails when too few of those mutants make a system test fail.
-# One runner per shard of about 100 added lines of a changed unit: each mutant reruns the unit's system tests, so a
-# server module with a new file needs several runners to stay under the time limit. Each shard tests every n-th mutant
+# One runner per shard of about 100 added lines of a changed unit, or of the `osf.mutationLinesPerShard` lines its
+# package.json sets: each mutant reruns the unit's system tests, so a server module with a new file needs several
+# runners to stay under the time limit. Each shard tests every n-th mutant
 # of all the added lines, and reuses its report of an earlier push when nothing but runs/ changed (ADR 0066).
 name: mutation
 
@@ -36,6 +37,7 @@ jobs:
             const { existsSync, readFileSync } = require("node:fs");
             const unit = /^((?:modules|packages)\/[^/]+|adapters\/[^/]+\/[^/]+)\/(?:src|bin)\/.*\.ts$/;
             const added = new Map();
+            const perShard = new Map();
             for (const row of readFileSync(0, "utf8").split("\n")) {
               const [count, , file = ""] = row.split("\t");
               const dir = unit.exec(file)?.[1];
@@ -43,9 +45,10 @@ jobs:
               const manifest = JSON.parse(readFileSync(`${dir}/package.json`, "utf8"));
               if (!manifest.scripts?.mutation) continue;
               added.set(manifest.name, (added.get(manifest.name) ?? 0) + (Number(count) || 0));
+              perShard.set(manifest.name, Number(manifest.osf?.mutationLinesPerShard) || 100);
             }
             const shards = [...added].sort(([a], [b]) => a.localeCompare(b)).flatMap(([name, lines]) => {
-              const count = Math.min(10, Math.max(1, Math.ceil(lines / 100)));
+              const count = Math.min(10, Math.max(1, Math.ceil(lines / perShard.get(name))));
               return Array.from({ length: count }, (_, index) => ({ package: name, shard: `${index + 1}/${count}` }));
             });
             console.log(JSON.stringify(shards));')

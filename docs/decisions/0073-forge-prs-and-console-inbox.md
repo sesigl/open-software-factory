@@ -89,3 +89,6 @@ What exists:
 - The inbox costs one adapter process and one forge call per page of pull requests plus one per listed pull request
   each time it is opened. Revisit when a repository has hundreds of open proposals.
 - Adding an operation to the port is not a breaking change; both adapters raise their minor version.
+- Each scenario of forge-forgejo starts a Forgejo container, and each mutant reruns its scenarios in a new process.
+  So one CI runner cannot test the mutants of a change of 80 lines. A unit's `package.json` may set
+  `osf.mutationLinesPerShard` (default 100), and forge-forgejo sets 25: its changes get four times the runners.
