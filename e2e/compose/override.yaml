@@ -67,7 +67,8 @@ services:
   observer:
     <<: *workspace
     profiles: [tools]
-    entrypoint: [observer]
+    # umask 0: the scenario's user may remove what the tool writes into /work.
+    entrypoint: [sh, -c, 'umask 0000 && exec observer "$$@"', observer]
     working_dir: /work
     environment:
       OUTPUT: /work
@@ -80,7 +81,7 @@ services:
   taskcapture:
     <<: *workspace
     profiles: [tools]
-    entrypoint: [taskcapture]
+    entrypoint: [sh, -c, 'umask 0000 && exec taskcapture "$$@"', taskcapture]
     working_dir: /work
     environment:
       OUTPUT: /work
