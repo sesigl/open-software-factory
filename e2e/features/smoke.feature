@@ -20,7 +20,7 @@ Feature: Key use cases across modules
     Then the work moves to the "implement" stage
     And the approval record names the approver and the time
 
-  @id=SCN-E2E-003 @status=planned
+  @id=SCN-E2E-003 @status=implemented
   Scenario: A repeated failure becomes a pull request to the factory
     Given 30 recorded runs in which the triage agent failed the scorer "research-skill-used"
     When the self-improvement loop runs

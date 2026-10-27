@@ -1,5 +1,6 @@
 // The factory of a smoke scenario on the Compose profile (ADR 0076): the e2e factory with the scenario's factory.yaml
 // in $INPUT/factory, the fake Slack and the scripted agent for containers, and the profile's .env with every value set.
+import { chmodSync } from "node:fs";
 import type { Compose, Fakes, FakeSlack, Forge, Harness, HarnessTurn, Sut } from "@opensoftware/testkit";
 
 export const FOREMAN_TOKEN = "foreman-token-1";
@@ -63,6 +64,14 @@ export function factoryYaml(
 /** Where a container reaches a URL of the Docker host. */
 export const fromContainer = (url: string): string => url.replace(/\/\/(localhost|127\.0\.0\.1):/, "//host.docker.internal:");
 
+/** The scenario's folder that the tools of the profile see as /work; their user may write it. */
+export async function workFolder(sut: Sut, files: Record<string, string>): Promise<string> {
+  for (const [path, content] of Object.entries(files)) await sut.files.put(`$INPUT/work/${path}`, content);
+  const folder = sut.files.path("$INPUT/work");
+  chmodSync(folder, 0o777);
+  return folder;
+}
+
 export interface Smoke {
   compose: Compose;
   slack: FakeSlack;
@@ -80,7 +89,7 @@ export interface Smoke {
 
 /**
  * Writes the e2e factory with `factory` as its factory.yaml and the profile's .env, with the fake Slack and the scripted
- * agent with `turns`. The forge, when given, is the one `docker compose run --rm factory` reaches.
+ * agent with `turns`. The forge, when given, is the one the factory's tools reach. `more` adds E2E_ values to .env.
  */
 export async function smoke(
   sut: Sut,
@@ -88,6 +97,7 @@ export async function smoke(
   factory: string,
   turns: HarnessTurn[] = [],
   forge?: Forge,
+  more: Record<string, string> = {},
 ): Promise<Smoke> {
   for (const [path, content] of Object.entries(fakes.fromRepository("e2e/factory")))
     await sut.files.put(`$INPUT/factory/${path}`, content);
@@ -111,6 +121,7 @@ export async function smoke(
     E2E_HARNESS_DIR: harnessDir,
     ...(forge ? { E2E_FORGE_URL: fromContainer(forge.url), E2E_FORGE_TOKEN: forge.token } : {}),
     E2E_WEBHOOK_SECRET: WEBHOOK_SECRET,
+    ...more,
   };
   // Port 0 lets Docker pick free ports, so scenarios that run side by side do not collide.
   const ports = ["CONSOLE_PORT", "INTAKE_PORT", "GATEKEEPER_PORT", "FOREMAN_PORT", "TEMPORAL_UI_PORT", "PHOENIX_PORT"];

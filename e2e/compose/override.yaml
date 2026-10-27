@@ -53,3 +53,16 @@ services:
       FACTORY_FORGEJO_ADAPTER: forge-forgejo
       FACTORY_INTAKE_URL: http://intake:8080/forge/events
       FACTORY_WEBHOOK_SECRET: ${E2E_WEBHOOK_SECRET:-}
+
+  # The self-improvement loop's tool, for "docker compose run --rm observer <command>" on the files in E2E_WORK_DIR.
+  observer:
+    <<: *workspace
+    profiles: [tools]
+    entrypoint: [observer]
+    working_dir: /work
+    environment:
+      OUTPUT: /work
+      OBSERVER_INFERENCE_URL: ${E2E_MODEL_URL:-}
+      OBSERVER_FORGE_TOKEN: ${E2E_FORGE_TOKEN:-}
+    volumes:
+      - ${E2E_WORK_DIR:-./work}:/work
