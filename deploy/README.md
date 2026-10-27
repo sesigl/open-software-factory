@@ -88,9 +88,9 @@ and names it, like `set FOREMAN_API_TOKEN in .env`.
 
 | ID | Status | Scenario |
 | --- | --- | --- |
-| SCN-DIST-001 | planned | Every service of the Compose profile is healthy after one command |
-| SCN-DIST-002 | planned | The Compose profile names the value that .env is missing |
-| SCN-DIST-003 | planned | The console of the Compose profile lists the runs of its foreman |
-| SCN-DIST-004 | planned | The console of the Compose profile shows the agents of the reference factory |
-| SCN-DIST-005 | planned | The plan of the reference factory adds the factory and finds no problems |
-| SCN-DIST-006 | planned | After the reference factory is applied, its plan shows no changes |
+| SCN-DIST-001 | implemented | Every service of the Compose profile is healthy after one command |
+| SCN-DIST-002 | implemented | The Compose profile names the value that .env is missing |
+| SCN-DIST-003 | implemented | The console of the Compose profile lists the runs of its foreman |
+| SCN-DIST-004 | implemented | The console of the Compose profile shows the agents of the reference factory |
+| SCN-DIST-005 | implemented | The plan of the reference factory adds the factory and finds no problems |
+| SCN-DIST-006 | implemented | After the reference factory is applied, its plan shows no changes |

@@ -92,3 +92,11 @@ Feature: A module's servers and events
     Then the command exits with code 1
     And the output contains "expected 1 event(s) of type pr.opened"
     And the output contains "osf.events: run.completed"
+
+  @id=SCN-TK-114 @status=implemented
+  Scenario: sut.compose starts a Compose file of the module and reaches the port a service publishes
+    Given a module whose "compose.yaml" has the service "events", a NATS server that publishes its port 8222
+    And its system test runs "up --detach --wait" with sut.compose, reads "/healthz" at the URL of "events" port 8222 and expects "ok"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
