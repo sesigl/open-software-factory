@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "PORT": {
+      "type": "string",
+      "default": "8080",
+      "description": "serve: the port the web pages are served on."
+    },
+    "OSF_NOW": {
+      "type": "string",
+      "description": "The current time, like 2026-01-01T00:00:00Z, for the age of a run. Default: the clock."
+    },
+    "CONSOLE_FOREMAN_URL": {
+      "type": "string",
+      "description": "serve: the base URL of a foreman's API, or several, comma-separated, one per factory. Required."
+    },
+    "CONSOLE_FOREMAN_TOKEN": {
+      "type": "string",
+      "description": "serve: the foreman's FOREMAN_API_TOKEN, sent as Authorization: Bearer <token>; several, comma-separated, in the order of CONSOLE_FOREMAN_URL, or one for all."
+    },
+    "CONSOLE_INTAKE_URL": {
+      "type": "string",
+      "description": "serve: the base URL of intake's API. Set, a run's page lists every request of its work item."
+    },
+    "CONSOLE_INTAKE_TOKEN": {
+      "type": "string",
+      "description": "serve: intake's INTAKE_API_TOKEN."
+    },
+    "CONSOLE_GATEKEEPER_URL": {
+      "type": "string",
+      "description": "serve: the base URL of gatekeeper's API. Set, a run's page shows each gate's state and who it waits for."
+    },
+    "CONSOLE_GATEKEEPER_TOKEN": {
+      "type": "string",
+      "description": "serve: gatekeeper's GATEKEEPER_API_TOKEN."
+    },
+    "CONSOLE_TRACE_URL": {
+      "type": "string",
+      "description": "serve: the link to a run's trace in the trace store, with {runId}, like https://langfuse.acme.dev/traces?run={runId}."
+    },
+    "CONSOLE_SESSION_URL": {
+      "type": "string",
+      "description": "serve: the link to a stage's transcript, with {sessionId}, like https://langfuse.acme.dev/sessions/{sessionId}."
+    },
+    "CONSOLE_TEMPORAL_URL": {
+      "type": "string",
+      "description": "serve: the base URL of the Temporal UI. Set, a run's page links its history."
+    },
+    "CONSOLE_TEMPORAL_NAMESPACE": {
+      "type": "string",
+      "default": "default",
+      "description": "serve: the Temporal namespace of the runs, the foreman's FOREMAN_TEMPORAL_NAMESPACE."
+    },
+    "CONSOLE_LINKS": {
+      "type": "string",
+      "description": "serve: the dashboards every page links, as name=url, comma-separated, like Grafana=https://grafana.acme.dev."
+    },
+    "CONSOLE_REFRESH": {
+      "type": "string",
+      "default": "10",
+      "description": "serve: the seconds after which the browser reloads the runs pages."
+    },
+    "CONSOLE_FACTORY": {
+      "type": "string",
+      "default": "factory.yaml",
+      "description": "serve: the factory definition that /factory shows, read-only."
+    },
+    "CONSOLE_FACTORY_PATH": {
+      "type": "string",
+      "default": "factory.yaml",
+      "description": "serve: the path of the factory definition in its Git repository."
+    },
+    "CONSOLE_REPOSITORY_URL": {
+      "type": "string",
+      "description": "serve: the web URL of the factory's Git repository, like https://github.com/acme/factory. Set, the configuration pages link the file."
+    },
+    "CONSOLE_BRANCH": {
+      "type": "string",
+      "default": "main",
+      "description": "serve: the branch where the factory definition changes."
+    }
+  }
+}
