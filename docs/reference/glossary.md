@@ -13,6 +13,7 @@ Use these terms in scenarios, code, UI text and docs.
 | Factory version | The commit hash of the factory definition a run used. |
 | Lock file | `factory.lock` next to `factory.yaml`: the exact version of each MCP server from a registry, pinned by `factory plan`. |
 | Compose profile | `deploy/compose/`: the factory with all its services on one machine, started with one `docker compose up` (ADR 0074). |
+| Helm chart | `deploy/helm/osf/`: the factory on Kubernetes for platform teams, installed with one `helm install`; PostgreSQL, NATS and Temporal are in it or the team's own (ADR 0075). |
 | Reference factory | The factory definition in `deploy/compose/factory/` that the Compose profile runs unless `FACTORY_DIR` names another. |
 | Product surface | A part of a product with its own factory, for example "web" or "server". |
 | Work item | One unit of requested work (idea, bug, automated trigger) as a CloudEvent. |

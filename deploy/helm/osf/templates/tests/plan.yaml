@@ -1,0 +1,52 @@
+# helm test: factory-spec plans the factory definition and fails on any problem (ADR 0075).
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Release.Name }}-test-plan
+  labels:
+    {{- include "osf.labels" (dict "root" . "component" "test") | nindent 4 }}
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  restartPolicy: Never
+  {{- include "osf.podSecurity" . | nindent 2 }}
+  initContainers:
+    - name: factory
+      image: {{ include "osf.image" (dict "root" . "name" "factory-spec" "tag" .Values.images.factorySpec) }}
+      imagePullPolicy: {{ .Values.images.pullPolicy }}
+      command: [sh, -c]
+      args:
+        - find /factory-source -mindepth 1 -maxdepth 1 ! -name '..*' -exec cp -RL {} /factory ';'
+      volumeMounts:
+        - name: factory-source
+          mountPath: /factory-source
+          readOnly: true
+        - name: factory
+          mountPath: /factory
+  containers:
+    - name: plan
+      image: {{ include "osf.image" (dict "root" . "name" "factory-spec" "tag" .Values.images.factorySpec) }}
+      imagePullPolicy: {{ .Values.images.pullPolicy }}
+      workingDir: /factory
+      args: [factory, plan]
+      env:
+        - name: OSF_DATA
+          value: /home/node/state
+        - name: OUTPUT
+          value: /home/node/rendered
+      volumeMounts:
+        - name: factory
+          mountPath: /factory
+        - name: state
+          mountPath: /home/node/state
+        - name: rendered
+          mountPath: /home/node/rendered
+  volumes:
+    {{- include "osf.factoryVolume" . | nindent 4 }}
+    - name: factory
+      emptyDir: {}
+    - name: state
+      emptyDir: {}
+    - name: rendered
+      emptyDir: {}

@@ -1,6 +1,7 @@
 # enable-template
-# The Temporal server of the Compose profile on PostgreSQL (ADR 0004, ADR 0074). The first line makes Temporal read
-# this file as a Go template, so the password comes from the environment and is never written here.
+# The Temporal server of the Compose profile and the Helm chart on PostgreSQL (ADR 0004, ADR 0074, ADR 0075). The
+# first line makes Temporal read this file as a Go template, so the database's address and password come from the
+# environment and the password is never written here.
 log:
   stdout: true
   level: warn
@@ -14,7 +15,7 @@ persistence:
       sql:
         pluginName: postgres12
         databaseName: temporal
-        connectAddr: postgres:5432
+        connectAddr: {{ env "POSTGRES_HOST" }}:{{ env "POSTGRES_PORT" }}
         connectProtocol: tcp
         user: {{ env "POSTGRES_USER" }}
         password: {{ env "POSTGRES_PASSWORD" }}
@@ -25,7 +26,7 @@ persistence:
       sql:
         pluginName: postgres12
         databaseName: temporal_visibility
-        connectAddr: postgres:5432
+        connectAddr: {{ env "POSTGRES_HOST" }}:{{ env "POSTGRES_PORT" }}
         connectProtocol: tcp
         user: {{ env "POSTGRES_USER" }}
         password: {{ env "POSTGRES_PASSWORD" }}

@@ -67,8 +67,8 @@ publish only the TypeScript package; clients for other languages are not built (
 | --- | --- |
 | Runtime | Node 24 LTS |
 | HTTP servers | Fastify |
-| Tool distribution | npm (`npx`), multi-arch container images; `@opensoftware/contracts` on npm |
-| Factory install | Docker Compose (`deploy/compose/`, ADR 0074) and Helm |
+| Tool distribution | npm (`npx`), multi-arch container images on GHCR (ADR 0075); `@opensoftware/contracts` on npm |
+| Factory install | Docker Compose (`deploy/compose/`, ADR 0074) and Helm (`deploy/helm/osf/`, ADR 0075) |
 | Supply chain | Sigstore signatures, SLSA provenance, SBOMs, Renovate |
 | CI | GitHub Actions; each tool also ships as a GitHub Action |
 

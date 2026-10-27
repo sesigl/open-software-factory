@@ -1,0 +1,12 @@
+# A kind cluster for the scenarios that install a Helm chart with sut.helm (ADR 0075). It uses kind, kubectl and helm
+# from .tools/bin, which make install pins, and sets KUBECONFIG for the next steps.
+name: kind
+description: Starts a kind cluster and sets KUBECONFIG for the next steps.
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        export KUBECONFIG="$RUNNER_TEMP/kubeconfig"
+        .tools/bin/kind create cluster --wait 120s
+        echo "KUBECONFIG=$KUBECONFIG" >> "$GITHUB_ENV"

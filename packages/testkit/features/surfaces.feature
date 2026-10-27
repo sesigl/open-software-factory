@@ -101,7 +101,7 @@ Feature: A module's servers and events
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
-  @id=SCN-TK-115 @status=planned
+  @id=SCN-TK-115 @status=implemented
   Scenario: sut.helm installs a chart of the module in the scenario's namespace and reaches the port of a service
     Given a module whose chart "chart" has the service "events", a NATS server on port 8222
     And its system test runs "install events chart --wait" with sut.helm, reads "/healthz" at the URL of "events" port 8222 and expects "ok"

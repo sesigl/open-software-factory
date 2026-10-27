@@ -5,38 +5,38 @@ Feature: The Helm chart installs a complete factory on Kubernetes with one comma
   Temporal unless the values name the team's own (ADR 0075). The scenarios run on kind, each release in a namespace
   of its own.
 
-  @id=SCN-DIST-007 @status=planned @realizes=SCN-FACTORY-OPEN-006
+  @id=SCN-DIST-007 @status=implemented @realizes=SCN-FACTORY-OPEN-006
   Scenario: Every workload of the Helm chart is ready after one command
     Given a kind cluster with the images of the Compose profile
     And a values file that sets every value under "secrets"
-    When the operator runs "helm install osf deploy/helm/osf --values values.yaml --wait"
+    When the operator runs "helm install osf deploy/helm/osf --values values.yaml --wait --timeout 10m"
     Then the command exits with code 0
     And the workloads "postgres", "nats", "temporal", "gatekeeper", "intake", "foreman" and "console" are ready
 
-  @id=SCN-DIST-008 @status=planned
+  @id=SCN-DIST-008 @status=implemented
   Scenario: The Helm chart names the secret that the values are missing
     Given a kind cluster with the images of the Compose profile
     And a values file that sets every value under "secrets" except "foremanApiToken"
-    When the operator runs "helm install osf deploy/helm/osf --values values.yaml --wait"
+    When the operator runs "helm install osf deploy/helm/osf --values values.yaml --wait --timeout 10m"
     Then the command exits with code 1
     And the output contains "set secrets.foremanApiToken or secrets.existingSecret"
 
-  @id=SCN-DIST-009 @status=planned
+  @id=SCN-DIST-009 @status=implemented
   Scenario: The console of the Helm chart lists the runs of its foreman
     Given a kind cluster with the images of the Compose profile
     And a values file that sets every value under "secrets"
-    When the operator runs "helm install osf deploy/helm/osf --values values.yaml --wait"
+    When the operator runs "helm install osf deploy/helm/osf --values values.yaml --wait --timeout 10m"
     Then the console's page "/" answers 200 with the heading "Runs"
     And the page does not say "did not answer"
 
-  @id=SCN-DIST-010 @status=planned
+  @id=SCN-DIST-010 @status=implemented
   Scenario: The console of the Helm chart shows the agents of the reference factory
     Given a kind cluster with the images of the Compose profile
     And a values file that sets every value under "secrets"
-    When the operator runs "helm install osf deploy/helm/osf --values values.yaml --wait"
+    When the operator runs "helm install osf deploy/helm/osf --values values.yaml --wait --timeout 10m"
     Then the console's page "/factory" lists the agents "triage", "spec", "implement", "review" and "ship"
 
-  @id=SCN-DIST-011 @status=planned
+  @id=SCN-DIST-011 @status=implemented
   Scenario: The test of the Helm chart plans the reference factory without problems
     Given a kind cluster with the images of the Compose profile
     And the operator installed the chart with a values file that sets every value under "secrets"

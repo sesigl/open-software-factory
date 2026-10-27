@@ -1,0 +1,11 @@
+# The factory definition, each file under its path with "/" as "__" (ADR 0075).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-factory
+  labels:
+    {{- include "osf.labels" (dict "root" . "component" "factory") | nindent 4 }}
+data:
+  {{- range $path, $content := include "osf.factoryFiles" . | fromYaml }}
+  {{ $path | replace "/" "__" }}: {{ $content | quote }}
+  {{- end }}

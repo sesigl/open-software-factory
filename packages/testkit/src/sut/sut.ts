@@ -8,6 +8,7 @@ import { type Acp, makeAcp } from "./acp.ts";
 import { type Action, makeAction } from "./action.ts";
 import { type Compose, makeCompose } from "./compose.ts";
 import { type Events, makeEvents } from "./events.ts";
+import { type Helm, makeHelm } from "./helm.ts";
 import { type Http, makeHttp } from "./http.ts";
 import { adapterCommand, makeLaunch } from "./launch.ts";
 import { type Mcp, makeMcp } from "./mcp.ts";
@@ -37,6 +38,11 @@ export interface Sut {
    * (ADR 0074). Every call for the same scenario uses the same project.
    */
   compose(file: string): Compose;
+  /**
+   * A Helm chart of the unit, like "helm/osf", installed with `helm` in a Kubernetes namespace of the scenario on the
+   * cluster of `KUBECONFIG` (ADR 0075). Every call for the same scenario uses the same namespace.
+   */
+  helm(chart: string): Helm;
   /**
    * The module's input and output folders. Every path starts with `$INPUT/` or `$OUTPUT/` and stays inside that
    * folder; the module gets them as the environment variables `INPUT` and `OUTPUT`.
@@ -127,6 +133,7 @@ export function makeSut(moduleRoot: string, dirs: Folders, hosts: () => string[]
     acp: makeAcp(launch, onStop, inside),
     events: makeEvents(onStop),
     compose: makeCompose(moduleRoot, dirs, onStop),
+    helm: makeHelm(moduleRoot, dirs, onStop),
     files: {
       async put(path, content) {
         const full = inside(path);

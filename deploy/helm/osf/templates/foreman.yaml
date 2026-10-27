@@ -1,0 +1,140 @@
+{{- $ctx := dict "root" . "component" "foreman" }}
+{{- include "osf.moduleService" $ctx }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "osf.name" $ctx }}
+  labels:
+    {{- include "osf.labels" $ctx | nindent 4 }}
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- with .Values.foreman.persistence.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.foreman.persistence.size }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "osf.name" $ctx }}
+  labels:
+    {{- include "osf.labels" $ctx | nindent 4 }}
+spec:
+  replicas: 1
+  # One pod at a time owns the runs' working folders.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "osf.selector" $ctx | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "osf.labels" $ctx | nindent 8 }}
+      annotations:
+        checksum/factory: {{ include "osf.factoryFiles" . | sha256sum }}
+    spec:
+      {{- include "osf.podSecurity" . | nindent 6 }}
+      initContainers:
+        # The namespace of the runs, created when it is missing, as the Compose profile does.
+        - name: temporal-namespace
+          image: {{ .Values.temporal.adminToolsImage }}
+          command: [sh, -c]
+          args:
+            - |
+              until temporal operator cluster health >/dev/null 2>&1; do sleep 1; done
+              temporal operator namespace describe --namespace "$NAMESPACE" >/dev/null 2>&1 ||
+                temporal operator namespace create --namespace "$NAMESPACE" --retention 30d
+          env:
+            - name: TEMPORAL_ADDRESS
+              value: {{ include "osf.temporalAddress" . | quote }}
+            - name: NAMESPACE
+              value: {{ .Values.temporalNamespace | quote }}
+        # foreman reads a run's factory version from Git: the files go into a repository with a fixed author and
+        # date, so equal files give the same commit after every restart.
+        - name: factory
+          image: {{ include "osf.image" (dict "root" . "name" "foreman" "tag" .Values.images.foreman) }}
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          command: [sh, -c]
+          args:
+            - |
+              set -eu
+              cd /factory
+              find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+              find /factory-source -mindepth 1 -maxdepth 1 ! -name '..*' -exec cp -RL {} . \;
+              [ -d .git ] || git init -q -b main
+              git add -A
+              git diff --cached --quiet || git commit -q -m "factory from the chart"
+          env:
+            - name: GIT_AUTHOR_NAME
+              value: factory
+            - name: GIT_AUTHOR_EMAIL
+              value: factory@localhost
+            - name: GIT_AUTHOR_DATE
+              value: "2026-01-01T00:00:00Z"
+            - name: GIT_COMMITTER_NAME
+              value: factory
+            - name: GIT_COMMITTER_EMAIL
+              value: factory@localhost
+            - name: GIT_COMMITTER_DATE
+              value: "2026-01-01T00:00:00Z"
+          volumeMounts:
+            - name: factory-source
+              mountPath: /factory-source
+              readOnly: true
+            - name: factory
+              mountPath: /factory
+      containers:
+        - name: foreman
+          image: {{ include "osf.image" (dict "root" . "name" "foreman" "tag" .Values.images.foreman) }}
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          args: [foreman, serve]
+          env:
+            {{- include "osf.secretEnv" (dict "root" . "name" "FOREMAN_API_TOKEN" "key" "foreman-api-token") | nindent 12 }}
+            {{- include "osf.secretEnv" (dict "root" . "name" "FOREMAN_GATEKEEPER_TOKEN" "key" "gatekeeper-api-token") | nindent 12 }}
+            - name: FOREMAN_FORGE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "osf.secret" . }}
+                  key: forge-token
+                  optional: true
+            - name: OSF_DATA
+              value: /home/node/data
+            - name: FOREMAN_FACTORY
+              value: /factory/factory.yaml
+            - name: FOREMAN_TEMPORAL_ADDRESS
+              value: {{ include "osf.temporalAddress" . | quote }}
+            - name: FOREMAN_TEMPORAL_NAMESPACE
+              value: {{ .Values.temporalNamespace | quote }}
+            - name: FOREMAN_NATS_URL
+              value: {{ include "osf.natsUrl" . | quote }}
+            - name: FOREMAN_GATEKEEPER_URL
+              value: {{ printf "http://%s:8080" (include "osf.name" (dict "root" . "component" "gatekeeper")) | quote }}
+            - name: FOREMAN_HARNESSES
+              value: {{ .Values.foreman.harnesses | quote }}
+            - name: FOREMAN_FORGES
+              value: {{ .Values.foreman.forges | quote }}
+          ports:
+            - name: http
+              containerPort: 8080
+          {{- include "osf.moduleProbe" "/v1/runs" | nindent 10 }}
+          {{- with .Values.foreman.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: factory
+              mountPath: /factory
+              readOnly: true
+            - name: data
+              mountPath: /home/node/data
+      volumes:
+        {{- include "osf.factoryVolume" . | nindent 8 }}
+        - name: factory
+          emptyDir: {}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "osf.name" $ctx }}
