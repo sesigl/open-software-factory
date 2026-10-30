@@ -38,7 +38,7 @@ The owner chose:
    model `deepseek/deepseek-v4.1-flash-1017`. The hard limit is the key's credit limit, set by the owner. The run
    also fails when the run record reports a cost above 0.20 USD, about a third of the nightly share of the budget.
 3. **claude-code runs only on a developer's machine,** on that person's Claude subscription through a token of
-   `claude setup-token`. It never runs in CI: a subscription belongs to one person, and OpenRouter promises Claude
+   `claude setup-token`, with the small model `claude-haiku-5-5`. It never runs in CI: a subscription belongs to one person, and OpenRouter promises Claude
    Code only with Anthropic's models, which the key does not allow.
 4. **codex has no paid run for now.** With that model Codex warned that it has no metadata for it, offered no edit
    tool, and the model tried a shell command, which the allowlist refused. The owner uses claude-code and opencode;

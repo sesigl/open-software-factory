@@ -33,13 +33,15 @@ const harnesses: { name: string; env: () => Record<string, string> }[] = [
 ];
 
 // claude-code runs only on a developer's machine, on that person's subscription: a token of `claude setup-token`, and
-// Claude Code's default model unless ANTHROPIC_MODEL names one. A subscription is one person's, never CI's.
-const { CLAUDE_CODE_OAUTH_TOKEN: token, ANTHROPIC_MODEL: model, CI } = process.env;
+// the small model claude-haiku-5-5 unless ANTHROPIC_MODEL names another. A subscription is one person's, never CI's.
+// An empty ANTHROPIC_MODEL, as some shells set it, also gets the small model, not Claude Code's default.
+const { CLAUDE_CODE_OAUTH_TOKEN: token, CI } = process.env;
+const model = process.env.ANTHROPIC_MODEL || "claude-haiku-5-5";
 if (token && CI) throw new Error("SMOKE-PAID: CLAUDE_CODE_OAUTH_TOKEN is a person's subscription; never set it in CI");
 if (token) {
   harnesses.push({
     name: "claude-code",
-    env: () => ({ CLAUDE_CODE_OAUTH_TOKEN: token, ...(model ? { ANTHROPIC_MODEL: model } : {}) }),
+    env: () => ({ CLAUDE_CODE_OAUTH_TOKEN: token, ANTHROPIC_MODEL: model }),
   });
 }
 
