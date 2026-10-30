@@ -713,9 +713,11 @@ owner before each slice: which model or service, and its budget.
     20 scored runs on each side of the merge.
   - [ ] foreman (from T-17): run `foreman serve` with a real harness and model next to the public intake below; done
     when an issue labeled `factory` in this repository is implemented by the foreman (phase 3).
-  - [ ] intake (from T-16): run `intake serve` at a public URL and point the `issues` webhook of
-    `sesigl/open-software-factory` at its `/forge/events`; done when an issue labeled `factory` here creates a work
-    item (ADR 0065). Ask the owner where intake runs.
+  - [ ] intake (from T-16): run `intake serve` and point the `issues` webhook of `sesigl/open-software-factory` at its
+    `/forge/events`; done when an issue labeled `factory` here creates a work item (ADR 0065). The owner chose the
+    Compose profile on a developer's machine with a smee.io relay: `INTAKE_WEBHOOK_SECRET` turns on the profile's
+    `/forge/events` (`SCN-DIST-014`), and `deploy/README.md` describes the relay and the webhook. Open: the owner sets
+    up the webhook and labels the first issue.
   - [x] harness (from T-12, T-20): `e2e/paid/` and the script `test:paid`: one SMOKE-PAID run for opencode, weekly on
     OpenRouter with `deepseek/deepseek-v4.1-flash-1017`, and one for claude-code on a developer's subscription with
     `claude-haiku-5-5` (ADR 0052, ADR 0053, ADR 0076, ADR 0077).

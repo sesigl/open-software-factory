@@ -33,7 +33,7 @@ through `kubectl port-forward` (`url`), `helm test` and the state of the workloa
 
 - System tests: 600 seconds in total on the CI runner. SCN-DIST-001, -003 and -004 each start the profile, about 40
   seconds with the images the CI job loaded before. SCN-DIST-007, -009, -010 and -011 each install the chart on kind,
-  about 90 seconds.
+  about 90 seconds. SCN-DIST-014 starts only intake with PostgreSQL and NATS, about 10 seconds.
 
 ## Scenario prefix
 
