@@ -42,7 +42,7 @@ read them for ideas, do not copy their company-specific rules.
   - Checks from `docs/quality/checks.md` as scripts in `tools/checks/`, each printing its ID and file:line:
     SPEC, TRACE, STEPS, PASS, BOUNDARY-STATIC, BOUNDARY-ENV, ISOLATION, NOSKIP, ASSERT, FLAKE, BUDGET,
     CONTRACT, DOCS-GEN, DOCS-AFFECTED, DOCS-LINKS, ADR. BOUNDARY-RUNTIME, NOREAL and REACH come with T-02.
-    MUTATION and SMOKE-PAID as nightly workflows.
+    MUTATION as a nightly workflow, SMOKE-PAID as a weekly one (ADR 0077).
   - ISOLATION allows a module to depend only on `@opensoftware/contracts`, `@opensoftware/testkit` (tests only), the
     libraries in `packages/` (ADR 0037) and external packages.
   - GitHub Actions: `verify` on every PR (required check), nightly mutation, release-please.
@@ -266,7 +266,7 @@ read them for ideas, do not copy their company-specific rules.
   model gateway; sampling at 20 percent with a fixed seed scores the expected runs; calibrate reports agreement
   with 20 labeled runs; scorer cost is recorded; a scorer pack ships: redundant-tests, change-requested,
   scope-creep, skipped-checks, needless-human-question.
-- **Done when:** the scorer pack, calibration and Langfuse export are released. Scoring our own sessions nightly
+- **Done when:** the scorer pack, calibration and Langfuse export are released. Scoring our own sessions weekly
   with a paid judge model moved to T-21.
 - **Slices:**
   - [x] `scorekit score` (hash-based sampling with a seed, the judge cost from the token usage and the scorer's price,
@@ -687,7 +687,7 @@ read them for ideas, do not copy their company-specific rules.
 
 - **Path / prefix:** `e2e/` · `SCN-E2E`
 - **Build:** implement the five scenarios in `e2e/features/smoke.feature` against the Compose profile with the
-  testkit fakes; add `SMOKE-PAID` (one small real task per first-party harness with a real model, nightly).
+  testkit fakes; add `SMOKE-PAID` (one small real task per first-party harness with a real model, weekly).
 - **Done (ADR 0076):** `e2e/` is the package `@opensoftware/e2e`; its `test:system` builds one image of the workspace
   and runs the five scenarios on the profile with the fakes, as the suite `e2e` of `make verify` on every pull
   request and every merge to `main`. E2E-004 uses the profile's LiteLLM with the config `taskcapture route` wrote,
