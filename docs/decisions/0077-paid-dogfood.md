@@ -33,10 +33,11 @@ The owner chose:
    with a real model and asks it to fix one typo. `make smoke-paid` runs it; the job `smoke-paid` of `nightly.yml`
    runs it every night. It is no system test: it has no scenario, no fakes and no network guard, so `make verify`
    never runs it and no check counts it.
-2. **Small models through OpenRouter, 20 USD a month.** The owner has an OpenRouter key and no API keys of
-   Anthropic or OpenAI. All three adapters call OpenRouter with that one key: claude-code uses
-   `anthropic/claude-haiku-5.5` on OpenRouter's Anthropic Messages API, codex and opencode use `openai/gpt-6-luna` on
-   its Responses and chat completions APIs. The hard limit is the key's credit limit, set by the owner. The run also
+2. **One small model through OpenRouter, 20 USD a month.** The owner has an OpenRouter key and no API keys of
+   Anthropic or OpenAI. All three adapters call OpenRouter with that one key, which allows only the model
+   `deepseek/deepseek-v4.1-flash-1017`: claude-code on OpenRouter's Anthropic Messages API, codex on its Responses API and opencode on its
+   chat completions API. OpenRouter promises Claude Code only with Anthropic's models, so the claude-code run also
+   shows whether Claude Code works with another model. The hard limit is the key's credit limit, set by the owner. The run also
    fails when the run record reports a cost above 0.20 USD, about a third of the nightly share of the budget.
 3. **Where intake and foreman run** stays open, with the other slices. Each of them asks the owner again before
    its first paid call.

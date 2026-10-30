@@ -68,14 +68,15 @@ scenario, uses no fakes and runs without the network guard. The workflow `nightl
 environment `smoke-paid`. Decision: [ADR 0077](../docs/decisions/0077-paid-dogfood.md).
 
 ```sh
-OPENROUTER_API_KEY=<key> ANTHROPIC_MODEL=anthropic/claude-haiku-5.5 OPENAI_MODEL=openai/gpt-6-luna make smoke-paid
+OPENROUTER_API_KEY=<key> ANTHROPIC_MODEL=deepseek/deepseek-v4.1-flash-1017 OPENAI_MODEL=deepseek/deepseek-v4.1-flash-1017 \
+  make smoke-paid
 ```
 
 | Variable | Meaning |
 | --- | --- |
-| `OPENROUTER_API_KEY` | The OpenRouter key of all three adapters. Its credit limit is the hard limit of the budget. |
-| `ANTHROPIC_MODEL` | The OpenRouter model of claude-code. Nightly: `anthropic/claude-haiku-5.5`. |
-| `OPENAI_MODEL` | The OpenRouter model of codex and opencode. Nightly: `openai/gpt-6-luna`. |
+| `OPENROUTER_API_KEY` | The OpenRouter key of all three adapters. Its credit limit is the hard limit of the budget, and it allows only the nightly model. |
+| `ANTHROPIC_MODEL` | The OpenRouter model of claude-code. Nightly: `deepseek/deepseek-v4.1-flash-1017`. |
+| `OPENAI_MODEL` | The OpenRouter model of codex and opencode. Nightly: `deepseek/deepseek-v4.1-flash-1017`. |
 
 Each adapter gets only its gateway's URL, key and model, `PATH`, and its own temporary `HOME`, `OUTPUT` and
 `OSF_DATA`.
