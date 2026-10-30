@@ -49,8 +49,13 @@ The owner chose:
    report is the job summary and the artifact `scorekit-report`; the README links the workflow. The run records in
    `runs/` carry no prompt content, so the judge sees the tool calls only.
 6. **Every paid run in GitHub Actions runs once a week, not every night,** on the owner's request: the workflow
-   `weekly-paid.yml` holds them all and runs on Mondays, or when a person starts it.
-7. **Where intake and foreman run** stays open, with the other slices. Each of them asks the owner again before
+   `weekly-paid.yml` holds SMOKE-PAID and the scores and runs on Mondays, or when a person starts it.
+   `taskcapture-suite.yml` keeps its free nightly run and adds its paid job on Mondays (below).
+7. **taskcapture runs its suite with a real model once a week.** The job `models` of `taskcapture-suite.yml` runs
+   Harbor's `opencode` agent with `openrouter/deepseek/deepseek-v4.1-flash-1017` on the suite of the free job, and
+   the report shows it next to the oracle and the no-op agent. The task containers reach only `openrouter.ai`.
+   Routing with the report's pick (`taskcapture route`) waits: the key allows one model, so there is no choice.
+8. **Where intake and foreman run** stays open, with the other slices. Each of them asks the owner again before
    its first paid call.
 
 ## Options considered
