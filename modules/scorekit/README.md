@@ -36,7 +36,7 @@ It appends two lines to `$OUTPUT/scores.jsonl`: one score per run in the format 
 
 | Command | What it does |
 | --- | --- |
-| `scorekit score --scorer <name or file> <runs>...` | Judge each sampled run that has no score of the scorer yet in `--out` (`$OUTPUT/scores.jsonl`) and append its score. `--seed <n>` (0) and `--sample <0..1>` change the sampling. |
+| `scorekit score --scorer <name or file> <runs>...` | Judge each sampled run that has no score of the scorer yet in `--out` (`$OUTPUT/scores.jsonl`) and append its score. `--seed <n>` (0) and `--sample <0..1>` change the sampling; `--model <name>` sends the gateway this model in place of the scorer's. |
 | `scorekit calibrate --scorer <name or file> --labels <file> <runs>...` | Judge every labeled run and write the agreement with the labels to `--out` (`$OUTPUT/calibration.json`). `--min-agreement <0..1>` exits 1 below it. |
 | `scorekit report <scores>...` | Write each scorer's runs, passes, fails, pass rate, cost, pass rate per day and scored runs to `--out` (`$OUTPUT/report.json`); `--markdown <file>` writes the same as Markdown tables. |
 | `scorekit push <scores>...` | Send the scores to Langfuse's score API (`POST /api/public/scores`). |
@@ -225,3 +225,4 @@ with a trusted publisher for `publish-scorekit.yml`. No credential is stored in 
 | SCN-SCORE-043 | implemented | Push finds an evaluator on the second page of Langfuse's list |
 | SCN-SCORE-044 | implemented | An evaluator Langfuse refuses is named and fails the command |
 | SCN-SCORE-045 | implemented | Push without Langfuse keys names the missing variables |
+| SCN-SCORE-046 | implemented | The option "--model" overrides the scorer's judge model |

@@ -137,7 +137,7 @@ pull request diff, where the review catches them.
 ## Smoke tests
 
 Five deterministic scenarios in [`e2e/features/smoke.feature`](../../e2e/features/smoke.feature) on the Compose
-profile, plus `SMOKE-PAID`: one small real task with a real model for opencode, nightly and before releases, and
+profile, plus `SMOKE-PAID`: one small real task with a real model for opencode, weekly and before releases, and
 for claude-code on a developer's subscription; never on pull requests. `SMOKE-PAID` lives in [`e2e/paid/`](../../e2e/paid/harness.paid.ts) and is no
 system test: it has no scenario and no fakes, and no check counts it (ADR 0077). The smoke scenarios run every module from one image built from the workspace,
 with the testkit's fakes on the Docker host: the scripted agent runs inside foreman's container, and a turn's

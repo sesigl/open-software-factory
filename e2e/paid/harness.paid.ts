@@ -7,7 +7,7 @@ import { join, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
 import { client, ndJsonStream, PROTOCOL_VERSION } from "@agentclientprotocol/sdk";
 
-// The owner's budget is 20 USD a month for the nightly runs, about 0.66 USD a night: one run may cost 0.20 USD.
+// The owner's budget is 20 USD a month for the weekly paid runs; one run of a harness may cost 0.20 USD.
 const MAX_USD_PER_RUN = 0.2;
 const ADAPTERS = resolve(import.meta.dirname, "../../adapters/harness");
 
