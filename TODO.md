@@ -712,9 +712,9 @@ owner before each slice: which model or service, and its budget.
   - [ ] intake (from T-16): run `intake serve` at a public URL and point the `issues` webhook of
     `sesigl/open-software-factory` at its `/forge/events`; done when an issue labeled `factory` here creates a work
     item (ADR 0065). Ask the owner where intake runs.
-  - [ ] harness (from T-12, T-20): give `e2e/` a `test:paid` script and one SMOKE-PAID run each for claude-code (on
-    a developer's subscription) and opencode (nightly, on OpenRouter) with a real model; done when both pass (ADR 0052,
-    ADR 0053, ADR 0076, ADR 0077).
+  - [x] harness (from T-12, T-20): `e2e/paid/` and the script `test:paid`: one SMOKE-PAID run for opencode, nightly on
+    OpenRouter with `deepseek/deepseek-v4.1-flash-1017`, and one for claude-code on a developer's subscription with
+    `claude-haiku-5-5` (ADR 0052, ADR 0053, ADR 0076, ADR 0077).
   - [ ] codex (from T-12): a SMOKE-PAID run of harness-codex with a model Codex knows, once the owner picks one
     (ADR 0077).
 

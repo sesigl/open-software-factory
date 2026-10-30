@@ -23,7 +23,6 @@
     "@opensoftware/gatekeeper": "workspace:*",
     "@opensoftware/harness-acp": "workspace:*",
     "@opensoftware/harness-claude-code": "workspace:*",
-    "@opensoftware/harness-codex": "workspace:*",
     "@opensoftware/harness-opencode": "workspace:*",
     "@opensoftware/inference-litellm": "workspace:*",
     "@opensoftware/intake": "workspace:*",
