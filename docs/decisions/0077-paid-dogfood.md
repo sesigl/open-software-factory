@@ -60,7 +60,14 @@ The owner chose:
    0.20 USD, the `prompt-injection` task a fraction of a cent. So the paid job runs only the small task, on the
    owner's request to keep test runs cheap; the free job still runs every task with the oracle.
    Routing with the report's pick (`taskcapture route`) waits: the key allows one model, so there is no choice.
-8. **Where intake and foreman run** stays open, with the other slices. Each of them asks the owner again before
+8. **observer proposes one fix a week at most,** with the same key and model: the job `observe` of
+   `weekly-paid.yml` runs `observer analyze --min-failures 2` on all scores so far and `observer propose` for the
+   first problem that has no observer pull request yet, open, closed or merged. So the model is called at most once a
+   week, and a closed proposal is not made again. Failures are rare in the first scores (one run per scorer of 9 to
+   25), so two failed runs, the minimum evidence of a proposal, make a problem. The pull request comes from
+   `github.token`, so the gatekeeper holds it for a maintainer's `/approve`; other checks run when a person closes
+   and opens it again. The job summary has `observer check` for every merged observer pull request.
+9. **Where intake and foreman run** stays open, with the other slices. Each of them asks the owner again before
    its first paid call.
 
 ## Options considered
@@ -83,7 +90,7 @@ picks a paid service records its prior art in its own pull request.
 
 ## Consequences
 
-Each week spends at most about 0.20 USD on SMOKE-PAID when opencode reports its cost, plus the judge calls for the new runs. A provider's change of model names or prices
+Each week spends at most about 0.20 USD on SMOKE-PAID when opencode reports its cost, plus the judge calls for the new runs and at most one observer call. A provider's change of model names or prices
 can make the run fail; the model is set in `weekly-paid.yml` only. The codex adapter has no real-model proof until it
 gets its own paid run. The other slices wait for the owner's answers; each comes in its own pull
 request with its scenarios and its budget. Revisit when a provider's price or the weekly cost changes.
