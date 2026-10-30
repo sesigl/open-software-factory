@@ -61,7 +61,8 @@ export async function startTurn(options: TurnOptions): Promise<HarnessTurn> {
   const close = async () => {
     connection.close();
     child.stdin.end();
-    await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 1000))]);
+    // unref: the wait must not keep the process alive once the harness exited.
+    await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 1000).unref())]);
     child.kill();
   };
   try {
