@@ -29,19 +29,21 @@ The workflow `nightly.yml` already has the job `smoke-paid` in the environment `
 
 The owner chose:
 
-1. **The harness slice comes first.** `e2e/paid/harness.paid.ts` starts each of claude-code, codex and opencode
-   with a real model and asks it to fix one typo. `make smoke-paid` runs it; the job `smoke-paid` of `nightly.yml`
-   runs codex and opencode every night. It is no system test: it has no scenario, no fakes and no network guard, so `make verify`
-   never runs it and no check counts it.
+1. **The harness slice comes first, with claude-code and opencode.** `e2e/paid/harness.paid.ts` starts each of
+   them with a real model and asks it to fix one typo. `make smoke-paid` runs it; the job `smoke-paid` of
+   `nightly.yml` runs opencode every night. It is no system test: it has no scenario, no fakes and no network guard,
+   so `make verify` never runs it and no check counts it.
 2. **One small model through OpenRouter, 20 USD a month.** The owner has an OpenRouter key and no API keys of
-   Anthropic or OpenAI. codex and opencode call OpenRouter with that one key, which allows only the model
-   `deepseek/deepseek-v4.1-flash-1017`: codex on its Responses API, opencode on its chat completions API. The
-   hard limit is the key's credit limit, set by the owner. The run also fails when the run record reports a cost above 0.20 USD, about a
-   third of the nightly share of the budget.
+   Anthropic or OpenAI. opencode calls OpenRouter's chat completions API with that one key, which allows only the
+   model `deepseek/deepseek-v4.1-flash-1017`. The hard limit is the key's credit limit, set by the owner. The run
+   also fails when the run record reports a cost above 0.20 USD, about a third of the nightly share of the budget.
 3. **claude-code runs only on a developer's machine,** on that person's Claude subscription through a token of
    `claude setup-token`. It never runs in CI: a subscription belongs to one person, and OpenRouter promises Claude
    Code only with Anthropic's models, which the key does not allow.
-4. **Where intake and foreman run** stays open, with the other slices. Each of them asks the owner again before
+4. **codex has no paid run for now.** With that model Codex warned that it has no metadata for it, offered no edit
+   tool, and the model tried a shell command, which the allowlist refused. The owner uses claude-code and opencode;
+   codex can get a paid run later, with a model Codex knows or Codex's model catalog from OpenRouter.
+5. **Where intake and foreman run** stays open, with the other slices. Each of them asks the owner again before
    its first paid call.
 
 ## Options considered
@@ -64,7 +66,7 @@ picks a paid service records its prior art in its own pull request.
 
 ## Consequences
 
-Each night spends at most about 0.20 USD per harness that reports its cost. A provider's change of model names or prices can make the run fail; the
-models are set in `nightly.yml` only. OpenRouter's Responses API keeps no state, so a Codex release that relies on
-stored responses breaks the codex run. The other slices wait for the owner's answers; each comes in its own pull
+Each night spends at most about 0.20 USD when opencode reports its cost. A provider's change of model names or prices
+can make the run fail; the model is set in `nightly.yml` only. The codex adapter has no real-model proof until it
+gets its own paid run. The other slices wait for the owner's answers; each comes in its own pull
 request with its scenarios and its budget. Revisit when a provider's price or the nightly cost changes.
