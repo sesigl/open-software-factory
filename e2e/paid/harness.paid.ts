@@ -11,8 +11,7 @@ import { client, ndJsonStream, PROTOCOL_VERSION } from "@agentclientprotocol/sdk
 const MAX_USD_PER_RUN = 0.2;
 const ADAPTERS = resolve(import.meta.dirname, "../../adapters/harness");
 
-// codex and opencode call OpenRouter with one key, on its Responses API and its chat completions API. The key's
-// credit limit is the hard limit of the budget.
+// opencode calls OpenRouter's chat completions API. The key's credit limit is the hard limit of the budget.
 const OPENROUTER = "https://openrouter.ai/api/v1";
 
 function required(name: string): string {
@@ -21,14 +20,17 @@ function required(name: string): string {
   return value;
 }
 
-const harnesses: { name: string; env: () => Record<string, string> }[] = ["codex", "opencode"].map((name) => ({
-  name,
-  env: () => ({
-    OPENAI_BASE_URL: OPENROUTER,
-    OPENAI_API_KEY: required("OPENROUTER_API_KEY"),
-    OPENAI_MODEL: required("OPENAI_MODEL"),
-  }),
-}));
+// codex has no paid run yet: Codex offers its edit tool only to models it knows, and the key allows none of them.
+const harnesses: { name: string; env: () => Record<string, string> }[] = [
+  {
+    name: "opencode",
+    env: () => ({
+      OPENAI_BASE_URL: OPENROUTER,
+      OPENAI_API_KEY: required("OPENROUTER_API_KEY"),
+      OPENAI_MODEL: required("OPENAI_MODEL"),
+    }),
+  },
+];
 
 // claude-code runs only on a developer's machine, on that person's subscription: a token of `claude setup-token`, and
 // Claude Code's default model unless ANTHROPIC_MODEL names one. A subscription is one person's, never CI's.
