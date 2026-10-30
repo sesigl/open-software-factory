@@ -266,6 +266,9 @@ importers:
 
   e2e:
     devDependencies:
+      '@agentclientprotocol/sdk':
+        specifier: 1.9.0
+        version: 1.9.0(zod@4.6.7)
       '@opensoftware/channel-slack':
         specifier: workspace:*
         version: link:../adapters/channel/slack
@@ -293,6 +296,15 @@ importers:
       '@opensoftware/harness-acp':
         specifier: workspace:*
         version: link:../adapters/harness/acp
+      '@opensoftware/harness-claude-code':
+        specifier: workspace:*
+        version: link:../adapters/harness/claude-code
+      '@opensoftware/harness-codex':
+        specifier: workspace:*
+        version: link:../adapters/harness/codex
+      '@opensoftware/harness-opencode':
+        specifier: workspace:*
+        version: link:../adapters/harness/opencode
       '@opensoftware/inference-litellm':
         specifier: workspace:*
         version: link:../adapters/inference/litellm

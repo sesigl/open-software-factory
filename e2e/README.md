@@ -1,5 +1,5 @@
 ---
-covers: [e2e/compose/**, e2e/images/**, e2e/scripts/**, e2e/factory/**]
+covers: [e2e/compose/**, e2e/images/**, e2e/scripts/**, e2e/factory/**, e2e/paid/**]
 ---
 
 # e2e
@@ -7,6 +7,7 @@ covers: [e2e/compose/**, e2e/images/**, e2e/scripts/**, e2e/factory/**]
 The end-to-end smoke scenarios of the factory. Each scenario starts the [Compose profile](../deploy/README.md) with
 every module built from this workspace, and the testkit's fakes in place of Slack, the coding agent, the model and
 the forge. Nothing calls a real service. Decision: [ADR 0076](../docs/decisions/0076-e2e-smoke-suite.md).
+The one exception is the paid smoke run below, which only `make smoke-paid` starts.
 
 ## Run it
 
@@ -55,6 +56,28 @@ The scenario writes these values into its `.env`, next to the profile's own valu
 | `E2E_MODEL_URL` | The scripted model gateway as containers reach it, ending in `/v1`: observer's model, LiteLLM's OpenAI base URL and the scripted Harbor's model. |
 | `E2E_HARBOR` | taskcapture's `TASKCAPTURE_HARBOR`. Default: `harbor`. |
 | `E2E_LITELLM_CONFIG` | The LiteLLM config file the profile's gateway serves. The scenario copies the profile's config unless it names another. |
+
+## Paid smoke run
+
+`SMOKE-PAID` ([`paid/harness.paid.ts`](paid/harness.paid.ts)) starts claude-code, codex and opencode, each with a
+real model, and asks each one to fix the typo "helo" in `notes.md`. A run passes when the turn ends with
+`end_turn`, the file says "hello world", and the run record has output tokens and, when the harness reports a cost,
+a cost of at most 0.20 USD. It is no system test: it has no scenario, uses no fakes and runs without the network
+guard. The workflow `nightly.yml` runs it every night in the environment `smoke-paid`. Decision:
+[ADR 0077](../docs/decisions/0077-paid-dogfood.md).
+
+```sh
+ANTHROPIC_API_KEY=<key> ANTHROPIC_MODEL=claude-haiku-5-5 OPENAI_API_KEY=<key> OPENAI_MODEL=gpt-5-mini make smoke-paid
+```
+
+| Variable | Meaning |
+| --- | --- |
+| `ANTHROPIC_API_KEY` | The Anthropic key of claude-code. |
+| `ANTHROPIC_MODEL` | The model of claude-code. Nightly: `claude-haiku-5-5`. |
+| `OPENAI_API_KEY` | The OpenAI key of codex and opencode. |
+| `OPENAI_MODEL` | The model of codex and opencode. Nightly: `gpt-5-mini`. |
+
+Each adapter gets only these variables, `PATH`, and its own temporary `HOME`, `OUTPUT` and `OSF_DATA`.
 
 ## Scenarios
 
