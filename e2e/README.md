@@ -65,11 +65,11 @@ world", and the run record has output tokens and, when the harness reports a cos
 no system test: it has no scenario, uses no fakes and runs without the network guard. Decision:
 [ADR 0077](../docs/decisions/0077-paid-dogfood.md).
 
-- **opencode** calls [OpenRouter](https://openrouter.ai) on its chat completions API. The workflow `nightly.yml`
-  runs it every night in the environment `smoke-paid`.
+- **opencode** calls [OpenRouter](https://openrouter.ai) on its chat completions API. The workflow `weekly-paid.yml`
+  runs it once a week in the environment `smoke-paid`.
 - **claude-code** runs only on your own machine, on your Claude subscription. It never runs in CI: a subscription
   belongs to one person.
-- **codex** has no paid run yet: Codex offers its edit tool only to models it knows, and the nightly key allows none.
+- **codex** has no paid run yet: Codex offers its edit tool only to models it knows, and the OpenRouter key allows none.
 
 ```sh
 OPENROUTER_API_KEY=<key> OPENAI_MODEL=deepseek/deepseek-v4.1-flash-1017 make smoke-paid
@@ -78,8 +78,8 @@ CLAUDE_CODE_OAUTH_TOKEN=<token of claude setup-token> pnpm --filter @opensoftwar
 
 | Variable | Meaning |
 | --- | --- |
-| `OPENROUTER_API_KEY` | The OpenRouter key of opencode. Its credit limit is the hard limit of the budget, and it allows only the nightly model. |
-| `OPENAI_MODEL` | The OpenRouter model of opencode. Nightly: `deepseek/deepseek-v4.1-flash-1017`. |
+| `OPENROUTER_API_KEY` | The OpenRouter key of opencode. Its credit limit is the hard limit of the budget, and it allows only the weekly run's model. |
+| `OPENAI_MODEL` | The OpenRouter model of opencode. Weekly: `deepseek/deepseek-v4.1-flash-1017`. |
 | `CLAUDE_CODE_OAUTH_TOKEN` | A token of `claude setup-token`. Only when it is set does claude-code run, on your subscription; the run fails when `CI` is set too. |
 | `ANTHROPIC_MODEL` | The model of claude-code. Default, also when it is empty: `claude-haiku-5-5`. |
 
