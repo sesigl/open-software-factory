@@ -73,6 +73,7 @@ No credential is stored in the repository.
 | `OTEL_RESOURCE_ATTRIBUTES` | string |  | Resource attributes of the run as key=value pairs, set by the launcher, for example osf.run.id=…,osf.work_item.id=…,osf.factory.version=…. run keeps them with each session; transcript writes them into the run record. |
 | `OTEL_SERVICE_NAME` | string |  | The service.name of the run record. Default: harness-claude-code. |
 | `ANTHROPIC_BASE_URL` | string |  | Base URL of the Anthropic Messages API that Claude Code calls, for example the inference gateway. Default: Anthropic's API. |
+| `CLAUDE_CODE_OAUTH_TOKEN` | string |  | A token of claude setup-token: Claude Code runs on the subscription of the person who made it, in place of an API key. |
 | `ANTHROPIC_API_KEY` | string |  | The key Claude Code sends to the model API, for example a gateway key or a placeholder that the egress proxy replaces. |
 | `ANTHROPIC_MODEL` | string |  | The model Claude Code asks for, for example claude-sonnet-5-5. Default: Claude Code's default model. |
 
