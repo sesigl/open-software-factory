@@ -12,12 +12,15 @@ export interface ScoreOptions {
   scorer?: string;
   seed: string;
   sample?: string;
+  /** The judge model the gateway gets, in place of the scorer's model. */
+  model?: string;
   out: string;
   now: string;
 }
 
 export async function score(paths: string[], options: ScoreOptions, env: NodeJS.ProcessEnv) {
-  const scorer = readScorer(options.scorer);
+  const read = readScorer(options.scorer);
+  const scorer = options.model === undefined ? read : { ...read, model: options.model };
   const rate = options.sample === undefined ? scorer.sample : Number(options.sample);
   if (!(rate >= 0 && rate <= 1)) throw new UsageError("--sample must be a number from 0 to 1");
   const runs = parseRuns(readRunFiles(paths));
