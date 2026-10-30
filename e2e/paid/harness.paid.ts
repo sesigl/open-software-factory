@@ -1,5 +1,5 @@
 // SMOKE-PAID: each first-party harness adapter fixes one typo with a real model (ADR 0077). It runs only through
-// `make smoke-paid`, nightly, and spends real money, so it is no system test: no scenario, no fakes, no network guard.
+// `make smoke-paid` and spends real money, so it is no system test: no scenario, no fakes, no network guard.
 import { execFileSync, spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -7,13 +7,13 @@ import { join, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
 import { client, ndJsonStream, PROTOCOL_VERSION } from "@agentclientprotocol/sdk";
 
-// The owner's budget is 20 USD a month for all three adapters, about 0.66 USD a night: one run may cost 0.20 USD.
+// The owner's budget is 20 USD a month for the nightly runs, about 0.66 USD a night: one run may cost 0.20 USD.
 const MAX_USD_PER_RUN = 0.2;
 const ADAPTERS = resolve(import.meta.dirname, "../../adapters/harness");
 
-// Every adapter calls OpenRouter with one key: claude-code on its Anthropic Messages API, codex on its Responses API and
-// opencode on its chat completions API. The key's credit limit is the hard limit of the budget.
-const OPENROUTER = "https://openrouter.ai/api";
+// codex and opencode call OpenRouter with one key, on its Responses API and its chat completions API. The key's
+// credit limit is the hard limit of the budget.
+const OPENROUTER = "https://openrouter.ai/api/v1";
 
 function required(name: string): string {
   const value = process.env[name];
@@ -21,26 +21,25 @@ function required(name: string): string {
   return value;
 }
 
-const harnesses = [
-  {
+const harnesses: { name: string; env: () => Record<string, string> }[] = ["codex", "opencode"].map((name) => ({
+  name,
+  env: () => ({
+    OPENAI_BASE_URL: OPENROUTER,
+    OPENAI_API_KEY: required("OPENROUTER_API_KEY"),
+    OPENAI_MODEL: required("OPENAI_MODEL"),
+  }),
+}));
+
+// claude-code runs only on a developer's machine, on that person's subscription: a token of `claude setup-token`, and
+// Claude Code's default model unless ANTHROPIC_MODEL names one. A subscription is one person's, never CI's.
+const { CLAUDE_CODE_OAUTH_TOKEN: token, ANTHROPIC_MODEL: model, CI } = process.env;
+if (token && CI) throw new Error("SMOKE-PAID: CLAUDE_CODE_OAUTH_TOKEN is a person's subscription; never set it in CI");
+if (token) {
+  harnesses.push({
     name: "claude-code",
-    // Claude Code sends ANTHROPIC_AUTH_TOKEN as a bearer token; an empty ANTHROPIC_API_KEY keeps it from Anthropic.
-    env: () => ({
-      ANTHROPIC_BASE_URL: OPENROUTER,
-      ANTHROPIC_AUTH_TOKEN: required("OPENROUTER_API_KEY"),
-      ANTHROPIC_API_KEY: "",
-      ANTHROPIC_MODEL: required("ANTHROPIC_MODEL"),
-    }),
-  },
-  ...["codex", "opencode"].map((name) => ({
-    name,
-    env: () => ({
-      OPENAI_BASE_URL: `${OPENROUTER}/v1`,
-      OPENAI_API_KEY: required("OPENROUTER_API_KEY"),
-      OPENAI_MODEL: required("OPENAI_MODEL"),
-    }),
-  })),
-];
+    env: () => ({ CLAUDE_CODE_OAUTH_TOKEN: token, ...(model ? { ANTHROPIC_MODEL: model } : {}) }),
+  });
+}
 
 for (const harness of harnesses) {
   test(`harness-${harness.name} fixes a typo with a real model`, async () => {
@@ -70,27 +69,30 @@ for (const harness of harnesses) {
         ),
       );
     let sessionId = "";
+    let stopReason = "";
     try {
       await connection.agent.request("initialize", { protocolVersion: PROTOCOL_VERSION, clientCapabilities: {} });
       ({ sessionId } = await connection.agent.request("session/new", { cwd: work, mcpServers: [] }));
       const prompt = 'In notes.md, change the word "helo" to "hello". Change nothing else and run no command.';
-      const { stopReason } = await connection.agent.request("session/prompt", {
+      ({ stopReason } = await connection.agent.request("session/prompt", {
         sessionId,
         prompt: [{ type: "text", text: prompt }],
-      });
-      expect(stopReason, stderr).toBe("end_turn");
+      }));
     } finally {
       connection.close();
       agent.kill();
     }
 
-    expect(readFileSync(join(work, "notes.md"), "utf8")).toBe("hello world\n");
-
+    // The transcript shows what the harness and the model did, so a failed run explains itself.
     execFileSync(process.execPath, [bin, "transcript", sessionId], { cwd: work, env });
+    const transcript = readFileSync(join(output, "transcript.jsonl"), "utf8");
+    expect(stopReason, `${stderr}\n${transcript}`).toBe("end_turn");
+    expect(readFileSync(join(work, "notes.md"), "utf8"), transcript).toBe("hello world\n");
+
     const { span } = JSON.parse(readFileSync(join(output, "run-record.json"), "utf8"));
     expect(span["osf.outcome"]).toBe("succeeded");
     expect(span["gen_ai.usage.output_tokens"]).toBeGreaterThan(0);
-    // Not every harness reports a cost; the spend limit on each provider key is the hard limit.
+    // Not every harness reports a cost; the credit limit of the key is the hard limit.
     if (span["osf.cost.usd"] !== undefined) expect(span["osf.cost.usd"]).toBeLessThanOrEqual(MAX_USD_PER_RUN);
   });
 }
