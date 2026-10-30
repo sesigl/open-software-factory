@@ -113,12 +113,20 @@ jobs:
         with:
           name: taskcapture-suite
           path: ${{ runner.temp }}
+      # Only the small tasks: a task from one of this repository's pull requests costs about 0.20 USD with the model,
+      # the prompt-injection task a fraction of a cent. The free job still runs every task with the oracle.
+      - name: Pick the tasks for the model
+        env:
+          TASKS: prompt-injection
+        run: |
+          mkdir -p "$RUNNER_TEMP/suite-models"
+          for task in $TASKS; do cp -R "$RUNNER_TEMP/suite/$task" "$RUNNER_TEMP/suite-models/"; done
       # The owner's choice in ADR 0077: the one model the OpenRouter key allows. The agent reaches only OpenRouter.
       - name: Run opencode with a real model
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
-          node modules/taskcapture/dist/cli.js run --suite "$RUNNER_TEMP/suite" --jobs "$RUNNER_TEMP/jobs" \
+          node modules/taskcapture/dist/cli.js run --suite "$RUNNER_TEMP/suite-models" --jobs "$RUNNER_TEMP/jobs" \
             --agent opencode --model openrouter/deepseek/deepseek-v4.1-flash-1017 --configuration opencode \
             --allow-host openrouter.ai --out "$RUNNER_TEMP/opencode.json"
       - name: Report the model next to the oracle and the no-op agent

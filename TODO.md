@@ -703,7 +703,7 @@ owner before each slice: which model or service, and its budget.
   - [x] scorekit (from T-07): `weekly-paid.yml` scores this repository's `runs/` weekly with every scorer of the pack on
     OpenRouter, `scorekit score --model` (`SCN-SCORE-046`), and the README links the report (ADR 0077).
   - [x] taskcapture (from T-09): the weekly job `models` of `taskcapture-suite.yml` runs opencode with a real model
-    on OpenRouter next to the oracle and reports it in the job summary (ADR 0077).
+    on OpenRouter on the small `prompt-injection` task, next to the oracle and reports it in the job summary (ADR 0077).
   - [ ] taskcapture route (from T-09): route with the report's pick, once the OpenRouter key allows more than one
     model (ADR 0077).
   - [ ] observer (from T-10): a weekly job runs `observer analyze` on the scores of the scorekit slice above and
