@@ -128,10 +128,24 @@ jobs:
             --markdown "$RUNNER_TEMP/report.md" "$RUNNER_TEMP/jobs/oracle" "$RUNNER_TEMP/jobs/nop" \
             "$RUNNER_TEMP/jobs/opencode"
           cat "$RUNNER_TEMP/report.md" >> "$GITHUB_STEP_SUMMARY"
+      # Why a trial failed: Harbor's exception of each trial, so the summary explains a low correctness.
+      - name: List the exceptions of the trials
+        if: always()
+        run: |
+          {
+            echo "## Exceptions of the opencode trials"
+            echo
+            echo "| Trial | Reward | Exception |"
+            echo "| --- | --- | --- |"
+            find "$RUNNER_TEMP/jobs/opencode" -name result.json | sort | while read -r file; do
+              jq -r 'select(.trial_name) | "| \(.trial_name) | \(.verifier_result.rewards.reward // "-") | \(.exception_info.exception_type // "-"): \((.exception_info.exception_message // "") | gsub("[\\n|]"; " ") | .[0:300]) |"' "$file"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+      # Only the results and the report: the agents' logs of one job are hundreds of megabytes.
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: taskcapture-models
           path: |
-            ${{ runner.temp }}/jobs/opencode/
+            ${{ runner.temp }}/jobs/opencode/**/result.json
             ${{ runner.temp }}/report.*
