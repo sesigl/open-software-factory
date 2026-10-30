@@ -1,5 +1,5 @@
-# Slow checks that never gate a pull request: MUTATION of every line of every module, and SMOKE-PAID
-# (docs/quality/checks.md). mutation.yml checks the changed lines of each pull request.
+# Slow checks that never gate a pull request: MUTATION of every line of every module (docs/quality/checks.md).
+# mutation.yml checks the changed lines of each pull request. The runs that call a paid model are in weekly-paid.yml.
 name: nightly
 
 on:
@@ -106,23 +106,3 @@ jobs:
         run: |
           gh issue create --title "MUTATION: score fell in the nightly run" \
             --body "The nightly mutation run failed: $RUN_URL"
-
-  smoke-paid:
-    name: smoke-paid
-    runs-on: ubuntu-24.04
-    timeout-minutes: 60
-    environment: smoke-paid
-    steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v5
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - run: make install
-      # The owner's choice in ADR 0077: opencode on the one model the OpenRouter key allows, 20 USD a month as its
-      # credit limit. claude-code runs only on a developer's subscription, never here.
-      - run: make smoke-paid
-        env:
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          OPENAI_MODEL: deepseek/deepseek-v4.1-flash-1017

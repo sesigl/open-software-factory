@@ -1,25 +1,45 @@
-# The scorekit dogfood (ADR 0077): every scorer of the pack judges this repository's runs/ with a real model. The
-# scores of earlier nights come from the cache, so a night pays only for the runs it has not scored. The report is
-# the job summary of each run and the artifact scorekit-report.
-name: scores
+# The runs that call a paid model (ADR 0077), once a week to keep the cost low: SMOKE-PAID of opencode, and the
+# scorekit dogfood, where every scorer of the pack judges this repository's runs/. The scores of earlier weeks come
+# from the cache, so a week pays only for the runs it has not scored. The report is the job summary of the job score
+# and the artifact scorekit-report. Both jobs use the environment smoke-paid, which holds the OpenRouter key.
+name: weekly paid
 
 on:
   schedule:
-    - cron: "53 4 * * *"
+    - cron: "17 5 * * 1" # Monday
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: scores
+  group: weekly-paid
   cancel-in-progress: false
 
 jobs:
+  smoke-paid:
+    name: smoke-paid
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    environment: smoke-paid
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: make install
+      # The owner's choice in ADR 0077: opencode on the one model the OpenRouter key allows, 20 USD a month as its
+      # credit limit. claude-code runs only on a developer's subscription, never here.
+      - run: make smoke-paid
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENAI_MODEL: deepseek/deepseek-v4.1-flash-1017
+
   score:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    # The environment that holds the OpenRouter key of the paid runs.
     environment: smoke-paid
     steps:
       - uses: actions/checkout@v5
@@ -36,7 +56,7 @@ jobs:
           path: scores/scores.jsonl
           key: scores-${{ github.run_id }}
           restore-keys: scores-
-      # The first night has no scores yet; report and the cache need the file.
+      # The first week has no scores yet; report and the cache need the file.
       - run: mkdir -p scores && touch scores/scores.jsonl
       # The owner's choice in ADR 0077: the one model the OpenRouter key allows, 20 USD a month as its credit limit.
       - name: Score the runs
@@ -51,7 +71,7 @@ jobs:
               || status=1
           done
           exit $status
-      # The scores so far are kept even when one judge call failed, so the next night does not pay for them again.
+      # The scores so far are kept even when one judge call failed, so the next week does not pay for them again.
       - if: always()
         uses: actions/cache/save@v4
         with:

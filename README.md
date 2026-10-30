@@ -51,9 +51,9 @@ list price and the pull requests on GitHub. The workflow [`ledger-dashboard.yml`
 builds the page every night and publishes it on Vercel ([ADR 0044](docs/decisions/0044-ledger-dogfood.md)):
 [the ledger dashboard](https://project-ia65q.vercel.app).
 
-scorekit judges the same runs every night with each scorer of its pack, for example whether an agent claimed success
-without running the checks. The workflow [`scores.yml`](.github/workflows/scores.yml) writes the pass rate per scorer
-into the summary of each run: [the latest scores](https://github.com/sesigl/open-software-factory/actions/workflows/scores.yml)
+scorekit judges the same runs once a week with each scorer of its pack, for example whether an agent claimed success
+without running the checks. The workflow [`weekly-paid.yml`](.github/workflows/weekly-paid.yml) writes the pass rate per scorer
+into the summary of its job `score`: [the latest scores](https://github.com/sesigl/open-software-factory/actions/workflows/weekly-paid.yml)
 ([ADR 0077](docs/decisions/0077-paid-dogfood.md)).
 
 ## Working on this repository
