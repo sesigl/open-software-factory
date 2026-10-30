@@ -35,7 +35,8 @@
     },
     "test:paid": {
       "dependsOn": ["build", "^build"],
-      "cache": false
+      "cache": false,
+      "passThroughEnv": ["OPENROUTER_API_KEY", "OPENAI_MODEL", "CLAUDE_CODE_OAUTH_TOKEN", "ANTHROPIC_MODEL"]
     },
     "mutation": {
       "dependsOn": ["build", "^build"],
