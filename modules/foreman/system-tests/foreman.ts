@@ -74,6 +74,8 @@ export interface Setup {
   sandboxAs?: string;
   /** A fake inference adapter, in FOREMAN_INFERENCES under the name "litellm". */
   inference?: InferenceOptions;
+  /** The harness keeps running after its agent exited, until the foreman stops it. */
+  lingers?: boolean;
   env?: Record<string, string>;
 }
 
@@ -115,12 +117,15 @@ export async function servingCommit(sut: Sut, fakes: Fakes, commit: string, setu
   const nats = setup.nats ? await fakes.nats() : undefined;
   const sandbox = setup.sandbox ? await fakes.sandbox(setup.sandbox) : undefined;
   const inference = setup.inference ? await fakes.inference(setup.inference) : undefined;
+  const acp = [sut.adapter("harness/acp"), "run", "--", harness.command, ...harness.args];
+  if (setup.lingers) {
+    await sut.files.put("$INPUT/lingers.sh", '"$@"\nexec sleep 60\n');
+    acp.unshift("sh", sut.files.path("$INPUT/lingers.sh"));
+  }
   const env = {
     FOREMAN_API_TOKEN: API_TOKEN,
     FOREMAN_TEMPORAL_ADDRESS: temporal.address,
-    FOREMAN_HARNESSES: JSON.stringify({
-      acp: [sut.adapter("harness/acp"), "run", "--", harness.command, ...harness.args].join(" "),
-    }),
+    FOREMAN_HARNESSES: JSON.stringify({ acp: acp.join(" ") }),
     FOREMAN_POLL_MS: "100",
     ...(gatekeeper ? { FOREMAN_GATEKEEPER_URL: gatekeeper.url, FOREMAN_GATEKEEPER_TOKEN: "gatekeeper-token" } : {}),
     ...(nats ? { FOREMAN_NATS_URL: nats.url } : {}),

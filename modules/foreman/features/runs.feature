@@ -61,3 +61,9 @@ Feature: Runs
     When a program posts the README's "work.json" to "/v1/runs" with the API token
     Then the harness adapter's record of the "plan" session has the run's folder "$OUTPUT/foreman/runs/<id>"
     And its resource attributes name the run, the work item, the stage "plan" and the factory version
+
+  @id=SCN-FORE-068 @status=implemented
+  Scenario: A stage ends when its harness keeps running after the turn
+    Given "foreman serve" runs the README's "factory.yaml" with a harness that keeps running after every turn
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then "/v1/runs/<id>" shows the state "complete" with the stages "plan" and "implement" "succeeded"
