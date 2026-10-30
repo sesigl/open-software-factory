@@ -1,7 +1,8 @@
 # The runs that call a paid model (ADR 0077), once a week to keep the cost low: SMOKE-PAID of opencode, and the
 # scorekit dogfood, where every scorer of the pack judges this repository's runs/. The scores of earlier weeks come
 # from the cache, so a week pays only for the runs it has not scored. The report is the job summary of the job score
-# and the artifact scorekit-report. Both jobs use the environment smoke-paid, which holds the OpenRouter key.
+# and the artifact scorekit-report. The job observe proposes a fix for the first problem in the scores. All jobs use the
+# environment smoke-paid, which holds the OpenRouter key.
 name: weekly paid
 
 on:
@@ -87,3 +88,68 @@ jobs:
         with:
           name: scorekit-report
           path: scores/
+
+  # The observer dogfood (ADR 0046): the problems of all scores so far, and one pull request with the model's fix of
+  # AGENTS.md for the first problem that has no observer pull request yet, open, closed or merged. So each problem gets
+  # one proposal, and a closed one is not proposed again. The gatekeeper holds the pull request for a maintainer's
+  # "/approve". The job summary has the problems and observer check of every merged observer pull request.
+  observe:
+    needs: score
+    if: always() && needs.score.result != 'skipped'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: smoke-paid
+    permissions:
+      contents: write # push the branch observer/<problem>-<hash>, never the default branch
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec turbo run build --filter=@opensoftware/observer...
+      - uses: actions/download-artifact@v5
+        with:
+          name: scorekit-report
+          path: scores
+      # Failures are rare and a proposal needs two failed runs as evidence, so two make a problem.
+      - name: Find the problems
+        run: |
+          node modules/observer/dist/cli.js analyze --min-failures 2 --runs runs --out problems.json \
+            --markdown problems.md scores/scores.jsonl
+          cat problems.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Propose a fix
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OBSERVER_FORGE_TOKEN: ${{ github.token }}
+          OBSERVER_INFERENCE_URL: https://openrouter.ai/api/v1
+          OBSERVER_INFERENCE_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          MODEL: deepseek/deepseek-v4.1-flash-1017
+        run: |
+          gh pr list --state all --limit 1000 --json headRefName \
+            -q '.[].headRefName | select(startswith("observer/")) | ltrimstr("observer/") | sub("-[0-9a-f]{8}$"; "")' \
+            | sort -u > proposed.txt
+          problem=$(jq -r --rawfile proposed proposed.txt \
+            '[.problems[].id | select(IN($proposed | split("\n")[]) | not)][0] // empty' problems.json)
+          if [ -z "$problem" ]; then
+            echo "No new problem to propose a fix for." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          node modules/observer/dist/cli.js propose --repo "https://github.com/$GITHUB_REPOSITORY" \
+            --problem "$problem" --model "$MODEL" --out proposal.json problems.json
+          jq -r '"Proposed a fix of \(.problem): \(.pullRequest)"' proposal.json >> "$GITHUB_STEP_SUMMARY"
+      - name: Check the merged proposals
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OBSERVER_FORGE_TOKEN: ${{ github.token }}
+        run: |
+          gh pr list --state merged --limit 1000 --json headRefName,url \
+            -q '.[] | select(.headRefName | startswith("observer/")) | "\(.headRefName) \(.url)"' |
+            while read -r branch url; do
+              problem=$(echo "${branch#observer/}" | sed -E 's/-[0-9a-f]{8}$//')
+              node modules/observer/dist/cli.js check --problem "$problem" --pull-request "$url" --runs runs \
+                --out "check-$problem.json" scores/scores.jsonl | sed -n 1p >> "$GITHUB_STEP_SUMMARY"
+            done
