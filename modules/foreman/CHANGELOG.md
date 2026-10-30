@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/sesigl/open-software-factory/compare/foreman-v0.4.0...foreman-v0.4.1) (2026-10-30)
+
+
+### Bug Fixes
+
+* **foreman:** stop without waiting for the harness timer ([#152](https://github.com/sesigl/open-software-factory/issues/152)) ([fca6b88](https://github.com/sesigl/open-software-factory/commit/fca6b8852cb46a6e84e240e7a8d1faf58af6655a))
+
 ## [0.4.0](https://github.com/sesigl/open-software-factory/compare/foreman-v0.3.0...foreman-v0.4.0) (2026-10-26)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/sesigl/open-software-factory/compare/scorekit-v0.4.0...scorekit-v0.5.0) (2026-10-30)
+
+
+### Features
+
+* **scorekit:** T-21 weekly paid runs: score runs/ on OpenRouter with score --model ([#144](https://github.com/sesigl/open-software-factory/issues/144)) ([92f5d19](https://github.com/sesigl/open-software-factory/commit/92f5d190f6300693c364b4a4a050a5a73bf84751))
+
 ## [0.4.0](https://github.com/sesigl/open-software-factory/compare/scorekit-v0.3.0...scorekit-v0.4.0) (2026-10-21)
 
 
