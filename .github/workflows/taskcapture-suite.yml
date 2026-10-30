@@ -1,12 +1,20 @@
 # The taskcapture dogfood (ADR 0045): a suite from this repository's merged pull requests, run every night with
 # Harbor's oracle agent (the pull request's own change) and its nop agent (no change). The run fails unless the
 # oracle solves every task and the no-op agent solves none. Neither agent calls a model, so the run costs nothing.
+# Once a week, and when a person starts it with "models", the job models also runs opencode with a real model on
+# the same suite (ADR 0077): every paid run in GitHub Actions runs once a week.
 name: taskcapture suite
 
 on:
   schedule:
     - cron: "23 2 * * *"
+    - cron: "47 3 * * 1" # Monday: also the paid job models
   workflow_dispatch:
+    inputs:
+      models:
+        description: Also run opencode with a real model on OpenRouter (paid)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -79,5 +87,51 @@ jobs:
         with:
           name: taskcapture-suite
           path: |
+            ${{ runner.temp }}/suite/
             ${{ runner.temp }}/jobs/
+            ${{ runner.temp }}/report.*
+
+  models:
+    needs: suite
+    if: github.event.schedule == '47 3 * * 1' || inputs.models
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    # The environment that holds the OpenRouter key of the paid runs.
+    environment: smoke-paid
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec turbo run build --filter=@opensoftware/taskcapture...
+      - uses: astral-sh/setup-uv@v6
+      - run: uv tool install harbor==0.24.0
+      - uses: actions/download-artifact@v4
+        with:
+          name: taskcapture-suite
+          path: ${{ runner.temp }}
+      # The owner's choice in ADR 0077: the one model the OpenRouter key allows. The agent reaches only OpenRouter.
+      - name: Run opencode with a real model
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          node modules/taskcapture/dist/cli.js run --suite "$RUNNER_TEMP/suite" --jobs "$RUNNER_TEMP/jobs" \
+            --agent opencode --model openrouter/deepseek/deepseek-v4.1-flash-1017 --configuration opencode \
+            --allow-host openrouter.ai --out "$RUNNER_TEMP/opencode.json"
+      - name: Report the model next to the oracle and the no-op agent
+        if: always()
+        run: |
+          node modules/taskcapture/dist/cli.js report --out "$RUNNER_TEMP/report.json" \
+            --markdown "$RUNNER_TEMP/report.md" "$RUNNER_TEMP/jobs/oracle" "$RUNNER_TEMP/jobs/nop" \
+            "$RUNNER_TEMP/jobs/opencode"
+          cat "$RUNNER_TEMP/report.md" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: taskcapture-models
+          path: |
+            ${{ runner.temp }}/jobs/opencode/
             ${{ runner.temp }}/report.*
