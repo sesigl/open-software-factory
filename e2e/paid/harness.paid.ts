@@ -11,21 +11,40 @@ import { client, ndJsonStream, PROTOCOL_VERSION } from "@agentclientprotocol/sdk
 const MAX_USD_PER_RUN = 0.2;
 const ADAPTERS = resolve(import.meta.dirname, "../../adapters/harness");
 
-// Each adapter gets its provider's key and model from the environment of `make smoke-paid`.
+// Every adapter calls OpenRouter with one key: claude-code on its Anthropic Messages API, codex on its Responses API and
+// opencode on its chat completions API. The key's credit limit is the hard limit of the budget.
+const OPENROUTER = "https://openrouter.ai/api";
+
+function required(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`SMOKE-PAID: set ${name}`);
+  return value;
+}
+
 const harnesses = [
-  { name: "claude-code", env: ["ANTHROPIC_API_KEY", "ANTHROPIC_MODEL"] },
-  { name: "codex", env: ["OPENAI_API_KEY", "OPENAI_MODEL"] },
-  { name: "opencode", env: ["OPENAI_API_KEY", "OPENAI_MODEL"] },
+  {
+    name: "claude-code",
+    // Claude Code sends ANTHROPIC_AUTH_TOKEN as a bearer token; an empty ANTHROPIC_API_KEY keeps it from Anthropic.
+    env: () => ({
+      ANTHROPIC_BASE_URL: OPENROUTER,
+      ANTHROPIC_AUTH_TOKEN: required("OPENROUTER_API_KEY"),
+      ANTHROPIC_API_KEY: "",
+      ANTHROPIC_MODEL: required("ANTHROPIC_MODEL"),
+    }),
+  },
+  ...["codex", "opencode"].map((name) => ({
+    name,
+    env: () => ({
+      OPENAI_BASE_URL: `${OPENROUTER}/v1`,
+      OPENAI_API_KEY: required("OPENROUTER_API_KEY"),
+      OPENAI_MODEL: required("OPENAI_MODEL"),
+    }),
+  })),
 ];
 
 for (const harness of harnesses) {
   test(`harness-${harness.name} fixes a typo with a real model`, async () => {
-    const provider: Record<string, string> = {};
-    for (const name of harness.env) {
-      const value = process.env[name];
-      if (!value) throw new Error(`SMOKE-PAID: set ${name}`);
-      provider[name] = value;
-    }
+    const provider = harness.env();
 
     const root = mkdtempSync(join(tmpdir(), `smoke-paid-${harness.name}-`));
     const [work, output, data] = [join(root, "work"), join(root, "output"), join(root, "data")] as const;

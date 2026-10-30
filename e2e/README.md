@@ -60,24 +60,25 @@ The scenario writes these values into its `.env`, next to the profile's own valu
 ## Paid smoke run
 
 `SMOKE-PAID` ([`paid/harness.paid.ts`](paid/harness.paid.ts)) starts claude-code, codex and opencode, each with a
-real model, and asks each one to fix the typo "helo" in `notes.md`. A run passes when the turn ends with
-`end_turn`, the file says "hello world", and the run record has output tokens and, when the harness reports a cost,
-a cost of at most 0.20 USD. It is no system test: it has no scenario, uses no fakes and runs without the network
-guard. The workflow `nightly.yml` runs it every night in the environment `smoke-paid`. Decision:
-[ADR 0077](../docs/decisions/0077-paid-dogfood.md).
+real model, and asks each one to fix the typo "helo" in `notes.md`. All three call [OpenRouter](https://openrouter.ai)
+with one key: claude-code on its Anthropic Messages API, codex on its Responses API and opencode on its chat
+completions API. A run passes when the turn ends with `end_turn`, the file says "hello world", and the run record has
+output tokens and, when the harness reports a cost, a cost of at most 0.20 USD. It is no system test: it has no
+scenario, uses no fakes and runs without the network guard. The workflow `nightly.yml` runs it every night in the
+environment `smoke-paid`. Decision: [ADR 0077](../docs/decisions/0077-paid-dogfood.md).
 
 ```sh
-ANTHROPIC_API_KEY=<key> ANTHROPIC_MODEL=claude-haiku-5-5 OPENAI_API_KEY=<key> OPENAI_MODEL=gpt-5-mini make smoke-paid
+OPENROUTER_API_KEY=<key> ANTHROPIC_MODEL=anthropic/claude-haiku-5.5 OPENAI_MODEL=openai/gpt-6-luna make smoke-paid
 ```
 
 | Variable | Meaning |
 | --- | --- |
-| `ANTHROPIC_API_KEY` | The Anthropic key of claude-code. |
-| `ANTHROPIC_MODEL` | The model of claude-code. Nightly: `claude-haiku-5-5`. |
-| `OPENAI_API_KEY` | The OpenAI key of codex and opencode. |
-| `OPENAI_MODEL` | The model of codex and opencode. Nightly: `gpt-5-mini`. |
+| `OPENROUTER_API_KEY` | The OpenRouter key of all three adapters. Its credit limit is the hard limit of the budget. |
+| `ANTHROPIC_MODEL` | The OpenRouter model of claude-code. Nightly: `anthropic/claude-haiku-5.5`. |
+| `OPENAI_MODEL` | The OpenRouter model of codex and opencode. Nightly: `openai/gpt-6-luna`. |
 
-Each adapter gets only these variables, `PATH`, and its own temporary `HOME`, `OUTPUT` and `OSF_DATA`.
+Each adapter gets only its gateway's URL, key and model, `PATH`, and its own temporary `HOME`, `OUTPUT` and
+`OSF_DATA`.
 
 ## Scenarios
 
