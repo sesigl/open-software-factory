@@ -132,6 +132,13 @@ repository's merged pull requests every night and runs them with Harbor's `oracl
 the oracle solves every task and the no-op agent solves none: then each task can be solved, and its hidden tests
 fail without the change. Neither agent calls a model. The report is in the job summary.
 
+Once a week, the job `models` runs the small `prompt-injection` task of the same suite with Harbor's `opencode` agent
+and a real model on OpenRouter, and
+reports it next to the oracle and the no-op agent, with the exception of each trial. With Harbor 0.24.0 opencode
+exits with `EPIPE` after its last step, so every trial has an exception, but its hidden tests still decide the
+reward. Its result does not fail the run: it measures the model
+([ADR 0077](../../docs/decisions/0077-paid-dogfood.md)).
+
 ## Releases
 
 release-please opens a release pull request from the Conventional Commits under `modules/taskcapture/`. Merging it
