@@ -299,9 +299,6 @@ importers:
       '@opensoftware/harness-claude-code':
         specifier: workspace:*
         version: link:../adapters/harness/claude-code
-      '@opensoftware/harness-codex':
-        specifier: workspace:*
-        version: link:../adapters/harness/codex
       '@opensoftware/harness-opencode':
         specifier: workspace:*
         version: link:../adapters/harness/opencode
