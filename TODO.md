@@ -706,9 +706,11 @@ owner before each slice: which model or service, and its budget.
     on OpenRouter on the small `prompt-injection` task, next to the oracle and reports it in the job summary (ADR 0077).
   - [ ] taskcapture route (from T-09): route with the report's pick, once the OpenRouter key allows more than one
     model (ADR 0077).
-  - [ ] observer (from T-10): a weekly job runs `observer analyze` on the scores of the scorekit slice above and
-    `observer propose` for the top problem with a real model; done when one observer pull request to this repository
-    is merged and `observer check` measures its effect (ADR 0046).
+  - [ ] observer (from T-10): the job `observe` of `weekly-paid.yml` runs `observer analyze` on the scores of the
+    scorekit slice above, `observer propose` for the first problem without an observer pull request, and
+    `observer check` for the merged ones (ADR 0046, ADR 0077). Open: done when one observer pull request to this
+    repository is merged and `observer check` measures its effect; that needs a problem with two failed runs and then
+    20 scored runs on each side of the merge.
   - [ ] foreman (from T-17): run `foreman serve` with a real harness and model next to the public intake below; done
     when an issue labeled `factory` in this repository is implemented by the foreman (phase 3).
   - [ ] intake (from T-16): run `intake serve` at a public URL and point the `issues` webhook of
