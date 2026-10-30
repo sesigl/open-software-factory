@@ -76,6 +76,7 @@ and names it, like `set FOREMAN_API_TOKEN in .env`.
 | `GATEKEEPER_SLACK_CHANNEL` | | Required. The ID of the Slack channel where gatekeeper asks, like `C0GATES`. |
 | `FOREMAN_FORGE_TOKEN` | | A token that may read pull requests and their checks, for the verify stage's check `verify`. |
 | `INTAKE_FORGE_ADAPTER` | `forge-github` | The forge adapter of intake's webhook: `forge-github` or `forge-forgejo`. |
+| `INTAKE_WEBHOOK_SECRET` | | The secret that the forge signs its webhook deliveries with. Set: intake takes them at `/forge/events`, and an issue labeled `factory` becomes a work item. Empty: intake takes no forge webhooks. |
 | `FACTORY_DIR` | `./factory` | The folder of the factory definition, its prompts, policy and groups. |
 | `OSF_HOST` | `127.0.0.1` | The address every published port listens on. `0.0.0.0` makes them reachable from other machines. |
 | `CONSOLE_PORT` | `8080` | The port of the console. `0` picks a free port. |
@@ -86,6 +87,30 @@ and names it, like `set FOREMAN_API_TOKEN in .env`.
 | `PHOENIX_PORT` | `6006` | The port of Phoenix. |
 | `LITELLM_PORT` | `4000` | The port of LiteLLM. |
 | `OSF_BUILD_CA` | `../images/no-ca.pem` | Behind a proxy that inspects TLS: the proxy's CA for npm in the image builds, as a path inside `deploy/`, like `../images/local-ca.pem`. |
+
+### Receive GitHub issues on your machine
+
+GitHub cannot reach `127.0.0.1`. A webhook relay forwards its deliveries to intake. [smee.io](https://smee.io) is
+free and keeps the same URL:
+
+1. Open https://smee.io/new and copy the channel URL.
+2. Set `INTAKE_WEBHOOK_SECRET` in `.env` to a long random value, like the output of `openssl rand -hex 32`.
+3. In the repository on GitHub, open Settings → Webhooks → Add webhook. Set the payload URL to the channel URL, the
+   content type to `application/json`, the secret to the value of `INTAKE_WEBHOOK_SECRET`, and select only the event
+   "Issues".
+4. Start intake and the relay:
+
+   ```sh
+   docker compose up --detach --wait intake
+   npx smee-client --url <channel URL> --target http://127.0.0.1:8081/forge/events
+   ```
+
+5. Add the label `factory` to an issue. Its work item is at
+   `GET http://127.0.0.1:8081/v1/work-items?dedupeKey=<link of the issue>`, with the header
+   `Authorization: Bearer <INTAKE_API_TOKEN>`.
+
+intake receives work only while the relay runs. To send a delivery that failed again, use "Redeliver" on the webhook's
+page "Recent Deliveries".
 
 ## Helm chart
 
@@ -182,3 +207,4 @@ repository's Packages and sets its visibility to public, like the first npm rele
 | SCN-DIST-011 | implemented | The test of the Helm chart plans the reference factory without problems |
 | SCN-DIST-012 | implemented | The verify stage of the reference factory waits for the check "verify" |
 | SCN-DIST-013 | implemented | The Compose profile takes the module images from the factory's registry |
+| SCN-DIST-014 | implemented | The intake of the Compose profile turns a GitHub issue labeled "factory" into a work item |

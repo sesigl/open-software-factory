@@ -248,6 +248,7 @@ services:
       INTAKE_NATS_URL: nats://nats:4222
       INTAKE_SLACK_ADAPTER: channel-slack
       INTAKE_FORGE_ADAPTER: ${INTAKE_FORGE_ADAPTER:-forge-github}
+      INTAKE_WEBHOOK_SECRET: ${INTAKE_WEBHOOK_SECRET:-}
     ports:
       - ${OSF_HOST:-127.0.0.1}:${INTAKE_PORT:-8081}:8080
 
