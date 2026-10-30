@@ -12,7 +12,7 @@ import { scorers } from "./commands/scorers.ts";
 const HELP = `Usage: scorekit <command> [options]
 
 Commands:
-  score --scorer <name|file> [--seed <n>] [--sample <0..1>] [--out <file>] <runs file or folder>...  Ask the scorer's judge about each sampled run without a score of the scorer and append the scores to --out ($OUTPUT/scores.jsonl).
+  score --scorer <name|file> [--seed <n>] [--sample <0..1>] [--model <name>] [--out <file>] <runs file or folder>...  Ask the scorer's judge about each sampled run without a score of the scorer and append the scores to --out ($OUTPUT/scores.jsonl).
   calibrate --scorer <name|file> --labels <file> [--min-agreement <0..1>] [--out <file>] <runs file or folder>...  Judge every labeled run and write the agreement with the labels to --out ($OUTPUT/calibration.json). Exits 1 below --min-agreement.
   report [--out <file>] [--markdown <file>] <scores file>...  Write each scorer's pass rate, cost, pass rate per day and scored runs to --out ($OUTPUT/report.json), and as Markdown to --markdown.
   push <scores file>...  Send the scores to Langfuse's score API.
@@ -52,6 +52,7 @@ const commands: Record<string, Command> = {
         scorer,
         seed: values.seed ?? "0",
         sample: values.sample,
+        model: values.model,
         out: output("scores.jsonl"),
         now: env.OSF_NOW ?? new Date().toISOString(),
       },

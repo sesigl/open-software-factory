@@ -700,11 +700,11 @@ Slices that need a paid model call or a paid service. They come last, so the pla
 owner before each slice: which model or service, and its budget.
 
 - **Slices:**
-  - [ ] scorekit (from T-07): score this repository's `runs/` nightly with a real judge model and link the report
-    from the README.
+  - [x] scorekit (from T-07): `weekly-paid.yml` scores this repository's `runs/` weekly with every scorer of the pack on
+    OpenRouter, `scorekit score --model` (`SCN-SCORE-046`), and the README links the report (ADR 0077).
   - [ ] taskcapture (from T-09): run `taskcapture-suite.yml` with real models next to the oracle, publish the report,
     and route with its pick.
-  - [ ] observer (from T-10): a nightly job runs `observer analyze` on the scores of the scorekit slice above and
+  - [ ] observer (from T-10): a weekly job runs `observer analyze` on the scores of the scorekit slice above and
     `observer propose` for the top problem with a real model; done when one observer pull request to this repository
     is merged and `observer check` measures its effect (ADR 0046).
   - [ ] foreman (from T-17): run `foreman serve` with a real harness and model next to the public intake below; done
@@ -712,7 +712,7 @@ owner before each slice: which model or service, and its budget.
   - [ ] intake (from T-16): run `intake serve` at a public URL and point the `issues` webhook of
     `sesigl/open-software-factory` at its `/forge/events`; done when an issue labeled `factory` here creates a work
     item (ADR 0065). Ask the owner where intake runs.
-  - [x] harness (from T-12, T-20): `e2e/paid/` and the script `test:paid`: one SMOKE-PAID run for opencode, nightly on
+  - [x] harness (from T-12, T-20): `e2e/paid/` and the script `test:paid`: one SMOKE-PAID run for opencode, weekly on
     OpenRouter with `deepseek/deepseek-v4.1-flash-1017`, and one for claude-code on a developer's subscription with
     `claude-haiku-5-5` (ADR 0052, ADR 0053, ADR 0076, ADR 0077).
   - [ ] codex (from T-12): a SMOKE-PAID run of harness-codex with a model Codex knows, once the owner picks one

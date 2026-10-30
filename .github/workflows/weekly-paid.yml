@@ -1,0 +1,89 @@
+# The runs that call a paid model (ADR 0077), once a week to keep the cost low: SMOKE-PAID of opencode, and the
+# scorekit dogfood, where every scorer of the pack judges this repository's runs/. The scores of earlier weeks come
+# from the cache, so a week pays only for the runs it has not scored. The report is the job summary of the job score
+# and the artifact scorekit-report. Both jobs use the environment smoke-paid, which holds the OpenRouter key.
+name: weekly paid
+
+on:
+  schedule:
+    - cron: "17 5 * * 1" # Monday
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: weekly-paid
+  cancel-in-progress: false
+
+jobs:
+  smoke-paid:
+    name: smoke-paid
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    environment: smoke-paid
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: make install
+      # The owner's choice in ADR 0077: opencode on the one model the OpenRouter key allows, 20 USD a month as its
+      # credit limit. claude-code runs only on a developer's subscription, never here.
+      - run: make smoke-paid
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENAI_MODEL: deepseek/deepseek-v4.1-flash-1017
+
+  score:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: smoke-paid
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The scorekit of this commit, so the scores never wait for a release.
+      - run: pnpm exec turbo run build --filter=@opensoftware/scorekit...
+      - uses: actions/cache/restore@v4
+        with:
+          path: scores/scores.jsonl
+          key: scores-${{ github.run_id }}
+          restore-keys: scores-
+      # The first week has no scores yet; report and the cache need the file.
+      - run: mkdir -p scores && touch scores/scores.jsonl
+      # The owner's choice in ADR 0077: the one model the OpenRouter key allows, 20 USD a month as its credit limit.
+      - name: Score the runs
+        env:
+          SCOREKIT_INFERENCE_URL: https://openrouter.ai/api/v1
+          SCOREKIT_INFERENCE_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          MODEL: deepseek/deepseek-v4.1-flash-1017
+        run: |
+          status=0
+          for scorer in $(node modules/scorekit/dist/cli.js scorers | awk '{print $1}'); do
+            node modules/scorekit/dist/cli.js score --scorer "$scorer" --model "$MODEL" --out scores/scores.jsonl runs \
+              || status=1
+          done
+          exit $status
+      # The scores so far are kept even when one judge call failed, so the next week does not pay for them again.
+      - if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: scores/scores.jsonl
+          key: scores-${{ github.run_id }}
+      - name: Write the report
+        if: always()
+        run: |
+          node modules/scorekit/dist/cli.js report --out scores/report.json --markdown scores/report.md scores/scores.jsonl
+          cat scores/report.md >> "$GITHUB_STEP_SUMMARY"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scorekit-report
+          path: scores/
