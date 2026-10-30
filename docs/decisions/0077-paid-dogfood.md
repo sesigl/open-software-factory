@@ -31,15 +31,17 @@ The owner chose:
 
 1. **The harness slice comes first.** `e2e/paid/harness.paid.ts` starts each of claude-code, codex and opencode
    with a real model and asks it to fix one typo. `make smoke-paid` runs it; the job `smoke-paid` of `nightly.yml`
-   runs it every night. It is no system test: it has no scenario, no fakes and no network guard, so `make verify`
+   runs codex and opencode every night. It is no system test: it has no scenario, no fakes and no network guard, so `make verify`
    never runs it and no check counts it.
 2. **One small model through OpenRouter, 20 USD a month.** The owner has an OpenRouter key and no API keys of
-   Anthropic or OpenAI. All three adapters call OpenRouter with that one key, which allows only the model
-   `deepseek/deepseek-v4.1-flash-1017`: claude-code on OpenRouter's Anthropic Messages API, codex on its Responses API and opencode on its
-   chat completions API. OpenRouter promises Claude Code only with Anthropic's models, so the claude-code run also
-   shows whether Claude Code works with another model. The hard limit is the key's credit limit, set by the owner. The run also
-   fails when the run record reports a cost above 0.20 USD, about a third of the nightly share of the budget.
-3. **Where intake and foreman run** stays open, with the other slices. Each of them asks the owner again before
+   Anthropic or OpenAI. codex and opencode call OpenRouter with that one key, which allows only the model
+   `deepseek/deepseek-v4.1-flash-1017`: codex on its Responses API, opencode on its chat completions API. The
+   hard limit is the key's credit limit, set by the owner. The run also fails when the run record reports a cost above 0.20 USD, about a
+   third of the nightly share of the budget.
+3. **claude-code runs only on a developer's machine,** on that person's Claude subscription through a token of
+   `claude setup-token`. It never runs in CI: a subscription belongs to one person, and OpenRouter promises Claude
+   Code only with Anthropic's models, which the key does not allow.
+4. **Where intake and foreman run** stays open, with the other slices. Each of them asks the owner again before
    its first paid call.
 
 ## Options considered
@@ -55,9 +57,9 @@ The owner chose:
 ## Prior art
 
 The harness slice adds no new dependency or service: it drives the adapters with the ACP client
-`@agentclientprotocol/sdk` that the testkit uses (ADR 0050). OpenRouter is the one paid service: one key and one
-credit limit for both providers. The providers' own keys were the other option; the owner has none, and two keys
-would need two spend limits. A subscription login of Claude Code or Codex is no option for a CI job. Each later slice that
+`@agentclientprotocol/sdk` that the testkit uses (ADR 0050). OpenRouter is the one paid service of the nightly run: one key and
+one credit limit. The providers' own keys were the other option; the owner has none, and two keys would need two
+spend limits. Each later slice that
 picks a paid service records its prior art in its own pull request.
 
 ## Consequences

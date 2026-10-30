@@ -24,9 +24,9 @@
       "type": "string",
       "description": "Base URL of the Anthropic Messages API that Claude Code calls, for example the inference gateway. Default: Anthropic's API."
     },
-    "ANTHROPIC_AUTH_TOKEN": {
+    "CLAUDE_CODE_OAUTH_TOKEN": {
       "type": "string",
-      "description": "A key Claude Code sends as a bearer token instead of ANTHROPIC_API_KEY, for a gateway that wants one, for example OpenRouter."
+      "description": "A token of claude setup-token: Claude Code runs on the subscription of the person who made it, in place of an API key."
     },
     "ANTHROPIC_API_KEY": {
       "type": "string",

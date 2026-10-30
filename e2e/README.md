@@ -59,27 +59,30 @@ The scenario writes these values into its `.env`, next to the profile's own valu
 
 ## Paid smoke run
 
-`SMOKE-PAID` ([`paid/harness.paid.ts`](paid/harness.paid.ts)) starts claude-code, codex and opencode, each with a
-real model, and asks each one to fix the typo "helo" in `notes.md`. All three call [OpenRouter](https://openrouter.ai)
-with one key: claude-code on its Anthropic Messages API, codex on its Responses API and opencode on its chat
-completions API. A run passes when the turn ends with `end_turn`, the file says "hello world", and the run record has
-output tokens and, when the harness reports a cost, a cost of at most 0.20 USD. It is no system test: it has no
-scenario, uses no fakes and runs without the network guard. The workflow `nightly.yml` runs it every night in the
-environment `smoke-paid`. Decision: [ADR 0077](../docs/decisions/0077-paid-dogfood.md).
+`SMOKE-PAID` ([`paid/harness.paid.ts`](paid/harness.paid.ts)) starts each first-party harness with a real model and
+asks it to fix the typo "helo" in `notes.md`. A run passes when the turn ends with `end_turn`, the file says "hello
+world", and the run record has output tokens and, when the harness reports a cost, a cost of at most 0.20 USD. It is
+no system test: it has no scenario, uses no fakes and runs without the network guard. Decision:
+[ADR 0077](../docs/decisions/0077-paid-dogfood.md).
+
+- **codex and opencode** call [OpenRouter](https://openrouter.ai) with one key, on its Responses API and its chat
+  completions API. The workflow `nightly.yml` runs them every night in the environment `smoke-paid`.
+- **claude-code** runs only on your own machine, on your Claude subscription. It never runs in CI: a subscription
+  belongs to one person.
 
 ```sh
-OPENROUTER_API_KEY=<key> ANTHROPIC_MODEL=deepseek/deepseek-v4.1-flash-1017 OPENAI_MODEL=deepseek/deepseek-v4.1-flash-1017 \
-  make smoke-paid
+OPENROUTER_API_KEY=<key> OPENAI_MODEL=deepseek/deepseek-v4.1-flash-1017 make smoke-paid
+CLAUDE_CODE_OAUTH_TOKEN=<token of claude setup-token> pnpm --filter @opensoftware/e2e test:paid -t claude-code
 ```
 
 | Variable | Meaning |
 | --- | --- |
-| `OPENROUTER_API_KEY` | The OpenRouter key of all three adapters. Its credit limit is the hard limit of the budget, and it allows only the nightly model. |
-| `ANTHROPIC_MODEL` | The OpenRouter model of claude-code. Nightly: `deepseek/deepseek-v4.1-flash-1017`. |
+| `OPENROUTER_API_KEY` | The OpenRouter key of codex and opencode. Its credit limit is the hard limit of the budget, and it allows only the nightly model. |
 | `OPENAI_MODEL` | The OpenRouter model of codex and opencode. Nightly: `deepseek/deepseek-v4.1-flash-1017`. |
+| `CLAUDE_CODE_OAUTH_TOKEN` | A token of `claude setup-token`. Only when it is set does claude-code run, on your subscription; the run fails when `CI` is set too. |
+| `ANTHROPIC_MODEL` | The model of claude-code. Default: Claude Code's default model. |
 
-Each adapter gets only its gateway's URL, key and model, `PATH`, and its own temporary `HOME`, `OUTPUT` and
-`OSF_DATA`.
+Each adapter gets only these variables, `PATH`, and its own temporary `HOME`, `OUTPUT` and `OSF_DATA`.
 
 ## Scenarios
 

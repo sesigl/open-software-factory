@@ -120,9 +120,9 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: make install
-      # The owner's choice in ADR 0077: the one model the OpenRouter key allows, 20 USD a month as its credit limit.
+      # The owner's choice in ADR 0077: codex and opencode on the one model the OpenRouter key allows, 20 USD a month as
+      # its credit limit. claude-code runs only on a developer's subscription, never here.
       - run: make smoke-paid
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          ANTHROPIC_MODEL: deepseek/deepseek-v4.1-flash-1017
           OPENAI_MODEL: deepseek/deepseek-v4.1-flash-1017
