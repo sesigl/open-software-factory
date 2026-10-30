@@ -81,7 +81,7 @@ CLAUDE_CODE_OAUTH_TOKEN=<token of claude setup-token> pnpm --filter @opensoftwar
 | `OPENROUTER_API_KEY` | The OpenRouter key of opencode. Its credit limit is the hard limit of the budget, and it allows only the nightly model. |
 | `OPENAI_MODEL` | The OpenRouter model of opencode. Nightly: `deepseek/deepseek-v4.1-flash-1017`. |
 | `CLAUDE_CODE_OAUTH_TOKEN` | A token of `claude setup-token`. Only when it is set does claude-code run, on your subscription; the run fails when `CI` is set too. |
-| `ANTHROPIC_MODEL` | The model of claude-code. Default: Claude Code's default model. |
+| `ANTHROPIC_MODEL` | The model of claude-code. Default, also when it is empty: `claude-haiku-5-5`. |
 
 Each adapter gets only these variables, `PATH`, and its own temporary `HOME`, `OUTPUT` and `OSF_DATA`.
 
