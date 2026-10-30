@@ -43,7 +43,12 @@ The owner chose:
 4. **codex has no paid run for now.** With that model Codex warned that it has no metadata for it, offered no edit
    tool, and the model tried a shell command, which the allowlist refused. The owner uses claude-code and opencode;
    codex can get a paid run later, with a model Codex knows or Codex's model catalog from OpenRouter.
-5. **Where intake and foreman run** stays open, with the other slices. Each of them asks the owner again before
+5. **scorekit scores `runs/` every night** with the same key and model: the workflow `scores.yml` runs every
+   scorer of the pack with `scorekit score --model`, which replaces the scorer's gateway alias `judge` with the
+   OpenRouter model. The scores of earlier nights stay in the Actions cache, so a night pays only for new runs. The
+   report is the job summary and the artifact `scorekit-report`; the README links the workflow. The run records in
+   `runs/` carry no prompt content, so the judge sees the tool calls only.
+6. **Where intake and foreman run** stays open, with the other slices. Each of them asks the owner again before
    its first paid call.
 
 ## Options considered

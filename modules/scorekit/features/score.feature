@@ -151,3 +151,11 @@ Feature: Score runs
     When the user runs "scorekit score --scorer redundant-tests runs.jsonl"
     Then the command exits with code 2
     And the error output contains "runs.jsonl:2: not a JSON line"
+
+  @id=SCN-SCORE-046 @status=implemented
+  Scenario: The option "--model" overrides the scorer's judge model
+    Given the runs file "runs.jsonl" with the run "run-01"
+    And a model gateway that answers every judge call with the result "pass" and the reason "Fine."
+    When the user runs "scorekit score --scorer redundant-tests --sample 1 --model deepseek/deepseek-v4.1-flash-1017 runs.jsonl"
+    Then the judge call asks the gateway for the model "deepseek/deepseek-v4.1-flash-1017"
+    And the score for "run-01" carries the judge model "deepseek/deepseek-v4.1-flash-1017"

@@ -700,8 +700,8 @@ Slices that need a paid model call or a paid service. They come last, so the pla
 owner before each slice: which model or service, and its budget.
 
 - **Slices:**
-  - [ ] scorekit (from T-07): score this repository's `runs/` nightly with a real judge model and link the report
-    from the README.
+  - [x] scorekit (from T-07): `scores.yml` scores this repository's `runs/` nightly with every scorer of the pack on
+    OpenRouter, `scorekit score --model` (`SCN-SCORE-046`), and the README links the report (ADR 0077).
   - [ ] taskcapture (from T-09): run `taskcapture-suite.yml` with real models next to the oracle, publish the report,
     and route with its pick.
   - [ ] observer (from T-10): a nightly job runs `observer analyze` on the scores of the scorekit slice above and
