@@ -33,9 +33,11 @@ The owner chose:
    with a real model and asks it to fix one typo. `make smoke-paid` runs it; the job `smoke-paid` of `nightly.yml`
    runs it every night. It is no system test: it has no scenario, no fakes and no network guard, so `make verify`
    never runs it and no check counts it.
-2. **Small models and 20 USD a month.** claude-code uses `claude-haiku-5-5`, codex and opencode use `gpt-5-mini`.
-   The hard limit is a spend limit on each provider key, set by the owner. The run also fails when the run record
-   reports a cost above 0.20 USD, about a third of the nightly share of the budget.
+2. **Small models through OpenRouter, 20 USD a month.** The owner has an OpenRouter key and no API keys of
+   Anthropic or OpenAI. All three adapters call OpenRouter with that one key: claude-code uses
+   `anthropic/claude-haiku-5.5` on OpenRouter's Anthropic Messages API, codex and opencode use `openai/gpt-6-luna` on
+   its Responses and chat completions APIs. The hard limit is the key's credit limit, set by the owner. The run also
+   fails when the run record reports a cost above 0.20 USD, about a third of the nightly share of the budget.
 3. **Where intake and foreman run** stays open, with the other slices. Each of them asks the owner again before
    its first paid call.
 
@@ -52,11 +54,14 @@ The owner chose:
 ## Prior art
 
 The harness slice adds no new dependency or service: it drives the adapters with the ACP client
-`@agentclientprotocol/sdk` that the testkit uses (ADR 0050), and calls the providers' own APIs. Each later slice that
+`@agentclientprotocol/sdk` that the testkit uses (ADR 0050). OpenRouter is the one paid service: one key and one
+credit limit for both providers. The providers' own keys were the other option; the owner has none, and two keys
+would need two spend limits. A subscription login of Claude Code or Codex is no option for a CI job. Each later slice that
 picks a paid service records its prior art in its own pull request.
 
 ## Consequences
 
 Each night spends at most about 0.20 USD per harness that reports its cost. A provider's change of model names or prices can make the run fail; the
-models are set in `nightly.yml` only. The other slices wait for the owner's answers; each comes in its own pull
+models are set in `nightly.yml` only. OpenRouter's Responses API keeps no state, so a Codex release that relies on
+stored responses breaks the codex run. The other slices wait for the owner's answers; each comes in its own pull
 request with its scenarios and its budget. Revisit when a provider's price or the nightly cost changes.
