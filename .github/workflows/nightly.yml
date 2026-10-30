@@ -120,7 +120,10 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: make install
+      # The owner's choice in ADR 0077: a small model per provider, 20 USD a month with a spend limit on each key.
       - run: make smoke-paid
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: claude-haiku-5-5
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: gpt-5-mini

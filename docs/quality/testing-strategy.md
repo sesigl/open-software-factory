@@ -138,7 +138,8 @@ pull request diff, where the review catches them.
 
 Five deterministic scenarios in [`e2e/features/smoke.feature`](../../e2e/features/smoke.feature) on the Compose
 profile, plus `SMOKE-PAID`: one small real task per first-party harness with a real model, nightly and before
-releases, never on pull requests. The smoke scenarios run every module from one image built from the workspace,
+releases, never on pull requests. `SMOKE-PAID` lives in [`e2e/paid/`](../../e2e/paid/harness.paid.ts) and is no
+system test: it has no scenario and no fakes, and no check counts it (ADR 0077). The smoke scenarios run every module from one image built from the workspace,
 with the testkit's fakes on the Docker host: the scripted agent runs inside foreman's container, and a turn's
 `commands` push a branch and open a pull request on Forgejo like a coding agent's tools (ADR 0076). The profile's own scenarios in [`deploy/features/`](../../deploy/features/compose.feature)
 start it with `sut.compose`, each as a Compose project of its own, and check that every service is healthy and wired

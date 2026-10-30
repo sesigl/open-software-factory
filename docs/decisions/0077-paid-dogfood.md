@@ -1,6 +1,6 @@
 ---
-status: proposed
-date: 2026-10-27
+status: accepted
+date: 2026-10-30
 ---
 
 # 0077. Paid dogfood: models, services and budget of T-21
@@ -9,8 +9,7 @@ date: 2026-10-27
 
 TODO item T-21 holds every slice that needs a paid model call or a paid service. `AGENTS.md` says to stop and
 ask before a paid call, and T-21 says to ask the owner before each slice which model or service it uses and its
-budget. This ADR collects the open choices of all six slices, so the owner can answer them in one place. It stays
-`proposed` until the owner picks; the pull request of a slice then sets it to `accepted` with the choice.
+budget. This ADR collects the open choices of all six slices, so the owner can answer them in one place.
 
 The slices and what each needs:
 
@@ -28,14 +27,17 @@ The workflow `nightly.yml` already has the job `smoke-paid` in the environment `
 
 ## Decision
 
-Open. The owner answers three questions:
+The owner chose:
 
-1. **Which slice comes first.** The proposal is the harness slice: its job and secrets exist, and it needs no
-   hosting.
-2. **Which model each slice uses, and the monthly budget.** The proposal is one small model for every nightly job
-   (judge, observer, taskcapture), and each harness's own default model for `SMOKE-PAID`, with a hard spend limit
-   on the provider's key.
-3. **Where intake and foreman run.** They need a public URL and a running process; the options are below.
+1. **The harness slice comes first.** `e2e/paid/harness.paid.ts` starts each of claude-code, codex and opencode
+   with a real model and asks it to fix one typo. `make smoke-paid` runs it; the job `smoke-paid` of `nightly.yml`
+   runs it every night. It is no system test: it has no scenario, no fakes and no network guard, so `make verify`
+   never runs it and no check counts it.
+2. **Small models and 20 USD a month.** claude-code uses `claude-haiku-5-5`, codex and opencode use `gpt-5-mini`.
+   The hard limit is a spend limit on each provider key, set by the owner. The run also fails when the run record
+   reports a cost above 0.20 USD, about a third of the nightly share of the budget.
+3. **Where intake and foreman run** stays open, with the other slices. Each of them asks the owner again before
+   its first paid call.
 
 ## Options considered
 
@@ -49,10 +51,12 @@ Open. The owner answers three questions:
 
 ## Prior art
 
-No new module, dependency or service is chosen yet. Each slice that picks a paid service records its prior art in
-the pull request that sets this ADR to `accepted`.
+The harness slice adds no new dependency or service: it drives the adapters with the ACP client
+`@agentclientprotocol/sdk` that the testkit uses (ADR 0050), and calls the providers' own APIs. Each later slice that
+picks a paid service records its prior art in its own pull request.
 
 ## Consequences
 
-T-21 waits for the owner's answers. Each slice comes in its own pull request with its scenarios and the chosen
-budget. Revisit when a provider's price or the nightly cost changes.
+Each night spends at most about 0.20 USD per harness that reports its cost. A provider's change of model names or prices can make the run fail; the
+models are set in `nightly.yml` only. The other slices wait for the owner's answers; each comes in its own pull
+request with its scenarios and its budget. Revisit when a provider's price or the nightly cost changes.

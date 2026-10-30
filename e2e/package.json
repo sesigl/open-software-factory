@@ -8,9 +8,11 @@
   "scripts": {
     "lint": "biome check .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test:system": "node scripts/images.ts && vitest run"
+    "test:system": "node scripts/images.ts && vitest run",
+    "test:paid": "vitest run --config vitest.paid.config.ts"
   },
   "devDependencies": {
+    "@agentclientprotocol/sdk": "1.9.0",
     "@opensoftware/channel-slack": "workspace:*",
     "@opensoftware/console": "workspace:*",
     "@opensoftware/contracts": "workspace:*",
@@ -20,6 +22,9 @@
     "@opensoftware/forge-github": "workspace:*",
     "@opensoftware/gatekeeper": "workspace:*",
     "@opensoftware/harness-acp": "workspace:*",
+    "@opensoftware/harness-claude-code": "workspace:*",
+    "@opensoftware/harness-codex": "workspace:*",
+    "@opensoftware/harness-opencode": "workspace:*",
     "@opensoftware/inference-litellm": "workspace:*",
     "@opensoftware/intake": "workspace:*",
     "@opensoftware/observer": "workspace:*",
