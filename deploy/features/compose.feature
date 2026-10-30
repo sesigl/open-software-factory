@@ -60,3 +60,11 @@ Feature: The Compose profile installs a complete factory with one command
     When the operator runs "docker compose config --images"
     Then the command exits with code 0
     And the output lists the images "gatekeeper", "intake", "foreman", "console" and "factory-spec" as "ghcr.io/sesigl/open-software-factory/<name>:<version>"
+
+  @id=SCN-DIST-014 @status=implemented @realizes=SCN-FACTORY-ACCESS-001
+  Scenario: The intake of the Compose profile turns a GitHub issue labeled "factory" into a work item
+    Given the Compose profile with every value of ".env.example" set in ".env" and "INTAKE_WEBHOOK_SECRET" set
+    And the operator ran "docker compose up --detach --wait intake"
+    And a GitHub webhook for issues to intake's "/forge/events", signed with the value of "INTAKE_WEBHOOK_SECRET"
+    When "tester" adds the label "factory" to the issue "Export reports as CSV"
+    Then intake shows a work item "Export reports as CSV" in the state "received" with the issue's link as its dedupe key

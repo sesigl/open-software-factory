@@ -24,9 +24,9 @@ const PORTS = [
   "LITELLM_PORT",
 ];
 
-/** Writes `.env` without the value `except` and returns the profile. */
-export async function profile(sut: Sut, except?: string): Promise<Compose> {
-  const lines = Object.entries(VALUES)
+/** Writes `.env` without the value `except` and with the values `more`, and returns the profile. */
+export async function profile(sut: Sut, except?: string, more: Record<string, string> = {}): Promise<Compose> {
+  const lines = Object.entries({ ...VALUES, ...more })
     .filter(([name]) => name !== except)
     .map(([name, value]) => `${name}=${value}`);
   await sut.files.put("$INPUT/.env", [...lines, ...PORTS.map((name) => `${name}=0`), ""].join("\n"));
