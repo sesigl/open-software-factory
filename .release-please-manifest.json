@@ -1,9 +1,9 @@
 {
-  "contracts": "1.10.0",
-  "packages/testkit": "0.27.0",
+  "contracts": "2.0.0",
+  "packages/testkit": "0.28.0",
   "packages/cli": "0.1.0",
   "packages/spec-files": "0.1.0",
-  "modules/factory-spec": "0.5.0",
+  "modules/factory-spec": "0.6.0",
   "modules/runlog": "0.4.0",
   "modules/proof": "0.4.0",
   "modules/spec-trace": "0.3.0",
@@ -14,9 +14,9 @@
   "modules/gatekeeper": "0.4.0",
   "adapters/harness/acp": "0.3.0",
   "packages/harness-proxy": "0.2.0",
-  "adapters/harness/claude-code": "0.3.0",
-  "adapters/harness/codex": "0.1.0",
-  "adapters/harness/opencode": "0.1.0",
+  "adapters/harness/claude-code": "0.4.0",
+  "adapters/harness/codex": "0.2.0",
+  "adapters/harness/opencode": "0.2.0",
   "adapters/sandbox/docker": "0.1.0",
   "adapters/sandbox/kubernetes": "0.1.0",
   "packages/sandbox-egress": "0.1.0",
@@ -27,6 +27,6 @@
   "adapters/channel/github": "0.2.0",
   "packages/channel-kit": "0.2.0",
   "modules/intake": "0.3.0",
-  "modules/foreman": "0.4.1",
-  "modules/console": "0.2.0"
+  "modules/foreman": "0.5.0",
+  "modules/console": "0.3.0"
 }

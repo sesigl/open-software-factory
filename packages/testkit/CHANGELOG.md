@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.28.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.27.0...testkit-v0.28.0) (2026-11-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* **contracts:** a factory definition without effort on each agent is invalid. Add effort to every agent before you use contracts 2.0.0.
+
+### Features
+
+* **contracts:** every agent declares its effort level ([#156](https://github.com/sesigl/open-software-factory/issues/156)) ([3c67f65](https://github.com/sesigl/open-software-factory/commit/3c67f651bd691f1b6b4db1088efd1c4b65bb7591))
+
+
+### Bug Fixes
+
+* **testkit:** sut.compose finds the developer's Docker CLI plugins ([#157](https://github.com/sesigl/open-software-factory/issues/157)) ([554f667](https://github.com/sesigl/open-software-factory/commit/554f667145ccab31a56c77a83943d340a5e9a3d4))
+
 ## [0.27.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.26.0...testkit-v0.27.0) (2026-10-27)
 
 
