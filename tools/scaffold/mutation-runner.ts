@@ -1,6 +1,6 @@
 // The Stryker test runner of `osf mutation` for a unit whose system tests start its built bin (ADR 0061). The first
 // run runs every scenario once with OSF_TESTKIT_MUTANTS, so each process of the module writes the mutants it ran
-// into the folder of its scenario (testkit, support/coverage.ts). Stryker then reruns, for each mutant, only the
+// into the folder of its scenario (testkit, support/coverage.js). Stryker then reruns, for each mutant, only the
 // scenarios that ran it, and marks a mutant no scenario ran as NoCoverage. With the option `osfShard` ("i/n"), it
 // tests only every n-th mutant (ADR 0066). Stryker loads this file by its path in each of its test runner processes,
 // so it imports nothing but Node.

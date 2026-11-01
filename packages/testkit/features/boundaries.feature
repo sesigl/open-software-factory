@@ -25,3 +25,11 @@ Feature: Runtime boundaries
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 1
     And the output contains "NOREAL: the module tried to reach example.com:443"
+
+  @id=SCN-TK-123 @status=implemented
+  Scenario: A module reaches a local socket by its path under the network guard
+    Given a module whose CLI serves "hello" on the local socket "demo.sock" and connects to it with the path alone
+    And its system test runs it and expects "answer hello"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
