@@ -14,6 +14,7 @@ scenario("SCN-FORE-010", async ({ sut, given, when, then }) => {
           "  review:",
           "    harness: acp",
           "    model: routes/default",
+          "    effort: medium",
           "    prompt: ./review.md",
           "workflow:",
           "  - stage: review",

@@ -36,9 +36,10 @@ Layers, top to bottom, in `architecture.json` (ADR 0014). A file imports only it
 
 ## Budget
 
-- System tests: 440 seconds in total on the CI runner (409 seconds on CI with SCN-TK-109 to -112, ADR 0070). Most scenarios run `testkit run` on a demo module, which
-  starts a nested vitest: about 2.5 seconds each, of which recording coverage for REACH is 0.3. With 79 scenarios
-  the total passed 240 seconds on main. SCN-TK-080 to -082 each start a Forgejo and take about 20 seconds.
+- System tests: 480 seconds in total on the CI runner (409 seconds on CI with SCN-TK-109 to -112, ADR 0070; 446.6
+  seconds with SCN-TK-121 and -122, ADR 0078). Most scenarios run `testkit run` on a demo module, which starts a
+  nested vitest: about 2.5 seconds each, of which recording coverage for REACH is 0.3. With 79 scenarios the total
+  passed 240 seconds on main. SCN-TK-080 to -082 each start a Forgejo and take about 20 seconds.
 
 ## Quality limits
 

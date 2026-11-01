@@ -19,6 +19,13 @@ Feature: Shared formats
     Then the command exits with code 1
     And the output contains "factory.yaml /agents/triage/modle: unknown field"
 
+  @id=SCN-CTR-012 @status=implemented
+  Scenario: A factory definition with an unknown effort is rejected with the allowed levels
+    Given a factory definition "factory.yaml" whose agent "triage" has the effort "huge"
+    When the developer runs "osf-contracts validate factory-definition factory.yaml"
+    Then the command exits with code 1
+    And the output contains "factory.yaml /agents/triage/effort: must be one of \"low\", \"medium\", \"high\", \"xhigh\", \"max\""
+
   @id=SCN-CTR-003 @status=implemented @realizes=SCN-FACTORY-DATA-001
   Scenario: A run record that names its transcript, artifacts and pull request validates
     Given a run record "run.json" with a transcript URI, two artifact URIs and a pull request URL

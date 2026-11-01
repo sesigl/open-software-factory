@@ -21,6 +21,7 @@
     "triage": {
       "harness": "claude-code",
       "model": "routes/triage",
+      "effort": "medium",
       "prompt": "./agents/triage.md",
       "mcp": ["registry:io.github/github@1.4", "linear@2"],
       "secrets": ["ref:openbao/linear-token"],
@@ -33,6 +34,7 @@
     "implement": {
       "harness": "codex",
       "model": "routes/implement",
+      "effort": "medium",
       "prompt": "./agents/implement.md",
       "skills": ["./skills/testing"],
       "sandbox": {

@@ -144,6 +144,11 @@ export type components = {
             harness: components["schemas"]["Name"];
             /** @description A model ID or a routing alias of the inference gateway, for example "routes/triage". */
             model: string;
+            /**
+             * @description How much the model thinks before it answers. Each harness adapter maps it to its product's own setting (ADR 0078).
+             *     A smart model works well at `low` or `medium`; a small model at `high` or more.
+             */
+            effort: components["schemas"]["Effort"];
             /** @description Path to the Markdown prompt. */
             prompt: string;
             /** @description Repositories the agent operates on, as clone URLs or "<owner>/<name>". */
@@ -209,6 +214,11 @@ export type components = {
         };
         /** @description A Git commit hash, abbreviated (7+) or full. The factory version is the commit of the factory definition. */
         CommitHash: string;
+        /**
+         * @description The effort level of an agent's model, from the least to the most thinking (ADR 0078).
+         * @enum {string}
+         */
+        Effort: "low" | "medium" | "high" | "xhigh" | "max";
         /**
          * @description `evidence.json` at the root of an evidence bundle: what was verified, against which scenario IDs, with which
          *     artifacts and result (P10).

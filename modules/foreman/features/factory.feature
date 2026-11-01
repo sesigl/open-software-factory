@@ -37,3 +37,10 @@ Feature: Factory definition
     When the user runs "foreman serve" with "FOREMAN_FACTORY" set to that "factory.yaml"
     Then the command exits with code 2
     And the output contains "factory.yaml: commit it in a Git repository"
+
+  @id=SCN-FORE-069 @status=implemented
+  Scenario: Each stage's agent gets its agent's effort as "OSF_EFFORT"
+    Given "foreman serve" runs the README's "factory.yaml" with the effort "high" for the agent "implement" and a scripted harness that ends every turn
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then the "plan" session's agent got "medium" as "OSF_EFFORT"
+    And the "implement" session's agent got "high" as "OSF_EFFORT"

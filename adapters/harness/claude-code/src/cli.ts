@@ -31,7 +31,12 @@ const code = await runAdapter({
       args: [BRIDGE],
       // Claude Code reads and keeps its user settings, logins and memory in the adapter's data folder, not in the
       // user's home, and calls only the model.
-      env: { CLAUDE_CONFIG_DIR: resolve(data, "claude"), CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1" },
+      // OSF_EFFORT is the port's effort level (ADR 0078); Claude Code's own variable wins over its settings files.
+      env: {
+        CLAUDE_CONFIG_DIR: resolve(data, "claude"),
+        CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1",
+        ...(process.env.OSF_EFFORT ? { CLAUDE_CODE_EFFORT_LEVEL: process.env.OSF_EFFORT } : {}),
+      },
     };
   },
   newSession: withoutBypass,

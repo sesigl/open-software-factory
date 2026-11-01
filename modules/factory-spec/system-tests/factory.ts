@@ -16,7 +16,7 @@ export function factoryYaml(options: { providers?: string[]; agents: string[]; r
   ].join("\n");
 }
 
-/** The agent `name` on `harness` with the prompt agents/<name>.md and extra lines. */
+/** The agent `name` on `harness` with the prompt agents/<name>.md, extra lines and, last, the effort "medium". */
 export function agent(name: string, extra: string[] = [], harness = "claude-code", model = `routes/${name}`): string[] {
   return [
     `${name}:`,
@@ -24,6 +24,7 @@ export function agent(name: string, extra: string[] = [], harness = "claude-code
     `  model: ${model}`,
     `  prompt: ./agents/${name}.md`,
     ...extra.map((line) => `  ${line}`),
+    "  effort: medium",
   ];
 }
 

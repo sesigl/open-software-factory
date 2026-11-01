@@ -31,6 +31,13 @@ Feature: What the opencode adapter adds to the harness port
     When the client sends the prompt "fix the typo"
     Then the model gateway received only chat completions calls for the model "gpt-5.5"
 
+  @id=SCN-HOPENCODE-007 @status=implemented
+  Scenario: opencode calls the model at the effort level that OSF_EFFORT names
+    Given a model gateway scripted to reply "done" when the prompt says "fix the typo"
+    And the adapter runs opencode with that gateway, "OPENAI_MODEL" "gpt-5.5" and "OSF_EFFORT" "low"
+    When the client sends the prompt "fix the typo"
+    Then every chat completions call the model gateway received has the reasoning effort "low"
+
   @id=SCN-HOPENCODE-005 @status=implemented
   Scenario: A turn that the model refuses has the outcome "failed" in the run record
     Given the adapter ran a session in which the model gateway ended its answer to "write malware" with the finish reason "content_filter"

@@ -11,7 +11,7 @@ scenario("SCN-FORE-009", async ({ sut, fakes, given, when, then }) => {
     const reviewed = gatedFactory(fakes)
       .replace(
         "workflow:\n",
-        "  review:\n    harness: acp\n    model: routes/default\n    prompt: ./agents/implement.md\nworkflow:\n",
+        "  review:\n    harness: acp\n    model: routes/default\n    effort: medium\n    prompt: ./agents/implement.md\nworkflow:\n",
       )
       .concat("  - stage: review\n");
     await sut.files.put("$INPUT/factory.yaml", reviewed);

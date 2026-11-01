@@ -9,7 +9,8 @@ through the harness port, with human gates, steering and cancel, on Temporal. A 
 foreman, and Temporal's UI shows its history. Decisions: [ADR 0067](../../docs/decisions/0067-foreman.md), on
 [ADR 0004](../../docs/decisions/0004-temporal.md), [ADR 0068](../../docs/decisions/0068-foreman-sandboxes.md) for
 sandboxes, [ADR 0069](../../docs/decisions/0069-foreman-checks.md) for checks, and
-[ADR 0070](../../docs/decisions/0070-foreman-gateway-and-take-over.md) for the inference gateway and take over.
+[ADR 0070](../../docs/decisions/0070-foreman-gateway-and-take-over.md) for the inference gateway and take over, and
+[ADR 0078](../../docs/decisions/0078-agent-effort.md) for the effort level of each agent.
 
 ## Quick start
 
@@ -26,10 +27,12 @@ agents:
   plan:
     harness: acp
     model: routes/default
+    effort: medium
     prompt: ./agents/plan.md
   implement:
     harness: acp
     model: routes/default
+    effort: medium
     prompt: ./agents/implement.md
 workflow:
   - stage: plan
@@ -96,6 +99,7 @@ agents:
   plan:
     harness: acp
     model: routes/default
+    effort: medium
     prompt: ./agents/plan.md
     secrets: [ref:file/anthropic-api-key]
     sandbox:
@@ -106,6 +110,7 @@ agents:
   implement:
     harness: acp
     model: routes/default
+    effort: medium
     prompt: ./agents/implement.md
     secrets: [ref:file/anthropic-api-key]
     sandbox:
@@ -155,14 +160,17 @@ agents:
   plan:
     harness: acp
     model: routes/default
+    effort: medium
     prompt: ./agents/plan.md
   implement:
     harness: acp
     model: routes/default
+    effort: medium
     prompt: ./agents/implement-pr.md
   ship:
     harness: acp
     model: routes/default
+    effort: medium
     prompt: ./agents/ship.md
 workflow:
   - stage: plan
@@ -221,10 +229,12 @@ agents:
   plan:
     harness: acp
     model: routes/default
+    effort: medium
     prompt: ./agents/plan.md
   implement:
     harness: acp
     model: routes/default
+    effort: medium
     prompt: ./agents/implement.md
 workflow:
   - stage: plan
@@ -253,6 +263,13 @@ Serve it as in the quick start, with `export OSF_SECRET_ANTHROPIC_API_KEY=…` f
 `FOREMAN_INFERENCES` maps an adapter's name to its command line; an adapter it does not name runs
 `npx -y @opensoftware/inference-<name>`. A factory names at most one inference adapter. Without one, the foreman sets
 none of these variables, and each harness adapter calls the model API it is configured for.
+
+## Effort level
+
+Every agent in `factory.yaml` names its `effort`: `low`, `medium`, `high`, `xhigh` or `max`. Each stage's harness
+adapter gets it as `OSF_EFFORT`, with or without an inference gateway, and a sandboxed stage gets it in its sandbox's
+environment. The harness adapter maps it to its product's setting (see the
+[harness port](../../ports/harness/README.md#the-effort-level)).
 
 ## Take over
 
@@ -446,3 +463,5 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-066 | implemented | A state that no run can have is refused |
 | SCN-FORE-067 | implemented | A run that waits at its gate is listed as blocked |
 | SCN-FORE-068 | implemented | A stage ends when its harness keeps running after the turn |
+| SCN-FORE-069 | implemented | Each stage's agent gets its agent's effort as "OSF_EFFORT" |
+| SCN-FORE-070 | implemented | A sandboxed stage gets its agent's effort in its sandbox's environment |

@@ -3,7 +3,13 @@ import { factoryYaml } from "./factory.ts";
 
 scenario("SCN-FSPEC-007", async ({ sut, given, when, then }) => {
   await given('a factory.yaml whose agent "triage" has the prompt "agents/missing.md" on line 10', async () => {
-    const agents = ["triage:", "  harness: claude-code", "  model: routes/triage", "  prompt: agents/missing.md"];
+    const agents = [
+      "triage:",
+      "  harness: claude-code",
+      "  model: routes/triage",
+      "  prompt: agents/missing.md",
+      "  effort: medium",
+    ];
     await sut.files.put("$INPUT/factory.yaml", factoryYaml({ agents }));
   });
 

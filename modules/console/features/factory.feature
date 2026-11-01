@@ -3,11 +3,18 @@ Feature: The factory's configuration, read-only
   The pages "/factory" and "/factory/agents/<name>" show the factory definition in "CONSOLE_FACTORY" and link to the
   file in Git, where it changes (ADR 0072).
 
-  @id=SCN-CONSOLE-023 @status=implemented @realizes=SCN-FACTORY-CODE-002
+  @id=SCN-CONSOLE-023 @status=deprecated @realizes=SCN-FACTORY-CODE-002
   Scenario: The factory page lists the agents with their harness and model
     Given "CONSOLE_FACTORY" names a "factory.yaml" with the agent "triage" on "claude-code" with the model "routes/triage"
     When a person opens "/factory"
     Then the page shows the agent "triage" with the harness "claude-code" and the model "routes/triage"
+    And the page links the agent's page "/factory/agents/triage"
+
+  @id=SCN-CONSOLE-036 @status=implemented @replaces=SCN-CONSOLE-023 @realizes=SCN-FACTORY-CODE-002
+  Scenario: The factory page lists the agents with their harness, model and effort
+    Given "CONSOLE_FACTORY" names a "factory.yaml" with the agent "triage" on "claude-code" with the model "routes/triage" and the effort "high"
+    When a person opens "/factory"
+    Then the page shows the agent "triage" with the harness "claude-code", the model "routes/triage" and the effort "high"
     And the page links the agent's page "/factory/agents/triage"
 
   @id=SCN-CONSOLE-024 @status=implemented @realizes=SCN-FACTORY-CODE-002

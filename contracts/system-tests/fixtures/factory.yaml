@@ -10,6 +10,7 @@ agents:
   triage:
     harness: claude-code
     model: routes/triage
+    effort: high
     prompt: ./agents/triage.md
     repositories: [acme/web]
     mcp: [registry:io.github/github@1.4, linear@2]
@@ -18,6 +19,7 @@ agents:
   implement:
     harness: codex
     model: routes/implement
+    effort: medium
     prompt: ./agents/implement.md
     skills: [./skills/testing]
     sandbox: { template: node-24, cpu: 4, memory: 8Gi }
