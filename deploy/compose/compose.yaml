@@ -173,13 +173,13 @@ services:
 
   # Copies FACTORY_DIR into the volume factory and commits it there: foreman reads a run's factory version from Git.
   factory-repo:
-    image: ghcr.io/sesigl/open-software-factory/factory-spec:0.5.0
+    image: ghcr.io/sesigl/open-software-factory/factory-spec:0.6.0
     build: &factory-spec
       context: ../images
       target: module
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/factory-spec@0.5.0"
+        PACKAGES: "@opensoftware/factory-spec@0.6.0"
     volumes:
       - ${FACTORY_DIR:-./factory}:/source:ro
       - factory:/factory
@@ -254,14 +254,14 @@ services:
 
   foreman:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/foreman:0.4.0
+    image: ghcr.io/sesigl/open-software-factory/foreman:0.5.0
     build:
       context: ../images
       target: module
       secrets: [ca]
       args:
         PACKAGES: >-
-          @opensoftware/foreman@0.4.0 @opensoftware/harness-claude-code@0.2.0 @opensoftware/forge-github@0.5.0
+          @opensoftware/foreman@0.5.0 @opensoftware/harness-claude-code@0.4.0 @opensoftware/forge-github@0.5.0
           @opensoftware/forge-forgejo@0.5.0
     command: [foreman, serve]
     depends_on:
@@ -294,13 +294,13 @@ services:
 
   console:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/console:0.2.0
+    image: ghcr.io/sesigl/open-software-factory/console:0.3.0
     build:
       context: ../images
       target: module
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/console@0.2.0 @opensoftware/forge-github@0.5.0 @opensoftware/forge-forgejo@0.5.0"
+        PACKAGES: "@opensoftware/console@0.3.0 @opensoftware/forge-github@0.5.0 @opensoftware/forge-forgejo@0.5.0"
     command: [console, serve]
     depends_on:
       foreman:
@@ -328,7 +328,7 @@ services:
 
   # factory-spec on the factory in the volume, for the commands of factory: docker compose run --rm factory plan
   factory:
-    image: ghcr.io/sesigl/open-software-factory/factory-spec:0.5.0
+    image: ghcr.io/sesigl/open-software-factory/factory-spec:0.6.0
     build: *factory-spec
     profiles: [tools]
     depends_on:
