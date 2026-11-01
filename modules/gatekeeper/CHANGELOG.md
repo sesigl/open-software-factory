@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/sesigl/open-software-factory/compare/gatekeeper-v0.4.0...gatekeeper-v0.4.1) (2026-11-01)
+
+
+### Performance Improvements
+
+* **gatekeeper:** request, status, keys and verify start without Fastify, pg and NATS ([#161](https://github.com/sesigl/open-software-factory/issues/161)) ([ab635a1](https://github.com/sesigl/open-software-factory/commit/ab635a1e85d399963ddc89325300a0753c4a0825))
+
 ## [0.4.0](https://github.com/sesigl/open-software-factory/compare/gatekeeper-v0.3.0...gatekeeper-v0.4.0) (2026-10-26)
 
 
