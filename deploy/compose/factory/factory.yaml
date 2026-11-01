@@ -9,26 +9,34 @@ providers:
   # The forge that holds the repositories and the checks of the verify stage.
   forge:
     github: "^0.5"
+# Each agent names its effort level (ADR 0078). A smart model (Opus, Sonnet) works at low or medium; give it high or
+# more only for hard work, and say why. A small model (Haiku) works at high or more. Point routes/triage and
+# routes/ship at a small model, and routes/spec, routes/implement and routes/review at a smart one.
 agents:
   triage:
     harness: claude-code
     model: routes/triage
+    effort: high
     prompt: ./agents/triage.md
   spec:
     harness: claude-code
     model: routes/spec
+    effort: medium
     prompt: ./agents/spec.md
   implement:
     harness: claude-code
     model: routes/implement
+    effort: medium
     prompt: ./agents/implement.md
   review:
     harness: claude-code
     model: routes/review
+    effort: medium
     prompt: ./agents/review.md
   ship:
     harness: claude-code
     model: routes/ship
+    effort: high
     prompt: ./agents/ship.md
 workflow:
   - stage: triage

@@ -22,9 +22,9 @@ images:
   pullPolicy: IfNotPresent
   gatekeeper: "0.4.0"
   intake: "0.2.0"
-  foreman: "0.4.0"
-  console: "0.2.0"
-  factorySpec: "0.5.0"
+  foreman: "0.5.0"
+  console: "0.3.0"
+  factorySpec: "0.6.0"
 
 # The factory definition with its prompts, policy and groups, as path: content. Empty: the reference factory in
 # files/factory/. foreman commits the files into Git, so a run's factory version is a commit.
