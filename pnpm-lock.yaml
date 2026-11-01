@@ -50,7 +50,7 @@ importers:
         version: link:../../../packages/testkit
 
   adapters/channel/slack:
-    dependencies:
+    devDependencies:
       '@chat-adapter/slack':
         specifier: 4.43.0
         version: 4.43.0(zod@4.6.7)
@@ -63,16 +63,15 @@ importers:
       '@opensoftware/cli':
         specifier: workspace:*
         version: link:../../../packages/cli
-      chat:
-        specifier: 4.43.0
-        version: 4.43.0(zod@4.6.7)
-    devDependencies:
       '@opensoftware/contracts':
         specifier: workspace:*
         version: link:../../../contracts
       '@opensoftware/testkit':
         specifier: workspace:*
         version: link:../../../packages/testkit
+      chat:
+        specifier: 4.43.0
+        version: 4.43.0(zod@4.6.7)
 
   adapters/forge/forgejo:
     dependencies:
@@ -732,6 +731,9 @@ importers:
       picomatch:
         specifier: 4.0.7
         version: 4.0.7
+      rolldown:
+        specifier: 1.2.14
+        version: 1.2.14
       ts-morph:
         specifier: 28.0.0
         version: 28.0.0

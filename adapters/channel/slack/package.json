@@ -19,7 +19,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "node ../../../tools/bin/osf.ts bundle .",
     "lint": "biome check .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test:system": "vitest run",
@@ -27,14 +27,12 @@
     "mutation": "node ../../../tools/bin/osf.ts mutation ."
   },
   "devDependencies": {
-    "@opensoftware/contracts": "workspace:*",
-    "@opensoftware/testkit": "workspace:*"
-  },
-  "dependencies": {
     "@chat-adapter/slack": "4.43.0",
     "@chat-adapter/state-memory": "4.43.0",
     "@opensoftware/channel-kit": "workspace:*",
     "@opensoftware/cli": "workspace:*",
+    "@opensoftware/contracts": "workspace:*",
+    "@opensoftware/testkit": "workspace:*",
     "chat": "4.43.0"
   }
 }
