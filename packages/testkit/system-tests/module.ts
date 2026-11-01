@@ -344,6 +344,33 @@ export function acpClientModule(steps: string[], test: string[], variables: stri
 }
 
 /**
+ * The ACP client module whose test starts it with the variables `env` and the scripted harness, sends "fix the typo"
+ * and expects one session in $INPUT whose recorded variables include `env`.
+ */
+export function recordingClientModule(env: Record<string, string>): Record<string, string> {
+  const variables = JSON.stringify(env);
+  return acpClientModule(
+    ['When the user runs "demo prompt:fix the typo"', "Then the agent recorded the session's folder and variables"],
+    [
+      'const harness = await fakes.harness([{ when: "fix the typo", reply: "done" }]);',
+      "let run: Awaited<ReturnType<typeof sut.cli>>;",
+      "await when('the user runs \"demo prompt:fix the typo\"', async () => {",
+      `  const env = { DEMO_AGENT_COMMAND: JSON.stringify([harness.command, ...harness.args]), ...${variables} };`,
+      '  run = await sut.cli(["prompt:fix the typo"], { env });',
+      "});",
+      'await then("the agent recorded the session\'s folder and variables", async () => {',
+      "  expect(run.exitCode, run.stderr).toBe(0);",
+      "  const sessions = harness.sessions();",
+      "  expect(sessions).toHaveLength(1);",
+      '  expect(sessions[0]?.cwd).toBe(sut.files.path("$INPUT"));',
+      `  expect(sessions[0]?.env).toMatchObject(${variables});`,
+      "});",
+    ],
+    Object.keys(env),
+  );
+}
+
+/**
  * Module demo whose bin is an ACP agent on stdio named "demo" 0.1.0. Its one session is "s1". It answers the prompt
  * `greet <name>` with the reply "hello <name> from <name of the session's folder>"; for "clean up" it asks the client
  * to approve the tool "rm -rf build" of kind "execute" and replies with the option the client chose; for "bye" it answers

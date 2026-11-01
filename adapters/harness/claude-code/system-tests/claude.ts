@@ -21,6 +21,7 @@ export const connect = (
 
 interface Call {
   model?: string;
+  output_config?: { effort?: string };
   messages?: { role: string; content: unknown }[];
 }
 

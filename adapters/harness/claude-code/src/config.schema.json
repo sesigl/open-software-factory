@@ -14,7 +14,7 @@
     },
     "OTEL_RESOURCE_ATTRIBUTES": {
       "type": "string",
-      "description": "Resource attributes of the run as key=value pairs, set by the launcher, for example osf.run.id=…,osf.work_item.id=…,osf.factory.version=…. run keeps them with each session; transcript writes them into the run record."
+      "description": "Resource attributes of the run as key=value pairs, set by the launcher, for example osf.run.id=\u2026,osf.work_item.id=\u2026,osf.factory.version=\u2026. run keeps them with each session; transcript writes them into the run record."
     },
     "OTEL_SERVICE_NAME": {
       "type": "string",
@@ -35,6 +35,11 @@
     "ANTHROPIC_MODEL": {
       "type": "string",
       "description": "The model Claude Code asks for, for example claude-sonnet-5-5. Default: Claude Code's default model."
+    },
+    "OSF_EFFORT": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "xhigh", "max"],
+      "description": "The effort level of the session's model, set by the launcher (ADR 0078). The adapter hands it to Claude Code as CLAUDE_CODE_EFFORT_LEVEL. Default: Claude Code's default for the model."
     }
   }
 }

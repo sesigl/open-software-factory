@@ -7,8 +7,8 @@ scenario("SCN-FORE-051", async ({ sut, fakes, given, when, then }) => {
     '"foreman serve" runs the README\'s "gateway/factory.yaml" with the model "routes/strong" for the agent "implement" and a fake inference adapter as "litellm"',
     async () => {
       const factory = gatewayFactory(fakes).replace(
-        "    model: routes/default\n    prompt: ./agents/implement.md",
-        "    model: routes/strong\n    prompt: ./agents/implement.md",
+        "    model: routes/default\n    effort: medium\n    prompt: ./agents/implement.md",
+        "    model: routes/strong\n    effort: medium\n    prompt: ./agents/implement.md",
       );
       server = await servingGateway(sut, fakes, { factory });
     },

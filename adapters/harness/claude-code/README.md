@@ -76,6 +76,7 @@ No credential is stored in the repository.
 | `CLAUDE_CODE_OAUTH_TOKEN` | string |  | A token of claude setup-token: Claude Code runs on the subscription of the person who made it, in place of an API key. |
 | `ANTHROPIC_API_KEY` | string |  | The key Claude Code sends to the model API, for example a gateway key or a placeholder that the egress proxy replaces. |
 | `ANTHROPIC_MODEL` | string |  | The model Claude Code asks for, for example claude-sonnet-5-5. Default: Claude Code's default model. |
+| `OSF_EFFORT` | string |  | The effort level of the session's model, set by the launcher (ADR 0078). The adapter hands it to Claude Code as CLAUDE_CODE_EFFORT_LEVEL. Default: Claude Code's default for the model. |
 
 ## Scenarios
 

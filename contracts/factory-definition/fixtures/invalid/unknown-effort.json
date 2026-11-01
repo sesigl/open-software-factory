@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "factory": "solo",
+  "agents": {
+    "implement": {
+      "harness": "claude-code",
+      "model": "claude-sonnet-5-5",
+      "effort": "huge",
+      "prompt": "./agents/implement.md"
+    }
+  }
+}

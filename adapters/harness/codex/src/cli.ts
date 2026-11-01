@@ -46,6 +46,10 @@ const configOf = (env: NodeJS.ProcessEnv): string =>
     "",
   ].join("\n");
 
+/** The model and, from the port's OSF_EFFORT (ADR 0078), the reasoning effort of every session, as CODEX_CONFIG. */
+const sessionConfig = (env: NodeJS.ProcessEnv): string =>
+  JSON.stringify({ model: env.OPENAI_MODEL, model_reasoning_effort: env.OSF_EFFORT });
+
 const code = await runAdapter({
   harness: "codex",
   usage: USAGE,
@@ -64,7 +68,7 @@ const code = await runAdapter({
         INITIAL_AGENT_MODE: "read-only",
         NO_BROWSER: "1",
         // The session's own settings: they win over a folder's .codex/config.toml, which may name another model.
-        ...(process.env.OPENAI_MODEL ? { CODEX_CONFIG: JSON.stringify({ model: process.env.OPENAI_MODEL }) } : {}),
+        CODEX_CONFIG: sessionConfig(process.env),
       },
     };
   },

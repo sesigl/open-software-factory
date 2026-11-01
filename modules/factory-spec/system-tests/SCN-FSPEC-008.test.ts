@@ -3,7 +3,7 @@ import { agent, factoryYaml, prompt } from "./factory.ts";
 
 scenario("SCN-FSPEC-008", async ({ sut, given, when, then }) => {
   await given('a factory.yaml whose workflow has the stage "review" on line 13 and no agent "review"', async () => {
-    const rest = ["workflow:", "  - stage: triage", "  - stage: review"];
+    const rest = ["workflow:", "  - stage: review", "  - stage: triage"];
     await sut.files.put("$INPUT/factory.yaml", factoryYaml({ agents: agent("triage"), rest }));
     await sut.files.put("$INPUT/agents/triage.md", prompt("triage"));
   });

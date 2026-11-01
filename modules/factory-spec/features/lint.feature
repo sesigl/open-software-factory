@@ -32,6 +32,13 @@ Feature: Lint a factory definition
     Then the command exits with code 1
     And the output contains "factory.yaml:9:5 /agents/triage/modle: unknown field"
 
+  @id=SCN-FSPEC-058 @status=implemented
+  Scenario: Lint names the line of an effort the format does not know, with the allowed levels
+    Given a factory.yaml whose agent "triage" has the effort "huge" on line 10
+    When the factory engineer runs "factory lint"
+    Then the command exits with code 1
+    And the output contains "factory.yaml:10:5 /agents/triage/effort: must be one of \"low\", \"medium\", \"high\", \"xhigh\", \"max\""
+
   @id=SCN-FSPEC-005 @status=implemented
   Scenario: Lint names the line of YAML that does not parse
     Given a factory.yaml that repeats the key "factory" on line 3

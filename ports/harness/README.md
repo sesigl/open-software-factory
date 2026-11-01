@@ -6,7 +6,7 @@ covers: [ports/harness/**]
 
 How the factory runs a coding agent headless: one protocol for every harness. Decisions:
 [ADR 0050](../../docs/decisions/0050-harness-port.md), [ADR 0052](../../docs/decisions/0052-harness-claude-code.md),
-[ADR 0053](../../docs/decisions/0053-harness-codex-opencode.md).
+[ADR 0053](../../docs/decisions/0053-harness-codex-opencode.md), [ADR 0078](../../docs/decisions/0078-agent-effort.md).
 
 ## The interface
 
@@ -26,6 +26,21 @@ On top of ACP every adapter refuses tool calls of kinds outside its `--allow` li
 an agent that does not end a cancelled turn, and records each session for the transcript export. The adapters share
 this code in the library [`harness-proxy`](../../packages/harness-proxy/README.md); each adapter adds what its
 product needs.
+
+## The effort level
+
+The launcher sets `OSF_EFFORT` to the agent's `effort` from `factory.yaml`: `low`, `medium`, `high`, `xhigh` or `max`.
+Each adapter maps it to its product's own setting:
+
+| Adapter | Product setting | What the model API gets |
+| --- | --- | --- |
+| `claude-code` | `CLAUDE_CODE_EFFORT_LEVEL` | `output_config.effort` of the Messages API request |
+| `codex` | `model_reasoning_effort` in the session's settings | `reasoning.effort` of the Responses API request |
+| `opencode` | `reasoningEffort` in the options of the gateway's model | `reasoning_effort` of the chat completions request |
+| `acp` | none | the agent gets `OSF_EFFORT` in its environment, unchanged |
+
+Without `OSF_EFFORT` each product uses its own default. A new adapter maps `OSF_EFFORT` to its product, or says in
+its README that its product has no effort level.
 
 ## Conformance
 

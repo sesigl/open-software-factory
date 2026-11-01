@@ -60,6 +60,7 @@ agents:
   triage:
     harness: claude-code
     model: routes/triage            # routing rule, not a fixed model
+    effort: high                    # a small model thinks more (ADR 0078)
     prompt: ./agents/triage.md
     mcp: [registry:io.github/github@1.4, linear@2]
     secrets: [ref:openbao/linear-token]
@@ -67,6 +68,7 @@ agents:
   implement:
     harness: codex
     model: routes/implement
+    effort: medium
     prompt: ./agents/implement.md
     skills: [./skills/testing]
     sandbox: { template: node-24, cpu: 4, memory: 8Gi }

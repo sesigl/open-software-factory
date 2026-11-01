@@ -94,6 +94,12 @@ model Agent {
   @minLength(1)
   `model`: string;
 
+  /**
+   * How much the model thinks before it answers. Each harness adapter maps it to its product's own setting (ADR 0078).
+   * A smart model works well at `low` or `medium`; a small model at `high` or more.
+   */
+  effort: Effort;
+
   /** Path to the Markdown prompt. */
   @minLength(1)
   prompt: string;
@@ -154,6 +160,15 @@ model Stage {
 /** The name of a check on the forge: a commit status context. */
 @minLength(1)
 scalar CheckName extends string;
+
+/** The effort level of an agent's model, from the least to the most thinking (ADR 0078). */
+enum Effort {
+  low,
+  medium,
+  high,
+  xhigh,
+  max,
+}
 
 enum EvidenceRequirement {
   required,

@@ -130,7 +130,7 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-020 | implemented | The run page shows a stage's gate with its state and who it waits for |
 | SCN-CONSOLE-021 | implemented | The run page shows the checks a stage waits for and why a stage failed |
 | SCN-CONSOLE-022 | implemented | A run that no foreman knows answers 404 |
-| SCN-CONSOLE-023 | implemented | The factory page lists the agents with their harness and model |
+| SCN-CONSOLE-023 | deprecated | The factory page lists the agents with their harness and model |
 | SCN-CONSOLE-024 | implemented | An agent's page is read-only and links to the file and the branch in Git |
 | SCN-CONSOLE-025 | implemented | An agent that the factory does not declare answers 404 |
 | SCN-CONSOLE-026 | implemented | A POST to the console answers 405 |
@@ -143,3 +143,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-033 | implemented | The inbox lists the branches of the prefix in "CONSOLE_INBOX_PREFIX" |
 | SCN-CONSOLE-034 | implemented | A forge that refuses the token is named on the inbox |
 | SCN-CONSOLE-035 | implemented | Without a repository the inbox answers 404 and names the variable |
+| SCN-CONSOLE-036 | implemented | The factory page lists the agents with their harness, model and effort |

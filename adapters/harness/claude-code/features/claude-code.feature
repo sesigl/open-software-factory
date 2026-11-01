@@ -32,6 +32,13 @@ Feature: What the claude-code adapter adds to the harness port
     When the client sends the prompt "fix the typo"
     Then the model gateway received a Messages API call for the model "claude-sonnet-5-5"
 
+  @id=SCN-HCLAUDE-006 @status=implemented
+  Scenario: Claude Code calls the model at the effort level that OSF_EFFORT names
+    Given a model gateway scripted to reply "done" when the prompt says "fix the typo"
+    And the adapter runs Claude Code with that gateway and "OSF_EFFORT" "low"
+    When the client sends the prompt "fix the typo"
+    Then the model gateway received a Messages API call with the effort "low"
+
   @id=SCN-HCLAUDE-005 @status=implemented
   Scenario: A turn that the model refuses has the outcome "failed" in the run record
     Given the adapter ran a session in which the model gateway ended its answer to "write malware" with the stop reason "refusal"

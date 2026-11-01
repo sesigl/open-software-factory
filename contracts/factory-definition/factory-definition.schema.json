@@ -151,6 +151,17 @@
             "minLength": 1,
             "description": "A model ID or a routing alias of the inference gateway, for example \"routes/triage\"."
           },
+          "effort": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max"
+            ],
+            "description": "How much the model thinks before it answers. Each harness adapter maps it to its product's own setting (ADR 0078).\nA smart model works well at `low` or `medium`; a small model at `high` or more."
+          },
           "prompt": {
             "type": "string",
             "minLength": 1,
@@ -221,6 +232,7 @@
         "required": [
           "harness",
           "model",
+          "effort",
           "prompt"
         ],
         "additionalProperties": false

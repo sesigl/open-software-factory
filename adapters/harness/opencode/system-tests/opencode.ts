@@ -16,6 +16,7 @@ export const connect = (
 
 interface Call {
   model?: string;
+  reasoning_effort?: string;
   messages?: { role: string; content: unknown; tool_call_id?: string }[];
 }
 

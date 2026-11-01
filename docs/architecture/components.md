@@ -54,7 +54,7 @@ through a reviewed PR to `factory-spec`, which the foreman loads as its next ver
 
 | Format | Status | Based on | Carries | Written by → read by |
 | --- | --- | --- | --- | --- |
-| Factory definition | new | YAML + JSON Schema; prompts as Markdown; tools as MCP | Agents, prompts, skills, MCP servers, secret references, models, runners, stages, gates, automations, scorers, benchmarks | people, observer → foreman, gatekeeper, scorekit, taskcapture |
+| Factory definition | new | YAML + JSON Schema; prompts as Markdown; tools as MCP | Agents, prompts, skills, MCP servers, secret references, models and effort levels, runners, stages, gates, automations, scorers, benchmarks | people, observer → foreman, gatekeeper, scorekit, taskcapture |
 | Work item event | adopt + small schema | CloudEvents | Type, origin link, requester, product surface, priority, dedupe key | intake → foreman, ledger |
 | Run record | adopt | OpenTelemetry GenAI conventions plus factory attributes; Agent Trace for line attribution | Transcript, tool calls, tokens, cost, model, harness, factory version, links | runlog → trace store, scorekit, ledger, taskcapture |
 | Evidence bundle | new | Folder with a manifest; Playwright traces, screenshots, video, JUnit | What was verified, against which scenario IDs, with which artifacts and result | proof → forge, spec-trace |

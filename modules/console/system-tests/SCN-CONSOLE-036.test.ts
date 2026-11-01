@@ -1,10 +1,10 @@
 import { scenario } from "@opensoftware/testkit";
 import { factoryEnv, links, open, rows, serving } from "./console.ts";
 
-scenario("SCN-CONSOLE-023", async ({ sut, given, when, then }) => {
+scenario("SCN-CONSOLE-036", async ({ sut, given, when, then }) => {
   let env: Record<string, string> = {};
   await given(
-    '"CONSOLE_FACTORY" names a "factory.yaml" with the agent "triage" on "claude-code" with the model "routes/triage"',
+    '"CONSOLE_FACTORY" names a "factory.yaml" with the agent "triage" on "claude-code" with the model "routes/triage" and the effort "high"',
     async () => {
       env = await factoryEnv(sut);
     },
@@ -17,10 +17,10 @@ scenario("SCN-CONSOLE-023", async ({ sut, given, when, then }) => {
   });
 
   await then(
-    'the page shows the agent "triage" with the harness "claude-code" and the model "routes/triage"',
+    'the page shows the agent "triage" with the harness "claude-code", the model "routes/triage" and the effort "high"',
     async () => {
       expect(page.status).toBe(200);
-      expect(rows(page.html)).toEqual([["triage", "claude-code", "routes/triage"]]);
+      expect(rows(page.html)).toEqual([["triage", "claude-code", "routes/triage", "high"]]);
       expect(page.html).toContain("<h1>acme</h1>");
       expect(page.html).toContain("<pre>harness:\n  claude-code: ^2\n</pre>");
     },

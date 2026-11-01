@@ -31,6 +31,13 @@ Feature: What the codex adapter adds to the harness port
     When the client sends the prompt "fix the typo"
     Then the model gateway received a Responses API call for the model "gpt-5.5"
 
+  @id=SCN-HCODEX-009 @status=implemented
+  Scenario: Codex calls the model at the effort level that OSF_EFFORT names
+    Given a model gateway scripted to reply "done" when the prompt says "fix the typo"
+    And the adapter runs Codex with that gateway, "OPENAI_MODEL" "gpt-5.5" and "OSF_EFFORT" "low"
+    When the client sends the prompt "fix the typo"
+    Then the model gateway received a Responses API call with the reasoning effort "low"
+
   @id=SCN-HCODEX-005 @status=implemented @realizes=SCN-FACTORY-OPEN-006
   Scenario: A folder's settings cannot send Codex's model calls to another provider
     Given the working folder's ".codex/config.toml" names the model provider "other" with a second model gateway

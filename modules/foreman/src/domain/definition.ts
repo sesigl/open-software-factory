@@ -1,6 +1,6 @@
-// The part of a factory definition a run needs (ADR 0067 to ADR 0070): its name, its sandbox, forge and inference
-// adapters, and its stages in order, each with its agent, the agent's harness, model, prompt text and sandbox, its
-// checks and its gate. Checked once against the contract and once for what only the foreman sees.
+// The part of a factory definition a run needs (ADR 0067 to ADR 0070, ADR 0078): its name, its sandbox, forge and
+// inference adapters, and its stages in order, each with its agent, the agent's harness, model, effort, prompt text and
+// sandbox, its checks and its gate. Checked once against the contract and once for what only the foreman sees.
 import type { FactoryDefinition, SandboxSpec } from "@opensoftware/contracts";
 
 export interface StagePlan {
@@ -9,6 +9,8 @@ export interface StagePlan {
   harness: string;
   /** The agent's model: a model ID or a routing alias of the inference gateway. */
   model: string;
+  /** The agent's effort level, which each harness adapter reads as OSF_EFFORT (ADR 0078). */
+  effort: FactoryDefinition["agents"][string]["effort"];
   /** The text of the agent's prompt file. */
   prompt: string;
   gate?: { policy: string; approvers?: string[] };
@@ -100,6 +102,7 @@ export function definitionOf(factory: FactoryDefinition, read: (path: string) =>
         agent,
         harness: declared.harness,
         model: declared.model,
+        effort: declared.effort,
         prompt: read(declared.prompt),
         ...(stage.gate ? { gate: stage.gate } : {}),
         ...(stage.checks?.length ? { checks: stage.checks } : {}),

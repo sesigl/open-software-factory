@@ -711,8 +711,19 @@ owner before each slice: which model or service, and its budget.
     `observer check` for the merged ones (ADR 0046, ADR 0077). Open: done when one observer pull request to this
     repository is merged and `observer check` measures its effect; that needs a problem with two failed runs and then
     20 scored runs on each side of the merge.
+  - [x] effort (before the foreman slice): every agent of `factory.yaml` declares its `effort` (`low` to `max`, required;
+    contracts 2.0.0); the foreman hands it to each stage as `OSF_EFFORT`, and claude-code, codex and opencode map it to
+    their own setting; the console's factory page shows it (ADR 0078, `SCN-CTR-012`, `SCN-FSPEC-058`, `SCN-FORE-069`,
+    `-070`, `SCN-TK-121`, `SCN-HCLAUDE-006`, `SCN-HCODEX-009`, `SCN-HOPENCODE-007`, `SCN-CONSOLE-036`).
+  - [ ] effort in the profile: once factory-spec, foreman and console are released on contracts 2.0.0, move the image
+    pins of `deploy/compose/compose.yaml` and the Helm chart to them, and give the agents of the reference factory
+    `deploy/compose/factory/factory.yaml` their levels: `high` for triage and ship (a small model), `medium` for spec,
+    implement and review (a smart one). The released images before them reject `effort` as an unknown field.
   - [ ] foreman (from T-17): run `foreman serve` with a real harness and model next to the public intake below; done
-    when an issue labeled `factory` in this repository is implemented by the foreman (phase 3).
+    when an issue labeled `factory` in this repository is implemented by the foreman (phase 3). Every model call goes
+    through LiteLLM, also on the owner's Claude subscription: LiteLLM forwards the subscription's token, and the
+    foreman hands Claude Code the run's key in `ANTHROPIC_CUSTOM_HEADERS` (`x-litellm-api-key`) in place of
+    `ANTHROPIC_API_KEY`. Models: Opus for spec and implement, Sonnet for review, Haiku for triage and ship.
   - [x] intake (from T-16): the Compose profile on a developer's machine takes the `issues` webhook of
     `sesigl/open-software-factory` through a smee.io relay; `INTAKE_WEBHOOK_SECRET` turns on the profile's
     `/forge/events` (`SCN-DIST-014`), and `deploy/README.md` describes the relay and the webhook (ADR 0065). Issue #150,

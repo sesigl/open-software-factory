@@ -175,11 +175,12 @@ export function activities(deps: ActivityDeps) {
         .join(",");
       const harness = commandLine(deps.harnesses, plan.harness, `npx -y @opensoftware/harness-${plan.harness} run`);
       const adapter = definition.sandboxAdapter;
-      const model = await gatewayEnv(view, definition, plan.model);
+      // The agent's model and gateway (ADR 0070) and its effort level (ADR 0078), with or without a sandbox.
+      const agentEnv = { ...(await gatewayEnv(view, definition, plan.model)), OSF_EFFORT: plan.effort };
       const sandbox = plan.sandbox
         ? await createSandbox(
             commandLine(deps.sandboxes, adapter, `npx -y @opensoftware/sandbox-${adapter}`),
-            { ...plan.sandbox, env: { OTEL_RESOURCE_ATTRIBUTES: resource, ...model } },
+            { ...plan.sandbox, env: { OTEL_RESOURCE_ATTRIBUTES: resource, ...agentEnv } },
             cwd,
             view.runId,
             deps.env,
@@ -198,7 +199,7 @@ export function activities(deps: ActivityDeps) {
                   ...deps.env,
                   OSF_DATA: join(deps.data, "harness", plan.harness),
                   OTEL_RESOURCE_ATTRIBUTES: resource,
-                  ...model,
+                  ...agentEnv,
                 },
                 prompt,
               },

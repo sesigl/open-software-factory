@@ -83,7 +83,8 @@ agent({ name: "testkit-scripted-harness" })
   .onRequest("session/new", ({ params }) => {
     const sessionId = `session-${sessions.size + 1}`;
     sessions.set(sessionId, { cwd: params.cwd });
-    const env = Object.entries(process.env).filter(([name]) => /^(OPENAI|ANTHROPIC)_/.test(name));
+    // The model variables (ADR 0070) and the effort level (ADR 0078) the agent got.
+    const env = Object.entries(process.env).filter(([name]) => /^(OPENAI_|ANTHROPIC_|OSF_EFFORT$)/.test(name));
     log({ session: { cwd: params.cwd, env: Object.fromEntries(env) as Record<string, string> } });
     return { sessionId };
   })
