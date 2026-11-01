@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.28.1](https://github.com/sesigl/open-software-factory/compare/testkit-v0.28.0...testkit-v0.28.1) (2026-11-01)
+
+
+### Performance Improvements
+
+* **testkit:** module processes load plain JavaScript guards; adapters skip coverage ([#162](https://github.com/sesigl/open-software-factory/issues/162)) ([641b06d](https://github.com/sesigl/open-software-factory/commit/641b06d95e365eb1e134c39d62e854fc8d051650))
+
 ## [0.28.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.27.0...testkit-v0.28.0) (2026-11-01)
 
 
