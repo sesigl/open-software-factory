@@ -1,7 +1,6 @@
 // How the testkit starts the module's artifact: one command, one working folder and a checked environment.
 import { existsSync } from "node:fs";
-import { dirname, extname, join, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { dirname, join, relative, resolve } from "node:path";
 import { artifactOf, moduleEnv, repoRoot, workspaceOf } from "../support/module.ts";
 import { baseEnv, FIXED_DATE, FIXED_SEED } from "../support/process.ts";
 import { isDocumented } from "../support/readme.ts";
@@ -12,10 +11,10 @@ export type Launch = (
   env?: Record<string, string>,
 ) => { command: string; argv: string[]; cwd: string; env: Record<string, string> };
 
-// Loaded into every module process: the network guard (NOREAL) and the coverage recorder (REACH). They sit next
-// to this file in the source tree and in the built package alike.
-const preload = (name: string): string =>
-  `--import=${new URL(`../support/${name}${extname(fileURLToPath(import.meta.url))}`, import.meta.url).href}`;
+// Loaded into every module process: the network guard (NOREAL) and the coverage recorder (REACH). They are plain
+// JavaScript, so a process loads them without stripping types, and they sit next to this file in the source tree
+// and in the built package alike.
+const preload = (name: string): string => `--import=${new URL(`../support/${name}.js`, import.meta.url).href}`;
 // The recorder comes first, so it also sees the guard run.
 const NODE_OPTIONS = `${preload("coverage")} ${preload("guard")}`;
 
