@@ -256,6 +256,9 @@ A `planned` scenario's test must fail; when it passes, the testkit fails it and 
 - REACH: every Node process of the module also records which of the module's code it ran, in
   `reports/coverage/` of the workspace ([ADR 0019](../../docs/decisions/0019-reach-from-process-coverage.md)).
   `osf check REACH` fails on lines a pull request adds that no system test reaches.
+  A process whose entry script is another package of this repository, like an adapter the module starts, records
+  nothing: it cannot run the module's code (ISOLATION), and V8's coverage makes each start slower. Both guards are plain JavaScript, so a
+  process loads them without stripping types.
 - The clock and the seed are fixed through `OSF_NOW` and `OSF_SEED`; a module reads them instead of the system
   clock and a random seed.
 
@@ -419,3 +422,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-120 | implemented | The model gateway for containers answers a call from a container |
 | SCN-TK-121 | implemented | The scripted harness records each session's effort level |
 | SCN-TK-122 | implemented | sut.compose runs docker with the developer's Docker configuration, where Docker finds its plugins |
+| SCN-TK-123 | implemented | A module reaches a local socket by its path under the network guard |

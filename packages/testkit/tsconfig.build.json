@@ -7,7 +7,9 @@
     "declaration": true,
     "rewriteRelativeImportExtensions": true,
     "types": ["node"],
-    "sourceMap": true
+    "sourceMap": true,
+    "allowJs": true,
+    "checkJs": true
   },
-  "include": ["bin/**/*.ts", "src/**/*.ts"]
+  "include": ["bin/**/*.ts", "src/**/*.ts", "src/**/*.js"]
 }
