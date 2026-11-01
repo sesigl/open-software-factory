@@ -59,6 +59,11 @@ folder, change the prompts, `policy/spec.rego` and `groups.json`, and set `FACTO
 `docker compose up` commits the folder into the volume `factory`, so a run's factory version is a commit. Add your
 models to `compose/litellm/config.yaml`, with their keys in `.env`.
 
+Each agent of the reference factory names its effort level ([ADR 0078](../docs/decisions/0078-agent-effort.md)):
+`high` for triage and ship, which need a small model, and `medium` for spec, implement and review, which need a smart
+one. Point the routes in `compose/litellm/config.yaml` at models of those sizes. When you change a route to a model of
+the other size, change the agent's `effort` too.
+
 ## Configuration
 
 `compose.yaml` reads these values from `compose/.env` or the environment. It refuses to start without a required one
@@ -178,11 +183,11 @@ change the version with the chart.
 Verify an image, and read its SBOM and provenance:
 
 ```sh
-cosign verify ghcr.io/sesigl/open-software-factory/foreman:0.4.0 \
+cosign verify ghcr.io/sesigl/open-software-factory/foreman:0.5.0 \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   --certificate-identity-regexp '^https://github.com/sesigl/open-software-factory/'
-docker buildx imagetools inspect ghcr.io/sesigl/open-software-factory/foreman:0.4.0 --format '{{ json .SBOM }}'
-docker buildx imagetools inspect ghcr.io/sesigl/open-software-factory/foreman:0.4.0 --format '{{ json .Provenance }}'
+docker buildx imagetools inspect ghcr.io/sesigl/open-software-factory/foreman:0.5.0 --format '{{ json .SBOM }}'
+docker buildx imagetools inspect ghcr.io/sesigl/open-software-factory/foreman:0.5.0 --format '{{ json .Provenance }}'
 ```
 
 One-time setup: GHCR makes each new package private. After the first run, the owner opens each package under the
