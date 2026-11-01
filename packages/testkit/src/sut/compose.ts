@@ -1,5 +1,6 @@
 // sut.compose: a Compose file of the unit, run with `docker compose` as a project of the scenario (ADR 0074).
-import { existsSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { moduleEnv, repoRoot } from "../support/module.ts";
 import { baseEnv, type CliResult, run } from "../support/process.ts";
@@ -31,6 +32,17 @@ export interface Compose {
 /** Docker's error when the host port it picked for a published port is taken by another process. */
 const PORT_TAKEN = /failed to bind host port .* address already in use/;
 
+/**
+ * A Docker configuration of the scenario that finds the developer's CLI plugins, like compose, and nothing else of
+ * theirs: no contexts and no credentials. The module's HOME is its working folder, so docker would not find a compose
+ * that is a plugin of the user, as Rancher Desktop and Docker Desktop install it.
+ */
+function writeDockerConfig(folder: string): void {
+  const plugins = join(process.env.DOCKER_CONFIG ?? join(homedir(), ".docker"), "cli-plugins");
+  mkdirSync(folder, { recursive: true });
+  writeFileSync(join(folder, "config.json"), `${JSON.stringify({ cliPluginsExtraDirs: [plugins] })}\n`);
+}
+
 export function makeCompose(
   moduleRoot: string,
   dirs: Folders,
@@ -39,7 +51,11 @@ export function makeCompose(
   const documented = moduleEnv(moduleRoot);
   // The workspace's random name keeps parallel scenarios apart; a project name is lower case.
   const project = basename(dirname(dirs.input)).toLowerCase();
-  const env = { ...baseEnv(dirs.input), ...(process.env.DOCKER_HOST ? { DOCKER_HOST: process.env.DOCKER_HOST } : {}) };
+  const env = {
+    ...baseEnv(dirs.input),
+    ...(process.env.DOCKER_HOST ? { DOCKER_HOST: process.env.DOCKER_HOST } : {}),
+    DOCKER_CONFIG: join(dirname(dirs.input), "docker"),
+  };
   let started = false;
   return (file) => {
     const path = resolve(moduleRoot, file);
@@ -54,6 +70,7 @@ export function makeCompose(
     };
     if (!started) {
       started = true;
+      writeDockerConfig(env.DOCKER_CONFIG);
       // Without the file: a project whose .env misses a value can still be taken down.
       onStop(() =>
         run("docker", ["compose", "--project-name", project, "down", "--volumes", "--timeout", "5"], dirs.input, env),
