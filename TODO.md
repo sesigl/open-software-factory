@@ -715,7 +715,7 @@ owner before each slice: which model or service, and its budget.
     contracts 2.0.0); the foreman hands it to each stage as `OSF_EFFORT`, and claude-code, codex and opencode map it to
     their own setting; the console's factory page shows it (ADR 0078, `SCN-CTR-012`, `SCN-FSPEC-058`, `SCN-FORE-069`,
     `-070`, `SCN-TK-121`, `SCN-HCLAUDE-006`, `SCN-HCODEX-009`, `SCN-HOPENCODE-007`, `SCN-CONSOLE-036`).
-  - [ ] effort in the profile: once factory-spec, foreman and console are released on contracts 2.0.0, move the image
+  - [x] effort in the profile: once factory-spec, foreman and console are released on contracts 2.0.0, move the image
     pins of `deploy/compose/compose.yaml` and the Helm chart to them, and give the agents of the reference factory
     `deploy/compose/factory/factory.yaml` their levels: `high` for triage and ship (a small model), `medium` for spec,
     implement and review (a smart one). The released images before them reject `effort` as an unknown field.
