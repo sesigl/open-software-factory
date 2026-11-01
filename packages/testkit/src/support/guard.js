@@ -1,6 +1,8 @@
+// @ts-check
 // NOREAL: loaded with --import into every Node process of the module under test. A TCP connection may go only to a
 // loopback address or to a host of the testkit's containers; local sockets (such as Docker's) are allowed. Any
 // other connection fails like an unreachable host and is logged, and the testkit fails the scenario.
+// Plain JavaScript, not TypeScript: Node then loads it without stripping types, which every process would pay.
 import { appendFileSync } from "node:fs";
 import net from "node:net";
 
@@ -12,23 +14,35 @@ const ALLOWED = new Set(
 );
 
 const connect = net.Socket.prototype.connect;
-net.Socket.prototype.connect = function guarded(this: net.Socket, ...args: unknown[]) {
-  const blocked = refused(args);
-  if (!blocked) return Reflect.apply(connect, this, args) as net.Socket;
-  const message = `NOREAL: the module tried to reach ${blocked}; system tests reach only the testkit's fakes`;
-  if (LOG) appendFileSync(LOG, `${message}\n`);
-  process.nextTick(() => this.destroy(new Error(message)));
-  return this;
-} as typeof connect;
+net.Socket.prototype.connect = /** @type {typeof connect} */ (
+  /**
+   * @this {net.Socket}
+   * @param {unknown[]} args
+   */
+  function guarded(...args) {
+    const blocked = refused(args);
+    if (!blocked) return /** @type {net.Socket} */ (Reflect.apply(connect, this, args));
+    const message = `NOREAL: the module tried to reach ${blocked}; system tests reach only the testkit's fakes`;
+    if (LOG) appendFileSync(LOG, `${message}\n`);
+    process.nextTick(() => this.destroy(new Error(message)));
+    return this;
+  }
+);
 
-/** `host:port` when the connection goes outside the fakes, else undefined. */
-function refused(args: unknown[]): string | undefined {
+/**
+ * `host:port` when the connection goes outside the fakes, else undefined.
+ * @param {unknown[]} args
+ * @returns {string | undefined}
+ */
+function refused(args) {
   // net.connect() passes its normalized arguments as one array.
   const first = Array.isArray(args[0]) ? args[0][0] : args[0];
-  let host: unknown;
-  let port: unknown;
+  /** @type {unknown} */
+  let host;
+  /** @type {unknown} */
+  let port;
   if (first !== null && typeof first === "object") {
-    const options = first as { host?: unknown; port?: unknown; path?: unknown };
+    const options = /** @type {{ host?: unknown; port?: unknown; path?: unknown }} */ (first);
     if (options.path !== undefined) return undefined;
     host = options.host;
     port = options.port;

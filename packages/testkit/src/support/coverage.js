@@ -1,20 +1,41 @@
+// @ts-check
 // REACH: loaded with --import into every Node process of the module under test. When the testkit sets
 // OSF_TESTKIT_COVERAGE, it records which code below OSF_TESTKIT_COVERAGE_ROOT the process ran and writes it on exit
 // as V8 coverage JSON, the format of NODE_V8_COVERAGE, to that folder (`<repository>/reports/coverage`), with the
 // repository root as `root`. The REACH check reads it.
+// A process whose entry script is another package of this repository, like an adapter that the module starts,
+// records nothing: no package imports another one's code (ISOLATION), so it never runs code below the root. Every
+// other process records, also one whose entry is in node_modules (a Vitest worker) or outside the repository (a
+// demo module of the testkit's own tests).
 // MUTATION: when the testkit sets OSF_TESTKIT_MUTANTS during a mutation run, the process also writes on exit the IDs
 // of the mutants its instrumented code ran, so `osf mutation` reruns only the scenarios that ran a mutant (ADR 0061).
+// Plain JavaScript, not TypeScript: Node then loads it without stripping types, which every process would pay.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { Session } from "node:inspector";
-import { join } from "node:path";
+import { join, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const DIR = process.env.OSF_TESTKIT_COVERAGE;
 const ROOT = process.env.OSF_TESTKIT_COVERAGE_ROOT;
+/** @type {(() => void)[]} */
+const writers = [];
 
-const writers: (() => void)[] = [];
+/**
+ * True when the process starts from another package of the repository that holds `dir` (`<repository>/reports/coverage`).
+ * @param {string} dir
+ * @param {string} root
+ */
+function otherPackage(dir, root) {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  const file = resolve(entry);
+  const repository = resolve(dir, "..", "..") + sep;
+  return (
+    file.startsWith(repository) && !file.startsWith(resolve(root) + sep) && !file.includes(`${sep}node_modules${sep}`)
+  );
+}
 
-if (DIR && ROOT) {
+if (DIR && ROOT && !otherPackage(DIR, ROOT)) {
   const prefix = `${pathToFileURL(ROOT).href}/`;
   const session = new Session();
   session.connect();
@@ -41,7 +62,8 @@ if (MUTANTS) {
   let written = 0;
   writers.push(() => {
     // Stryker's instrumented code counts each mutant it reaches in this global; outside a test runner in `static`.
-    const ns = (globalThis as { __stryker__?: { mutantCoverage?: { static: Record<string, number> } } }).__stryker__;
+    const ns = /** @type {{ __stryker__?: { mutantCoverage?: { static: Record<string, number> } } }} */ (globalThis)
+      .__stryker__;
     mkdirSync(MUTANTS, { recursive: true });
     const ids = Object.keys(ns?.mutantCoverage?.static ?? {});
     writeFileSync(join(MUTANTS, `mutants-${process.pid}-${++written}.json`), JSON.stringify(ids));
@@ -49,7 +71,7 @@ if (MUTANTS) {
 }
 
 if (writers.length > 0) {
-  const write = (): void => {
+  const write = () => {
     for (const writer of writers) writer();
   };
   process.on("exit", write);
