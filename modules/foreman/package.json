@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/foreman",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "foreman: runs the factory's workflow of agents for each work item on Temporal, with gates, steering and cancel.",
   "license": "Apache-2.0",
   "repository": {
