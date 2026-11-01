@@ -1,4 +1,8 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["bin/**/*.ts", "src/**/*.ts", "system-tests/**/*.ts", "vitest.config.ts"]
+  "include": ["bin/**/*.ts", "src/**/*.ts", "system-tests/**/*.ts", "vitest.config.ts", "src/**/*.js"],
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true
+  }
 }
