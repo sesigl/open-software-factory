@@ -9,6 +9,8 @@ export default defineConfig({
     // A worker runs many scenario files and imports the testkit once (ADR 0051).
     isolate: false,
     testTimeout: 60_000,
+    // The Forgejo fake starts one container per worker; one worker starts it once for the whole suite.
+    maxWorkers: 1,
     reporters: [
       "default",
       ["junit", { outputFile: "../../reports/junit/observer.xml", classnameTemplate: "{filepath}" }],
