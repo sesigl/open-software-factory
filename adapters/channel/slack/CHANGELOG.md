@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/sesigl/open-software-factory/compare/channel-slack-v0.2.0...channel-slack-v0.2.1) (2026-11-01)
+
+
+### Performance Improvements
+
+* **channel-slack:** ship one bundled file that starts in 70 ms instead of 140 ms ([#164](https://github.com/sesigl/open-software-factory/issues/164)) ([6bd056f](https://github.com/sesigl/open-software-factory/commit/6bd056f266591cd5825fecb564e7e184f7209c23))
+
 ## [0.2.0](https://github.com/sesigl/open-software-factory/compare/channel-slack-v0.1.0...channel-slack-v0.2.0) (2026-10-25)
 
 
