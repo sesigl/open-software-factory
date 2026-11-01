@@ -5,7 +5,6 @@ import { type Command, outputPath, check as require, runProgram } from "@opensof
 import { keys } from "./commands/keys.ts";
 import type { Options } from "./commands/load.ts";
 import { request } from "./commands/request.ts";
-import { serve } from "./commands/serve.ts";
 import { status } from "./commands/status.ts";
 import { verify } from "./commands/verify.ts";
 
@@ -67,7 +66,11 @@ function gateOptions(): Options {
 const commands: Record<string, Command> = {
   request: () => request(gateOptions()),
   status: () => status(gateOptions()),
-  serve: () => serve({ ...policyAndGroups(), channel: values.channel, env: process.env }),
+  // Only serve needs Fastify and PostgreSQL; the other commands start without loading them.
+  serve: async () => {
+    const { serve } = await import("./commands/serve.ts");
+    return serve({ ...policyAndGroups(), channel: values.channel, env: process.env });
+  },
   keys: () => keys(values.out ?? process.env.OUTPUT ?? "."),
   verify: () => {
     const key = values["public-key"];
