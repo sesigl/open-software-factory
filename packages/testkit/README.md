@@ -422,3 +422,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-120 | implemented | The model gateway for containers answers a call from a container |
 | SCN-TK-121 | implemented | The scripted harness records each session's effort level |
 | SCN-TK-122 | implemented | sut.compose runs docker with the developer's Docker configuration, where Docker finds its plugins |
+| SCN-TK-123 | implemented | A module reaches a local socket by its path under the network guard |
