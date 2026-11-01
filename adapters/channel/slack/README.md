@@ -61,7 +61,10 @@ The system tests run the port's `@conformance` scenarios and this adapter's own 
 
 release-please opens a release pull request from the Conventional Commits under `adapters/channel/slack/`. Merging
 it creates the tag `channel-slack-v<version>`. The workflow `.github/workflows/publish-channel-slack.yml` then builds
-the package and publishes it to npm as `@opensoftware/channel-slack`. The first release is `0.1.0`; until `1.0.0`, a
+the package and publishes it to npm as `@opensoftware/channel-slack`. The package is one bundled file with no runtime dependencies
+([ADR 0079](../../../docs/decisions/0079-bundled-cli-packages.md)): `osf bundle` builds `dist/main.js`, and
+`dist/THIRD-PARTY-NOTICES.md` holds the licenses of the bundled packages. A start takes about 70 ms instead of 140 ms,
+and `npx` installs one package. The first release is `0.1.0`; until `1.0.0`, a
 breaking change raises the minor version. The one-time setup is the same as for contracts
 ([`contracts/README.md`](../../../contracts/README.md#releases)). No credential is stored in the repository.
 
