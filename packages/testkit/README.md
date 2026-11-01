@@ -417,8 +417,5 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-118 | implemented | A scripted command that fails ends the turn with "refusal" and fails the scenario with its output |
 | SCN-TK-119 | implemented | A scripted harness for containers answers a module that runs it in a container |
 | SCN-TK-120 | implemented | The model gateway for containers answers a call from a container |
-<<<<<<< HEAD
 | SCN-TK-121 | implemented | The scripted harness records each session's effort level |
-=======
 | SCN-TK-122 | implemented | sut.compose runs docker with the developer's Docker configuration, where Docker finds its plugins |
->>>>>>> origin/main
