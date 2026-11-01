@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/harness-claude-code",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "harness-claude-code: runs Claude Code behind the harness port through its ACP bridge, asking before each edit and command, with a tool allowlist, cancel within 5 seconds and a run record with tokens and cost.",
   "license": "Apache-2.0",
   "repository": {
