@@ -77,6 +77,7 @@ builds the package and publishes it to npm as `@opensoftware/harness-opencode`. 
 | `OPENAI_BASE_URL` | string | `"https://api.openai.com/v1"` | Base URL of the OpenAI-compatible chat completions API that opencode calls, ending in /v1, for example the inference gateway. |
 | `OPENAI_API_KEY` | string |  | The key opencode sends to the model API, for example a gateway key or a placeholder that the egress proxy replaces. |
 | `OPENAI_MODEL` | string |  | The model opencode asks for, for example gpt-5.5. Required. |
+| `OSF_EFFORT` | string |  | The effort level of the session's model, set by the launcher (ADR 0078). The adapter sets it as the reasoningEffort option of the gateway's model. Default: none, the model's own default. |
 
 ## Scenarios
 

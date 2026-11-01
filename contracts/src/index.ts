@@ -111,6 +111,10 @@ function describe(error: ErrorObject): Problem {
       return { path: child(String(error.params.unevaluatedProperty)), message: "unknown field" };
     case "required":
       return { path: child(String(error.params.missingProperty)), message: "missing required field" };
+    case "enum": {
+      const allowed = (error.params.allowedValues as unknown[]).map((value) => JSON.stringify(value)).join(", ");
+      return { path: error.instancePath || "/", message: `must be one of ${allowed}` };
+    }
     case "anyOf":
     case "oneOf":
       return { path: error.instancePath || "/", message: "must match exactly one of the allowed forms" };

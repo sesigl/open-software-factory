@@ -5,6 +5,7 @@
     "ship": {
       "harness": "claude-code",
       "model": "routes/default",
+      "effort": "medium",
       "prompt": "./agents/ship.md"
     }
   },

@@ -90,6 +90,7 @@ agents:
     harness: claude-code
     model: routes/triage
     prompt: ./prompts/triage.md
+    effort: high
 `;
 
 /** Writes the factory definition to $INPUT and gives the variables that name it. */

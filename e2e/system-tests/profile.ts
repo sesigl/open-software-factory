@@ -48,6 +48,7 @@ export function factoryYaml(
       `  ${stage}:`,
       `    harness: ${harness}`,
       `    model: routes/${stage}`,
+      "    effort: medium",
       `    prompt: ./agents/${stage}.md`,
       ...(more.agent ?? []).map((line) => `    ${line}`),
     ]),

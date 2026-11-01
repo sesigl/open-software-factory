@@ -27,6 +27,7 @@ export function factoryPage(factory: Factory, source: Source) {
           <th>Agent</th>
           <th>Harness</th>
           <th>Model</th>
+          <th>Effort</th>
         </tr>
       </thead>
       <tbody>
@@ -35,6 +36,7 @@ export function factoryPage(factory: Factory, source: Source) {
             <td><a href=${`/factory/agents/${name}`}>${name}</a></td>
             <td>${String(agent.harness)}</td>
             <td>${String(agent.model)}</td>
+            <td>${String(agent.effort)}</td>
           </tr>`,
         )}
       </tbody>

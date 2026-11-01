@@ -5,6 +5,7 @@
     "implement": {
       "harness": "claude-code",
       "model": "claude-sonnet-5-5",
+      "effort": "medium",
       "prompt": "./agents/implement.md"
     }
   }

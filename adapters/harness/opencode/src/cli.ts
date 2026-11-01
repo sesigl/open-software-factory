@@ -27,10 +27,11 @@ const PERMISSION = {
 };
 
 /**
- * opencode's configuration: the one provider "osf" for the gateway, the permissions for every built-in agent, which
- * win over a folder's `.opencode/` settings, and no title call, update or share.
+ * opencode's configuration: the one provider "osf" for the gateway, its model at the port's effort level when one is
+ * set (ADR 0078), the permissions for every built-in agent, which win over a folder's `.opencode/` settings, and no
+ * title call, update or share.
  */
-const configOf = (model: string, baseURL: string) => ({
+const configOf = (model: string, baseURL: string, effort?: string) => ({
   model: `osf/${model}`,
   small_model: `osf/${model}`,
   autoupdate: false,
@@ -40,7 +41,8 @@ const configOf = (model: string, baseURL: string) => ({
       npm: "@ai-sdk/openai-compatible",
       name: "gateway",
       options: { baseURL, apiKey: "{env:OPENAI_API_KEY}" },
-      models: { [model]: { name: model } },
+      // JSON leaves out an undefined effort, so the model keeps its own default.
+      models: { [model]: { name: model, options: { reasoningEffort: effort } } },
     },
   },
   permission: PERMISSION,
@@ -76,7 +78,7 @@ const code = await runAdapter({
       env: {
         ...xdg,
         ...off,
-        OPENCODE_CONFIG_CONTENT: JSON.stringify(configOf(model, base)),
+        OPENCODE_CONFIG_CONTENT: JSON.stringify(configOf(model, base, process.env.OSF_EFFORT)),
         // opencode installs its plugin package into each config folder with npm; offline, with a cache of its own,
         // that install finds nothing and calls no registry.
         npm_config_offline: "true",

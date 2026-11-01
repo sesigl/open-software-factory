@@ -125,3 +125,4 @@ None. The CLI reads no environment variables.
 | SCN-CTR-009 | implemented | A tighter form of a "exactly one of" rule fails the compatibility check |
 | SCN-CTR-010 | implemented | runSpans gives each span of a run record with its resource and decoded attributes |
 | SCN-CTR-011 | implemented | runSpans gives no spans for a value that is not a trace export request |
+| SCN-CTR-012 | implemented | A factory definition with an unknown effort is rejected with the allowed levels |

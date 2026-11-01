@@ -11,6 +11,7 @@ agents:
   developer:
     harness: claude-code
     model: routes/developer
+    effort: medium
     prompt: ./AGENTS.md
     repositories: [sesigl/open-software-factory]
     skills:

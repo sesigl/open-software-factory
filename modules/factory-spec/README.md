@@ -7,7 +7,7 @@ covers: [modules/factory-spec/src/**]
 One `factory.yaml` rendered for every harness. Claude Code, Codex and OpenCode read the same prompt, skills and MCP
 servers, and `factory plan` shows what a change does before `factory apply` writes it. It also registers the forge
 webhooks of automations and writes kagent and gh-aw files. Decisions:
-[ADR 0020](../../docs/decisions/0020-factory-spec.md), [ADR 0022](../../docs/decisions/0022-factory-spec-automations-and-targets.md) and [ADR 0060](../../docs/decisions/0060-factory-spec-forge-port.md). The format is the `factory-definition` contract
+[ADR 0020](../../docs/decisions/0020-factory-spec.md), [ADR 0022](../../docs/decisions/0022-factory-spec-automations-and-targets.md), [ADR 0060](../../docs/decisions/0060-factory-spec-forge-port.md) and [ADR 0078](../../docs/decisions/0078-agent-effort.md). The format is the `factory-definition` contract
 ([`contracts/`](../../contracts/README.md)).
 
 ## Quick start
@@ -24,6 +24,7 @@ agents:
   assistant:
     harness: claude-code
     model: routes/default
+    effort: medium
     prompt: ./agents/assistant.md
     mcp:
       - "@modelcontextprotocol/server-filesystem@2025.8.21"
@@ -54,8 +55,21 @@ filesystem server with `npx`.
 | `opencode` | `opencode.json` (`mcp`), one link per skill in `.opencode/skills/` |
 
 `render` writes the agent's own harness; `--harness all` writes every harness under `providers.harness`. A link in
-a skill folder whose skill the factory no longer declares is removed. The model is not written: the inference
-gateway routes it at run time.
+a skill folder whose skill the factory no longer declares is removed. The model and the effort are not written:
+the inference gateway routes the model at run time, and the foreman hands each stage's agent its effort.
+
+## Model and effort
+
+Every agent names its `model` and its `effort`: `low`, `medium`, `high`, `xhigh` or `max`, how much the model thinks
+before it answers (ADR 0078). Both are required, so the file shows what each agent runs at. Each harness adapter maps
+`effort` to its product's own setting. The rule for the levels:
+
+- A smart model (Opus, Sonnet) works at `low` or `medium`. It is strong enough for most work.
+- Only an agent for hard work gets `high` or more on a smart model, with a comment that says why.
+- A small model (Haiku) works at `high` or more.
+
+`factory lint` does not check the rule: a model can be a routing alias like `routes/implement`, which hides its
+family. The review of the factory's pull request does.
 
 ## MCP servers and factory.lock
 
@@ -259,3 +273,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FSPEC-055 | implemented | Apply asks for the webhook secret when an automation needs a webhook |
 | SCN-FSPEC-056 | implemented | Apply names the forge adapter it cannot start |
 | SCN-FSPEC-057 | implemented | Lint accepts a stage that waits for the check "verify" and asks for evidence |
+| SCN-FSPEC-058 | implemented | Lint names the line of an effort the format does not know, with the allowed levels |

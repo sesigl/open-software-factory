@@ -73,3 +73,9 @@ Feature: Sandboxes
     When a program posts the README's "work.json" to "/v1/runs" with the API token
     Then "/v1/runs/<id>" shows the state "complete"
     And the sandbox adapter created no sandbox
+
+  @id=SCN-FORE-070 @status=implemented
+  Scenario: A sandboxed stage gets its agent's effort in its sandbox's environment
+    Given "foreman serve" runs the README's "sandboxed/factory.yaml" with a fake sandbox adapter as "docker" and a scripted harness that ends every turn
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then the spec of each stage's sandbox sets "OSF_EFFORT" to "medium"
