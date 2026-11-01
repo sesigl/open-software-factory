@@ -17,7 +17,13 @@ const SECRETS: Record<string, string> = {
  */
 export async function cluster(sut: Sut): Promise<Helm> {
   const helm = sut.helm("helm/osf");
-  const account = await helm.kubectl(["get", "serviceaccount", "default"]);
+  // Kubernetes creates the "default" service account of a new namespace a moment after the namespace, so the step
+  // asks again, once a second for up to 30 s.
+  let account = await helm.kubectl(["get", "serviceaccount", "default"]);
+  for (let attempt = 1; account.exitCode !== 0 && attempt < 30; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, 1_000));
+    account = await helm.kubectl(["get", "serviceaccount", "default"]);
+  }
   if (account.exitCode !== 0) throw new Error(`no cluster to install the chart on: ${account.stderr}`);
   return helm;
 }
