@@ -79,6 +79,10 @@ A new module starts with `skills/new-module`. A new dependency or service starts
   and delete its test in the same change.
 - Adopt before you build. Check for an existing open-source project first and record what you found.
 - Never write a credential into code, tests, fixtures, logs or documents.
+- When a suite comes near its BUDGET or goes over it, make it faster before you raise the budget. Measure where the
+  time goes (process starts, imports, fakes, waits) and fix the cause in the module, its adapters or the testkit. The
+  tests stay system tests from the outside: never test less, skip steps or reach inside. Raise a budget only with the
+  measured reason in the module's `AGENTS.md`.
 
 ## Commands
 
