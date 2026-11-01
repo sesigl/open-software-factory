@@ -42,6 +42,7 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
 - `sut.files`: `put`, `read`, `list`, `remove` and `clear` in the module's input and output folders. Every path
   starts with `$INPUT/` or `$OUTPUT/` and stays inside that folder; any other path fails the test. `path` gives
   the absolute path of a file there, for a library in `packages/` whose functions take paths (ADR 0039).
+  `put(path, content, { executable: true })` writes a file its owner can run, like a fake program or plugin.
 - `sut.readme`: `quickStartArgs()` (the arguments of the README's `npx <package> ...` line) and
   `quickStartOutput()` (the first `$OUTPUT/<file>` it names).
 - `sut.git`: `$INPUT` is a Git repository with a fixed author and clock.
@@ -266,6 +267,7 @@ The testkit reads these environment variables:
 | --- | --- |
 | `PLAYWRIGHT_BROWSERS_PATH` | Where Playwright keeps its browsers. The module gets it like `PATH`, since its `HOME` is the working folder. |
 | `__STRYKER_ACTIVE_MUTANT__` | The mutant Stryker activates during a mutation run (`osf mutation`, ADR 0037). The module's instrumented build reads it in its own process. |
+| `DOCKER_CONFIG` | The Docker CLI's configuration folder. `sut.compose` lets `docker` find the plugins in its `cli-plugins/`, like `docker compose`, and nothing else from it, since the module's `HOME` is the working folder. Default: `~/.docker`. |
 | `KUBECONFIG` | The cluster where `sut.helm` installs charts, as for any `kubectl` command. Default: kubectl's own (`~/.kube/config`). The module does not get it unless the test passes it on. |
 | `OSF_TESTKIT_MUTANTS` | A folder, set by `osf mutation` for its first test run ([ADR 0061](../../docs/decisions/0061-mutation-runs-the-scenarios-that-reach-a-mutant.md)). Each process of the module writes the IDs of the mutants it ran to `<folder>/<scenario ID>/` when it exits. |
 
@@ -415,4 +417,8 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-118 | implemented | A scripted command that fails ends the turn with "refusal" and fails the scenario with its output |
 | SCN-TK-119 | implemented | A scripted harness for containers answers a module that runs it in a container |
 | SCN-TK-120 | implemented | The model gateway for containers answers a call from a container |
+<<<<<<< HEAD
 | SCN-TK-121 | implemented | The scripted harness records each session's effort level |
+=======
+| SCN-TK-122 | implemented | sut.compose runs docker with the developer's Docker configuration, where Docker finds its plugins |
+>>>>>>> origin/main

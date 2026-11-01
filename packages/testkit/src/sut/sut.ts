@@ -1,6 +1,6 @@
 // The handle on the module under test: its CLI, HTTP API, MCP server, ACP agent and events, its input and output folders and
 // the Git repository in $INPUT.
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { listFiles, quickStart } from "../support/module.ts";
 import { type CliResult, mustRun, run } from "../support/process.ts";
@@ -48,7 +48,8 @@ export interface Sut {
    * folder; the module gets them as the environment variables `INPUT` and `OUTPUT`.
    */
   files: {
-    put(path: string, content: string): Promise<void>;
+    /** Writes the file; `executable` lets the owner run it, like a plugin or a fake program. */
+    put(path: string, content: string, options?: { executable?: boolean }): Promise<void>;
     read(path: string): Promise<string>;
     list(dir?: string): Promise<string[]>;
     remove(path: string): Promise<void>;
@@ -135,10 +136,11 @@ export function makeSut(moduleRoot: string, dirs: Folders, hosts: () => string[]
     compose: makeCompose(moduleRoot, dirs, onStop),
     helm: makeHelm(moduleRoot, dirs, onStop),
     files: {
-      async put(path, content) {
+      async put(path, content, options = {}) {
         const full = inside(path);
         mkdirSync(dirname(full), { recursive: true });
         writeFileSync(full, content);
+        if (options.executable) chmodSync(full, 0o755);
       },
       async read(path) {
         return readFileSync(inside(path), "utf8");
