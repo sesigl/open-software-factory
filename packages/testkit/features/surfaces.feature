@@ -101,6 +101,14 @@ Feature: A module's servers and events
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-122 @status=implemented
+  Scenario: sut.compose runs docker with the developer's Docker configuration, where Docker finds its plugins
+    Given a Docker configuration folder whose plugin "cli-plugins/docker-compose" answers "fake compose 9.9.9"
+    And a module whose system test runs "version" with sut.compose and expects "fake compose 9.9.9"
+    When the developer runs "testkit run --junit report.xml" in the module with "DOCKER_CONFIG" set to that folder
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-115 @status=implemented
   Scenario: sut.helm installs a chart of the module in the scenario's namespace and reaches the port of a service
     Given a module whose chart "chart" has the service "events", a NATS server on port 8222
