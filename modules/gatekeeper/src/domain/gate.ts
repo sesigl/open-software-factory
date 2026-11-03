@@ -70,6 +70,14 @@ export function outcomeText(outcome: Decided, speech: Speech): string {
   return `${verb} by ${speech.mention(outcome.by)}${outcome.reason ? `: ${outcome.reason}` : ""}.`;
 }
 
+/** The outcome in one line, for the command's output and the commit status. */
+export function describe(outcome: Outcome): string {
+  if (outcome.state === "pending") return `waiting for ${outcome.waitingFor.join(", ")}`;
+  if (outcome.state === "expired") return `expired at ${toIso(outcome.at)}`;
+  if (outcome.by.startsWith("policy:")) return "approved by the policy: no approver group needed";
+  return `${outcome.state} by ${outcome.by}${outcome.reason ? `: ${outcome.reason}` : ""}`;
+}
+
 /** Decides the gate from the request's time and the thread after it, in order, at the time `now`. */
 export function decide(
   gate: Gate,

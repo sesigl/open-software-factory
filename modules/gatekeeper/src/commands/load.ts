@@ -7,12 +7,18 @@ import { evaluate } from "../adapters/opa.ts";
 import { type Program, program } from "../adapters/program.ts";
 import { slackChannel } from "../adapters/slack.ts";
 import { decidedEvent, requestedEvent } from "../domain/events.ts";
-import type { Channel, Decided, Gate, Outcome } from "../domain/gate.ts";
+import { type Channel, type Decided, describe, type Gate, type Outcome } from "../domain/gate.ts";
 import { parseGroups, parseRules } from "../domain/policy.ts";
-import { defaultForgeAdapter, parsePullRequest, requestOf } from "../domain/pull-request.ts";
+import {
+  commitState,
+  defaultForgeAdapter,
+  type PullRequest,
+  parsePullRequest,
+  requestOf,
+} from "../domain/pull-request.ts";
 import { buildRecord, signWith } from "../domain/record.ts";
 import { gateId, parseRequest } from "../domain/request.ts";
-import { fromIso, toIso } from "../domain/time.ts";
+import { fromIso } from "../domain/time.ts";
 
 export interface Options {
   policy: string;
@@ -41,11 +47,7 @@ export async function load(options: Options): Promise<Loaded> {
   let pr: Loaded["pr"];
   if (options.pullRequest) {
     const ref = parsePullRequest(options.pullRequest);
-    const run = program(env.GATEKEEPER_FORGE_ADAPTER || defaultForgeAdapter(ref), {
-      FORGE_URL: env.GATEKEEPER_FORGE_URL || ref.forgeUrl,
-      FORGE_TOKEN: env.GATEKEEPER_FORGE_TOKEN || undefined,
-    });
-    const forge = pullRequestForge(ref, run);
+    const forge = forgeFor(ref, env);
     const pull = await forge.read();
     request = requestOf(ref, pull);
     pr = { forge, sha: pull.sha, channel: forge.channel(pull) };
@@ -82,20 +84,20 @@ export function slackOf(channel: string, env: Options["env"]): Channel & { run: 
   return { ...slackChannel(slack[1] as string, run), run };
 }
 
-export const nowOf = (text: string | undefined): number => (text ? fromIso(text) : Date.now() * 1000);
+/** The pull request through the forge adapter in GATEKEEPER_FORGE_ADAPTER (ADR 0062). */
+export function forgeFor(ref: PullRequest, env: Options["env"]): Forge {
+  const run = program(env.GATEKEEPER_FORGE_ADAPTER || defaultForgeAdapter(ref), {
+    FORGE_URL: env.GATEKEEPER_FORGE_URL || ref.forgeUrl,
+    FORGE_TOKEN: env.GATEKEEPER_FORGE_TOKEN || undefined,
+  });
+  return pullRequestForge(ref, run);
+}
 
-const STATES = { pending: "pending", approved: "success", rejected: "failure", expired: "failure" } as const;
+export const nowOf = (text: string | undefined): number => (text ? fromIso(text) : Date.now() * 1000);
 
 /** The commit status "gatekeeper" of a pull request's head commit. */
 export async function report(loaded: Loaded, outcome: Outcome, description: string): Promise<void> {
-  if (loaded.pr) await loaded.pr.forge.status(loaded.pr.sha, STATES[outcome.state], description);
-}
-
-export function describe(outcome: Outcome): string {
-  if (outcome.state === "pending") return `waiting for ${outcome.waitingFor.join(", ")}`;
-  if (outcome.state === "expired") return `expired at ${toIso(outcome.at)}`;
-  if (outcome.by.startsWith("policy:")) return "approved by the policy: no approver group needed";
-  return `${outcome.state} by ${outcome.by}${outcome.reason ? `: ${outcome.reason}` : ""}`;
+  if (loaded.pr) await loaded.pr.forge.status(loaded.pr.sha, commitState(outcome), description);
 }
 
 /** Writes the record, signed when GATEKEEPER_SIGNING_KEY is set, and says when it is not. */
