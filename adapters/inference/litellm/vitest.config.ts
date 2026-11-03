@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 
-// System tests of this adapter: the @conformance scenarios of ports/inference/features/, against LiteLLM and
-// PostgreSQL on the Docker host. Turbo never caches them, so PASS always reads the results of this run.
+// System tests of this adapter: the @conformance scenarios of ports/inference/features/ and its own in features/,
+// against LiteLLM and PostgreSQL on the Docker host. Turbo never caches them, so PASS always reads the results of this run.
 export default defineConfig({
   test: {
     include: ["system-tests/**/*.test.ts"],
