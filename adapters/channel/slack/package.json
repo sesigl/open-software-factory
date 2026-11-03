@@ -19,7 +19,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "node ../../../tools/bin/osf.ts bundle .",
+    "build": "node ../../../tools/bin/bundle.ts .",
     "lint": "biome check .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test:system": "vitest run",
