@@ -94,8 +94,6 @@ jobs:
       - run: npm install --global npm@11.21.1
       - name: Publish
         env:
-          # Only for the first version, before the trusted publisher exists; unset afterwards (adapters/channel/github/README.md#releases).
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           # npm accepts provenance only from public repositories; it turns on when this repository is public.
           PRIVATE: ${{ github.event.repository.private }}
         run: |
