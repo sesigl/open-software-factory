@@ -49,9 +49,7 @@ export async function serve(options: ServeOptions) {
     required(env, "GATEKEEPER_SLACK_TOKEN", "the Slack bot token");
     required(env, "GATEKEEPER_SLACK_SIGNING_SECRET", "the signing secret of the Slack app");
   }
-  const pollMs = Number(env.GATEKEEPER_POLL_MS || POLL_MS);
-  if (!Number.isInteger(pollMs) || pollMs <= 0)
-    throw new UsageError("set GATEKEEPER_POLL_MS to a number of milliseconds, like 30000");
+  const pollMs = Number(env.GATEKEEPER_POLL_MS) || POLL_MS;
   const policyText = readText(options.policy);
   const groups = readJson(options.groups);
   const now = () => nowOf(env.OSF_NOW);
