@@ -97,12 +97,13 @@ One-time setup (no credential is ever stored in the repository):
    repository is published.
 2. GitHub: the publish job runs in the environment `npm` (Settings → Environments; GitHub creates it on the first
    run).
-3. First version only: npm configures trusted publishing per existing package, so `1.0.0` needs a token. Add a
-   granular npm access token with read and write access to the `opensoftware` organization's packages as the
-   secret `NPM_TOKEN` (a repository secret or a secret of the environment `npm`), or publish `1.0.0` by hand.
-4. After the first version: on npmjs.com, package settings → Trusted publishing, add GitHub Actions with the
-   repository `sesigl/open-software-factory`, the workflow `publish-contracts.yml` and the environment `npm`.
-   Then delete the secret `NPM_TOKEN` and revoke the token. Later versions publish through OIDC only.
+3. First version only: npm adds a trusted publisher only to a package that exists, so a maintainer publishes the
+   first version by hand, from the release tag, with their own npm login and two-factor authentication:
+   `pnpm --filter "<package>..." build`, `pnpm --dir <folder> pack`, then `npm publish <file>.tgz --access public`.
+4. Then add the trusted publisher, on npmjs.com (package settings → Trusted publishing) or with
+   `npm trust github <package> --file publish-<name>.yml --repository sesigl/open-software-factory --environment npm
+   --allow-publish`. Every later version publishes through OIDC only, with a provenance statement; the repository
+   holds no npm token.
 
 ## Configuration
 
