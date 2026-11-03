@@ -198,11 +198,13 @@ export function stageStateOf(stopReason: string): StageState {
   return "failed";
 }
 
-/** The prompt of a stage: the agent's prompt, then the work item and the run's pull request. */
+/** The prompt of a stage: the agent's prompt, then the work item with its origin, and the run's pull request. */
 export function promptOf(agentPrompt: string, workItem: WorkItem, pullRequest?: string): string {
   const description = workItem.description ? `\n\n${workItem.description}` : "";
+  // The origin tells the agent where the work is, like the issue of a repository (ADR 0080).
+  const origin = workItem.origin.url ? `\n\nOrigin: ${workItem.origin.url}` : "";
   const link = pullRequest ? `\n\nPull request: ${pullRequest}` : "";
-  return `${agentPrompt.trimEnd()}\n\n# Work item ${workItem.id}\n\n${workItem.title}${description}${link}\n`;
+  return `${agentPrompt.trimEnd()}\n\n# Work item ${workItem.id}\n\n${workItem.title}${description}${origin}${link}\n`;
 }
 
 /** What a running stage asks its run for: the steering messages so far, and the stage a person takes over. */
