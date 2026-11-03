@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/sesigl/open-software-factory/compare/channel-slack-v0.2.1...channel-slack-v0.2.2) (2026-11-03)
+
+
+### Bug Fixes
+
+* **channel-slack:** the publish job builds the bundle without the repository's other tools ([#167](https://github.com/sesigl/open-software-factory/issues/167)) ([1d27b33](https://github.com/sesigl/open-software-factory/commit/1d27b33a393c5af1f24732bb591487b68cd8f71a))
+
 ## [0.2.1](https://github.com/sesigl/open-software-factory/compare/channel-slack-v0.2.0...channel-slack-v0.2.1) (2026-11-01)
 
 
