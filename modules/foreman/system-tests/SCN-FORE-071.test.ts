@@ -31,6 +31,7 @@ scenario("SCN-FORE-071", async ({ sut, fakes, given, when, then }) => {
   );
 
   await then("no prompt has two empty lines in a row", async () => {
-    for (const prompt of server.harness.prompts()) expect(prompt).not.toContain("\n\n\n");
+    const prompts = server.harness.prompts();
+    expect(prompts.filter((prompt) => prompt.includes("\n\n\n"))).toEqual([]);
   });
 });
