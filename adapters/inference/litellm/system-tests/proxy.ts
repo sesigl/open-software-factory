@@ -57,12 +57,11 @@ export async function runKey(sut: Sut, id: string, run: string): Promise<string>
 }
 
 /**
- * The test proxy: a fake of LiteLLM's readiness check, with a connected database, and of its key list, which answers
- * with `status`. Real LiteLLM answers a key that is not its master key with 401.
+ * The test proxy: a fake of LiteLLM's key list, which answers with `status`. Real LiteLLM answers a key that is not
+ * its master key with 401.
  */
 export function testProxy(fakes: Fakes, status: number) {
   return fakes.http([
-    { path: "/health/readiness", body: { status: "connected", db: "connected" } },
     { path: "/key/list?size=1", status, body: status === 200 ? { keys: [] } : { error: { message: "Unauthorized" } } },
   ]);
 }

@@ -3,12 +3,9 @@ import { attachConfig, cli, start, testProxy } from "./proxy.ts";
 
 scenario("SCN-INFLITE-001", async ({ sut, fakes, given, when, then }) => {
   let proxy: Awaited<ReturnType<typeof testProxy>>;
-  await given(
-    'a test proxy that answers the readiness check with a connected database and "/key/list" with the status 200',
-    async () => {
-      proxy = await testProxy(fakes, 200);
-    },
-  );
+  await given('a test proxy that answers "/key/list" with the status 200', async () => {
+    proxy = await testProxy(fakes, 200);
+  });
 
   let run: Awaited<ReturnType<typeof start>>;
   await when(
