@@ -39,8 +39,8 @@ export interface ModelGateway {
    * `http://host.docker.internal:<port>/v1`. On Linux a container needs `--add-host host.docker.internal:host-gateway`.
    */
   containerUrl?: string;
-  /** Every call the gateway received, in order. */
-  calls: { path: string; body: string }[];
+  /** Every call the gateway received, in order, with its headers; header names are lower case. */
+  calls: { path: string; body: string; headers: Record<string, string> }[];
 }
 
 export interface ModelGatewayOptions {
@@ -77,7 +77,8 @@ export async function startModelGateway(
   const server = createServer(async (request, response) => {
     const body = await readBody(request);
     const path = request.url ?? "/";
-    calls.push({ path, body });
+    const headers = Object.fromEntries(Object.entries(request.headers).map(([name, value]) => [name, String(value)]));
+    calls.push({ path, body, headers });
     const route = request.method === "POST" ? path.split("?")[0] : undefined;
     const answer = route && streamedAnswers[route];
     if (answer && (route !== "/v1/chat/completions" || streams(body))) {
