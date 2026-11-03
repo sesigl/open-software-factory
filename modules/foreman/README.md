@@ -327,7 +327,8 @@ took it over, and a `reason` when it failed for a reason the foreman knows.
 - **Stages.** The stages run in the order of `workflow`, each in the run's folder `OSF_DATA/runs/<run ID>`, or in a
   sandbox when the stage's agent declares one ([Sandboxes](#sandboxes)). The foreman
   starts the stage's harness adapter from `FOREMAN_HARNESSES`, speaks ACP to it, opens a session and sends one prompt:
-  the agent's prompt file, then the work item's ID, title and description. It allows the tool calls the adapter asks
+  the agent's prompt file, then the work item's ID, title and description, and `Origin: <url>` when the work item
+  has an origin's link, like the issue it came from. It allows the tool calls the adapter asks
   about; limit them with the adapter's `--allow`. A turn that ends with `end_turn` succeeds the stage; any other end
   fails or cancels it, ends the run, and leaves the later stages `pending`. The adapter gets
   `OTEL_RESOURCE_ATTRIBUTES` with `osf.run.id`, `osf.work_item.id`, `osf.stage` and `osf.factory.version`, and the
@@ -336,7 +337,8 @@ took it over, and a `reason` when it failed for a reason the foreman knows.
   request; a failing one fails the run ([Checks](#checks)).
 - **Gates.** Before a stage with a `gate` starts, the foreman asks gatekeeper at `FOREMAN_GATEKEEPER_URL`
   ([gatekeeper](../gatekeeper/README.md#server)): the work item's ID, the stage, the summary `<title>: start the
-  stage <stage>`, the origin's link, and the gate's `policy` and `approvers` in `change`. The run is `blocked` until a
+  stage <stage>`, the origin's link and the run's pull request as `links` (`Origin`, `Pull request`), and the gate's
+  `policy` and `approvers` in `change`. The run is `blocked` until a
   `gate.decided@v1` for that gate arrives on NATS. `approved` starts the stage; `rejected` or `expired` fails the run.
 - **Signals.** A steering message reaches the running stage's agent within `FOREMAN_POLL_MS` as a prompt in its
   session, which the harness port treats as steering. A cancel ends the agent's turn, or the wait at a gate, and the
@@ -465,3 +467,5 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-068 | implemented | A stage ends when its harness keeps running after the turn |
 | SCN-FORE-069 | implemented | Each stage's agent gets its agent's effort as "OSF_EFFORT" |
 | SCN-FORE-070 | implemented | A sandboxed stage gets its agent's effort in its sandbox's environment |
+| SCN-FORE-071 | implemented | A stage's prompt names the origin of the work item |
+| SCN-FORE-072 | implemented | A gate request links the run's pull request |

@@ -32,3 +32,10 @@ Feature: Gates
     And then "gate.decided@v1" with the decision "rejected" for the gate "g0a1b2c3d4e5f6a7b"
     Then "/v1/runs/<id>" shows the state "failed" with the stage "implement" "rejected"
     And the harness never received the prompt "Implement plan.md"
+
+  @id=SCN-FORE-072 @status=implemented
+  Scenario: A gate request links the run's pull request
+    Given the README's factory with a gate before the stage "implement", whose "plan" turn replies with the link "https://github.com/tester/web/pull/7"
+    And gatekeeper answers a request with the gate "g0a1b2c3d4e5f6a7b"
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then gatekeeper received a request for the stage "implement" with the link "https://github.com/tester/web/pull/7" titled "Pull request"
