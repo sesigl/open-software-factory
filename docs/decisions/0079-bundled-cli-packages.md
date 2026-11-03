@@ -41,7 +41,8 @@ cost, and `npx @opensoftware/channel-slack` also installs the more than 100 pack
 - **License notices.** The build writes `dist/THIRD-PARTY-NOTICES.md` with the name, version, license and license
   text of each package in the bundle, from that package's `package.json` and license file. The package publishes it.
 - **One build tool for the repository.** `osf bundle <package>` in `tools/` runs rolldown with these settings, so every
-  bundled package builds the same way. rolldown is a direct `devDependency` of the repository, at the version that
+  bundled package builds the same way. A package's `build` script calls it as `node tools/bin/bundle.ts .`, an entry that loads
+  only the bundler: a publish job builds one package and its dependencies, not the rest of the repository. rolldown is a direct `devDependency` of the repository, at the version that
   Vite already brings.
 - **When to bundle.** A package is bundled when its start time matters, measured, as for gatekeeper's budget. A
   package with few dependencies, like `forge-github` (17 modules, about 40 ms), stays on `tsc`.
