@@ -6,11 +6,11 @@ Feature: Attach to a LiteLLM proxy that already runs
   that proxy and starts no container (ADR 0080). The running LiteLLM proxy is LiteLLM with PostgreSQL in a Compose
   project of the test, with the master key "sk-testkit-master". Its config routes "routes/triage" to the test
   provider's model "model-c". The test provider is an OpenAI-compatible API at "host.docker.internal". The test proxy
-  is a fake of LiteLLM's readiness check ("/health/readiness") and key list ("/key/list") on 127.0.0.1.
+  is a fake of LiteLLM's key list ("/key/list") on 127.0.0.1.
 
   @id=SCN-INFLITE-001 @status=implemented
   Scenario: start attaches to a running proxy without Docker
-    Given a test proxy that answers the readiness check with a connected database and "/key/list" with the status 200
+    Given a test proxy that answers "/key/list" with the status 200
     When the client runs "start" with "DOCKER_HOST" set to "unix:///nonexistent/docker.sock", "OSF_SECRET_PROXY_MASTER_KEY" set to "sk-testkit-master" and a config whose "osf.proxy" names the test proxy's URL and "os.environ/OSF_SECRET_PROXY_MASTER_KEY"
     Then start prints an ID of 12 hex digits and the test proxy's URL with "/v1" at the end
     And the test proxy received "/key/list" with the header "authorization" "Bearer sk-testkit-master"
@@ -41,7 +41,7 @@ Feature: Attach to a LiteLLM proxy that already runs
 
   @id=SCN-INFLITE-005 @status=implemented
   Scenario: start refuses a proxy that does not accept the master key
-    Given a test proxy that answers the readiness check with a connected database and "/key/list" with the status 401
+    Given a test proxy that answers "/key/list" with the status 401
     When the client runs "start" with a config whose "osf.proxy" names the test proxy's URL
     Then start exits with code 1 with an error that names the status 401
     And start prints nothing on standard output

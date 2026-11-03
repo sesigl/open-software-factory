@@ -87,9 +87,10 @@ export OSF_SECRET_LITELLM_MASTER_KEY=...   # the proxy's master key
 npx @opensoftware/inference-litellm start attach.yaml   # {"id":"3f2a...","url":"http://litellm:4000/v1"}
 ```
 
-- **No container.** `start` starts nothing. It waits up to 60 seconds until the proxy answers `/health/readiness`
-  with a connected database, and checks the master key with `GET /key/list`. A key that the proxy refuses exits 1
-  with LiteLLM's status, such as 401.
+- **No container.** `start` starts nothing. It checks the proxy, its database and the master key with one call,
+  `GET /key/list`. A proxy that does not answer exits 1. A key that the proxy refuses exits 1 with LiteLLM's status,
+  such as 401. `start` does not wait for a proxy that is still starting; in Compose, let the client's service depend
+  on the health check of the `litellm` service.
 - **The master key** is a variable of the adapter that matches `OSF_SECRET_<NAME>`, named as
   `os.environ/OSF_SECRET_<NAME>`. Another name exits 2. Each command reads the key from that variable, so set it for
   `key`, `spend-log` and `stop` too.
