@@ -13,6 +13,17 @@ const USAGE = `Usage:
 
 const BRIDGE = fileURLToPath(import.meta.resolve("@agentclientprotocol/claude-agent-acp/dist/index.js"));
 
+/**
+ * On a subscription (ADR 0080): Claude Code sends the subscription's token to Anthropic as `Authorization`, so the
+ * gateway's key moves from ANTHROPIC_API_KEY, which would replace the subscription, to the gateway's own header.
+ */
+function subscriptionEnv(env: NodeJS.ProcessEnv): Record<string, string> {
+  const key = env.ANTHROPIC_API_KEY;
+  if (!env.CLAUDE_CODE_OAUTH_TOKEN || !key) return {};
+  const headers = [env.ANTHROPIC_CUSTOM_HEADERS, `x-litellm-api-key: Bearer ${key}`].filter(Boolean).join("\n");
+  return { ANTHROPIC_API_KEY: "", ANTHROPIC_CUSTOM_HEADERS: headers };
+}
+
 /** A session may never skip Claude Code's permission requests, whatever the client asks for. */
 function withoutBypass(params: NewSessionRequest): NewSessionRequest {
   const meta = params._meta ?? {};
@@ -36,6 +47,7 @@ const code = await runAdapter({
         CLAUDE_CONFIG_DIR: resolve(data, "claude"),
         CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1",
         ...(process.env.OSF_EFFORT ? { CLAUDE_CODE_EFFORT_LEVEL: process.env.OSF_EFFORT } : {}),
+        ...subscriptionEnv(process.env),
       },
     };
   },
