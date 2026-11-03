@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/channel-slack",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "channel-slack: Slack mentions as work items, replies and approval cards with buttons, behind the factory's channel port, on Vercel Chat SDK.",
   "license": "Apache-2.0",
   "repository": {
@@ -19,7 +19,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "node ../../../tools/bin/osf.ts bundle .",
+    "build": "node ../../../tools/bin/bundle.ts .",
     "lint": "biome check .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test:system": "vitest run",
