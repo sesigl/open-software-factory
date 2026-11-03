@@ -8,7 +8,8 @@ One OpenAI-compatible model endpoint for every harness behind the factory's infe
 and a budget per run, and a spend log line per call that names the run. It runs the
 [LiteLLM proxy](https://github.com/BerriAI/litellm) with PostgreSQL on Docker, from your LiteLLM config.
 Decision: [ADR 0056](../../../docs/decisions/0056-inference-port.md). The port's scenarios are in
-[`ports/inference/features/`](../../../ports/inference/features/inference.feature).
+[`ports/inference/features/`](../../../ports/inference/features/inference.feature), the adapter's own in
+[`features/`](features/attach.feature).
 
 ## Quick start
 
@@ -65,17 +66,53 @@ the model the benchmark chose.
   provider's Responses API.
 - **A company gateway** is a provider like any other: its URL as `api_base` and its key as
   `os.environ/OSF_SECRET_<NAME>`. A company that wants no bundled gateway points the harnesses at its own URL instead.
-- **No state of its own.** `stop` removes both containers, the database's volume and the network.
+- **No state of its own.** `stop` removes both containers, the database's volume and the network. Only an attached
+  gateway has a record in `OSF_DATA` (see below).
+
+## Attach to a running proxy
+
+A client that runs in a container without Docker, such as foreman in the Compose profile, cannot start containers.
+It attaches to a LiteLLM proxy that already runs instead, such as the profile's `litellm` service (ADR 0080). A config
+whose top level has `osf.proxy` makes `start` attach:
+
+```yaml
+osf:
+  proxy:
+    url: http://litellm:4000
+    master_key: os.environ/OSF_SECRET_LITELLM_MASTER_KEY
+```
+
+```sh
+export OSF_SECRET_LITELLM_MASTER_KEY=...   # the proxy's master key
+npx @opensoftware/inference-litellm start attach.yaml   # {"id":"3f2a...","url":"http://litellm:4000/v1"}
+```
+
+- **No container.** `start` starts nothing. It waits up to 60 seconds until the proxy answers `/health/readiness`
+  with a connected database, and checks the master key with `GET /key/list`. A key that the proxy refuses exits 1
+  with LiteLLM's status, such as 401.
+- **The master key** is a variable of the adapter that matches `OSF_SECRET_<NAME>`, named as
+  `os.environ/OSF_SECRET_<NAME>`. Another name exits 2. Each command reads the key from that variable, so set it for
+  `key`, `spend-log` and `stop` too.
+- **The model routes are the proxy's own config.** `start` does not read or change them; the rest of the config is
+  not used. Change the routes in the proxy's config.
+- **The record.** `start` writes the gateway's ID, the proxy's URL and the name of the master key's variable to
+  `OSF_DATA/gateways/<ID>.json`, never the key's value. `key`, `spend-log`, `stop` and `list` look there first, then on
+  the Docker host.
+- **Shared proxy.** Other clients can use the same proxy. `spend-log` prints only the calls of the run keys that this
+  gateway made. `stop` deletes these keys with `POST /key/delete` and removes the record; the proxy and its spend
+  rows stay.
+
+Without `osf.proxy`, `start` runs its own LiteLLM and PostgreSQL as above.
 
 ## Commands
 
 | Command | What it does |
 | --- | --- |
-| `inference-litellm start <config.yaml>` | Start a gateway from the LiteLLM config and print `{"id", "url"}` once LiteLLM answers and reaches its database. |
+| `inference-litellm start <config.yaml>` | Start a gateway from the LiteLLM config and print `{"id", "url"}` once LiteLLM answers and reaches its database. With `osf.proxy`, attach to that proxy instead. |
 | `inference-litellm key <ID> <run ID> [--budget <USD>]` | Print a key for the run, refused once its spend passed the budget. |
 | `inference-litellm spend-log <ID>` | Print one JSON line per call the gateway answered. |
-| `inference-litellm stop <ID>` | Remove the gateway with its keys and spend log. |
-| `inference-litellm list` | Print the IDs of the gateways on the Docker host. |
+| `inference-litellm stop <ID>` | Remove the gateway with its keys and spend log. For an attached gateway: delete its run keys and its record. |
+| `inference-litellm list` | Print the IDs of the attached gateways and of the gateways on the Docker host. |
 
 An unknown gateway ID exits 1 with `no gateway <ID>`.
 
@@ -95,4 +132,5 @@ No credential is stored in the repository.
 | Variable | Type | Default | Meaning |
 | --- | --- | --- | --- |
 | `DOCKER_HOST` | string |  | The Docker daemon to use, as for any docker command. Default: the Docker CLI's current context. |
-| `OSF_SECRET_*` | string |  | OSF_SECRET_<NAME> holds a value the config names as os.environ/OSF_SECRET_<NAME>, such as a provider key. The Docker CLI hands it to the LiteLLM container only; it is never in the config. |
+| `OSF_DATA` | string | `".inference-litellm"` | Folder where start records each gateway that it attached to a running proxy, as gateways/<ID>.json with the proxy's URL and the name of the master key's variable, and the hashed tokens of its run keys as gateways/<ID>.keys. It never holds a key's value. |
+| `OSF_SECRET_*` | string |  | OSF_SECRET_<NAME> holds a value the config names as os.environ/OSF_SECRET_<NAME>, such as a provider key, or the master key of a running proxy that osf.proxy.master_key names. The Docker CLI hands a provider key to the LiteLLM container only; it is never in the config. |
