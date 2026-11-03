@@ -23,7 +23,7 @@
   "adapters/inference/litellm": "0.2.0",
   "adapters/forge/forgejo": "0.5.0",
   "adapters/forge/github": "0.5.0",
-  "adapters/channel/slack": "0.2.1",
+  "adapters/channel/slack": "0.2.2",
   "adapters/channel/github": "0.2.0",
   "packages/channel-kit": "0.2.0",
   "modules/intake": "0.3.0",
