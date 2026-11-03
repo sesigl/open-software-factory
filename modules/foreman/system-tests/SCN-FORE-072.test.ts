@@ -2,6 +2,7 @@ import { scenario } from "@opensoftware/testkit";
 import { gatedFactory, IMPLEMENT, PLAN, readmeWork, serving } from "./foreman.ts";
 
 const PULL_REQUEST = "https://github.com/tester/web/pull/7";
+const ISSUE = "https://github.com/tester/web/issues/3";
 
 scenario("SCN-FORE-072", async ({ sut, fakes, given, when, then }) => {
   let factory = "";
@@ -25,17 +26,28 @@ scenario("SCN-FORE-072", async ({ sut, fakes, given, when, then }) => {
   });
 
   let runId = "";
-  await when('a program posts the README\'s "work.json" to "/v1/runs" with the API token', async () => {
-    runId = (await server.start(readmeWork(fakes))).data?.runId as string;
-  });
+  await when(
+    'a program posts the README\'s "work.json" with the origin "https://github.com/tester/web/issues/3" to "/v1/runs"',
+    async () => {
+      const work = { ...readmeWork(fakes), origin: { source: "github", url: ISSUE } };
+      runId = (await server.start(work)).data?.runId as string;
+    },
+  );
 
   await then(
-    'gatekeeper received a request for the stage "implement" with the link "https://github.com/tester/web/pull/7" titled "Pull request"',
+    'gatekeeper received a request for the stage "implement" with the links "Origin" and "Pull request", in this order',
     async () => {
       await server.until(runId, "blocked");
       const [request] = server.gatekeeper?.received() ?? [];
-      expect(request).toMatchObject({ body: { stage: "implement" } });
-      expect((request?.body as { links?: unknown[] }).links).toEqual([{ url: PULL_REQUEST, title: "Pull request" }]);
+      expect(request).toMatchObject({
+        body: {
+          stage: "implement",
+          links: [
+            { url: ISSUE, title: "Origin" },
+            { url: PULL_REQUEST, title: "Pull request" },
+          ],
+        },
+      });
     },
   );
 });

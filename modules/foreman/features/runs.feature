@@ -73,3 +73,4 @@ Feature: Runs
     Given "foreman serve" runs the README's "factory.yaml" with a scripted harness that ends every turn
     When a program posts the README's "work.json" with the origin "https://github.com/tester/web/issues/3" to "/v1/runs"
     Then every prompt the harness received has the line "Origin: https://github.com/tester/web/issues/3"
+    And no prompt has two empty lines in a row

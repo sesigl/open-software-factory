@@ -29,4 +29,8 @@ scenario("SCN-FORE-071", async ({ sut, fakes, given, when, then }) => {
       for (const prompt of prompts) expect(prompt.split("\n")).toContain(`Origin: ${ISSUE}`);
     },
   );
+
+  await then("no prompt has two empty lines in a row", async () => {
+    for (const prompt of server.harness.prompts()) expect(prompt).not.toContain("\n\n\n");
+  });
 });
