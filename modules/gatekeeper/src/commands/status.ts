@@ -1,6 +1,6 @@
 // gatekeeper status: read the thread, decide, post what is new, and write the record once the gate is decided.
-import { decide, marker } from "../domain/gate.ts";
-import { approveByPolicy, describe, load, type Options, publishDecided, report, writeRecord } from "./load.ts";
+import { decide, describe, marker } from "../domain/gate.ts";
+import { approveByPolicy, load, type Options, publishDecided, report, writeRecord } from "./load.ts";
 
 /** Exit codes: 0 approved, 1 rejected or expired, 3 waiting. */
 export async function status(options: Options) {
