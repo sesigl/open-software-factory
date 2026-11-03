@@ -113,7 +113,7 @@ Every server, client and subscription stops when the scenario ends, before the f
   `custom_tool_call`, such as Codex's `apply_patch`; the call IDs are `call_1`, `call_2`, ... A streamed chat answer
   sends each tool as a `tool_calls` delta and ends with `stopReason` as its `finish_reason` (default `tool_calls`
   with tools, `stop` without), for example `content_filter`. A chat completions call without a stream keeps the
-  first matching entry. `calls` lists every call with its `path` and `body`. `fakes.modelGateway(script,
+  first matching entry. `calls` lists every call with its `path`, `body` and `headers` (names in lower case). `fakes.modelGateway(script,
   { containers: true })` listens on every interface and also gives `containerUrl`,
   `http://host.docker.internal:<port>/v1`, as `fakes.http` does ([ADR 0076](../../docs/decisions/0076-e2e-smoke-suite.md)).
 - `fakes.http([{ method, path, status, body, contentType, times }])`: a scripted JSON API on `127.0.0.1`
@@ -423,3 +423,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-121 | implemented | The scripted harness records each session's effort level |
 | SCN-TK-122 | implemented | sut.compose runs docker with the developer's Docker configuration, where Docker finds its plugins |
 | SCN-TK-123 | implemented | A module reaches a local socket by its path under the network guard |
+| SCN-TK-124 | implemented | The model gateway keeps the headers of each call |
