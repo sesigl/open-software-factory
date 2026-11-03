@@ -31,6 +31,9 @@ proxy config, the format `taskcapture route` writes. An unknown gateway ID exits
 - The same aliases and keys serve the Anthropic Messages API at `POST <url without /v1>/v1/messages`, with the key as
   `x-api-key`, which Claude Code calls, and the OpenAI Responses API at `POST <url>/responses`, which Codex calls
   ([ADR 0070](../../docs/decisions/0070-foreman-gateway-and-take-over.md)).
+- On a subscription, Claude Code sends the key as `x-litellm-api-key: Bearer <key>` and the subscription's token as
+  `Authorization: Bearer <token>`; the gateway takes the key from that header and forwards the token to Anthropic
+  ([ADR 0080](../../docs/decisions/0080-dogfood-on-a-subscription.md)).
 - A call needs a key from `key`: another key gets 401. An alias the config does not route gets 400 with its name.
 - A run's calls are refused with a 4xx status and the error type `budget_exceeded` once its spend passed its budget.
   The gateway counts a call's spend just after its answer, so a call sent at that moment may still pass; by the time
