@@ -115,3 +115,11 @@ Feature: Scripted model gateway
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-124 @status=implemented
+  Scenario: The model gateway keeps the headers of each call
+    Given a module whose CLI sends "Say hello" to the chat completions endpoint at "DEMO_MODEL_URL" with the header "x-demo-key" "k1"
+    And its system test expects the gateway's call to have the header "x-demo-key" "k1"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
