@@ -95,7 +95,7 @@ export async function forge(
   branch: string,
   comments: Comment[] = [],
   before?: Comment[],
-): Promise<FakeHttp & { comment(comment: Comment): void }> {
+): Promise<FakeHttp & { comment(comment: Comment): void; failReads(status?: number): void }> {
   const base = "/repos/acme/web";
   const commentJson = ({ id, body, login, at }: Comment) => ({
     id,
@@ -106,6 +106,11 @@ export async function forge(
   });
   // The fake sends a route's body as JSON when it answers, so a comment added to this list is in the next answer.
   const listed = comments.map(commentJson);
+  // The fake answers with the route's status at the time of the call, so a test can make the reads fail for a while.
+  const reads: { path: string; body: unknown; status?: number } = {
+    path: `${base}/issues/12/comments?per_page=100`,
+    body: listed,
+  };
   const http = await fakes.http([
     {
       path: `${base}/pulls/12`,
@@ -128,7 +133,7 @@ export async function forge(
     { path: `${base}/commits/${SHA}/status`, body: { statuses: [] } },
     { path: "/user", body: { login: "gatekeeper-bot" } },
     ...(before ? [{ path: `${base}/issues/12/comments?per_page=100`, body: before.map(commentJson), times: 1 }] : []),
-    { path: `${base}/issues/12/comments?per_page=100`, body: listed },
+    reads,
     {
       method: "POST",
       path: `${base}/issues/12/comments`,
@@ -136,7 +141,13 @@ export async function forge(
     },
     { method: "POST", path: `${base}/statuses/${SHA}`, body: {} },
   ]);
-  return Object.assign(http, { comment: (added: Comment) => void listed.push(commentJson(added)) });
+  return Object.assign(http, {
+    comment: (added: Comment) => void listed.push(commentJson(added)),
+    /** The reads of the comments answer with this status from now on; no status: they answer again. */
+    failReads: (status?: number) => {
+      reads.status = status;
+    },
+  });
 }
 
 /** The variables that point gatekeeper's forge adapter at the scripted GitHub API. */
