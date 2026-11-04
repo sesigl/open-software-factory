@@ -108,9 +108,8 @@ export async function serve(options: ServeOptions) {
   await app.listen({ port, host: "0.0.0.0" });
   const served = [slack?.name, pullRequests ? "pull requests" : undefined].filter(Boolean).join(" and ");
   process.stdout.write(`gatekeeper serves ${served} on port ${port}\n`);
-  const warn = (error: Error): void => {
+  const warn = (error: Error) =>
     process.stderr.write(`gatekeeper: the check of the pending gates failed: ${error.message}\n`);
-  };
   const timer = setInterval(() => void service.check().catch(warn), CHECK_EVERY_MS);
   // A pull request sends no event: the server reads the comments of its pending gates, one read at a time.
   let polling: Promise<void> | undefined;
@@ -118,7 +117,9 @@ export async function serve(options: ServeOptions) {
     ? setInterval(() => {
         polling ??= service
           .check((name) => pullRequestOf(name) !== undefined)
-          .catch(warn)
+          .catch((error: Error) => {
+            warn(error);
+          })
           .finally(() => {
             polling = undefined;
           });
