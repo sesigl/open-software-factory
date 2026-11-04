@@ -375,3 +375,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-GATE-065 | implemented | A "/reject" comment of a maintainer rejects the gate with the reason |
 | SCN-GATE-066 | implemented | A request without a pull request link on a server without Slack gets the status 400 |
 | SCN-GATE-067 | implemented | The server without a Slack channel and without the forge token exits with code 2 |
+| SCN-GATE-068 | implemented | A failed read of the pull request's comments keeps the gate pending, and a later read decides it |

@@ -165,3 +165,10 @@ Feature: Serve the gate API
     When the user runs "gatekeeper serve" without "--channel" and without "GATEKEEPER_FORGE_TOKEN"
     Then the command exits with code 2
     And the error output says "serve needs a Slack channel, like --channel slack:C0GATES, or GATEKEEPER_FORGE_TOKEN"
+
+  @id=SCN-GATE-068 @status=implemented
+  Scenario: A failed read of the pull request's comments keeps the gate pending, and a later read decides it
+    Given the server asked "maintainers" on the pull request "acme/web#12"
+    And the forge answers the reads of its comments with the status 502
+    When the forge answers again and "github:sesigl" of "maintainers" comments "/approve" on the pull request
+    Then "/v1/gates/<gate>" shows the state "approved" with a record approved by the person "github:sesigl"
