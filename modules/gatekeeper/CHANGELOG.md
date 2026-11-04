@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/sesigl/open-software-factory/compare/gatekeeper-v0.4.1...gatekeeper-v0.5.0) (2026-11-04)
+
+
+### Features
+
+* **gatekeeper:** the server decides gates on pull requests ([#173](https://github.com/sesigl/open-software-factory/issues/173)) ([70feade](https://github.com/sesigl/open-software-factory/commit/70feadec8c550916d2a08336db012064429eacc2))
+
 ## [0.4.1](https://github.com/sesigl/open-software-factory/compare/gatekeeper-v0.4.0...gatekeeper-v0.4.1) (2026-11-01)
 
 

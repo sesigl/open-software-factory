@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/sesigl/open-software-factory/compare/inference-litellm-v0.2.0...inference-litellm-v0.3.0) (2026-11-04)
+
+
+### Features
+
+* **inference-litellm:** attach to a running LiteLLM proxy ([#172](https://github.com/sesigl/open-software-factory/issues/172)) ([8ca502f](https://github.com/sesigl/open-software-factory/commit/8ca502f5dd563a817751b71f42162cc1313cb0e5))
+
 ## [0.2.0](https://github.com/sesigl/open-software-factory/compare/inference-litellm-v0.1.0...inference-litellm-v0.2.0) (2026-10-26)
 
 
