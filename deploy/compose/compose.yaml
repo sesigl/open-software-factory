@@ -197,14 +197,19 @@ services:
 
   gatekeeper:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/gatekeeper:0.4.0
+    image: ghcr.io/sesigl/open-software-factory/gatekeeper:0.5.0
     build:
       context: ../images
       target: gatekeeper
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/gatekeeper@0.4.0 @opensoftware/channel-slack@0.2.0"
-    command: [gatekeeper, serve, --policy, /factory/policy/spec.rego, --groups, /factory/groups.json, --channel, "slack:${GATEKEEPER_SLACK_CHANNEL:?set GATEKEEPER_SLACK_CHANNEL in .env}"]
+        PACKAGES: "@opensoftware/gatekeeper@0.5.0 @opensoftware/channel-slack@0.2.2 @opensoftware/forge-github@0.5.0"
+    # Asks in the Slack channel GATEKEEPER_SLACK_CHANNEL, on the run's pull request with GATEKEEPER_FORGE_TOKEN, or both.
+    entrypoint: [sh, -c]
+    command:
+      - >-
+        exec gatekeeper serve --policy /factory/policy/spec.rego --groups /factory/groups.json
+        $${GATEKEEPER_SLACK_CHANNEL:+--channel slack:$$GATEKEEPER_SLACK_CHANNEL}
     depends_on:
       factory-repo:
         condition: service_completed_successfully
@@ -217,10 +222,12 @@ services:
       GATEKEEPER_API_TOKEN: ${GATEKEEPER_API_TOKEN:?set GATEKEEPER_API_TOKEN in .env}
       GATEKEEPER_DATABASE_URL: postgres://osf:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/gatekeeper
       GATEKEEPER_NATS_URL: nats://nats:4222
+      GATEKEEPER_SLACK_CHANNEL: ${GATEKEEPER_SLACK_CHANNEL:-}
       GATEKEEPER_SLACK_ADAPTER: channel-slack
-      GATEKEEPER_SLACK_TOKEN: ${GATEKEEPER_SLACK_TOKEN:?set GATEKEEPER_SLACK_TOKEN in .env}
-      GATEKEEPER_SLACK_SIGNING_SECRET: ${GATEKEEPER_SLACK_SIGNING_SECRET:?set GATEKEEPER_SLACK_SIGNING_SECRET in .env}
+      GATEKEEPER_SLACK_TOKEN: ${GATEKEEPER_SLACK_TOKEN:-}
+      GATEKEEPER_SLACK_SIGNING_SECRET: ${GATEKEEPER_SLACK_SIGNING_SECRET:-}
       GATEKEEPER_FORGE_ADAPTER: forge-github
+      GATEKEEPER_FORGE_TOKEN: ${GATEKEEPER_FORGE_TOKEN:-}
     volumes:
       - factory:/factory:ro
     ports:
@@ -254,15 +261,15 @@ services:
 
   foreman:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/foreman:0.5.0
+    image: ghcr.io/sesigl/open-software-factory/foreman:0.6.0
     build:
       context: ../images
-      target: module
+      target: foreman
       secrets: [ca]
       args:
         PACKAGES: >-
-          @opensoftware/foreman@0.5.0 @opensoftware/harness-claude-code@0.4.0 @opensoftware/forge-github@0.5.0
-          @opensoftware/forge-forgejo@0.5.0
+          @opensoftware/foreman@0.6.0 @opensoftware/harness-claude-code@0.5.0 @opensoftware/forge-github@0.5.0
+          @opensoftware/forge-forgejo@0.5.0 @opensoftware/inference-litellm@0.3.0
     command: [foreman, serve]
     depends_on:
       factory-repo:
@@ -272,6 +279,8 @@ services:
       nats:
         condition: service_healthy
       gatekeeper:
+        condition: service_healthy
+      litellm:
         condition: service_healthy
     environment:
       OSF_HEALTH_PATH: /v1/runs
@@ -286,6 +295,20 @@ services:
       FOREMAN_FORGES: '{"github": "forge-github", "forgejo": "forge-forgejo"}'
       # A token that may read pull requests and their checks, for the verify stage's check "verify". Optional.
       FOREMAN_FORGE_TOKEN: ${FOREMAN_FORGE_TOKEN:-}
+      # A factory with providers.inference litellm attaches to the service litellm with its master key (ADR 0080).
+      FOREMAN_INFERENCES: '{"litellm": "inference-litellm"}'
+      OSF_SECRET_LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?set LITELLM_MASTER_KEY in .env}
+      # Optional. Claude Code runs on the subscription of this token's owner, through litellm (ADR 0080).
+      CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
+      # Optional. The agents clone, push and open pull requests with gh and Git on github.com with this token.
+      GH_TOKEN: ${GH_TOKEN:-}
+      GIT_CONFIG_COUNT: "3"
+      GIT_CONFIG_KEY_0: credential.https://github.com.helper
+      GIT_CONFIG_VALUE_0: "!gh auth git-credential"
+      GIT_CONFIG_KEY_1: user.name
+      GIT_CONFIG_VALUE_1: ${FACTORY_GIT_NAME:-factory}
+      GIT_CONFIG_KEY_2: user.email
+      GIT_CONFIG_VALUE_2: ${FACTORY_GIT_EMAIL:-factory@localhost}
     volumes:
       - factory:/factory:ro
       - foreman:/home/node/data
