@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/sesigl/open-software-factory/compare/harness-claude-code-v0.4.0...harness-claude-code-v0.5.0) (2026-11-04)
+
+
+### Features
+
+* **harness-claude-code:** run Claude Code on a subscription through the gateway ([#170](https://github.com/sesigl/open-software-factory/issues/170)) ([413b57e](https://github.com/sesigl/open-software-factory/commit/413b57e715f19b869022ad079fae92b27cffab9b))
+
 ## [0.4.0](https://github.com/sesigl/open-software-factory/compare/harness-claude-code-v0.3.0...harness-claude-code-v0.4.0) (2026-11-01)
 
 

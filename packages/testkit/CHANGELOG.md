@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.29.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.28.1...testkit-v0.29.0) (2026-11-04)
+
+
+### Features
+
+* **gatekeeper:** the server decides gates on pull requests ([#173](https://github.com/sesigl/open-software-factory/issues/173)) ([70feade](https://github.com/sesigl/open-software-factory/commit/70feadec8c550916d2a08336db012064429eacc2))
+* **harness-claude-code:** run Claude Code on a subscription through the gateway ([#170](https://github.com/sesigl/open-software-factory/issues/170)) ([413b57e](https://github.com/sesigl/open-software-factory/commit/413b57e715f19b869022ad079fae92b27cffab9b))
+
 ## [0.28.1](https://github.com/sesigl/open-software-factory/compare/testkit-v0.28.0...testkit-v0.28.1) (2026-11-01)
 
 
