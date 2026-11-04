@@ -41,6 +41,7 @@ adds a row.
 | FORGE | forge port | `ports/forge/features/` |
 | FGITHUB | forge adapter github | `adapters/forge/github/features/` |
 | INFER | inference port | `ports/inference/features/` |
+| INFLITE | inference adapter litellm | `adapters/inference/litellm/features/` |
 | SECRET | secrets port | `ports/secrets/features/` |
 | DIST | distribution | `deploy/features/` |
 | E2E | end-to-end smoke | `e2e/features/` |

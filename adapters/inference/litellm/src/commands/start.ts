@@ -1,4 +1,5 @@
-// start <config>: PostgreSQL and the LiteLLM proxy on a network of their own, the proxy published on 127.0.0.1.
+// start <config>: PostgreSQL and the LiteLLM proxy on a network of their own, the proxy published on 127.0.0.1. A
+// config with osf.proxy attaches to a proxy that already runs instead (attach.ts).
 import { randomBytes } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -6,7 +7,7 @@ import { join } from "node:path";
 import { check, type Outcome } from "@opensoftware/cli";
 import { docker, errors } from "../adapters/docker.ts";
 import { ready } from "../adapters/litellm.ts";
-import { gatewayConfig } from "../domain/config.ts";
+import { attachedProxy, gatewayConfig } from "../domain/config.ts";
 import {
   CONFIG_DIR,
   databaseName,
@@ -17,6 +18,7 @@ import {
   POSTGRES_IMAGE,
   PROXY_PORT,
 } from "../domain/names.ts";
+import { attach } from "./attach.ts";
 import { origin } from "./gateway.ts";
 import { removeGateway } from "./stop.ts";
 
@@ -24,7 +26,10 @@ const READY_TIMEOUT_MS = 180_000;
 
 export async function start(file: string | undefined): Promise<Outcome> {
   check(file, "name the LiteLLM config, like start litellm-config.yaml");
-  const config = gatewayConfig(readFileSync(file as string, "utf8"));
+  const text = readFileSync(file as string, "utf8");
+  const proxy = attachedProxy(text);
+  if (proxy) return attach(proxy);
+  const config = gatewayConfig(text);
   const id = randomBytes(6).toString("hex");
   const name = gatewayName(id);
   const password = randomBytes(18).toString("hex");

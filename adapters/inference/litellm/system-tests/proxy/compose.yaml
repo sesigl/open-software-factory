@@ -1,0 +1,52 @@
+# The running LiteLLM proxy of the SCN-INFLITE scenarios: LiteLLM and PostgreSQL as a Compose project of the test,
+# like the "litellm" service of deploy/compose/compose.yaml. The master key and the database password are test values.
+# $INPUT/.env sets PROVIDER_BASE, the base URL of the test provider. The images are the ones that start runs.
+services:
+  postgres:
+    image: postgres:18-alpine@sha256:898c60cb390d1085bc97bdd6a1ae968757421df394b071848b52b1c09c89d6a5
+    environment:
+      POSTGRES_USER: litellm
+      POSTGRES_PASSWORD: testkit
+      POSTGRES_DB: litellm
+    healthcheck:
+      test: [CMD, pg_isready, -U, litellm]
+      interval: 1s
+      timeout: 5s
+      retries: 60
+
+  litellm:
+    image: ghcr.io/berriai/litellm:v1.106.2@sha256:7294b90f868c5c38c99b83021c7ba46f9b439e95f8e32964c925c7d2563a03f7
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: [--config, /etc/litellm/config.yaml, --port, "4000"]
+    environment:
+      DATABASE_URL: postgresql://litellm:testkit@postgres:5432/litellm
+      LITELLM_MASTER_KEY: sk-testkit-master
+      LITELLM_LOCAL_MODEL_COST_MAP: "True"
+      PROVIDER_BASE: ${PROVIDER_BASE:?set PROVIDER_BASE in .env}
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    configs:
+      - source: litellm
+        target: /etc/litellm/config.yaml
+    ports:
+      - 127.0.0.1::4000
+    healthcheck:
+      test: [CMD, python3, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4000/health/liveliness')"]
+      interval: 1s
+      timeout: 5s
+      retries: 180
+
+configs:
+  litellm:
+    content: |
+      model_list:
+        - model_name: routes/triage
+          litellm_params:
+            model: openai/model-c
+            api_base: os.environ/PROVIDER_BASE
+            api_key: unused
+      general_settings:
+        master_key: os.environ/LITELLM_MASTER_KEY
+        proxy_batch_write_at: 1

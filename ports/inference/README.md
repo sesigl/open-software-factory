@@ -45,7 +45,8 @@ proxy config, the format `taskcapture route` writes. An unknown gateway ID exits
 - `stop` removes the gateway's keys and spend log.
 
 A company with its own gateway names it as a provider of the config, or points the harness adapters at its URL and
-runs no inference adapter.
+runs no inference adapter. The `litellm` adapter can also attach to a LiteLLM proxy that already runs, such as the
+`litellm` service of the Compose profile, and starts no container (ADR 0080).
 
 ## Conformance
 
