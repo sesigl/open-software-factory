@@ -100,6 +100,7 @@ export async function prServing(sut: Sut, fakes: Fakes, env: Record<string, stri
   const gate = gateOf(sut);
   return {
     http,
+    db,
     gate,
     post: (body: GateRequest) => api().POST("/v1/gates", { body, headers: AUTH }),
     /** Reads the gate until the server decided it. */

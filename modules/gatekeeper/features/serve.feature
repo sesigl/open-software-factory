@@ -172,3 +172,9 @@ Feature: Serve the gate API
     And the forge answers the reads of its comments with the status 502
     When the forge answers again and "github:sesigl" of "maintainers" comments "/approve" on the pull request
     Then "/v1/gates/<gate>" shows the state "approved" with a record approved by the person "github:sesigl"
+
+  @id=SCN-GATE-069 @status=implemented
+  Scenario: The server goes on serving when its database fails during a check of the pull request gates
+    Given the server asked "maintainers" on the pull request "acme/web#12"
+    When its database stops
+    Then after ten checks of the pull request gates the server still answers "/v1/gates/<gate>", with the status 500
