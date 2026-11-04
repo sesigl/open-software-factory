@@ -81,7 +81,7 @@ It prints `gate g… approved by slack:U0ADA`, exits 0 and writes the record `$O
 | --- | --- |
 | `gatekeeper request <gate> [--out <file>] [--record <file>]` | Ask the policy's approver groups in the channel, once per gate. Writes `$OUTPUT/gate.json` (or `--out`). |
 | `gatekeeper status <gate> [--record <file>]` | Decide the gate from the channel and write the record `$OUTPUT/record.json` (or `--record`) once it is decided. Exits 0 when approved, 1 when rejected or expired, 3 while it waits. |
-| `gatekeeper serve --policy <file.rego> --groups <file.json> --channel slack:<channel ID>` | Serve the gate API on `PORT` until it gets SIGTERM; see [Server](#server). |
+| `gatekeeper serve --policy <file.rego> --groups <file.json> [--channel slack:<channel ID>]` | Serve the gate API on `PORT` until it gets SIGTERM; see [Server](#server). |
 | `gatekeeper verify --public-key <file.pem> <record.json>` | Check the record's signature. |
 | `gatekeeper keys [--out <folder>]` | Write a new Ed25519 key pair: `gatekeeper.pem` (only its owner may read it) for `GATEKEEPER_SIGNING_KEY` and `gatekeeper.pub` for `verify`. |
 
@@ -185,7 +185,8 @@ succeeds and the commit status stays `pending`. Inputs: `policy`, `groups`, `tok
 ## Server
 
 `gatekeeper serve` keeps the gates in PostgreSQL, so a program asks with one HTTP call and people decide with a
-button or a reply in Slack. Nothing polls: Slack sends each reply and each press to the server.
+button or a reply in Slack, or with a comment on a pull request. For Slack nothing polls: Slack sends each reply and
+each press to the server.
 
 ```sh
 export GATEKEEPER_DATABASE_URL=postgres://gatekeeper@db/gatekeeper
@@ -211,6 +212,30 @@ The request message has the buttons Approve and Reject. The rules of [Decisions]
 replies alike, and a press after the decision changes nothing. A press counts at the server's time when it arrives. The policy's answer is stored with the gate when it
 is requested; the groups file is read when the server starts. The server checks every pending gate when it starts
 and then every minute, so an escalation or an expiry needs no event.
+
+### Pull requests in server mode
+
+With `GATEKEEPER_FORGE_TOKEN`, a request whose `links` contain a pull request URL (`https://github.com/<owner>/<repo>/pull/<n>`,
+or `/pulls/<n>` on Forgejo) is asked on that pull request, as [Pull requests](#pull-requests) describes: the server
+comments the request with its marker and sets the commit status `gatekeeper` of the head commit to `pending`. The
+gate's `channel` is the pull request's URL. The server reads the comments of the pull requests with a pending gate
+every `GATEKEEPER_POLL_MS` (default 30 seconds) and decides with the same rules as `status`: an `/approve` or
+`/reject <reason>` of an approver decides, and the commit status becomes `success` or `failure`. The record and the
+event `gate.decided@v1` are the same as for a gate in Slack. The commit status goes to the head commit that the server
+read when it asked; after a restart, the server reads the head commit again.
+
+A server can run without a Slack app:
+
+```sh
+export GATEKEEPER_DATABASE_URL=postgres://gatekeeper@db/gatekeeper
+export GATEKEEPER_API_TOKEN=... GATEKEEPER_FORGE_TOKEN=...
+npx @opensoftware/gatekeeper serve --policy policy.rego --groups groups.json
+```
+
+It needs `--channel`, `GATEKEEPER_FORGE_TOKEN` or both, and exits with code 2 without either. With both, a request with a
+pull request link is asked on the pull request and every other request in Slack. Without `--channel`, a request
+without a pull request link gets 400, and the Slack routes answer 404. The approvers on a pull request are
+`github:<login>` (or the prefix of the forge adapter) in the groups file.
 
 Set up a Slack app with the bot scopes `chat:write` and `channels:history`, the event `message.channels` with the
 request URL `https://<server>/slack/events`, and interactivity with the request URL `https://<server>/slack/actions`.
@@ -255,10 +280,11 @@ the decision. The event ID is the gate's ID with `.requested` or `.decided`.
 | `GATEKEEPER_SLACK_ADAPTER` | string | `"npx -y @opensoftware/channel-slack"` | The command line of the channel port's slack adapter, which reaches Slack for a slack: channel (ADR 0062). |
 | `GATEKEEPER_SLACK_URL` | string |  | Base URL of the Slack Web API, ending in a slash: the adapter's CHANNEL_API_URL. Default: the adapter's, https://slack.com/api/. |
 | `GATEKEEPER_SLACK_TOKEN` | string |  | Slack bot token with chat:write and channels:history: the adapter's CHANNEL_TOKEN. Required for a slack: channel. |
-| `GATEKEEPER_SLACK_SIGNING_SECRET` | string |  | serve: the signing secret of the Slack app, the adapter's CHANNEL_SIGNING_SECRET, which checks every request from Slack. Required for serve. |
+| `GATEKEEPER_SLACK_SIGNING_SECRET` | string |  | serve: the signing secret of the Slack app, the adapter's CHANNEL_SIGNING_SECRET, which checks every request from Slack. Required for serve with a Slack channel. |
 | `GATEKEEPER_FORGE_ADAPTER` | string |  | The command line of the forge port's adapter for --pull-request (ADR 0062). Default: npx -y @opensoftware/forge-github for github.com, npx -y @opensoftware/forge-forgejo for any other host. |
 | `GATEKEEPER_FORGE_URL` | string |  | The forge adapter's FORGE_URL. Default: https://api.github.com for github.com, the pull request's origin for Forgejo. |
-| `GATEKEEPER_FORGE_TOKEN` | string |  | The forge adapter's FORGE_TOKEN: a token that may read the pull request, comment on it and set its commit status. Never written to a file. |
+| `GATEKEEPER_FORGE_TOKEN` | string |  | The forge adapter's FORGE_TOKEN: a token that may read the pull request, comment on it and set its commit status. serve: with it, a request that links a pull request is asked on the pull request. Never written to a file. |
+| `GATEKEEPER_POLL_MS` | string | `"30000"` | serve: the milliseconds between two reads of the comments of the pull requests with a pending gate (ADR 0080). Only with GATEKEEPER_FORGE_TOKEN. |
 | `GATEKEEPER_SIGNING_KEY` | string |  | Ed25519 private key in PEM that signs each record. Without it the record is unsigned. |
 | `GATEKEEPER_NATS_URL` | string |  | NATS server, like nats://localhost:4222, for the events gate.requested@v1 and gate.decided@v1. Unset: no events. serve keeps them in its outbox while NATS is unreachable. |
 | `GATEKEEPER_DATABASE_URL` | string |  | serve: the PostgreSQL database, like postgres://gatekeeper@db/gatekeeper, for the gates and the outbox. Required for serve. |
@@ -344,3 +370,10 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-GATE-060 | implemented | A forge token that the forge refuses exits 1 with the forge's error |
 | SCN-GATE-061 | implemented | A pull request that the forge does not have exits 1 and names it |
 | SCN-GATE-062 | implemented | A channel adapter that prints no JSON exits 1 and names the adapter |
+| SCN-GATE-063 | implemented | A request that links a pull request is asked in a comment on the pull request |
+| SCN-GATE-064 | implemented | An "/approve" comment of a maintainer approves the gate and is published as "gate.decided@v1" |
+| SCN-GATE-065 | implemented | A "/reject" comment of a maintainer rejects the gate with the reason |
+| SCN-GATE-066 | implemented | A request without a pull request link on a server without Slack gets the status 400 |
+| SCN-GATE-067 | implemented | The server without a Slack channel and without the forge token exits with code 2 |
+| SCN-GATE-068 | implemented | A failed read of the pull request's comments keeps the gate pending, and a later read decides it |
+| SCN-GATE-069 | implemented | The server goes on serving when its database fails during a check of the pull request gates |

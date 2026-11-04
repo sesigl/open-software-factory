@@ -1,6 +1,7 @@
 // A pull request as a gate: its URL, the forge adapter that reaches it, and the request built from it (ADR 0062).
 import { UsageError } from "@opensoftware/cli";
-import type { GateRequest } from "./request.ts";
+import type { Outcome } from "./gate.ts";
+import type { GateRequest, Link } from "./request.ts";
 
 export interface PullRequest {
   url: string;
@@ -15,8 +16,15 @@ export interface PullRequest {
 
 /** GitHub writes /<owner>/<repo>/pull/<n>, Forgejo /<owner>/<repo>/pulls/<n>. */
 export function parsePullRequest(url: string): PullRequest {
+  const pr = pullRequestOf(url);
+  if (!pr) throw new UsageError(`${url} is not a pull request URL like https://github.com/acme/web/pull/12`);
+  return pr;
+}
+
+/** The pull request of the URL, or undefined when the URL is no pull request. */
+export function pullRequestOf(url: string): PullRequest | undefined {
   const match = URL.canParse(url) ? /^\/([^/]+)\/([^/]+)\/pulls?\/(\d+)\/?$/.exec(new URL(url).pathname) : null;
-  if (!match) throw new UsageError(`${url} is not a pull request URL like https://github.com/acme/web/pull/12`);
+  if (!match) return undefined;
   const { host, origin } = new URL(url);
   const github = host === "github.com";
   return {
@@ -28,6 +36,20 @@ export function parsePullRequest(url: string): PullRequest {
     forgeUrl: github ? "https://api.github.com" : origin,
   };
 }
+
+/** The first link of a request that is a pull request: the server asks there (ADR 0080). */
+export function pullRequestIn(links: Link[]): PullRequest | undefined {
+  for (const link of links) {
+    const pr = pullRequestOf(link.url);
+    if (pr) return pr;
+  }
+  return undefined;
+}
+
+const STATES = { pending: "pending", approved: "success", rejected: "failure", expired: "failure" } as const;
+
+/** The state of the commit status "gatekeeper" for the gate's outcome. */
+export const commitState = (outcome: Outcome) => STATES[outcome.state];
 
 /** The adapter's command line when GATEKEEPER_FORGE_ADAPTER names none. */
 export const defaultForgeAdapter = (pr: PullRequest): string =>

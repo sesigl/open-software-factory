@@ -1,7 +1,8 @@
 @module=gatekeeper @owner=maintainers
 Feature: Serve the gate API
   "gatekeeper serve" takes requests over HTTP, asks in Slack with buttons, decides on Slack's events and button
-  presses without polling, and publishes its events through a PostgreSQL outbox (ADR 0048).
+  presses without polling, and publishes its events through a PostgreSQL outbox (ADR 0048). With the forge token, it
+  asks on the pull request that a request links, and reads the comments of the pull request at an interval (ADR 0080).
 
   @id=SCN-GATE-041 @status=implemented @realizes=SCN-FACTORY-ORCH-003
   Scenario: A program asks for approval over HTTP and the server asks in Slack with buttons
@@ -126,3 +127,54 @@ Feature: Serve the gate API
     When the user runs "gatekeeper serve" for the channel "slack:C0GATES" without "GATEKEEPER_DATABASE_URL"
     Then the command exits with code 2
     And the error output says "set GATEKEEPER_DATABASE_URL"
+
+  @id=SCN-GATE-063 @status=implemented
+  Scenario: A request that links a pull request is asked in a comment on the pull request
+    Given the server runs with "GATEKEEPER_FORGE_TOKEN" and without a Slack channel
+    When a program posts a request that links the pull request "acme/web#12" to "/v1/gates"
+    Then the answer has the status 201 and a gate in the state "pending" for the channel "https://github.com/acme/web/pull/12"
+    And the pull request has a comment that asks "maintainers" to approve with "/approve"
+    And the head commit of the pull request has the commit status "gatekeeper" with the state "pending"
+
+  @id=SCN-GATE-064 @status=implemented
+  Scenario: An "/approve" comment of a maintainer approves the gate and is published as "gate.decided@v1"
+    Given the server, with "GATEKEEPER_NATS_URL" set to a NATS server, asked "maintainers" on the pull request "acme/web#12"
+    When "github:sesigl" of "maintainers" comments "/approve" on the pull request
+    Then "/v1/gates/<gate>" shows the state "approved" and a record approved by the person "github:sesigl"
+    And the event "gate.decided@v1" arrives on "osf.gate.decided.v1" with the decision "approved" by "github:sesigl"
+    And the head commit of the pull request has the commit status "gatekeeper" with the state "success" and the description "approved by github:sesigl"
+
+  @id=SCN-GATE-065 @status=implemented
+  Scenario: A "/reject" comment of a maintainer rejects the gate with the reason
+    Given the server asked "maintainers" on the pull request "acme/web#12"
+    When "github:sesigl" of "maintainers" comments "/reject Breaks the release" on the pull request
+    Then "/v1/gates/<gate>" shows the state "rejected" and a record with the reason "Breaks the release"
+    And the pull request has the comment "Rejected by @sesigl: Breaks the release."
+    And the head commit of the pull request has the commit status "gatekeeper" with the state "failure"
+
+  @id=SCN-GATE-066 @status=implemented
+  Scenario: A request without a pull request link on a server without Slack gets the status 400
+    Given the server runs with "GATEKEEPER_FORGE_TOKEN" and without a Slack channel
+    When a program posts a request that links only the issue "acme/web#7" to "/v1/gates"
+    Then the answer has the status 400 and a problem whose detail says "the request links no pull request"
+    And the forge has no comment and no commit status
+
+  @id=SCN-GATE-067 @status=implemented
+  Scenario: The server without a Slack channel and without the forge token exits with code 2
+    Given the README policy and groups
+    When the user runs "gatekeeper serve" without "--channel" and without "GATEKEEPER_FORGE_TOKEN"
+    Then the command exits with code 2
+    And the error output says "serve needs a Slack channel, like --channel slack:C0GATES, or GATEKEEPER_FORGE_TOKEN"
+
+  @id=SCN-GATE-068 @status=implemented
+  Scenario: A failed read of the pull request's comments keeps the gate pending, and a later read decides it
+    Given the server asked "maintainers" on the pull request "acme/web#12"
+    And the forge answers the reads of its comments with the status 502
+    When the forge answers again and "github:sesigl" of "maintainers" comments "/approve" on the pull request
+    Then "/v1/gates/<gate>" shows the state "approved" with a record approved by the person "github:sesigl"
+
+  @id=SCN-GATE-069 @status=implemented
+  Scenario: The server goes on serving when its database fails during a check of the pull request gates
+    Given the server asked "maintainers" on the pull request "acme/web#12"
+    When its database stops
+    Then after ten checks of the pull request gates the server still answers "/v1/gates/<gate>", with the status 500

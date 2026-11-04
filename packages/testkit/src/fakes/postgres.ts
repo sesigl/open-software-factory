@@ -16,6 +16,8 @@ import { PGlite } from "@electric-sql/pglite";
 export interface Postgres {
   /** `postgres://test:test@127.0.0.1:<port>/test` */
   url: string;
+  /** Stops the database while the test runs, as a server that goes away: open connections end, new ones are refused. */
+  stop(): Promise<void>;
 }
 
 const USER = "test";
@@ -35,13 +37,19 @@ export async function startPostgres(): Promise<{ postgres: Postgres; close(): Pr
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   const address = server.address();
   if (!address || typeof address === "string") throw new Error("fakes.postgres: the server has no TCP address");
-  return {
-    postgres: { url: `postgres://${USER}:${PASSWORD}@127.0.0.1:${address.port}/test` },
-    async close() {
+  // Once only: a test may stop the database, and the teardown closes it again.
+  let closing: Promise<void> | undefined;
+  const close = () =>
+    (closing ??= (async () => {
       for (const socket of sockets) socket.destroy();
       await new Promise<void>((resolve) => server.close(() => resolve()));
       await session.idle();
       await db.close();
+    })());
+  return {
+    postgres: { url: `postgres://${USER}:${PASSWORD}@127.0.0.1:${address.port}/test`, stop: close },
+    async close() {
+      await close();
       return [];
     },
   };
