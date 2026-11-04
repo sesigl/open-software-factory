@@ -134,11 +134,16 @@ export function activities(deps: ActivityDeps) {
     async requestGate(view: RunView, definition: Definition, index: number): Promise<Fact> {
       const plan = definition.stages[index];
       const origin = view.workItem.origin.url;
+      // The run's pull request lets gatekeeper ask the approvers on it (ADR 0080).
+      const links = [
+        ...(origin ? [{ url: origin, title: "Origin" }] : []),
+        ...(view.pullRequest ? [{ url: view.pullRequest, title: "Pull request" }] : []),
+      ];
       const gate = await deps.gatekeeper.request({
         workItem: view.workItem.id,
         stage: plan?.stage ?? "",
         summary: gateSummaryOf(view, index),
-        ...(origin ? { links: [{ url: origin, title: "Origin" }] } : {}),
+        ...(links.length ? { links } : {}),
         change: { factory: definition.factory, policy: plan?.gate?.policy, approvers: plan?.gate?.approvers ?? [] },
       });
       return { kind: "gate", index, gateId: gate.id, state: gate.state };
