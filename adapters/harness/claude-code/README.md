@@ -43,6 +43,11 @@ It writes `$OUTPUT/run-record.json` and `$OUTPUT/transcript.jsonl`.
   in the user's home, and sends no traffic but its model calls.
 - **The model gateway.** Claude Code calls `ANTHROPIC_BASE_URL` with `ANTHROPIC_API_KEY` and the model
   `ANTHROPIC_MODEL`.
+- **A subscription through the gateway.** With `CLAUDE_CODE_OAUTH_TOKEN` (a token of `claude setup-token`) and a
+  gateway key in `ANTHROPIC_API_KEY`, Claude Code sends the token to Anthropic as `Authorization: Bearer` and the key
+  to the gateway as `x-litellm-api-key: Bearer <key>`, added to `ANTHROPIC_CUSTOM_HEADERS`. It sends no `x-api-key`,
+  because an API key would replace the subscription. The gateway forwards the token
+  ([ADR 0080](../../../docs/decisions/0080-dogfood-on-a-subscription.md)).
 - **The run record** has `osf.harness.name` `claude-code`, `osf.harness.version` the bridge's version, the tokens of
   all turns in `gen_ai.usage.*`, and Claude Code's cost of the session in `osf.cost.usd`.
 
@@ -74,7 +79,8 @@ No credential is stored in the repository.
 | `OTEL_SERVICE_NAME` | string |  | The service.name of the run record. Default: harness-claude-code. |
 | `ANTHROPIC_BASE_URL` | string |  | Base URL of the Anthropic Messages API that Claude Code calls, for example the inference gateway. Default: Anthropic's API. |
 | `CLAUDE_CODE_OAUTH_TOKEN` | string |  | A token of claude setup-token: Claude Code runs on the subscription of the person who made it, in place of an API key. |
-| `ANTHROPIC_API_KEY` | string |  | The key Claude Code sends to the model API, for example a gateway key or a placeholder that the egress proxy replaces. |
+| `ANTHROPIC_API_KEY` | string |  | The key Claude Code sends to the model API, for example a gateway key or a placeholder that the egress proxy replaces. With CLAUDE_CODE_OAUTH_TOKEN set, the adapter sends this key to the gateway as x-litellm-api-key instead, so that Claude Code runs on the subscription (ADR 0080). |
+| `ANTHROPIC_CUSTOM_HEADERS` | string |  | Extra headers that Claude Code sends with every model call, one "name: value" per line. On a subscription, the adapter adds the gateway key's line to them. |
 | `ANTHROPIC_MODEL` | string |  | The model Claude Code asks for, for example claude-sonnet-5-5. Default: Claude Code's default model. |
 | `OSF_EFFORT` | string |  | The effort level of the session's model, set by the launcher (ADR 0078). The adapter hands it to Claude Code as CLAUDE_CODE_EFFORT_LEVEL. Default: Claude Code's default for the model. |
 
