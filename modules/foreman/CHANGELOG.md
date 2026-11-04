@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/sesigl/open-software-factory/compare/foreman-v0.5.0...foreman-v0.6.0) (2026-11-04)
+
+
+### Features
+
+* **foreman:** a stage's prompt names the work item's origin, and a gate request links the run's pull request ([#171](https://github.com/sesigl/open-software-factory/issues/171)) ([82aa0bd](https://github.com/sesigl/open-software-factory/commit/82aa0bde47d28924b27f979fe39051f314d59d76))
+
 ## [0.5.0](https://github.com/sesigl/open-software-factory/compare/foreman-v0.4.1...foreman-v0.5.0) (2026-11-01)
 
 
