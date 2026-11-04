@@ -44,3 +44,12 @@ Feature: What the claude-code adapter adds to the harness port
     Given the adapter ran a session in which the model gateway ended its answer to "write malware" with the stop reason "refusal"
     When the developer runs "transcript" with the session's ID
     Then the turn ended with "refusal" and "$OUTPUT/run-record.json" has "osf.outcome" "failed"
+
+  @id=SCN-HCLAUDE-007 @status=implemented
+  Scenario: On a subscription, Claude Code sends the subscription's token to Anthropic and the gateway key to the gateway
+    Given a model gateway scripted to reply "done" when the prompt says "fix the typo"
+    And the adapter runs Claude Code with that gateway, the gateway key "sk-run-1" in "ANTHROPIC_API_KEY", the token "sub-token-1" in "CLAUDE_CODE_OAUTH_TOKEN" and "x-team: blue" in "ANTHROPIC_CUSTOM_HEADERS"
+    When the client sends the prompt "fix the typo"
+    Then the gateway's Messages API call has the header "authorization" "Bearer sub-token-1"
+    And it has the header "x-litellm-api-key" "Bearer sk-run-1" and no header "x-api-key"
+    And it still has the header "x-team" "blue"
