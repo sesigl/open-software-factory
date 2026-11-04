@@ -64,7 +64,8 @@ export interface Store {
   get(id: string): Promise<StoredGate | undefined>;
   remove(id: string): Promise<void>;
   byThread(channel: string, thread: string): Promise<StoredGate | undefined>;
-  pending(): Promise<string[]>;
+  /** The pending gates that were asked, oldest first, with their channels. */
+  pending(): Promise<{ id: string; channel: string }[]>;
   press(gate: string, press: Press): Promise<void>;
   /** Runs `work` on the locked gate in one transaction; its changes and events commit together. */
   locked<T>(id: string, work: (row: StoredGate | undefined, changes: Changes) => Promise<T>): Promise<T>;
@@ -147,9 +148,9 @@ export async function openStore(url: string): Promise<Store> {
       one(`SELECT ${ROW} FROM gatekeeper.gates WHERE channel = $1 AND thread = $2`, [channel, thread]),
     async pending() {
       const { rows } = await pool.query(
-        "SELECT id FROM gatekeeper.gates WHERE state = 'pending' AND thread IS NOT NULL ORDER BY requested_at",
+        "SELECT id, channel FROM gatekeeper.gates WHERE state = 'pending' AND thread IS NOT NULL ORDER BY requested_at",
       );
-      return rows.map((row) => row.id as string);
+      return rows.map((row) => ({ id: row.id as string, channel: row.channel as string }));
     },
     async press(gate, { ts, author, action }) {
       await pool.query(

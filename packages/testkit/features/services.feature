@@ -11,6 +11,14 @@ Feature: Services and outside systems
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-125 @status=implemented
+  Scenario: A stopped fakes.postgres refuses the module's connection
+    Given a module whose CLI sends a PostgreSQL SSL request to "DEMO_DATABASE_URL" and prints the answer
+    And its system test stops fakes.postgres before it runs the module and expects the output to say "ECONNREFUSED"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-009 @status=implemented
   Scenario: fakes.nats gives the module a reachable NATS server
     Given a module whose CLI connects to "DEMO_NATS_URL" and prints the first word the server sends

@@ -36,7 +36,7 @@
     },
     "GATEKEEPER_SLACK_SIGNING_SECRET": {
       "type": "string",
-      "description": "serve: the signing secret of the Slack app, the adapter's CHANNEL_SIGNING_SECRET, which checks every request from Slack. Required for serve."
+      "description": "serve: the signing secret of the Slack app, the adapter's CHANNEL_SIGNING_SECRET, which checks every request from Slack. Required for serve with a Slack channel."
     },
     "GATEKEEPER_FORGE_ADAPTER": {
       "type": "string",
@@ -48,7 +48,12 @@
     },
     "GATEKEEPER_FORGE_TOKEN": {
       "type": "string",
-      "description": "The forge adapter's FORGE_TOKEN: a token that may read the pull request, comment on it and set its commit status. Never written to a file."
+      "description": "The forge adapter's FORGE_TOKEN: a token that may read the pull request, comment on it and set its commit status. serve: with it, a request that links a pull request is asked on the pull request. Never written to a file."
+    },
+    "GATEKEEPER_POLL_MS": {
+      "type": "string",
+      "default": "30000",
+      "description": "serve: the milliseconds between two reads of the comments of the pull requests with a pending gate (ADR 0080). Only with GATEKEEPER_FORGE_TOKEN."
     },
     "GATEKEEPER_SIGNING_KEY": {
       "type": "string",
