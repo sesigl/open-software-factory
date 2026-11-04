@@ -177,7 +177,8 @@ Every server, client and subscription stops when the scenario ends, before the f
   wire-protocol server, with no Docker ([ADR 0049](../../docs/decisions/0049-in-memory-stand-ins.md)). The module
   connects to `postgres://test:test@127.0.0.1:<port>/test` with its own driver; a wrong password is refused with
   SQLSTATE 28P01. Connections run one at a time: a transaction holds the database until it ends, so code must not
-  wait inside a transaction for a second connection of its own.
+  wait inside a transaction for a second connection of its own. `stop()` stops the database while the test runs:
+  open connections end and new ones are refused, as when a server goes away.
 - `fakes.nats()`, `fakes.temporal()`: NATS with JetStream and the Temporal CLI's dev server for this scenario, each
   the real server as a process on the host with its data in a temporary folder, with no Docker
   ([ADR 0067](../../docs/decisions/0067-foreman.md)). `make install` pins `nats-server` 2.11.9 and `temporal` 1.4.1 in
@@ -424,3 +425,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-122 | implemented | sut.compose runs docker with the developer's Docker configuration, where Docker finds its plugins |
 | SCN-TK-123 | implemented | A module reaches a local socket by its path under the network guard |
 | SCN-TK-124 | implemented | The model gateway keeps the headers of each call |
+| SCN-TK-125 | implemented | A stopped fakes.postgres refuses the module's connection |

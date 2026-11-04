@@ -17,8 +17,9 @@ Commands:
          Ask the approver groups of the policy in the channel, once per gate. Writes --out ($OUTPUT/gate.json).
   status ${GATE} [--record <file>]
          Decide the gate from the channel: exit 0 approved, 1 rejected or expired, 3 waiting. Writes --record ($OUTPUT/record.json).
-  serve --policy <file.rego> --groups <file.json> --channel slack:<channel>
+  serve --policy <file.rego> --groups <file.json> [--channel slack:<channel>]
          Serve the gate API on PORT: requests over HTTP, Slack events and buttons, events through a PostgreSQL outbox.
+         With GATEKEEPER_FORGE_TOKEN, a request that links a pull request is asked and decided on the pull request.
   verify --public-key <file.pem> <record.json>
          Check the signature of a record.
   keys [--out <folder>]
