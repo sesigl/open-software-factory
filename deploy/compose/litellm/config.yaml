@@ -1,7 +1,28 @@
 # The LLM gateway of the Compose profile (ADR 0056, ADR 0074). Each model_name is a routing alias that agents name as
-# their model, like routes/implement in factory/factory.yaml. Add your models here; the keys come from the
-# environment, like os.environ/ANTHROPIC_API_KEY, never from this file.
-model_list: []
+# their model, like routes/implement in factory/factory.yaml. Keys come from the environment, never from this file.
+# The anthropic/ models below have no api_key: Claude Code sends the subscription token of CLAUDE_CODE_OAUTH_TOKEN, and
+# LiteLLM forwards it to Anthropic (ADR 0080). To use an API key instead, add api_key: os.environ/ANTHROPIC_API_KEY to
+# each model and set ANTHROPIC_API_KEY for the service litellm.
+model_list:
+  - model_name: routes/triage
+    litellm_params:
+      model: anthropic/claude-haiku-5-5
+  - model_name: routes/spec
+    litellm_params:
+      model: anthropic/claude-opus-5-5
+  - model_name: routes/implement
+    litellm_params:
+      model: anthropic/claude-opus-5-5
+  - model_name: routes/review
+    litellm_params:
+      model: anthropic/claude-sonnet-5-5
+  - model_name: routes/ship
+    litellm_params:
+      model: anthropic/claude-haiku-5-5
+  # Claude Code's own small calls, like the title of a session, name this model.
+  - model_name: claude-haiku-5-5
+    litellm_params:
+      model: anthropic/claude-haiku-5-5
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY

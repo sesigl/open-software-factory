@@ -17,7 +17,7 @@ You need Docker with Compose 2.24 or later.
 
 ```sh
 cd deploy/compose
-cp .env.example .env    # set every value: the tokens, the database password and the Slack app of gatekeeper
+cp .env.example .env    # set the tokens, the database password, and Slack or a forge token for gatekeeper
 docker compose up --detach --wait
 docker compose run --rm factory plan
 ```
@@ -39,7 +39,7 @@ published yet, like one whose pin moved a moment ago, is built from npm, which t
 | `phoenix` | the trace store, on PostgreSQL | `PHOENIX_PORT`, 6006 |
 | `litellm` | the LLM gateway, configured by `litellm/config.yaml` | `LITELLM_PORT`, 4000 |
 | `factory-repo` | one-shot: copies `FACTORY_DIR` into the volume `factory` and commits it | none |
-| `gatekeeper` | approvals in Slack, with the policy and groups of the factory | `GATEKEEPER_PORT`, 8082 |
+| `gatekeeper` | approvals in Slack or on pull requests, with the policy and groups of the factory | `GATEKEEPER_PORT`, 8082 |
 | `intake` | work from Slack, the forge and Sentry | `INTAKE_PORT`, 8081 |
 | `foreman` | runs the factory's workflow on Temporal | `FOREMAN_PORT`, 8083 |
 | `console` | the web view of the runs and the factory | `CONSOLE_PORT`, 8080 |
@@ -57,7 +57,31 @@ The reference factory in `compose/factory/` has the stages triage, spec (behind 
 evidence) and ship. foreman reads that check with `FOREMAN_FORGE_TOKEN`. To run your own, copy the
 folder, change the prompts, `policy/spec.rego` and `groups.json`, and set `FACTORY_DIR` to it. Each
 `docker compose up` commits the folder into the volume `factory`, so a run's factory version is a commit. Add your
-models to `compose/litellm/config.yaml`, with their keys in `.env`.
+models to `compose/litellm/config.yaml`, with their keys in `.env`. Its routes point at Anthropic's models without a
+key, for `CLAUDE_CODE_OAUTH_TOKEN`.
+
+A factory that names `providers.inference: litellm` with the config `osf.proxy` attaches to the service `litellm`:
+foreman gets a key with the factory's budget for each run, and the spend log names the run.
+
+### The factory of this repository
+
+[`dogfood/factory/`](dogfood/factory/factory.yaml) implements the issues labeled `factory` of this repository on its
+owner's Claude subscription ([ADR 0080](../docs/decisions/0080-dogfood-on-a-subscription.md)). Its agents clone the
+issue's repository with `gh`, follow its `AGENTS.md` and open a draft pull request with the scenarios. The gate before
+`implement` asks the owner on that pull request; the owner comments `/approve`, and the agents implement, review,
+wait for the check `verify` and mark the pull request ready. The owner merges it. In `.env`:
+
+```sh
+FACTORY_DIR=../dogfood/factory
+CLAUDE_CODE_OAUTH_TOKEN=...   # claude setup-token
+GH_TOKEN=...                  # fine-grained: this repository only, Contents, Issues and Pull requests write
+GATEKEEPER_FORGE_TOKEN=...    # the same token
+FOREMAN_FORGE_TOKEN=...       # the same token
+INTAKE_WEBHOOK_SECRET=...     # see "Receive GitHub issues on your machine"
+```
+
+foreman runs Claude Code without a sandbox: its agents see foreman's environment, with both tokens and the master key
+of `litellm`. Run it on your own machine only.
 
 Each agent of the reference factory names its effort level ([ADR 0078](../docs/decisions/0078-agent-effort.md)):
 `high` for triage and ship, which need a small model, and `medium` for spec, implement and review, which need a smart
@@ -76,10 +100,14 @@ and names it, like `set FOREMAN_API_TOKEN in .env`.
 | `FOREMAN_API_TOKEN` | | Required. The token of foreman's API; console sends it. |
 | `INTAKE_API_TOKEN` | | Required. The token of intake's API; console sends it. |
 | `GATEKEEPER_API_TOKEN` | | Required. The token of gatekeeper's API; foreman and console send it. |
-| `GATEKEEPER_SLACK_TOKEN` | | Required. The bot token of gatekeeper's Slack app. |
-| `GATEKEEPER_SLACK_SIGNING_SECRET` | | Required. The signing secret of gatekeeper's Slack app. |
-| `GATEKEEPER_SLACK_CHANNEL` | | Required. The ID of the Slack channel where gatekeeper asks, like `C0GATES`. |
+| `GATEKEEPER_SLACK_CHANNEL` | | The ID of the Slack channel where gatekeeper asks, like `C0GATES`. Set it, `GATEKEEPER_FORGE_TOKEN` or both. |
+| `GATEKEEPER_SLACK_TOKEN` | | With a Slack channel: the bot token of gatekeeper's Slack app. |
+| `GATEKEEPER_SLACK_SIGNING_SECRET` | | With a Slack channel: the signing secret of gatekeeper's Slack app. |
+| `GATEKEEPER_FORGE_TOKEN` | | A token that may comment on pull requests and set their commit status. Set: a gate request that links a pull request is asked on it, and decided by `/approve` or `/reject` comments. |
 | `FOREMAN_FORGE_TOKEN` | | A token that may read pull requests and their checks, for the verify stage's check `verify`. |
+| `CLAUDE_CODE_OAUTH_TOKEN` | | A token of `claude setup-token`. Set: Claude Code runs on that person's subscription, and its calls still go through `litellm` with the run's key ([ADR 0080](../docs/decisions/0080-dogfood-on-a-subscription.md)). |
+| `GH_TOKEN` | | A token with which the agents clone, push and open pull requests on github.com with `gh` and Git. |
+| `FACTORY_GIT_NAME`, `FACTORY_GIT_EMAIL` | `factory`, `factory@localhost` | The author of the agents' commits. |
 | `INTAKE_FORGE_ADAPTER` | `forge-github` | The forge adapter of intake's webhook: `forge-github` or `forge-forgejo`. |
 | `INTAKE_WEBHOOK_SECRET` | | The secret that the forge signs its webhook deliveries with. Set: intake takes them at `/forge/events`, and an issue labeled `factory` becomes a work item. Empty: intake takes no forge webhooks. |
 | `FACTORY_DIR` | `./factory` | The folder of the factory definition, its prompts, policy and groups. |
