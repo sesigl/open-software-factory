@@ -211,6 +211,7 @@ jobs:
           for image in $(node -e 'import("./packages/testkit/src/fakes/services.ts").then(({ IMAGES: all }) =>
             console.log(process.env.IMAGES.split(" ").map((name) => all[name]).join(" ")))'); do
             nohup docker pull --quiet "$image" >/dev/null 2>&1 &
+            echo $! >> "$RUNNER_TEMP/pulls"
           done
       # Images a suite needs besides the testkit's fakes, named in full.
       - name: Pull the suite's own images in the background
@@ -220,6 +221,7 @@ jobs:
         run: |
           for image in $PULL; do
             nohup docker pull --quiet "$image" >/dev/null 2>&1 &
+            echo $! >> "$RUNNER_TEMP/pulls"
           done
       # A kind cluster with agent-sandbox for the kubernetes sandbox adapter (ADR 0055).
       - name: Start kind with agent-sandbox
@@ -242,6 +244,14 @@ jobs:
           echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/playwright" >> "$GITHUB_ENV"
           PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/playwright" \
             pnpm --filter @opensoftware/proof exec playwright-core install --with-deps "$BROWSER"
+      # BUDGET measures the tests, not the pulls: a test that starts before its image is there waits for it.
+      - name: Wait for the image pulls
+        if: steps.plan.outputs.run == 'true' && (matrix.images || matrix.pull)
+        run: |
+          [ -f "$RUNNER_TEMP/pulls" ] || exit 0
+          while read -r pid; do
+            while kill -0 "$pid" 2>/dev/null; do sleep 1; done
+          done < "$RUNNER_TEMP/pulls"
       - run: make verify-tests FILTER="$FILTER"
         env:
           FILTER: ${{ matrix.filter }}
