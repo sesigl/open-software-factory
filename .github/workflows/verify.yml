@@ -147,10 +147,34 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+      # Pull requests replay the results of the suites whose inputs did not change; everything else runs all suites
+      # (ADR 0081). The cache of main is readable by every pull request.
+      - name: Restore the turbo cache of the suite
+        uses: actions/cache/restore@v4
+        with:
+          path: .turbo/cache
+          key: turbo-${{ matrix.suite }}-${{ github.sha }}-${{ github.run_attempt }}
+          restore-keys: turbo-${{ matrix.suite }}-
       - run: make install
+      # run=false when every system test task of the suite is a cache hit: the slow setup below is then not needed.
+      - name: Plan the suite
+        id: plan
+        env:
+          FILTER: ${{ matrix.filter }}
+          OSF_TEST_CACHE: ${{ github.event_name == 'pull_request' && '1' || '' }}
+        run: |
+          run=true
+          if [ -n "$OSF_TEST_CACHE" ]; then
+            filters=$(for f in $FILTER; do printf -- '--filter=%s ' "$f"; done)
+            # shellcheck disable=SC2086
+            misses=$(pnpm exec turbo run test:system --dry=json $filters |
+              jq '[.tasks[] | select(.task == "test:system" and .cache.status != "HIT")] | length')
+            if [ "$misses" = 0 ]; then run=false; fi
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
       # The scenarios start these containers (ADR 0016). Pulling them now overlaps the download with the build.
       - name: Pull the container images in the background
-        if: matrix.images
+        if: steps.plan.outputs.run == 'true' && matrix.images
         env:
           IMAGES: ${{ matrix.images }}
         run: |
@@ -160,7 +184,7 @@ jobs:
           done
       # Images a suite needs besides the testkit's fakes, named in full.
       - name: Pull the suite's own images in the background
-        if: matrix.pull
+        if: steps.plan.outputs.run == 'true' && matrix.pull
         env:
           PULL: ${{ matrix.pull }}
         run: |
@@ -169,19 +193,19 @@ jobs:
           done
       # A kind cluster with agent-sandbox for the kubernetes sandbox adapter (ADR 0055).
       - name: Start kind with agent-sandbox
-        if: matrix.kind
+        if: steps.plan.outputs.run == 'true' && matrix.kind
         uses: ./.github/actions/kind-agent-sandbox
       # A kind cluster for the scenarios that install a Helm chart (ADR 0075).
       - name: Start kind
-        if: matrix.cluster == 'kind'
+        if: steps.plan.outputs.run == 'true' && matrix.cluster == 'kind'
         uses: ./.github/actions/kind
       # The images of the chart osf, pulled from GHCR or built at the pins of compose.yaml, loaded into kind.
       - name: Load the images of the Helm chart into kind
-        if: matrix.kind-images
+        if: steps.plan.outputs.run == 'true' && matrix.kind-images
         run: deploy/helm/kind-images.sh
       # proof capture opens pages in Chromium (ADR 0029); the testkit hands PLAYWRIGHT_BROWSERS_PATH to the module.
       - name: Install the browser of the capture scenarios
-        if: matrix.browser
+        if: steps.plan.outputs.run == 'true' && matrix.browser
         env:
           BROWSER: ${{ matrix.browser }}
         run: |
@@ -191,6 +215,7 @@ jobs:
       - run: make verify-tests FILTER="$FILTER"
         env:
           FILTER: ${{ matrix.filter }}
+          OSF_TEST_CACHE: ${{ github.event_name == 'pull_request' && '1' || '' }}
       # A release that did not get ready: the pods of every namespace and why they wait, for the log.
       - name: Show the state of the kind cluster
         if: (failure() || cancelled()) && matrix.cluster == 'kind'
@@ -203,14 +228,12 @@ jobs:
               $kubectl describe pod --namespace "$namespace" "$pod" | tail -n 30
               $kubectl logs --namespace "$namespace" "$pod" --all-containers --tail 30 || true
             done
-      # Coverage files are named after the process ID, which repeats across runners: prefix them with the suite.
-      - name: Name the coverage files after the suite
+      - name: Save the turbo cache of the suite
         if: always()
-        env:
-          SUITE: ${{ matrix.suite }}
-        run: |
-          shopt -s nullglob
-          for file in reports/coverage/*.json; do mv "$file" "reports/coverage/$SUITE-${file##*/}"; done
+        uses: actions/cache/save@v4
+        with:
+          path: .turbo/cache
+          key: turbo-${{ matrix.suite }}-${{ github.sha }}-${{ github.run_attempt }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:

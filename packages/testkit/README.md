@@ -255,8 +255,10 @@ A `planned` scenario's test must fail; when it passes, the testkit fails it and 
   sockets are allowed. Any other connection fails as unreachable and fails the scenario with
   `NOREAL: the module tried to reach <host>:<port>`. A module written in another language gets no guard.
 - REACH: every Node process of the module also records which of the module's code it ran, in
-  `reports/coverage/` of the workspace ([ADR 0019](../../docs/decisions/0019-reach-from-process-coverage.md)).
-  `osf check REACH` fails on lines a pull request adds that no system test reaches.
+  `reports/coverage/` of the module ([ADR 0019](../../docs/decisions/0019-reach-from-process-coverage.md)), next to
+  its `reports/junit.xml`, so that turbo replays both ([ADR 0081](../../docs/decisions/0081-cached-system-tests-on-pull-requests.md)).
+  `osf collect-reports` copies them to `reports/` of the workspace, and `osf check REACH` fails on lines a pull
+  request adds that no system test reaches.
   A process whose entry script is another package of this repository, like an adapter the module starts, records
   nothing: it cannot run the module's code (ISOLATION), and V8's coverage makes each start slower. Both guards are plain JavaScript, so a
   process loads them without stripping types.
