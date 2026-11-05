@@ -2,7 +2,7 @@ import { type FakeHttp, scenario } from "@opensoftware/testkit";
 import { githubRoutes } from "./forge.ts";
 import { bundleOf, PR, SHA, screenshot } from "./reports.ts";
 
-scenario("SCN-PROOF-026", async ({ sut, fakes, given, when, then }) => {
+scenario("SCN-PROOF-048", async ({ sut, fakes, given, when, then }) => {
   let github: FakeHttp;
   await given('a GitHub API without comments on the pull request "https://github.com/acme/web/pull/7"', async () => {
     github = await fakes.http(githubRoutes([]));
@@ -30,13 +30,15 @@ scenario("SCN-PROOF-026", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then(
-    'the GitHub API received "POST /repos/acme/web/issues/7/comments" with a comment that lists "SCN-WEB-001"',
+    'the GitHub API received "POST /repos/acme/web/issues/7/comments" with a comment that says "Scenarios: 1 passed, 0 failed, 0 skipped" and does not name "SCN-WEB-001"',
     async () => {
       const posted = github
         .received()
         .find((request) => request.method === "POST" && request.path.endsWith("/comments"));
       expect(posted?.path).toBe("/repos/acme/web/issues/7/comments");
-      expect((posted?.body as { body?: string } | undefined)?.body).toContain("| SCN-WEB-001 | passed |");
+      const body = (posted?.body as { body?: string } | undefined)?.body;
+      expect(body).toContain("Scenarios: 1 passed, 0 failed, 0 skipped");
+      expect(body).not.toContain("SCN-WEB-001");
     },
   );
 

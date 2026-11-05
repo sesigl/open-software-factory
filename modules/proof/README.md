@@ -140,7 +140,8 @@ is refused (`<folder> has no screenshot, video or trace`).
 PROOF_FORGE_TOKEN=$GITHUB_TOKEN proof attach evidence --pr https://github.com/acme/web/pull/7 --bundle-url "$RUN_URL"
 ```
 
-attach posts one comment with the result, a link to the bundle and a table of the scenarios, and sets the commit
+attach posts one comment with the result, the number of passed, failed and skipped scenarios, a link to the bundle
+and a table of only the scenarios that did not pass. It sets the commit
 status `proof` on the bundle's commit to `success` or `failure` with the description `<n> of <m> scenarios passed`.
 The comment starts with `<!-- proof -->`; a second attach edits it instead of adding one. The pull request is `--pr`
 or the bundle's own. A URL with `/pull/<n>` is GitHub, one with `/pulls/<n>` Forgejo; `PROOF_FORGE_URL` points at
@@ -236,10 +237,10 @@ with a trusted publisher for `publish-proof.yml`. No credential is stored in the
 | SCN-PROOF-020 | implemented | A failed scenario fails the verification |
 | SCN-PROOF-021 | implemented | An artifact changed after bundling fails the verification |
 | SCN-PROOF-022 | implemented | A manifest that breaks the contract fails the verification |
-| SCN-PROOF-023 | implemented | The evidence bundle is attached to a Forgejo pull request |
+| SCN-PROOF-023 | deprecated | The evidence bundle is attached to a Forgejo pull request |
 | SCN-PROOF-024 | implemented | Attaching again updates the comment instead of adding one |
 | SCN-PROOF-025 | implemented | A failed bundle sets the status to failure |
-| SCN-PROOF-026 | implemented | The evidence bundle is attached to a GitHub pull request |
+| SCN-PROOF-026 | deprecated | The evidence bundle is attached to a GitHub pull request |
 | SCN-PROOF-027 | implemented | On GitHub the existing proof comment is updated |
 | SCN-PROOF-028 | implemented | The bundle is uploaded to an S3-compatible store and linked |
 | SCN-PROOF-029 | implemented | Attach without a token is refused |
@@ -260,3 +261,6 @@ with a trusted publisher for `publish-proof.yml`. No credential is stored in the
 | SCN-PROOF-044 | implemented | A failed verification fails the action after the attach |
 | SCN-PROOF-045 | implemented | A listed scenario without evidence fails the action |
 | SCN-PROOF-046 | implemented | On a push the action bundles and verifies without a comment |
+| SCN-PROOF-047 | implemented | The evidence bundle is attached to a Forgejo pull request with the counts of the results |
+| SCN-PROOF-048 | implemented | The evidence bundle is attached to a GitHub pull request with the counts of the results |
+| SCN-PROOF-049 | implemented | The comment lists only the scenarios that did not pass |
