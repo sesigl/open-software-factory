@@ -2,16 +2,12 @@
 // Entry point of the repository tooling. `make` and package scripts call it; system tests call it through
 // @opensoftware/testkit. It works on the Git repository that contains the current directory.
 import { spawnSync } from "node:child_process";
+import module from "node:module";
 import { relative, resolve } from "node:path";
-import { bundle } from "../scaffold/bundle.ts";
-import { collectReports } from "../scaffold/collect-reports.ts";
-import { generateDocs } from "../scaffold/docs.ts";
-import { installTools } from "../scaffold/install-tools.ts";
-import { mutation } from "../scaffold/mutation.ts";
-import { newModule } from "../scaffold/new-module.ts";
-import { nextId } from "../scaffold/next-id.ts";
-import { releaseFiles } from "../scaffold/release-files.ts";
-import { testScenario } from "../scaffold/test-scenario.ts";
+
+// Node keeps the compiled code of the tooling in its temporary folder, so each later start skips the compile step.
+// The modules of a command load only when it runs: system tests start osf many times (ADR 0079).
+module.enableCompileCache?.();
 
 const USAGE = `Usage: osf <command>
 
@@ -39,13 +35,13 @@ async function main(argv: string[]): Promise<number> {
   const root = repositoryRoot();
   switch (command) {
     case "bundle":
-      return bundle(root, args);
+      return (await import("../scaffold/bundle.ts")).bundle(root, args);
     case "check": {
       const { runChecks } = await import("../checks/run.ts");
       return runChecks(root, args);
     }
     case "collect-reports":
-      return collectReports(root);
+      return (await import("../scaffold/collect-reports.ts")).collectReports(root);
     case "docs-affected": {
       const { runChecks } = await import("../checks/run.ts");
       return runChecks(root, ["DOCS-AFFECTED", "--list"]);
@@ -53,20 +49,21 @@ async function main(argv: string[]): Promise<number> {
     case "docs": {
       const path = args.find((arg) => !arg.startsWith("--"));
       const under = path === undefined ? undefined : relative(root, resolve(path));
+      const { generateDocs } = await import("../scaffold/docs.ts");
       return generateDocs(root, { write: !args.includes("--check"), under });
     }
     case "new-module":
-      return newModule(root, args);
+      return (await import("../scaffold/new-module.ts")).newModule(root, args);
     case "next-id":
-      return nextId(root, args);
+      return (await import("../scaffold/next-id.ts")).nextId(root, args);
     case "release-files":
-      return releaseFiles(root);
+      return (await import("../scaffold/release-files.ts")).releaseFiles(root);
     case "test-scenario":
-      return testScenario(root, args);
+      return (await import("../scaffold/test-scenario.ts")).testScenario(root, args);
     case "mutation":
-      return mutation(root, args);
+      return (await import("../scaffold/mutation.ts")).mutation(root, args);
     case "install-tools":
-      return installTools(root);
+      return (await import("../scaffold/install-tools.ts")).installTools(root);
     case undefined:
     case "help":
     case "--help":
