@@ -84,7 +84,8 @@ are in [`contracts/events/asyncapi.yaml`](../../contracts/events/asyncapi.yaml).
 
 Plus `contracts` and `testkit` (core, wave 0) and the `open-software-factory` distribution (wave 4). Libraries in
 `packages/` hold code that several modules share, without a CLI or state of their own (ADR 0039): `cli` runs the
-commands of a module (ADR 0040), `spec-files` reads feature files and JUnit reports (ADR 0042). The reader of run
+commands of a module (ADR 0040), `spec-files` reads feature files and JUnit reports (ADR 0042), `postgres` opens the
+pools and runs the transactions of modules on PostgreSQL (ADR 0082). The reader of run
 records, `runSpans`, lives in `contracts` (ADR 0041).
 
 ## Adopt, don't rebuild

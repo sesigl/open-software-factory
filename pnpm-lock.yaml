@@ -424,6 +424,9 @@ importers:
       '@opensoftware/contracts':
         specifier: workspace:*
         version: link:../../contracts
+      '@opensoftware/postgres':
+        specifier: workspace:*
+        version: link:../../packages/postgres
       fastify:
         specifier: 5.12.7
         version: 5.12.7
@@ -455,6 +458,9 @@ importers:
       '@opensoftware/contracts':
         specifier: workspace:*
         version: link:../../contracts
+      '@opensoftware/postgres':
+        specifier: workspace:*
+        version: link:../../packages/postgres
       fastify:
         specifier: 5.12.7
         version: 5.12.7
@@ -645,6 +651,19 @@ importers:
       '@opensoftware/testkit':
         specifier: workspace:*
         version: link:../testkit
+
+  packages/postgres:
+    dependencies:
+      pg:
+        specifier: 8.23.1
+        version: 8.23.1
+    devDependencies:
+      '@opensoftware/testkit':
+        specifier: workspace:*
+        version: link:../testkit
+      '@types/pg':
+        specifier: 8.23.1
+        version: 8.23.1
 
   packages/sandbox-egress:
     dependencies:
