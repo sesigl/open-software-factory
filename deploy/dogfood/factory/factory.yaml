@@ -1,0 +1,62 @@
+# The factory that implements this repository's own issues (ADR 0080): an issue labeled "factory" in
+# sesigl/open-software-factory becomes a pull request. Run it in the Compose profile with FACTORY_DIR=../dogfood/factory.
+# Claude Code runs on the owner's subscription through the profile's litellm; the owner approves the spec on the pull
+# request with /approve before the code is written, and merges the pull request.
+version: 1
+factory: dogfood
+description: Implements the issues labeled factory of this repository, with the owner's approval of the spec on its pull request.
+providers:
+  harness:
+    claude-code: "^2"
+  forge:
+    github: "^0.5"
+  inference:
+    litellm: "^0"
+# Attaches to the profile's litellm. The budget is in USD at LiteLLM's list prices: a stop for a run that does not
+# end, not the subscription's limit.
+inference:
+  config: ./inference/litellm.yaml
+  budget: 10
+# Each agent names its effort level (ADR 0078): Opus for spec and implement, Sonnet for review, Haiku for triage and
+# ship, routed in the profile's litellm/config.yaml.
+agents:
+  triage:
+    harness: claude-code
+    model: routes/triage
+    effort: high
+    prompt: ./agents/triage.md
+  spec:
+    harness: claude-code
+    model: routes/spec
+    effort: medium
+    prompt: ./agents/spec.md
+  implement:
+    harness: claude-code
+    model: routes/implement
+    effort: medium
+    prompt: ./agents/implement.md
+  review:
+    harness: claude-code
+    model: routes/review
+    effort: medium
+    prompt: ./agents/review.md
+  ship:
+    harness: claude-code
+    model: routes/ship
+    effort: high
+    prompt: ./agents/ship.md
+workflow:
+  - stage: triage
+  - stage: spec
+  # A gate comes before its stage: the owner approves the spec's pull request before implement starts.
+  - stage: implement
+    gate:
+      policy: ./policy/spec.rego
+      approvers: [maintainers]
+  - stage: review
+  # Starts when the check "verify" of the run's pull request succeeded, and must produce evidence.
+  - stage: verify
+    agent: implement
+    checks: [verify]
+    evidence: required
+  - stage: ship

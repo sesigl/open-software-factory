@@ -92,6 +92,9 @@ const ROW = "id, request, rules, channel, thread, requested_at, state, waiting_f
 export async function openStore(url: string): Promise<Store> {
   const pool = new pg.Pool({ connectionString: url, max: 4 });
   pool.on("error", () => {});
+  // A client of a transaction emits "error" when the database closes its connection between two queries. Without a
+  // listener the process ends; the pool destroys the broken client when it is released.
+  pool.on("connect", (client) => client.on("error", () => {}));
   try {
     await inTransaction(pool, async (client) => {
       await client.query("SELECT pg_advisory_xact_lock($1)", [SCHEMA_LOCK]);

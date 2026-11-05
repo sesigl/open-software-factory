@@ -47,6 +47,13 @@ Feature: The Compose profile installs a complete factory with one command
     Then the command exits with code 0
     And the output contains "No changes."
 
+  @id=SCN-DIST-015 @status=implemented
+  Scenario: The plan of this repository's factory adds the factory and finds no problems
+    Given the Compose profile with every value of ".env.example" set in ".env" and "FACTORY_DIR" set to "../dogfood/factory"
+    When the operator runs "docker compose run --rm factory plan"
+    Then the command exits with code 0
+    And the output contains "Plan: 8 to add, 0 to change, 0 to remove, 0 drifted."
+
   @id=SCN-DIST-012 @status=implemented
   Scenario: The verify stage of the reference factory waits for the check "verify"
     Given the Compose profile with every value of ".env.example" set in ".env"
