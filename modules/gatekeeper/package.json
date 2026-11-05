@@ -27,6 +27,8 @@
     "mutation": "node ../../tools/bin/osf.ts mutation ."
   },
   "devDependencies": {
+    "@opensoftware/channel-slack": "workspace:*",
+    "@opensoftware/forge-github": "workspace:*",
     "@opensoftware/testkit": "workspace:*",
     "@types/pg": "8.23.1"
   },

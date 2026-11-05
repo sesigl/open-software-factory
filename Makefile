@@ -48,8 +48,14 @@ verify-static: ## part of verify: lint, typecheck and build every package withou
 	@$(TURBO) lint typecheck build --force
 
 # One system test suite at a time: BUDGET adds up test times, and suites that share the cores slow each other.
+# Every suite runs unless OSF_TEST_CACHE is set, which only pull requests in CI do (ADR 0081): a run of its own
+# OSF_TEST_RUN changes the hash of every test task and of no build. (--force would rebuild everything, and --only
+# would leave the builds of the dependencies out of the hash.) Each suite writes into its own reports/;
+# collect-reports copies them to reports/ of the repository, also after a failure.
 verify-tests: ## part of verify: the system test suites; FILTER="pkg !pkg" limits them to some packages
-	@$(TURBO) test:system --concurrency=1 --continue $(foreach f,$(FILTER),--filter=$(f))
+	@rm -rf $(wildcard */reports */*/reports */*/*/reports)
+	@status=0; $(if $(OSF_TEST_CACHE),,OSF_TEST_RUN=$$$$-$$(date +%s)) $(TURBO) test:system --concurrency=1 --continue \
+	  $(foreach f,$(FILTER),--filter=$(f)) || status=$$?; $(OSF) collect-reports; exit $$status
 
 # REACH maps the coverage in reports/coverage/ to the built files, so the build comes first (cached after verify-static).
 verify-checks: ## part of verify: every check, on the test results in reports/
