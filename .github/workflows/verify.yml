@@ -48,8 +48,29 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+      - name: Restore the turbo cache of lint, typecheck and build
+        uses: actions/cache/restore@v4
+        with:
+          path: .turbo/cache
+          key: turbo-static-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: turbo-static-
+      # The pinned binaries of install-tools: a new pin in install-tools.ts makes a new key. Without it, each job
+      # downloads all eight from their sites, which takes about 8 s and failed when one site did not answer.
+      - name: Restore the pinned tools
+        uses: actions/cache@v4
+        with:
+          path: .tools/bin
+          key: tools-${{ runner.os }}-${{ hashFiles('tools/scaffold/install-tools.ts') }}
       - run: make install
       - run: make verify-static
+        env:
+          OSF_TEST_CACHE: ${{ github.event_name == 'pull_request' && '1' || '' }}
+      - name: Save the turbo cache of lint, typecheck and build
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .turbo/cache
+          key: turbo-static-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
 
   tests:
     name: tests (${{ matrix.suite }})
@@ -147,50 +168,94 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+      # Pull requests replay the results of the suites whose inputs did not change; everything else runs all suites
+      # (ADR 0081). The cache of main is readable by every pull request. The key names the run: two runs of one merge
+      # commit, such as one cancelled by an edit of the description, must not share a key, or the first one wins.
+      - name: Restore the turbo cache of the suite
+        uses: actions/cache/restore@v4
+        with:
+          path: .turbo/cache
+          key: turbo-${{ matrix.suite }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: turbo-${{ matrix.suite }}-
+      # The pinned binaries of install-tools: a new pin in install-tools.ts makes a new key. Without it, each job
+      # downloads all eight from their sites, which takes about 8 s and failed when one site did not answer.
+      - name: Restore the pinned tools
+        uses: actions/cache@v4
+        with:
+          path: .tools/bin
+          key: tools-${{ runner.os }}-${{ hashFiles('tools/scaffold/install-tools.ts') }}
       - run: make install
+      # run=false when every system test task of the suite is a cache hit: the slow setup below is then not needed.
+      - name: Plan the suite
+        id: plan
+        env:
+          FILTER: ${{ matrix.filter }}
+          OSF_TEST_CACHE: ${{ github.event_name == 'pull_request' && '1' || '' }}
+        run: |
+          run=true
+          if [ -n "$OSF_TEST_CACHE" ]; then
+            filters=$(for f in $FILTER; do printf -- '--filter=%s ' "$f"; done)
+            # shellcheck disable=SC2086
+            pnpm exec turbo run test:system --dry=json $filters > "$RUNNER_TEMP/plan.json"
+            jq -r '.tasks[] | select(.task == "test:system") | "\(.taskId) \(.hash) \(.cache.status)"' "$RUNNER_TEMP/plan.json"
+            misses=$(jq '[.tasks[] | select(.task == "test:system" and .cache.status != "HIT")] | length' "$RUNNER_TEMP/plan.json")
+            if [ "$misses" = 0 ]; then run=false; fi
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
       # The scenarios start these containers (ADR 0016). Pulling them now overlaps the download with the build.
       - name: Pull the container images in the background
-        if: matrix.images
+        if: steps.plan.outputs.run == 'true' && matrix.images
         env:
           IMAGES: ${{ matrix.images }}
         run: |
           for image in $(node -e 'import("./packages/testkit/src/fakes/services.ts").then(({ IMAGES: all }) =>
             console.log(process.env.IMAGES.split(" ").map((name) => all[name]).join(" ")))'); do
             nohup docker pull --quiet "$image" >/dev/null 2>&1 &
+            echo $! >> "$RUNNER_TEMP/pulls"
           done
       # Images a suite needs besides the testkit's fakes, named in full.
       - name: Pull the suite's own images in the background
-        if: matrix.pull
+        if: steps.plan.outputs.run == 'true' && matrix.pull
         env:
           PULL: ${{ matrix.pull }}
         run: |
           for image in $PULL; do
             nohup docker pull --quiet "$image" >/dev/null 2>&1 &
+            echo $! >> "$RUNNER_TEMP/pulls"
           done
       # A kind cluster with agent-sandbox for the kubernetes sandbox adapter (ADR 0055).
       - name: Start kind with agent-sandbox
-        if: matrix.kind
+        if: steps.plan.outputs.run == 'true' && matrix.kind
         uses: ./.github/actions/kind-agent-sandbox
       # A kind cluster for the scenarios that install a Helm chart (ADR 0075).
       - name: Start kind
-        if: matrix.cluster == 'kind'
+        if: steps.plan.outputs.run == 'true' && matrix.cluster == 'kind'
         uses: ./.github/actions/kind
       # The images of the chart osf, pulled from GHCR or built at the pins of compose.yaml, loaded into kind.
       - name: Load the images of the Helm chart into kind
-        if: matrix.kind-images
+        if: steps.plan.outputs.run == 'true' && matrix.kind-images
         run: deploy/helm/kind-images.sh
       # proof capture opens pages in Chromium (ADR 0029); the testkit hands PLAYWRIGHT_BROWSERS_PATH to the module.
       - name: Install the browser of the capture scenarios
-        if: matrix.browser
+        if: steps.plan.outputs.run == 'true' && matrix.browser
         env:
           BROWSER: ${{ matrix.browser }}
         run: |
           echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/playwright" >> "$GITHUB_ENV"
           PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/playwright" \
             pnpm --filter @opensoftware/proof exec playwright-core install --with-deps "$BROWSER"
+      # BUDGET measures the tests, not the pulls: a test that starts before its image is there waits for it.
+      - name: Wait for the image pulls
+        if: steps.plan.outputs.run == 'true' && (matrix.images || matrix.pull)
+        run: |
+          [ -f "$RUNNER_TEMP/pulls" ] || exit 0
+          while read -r pid; do
+            while kill -0 "$pid" 2>/dev/null; do sleep 1; done
+          done < "$RUNNER_TEMP/pulls"
       - run: make verify-tests FILTER="$FILTER"
         env:
           FILTER: ${{ matrix.filter }}
+          OSF_TEST_CACHE: ${{ github.event_name == 'pull_request' && '1' || '' }}
       # A release that did not get ready: the pods of every namespace and why they wait, for the log.
       - name: Show the state of the kind cluster
         if: (failure() || cancelled()) && matrix.cluster == 'kind'
@@ -203,14 +268,20 @@ jobs:
               $kubectl describe pod --namespace "$namespace" "$pod" | tail -n 30
               $kubectl logs --namespace "$namespace" "$pod" --all-containers --tail 30 || true
             done
-      # Coverage files are named after the process ID, which repeats across runners: prefix them with the suite.
-      - name: Name the coverage files after the suite
+      # The hash each test task ran with, to compare with the plan above.
+      - name: Show the hashes of the test run
         if: always()
-        env:
-          SUITE: ${{ matrix.suite }}
         run: |
           shopt -s nullglob
-          for file in reports/coverage/*.json; do mv "$file" "reports/coverage/$SUITE-${file##*/}"; done
+          for summary in .turbo/runs/*.json; do
+            jq -r '.tasks[] | select(.task == "test:system") | "\(.taskId) \(.hash) \(.cache.status)"' "$summary"
+          done
+      - name: Save the turbo cache of the suite
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .turbo/cache
+          key: turbo-${{ matrix.suite }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -249,6 +320,19 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+      # verify-checks builds every package before the checks; the static job of this run built and saved them all.
+      - name: Restore the builds of the static job
+        uses: actions/cache/restore@v4
+        with:
+          path: .turbo/cache
+          key: turbo-static-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+      # The pinned binaries of install-tools: a new pin in install-tools.ts makes a new key. Without it, each job
+      # downloads all eight from their sites, which takes about 8 s and failed when one site did not answer.
+      - name: Restore the pinned tools
+        uses: actions/cache@v4
+        with:
+          path: .tools/bin
+          key: tools-${{ runner.os }}-${{ hashFiles('tools/scaffold/install-tools.ts') }}
       - run: make install
 
       - name: Pull request context for DOCS-AFFECTED

@@ -81,17 +81,27 @@ export function makeLaunch(moduleRoot: string, dirs: Folders, hosts: () => strin
 }
 
 /**
- * Where the module's processes record coverage: `reports/coverage/` of the workspace the module is in. A module
- * outside a workspace, such as a demo module of the testkit's own tests, records into the coverage of the module
- * that runs it, so code of that module that runs in it still counts.
+ * Where the module's processes record coverage: `reports/coverage/` of the module, which turbo replays with its
+ * results (ADR 0081). A module outside a workspace, such as a demo module of the testkit's own tests, records into the
+ * coverage of the module that runs it, so code of that module that runs in it still counts.
  */
 function coverageEnv(moduleRoot: string): Record<string, string> {
   const workspace = workspaceOf(moduleRoot);
   if (workspace) {
-    return { OSF_TESTKIT_COVERAGE: join(workspace, "reports", "coverage"), OSF_TESTKIT_COVERAGE_ROOT: moduleRoot };
+    return {
+      OSF_TESTKIT_COVERAGE: join(moduleRoot, "reports", "coverage"),
+      OSF_TESTKIT_COVERAGE_ROOT: moduleRoot,
+      OSF_TESTKIT_COVERAGE_REPOSITORY: workspace,
+    };
   }
-  const { OSF_TESTKIT_COVERAGE: dir, OSF_TESTKIT_COVERAGE_ROOT: root } = process.env;
-  return dir && root ? { OSF_TESTKIT_COVERAGE: dir, OSF_TESTKIT_COVERAGE_ROOT: root } : {};
+  const {
+    OSF_TESTKIT_COVERAGE: dir,
+    OSF_TESTKIT_COVERAGE_ROOT: root,
+    OSF_TESTKIT_COVERAGE_REPOSITORY: repo,
+  } = process.env;
+  return dir && root && repo
+    ? { OSF_TESTKIT_COVERAGE: dir, OSF_TESTKIT_COVERAGE_ROOT: root, OSF_TESTKIT_COVERAGE_REPOSITORY: repo }
+    : {};
 }
 
 /**

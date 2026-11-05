@@ -84,8 +84,9 @@ docs/vision/           factory-level requirements; source for module scenarios, 
 ## Test speed
 
 System tests are the only tests, so their speed is the speed of every pull request. Speed comes from how the
-tests run and how scenarios are written, never from testing less: no unit tests, mocks, skipped scenarios or
-affected-only `verify` (PASS needs every implemented scenario to run in each run).
+tests run and how scenarios are written, never from testing less: no unit tests, mocks or skipped scenarios. A pull
+request replays the passed result of a suite whose inputs did not change, from the turbo cache; `main` and `make verify`
+run every suite (ADR 0081). The check AFFECTED keeps the inputs of each suite complete.
 
 Where the time went, and what each step changed:
 
@@ -95,6 +96,7 @@ Where the time went, and what each step changed:
 | ADR 0049 | Containers for systems that have a fast stand-in | PGlite, in-process fakes of Slack, GitHub and the model gateway |
 | ADR 0067 | NATS and Temporal containers, about 5 s each | The same servers as pinned binaries on the host, about 1 s each |
 | ADR 0051 | Every scenario file imported the testkit again, 0.7 s each | Files share Vitest workers |
+| ADR 0081 | A pull request that changed one README ran all 17 suites: 8 minutes | Pull requests replay the results of unchanged suites and skip their setup |
 | ADR 0061 | Every mutant reran the whole suite: 25 minutes for one forge adapter change of 65 mutants | Each mutant reruns only the scenarios whose module processes ran it |
 
 In October 2026 a full pull request run took about 4 minutes for `verify`. The longest suites were

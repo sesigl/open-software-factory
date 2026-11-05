@@ -1,6 +1,15 @@
 {
   "$schema": "https://turborepo.com/schema.json",
-  "globalDependencies": ["biome.json", "tsconfig.base.json"],
+  "cacheDir": ".turbo/cache",
+  "globalDependencies": [
+    "biome.json",
+    "tsconfig.base.json",
+    "Makefile",
+    ".nvmrc",
+    "pnpm-workspace.yaml",
+    "tools/scaffold/install-tools.ts",
+    ".github/workflows/verify.yml"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -26,7 +35,10 @@
     },
     "test:system": {
       "dependsOn": ["build", "^build"],
-      "cache": false,
+      "cache": true,
+      "inputs": ["$TURBO_DEFAULT$"],
+      "outputs": ["reports/**"],
+      "env": ["OSF_TEST_RUN"],
       "passThroughEnv": ["PLAYWRIGHT_BROWSERS_PATH", "KUBECONFIG", "OSF_SANDBOX_HOST_ALIASES"]
     },
     "docs": {
