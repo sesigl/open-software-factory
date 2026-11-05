@@ -102,8 +102,27 @@ One-time setup (no credential is ever stored in the repository):
    `pnpm --filter "<package>..." build`, `pnpm --dir <folder> pack`, then `npm publish <file>.tgz --access public`.
 4. Then add the trusted publisher, on npmjs.com (package settings → Trusted publishing) or with
    `npm trust github <package> --file publish-<name>.yml --repository sesigl/open-software-factory --environment npm
-   --allow-publish`. Every later version publishes through OIDC only, with a provenance statement; the repository
-   holds no npm token.
+   --allow-publish --allow-stage-publish`. Every later version publishes through OIDC only, with a provenance
+   statement; the repository holds no npm token.
+
+An agent can do step 4 and the checks below with the npm CLI (11.19 or later). It needs a maintainer's
+`npm login --registry https://registry.npmjs.org`. Every `npm trust` call needs two-factor authentication, also
+`list`. Without a terminal, the call fails with `EOTP` and prints an `authUrl` and a `doneUrl`. The maintainer
+opens the `authUrl` and approves. Then a `GET` of the `doneUrl`, with the login's token as a bearer token, returns
+a `token`. The agent passes it as `--otp=<token>` to the next `npm trust` calls; it stays valid for some minutes.
+
+To check all packages, run `npm trust list <package>` for each `publish-*.yml` that publishes to npm. Each package
+has exactly one entry: this repository, its own workflow file, the environment `npm`, and the permissions
+`createPackage` and `createStagedPackage`.
+
+When a publish fails with `E404 Not Found - PUT https://registry.npmjs.org/@opensoftware%2f<name>`:
+
+- npm did not accept the job as a trusted publisher. Check that the job has `id-token: write` and
+  `environment: npm`, and compare the package's entry with the rule above.
+- An entry can look correct and still fail. Then remove it with `npm trust revoke <package> --id=<id>`, add it
+  again with step 4 and run the workflow again with the tag.
+- After a successful publish, npm can take some minutes before the version is available. A build that installs
+  the new version in this time fails with `ETARGET`; run it again.
 
 ## Configuration
 
