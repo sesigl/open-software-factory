@@ -48,8 +48,22 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+      - name: Restore the turbo cache of lint, typecheck and build
+        uses: actions/cache/restore@v4
+        with:
+          path: .turbo/cache
+          key: turbo-static-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: turbo-static-
       - run: make install
       - run: make verify-static
+        env:
+          OSF_TEST_CACHE: ${{ github.event_name == 'pull_request' && '1' || '' }}
+      - name: Save the turbo cache of lint, typecheck and build
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .turbo/cache
+          key: turbo-static-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
 
   tests:
     name: tests (${{ matrix.suite }})

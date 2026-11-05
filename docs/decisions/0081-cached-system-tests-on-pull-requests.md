@@ -27,6 +27,8 @@ gatekeeper's key, and `make check`, which selects the affected suites with turbo
   browser). Everywhere else (`main`, nightly, `make verify`) every suite runs: `make verify-tests` gives each run its
   own `OSF_TEST_RUN`, an environment variable in the hash of `test:system` only, so the tests run again and the builds
   stay cached. A missing input therefore shows up at the latest in the next run on `main`.
+- Lint, typecheck and build (`make verify-static`) use the same rule: a pull request replays the results of unchanged
+  packages from the cache of its job; everywhere else they run with `--force`.
 - Two turbo options do not fit: `--force` also rebuilds every package, and `--only` leaves the builds of the
   dependencies out of the hash of `test:system`, so a change in a dependency would replay old results.
 - `turbo.json` sets `cacheDir` to `.turbo/cache`. Without it, turbo shares one cache between Git worktrees, and the
@@ -43,7 +45,8 @@ gatekeeper's key, and `make check`, which selects the affected suites with turbo
   - every such package writes its JUnit results to its own `reports/junit.xml`;
   - `turbo.json` caches `test:system` with the inputs and outputs above, and `globalDependencies` lists the
     repository-wide files that tests depend on;
-  - only pull requests use the cache, no run of `test:system` uses `--only`, and `cacheDir` is set.
+  - only pull requests use the cache, `make verify-static` forces lint, typecheck and build otherwise, no run of
+    `test:system` uses `--only`, and `cacheDir` is set.
 - A module may declare an adapter that its system tests start as a `devDependency`. ISOLATION accepts that and still
   forbids an import of the adapter, and any declaration of another module.
 

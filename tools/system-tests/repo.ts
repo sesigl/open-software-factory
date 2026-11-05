@@ -337,7 +337,8 @@ export function verifyWorkflow(
 
 /** The Makefile target that gives each run its own test hash unless OSF_TEST_CACHE is set. */
 export const VERIFY_TESTS =
-  "verify-tests:\n\t@$(if $(OSF_TEST_CACHE),,OSF_TEST_RUN=$$$$-$$(date +%s)) $(TURBO) test:system\n";
+  "verify-tests:\n\t@$(if $(OSF_TEST_CACHE),,OSF_TEST_RUN=$$$$-$$(date +%s)) $(TURBO) test:system\n" +
+  "verify-static:\n\t@$(TURBO) lint typecheck build $(if $(OSF_TEST_CACHE),,--force)\n";
 
 /** A vitest config that writes JUnit results to `output`. */
 export const vitestConfig = (output = "reports/junit.xml"): string =>
