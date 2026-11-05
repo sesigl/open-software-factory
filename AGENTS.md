@@ -27,6 +27,7 @@ tooling is described in `tools/README.md`. Every pull request is reviewed by a p
 | --- | --- |
 | "Implement this feature file" | For each `planned` scenario in it: `skills/write-system-test`, then `skills/implement-scenario`. |
 | "Start module X" | Read its item in `TODO.md`, then `skills/new-module`. Write the scenarios the item lists before any code. |
+| "Change code that uses PostgreSQL" | `skills/use-postgres`. |
 | "Read the context" | `README.md`, `docs/vision/talk-analysis.md`, `docs/principles.md`, `docs/architecture/`. |
 
 ## Definition of done

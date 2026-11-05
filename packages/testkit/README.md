@@ -116,12 +116,15 @@ Every server, client and subscription stops when the scenario ends, before the f
   first matching entry. `calls` lists every call with its `path`, `body` and `headers` (names in lower case). `fakes.modelGateway(script,
   { containers: true })` listens on every interface and also gives `containerUrl`,
   `http://host.docker.internal:<port>/v1`, as `fakes.http` does ([ADR 0076](../../docs/decisions/0076-e2e-smoke-suite.md)).
-- `fakes.http([{ method, path, status, body, contentType, times }])`: a scripted JSON API on `127.0.0.1`
+- `fakes.http([{ method, path, status, body, contentType, times, until }])`: a scripted JSON API on `127.0.0.1`
   ([ADR 0021](../../docs/decisions/0021-testkit-scripted-http.md)). Pass its `url` to the module through its
   documented config. A request whose method (default `GET`) and exact path with query match a route gets its
   `status` (default 200) and JSON `body`; a route with `times` answers only that many requests, and later ones go to
   the next matching route, for example an outage before a success ([ADR 0023](../../docs/decisions/0023-runlog.md)).
   A route with `contentType`, such as `text/html`, answers its `body` text as is, for example a page to capture.
+  A route with `until` (a promise) answers only after the promise settles, for example to hold a module in the
+  middle of a transaction. The fake reads `until`, `status` and `body` when it answers, so a test can change them on
+  a route it already gave the fake.
   Any other request gets HTTP 404 and fails the scenario with the request shown. `requests()` lists what it
   received as `METHOD /path`; `received()` lists each request with its `body` (JSON, or text when it is not JSON;
   a gzip body is unpacked first); `headers()` lists each request with its headers, names in lower case
@@ -178,7 +181,8 @@ Every server, client and subscription stops when the scenario ends, before the f
   connects to `postgres://test:test@127.0.0.1:<port>/test` with its own driver; a wrong password is refused with
   SQLSTATE 28P01. Connections run one at a time: a transaction holds the database until it ends, so code must not
   wait inside a transaction for a second connection of its own. `stop()` stops the database while the test runs:
-  open connections end and new ones are refused, as when a server goes away.
+  open connections end, also one in the middle of a transaction, and new ones are refused, as when a server goes
+  away.
 - `fakes.nats()`, `fakes.temporal()`: NATS with JetStream and the Temporal CLI's dev server for this scenario, each
   the real server as a process on the host with its data in a temporary folder, with no Docker
   ([ADR 0067](../../docs/decisions/0067-foreman.md)). `make install` pins `nats-server` 2.11.9 and `temporal` 1.4.1 in
@@ -428,3 +432,5 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-123 | implemented | A module reaches a local socket by its path under the network guard |
 | SCN-TK-124 | implemented | The model gateway keeps the headers of each call |
 | SCN-TK-125 | implemented | A stopped fakes.postgres refuses the module's connection |
+| SCN-TK-126 | implemented | A route with "until" answers only after its promise settles |
+| SCN-TK-127 | implemented | A test may stop fakes.postgres while a client holds a transaction open |

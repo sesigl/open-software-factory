@@ -66,9 +66,14 @@ export function demoModule(options: DemoOptions = {}): Record<string, string> {
 
 /**
  * Module demo whose CLI gets `/v0.1/servers?search=tracker` from `DEMO_API_URL` and prints the body; its test scripts
- * `fakes.http` with `routes` (TypeScript source) and expects the body `{"count":1}`.
+ * `fakes.http` with `routes` (TypeScript source) and expects the body `{"count":1}`. `before` (TypeScript lines) runs
+ * before the fake starts, and `run` replaces the plain run of the CLI.
  */
-export function apiModule(routes: string): Record<string, string> {
+export function apiModule(
+  routes: string,
+  before: string[] = [],
+  run: string[] = ["run = await sut.cli([], { env: { DEMO_API_URL: api.url } });"],
+): Record<string, string> {
   return demoModule({
     bin: [
       "const response = await fetch(`${process.env.DEMO_API_URL}/v0.1/servers?search=tracker`);",
@@ -79,10 +84,11 @@ export function apiModule(routes: string): Record<string, string> {
       "# demo\n\n## Configuration\n\n| Variable | Meaning |\n| --- | --- |\n| `DEMO_API_URL` | Base URL of the API. |\n",
     steps: ['When the user runs "demo"', 'Then the output is {"count":1}'],
     test: [
+      ...before,
       `const api = await fakes.http(${routes});`,
       "let run: Awaited<ReturnType<typeof sut.cli>>;",
       "await when('the user runs \"demo\"', async () => {",
-      "  run = await sut.cli([], { env: { DEMO_API_URL: api.url } });",
+      ...run.map((line) => `  ${line}`),
       "});",
       "await then('the output is {\"count\":1}', async () => {",
       "  expect(run.stdout).toBe('{\"count\":1}');",
