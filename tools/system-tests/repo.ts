@@ -293,3 +293,94 @@ export function mutationReport(mutants: { line: number; status: string; replacem
   };
   return `${JSON.stringify(report)}\n`;
 }
+
+/** The repository-wide files that every system test depends on (ADR 0081). */
+export const TEST_GLOBALS = [
+  "Makefile",
+  ".nvmrc",
+  "pnpm-workspace.yaml",
+  "tools/scaffold/install-tools.ts",
+  ".github/workflows/verify.yml",
+];
+
+/** A turbo.json that caches the system tests with these global dependencies and test inputs. */
+export function cachedTurbo(
+  globals: string[] = TEST_GLOBALS,
+  inputs: string[] = ["$TURBO_DEFAULT$"],
+  cacheDir = ".turbo/cache",
+): string {
+  const task = { dependsOn: ["build", "^build"], cache: true, inputs, outputs: ["reports/**"], env: ["OSF_TEST_RUN"] };
+  return `${JSON.stringify({ cacheDir, globalDependencies: globals, tasks: { "test:system": task } })}\n`;
+}
+
+/** A verify.yml whose tests jobs run "demo" alone and the rest with `rest`; the cache only on pull requests. */
+export function verifyWorkflow(
+  rest = "!@opensoftware/demo",
+  cache = "${{ github.event_name == 'pull_request' && '1' || '' }}",
+): string {
+  return [
+    "name: verify",
+    "env:",
+    `  OSF_TEST_CACHE: ${cache}`,
+    "jobs:",
+    "  tests:",
+    "    strategy:",
+    "      matrix:",
+    "        include:",
+    "          - suite: demo",
+    '            filter: "@opensoftware/demo"',
+    "          - suite: rest",
+    `            filter: "${rest}"`,
+    "",
+  ].join("\n");
+}
+
+/** The Makefile target that gives each run its own test hash unless OSF_TEST_CACHE is set. */
+export const VERIFY_TESTS =
+  "verify-tests:\n\t@$(if $(OSF_TEST_CACHE),,OSF_TEST_RUN=$$$$-$$(date +%s)) $(TURBO) test:system\n" +
+  "verify-static:\n\t@$(TURBO) lint typecheck build $(if $(OSF_TEST_CACHE),,--force)\n";
+
+/** A vitest config that writes JUnit results to `output`. */
+export const vitestConfig = (output = "reports/junit.xml"): string =>
+  `export default { test: { reporters: [["junit", { outputFile: "${output}" }]] } };\n`;
+
+/** A package with system tests, its vitest config and one system test. */
+export function testedPackage(
+  name: string,
+  test = 'import { scenario } from "@opensoftware/testkit";\n',
+): Record<string, string> {
+  const manifest = {
+    name: `@opensoftware/${name}`,
+    version: "0.1.0",
+    type: "module",
+    scripts: { "test:system": "vitest run" },
+    devDependencies: { "@opensoftware/testkit": "workspace:*" },
+  };
+  return {
+    [`modules/${name}/package.json`]: `${JSON.stringify(manifest, null, 2)}\n`,
+    [`modules/${name}/vitest.config.ts`]: vitestConfig(),
+    [`modules/${name}/system-tests/SCN-${name.toUpperCase()}-001.test.ts`]: test,
+  };
+}
+
+/** A repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081. */
+export function cachedRepository(): Record<string, string> {
+  return {
+    "turbo.json": cachedTurbo(),
+    Makefile: VERIFY_TESTS,
+    ".nvmrc": "24\n",
+    "pnpm-workspace.yaml": "packages:\n  - modules/*\n  - adapters/*/*\n  - tools\n",
+    "tools/scaffold/install-tools.ts": "export const PINS = {};\n",
+    ".github/workflows/verify.yml": verifyWorkflow(),
+    ...testedPackage("demo"),
+    ...testedPackage("other"),
+  };
+}
+
+/** Writes the files below $INPUT. */
+export async function putAll(
+  sut: { files: { put(path: string, content: string): Promise<unknown> } },
+  files: Record<string, string>,
+): Promise<void> {
+  for (const [path, content] of Object.entries(files)) await sut.files.put(`$INPUT/${path}`, content);
+}

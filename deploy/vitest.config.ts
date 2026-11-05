@@ -1,6 +1,6 @@
 import { defineConfig } from "vitest/config";
 
-// System tests of the Compose profile. Turbo never caches them, so PASS always reads the results of this run.
+// System tests of the Compose profile. Turbo replays their results on pull requests (ADR 0081).
 export default defineConfig({
   test: {
     include: ["system-tests/**/*.test.ts"],
@@ -11,6 +11,6 @@ export default defineConfig({
     // A scenario that starts the profile builds the module images and pulls the services on its first run.
     testTimeout: 900_000,
     hookTimeout: 120_000,
-    reporters: ["default", ["junit", { outputFile: "../reports/junit/deploy.xml", classnameTemplate: "{filepath}" }]],
+    reporters: ["default", ["junit", { outputFile: "reports/junit.xml", classnameTemplate: "{filepath}" }]],
   },
 });

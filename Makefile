@@ -44,12 +44,19 @@ verify: ## everything from a clean state; required before you report done
 	$(MAKE) verify-checks || status=1; exit $$status
 
 # The three parts of `make verify`. CI runs them as parallel jobs (.github/workflows/verify.yml).
-verify-static: ## part of verify: lint, typecheck and build every package without the cache
-	@$(TURBO) lint typecheck build --force
+# Pull requests in CI set OSF_TEST_CACHE and replay the results of unchanged packages (ADR 0081).
+verify-static: ## part of verify: lint, typecheck and build every package, without the cache unless OSF_TEST_CACHE is set
+	@$(TURBO) lint typecheck build $(if $(OSF_TEST_CACHE),,--force)
 
 # One system test suite at a time: BUDGET adds up test times, and suites that share the cores slow each other.
+# Every suite runs unless OSF_TEST_CACHE is set, which only pull requests in CI do (ADR 0081): a run of its own
+# OSF_TEST_RUN changes the hash of every test task and of no build. (--force would rebuild everything, and --only
+# would leave the builds of the dependencies out of the hash.) Each suite writes into its own reports/;
+# collect-reports copies them to reports/ of the repository, also after a failure.
 verify-tests: ## part of verify: the system test suites; FILTER="pkg !pkg" limits them to some packages
-	@$(TURBO) test:system --concurrency=1 --continue $(foreach f,$(FILTER),--filter=$(f))
+	@rm -rf $(wildcard */reports */*/reports */*/*/reports)
+	@status=0; $(if $(OSF_TEST_CACHE),,OSF_TEST_RUN=$$$$-$$(date +%s)) $(TURBO) test:system --summarize --concurrency=1 --continue \
+	  $(foreach f,$(FILTER),--filter=$(f)) || status=$$?; $(OSF) collect-reports; exit $$status
 
 # REACH maps the coverage in reports/coverage/ to the built files, so the build comes first (cached after verify-static).
 verify-checks: ## part of verify: every check, on the test results in reports/
