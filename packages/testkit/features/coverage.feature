@@ -1,7 +1,8 @@
 @module=testkit @owner=maintainers
 Feature: Coverage of the running module
   Every Node process of the module under test records which of the module's code it ran, in
-  reports/coverage/ of the workspace. The REACH check reads it.
+  reports/coverage/ of the module. "osf collect-reports" copies it to reports/coverage/ of the workspace, where the
+  REACH check reads it (ADR 0081).
 
   @id=SCN-TK-026 @status=implemented
   Scenario: The testkit records which functions of the module its system tests ran

@@ -27,6 +27,8 @@
     "mutation": "node ../../tools/bin/osf.ts mutation ."
   },
   "devDependencies": {
+    "@opensoftware/forge-github": "workspace:*",
+    "@opensoftware/harness-acp": "workspace:*",
     "@opensoftware/testkit": "workspace:*"
   },
   "dependencies": {

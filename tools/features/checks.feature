@@ -101,6 +101,22 @@ Feature: Repository checks
     Then the command exits with code 0
     And the output contains "ISOLATION ok"
 
+  @id=SCN-REPO-080 @status=implemented
+  Scenario: ISOLATION accepts a module that declares an adapter in its devDependencies for its system tests
+    Given a repository with the module "demo" and the adapter "adapters/forge/github" named "@opensoftware/forge-github"
+    And "modules/demo/package.json" declares "@opensoftware/forge-github" in its "devDependencies"
+    When the developer runs "osf check ISOLATION"
+    Then the command exits with code 0
+    And the output contains "ISOLATION ok"
+
+  @id=SCN-REPO-081 @status=implemented
+  Scenario: ISOLATION rejects a module that declares an adapter in its dependencies
+    Given a repository with the module "demo" and the adapter "adapters/forge/github" named "@opensoftware/forge-github"
+    And "modules/demo/package.json" declares "@opensoftware/forge-github" in its "dependencies"
+    When the developer runs "osf check ISOLATION"
+    Then the command exits with code 1
+    And the output contains "ISOLATION modules/demo/package.json:5 @opensoftware/forge-github is another module"
+
   @id=SCN-REPO-010 @status=implemented
   Scenario: BOUNDARY-ENV rejects an environment variable that the README does not document
     Given a repository with the implemented scenario "SCN-DEMO-001" and its system test
@@ -408,3 +424,123 @@ Feature: Repository checks
     When the developer runs "osf check"
     Then the command exits with code 0
     And the output contains "ARCH ok"
+
+  @id=SCN-REPO-068 @status=implemented
+  Scenario: AFFECTED accepts a repository that caches its system tests by the rules
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 0
+    And the output contains "AFFECTED ok"
+
+  @id=SCN-REPO-069 @status=implemented
+  Scenario: AFFECTED rejects a system test that starts an adapter its package does not declare
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And the adapter "adapters/forge/github" named "@opensoftware/forge-github"
+    And "modules/demo/system-tests/SCN-DEMO-001.test.ts" starts the adapter "forge/github"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED modules/demo/system-tests/SCN-DEMO-001.test.ts:3 starts the adapter "forge/github", which modules/demo/package.json does not declare"
+
+  @id=SCN-REPO-070 @status=implemented
+  Scenario: AFFECTED rejects a system test that imports a workspace package its package does not declare
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And "modules/demo/system-tests/SCN-DEMO-001.test.ts" imports "@opensoftware/other"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED modules/demo/system-tests/SCN-DEMO-001.test.ts:1 imports "@opensoftware/other", which modules/demo/package.json does not declare"
+
+  @id=SCN-REPO-071 @status=implemented
+  Scenario: AFFECTED rejects a system test that reads a file of another package its package does not declare
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And "modules/demo/system-tests/SCN-DEMO-001.test.ts" reads "../../other/features/a.feature"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED modules/demo/system-tests/SCN-DEMO-001.test.ts:3 reads "../../other/features/a.feature" outside its package: declare the package or list the file in globalDependencies of turbo.json"
+
+  @id=SCN-REPO-072 @status=implemented
+  Scenario: AFFECTED rejects a package with system tests that no tests job of CI runs
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And the tests job "rest" of ".github/workflows/verify.yml" has the filter "!@opensoftware/demo !@opensoftware/other"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED modules/other/package.json:1 no tests job of .github/workflows/verify.yml runs the system tests of @opensoftware/other"
+
+  @id=SCN-REPO-073 @status=implemented
+  Scenario: AFFECTED rejects a package with system tests that two tests jobs of CI run
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And the tests job "rest" of ".github/workflows/verify.yml" has the filter "!@opensoftware/other"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED modules/demo/package.json:1 the tests jobs demo and rest of .github/workflows/verify.yml both run the system tests of @opensoftware/demo"
+
+  @id=SCN-REPO-074 @status=implemented
+  Scenario: AFFECTED rejects a test suite that writes its JUnit results outside its own reports folder
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And "modules/demo/vitest.config.ts" writes its JUnit results to "../../reports/junit/demo.xml"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED modules/demo/vitest.config.ts:1 writes its JUnit results elsewhere than "reports/junit.xml", which turbo stores and replays"
+
+  @id=SCN-REPO-075 @status=implemented
+  Scenario: AFFECTED rejects a test cache whose inputs leave out files of the package
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And "turbo.json" gives "test:system" the inputs "$TURBO_DEFAULT$" and "!features/**"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED turbo.json:1 test:system must cache with the inputs ["$TURBO_DEFAULT$"], the outputs ["reports/**"] and the env ["OSF_TEST_RUN"]"
+
+  @id=SCN-REPO-076 @status=implemented
+  Scenario: AFFECTED rejects a test cache without a repository-wide file that the tests depend on
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And "turbo.json" leaves "tools/scaffold/install-tools.ts" out of its "globalDependencies"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED turbo.json:1 globalDependencies leave out "tools/scaffold/install-tools.ts", which every system test depends on"
+
+  @id=SCN-REPO-082 @status=implemented
+  Scenario: AFFECTED rejects a test cache that turbo shares between worktrees
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And "turbo.json" sets no "cacheDir"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED turbo.json:1 cacheDir must be ".turbo/cache": results hold absolute paths, so a worktree must not replay those of another"
+
+  @id=SCN-REPO-083 @status=implemented
+  Scenario: AFFECTED rejects a run of the system tests that leaves their dependencies out of the hash
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And the target "verify-tests" of "Makefile" runs "turbo run test:system --only"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED Makefile:2 runs test:system with --only, which leaves its dependencies out of the hash"
+
+  @id=SCN-REPO-084 @status=implemented
+  Scenario: AFFECTED rejects a Makefile that does not run lint, typecheck and build without the cache by default
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And the target "verify-static" of "Makefile" runs lint, typecheck and build without "--force"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED Makefile:3 verify-static must run lint, typecheck and build with $(if $(OSF_TEST_CACHE),,--force)"
+
+  @id=SCN-REPO-077 @status=implemented
+  Scenario: AFFECTED rejects a workflow that uses the test cache outside pull requests
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And ".github/workflows/verify.yml" sets "OSF_TEST_CACHE: 1" for every event
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED .github/workflows/verify.yml:3 sets OSF_TEST_CACHE outside pull requests: only a pull request may replay test results"
+
+  @id=SCN-REPO-078 @status=implemented
+  Scenario: AFFECTED rejects a Makefile that does not give each run of the system tests its own hash by default
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And the target "verify-tests" of "Makefile" runs the system tests without "OSF_TEST_RUN"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED Makefile:1 verify-tests must give each run its own test hash with $(if $(OSF_TEST_CACHE),,OSF_TEST_RUN=$$$$-$$(date +%s))"
+
+  @id=SCN-REPO-079 @status=implemented
+  Scenario: collect-reports copies the results of each package to the reports folder of the repository
+    Given a repository with the modules "demo" and "other"
+    And "modules/demo/reports/junit.xml" and the coverage file "modules/demo/reports/coverage/coverage-7-1-0.json"
+    When the developer runs "osf collect-reports"
+    Then the command exits with code 0
+    And "reports/junit/demo.xml" and "reports/coverage/demo-coverage-7-1-0.json" have the content of the package's files

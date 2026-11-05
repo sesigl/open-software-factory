@@ -38,6 +38,8 @@
     "yaml": "2.8.1"
   },
   "devDependencies": {
+    "@opensoftware/forge-forgejo": "workspace:*",
+    "@opensoftware/forge-github": "workspace:*",
     "@opensoftware/testkit": "workspace:*",
     "@types/semver": "7.7.1"
   }

@@ -1,6 +1,6 @@
 import { defineConfig } from "vitest/config";
 
-// System tests of this module. Turbo never caches them, so PASS always reads the results of this run.
+// System tests of this module. Their results stay in its reports/, which turbo replays on pull requests (ADR 0081).
 export default defineConfig({
   test: {
     include: ["system-tests/**/*.test.ts"],
@@ -11,9 +11,6 @@ export default defineConfig({
     testTimeout: 60_000,
     // The Forgejo fake starts one container per worker; one worker starts it once for the whole suite.
     maxWorkers: 1,
-    reporters: [
-      "default",
-      ["junit", { outputFile: "../../reports/junit/observer.xml", classnameTemplate: "{filepath}" }],
-    ],
+    reporters: ["default", ["junit", { outputFile: "reports/junit.xml", classnameTemplate: "{filepath}" }]],
   },
 });
