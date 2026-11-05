@@ -23,21 +23,30 @@ export function summary(manifest: EvidenceManifest): string {
   return `${passed} of ${manifest.scenarios.length} scenarios passed`;
 }
 
-/** The pull request comment: the result, a link to the bundle and one row per scenario. */
+/**
+ * The pull request comment: the result, the count of each result, a link to the bundle, and one row per scenario
+ * that did not pass. The bundle holds every scenario; the comment stays short when all passed.
+ */
 export function comment(manifest: EvidenceManifest, link: string | undefined): string {
   const files = (paths: string[]): string => paths.map((path) => `\`${path.split("/").pop()}\``).join(", ");
+  const count = (result: string) => manifest.scenarios.filter((scenario) => scenario.result === result).length;
+  const open = manifest.scenarios.filter((scenario) => scenario.result !== "passed");
   return [
     MARKER,
     `### proof: ${manifest.result}`,
     "",
-    `${summary(manifest)} for ${manifest.subject.commit}. Evidence bundle: ${
-      link ? `[${manifest.id}](${link})` : `${manifest.id} (not uploaded)`
-    }`,
+    `Scenarios: ${count("passed")} passed, ${count("failed")} failed, ${count("skipped")} skipped. Commit ${
+      manifest.subject.commit
+    }. Evidence bundle: ${link ? `[${manifest.id}](${link})` : `${manifest.id} (not uploaded)`}`,
     "",
-    "| Scenario | Result | Evidence |",
-    "| --- | --- | --- |",
-    ...manifest.scenarios.map((scenario) => `| ${scenario.id} | ${scenario.result} | ${files(scenario.artifacts)} |`),
-    "",
+    ...(open.length > 0
+      ? [
+          "| Scenario | Result | Evidence |",
+          "| --- | --- | --- |",
+          ...open.map((scenario) => `| ${scenario.id} | ${scenario.result} | ${files(scenario.artifacts)} |`),
+          "",
+        ]
+      : []),
   ].join("\n");
 }
 
