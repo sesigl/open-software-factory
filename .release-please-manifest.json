@@ -26,6 +26,7 @@
   "adapters/channel/slack": "0.2.2",
   "adapters/channel/github": "0.2.0",
   "packages/channel-kit": "0.2.0",
+  "packages/postgres": "0.0.0",
   "modules/intake": "0.3.0",
   "modules/foreman": "0.6.0",
   "modules/console": "0.3.0"
