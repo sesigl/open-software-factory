@@ -179,6 +179,13 @@ export async function openStore(url: string): Promise<Store> {
 /** BEGIN, the work, COMMIT; ROLLBACK when the work fails. */
 async function inTransaction<T>(pool: pg.Pool, work: (client: pg.PoolClient) => Promise<T>): Promise<T> {
   const client = await pool.connect();
+  // A checked-out client emits "error" when the database closes its connection between two queries; the pool's
+  // listener does not cover it, and without one the process ends. The broken client is destroyed on release.
+  let broken: Error | undefined;
+  const onError = (error: Error) => {
+    broken = error;
+  };
+  client.on("error", onError);
   try {
     await client.query("BEGIN");
     const result = await work(client);
@@ -188,6 +195,7 @@ async function inTransaction<T>(pool: pg.Pool, work: (client: pg.PoolClient) => 
     await client.query("ROLLBACK").catch(() => {});
     throw error;
   } finally {
-    client.release();
+    client.off("error", onError);
+    client.release(broken);
   }
 }
