@@ -1,18 +1,16 @@
 // The pool and the transactions of a module on PostgreSQL (ADR 0082).
 import pg from "pg";
 
-export interface PoolOptions {
-  /** The most clients the pool keeps open at once. */
-  max: number;
-}
+/** The most clients a pool keeps open at once: enough for a module's server, few for a shared database. */
+const MAX_CLIENTS = 4;
 
 /**
- * A pool on the database at `url`. A client that loses its connection does not end the process: the pool listens for
- * the errors of its idle clients, and each client for its own, also while a transaction holds it between two queries.
- * Its next query fails instead, and the pool destroys it when it is released.
+ * A pool on the database at `url` with at most four clients. A client that loses its connection does not end the
+ * process: the pool listens for the errors of its idle clients, and each client for its own, also while a transaction
+ * holds it between two queries. Its next query fails instead, and the pool destroys it when it is released.
  */
-export function openPool(url: string, { max }: PoolOptions): pg.Pool {
-  const pool = new pg.Pool({ connectionString: url, max });
+export function openPool(url: string): pg.Pool {
+  const pool = new pg.Pool({ connectionString: url, max: MAX_CLIENTS });
   pool.on("error", () => {});
   pool.on("connect", (client) => client.on("error", () => {}));
   return pool;

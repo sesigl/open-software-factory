@@ -6,7 +6,7 @@ Adds rules for the postgres library. The root `AGENTS.md` applies in full. Decis
 
 The only way a system test or another program may use the library:
 
-- Library: the exports of `src/index.ts` (`openPool`, `transaction` and the type `PoolOptions`), imported as
+- Library: the exports of `src/index.ts` (`openPool` and `transaction`), imported as
   `@opensoftware/postgres`
 
 The library's system tests import it by its package name and call it in their own process (ADR 0039), on the

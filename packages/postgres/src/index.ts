@@ -1,1 +1,1 @@
-export { openPool, type PoolOptions, transaction } from "./pool.ts";
+export { openPool, transaction } from "./pool.ts";

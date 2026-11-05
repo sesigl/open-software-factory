@@ -33,3 +33,10 @@ Feature: Pool and transactions
     When the database stops
     Then the pool drops its idle client
     And no error ended the process
+
+  @id=SCN-PG-005 @status=implemented
+  Scenario: A pool opens at most four clients, and a fifth request waits for one
+    Given a pool on a PostgreSQL database with the table "work"
+    When five requests ask the pool for a client at once
+    Then 1 request waits
+    And the pool has 4 clients
