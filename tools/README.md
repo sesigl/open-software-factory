@@ -148,3 +148,4 @@ Each failure prints one line: the check ID, `file:line`, and what to fix. Each c
 | SCN-REPO-081 | implemented | ISOLATION rejects a module that declares an adapter in its dependencies |
 | SCN-REPO-082 | implemented | AFFECTED rejects a test cache that turbo shares between worktrees |
 | SCN-REPO-083 | implemented | AFFECTED rejects a run of the system tests that leaves their dependencies out of the hash |
+| SCN-REPO-084 | implemented | AFFECTED rejects a Makefile that does not run lint, typecheck and build without the cache by default |
