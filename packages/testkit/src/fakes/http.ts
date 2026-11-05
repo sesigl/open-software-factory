@@ -17,6 +17,11 @@ export interface HttpRoute {
   contentType?: string;
   /** Answer only this many requests; later requests go to the next route that matches. Default: every request. */
   times?: number;
+  /**
+   * Answer only after this promise settles, for example to hold a module in the middle of a call. The fake reads it
+   * when a request arrives, so a test can set it on a route it already gave the fake.
+   */
+  until?: Promise<unknown>;
 }
 
 /** One request the fake received. */
@@ -90,10 +95,13 @@ export async function startHttp(routes: HttpRoute[], options: HttpOptions = {}):
       const route = entry?.route;
       if (entry) entry.answered += 1;
       else unscripted.push(`unscripted HTTP request: ${line}`);
-      response.setHeader("content-type", route?.contentType ?? "application/json");
-      response.statusCode = route ? (route.status ?? 200) : 404;
-      if (route?.contentType) response.end(String(route.body));
-      else response.end(JSON.stringify(route ? route.body : { error: `unscripted HTTP request: ${line}` }));
+      const answer = () => {
+        response.setHeader("content-type", route?.contentType ?? "application/json");
+        response.statusCode = route ? (route.status ?? 200) : 404;
+        if (route?.contentType) response.end(String(route.body));
+        else response.end(JSON.stringify(route ? route.body : { error: `unscripted HTTP request: ${line}` }));
+      };
+      void Promise.allSettled([route?.until]).then(answer);
     });
   });
   await new Promise<void>((resolve) => server.listen(0, options.containers ? "0.0.0.0" : "127.0.0.1", resolve));

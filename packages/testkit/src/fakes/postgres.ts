@@ -41,6 +41,7 @@ export async function startPostgres(): Promise<{ postgres: Postgres; close(): Pr
   let closing: Promise<void> | undefined;
   const close = () =>
     (closing ??= (async () => {
+      session.stop();
       for (const socket of sockets) socket.destroy();
       await new Promise<void>((resolve) => server.close(() => resolve()));
       await session.idle();
@@ -75,6 +76,7 @@ class Session {
   private holder: Connection | undefined;
   private waiting: (() => void)[] = [];
   private running = Promise.resolve();
+  private stopped = false;
   private readonly db: PGlite;
 
   constructor(db: PGlite) {
@@ -99,12 +101,18 @@ class Session {
   async drop(owner: Connection): Promise<void> {
     if (this.holder !== owner) return;
     await this.running;
-    if (this.db.isInTransaction()) await this.db.exec("ROLLBACK");
+    // The connections of a stopped database close after the database: nothing is left to end.
+    if (!this.stopped && this.db.isInTransaction()) await this.db.exec("ROLLBACK");
     this.release(owner);
   }
 
   idle(): Promise<void> {
     return this.running;
+  }
+
+  /** The database stops: connections that close from now on leave nothing to end. */
+  stop(): void {
+    this.stopped = true;
   }
 
   private release(owner: Connection): void {

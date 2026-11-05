@@ -1,6 +1,7 @@
 # The image of one module of the factory and its adapters, installed from npm at the versions the Compose profile
 # pins (ADR 0074). Build it with the build argument PACKAGES, the packages separated by spaces, like
-# "@opensoftware/foreman@0.4.0 @opensoftware/forge-github@0.5.0". The target gatekeeper adds OPA.
+# "@opensoftware/foreman@0.4.0 @opensoftware/forge-github@0.5.0". The target gatekeeper adds OPA; the target foreman
+# adds GitHub's gh and make, for the agents that clone, build and push.
 ARG NODE_IMAGE=node:24.11.1-bookworm-slim
 
 FROM openpolicyagent/opa:1.21.0-static AS opa
@@ -28,3 +29,10 @@ WORKDIR /home/node
 
 FROM module AS gatekeeper
 COPY --from=opa /opa /usr/local/bin/opa
+
+FROM module AS foreman
+USER root
+RUN apt-get update \
+  && apt-get install --yes --no-install-recommends gh make \
+  && rm -rf /var/lib/apt/lists/*
+USER node
