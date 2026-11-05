@@ -1,5 +1,6 @@
 // The gates of server mode, the button presses and the event outbox in PostgreSQL, schema "gatekeeper" (ADR 0048).
-import pg from "pg";
+import { openPool, transaction } from "@opensoftware/postgres";
+import type pg from "pg";
 import type { Outgoing } from "../domain/events.ts";
 import type { Rules } from "../domain/policy.ts";
 import type { GateRecord } from "../domain/record.ts";
@@ -90,13 +91,9 @@ const fromDb = (row: Record<string, unknown>): StoredGate => ({
 const ROW = "id, request, rules, channel, thread, requested_at, state, waiting_for, record";
 
 export async function openStore(url: string): Promise<Store> {
-  const pool = new pg.Pool({ connectionString: url, max: 4 });
-  pool.on("error", () => {});
-  // A client of a transaction emits "error" when the database closes its connection between two queries. Without a
-  // listener the process ends; the pool destroys the broken client when it is released.
-  pool.on("connect", (client) => client.on("error", () => {}));
+  const pool = openPool(url, { max: 4 });
   try {
-    await inTransaction(pool, async (client) => {
+    await transaction(pool, async (client) => {
       await client.query("SELECT pg_advisory_xact_lock($1)", [SCHEMA_LOCK]);
       await client.query(TABLES);
     });
@@ -125,7 +122,7 @@ export async function openStore(url: string): Promise<Store> {
   });
   return {
     claim: (row, event) =>
-      inTransaction(pool, async (client) => {
+      transaction(pool, async (client) => {
         const { rowCount } = await client.query(
           `INSERT INTO gatekeeper.gates (${ROW}) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT (id) DO NOTHING`,
           [
@@ -162,7 +159,7 @@ export async function openStore(url: string): Promise<Store> {
       );
     },
     locked: (id, work) =>
-      inTransaction(pool, async (client) => {
+      transaction(pool, async (client) => {
         const { rows } = await client.query(`SELECT ${ROW} FROM gatekeeper.gates WHERE id = $1 FOR UPDATE`, [id]);
         return work(rows[0] ? fromDb(rows[0]) : undefined, write(client, id));
       }),
@@ -177,20 +174,4 @@ export async function openStore(url: string): Promise<Store> {
     },
     close: () => pool.end(),
   };
-}
-
-/** BEGIN, the work, COMMIT; ROLLBACK when the work fails. */
-async function inTransaction<T>(pool: pg.Pool, work: (client: pg.PoolClient) => Promise<T>): Promise<T> {
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-    const result = await work(client);
-    await client.query("COMMIT");
-    return result;
-  } catch (error) {
-    await client.query("ROLLBACK").catch(() => {});
-    throw error;
-  } finally {
-    client.release();
-  }
 }
