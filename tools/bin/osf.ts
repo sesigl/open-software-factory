@@ -4,6 +4,7 @@
 import { spawnSync } from "node:child_process";
 import { relative, resolve } from "node:path";
 import { bundle } from "../scaffold/bundle.ts";
+import { collectReports } from "../scaffold/collect-reports.ts";
 import { generateDocs } from "../scaffold/docs.ts";
 import { installTools } from "../scaffold/install-tools.ts";
 import { mutation } from "../scaffold/mutation.ts";
@@ -15,6 +16,7 @@ const USAGE = `Usage: osf <command>
 
   bundle <package>        build a CLI package as one bundled file with its license notices (ADR 0079)
   check [ID ...]          run checks; no ID runs the fast set, --all runs every check
+  collect-reports         copy each package's reports/ to reports/junit/<name>.xml and reports/coverage/ (ADR 0081)
   docs-affected           list hand-written docs whose covers: paths changed since OSF_BASE
   docs [PATH] [--check]   regenerate generated README sections (under PATH); --check only reports stale ones
   new-module <name> [--prefix PREFIX]
@@ -40,6 +42,8 @@ async function main(argv: string[]): Promise<number> {
       const { runChecks } = await import("../checks/run.ts");
       return runChecks(root, args);
     }
+    case "collect-reports":
+      return collectReports(root);
     case "docs-affected": {
       const { runChecks } = await import("../checks/run.ts");
       return runChecks(root, ["DOCS-AFFECTED", "--list"]);
