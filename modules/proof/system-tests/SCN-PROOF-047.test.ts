@@ -2,7 +2,7 @@ import { scenario } from "@opensoftware/testkit";
 import { forgejoBundle } from "./forge.ts";
 import { screenshot } from "./reports.ts";
 
-scenario("SCN-PROOF-023", async ({ sut, fakes, given, when, then }) => {
+scenario("SCN-PROOF-047", async ({ sut, fakes, given, when, then }) => {
   let setup: Awaited<ReturnType<typeof forgejoBundle>>;
   await given('a Forgejo pull request and a bundle of its head commit where "SCN-WEB-001" passed', async () => {
     setup = await forgejoBundle(sut, fakes, [
@@ -25,14 +25,19 @@ scenario("SCN-PROOF-023", async ({ sut, fakes, given, when, then }) => {
     expect(run.exitCode, run.stdout + run.stderr).toBe(0);
   });
 
+  let comment: string;
   await then(
-    'the pull request has a comment that links "https://ci.example.com/evidence" and lists "SCN-WEB-001" as "passed"',
+    'the pull request has a comment that links "https://ci.example.com/evidence" and says "Scenarios: 1 passed, 0 failed, 0 skipped"',
     async () => {
-      const [comment] = await setup.forge.comments(setup.pr);
+      [comment = ""] = await setup.forge.comments(setup.pr);
       expect(comment).toContain("(https://ci.example.com/evidence)");
-      expect(comment).toContain("| SCN-WEB-001 | passed |");
+      expect(comment).toContain("Scenarios: 1 passed, 0 failed, 0 skipped");
     },
   );
+
+  await then('the comment does not name "SCN-WEB-001"', async () => {
+    expect(comment).not.toContain("SCN-WEB-001");
+  });
 
   await then(
     'the head commit has the status "proof" with the state "success" and the description "1 of 1 scenarios passed"',
