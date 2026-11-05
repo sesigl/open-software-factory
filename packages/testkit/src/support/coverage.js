@@ -1,8 +1,8 @@
 // @ts-check
 // REACH: loaded with --import into every Node process of the module under test. When the testkit sets
 // OSF_TESTKIT_COVERAGE, it records which code below OSF_TESTKIT_COVERAGE_ROOT the process ran and writes it on exit
-// as V8 coverage JSON, the format of NODE_V8_COVERAGE, to that folder (`<repository>/reports/coverage`), with the
-// repository root as `root`. The REACH check reads it.
+// as V8 coverage JSON, the format of NODE_V8_COVERAGE, to that folder (`<module>/reports/coverage`, ADR 0081), with
+// the repository root OSF_TESTKIT_COVERAGE_REPOSITORY as `root`. The REACH check reads it.
 // A process whose entry script is another package of this repository, like an adapter that the module starts,
 // records nothing: no package imports another one's code (ISOLATION), so it never runs code below the root. Every
 // other process records, also one whose entry is in node_modules (a Vitest worker) or outside the repository (a
@@ -17,25 +17,26 @@ import { pathToFileURL } from "node:url";
 
 const DIR = process.env.OSF_TESTKIT_COVERAGE;
 const ROOT = process.env.OSF_TESTKIT_COVERAGE_ROOT;
+const REPOSITORY = process.env.OSF_TESTKIT_COVERAGE_REPOSITORY;
 /** @type {(() => void)[]} */
 const writers = [];
 
 /**
- * True when the process starts from another package of the repository that holds `dir` (`<repository>/reports/coverage`).
- * @param {string} dir
+ * True when the process starts from another package of `repository`, not from the module at `root`.
+ * @param {string} repository
  * @param {string} root
  */
-function otherPackage(dir, root) {
+function otherPackage(repository, root) {
   const entry = process.argv[1];
   if (!entry) return false;
   const file = resolve(entry);
-  const repository = resolve(dir, "..", "..") + sep;
+  repository = resolve(repository) + sep;
   return (
     file.startsWith(repository) && !file.startsWith(resolve(root) + sep) && !file.includes(`${sep}node_modules${sep}`)
   );
 }
 
-if (DIR && ROOT && !otherPackage(DIR, ROOT)) {
+if (DIR && ROOT && REPOSITORY && !otherPackage(REPOSITORY, ROOT)) {
   const prefix = `${pathToFileURL(ROOT).href}/`;
   const session = new Session();
   session.connect();
@@ -51,7 +52,7 @@ if (DIR && ROOT && !otherPackage(DIR, ROOT)) {
       );
       if (result.length === 0) return;
       mkdirSync(DIR, { recursive: true });
-      const root = pathToFileURL(join(DIR, "..", "..")).href;
+      const root = pathToFileURL(REPOSITORY).href;
       writeFileSync(join(DIR, `coverage-${process.pid}-${++written}.json`), JSON.stringify({ root, result }));
     });
   });
