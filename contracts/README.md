@@ -91,6 +91,9 @@ the workflow by hand with the tag. The CONTRACT check and `osf-contracts breakin
 Only the TypeScript package exists (ADR 0012). A client for another language can be generated from
 `openapi/openapi.json` with any OpenAPI generator when someone needs one.
 
+A new package gets its publish workflow and its release-please entries with `osf release-files`; the check RELEASE
+fails until they are current, and also when a workflow differs from `tools/scaffold/publish-workflow.yml`.
+
 One-time setup (no credential is ever stored in the repository):
 
 1. npm: the organization `opensoftware` owns the scope `@opensoftware`, under which every package of this
