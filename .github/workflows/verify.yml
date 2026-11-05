@@ -296,6 +296,12 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+      # verify-checks builds every package before the checks; the static job of this run built and saved them all.
+      - name: Restore the builds of the static job
+        uses: actions/cache/restore@v4
+        with:
+          path: .turbo/cache
+          key: turbo-static-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
       - run: make install
 
       - name: Pull request context for DOCS-AFFECTED
