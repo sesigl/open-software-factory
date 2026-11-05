@@ -1,0 +1,3 @@
+{
+  "layers": [{ "name": "api", "paths": ["src/index.ts"] }, { "name": "pool", "paths": ["src/pool.ts"] }]
+}
