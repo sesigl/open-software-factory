@@ -3,7 +3,8 @@
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
-import pg from "pg";
+import { openPool, transaction } from "@opensoftware/postgres";
+import type pg from "pg";
 
 export interface Sql {
   query<Row>(text: string, values?: unknown[]): Promise<{ rows: Row[] }>;
@@ -18,8 +19,7 @@ export interface Database extends Sql {
 }
 
 async function postgres(url: string): Promise<Database> {
-  const pool = new pg.Pool({ connectionString: url, max: 4 });
-  pool.on("error", () => {});
+  const pool = openPool(url, { max: 4 });
   const sql = (client: pg.Pool | pg.PoolClient): Sql => ({
     query: async <Row>(text: string, values?: unknown[]) =>
       (await client.query(text, values)) as unknown as { rows: Row[] },
@@ -27,16 +27,7 @@ async function postgres(url: string): Promise<Database> {
   });
   return {
     ...sql(pool),
-    async transaction(work) {
-      const client = await pool.connect();
-      const done = client
-        .query("BEGIN")
-        .then(() => work(sql(client)))
-        .then((result) => client.query("COMMIT").then(() => result));
-      // A failed transaction ends its connection, and PostgreSQL rolls back what a closed connection left open.
-      void Promise.allSettled([done]).then(([outcome]) => client.release(outcome?.status === "rejected"));
-      return done;
-    },
+    transaction: (work) => transaction(pool, (client) => work(sql(client))),
     close: () => pool.end(),
   };
 }
