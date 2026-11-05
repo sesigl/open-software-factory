@@ -10,6 +10,7 @@ import { installTools } from "../scaffold/install-tools.ts";
 import { mutation } from "../scaffold/mutation.ts";
 import { newModule } from "../scaffold/new-module.ts";
 import { nextId } from "../scaffold/next-id.ts";
+import { releaseFiles } from "../scaffold/release-files.ts";
 import { testScenario } from "../scaffold/test-scenario.ts";
 
 const USAGE = `Usage: osf <command>
@@ -21,6 +22,7 @@ const USAGE = `Usage: osf <command>
   docs [PATH] [--check]   regenerate generated README sections (under PATH); --check only reports stale ones
   new-module <name> [--prefix PREFIX]
   next-id <module>        print the next free scenario ID of a module or prefix
+  release-files           write the publish workflow and release-please entries of every published package
   test-scenario <ID>      run the one system test of a scenario
   mutation <folder> [--all] [--list] [--shard i/n]
                           Stryker on the lines of a module changed since OSF_BASE (--all: every line)
@@ -57,6 +59,8 @@ async function main(argv: string[]): Promise<number> {
       return newModule(root, args);
     case "next-id":
       return nextId(root, args);
+    case "release-files":
+      return releaseFiles(root);
     case "test-scenario":
       return testScenario(root, args);
     case "mutation":
