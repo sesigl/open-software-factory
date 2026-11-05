@@ -35,7 +35,11 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
-      - run: pnpm install --frozen-lockfile --filter "@opensoftware/gatekeeper..." --filter "@opensoftware/forge-github..."
+      # gatekeeper's workspace dependencies include the adapters its system tests start (ADR 0081); a bundled adapter
+      # such as channel-slack builds with tools/bin/bundle.ts, so the tools are installed too.
+      - run: >-
+          pnpm install --frozen-lockfile --filter @opensoftware/tools --filter "@opensoftware/gatekeeper..."
+          --filter "@opensoftware/forge-github..."
       - run: pnpm --filter "@opensoftware/gatekeeper..." --filter "@opensoftware/forge-github..." build
       - uses: ./modules/gatekeeper
         env:
