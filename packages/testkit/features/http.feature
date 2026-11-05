@@ -27,6 +27,14 @@ Feature: Scripted HTTP API
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-126 @status=implemented
+  Scenario: A route with "until" answers only after its promise settles
+    Given a module whose CLI gets "/v0.1/servers?search=tracker" from the API at "DEMO_API_URL" and prints the body
+    And its system test holds the answer {"count":0} until the fake has the request, then changes it to {"count":1}
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-030 @status=implemented
   Scenario: The fake gives the body of every request it received
     Given a module whose CLI posts {"n":1} to "/v1/traces" at "DEMO_API_URL" twice and prints both status codes
