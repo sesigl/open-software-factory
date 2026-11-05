@@ -178,3 +178,11 @@ Feature: Serve the gate API
     Given the server asked "maintainers" on the pull request "acme/web#12"
     When its database stops
     Then after ten checks of the pull request gates the server still answers "/v1/gates/<gate>", with the status 500
+
+  @id=SCN-GATE-070 @status=implemented
+  Scenario: The server goes on serving when its database stops in the middle of a pull request gate's check
+    Given the server asked "maintainers" on the pull request "acme/web#12"
+    And the forge holds the server's next read of the pull request's comments
+    When its database stops
+    And the forge answers the read
+    Then the server answers "/v1/gates/<gate>" with the status 500

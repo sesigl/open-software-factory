@@ -92,6 +92,9 @@ const ROW = "id, request, rules, channel, thread, requested_at, state, waiting_f
 export async function openStore(url: string): Promise<Store> {
   const pool = new pg.Pool({ connectionString: url, max: 4 });
   pool.on("error", () => {});
+  // A client of a transaction emits "error" when the database closes its connection between two queries. Without a
+  // listener the process ends; the pool destroys the broken client when it is released.
+  pool.on("connect", (client) => client.on("error", () => {}));
   try {
     await inTransaction(pool, async (client) => {
       await client.query("SELECT pg_advisory_xact_lock($1)", [SCHEMA_LOCK]);
@@ -179,13 +182,6 @@ export async function openStore(url: string): Promise<Store> {
 /** BEGIN, the work, COMMIT; ROLLBACK when the work fails. */
 async function inTransaction<T>(pool: pg.Pool, work: (client: pg.PoolClient) => Promise<T>): Promise<T> {
   const client = await pool.connect();
-  // A checked-out client emits "error" when the database closes its connection between two queries; the pool's
-  // listener does not cover it, and without one the process ends. The broken client is destroyed on release.
-  let broken: Error | undefined;
-  const onError = (error: Error) => {
-    broken = error;
-  };
-  client.on("error", onError);
   try {
     await client.query("BEGIN");
     const result = await work(client);
@@ -195,7 +191,6 @@ async function inTransaction<T>(pool: pg.Pool, work: (client: pg.PoolClient) => 
     await client.query("ROLLBACK").catch(() => {});
     throw error;
   } finally {
-    client.off("error", onError);
-    client.release(broken);
+    client.release();
   }
 }

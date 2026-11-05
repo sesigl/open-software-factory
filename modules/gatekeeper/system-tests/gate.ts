@@ -95,7 +95,7 @@ export async function forge(
   branch: string,
   comments: Comment[] = [],
   before?: Comment[],
-): Promise<FakeHttp & { comment(comment: Comment): void; failReads(status?: number): void }> {
+): Promise<FakeHttp & { comment(comment: Comment): void; failReads(status?: number): void; holdReads(): () => void }> {
   const base = "/repos/acme/web";
   const commentJson = ({ id, body, login, at }: Comment) => ({
     id,
@@ -107,7 +107,7 @@ export async function forge(
   // The fake sends a route's body as JSON when it answers, so a comment added to this list is in the next answer.
   const listed = comments.map(commentJson);
   // The fake answers with the route's status at the time of the call, so a test can make the reads fail for a while.
-  const reads: { path: string; body: unknown; status?: number } = {
+  const reads: { path: string; body: unknown; status?: number; until?: Promise<unknown> } = {
     path: `${base}/issues/12/comments?per_page=100`,
     body: listed,
   };
@@ -146,6 +146,17 @@ export async function forge(
     /** The reads of the comments answer with this status from now on; no status: they answer again. */
     failReads: (status?: number) => {
       reads.status = status;
+    },
+    /** The reads of the comments wait from now on; the returned function answers them and ends the wait. */
+    holdReads: () => {
+      let release = () => {};
+      reads.until = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      return () => {
+        reads.until = undefined;
+        release();
+      };
     },
   });
 }
