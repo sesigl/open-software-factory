@@ -38,9 +38,10 @@ A change is done only when `make verify` passes. `docs/quality/checks.md` lists 
 | SPEC | Every scenario has one unique `@id=SCN-<MODULE>-<NNN>` and one `@status`. |
 | TRACE | Every `implemented` scenario has exactly one system test. No test without a scenario. |
 | STEPS | The test's `given`, `when` and `then` labels match the scenario's steps. |
-| PASS | Every `implemented` scenario's test ran and passed in this run. Skipped counts as failed. |
+| PASS | Every `implemented` scenario's test ran and passed in this run, or was replayed for the same inputs. Skipped counts as failed. |
 | BOUNDARY | System tests reach the module only through its public surface. |
 | ISOLATION | No module imports another module. |
+| AFFECTED | A system test declares every package it starts, imports or reads, so the test cache replays only unchanged results. |
 | ARCH | Every module declares its layers in `architecture.json`; no file imports a layer above its own. |
 | DUP | Duplicated source lines stay under each unit's limit; no clone across modules. |
 | CONTRACT | No breaking change to `contracts/` without a major version. |
