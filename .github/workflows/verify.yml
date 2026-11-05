@@ -148,12 +148,13 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       # Pull requests replay the results of the suites whose inputs did not change; everything else runs all suites
-      # (ADR 0081). The cache of main is readable by every pull request.
+      # (ADR 0081). The cache of main is readable by every pull request. The key names the run: two runs of one merge
+      # commit, such as one cancelled by an edit of the description, must not share a key, or the first one wins.
       - name: Restore the turbo cache of the suite
         uses: actions/cache/restore@v4
         with:
           path: .turbo/cache
-          key: turbo-${{ matrix.suite }}-${{ github.sha }}-${{ github.run_attempt }}
+          key: turbo-${{ matrix.suite }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: turbo-${{ matrix.suite }}-
       - run: make install
       # run=false when every system test task of the suite is a cache hit: the slow setup below is then not needed.
@@ -242,7 +243,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: .turbo/cache
-          key: turbo-${{ matrix.suite }}-${{ github.sha }}-${{ github.run_attempt }}
+          key: turbo-${{ matrix.suite }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
