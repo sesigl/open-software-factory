@@ -167,8 +167,9 @@ jobs:
           if [ -n "$OSF_TEST_CACHE" ]; then
             filters=$(for f in $FILTER; do printf -- '--filter=%s ' "$f"; done)
             # shellcheck disable=SC2086
-            misses=$(pnpm exec turbo run test:system --dry=json $filters |
-              jq '[.tasks[] | select(.task == "test:system" and .cache.status != "HIT")] | length')
+            pnpm exec turbo run test:system --dry=json $filters > "$RUNNER_TEMP/plan.json"
+            jq -r '.tasks[] | select(.task == "test:system") | "\(.taskId) \(.hash) \(.cache.status)"' "$RUNNER_TEMP/plan.json"
+            misses=$(jq '[.tasks[] | select(.task == "test:system" and .cache.status != "HIT")] | length' "$RUNNER_TEMP/plan.json")
             if [ "$misses" = 0 ]; then run=false; fi
           fi
           echo "run=$run" >> "$GITHUB_OUTPUT"
@@ -228,6 +229,14 @@ jobs:
               $kubectl describe pod --namespace "$namespace" "$pod" | tail -n 30
               $kubectl logs --namespace "$namespace" "$pod" --all-containers --tail 30 || true
             done
+      # The hash each test task ran with, to compare with the plan above.
+      - name: Show the hashes of the test run
+        if: always()
+        run: |
+          shopt -s nullglob
+          for summary in .turbo/runs/*.json; do
+            jq -r '.tasks[] | select(.task == "test:system") | "\(.taskId) \(.hash) \(.cache.status)"' "$summary"
+          done
       - name: Save the turbo cache of the suite
         if: always()
         uses: actions/cache/save@v4
