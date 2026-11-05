@@ -513,6 +513,14 @@ Feature: Repository checks
     Then the command exits with code 1
     And the output contains "AFFECTED Makefile:2 runs test:system with --only, which leaves its dependencies out of the hash"
 
+  @id=SCN-REPO-084 @status=implemented
+  Scenario: AFFECTED rejects a Makefile that does not run lint, typecheck and build without the cache by default
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And the target "verify-static" of "Makefile" runs lint, typecheck and build without "--force"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED Makefile:3 verify-static must run lint, typecheck and build with $(if $(OSF_TEST_CACHE),,--force)"
+
   @id=SCN-REPO-077 @status=implemented
   Scenario: AFFECTED rejects a workflow that uses the test cache outside pull requests
     Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081

@@ -23,6 +23,8 @@ const CACHE_DIR = ".turbo/cache";
 /** A run of its own: the hash of every test task changes, and the builds stay cached. */
 const FORCE = "$(if $(OSF_TEST_CACHE),,OSF_TEST_RUN=$$$$-$$(date +%s))";
 const ENV = ["OSF_TEST_RUN"];
+/** Lint, typecheck and build run again outside pull requests. */
+const STATIC_FORCE = "$(if $(OSF_TEST_CACHE),,--force)";
 const PULL_REQUEST = "github.event_name == 'pull_request'";
 
 interface Manifest {
@@ -221,15 +223,32 @@ function suites(repo: Repo, units: Unit[]): Finding[] {
     });
 }
 
-/** `make verify-tests` runs every suite unless OSF_TEST_CACHE asks for the cache. */
+/** `make verify-tests` and `make verify-static` run everything unless OSF_TEST_CACHE asks for the cache. */
 function forced(repo: Repo): Finding[] {
   if (!repo.exists(MAKEFILE)) return [];
   const text = repo.read(MAKEFILE);
   const recipe = /^verify-tests:.*\n((?:\t.*\n?)*)/m.exec(text)?.[1] ?? "";
-  if (recipe.includes(FORCE)) return [];
-  return [
-    finding(MAKEFILE, lineOf(text, "verify-tests:"), `verify-tests must give each run its own test hash with ${FORCE}`),
-  ];
+  const findings: Finding[] = [];
+  if (!recipe.includes(FORCE)) {
+    findings.push(
+      finding(
+        MAKEFILE,
+        lineOf(text, "verify-tests:"),
+        `verify-tests must give each run its own test hash with ${FORCE}`,
+      ),
+    );
+  }
+  const statics = /^verify-static:.*\n((?:\t.*\n?)*)/m.exec(text)?.[1] ?? "";
+  if (!statics.includes(STATIC_FORCE)) {
+    findings.push(
+      finding(
+        MAKEFILE,
+        lineOf(text, "verify-static:"),
+        `verify-static must run lint, typecheck and build with ${STATIC_FORCE}`,
+      ),
+    );
+  }
+  return findings;
 }
 
 /** Only a pull request sets OSF_TEST_CACHE. */

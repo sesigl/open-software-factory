@@ -44,8 +44,9 @@ verify: ## everything from a clean state; required before you report done
 	$(MAKE) verify-checks || status=1; exit $$status
 
 # The three parts of `make verify`. CI runs them as parallel jobs (.github/workflows/verify.yml).
-verify-static: ## part of verify: lint, typecheck and build every package without the cache
-	@$(TURBO) lint typecheck build --force
+# Pull requests in CI set OSF_TEST_CACHE and replay the results of unchanged packages (ADR 0081).
+verify-static: ## part of verify: lint, typecheck and build every package, without the cache unless OSF_TEST_CACHE is set
+	@$(TURBO) lint typecheck build $(if $(OSF_TEST_CACHE),,--force)
 
 # One system test suite at a time: BUDGET adds up test times, and suites that share the cores slow each other.
 # Every suite runs unless OSF_TEST_CACHE is set, which only pull requests in CI do (ADR 0081): a run of its own
