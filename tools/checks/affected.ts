@@ -8,6 +8,7 @@ import { Node, Project } from "ts-morph";
 import { parse } from "yaml";
 import type { Context } from "./lib/context.ts";
 import { type Finding, lineOf, type Repo } from "./lib/repo.ts";
+import { type Unit, workspace } from "./lib/workspace.ts";
 
 const ID = "AFFECTED";
 const TURBO = "turbo.json";
@@ -27,21 +28,6 @@ const ENV = ["OSF_TEST_RUN"];
 const STATIC_FORCE = "$(if $(OSF_TEST_CACHE),,--force)";
 const PULL_REQUEST = "github.event_name == 'pull_request'";
 
-interface Manifest {
-  name?: string;
-  scripts?: Record<string, string>;
-  dependencies?: Record<string, string>;
-  devDependencies?: Record<string, string>;
-}
-
-interface Unit {
-  /** The folder of the package, relative to the root. */
-  dir: string;
-  name: string;
-  declared: Set<string>;
-  tested: boolean;
-}
-
 const finding = (file: string, line: number, message: string): Finding => ({ check: ID, file, line, message });
 
 export function affected(context: Context): Finding[] {
@@ -57,23 +43,6 @@ export function affected(context: Context): Finding[] {
     ...pullRequestsOnly(repo),
     ...withDependencies(repo),
   ];
-}
-
-/** The packages of pnpm-workspace.yaml, with their names and declared dependencies. */
-function workspace(repo: Repo): Unit[] {
-  if (!repo.exists("pnpm-workspace.yaml")) return [];
-  const globs = ((parse(repo.read("pnpm-workspace.yaml")) as { packages?: string[] }).packages ?? []).map(
-    (glob) => `${glob}/package.json`,
-  );
-  return repo.match(...globs).map((file) => {
-    const manifest = JSON.parse(repo.read(file)) as Manifest;
-    return {
-      dir: dirname(file),
-      name: manifest.name ?? dirname(file),
-      declared: new Set([...Object.keys(manifest.dependencies ?? {}), ...Object.keys(manifest.devDependencies ?? {})]),
-      tested: manifest.scripts?.["test:system"] !== undefined,
-    };
-  });
 }
 
 /** What the system tests of `unit` start, import and read must be declared, and its JUnit results stay in it. */

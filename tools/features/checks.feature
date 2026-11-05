@@ -544,3 +544,67 @@ Feature: Repository checks
     When the developer runs "osf collect-reports"
     Then the command exits with code 0
     And "reports/junit/demo.xml" and "reports/coverage/demo-coverage-7-1-0.json" have the content of the package's files
+
+  @id=SCN-REPO-085 @status=implemented
+  Scenario: RELEASE accepts the release files that osf release-files wrote
+    Given a repository with the published module "demo" at version "0.3.0" and the private module "other"
+    And the developer ran "osf release-files"
+    When the developer runs "osf check RELEASE"
+    Then the command exits with code 0
+    And the output contains "RELEASE ok"
+
+  @id=SCN-REPO-086 @status=implemented
+  Scenario: osf release-files writes the publish workflow and the release entries of a published package
+    Given a repository with the published module "demo" at version "0.3.0" and the private module "other"
+    When the developer runs "osf release-files"
+    Then the command exits with code 0
+    And ".github/workflows/publish-demo.yml" publishes "@opensoftware/demo" from "modules/demo"
+    And "release-please-config.json" has the entry "modules/demo" with the component "demo" and the initial version "0.1.0"
+    And ".release-please-manifest.json" gives "modules/demo" the version "0.3.0"
+    And no release file names "other"
+
+  @id=SCN-REPO-087 @status=implemented
+  Scenario: RELEASE rejects a published package without its publish workflow
+    Given a repository with the published module "demo" at version "0.3.0" and the private module "other"
+    And the developer ran "osf release-files"
+    And ".github/workflows/publish-demo.yml" is deleted
+    When the developer runs "osf check RELEASE"
+    Then the command exits with code 1
+    And the output contains "RELEASE modules/demo/package.json:2 @opensoftware/demo has no .github/workflows/publish-demo.yml: run osf release-files"
+
+  @id=SCN-REPO-088 @status=implemented
+  Scenario: RELEASE rejects a publish workflow that differs from the template
+    Given a repository with the published module "demo" at version "0.3.0" and the private module "other"
+    And the developer ran "osf release-files"
+    And ".github/workflows/publish-demo.yml" gets one more line
+    When the developer runs "osf check RELEASE"
+    Then the command exits with code 1
+    And the output contains "RELEASE .github/workflows/publish-demo.yml:1 differs from tools/scaffold/publish-workflow.yml: run osf release-files"
+
+  @id=SCN-REPO-089 @status=implemented
+  Scenario: RELEASE rejects a published package without its release-please entry
+    Given a repository with the published module "demo" at version "0.3.0" and the private module "other"
+    And the developer ran "osf release-files"
+    And "release-please-config.json" has no packages
+    When the developer runs "osf check RELEASE"
+    Then the command exits with code 1
+    And the output contains "RELEASE release-please-config.json:1 has no entry for modules/demo with"
+
+  @id=SCN-REPO-090 @status=implemented
+  Scenario: RELEASE rejects a manifest version that differs from the package's version
+    Given a repository with the published module "demo" at version "0.3.0" and the private module "other"
+    And the developer ran "osf release-files"
+    And "modules/demo/package.json" has the version "0.4.0"
+    When the developer runs "osf check RELEASE"
+    Then the command exits with code 1
+    And the output contains "RELEASE .release-please-manifest.json:2 does not give modules/demo its version 0.4.0: run osf release-files"
+
+  @id=SCN-REPO-091 @status=implemented
+  Scenario: RELEASE rejects the release files of a package that is no longer published
+    Given a repository with the published module "demo" at version "0.3.0" and the private module "other"
+    And the developer ran "osf release-files"
+    And "modules/demo/package.json" is private
+    When the developer runs "osf check RELEASE"
+    Then the command exits with code 1
+    And the output contains "RELEASE .github/workflows/publish-demo.yml:1 publishes no published package of the workspace: run osf release-files"
+    And the output contains "RELEASE release-please-config.json:3 modules/demo is no published package: run osf release-files"
