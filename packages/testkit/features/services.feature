@@ -19,6 +19,13 @@ Feature: Services and outside systems
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-127 @status=implemented
+  Scenario: A test may stop fakes.postgres while a client holds a transaction open
+    Given a module whose system test begins a transaction on fakes.postgres and then stops fakes.postgres
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-009 @status=implemented
   Scenario: fakes.nats gives the module a reachable NATS server
     Given a module whose CLI connects to "DEMO_NATS_URL" and prints the first word the server sends

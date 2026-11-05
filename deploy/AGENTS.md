@@ -7,7 +7,7 @@ Adds rules for the distribution. The root `AGENTS.md` applies in full.
 The only ways a system test or an operator may use the distribution:
 
 - The Compose profile: `docker compose` in `compose/`, with `compose/.env` (see `README.md#configuration`)
-- The reference factory in `compose/factory/`
+- The reference factory in `compose/factory/` and this repository's factory in `dogfood/factory/`
 - The image build `images/Dockerfile`, with the build argument `PACKAGES`
 - The Helm chart: `helm` with `helm/osf/` and a values file (see `README.md#helm-values`), and `helm test`
 
