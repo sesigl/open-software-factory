@@ -1,0 +1,38 @@
+{
+  "name": "@opensoftware/postgres",
+  "version": "0.0.0",
+  "description": "What the modules of the open software factory share around node-postgres: a pool that survives a lost connection, and transactions.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "packages/postgres"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "vitest run",
+    "mutation": "node ../../tools/bin/osf.ts mutation ."
+  },
+  "dependencies": {
+    "pg": "8.23.1"
+  },
+  "devDependencies": {
+    "@opensoftware/testkit": "workspace:*",
+    "@types/pg": "8.23.1"
+  }
+}
