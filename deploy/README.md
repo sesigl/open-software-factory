@@ -241,3 +241,4 @@ repository's Packages and sets its visibility to public, like the first npm rele
 | SCN-DIST-012 | implemented | The verify stage of the reference factory waits for the check "verify" |
 | SCN-DIST-013 | implemented | The Compose profile takes the module images from the factory's registry |
 | SCN-DIST-014 | implemented | The intake of the Compose profile turns a GitHub issue labeled "factory" into a work item |
+| SCN-DIST-015 | implemented | The plan of this repository's factory adds the factory and finds no problems |
