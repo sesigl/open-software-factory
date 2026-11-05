@@ -197,6 +197,13 @@
       "initial-version": "0.1.0",
       "bump-minor-pre-major": true
     },
+    "packages/postgres": {
+      "release-type": "node",
+      "package-name": "@opensoftware/postgres",
+      "component": "postgres",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
+    },
     "packages/channel-kit": {
       "release-type": "node",
       "package-name": "@opensoftware/channel-kit",
