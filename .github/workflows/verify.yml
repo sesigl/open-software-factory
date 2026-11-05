@@ -54,6 +54,13 @@ jobs:
           path: .turbo/cache
           key: turbo-static-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: turbo-static-
+      # The pinned binaries of install-tools: a new pin in install-tools.ts makes a new key. Without it, each job
+      # downloads all eight from their sites, which takes about 8 s and failed when one site did not answer.
+      - name: Restore the pinned tools
+        uses: actions/cache@v4
+        with:
+          path: .tools/bin
+          key: tools-${{ runner.os }}-${{ hashFiles('tools/scaffold/install-tools.ts') }}
       - run: make install
       - run: make verify-static
         env:
@@ -170,6 +177,13 @@ jobs:
           path: .turbo/cache
           key: turbo-${{ matrix.suite }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: turbo-${{ matrix.suite }}-
+      # The pinned binaries of install-tools: a new pin in install-tools.ts makes a new key. Without it, each job
+      # downloads all eight from their sites, which takes about 8 s and failed when one site did not answer.
+      - name: Restore the pinned tools
+        uses: actions/cache@v4
+        with:
+          path: .tools/bin
+          key: tools-${{ runner.os }}-${{ hashFiles('tools/scaffold/install-tools.ts') }}
       - run: make install
       # run=false when every system test task of the suite is a cache hit: the slow setup below is then not needed.
       - name: Plan the suite
@@ -302,6 +316,13 @@ jobs:
         with:
           path: .turbo/cache
           key: turbo-static-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+      # The pinned binaries of install-tools: a new pin in install-tools.ts makes a new key. Without it, each job
+      # downloads all eight from their sites, which takes about 8 s and failed when one site did not answer.
+      - name: Restore the pinned tools
+        uses: actions/cache@v4
+        with:
+          path: .tools/bin
+          key: tools-${{ runner.os }}-${{ hashFiles('tools/scaffold/install-tools.ts') }}
       - run: make install
 
       - name: Pull request context for DOCS-AFFECTED
