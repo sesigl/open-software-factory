@@ -54,7 +54,7 @@ verify-static: ## part of verify: lint, typecheck and build every package withou
 # collect-reports copies them to reports/ of the repository, also after a failure.
 verify-tests: ## part of verify: the system test suites; FILTER="pkg !pkg" limits them to some packages
 	@rm -rf $(wildcard */reports */*/reports */*/*/reports)
-	@status=0; $(if $(OSF_TEST_CACHE),,OSF_TEST_RUN=$$$$-$$(date +%s)) $(TURBO) test:system --concurrency=1 --continue \
+	@status=0; $(if $(OSF_TEST_CACHE),,OSF_TEST_RUN=$$$$-$$(date +%s)) $(TURBO) test:system --summarize --concurrency=1 --continue \
 	  $(foreach f,$(FILTER),--filter=$(f)) || status=$$?; $(OSF) collect-reports; exit $$status
 
 # REACH maps the coverage in reports/coverage/ to the built files, so the build comes first (cached after verify-static).
