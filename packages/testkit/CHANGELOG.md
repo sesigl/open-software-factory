@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.30.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.29.0...testkit-v0.30.0) (2026-11-05)
+
+
+### Features
+
+* **deploy:** the Compose profile runs this repository's factory on a Claude subscription ([#175](https://github.com/sesigl/open-software-factory/issues/175)) ([6c4e676](https://github.com/sesigl/open-software-factory/commit/6c4e676dec228f082d2f0b541d48649a38e3b1f2))
+
+
+### Performance Improvements
+
+* **ci:** pull requests replay the system test results of unchanged suites ([#178](https://github.com/sesigl/open-software-factory/issues/178)) ([fcb60ba](https://github.com/sesigl/open-software-factory/commit/fcb60badf3c0488706721b4e49814d03b5685f9a))
+
 ## [0.29.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.28.1...testkit-v0.29.0) (2026-11-04)
 
 

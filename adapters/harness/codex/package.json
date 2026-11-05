@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/harness-codex",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "harness-codex: runs Codex behind the harness port through its ACP bridge in its read-only mode, asking before each edit and each command that leaves the sandbox, with a tool allowlist, cancel within 5 seconds and a run record with tokens.",
   "license": "Apache-2.0",
   "repository": {

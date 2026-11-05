@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.1](https://github.com/sesigl/open-software-factory/compare/intake-v0.3.0...intake-v0.3.1) (2026-11-05)
+
+
+### Bug Fixes
+
+* **intake:** pools and transactions come from a shared library that survives a lost connection ([#180](https://github.com/sesigl/open-software-factory/issues/180)) ([ff46542](https://github.com/sesigl/open-software-factory/commit/ff46542f54d271e97a49147e41e7e2a399b9171c))
+
+
+### Performance Improvements
+
+* **ci:** pull requests replay the system test results of unchanged suites ([#178](https://github.com/sesigl/open-software-factory/issues/178)) ([fcb60ba](https://github.com/sesigl/open-software-factory/commit/fcb60badf3c0488706721b4e49814d03b5685f9a))
+
 ## [0.3.0](https://github.com/sesigl/open-software-factory/compare/intake-v0.2.0...intake-v0.3.0) (2026-10-27)
 
 

@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.6.0](https://github.com/sesigl/open-software-factory/compare/gatekeeper-v0.5.0...gatekeeper-v0.6.0) (2026-11-05)
+
+
+### Features
+
+* **deploy:** the Compose profile runs this repository's factory on a Claude subscription ([#175](https://github.com/sesigl/open-software-factory/issues/175)) ([6c4e676](https://github.com/sesigl/open-software-factory/commit/6c4e676dec228f082d2f0b541d48649a38e3b1f2))
+
+
+### Bug Fixes
+
+* **intake:** pools and transactions come from a shared library that survives a lost connection ([#180](https://github.com/sesigl/open-software-factory/issues/180)) ([ff46542](https://github.com/sesigl/open-software-factory/commit/ff46542f54d271e97a49147e41e7e2a399b9171c))
+
+
+### Performance Improvements
+
+* **ci:** pull requests replay the system test results of unchanged suites ([#178](https://github.com/sesigl/open-software-factory/issues/178)) ([fcb60ba](https://github.com/sesigl/open-software-factory/commit/fcb60badf3c0488706721b4e49814d03b5685f9a))
+
 ## [0.5.0](https://github.com/sesigl/open-software-factory/compare/gatekeeper-v0.4.1...gatekeeper-v0.5.0) (2026-11-04)
 
 
