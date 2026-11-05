@@ -385,11 +385,23 @@ jobs:
       # Dogfood of spec-trace (ADR 0031): the report with the scenarios this change adds, removes or changes, as the
       # job summary and the artifact spec-trace. make verify-checks ran its rules already. The action runs the release
       # of the version in modules/spec-trace/package.json from npm.
+      # A release pull request raises the version before it is on npm: then the step runs the build of this commit.
+      - name: Pick the spec-trace command
+        id: spec-trace
+        if: always()
+        run: |
+          version=$(jq -r .version modules/spec-trace/package.json)
+          if npm view "@opensoftware/spec-trace@$version" version >/dev/null 2>&1; then
+            echo "command=" >> "$GITHUB_OUTPUT"
+          else
+            echo "command=node $PWD/modules/spec-trace/dist/cli.js" >> "$GITHUB_OUTPUT"
+          fi
       - name: spec-trace
         if: always()
         uses: ./modules/spec-trace
         with:
           rules: ""
+          command: ${{ steps.spec-trace.outputs.command }}
 
       - name: Lint, typecheck, build and every test suite passed
         env:
