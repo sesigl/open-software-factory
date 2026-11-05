@@ -20,7 +20,7 @@ so a fix in intake alone has no system test that notices it, and MUTATION reject
 
 - A library `packages/postgres`, published as `@opensoftware/postgres` (ADR 0037, ADR 0039), holds what modules need
   around `pg`:
-  - `openPool(url, options)`: a `pg.Pool` with a listener for the errors of idle clients and one for each client it
+  - `openPool(url)`: a `pg.Pool` of at most four clients, with a listener for the errors of idle clients and one for each client it
     creates, so a checked-out client that loses its connection does not end the process;
   - `transaction(pool, work)`: `BEGIN`, the work, `COMMIT`; `ROLLBACK` when the work fails; the client goes back to
     the pool in every case, and pg-pool destroys a client that lost its connection.

@@ -14,7 +14,7 @@ export async function workDatabase(
   fakes: Fakes,
 ): Promise<{ db: { stop(): Promise<void> }; pool: Pool; errors: Error[] }> {
   const db = await fakes.postgres();
-  const pool = openPool(db.url, { max: 2 });
+  const pool = openPool(db.url);
   onTestFinished(() => pool.end().catch(() => {}));
   await pool.query("CREATE TABLE work (id text PRIMARY KEY)");
   return { db, pool, errors: fatalErrors() };

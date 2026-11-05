@@ -13,7 +13,7 @@ connection, and transactions. A library: modules depend on it, it has no command
 ```ts
 import { openPool, transaction } from "@opensoftware/postgres";
 
-const pool = openPool(process.env.DATABASE_URL as string, { max: 4 });
+const pool = openPool(process.env.DATABASE_URL as string);
 await transaction(pool, async (client) => {
   await client.query("INSERT INTO work (id) VALUES ($1)", ["w-1"]);
   await client.query("INSERT INTO outbox (event) VALUES ($1)", ["work.received"]);
@@ -23,7 +23,7 @@ await pool.end();
 
 ## API
 
-- `openPool(url, { max })` returns a `pg.Pool`. It listens for the errors of idle clients and of every client it
+- `openPool(url)` returns a `pg.Pool` with at most four clients. It listens for the errors of idle clients and of every client it
   creates. A client that loses its connection, also one that a transaction holds between two queries, then does not
   end the process: its next query fails instead.
 - `transaction(pool, work)` runs `BEGIN`, `work(client)` and `COMMIT`, and returns what `work` returns. When `work`
@@ -53,3 +53,4 @@ credential is stored in the repository.
 | SCN-PG-002 | implemented | A transaction whose work fails leaves no row |
 | SCN-PG-003 | implemented | The process goes on when the database stops while a transaction holds its client between two queries |
 | SCN-PG-004 | implemented | The process goes on when the database stops while the pool holds an idle client |
+| SCN-PG-005 | implemented | A pool opens at most four clients, and a fifth request waits for one |

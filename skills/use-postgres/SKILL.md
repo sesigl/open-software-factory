@@ -16,7 +16,7 @@ The process must go on and answer with an error. It must not end.
    ```ts
    import { openPool, transaction } from "@opensoftware/postgres";
 
-   const pool = openPool(url, { max: 4 });
+   const pool = openPool(url);
    await transaction(pool, async (client) => {
      await client.query("UPDATE ...", [id]);
      await client.query("INSERT INTO outbox ...", [event]);

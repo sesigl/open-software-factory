@@ -19,7 +19,7 @@ export interface Database extends Sql {
 }
 
 async function postgres(url: string): Promise<Database> {
-  const pool = openPool(url, { max: 4 });
+  const pool = openPool(url);
   const sql = (client: pg.Pool | pg.PoolClient): Sql => ({
     query: async <Row>(text: string, values?: unknown[]) =>
       (await client.query(text, values)) as unknown as { rows: Row[] },

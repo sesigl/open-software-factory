@@ -91,7 +91,7 @@ const fromDb = (row: Record<string, unknown>): StoredGate => ({
 const ROW = "id, request, rules, channel, thread, requested_at, state, waiting_for, record";
 
 export async function openStore(url: string): Promise<Store> {
-  const pool = openPool(url, { max: 4 });
+  const pool = openPool(url);
   try {
     await transaction(pool, async (client) => {
       await client.query("SELECT pg_advisory_xact_lock($1)", [SCHEMA_LOCK]);
