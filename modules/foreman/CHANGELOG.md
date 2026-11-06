@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/sesigl/open-software-factory/compare/foreman-v0.6.0...foreman-v0.6.1) (2026-11-05)
+
+
+### Performance Improvements
+
+* **ci:** pull requests replay the system test results of unchanged suites ([#178](https://github.com/sesigl/open-software-factory/issues/178)) ([fcb60ba](https://github.com/sesigl/open-software-factory/commit/fcb60badf3c0488706721b4e49814d03b5685f9a))
+
 ## [0.6.0](https://github.com/sesigl/open-software-factory/compare/foreman-v0.5.0...foreman-v0.6.0) (2026-11-04)
 
 

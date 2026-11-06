@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.1.0](https://github.com/sesigl/open-software-factory/compare/contracts-v2.0.0...contracts-v2.1.0) (2026-11-05)
+
+
+### Features
+
+* **tools:** RELEASE checks the publish workflow and release entries of every package ([#183](https://github.com/sesigl/open-software-factory/issues/183)) ([7f75236](https://github.com/sesigl/open-software-factory/commit/7f7523655c27dd8d0535ef1291be482c9ceb04ca))
+
+
+### Performance Improvements
+
+* **ci:** pull requests replay the system test results of unchanged suites ([#178](https://github.com/sesigl/open-software-factory/issues/178)) ([fcb60ba](https://github.com/sesigl/open-software-factory/commit/fcb60badf3c0488706721b4e49814d03b5685f9a))
+
 ## [2.0.0](https://github.com/sesigl/open-software-factory/compare/contracts-v1.10.0...contracts-v2.0.0) (2026-11-01)
 
 
