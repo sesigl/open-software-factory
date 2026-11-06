@@ -100,9 +100,10 @@ One-time setup (no credential is ever stored in the repository):
    repository is published.
 2. GitHub: the publish job runs in the environment `npm` (Settings → Environments; GitHub creates it on the first
    run).
-3. First version only: npm adds a trusted publisher only to a package that exists, so a maintainer publishes the
-   first version by hand, from the release tag, with their own npm login and two-factor authentication:
-   `pnpm --filter "<package>..." build`, `pnpm --dir <folder> pack`, then `npm publish <file>.tgz --access public`.
+3. New package only: npm adds a trusted publisher only to a package that exists. Before the release pull request
+   with its first version merges, a maintainer creates it: build and pack it as version `0.0.0`, then run
+   `npm publish <file>.tgz --tag placeholder --access public` without `--otp`. npm stages that version, so the
+   package exists and nothing is public (`skills/release-packages`).
 4. Then add the trusted publisher, on npmjs.com (package settings → Trusted publishing) or with
    `npm trust github <package> --file publish-<name>.yml --repository sesigl/open-software-factory --environment npm
    --allow-publish --allow-stage-publish`. Every later version publishes through OIDC only, with a provenance

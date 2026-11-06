@@ -28,6 +28,8 @@ tooling is described in `tools/README.md`. Every pull request is reviewed by a p
 | "Implement this feature file" | For each `planned` scenario in it: `skills/write-system-test`, then `skills/implement-scenario`. |
 | "Start module X" | Read its item in `TODO.md`, then `skills/new-module`. Write the scenarios the item lists before any code. |
 | "Change code that uses PostgreSQL" | `skills/use-postgres`. |
+| "Open a pull request" or "fix its checks" | `skills/ship-pull-request`. |
+| "Release the packages" or "a publish failed" | `skills/release-packages`. |
 | "Read the context" | `README.md`, `docs/vision/talk-analysis.md`, `docs/principles.md`, `docs/architecture/`. |
 
 ## Definition of done
@@ -65,6 +67,11 @@ Follow this loop for every behavior change. Each step has a skill.
 
 A new module starts with `skills/new-module`. A new dependency or service starts with `skills/write-adr`.
 
+- Work on a branch in the main checkout, not in a git worktree: turbo then keeps one cache for all branches.
+- Store learnings in the repository, never in an agent's own auto memory: in a skill, an `AGENTS.md` or a doc, where
+  every later session and agent reads them. Before you add one, show the learning and its place to the maintainer
+  and wait for approval.
+
 ## Hard rules
 
 - Specify behavior in Gherkin. The scenario is the requirement; the system test is its proof.
@@ -80,6 +87,9 @@ A new module starts with `skills/new-module`. A new dependency or service starts
   less code or a shared library. Never with a unit test or a mock.
 - Never skip or weaken the test of an `implemented` scenario. To remove behavior, mark the scenario `deprecated`
   and delete its test in the same change.
+- Every per-package convention in CI, release or config files (a CI job, a publish workflow, a release entry, a report
+  path) has a deterministic check in `tools/checks/` that also catches a new package. Generate such files from one
+  template where you can.
 - Adopt before you build. Check for an existing open-source project first and record what you found.
 - Never write a credential into code, tests, fixtures, logs or documents.
 - When a suite comes near its BUDGET or goes over it, make it faster before you raise the budget. Measure where the
