@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/sandbox-kubernetes",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "sandbox-kubernetes: runs isolated, resource-limited sandboxes as kubernetes-sigs/agent-sandbox claims, each reaching out only through its own iron-proxy egress pod that refuses other hosts, puts in the real secrets and allows only the declared MCP tools.",
   "license": "Apache-2.0",
   "repository": {
