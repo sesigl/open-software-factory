@@ -19,6 +19,8 @@ agents:
       - ./skills/fix-mutation-and-duplication
       - ./skills/keep-docs-evergreen
       - ./skills/new-module
+      - ./skills/release-packages
+      - ./skills/ship-pull-request
       - ./skills/use-postgres
       - ./skills/write-adr
       - ./skills/write-scenario
