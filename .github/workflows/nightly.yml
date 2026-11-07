@@ -35,6 +35,9 @@ jobs:
     name: shards to mutate
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
     outputs:
       shards: ${{ steps.plan.outputs.shards }}
     steps:
@@ -48,22 +51,37 @@ jobs:
       - id: plan
         env:
           PACKAGES: ${{ inputs.packages }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           pnpm --silent run osf mutation-plan --all > "$RUNNER_TEMP/shards.json"
           pnpm exec turbo run mutation --dry=json > "$RUNNER_TEMP/turbo.json"
+          # The minutes of each shard in the last completed nightly run: the longest shards start first, so the run
+          # does not wait for one of them at its end. Only the order changes; a new shard keeps the plan's order.
+          last=$(gh run list --workflow nightly.yml --status completed --limit 1 --json databaseId --jq '.[0].databaseId // empty' || true)
+          if [ -n "$last" ]; then
+            gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs/$last/jobs?per_page=100" \
+              --jq '.jobs[] | select(any(.steps[]?; .name == "Run ./.github/actions/mutation-shard" and .conclusion == "success")) | {name, minutes: (((.completed_at | fromdate) - (.started_at | fromdate)) / 60)}' \
+              | jq -s . > "$RUNNER_TEMP/minutes.json" || echo "[]" > "$RUNNER_TEMP/minutes.json"
+          else
+            echo "[]" > "$RUNNER_TEMP/minutes.json"
+          fi
           shards=$(node -e '
             const { readFileSync } = require("node:fs");
-            const [shards, turbo] = process.argv.slice(1).map((file) => JSON.parse(readFileSync(file, "utf8")));
+            const [shards, turbo, last] = process.argv.slice(1).map((file) => JSON.parse(readFileSync(file, "utf8")));
             const hashes = new Map(turbo.tasks.filter((task) => task.task === "mutation").map((task) => [task.package, task.hash]));
+            const minutes = new Map(last.map((job) => [job.name, job.minutes]));
             const only = (process.env.PACKAGES ?? "").split(/\s+/).filter(Boolean);
             const plan = shards
               .filter((shard) => only.length === 0 || only.includes(shard.package))
-              .map((shard) => {
+              .map((shard, order) => {
                 const hash = hashes.get(shard.package);
                 if (!hash) throw new Error(`turbo has no mutation task for ${shard.package}`);
-                return { ...shard, key: `mutation-all-v1-${shard.package.replace(/\W+/g, "-")}-${shard.shard.replace("/", "-of-")}-${hash}` };
-              });
-            console.log(JSON.stringify(plan));' "$RUNNER_TEMP/shards.json" "$RUNNER_TEMP/turbo.json")
+                const key = `mutation-all-v1-${shard.package.replace(/\W+/g, "-")}-${shard.shard.replace("/", "-of-")}-${hash}`;
+                return { ...shard, key, order, minutes: minutes.get(`mutation (${shard.package} ${shard.shard})`) };
+              })
+              .sort((a, b) => (b.minutes ?? Infinity) - (a.minutes ?? Infinity) || a.order - b.order)
+              .map(({ order, minutes, ...shard }) => shard);
+            console.log(JSON.stringify(plan));' "$RUNNER_TEMP/shards.json" "$RUNNER_TEMP/turbo.json" "$RUNNER_TEMP/minutes.json")
           echo "$shards" | jq -r '.[] | "\(.package) \(.shard) \(.key)"'
           echo "shards=$shards" >> "$GITHUB_OUTPUT"
 
@@ -76,8 +94,8 @@ jobs:
     timeout-minutes: 90
     strategy:
       fail-fast: false
-      # 4 of the 20 jobs that run at the same time stay free for pull requests.
-      max-parallel: 16
+      # A run started by hand leaves 4 of the 20 jobs that run at the same time free for pull requests; at night, all.
+      max-parallel: ${{ github.event_name == 'schedule' && 20 || 16 }}
       matrix:
         include: ${{ fromJSON(needs.plan.outputs.shards) }}
     steps:
@@ -134,11 +152,18 @@ jobs:
           pattern: mutation-*
           path: reports/mutation/
           merge-multiple: true
+      # A shard that failed leaves its mutants out of the score: the score of the other shards does not pass the run.
       - id: score
         if: ${{ !inputs.packages }}
+        env:
+          SHARDS: ${{ needs.mutation.result }}
         run: |
           set -o pipefail
           pnpm --silent run osf check MUTATION --total | tee "$RUNNER_TEMP/score.txt"
+          if [ "$SHARDS" != success ] && [ "$SHARDS" != skipped ]; then
+            echo "failed: a shard of the run did not pass ($SHARDS), so the score is incomplete" | tee -a "$RUNNER_TEMP/score.txt"
+            exit 1
+          fi
       # A run for some packages scores only theirs: the counts of each report.
       - name: Count the mutants of each report
         if: always() && inputs.packages

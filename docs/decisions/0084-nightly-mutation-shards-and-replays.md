@@ -30,11 +30,15 @@ The nightly run mutates every line (ADR 0037) and runs `osf check MUTATION --tot
   `--all` it cuts every unit with a mutation script into shards of about 600 lines, or of the
   `osf.mutationAllLinesPerShard` lines its `package.json` sets, at most 20 (SCN-REPO-092). The units whose scenarios
   start slow services set smaller shards, from the lines per minute of measured runs: intake, gatekeeper, foreman,
-  proof, observer, sandbox-kubernetes, inference-litellm, forge-forgejo and harness-opencode. The shards of the units
-  with the fewest lines per shard start first. The units that start containers, whose runs wait for the Docker daemon
-  more than for the CPUs, set two Stryker workers in `osf.mutationConcurrency`. Without `--all` it cuts each unit that
-  a change adds lines to, as `mutation.yml` did in its own script (SCN-REPO-093). A new unit joins both runs without a
-  change to a workflow. Each shard tests every n-th mutant (ADR 0066).
+  proof, observer, sandbox-kubernetes, inference-litellm, forge-forgejo and harness-opencode. The plan job starts the
+  shards that took longest in the last completed nightly run first, and a shard without a time first of all; without
+  times, the shards of the units with the fewest lines per shard start first. Only the order depends on the times, so
+  the keys do not change. A run at night uses all 20 jobs that GitHub runs at the same time, and a run started by hand
+  leaves 4 free for pull requests. The plan warns when a unit needs more than 20 shards. The units that start
+  containers, whose runs wait for the Docker daemon more than for the CPUs, set two Stryker workers in
+  `osf.mutationConcurrency`. Without `--all` it cuts each unit that a change adds lines to, as `mutation.yml` did in
+  its own script (SCN-REPO-093). A new unit joins both runs without a change to a workflow. Each shard tests every
+  n-th mutant (ADR 0066).
 - The nightly run keys each shard's report on turbo's hash of the unit's `mutation` task, the shard and a scheme
   version. The hash covers the unit's files, the builds of its declared dependencies (which the check AFFECTED keeps
   complete, ADR 0081), the global dependencies of `turbo.json`, and the mutation tooling and its workflow files in the
@@ -72,7 +76,7 @@ The nightly run mutates every line (ADR 0037) and runs `osf check MUTATION --tot
   about 3,800 mutants of intake, ledger, scorekit and runlog ended as Timeout, which counts as detected. turbo builds only the unit's dependencies before
   `osf mutation`, since Stryker builds the unit itself, and on CI `osf mutation` does not build it again at the end.
 - The nightly run keeps one open ticket: a failed run comments on it with the units below their limit, and a passing
-  run closes it.
+  run closes it. A run in which a shard failed fails its score: the reports of the other shards leave out mutants.
 
 ## Options considered
 

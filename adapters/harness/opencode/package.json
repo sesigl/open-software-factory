@@ -36,6 +36,6 @@
     "opencode-ai": "1.19.4"
   },
   "osf": {
-    "mutationAllLinesPerShard": 300
+    "mutationAllLinesPerShard": 25
   }
 }

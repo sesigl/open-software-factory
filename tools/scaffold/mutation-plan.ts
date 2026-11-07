@@ -48,7 +48,13 @@ export function mutationPlan(root: string, args: string[]): number {
     const perShard = base
       ? Number(manifest.osf?.mutationLinesPerShard) || CHANGED_LINES_PER_SHARD
       : Number(manifest.osf?.mutationAllLinesPerShard) || ALL_LINES_PER_SHARD;
-    const count = Math.min(base ? MAX_SHARDS.changed : MAX_SHARDS.all, Math.ceil(lines / perShard));
+    const max = base ? MAX_SHARDS.changed : MAX_SHARDS.all;
+    const count = Math.min(max, Math.ceil(lines / perShard));
+    if (count < Math.ceil(lines / perShard)) {
+      process.stderr.write(
+        `osf mutation-plan: ${manifest.name} has more lines than ${max} shards of ${perShard} hold\n`,
+      );
+    }
     for (let index = 1; index <= count; index++) {
       plan.push({ package: manifest.name, folder, shard: `${index}/${count}`, perShard });
     }
