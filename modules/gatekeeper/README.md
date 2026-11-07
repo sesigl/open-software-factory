@@ -378,3 +378,23 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-GATE-068 | implemented | A failed read of the pull request's comments keeps the gate pending, and a later read decides it |
 | SCN-GATE-069 | implemented | The server goes on serving when its database fails during a check of the pull request gates |
 | SCN-GATE-070 | implemented | The server goes on serving when its database stops in the middle of a pull request gate's check |
+| SCN-GATE-071 | implemented | A work item that is no text of 1 to 128 characters exits 2 and names the field |
+| SCN-GATE-072 | implemented | A stage that is no lowercase name exits 2 and names the field |
+| SCN-GATE-073 | implemented | A summary of only spaces exits 2 and names the field |
+| SCN-GATE-074 | implemented | Links that are no list of URLs exit 2 and name the field |
+| SCN-GATE-075 | implemented | A change that is no JSON object exits 2 and names the field |
+| SCN-GATE-076 | implemented | A request file that holds no JSON object exits 2 and names the file |
+| SCN-GATE-077 | implemented | Approvers or escalation groups that are no group names exit 2 and name the rule |
+| SCN-GATE-078 | implemented | A policy without rules in the package "gatekeeper" exits 2 and names the policy |
+| SCN-GATE-079 | implemented | A policy without approvers exits 2 and names the policy |
+| SCN-GATE-080 | implemented | A risk that is no text exits 2 |
+| SCN-GATE-081 | implemented | A policy with "escalate_after" and without "escalate_to" exits 2 |
+| SCN-GATE-082 | implemented | A duration that is not like "4h" exits 2 and names the rule |
+| SCN-GATE-083 | implemented | A groups file that does not map each group to a list of identities exits 2 and names the file |
+| SCN-GATE-084 | implemented | A time in "OSF_NOW" that is no ISO time exits 2 and names the time |
+| SCN-GATE-085 | implemented | A channel that is not like "slack:C0GATES", or a Slack channel without a token, exits 2 |
+| SCN-GATE-086 | implemented | "gatekeeper request" with wrong arguments exits 2 and says what to change |
+| SCN-GATE-087 | implemented | "gatekeeper verify" without a public key or with two records exits 2 |
+| SCN-GATE-088 | implemented | The output of a request names the gate, the groups, the channel and the risk |
+| SCN-GATE-089 | implemented | The server with a wrong setting exits with code 2 and names the setting |
+| SCN-GATE-090 | implemented | A call without an Authorization header gets the status 401 and a problem that says how to send the token |
