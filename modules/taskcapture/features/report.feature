@@ -58,3 +58,54 @@ Feature: Report correctness against cost
     When the user runs "taskcapture report jobs"
     Then the command exits with code 2
     And the error output says "taskcapture: no Harbor trial result (result.json with trial_name) in jobs"
+
+  @id=SCN-TASK-061 @status=implemented
+  Scenario: Of the cells with the highest correctness the cheapest is the best
+    Given the job folder "v1" where "model-a" scores 1.0 at 2.00 USD per trial, "model-b" 1.0 at 1.00 USD, "model-c" 1.0 at 3.00 USD and "model-d" 1.0 without a cost
+    When the user runs "taskcapture report v1"
+    Then "report.json" names "model-b" the best, the lowest cost and the most efficient
+    And "report.json" has the Pareto front "model-b"
+
+  @id=SCN-TASK-062 @status=implemented
+  Scenario: Of the cells with the lowest cost the most correct is the lowest cost
+    Given the job folder "v1" where "model-a" scores 0.5 at 1.00 USD per trial, "model-b" 1.0 at 1.00 USD and "model-c" 0.25 at 1.00 USD
+    When the user runs "taskcapture report v1"
+    Then "report.json" names "model-b" the best, the lowest cost and the most efficient
+    And "report.json" has the Pareto front "model-b"
+
+  @id=SCN-TASK-063 @status=implemented
+  Scenario: Of the cells with the highest correctness per USD the most correct is the most efficient
+    Given the job folder "v1" where "model-a" scores 0.5 at 1.00 USD per trial, "model-b" 1.0 at 2.00 USD and "model-c" 0.25 at 0.50 USD
+    When the user runs "taskcapture report v1"
+    Then "report.json" names "model-b" the best, "model-c" the lowest cost and "model-b" the most efficient
+    And "report.json" has the Pareto front "model-c", "model-a" and "model-b"
+
+  @id=SCN-TASK-064 @status=implemented
+  Scenario: The option "--markdown" writes the cells, the picks and a warning for each incomplete cell and each trial without a cost
+    Given the job folder "v1" where "model-a" scored "web-1" at 1.00 USD and "web-2" without a cost and "model-b" scored 0.75 on "web-1" at 0.50 USD and ended "web-2" with the error "AgentTimeoutError"
+    When the user runs "taskcapture report --markdown report.md v1"
+    Then "report.md" has the heading "# Benchmark report", the line "2 tasks, 2 cells of configuration and model." and one table row per cell
+    And "report.md" names the best, the lowest-cost and the most efficient cell
+    And "report.md" has the section "## Warnings" with one warning for "v1 · model-a" and one for "v1 · model-b"
+
+  @id=SCN-TASK-065 @status=implemented
+  Scenario: The output names each cell, its warnings and the picks
+    Given the job folder "v1" where "model-a" scored "web-1" at 1.00 USD and "web-2" without a cost and "model-b" scored 0.75 on "web-1" at 0.50 USD and ended "web-2" with the error "AgentTimeoutError"
+    When the user runs "taskcapture report v1"
+    Then the output has one line per cell with its correctness, its USD per trial and its scored tasks
+    And the output has one line per warning and then the line "best: v1 · model-a; lowest cost: v1 · model-b; most efficient: v1 · model-b"
+
+  @id=SCN-TASK-066 @status=implemented
+  Scenario: The chart of "--chart" titles its axes and marks each cell with a filled point
+    Given the job folder "v1" where "gpt-5.6-sol" scores 1.0 at 6.23 USD per trial, "glm-5.3-flash" 0.9 at 1.99 USD and "llama-9-tiny" 0.2 at 1.50 USD
+    When the user runs "taskcapture report --chart chart.json v1"
+    Then "chart.json" has the title "Correctness against average cost per trial"
+    And "chart.json" titles the x axis "Average cost per trial (USD)" and the y axis "Correctness" in percent
+    And "chart.json" colors each point by its model and shapes it by its configuration
+    And "chart.json" marks each cell with a filled point of size 120 with a tooltip
+
+  @id=SCN-TASK-067 @status=implemented
+  Scenario: Report needs a folder or a result file
+    When the user runs "taskcapture report"
+    Then the command exits with code 2
+    And the error output says "taskcapture: report takes Harbor job folders or result.json files"

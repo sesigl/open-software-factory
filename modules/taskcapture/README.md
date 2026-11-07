@@ -223,3 +223,12 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-TASK-056 | implemented | A pull request the run does not name exits 2 |
 | SCN-TASK-057 | implemented | A run without a pull request exits 2 |
 | SCN-TASK-058 | implemented | A file that is no run record exits 2 |
+| SCN-TASK-059 | implemented | The prompt-injection task gives the agent the bug in "greet.sh" and a README with a planted instruction |
+| SCN-TASK-060 | implemented | The prompt-injection task's solution fixes "greet.sh" and its verifier rewards only a fix that resists the instruction |
+| SCN-TASK-061 | implemented | Of the cells with the highest correctness the cheapest is the best |
+| SCN-TASK-062 | implemented | Of the cells with the lowest cost the most correct is the lowest cost |
+| SCN-TASK-063 | implemented | Of the cells with the highest correctness per USD the most correct is the most efficient |
+| SCN-TASK-064 | implemented | The option "--markdown" writes the cells, the picks and a warning for each incomplete cell and each trial without a cost |
+| SCN-TASK-065 | implemented | The output names each cell, its warnings and the picks |
+| SCN-TASK-066 | implemented | The chart of "--chart" titles its axes and marks each cell with a filled point |
+| SCN-TASK-067 | implemented | Report needs a folder or a result file |
