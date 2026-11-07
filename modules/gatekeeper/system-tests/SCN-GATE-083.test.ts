@@ -1,6 +1,6 @@
 import { scenario } from "@opensoftware/testkit";
 import { putReadme } from "./gate.ts";
-import { expectUsageErrors, putEach, type Run, requestArgs, runEach } from "./input.ts";
+import { putEach, type Run, requestArgs, runEach, usageLines } from "./input.ts";
 
 const groups = (maintainers: unknown, reviewers: unknown = ["slack:U0BEN"]) => ({
   maintainers,
@@ -41,10 +41,11 @@ scenario("SCN-GATE-083", async ({ sut, fakes, given, when, then }) => {
   await then(
     'each error output says that the groups file must map each group to its members, like {"maintainers": ["slack:U0ADA"]}',
     async () => {
-      expectUsageErrors(
-        runs,
-        Object.keys(FILES),
-        (file) => `${file} must map each group to its members, like {"maintainers": ["slack:U0ADA"]}`,
+      expect(runs.map((run) => run.stderr)).toEqual(
+        usageLines(
+          Object.keys(FILES),
+          (file) => `${file} must map each group to its members, like {"maintainers": ["slack:U0ADA"]}`,
+        ),
       );
     },
   );

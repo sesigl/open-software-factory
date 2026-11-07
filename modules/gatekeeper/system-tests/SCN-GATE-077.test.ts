@@ -1,6 +1,6 @@
 import { scenario } from "@opensoftware/testkit";
 import { putReadme } from "./gate.ts";
-import { expectUsageErrors, putEach, type Run, requestArgs, runEach } from "./input.ts";
+import { putEach, type Run, requestArgs, runEach, usageLines } from "./input.ts";
 
 const RULE = "package gatekeeper\n\n";
 const FILES = {
@@ -34,11 +34,12 @@ scenario("SCN-GATE-077", async ({ sut, fakes, given, when, then }) => {
   await then(
     `each error output says that the policy's "approvers" or "escalate_to" must be a set of group names like "maintainers"`,
     async () => {
-      expectUsageErrors(
-        runs,
-        Object.keys(FILES),
-        (policy) =>
-          `the policy's ${policy === "leads.rego" ? "escalate_to" : "approvers"} must be a set of group names like "maintainers"`,
+      expect(runs.map((run) => run.stderr)).toEqual(
+        usageLines(
+          Object.keys(FILES),
+          (policy) =>
+            `the policy's ${policy === "leads.rego" ? "escalate_to" : "approvers"} must be a set of group names like "maintainers"`,
+        ),
       );
     },
   );

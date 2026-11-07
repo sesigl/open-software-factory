@@ -1,6 +1,6 @@
 import { scenario } from "@opensoftware/testkit";
 import { putReadme } from "./gate.ts";
-import { expectUsageErrors, putEach, type Run, requestArgs, runEach } from "./input.ts";
+import { putEach, type Run, requestArgs, runEach, usageLines } from "./input.ts";
 
 const RULE = 'package gatekeeper\n\napprovers contains "maintainers"\n\n';
 const escalate = (after: string) => `${RULE}escalate_after := "${after}"\n\nescalate_to contains "leads"\n`;
@@ -35,11 +35,12 @@ scenario("SCN-GATE-082", async ({ sut, fakes, given, when, then }) => {
   await then(
     `each error output says that the policy's "escalate_after" or "expire_after" must be a duration like "30m", "4h" or "2d"`,
     async () => {
-      expectUsageErrors(
-        runs,
-        Object.keys(FILES),
-        (policy) =>
-          `the policy's ${policy === "days.rego" ? "expire_after" : "escalate_after"} must be a duration like "30m", "4h" or "2d"`,
+      expect(runs.map((run) => run.stderr)).toEqual(
+        usageLines(
+          Object.keys(FILES),
+          (policy) =>
+            `the policy's ${policy === "days.rego" ? "expire_after" : "escalate_after"} must be a duration like "30m", "4h" or "2d"`,
+        ),
       );
     },
   );

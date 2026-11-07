@@ -43,7 +43,6 @@ export const readmeRequestWith = (fields: Record<string, unknown>) => ({
   ...fields,
 });
 
-/** Expects every run to exit 2 with exactly this one line, given the run's file. */
-export function expectUsageErrors(runs: Run[], files: string[], line: (file: string) => string): void {
-  expect(runs.map((run) => run.stderr)).toEqual(files.map((file) => `gatekeeper: ${line(file)}\n`));
-}
+/** The error output of a usage error for each item: gatekeeper's one line. */
+export const usageLines = (items: string[], line: (item: string) => string): string[] =>
+  items.map((item) => `gatekeeper: ${line(item)}\n`);

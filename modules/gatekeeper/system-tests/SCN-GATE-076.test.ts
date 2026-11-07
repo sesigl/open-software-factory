@@ -1,6 +1,6 @@
 import { scenario } from "@opensoftware/testkit";
 import { putReadme } from "./gate.ts";
-import { expectUsageErrors, putEach, type Run, requestArgs, runEach } from "./input.ts";
+import { putEach, type Run, requestArgs, runEach, usageLines } from "./input.ts";
 
 const FILES = { "list.json": "[]", "null.json": "null", "text.json": '"merge"' };
 
@@ -23,6 +23,8 @@ scenario("SCN-GATE-076", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then("each error output says that the request file is no JSON object", async () => {
-    expectUsageErrors(runs, Object.keys(FILES), (file) => `${file} is no JSON object`);
+    expect(runs.map((run) => run.stderr)).toEqual(
+      usageLines(Object.keys(FILES), (file) => `${file} is no JSON object`),
+    );
   });
 });

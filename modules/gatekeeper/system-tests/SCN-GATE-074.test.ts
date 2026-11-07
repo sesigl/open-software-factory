@@ -1,6 +1,6 @@
 import { scenario } from "@opensoftware/testkit";
 import { putReadme } from "./gate.ts";
-import { expectUsageErrors, putEach, type Run, readmeRequestWith, requestArgs, runEach } from "./input.ts";
+import { putEach, type Run, readmeRequestWith, requestArgs, runEach, usageLines } from "./input.ts";
 
 const FILES = {
   "text.json": readmeRequestWith({ links: "https://github.com/acme/web/pull/6" }),
@@ -32,10 +32,8 @@ scenario("SCN-GATE-074", async ({ sut, fakes, given, when, then }) => {
   await then(
     'each error output says that the field "links" of the request file must be a list of { url, title }',
     async () => {
-      expectUsageErrors(
-        runs,
-        Object.keys(FILES),
-        (file) => `${file}: the field "links" must be a list of { url, title }`,
+      expect(runs.map((run) => run.stderr)).toEqual(
+        usageLines(Object.keys(FILES), (file) => `${file}: the field "links" must be a list of { url, title }`),
       );
     },
   );

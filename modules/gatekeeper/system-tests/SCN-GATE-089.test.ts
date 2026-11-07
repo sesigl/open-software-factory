@@ -1,6 +1,6 @@
 import { scenario } from "@opensoftware/testkit";
 import { putReadme } from "./gate.ts";
-import type { Run } from "./input.ts";
+import { type Run, runEach } from "./input.ts";
 import { API_TOKEN, SERVE } from "./server.ts";
 
 // No server starts: each setting stops it before it opens the database.
@@ -40,11 +40,17 @@ scenario("SCN-GATE-089", async ({ sut, fakes, given, when, then }) => {
     await putReadme(sut, fakes);
   });
 
-  const runs: Run[] = [];
+  let runs: Run[] = [];
   await when(
     'the user runs "gatekeeper serve" for the channels "slack:c0gates", "xslack:C0GATES" and "slack:C0GATES#x", and for "slack:C0GATES" without "GATEKEEPER_API_TOKEN", without "GATEKEEPER_SLACK_TOKEN", without "GATEKEEPER_SLACK_SIGNING_SECRET" and with "GATEKEEPER_SIGNING_KEY" set to "not a key"',
     async () => {
-      for (const { args, env } of RUNS) runs.push(await sut.cli(args, { env }));
+      const at = (item: string) => RUNS[Number(item)] as (typeof RUNS)[number];
+      runs = await runEach(
+        sut,
+        RUNS.map((_, index) => String(index)),
+        (item) => at(item).args,
+        (item) => at(item).env,
+      );
     },
   );
 

@@ -1,6 +1,6 @@
 import { scenario } from "@opensoftware/testkit";
 import { putReadme } from "./gate.ts";
-import { expectUsageErrors, putEach, type Run, requestArgs, runEach } from "./input.ts";
+import { putEach, type Run, requestArgs, runEach, usageLines } from "./input.ts";
 
 const FILES = {
   "empty.rego": "package gatekeeper\n",
@@ -29,6 +29,8 @@ scenario("SCN-GATE-078", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then("each error output says that the policy has no rules in the package gatekeeper", async () => {
-    expectUsageErrors(runs, Object.keys(FILES), (policy) => `${policy} has no rules in the package gatekeeper`);
+    expect(runs.map((run) => run.stderr)).toEqual(
+      usageLines(Object.keys(FILES), (policy) => `${policy} has no rules in the package gatekeeper`),
+    );
   });
 });
