@@ -39,6 +39,7 @@ adds a row.
 | SKUBE | sandbox adapter kubernetes | `adapters/sandbox/kubernetes/features/` |
 | CHANNEL | channel port | `ports/channel/features/` |
 | CSLACK | channel adapter slack | `adapters/channel/slack/features/` |
+| CGITHUB | channel adapter github | `adapters/channel/github/features/` |
 | FORGE | forge port | `ports/forge/features/` |
 | FGITHUB | forge adapter github | `adapters/forge/github/features/` |
 | INFER | inference port | `ports/inference/features/` |
