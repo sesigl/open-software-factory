@@ -8,7 +8,7 @@ import { readJson, readText } from "../adapters/files.ts";
 import { openStore } from "../adapters/postgres.ts";
 import { receive } from "../adapters/slack.ts";
 import { pullRequestOf } from "../domain/pull-request.ts";
-import { buildRecord, signWith } from "../domain/record.ts";
+import { signingKeyOf } from "../domain/record.ts";
 import { parseRequest } from "../domain/request.ts";
 import { viewOf } from "../domain/stored.ts";
 import { type Decision, gates } from "./gates.ts";
@@ -54,7 +54,8 @@ export async function serve(options: ServeOptions) {
   const groups = readJson(options.groups);
   const now = () => nowOf(env.OSF_NOW);
   const signingKey = env.GATEKEEPER_SIGNING_KEY || undefined;
-  checkKey(signingKey);
+  // A key that cannot sign stops the server before it starts, not at the first decision.
+  if (signingKey) signingKeyOf(signingKey);
 
   const store = await openStore(database);
   const slack = options.channel === undefined ? undefined : slackOf(options.channel, env);
@@ -169,18 +170,4 @@ function slackRoutes(channel: ReturnType<typeof slackOf>, service: ReturnType<ty
       return reply.code(200).send();
     });
   };
-}
-
-/** A key that cannot sign stops the server before it starts, not at the first decision. */
-function checkKey(key: string | undefined): void {
-  if (!key) return;
-  const outcome = { state: "expired", at: 0 } as const;
-  const gate = {
-    id: "g0000000000000000",
-    request: { workItem: "check", stage: "check", summary: "check", links: [], change: {} },
-    rules: { approvers: [] },
-    groups: {},
-    policy: "check",
-  };
-  signWith(buildRecord(gate, { policyText: "", channel: "check", requestedAt: 0 }, outcome), key);
 }

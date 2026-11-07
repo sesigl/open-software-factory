@@ -20,7 +20,8 @@ function groupNames(value: unknown, rule: string): string[] {
 }
 
 export function parseRules(value: unknown, policy: string): Rules {
-  if (!value || typeof value !== "object" || Object.keys(value).length === 0)
+  // OPA answers data.gatekeeper with an object, or with nothing when no rule is in the package.
+  if (!value || Object.keys(value).length === 0)
     throw new UsageError(`${policy} has no rules in the package gatekeeper`);
   const answer = value as Record<string, unknown>;
   if (answer.approvers === undefined) throw new UsageError(`${policy} sets no approvers`);
