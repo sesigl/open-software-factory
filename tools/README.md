@@ -94,7 +94,7 @@ To check it, serve a port on the host and read it from a container: `docker run 
 host.docker.internal:host-gateway alpine:3 wget -qO- http://host.docker.internal:<port>`.
 
 `sut.helm` installs charts only on a local kind cluster: the current context of `KUBECONFIG` must be `kind-*` with a
-server on the loopback address (SCN-TK-131), so a scenario never creates namespaces on a shared cluster. Start one
+server on the loopback address (SCN-TK-132), so a scenario never creates namespaces on a shared cluster. Start one
 with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests with `KUBECONFIG=$HOME/.kube/kind`.
 
 ## Configuration

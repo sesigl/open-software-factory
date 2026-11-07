@@ -1,10 +1,10 @@
 // A fake sandbox adapter (ADR 0068): a program with the commands create, exec, copy, destroy and list of the sandbox
 // port, whose sandboxes are folders on the host. The module runs it like any sandbox adapter; the test reads the specs
 // it got, the commands it ran and the sandboxes that still exist.
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { tempFolder } from "../support/temp.ts";
 
 /** The part of the `sandbox-spec` contract the fake reads. */
 export interface SandboxSpec {
@@ -51,7 +51,7 @@ export interface Sandbox {
 const ADAPTER = fileURLToPath(new URL(`./sandbox-adapter${extname(fileURLToPath(import.meta.url))}`, import.meta.url));
 
 export function startSandbox(options: SandboxOptions = {}): { sandbox: Sandbox; close(): Promise<string[]> } {
-  const state = mkdtempSync(join(tmpdir(), "osf-sandbox-"));
+  const state = tempFolder("osf-sandbox-");
   writeFileSync(join(state, "options.json"), JSON.stringify(options));
   const logFile = join(state, "log.jsonl");
   const entries = (): SandboxLogEntry[] =>
