@@ -51,9 +51,24 @@
       "passThroughEnv": ["OPENROUTER_API_KEY", "OPENAI_MODEL", "CLAUDE_CODE_OAUTH_TOKEN", "ANTHROPIC_MODEL"]
     },
     "mutation": {
-      "dependsOn": ["build", "^build"],
+      "dependsOn": ["^build"],
       "cache": false,
-      "passThroughEnv": ["OSF_BASE", "PLAYWRIGHT_BROWSERS_PATH", "KUBECONFIG", "OSF_SANDBOX_HOST_ALIASES"]
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/tools/package.json",
+        "$TURBO_ROOT$/tools/scaffold/mutation.ts",
+        "$TURBO_ROOT$/tools/scaffold/mutation-runner.ts",
+        "$TURBO_ROOT$/tools/checks/quality.ts",
+        "$TURBO_ROOT$/tools/checks/lib/**",
+        "$TURBO_ROOT$/.github/actions/**"
+      ],
+      "passThroughEnv": [
+        "OSF_BASE",
+        "OSF_MUTATION_RUNS",
+        "PLAYWRIGHT_BROWSERS_PATH",
+        "KUBECONFIG",
+        "OSF_SANDBOX_HOST_ALIASES"
+      ]
     }
   }
 }

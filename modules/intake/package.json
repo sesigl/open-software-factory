@@ -41,5 +41,8 @@
     "@opensoftware/postgres": "workspace:*",
     "fastify": "5.12.7",
     "pg": "8.23.1"
+  },
+  "osf": {
+    "mutationAllLinesPerShard": 150
   }
 }

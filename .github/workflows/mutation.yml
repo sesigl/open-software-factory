@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   # The units with a mutation script whose TypeScript sources in src/ or bin/ the pull request changes, each cut
-  # into shards of about 100 added lines: one runner per shard, so that a large change fits the time limit.
+  # into shards of about 100 added lines (osf mutation-plan): one runner per shard, so a large change fits the limit.
   units:
     name: units to mutate
     runs-on: ubuntu-24.04
@@ -29,29 +29,18 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - id: list
         env:
           OSF_BASE: ${{ github.event.pull_request.base.sha }}
         run: |
-          shards=$(git diff --numstat --no-renames "$OSF_BASE"...HEAD | node -e '
-            const { existsSync, readFileSync } = require("node:fs");
-            const unit = /^((?:modules|packages)\/[^/]+|adapters\/[^/]+\/[^/]+)\/(?:src|bin)\/.*\.ts$/;
-            const added = new Map();
-            const perShard = new Map();
-            for (const row of readFileSync(0, "utf8").split("\n")) {
-              const [count, , file = ""] = row.split("\t");
-              const dir = unit.exec(file)?.[1];
-              if (!dir || !existsSync(`${dir}/package.json`)) continue;
-              const manifest = JSON.parse(readFileSync(`${dir}/package.json`, "utf8"));
-              if (!manifest.scripts?.mutation) continue;
-              added.set(manifest.name, (added.get(manifest.name) ?? 0) + (Number(count) || 0));
-              perShard.set(manifest.name, Number(manifest.osf?.mutationLinesPerShard) || 100);
-            }
-            const shards = [...added].sort(([a], [b]) => a.localeCompare(b)).flatMap(([name, lines]) => {
-              const count = Math.min(10, Math.max(1, Math.ceil(lines / perShard.get(name))));
-              return Array.from({ length: count }, (_, index) => ({ package: name, shard: `${index + 1}/${count}` }));
-            });
-            console.log(JSON.stringify(shards));')
+          shards=$(pnpm --silent run osf mutation-plan)
+          echo "$shards" | jq -r '.[] | "\(.package) \(.shard)"'
           echo "shards=$shards" >> "$GITHUB_OUTPUT"
 
   unit:
@@ -85,44 +74,13 @@ jobs:
         with:
           path: reports/mutation/
           key: ${{ steps.key.outputs.key }}
-      - uses: pnpm/action-setup@v4
-        if: steps.cache.outputs.cache-hit != 'true'
-      - uses: actions/setup-node@v5
-        if: steps.cache.outputs.cache-hit != 'true'
+      - if: steps.cache.outputs.cache-hit != 'true'
+        uses: ./.github/actions/mutation-shard
         with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - run: make install
-        if: steps.cache.outputs.cache-hit != 'true'
-      # The pinned binaries of make install, such as opa for gatekeeper, for the commands that skip make.
-      - run: echo "$GITHUB_WORKSPACE/.tools/bin" >> "$GITHUB_PATH"
-        if: steps.cache.outputs.cache-hit != 'true'
-      # Capture scenarios open pages in Chromium: install it when the unit depends on playwright-core.
-      - name: Install the browser of a unit that captures pages
-        if: steps.cache.outputs.cache-hit != 'true'
-        env:
-          PACKAGE: ${{ matrix.package }}
-        run: |
-          if grep -l "\"name\": \"$PACKAGE\"" modules/*/package.json packages/*/package.json \
-            | xargs grep -q '"playwright-core"'; then
-            echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/playwright" >> "$GITHUB_ENV"
-            PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/playwright" \
-              pnpm --filter "$PACKAGE" exec playwright-core install --with-deps chromium
-          fi
-      # The kubernetes sandbox adapter's tests need a cluster with agent-sandbox (ADR 0055).
-      - name: Start kind with agent-sandbox
-        if: steps.cache.outputs.cache-hit != 'true' && matrix.package == '@opensoftware/sandbox-kubernetes'
-        uses: ./.github/actions/kind-agent-sandbox
-      # The testkit's sut.helm installs a chart on kind (ADR 0075).
-      - name: Start kind
-        if: steps.cache.outputs.cache-hit != 'true' && matrix.package == '@opensoftware/testkit'
-        uses: ./.github/actions/kind
-      - run: pnpm exec turbo run mutation --filter="$PACKAGE" -- --shard "$SHARD"
-        if: steps.cache.outputs.cache-hit != 'true'
-        env:
-          PACKAGE: ${{ matrix.package }}
-          SHARD: ${{ matrix.shard }}
-          OSF_BASE: ${{ github.event.pull_request.base.sha }}
+          package: ${{ matrix.package }}
+          shard: ${{ matrix.shard }}
+          all: "false"
+          base: ${{ github.event.pull_request.base.sha }}
       # Only the report of a finished run: a run that failed or was cancelled leaves nothing to reuse.
       - uses: actions/cache/save@v4
         if: steps.cache.outputs.cache-hit != 'true' && hashFiles('reports/mutation/*.json') != ''

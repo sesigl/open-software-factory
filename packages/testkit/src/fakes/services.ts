@@ -32,9 +32,20 @@ export const IMAGES = {
 
 export type Track = (container: StartedTestContainer) => StartedTestContainer;
 
+/**
+ * The labels of every container of the fakes. OSF_TESTKIT_RUN names the run of a mutant: when the run ends, the
+ * mutation runner removes its containers by this label. Ryuk does not: every process of a Stryker run shares one
+ * Ryuk, which removes the containers only when the last process ends (ADR 0084).
+ */
+export function runLabels(): Record<string, string> {
+  const run = process.env.OSF_TESTKIT_RUN;
+  return run ? { "org.opensoftware.run": run } : {};
+}
+
 export async function startS3(track: Track): Promise<S3> {
   const container = track(
     await new GenericContainer(IMAGES.s3)
+      .withLabels(runLabels())
       .withCommand([
         "server",
         "-s3",

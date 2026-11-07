@@ -32,5 +32,9 @@
   "dependencies": {
     "@opensoftware/cli": "workspace:*",
     "yaml": "2.9.1"
+  },
+  "osf": {
+    "mutationAllLinesPerShard": 60,
+    "mutationConcurrency": 2
   }
 }

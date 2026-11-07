@@ -3,7 +3,7 @@
 // gives each scenario that asks for it the forge without the repositories of the scenarios before (ADR 0064).
 import { randomUUID } from "node:crypto";
 import { GenericContainer, type StartedTestContainer, Wait } from "testcontainers";
-import { address, IMAGES } from "./services.ts";
+import { address, IMAGES, runLabels } from "./services.ts";
 
 export interface PullRequest {
   repository: string;
@@ -99,7 +99,10 @@ interface Forgejo {
   reviewer?: Promise<string>;
 }
 
-/** Started by the first scenario of this process that asks for a forge; Ryuk stops it when the process ends. */
+/**
+ * Started by the first scenario of this process that asks for a forge; Ryuk stops it when the process ends, or the
+ * mutation runner when the run of a mutant ends (runLabels).
+ */
 let running: Promise<Forgejo> | undefined;
 
 /**
@@ -126,6 +129,7 @@ async function startForgejo(): Promise<Forgejo> {
   // A fresh password per forge: it lives only as long as the container.
   const password = randomUUID();
   const container = await new GenericContainer(IMAGES.forge)
+    .withLabels(runLabels())
     .withEnvironment({
       FORGEJO__security__INSTALL_LOCK: "true",
       FORGEJO__database__DB_TYPE: "sqlite3",

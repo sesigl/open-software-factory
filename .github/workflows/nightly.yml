@@ -1,47 +1,45 @@
-# Slow checks that never gate a pull request: MUTATION of every line of every module (docs/quality/checks.md).
+# Slow checks that never gate a pull request: MUTATION of every line of every unit (docs/quality/checks.md, ADR 0084).
 # mutation.yml checks the changed lines of each pull request. The runs that call a paid model are in weekly-paid.yml.
+# Each unit is cut into shards by its lines (osf mutation-plan --all), one runner each. A shard's report is stored
+# under turbo's hash of the unit's mutation task: a later run replays it while the unit, its dependencies and the
+# mutation tooling did not change. Sunday's run and a run started with `fresh` mutate every shard again.
 name: nightly
 
 on:
   schedule:
-    - cron: "17 3 * * *"
+    - cron: "17 3 * * 1-6"
+    - cron: "17 3 * * 0"
   workflow_dispatch:
+    inputs:
+      fresh:
+        description: Mutate every shard again, without the reports of earlier runs.
+        type: boolean
+        default: false
+      packages:
+        description: Only these packages, separated by spaces, such as "@opensoftware/ledger". Empty is every unit.
+        type: string
+        default: ""
 
 permissions:
   contents: read
 
-jobs:
-  # Every module that has a mutation script, so a new module joins without a change here.
-  modules:
-    name: modules with a mutation script
-    runs-on: ubuntu-24.04
-    outputs:
-      packages: ${{ steps.list.outputs.packages }}
-    steps:
-      - uses: actions/checkout@v5
-      - id: list
-        run: |
-          packages=$(node -e '
-            const { readdirSync, readFileSync, existsSync } = require("node:fs");
-            const names = readdirSync("modules")
-              .map((dir) => `modules/${dir}/package.json`)
-              .filter((file) => existsSync(file))
-              .map((file) => JSON.parse(readFileSync(file, "utf8")))
-              .filter((manifest) => manifest.scripts?.mutation)
-              .map((manifest) => manifest.name);
-            console.log(JSON.stringify(names));')
-          echo "packages=$packages" >> "$GITHUB_OUTPUT"
+# One run at a time per branch: a second run would mutate the same shards again.
+concurrency:
+  group: nightly-${{ github.ref }}
+  cancel-in-progress: false
 
-  # One runner per module: a full run of one module takes 45 to 90 minutes.
-  mutation:
-    name: mutation (${{ matrix.package }})
-    needs: modules
+jobs:
+  # The shards of every unit with a mutation script, so a new unit joins without a change here, each with the key of
+  # its report: turbo's hash of the unit's mutation task (inputs in turbo.json), the shard and the scheme version.
+  plan:
+    name: shards to mutate
     runs-on: ubuntu-24.04
-    timeout-minutes: 300
-    strategy:
-      fail-fast: false
-      matrix:
-        package: ${{ fromJSON(needs.modules.outputs.packages) }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      shards: ${{ steps.plan.outputs.shards }}
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -49,30 +47,86 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
-      - run: make install
-      # The pinned binaries of make install, such as opa for gatekeeper, for the commands that skip make.
-      - run: echo "$GITHUB_WORKSPACE/.tools/bin" >> "$GITHUB_PATH"
-      # Capture scenarios open pages in Chromium: install it when the module depends on playwright-core.
-      - name: Install the browser of a module that captures pages
+      - run: pnpm install --frozen-lockfile
+      - id: plan
         env:
-          PACKAGE: ${{ matrix.package }}
+          PACKAGES: ${{ inputs.packages }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          if grep -l "\"name\": \"$PACKAGE\"" modules/*/package.json | xargs grep -q '"playwright-core"'; then
-            echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/playwright" >> "$GITHUB_ENV"
-            PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/playwright" \
-              pnpm --filter "$PACKAGE" exec playwright-core install --with-deps chromium
+          pnpm --silent run osf mutation-plan --all > "$RUNNER_TEMP/shards.json"
+          pnpm exec turbo run mutation --dry=json > "$RUNNER_TEMP/turbo.json"
+          # The minutes of each shard in the last completed nightly run: the longest shards start first, so the run
+          # does not wait for one of them at its end. Only the order changes; a new shard keeps the plan's order.
+          last=$(gh run list --workflow nightly.yml --status completed --limit 1 --json databaseId --jq '.[0].databaseId // empty' || true)
+          if [ -n "$last" ]; then
+            gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs/$last/jobs?per_page=100" \
+              --jq '.jobs[] | select(any(.steps[]?; .name == "Run ./.github/actions/mutation-shard" and .conclusion == "success")) | {name, minutes: (((.completed_at | fromdate) - (.started_at | fromdate)) / 60)}' \
+              | jq -s . > "$RUNNER_TEMP/minutes.json" || echo "[]" > "$RUNNER_TEMP/minutes.json"
+          else
+            echo "[]" > "$RUNNER_TEMP/minutes.json"
           fi
-      # The kubernetes sandbox adapter's tests need a cluster with agent-sandbox (ADR 0055).
-      - name: Start kind with agent-sandbox
-        if: matrix.package == '@opensoftware/sandbox-kubernetes'
-        uses: ./.github/actions/kind-agent-sandbox
-      - run: pnpm exec turbo run mutation --filter="$PACKAGE" -- --all
-        env:
-          PACKAGE: ${{ matrix.package }}
+          shards=$(node -e '
+            const { readFileSync } = require("node:fs");
+            const [shards, turbo, last] = process.argv.slice(1).map((file) => JSON.parse(readFileSync(file, "utf8")));
+            const hashes = new Map(turbo.tasks.filter((task) => task.task === "mutation").map((task) => [task.package, task.hash]));
+            const minutes = new Map(last.map((job) => [job.name, job.minutes]));
+            const only = (process.env.PACKAGES ?? "").split(/\s+/).filter(Boolean);
+            const plan = shards
+              .filter((shard) => only.length === 0 || only.includes(shard.package))
+              .map((shard, order) => {
+                const hash = hashes.get(shard.package);
+                if (!hash) throw new Error(`turbo has no mutation task for ${shard.package}`);
+                const key = `mutation-all-v1-${shard.package.replace(/\W+/g, "-")}-${shard.shard.replace("/", "-of-")}-${hash}`;
+                return { ...shard, key, order, minutes: minutes.get(`mutation (${shard.package} ${shard.shard})`) };
+              })
+              .sort((a, b) => (b.minutes ?? Infinity) - (a.minutes ?? Infinity) || a.order - b.order)
+              .map(({ order, minutes, ...shard }) => shard);
+            console.log(JSON.stringify(plan));' "$RUNNER_TEMP/shards.json" "$RUNNER_TEMP/turbo.json" "$RUNNER_TEMP/minutes.json")
+          echo "$shards" | jq -r '.[] | "\(.package) \(.shard) \(.key)"'
+          echo "shards=$shards" >> "$GITHUB_OUTPUT"
+
+  mutation:
+    name: mutation (${{ matrix.package }} ${{ matrix.shard }})
+    needs: plan
+    if: needs.plan.outputs.shards != '[]'
+    runs-on: ubuntu-24.04
+    # A shard takes about 30 minutes (osf.mutationAllLinesPerShard in the unit's package.json); twice that is a fault.
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      # A run started by hand leaves 4 of the 20 jobs that run at the same time free for pull requests; at night, all.
+      max-parallel: ${{ github.event_name == 'schedule' && 20 || 16 }}
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@v5
+      # The newest report of the same key; each run saves its own, so a fresh run's report wins from then on.
+      - id: cache
+        if: ${{ !inputs.fresh && github.event.schedule != '17 3 * * 0' }}
+        uses: actions/cache/restore@v4
+        with:
+          path: reports/mutation/
+          key: ${{ matrix.key }}-${{ github.run_id }}
+          restore-keys: ${{ matrix.key }}-
+      - if: steps.cache.outputs.cache-matched-key == ''
+        uses: ./.github/actions/mutation-shard
+        with:
+          package: ${{ matrix.package }}
+          shard: ${{ matrix.shard }}
+          all: "true"
+      # Only the report of a finished run: a run that failed or was cancelled leaves nothing to reuse.
+      - if: steps.cache.outputs.cache-matched-key == '' && hashFiles('reports/mutation/*.json') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: reports/mutation/
+          key: ${{ matrix.key }}-${{ github.run_id }}
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: mutation-${{ strategy.job-index }}
           path: reports/mutation/
+          if-no-files-found: ignore
+          retention-days: 7
 
   mutation-score:
     name: mutation score
@@ -90,19 +144,55 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
-      - run: make install
+      - run: pnpm install --frozen-lockfile
+      # osf imports the libraries in packages/ that tools/ depends on, as in `make install`.
+      - run: pnpm exec turbo run build --filter=@opensoftware/tools^...
       - uses: actions/download-artifact@v5
         with:
           pattern: mutation-*
           path: reports/mutation/
           merge-multiple: true
-      - run: pnpm --silent run osf check MUTATION --total
-      # A run started by hand on another branch only reports.
-      - name: Open a ticket when the mutation score falls
-        if: failure() && github.ref == 'refs/heads/main'
+      # A shard that failed leaves its mutants out of the score: the score of the other shards does not pass the run.
+      - id: score
+        if: ${{ !inputs.packages }}
+        env:
+          SHARDS: ${{ needs.mutation.result }}
+        run: |
+          set -o pipefail
+          pnpm --silent run osf check MUTATION --total | tee "$RUNNER_TEMP/score.txt"
+          if [ "$SHARDS" != success ] && [ "$SHARDS" != skipped ]; then
+            echo "failed: a shard of the run did not pass ($SHARDS), so the score is incomplete" | tee -a "$RUNNER_TEMP/score.txt"
+            exit 1
+          fi
+      # A run for some packages scores only theirs: the counts of each report.
+      - name: Count the mutants of each report
+        if: always() && inputs.packages
+        run: |
+          for report in reports/mutation/*.json; do
+            jq -r --arg report "$(basename "$report")" \
+              '[.files[].mutants[].status] | group_by(.) | map("\(.[0])=\(length)") | "\($report) \(join(" "))"' "$report"
+          done
+      # One open ticket at most: a failed run comments on it, a passing run closes it. A run started by hand on
+      # another branch, or for some packages only, only reports.
+      - name: Update the ticket of the mutation score
+        if: always() && github.ref == 'refs/heads/main' && !inputs.packages
         env:
           GH_TOKEN: ${{ github.token }}
+          OUTCOME: ${{ steps.score.outcome }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          gh issue create --title "MUTATION: score fell in the nightly run" \
-            --body "The nightly mutation run failed: $RUN_URL"
+          title="MUTATION: score fell in the nightly run"
+          open=$(gh issue list --state open --search "in:title \"$title\"" --json number,title \
+            --jq "[.[] | select(.title == \"$title\")][0].number // empty")
+          summary=$(grep -E "were detected|no mutation report|failed:" "$RUNNER_TEMP/score.txt" 2>/dev/null | head -40 || true)
+          [ -n "$summary" ] || summary="The run ended before the score: see the log of the run."
+          if [ "$OUTCOME" = success ]; then
+            [ -n "$open" ] && gh issue close "$open" --comment "The nightly mutation run passed: $RUN_URL"
+            exit 0
+          fi
+          body=$(printf 'The nightly mutation run failed: %s\n\n```text\n%s\n```\n' "$RUN_URL" "$summary")
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body"
+          fi

@@ -26,6 +26,13 @@ Feature: Services and outside systems
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-129 @status=implemented
+  Scenario: The containers of the fakes carry the label of the run that OSF_TESTKIT_RUN names
+    Given a module whose system test starts fakes.s3 and expects that the label "org.opensoftware.run=r7" finds its container
+    When the developer runs "testkit run --junit report.xml" with OSF_TESTKIT_RUN "r7" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-009 @status=implemented
   Scenario: fakes.nats gives the module a reachable NATS server
     Given a module whose CLI connects to "DEMO_NATS_URL" and prints the first word the server sends

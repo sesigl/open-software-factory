@@ -1,0 +1,127 @@
+# One shard of a mutation run (ADR 0066, ADR 0084), for mutation.yml and nightly.yml: the setup that the unit's
+# system tests need, then `osf mutation` through turbo, which builds the unit and its dependencies first.
+# The memory guard keeps the runner reachable: without swap, and with the highest OOM score for Stryker and the tests,
+# a mutant that fills the memory is ended by the kernel, and the job reports it with its log. With swap, such a mutant
+# froze the runner until GitHub lost it, and the job left no log.
+name: mutation shard
+description: Sets up a unit's system tests and runs Stryker on one shard of its mutants.
+inputs:
+  package:
+    description: The package name of the unit, such as @opensoftware/ledger.
+    required: true
+  shard:
+    description: The shard, i/n.
+    required: true
+  all:
+    description: "true: mutate every line; false: only the lines added since OSF_BASE."
+    required: true
+  base:
+    description: OSF_BASE, the base commit of the changed lines.
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v4
+    - uses: actions/setup-node@v5
+      with:
+        node-version-file: .nvmrc
+        cache: pnpm
+    # The pinned binaries of install-tools: a new pin in install-tools.ts makes a new key.
+    - uses: actions/cache@v4
+      with:
+        path: .tools/bin
+        key: tools-${{ runner.os }}-${{ hashFiles('tools/scaffold/install-tools.ts') }}
+    - shell: bash
+      run: make install
+    # The pinned binaries of make install, such as opa for gatekeeper, for the commands that skip make.
+    - shell: bash
+      run: echo "$GITHUB_WORKSPACE/.tools/bin" >> "$GITHUB_PATH"
+    # Capture scenarios open pages in Chromium: install it when the unit depends on playwright-core.
+    - name: Install the browser of a unit that captures pages
+      shell: bash
+      env:
+        PACKAGE: ${{ inputs.package }}
+      run: |
+        if grep -l "\"name\": \"$PACKAGE\"" modules/*/package.json packages/*/package.json adapters/*/*/package.json \
+          | xargs grep -q '"playwright-core"'; then
+          echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/playwright" >> "$GITHUB_ENV"
+          PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/playwright" \
+            pnpm --filter "$PACKAGE" exec playwright-core install --with-deps chromium
+        fi
+    # The kubernetes sandbox adapter's tests need a cluster with agent-sandbox (ADR 0055).
+    - name: Start kind with agent-sandbox
+      if: inputs.package == '@opensoftware/sandbox-kubernetes'
+      uses: ./.github/actions/kind-agent-sandbox
+    # The testkit's sut.helm installs a chart on kind (ADR 0075).
+    - name: Start kind
+      if: inputs.package == '@opensoftware/testkit'
+      uses: ./.github/actions/kind
+    - name: Turn off swap
+      shell: bash
+      run: sudo swapoff -a
+    # Every two minutes the free memory and disk, the containers and the largest processes, so that a slow or full shard
+    # shows why; every 30 seconds the containers of ended runs are removed.
+    - name: Mutate
+      shell: bash
+      env:
+        PACKAGE: ${{ inputs.package }}
+        SHARD: ${{ inputs.shard }}
+        ALL: ${{ inputs.all }}
+        OSF_BASE: ${{ inputs.base }}
+      run: |
+        echo 1000 > /proc/self/oom_score_adj
+        # Each test runner process of Stryker writes the start of its live run into OSF_MUTATION_RUNS (mutation-runner.ts).
+        export OSF_MUTATION_RUNS="$RUNNER_TEMP/osf-runs"
+        mkdir -p "$OSF_MUTATION_RUNS"
+        started=$(date +%s)
+        (
+          tick=0
+          guard=false
+          while sleep 30; do
+            # The runner removes the containers of the fakes when a run ends, by their label (mutation-runner.ts). A
+            # container that a module under test started with the Docker CLI, such as the LiteLLM proxy of
+            # inference-litellm, has no label, and stays when its mutant's run is killed at its first failure or its
+            # timeout. A container created after Stryker started and before the oldest live run started belongs to a
+            # run that ended: no live run can use it. kind's cluster is older than Stryker and stays.
+            oldest=$(date +%s)
+            for run in "$OSF_MUTATION_RUNS"/*; do
+              [ -f "$run" ] || continue
+              guard=true
+              # The file of a runner process that died names no live run.
+              if ! kill -0 "$(basename "$run")" 2>/dev/null; then rm -f "$run"; continue; fi
+              start=$(cat "$run" 2>/dev/null) || continue
+              [ -n "$start" ] && [ "$start" -lt "$oldest" ] && oldest=$start
+            done
+            # Stryker's command runner of a library writes no live runs: without them, the guard removes nothing.
+            for id in $(if $guard; then docker ps --all --quiet; fi); do
+              read -r name created < <(docker inspect --format '{{.Name}} {{.Created}}' "$id" 2>/dev/null) || continue
+              # Ryuk serves every live run.
+              case "$name" in /testcontainers-ryuk-*) continue ;; esac
+              at=$(date -d "$created" +%s 2>/dev/null) || continue
+              if [ "$at" -gt "$started" ] && [ "$at" -lt $((oldest - 2)) ]; then
+                echo "removing the container ${name#/}, left by a run that ended"
+                docker rm --force --volumes "$id" >/dev/null 2>&1 || true
+              fi
+            done
+            # Networks of such containers; prune keeps every network that a container uses.
+            docker network prune --force --filter "until=10m" >/dev/null 2>&1 || true
+            tick=$((tick + 1))
+            [ $((tick % 4)) -eq 0 ] || continue
+            echo "::group::resources $(date -u +%H:%M:%S)"
+            free -m | head -2
+            df -h / | tail -1
+            echo "containers: $(docker ps -q | wc -l), processes: $(ps -e --no-headers | wc -l)"
+            ps -eo rss=,etime=,args= --sort=-rss | head -5 | cut -c1-160
+            echo "::endgroup::"
+          done
+        ) &
+        sampler=$!
+        args=(--shard "$SHARD")
+        if [ "$ALL" = true ]; then args+=(--all); fi
+        status=0
+        pnpm exec turbo run mutation --filter="$PACKAGE" --log-order=stream -- "${args[@]}" || status=$?
+        kill "$sampler"
+        oom=$(sudo dmesg | grep -i "killed process" | tail -5 || true)
+        if [ -n "$oom" ]; then echo "::warning::the kernel ended a process for lack of memory: $oom"; fi
+        exit "$status"
