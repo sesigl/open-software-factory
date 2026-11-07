@@ -33,6 +33,14 @@ Feature: Services and outside systems
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-130 @status=implemented
+  Scenario: The module's processes reach Docker through the Docker settings of the machine
+    Given a module whose CLI prints "DOCKER_HOST" and "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE"
+    And its system test expects the output "unix:///run/demo/docker.sock /var/run/docker.sock"
+    When the developer runs "testkit run --junit report.xml" with DOCKER_HOST "unix:///run/demo/docker.sock" and TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE "/var/run/docker.sock" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-009 @status=implemented
   Scenario: fakes.nats gives the module a reachable NATS server
     Given a module whose CLI connects to "DEMO_NATS_URL" and prints the first word the server sends
