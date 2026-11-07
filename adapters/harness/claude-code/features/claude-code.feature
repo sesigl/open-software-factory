@@ -53,3 +53,13 @@ Feature: What the claude-code adapter adds to the harness port
     Then the gateway's Messages API call has the header "authorization" "Bearer sub-token-1"
     And it has the header "x-litellm-api-key" "Bearer sk-run-1" and no header "x-api-key"
     And it still has the header "x-team" "blue"
+
+  @id=SCN-HCLAUDE-008 @status=implemented
+  Scenario: run with an agent command is a usage error
+    When the developer runs "run echo hi"
+    Then the command exits with code 2 and writes "harness-claude-code: harness-claude-code run takes no agent command; it runs Claude Code" to standard error
+
+  @id=SCN-HCLAUDE-009 @status=implemented
+  Scenario: --help names the adapter's commands
+    When the developer runs "--help"
+    Then the command exits with code 0 and prints "harness-claude-code run [--allow <kinds>]" and "harness-claude-code transcript <session ID>"

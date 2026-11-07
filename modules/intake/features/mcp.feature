@@ -53,3 +53,10 @@ Feature: The Factory MCP server
     Given the server runs and "intake mcp" is connected to it as "github:varun"
     When the agent lists the tools
     Then the tools are "submit_work", "work_status" and "run_evidence", which takes the work item's "id"
+
+  @id=SCN-INTAKE-041 @status=implemented
+  Scenario: The Factory MCP server lists the fields of "submit_work" and "work_status" with their descriptions
+    Given the server runs and "intake mcp" is connected to it as "github:varun"
+    When the agent lists the tools
+    Then the tool "submit_work" takes the "title", and optional "description", "type" and "dedupeKey", each with its description
+    And the tool "work_status" takes the work item's "id"
