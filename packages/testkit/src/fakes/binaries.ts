@@ -1,12 +1,12 @@
 // Temporal's dev server and NATS as processes on the host (ADR 0067): the real servers, each a single binary that
 // starts in about a second, without Docker. `make install` pins both in .tools/bin; elsewhere they must be on PATH.
 import { type ChildProcess, spawn } from "node:child_process";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { existsSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { repoRoot, workspaceOf } from "../support/module.ts";
 import { freePort } from "../support/server.ts";
+import { tempFolder } from "../support/temp.ts";
 import type { Nats, Temporal } from "./services.ts";
 
 interface Running<T> {
@@ -75,7 +75,7 @@ async function start<T>(
   readyUrl: string,
   service: T,
 ): Promise<Running<T>> {
-  const home = mkdtempSync(join(tmpdir(), `osf-${name}-`));
+  const home = tempFolder(`osf-${name}-`);
   const child = spawn(program(name), args(home), {
     env: { PATH: process.env.PATH ?? "", HOME: home },
     stdio: ["ignore", "ignore", "pipe"],
