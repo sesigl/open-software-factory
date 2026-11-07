@@ -1,11 +1,11 @@
 // A scripted coding agent that speaks ACP on stdio (ADR 0018). The module starts it like any ACP agent; the agent
 // performs the scripted file edits and commands and ends each turn. A prompt that matches no turn fails the scenario.
 // For containers, the agent runs with the container's node and names the folders the container must mount (ADR 0076).
-import { chmodSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { chmodSync, existsSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, extname, join, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { StopReason, ToolKind } from "@agentclientprotocol/sdk";
+import { tempFolder } from "../support/temp.ts";
 
 export interface HarnessTool {
   /** The title of the tool call, for example "rm -rf build". */
@@ -124,7 +124,7 @@ export function startHarness(
   script: HarnessTurn[],
   options: HarnessOptions = {},
 ): { harness: Harness; close(): Promise<string[]> } {
-  const dir = mkdtempSync(join(tmpdir(), "osf-harness-"));
+  const dir = tempFolder("osf-harness-");
   const scriptFile = join(dir, "script.json");
   const logFile = join(dir, "log.jsonl");
   writeFileSync(scriptFile, JSON.stringify(script));

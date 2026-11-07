@@ -1,10 +1,10 @@
 // A fake inference adapter (ADR 0070): a program with the commands start, key, spend-log, stop and list of the inference
 // port. It serves no gateway: start prints the URL from its options. The module runs it like any inference adapter; the
 // test reads the configs it started from, the keys it made and the gateways that still exist.
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { tempFolder } from "../support/temp.ts";
 
 export interface InferenceOptions {
   /** The URL `start` prints for every gateway. Default: "http://127.0.0.1:4000/v1". */
@@ -36,7 +36,7 @@ const ADAPTER = fileURLToPath(
 );
 
 export function startInference(options: InferenceOptions = {}): { inference: Inference; close(): Promise<string[]> } {
-  const state = mkdtempSync(join(tmpdir(), "osf-inference-"));
+  const state = tempFolder("osf-inference-");
   writeFileSync(join(state, "options.json"), JSON.stringify(options));
   const logFile = join(state, "log.jsonl");
   const entries = (): InferenceLogEntry[] =>

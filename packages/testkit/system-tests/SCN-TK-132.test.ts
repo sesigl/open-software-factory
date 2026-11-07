@@ -1,24 +1,24 @@
 import { scenario } from "@opensoftware/testkit";
 import { demoModule, testCases } from "./module.ts";
 
-scenario("SCN-TK-131", async ({ sut, given, when, then }) => {
-  await given('a kubeconfig whose current context "eks-apps" points to "https://cluster.example.invalid"', async () => {
+scenario("SCN-TK-132", async ({ sut, given, when, then }) => {
+  await given('a kubeconfig whose current context "shared" points to "https://cluster.example.invalid"', async () => {
     await sut.files.put(
       "$INPUT/kubeconfig",
       [
         "apiVersion: v1",
         "kind: Config",
-        "clusters: [{ name: eks-apps, cluster: { server: https://cluster.example.invalid } }]",
-        "users: [{ name: eks-apps, user: { token: none } }]",
-        "contexts: [{ name: eks-apps, context: { cluster: eks-apps, user: eks-apps } }]",
-        "current-context: eks-apps",
+        "clusters: [{ name: shared, cluster: { server: https://cluster.example.invalid } }]",
+        "users: [{ name: shared, user: { token: none } }]",
+        "contexts: [{ name: shared, context: { cluster: shared, user: shared } }]",
+        "current-context: shared",
         "",
       ].join("\n"),
     );
   });
 
   await given(
-    'a module whose system test runs "install events chart" with sut.helm and expects the error \'the current context "eks-apps" is not a local kind cluster\'',
+    'a module whose system test runs "install events chart" with sut.helm and expects the error \'the current context "shared" is not a local kind cluster\'',
     async () => {
       const module = demoModule({
         steps: ['When the user installs "chart"', "Then sut.helm refuses the cluster"],
@@ -29,7 +29,7 @@ scenario("SCN-TK-131", async ({ sut, given, when, then }) => {
           '  refused = await helm.run(["install", "events", helm.chart]).catch((error: unknown) => error);',
           "});",
           'await then("sut.helm refuses the cluster", async () => {',
-          "  expect(String(refused)).toContain('the current context \"eks-apps\" is not a local kind cluster');",
+          "  expect(String(refused)).toContain('the current context \"shared\" is not a local kind cluster');",
           "});",
         ],
       });

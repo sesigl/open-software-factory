@@ -69,5 +69,7 @@ export async function startS3(track: Track): Promise<S3> {
 }
 
 export function address(container: StartedTestContainer, port: number): string {
-  return `${container.getHost()}:${container.getMappedPort(port)}`;
+  // "localhost" can resolve to ::1 first, and Rancher Desktop publishes a port on IPv4 only.
+  const host = container.getHost() === "localhost" ? "127.0.0.1" : container.getHost();
+  return `${host}:${container.getMappedPort(port)}`;
 }
