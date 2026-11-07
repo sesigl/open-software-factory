@@ -1,7 +1,7 @@
 import { scenario } from "@opensoftware/testkit";
 import { demoModule, testCases } from "./module.ts";
 
-scenario("SCN-TK-131", async ({ sut, given, when, then }) => {
+scenario("SCN-TK-132", async ({ sut, given, when, then }) => {
   await given('a kubeconfig whose current context "shared" points to "https://cluster.example.invalid"', async () => {
     await sut.files.put(
       "$INPUT/kubeconfig",
