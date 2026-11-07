@@ -40,5 +40,5 @@ Checked by DUP and MUTATION (ADR 0037):
 
 ## Scenario prefix
 
-The `@conformance` scenarios of the port: `SCN-FORGE-NNN` in `ports/forge/features/`. The adapter has no scenarios
-of its own yet.
+The `@conformance` scenarios of the port: `SCN-FORGE-NNN` in `ports/forge/features/`. The adapter's own scenarios:
+`SCN-FFORGEJO-NNN` in `features/`.

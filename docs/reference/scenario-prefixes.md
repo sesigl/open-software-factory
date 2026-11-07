@@ -42,6 +42,7 @@ adds a row.
 | CGITHUB | channel adapter github | `adapters/channel/github/features/` |
 | FORGE | forge port | `ports/forge/features/` |
 | FGITHUB | forge adapter github | `adapters/forge/github/features/` |
+| FFORGEJO | forge adapter forgejo | `adapters/forge/forgejo/features/` |
 | INFER | inference port | `ports/inference/features/` |
 | INFLITE | inference adapter litellm | `adapters/inference/litellm/features/` |
 | SECRET | secrets port | `ports/secrets/features/` |

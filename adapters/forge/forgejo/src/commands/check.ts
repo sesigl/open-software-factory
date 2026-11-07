@@ -17,7 +17,7 @@ export async function check(
 ): Promise<Outcome> {
   const api = forge(repo);
   ensure(sha && name, "name the commit and the check, like check tester/web 9b1c2d3 verify success");
-  ensure(CHECK_STATES.includes(state ?? ""), `the state is one of ${CHECK_STATES.join(", ")}`);
+  ensure(CHECK_STATES.includes(state as string), `the state is one of ${CHECK_STATES.join(", ")}`);
   await api.call("POST", `/statuses/${sha}`, {
     context: name,
     state,
