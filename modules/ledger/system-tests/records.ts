@@ -218,3 +218,22 @@ export async function pageText(sut: { files: { read(path: string): Promise<strin
     .replace(/&amp;/g, "&")
     .replace(/\s+/g, " ");
 }
+
+/**
+ * A Markdown table with the head "A | B" and rows like "1 | 2" as one block: a line break, the head, the separator,
+ * the rows and an empty line. The text of `readMarkdown` contains it only as whole lines and with no other row.
+ */
+export function table(head: string, ...rows: string[]): string {
+  const separator = head
+    .split(" | ")
+    .map(() => "---")
+    .join(" | ");
+  return `\n${[head, separator, ...rows].map((row) => `| ${row} |`).join("\n")}\n\n`;
+}
+
+/** A block of a Markdown heading, an empty line and the table below it. */
+export const under = (heading: string, block: string): string => `\n${heading}\n${block}`;
+
+/** The Markdown report the scenario's command wrote, with a line break before it and after it. */
+export const readMarkdown = async (sut: { files: { read(path: string): Promise<string> } }): Promise<string> =>
+  `\n${await sut.files.read("$INPUT/report.md")}\n`;

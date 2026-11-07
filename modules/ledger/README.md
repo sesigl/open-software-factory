@@ -291,3 +291,5 @@ with a trusted publisher for `publish-ledger.yml`. No credential is stored in th
 | SCN-LEDGER-062 | implemented | The page shows the spend by source, user, agent and model |
 | SCN-LEDGER-063 | implemented | The page shows the median cycle time by segment and the human interactions |
 | SCN-LEDGER-064 | implemented | A price table that is no JSON is refused |
+| SCN-LEDGER-065 | implemented | The Markdown report shows each measure of the period in its table |
+| SCN-LEDGER-066 | implemented | Without pull requests the Markdown report shows a dash for each value it cannot compute |

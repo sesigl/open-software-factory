@@ -70,3 +70,31 @@ Feature: Flow metrics
     When the user runs "ledger report data.jsonl"
     Then the command exits with code 0
     And "report.json" shows a total spend of 2.00 USD and the cost per pull request null
+
+  @id=SCN-LEDGER-065 @status=implemented @realizes=SCN-FACTORY-OUTCOME-001
+  Scenario: The Markdown report shows each measure of the period in its table
+    Given a pull request "Add the login" opened on 2026-01-05 at 09:00 for a work item received at 08:00, reviewed by a person at 11:00 and merged on 2026-01-06 at 12:00
+    And a run of 2 hours of the agent "implementer" from the source "slack" for that pull request, with spend rows of 4.00 USD
+    When the user runs "ledger report --since 2026-01-05 --until 2026-01-06 --target 3 --compute-usd-per-hour 0.50 --platform-usd 1 --markdown report.md data.jsonl"
+    Then "report.md" has the title "# Ledger report: 2026-01-05 to 2026-01-06"
+    And "report.md" has the table "Measure | Value" with the rows "Pull requests opened | 1", "Pull requests merged | 1", "Human interactions per pull request | 1", "Runs | 1" and "Top-level runs | 1"
+    And "report.md" has the table "Day | Opened | Merged" with the rows "2026-01-05 | 1 | 0" and "2026-01-06 | 0 | 1"
+    And "report.md" has the table "Segment | Median" with the rows "Kickoff to pull request | 1 h", "Kickoff to merge | 28 h", "Pull request to first human review | 2 h" and "First human review to merge | 25 h"
+    And "report.md" has the table "Measure | Value" with the rows "Cost per pull request | 6.00 USD", "Inference per pull request | 4.00 USD", "Compute per pull request | 1.00 USD", "Platform per pull request | 1.00 USD", "Target | 3.00 USD" and "Gap to target | 3.00 USD"
+    And "report.md" has the table "Pull request | Title | Cost" with the row "https://github.com/acme/web/pull/1 | Add the login | 5.00 USD"
+    And "report.md" has the table "Measure | Value" with the rows "Total | 4.00 USD" and "Unattributed | 0.00 USD"
+    And "report.md" has under "### By source" the table "source | Spend | Share" with the row "slack | 4.00 USD | 100.0%"
+    And "report.md" has under "### By user" the table "user | Spend | Share" with the row "github:mona | 4.00 USD | 100.0%"
+    And "report.md" has under "### By agent" the table "agent | Spend | Share" with the row "implementer | 4.00 USD | 100.0%"
+    And "report.md" has under "### By model" the table "model | Spend | Share" with the row "claude-sonnet-5-5 | 4.00 USD | 100.0%"
+    And "report.md" has the table "Reverts | Merged | Rate" with the row "0 | 1 | 0.0%"
+
+  @id=SCN-LEDGER-066 @status=implemented
+  Scenario: Without pull requests the Markdown report shows a dash for each value it cannot compute
+    Given spend rows of 2.00 USD and no pull request events
+    When the user runs "ledger report --markdown report.md data.jsonl"
+    Then "report.md" has the title "# Ledger report: start to end"
+    And "report.md" has the table "Measure | Value" with the rows "Pull requests opened | 0", "Pull requests merged | 0", "Human interactions per pull request | -", "Runs | 0" and "Top-level runs | 0"
+    And "report.md" has the table "Segment | Median" with the rows "Kickoff to pull request | -", "Kickoff to merge | -", "Pull request to first human review | -" and "First human review to merge | -"
+    And "report.md" has the table "Measure | Value" with the rows "Cost per pull request | -", "Inference per pull request | -", "Compute per pull request | -", "Platform per pull request | -", "Target | -" and "Gap to target | -"
+    And "report.md" has the table "Reverts | Merged | Rate" with the row "0 | 0 | -"
