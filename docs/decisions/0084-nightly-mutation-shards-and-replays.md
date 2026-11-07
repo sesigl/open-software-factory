@@ -46,11 +46,19 @@ The nightly run mutates every line (ADR 0037) and runs `osf check MUTATION --tot
 - `.github/actions/mutation-shard` holds the setup and the run of one shard for both workflows. It turns off swap and
   gives Stryker and the tests the highest OOM score, so that the kernel ends a mutant that fills the memory, and the
   runner stays reachable and keeps the log. Every two minutes it prints the free memory and disk, the number of
-  containers and the largest processes, and it removes each container older than 15 minutes, except kind's and
-  Ryuk's. A module under test, such as inference-litellm, starts containers with the Docker CLI, and its scenario
-  stops them; when a mutant's run is killed at its first failure or its timeout, they stay. On the first sharded run,
-  LiteLLM containers of about 590 MB each stayed for up to 43 minutes, until the runner had 854 MB free and GitHub
-  lost it. turbo streams the output.
+  containers and the largest processes. turbo streams the output.
+- Each run of Vitest in a mutation run has an ID in `OSF_TESTKIT_RUN`, and the testkit labels every container of its
+  fakes with it (SCN-TK-129). When the run ends, the runner removes the containers with its label. Ryuk does not:
+  testcontainers lets every process of a Stryker run share one Ryuk, which removes the containers only when the last
+  process ends. On a shard of forge-forgejo, the Forgejo of each mutant's run stayed, 123 containers of about 220 MB,
+  until the kernel ended Stryker.
+- A module under test, such as inference-litellm, starts containers with the Docker CLI, without the label, and its
+  scenario stops them; when a mutant's run is killed at its first failure or its timeout, they stay. On the first
+  sharded run, LiteLLM containers of about 590 MB each stayed for up to 43 minutes, until the runner had 854 MB free
+  and GitHub lost it. Each test runner process of Stryker writes the start of its live run into a folder, and every
+  30 seconds the shard removes each container that was created after Stryker started and before the oldest live run
+  started: no live run can use it. kind's cluster is older than Stryker, and Ryuk serves every run, so both stay.
+  Stryker's command runner of a library writes no live runs, so for a library the shard removes nothing.
 - Stryker starts one worker per CPU, or the `osf.mutationConcurrency` a `package.json` sets, and each mutant's run
   uses one Vitest worker, or `osf.mutationWorkers`. The first run writes the time of each scenario file, and each
   mutant's run takes the files shortest first, through a sequencer in a Vitest config in Stryker's temporary folder

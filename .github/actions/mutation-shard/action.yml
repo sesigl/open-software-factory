@@ -61,7 +61,7 @@ runs:
       shell: bash
       run: sudo swapoff -a
     # Every two minutes the free memory and disk, the containers and the largest processes, so that a slow or full shard
-    # shows why.
+    # shows why; every 30 seconds the containers of ended runs are removed.
     - name: Mutate
       shell: bash
       env:
@@ -77,21 +77,27 @@ runs:
         started=$(date +%s)
         (
           tick=0
+          guard=false
           while sleep 30; do
-            # A container that a module under test started, such as the LiteLLM proxy of inference-litellm, stays when
-            # its mutant's run is killed at its first failure or its timeout. A container created after Stryker started
-            # and before the oldest live run started belongs to a run that ended: no live run can use it. kind's
-            # cluster is older than Stryker and stays.
+            # The runner removes the containers of the fakes when a run ends, by their label (mutation-runner.ts). A
+            # container that a module under test started with the Docker CLI, such as the LiteLLM proxy of
+            # inference-litellm, has no label, and stays when its mutant's run is killed at its first failure or its
+            # timeout. A container created after Stryker started and before the oldest live run started belongs to a
+            # run that ended: no live run can use it. kind's cluster is older than Stryker and stays.
             oldest=$(date +%s)
             for run in "$OSF_MUTATION_RUNS"/*; do
               [ -f "$run" ] || continue
+              guard=true
               # The file of a runner process that died names no live run.
               if ! kill -0 "$(basename "$run")" 2>/dev/null; then rm -f "$run"; continue; fi
               start=$(cat "$run" 2>/dev/null) || continue
               [ -n "$start" ] && [ "$start" -lt "$oldest" ] && oldest=$start
             done
-            for id in $(docker ps --all --quiet); do
+            # Stryker's command runner of a library writes no live runs: without them, the guard removes nothing.
+            for id in $(if $guard; then docker ps --all --quiet; fi); do
               read -r name created < <(docker inspect --format '{{.Name}} {{.Created}}' "$id" 2>/dev/null) || continue
+              # Ryuk serves every live run.
+              case "$name" in /testcontainers-ryuk-*) continue ;; esac
               at=$(date -d "$created" +%s 2>/dev/null) || continue
               if [ "$at" -gt "$started" ] && [ "$at" -lt $((oldest - 2)) ]; then
                 echo "removing the container ${name#/}, left by a run that ended"

@@ -71,9 +71,10 @@ function vitestEntry(): string {
  */
 function vitest(entry: string, args: string[], env: Record<string, string>, timeoutMs?: number): Promise<Vitest> {
   const live = liveRun();
+  const id = `${process.pid}-${++runs}`;
   return new Promise((done) => {
     const child = spawn(process.execPath, [entry, "run", ...args], {
-      env: { ...process.env, ...env },
+      env: { ...process.env, ...env, OSF_TESTKIT_RUN: id },
       detached: true,
     });
     let output = "";
@@ -94,6 +95,7 @@ function vitest(entry: string, args: string[], env: Record<string, string>, time
     child.on("close", (code) => {
       clearTimeout(timer);
       killGroup(child.pid);
+      removeContainers(id);
       live.end();
       done({ exitCode: code ?? 1, output: output.slice(-OUTPUT_LIMIT), timedOut });
     });
@@ -111,6 +113,27 @@ function liveRun(): { end(): void } {
   mkdirSync(dir, { recursive: true });
   writeFileSync(file, String(Math.floor(Date.now() / 1000)));
   return { end: () => rmSync(file, { force: true }) };
+}
+
+let runs = 0;
+
+/**
+ * Removes the containers that the fakes of the run `id` started, by the label of OSF_TESTKIT_RUN (testkit). Every
+ * process of a Stryker run shares one Ryuk, which removes them only when the last process ends: the forge of each
+ * mutant's run stayed, until the runner had no free memory. It does not wait, and without Docker it does nothing.
+ */
+function removeContainers(id: string): void {
+  const remove = spawn("sh", ["-c", removeCommand('"$1"'), "remove", id], { stdio: "ignore" });
+  remove.on("error", () => {});
+  remove.unref();
+}
+
+/** The shell command that removes the containers with the run label `id`, a shell word. */
+export function removeCommand(id: string): string {
+  return (
+    `ids=$(docker ps --all --quiet --filter label=org.opensoftware.run=${id} 2>/dev/null); ` +
+    '[ -z "$ids" ] || docker rm --force --volumes $ids >/dev/null 2>&1'
+  );
 }
 
 /** Kills what is left of a process group; a group whose processes all ended is no error. */

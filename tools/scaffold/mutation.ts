@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import { addedLines, baseCommit, changedFiles } from "../checks/lib/git.ts";
 import { Repo } from "../checks/lib/repo.ts";
 import { mutatedUnits, mutationReport } from "../checks/quality.ts";
+import { removeCommand } from "./mutation-runner.ts";
 
 export async function mutation(root: string, args: string[]): Promise<number> {
   const path = args.find((arg) => !arg.startsWith("--"));
@@ -90,9 +91,11 @@ function runner(cwd: string, unit: string, shard: Shard | undefined, settings: S
     const skip = shard
       ? `[ -n "$__STRYKER_ACTIVE_MUTANT__" ] && [ $(($__STRYKER_ACTIVE_MUTANT__ % ${shard.count})) -ne ${shard.index - 1} ] || `
       : "";
+    // Each run labels the containers of its fakes and removes them when it ends (mutation-runner.ts).
+    const run = `export OSF_TESTKIT_RUN="library-$$"; node "${vitest}" run --bail=1 --reporter=dot; status=$?`;
     return {
       testRunner: "command",
-      commandRunner: { command: `${skip}node "${vitest}" run --bail=1 --reporter=dot` },
+      commandRunner: { command: `${skip}{ ${run}; ${removeCommand('"$OSF_TESTKIT_RUN"')}; exit $status; }` },
       coverageAnalysis: "off",
     };
   }
