@@ -47,7 +47,8 @@ const signedText = (record: GateRecord): Buffer => {
 export const signWith = (record: GateRecord, key: string | undefined): GateRecord =>
   key ? signRecord(record, key) : record;
 
-export function signRecord(record: GateRecord, privateKeyPem: string): GateRecord {
+/** The Ed25519 private key in GATEKEEPER_SIGNING_KEY, or a usage error that says what is wrong with it. */
+export function signingKeyOf(privateKeyPem: string): KeyObject {
   let key: KeyObject;
   try {
     key = createPrivateKey(privateKeyPem);
@@ -55,6 +56,11 @@ export function signRecord(record: GateRecord, privateKeyPem: string): GateRecor
     throw new UsageError("GATEKEEPER_SIGNING_KEY is no private key in PEM");
   }
   if (key.asymmetricKeyType !== "ed25519") throw new UsageError("GATEKEEPER_SIGNING_KEY must be an Ed25519 key");
+  return key;
+}
+
+export function signRecord(record: GateRecord, privateKeyPem: string): GateRecord {
+  const key = signingKeyOf(privateKeyPem);
   const value = sign(null, signedText(record), key).toString("base64");
   return { ...record, signature: { algorithm: "Ed25519", key: keyId(createPublicKey(key)), value } };
 }
