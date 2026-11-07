@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/sesigl/open-software-factory/compare/proof-v0.5.0...proof-v0.5.1) (2026-11-07)
+
+
+### Performance Improvements
+
+* **ci:** shard the nightly mutation run and replay unchanged shards ([#187](https://github.com/sesigl/open-software-factory/issues/187)) ([b5557bf](https://github.com/sesigl/open-software-factory/commit/b5557bfaf795918749db1e9ff413384bfcf1d537))
+
 ## [0.5.0](https://github.com/sesigl/open-software-factory/compare/proof-v0.4.0...proof-v0.5.0) (2026-11-05)
 
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.30.1](https://github.com/sesigl/open-software-factory/compare/testkit-v0.30.0...testkit-v0.30.1) (2026-11-07)
+
+
+### Bug Fixes
+
+* **testkit:** local runs reach Docker as the machine does, and sut.helm uses only a local kind cluster ([#190](https://github.com/sesigl/open-software-factory/issues/190)) ([88afac9](https://github.com/sesigl/open-software-factory/commit/88afac9b32cd8281db2f09569f335e174e93f95c))
+* **testkit:** SCN-TK-132 replaces SCN-TK-131 with a neutral context name ([#194](https://github.com/sesigl/open-software-factory/issues/194)) ([0c0d51c](https://github.com/sesigl/open-software-factory/commit/0c0d51c9a1ccaf909cc4da045a24d0582ce4da7f))
+
+
+### Performance Improvements
+
+* **ci:** shard the nightly mutation run and replay unchanged shards ([#187](https://github.com/sesigl/open-software-factory/issues/187)) ([b5557bf](https://github.com/sesigl/open-software-factory/commit/b5557bfaf795918749db1e9ff413384bfcf1d537))
+
 ## [0.30.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.29.0...testkit-v0.30.0) (2026-11-05)
 
 
