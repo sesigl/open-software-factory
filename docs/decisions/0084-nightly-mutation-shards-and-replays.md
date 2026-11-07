@@ -77,6 +77,12 @@ The nightly run mutates every line (ADR 0037) and runs `osf check MUTATION --tot
   `osf mutation`, since Stryker builds the unit itself, and on CI `osf mutation` does not build it again at the end.
 - The nightly run keeps one open ticket: a failed run comments on it with the units below their limit, and a passing
   run closes it. A run in which a shard failed fails its score: the reports of the other shards leave out mutants.
+- A run in which a shard failed, for example because GitHub lost its runner, starts one retry: a new run with
+  `retried`, which waits for the first run to end, replays the reports of the shards that passed and mutates only the
+  others. The retry updates the ticket. GitHub reruns the failed jobs of a run only after the run ended, so the run
+  cannot rerun its own shards.
+- A Timeout counts as detected, as in Stryker: a mutant that makes a scenario loop is caught. The timeout factor of
+  2.5 keeps slow runs under load from ending as Timeout.
 
 ## Options considered
 
@@ -88,6 +94,10 @@ The nightly run mutates every line (ADR 0037) and runs `osf check MUTATION --tot
 | Stryker incremental mode | Keeps the results of unchanged mutants in a changed unit | ADR 0066: it does not see changes to the testkit or a dependency |
 | One Vitest process per Stryker worker that stays up between mutants | Saves Vitest's start and the testkit's import for each mutant, about 1 to 2 seconds | The active mutant must reach the module's processes another way than the environment; a run stopped at its first failure leaves processes that only a new process group ends |
 | A larger runner | Fewer shards | A paid service |
+| A cache key without the testkit and the global files | More nights replay | A testkit change changes which mutants the scenarios kill, so a replay could report a wrong score |
+| A rolling run: changed units plus one seventh of the others each night | Short nights | Each score is up to a week old, and the ticket follows no single run |
+| One forge or LiteLLM for each Stryker worker, reset between mutants | About 2 times faster for forge-forgejo | State of one mutant's run can change the next; litellm's scenarios start the proxy through the module under test |
+| A limit on the share of Timeout mutants | Finds a score made of timeouts | A loop that a mutant causes is a real detection, such as the reconnect loops of packages/postgres |
 
 ## Prior art
 

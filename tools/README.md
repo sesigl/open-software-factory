@@ -38,7 +38,8 @@ make verify      # everything: lint, types, all system tests, all checks
 | `osf install-tools` | `make install` | Download the checksum-pinned lychee, oasdiff, opa, temporal, nats-server, helm, kubectl and kind into `.tools/bin/`. |
 
 `make run-record` builds `modules/runlog` and runs `runlog export --latest --per-run` with `OUTPUT=runs` on the
-Claude Code project folder of this checkout and `~/.codex/sessions` (ADR 0027). `RUN_SESSIONS=<folder>` overrides
+Claude Code project folder of this checkout, below `CLAUDE_CONFIG_DIR` when it is set and `~/.claude` when not, and
+`~/.codex/sessions` (ADR 0027). `RUN_SESSIONS=<folder>` overrides
 the folders.
 
 `make agents-sync` builds `modules/factory-spec` and runs `factory render --harness all` on the repository's

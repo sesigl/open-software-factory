@@ -19,6 +19,10 @@ on:
         description: Only these packages, separated by spaces, such as "@opensoftware/ledger". Empty is every unit.
         type: string
         default: ""
+      retried:
+        description: Set by a run whose shard failed, for its one retry. Leave it off.
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -137,6 +141,7 @@ jobs:
     permissions:
       contents: read
       issues: write
+      actions: write
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -172,10 +177,21 @@ jobs:
             jq -r --arg report "$(basename "$report")" \
               '[.files[].mutants[].status] | group_by(.) | map("\(.[0])=\(length)") | "\($report) \(join(" "))"' "$report"
           done
+      # A shard that failed, such as one whose runner GitHub lost, gets one retry: a new run, which starts when this
+      # one ends (concurrency), replays the reports of the shards that passed and mutates only the others. The retry
+      # reports the result. A shard that fails again fails the retry.
+      - id: retry
+        name: Retry the shards that failed
+        if: always() && needs.mutation.result == 'failure' && !inputs.retried && !inputs.packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run nightly.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME" -f retried=true
+          echo "A shard failed: a new run retries it and reports the score."
       # One open ticket at most: a failed run comments on it, a passing run closes it. A run started by hand on
-      # another branch, or for some packages only, only reports.
+      # another branch, or for some packages only, only reports; a run that started its retry leaves it to the retry.
       - name: Update the ticket of the mutation score
-        if: always() && github.ref == 'refs/heads/main' && !inputs.packages
+        if: always() && github.ref == 'refs/heads/main' && !inputs.packages && steps.retry.outcome != 'success'
         env:
           GH_TOKEN: ${{ github.token }}
           OUTCOME: ${{ steps.score.outcome }}
