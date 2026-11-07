@@ -48,3 +48,24 @@ Feature: Propose a fix as a pull request
     Then the command exits with code 1
     And the error output says "observer: the model's answer is no proposal with "solution" and "edits": Tell the agent to use the research skill."
     And the repository has no pull request
+
+  @id=SCN-OBS-034 @status=implemented
+  Scenario: Propose sends the key and the text of each file to the model gateway
+    Given the model gateway answers a prompt with "Investigated inline." with the solution "Tell the triage agent to use the research skill." and an edit of "AGENTS.md" from "Investigate inline." to "Use the research skill before you investigate."
+    When the user runs "observer propose --repo <forge URL>/tester/factory problems.json" with "OBSERVER_INFERENCE_URL" "<gateway URL>//" and "OBSERVER_INFERENCE_KEY" "gateway-key-1"
+    Then the command exits with code 0
+    And the model gateway got one call of "/v1/chat/completions" with the header "authorization" "Bearer gateway-key-1"
+    And the prompt ends with "File AGENTS.md:" and the text of "AGENTS.md" in a code fence
+
+  @id=SCN-OBS-035 @status=implemented
+  Scenario: An edit with an empty or wrong path, or without its old or new text, opens no pull request
+    When the user runs "observer propose --repo <forge URL>/tester/factory problems.json" four times, and the model gateway answers each time with one edit of "AGENTS.md" that has an empty path, the path 7, no "old" or no "new"
+    Then each run exits with code 1 and the error output says "observer: the model's answer is no proposal with "solution" and "edits""
+    And the repository has no pull request
+
+  @id=SCN-OBS-036 @status=implemented
+  Scenario: An edit whose path leaves the repository opens no pull request
+    Given the model gateway answers a prompt with "Investigated inline." with the solution "Keep notes outside." and a new file "../notes.md"
+    When the user runs "observer propose --repo <forge URL>/tester/factory problems.json"
+    Then the command exits with code 1 and the error output says "observer: the edit of ../notes.md does not apply: the path leaves the repository"
+    And the repository has no pull request

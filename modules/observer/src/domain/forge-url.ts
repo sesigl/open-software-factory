@@ -37,17 +37,17 @@ function parts(url: string, example: string): { url: URL; path: string[] } {
 /** A repository URL like https://github.com/acme/factory. */
 export function repositoryOf(url: string, apiOverride: string | undefined): RepositoryRef {
   const { url: parsed, path } = parts(url, "https://github.com/acme/factory");
-  const [owner, repo] = path;
-  if (path.length !== 2 || !owner || !repo)
-    throw new UsageError(`${url} is not a repository URL like https://github.com/acme/factory`);
+  // The path holds no empty parts, so two parts are the owner and the name.
+  if (path.length !== 2) throw new UsageError(`${url} is not a repository URL like https://github.com/acme/factory`);
+  const [owner, repo] = path as [string, string];
   return { owner, repo, api: apiOf(parsed, apiOverride), cloneUrl: `${parsed.origin}/${owner}/${repo}.git` };
 }
 
 /** A pull request URL: GitHub writes /<owner>/<repo>/pull/<n>, Forgejo /<owner>/<repo>/pulls/<n>. */
 export function pullRequestOf(url: string, apiOverride: string | undefined): PullRequestRef {
   const { url: parsed, path } = parts(url, "https://github.com/acme/factory/pull/12");
-  const [owner = "", repo = "", kind, number = ""] = path;
-  if (path.length !== 4 || !/^pulls?$/.test(kind ?? "") || !/^\d+$/.test(number))
+  const [owner, repo, kind, number] = path as [string, string, string, string];
+  if (path.length !== 4 || !/^pulls?$/.test(kind) || !/^\d+$/.test(number))
     throw new UsageError(`${url} is not a pull request URL like https://github.com/acme/factory/pull/12`);
   return { url, owner, repo, number: Number(number), api: apiOf(parsed, apiOverride) };
 }

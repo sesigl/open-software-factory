@@ -72,3 +72,17 @@ Feature: Check the effect of a merged change
     When the user runs "observer check --problem research-skill-used --pull-request https://github.com/acme/factory/issues/12 scores.jsonl"
     Then the command exits with code 2
     And the error output says "observer: https://github.com/acme/factory/issues/12 is not a pull request URL like https://github.com/acme/factory/pull/12"
+
+  @id=SCN-OBS-037 @status=implemented
+  Scenario: A text that is no URL, or a pull request URL with a wrong kind or number, exits 2
+    Given "scores.jsonl" where "research-skill-used" failed 30 of 40 runs before "2026-01-10T00:00:00Z" and 2 of 20 runs after it
+    When the user runs "observer check --problem research-skill-used --pull-request <URL> scores.jsonl" with the URLs "not a URL", ".../pull/12x", ".../pull/x12", ".../xpull/12" and ".../pullz/12" of "https://github.com/acme/factory"
+    Then each run exits with code 2; the error output says "observer: not a URL is not a URL like https://github.com/acme/factory/pull/12" and, for the others, "observer: <URL> is not a pull request URL like https://github.com/acme/factory/pull/12"
+
+  @id=SCN-OBS-038 @status=implemented
+  Scenario: Check reads a Forgejo pull request URL from the forge API without the trailing slashes of OBSERVER_FORGE_URL
+    Given "scores.jsonl" where "research-skill-used" failed 30 of 40 runs before "2026-01-10T00:00:00Z" and 2 of 20 runs after it
+    And a forge API that answers the pull request 12 of "acme/factory" as merged at "2026-01-10T00:00:00Z"
+    When the user runs "observer check --problem research-skill-used --pull-request https://forge.example/acme/factory/pulls/12 scores.jsonl" with "OBSERVER_FORGE_URL" "<forge API URL>//"
+    Then the output says "research-skill-used: 75.0% before (30 of 40 runs), 10.0% after (2 of 20 runs): fell"
+    And the forge API got only "GET /repos/acme/factory/pulls/12"
