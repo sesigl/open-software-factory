@@ -32,7 +32,8 @@ This is the fourth and last slice of T-04.
   `.`, `_` and `-` replaced by `-`. A session exported twice keeps one line; two sessions on one branch keep two
   files; a branch name used again never overwrites an older run.
 - **`make run-record`** runs `runlog export --latest --per-run` with `OUTPUT=runs` on the Claude Code project
-  folder of this checkout (`~/.claude/projects/<path with every other character as ->`) and `~/.codex/sessions`.
+  folder of this checkout (`<CLAUDE_CONFIG_DIR, or ~/.claude>/projects/<path with every other character as ->`)
+  and `~/.codex/sessions`.
   `RUN_SESSIONS=<folder>` overrides the folders. No prompt or tool content is exported.
 - **The rule.** `AGENTS.md` tells every agent to run `make run-record` and commit `runs/` before it pushes.
 - **The check RUNS** (`make verify`):

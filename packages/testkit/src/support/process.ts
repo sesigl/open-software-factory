@@ -11,12 +11,21 @@ export interface CliResult {
 export const FIXED_DATE = "2026-01-01T00:00:00Z";
 export const FIXED_SEED = "1";
 
+/** The variables that say how this machine reaches its Docker daemon, for the Docker CLI and testcontainers. */
+const MACHINE_DOCKER = ["DOCKER_HOST", "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE", "TESTCONTAINERS_HOST_OVERRIDE"];
+
 export function baseEnv(workspace: string): Record<string, string> {
-  // Where Playwright keeps its browsers belongs to the machine, like PATH; HOME is the workspace.
+  // Where Playwright keeps its browsers and how the Docker daemon is reached belong to the machine, like PATH; HOME
+  // is the workspace. Rancher Desktop, for one, has no /var/run/docker.sock on the host, only its DOCKER_HOST, and
+  // testcontainers mounts the socket into Ryuk by its path in the VM.
   const browsers = process.env.PLAYWRIGHT_BROWSERS_PATH;
+  const docker = Object.fromEntries(
+    MACHINE_DOCKER.flatMap((name) => (process.env[name] ? [[name, process.env[name] as string]] : [])),
+  );
   return {
     PATH: process.env.PATH ?? "",
     ...(browsers ? { PLAYWRIGHT_BROWSERS_PATH: browsers } : {}),
+    ...docker,
     HOME: workspace,
     LANG: "C.UTF-8",
     TZ: "UTC",

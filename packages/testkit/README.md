@@ -277,8 +277,10 @@ The testkit reads these environment variables:
 | --- | --- |
 | `PLAYWRIGHT_BROWSERS_PATH` | Where Playwright keeps its browsers. The module gets it like `PATH`, since its `HOME` is the working folder. |
 | `__STRYKER_ACTIVE_MUTANT__` | The mutant Stryker activates during a mutation run (`osf mutation`, ADR 0037). The module's instrumented build reads it in its own process. |
+| `DOCKER_HOST` | The Docker daemon, as for any `docker` command, such as `unix://$HOME/.rd/docker.sock` of Rancher Desktop. The module's processes get it like `PATH`, so a module that starts containers and the fakes reach the same daemon. Default: Docker's own (`/var/run/docker.sock`). |
+| `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE`, `TESTCONTAINERS_HOST_OVERRIDE` | How testcontainers reaches the daemon of a Docker that runs in a VM, such as Rancher Desktop: the socket path in the VM, which Ryuk mounts, and the host of the mapped ports. The module's processes get them like `DOCKER_HOST`. |
 | `DOCKER_CONFIG` | The Docker CLI's configuration folder. `sut.compose` lets `docker` find the plugins in its `cli-plugins/`, like `docker compose`, and nothing else from it, since the module's `HOME` is the working folder. Default: `~/.docker`. |
-| `KUBECONFIG` | The cluster where `sut.helm` installs charts, as for any `kubectl` command. Default: kubectl's own (`~/.kube/config`). The module does not get it unless the test passes it on. |
+| `KUBECONFIG` | The cluster where `sut.helm` installs charts, as for any `kubectl` command. Its current context must be a local kind cluster, `kind-*` with a server on the loopback address: `sut.helm` refuses any other cluster before its first command (SCN-TK-131). Without it, `kubectl` finds no cluster, since its `HOME` is the working folder. The module does not get it unless the test passes it on. |
 | `OSF_TESTKIT_MUTANTS` | A folder, set by `osf mutation` for its first test run ([ADR 0061](../../docs/decisions/0061-mutation-runs-the-scenarios-that-reach-a-mutant.md)). Each process of the module writes the IDs of the mutants it ran to `<folder>/<scenario ID>/` when it exits. |
 | `OSF_TESTKIT_RUN` | An ID of the run, set by `osf mutation` for each run of a mutant ([ADR 0084](../../docs/decisions/0084-nightly-mutation-shards-and-replays.md)). Every container of the fakes carries the label `org.opensoftware.run` with this ID, so the runner removes the containers of a run when it ends. |
 
@@ -437,3 +439,5 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-127 | implemented | A test may stop fakes.postgres while a client holds a transaction open |
 | SCN-TK-128 | implemented | The processes of a mutation run record no coverage |
 | SCN-TK-129 | implemented | The containers of the fakes carry the label of the run that OSF_TESTKIT_RUN names |
+| SCN-TK-130 | implemented | The module's processes reach Docker through the Docker settings of the machine |
+| SCN-TK-131 | implemented | sut.helm refuses a cluster that is not a local kind cluster |
