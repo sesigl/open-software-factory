@@ -29,6 +29,8 @@ npx @opensoftware/forge-github event delivery.json                # a pr.opened@
   requests and commit statuses, and administration of the repository for `protect` and `webhook`. A token GitHub
   refuses exits 1 with `the forge refused the token`; a repository it does not show exits 1 with
   `no repository <repo>`.
+- **Usage errors** exit 2 before any call to GitHub: a repository that is not `<owner>/<name>`, a pull request
+  number that is not a whole number above 0, and a command with a word too many, which prints the usage.
 - **Comments.** `comments` marks the token's own comments as `mine` with its user from `GET /user`. GitHub refuses
   that call for a GitHub Actions token; its user is then `github-actions[bot]`, who writes its comments.
 - **Branches** are refs: `branch` creates `refs/heads/<branch>` at the commit of `--from` or of the default branch.
@@ -76,7 +78,8 @@ npx @opensoftware/forge-github event delivery.json                # a pr.opened@
 
 ## Tests
 
-The system tests run the port's `@conformance` scenarios against `fakes.github()`, the testkit's in-process fake of
+The system tests run the port's `@conformance` scenarios and this adapter's own scenarios in
+[`features/`](features/github.feature) against `fakes.github()`, the testkit's in-process fake of
 GitHub's REST API (ADR 0058). No real GitHub is called.
 
 ## Releases
