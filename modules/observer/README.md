@@ -161,3 +161,9 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-OBS-031 | implemented | A repository that cannot be cloned exits 1 |
 | SCN-OBS-032 | implemented | A URL that is no pull request exits 2 |
 | SCN-OBS-033 | implemented | A line that is not JSON exits 2 and names the line |
+| SCN-OBS-034 | implemented | Propose sends the key and the text of each file to the model gateway |
+| SCN-OBS-035 | implemented | An edit with an empty or wrong path, or without its old or new text, opens no pull request |
+| SCN-OBS-036 | implemented | An edit whose path leaves the repository opens no pull request |
+| SCN-OBS-037 | implemented | A text that is no URL, or a pull request URL with a wrong kind or number, exits 2 |
+| SCN-OBS-038 | implemented | Check reads a Forgejo pull request URL from the forge API without the trailing slashes of OBSERVER_FORGE_URL |
+| SCN-OBS-039 | implemented | A repository URL that is no URL or has more than two parts exits 2 |

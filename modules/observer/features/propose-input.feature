@@ -36,3 +36,9 @@ Feature: Refuse a proposal before any change
     When the user runs "observer propose --repo http://127.0.0.1:9/acme/factory problems.json"
     Then the command exits with code 1
     And the error output starts with "observer: git clone failed"
+
+  @id=SCN-OBS-039 @status=implemented
+  Scenario: A repository URL that is no URL or has more than two parts exits 2
+    Given "problems.json" with the problem "research-skill-used" of 30 failures in 40 runs
+    When the user runs "observer propose --repo <URL> problems.json" with the URLs "not a URL" and "https://github.com/acme/factory/tree"
+    Then both exit with code 2; the error output says "observer: not a URL is not a URL like https://github.com/acme/factory" and "observer: https://github.com/acme/factory/tree is not a repository URL like https://github.com/acme/factory"
