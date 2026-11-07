@@ -186,3 +186,16 @@ Feature: Serve the gate API
     When its database stops
     And the forge answers the read
     Then the server answers "/v1/gates/<gate>" with the status 500
+
+  @id=SCN-GATE-089 @status=implemented
+  Scenario: The server with a wrong setting exits with code 2 and names the setting
+    Given the README policy and groups
+    When the user runs "gatekeeper serve" for the channels "slack:c0gates", "xslack:C0GATES" and "slack:C0GATES#x", and for "slack:C0GATES" without "GATEKEEPER_API_TOKEN", without "GATEKEEPER_SLACK_TOKEN", without "GATEKEEPER_SLACK_SIGNING_SECRET" and with "GATEKEEPER_SIGNING_KEY" set to "not a key"
+    Then each command exits with code 2
+    And the error outputs say "serve needs a Slack channel, like --channel slack:C0GATES" three times, then "set GATEKEEPER_API_TOKEN", "set GATEKEEPER_SLACK_TOKEN", "set GATEKEEPER_SLACK_SIGNING_SECRET" and "GATEKEEPER_SIGNING_KEY is no private key in PEM"
+
+  @id=SCN-GATE-090 @status=implemented
+  Scenario: A call without an Authorization header gets the status 401 and a problem that says how to send the token
+    Given the server runs with the README policy and groups for the channel "slack:C0GATES"
+    When a program posts the README request to "/v1/gates" without an Authorization header
+    Then the answer has the status 401 and a problem whose detail says "send Authorization: Bearer <GATEKEEPER_API_TOKEN>"
