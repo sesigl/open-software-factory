@@ -40,3 +40,45 @@ Feature: Calibrate a scorer
     Then the command exits with code 0
     And the error output contains "no run for the label of run-02"
     And the output contains "agreement 1 of 1 (100.0%)"
+
+  @id=SCN-SCORE-062 @status=implemented
+  Scenario: Calibration uses only the labels of the scorer with the source ANNOTATION
+    Given the runs file "runs.jsonl" with the runs "run-01" to "run-03"
+    And the labels file "labels.jsonl" with an ANNOTATION label of "redundant-tests" for "run-01" and "run-04", a score of "redundant-tests" with the source "API" for "run-02" and an ANNOTATION label of "scope-creep" for "run-03"
+    And a model gateway that answers every judge call with the result "pass" and the reason "Fine."
+    When the user runs "scorekit calibrate --scorer redundant-tests --labels labels.jsonl runs.jsonl"
+    Then the command exits with code 0
+    And the model gateway received 1 judge call
+    And the output is "agreement 1 of 1 (100.0%)"
+    And the error output is "scorekit: no run for the label of run-04"
+
+  @id=SCN-SCORE-063 @status=implemented
+  Scenario: The minimum agreement takes the bounds 0 and 1, and an agreement equal to the minimum passes
+    Given the runs file "runs.jsonl" with the runs "run-01" to "run-03"
+    And the labels file "labels.jsonl" that labels "run-01" "pass", "run-02" "fail" and "run-03" "pass"
+    And a model gateway that passes "run-01" and "run-02" and fails "run-03"
+    When the user runs "scorekit calibrate --scorer redundant-tests --labels labels.jsonl runs.jsonl" with "--min-agreement" 0, 0.333333 and 1
+    Then the commands exit with the codes 0, 0 and 1
+    And the outputs are "agreement 1 of 3 (33.3%), kappa -0.50" twice and then "agreement 1 of 3 (33.3%) is below 100.0%"
+
+  @id=SCN-SCORE-064 @status=implemented
+  Scenario: Wrong options of "scorekit calibrate" are refused with the reason
+    Given the runs file "runs.jsonl" with the run "run-01"
+    And the labels file "labels.jsonl" that labels "run-01" "pass"
+    When the user runs "scorekit calibrate --scorer redundant-tests" with each of these arguments
+      | arguments                                          | error                                                                    |
+      | runs.jsonl                                         | --labels is required: a file of score records with the source ANNOTATION |
+      | --labels labels.jsonl --min-agreement 1.5 runs.jsonl  | --min-agreement must be a number from 0 to 1                          |
+      | --labels labels.jsonl --min-agreement=-0.5 runs.jsonl | --min-agreement must be a number from 0 to 1                          |
+      | --labels labels.jsonl --min-agreement most runs.jsonl | --min-agreement must be a number from 0 to 1                          |
+    Then each command exits with code 2
+    And the error output of each command is "scorekit: " and the error of its row
+
+  @id=SCN-SCORE-065 @status=implemented
+  Scenario: A judge answer without a verdict fails the calibration and shows the first 200 characters of the answer
+    Given the runs file "runs.jsonl" with the run "run-01"
+    And the labels file "labels.jsonl" that labels "run-01" "pass"
+    And a model gateway that answers the judge call for "run-01" with 300 characters that are not a verdict
+    When the user runs "scorekit calibrate --scorer redundant-tests --labels labels.jsonl runs.jsonl"
+    Then the command exits with code 1
+    And the error output is "scorekit: run-01: the judge's answer is not a verdict: " and the first 200 characters of the answer

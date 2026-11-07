@@ -21,3 +21,18 @@ Feature: Report scores
     Given "scores.jsonl" with 4 scores of "redundant-tests", 3 with the value 1 and 1 with the value 0, each with the judge cost 0.01
     When the user runs "scorekit report scores.jsonl --markdown report.md"
     Then "report.md" has the row "| redundant-tests | 4 | 3 | 1 | 75.0% | 0.0400 |"
+
+  @id=SCN-SCORE-060 @status=implemented
+  Scenario: The Markdown report has a table of the scorers, then the days and the runs of each scorer
+    Given "scores.jsonl" with 3 scores of "scope-creep" and "redundant-tests" not in time order, a label with the source "ANNOTATION" and a reason with "|" and a line break
+    When the user runs "scorekit report scores.jsonl --markdown report.md"
+    Then the command exits with code 0
+    And the output has one line per scorer, sorted by name, with its runs, pass rate and cost
+    And "report.md" has the table of the scorers, then for each scorer the table of its days and the table of its runs
+
+  @id=SCN-SCORE-061 @status=implemented
+  Scenario: A score file line that breaks the score contract is named with its file and line
+    Given "scores.jsonl" whose second line is a JSON object with only the name "redundant-tests"
+    When the user runs "scorekit report scores.jsonl"
+    Then the command exits with code 2
+    And the error output starts with "scorekit: scores.jsonl:2: not a score: "

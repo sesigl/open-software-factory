@@ -159,3 +159,80 @@ Feature: Score runs
     When the user runs "scorekit score --scorer redundant-tests --sample 1 --model deepseek/deepseek-v4.1-flash-1017 runs.jsonl"
     Then the judge call asks the gateway for the model "deepseek/deepseek-v4.1-flash-1017"
     And the score for "run-01" carries the judge model "deepseek/deepseek-v4.1-flash-1017"
+
+  @id=SCN-SCORE-047 @status=implemented
+  Scenario: The judge gets the run's facts and its steps by start time
+    Given the scorer file "scorers/twins.md" with the prompt "Look for tests that repeat each other." and the pass criterion " No test repeats another. " with spaces around it
+    And the runs file "runs.jsonl" with the run "run-01" in two lines, whose spans are not in start time order
+    And a model gateway that answers every judge call with the result "pass" and the reason "Fine."
+    When the user runs "scorekit score --scorer scorers/twins.md runs.jsonl"
+    Then the judge call's system message names the scorer "twins", the prompt, the pass criterion without the spaces and the answer format
+    And the judge call's user message lists the facts of "run-01" that have a value, then its messages and tool calls by start time
+    And the score for "run-01" has the ID of "twins" and "run-01", the session ID "session-run-01", the time of the clock and the version of "scorers/twins.md"
+
+  @id=SCN-SCORE-048 @status=implemented
+  Scenario: A run without facts and steps gets a transcript with its ID only
+    Given the runs file "runs.jsonl" with a run whose resource has no run ID and whose root span has only the conversation ID "session-two" and no duration
+    And a model gateway that answers every judge call with the result "pass" and the reason "Fine."
+    When the user runs "scorekit score --scorer redundant-tests --sample 1 runs.jsonl"
+    Then the judge call's user message is "Run: session-two", an empty line, "Steps:" and "(none recorded)"
+    And "scores.jsonl" holds a score for "session-two"
+
+  @id=SCN-SCORE-049 @status=implemented
+  Scenario: The output counts the passes, the fails and the runs already scored
+    Given the runs file "runs.jsonl" with the 4 runs "run-01" to "run-04"
+    And "scores.jsonl" already holds a score of "redundant-tests" for "run-01" and a score of "scope-creep" for "run-02"
+    And a model gateway that passes "run-02" and fails "run-03" and "run-04"
+    When the user runs "scorekit score --scorer redundant-tests --sample 1 runs.jsonl"
+    Then the command exits with code 0
+    And the output is "scored 3 of 4 runs with redundant-tests: 1 pass, 2 fail, 1 already scored"
+    And "scores.jsonl" holds the value 1 for "run-02" and the value 0 for "run-03" and "run-04" of "redundant-tests"
+
+  @id=SCN-SCORE-050 @status=implemented
+  Scenario: The sampling rate 0 scores no run
+    Given the runs file "runs.jsonl" with the runs "run-01" and "run-02"
+    And a model gateway without a scripted answer
+    When the user runs "scorekit score --scorer redundant-tests --sample 0 runs.jsonl"
+    Then the command exits with code 0
+    And the output is "scored 0 of 2 runs with redundant-tests: 0 pass, 0 fail"
+    And the model gateway received no judge call
+
+  @id=SCN-SCORE-051 @status=implemented
+  Scenario: Wrong options of "scorekit score" are refused with the reason
+    Given the runs file "runs.jsonl" with the run "run-01"
+    When the user runs "scorekit score" with each of these arguments
+      | arguments                                    | error                                               |
+      | --scorer redundant-tests --sample 1.5 runs.jsonl  | --sample must be a number from 0 to 1               |
+      | --scorer redundant-tests --sample=-0.5 runs.jsonl | --sample must be a number from 0 to 1               |
+      | --sample 1 runs.jsonl                        | --scorer is required: a pack name or a scorer file  |
+      | --scorer scorers/none.md runs.jsonl          | scorers/none.md: no such scorer file                |
+      | --scorer redundant-tests --sample 1          | name at least one runs file or folder               |
+    Then each command exits with code 2
+    And the error output of each command is "scorekit: " and the error of its row
+
+  @id=SCN-SCORE-052 @status=implemented
+  Scenario: A scorer file in the current folder is named without a folder
+    Given the scorer file "local.md" in the current folder
+    And the runs file "runs.jsonl" with the run "run-01"
+    And a model gateway that answers every judge call with the result "pass" and the reason "Fine."
+    When the user runs "scorekit score --scorer local.md runs.jsonl"
+    Then the command exits with code 0
+    And "scores.jsonl" holds a score for "run-01" with the name "local"
+
+  @id=SCN-SCORE-053 @status=implemented
+  Scenario: A folder of runs files skips the files that do not end in ".jsonl"
+    Given the runs file "runs/a.jsonl" with the run "run-01"
+    And the file "runs/a.jsonl.bak" with the run "run-02"
+    And a model gateway that answers every judge call with the result "pass" and the reason "Fine."
+    When the user runs "scorekit score --scorer redundant-tests --sample 1 runs"
+    Then "scores.jsonl" holds scores for exactly the runs "run-01"
+
+  @id=SCN-SCORE-054 @status=implemented
+  Scenario: The judge model and the answers the gateway gives without a message
+    Given the runs file "runs.jsonl" with the runs "run-01" to "run-04"
+    And a gateway at a URL with a trailing slash that answers "run-01" with the model "judge-2026-01" and the result "pass", "run-02" without choices, "run-03" with no choice and "run-04" with a choice without a message
+    When the user runs "scorekit score --scorer redundant-tests --sample 1 runs.jsonl"
+    Then the command exits with code 1
+    And the gateway received each judge call at "POST /v1/chat/completions" with the header "content-type" "application/json"
+    And the score for "run-01" carries the judge model "judge-2026-01"
+    And the error output says for "run-02", "run-03" and "run-04" that the judge's answer is not a verdict
