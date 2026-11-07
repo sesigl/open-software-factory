@@ -2,6 +2,7 @@
 // the config's OTLP/HTTP receiver and reads what the Collector exported to OTEL_EXPORTER_OTLP_ENDPOINT, which the
 // fake points at its own receiver on the host.
 import { GenericContainer, TestContainers, Wait } from "testcontainers";
+import { reachable } from "../support/port.ts";
 import { startHttp } from "./http.ts";
 import { address, IMAGES, runLabels, type Track } from "./services.ts";
 
@@ -36,6 +37,7 @@ export async function startCollector(config: string, track: Track): Promise<Runn
       .withWaitStrategy(Wait.forLogMessage(/Everything is ready/))
       .start(),
   );
+  await reachable("127.0.0.1", container.getMappedPort(4318));
   const receiver = `http://${address(container, 4318)}`;
   return {
     collector: {
