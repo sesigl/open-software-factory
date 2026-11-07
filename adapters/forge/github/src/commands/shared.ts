@@ -6,14 +6,14 @@ import { REPOSITORY } from "../domain/repository.ts";
 
 /** GitHub for "<owner>/<name>". */
 export function connect(repo: string | undefined): GitHub {
-  check(repo !== undefined && REPOSITORY.test(repo), "name the repository as <owner>/<name>, like tester/web");
+  check(REPOSITORY.test(String(repo)), "name the repository as <owner>/<name>, like tester/web");
   return github(repo as string);
 }
 
-/** A whole number from the command line, at least `min`. */
+/** A whole number from the command line, at least `min`; a missing number is NaN. */
 export function count(text: string | undefined, min: number, hint: string): number {
   const value = Number(text);
-  check(text !== undefined && Number.isInteger(value) && value >= min, hint);
+  check(Number.isInteger(value) && value >= min, hint);
   return value;
 }
 
