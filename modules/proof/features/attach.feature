@@ -108,3 +108,38 @@ Feature: Attach a bundle to a pull request
     Then the command exits with code 0
     And the pull request has a comment that says "Scenarios: 1 passed, 1 failed, 0 skipped" and lists "SCN-WEB-002" as "failed"
     And the comment does not name "SCN-WEB-001"
+
+  @id=SCN-PROOF-052 @status=implemented
+  Scenario: The comment on GitHub has the counts, the bundle link and one row per scenario that did not pass
+    Given a GitHub API without comments on the pull request "https://github.com/acme/web/pull/7"
+    And a bundle for that pull request where "SCN-WEB-001" passed, "SCN-WEB-002" failed with the screenshot "refund.png" and "SCN-WEB-003" was skipped with the screenshot "coupon.png"
+    When the developer runs "proof attach evidence --bundle-url https://ci.example.com/evidence" with PROOF_FORGE_URL of the GitHub API with a trailing slash and PROOF_FORGE_TOKEN "test-token"
+    Then the command exits with code 0
+    And the output is 'added the comment on https://github.com/acme/web/pull/7; set "proof" to failure on 9b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c'
+    And the GitHub API received a comment with the marker, the title "### proof: failed", the counts, the commit, the bundle link and the rows of "SCN-WEB-002" and "SCN-WEB-003"
+    And the GitHub API received the status with the context "proof", the state "failure", the description "1 of 3 scenarios passed" and the target URL "https://ci.example.com/evidence"
+    And each request to the GitHub API has the header "authorization" with the value "token test-token"
+
+  @id=SCN-PROOF-053 @status=implemented
+  Scenario: The comment names the bundle ID when the bundle is not uploaded
+    Given a GitHub API without comments on the pull request "https://github.com/acme/web/pull/7"
+    And a bundle for that pull request where "SCN-WEB-001" passed
+    When the developer runs "proof attach evidence" with PROOF_FORGE_URL of the GitHub API and PROOF_FORGE_TOKEN
+    Then the command exits with code 0
+    And the GitHub API received a comment with the marker, the title "### proof: passed", the counts, the commit and "<bundle id> (not uploaded)", and no table
+
+  @id=SCN-PROOF-054 @status=implemented
+  Scenario: The proof comment on the second page of comments is updated
+    Given a GitHub API with 100 other comments on the first page and the proof comment 42 on the second page of the pull request "https://github.com/acme/web/pull/7"
+    And a bundle for that pull request where "SCN-WEB-001" passed
+    When the developer runs "proof attach evidence" with PROOF_FORGE_URL of the GitHub API and PROOF_FORGE_TOKEN
+    Then the command exits with code 0
+    And the GitHub API received "PATCH /repos/acme/web/issues/comments/42" and no new comment
+    And the output starts with "updated the comment on https://github.com/acme/web/pull/7"
+
+  @id=SCN-PROOF-055 @status=implemented
+  Scenario: A pull request URL with more path after the number is refused
+    Given a bundle without a pull request where "SCN-WEB-001" passed
+    When the developer runs "proof attach evidence --pr https://github.com/acme/web/pull/7/files" with PROOF_FORGE_TOKEN
+    Then the command exits with code 1
+    And the error output contains "not a GitHub or Forgejo pull request URL: https://github.com/acme/web/pull/7/files"

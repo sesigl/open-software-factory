@@ -20,7 +20,8 @@ export function forgeAt(base: string, token: string): Forge {
     const response = await fetch(`${base.replace(/\/$/, "")}${path}`, {
       method,
       headers: { authorization: `token ${token}`, accept: "application/json", "content-type": "application/json" },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      // JSON.stringify(undefined) is undefined: a GET sends no body.
+      body: JSON.stringify(body),
     });
     const text = await response.text();
     if (!response.ok)
