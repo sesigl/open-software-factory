@@ -47,7 +47,9 @@ export function scenario(id: string, body: (context: ScenarioContext) => Promise
     } finally {
       await sut?.close();
       await handle.close();
-      rmSync(workspace, { recursive: true, force: true });
+      // A process of the module can still write into the workspace while it is removed (ENOTEMPTY): Node then
+      // removes it again, up to 5 times.
+      rmSync(workspace, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   });
 }
