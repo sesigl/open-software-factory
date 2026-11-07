@@ -58,3 +58,9 @@ Feature: The work item API
     Given the server received the README's "work.json"
     When a program gets "/v1/work-items?dedupeKey=idea:export-csv"
     Then the answer has the status 200 and the work item with the title "Export reports as CSV"
+
+  @id=SCN-INTAKE-042 @status=implemented
+  Scenario: A submission that is not a JSON object gets the status 400
+    Given the server runs
+    When a program posts the JSON values "[]", "null" and "7" to "/v1/work-items"
+    Then each answer has the status 400 and the problem "The request is not a work submission" with the detail "the submission is not a JSON object"

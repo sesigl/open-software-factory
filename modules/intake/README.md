@@ -279,3 +279,5 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-INTAKE-038 | implemented | A "run.completed@v1" that breaks its contract changes nothing |
 | SCN-INTAKE-039 | implemented | The Slack thread of a work item links the pull request of its finished run |
 | SCN-INTAKE-040 | implemented | A run's start adds no reply to the Slack thread, only its pull request does |
+| SCN-INTAKE-041 | implemented | The Factory MCP server lists the fields of "submit_work" and "work_status" with their descriptions |
+| SCN-INTAKE-042 | implemented | A submission that is not a JSON object gets the status 400 |
