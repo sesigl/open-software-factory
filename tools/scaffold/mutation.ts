@@ -4,8 +4,9 @@
 // (ADR 0066), so that n runners share a large change.
 import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { availableParallelism } from "node:os";
-import { join, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { addedLines, baseCommit, changedFiles } from "../checks/lib/git.ts";
 import { Repo } from "../checks/lib/repo.ts";
@@ -42,7 +43,7 @@ export async function mutation(root: string, args: string[]): Promise<number> {
   const stryker = new Stryker({
     mutate: local,
     inPlace: true,
-    ...runner(unit, shard),
+    ...runner(cwd, unit, shard),
     buildCommand: "pnpm run build",
     // Only the sources: tsc builds them with the instrumented code, which does not type-check.
     disableTypeChecks: "src/**/*.ts",
@@ -71,15 +72,17 @@ export async function mutation(root: string, args: string[]): Promise<number> {
  * processes of its built bin, which record the mutants they ran: each mutant reruns only the scenarios that ran it.
  * A library's tests run its code in the test process, which records nothing: each mutant reruns all its tests.
  */
-function runner(unit: string, shard: Shard | undefined): Record<string, unknown> {
+function runner(cwd: string, unit: string, shard: Shard | undefined): Record<string, unknown> {
   if (unit.startsWith("packages/")) {
+    // Node starts Vitest's entry directly: `pnpm exec` costs about 0.3 s more per mutant.
+    const vitest = join(dirname(createRequire(join(cwd, "package.json")).resolve("vitest/package.json")), "vitest.mjs");
     // The first run has no active mutant and runs the tests; a mutant of another shard passes without a test.
     const skip = shard
       ? `[ -n "$__STRYKER_ACTIVE_MUTANT__" ] && [ $(($__STRYKER_ACTIVE_MUTANT__ % ${shard.count})) -ne ${shard.index - 1} ] || `
       : "";
     return {
       testRunner: "command",
-      commandRunner: { command: `${skip}pnpm exec vitest run --bail=1 --reporter=dot` },
+      commandRunner: { command: `${skip}node "${vitest}" run --bail=1 --reporter=dot` },
       coverageAnalysis: "off",
     };
   }
@@ -91,6 +94,8 @@ function runner(unit: string, shard: Shard | undefined): Record<string, unknown>
     coverageAnalysis: "perTest",
     // A mutant's run starts Vitest for a few scenarios; their time in the first run leaves out that start.
     timeoutMS: 60_000,
+    // The first run starts every scenario of the unit once; foreman's take more than Stryker's default of 5 minutes.
+    dryRunTimeoutMinutes: 30,
   };
 }
 

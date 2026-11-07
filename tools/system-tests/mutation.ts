@@ -24,3 +24,23 @@ export async function addLines(sut: Sut, total: number, added: number[]): Promis
   );
   await sut.files.put("$INPUT/modules/demo/src/run.ts", `${lines.join("\n")}\n`);
 }
+
+/** Writes module `name` with a mutation script, the `osf` settings of its package.json and src/run.ts of `count` lines. */
+export async function demoModule(
+  sut: Sut,
+  name: string,
+  count: number,
+  settings: Record<string, number> = {},
+): Promise<void> {
+  const manifest = { ...JSON.parse(mutationPackage(name)), osf: settings };
+  await sut.files.put(`$INPUT/modules/${name}/package.json`, `${JSON.stringify(manifest, null, 2)}\n`);
+  await sut.files.put(`$INPUT/modules/${name}/AGENTS.md`, qualityLimits());
+  const lines = Array.from({ length: count }, (_, index) => line(index + 1));
+  await sut.files.put(`$INPUT/modules/${name}/src/run.ts`, `${lines.join("\n")}\n`);
+}
+
+/** The shards of `osf mutation-plan` output, as "folder shard". */
+export function shardsOf(stdout: string): string[] {
+  const plan = JSON.parse(stdout) as { folder: string; shard: string }[];
+  return plan.map(({ folder, shard }) => `${folder} ${shard}`);
+}

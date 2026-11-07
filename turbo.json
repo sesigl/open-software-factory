@@ -53,6 +53,14 @@
     "mutation": {
       "dependsOn": ["build", "^build"],
       "cache": false,
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/tools/package.json",
+        "$TURBO_ROOT$/tools/scaffold/mutation.ts",
+        "$TURBO_ROOT$/tools/scaffold/mutation-runner.ts",
+        "$TURBO_ROOT$/.github/workflows/nightly.yml",
+        "$TURBO_ROOT$/.github/actions/**"
+      ],
       "passThroughEnv": ["OSF_BASE", "PLAYWRIGHT_BROWSERS_PATH", "KUBECONFIG", "OSF_SANDBOX_HOST_ALIASES"]
     }
   }

@@ -22,6 +22,7 @@ const USAGE = `Usage: osf <command>
   test-scenario <ID>      run the one system test of a scenario
   mutation <folder> [--all] [--list] [--shard i/n]
                           Stryker on the lines of a module changed since OSF_BASE (--all: every line)
+  mutation-plan [--all]   the shards of a mutation run as JSON: changed lines since OSF_BASE, or every line
   install-tools           download the pinned lychee, oasdiff, opa, temporal and nats-server binaries into .tools/bin
 `;
 
@@ -62,6 +63,8 @@ async function main(argv: string[]): Promise<number> {
       return (await import("../scaffold/test-scenario.ts")).testScenario(root, args);
     case "mutation":
       return (await import("../scaffold/mutation.ts")).mutation(root, args);
+    case "mutation-plan":
+      return (await import("../scaffold/mutation-plan.ts")).mutationPlan(root, args);
     case "install-tools":
       return (await import("../scaffold/install-tools.ts")).installTools(root);
     case undefined:

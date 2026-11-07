@@ -6,35 +6,57 @@
 // so it imports nothing but Node.
 import { spawn } from "node:child_process";
 import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
-import { join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
 
 interface Vitest {
   exitCode: number;
   output: string;
+  timedOut: boolean;
+}
+
+/** The output a run keeps: its end. A mutant that prints in a loop must not fill the memory of the runner. */
+const OUTPUT_LIMIT = 64 * 1024;
+
+/**
+ * Vitest's own entry in the unit's folder. Node starts it directly: `pnpm exec` costs about 0.3 s more per mutant.
+ */
+function vitestEntry(): string {
+  const manifest = createRequire(join(process.cwd(), "package.json")).resolve("vitest/package.json");
+  return join(dirname(manifest), "vitest.mjs");
 }
 
 /**
  * Runs Vitest on the system tests in the unit's folder, all of them without `files`. Vitest runs in its own process
- * group, which is killed when it ends: a run that stops at its first failure (`--bail`) leaves the module's servers of
- * its other tests running, and over many mutants they fill the runner's memory.
+ * group, which is killed when it ends or when `timeoutMs` passes: a run that stops at its first failure (`--bail`)
+ * leaves the module's servers of its other tests running, and over many mutants they fill the runner's memory.
  */
-function vitest(args: string[], env: Record<string, string>): Promise<Vitest> {
+function vitest(entry: string, args: string[], env: Record<string, string>, timeoutMs?: number): Promise<Vitest> {
   return new Promise((done) => {
-    const child = spawn("pnpm", ["exec", "vitest", "run", ...args], {
+    const child = spawn(process.execPath, [entry, "run", ...args], {
       env: { ...process.env, ...env },
       detached: true,
     });
     let output = "";
-    child.stdout.on("data", (chunk) => {
+    const keep = (chunk: Buffer): void => {
       output += chunk;
-    });
-    child.stderr.on("data", (chunk) => {
-      output += chunk;
-    });
+      if (output.length > 2 * OUTPUT_LIMIT) output = output.slice(-OUTPUT_LIMIT);
+    };
+    child.stdout.on("data", keep);
+    child.stderr.on("data", keep);
+    let timedOut = false;
+    const timer =
+      timeoutMs === undefined
+        ? undefined
+        : setTimeout(() => {
+            timedOut = true;
+            killGroup(child.pid);
+          }, timeoutMs);
     child.on("close", (code) => {
+      clearTimeout(timer);
       killGroup(child.pid);
-      done({ exitCode: code ?? 1, output });
+      done({ exitCode: code ?? 1, output: output.slice(-OUTPUT_LIMIT), timedOut });
     });
   });
 }
@@ -57,6 +79,7 @@ class ScenarioRunner {
   static inject = ["options"] as const;
 
   private readonly shard?: { index: number; count: number };
+  private readonly entry = vitestEntry();
 
   constructor(options: { osfShard?: string }) {
     const [index = 1, count = 1] = options.osfShard?.split("/").map(Number) ?? [];
@@ -72,7 +95,9 @@ class ScenarioRunner {
     try {
       const results = join(temp, "results.json");
       const mutants = join(temp, "mutants");
-      const run = await vitest(["--reporter=json", `--outputFile=${results}`], { OSF_TESTKIT_MUTANTS: mutants });
+      const run = await vitest(this.entry, ["--reporter=json", `--outputFile=${results}`], {
+        OSF_TESTKIT_MUTANTS: mutants,
+      });
       const report = JSON.parse(readFileSync(results, "utf8")) as Report;
       const tests = [];
       const perTest: Record<string, Record<string, number>> = {};
@@ -99,15 +124,24 @@ class ScenarioRunner {
     }
   }
 
-  async mutantRun(options: { activeMutant: { id: string }; testFilter?: string[] }) {
+  async mutantRun(options: { activeMutant: { id: string }; testFilter?: string[]; timeout?: number }) {
     const files = options.testFilter ?? [];
     // A mutant of another shard passes without a test; osf mutation removes it from this shard's report.
     if (this.shard && Number(options.activeMutant.id) % this.shard.count !== this.shard.index - 1) {
       return { status: "survived", nrOfTests: 0 };
     }
-    const run = await vitest(["--bail=1", "--reporter=dot", ...files], {
-      __STRYKER_ACTIVE_MUTANT__: options.activeMutant.id,
-    });
+    // The runner ends a run that passes the timeout itself, just before Stryker does: it kills the whole process
+    // group, and Stryker then keeps this runner process instead of starting a new one.
+    const limit = options.timeout === undefined ? undefined : Math.max(1_000, options.timeout - 1_000);
+    const run = await vitest(
+      this.entry,
+      ["--bail=1", "--reporter=dot", ...files],
+      {
+        __STRYKER_ACTIVE_MUTANT__: options.activeMutant.id,
+      },
+      limit,
+    );
+    if (run.timedOut) return { status: "timeout", reason: `no result within ${limit} ms` };
     if (run.exitCode === 0) return { status: "survived", nrOfTests: files.length };
     return { status: "killed", killedBy: files, failureMessage: run.output.slice(-2000), nrOfTests: files.length };
   }
