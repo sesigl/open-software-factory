@@ -60,7 +60,8 @@ runs:
     - name: Turn off swap
       shell: bash
       run: sudo swapoff -a
-    # Every two minutes the free memory and the largest processes, so that a slow or full shard shows why.
+    # Every two minutes the free memory and disk, the containers and the largest processes, so that a slow or full shard
+    # shows why.
     - name: Mutate
       shell: bash
       env:
@@ -72,8 +73,20 @@ runs:
         echo 1000 > /proc/self/oom_score_adj
         (
           while sleep 120; do
+            # A container that a module under test started, such as the LiteLLM proxy of inference-litellm, stays when
+            # its mutant's run is killed at its first failure or its timeout: no scenario runs for 15 minutes.
+            now=$(date +%s)
+            docker ps --format '{{.ID}} {{.Names}} {{.CreatedAt}}' | while read -r id name created; do
+              case "$name" in kind-*|testcontainers-ryuk-*) continue ;; esac
+              if [ $((now - $(date -d "${created% *}" +%s))) -gt 900 ]; then
+                echo "removing the container $name, left by a killed run"
+                docker rm --force "$id" >/dev/null
+              fi
+            done
             echo "::group::resources $(date -u +%H:%M:%S)"
             free -m | head -2
+            df -h / | tail -1
+            echo "containers: $(docker ps -q | wc -l), processes: $(ps -e --no-headers | wc -l)"
             ps -eo rss=,etime=,args= --sort=-rss | head -5 | cut -c1-160
             echo "::endgroup::"
           done

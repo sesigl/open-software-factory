@@ -106,6 +106,9 @@ function runner(cwd: string, unit: string, shard: Shard | undefined, settings: S
     coverageAnalysis: "perTest",
     // A mutant's run starts Vitest for a few scenarios; their time in the first run leaves out that start.
     timeoutMS: 60_000,
+    // A mutant that survives reruns all its scenarios in one worker, while the other workers load the CPUs: with
+    // Stryker's factor of 1.5 over the first run's time, some of them ended as Timeout, which counts as detected.
+    timeoutFactor: 2.5,
     // The first run starts every scenario of the unit once; foreman's take more than Stryker's default of 5 minutes.
     dryRunTimeoutMinutes: 30,
   };

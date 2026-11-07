@@ -42,8 +42,12 @@ The nightly run mutates every line (ADR 0037) and runs `osf check MUTATION --tot
   only those packages.
 - `.github/actions/mutation-shard` holds the setup and the run of one shard for both workflows. It turns off swap and
   gives Stryker and the tests the highest OOM score, so that the kernel ends a mutant that fills the memory, and the
-  runner stays reachable and keeps the log. Every two minutes it prints the free memory and the largest processes.
-  turbo streams the output.
+  runner stays reachable and keeps the log. Every two minutes it prints the free memory and disk, the number of
+  containers and the largest processes, and it removes each container older than 15 minutes, except kind's and
+  Ryuk's. A module under test, such as inference-litellm, starts containers with the Docker CLI, and its scenario
+  stops them; when a mutant's run is killed at its first failure or its timeout, they stay. On the first sharded run,
+  LiteLLM containers of about 590 MB each stayed for up to 43 minutes, until the runner had 854 MB free and GitHub
+  lost it. turbo streams the output.
 - Stryker starts one worker per CPU, or the `osf.mutationConcurrency` a `package.json` sets, and each mutant's run
   uses one Vitest worker, or `osf.mutationWorkers`. The first run writes the time of each scenario file, and each
   mutant's run takes the files shortest first, through a sequencer in a Vitest config in Stryker's temporary folder
@@ -52,7 +56,9 @@ The nightly run mutates every line (ADR 0037) and runs `osf check MUTATION --tot
 - The testkit records no coverage while `__STRYKER_ACTIVE_MUTANT__` or `OSF_TESTKIT_MUTANTS` is set (SCN-TK-128).
 - The test runner ends a mutant's run itself at Stryker's timeout and kills its process group. It keeps the last
   64 KiB of the output. It and the command runner of a library start Vitest's entry with Node, not with `pnpm exec`.
-  The first run may take 30 minutes, not Stryker's default of 5. turbo builds only the unit's dependencies before
+  The first run may take 30 minutes, not Stryker's default of 5. Stryker's timeout factor is 2.5, not 1.5: a mutant
+  that survives reruns all its scenarios in one worker while the other workers load the CPUs, and with 1.5, 7 of
+  about 3,800 mutants of intake, ledger, scorekit and runlog ended as Timeout, which counts as detected. turbo builds only the unit's dependencies before
   `osf mutation`, since Stryker builds the unit itself, and on CI `osf mutation` does not build it again at the end.
 - The nightly run keeps one open ticket: a failed run comments on it with the units below their limit, and a passing
   run closes it.
