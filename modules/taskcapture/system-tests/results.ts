@@ -49,3 +49,22 @@ export const THREE_MODELS: TrialResult[] = [
 export async function readJson(sut: { files: { read(path: string): Promise<string> } }, path: string): Promise<any> {
   return JSON.parse(await sut.files.read(path));
 }
+
+/** The models of the best, the lowest-cost and the most efficient cell in $OUTPUT/report.json, and of its Pareto front. */
+export async function picksAndFront(sut: {
+  files: { read(path: string): Promise<string> };
+}): Promise<{ picks: (string | undefined)[]; front: string[] }> {
+  const report = await readJson(sut, "$OUTPUT/report.json");
+  return {
+    picks: [report.best, report.lowestCost, report.mostEfficient].map((cell) => cell?.model),
+    front: report.paretoFront.map((cell: { model: string }) => cell.model),
+  };
+}
+
+/** model-a scored web-1 at 1.00 USD and web-2 without a cost; model-b scored 0.75 on web-1 at 0.50 USD and ended web-2 with AgentTimeoutError. */
+export const WITH_WARNINGS: TrialResult[] = [
+  { task: "web-1", model: "model-a", reward: 1, costUsd: 1 },
+  { task: "web-2", model: "model-a", reward: 1 },
+  { task: "web-1", model: "model-b", reward: 0.75, costUsd: 0.5 },
+  { task: "web-2", model: "model-b", costUsd: 0.5, error: "AgentTimeoutError" },
+];

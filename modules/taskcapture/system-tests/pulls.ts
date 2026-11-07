@@ -122,3 +122,6 @@ export const section = (toml: string, name: string): string[] => {
   const end = toml.indexOf("\n[", start + 1);
   return toml.slice(start, end < 0 ? undefined : end).split("\n");
 };
+
+/** The text of a file with these lines, each ended by a newline. */
+export const lines = (...text: string[]): string => `${text.join("\n")}\n`;
