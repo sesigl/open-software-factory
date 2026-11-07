@@ -34,7 +34,7 @@
     "yaml": "2.9.1"
   },
   "osf": {
-    "mutationAllLinesPerShard": 150,
+    "mutationAllLinesPerShard": 60,
     "mutationConcurrency": 2
   }
 }

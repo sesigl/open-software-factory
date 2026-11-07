@@ -127,6 +127,8 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # osf imports the libraries in packages/ that tools/ depends on, as in `make install`.
+      - run: pnpm exec turbo run build --filter=@opensoftware/tools^...
       - uses: actions/download-artifact@v5
         with:
           pattern: mutation-*
