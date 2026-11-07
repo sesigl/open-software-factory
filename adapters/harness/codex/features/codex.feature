@@ -62,3 +62,17 @@ Feature: What the codex adapter adds to the harness port
     And the adapter runs Codex with that gateway
     When the client sends the prompt "fix the typo"
     Then the Responses API call's turn metadata says "analytics_enabled" false
+
+  @id=SCN-HCODEX-010 @status=implemented
+  Scenario: Codex offers the model no web search
+    Given a model gateway scripted to reply "done" when the prompt says "fix the typo"
+    And the adapter runs Codex with that gateway and "OPENAI_MODEL" "gpt-5.5"
+    When the client sends the prompt "fix the typo"
+    Then the Responses API call offers the tools "exec_command" and "apply_patch" and no tool "web_search"
+
+  @id=SCN-HCODEX-011 @status=implemented
+  Scenario: Codex sends OPENAI_API_KEY to the model gateway
+    Given a model gateway scripted to reply "done" when the prompt says "fix the typo"
+    And the adapter runs Codex with that gateway and "OPENAI_API_KEY" "testkit-other-key"
+    When the client sends the prompt "fix the typo"
+    Then the Responses API call has the header "authorization" "Bearer testkit-other-key"

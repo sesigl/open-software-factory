@@ -14,13 +14,19 @@ const USAGE = `Usage:
 const BRIDGE = fileURLToPath(import.meta.resolve("@agentclientprotocol/codex-acp/dist/index.js"));
 
 /** Codex features that reach a service other than the model: plugins, apps, browsers, image generation, updates. */
-const OFF = ["plugins", "remote_plugin", "plugin_sharing", "apps", "browser_use", "browser_use_external"].concat([
+const OFF = [
+  "plugins",
+  "remote_plugin",
+  "plugin_sharing",
+  "apps",
+  "browser_use",
+  "browser_use_external",
   "computer_use",
   "image_generation",
   "in_app_updates",
   "skill_mcp_dependency_install",
   "tool_suggest",
-]);
+];
 
 /**
  * Codex's config.toml: the one model provider "osf", the gateway, on the Responses API, with no analytics, no web

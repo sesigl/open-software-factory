@@ -43,8 +43,10 @@ It writes `$OUTPUT/run-record.json` and `$OUTPUT/transcript.jsonl`.
   Landlock) or macOS Seatbelt; without one every sandboxed command fails.
 - **Its own settings.** Codex keeps its settings, logins and sessions in `OSF_DATA/codex`, never in the user's
   `~/.codex`. On each `run` the adapter writes `config.toml` there with one model provider and nothing else.
-- **The model gateway.** Codex calls the Responses API at `OPENAI_BASE_URL` with `OPENAI_API_KEY` and the model
-  `OPENAI_MODEL`.
+  Analytics, web search and the features that call another service are off: Codex offers the model no `web_search`
+  tool.
+- **The model gateway.** Codex calls the Responses API at `OPENAI_BASE_URL` with `OPENAI_API_KEY` as its bearer
+  token and the model `OPENAI_MODEL`.
 - **The run record** has `osf.harness.name` `codex`, `osf.harness.version` the bridge's version and the tokens of all
   turns in `gen_ai.usage.*`. Codex reports no cost.
 - **Titles.** After the first turn of a session Codex asks the model once more, for the session's title.
