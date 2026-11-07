@@ -27,7 +27,9 @@
     "mutation": "node ../../../tools/bin/osf.ts mutation ."
   },
   "osf": {
-    "mutationLinesPerShard": 25
+    "mutationLinesPerShard": 25,
+    "mutationAllLinesPerShard": 150,
+    "mutationConcurrency": 2
   },
   "devDependencies": {
     "@opensoftware/contracts": "workspace:*",

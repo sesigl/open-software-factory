@@ -8,8 +8,11 @@ import { mutatedUnits } from "../checks/quality.ts";
 
 /** Changed lines one runner mutates on a pull request, unless the package.json sets `osf.mutationLinesPerShard`. */
 const CHANGED_LINES_PER_SHARD = 100;
-/** Lines one runner mutates in the nightly run, unless the package.json sets `osf.mutationAllLinesPerShard`. */
-const ALL_LINES_PER_SHARD = 300;
+/**
+ * Lines one runner mutates in about 15 to 20 minutes in the nightly run, unless the package.json sets
+ * `osf.mutationAllLinesPerShard`: a unit whose scenarios start slow services sets fewer.
+ */
+const ALL_LINES_PER_SHARD = 600;
 const MAX_SHARDS = { changed: 10, all: 20 };
 
 interface Shard {
@@ -33,7 +36,7 @@ export function mutationPlan(root: string, args: string[]): number {
     return 2;
   }
   const changed = base ? new Set(changedFiles(root, base)) : undefined;
-  const plan: Shard[] = [];
+  const plan: (Shard & { perShard: number })[] = [];
   for (const [folder, files] of [...mutatedUnits(repo)].sort(([a], [b]) => a.localeCompare(b))) {
     const manifest = JSON.parse(repo.read(`${folder}/package.json`)) as Manifest;
     if (!manifest.scripts?.mutation) continue;
@@ -47,10 +50,13 @@ export function mutationPlan(root: string, args: string[]): number {
       : Number(manifest.osf?.mutationAllLinesPerShard) || ALL_LINES_PER_SHARD;
     const count = Math.min(base ? MAX_SHARDS.changed : MAX_SHARDS.all, Math.ceil(lines / perShard));
     for (let index = 1; index <= count; index++) {
-      plan.push({ package: manifest.name, folder, shard: `${index}/${count}` });
+      plan.push({ package: manifest.name, folder, shard: `${index}/${count}`, perShard });
     }
   }
-  process.stdout.write(`${JSON.stringify(plan)}\n`);
+  // The units with the fewest lines per shard cost the most per line: their shards start first, so the run does not
+  // wait for one of them at its end.
+  const ordered = plan.sort((a, b) => a.perShard - b.perShard).map(({ perShard: _, ...shard }) => shard);
+  process.stdout.write(`${JSON.stringify(ordered)}\n`);
   return 0;
 }
 

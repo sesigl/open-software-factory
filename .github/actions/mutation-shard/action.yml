@@ -71,18 +71,37 @@ runs:
         OSF_BASE: ${{ inputs.base }}
       run: |
         echo 1000 > /proc/self/oom_score_adj
+        # Each test runner process of Stryker writes the start of its live run into OSF_MUTATION_RUNS (mutation-runner.ts).
+        export OSF_MUTATION_RUNS="$RUNNER_TEMP/osf-runs"
+        mkdir -p "$OSF_MUTATION_RUNS"
+        started=$(date +%s)
         (
-          while sleep 120; do
+          tick=0
+          while sleep 30; do
             # A container that a module under test started, such as the LiteLLM proxy of inference-litellm, stays when
-            # its mutant's run is killed at its first failure or its timeout: no scenario runs for 15 minutes.
-            now=$(date +%s)
-            docker ps --format '{{.ID}} {{.Names}} {{.CreatedAt}}' | while read -r id name created; do
-              case "$name" in kind-*|testcontainers-ryuk-*) continue ;; esac
-              if [ $((now - $(date -d "${created% *}" +%s))) -gt 900 ]; then
-                echo "removing the container $name, left by a killed run"
-                docker rm --force "$id" >/dev/null
+            # its mutant's run is killed at its first failure or its timeout. A container created after Stryker started
+            # and before the oldest live run started belongs to a run that ended: no live run can use it. kind's
+            # cluster is older than Stryker and stays.
+            oldest=$(date +%s)
+            for run in "$OSF_MUTATION_RUNS"/*; do
+              [ -f "$run" ] || continue
+              # The file of a runner process that died names no live run.
+              if ! kill -0 "$(basename "$run")" 2>/dev/null; then rm -f "$run"; continue; fi
+              start=$(cat "$run" 2>/dev/null) || continue
+              [ -n "$start" ] && [ "$start" -lt "$oldest" ] && oldest=$start
+            done
+            for id in $(docker ps --all --quiet); do
+              read -r name created < <(docker inspect --format '{{.Name}} {{.Created}}' "$id" 2>/dev/null) || continue
+              at=$(date -d "$created" +%s 2>/dev/null) || continue
+              if [ "$at" -gt "$started" ] && [ "$at" -lt $((oldest - 2)) ]; then
+                echo "removing the container ${name#/}, left by a run that ended"
+                docker rm --force --volumes "$id" >/dev/null 2>&1 || true
               fi
             done
+            # Networks of such containers; prune keeps every network that a container uses.
+            docker network prune --force --filter "until=10m" >/dev/null 2>&1 || true
+            tick=$((tick + 1))
+            [ $((tick % 4)) -eq 0 ] || continue
             echo "::group::resources $(date -u +%H:%M:%S)"
             free -m | head -2
             df -h / | tail -1

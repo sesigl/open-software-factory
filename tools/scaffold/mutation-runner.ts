@@ -70,6 +70,7 @@ function vitestEntry(): string {
  * leaves the module's servers of its other tests running, and over many mutants they fill the runner's memory.
  */
 function vitest(entry: string, args: string[], env: Record<string, string>, timeoutMs?: number): Promise<Vitest> {
+  const live = liveRun();
   return new Promise((done) => {
     const child = spawn(process.execPath, [entry, "run", ...args], {
       env: { ...process.env, ...env },
@@ -93,9 +94,23 @@ function vitest(entry: string, args: string[], env: Record<string, string>, time
     child.on("close", (code) => {
       clearTimeout(timer);
       killGroup(child.pid);
+      live.end();
       done({ exitCode: code ?? 1, output: output.slice(-OUTPUT_LIMIT), timedOut });
     });
   });
+}
+
+/**
+ * With OSF_MUTATION_RUNS (mutation-shard action), the start of this process's live run, in seconds, in a file named
+ * by its process ID. The action removes a container that a module started only when it is older than every live run.
+ */
+function liveRun(): { end(): void } {
+  const dir = process.env.OSF_MUTATION_RUNS;
+  if (!dir) return { end() {} };
+  const file = join(dir, String(process.pid));
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(file, String(Math.floor(Date.now() / 1000)));
+  return { end: () => rmSync(file, { force: true }) };
 }
 
 /** Kills what is left of a process group; a group whose processes all ended is no error. */

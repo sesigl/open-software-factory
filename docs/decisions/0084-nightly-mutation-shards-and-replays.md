@@ -27,9 +27,12 @@ The nightly run mutates every line (ADR 0037) and runs `osf check MUTATION --tot
 ## Decision
 
 - `osf mutation-plan` prints the shards of a run as JSON, from the units that `osf check MUTATION` scores. With
-  `--all` it cuts every unit with a mutation script into shards of about 300 lines, or of the
-  `osf.mutationAllLinesPerShard` lines its `package.json` sets, at most 20 (SCN-REPO-092). intake, gatekeeper and
-  foreman set smaller shards, because each of their scenarios starts slow services. Without `--all` it cuts each unit
+  `--all` it cuts every unit with a mutation script into shards of about 600 lines, or of the
+  `osf.mutationAllLinesPerShard` lines its `package.json` sets, at most 20 (SCN-REPO-092). The units whose scenarios
+  start slow services set smaller shards, from the lines per minute of measured runs: intake, gatekeeper, foreman,
+  proof, observer, sandbox-kubernetes, inference-litellm and forge-forgejo. The shards of the units with the fewest
+  lines per shard start first. The units that start containers, whose runs wait for the Docker daemon more than for
+  the CPUs, set two Stryker workers in `osf.mutationConcurrency`. Without `--all` it cuts each unit
   that a change adds lines to, as `mutation.yml` did in its own script (SCN-REPO-093). A new unit joins both runs
   without a change to a workflow. Each shard tests every n-th mutant (ADR 0066).
 - The nightly run keys each shard's report on turbo's hash of the unit's `mutation` task, the shard and a scheme

@@ -62,7 +62,13 @@
         "$TURBO_ROOT$/tools/checks/lib/**",
         "$TURBO_ROOT$/.github/actions/**"
       ],
-      "passThroughEnv": ["OSF_BASE", "PLAYWRIGHT_BROWSERS_PATH", "KUBECONFIG", "OSF_SANDBOX_HOST_ALIASES"]
+      "passThroughEnv": [
+        "OSF_BASE",
+        "OSF_MUTATION_RUNS",
+        "PLAYWRIGHT_BROWSERS_PATH",
+        "KUBECONFIG",
+        "OSF_SANDBOX_HOST_ALIASES"
+      ]
     }
   }
 }
