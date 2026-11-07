@@ -95,8 +95,10 @@ agents-sync: ## render factory.yaml: CLAUDE.md, the MCP files and the skill link
 	@pnpm --silent --filter @opensoftware/factory-spec build
 	@OUTPUT=. node modules/factory-spec/dist/cli.js render --harness all
 
-# The session folders of this checkout (ADR 0027): its Claude Code project folder and every Codex session.
-RUN_SESSIONS ?= $(wildcard $(HOME)/.claude/projects/$(shell pwd | sed 's/[^a-zA-Z0-9]/-/g') $(HOME)/.codex/sessions)
+# The session folders of this checkout (ADR 0027): its Claude Code project folder and every Codex session. Claude
+# Code keeps its sessions in CLAUDE_CONFIG_DIR when it is set, else in ~/.claude.
+CLAUDE_DIR := $(patsubst %/,%,$(or $(CLAUDE_CONFIG_DIR),$(HOME)/.claude))
+RUN_SESSIONS ?= $(wildcard $(CLAUDE_DIR)/projects/$(shell pwd | sed 's/[^a-zA-Z0-9]/-/g') $(HOME)/.codex/sessions)
 
 run-record: ## export the run of this checkout's newest agent session to runs/<run id>.jsonl; commit it before you push
 	@pnpm --silent --filter @opensoftware/runlog build
