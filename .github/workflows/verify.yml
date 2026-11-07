@@ -276,8 +276,15 @@ jobs:
           for summary in .turbo/runs/*.json; do
             jq -r '.tasks[] | select(.task == "test:system") | "\(.taskId) \(.hash) \(.cache.status)"' "$summary"
           done
-      - name: Save the turbo cache of the suite
+      # A result over its budget stays out of the cache: replayed, it would fail BUDGET in every later pull request
+      # whose inputs of the suite are the same, while main, which runs every suite, passes. verify reports BUDGET.
+      - name: Check the budget of the suite
+        id: budget
         if: always()
+        continue-on-error: true
+        run: pnpm --silent run osf check BUDGET
+      - name: Save the turbo cache of the suite
+        if: always() && steps.budget.outcome == 'success'
         uses: actions/cache/save@v4
         with:
           path: .turbo/cache
