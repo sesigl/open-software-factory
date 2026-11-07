@@ -1,11 +1,10 @@
 // scenario(id, fn): the one system test of a scenario, with its steps, its sut and its fakes.
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { rmSync } from "node:fs";
 import { type TestContext, test } from "vitest";
 import { type Fakes, type FakesHandle, makeFakes } from "./fakes/fakes.ts";
 import { findModuleRoot, scenarioStatus } from "./support/module.ts";
 import { initGit } from "./support/process.ts";
+import { tempFolder } from "./support/temp.ts";
 import { folders, makeSut, type Sut, type SutHandle } from "./sut/sut.ts";
 
 export type StepFn = (label: string, body: () => unknown) => Promise<void>;
@@ -28,7 +27,7 @@ export function scenario(id: string, body: (context: ScenarioContext) => Promise
     if (retries > 0) await vitestContext.annotate(String(retries), "retries");
 
     const status = scenarioStatus(moduleRoot, id);
-    const workspace = mkdtempSync(join(tmpdir(), "osf-sut-"));
+    const workspace = tempFolder("osf-sut-");
     const handle = makeFakes(moduleRoot);
     let sut: SutHandle | undefined;
     try {
