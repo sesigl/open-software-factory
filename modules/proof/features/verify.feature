@@ -38,3 +38,18 @@ Feature: Verify a bundle
     When the developer runs "proof verify evidence"
     Then the command exits with code 1
     And the output contains "evidence.json /scenarios/0/id"
+
+  @id=SCN-PROOF-050 @status=implemented
+  Scenario: The verification prints one line per scenario with its result and its count of artifacts
+    Given a bundle where "SCN-WEB-001" passed with 2 screenshots, "SCN-WEB-002" passed without a file and "SCN-WEB-003" was skipped with a screenshot
+    When the developer runs "proof verify evidence"
+    Then the command exits with code 1
+    And the output is the lines "SCN-WEB-001 passed with 2 artifacts", "SCN-WEB-002 has no evidence" and "SCN-WEB-003 was skipped"
+
+  @id=SCN-PROOF-051 @status=implemented
+  Scenario: An artifact removed after bundling fails the verification
+    Given a bundle where "SCN-WEB-001" passed with a screenshot
+    And the screenshot was removed after the bundle was written
+    When the developer runs "proof verify evidence"
+    Then the command exits with code 1
+    And the output contains "artifacts/SCN-WEB-001/checkout.png is missing"

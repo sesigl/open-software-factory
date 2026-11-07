@@ -60,3 +60,10 @@ Feature: Bundle a Playwright report
     Given a Playwright report whose test "SCN-WEB-001 checkout" has the attachment "console.txt" of the type "text/plain"
     When the developer runs "proof bundle --playwright report.json"
     Then the bundle lists "artifacts/SCN-WEB-001/console.txt" as "other" with the media type "text/plain"
+
+  @id=SCN-PROOF-056 @status=implemented
+  Scenario: Attachments with the same file name get numbered paths in the bundle
+    Given a Playwright report with the suite "SCN-WEB-001 checkout" inside the suite "web.spec.ts", whose test has the screenshot "screenshot.png" from 3 folders over 2 results, the file "stdout" from 2 folders and an attachment without a file
+    When the developer runs "proof bundle --playwright report.json"
+    Then the command exits with code 0
+    And the bundle lists the scenario "SCN-WEB-001" with the artifacts "artifacts/SCN-WEB-001/screenshot.png", "artifacts/SCN-WEB-001/screenshot-2.png", "artifacts/SCN-WEB-001/screenshot-3.png", "artifacts/SCN-WEB-001/stdout" and "artifacts/SCN-WEB-001/stdout-2"

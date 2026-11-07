@@ -264,3 +264,10 @@ with a trusted publisher for `publish-proof.yml`. No credential is stored in the
 | SCN-PROOF-047 | implemented | The evidence bundle is attached to a Forgejo pull request with the counts of the results |
 | SCN-PROOF-048 | implemented | The evidence bundle is attached to a GitHub pull request with the counts of the results |
 | SCN-PROOF-049 | implemented | The comment lists only the scenarios that did not pass |
+| SCN-PROOF-050 | implemented | The verification prints one line per scenario with its result and its count of artifacts |
+| SCN-PROOF-051 | implemented | An artifact removed after bundling fails the verification |
+| SCN-PROOF-052 | implemented | The comment on GitHub has the counts, the bundle link and one row per scenario that did not pass |
+| SCN-PROOF-053 | implemented | The comment names the bundle ID when the bundle is not uploaded |
+| SCN-PROOF-054 | implemented | The proof comment on the second page of comments is updated |
+| SCN-PROOF-055 | implemented | A pull request URL with more path after the number is refused |
+| SCN-PROOF-056 | implemented | Attachments with the same file name get numbered paths in the bundle |
