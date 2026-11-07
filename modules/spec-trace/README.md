@@ -246,3 +246,5 @@ with a trusted publisher for `publish-spec-trace.yml`. No credential is stored i
 | SCN-TRACE-062 | implemented | On a pull request the action compares with the base commit of the pull request |
 | SCN-TRACE-063 | implemented | The action writes the summary to the job summary |
 | SCN-TRACE-064 | implemented | The action passes the proof bundles of the input "evidence" to the report |
+| SCN-TRACE-065 | implemented | The summary without changes and findings has the totals, the change line and no table |
+| SCN-TRACE-066 | implemented | The summary has one table row for each change and for each finding |
