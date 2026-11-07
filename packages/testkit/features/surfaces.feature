@@ -109,10 +109,18 @@ Feature: A module's servers and events
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
-  @id=SCN-TK-131 @status=implemented
+  @id=SCN-TK-131 @status=deprecated
   Scenario: sut.helm refuses a cluster that is not a local kind cluster
-    Given a kubeconfig whose current context "eks-apps" points to "https://cluster.example.invalid"
-    And a module whose system test runs "install events chart" with sut.helm and expects the error 'the current context "eks-apps" is not a local kind cluster'
+    Given a kubeconfig whose current context "shared" points to "https://cluster.example.invalid"
+    And a module whose system test runs "install events chart" with sut.helm and expects the error 'the current context "shared" is not a local kind cluster'
+    When the developer runs "testkit run --junit report.xml" in the module with "KUBECONFIG" set to that kubeconfig
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-132 @status=implemented @replaces=SCN-TK-131
+  Scenario: sut.helm refuses a cluster that is not a local kind cluster
+    Given a kubeconfig whose current context "shared" points to "https://cluster.example.invalid"
+    And a module whose system test runs "install events chart" with sut.helm and expects the error 'the current context "shared" is not a local kind cluster'
     When the developer runs "testkit run --junit report.xml" in the module with "KUBECONFIG" set to that kubeconfig
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
