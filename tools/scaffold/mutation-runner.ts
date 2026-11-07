@@ -5,15 +5,52 @@
 // tests only every n-th mutant (ADR 0066). Stryker loads this file by its path in each of its test runner processes,
 // so it imports nothing but Node.
 import { spawn } from "node:child_process";
-import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, relative } from "node:path";
+import { pathToFileURL } from "node:url";
 
 interface Vitest {
   exitCode: number;
   output: string;
   timedOut: boolean;
+}
+
+/**
+ * The Vitest config of a mutant's run, which the first run writes: the unit's own config, with a sequencer that runs
+ * the scenario files with the shortest time of the first run first. A mutant's run stops at its first failure, and
+ * most mutants are killed, so a short scenario that kills it saves the longer ones. Stryker starts its test runner
+ * processes before the first run ends, so the config is a file in Stryker's temporary folder, which all of them read.
+ */
+const ORDER = join(".stryker-tmp", "osf-order");
+
+function writeOrder(durations: Record<string, number>): void {
+  const base = join(process.cwd(), "vitest.config.ts");
+  if (!existsSync(base)) return;
+  const dir = join(process.cwd(), ORDER);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "durations.json"), JSON.stringify(durations));
+  const config = [
+    'import { readFileSync } from "node:fs";',
+    'import { mergeConfig } from "vitest/config";',
+    `import base from ${JSON.stringify(pathToFileURL(base).href)};`,
+    'const durations = JSON.parse(readFileSync(new URL("./durations.json", import.meta.url), "utf8"));',
+    "const cost = (file) => durations[file] ?? Number.MAX_SAFE_INTEGER;",
+    "class ShortestFirst {",
+    "  async shard(files) { return files; }",
+    "  async sort(files) { return [...files].sort((a, b) => cost(a.moduleId) - cost(b.moduleId)); }",
+    "}",
+    `export default mergeConfig(base, { root: ${JSON.stringify(process.cwd())}, test: { sequence: { sequencer: ShortestFirst } } });`,
+    "",
+  ].join("\n");
+  writeFileSync(join(dir, "vitest.config.mjs"), config);
+}
+
+/** `--config` of the ordered config, once the first run wrote it. */
+function orderArgs(): string[] {
+  const config = join(process.cwd(), ORDER, "vitest.config.mjs");
+  return existsSync(config) ? [`--config=${config}`] : [];
 }
 
 /** The output a run keeps: its end. A mutant that prints in a loop must not fill the memory of the runner. */
@@ -79,11 +116,13 @@ class ScenarioRunner {
   static inject = ["options"] as const;
 
   private readonly shard?: { index: number; count: number };
+  private readonly workers: number;
   private readonly entry = vitestEntry();
 
-  constructor(options: { osfShard?: string }) {
+  constructor(options: { osfShard?: string; osfWorkers?: number }) {
     const [index = 1, count = 1] = options.osfShard?.split("/").map(Number) ?? [];
     this.shard = options.osfShard ? { index, count } : undefined;
+    this.workers = options.osfWorkers ?? 1;
   }
 
   capabilities() {
@@ -101,9 +140,11 @@ class ScenarioRunner {
       const report = JSON.parse(readFileSync(results, "utf8")) as Report;
       const tests = [];
       const perTest: Record<string, Record<string, number>> = {};
+      const durations: Record<string, number> = {};
       for (const file of report.testResults) {
         const id = relative(process.cwd(), file.name);
         for (const test of file.assertionResults) {
+          durations[file.name] = (durations[file.name] ?? 0) + (test.duration ?? 0);
           const failed = test.status !== "passed";
           // Status 0 is Success and 1 Failed in Stryker's TestStatus.
           tests.push({
@@ -116,6 +157,7 @@ class ScenarioRunner {
           perTest[id] = { ...perTest[id], ...ranBy(join(mutants, test.title)) };
         }
       }
+      writeOrder(durations);
       return { status: "complete", tests, mutantCoverage: { static: {}, perTest } };
     } catch (error) {
       return { status: "error", errorMessage: String(error) };
@@ -135,7 +177,7 @@ class ScenarioRunner {
     const limit = options.timeout === undefined ? undefined : Math.max(1_000, options.timeout - 1_000);
     const run = await vitest(
       this.entry,
-      ["--bail=1", "--reporter=dot", ...files],
+      [...orderArgs(), "--bail=1", "--reporter=dot", `--maxWorkers=${this.workers}`, ...files],
       {
         __STRYKER_ACTIVE_MUTANT__: options.activeMutant.id,
       },
@@ -164,7 +206,10 @@ function ranBy(folder: string): Record<string, number> {
 
 /** The option of `osf mutation` for this runner, so that Stryker accepts it. */
 export const strykerValidationSchema = {
-  properties: { osfShard: { type: "string", description: "Test only every n-th mutant: i/n (ADR 0066)." } },
+  properties: {
+    osfShard: { type: "string", description: "Test only every n-th mutant: i/n (ADR 0066)." },
+    osfWorkers: { type: "number", description: "Vitest workers of a mutant's run (ADR 0084)." },
+  },
 };
 
 export const strykerPlugins = [{ kind: "TestRunner", name: "osf-scenarios", injectableClass: ScenarioRunner }];

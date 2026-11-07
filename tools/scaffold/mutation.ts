@@ -36,6 +36,7 @@ export async function mutation(root: string, args: string[]): Promise<number> {
 
   const cwd = join(root, unit);
   const report = join(root, mutationReport(unit, shard?.index));
+  const settings = (JSON.parse(readFileSync(join(cwd, "package.json"), "utf8")) as { osf?: Settings }).osf ?? {};
   // Stryker builds the module from the mutated files and starts its system tests once per mutant. The tests start
   // the built artifact, which reads the active mutant from __STRYKER_ACTIVE_MUTANT__ (the testkit passes it on).
   // In place, because the module's tsconfig files extend the repository's.
@@ -43,11 +44,14 @@ export async function mutation(root: string, args: string[]): Promise<number> {
   const stryker = new Stryker({
     mutate: local,
     inPlace: true,
-    ...runner(cwd, unit, shard),
+    ...runner(cwd, unit, shard, settings),
     buildCommand: "pnpm run build",
     // Only the sources: tsc builds them with the instrumented code, which does not type-check.
     disableTypeChecks: "src/**/*.ts",
-    concurrency: Math.max(1, Math.floor(availableParallelism() / 2)),
+    // One mutant per CPU, each in one Vitest worker: the CPUs then test different mutants, and none of them runs the
+    // rest of a mutant's scenarios after the first one failed. A unit whose scenarios start heavy services, such as
+    // Temporal, sets fewer in osf.mutationConcurrency (ADR 0084).
+    concurrency: Number(settings.mutationConcurrency) || availableParallelism(),
     reporters: ["json", "progress-append-only"],
     jsonReporter: { fileName: report },
     tempDirName: ".stryker-tmp",
@@ -61,8 +65,9 @@ export async function mutation(root: string, args: string[]): Promise<number> {
     if (shard) keepOwnMutants(report, shard);
   } finally {
     process.chdir(previous);
-    // Stryker restores the source files but leaves the build of the last mutated source: build again.
-    spawnSync("pnpm", ["run", "build"], { cwd, stdio: "inherit" });
+    // Stryker restores the source files but leaves the build of the last mutated source: build again, except on CI,
+    // where the runner ends after this.
+    if (!process.env.CI) spawnSync("pnpm", ["run", "build"], { cwd, stdio: "inherit" });
   }
   return 0;
 }
@@ -72,7 +77,12 @@ export async function mutation(root: string, args: string[]): Promise<number> {
  * processes of its built bin, which record the mutants they ran: each mutant reruns only the scenarios that ran it.
  * A library's tests run its code in the test process, which records nothing: each mutant reruns all its tests.
  */
-function runner(cwd: string, unit: string, shard: Shard | undefined): Record<string, unknown> {
+interface Settings {
+  mutationConcurrency?: number;
+  mutationWorkers?: number;
+}
+
+function runner(cwd: string, unit: string, shard: Shard | undefined, settings: Settings): Record<string, unknown> {
   if (unit.startsWith("packages/")) {
     // Node starts Vitest's entry directly: `pnpm exec` costs about 0.3 s more per mutant.
     const vitest = join(dirname(createRequire(join(cwd, "package.json")).resolve("vitest/package.json")), "vitest.mjs");
@@ -91,6 +101,8 @@ function runner(cwd: string, unit: string, shard: Shard | undefined): Record<str
     testRunner: "osf-scenarios",
     // The runner tests only the mutants of this shard (mutation-runner.ts).
     osfShard: shard && `${shard.index}/${shard.count}`,
+    // Vitest workers of a mutant's run; more only for a unit whose scenarios mostly wait (osf.mutationWorkers).
+    osfWorkers: Number(settings.mutationWorkers) || 1,
     coverageAnalysis: "perTest",
     // A mutant's run starts Vitest for a few scenarios; their time in the first run leaves out that start.
     timeoutMS: 60_000,

@@ -11,3 +11,11 @@ Feature: Coverage of the running module
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And a file in "$INPUT/reports/coverage/" shows that "bin/demo.js" ran "used" and not "unused"
+
+  @id=SCN-TK-128 @status=implemented
+  Scenario: The processes of a mutation run record no coverage
+    Given a module in a workspace whose CLI declares the functions "used" and "unused" and calls "used"
+    And its system test runs the CLI
+    When the developer runs "testkit run --junit report.xml" with __STRYKER_ACTIVE_MUTANT__ "7" in the module
+    Then the command exits with code 0
+    And "$INPUT/reports/coverage/" holds no file

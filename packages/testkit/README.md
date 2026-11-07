@@ -434,3 +434,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-125 | implemented | A stopped fakes.postgres refuses the module's connection |
 | SCN-TK-126 | implemented | A route with "until" answers only after its promise settles |
 | SCN-TK-127 | implemented | A test may stop fakes.postgres while a client holds a transaction open |
+| SCN-TK-128 | implemented | The processes of a mutation run record no coverage |

@@ -23,9 +23,9 @@ on:
 permissions:
   contents: read
 
-# One run at a time: a second run would mutate the same shards, and both would write the same reports.
+# One run at a time per branch: a second run would mutate the same shards again.
 concurrency:
-  group: nightly
+  group: nightly-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -70,11 +70,14 @@ jobs:
   mutation:
     name: mutation (${{ matrix.package }} ${{ matrix.shard }})
     needs: plan
+    if: needs.plan.outputs.shards != '[]'
     runs-on: ubuntu-24.04
     # A shard takes about 30 minutes (osf.mutationAllLinesPerShard in the unit's package.json); twice that is a fault.
     timeout-minutes: 90
     strategy:
       fail-fast: false
+      # 4 of the 20 jobs that run at the same time stay free for pull requests.
+      max-parallel: 16
       matrix:
         include: ${{ fromJSON(needs.plan.outputs.shards) }}
     steps:
@@ -130,13 +133,22 @@ jobs:
           path: reports/mutation/
           merge-multiple: true
       - id: score
+        if: ${{ !inputs.packages }}
         run: |
           set -o pipefail
           pnpm --silent run osf check MUTATION --total | tee "$RUNNER_TEMP/score.txt"
+      # A run for some packages scores only theirs: the counts of each report.
+      - name: Count the mutants of each report
+        if: always() && inputs.packages
+        run: |
+          for report in reports/mutation/*.json; do
+            jq -r --arg report "$(basename "$report")" \
+              '[.files[].mutants[].status] | group_by(.) | map("\(.[0])=\(length)") | "\($report) \(join(" "))"' "$report"
+          done
       # One open ticket at most: a failed run comments on it, a passing run closes it. A run started by hand on
       # another branch, or for some packages only, only reports.
       - name: Update the ticket of the mutation score
-        if: always() && github.ref == 'refs/heads/main' && !inputs.packages && steps.score.outcome != 'skipped'
+        if: always() && github.ref == 'refs/heads/main' && !inputs.packages
         env:
           GH_TOKEN: ${{ github.token }}
           OUTCOME: ${{ steps.score.outcome }}
@@ -145,7 +157,8 @@ jobs:
           title="MUTATION: score fell in the nightly run"
           open=$(gh issue list --state open --search "in:title \"$title\"" --json number,title \
             --jq "[.[] | select(.title == \"$title\")][0].number // empty")
-          summary=$(grep -E "were detected|no mutation report|failed:" "$RUNNER_TEMP/score.txt" | head -40 || true)
+          summary=$(grep -E "were detected|no mutation report|failed:" "$RUNNER_TEMP/score.txt" 2>/dev/null | head -40 || true)
+          [ -n "$summary" ] || summary="The run ended before the score: see the log of the run."
           if [ "$OUTCOME" = success ]; then
             [ -n "$open" ] && gh issue close "$open" --comment "The nightly mutation run passed: $RUN_URL"
             exit 0

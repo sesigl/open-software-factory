@@ -18,6 +18,11 @@ The nightly run mutates every line (ADR 0037) and runs `osf check MUTATION --tot
 - turbo printed the output of the task only when it ended, so a job that reached the limit showed no progress.
 - Every night mutated every line again, also when nothing changed since the night before.
 - Each mutant started Vitest through `pnpm exec`, which costs about 0.3 seconds more than starting Vitest's entry.
+- Each mutant's run started Vitest with its default pool of workers, which ran the scenario files longest first. Most
+  mutants are killed, and the run stops at the first failure: the CPUs ran long scenarios of a mutant that a short
+  one kills, and the rest of the cancelled files. Stryker started half as many workers as the runner has CPUs.
+- Every module process of every mutant recorded V8 coverage for REACH and wrote it to `reports/coverage/`. A mutation
+  run does not read it, and it costs 5 to 10 % of each run (ledger and intake, measured on a laptop).
 
 ## Decision
 
@@ -39,9 +44,16 @@ The nightly run mutates every line (ADR 0037) and runs `osf check MUTATION --tot
   gives Stryker and the tests the highest OOM score, so that the kernel ends a mutant that fills the memory, and the
   runner stays reachable and keeps the log. Every two minutes it prints the free memory and the largest processes.
   turbo streams the output.
+- Stryker starts one worker per CPU, or the `osf.mutationConcurrency` a `package.json` sets, and each mutant's run
+  uses one Vitest worker, or `osf.mutationWorkers`. The first run writes the time of each scenario file, and each
+  mutant's run takes the files shortest first, through a sequencer in a Vitest config in Stryker's temporary folder
+  that extends the unit's own. On scorekit, with 6 Stryker workers for both, a shard of 62 mutants took 36 seconds
+  instead of 85, with the same result for each mutant.
+- The testkit records no coverage while `__STRYKER_ACTIVE_MUTANT__` or `OSF_TESTKIT_MUTANTS` is set (SCN-TK-128).
 - The test runner ends a mutant's run itself at Stryker's timeout and kills its process group. It keeps the last
   64 KiB of the output. It and the command runner of a library start Vitest's entry with Node, not with `pnpm exec`.
-  The first run may take 30 minutes, not Stryker's default of 5.
+  The first run may take 30 minutes, not Stryker's default of 5. turbo builds only the unit's dependencies before
+  `osf mutation`, since Stryker builds the unit itself, and on CI `osf mutation` does not build it again at the end.
 - The nightly run keeps one open ticket: a failed run comments on it with the units below their limit, and a passing
   run closes it.
 
@@ -53,6 +65,7 @@ The nightly run mutates every line (ADR 0037) and runs `osf check MUTATION --tot
 | Turbo task cache with `outputs` | No extra cache step | The reports are in the root `reports/mutation/`, and an output glob cannot name the unit's report; moving the reports changes SCN-REPO-051 |
 | Shards by the duration of the last run | Better balanced shards | The shard count changes from run to run, so the keys change, and nothing is replayed |
 | Stryker incremental mode | Keeps the results of unchanged mutants in a changed unit | ADR 0066: it does not see changes to the testkit or a dependency |
+| One Vitest process per Stryker worker that stays up between mutants | Saves Vitest's start and the testkit's import for each mutant, about 1 to 2 seconds | The active mutant must reach the module's processes another way than the environment; a run stopped at its first failure leaves processes that only a new process group ends |
 | A larger runner | Fewer shards | A paid service |
 
 ## Prior art

@@ -84,8 +84,6 @@ runs:
         status=0
         pnpm exec turbo run mutation --filter="$PACKAGE" --log-order=stream -- "${args[@]}" || status=$?
         kill "$sampler"
-        if sudo dmesg | grep -qi "killed process"; then
-          echo "::warning::the kernel ended a process for lack of memory:"
-          sudo dmesg | grep -i "killed process" | tail -5
-        fi
+        oom=$(sudo dmesg | grep -i "killed process" | tail -5 || true)
+        if [ -n "$oom" ]; then echo "::warning::the kernel ended a process for lack of memory: $oom"; fi
         exit "$status"
