@@ -56,6 +56,47 @@ package without the cache, then every check. The checks themselves always run ou
 Each failure prints one line: the check ID, `file:line`, and what to fix. Each check ends with `ID ok` or
 `ID failed: N`. The exit code is 1 when any check failed.
 
+## Local machine
+
+`make install` pins its binaries for Linux x86_64 (CI) and macOS arm64. The system tests need Docker, and three
+things of it:
+
+- **The daemon.** The module's processes and the fakes use the machine's `DOCKER_HOST`,
+  `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE` and `TESTCONTAINERS_HOST_OVERRIDE` (SCN-TK-130). Rancher Desktop, for one,
+  has no `/var/run/docker.sock` on the host: set `DOCKER_HOST=unix://$HOME/.rd/docker.sock` and
+  `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock`.
+- **The host from a container.** A container reaches the fakes as `host.docker.internal`, which modules and the
+  testkit map to `host-gateway`, as Linux needs. On Rancher Desktop, `host-gateway` is the VM, not the Mac, so set
+  the daemon's `host-gateway-ip` to the Mac's address in the VM, `192.168.5.2`.
+- **Networks.** Parallel scenarios each create a network; Docker's default pools hold about 30. Give the daemon
+  larger pools.
+
+On Rancher Desktop, both daemon settings go into
+`~/Library/Application Support/rancher-desktop/lima/_config/override.yaml`; restart Rancher Desktop after the change:
+
+```yaml
+provision:
+  - mode: system
+    script: |
+      #!/bin/sh
+      cat > /etc/docker/daemon.json <<'EOF'
+      {
+        "min-api-version": "1.41",
+        "seccomp-profile": "/etc/rancher-desktop/seccomp.json",
+        "features": { "containerd-snapshotter": true },
+        "host-gateway-ip": "192.168.5.2",
+        "default-address-pools": [{ "base": "10.210.0.0/16", "size": 24 }]
+      }
+      EOF
+```
+
+To check it, serve a port on the host and read it from a container: `docker run --rm --add-host
+host.docker.internal:host-gateway alpine:3 wget -qO- http://host.docker.internal:<port>`.
+
+`sut.helm` installs charts only on a local kind cluster: the current context of `KUBECONFIG` must be `kind-*` with a
+server on the loopback address (SCN-TK-132), so a scenario never creates namespaces on a shared cluster. Start one
+with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests with `KUBECONFIG=$HOME/.kube/kind`.
+
 ## Configuration
 
 | Variable | Meaning |
