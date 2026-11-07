@@ -35,7 +35,9 @@ gatekeeper's key, and `make check`, which selects the affected suites with turbo
   results hold absolute paths of the worktree that made them.
 - `osf collect-reports` copies each package's results to `reports/junit/<name>.xml` and
   `reports/coverage/<name>-*.json`, where the checks read them. PASS, FLAKE, BUDGET and REACH count a replayed result
-  as a result of this run: it is the result of the same inputs.
+  as a result of this run: it is the result of the same inputs. A suite job saves its cache only when its results are
+  inside the suite's budget: a slow run's result, replayed, failed BUDGET in every later pull request with the same
+  inputs (foreman: 327 s replayed against a budget of 290 s, while main measured 214 s).
 - The check AFFECTED enforces the key, in every `make check` and `make verify`, without a cache:
   - every adapter that a system test starts with `sut.adapter(...)` and every `@opensoftware/*` package it imports is
     declared in its `package.json`;
