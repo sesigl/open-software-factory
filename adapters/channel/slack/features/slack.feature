@@ -29,3 +29,14 @@ Feature: Slack's own rules for the channel port
     Then messages prints "Deploy 42 waits for approval" with "mine" true and then "Lunch at noon?" with "mine" false
     And each message's thread is "slack:C0WEB:" and its ID
     And each message's time has the microseconds of its ID
+
+  @id=SCN-CSLACK-005 @status=implemented
+  Scenario: A reply to a target that is neither a Slack thread nor a Slack channel is a usage error
+    When the client runs "reply" with "On it" to "slack:C0WEB:1767225600.000100x", "xslack:C0WEB:1767225600.000100" and "xslack:C0WEB"
+    Then each reply exits with code 2 and the error "channel-slack: name the thread as slack:<channel>:<ts> or a channel as slack:<channel>"
+    And the test chat shows no message in the channel "C0WEB"
+
+  @id=SCN-CSLACK-006 @status=implemented
+  Scenario: The help names the forms of a thread and a channel, and Slack's Web API
+    When the client runs "--help"
+    Then the help exits with code 0 and names a thread as "slack:<channel>:<ts>", a channel as "slack:<channel>" and Slack's Web API
