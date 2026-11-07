@@ -32,5 +32,8 @@
   "dependencies": {
     "@opensoftware/cli": "workspace:*",
     "@opensoftware/contracts": "workspace:*"
+  },
+  "osf": {
+    "mutationAllLinesPerShard": 300
   }
 }

@@ -280,6 +280,7 @@ The testkit reads these environment variables:
 | `DOCKER_CONFIG` | The Docker CLI's configuration folder. `sut.compose` lets `docker` find the plugins in its `cli-plugins/`, like `docker compose`, and nothing else from it, since the module's `HOME` is the working folder. Default: `~/.docker`. |
 | `KUBECONFIG` | The cluster where `sut.helm` installs charts, as for any `kubectl` command. Default: kubectl's own (`~/.kube/config`). The module does not get it unless the test passes it on. |
 | `OSF_TESTKIT_MUTANTS` | A folder, set by `osf mutation` for its first test run ([ADR 0061](../../docs/decisions/0061-mutation-runs-the-scenarios-that-reach-a-mutant.md)). Each process of the module writes the IDs of the mutants it ran to `<folder>/<scenario ID>/` when it exits. |
+| `OSF_TESTKIT_RUN` | An ID of the run, set by `osf mutation` for each run of a mutant ([ADR 0084](../../docs/decisions/0084-nightly-mutation-shards-and-replays.md)). Every container of the fakes carries the label `org.opensoftware.run` with this ID, so the runner removes the containers of a run when it ends. |
 
 `testkit conformance` passes the port features folder to the
 tests itself.
@@ -434,3 +435,5 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-125 | implemented | A stopped fakes.postgres refuses the module's connection |
 | SCN-TK-126 | implemented | A route with "until" answers only after its promise settles |
 | SCN-TK-127 | implemented | A test may stop fakes.postgres while a client holds a transaction open |
+| SCN-TK-128 | implemented | The processes of a mutation run record no coverage |
+| SCN-TK-129 | implemented | The containers of the fakes carry the label of the run that OSF_TESTKIT_RUN names |

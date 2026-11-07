@@ -3,7 +3,7 @@
 // fake points at its own receiver on the host.
 import { GenericContainer, TestContainers, Wait } from "testcontainers";
 import { startHttp } from "./http.ts";
-import { address, IMAGES, type Track } from "./services.ts";
+import { address, IMAGES, runLabels, type Track } from "./services.ts";
 
 export interface Collector {
   /** Posts one OTLP/JSON `ExportTraceServiceRequest` to the config's OTLP/HTTP receiver (port 4318). */
@@ -29,6 +29,7 @@ export async function startCollector(config: string, track: Track): Promise<Runn
   await TestContainers.exposeHostPorts(port);
   const container = track(
     await new GenericContainer(IMAGES.collector)
+      .withLabels(runLabels())
       .withEnvironment({ OTEL_EXPORTER_OTLP_ENDPOINT: `http://${HOST}:${port}` })
       .withCopyContentToContainer([{ content: config, target: "/etc/otelcol-contrib/config.yaml" }])
       .withExposedPorts(4318)

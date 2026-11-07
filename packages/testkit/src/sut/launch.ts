@@ -49,7 +49,10 @@ export function makeLaunch(moduleRoot: string, dirs: Folders, hosts: () => strin
   // A library in packages/ has no bin: its tests never launch it, so the artifact is looked up on the first launch.
   let artifact: string | undefined;
   const documented = moduleEnv(moduleRoot);
-  const coverage = coverageEnv(moduleRoot);
+  // A mutation run records no coverage: REACH reads only the coverage of the tests, and the V8 profiler slows every
+  // process of every mutant (ADR 0084).
+  const { __STRYKER_ACTIVE_MUTANT__: mutant, OSF_TESTKIT_MUTANTS: mutants } = process.env;
+  const coverage = mutant || mutants ? {} : coverageEnv(moduleRoot);
   return (args, env = {}) => {
     artifact ??= builtArtifact(moduleRoot);
     for (const name of Object.keys(env)) {

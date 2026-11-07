@@ -122,3 +122,20 @@ Feature: Quality limits
     When the developer runs "osf check MUTATION" against the base commit
     Then the command exits with code 1
     And the output contains "33.3% of the mutants in changed lines of modules/demo were detected, the limit is 70%"
+
+  @id=SCN-REPO-092 @status=implemented
+  Scenario: osf mutation-plan with --all cuts every unit with a mutation script into shards by its lines
+    Given module "demo" whose package.json sets "mutationAllLinesPerShard" to 2 and whose "src/run.ts" has 5 lines
+    And module "small" whose "src/run.ts" has 1 line
+    When the developer runs "osf mutation-plan --all"
+    Then the command exits with code 0
+    And the output lists the shards "1/3", "2/3" and "3/3" of "modules/demo" and the shard "1/1" of "modules/small"
+
+  @id=SCN-REPO-093 @status=implemented
+  Scenario: osf mutation-plan cuts each unit that a change adds lines to into shards by the added lines
+    Given a base commit with module "demo" whose package.json sets "mutationLinesPerShard" to 2 and "src/run.ts" of 3 lines
+    And module "small" in the base commit that the change does not touch
+    And a change that adds lines 4 to 6 to "src/run.ts"
+    When the developer runs "osf mutation-plan" against the base commit
+    Then the command exits with code 0
+    And the output lists the shards "1/2" and "2/2" of "modules/demo" and no shard of "modules/small"
