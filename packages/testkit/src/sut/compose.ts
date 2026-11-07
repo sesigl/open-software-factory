@@ -1,8 +1,9 @@
 // sut.compose: a Compose file of the unit, run with `docker compose` as a project of the scenario (ADR 0074).
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
+import { userInfo } from "node:os";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { moduleEnv, repoRoot } from "../support/module.ts";
+import { reachable } from "../support/port.ts";
 import { baseEnv, type CliResult, run } from "../support/process.ts";
 import { isDocumented } from "../support/readme.ts";
 import type { Folders } from "./sut.ts";
@@ -38,7 +39,8 @@ const PORT_TAKEN = /failed to bind host port .* address already in use/;
  * that is a plugin of the user, as Rancher Desktop and Docker Desktop install it.
  */
 function writeDockerConfig(folder: string): void {
-  const plugins = join(process.env.DOCKER_CONFIG ?? join(homedir(), ".docker"), "cli-plugins");
+  // The user's own home, not HOME: a module under test, such as the testkit itself, runs with HOME in its workspace.
+  const plugins = join(process.env.DOCKER_CONFIG ?? join(userInfo().homedir, ".docker"), "cli-plugins");
   mkdirSync(folder, { recursive: true });
   writeFileSync(join(folder, "config.json"), `${JSON.stringify({ cliPluginsExtraDirs: [plugins] })}\n`);
 }
@@ -124,6 +126,7 @@ export function makeCompose(
         if (result.exitCode !== 0 || !published) {
           throw new Error(`sut.compose: ${service} publishes no port ${port}: ${result.stderr}`);
         }
+        await reachable("127.0.0.1", Number(published));
         return `http://127.0.0.1:${published}`;
       },
     };

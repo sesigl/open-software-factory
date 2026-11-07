@@ -11,7 +11,9 @@ scenario("SCN-TK-105", async ({ sut, given, when, then }) => {
           'const spec = { template: "node:24", env: { CI: "true" }, secrets: { TOKEN: "ref:file/token" } };',
           'writeFileSync("spec.json", JSON.stringify(spec));',
           'const id = sandbox("create", "spec.json").stdout.trim();',
-          'process.stdout.write(sandbox("exec", id, "--", "printenv", "CI", "TOKEN").stdout);',
+          // One variable per printenv: the printenv of macOS prints only the first name it gets.
+          'const value = (name) => sandbox("exec", id, "--", "printenv", name).stdout;',
+          'process.stdout.write(value("CI") + value("TOKEN"));',
         ],
         [
           'expect(run.stdout, run.stderr).toBe("true\\nosf-secret-placeholder-TOKEN\\n");',
