@@ -98,6 +98,7 @@ Where the time went, and what each step changed:
 | ADR 0051 | Every scenario file imported the testkit again, 0.7 s each | Files share Vitest workers |
 | ADR 0081 | A pull request that changed one README ran all 17 suites: 8 minutes | Pull requests replay the results of unchanged suites and skip their setup |
 | ADR 0061 | Every mutant reran the whole suite: 25 minutes for one forge adapter change of 65 mutants | Each mutant reruns only the scenarios whose module processes ran it |
+| ADR 0084 | The nightly mutation run took one runner per unit, up to the 5-hour limit, and failed every night | Shards of about 600 lines, shortest scenarios first, no coverage during mutation; unchanged shards replay their reports |
 
 In October 2026 a full pull request run took about 4 minutes for `verify`. The longest suites were
 inference-litellm (each scenario starts LiteLLM and PostgreSQL), sandbox-kubernetes (kind) and the catch-all
