@@ -43,6 +43,7 @@ export function makeHelm(
   let created: Promise<void> | undefined;
   const ensureNamespace = (): Promise<void> => {
     created ??= (async () => {
+      await localKindCluster(dirs.input, env);
       const result = await run(program("kubectl"), ["create", "namespace", namespace], dirs.input, env);
       if (result.exitCode !== 0) throw new Error(`sut.helm: kubectl create namespace failed: ${result.stderr}`);
       onStop(() => run(program("kubectl"), ["delete", "namespace", namespace, "--wait=false"], dirs.input, env));
@@ -100,4 +101,22 @@ export function makeHelm(
       },
     };
   };
+}
+
+/**
+ * Refuses every cluster but a local kind cluster before the first command: a scenario creates and deletes namespaces,
+ * and a developer's KUBECONFIG can point to a shared cluster. kind names its contexts `kind-<cluster>` and serves the
+ * API on the loopback address. kubectl reads only the kubeconfig here; it calls no cluster.
+ */
+async function localKindCluster(cwd: string, env: Record<string, string>): Promise<void> {
+  const context = (await run(program("kubectl"), ["config", "current-context"], cwd, env)).stdout.trim();
+  const view = ["config", "view", "--minify", "--output", "jsonpath={.clusters[0].cluster.server}"];
+  const server = (await run(program("kubectl"), view, cwd, env)).stdout.trim();
+  const host = URL.canParse(server) ? new URL(server).hostname : "";
+  if (!context.startsWith("kind-") || !["127.0.0.1", "localhost", "[::1]"].includes(host)) {
+    throw new Error(
+      `sut.helm: the current context "${context}" is not a local kind cluster (server ${server || "none"}): ` +
+        "set KUBECONFIG to the kubeconfig of a kind cluster",
+    );
+  }
 }
