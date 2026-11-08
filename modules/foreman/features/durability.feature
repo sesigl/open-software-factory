@@ -25,3 +25,18 @@ Feature: Durability
     When gatekeeper publishes "gate.decided@v1" with the decision "approved" for the gate
     And the foreman starts again
     Then "/v1/runs/<id>" shows the state "complete" with the stages "plan" and "implement" "succeeded"
+
+  @id=SCN-FORE-082 @status=implemented
+  Scenario: A work item that the foreman cannot start for a moment comes again and starts its run
+    Given "foreman serve" runs the README's "factory.yaml" with "FOREMAN_NATS_URL" set to a NATS server
+    And the file "factory.yaml" is gone
+    When intake publishes "work.received@v1" with the README's "work.json"
+    And the file "factory.yaml" is back
+    Then the server publishes "run.started@v1" for the work item
+
+  @id=SCN-FORE-083 @status=implemented
+  Scenario: A message that is not JSON is dropped and the next work item starts its run
+    Given "foreman serve" runs the README's "factory.yaml" with "FOREMAN_NATS_URL" set to a NATS server
+    When a program publishes the text "not json" on "osf.work.received.v1"
+    And intake publishes "work.received@v1" with the README's "work.json"
+    Then the server publishes "run.started@v1" for the work item, once
