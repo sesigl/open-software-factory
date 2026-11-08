@@ -851,6 +851,20 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
 
 - **Done when:** `README.md` and `AGENTS.md` describe the current phase as `TODO.md` does.
 
+### [ ] T-34 · faster mutation tests (P2)
+
+- **Done when:** a second push of the same pull request runs no mutant again whose unit, test and changed lines did
+  not change, and the before and after times of one pull request are in the ADR. No mutator is removed and the
+  MUTATION limit stays.
+- **Slices:**
+  - [ ] Each unit's shard report has the key of turbo's hash of the unit's mutation task and a hash of its changed
+    line ranges, not the base commit and the whole tree.
+  - [ ] Each mutant has a stable shard from a hash of its file, position and mutator.
+  - [ ] Stryker's incremental mode per unit. A change outside the unit's `src/` and `system-tests/` discards the
+    incremental file. The weekly full run stays.
+  - [ ] No mutation run on a draft pull request or before `verify` passes.
+  - [ ] Units with slow starts (litellm): smaller shards, and the fastest scenario runs first.
+
 ---
 
 ## After the plan: phase 3 and 4
