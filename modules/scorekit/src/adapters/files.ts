@@ -17,9 +17,9 @@ export function readRunFiles(paths: string[]): Input[] {
 }
 
 export function packNames(): string[] {
+  // The pack folder holds only scorer files.
   return readdirSync(PACK)
-    .filter((file) => file.endsWith(".md"))
-    .map((file) => file.slice(0, -3))
+    .map((file) => basename(file, ".md"))
     .sort();
 }
 
@@ -32,7 +32,7 @@ export function readScorer(value: string | undefined): Scorer {
     throw new UsageError(
       isPath ? `${value}: no such scorer file` : `no scorer "${value}" in the pack: ${packNames().join(", ")}`,
     );
-  return parseScorer(isPath ? value : `${value}.md`, basename(file, ".md"), readFileSync(file, "utf8"));
+  return parseScorer(value, basename(file, ".md"), readFileSync(file, "utf8"));
 }
 
 /** The score records of score files, each checked against the `score` contract. A missing file has none. */
