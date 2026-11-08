@@ -30,8 +30,9 @@ chart run NATS with JetStream, but no stream exists. The review of the whole sta
   answer, so an event that NATS did not store goes out again.
 - **Consumers are durable.** The foreman reads `osf.work.received.v1` and `osf.gate.decided.v1` through the durable
   consumer `foreman`, and intake reads `osf.run.started.v1` and `osf.run.completed.v1` through the durable consumer
-  `intake`. A consumer acknowledges a message after it handled it. When the handling fails, the message comes again
-  after 5 seconds, at most 5 times. Then the server writes a warning.
+  `intake`. A consumer acknowledges a message after it handled it. When the handling fails, or the message is not
+  JSON, the server writes a warning, and the message comes again after 5 seconds, at most 5 times. A message that can
+  never succeed, such as a work item that breaks its contract, is a warning and is acknowledged at once.
 - **Replicas share a consumer.** Two foreman servers with the same consumer name get each message once between them.
 - **Handling stays idempotent.** A message can come more than once: the foreman starts one run per work item
   (Temporal's workflow ID, ADR 0067), and intake's status changes ignore an event that does not move the work item
