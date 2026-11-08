@@ -49,6 +49,9 @@ the folders.
 `make` holds no build logic (ADR 0010). `make check` runs the affected `lint`, `typecheck` and `test:system`
 Turborepo tasks (`--filter=...[OSF_BASE]`), builds spec-trace, and then runs the fast checks. `make verify` runs those tasks for every
 package without the cache, then every check. The checks themselves always run outside the Turborepo cache.
+A package's build hash leaves out its Markdown files (`!**/*.md` in `turbo.json`): a change to a library's README or
+CHANGELOG does not run the system tests of the packages that depend on it again. The package's own `test:system`
+still takes its README as an input, because its tests read the quick start.
 `make verify` is three targets that CI runs as parallel jobs: `make verify-static` (lint, typecheck, build),
 `make verify-tests` (the system test suites, one at a time; `FILTER="pkg !pkg"` limits them to some packages) and
 `make verify-checks` (`spec-trace check` and every `osf` check, on the results in `reports/`).
