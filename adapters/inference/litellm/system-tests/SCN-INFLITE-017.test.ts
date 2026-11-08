@@ -12,21 +12,17 @@ scenario("SCN-INFLITE-017", async ({ sut, fakes, given, when, then }) => {
       first = await box.start(config(api.containerUrl as string, routes), { OSF_INFERENCE_OWNER: "99999999" });
     });
 
-    let second = { id: "", url: "" };
-    await when(
-      'a second gateway starts with "OSF_INFERENCE_OWNER" set to a process that runs and "OSF_INFERENCE_ORPHAN_AGE" set to "0"',
-      async () => {
-        second = await box.start(config(api.containerUrl as string, routes), {
-          OSF_INFERENCE_OWNER: String(process.pid),
-          OSF_INFERENCE_ORPHAN_AGE: "0",
-        });
-      },
-    );
+    let run: Awaited<ReturnType<typeof sut.cli>>;
+    await when('"start" runs with "OSF_INFERENCE_ORPHAN_AGE" set to "0" and a config that does not exist', async () => {
+      run = await sut.cli(["start", "missing.yaml"], { env: { OSF_INFERENCE_ORPHAN_AGE: "0" } });
+    });
 
-    await then('"list" prints the second gateway and not the first', async () => {
-      const listed = (await sut.cli(["list"])).stdout.split("\n");
-      expect(listed).toContain(second.id);
-      expect(listed).not.toContain(first.id);
+    await then('"start" exits with code 1', async () => {
+      expect(run.exitCode, run.stderr).toBe(1);
+    });
+
+    await then('"list" does not print the first gateway', async () => {
+      expect((await sut.cli(["list"])).stdout.split("\n")).not.toContain(first.id);
     });
   } finally {
     await box.stopAll();

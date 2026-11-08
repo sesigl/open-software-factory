@@ -57,11 +57,12 @@ async function removeOrphans(): Promise<void> {
 
 export async function start(file: string | undefined): Promise<Outcome> {
   check(file, "name the LiteLLM config, like start litellm-config.yaml");
+  // First, also when this start fails: a gateway of a launcher that ended goes in any case.
+  await removeOrphans();
   const text = readFileSync(file as string, "utf8");
   const proxy = attachedProxy(text);
   if (proxy) return attach(proxy);
   const config = gatewayConfig(text);
-  await removeOrphans();
   const id = randomBytes(6).toString("hex");
   const name = gatewayName(id);
   const password = randomBytes(18).toString("hex");
