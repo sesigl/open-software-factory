@@ -4,14 +4,10 @@
 // message until PostgreSQL is idle again (ReadyForQuery "I"), so a transaction or an extended-protocol exchange
 // never mixes with another connection's messages. It asks for the password like a server with password
 // authentication and refuses a wrong one with SQLSTATE 28P01. A new database starts from a copy of an empty data
-// directory that the first start of this PGlite version leaves in the temporary folder: 0.6 s instead of 2.4 s.
-import { createHash } from "node:crypto";
-import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+// directory of the same PGlite version (@electric-sql/pglite-prepopulatedfs, ADR 0093): 0.6 s instead of 2.4 s.
 import { createServer, type Socket } from "node:net";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
+import { dataDir } from "@electric-sql/pglite-prepopulatedfs";
 
 export interface Postgres {
   /** `postgres://test:test@127.0.0.1:<port>/test` */
@@ -26,7 +22,7 @@ const SSL_REQUEST = 80877103;
 const CANCEL_REQUEST = 80877102;
 
 export async function startPostgres(): Promise<{ postgres: Postgres; close(): Promise<string[]> }> {
-  const db = await emptyDatabase();
+  const db = await PGlite.create({ loadDataDir: await dataDir() });
   const session = new Session(db);
   const sockets = new Set<Socket>();
   const server = createServer((socket) => {
@@ -54,21 +50,6 @@ export async function startPostgres(): Promise<{ postgres: Postgres; close(): Pr
       return [];
     },
   };
-}
-
-/** A new PGlite database from the cached empty data directory, made by the first call for this PGlite build. */
-async function emptyDatabase(): Promise<PGlite> {
-  const build = createHash("sha256")
-    .update(fileURLToPath(import.meta.resolve("@electric-sql/pglite")))
-    .digest("hex");
-  const cache = join(tmpdir(), `osf-testkit-pglite-${build.slice(0, 16)}.tar`);
-  if (existsSync(cache)) return PGlite.create({ loadDataDir: new Blob([readFileSync(cache)]) });
-  const db = await PGlite.create();
-  const dump = await db.dumpDataDir("none");
-  const partial = `${cache}.${process.pid}`;
-  writeFileSync(partial, Buffer.from(await dump.arrayBuffer()));
-  renameSync(partial, cache);
-  return db;
 }
 
 /** The one PGlite session, lent to one connection at a time. */
