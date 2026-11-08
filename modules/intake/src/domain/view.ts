@@ -13,14 +13,10 @@ export type Status = WorkItemView["status"];
 
 export const STATUSES: Status[] = ["received", "running", "complete", "failed", "cancelled"];
 
-/** The query of GET /v1/inbox: the status, if any, and the limit; or the problem with it. */
-export function inboxQueryOf(query: { status?: string; limit?: string }): { status?: Status; limit: number } | string {
-  const { status, limit } = query;
-  if (status !== undefined && !STATUSES.includes(status as Status))
-    return `status: no work item is "${status}"; ask for ${STATUSES.slice(0, -1).join(", ")} or ${STATUSES.at(-1)}`;
-  const count = limit === undefined ? 50 : Number(limit);
-  if (!Number.isInteger(count) || count < 1 || count > 200) return "limit: give a whole number from 1 to 200";
-  return { ...(status ? { status: status as Status } : {}), limit: count };
+/** The status of GET /v1/inbox?status=, if any; or the problem with it. */
+export function inboxStatusOf(status: string | undefined): { status?: Status } | string {
+  if (status === undefined) return {};
+  return STATUSES.includes(status as Status) ? { status: status as Status } : `status: one of ${STATUSES.join(", ")}`;
 }
 
 export interface Stored {

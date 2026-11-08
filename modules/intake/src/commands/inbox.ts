@@ -40,10 +40,9 @@ export function inbox(store: Store, config: InboxConfig) {
   return {
     relay,
     view,
-    /** The latest work items, the one received last first, in the status if one is given. */
-    async latest(limit: number, status?: Status): Promise<WorkItemView[]> {
-      const views = await Promise.all((await store.latest(limit, status)).map(view));
-      return views.filter((found): found is WorkItemView => found !== undefined);
+    /** The 50 latest work items, the one received last first, in the status if one is given. */
+    async latest(status?: Status): Promise<WorkItemView[]> {
+      return (await Promise.all((await store.latest(status)).map(view))) as WorkItemView[];
     },
     /**
      * Moves the work item of a run event to the run's status, and gives the replies that link a finished run's pull

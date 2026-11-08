@@ -152,7 +152,7 @@
     "/v1/inbox": {
       "get": {
         "operationId": "IntakeApi_listWorkItems",
-        "description": "The latest work items, the one received last first; with `status`, only the work items in that status. At most `limit` (default 50, at most 200).",
+        "description": "The 50 latest work items, the one received last first; with `status`, only the work items in that status.",
         "parameters": [
           {
             "name": "status",
@@ -160,16 +160,6 @@
             "required": false,
             "schema": {
               "$ref": "#/components/schemas/WorkItemStatus"
-            },
-            "explode": false
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
             },
             "explode": false
           }

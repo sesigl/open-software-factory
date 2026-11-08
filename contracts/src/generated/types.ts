@@ -58,7 +58,7 @@ export type paths = {
             path?: never;
             cookie?: never;
         };
-        /** @description The latest work items, the one received last first; with `status`, only the work items in that status. At most `limit` (default 50, at most 200). */
+        /** @description The 50 latest work items, the one received last first; with `status`, only the work items in that status. */
         get: operations["IntakeApi_listWorkItems"];
         put?: never;
         post?: never;
@@ -1287,7 +1287,6 @@ export interface operations {
         parameters: {
             query?: {
                 status?: components["schemas"]["WorkItemStatus"];
-                limit?: number;
             };
             header?: never;
             path?: never;

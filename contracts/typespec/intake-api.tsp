@@ -33,10 +33,10 @@ namespace IntakeApi {
     | GatekeeperApi.Failure<401>
     | GatekeeperApi.Failure<404>;
 
-  /** The latest work items, the one received last first; with `status`, only the work items in that status. At most `limit` (default 50, at most 200). */
+  /** The 50 latest work items, the one received last first; with `status`, only the work items in that status. */
   @route("/v1/inbox")
   @get
-  op listWorkItems(@query status?: WorkItemStatus, @query limit?: int32):
+  op listWorkItems(@query status?: WorkItemStatus):
     | WorkItemList
     | GatekeeperApi.Failure<400>
     | GatekeeperApi.Failure<401>;
