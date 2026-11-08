@@ -96,3 +96,4 @@ builds the package and publishes it to npm as `@opensoftware/sandbox-docker`. Th
 | `OSF_OPENBAO_TOKEN` | string |  | The token the egress proxy reads OpenBao with. The sandbox never gets it. |
 | `OSF_OPENBAO_MOUNT` | string | `"secret"` | The KV v2 mount of ref:openbao/<path>: the secret's field value at <mount>/data/<path>. |
 | `DOCKER_HOST` | string |  | The Docker daemon to use, as for any docker command. Default: the Docker CLI's current context. |
+| `OSF_SANDBOX_NETWORK` | string |  | A Docker network the egress proxy of each sandbox also joins, like the Compose profile's network, so a host on it that the spec's egress allows, like litellm, resolves. The sandbox itself stays on its own network. |
