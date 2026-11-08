@@ -12,7 +12,8 @@ const USAGE = `Usage:
 
 /** The opencode binary of this platform, from the package that opencode-ai installs for it. */
 function binary(): string {
-  const platform = process.platform === "win32" ? "windows" : process.platform;
+  // opencode names its Windows packages "windows", not "win32".
+  const platform = process.platform.replace("win32", "windows");
   const fromOpencode = createRequire(createRequire(import.meta.url).resolve("opencode-ai/package.json"));
   const folder = dirname(fromOpencode.resolve(`opencode-${platform}-${process.arch}/package.json`));
   return join(folder, "bin", platform === "windows" ? "opencode.exe" : "opencode");
@@ -21,7 +22,7 @@ function binary(): string {
 /** Reading, searching and the todo list run without asking; every other tool asks; the web is denied. */
 const PERMISSION = {
   "*": "ask",
-  ...Object.fromEntries(["read", "glob", "grep", "list", "todowrite"].map((tool) => [tool, "allow"])),
+  ...Object.fromEntries(["read", "glob", "grep", "todowrite"].map((tool) => [tool, "allow"])),
   webfetch: "deny",
   websearch: "deny",
 };
@@ -29,12 +30,11 @@ const PERMISSION = {
 /**
  * opencode's configuration: the one provider "osf" for the gateway, its model at the port's effort level when one is
  * set (ADR 0078), the permissions for every built-in agent, which win over a folder's `.opencode/` settings, and no
- * title call, update or share.
+ * title call or share. OPENCODE_DISABLE_AUTOUPDATE turns off the update; the default agent is "build".
  */
 const configOf = (model: string, baseURL: string, effort?: string) => ({
   model: `osf/${model}`,
   small_model: `osf/${model}`,
-  autoupdate: false,
   share: "disabled",
   provider: {
     osf: {
@@ -46,7 +46,6 @@ const configOf = (model: string, baseURL: string, effort?: string) => ({
     },
   },
   permission: PERMISSION,
-  default_agent: "build",
   agent: {
     ...Object.fromEntries(["build", "plan", "general", "explore"].map((agent) => [agent, { permission: PERMISSION }])),
     title: { disable: true },
