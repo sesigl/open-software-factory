@@ -851,7 +851,7 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
 
 - **Done when:** `README.md` and `AGENTS.md` describe the current phase as `TODO.md` does.
 
-### [ ] T-34 · faster mutation tests (P2)
+### [x] T-34 · faster mutation tests (P2)
 
 - **Done when:** a second push of the same pull request runs no mutant again whose unit, test and changed lines did
   not change, and the before and after times of one pull request are in the ADR. No mutator is removed and the
@@ -863,7 +863,7 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
     weekly full run stays (ADR 0091, `SCN-REPO-095`, `-096`).
   - [x] No mutation run on a draft pull request.
   - [x] inference-litellm: 25 added lines per shard. Its runs already take the shortest scenario first (ADR 0084).
-  - [ ] The times of one pull request before and after, in ADR 0091.
+  - [x] The times of one pull request before and after, in ADR 0091.
   - Not done, with the reason in ADR 0091: a stable shard per mutant (the joined results serve every shard), and a
     start after `verify` passes (it adds the time of `verify` to every pull request).
 

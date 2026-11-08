@@ -75,6 +75,17 @@ every shard finds a stale result that the guard did not catch.
 
 ## Consequences
 
+- Measured on CI, on a pull request that changed lines of intake and gatekeeper, with three pushes. Before this
+  decision, pushes 2 and 3 changed the tree, so each ran every shard again, as push 1 did.
+
+  | Push | Change | intake shard | gatekeeper shard | Whole run |
+  | --- | --- | --- | --- | --- |
+  | 1 | lines of intake and gatekeeper | 139 s, every mutant | 77 s, every mutant | 272 s |
+  | 2 | one more line of gatekeeper | 8 s, report restored | 93 s, 6 of 7 mutant results reused | 165 s |
+  | 3 | `README.md` only | 6 s, report restored | 7 s, report restored | 90 s |
+
+  A shard that runs still pays its setup, the build and the first test run: gatekeeper's shard took about as long
+  with 6 of 7 results reused. The reuse of single results saves most on a unit with many slow mutants.
 - A push that changes one unit runs only that unit's shards; the shards of the other units restore their reports.
 - A push that changes some lines of a unit runs the mutants that those lines and the changed test files reach. The
   shards still build the unit and run the first test run.
