@@ -7,7 +7,8 @@ covers: [modules/intake/src/**]
 One inbox for agent work. A program, a Slack mention, an issue labeled `factory`, a Sentry alert or a local coding
 agent puts work in; intake turns requests with the same dedupe key into one work item, keeps a link back to every
 origin, and publishes `work.received@v1` for the foreman. Decisions: [ADR 0063](../../docs/decisions/0063-intake.md),
-[ADR 0065](../../docs/decisions/0065-intake-issues-and-alerts.md).
+[ADR 0065](../../docs/decisions/0065-intake-issues-and-alerts.md),
+[ADR 0093](../../docs/decisions/0093-pglite-prepopulated-data-folder.md).
 
 ## Quick start
 

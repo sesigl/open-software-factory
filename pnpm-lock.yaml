@@ -473,6 +473,9 @@ importers:
       '@electric-sql/pglite':
         specifier: 0.5.11
         version: 0.5.11
+      '@electric-sql/pglite-prepopulatedfs':
+        specifier: 0.5.11
+        version: 0.5.11(@electric-sql/pglite@0.5.11)
       '@modelcontextprotocol/sdk':
         specifier: 1.32.1
         version: 1.32.1(zod@4.6.7)
@@ -738,6 +741,9 @@ importers:
       '@electric-sql/pglite':
         specifier: 0.5.11
         version: 0.5.11
+      '@electric-sql/pglite-prepopulatedfs':
+        specifier: 0.5.11
+        version: 0.5.11(@electric-sql/pglite@0.5.11)
       '@modelcontextprotocol/sdk':
         specifier: 1.32.1
         version: 1.32.1(zod@4.6.7)
@@ -1214,6 +1220,11 @@ packages:
 
   '@duckdb/node-bindings@1.5.6-r.1':
     resolution: {integrity: sha512-/pWlTyvKC1d16iSMJCBAPwlmzoeXRs5Y9cqG+TpKd/YAW6Ke05FJg099v/Im2bkS9BgznNyNcAK1NxA1eQhSUw==}
+
+  '@electric-sql/pglite-prepopulatedfs@0.5.11':
+    resolution: {integrity: sha512-2I59JiyNmtgl579/VC2evj74nMzSN8jxvc/00iEj3jySBHpu94st4UsSNe04tDCR12/ig3So6HjXN11XvK+ZMg==}
+    peerDependencies:
+      '@electric-sql/pglite': 0.5.11
 
   '@electric-sql/pglite@0.5.11':
     resolution: {integrity: sha512-SWuqsTjA4DDWqgZ05PC1RJaq8e00p5KACxbqaikDFQ8dIGA0SLRzuPniky7IW+q/c5RDNMdEXwv7mFBWIx9Hxw==}
@@ -5920,6 +5931,10 @@ snapshots:
       '@duckdb/node-bindings-linux-x64-musl': 1.5.6-r.1
       '@duckdb/node-bindings-win32-arm64': 1.5.6-r.1
       '@duckdb/node-bindings-win32-x64': 1.5.6-r.1
+
+  '@electric-sql/pglite-prepopulatedfs@0.5.11(@electric-sql/pglite@0.5.11)':
+    dependencies:
+      '@electric-sql/pglite': 0.5.11
 
   '@electric-sql/pglite@0.5.11': {}
 

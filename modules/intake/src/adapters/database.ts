@@ -1,8 +1,9 @@
 // One SQL interface over PostgreSQL (node-postgres) and the embedded PostgreSQL PGlite (ADR 0063): the server runs
 // the same statements on both.
-import { mkdirSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, mkdirSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
+import { dataDir } from "@electric-sql/pglite-prepopulatedfs";
 import { openPool, transaction } from "@opensoftware/postgres";
 import type pg from "pg";
 
@@ -32,9 +33,16 @@ async function postgres(url: string): Promise<Database> {
   };
 }
 
+/**
+ * PGlite in the folder. A new folder starts from PGlite's empty database of the same version (ADR 0093), which costs a
+ * third of the CPU time of PostgreSQL's initdb; PGlite refuses it for a folder that holds a database.
+ */
 async function embedded(folder: string): Promise<Database> {
   mkdirSync(folder, { recursive: true });
-  const db = await PGlite.create(folder);
+  // Stryker disable next-line ConditionalExpression,StringLiteral: a new folder also works without the empty database, only slower
+  const empty = existsSync(join(folder, "PG_VERSION")) ? undefined : await dataDir();
+  // Stryker disable next-line ObjectLiteral: the same, PGlite then runs initdb itself
+  const db = await PGlite.create(folder, { loadDataDir: empty });
   return {
     query: (text, values) => db.query(text, values),
     exec: (text) => db.exec(text),
