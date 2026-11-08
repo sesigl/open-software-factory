@@ -7,7 +7,8 @@ covers: [adapters/forge/forgejo/src/**]
 Branches, pull requests, checks, comments, merge rules, webhooks and pull request events on a
 [Forgejo](https://forgejo.org) forge, such as Codeberg or your own, behind the factory's forge port. It calls
 Forgejo's REST API v1 and keeps no state of its own. Decision: [ADR 0057](../../../docs/decisions/0057-forge-port.md).
-The port's scenarios are in [`ports/forge/features/`](../../../ports/forge/features/forge.feature).
+The port's scenarios are in [`ports/forge/features/`](../../../ports/forge/features/forge.feature), this adapter's
+own scenarios in [`features/`](features/forgejo.feature).
 
 ## Quick start
 
