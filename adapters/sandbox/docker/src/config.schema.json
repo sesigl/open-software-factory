@@ -27,6 +27,10 @@
     "DOCKER_HOST": {
       "type": "string",
       "description": "The Docker daemon to use, as for any docker command. Default: the Docker CLI's current context."
+    },
+    "OSF_SANDBOX_NETWORK": {
+      "type": "string",
+      "description": "A Docker network the egress proxy of each sandbox also joins, like the Compose profile's network, so a host on it that the spec's egress allows, like litellm, resolves. The sandbox itself stays on its own network."
     }
   }
 }
