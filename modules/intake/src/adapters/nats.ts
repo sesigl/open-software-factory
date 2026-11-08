@@ -6,7 +6,6 @@ import { connect, type NatsConnection } from "@nats-io/transport-node";
 
 const STREAM = "OSF";
 const CONSUMER = "intake";
-const DAY_NS = 24 * 3600 * 1_000_000_000;
 const RETRY_MS = 2000;
 /** A run event whose handling failed comes again after REDELIVER_MS, at most MAX_DELIVER times. */
 const REDELIVER_MS = 5000;
@@ -15,7 +14,7 @@ const MAX_DELIVER = 5;
 /** Adds the stream on "osf.>"; adding it again with the same configuration changes nothing. */
 async function streamOf(nats: NatsConnection): Promise<JetStreamManager> {
   const manager = await jetstreamManager(nats);
-  await manager.streams.add({ name: STREAM, subjects: ["osf.>"], max_age: 7 * DAY_NS });
+  await manager.streams.add({ name: STREAM, subjects: ["osf.>"] });
   return manager;
 }
 
