@@ -6,6 +6,8 @@ export interface Server {
   port: number;
   /** Stops the process and returns what it printed. */
   stop(): Promise<{ stdout: string; stderr: string }>;
+  /** What the process printed so far. */
+  output(): { stdout: string; stderr: string };
 }
 
 // Below the kernel's range of ephemeral ports (32768 and up on Linux), where the fakes, Docker and every port 0 land.
@@ -62,6 +64,7 @@ export async function startServer(
       await stop(child, exited);
       return { stdout, stderr };
     },
+    output: () => ({ stdout, stderr }),
   };
 }
 
