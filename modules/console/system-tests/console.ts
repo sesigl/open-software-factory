@@ -154,3 +154,21 @@ export const TOKEN_ROUTES = {
   intake: "/v1/work-items/wi_00000000000000000000",
   gatekeeper: "/v1/gates/g0000000000000000",
 } as const;
+
+/** An intake that lists no work items and takes every submission, as intake answers it. */
+export const submittingIntake = (fakes: Fakes) =>
+  fakes.http([
+    { path: "/v1/inbox", body: { workItems: [] } },
+    { method: "POST", path: "/v1/work-items", status: 201, body: {} },
+  ]);
+
+/** Sends the form "submit work" to the console with these fields and headers, without following a redirect. */
+export async function sendWorkForm(url: string, fields: Record<string, string>, headers: Record<string, string> = {}) {
+  const response = await fetch(`${url}/work`, {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded", ...headers },
+    body: new URLSearchParams(fields).toString(),
+    redirect: "manual",
+  });
+  return { status: response.status, location: response.headers.get("location"), html: await response.text() };
+}

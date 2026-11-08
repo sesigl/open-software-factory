@@ -4,8 +4,28 @@ import type { WorkItemView } from "@opensoftware/contracts";
 import { age } from "../domain/runs.ts";
 import { html, linkOr } from "./html.ts";
 
-export function workPage(items: WorkItemView[], now: number) {
+/** The form "submit work", shown when the console takes actions (ADR 0089). */
+const submitForm = html`<form method="post" action="/work">
+  <fieldset>
+    <legend>Submit work</legend>
+    <label>Title <input name="title" required maxlength="300" /></label>
+    <label
+      >Type
+      <select name="type">
+        <option value="task">task</option>
+        <option value="bug">bug</option>
+        <option value="idea">idea</option>
+        <option value="automation">automation</option>
+      </select>
+    </label>
+    <label>Description <textarea name="description"></textarea></label>
+  </fieldset>
+  <button type="submit">Submit</button>
+</form>`;
+
+export function workPage(items: WorkItemView[], now: number, actions = false) {
   return html`<h1>Work</h1>
+    ${actions ? submitForm : null}
     <p>The latest work items, the one received last first.</p>
     <table>
       <thead>

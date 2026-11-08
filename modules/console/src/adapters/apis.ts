@@ -45,3 +45,22 @@ export async function probe(api: Api, path: string, anonymous = false): Promise<
     return { status: 0 };
   }
 }
+
+/** POSTs the JSON body to the API with its token; an answer other than 2xx, or none, is a note that names the API. */
+export async function postJson<T>(api: Api, path: string, body: unknown): Promise<Answer<T>> {
+  const headers: Record<string, string> = {
+    "content-type": "application/json",
+    ...(api.token ? { authorization: `Bearer ${api.token}` } : {}),
+  };
+  try {
+    const response = await fetch(`${api.url.replace(/\/$/, "")}${path}`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+    });
+    if (response.ok) return { ok: true, body: (await response.json()) as T };
+    return { ok: false, status: response.status, note: `the ${api.name} at ${api.url} refused it: ${response.status}` };
+  } catch {
+    return { ok: false, status: 0, note: `the ${api.name} at ${api.url} did not answer` };
+  }
+}

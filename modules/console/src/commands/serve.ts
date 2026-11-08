@@ -5,10 +5,11 @@ import { createRequire } from "node:module";
 import { UsageError } from "@opensoftware/cli";
 import type { GateView, RunView, WorkItemList, WorkItemView, WorkRequest } from "@opensoftware/contracts";
 import Fastify, { type FastifyReply } from "fastify";
-import { type Api, getJson } from "../adapters/apis.ts";
+import { type Api, getJson, postJson } from "../adapters/apis.ts";
 import { readFactory } from "../adapters/factory-file.ts";
 import { proposals } from "../adapters/forge.ts";
 import { fill, isState, list, namedLinks, orderRuns, STATES } from "../domain/runs.ts";
+import { submissionOf } from "../domain/submit.ts";
 import { agentPage, factoryPage, type Source } from "../pages/factory.ts";
 import { healthPage } from "../pages/health.ts";
 import { type Frame, page, problem } from "../pages/html.ts";
@@ -46,6 +47,7 @@ export async function serve(env: Env) {
   const repository = env.CONSOLE_REPOSITORY_URL?.replace(/\/$/, "");
   const source: Source = { path, branch, url: repository && `${repository}/blob/${branch}/${path}` };
   const inbox = env.CONSOLE_INBOX_REPOSITORY;
+  const userHeader = env.CONSOLE_USER_HEADER?.toLowerCase() || undefined;
   const prefix = env.CONSOLE_INBOX_PREFIX || "observer/";
   const forge = {
     command: env.CONSOLE_FORGE_ADAPTER || "npx -y @opensoftware/forge-github",
@@ -152,8 +154,38 @@ export async function serve(env: Env) {
       );
     const answer = await getJson<WorkItemList>(intake, "/v1/inbox");
     const notes = answer.ok ? [] : [answer.note];
-    return send(reply, 200, { title: "Work", refresh, notes }, workPage(answer.ok ? answer.body.workItems : [], now()));
+    const items = answer.ok ? answer.body.workItems : [];
+    return send(reply, 200, { title: "Work", refresh, notes }, workPage(items, now(), Boolean(userHeader)));
   });
+
+  // Actions (ADR 0089): only with CONSOLE_USER_HEADER, from the same origin, in the name of the signed-in person.
+  // Forms always parse, so a read-only console answers a form with 405, not 415.
+  app.addContentTypeParser("application/x-www-form-urlencoded", { parseAs: "string" }, (_request, body, done) =>
+    done(null, Object.fromEntries(new URLSearchParams(body as string))),
+  );
+  if (userHeader) {
+    app.post<{ Body: Record<string, string> }>("/work", async (request, reply) => {
+      const origin = request.headers.origin;
+      if (origin && new URL(origin).host !== request.headers.host)
+        return send(reply, 403, { title: "Work" }, problem("Forbidden", "the form came from another site"));
+      const person = request.headers[userHeader];
+      if (typeof person !== "string" || !person)
+        return send(
+          reply,
+          401,
+          { title: "Work" },
+          problem("Sign in", `sign in first: the console needs ${userHeader}`),
+        );
+      if (!intake)
+        return send(reply, 404, { title: "Work" }, problem("No work items", "set CONSOLE_INTAKE_URL to submit work"));
+      const submission = submissionOf(request.body ?? {}, person, new Date(now()).toISOString());
+      if (typeof submission === "string")
+        return send(reply, 400, { title: "Work" }, problem("The work is not complete", submission));
+      const answer = await postJson(intake, "/v1/work-items", submission);
+      if (!answer.ok) return send(reply, 502, { title: "Work" }, problem("Not submitted", answer.note));
+      return reply.code(303).header("location", "/work").send();
+    });
+  }
 
   app.get("/health", async (_request, reply) => {
     const items = await examine(env);

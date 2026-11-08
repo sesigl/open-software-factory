@@ -815,8 +815,10 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
   steers, cancels, takes over and hands back a run, each through the existing APIs with the person's identity.
 - **Slices:**
   - [x] intake's `GET /v1/inbox` and the console page `/work` (`SCN-INTAKE-046` to `-048`, `SCN-CONSOLE-043`, `-044`).
-  - [ ] Actions: forms that submit work, steer, cancel, take over and hand back a run, and decide a gate, with the
-    person's identity from the sign-in proxy (an ADR that ends the console's read-only rule).
+  - [x] Actions behind the sign-in proxy's identity header, off by default; the form "submit work" on `/work`
+    (ADR 0089, `SCN-CONSOLE-045` to `-047`).
+  - [ ] Steer, cancel, take over and hand back a run, and decide a gate, from the console; each API records the
+    person who acted first.
 
 ### [ ] T-29 · one trace store (P1)
 

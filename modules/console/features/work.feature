@@ -15,3 +15,24 @@ Feature: Work
     Given a console without "CONSOLE_INTAKE_URL"
     When a person opens "/work"
     Then the page answers 404 and says "no work items: set CONSOLE_INTAKE_URL to the base URL of intake's API"
+
+  @id=SCN-CONSOLE-045 @status=implemented
+  Scenario: A signed-in person submits work from the work page
+    Given a console with "CONSOLE_USER_HEADER" set to "X-Forwarded-Email" and an intake that takes submissions
+    When the person "ada@acme.dev" sends the form "submit work" of "/work" with the title "Add a dark mode" and the type "idea"
+    Then the answer redirects to "/work"
+    And intake received the submission "Add a dark mode" of the type "idea" from the person "ada@acme.dev" with the origin "console"
+
+  @id=SCN-CONSOLE-046 @status=implemented
+  Scenario: A form without the signed-in person submits nothing
+    Given a console with "CONSOLE_USER_HEADER" set to "X-Forwarded-Email" and an intake that takes submissions
+    When a program sends the form "submit work" of "/work" without the header "X-Forwarded-Email"
+    Then the answer has the status 401 and says "sign in first: the console needs x-forwarded-email"
+    And intake received no submission
+
+  @id=SCN-CONSOLE-047 @status=implemented
+  Scenario: Without "CONSOLE_USER_HEADER" the console stays read-only
+    Given a console with an intake but without "CONSOLE_USER_HEADER"
+    When a person opens "/work" and a program sends the form "submit work" of "/work"
+    Then the page has no form
+    And the form gets the status 405

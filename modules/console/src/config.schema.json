@@ -101,6 +101,10 @@
     "CONSOLE_FORGE_TOKEN": {
       "type": "string",
       "description": "serve: the adapter's FORGE_TOKEN; a token that may read pull requests is enough."
+    },
+    "CONSOLE_USER_HEADER": {
+      "type": "string",
+      "description": "serve: the header in which the sign-in proxy sends the signed-in person, like X-Forwarded-Email. Set, the console takes actions in that person's name, such as submitting work on /work (ADR 0089); unset, it is read-only. Only set it behind a proxy that sets the header and removes it from the browser's requests."
     }
   }
 }

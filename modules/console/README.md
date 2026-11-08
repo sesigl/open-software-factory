@@ -46,8 +46,15 @@ Open <http://localhost:8080>. The page lists the foreman's runs, the running one
 | `/inbox` | The self-improvement inbox: the open pull requests of `CONSOLE_INBOX_REPOSITORY` whose branch starts with `CONSOLE_INBOX_PREFIX` (default `observer/`), newest first, each with its link, branch, author, state ("approved", "changes requested" or "needs review") and age. A forge adapter that fails is named above the list. 404 without `CONSOLE_INBOX_REPOSITORY`. |
 
 Every page links the runs, the work items (with `CONSOLE_INTAKE_URL`), the factory, the health page and the dashboards in `CONSOLE_LINKS`. The runs pages reload themselves every
-`CONSOLE_REFRESH` seconds. The console is read-only: it has no forms, and any method but `GET` and `HEAD` answers 405.
-It shows what the foreman and intake show, so run it behind your sign-in proxy, such as oauth2-proxy.
+`CONSOLE_REFRESH` seconds. Without `CONSOLE_USER_HEADER` the console is read-only: it has no forms, and any method but
+`GET` and `HEAD` answers 405. It shows what the foreman and intake show, so run it behind your sign-in proxy, such as
+oauth2-proxy.
+
+Actions ([ADR 0089](../../docs/decisions/0089-console-actions.md)): set `CONSOLE_USER_HEADER` to the header in which
+your sign-in proxy sends the signed-in person, like `X-Forwarded-Email`. Then `/work` has the form "submit work"
+(title, type and description), which the console posts to intake with that person as the requester and the origin
+`console`. A form without the header answers 401, and a form from another site 403. Only set the variable behind a
+proxy that sets the header and removes it from the browser's requests.
 
 Several factories: list each foreman in `CONSOLE_FOREMAN_URL`, comma-separated, and their tokens in the same order in
 `CONSOLE_FOREMAN_TOKEN`, or one token for all.
@@ -107,6 +114,7 @@ A server of a release before `/v1/health` fails its check with the advice to upd
 | `CONSOLE_FORGE_ADAPTER` | string | `"npx -y @opensoftware/forge-github"` | serve: the command line of the forge port's adapter that /inbox runs with prs (ADR 0073). |
 | `CONSOLE_FORGE_URL` | string |  | serve: the forge's API, the adapter's FORGE_URL, like https://codeberg.org for forge-forgejo. Default: the adapter's own. |
 | `CONSOLE_FORGE_TOKEN` | string |  | serve: the adapter's FORGE_TOKEN; a token that may read pull requests is enough. |
+| `CONSOLE_USER_HEADER` | string |  | serve: the header in which the sign-in proxy sends the signed-in person, like X-Forwarded-Email. Set, the console takes actions in that person's name, such as submitting work on /work (ADR 0089); unset, it is read-only. Only set it behind a proxy that sets the header and removes it from the browser's requests. |
 
 ## Releases
 
@@ -170,3 +178,6 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-042 | implemented | A trace link with "{traceId}" is left out for a run without a trace ID |
 | SCN-CONSOLE-043 | implemented | The work page lists each work item with its status and its run |
 | SCN-CONSOLE-044 | implemented | Without intake the work page answers 404 and names the variable |
+| SCN-CONSOLE-045 | implemented | A signed-in person submits work from the work page |
+| SCN-CONSOLE-046 | implemented | A form without the signed-in person submits nothing |
+| SCN-CONSOLE-047 | implemented | Without "CONSOLE_USER_HEADER" the console stays read-only |
