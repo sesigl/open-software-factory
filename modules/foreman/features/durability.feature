@@ -32,4 +32,17 @@ Feature: Durability
     And the file "factory.yaml" is gone
     When intake publishes "work.received@v1" with the README's "work.json"
     And the file "factory.yaml" is back
-    Then the server publishes "run.started@v1" for the work item
+    Then within 20 seconds the server publishes "run.started@v1" for the work item
+    And it warned once about "osf.work.received.v1", for the delivery 1 of 5, and about no other subject
+
+  @id=SCN-FORE-083 @status=implemented
+  Scenario: A work item that breaks its contract is one warning and comes no second time
+    Given "foreman serve" runs the README's "factory.yaml" with "FOREMAN_NATS_URL" set to a NATS server
+    When intake publishes "work.received@v1" with a work item without a title
+    Then after 7 seconds the server warned once about "osf.work.received.v1", that the body is not a work item
+
+  @id=SCN-FORE-084 @status=implemented
+  Scenario: A gate decision for a run that does not exist is one warning and comes no second time
+    Given "foreman serve" runs the README's "factory.yaml" with "FOREMAN_NATS_URL" set to a NATS server
+    When gatekeeper publishes "gate.decided@v1" for a work item that has no run
+    Then after 7 seconds the server warned once about "osf.gate.decided.v1"

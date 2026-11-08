@@ -443,3 +443,5 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-131 | deprecated | sut.helm refuses a cluster that is not a local kind cluster |
 | SCN-TK-132 | implemented | sut.helm refuses a cluster that is not a local kind cluster |
 | SCN-TK-133 | implemented | The scripted harness records each session's trace context |
+| SCN-TK-134 | implemented | sut.compose takes down the project of a run that ended without taking it down |
+| SCN-TK-135 | implemented | sut.http.output shows what every server of the scenario printed, the first one first |

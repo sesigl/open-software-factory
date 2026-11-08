@@ -22,8 +22,9 @@ chart run NATS with JetStream, but no stream exists. The review of the whole sta
 
 ## Decision
 
-- **One stream.** The stream `OSF` keeps every subject `osf.>` for 7 days, on file storage. Each module that publishes
-  or consumes events creates the stream when it is missing. Creating it again with the same configuration changes
+- **One stream.** The stream `OSF` keeps every subject `osf.>` on file storage, with NATS's default limits; an operator
+  sets a retention with `nats stream edit OSF`. Each module that publishes or consumes events creates the stream when
+  it is missing. Creating it again with the same configuration changes
   nothing, so the order in which the modules start does not matter.
 - **Publishers wait for the stream.** intake's outbox, gatekeeper and the foreman publish with JetStream's publish,
   which answers only after the stream stored the message. intake removes an event from its outbox only after that
@@ -31,8 +32,9 @@ chart run NATS with JetStream, but no stream exists. The review of the whole sta
 - **Consumers are durable.** The foreman reads `osf.work.received.v1` and `osf.gate.decided.v1` through the durable
   consumer `foreman`, and intake reads `osf.run.started.v1` and `osf.run.completed.v1` through the durable consumer
   `intake`. A consumer acknowledges a message after it handled it. When the handling fails, or the message is not
-  JSON, the server writes a warning, and the message comes again after 5 seconds, at most 5 times. A message that can
-  never succeed, such as a work item that breaks its contract, is a warning and is acknowledged at once.
+  JSON, the server writes a warning with the delivery count, and the message comes again after 5 seconds, at most 5
+  times; so does a run event that breaks its contract. The foreman acknowledges at once, with one warning, a message
+  that can never succeed: a work item that breaks its contract, or a decision for a run that does not exist.
 - **Replicas share a consumer.** Two foreman servers with the same consumer name get each message once between them.
 - **Handling stays idempotent.** A message can come more than once: the foreman starts one run per work item
   (Temporal's workflow ID, ADR 0067), and intake's status changes ignore an event that does not move the work item
@@ -63,6 +65,9 @@ chart run NATS with JetStream, but no stream exists. The review of the whole sta
 
 - A foreman or intake that restarts gets the events it missed. The vision scenario RUNTIME-001 (durable runs) now
   holds also for the events between the modules.
-- The first start of a module on a new NATS creates the stream. A team that runs its own NATS must enable JetStream.
+- The first start of a module on a new NATS creates the stream. A team that runs its own NATS must enable JetStream:
+  without it, intake and the foreman do not start.
+- The stream has no message IDs for duplicates. An event that the outbox sends twice reaches the consumers twice, and
+  their handling is idempotent.
 - A message that fails 5 times is not handled. Its warning names the subject and the reason.
 - Revisit when more than one team shares one NATS: then the stream name and the subjects need a prefix per factory.
