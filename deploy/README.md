@@ -54,7 +54,10 @@ profile when its pin moves. See [Releases](#releases) for how they are published
 
 The reference factory in `compose/factory/` has the stages triage, spec (behind a gate that a member of
 `maintainers` approves in Slack), implement, review, verify (after the pull request's check `verify` succeeded, with
-evidence) and ship. foreman reads that check with `FOREMAN_FORGE_TOKEN`. To run your own, copy the
+evidence) and ship. foreman reads that check with `FOREMAN_FORGE_TOKEN`. Its prompts work on any GitHub repository:
+each stage clones the repository of the issue in the work item's origin, reads the repository's own `AGENTS.md`,
+`CONTRIBUTING.md` and `README.md`, and runs the checks they name. Name your CI's check in the stage `verify` of
+`factory.yaml` when it is not `verify`. To run your own, copy the
 folder, change the prompts, `policy/spec.rego` and `groups.json`, and set `FACTORY_DIR` to it. Each
 `docker compose up` commits the folder into the volume `factory`, so a run's factory version is a commit. Add your
 models to `compose/litellm/config.yaml`, with their keys in `.env`. Its routes point at Anthropic's models without a

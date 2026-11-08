@@ -804,6 +804,10 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
 
 - **Done when:** the work item or the factory names the repository, and the reference factory implements an issue of
   any GitHub repository with one token.
+- **Slices:**
+  - [x] The reference prompts clone the repository of the issue in the origin link, follow the repository's own
+    instructions and checks, and stop when a work item names no repository.
+  - [ ] A first run of the reference factory on a sample repository, with a paid model (ask the owner first).
 
 ### [ ] T-28 · console actions and the work inbox (P1)
 
