@@ -1,10 +1,14 @@
 // `osf mutation-plan [--all]`: the shards of a mutation run as JSON, one runner each (ADR 0066, ADR 0084). Without
 // --all, the units whose source lines a change adds since OSF_BASE, cut by the added lines (mutation.yml); with --all,
 // every unit with a mutation script, cut by all its lines (nightly.yml). A new unit joins both runs without a change
-// in a workflow.
+// in a workflow. With --keys, each shard also has the `key` of its report and the `guard` of its unit's mutant results
+// and the file name of those `results` (mutation-keys.ts, ADR 0091).
 import { addedLines, baseCommit, changedFiles } from "../checks/lib/git.ts";
 import { Repo } from "../checks/lib/repo.ts";
 import { mutatedUnits } from "../checks/quality.ts";
+import { mutatedRanges } from "./mutation.ts";
+import { type KeyedUnit, mutationKeys } from "./mutation-keys.ts";
+import { incrementalFile } from "./mutation-merge.ts";
 
 /** Changed lines one runner mutates on a pull request, unless the package.json sets `osf.mutationLinesPerShard`. */
 const CHANGED_LINES_PER_SHARD = 100;
@@ -19,6 +23,10 @@ interface Shard {
   package: string;
   folder: string;
   shard: string;
+  key?: string;
+  guard?: string;
+  /** The file name of the unit's mutant results for its guard (osf mutation-merge). */
+  results?: string;
 }
 
 interface Manifest {
@@ -37,6 +45,7 @@ export function mutationPlan(root: string, args: string[]): number {
   }
   const changed = base ? new Set(changedFiles(root, base)) : undefined;
   const plan: (Shard & { perShard: number })[] = [];
+  const keyed: KeyedUnit[] = [];
   for (const [folder, files] of [...mutatedUnits(repo)].sort(([a], [b]) => a.localeCompare(b))) {
     const manifest = JSON.parse(repo.read(`${folder}/package.json`)) as Manifest;
     if (!manifest.scripts?.mutation) continue;
@@ -55,13 +64,28 @@ export function mutationPlan(root: string, args: string[]): number {
         `osf mutation-plan: ${manifest.name} has more lines than ${max} shards of ${perShard} hold\n`,
       );
     }
+    const ranges = mutatedRanges(repo, files, all);
+    keyed.push({ package: manifest.name, folder, sources, ranges: typeof ranges === "string" ? [] : ranges });
     for (let index = 1; index <= count; index++) {
       plan.push({ package: manifest.name, folder, shard: `${index}/${count}`, perShard });
     }
   }
   // The units with the fewest lines per shard cost the most per line: their shards start first, so the run does not
   // wait for one of them at its end.
-  const ordered = plan.sort((a, b) => a.perShard - b.perShard).map(({ perShard: _, ...shard }) => shard);
+  const ordered: Shard[] = plan.sort((a, b) => a.perShard - b.perShard).map(({ perShard: _, ...shard }) => shard);
+  if (args.includes("--keys")) {
+    const keys = mutationKeys(root, keyed);
+    if (typeof keys === "string") {
+      process.stderr.write(`osf mutation-plan: ${keys}\n`);
+      return 2;
+    }
+    for (const shard of ordered) {
+      const unit = keys.get(shard.package);
+      shard.key = `${shard.folder.replaceAll("/", "-")}-${shard.shard.replace("/", "-of-")}-${unit?.key}`;
+      shard.guard = unit?.guard;
+      shard.results = unit && incrementalFile("", shard.folder, unit.guard);
+    }
+  }
   process.stdout.write(`${JSON.stringify(ordered)}\n`);
   return 0;
 }

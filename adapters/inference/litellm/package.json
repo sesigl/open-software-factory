@@ -35,6 +35,7 @@
   },
   "osf": {
     "mutationAllLinesPerShard": 60,
+    "mutationLinesPerShard": 25,
     "mutationConcurrency": 2
   }
 }
