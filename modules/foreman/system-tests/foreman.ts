@@ -258,7 +258,16 @@ export interface ChecksSetup {
   /** Whether the "implement" turn replies with the pull request's link; default true. */
   linked?: boolean;
   nats?: boolean;
+  /** The text of factory.yaml; default: the README's "checks/factory.yaml". */
+  factory?: string;
 }
+
+/** The README's "checks/factory.yaml" whose stage "ship" must also produce evidence. */
+export const evidenceFactory = (fakes: Fakes): string =>
+  (readmeFiles(fakes)["checks/factory.yaml"] as string).replace(
+    "    checks: [verify]\n",
+    "    checks: [verify]\n    evidence: required\n",
+  );
 
 /**
  * "foreman serve" on the README's "checks/factory.yaml", with the fake GitHub, whose repository "tester/web" has the
@@ -272,18 +281,18 @@ export async function servingChecks(sut: Sut, fakes: Fakes, setup: ChecksSetup =
     title: TITLE,
     files: { "export.ts": "export const csv = true;\n" },
   });
-  /** Sets the check "verify" of the pull request's head commit, as CI does. */
-  const check = async (state: string) => {
+  /** Sets the check of the pull request's head commit, "verify" unless named, as CI does. */
+  const check = async (state: string, context = "verify") => {
     const response = await fetch(`${github.url}/repos/${github.owner}/web/statuses/${pr.sha}`, {
       method: "POST",
       headers: { authorization: `token ${github.token}`, "content-type": "application/json" },
-      body: JSON.stringify({ state, context: "verify" }),
+      body: JSON.stringify({ state, context }),
     });
     if (response.status !== 201) throw new Error(`the fake GitHub answered ${response.status} to the check`);
   };
   if (setup.check) await check(setup.check);
   const server = await serving(sut, fakes, {
-    factory: readmeFiles(fakes)["checks/factory.yaml"] as string,
+    factory: setup.factory ?? (readmeFiles(fakes)["checks/factory.yaml"] as string),
     turns: [
       { when: PLAN, reply: "plan.md is written" },
       { when: IMPLEMENT, reply: setup.linked === false ? "done" : `Opened ${pr.url} for review.` },

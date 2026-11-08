@@ -794,6 +794,11 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
 ### [ ] T-26 · evidence in the loop (P1)
 
 - **Done when:** a stage with `evidence: required` fails without a proof evidence bundle for its pull request.
+- **Slices:**
+  - [x] `evidence: required` adds the check `proof` to the stage's checks; without a forge adapter the server does not
+    start (ADR 0088, `SCN-FORE-078` to `-080`).
+  - [ ] The reference factory's README and `deploy/README.md` say to run proof in the target repository's CI, once the
+    profile pins the foreman with this change.
 
 ### [ ] T-27 · a reference factory that works on any repository (P1)
 

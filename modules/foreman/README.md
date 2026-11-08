@@ -207,6 +207,11 @@ The forge adapter is the one the factory names under `providers.forge`; a factor
 `npx -y @opensoftware/forge-<name>`. It gets `FORGE_URL` and `FORGE_TOKEN` from `FOREMAN_FORGE_URL` and
 `FOREMAN_FORGE_TOKEN`.
 
+A stage with `evidence: required` also waits for the check `proof`: the commit status that
+[proof](../proof/README.md) sets when it attaches the evidence of a pull request
+([ADR 0088](../../docs/decisions/0088-evidence-check.md)). Run proof in the CI of the repository, or the stage stays
+blocked. Such a stage needs a forge adapter under `providers.forge`, as `checks` do.
+
 ## Inference gateway
 
 Give the factory's agents one model endpoint with a budget per run: name an
@@ -495,3 +500,6 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-075 | implemented | A server that reaches Temporal and NATS is healthy, without a token |
 | SCN-FORE-076 | implemented | A run sends a span per stage and one for the run, in one trace |
 | SCN-FORE-077 | implemented | Each stage's harness gets the trace and the stage's span in "TRACEPARENT" |
+| SCN-FORE-078 | implemented | A stage that must produce evidence also waits for the check "proof" |
+| SCN-FORE-079 | implemented | A stage that must produce evidence fails when the check "proof" failed |
+| SCN-FORE-080 | implemented | A factory with a stage that must produce evidence but without a forge adapter stops the server at the start |

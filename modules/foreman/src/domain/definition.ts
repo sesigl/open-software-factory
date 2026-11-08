@@ -66,12 +66,28 @@ function inferenceProblems(factory: FactoryDefinition): DefinitionProblem[] {
 
 function checkProblems(factory: FactoryDefinition): DefinitionProblem[] {
   if (Object.keys(factory.providers?.forge ?? {}).length === 1) return [];
-  return (factory.workflow ?? []).flatMap((stage, index) =>
-    stage.checks?.length
+  return (factory.workflow ?? []).flatMap((stage, index) => [
+    ...(stage.checks?.length
       ? [{ path: `/workflow/${index}/checks`, message: "name one forge adapter under providers.forge" }]
-      : [],
-  );
+      : []),
+    ...(stage.evidence === "required"
+      ? [
+          {
+            path: `/workflow/${index}/evidence`,
+            message: `name one forge adapter under providers.forge: the stage waits for the check "${EVIDENCE_CHECK}"`,
+          },
+        ]
+      : []),
+  ]);
 }
+
+/** The check that says a pull request has its evidence bundle: proof's commit status (ADR 0088). */
+export const EVIDENCE_CHECK = "proof";
+
+/** The checks a stage waits for: its own, and proof's when it must produce evidence. */
+const checksOf = (stage: NonNullable<FactoryDefinition["workflow"]>[number]): string[] => [
+  ...new Set([...(stage.checks ?? []), ...(stage.evidence === "required" ? [EVIDENCE_CHECK] : [])]),
+];
 
 function stageAgentProblems(factory: FactoryDefinition): DefinitionProblem[] {
   return (factory.workflow ?? []).flatMap((stage, index) => {
@@ -105,7 +121,7 @@ export function definitionOf(factory: FactoryDefinition, read: (path: string) =>
         effort: declared.effort,
         prompt: read(declared.prompt),
         ...(stage.gate ? { gate: stage.gate } : {}),
-        ...(stage.checks?.length ? { checks: stage.checks } : {}),
+        ...(checksOf(stage).length ? { checks: checksOf(stage) } : {}),
         ...(declared.sandbox ? { sandbox: { ...declared.sandbox, secrets: secretsOf(declared.secrets ?? []) } } : {}),
       };
     }),

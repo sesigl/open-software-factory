@@ -61,3 +61,25 @@ Feature: Checks before a stage
     When the user runs "foreman serve"
     Then the command exits with code 2
     And the output contains "factory.yaml: /workflow/2/checks: name one forge adapter under providers.forge"
+
+  @id=SCN-FORE-078 @status=implemented
+  Scenario: A stage that must produce evidence also waits for the check "proof"
+    Given "foreman serve" runs the README's "checks/factory.yaml" whose stage "ship" has "evidence: required", with the fake GitHub, whose pull request "tester/web#1" has the check "verify" in the state "success" and no check "proof"
+    And the scripted "implement" turn replies with the link of that pull request
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then "/v1/runs/<id>" shows the state "blocked" with the stage "ship" "blocked", its check "verify" "success" and its check "proof" "pending"
+
+  @id=SCN-FORE-079 @status=implemented
+  Scenario: A stage that must produce evidence fails when the check "proof" failed
+    Given "foreman serve" runs the README's "checks/factory.yaml" whose stage "ship" has "evidence: required", with the fake GitHub, whose pull request "tester/web#1" has the check "verify" in the state "success" and the check "proof" in the state "failure"
+    And the scripted "implement" turn replies with the link of that pull request
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then "/v1/runs/<id>" shows the state "failed" with the stage "ship" "failed" and its check "proof" "failure"
+    And the harness never received the prompt "Merge the pull request"
+
+  @id=SCN-FORE-080 @status=implemented
+  Scenario: A factory with a stage that must produce evidence but without a forge adapter stops the server at the start
+    Given the README's "checks/factory.yaml" whose stage "ship" has "evidence: required", without "providers.forge"
+    When the user runs "foreman serve"
+    Then the command exits with code 2
+    And the output contains "factory.yaml: /workflow/2/evidence: name one forge adapter under providers.forge: the stage waits for the check \"proof\""
