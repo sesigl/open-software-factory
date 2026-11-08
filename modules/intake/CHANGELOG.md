@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/sesigl/open-software-factory/compare/intake-v0.4.0...intake-v0.4.1) (2026-11-08)
+
+
+### Performance Improvements
+
+* **intake:** new embedded databases start from PGlite's empty data folder ([#235](https://github.com/sesigl/open-software-factory/issues/235)) ([d42f3c6](https://github.com/sesigl/open-software-factory/commit/d42f3c660fccdd6350dcc65c07f3957403a93dc7))
+
 ## [0.4.0](https://github.com/sesigl/open-software-factory/compare/intake-v0.3.1...intake-v0.4.0) (2026-11-08)
 
 
