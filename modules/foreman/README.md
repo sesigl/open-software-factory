@@ -495,3 +495,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-075 | implemented | A server that reaches Temporal and NATS is healthy, without a token |
 | SCN-FORE-076 | implemented | A run sends a span per stage and one for the run, in one trace |
 | SCN-FORE-077 | implemented | Each stage's harness gets the trace and the stage's span in "TRACEPARENT" |
+| SCN-FORE-082 | implemented | A work item that the foreman cannot start for a moment comes again and starts its run |
