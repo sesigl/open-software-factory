@@ -183,3 +183,5 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-045 | implemented | A signed-in person submits work from the work page |
 | SCN-CONSOLE-046 | implemented | A form without the signed-in person submits nothing |
 | SCN-CONSOLE-047 | implemented | Without "CONSOLE_USER_HEADER" the console stays read-only |
+| SCN-CONSOLE-048 | implemented | "console doctor" names a missing foreman URL, a server without "/v1/health" and a factory it cannot read |
+| SCN-CONSOLE-049 | implemented | A form from another site submits nothing |
