@@ -736,6 +736,81 @@ owner before each slice: which model or service, and its budget.
 
 ---
 
+## Wave 5 · v1: a simple factory that people can trust
+
+The parts exist and are tested. This wave makes the assembled factory keep its own promises and makes it easy to set up.
+The v1 promise covers the delivery loop and its record: intake, foreman, gatekeeper, console, factory-spec, runlog and
+proof, with one adapter per port (claude-code, docker, github, litellm). The other modules stay released CLIs outside
+the v1 promise. P0 items come first: without them, people cannot trust the factory with real work.
+
+### [ ] T-22 · durable events (P0)
+
+- **Problem:** intake, foreman and gatekeeper send events on core NATS subjects. A consumer that is down loses work
+  items and gate decisions.
+- **Build:** a JetStream stream `OSF` on `osf.>`; publishers wait for the stream's acknowledgement; each consumer has a
+  durable consumer and acknowledges a message only after it handled it.
+- **Done when:** a work item and a gate decision sent while the foreman is down reach it when it starts, and a run
+  event sent while intake is down reaches intake.
+
+### [ ] T-23 · sandbox on by default (P0)
+
+- **Problem:** the profile runs agents in the foreman container, with every token in its environment (P11).
+- **Done when:** every stage of the reference factory runs in the Docker sandbox adapter in the Compose profile, and
+  the agent's environment holds no forge or model token of the foreman.
+
+### [ ] T-24 · a record of every factory run (P0)
+
+- **Problem:** the improvement path sees a factory run only when someone exports its session by hand (P6).
+- **Done when:** the foreman gives each stage a `TRACEPARENT` and exports the stage's session with runlog to the trace
+  store of the profile; the console links each stage to its trace.
+
+### [ ] T-25 · doctor and a health page (P0)
+
+- **Problem:** the health signals exist, but they are spread over several tools, and a health check accepts any status
+  below 500.
+- **Done when:** one command checks each service, token, model route, harness, sandbox, event path and trace store in
+  order and prints one fix per failure; the console shows the same list; health routes check their dependencies.
+
+### [ ] T-26 · evidence in the loop (P1)
+
+- **Done when:** a stage with `evidence: required` fails without a proof evidence bundle for its pull request.
+
+### [ ] T-27 · a reference factory that works on any repository (P1)
+
+- **Done when:** the work item or the factory names the repository, and the reference factory implements an issue of
+  any GitHub repository with one token.
+
+### [ ] T-28 · console actions and the work inbox (P1)
+
+- **Done when:** the console lists work items (an intake list route), submits work, approves or rejects a gate, and
+  steers, cancels, takes over and hands back a run, each through the existing APIs with the person's identity.
+
+### [ ] T-29 · one trace store (P1)
+
+- **Done when:** the profile runs one trace store, and runlog, scorekit and the console use the same one. An adopted
+  service without a consumer leaves the profile.
+
+### [ ] T-30 · simple setup (P1)
+
+- **Done when:** `osf init`, `osf up` and `osf doctor` (or their Compose equivalents) take a new team from a clone to a
+  healthy factory, and one tutorial describes the first run.
+
+### [ ] T-31 · the improvement path in the profile (P2)
+
+- **Done when:** scheduled jobs run runlog, scorekit, ledger and observer on the factory's own runs, and the console
+  shows cost and scores.
+
+### [ ] T-32 · factory version from Git and public intake (P2)
+
+- **Done when:** the foreman reads `factory.yaml` from a Git remote at a commit, and the docs describe one way to give
+  intake a public URL without a relay.
+
+### [x] T-33 · current status lines (P2)
+
+- **Done when:** `README.md` and `AGENTS.md` describe the current phase as `TODO.md` does.
+
+---
+
 ## After the plan: phase 3 and 4
 
 When T-17 is done, follow `docs/explanation/bootstrapping.md`: the factory implements this repository's

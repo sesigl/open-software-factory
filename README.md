@@ -7,9 +7,9 @@ improving itself over time.
 Each tool solves one problem on its own and connects to the others only through open formats. Where a good
 open-source project already exists, the factory adopts it and builds only the adapter.
 
-> Status: **phase 0, the foundation.** The repository tooling and its checks exist ([`tools/`](tools/README.md));
-> no tool module is built yet. This repository holds the vision, the architecture, the quality system, the agent
-> rules and the work plan. Start with [`TODO.md`](TODO.md).
+> Status: **between phase 2 and phase 3.** Every tool below is built, tested and released on npm, and this
+> repository's CI uses them on its own pull requests. The factory does not yet implement this repository's issues on
+> its own: [`TODO.md`](TODO.md) wave 5 lists what a trustworthy v1 still needs.
 
 ## Start here
 
