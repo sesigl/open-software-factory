@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.2](https://github.com/sesigl/open-software-factory/compare/inference-litellm-v0.3.1...inference-litellm-v0.3.2) (2026-11-08)
+
+
+### Bug Fixes
+
+* no leaked containers from local runs ([#227](https://github.com/sesigl/open-software-factory/issues/227)) ([4d8afbc](https://github.com/sesigl/open-software-factory/commit/4d8afbc71d49366071f021731db3fec69b08567f))
+
+
+### Performance Improvements
+
+* **ci:** shard the nightly mutation run and replay unchanged shards ([#187](https://github.com/sesigl/open-software-factory/issues/187)) ([e38b1b8](https://github.com/sesigl/open-software-factory/commit/e38b1b8607cca7dd46f2251df74465a26d84aaaf))
+
 ## [0.3.1](https://github.com/sesigl/open-software-factory/compare/inference-litellm-v0.3.0...inference-litellm-v0.3.1) (2026-11-05)
 
 

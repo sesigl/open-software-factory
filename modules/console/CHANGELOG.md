@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/sesigl/open-software-factory/compare/console-v0.3.1...console-v0.4.0) (2026-11-08)
+
+
+### Features
+
+* TODO.md wave 5, the v1 gaps (durable events, health, doctor, traces, evidence, console work and actions) ([#226](https://github.com/sesigl/open-software-factory/issues/226)) ([2787352](https://github.com/sesigl/open-software-factory/commit/27873526013a268d71ca9c738e2088a9f22c9b76))
+
 ## [0.3.1](https://github.com/sesigl/open-software-factory/compare/console-v0.3.0...console-v0.3.1) (2026-11-05)
 
 

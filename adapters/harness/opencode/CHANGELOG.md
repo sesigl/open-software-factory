@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/sesigl/open-software-factory/compare/harness-opencode-v0.2.1...harness-opencode-v0.2.2) (2026-11-08)
+
+
+### Performance Improvements
+
+* **ci:** shard the nightly mutation run and replay unchanged shards ([#187](https://github.com/sesigl/open-software-factory/issues/187)) ([e38b1b8](https://github.com/sesigl/open-software-factory/commit/e38b1b8607cca7dd46f2251df74465a26d84aaaf))
+
 ## [0.2.1](https://github.com/sesigl/open-software-factory/compare/harness-opencode-v0.2.0...harness-opencode-v0.2.1) (2026-11-05)
 
 
