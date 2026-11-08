@@ -10,9 +10,9 @@ export function fromIso(text: string): number {
 }
 
 export function toIso(micros: number): string {
-  const seconds = Math.floor(micros / 1_000_000);
-  const fraction = String(micros % 1_000_000).padStart(6, "0");
-  return `${new Date(seconds * 1000).toISOString().slice(0, 19)}.${fraction}Z`;
+  const second = Math.floor(micros / 1_000_000);
+  const digits = String(micros % 1_000_000).padStart(6, "0");
+  return `${new Date(second * 1000).toISOString().slice(0, 19)}.${digits}Z`;
 }
 
 const UNITS: Record<string, number> = { s: 1, m: 60, h: 3600, d: 86_400 };
