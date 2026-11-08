@@ -496,3 +496,5 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-076 | implemented | A run sends a span per stage and one for the run, in one trace |
 | SCN-FORE-077 | implemented | Each stage's harness gets the trace and the stage's span in "TRACEPARENT" |
 | SCN-FORE-082 | implemented | A work item that the foreman cannot start for a moment comes again and starts its run |
+| SCN-FORE-083 | implemented | A work item that breaks its contract is one warning and comes no second time |
+| SCN-FORE-084 | implemented | A gate decision for a run that does not exist is one warning and comes no second time |

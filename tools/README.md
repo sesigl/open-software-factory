@@ -12,7 +12,8 @@ and the root `spec-trace.json` ([ADR 0031](../docs/decisions/0031-spec-trace-act
 
 ```sh
 make install     # pnpm dependencies and the pinned lychee, oasdiff, opa, temporal, nats-server, helm, kubectl and kind binaries
-make check       # lint and the static checks, in seconds
+make check-fast  # lint, typecheck and the static checks, in seconds: no system test, no container
+make check       # the same, and the system tests of the changed units
 make verify      # everything: lint, types, all system tests, all checks
 ```
 

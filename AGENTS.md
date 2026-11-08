@@ -102,7 +102,8 @@ A new module starts with `skills/new-module`. A new dependency or service starts
 
 ```text
 make install               install dependencies and the pinned lychee, oasdiff, opa, temporal, nats-server, helm, kubectl and kind binaries
-make check                 lint and the static checks (seconds)
+make check-fast            lint, typecheck and the static checks; no system test, no container (seconds)
+make check                 the same, and the system tests of the changed units (minutes)
 make verify                all checks; required before you report done
 make test-scenario ID=…    run the one system test of a scenario
 make smoke                 the deterministic end-to-end scenarios in e2e/ (minutes)
@@ -121,7 +122,8 @@ When a check fails, its output starts with the check ID and the file and line to
 ## Harness notes
 
 - Skills live in `skills/` and are declared in `factory.yaml`. Run `make agents-sync` after you add or remove one.
-- Claude Code: a `Stop` hook in `.claude/settings.json` runs `make check` before you end a turn. Use plan mode
+- Claude Code: a `Stop` hook in `.claude/settings.json` runs `make check-fast` (no system test, no container) before
+  you end a turn. Use plan mode
   before a change that touches `contracts/` or more than one module. Use subagents for independent modules; never
   let two agents change the same module at the same time.
 - When `make check` fails, read the check ID in the output (for example `BOUNDARY`) and open
