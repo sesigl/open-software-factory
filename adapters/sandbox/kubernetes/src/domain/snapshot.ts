@@ -8,6 +8,8 @@ import { GRACE_SECONDS } from "./resources.ts";
 /** The label of a snapshot's claim, writer pod and template. */
 export const SNAPSHOT_LABEL = "osf.snapshot.id";
 
+const snapshotLabels = (id: string) => ({ [SNAPSHOT_LABEL]: id });
+
 /** The writer and the restore container keep each file's owner and mode, which only root may set. */
 const ROOT = { runAsUser: 0, runAsGroup: 0 };
 
@@ -21,7 +23,7 @@ export function snapshotVolume(id: string, size: string): unknown {
   return {
     apiVersion: "v1",
     kind: "PersistentVolumeClaim",
-    metadata: { name: snapshotName(id), labels: { [SNAPSHOT_LABEL]: id } },
+    metadata: { name: snapshotName(id), labels: snapshotLabels(id) },
     spec: { accessModes: ["ReadWriteOnce"], resources: { requests: { storage: size } } },
   };
 }
@@ -30,7 +32,7 @@ export function writerPod(id: string, image: string): unknown {
   return {
     apiVersion: "v1",
     kind: "Pod",
-    metadata: { name: writerName(id), labels: { [SNAPSHOT_LABEL]: id } },
+    metadata: { name: writerName(id), labels: snapshotLabels(id) },
     spec: {
       automountServiceAccountToken: false,
       terminationGracePeriodSeconds: GRACE_SECONDS,
@@ -71,7 +73,7 @@ export function snapshotTemplate(id: string, base: PodTemplate): unknown {
   return {
     apiVersion: "extensions.agents.x-k8s.io/v1beta1",
     kind: "SandboxTemplate",
-    metadata: { name: snapshotName(id), labels: { [SNAPSHOT_LABEL]: id } },
+    metadata: { name: snapshotName(id), labels: snapshotLabels(id) },
     spec: {
       networkPolicyManagement: "Unmanaged",
       podTemplate: {
