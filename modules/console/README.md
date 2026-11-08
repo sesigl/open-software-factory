@@ -30,6 +30,7 @@ Open <http://localhost:8080>. The page lists the foreman's runs, the running one
 | Command | What it does |
 | --- | --- |
 | `console serve` | Serve the pages below on `PORT`. Exits 2 without `CONSOLE_FOREMAN_URL`. |
+| `console doctor` | Check the factory as [Health](#health) describes, print one line per check (`ok    <check>` or `FAIL  <check>: <what to do>`) and the count, and exit 1 when a check fails. |
 
 ## Pages
 
@@ -40,9 +41,10 @@ Open <http://localhost:8080>. The page lists the foreman's runs, the running one
 | `/runs/<runId>` | One run: its state, factory and factory version, age, pull request, trace and Temporal history; its origin, or with `CONSOLE_INTAKE_URL` every request of its work item; and its stages as its evidence, each with its agent, state, transcript, gate, checks and the reason it failed. 404 when no foreman knows the run. |
 | `/factory` | The factory definition in `CONSOLE_FACTORY`: its name, description, providers and agents with their harness and model. |
 | `/factory/agents/<name>` | One agent's configuration, and the link to the file on the branch where it changes. 404 for an agent the factory does not declare. |
+| `/health` | The checks of `console doctor` as a table: each check, its state and what to do. 200 when every check is ok, else 503. |
 | `/inbox` | The self-improvement inbox: the open pull requests of `CONSOLE_INBOX_REPOSITORY` whose branch starts with `CONSOLE_INBOX_PREFIX` (default `observer/`), newest first, each with its link, branch, author, state ("approved", "changes requested" or "needs review") and age. A forge adapter that fails is named above the list. 404 without `CONSOLE_INBOX_REPOSITORY`. |
 
-Every page links the runs, the factory and the dashboards in `CONSOLE_LINKS`. The runs pages reload themselves every
+Every page links the runs, the factory, the health page and the dashboards in `CONSOLE_LINKS`. The runs pages reload themselves every
 `CONSOLE_REFRESH` seconds. The console is read-only: it has no forms, and any method but `GET` and `HEAD` answers 405.
 It shows what the foreman and intake show, so run it behind your sign-in proxy, such as oauth2-proxy.
 
@@ -59,6 +61,20 @@ Links: `CONSOLE_TRACE_URL` and `CONSOLE_SESSION_URL` are URL templates of the tr
 Phoenix, with `{runId}` and `{sessionId}`. The foreman sets the run's ID as `osf.run.id` on every run's traces
 ([runlog](../runlog/README.md)), and a stage's harness session is its transcript. `CONSOLE_TEMPORAL_URL` links the
 run's history: `<url>/namespaces/<CONSOLE_TEMPORAL_NAMESPACE>/workflows/<runId>`.
+
+## Health
+
+`console doctor` and `/health` check, in this order ([ADR 0086](../../docs/decisions/0086-health-routes.md)):
+
+1. Each foreman, intake and gatekeeper the console names: its `GET /v1/health`, one line per check the server reports
+   (such as `foreman temporal` or `intake nats`), and whether it accepts the console's token. A server that does not
+   answer names the variable of its URL; a refused token names the console's variable and the server's own.
+2. `factory`: the definition in `CONSOLE_FACTORY` can be read and declares an agent.
+
+The links to the Temporal UI and the trace store are for the browser, so the console does not check them; the
+foreman's `temporal` check covers Temporal.
+
+A server of a release before `/v1/health` fails its check with the advice to update it.
 
 ## Configuration
 
@@ -144,3 +160,7 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-034 | implemented | A forge that refuses the token is named on the inbox |
 | SCN-CONSOLE-035 | implemented | Without a repository the inbox answers 404 and names the variable |
 | SCN-CONSOLE-036 | implemented | The factory page lists the agents with their harness, model and effort |
+| SCN-CONSOLE-037 | implemented | A healthy factory passes every check of "console doctor" |
+| SCN-CONSOLE-038 | implemented | "console doctor" names each failing check and what to do |
+| SCN-CONSOLE-039 | implemented | A foreman that does not answer is named with the variable of its URL |
+| SCN-CONSOLE-040 | implemented | The page "/health" shows the checks and answers 503 when one fails |

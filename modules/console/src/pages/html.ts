@@ -35,6 +35,7 @@ export function page(frame: Frame, content: VNode | VNode[]): string {
             <li><a href="/">Runs</a></li>
             <li><a href="/factory">Factory</a></li>
             ${frame.inbox ? html`<li><a href="/inbox">Inbox</a></li>` : null}
+            <li><a href="/health">Health</a></li>
           </ul>
           <ul>
             ${frame.links.map((link) => html`<li><a href=${link.url}>${link.name}</a></li>`)}

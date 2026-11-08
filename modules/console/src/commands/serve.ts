@@ -10,10 +10,12 @@ import { readFactory } from "../adapters/factory-file.ts";
 import { proposals } from "../adapters/forge.ts";
 import { fill, isState, list, namedLinks, orderRuns, STATES } from "../domain/runs.ts";
 import { agentPage, factoryPage, type Source } from "../pages/factory.ts";
+import { healthPage } from "../pages/health.ts";
 import { type Frame, page, problem } from "../pages/html.ts";
 import { inboxPage } from "../pages/inbox.ts";
 import { runPage } from "../pages/run.ts";
 import { runsPage } from "../pages/runs.ts";
+import { examine } from "./doctor.ts";
 
 type Env = Record<string, string | undefined>;
 
@@ -133,6 +135,11 @@ export async function serve(env: Env) {
     const answer = await proposals(forge, inbox, prefix);
     const notes = answer.ok ? [] : [answer.note];
     return send(reply, 200, { title: "Inbox", notes }, inboxPage(inbox, answer.ok ? answer.body : [], now()));
+  });
+
+  app.get("/health", async (_request, reply) => {
+    const items = await examine(env);
+    return send(reply, items.every(({ ok }) => ok) ? 200 : 503, { title: "Health" }, healthPage(items));
   });
 
   // Read-only: any method but GET and HEAD answers 405.

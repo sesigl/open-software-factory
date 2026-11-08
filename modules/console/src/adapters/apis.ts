@@ -23,3 +23,25 @@ export async function getJson<T>(api: Api, path: string): Promise<Answer<T>> {
     return { ok: false, status: 0, note: `the ${api.name} at ${api.url} did not answer` };
   }
 }
+
+/** The status and JSON body of GET `path`, with the API's token unless `anonymous`; status 0 when nothing answers. */
+export async function probe(api: Api, path: string, anonymous = false): Promise<{ status: number; body?: unknown }> {
+  const headers: Record<string, string> = api.token && !anonymous ? { authorization: `Bearer ${api.token}` } : {};
+  try {
+    const response = await fetch(`${api.url.replace(/\/$/, "")}${path}`, {
+      headers,
+      redirect: "manual",
+      signal: AbortSignal.timeout(5000),
+    });
+    const text = await response.text();
+    let body: unknown;
+    try {
+      body = JSON.parse(text);
+    } catch {
+      body = undefined;
+    }
+    return { status: response.status, body };
+  } catch {
+    return { status: 0 };
+  }
+}

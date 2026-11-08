@@ -778,9 +778,10 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
   - [x] `GET /v1/health` on intake, gatekeeper and the foreman, with one check per dependency and its fix, without a
     token; `healthOf` in `@opensoftware/cli` (ADR 0086, `SCN-CLI-017` to `-019`, `SCN-INTAKE-044`, `-045`,
     `SCN-GATE-091`, `-092`, `SCN-FORE-075`).
-  - [ ] `console doctor` and the console page `/health`: each server's health, the tokens, the factory definition, the
-    Temporal UI and the trace store, with one fix per failure.
-  - [ ] The Compose profile and the Helm chart probe `/v1/health` and want a 2xx answer, once the images have it.
+  - [x] `console doctor` and the console page `/health`: each server's health and token, and the factory definition,
+    with one fix per failure (`SCN-CONSOLE-037` to `-040`).
+  - [ ] The Compose profile and the Helm chart probe `/v1/health` and want a 2xx answer, and `deploy/README.md` starts
+    with `docker compose run --rm console doctor`, once the images have it.
   - [ ] Deep checks: one model call per route through LiteLLM, the harness answers ACP `initialize`, a sandbox starts
     and refuses a denied host, a test event reaches the foreman, a test span reaches the trace store.
 
