@@ -175,7 +175,8 @@ jobs:
           groups: .github/gatekeeper/groups.json
 ```
 
-The action sets up OPA, runs `request` and `status` for the pull request of the event and uploads the record as the
+The action sets up OPA 1.21.0 (through the GitHub API, checked against its pinned SHA-256, when github.com fails to
+send the release file), runs `request` and `status` for the pull request of the event and uploads the record as the
 artifact `gatekeeper-record`. Its outputs are `decision` (`approved`, `rejected`, `expired` or `pending`) and
 `record` (the record's path, once decided). It fails when the gate is rejected or expired; while it waits it
 succeeds and the commit status stays `pending`. Inputs: `policy`, `groups`, `token` (default the job's token),

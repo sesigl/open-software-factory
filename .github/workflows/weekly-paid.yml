@@ -31,6 +31,8 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: make install
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       # The owner's choice in ADR 0077: opencode on the one model the OpenRouter key allows, 20 USD a month as its
       # credit limit. claude-code runs only on a developer's subscription, never here.
       - run: make smoke-paid
