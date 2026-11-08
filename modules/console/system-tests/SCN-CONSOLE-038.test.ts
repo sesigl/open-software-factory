@@ -10,18 +10,21 @@ scenario("SCN-CONSOLE-038", async ({ sut, fakes, given, when, then }) => {
     env = { CONSOLE_FOREMAN_URL: foreman.url, CONSOLE_FOREMAN_TOKEN: "wrong-token", ...(await factoryEnv(sut)) };
   });
 
-  await given(`an intake whose "/v1/health" answers 503 with the check "nats" failing with "${NATS}"`, async () => {
-    const intake = await healthyServer(
-      fakes,
-      [
-        { name: "database", ok: true },
-        { name: "nats", ok: false, detail: NATS },
-      ],
-      TOKEN_ROUTES.intake,
-      404,
-    );
-    env = { ...env, CONSOLE_INTAKE_URL: intake.url, CONSOLE_INTAKE_TOKEN: "intake-token" };
-  });
+  await given(
+    'an intake whose "/v1/health" answers 503 with the check "nats" failing with "the durable consumer of the run events is not attached: check INTAKE_NATS_URL"',
+    async () => {
+      const intake = await healthyServer(
+        fakes,
+        [
+          { name: "database", ok: true },
+          { name: "nats", ok: false, detail: NATS },
+        ],
+        TOKEN_ROUTES.intake,
+        404,
+      );
+      env = { ...env, CONSOLE_INTAKE_URL: intake.url, CONSOLE_INTAKE_TOKEN: "intake-token" };
+    },
+  );
 
   let run: Awaited<ReturnType<typeof sut.cli>>;
   await when('the user runs "console doctor"', async () => {
@@ -41,8 +44,11 @@ scenario("SCN-CONSOLE-038", async ({ sut, fakes, given, when, then }) => {
     },
   );
 
-  await then(`it prints "FAIL  intake nats: ${NATS}"`, async () => {
-    expect(run.stdout).toContain(`FAIL  intake nats: ${NATS}\n`);
-    expect(run.stdout).toContain("ok    intake database\n");
-  });
+  await then(
+    'it prints "FAIL  intake nats: the durable consumer of the run events is not attached: check INTAKE_NATS_URL"',
+    async () => {
+      expect(run.stdout).toContain(`FAIL  intake nats: ${NATS}\n`);
+      expect(run.stdout).toContain("ok    intake database\n");
+    },
+  );
 });

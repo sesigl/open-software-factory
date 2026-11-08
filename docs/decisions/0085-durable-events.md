@@ -32,7 +32,7 @@ chart run NATS with JetStream, but no stream exists. The review of the whole sta
 - **Consumers are durable.** The foreman reads `osf.work.received.v1` and `osf.gate.decided.v1` through the durable
   consumer `foreman`, and intake reads `osf.run.started.v1` and `osf.run.completed.v1` through the durable consumer
   `intake`. A consumer acknowledges a message after it handled it. When the handling fails, or the message is not
-  JSON, the server writes a warning with the delivery count, and the message comes again after 5 seconds, at most 5
+  JSON, the server writes a warning with the delivery count, and the message comes again after 2 seconds, at most 5
   times; so does a run event that breaks its contract. The foreman acknowledges at once, with one warning, a message
   that can never succeed: a work item that breaks its contract, or a decision for a run that does not exist.
 - **Replicas share a consumer.** Two foreman servers with the same consumer name get each message once between them.

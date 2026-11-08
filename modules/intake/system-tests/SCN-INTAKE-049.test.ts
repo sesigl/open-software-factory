@@ -17,7 +17,7 @@ scenario("SCN-INTAKE-049", async ({ sut, fakes, given, when, then }) => {
   await then(
     'within 10 seconds the server warns twice about "osf.run.completed.v1", for the delivery 1 and 2 of 5',
     async () => {
-      // JetStream sends an unacknowledged message again after 30 seconds; only the server's nak brings it back in 5.
+      // JetStream sends an unacknowledged message again after 30 seconds; only the server's nak brings it back in 2.
       const warnings = () =>
         sut.http
           .output()

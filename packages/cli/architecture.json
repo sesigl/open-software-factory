@@ -1,8 +1,24 @@
 {
   "layers": [
-    { "name": "api", "paths": ["src/index.ts"] },
-    { "name": "program", "paths": ["src/program.ts"] },
-    { "name": "files", "paths": ["src/files.ts"] },
-    { "name": "errors", "paths": ["src/errors.ts"] }
+    {
+      "name": "api",
+      "paths": ["src/index.ts"]
+    },
+    {
+      "name": "health",
+      "paths": ["src/health.ts"]
+    },
+    {
+      "name": "program",
+      "paths": ["src/program.ts"]
+    },
+    {
+      "name": "files",
+      "paths": ["src/files.ts"]
+    },
+    {
+      "name": "errors",
+      "paths": ["src/errors.ts"]
+    }
   ]
 }

@@ -8,7 +8,7 @@ const STREAM = "OSF";
 const CONSUMER = "intake";
 const RETRY_MS = 2000;
 /** A run event whose handling failed comes again after REDELIVER_MS, at most MAX_DELIVER times. */
-const REDELIVER_MS = 5000;
+const REDELIVER_MS = 2000;
 const MAX_DELIVER = 5;
 
 /** Adds the stream on "osf.>"; adding it again with the same configuration changes nothing. */

@@ -364,7 +364,7 @@ ends, with the outcome `succeeded`, `failed` or `cancelled`. Their IDs are the r
 `.completed`. The events are kept in the JetStream stream `OSF` on `osf.>`, which the
 foreman adds when it is missing, and the foreman reads them through its durable consumer `foreman` ([ADR
 0085](../../docs/decisions/0085-durable-events.md)). A work item or a gate decision published while the foreman is down
-reaches it when it starts again. A message is acknowledged after it is handled; one that fails comes again after 5
+reaches it when it starts again. A message is acknowledged after it is handled; one that fails comes again after 2
 seconds, at most 5 times. A work item that is not valid, or a decision for a run that does not exist, is a warning
 and does not come again.
 

@@ -24,7 +24,10 @@ scenario("SCN-FORE-080", async ({ sut, fakes, given, when, then }) => {
     expect(run.exitCode, run.stderr).toBe(2);
   });
 
-  await then(`the output contains "${PROBLEM.replaceAll('"', '\\"')}"`, async () => {
-    expect(run.stderr).toContain(PROBLEM);
-  });
+  await then(
+    'the output contains "factory.yaml: /workflow/2/evidence: name one forge adapter under providers.forge: the stage waits for the check \\"proof\\""',
+    async () => {
+      expect(run.stderr).toContain(PROBLEM);
+    },
+  );
 });

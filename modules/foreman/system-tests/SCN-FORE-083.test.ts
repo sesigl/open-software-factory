@@ -19,10 +19,10 @@ scenario("SCN-FORE-083", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then(
-    'after 7 seconds the server warned once about "osf.work.received.v1", that the body is not a work item',
+    'after 4 seconds the server warned once about "osf.work.received.v1", that the body is not a work item',
     async () => {
-      // A message that comes again does so after 5 seconds.
-      await new Promise((resolve) => setTimeout(resolve, 7000));
+      // A message that comes again does so after 2 seconds.
+      await new Promise((resolve) => setTimeout(resolve, 4000));
       const warnings = sut.http
         .output()
         .stderr.split("\n")

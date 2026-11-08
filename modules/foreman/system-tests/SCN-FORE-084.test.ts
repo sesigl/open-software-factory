@@ -30,9 +30,9 @@ scenario("SCN-FORE-084", async ({ sut, fakes, given, when, then }) => {
     });
   });
 
-  await then('after 7 seconds the server warned once about "osf.gate.decided.v1"', async () => {
-    // A message that comes again does so after 5 seconds.
-    await new Promise((resolve) => setTimeout(resolve, 7000));
+  await then('after 4 seconds the server warned once about "osf.gate.decided.v1"', async () => {
+    // A message that comes again does so after 2 seconds.
+    await new Promise((resolve) => setTimeout(resolve, 4000));
     const warnings = sut.http
       .output()
       .stderr.split("\n")

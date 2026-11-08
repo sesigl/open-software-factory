@@ -292,4 +292,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-INTAKE-046 | implemented | The inbox lists the work items, the one received last first |
 | SCN-INTAKE-047 | implemented | The inbox lists only the work items in the status the query names |
 | SCN-INTAKE-048 | implemented | The inbox refuses a status that no work item can have |
-| SCN-INTAKE-049 | implemented | A run event that breaks its contract is a warning and comes again after 5 seconds |
+| SCN-INTAKE-049 | implemented | A run event that breaks its contract is a warning and comes again after 2 seconds |

@@ -21,12 +21,12 @@ scenario("SCN-FORE-082", async ({ sut, fakes, given, when, then }) => {
   });
 
   await when('the file "factory.yaml" is back', async () => {
-    // The first delivery fails while the file is gone; the message comes again after 5 seconds.
+    // The first delivery fails while the file is gone; the message comes again after 2 seconds.
     await new Promise((resolve) => setTimeout(resolve, 1000));
     await sut.files.put("$INPUT/factory.yaml", readmeFiles(fakes)["factory.yaml"] as string);
   });
 
-  // JetStream sends an unacknowledged message again after 30 seconds; only the server's nak brings it back in 5.
+  // JetStream sends an unacknowledged message again after 30 seconds; only the server's nak brings it back in 2.
   await then('within 20 seconds the server publishes "run.started@v1" for the work item', async () => {
     const [started] = await events.received("run.started@v1", { timeoutMs: 20_000 });
     expect(started?.data).toMatchObject({ workItemId: readmeWork(fakes).id });

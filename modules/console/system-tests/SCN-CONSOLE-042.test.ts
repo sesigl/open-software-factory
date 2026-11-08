@@ -10,10 +10,13 @@ scenario("SCN-CONSOLE-042", async ({ sut, fakes, given, when, then }) => {
   });
 
   let page: Awaited<ReturnType<typeof open>>;
-  await when(`a person opens the run's page with "CONSOLE_TRACE_URL" set to "${TEMPLATE}"`, async () => {
-    await serving(sut, [api.url], { CONSOLE_TRACE_URL: TEMPLATE });
-    page = await open(sut, `/runs/${RUN}`);
-  });
+  await when(
+    'a person opens the run\'s page with "CONSOLE_TRACE_URL" set to "http://127.0.0.1:6006/projects/UHJvamVjdDox/traces/{traceId}"',
+    async () => {
+      await serving(sut, [api.url], { CONSOLE_TRACE_URL: TEMPLATE });
+      page = await open(sut, `/runs/${RUN}`);
+    },
+  );
 
   await then('the page has no link with the text "trace"', async () => {
     expect(page.status).toBe(200);

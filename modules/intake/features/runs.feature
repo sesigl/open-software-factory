@@ -54,7 +54,7 @@ Feature: A work item follows its run
     Then "/v1/work-items/<id>" shows the status "complete"
 
   @id=SCN-INTAKE-049 @status=implemented
-  Scenario: A run event that breaks its contract is a warning and comes again after 5 seconds
+  Scenario: A run event that breaks its contract is a warning and comes again after 2 seconds
     Given the server, with "INTAKE_NATS_URL" set to a NATS server, received the README's "work.json"
     When the foreman publishes "run.completed@v1" for the work item with the outcome "merged"
     Then within 10 seconds the server warns twice about "osf.run.completed.v1", for the delivery 1 and 2 of 5

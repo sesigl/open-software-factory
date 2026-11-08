@@ -12,7 +12,7 @@ export const SUBJECTS = {
 
 const STREAM = "OSF";
 /** A message whose handling failed comes again after this time, at most MAX_DELIVER times. */
-const RETRY_MS = 5000;
+const RETRY_MS = 2000;
 const MAX_DELIVER = 5;
 
 export interface Bus {
