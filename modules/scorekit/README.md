@@ -226,3 +226,22 @@ with a trusted publisher for `publish-scorekit.yml`. No credential is stored in 
 | SCN-SCORE-044 | implemented | An evaluator Langfuse refuses is named and fails the command |
 | SCN-SCORE-045 | implemented | Push without Langfuse keys names the missing variables |
 | SCN-SCORE-046 | implemented | The option "--model" overrides the scorer's judge model |
+| SCN-SCORE-047 | implemented | The judge gets the run's facts and its steps by start time |
+| SCN-SCORE-048 | implemented | A run without facts and steps gets a transcript with its ID only |
+| SCN-SCORE-049 | implemented | The output counts the passes, the fails and the runs already scored |
+| SCN-SCORE-050 | implemented | The sampling rate 0 scores no run |
+| SCN-SCORE-051 | implemented | Wrong options of "scorekit score" are refused with the reason |
+| SCN-SCORE-052 | implemented | A scorer file in the current folder is named without a folder |
+| SCN-SCORE-053 | implemented | A folder of runs files skips the files that do not end in ".jsonl" |
+| SCN-SCORE-054 | implemented | The judge model and the answers the gateway gives without a message |
+| SCN-SCORE-055 | implemented | A scorer file with a wrong value or a wrong form is refused with the reason |
+| SCN-SCORE-056 | implemented | A scorer file with the lowest values allowed is accepted |
+| SCN-SCORE-057 | implemented | The pack list puts the sampling rates of all scorers in one column |
+| SCN-SCORE-058 | implemented | Push counts the scores Langfuse took |
+| SCN-SCORE-059 | implemented | Push with only the public key is refused |
+| SCN-SCORE-060 | implemented | The Markdown report has a table of the scorers, then the days and the runs of each scorer |
+| SCN-SCORE-061 | implemented | A score file line that breaks the score contract is named with its file and line |
+| SCN-SCORE-062 | implemented | Calibration uses only the labels of the scorer with the source ANNOTATION |
+| SCN-SCORE-063 | implemented | The minimum agreement takes the bounds 0 and 1, and an agreement equal to the minimum passes |
+| SCN-SCORE-064 | implemented | Wrong options of "scorekit calibrate" are refused with the reason |
+| SCN-SCORE-065 | implemented | A judge answer without a verdict fails the calibration and shows the first 200 characters of the answer |

@@ -17,9 +17,9 @@ export interface CalibrateOptions {
 export async function calibrate(paths: string[], options: CalibrateOptions, env: NodeJS.ProcessEnv) {
   const scorer = readScorer(options.scorer);
   if (!options.labels) throw new UsageError("--labels is required: a file of score records with the source ANNOTATION");
-  const minimum = options.minAgreement === undefined ? undefined : Number(options.minAgreement);
-  if (minimum !== undefined && !(minimum >= 0 && minimum <= 1))
-    throw new UsageError("--min-agreement must be a number from 0 to 1");
+  // Without --min-agreement no agreement is below the minimum.
+  const minimum = Number(options.minAgreement ?? 0);
+  if (!(minimum >= 0 && minimum <= 1)) throw new UsageError("--min-agreement must be a number from 0 to 1");
   const labels = new Map(
     readScores([options.labels])
       .filter((label) => label.source === "ANNOTATION" && label.name === scorer.name)
@@ -37,7 +37,7 @@ export async function calibrate(paths: string[], options: CalibrateOptions, env:
   const result = compare(scorer.name, judged, missing);
   writeText(options.out, `${JSON.stringify(result, null, 2)}\n`);
   const agreement = `agreement ${result.agreed} of ${result.labeled} (${percent(result.agreement)})`;
-  const below = minimum !== undefined && result.agreement < minimum;
+  const below = result.agreement < minimum;
   const kappa = result.kappa === null ? "" : `, kappa ${result.kappa.toFixed(2)}`;
   return {
     lines: [below ? `${agreement} is below ${percent(minimum)}` : `${agreement}${kappa}`],

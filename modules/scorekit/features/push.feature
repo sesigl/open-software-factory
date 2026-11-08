@@ -18,3 +18,19 @@ Feature: Push scores to Langfuse
     When the user runs "scorekit push scores.jsonl" with the public key "pk-lf-test" and the secret key "sk-lf-test"
     Then the command exits with code 1
     And the error output contains "Langfuse answered HTTP 401"
+
+  @id=SCN-SCORE-058 @status=implemented
+  Scenario: Push counts the scores Langfuse took
+    Given "scores.jsonl" with 2 scores of "redundant-tests"
+    And a Langfuse API at a host with a trailing slash that answers the first score with HTTP 500 and accepts the second
+    When the user runs "scorekit push scores.jsonl" with the public key "pk-lf-test" and the secret key "sk-lf-test"
+    Then the command exits with code 1
+    And the output is "pushed 1 of 2 scores to Langfuse"
+    And Langfuse received both scores at "POST /api/public/scores" with the header "content-type" "application/json"
+
+  @id=SCN-SCORE-059 @status=implemented
+  Scenario: Push with only the public key is refused
+    Given "scores.jsonl" with 2 scores of "redundant-tests"
+    When the user runs "scorekit push scores.jsonl" with the public key "pk-lf-test" and without a secret key
+    Then the command exits with code 2
+    And the error output is "scorekit: set LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY"
