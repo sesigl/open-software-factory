@@ -25,6 +25,20 @@ export function readmeFiles(fakes: Fakes): Record<string, string> {
 
 export const readmeWork = (fakes: Fakes): WorkItem => JSON.parse(readmeFiles(fakes)["work.json"] as string);
 
+/** The CloudEvent work.received@v1 of the README's work item, as intake publishes it. */
+export const workReceived = (fakes: Fakes) => {
+  const workItem = readmeWork(fakes);
+  return {
+    specversion: "1.0",
+    id: workItem.id,
+    source: "/osf/intake",
+    type: "work.received@v1",
+    time: "2026-01-01T00:00:00Z",
+    subject: workItem.id,
+    data: workItem,
+  };
+};
+
 /** A second work item, besides the README's. */
 export const otherWork = (fakes: Fakes): WorkItem => ({
   ...readmeWork(fakes),
@@ -189,6 +203,10 @@ export async function servingCommit(sut: Sut, fakes: Fakes, commit: string, setu
         await new Promise((resolve) => setTimeout(resolve, 50));
       }
     },
+    /** Stops the server. */
+    stop: () => sut.http.stop(),
+    /** Starts the stopped server again with the same data folder and variables. */
+    startAgain: () => sut.http.start(["serve"], { env }),
     /** Stops the server and starts it again with the same data folder and variables. */
     async restart() {
       await sut.http.stop();
@@ -212,7 +230,8 @@ export async function started(sut: Sut, fakes: Fakes, setup: Setup = {}) {
 export async function waitingAtGate(sut: Sut, fakes: Fakes, setup: Setup = {}) {
   const run = await started(sut, fakes, { factory: gatedFactory(fakes), gatekeeper: true, nats: true, ...setup });
   await run.until(run.runId, "blocked");
-  const events = await sut.events.watch(run.nats as NonNullable<typeof run.nats>);
+  // Only the factory's subjects: a watcher of ">" would take the messages that NATS still sends to a stopped foreman.
+  const events = await sut.events.watch(run.nats as NonNullable<typeof run.nats>, "osf.>");
   /** Publishes gate.decided@v1 for the gate, as gatekeeper does. */
   const decide = (decision: "approved" | "rejected", gateId = GATE) =>
     events.publish("osf.gate.decided.v1", {

@@ -6,7 +6,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { UsageError } from "@opensoftware/cli";
 import type { GateDecided, WorkItem } from "@opensoftware/contracts";
-import { Client, Connection } from "@temporalio/client";
+import { Client, Connection, WorkflowNotFoundError } from "@temporalio/client";
 import { NativeConnection, Worker } from "@temporalio/worker";
 import Fastify, { type FastifyReply } from "fastify";
 import { readFactory } from "../adapters/factory.ts";
@@ -62,14 +62,26 @@ function api(work: Runs, token: string) {
   return app;
 }
 
-/** Starts runs for work items from intake and hands gate decisions to the runs that wait for them. */
-function listen(bus: Bus, work: Runs): void {
-  bus.subscribe(SUBJECTS.workReceived, async (event) => {
-    await work.start((event as { data?: WorkItem }).data);
-  });
-  bus.subscribe(SUBJECTS.gateDecided, async (event) => {
-    const { data } = event as GateDecided;
-    await work.decided(data.workItemId, { gateId: data.gateId, state: data.decision });
+/**
+ * Starts runs for work items from intake and hands gate decisions to the runs that wait for them, through the durable
+ * consumer "foreman" (ADR 0085). An event that can never succeed, a work item that is not valid or a decision for a run
+ * that does not exist, is a warning and is acknowledged; another failure comes again.
+ */
+function listen(bus: Bus, work: Runs, warn: (text: string) => void): Promise<void> {
+  const once = (subject: string, failure: unknown) => {
+    if (!(failure instanceof UsageError || failure instanceof WorkflowNotFoundError)) throw failure;
+    warn(`${subject}: ${failure.message}`);
+  };
+  return bus.consume("foreman", [SUBJECTS.workReceived, SUBJECTS.gateDecided], async (event, subject) => {
+    const { data } = event as { data?: unknown };
+    if (subject === SUBJECTS.gateDecided) {
+      const { workItemId, gateId, decision } = data as GateDecided["data"];
+      await work
+        .decided(workItemId, { gateId, state: decision })
+        .catch((failure) => once(SUBJECTS.gateDecided, failure));
+    } else {
+      await work.start(data as WorkItem).catch((failure) => once(SUBJECTS.workReceived, failure));
+    }
   });
 }
 
@@ -119,7 +131,7 @@ export async function serve(env: Env) {
       defaultHeartbeatThrottleInterval: pollMs,
     });
     const running = worker.run();
-    if (bus) listen(bus, work);
+    if (bus) await listen(bus, work, warn);
 
     const app = api(work, token);
     const port = Number(env.PORT || 8080);

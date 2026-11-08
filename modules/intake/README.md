@@ -193,8 +193,11 @@ work item of a run follows it (ADR 0071):
 | `run.completed@v1` with the outcome `succeeded`, `failed` or `cancelled` | `complete`, `failed` or `cancelled` |
 
 A `run.completed@v1` that lists `pullRequests` also links them in the Slack threads of the work item, as described in
-[Slack](#slack). A `run.started@v1` that arrives after its run completed changes nothing. The subjects are core NATS: run events
-published while the server is down do not reach it. While NATS is unreachable the server tries again every 2 seconds.
+[Slack](#slack). A `run.started@v1` that arrives after its run completed changes nothing. The events are kept in the JetStream stream
+`OSF` on `osf.>`, and the server reads the run events through its durable consumer `intake` ([ADR
+0085](../../docs/decisions/0085-durable-events.md)): run events published while the server is down reach it when it
+starts again. The outbox removes an event only after the stream stored it. While NATS is unreachable the server tries
+again every 2 seconds.
 
 ## Configuration
 

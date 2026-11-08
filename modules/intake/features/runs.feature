@@ -44,3 +44,11 @@ Feature: A work item follows its run
     Given the server, with "INTAKE_NATS_URL" set to a NATS server and the Slack channel adapter, made a work item of the mention "<@bot> Export reports as CSV" in the Slack channel "C0WORK"
     When the foreman publishes "run.started@v1" for the work item, then "run.completed@v1" with the outcome "succeeded" and the pull request "https://github.com/acme/web/pull/8"
     Then the thread has the replies "Received as work item <id>." and "Pull request: https://github.com/acme/web/pull/8"
+
+  @id=SCN-INTAKE-043 @status=implemented @realizes=SCN-FACTORY-RUNTIME-001
+  Scenario: A run event of a time when the server was down reaches the work item when the server starts again
+    Given the server, with "INTAKE_NATS_URL" set to a NATS server and "INTAKE_DATABASE_URL" set to a PostgreSQL database, received the README's "work.json"
+    And the server stops
+    When the foreman publishes "run.completed@v1" for the work item with the outcome "succeeded"
+    And the server starts again
+    Then "/v1/work-items/<id>" shows the status "complete"

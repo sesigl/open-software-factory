@@ -355,7 +355,12 @@ on `osf.gate.decided.v1` to the run of its work item. A run publishes
 [`run.started@v1`](../../contracts/events/run-started/run-started.schema.json) on `osf.run.started.v1` when it starts and
 [`run.completed@v1`](../../contracts/events/run-completed/run-completed.schema.json) on `osf.run.completed.v1` when it
 ends, with the outcome `succeeded`, `failed` or `cancelled`. Their IDs are the run's ID with `.started` and
-`.completed`. The subjects are core NATS: work published while no foreman listens is not started.
+`.completed`. The events are kept in the JetStream stream `OSF` on `osf.>`, which the
+foreman adds when it is missing, and the foreman reads them through its durable consumer `foreman` ([ADR
+0085](../../docs/decisions/0085-durable-events.md)). A work item or a gate decision published while the foreman is down
+reaches it when it starts again. A message is acknowledged after it is handled; one that fails comes again after 5
+seconds, at most 5 times. A work item that is not valid, or a decision for a run that does not exist, is a warning
+and does not come again.
 
 ## Releases
 

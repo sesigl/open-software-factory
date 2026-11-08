@@ -1,22 +1,41 @@
-// The outbox's events to NATS as plain messages, in order, on one connection; a JetStream stream on "osf.>" keeps them.
-// And the foreman's run events from NATS, on a connection that waits for NATS and connects again (ADR 0071).
+// The outbox's events to the JetStream stream "OSF", in order, on one connection; each publish waits until the stream
+// stored the event (ADR 0085). And the foreman's run events through the durable consumer "intake", on a connection
+// that waits for NATS and connects again (ADR 0071), so the server gets the run events of a time it was down.
+import { AckPolicy, DeliverPolicy, type JetStreamManager, jetstream, jetstreamManager } from "@nats-io/jetstream";
 import { connect, type NatsConnection } from "@nats-io/transport-node";
+
+const STREAM = "OSF";
+const CONSUMER = "intake";
+const DAY_NS = 24 * 3600 * 1_000_000_000;
+const RETRY_MS = 2000;
+/** A run event whose handling failed comes again after REDELIVER_MS, at most MAX_DELIVER times. */
+const REDELIVER_MS = 5000;
+const MAX_DELIVER = 5;
+
+/** Adds the stream on "osf.>"; adding it again with the same configuration changes nothing. */
+async function streamOf(nats: NatsConnection): Promise<JetStreamManager> {
+  const manager = await jetstreamManager(nats);
+  await manager.streams.add({ name: STREAM, subjects: ["osf.>"], max_age: 7 * DAY_NS });
+  return manager;
+}
 
 export async function publishToNats(server: string, events: { subject: string; event: unknown }[]): Promise<void> {
   const nats = await connect({ servers: server, timeout: 2000 });
   const sent = async () => {
-    for (const { subject, event } of events) nats.publish(subject, JSON.stringify(event));
-    await nats.flush();
+    await streamOf(nats);
+    const stream = jetstream(nats);
+    // The event's ID as the message ID: the stream keeps an event that the outbox sends twice once.
+    for (const { subject, event } of events)
+      await stream.publish(subject, JSON.stringify(event), { msgID: (event as { id: string }).id });
   };
   await sent().finally(() => nats.close());
 }
 
-const RETRY_MS = 2000;
-
 /**
- * Calls `handle` with each message's JSON on the subjects, one message of a subject after the other. It tries to reach
- * NATS every 2 seconds until it does, then reconnects on its own. A message that is not JSON or that `handle` fails on
- * is a warning. Resolves after the first try, with the function that stops listening.
+ * Calls `handle` with each message's JSON on the subjects, one message after the other, through the durable consumer
+ * "intake". It tries to reach NATS every 2 seconds until it does, then reconnects on its own. A message is
+ * acknowledged after `handle` resolved; a message that is not JSON is a warning and is dropped, and a message that
+ * `handle` fails on is a warning and comes again. Resolves after the first try, with the function that stops listening.
  */
 export async function subscribeToNats(
   server: string,
@@ -27,24 +46,41 @@ export async function subscribeToNats(
   let stopped = false;
   let nats: NatsConnection | undefined;
   let timer: NodeJS.Timeout | undefined;
-  /** Handles the subject's messages one after the other, in the order NATS delivers them. */
-  const drain = async (subject: string, messages: AsyncIterable<{ json(): unknown }>) => {
-    for await (const message of messages)
-      await Promise.resolve()
-        .then(() => handle(message.json()))
-        .catch((failure: Error) => warn(`${subject}: ${failure.message}`));
-  };
   const listen = async (connection: NatsConnection) => {
-    for (const subject of subjects) void drain(subject, connection.subscribe(subject));
-    // The server has the subscriptions once the flush returns.
-    await connection.flush();
+    const manager = await streamOf(connection);
+    await manager.consumers.add(STREAM, {
+      durable_name: CONSUMER,
+      filter_subjects: subjects,
+      ack_policy: AckPolicy.Explicit,
+      deliver_policy: DeliverPolicy.All,
+      max_deliver: MAX_DELIVER,
+    });
+    const messages = await (await jetstream(connection).consumers.get(STREAM, CONSUMER)).consume();
+    void (async () => {
+      for await (const message of messages) {
+        try {
+          await handle(message.json());
+          message.ack();
+        } catch (failure) {
+          const dropped = failure instanceof SyntaxError;
+          warn(`${message.subject}: ${(failure as Error).message}${dropped ? "" : `, it comes again`}`);
+          if (dropped) message.term();
+          else message.nak(REDELIVER_MS);
+        }
+      }
+    })();
   };
   const attempt = (): Promise<void> =>
     connect({ servers: server, timeout: RETRY_MS, maxReconnectAttempts: -1 }).then(
       (connection) => {
         if (stopped) return connection.close();
         nats = connection;
-        return listen(connection);
+        // A NATS without JetStream is a warning; the server tries again.
+        return listen(connection).catch(async (failure: Error) => {
+          warn(`no durable consumer on NATS: ${failure.message}`);
+          await connection.close();
+          if (!stopped) timer = setTimeout(attempt, RETRY_MS);
+        });
       },
       () => {
         if (!stopped) timer = setTimeout(attempt, RETRY_MS);

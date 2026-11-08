@@ -242,7 +242,9 @@ request URL `https://<server>/slack/events`, and interactivity with the request 
 
 With `GATEKEEPER_NATS_URL`, each event is written to the outbox table in the same transaction as the gate's change
 and published right after. While NATS is unreachable the events wait in the outbox and go out once it is back, at
-least once, with the same event IDs.
+least once, with the same event IDs. The events go to the JetStream stream `OSF` on `osf.>`, which gatekeeper adds
+when it is missing; an event leaves the outbox only after the stream stored it, so a foreman that is down gets the
+decision when it starts ([ADR 0085](../../docs/decisions/0085-durable-events.md)).
 
 ## Records
 

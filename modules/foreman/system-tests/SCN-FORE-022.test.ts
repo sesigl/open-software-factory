@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { readmeWork, serving, WAIT_MS } from "./foreman.ts";
+import { readmeWork, serving, WAIT_MS, workReceived } from "./foreman.ts";
 
 scenario("SCN-FORE-022", async ({ sut, fakes, given, when, then }) => {
   let server: Awaited<ReturnType<typeof serving>>;
@@ -13,16 +13,7 @@ scenario("SCN-FORE-022", async ({ sut, fakes, given, when, then }) => {
   );
 
   await when('intake publishes "work.received@v1" with the README\'s "work.json"', async () => {
-    const workItem = readmeWork(fakes);
-    await events.publish("osf.work.received.v1", {
-      specversion: "1.0",
-      id: workItem.id,
-      source: "/osf/intake",
-      type: "work.received@v1",
-      time: "2026-01-01T00:00:00Z",
-      subject: workItem.id,
-      data: workItem,
-    });
+    await events.publish("osf.work.received.v1", workReceived(fakes));
   });
 
   let runId = "";
