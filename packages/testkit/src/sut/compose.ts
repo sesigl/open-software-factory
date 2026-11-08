@@ -1,5 +1,5 @@
 // sut.compose: a Compose file of the unit, run with `docker compose` as a project of the scenario (ADR 0074).
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { userInfo } from "node:os";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { moduleEnv, repoRoot } from "../support/module.ts";
@@ -45,6 +45,46 @@ function writeDockerConfig(folder: string): void {
   writeFileSync(join(folder, "config.json"), `${JSON.stringify({ cliPluginsExtraDirs: [plugins] })}\n`);
 }
 
+/**
+ * The folder with one file per Compose project of the testkit that names its owner process. It is below the user's
+ * own home, not HOME or TMPDIR, so nested runs with their own HOME and TMPDIR share it.
+ */
+const OWNERS = join(userInfo().homedir, ".cache", "osf-testkit", "compose-owners");
+
+/** Whether the process lives: signal 0 checks without sending; EPERM means it lives under another user. */
+function alive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === "EPERM";
+  }
+}
+
+let swept: Promise<void> | undefined;
+
+/**
+ * Takes down, once per process, every project of a scenario whose process ended without taking it down: a run that
+ * was killed, or whose worker was stopped, leaves its containers behind otherwise (ADR 0090). A project of the
+ * testkit is named "osf-sut-..."; it is left when no owner file names it, or its owner no longer runs.
+ */
+function sweep(env: Record<string, string>, cwd: string): Promise<void> {
+  swept ??= (async () => {
+    const listed = await run("docker", ["compose", "ls", "--all", "--format", "json"], cwd, env);
+    if (listed.exitCode !== 0) return;
+    const projects = JSON.parse(listed.stdout.trim() || "[]") as { Name: string }[];
+    for (const { Name } of projects) {
+      if (!Name.startsWith("osf-sut-")) continue;
+      const owner = join(OWNERS, `${Name}.pid`);
+      const pid = existsSync(owner) ? Number(readFileSync(owner, "utf8")) : 0;
+      if (pid > 0 && alive(pid)) continue;
+      await run("docker", ["compose", "--project-name", Name, "down", "--volumes", "--timeout", "2"], cwd, env);
+      rmSync(owner, { force: true });
+    }
+  })();
+  return swept;
+}
+
 export function makeCompose(
   moduleRoot: string,
   dirs: Folders,
@@ -65,7 +105,8 @@ export function makeCompose(
       throw new Error(`sut.compose: no Compose file ${file} in ${relative(repoRoot(), moduleRoot)}`);
     }
     const envFile = join(dirs.input, ".env");
-    const compose = (args: string[], extra: Record<string, string> = {}): Promise<CliResult> => {
+    const compose = async (args: string[], extra: Record<string, string> = {}): Promise<CliResult> => {
+      await sweep(env, dirs.input);
       if (!existsSync(envFile)) writeFileSync(envFile, "");
       const argv = ["compose", "--project-name", project, "--file", path, "--env-file", envFile, ...args];
       return run("docker", argv, dirs.input, { ...env, ...extra });
@@ -73,10 +114,19 @@ export function makeCompose(
     if (!started) {
       started = true;
       writeDockerConfig(env.DOCKER_CONFIG);
+      // The owner of the project, so a later run takes it down when this process ends without doing so.
+      mkdirSync(OWNERS, { recursive: true });
+      writeFileSync(join(OWNERS, `${project}.pid`), String(process.pid));
       // Without the file: a project whose .env misses a value can still be taken down.
-      onStop(() =>
-        run("docker", ["compose", "--project-name", project, "down", "--volumes", "--timeout", "5"], dirs.input, env),
-      );
+      onStop(async () => {
+        await run(
+          "docker",
+          ["compose", "--project-name", project, "down", "--volumes", "--timeout", "5"],
+          dirs.input,
+          env,
+        );
+        rmSync(join(OWNERS, `${project}.pid`), { force: true });
+      });
     }
     return {
       async run(args, options = {}) {
