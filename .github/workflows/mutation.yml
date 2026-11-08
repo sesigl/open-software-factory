@@ -5,26 +5,21 @@
 # runners to stay under the time limit. Each shard tests every n-th mutant of all the added lines (ADR 0066). A shard
 # reuses its report of an earlier push when its unit's turbo hash and added lines are the same; otherwise Stryker
 # reuses the result of each mutant whose code and tests did not change, while nothing else the tests read changed
-# (ADR 0091). A draft pull request runs no mutation; marking it ready starts the run.
+# (ADR 0091). verify.yml calls this workflow after its job verify passed, on a pull request that is no draft; a new
+# push cancels the run with verify's own run (ADR 0092).
 name: mutation
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_call:
 
 permissions:
   contents: read
-
-concurrency:
-  group: mutation-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
 
 jobs:
   # The units with a mutation script whose TypeScript sources in src/ or bin/ the pull request changes, each cut
   # into shards of about 100 added lines (osf mutation-plan): one runner per shard, so a large change fits the limit.
   units:
     name: units to mutate
-    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-24.04
     outputs:
       shards: ${{ steps.list.outputs.shards }}
@@ -100,7 +95,7 @@ jobs:
   mutation:
     name: mutation
     needs: [units, unit]
-    if: ${{ always() && !cancelled() && !github.event.pull_request.draft }}
+    if: always() && !cancelled()
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
