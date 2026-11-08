@@ -1,7 +1,9 @@
 // `make install` step: the pinned lychee (DOCS-LINKS), oasdiff (CONTRACT), opa (gatekeeper's policies, ADR 0047),
 // temporal and nats-server (the servers of `fakes.temporal()` and `fakes.nats()`, ADR 0067), and helm, kubectl and
-// kind (the Helm chart's scenarios, ADR 0075) binaries, checked against their SHA-256, in .tools/bin. Builds are
-// pinned for Linux x86_64 (CI) and macOS arm64; elsewhere put the same versions on PATH.
+// kind (the Helm chart's scenarios, ADR 0075) binaries, and the agent-sandbox manifest (the kind cluster of the
+// kubernetes sandbox adapter, ADR 0055), checked against their SHA-256, in .tools/bin. CI caches .tools/bin, so a job
+// downloads nothing while the pins stay the same. Builds are pinned for Linux x86_64 (CI) and macOS arm64; elsewhere
+// put the same versions on PATH.
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
@@ -16,6 +18,8 @@ interface Build {
   member?: string;
   /** The download is the binary itself, not a .tar.gz. */
   binary?: true;
+  /** The download is a file to read, not to run: it keeps mode 644. */
+  file?: true;
 }
 
 interface Pinned {
@@ -23,6 +27,12 @@ interface Pinned {
   version: string;
   builds: Record<string, Build>;
 }
+
+const AGENT_SANDBOX: Build = {
+  url: "https://github.com/kubernetes-sigs/agent-sandbox/releases/download/v1.0.8/sandbox-with-extensions.yaml",
+  sha256: "e68bfae0bd9b6ff717745a4be04bcc909594ba32011b6a0891b77c4d7b5bf58a",
+  file: true,
+};
 
 const PINNED: Pinned[] = [
   {
@@ -147,9 +157,14 @@ const PINNED: Pinned[] = [
       },
     },
   },
+  {
+    name: "agent-sandbox.yaml",
+    version: "1.0.8",
+    builds: { "linux-x64": AGENT_SANDBOX, "darwin-arm64": AGENT_SANDBOX },
+  },
 ];
 
-export function installTools(root: string): number {
+export async function installTools(root: string): Promise<number> {
   const bin = join(root, ".tools", "bin");
   mkdirSync(bin, { recursive: true });
   for (const tool of PINNED) {
@@ -164,18 +179,47 @@ export function installTools(root: string): number {
     const temp = mkdtempSync(join(tmpdir(), "osf-tools-"));
     try {
       const archive = join(temp, "archive.tar.gz");
-      run("curl", ["-sSfL", "-o", archive, build.url]);
+      await download(build.url, archive);
       const digest = createHash("sha256").update(readFileSync(archive)).digest("hex");
       if (digest !== build.sha256) throw new Error(`${tool.name}: checksum ${digest} does not match ${build.sha256}`);
-      if (!build.binary) run("tar", ["-xzf", archive, "-C", temp]);
-      copyFileSync(build.binary ? archive : join(temp, build.member ?? tool.name), target);
-      chmodSync(target, 0o755);
+      const raw = build.binary || build.file;
+      if (!raw) run("tar", ["-xzf", archive, "-C", temp]);
+      copyFileSync(raw ? archive : join(temp, build.member ?? tool.name), target);
+      chmodSync(target, build.file ? 0o644 : 0o755);
       process.stdout.write(`installed ${tool.name} ${tool.version}\n`);
     } finally {
       rmSync(temp, { recursive: true, force: true });
     }
   }
   return 0;
+}
+
+const RELEASE = /^https:\/\/github\.com\/([^/]+\/[^/]+)\/releases\/download\/([^/]+)\/([^/]+)$/;
+
+/**
+ * Downloads a file. github.com sometimes answers 504 for release downloads for an hour or more while its API still
+ * works: then a release file comes through the API, with GITHUB_TOKEN when it is set. The caller checks the SHA-256.
+ */
+async function download(url: string, target: string): Promise<void> {
+  const curl = (args: string[]) =>
+    spawnSync("curl", ["-sSfL", "--retry", "2", "--retry-all-errors", ...args], { stdio: "inherit" });
+  if (curl(["-o", target, url]).status === 0) return;
+  const release = RELEASE.exec(url);
+  if (!release) throw new Error(`curl ${url} failed`);
+  const [, repo, tag, name] = release;
+  const token = process.env.GITHUB_TOKEN ? ["-H", `Authorization: Bearer ${process.env.GITHUB_TOKEN}`] : [];
+  const api = `https://api.github.com/repos/${repo}/releases`;
+  const found = spawnSync("curl", ["-sSfL", "--retry", "2", ...token, `${api}/tags/${tag}`], { encoding: "utf8" });
+  const asset =
+    found.status === 0
+      ? (JSON.parse(found.stdout) as { assets: { id: number; name: string }[] }).assets.find((a) => a.name === name)
+      : undefined;
+  if (!asset) throw new Error(`curl ${url} failed, and the GitHub API has no release file ${name} of ${repo} ${tag}`);
+  process.stderr.write(`${name}: github.com failed, downloading it through the GitHub API\n`);
+  if (
+    curl([...token, "-H", "Accept: application/octet-stream", "-o", target, `${api}/assets/${asset.id}`]).status !== 0
+  )
+    throw new Error(`curl ${url} failed, also through the GitHub API`);
 }
 
 function run(command: string, args: string[]): void {
