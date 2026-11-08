@@ -48,6 +48,6 @@ const commands: Record<string, Command> = {
 process.exitCode = await runProgram({
   name: "sandbox-kubernetes",
   usage: USAGE,
-  command: name === undefined ? undefined : commands[name],
+  command: commands[name as string],
   help: values.help,
 });

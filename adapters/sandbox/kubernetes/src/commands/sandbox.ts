@@ -9,21 +9,15 @@ export interface Context {
   settings: Settings;
 }
 
-interface Named {
-  metadata: { name: string; annotations?: Record<string, string> };
-}
-
-/** The pod of the sandbox; an ID of the wrong form is a usage error, an unknown one an error. */
+/**
+ * The pod of the sandbox; an ID of the wrong form is a usage error, an unknown one an error. The claim's warm pool has
+ * no replicas, so agent-sandbox starts the sandbox cold: its Sandbox and its pod get the claim's name.
+ */
 export async function sandboxPod({ kube }: Context, id: string | undefined): Promise<string> {
   check(id && ID.test(id), "name a sandbox by the 12 hex digits create printed");
-  const claim = await kube.get<Named & { status?: { sandbox?: { name?: string } } }>([
-    "sandboxclaim",
-    sandboxName(id as string),
-  ]);
-  if (!claim) throw new Error(`no sandbox ${id}`);
-  const name = claim.status?.sandbox?.name || claim.metadata.name;
-  const sandbox = await kube.get<Named>(["sandbox", name]);
-  return sandbox?.metadata.annotations?.["agents.x-k8s.io/pod-name"] || name;
+  const name = sandboxName(id as string);
+  if (!(await kube.get(["sandboxclaim", name]))) throw new Error(`no sandbox ${id}`);
+  return name;
 }
 
 /** Waits until `ready` gives a value, for at most `timeoutMs`; `ready` throws to stop at once. */

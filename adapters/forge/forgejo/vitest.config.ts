@@ -1,6 +1,7 @@
 import { defineConfig } from "vitest/config";
 
-// System tests of this adapter: the @conformance scenarios of ports/forge/features/, against the testkit's Forgejo.
+// System tests of this adapter: the @conformance scenarios of ports/forge/features/ and its own scenarios in
+// features/, against the testkit's Forgejo.
 // Turbo replays their results on pull requests (ADR 0081).
 export default defineConfig({
   test: {

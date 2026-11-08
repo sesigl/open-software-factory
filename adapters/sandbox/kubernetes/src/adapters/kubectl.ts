@@ -3,7 +3,8 @@
 import { type ChildProcess, spawn } from "node:child_process";
 
 export interface KubectlResult {
-  code: number;
+  /** The exit code, or null when a signal ended kubectl. */
+  code: number | null;
   stdout: Buffer;
   stderr: string;
 }
@@ -11,7 +12,7 @@ export interface KubectlResult {
 export interface Kubectl {
   /** Runs `kubectl <args>` and collects its output; `input` goes to its standard input. */
   run(args: string[], input?: string): Promise<KubectlResult>;
-  /** Runs `kubectl <args>` and gives its standard output as text; a failure throws with kubectl's error. */
+  /** Runs `kubectl <args>` and gives its standard output as it is; a failure throws with kubectl's error. */
   text(args: string[], input?: string): Promise<string>;
   /** `kubectl get <args>` as JSON, or undefined when the object does not exist. */
   get<T>(args: string[]): Promise<T | undefined>;
@@ -29,7 +30,7 @@ export function kubectl(namespace: string): Kubectl {
   const text = async (args: string[], input?: string) => {
     const result = await run(args, input);
     if (result.code !== 0) throw new Error(`kubectl ${args[0]} failed: ${result.stderr.trim()}`);
-    return result.stdout.toString("utf8").trim();
+    return result.stdout.toString("utf8");
   };
   return {
     run,
@@ -48,8 +49,8 @@ export function kubectl(namespace: string): Kubectl {
         child.on("close", (code) => resolve(code ?? 1));
       }),
     async pipe(from, to) {
-      const source = spawn("kubectl", withNamespace(from), { stdio: ["ignore", "pipe", "pipe"] });
-      const target = spawn("kubectl", withNamespace(to), { stdio: ["pipe", "pipe", "pipe"] });
+      const source = spawn("kubectl", withNamespace(from));
+      const target = spawn("kubectl", withNamespace(to));
       source.stdout.pipe(target.stdin);
       const [out, into] = await Promise.all([collect(source, undefined, false), collect(target, null)]);
       for (const [args, result] of [
@@ -67,9 +68,9 @@ export function kubectl(namespace: string): Kubectl {
  * `output: false` leaves its standard output to a pipe.
  */
 async function collect(child: ChildProcess, input?: string | null, output = true): Promise<KubectlResult> {
-  const closed = new Promise<number>((resolve, reject) => {
+  const closed = new Promise<number | null>((resolve, reject) => {
     child.once("error", reject);
-    child.once("close", (code) => resolve(code ?? 1));
+    child.once("close", resolve);
   });
   if (input !== null) child.stdin?.end(input);
   const [stdout, stderr, code] = await Promise.all([

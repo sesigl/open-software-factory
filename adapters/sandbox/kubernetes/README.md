@@ -75,7 +75,8 @@ npx @opensoftware/sandbox-kubernetes destroy "$id"
 - **The egress log** has one JSON line per request, as for every sandbox adapter: `host`, `method`, `path`,
   `outcome`, `refusedBy`, `mcpServer`, `tool` and `secrets`. It holds no header values and no MCP arguments.
 - **A sandbox that does not start** (an image that cannot be pulled, a container that exits) is removed, and `create`
-  exits 1 with the reason.
+  exits 1 with the reason: the container, its waiting reason (any reason but `ContainerCreating` and
+  `PodInitializing`) and Kubernetes' message.
 - **No state of its own.** The cluster holds every part of a sandbox, labelled `osf.sandbox.id=<ID>`. `destroy`
   removes them all; a snapshot stays.
 
@@ -91,7 +92,8 @@ npx @opensoftware/sandbox-kubernetes destroy "$id"
 | `sandbox-kubernetes list` | Print the IDs of the sandboxes in the namespace. |
 | `sandbox-kubernetes egress-log <ID>` | Print one JSON line per request that left the sandbox. |
 
-An unknown sandbox ID exits 1 with `no sandbox <ID>`. A snapshot keeps only `/workspace`. Its claim is
+An ID that is not 12 hex digits, or a command that misses its argument, exits 2. An unknown sandbox ID exits 1
+with `no sandbox <ID>`. When kubectl fails, the command exits 1 with `kubectl <command> failed:` and kubectl's error. A snapshot keeps only `/workspace`. Its claim is
 `ReadWriteOnce`, so sandboxes from one snapshot run on one node.
 
 ## Releases

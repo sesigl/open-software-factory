@@ -37,13 +37,15 @@ It writes `$OUTPUT/run-record.json` and `$OUTPUT/transcript.jsonl`.
   ([`harness-proxy`](../../../packages/harness-proxy/README.md)).
 - **opencode asks first.** The adapter's configuration lets reading, searching and the todo list run without asking,
   asks before every other tool, such as each edit (kind `edit`) and each command (kind `execute`), and denies web
-  fetch and web search. `OPENCODE_DISABLE_PROJECT_CONFIG` keeps a folder's `opencode.json` from asking less.
+  fetch and web search. `OPENCODE_DISABLE_PROJECT_CONFIG` keeps a folder's `opencode.json` from asking less, and
+  keeps its instructions from the model.
 - **Its own settings.** opencode keeps its settings, logins and sessions in `OSF_DATA/opencode`, never in the user's
-  home. It reads no Claude Code settings or skills, loads no external plugins, and turns off auto update, the
-  models.dev fetch, LSP downloads, sharing and the title call.
+  home. It reads no rules from the user's home (`~/.config/opencode/AGENTS.md`, `~/.claude/CLAUDE.md`) and writes
+  nothing there. It reads no Claude Code settings or skills, no skills in `.agents/skills`, loads no external plugins,
+  and turns off auto update, the models.dev fetch, LSP downloads, sharing and the title call.
 - **The model gateway.** One provider `osf` with `@ai-sdk/openai-compatible` calls the chat completions API at
-  `OPENAI_BASE_URL` with `OPENAI_API_KEY` and the model `OPENAI_MODEL`. Without `OPENAI_MODEL`, `run` is a usage
-  error.
+  `OPENAI_BASE_URL` with `OPENAI_API_KEY` as its bearer token and the model `OPENAI_MODEL`. Without `OPENAI_MODEL`,
+  `run` is a usage error.
 - **The run record** has `osf.harness.name` `opencode`, `osf.harness.version` opencode's version and the tokens of all
   turns in `gen_ai.usage.*`. opencode reports no cost over ACP.
 - **Platforms.** The adapter runs the binary of `opencode-<platform>-<arch>` that `opencode-ai` installs: Linux with

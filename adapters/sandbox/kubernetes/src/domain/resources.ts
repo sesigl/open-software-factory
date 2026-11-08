@@ -25,7 +25,9 @@ export const GRACE_SECONDS = 1;
 /** Where the egress pod mounts its ConfigMap; the start script copies the configuration into PROXY_DIR. */
 const CONFIG_DIR = "/osf-config";
 
-const labels = (id: string, role: "sandbox" | "egress") => ({ [ID_LABEL]: id, [ROLE_LABEL]: role });
+/** The labels of the egress pod and its objects, and of the sandbox's objects; list finds the sandboxes' claims by the role. */
+const egressLabels = (id: string) => ({ [ID_LABEL]: id, [ROLE_LABEL]: "egress" });
+const sandboxLabels = (id: string) => ({ [ID_LABEL]: id, [ROLE_LABEL]: "sandbox" });
 
 /** The pod of a template that is an image: one container "sandbox". */
 export const imagePod = (image: string): PodTemplate => ({ spec: { containers: [{ name: "sandbox", image }] } });
@@ -35,7 +37,7 @@ export function egressConfig(id: string, config: unknown): unknown {
   return {
     apiVersion: "v1",
     kind: "ConfigMap",
-    metadata: { name: egressName(id), labels: labels(id, "egress") },
+    metadata: { name: egressName(id), labels: egressLabels(id) },
     data: { "proxy.yaml": `${JSON.stringify(config, null, 2)}\n`, "start.sh": START_SCRIPT },
   };
 }
@@ -45,24 +47,27 @@ export function egressEnv(id: string, variables: Record<string, string>): unknow
   return {
     apiVersion: "v1",
     kind: "Secret",
-    metadata: { name: egressName(id), labels: labels(id, "egress") },
-    type: "Opaque",
+    metadata: { name: egressName(id), labels: egressLabels(id) },
     stringData: variables,
   };
 }
 
-/** The egress pod: iron-proxy with its configuration, its variables and, when there are any, the secret files. */
+/**
+ * The egress pod: iron-proxy with its configuration, its variables and, when there are any, the secret files.
+ * Kubernetes mounts ConfigMaps and Secrets read-only, and pulls an image with a tag other than latest only when the
+ * node does not have it.
+ */
 export function egressPod(id: string, settings: Settings, files: string | undefined): unknown {
   const name = egressName(id);
   const mounts = [
     { name: "state", mountPath: PROXY_DIR },
-    { name: "config", mountPath: CONFIG_DIR, readOnly: true },
-    ...(files ? [{ name: "secrets", mountPath: `${PROXY_DIR}/secrets`, readOnly: true }] : []),
+    { name: "config", mountPath: CONFIG_DIR },
+    ...(files ? [{ name: "secrets", mountPath: `${PROXY_DIR}/secrets` }] : []),
   ];
   return {
     apiVersion: "v1",
     kind: "Pod",
-    metadata: { name, labels: labels(id, "egress") },
+    metadata: { name, labels: egressLabels(id) },
     spec: {
       ...(settings.hostAliases.length ? { hostAliases: settings.hostAliases } : {}),
       automountServiceAccountToken: false,
@@ -71,7 +76,6 @@ export function egressPod(id: string, settings: Settings, files: string | undefi
         {
           name: "egress",
           image: EGRESS_IMAGE,
-          imagePullPolicy: "IfNotPresent",
           command: [
             "sh",
             "-c",
@@ -96,8 +100,8 @@ export function egressService(id: string): unknown {
   return {
     apiVersion: "v1",
     kind: "Service",
-    metadata: { name: egressName(id), labels: labels(id, "egress") },
-    spec: { selector: labels(id, "egress"), ports: [{ port: EGRESS_PORT, targetPort: EGRESS_PORT }] },
+    metadata: { name: egressName(id), labels: egressLabels(id) },
+    spec: { selector: egressLabels(id), ports: [{ port: EGRESS_PORT, targetPort: EGRESS_PORT }] },
   };
 }
 
@@ -106,7 +110,7 @@ export function caConfig(id: string, certificate: string): unknown {
   return {
     apiVersion: "v1",
     kind: "ConfigMap",
-    metadata: { name: caName(id), labels: labels(id, "egress") },
+    metadata: { name: caName(id), labels: egressLabels(id) },
     data: { [CA_FILE.split("/").pop() as string]: certificate },
   };
 }
@@ -133,7 +137,7 @@ export function sandboxTemplate(id: string, spec: SandboxSpec, base: PodTemplate
     volumeMounts: [
       ...(first.volumeMounts ?? []).filter((mount) => !ours.includes(mount.mountPath)),
       { name: VOLUMES.workspace, mountPath: ours[0] as string },
-      { name: VOLUMES.ca, mountPath: ours[1] as string, readOnly: true },
+      { name: VOLUMES.ca, mountPath: ours[1] as string },
     ],
   };
   return {
@@ -141,13 +145,13 @@ export function sandboxTemplate(id: string, spec: SandboxSpec, base: PodTemplate
     kind: "SandboxTemplate",
     metadata: {
       name: sandboxName(id),
-      labels: labels(id, "sandbox"),
+      labels: sandboxLabels(id),
       annotations: { [BASE_ANNOTATION]: JSON.stringify(base) },
     },
     spec: {
       podTemplate: {
         metadata: {
-          labels: base.metadata?.labels ?? {},
+          ...base.metadata,
           annotations: { ...base.metadata?.annotations, "kubectl.kubernetes.io/default-container": first.name },
         },
         spec: {
@@ -168,7 +172,7 @@ export function sandboxTemplate(id: string, spec: SandboxSpec, base: PodTemplate
         ingress: [],
         egress: [
           {
-            to: [{ podSelector: { matchLabels: labels(id, "egress") } }],
+            to: [{ podSelector: { matchLabels: egressLabels(id) } }],
             ports: [{ protocol: "TCP", port: EGRESS_PORT }],
           },
           {
@@ -205,13 +209,13 @@ export function claim(id: string): unknown[] {
     {
       apiVersion: EXTENSIONS,
       kind: "SandboxWarmPool",
-      metadata: { name, labels: labels(id, "sandbox") },
+      metadata: { name, labels: sandboxLabels(id) },
       spec: { replicas: 0, sandboxTemplateRef: { name } },
     },
     {
       apiVersion: EXTENSIONS,
       kind: "SandboxClaim",
-      metadata: { name, labels: labels(id, "sandbox") },
+      metadata: { name, labels: sandboxLabels(id) },
       spec: { warmPoolRef: { name } },
     },
   ];
