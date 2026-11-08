@@ -57,7 +57,7 @@ with the same work item.
 | `GET /v1/work-items?dedupeKey=<key>` | The work item with this dedupe key, such as an issue's link or `sentry:<issue ID>`. 404 when there is none, 400 without the key. |
 | `GET /v1/inbox` | The latest work items, the one received last first, each as `GET /v1/work-items/{workItemId}` shows it: `{ "workItems": [...] }`. At most 50. `?status=` keeps the work items in that status; another status is 400. |
 | `GET /v1/work-items/{workItemId}` | The work item, its `status` ([Events](#events)), its `runId` once the foreman started its run, `receivedAt`, and `requests`: the requester, origin and time of each submission, oldest first. 404 for a work item the server does not know. |
-| `GET /v1/health` | Whether the server reaches its database and, with `INTAKE_NATS_URL`, whether its durable consumer is attached: 200 with `status: ok`, else 503 with the failing check and what to fix ([ADR 0086](../../docs/decisions/0086-health-routes.md)). Needs no token. |
+| `GET /v1/health` | Whether the server reaches its database and, with `INTAKE_NATS_URL`, NATS: 200 with `status: ok`, else 503 with the failing check and what to fix ([ADR 0086](../../docs/decisions/0086-health-routes.md)). Needs no token. |
 | `POST /slack/events` | Slack's Events API, with `INTAKE_SLACK_TOKEN`: a message that mentions the bot becomes a work item. |
 | `POST /forge/events` | The forge's webhook, with `INTAKE_WEBHOOK_SECRET`: an issue that gets the label `factory` becomes a work item. |
 | `POST /sentry/events` | Sentry's webhook, with `INTAKE_SENTRY_SECRET`: an alert about a fatal error becomes a `bug`. |

@@ -1,5 +1,6 @@
 // Runs `opa eval` as a separate process (ADR 0047): the request is `input`, the answer is `data.gatekeeper`.
-import { spawn } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
+import { promisify } from "node:util";
 import { UsageError } from "@opensoftware/cli";
 
 interface OpaOutput {
@@ -37,10 +38,5 @@ export async function evaluate(opa: string, policy: string, input: unknown): Pro
 
 /** Resolves when the OPA program starts and prints its version. */
 export async function opaVersion(opa: string): Promise<void> {
-  const child = spawn(opa, ["version"], { stdio: "ignore" });
-  const code = await new Promise<number>((resolve, reject) => {
-    child.on("error", (error: NodeJS.ErrnoException) => reject(new Error(`could not start ${opa} (${error.code})`)));
-    child.on("close", (exit) => resolve(exit ?? 1));
-  });
-  if (code !== 0) throw new Error(`${opa} version exited with ${code}`);
+  await promisify(execFile)(opa, ["version"]);
 }

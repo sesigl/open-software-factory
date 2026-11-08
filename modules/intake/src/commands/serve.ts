@@ -95,9 +95,7 @@ export async function serve(env: Env) {
         ? [
             {
               name: "nats",
-              check: async () => {
-                if (!subscription.attached()) throw new Error("the durable consumer of the run events is not attached");
-              },
+              check: () => subscription.ping(),
               fix: "check INTAKE_NATS_URL, and that NATS runs with JetStream",
             },
           ]

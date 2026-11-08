@@ -24,9 +24,9 @@ place that says what is wrong and how to fix it.
 
   | Server | Checks |
   | --- | --- |
-  | intake | `database` (a query), `nats` with `INTAKE_NATS_URL` (the durable consumer is attached, ADR 0085) |
+  | intake | `database` (a query), `nats` with `INTAKE_NATS_URL` (a round trip to NATS) |
   | gatekeeper | `database` (a query), `opa` (the program runs), `nats` with `GATEKEEPER_NATS_URL` (a connection) |
-  | foreman | `temporal` (the frontend answers), `nats` with `FOREMAN_NATS_URL` (the connection is open) |
+  | foreman | `temporal` (the frontend answers), `nats` with `FOREMAN_NATS_URL` (a round trip to NATS) |
 
 - **Each check has a time limit** of 2 seconds, so a hung dependency makes the answer `failing`, not slow.
 - **One path in `contracts/`.** The three servers share the operation `HealthApi.getHealth`, because they answer the

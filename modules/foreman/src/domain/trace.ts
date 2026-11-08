@@ -19,6 +19,10 @@ export const traceparentOf = (runId: string, index: number): string =>
 
 export type Outcome = "succeeded" | "failed" | "cancelled";
 
+/** The outcome of a run's final state or of a stage's stop reason; anything else failed. */
+const OUTCOMES: Record<string, Outcome> = { complete: "succeeded", end_turn: "succeeded", cancelled: "cancelled" };
+export const outcomeOf = (end: string): Outcome => OUTCOMES[end] ?? "failed";
+
 export interface SpanFacts {
   runId: string;
   /** The stage's index; none for the run's own span. */
@@ -30,16 +34,14 @@ export interface SpanFacts {
   outcome: Outcome;
   /** The run's resource: osf.run.id, osf.work_item.id, osf.factory.version and, for a stage, osf.stage. */
   resource: Record<string, string>;
-  attributes: Record<string, string | number | undefined>;
+  attributes: Record<string, string | undefined>;
 }
 
 const nanos = (iso: string) => `${BigInt(Date.parse(iso)) * 1_000_000n}`;
 
-const attributesOf = (values: Record<string, string | number | undefined>) =>
+const attributesOf = (values: Record<string, string | undefined>) =>
   Object.entries(values).flatMap(([key, value]) =>
-    value === undefined
-      ? []
-      : [{ key, value: typeof value === "number" ? { doubleValue: value } : { stringValue: value } }],
+    value === undefined ? [] : [{ key, value: { stringValue: value } }],
   );
 
 /** One OTLP/JSON ExportTraceServiceRequest with the span. */

@@ -38,11 +38,15 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
 
 ## Budget
 
-- System tests: 290 seconds in total on the CI runner (67 scenarios; each starts the Temporal dev server and NATS as
+- System tests: 320 seconds in total on the CI runner (83 scenarios; each starts the Temporal dev server and NATS as
   pinned binaries on the host, ADR 0067, and the built `harness-acp` adapter with the testkit's scripted agent, which
   `turbo.json` builds before the tests; sandboxed stages use the testkit's fake sandbox adapter, ADR 0068; checks use
   `fakes.github` and the built `forge-github` adapter, ADR 0069; the gateway uses the testkit's fake inference adapter,
   ADR 0070).
+- Measured for 320 s: on main, 72 scenarios took 234 s on the CI runner (3.3 s each, of which about 0.7 s is the
+  Temporal dev server and most of the rest the start of `foreman serve`). Wave 5 adds 11 scenarios of about 4 s each
+  (durable events, health, traces, evidence), two of which start the foreman twice. The same 72 scenarios took 261 s
+  in another run on the same runner type, so the budget keeps about 10% for the runner.
 
 ## Quality limits
 

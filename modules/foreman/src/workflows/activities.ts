@@ -27,7 +27,7 @@ import {
   runStarted,
   type Step,
 } from "../domain/run.ts";
-import { type Outcome, otlpOf, type SpanFacts, traceparentOf } from "../domain/trace.ts";
+import { type Outcome, otlpOf, outcomeOf, type SpanFacts, traceparentOf } from "../domain/trace.ts";
 
 export interface ActivityDeps {
   now(): string;
@@ -152,7 +152,7 @@ export function activities(deps: ActivityDeps) {
         name: `run ${view.factory}`,
         start: view.startedAt,
         end: view.endedAt ?? deps.now(),
-        outcome: view.state === "complete" ? "succeeded" : view.state === "cancelled" ? "cancelled" : "failed",
+        outcome: outcomeOf(view.state),
         resource: resourceOf(view),
         attributes: { "osf.factory": view.factory, "osf.pull_request": view.pullRequest },
       });
@@ -245,7 +245,7 @@ export function activities(deps: ActivityDeps) {
         );
         sessionId = turn.sessionId;
         const { stopReason, takenOver } = await untilDone(turn, view.runId, index, steered);
-        outcome = stopReason === "end_turn" ? "succeeded" : stopReason === "cancelled" ? "cancelled" : "failed";
+        outcome = outcomeOf(stopReason);
         await sandbox?.copyOut();
         const pullRequest = lastPullRequestIn(turn.transcript());
         return {

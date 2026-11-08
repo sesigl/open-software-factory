@@ -11,6 +11,10 @@ export interface ReceivedSpan {
   spanId: string;
   parentSpanId?: string;
   name: string;
+  startTimeUnixNano: string;
+  endTimeUnixNano: string;
+  /** OTLP status codes: 1 ok, 2 error. */
+  status: { code: number };
   attributes: Record<string, string | number | undefined>;
   resource: Record<string, string | number | undefined>;
 }

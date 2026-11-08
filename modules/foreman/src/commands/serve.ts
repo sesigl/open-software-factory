@@ -154,9 +154,7 @@ export async function serve(env: Env) {
           ? [
               {
                 name: "nats",
-                check: async () => {
-                  if (!bus.connected()) throw new Error("the connection to NATS is down");
-                },
+                check: () => bus.ping(),
                 fix: "check FOREMAN_NATS_URL and that NATS runs",
               },
             ]

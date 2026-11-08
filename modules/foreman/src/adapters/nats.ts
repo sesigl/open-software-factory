@@ -23,20 +23,13 @@ export interface Bus {
    * warning and comes again, at most MAX_DELIVER times.
    */
   consume(name: string, subjects: string[], handle: (event: unknown, subject: string) => Promise<void>): Promise<void>;
-  /** Whether the connection to NATS is up now. */
-  connected(): boolean;
+  /** One round trip to NATS: it waits while the connection is down, and fails when the connection is closed. */
+  ping(): Promise<void>;
   close(): Promise<void>;
 }
 
 export async function openBus(url: string, warn: (text: string) => void): Promise<Bus> {
   const connection: NatsConnection = await connect({ servers: url });
-  let up = true;
-  // NATS's status events say when the connection drops and comes back.
-  void (async () => {
-    for await (const status of connection.status())
-      if (status.type === "disconnect") up = false;
-      else if (status.type === "reconnect") up = true;
-  })();
   const manager = await jetstreamManager(connection);
   // Adding the stream again with the same configuration changes nothing, so every module can add it.
   await manager.streams.add({ name: STREAM, subjects: ["osf.>"] });
@@ -69,7 +62,7 @@ export async function openBus(url: string, warn: (text: string) => void): Promis
             );
       })();
     },
-    connected: () => up && !connection.isClosed(),
+    ping: () => connection.flush(),
     async close() {
       await connection.drain();
     },

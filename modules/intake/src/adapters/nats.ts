@@ -32,17 +32,16 @@ export async function publishToNats(server: string, events: { subject: string; e
  * Calls `handle` with each message's JSON on the subjects, one message after the other, through the durable consumer
  * "intake". It tries to reach NATS every 2 seconds until it does, then reconnects on its own. A message is
  * acknowledged after `handle` resolved; a message that is not JSON, or that `handle` fails on, is a warning and comes
- * again, at most MAX_DELIVER times. Resolves after the first try, with `attached` (whether the durable consumer is
- * attached now) and `stop`, which stops listening.
+ * again, at most MAX_DELIVER times. Resolves after the first try, with `ping` (one round trip to NATS, which waits
+ * while the connection is down and fails before the first connection) and `stop`, which stops listening.
  */
 export async function subscribeToNats(
   server: string,
   subjects: string[],
   handle: (event: unknown) => Promise<void>,
   warn: (text: string) => void,
-): Promise<{ attached(): boolean; stop(): Promise<void> }> {
+): Promise<{ ping(): Promise<void>; stop(): Promise<void> }> {
   let stopped = false;
-  let attached = false;
   let nats: NatsConnection | undefined;
   let timer: NodeJS.Timeout | undefined;
   const listen = async (connection: NatsConnection) => {
@@ -55,13 +54,6 @@ export async function subscribeToNats(
       max_deliver: MAX_DELIVER,
     });
     const messages = await (await jetstream(connection).consumers.get(STREAM, CONSUMER)).consume();
-    attached = true;
-    // NATS's status events say when the connection drops and comes back; the consumer follows the connection.
-    void (async () => {
-      for await (const status of connection.status())
-        if (status.type === "disconnect") attached = false;
-        else if (status.type === "reconnect") attached = true;
-    })();
     void (async () => {
       for await (const message of messages) {
         try {
@@ -90,7 +82,10 @@ export async function subscribeToNats(
     );
   await attempt();
   return {
-    attached: () => attached && !nats?.isClosed(),
+    async ping() {
+      if (!nats) throw new Error("not connected to NATS");
+      await nats.flush();
+    },
     async stop() {
       stopped = true;
       clearTimeout(timer);

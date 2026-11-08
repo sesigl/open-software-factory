@@ -40,6 +40,14 @@ scenario("SCN-FORE-076", async ({ sut, fakes, given, when, then }) => {
       const [plan, implement, run] = otlp.spans();
       expect(run?.parentSpanId).toBeUndefined();
       expect([plan?.parentSpanId, implement?.parentSpanId]).toEqual([run?.spanId, run?.spanId]);
+      const ids = [plan, implement, run].map((span) => span?.spanId);
+      expect(new Set(ids).size, String(ids)).toBe(3);
+      for (const span of [plan, implement, run]) {
+        expect(span?.spanId).toMatch(/^[0-9a-f]{16}$/);
+        expect(span?.status).toEqual({ code: 1 });
+        expect(BigInt(span?.startTimeUnixNano ?? 0)).toBeGreaterThan(0n);
+        expect(BigInt(span?.endTimeUnixNano ?? 0)).toBeGreaterThanOrEqual(BigInt(span?.startTimeUnixNano ?? 0));
+      }
       expect(plan?.attributes).toMatchObject({ "osf.outcome": "succeeded", "osf.agent": "plan", "osf.stage": "plan" });
       expect(implement?.attributes).toMatchObject({
         "osf.outcome": "succeeded",

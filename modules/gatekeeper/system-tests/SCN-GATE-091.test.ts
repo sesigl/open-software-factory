@@ -13,7 +13,7 @@ scenario("SCN-GATE-091", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then('the answer is 200 with the status "ok" and the checks "database", "opa" and "nats" ok', async () => {
-    expect(answer.status).toBe(200);
+    expect(answer.status, JSON.stringify(answer.body)).toBe(200);
     expect(answer.body).toEqual({
       status: "ok",
       checks: [

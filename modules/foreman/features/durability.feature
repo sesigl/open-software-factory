@@ -36,13 +36,9 @@ Feature: Durability
     And it warned once about "osf.work.received.v1", for the delivery 1 of 5, and about no other subject
 
   @id=SCN-FORE-083 @status=implemented
-  Scenario: A work item that breaks its contract is one warning and comes no second time
+  Scenario: A work item that breaks its contract and a gate decision for no run are one warning each and come no second time
     Given "foreman serve" runs the README's "factory.yaml" with "FOREMAN_NATS_URL" set to a NATS server
     When intake publishes "work.received@v1" with a work item without a title
+    And gatekeeper publishes "gate.decided@v1" for a work item that has no run
     Then after 4 seconds the server warned once about "osf.work.received.v1", that the body is not a work item
-
-  @id=SCN-FORE-084 @status=implemented
-  Scenario: A gate decision for a run that does not exist is one warning and comes no second time
-    Given "foreman serve" runs the README's "factory.yaml" with "FOREMAN_NATS_URL" set to a NATS server
-    When gatekeeper publishes "gate.decided@v1" for a work item that has no run
-    Then after 4 seconds the server warned once about "osf.gate.decided.v1"
+    And it warned once about "osf.gate.decided.v1"
