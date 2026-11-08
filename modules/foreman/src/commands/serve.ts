@@ -75,19 +75,16 @@ function api(work: Runs, token: string, health: () => Promise<Health>) {
  * that does not exist, is a warning and is acknowledged; another failure comes again.
  */
 function listen(bus: Bus, work: Runs, warn: (text: string) => void): Promise<void> {
-  const once = (subject: string, failure: unknown) => {
-    if (!(failure instanceof UsageError || failure instanceof WorkflowNotFoundError)) throw failure;
-    warn(`${subject}: ${failure.message}`);
-  };
   return bus.consume("foreman", [SUBJECTS.workReceived, SUBJECTS.gateDecided], async (event, subject) => {
     const { data } = event as { data?: unknown };
-    if (subject === SUBJECTS.gateDecided) {
-      const { workItemId, gateId, decision } = data as GateDecided["data"];
-      await work
-        .decided(workItemId, { gateId, state: decision })
-        .catch((failure) => once(SUBJECTS.gateDecided, failure));
-    } else {
-      await work.start(data as WorkItem).catch((failure) => once(SUBJECTS.workReceived, failure));
+    try {
+      if (subject === SUBJECTS.gateDecided) {
+        const { workItemId, gateId, decision } = data as GateDecided["data"];
+        await work.decided(workItemId, { gateId, state: decision });
+      } else await work.start(data as WorkItem);
+    } catch (failure) {
+      if (!(failure instanceof UsageError || failure instanceof WorkflowNotFoundError)) throw failure;
+      warn(`${subject}: ${failure.message}`);
     }
   });
 }

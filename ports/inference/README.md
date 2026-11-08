@@ -15,7 +15,7 @@ command line:
 
 | Port operation | Command |
 | --- | --- |
-| start a gateway | `<adapter> start <config>` prints one JSON line `{"id", "url"}`; `url` ends in `/v1` |
+| start a gateway | `<adapter> start <config>` prints one JSON line `{"id", "url"}`; `url` ends in `/v1`. The launcher sets `OSF_INFERENCE_OWNER` to its process ID, and an adapter removes the gateways of an owner on its host that no longer runs (ADR 0090) |
 | a key per run | `<adapter> key <ID> <run ID> [--budget <USD>]` prints the run's key |
 | spend log | `<adapter> spend-log <ID>` prints one JSON line per call the gateway answered |
 | stop | `<adapter> stop <ID>` removes the gateway and all its data |

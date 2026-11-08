@@ -288,3 +288,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-INTAKE-043 | implemented | A run event of a time when the server was down reaches the work item when the server starts again |
 | SCN-INTAKE-044 | implemented | A server that reaches its database and NATS is healthy |
 | SCN-INTAKE-045 | implemented | A server that does not reach NATS is failing and says what to fix |
+| SCN-INTAKE-049 | implemented | A run event that breaks its contract is a warning and comes again after 5 seconds |
