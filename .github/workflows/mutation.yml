@@ -112,6 +112,8 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: make install
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       - uses: actions/download-artifact@v5
         if: needs.units.outputs.shards != '[]'
         with:
