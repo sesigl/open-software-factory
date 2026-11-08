@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.3](https://github.com/sesigl/open-software-factory/compare/inference-litellm-v0.3.2...inference-litellm-v0.3.3) (2026-11-08)
+
+
+### Performance Improvements
+
+* **inference-litellm:** gateways share LiteLLM's compiled Python files ([#234](https://github.com/sesigl/open-software-factory/issues/234)) ([0b48197](https://github.com/sesigl/open-software-factory/commit/0b4819718ae266c444b92fabb5dee5fef080fed8))
+* **mutation:** reuse the reports of unchanged units and the results of unchanged mutants ([#230](https://github.com/sesigl/open-software-factory/issues/230)) ([1d3c45f](https://github.com/sesigl/open-software-factory/commit/1d3c45f925a288e35d3add970a128d1f63b28790))
+
 ## [0.3.2](https://github.com/sesigl/open-software-factory/compare/inference-litellm-v0.3.1...inference-litellm-v0.3.2) (2026-11-08)
 
 
