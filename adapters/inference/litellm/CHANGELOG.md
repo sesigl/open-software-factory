@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/sesigl/open-software-factory/compare/inference-litellm-v0.3.1...inference-litellm-v0.3.2) (2026-11-08)
+
+
+### Performance Improvements
+
+* **ci:** shard the nightly mutation run and replay unchanged shards ([#187](https://github.com/sesigl/open-software-factory/issues/187)) ([b5557bf](https://github.com/sesigl/open-software-factory/commit/b5557bfaf795918749db1e9ff413384bfcf1d537))
+
 ## [0.3.1](https://github.com/sesigl/open-software-factory/compare/inference-litellm-v0.3.0...inference-litellm-v0.3.1) (2026-11-05)
 
 

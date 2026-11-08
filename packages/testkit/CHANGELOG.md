@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.30.1](https://github.com/sesigl/open-software-factory/compare/testkit-v0.30.0...testkit-v0.30.1) (2026-11-08)
+
+
+### Bug Fixes
+
+* **testkit:** local runs reach Docker as the machine does, and sut.helm uses only a local kind cluster ([#190](https://github.com/sesigl/open-software-factory/issues/190)) ([88afac9](https://github.com/sesigl/open-software-factory/commit/88afac9b32cd8281db2f09569f335e174e93f95c))
+* **testkit:** SCN-TK-132 replaces SCN-TK-131 with a neutral context name ([#194](https://github.com/sesigl/open-software-factory/issues/194)) ([0c0d51c](https://github.com/sesigl/open-software-factory/commit/0c0d51c9a1ccaf909cc4da045a24d0582ce4da7f))
+* **testkit:** system tests pass on macOS with Rancher Desktop ([#197](https://github.com/sesigl/open-software-factory/issues/197)) ([b2f432e](https://github.com/sesigl/open-software-factory/commit/b2f432ece3ec6458ce1b9e986d9dba301186ba5a))
+* **testkit:** the removal of a scenario's workspace retries while a process still writes into it ([#201](https://github.com/sesigl/open-software-factory/issues/201)) ([f2fa5e3](https://github.com/sesigl/open-software-factory/commit/f2fa5e3ee5e4248c21b40ee37bfe2194931614ff))
+
+
+### Performance Improvements
+
+* **ci:** shard the nightly mutation run and replay unchanged shards ([#187](https://github.com/sesigl/open-software-factory/issues/187)) ([b5557bf](https://github.com/sesigl/open-software-factory/commit/b5557bfaf795918749db1e9ff413384bfcf1d537))
+
 ## [0.30.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.29.0...testkit-v0.30.0) (2026-11-05)
 
 
