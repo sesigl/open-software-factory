@@ -2,7 +2,7 @@
 // config with osf.proxy attaches to a proxy that already runs instead (attach.ts).
 import { randomBytes } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { hostname, tmpdir } from "node:os";
 import { join } from "node:path";
 import { check, type Outcome } from "@opensoftware/cli";
 import { docker, errors } from "../adapters/docker.ts";
@@ -13,8 +13,10 @@ import {
   databaseName,
   GATEWAY_LABEL,
   gatewayName,
+  HOST_LABEL,
   ID_LABEL,
   LITELLM_IMAGE,
+  OWNER_LABEL,
   POSTGRES_IMAGE,
   PROXY_PORT,
 } from "../domain/names.ts";
@@ -24,8 +26,41 @@ import { removeGateway } from "./stop.ts";
 
 const READY_TIMEOUT_MS = 180_000;
 
+/** Whether the process lives: signal 0 checks without sending; EPERM means it lives under another user. */
+function alive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === "EPERM";
+  }
+}
+
+/**
+ * Removes the gateways whose owner ran on this host and no longer runs, once they are older than
+ * OSF_INFERENCE_ORPHAN_AGE seconds (default 120): a foreman that was killed leaves its gateway behind otherwise (ADR
+ * 0090). The age leaves a gateway alone while another start still creates it. A gateway without an owner, or of
+ * another host, is never touched.
+ */
+async function removeOrphans(): Promise<void> {
+  const age = Number(process.env.OSF_INFERENCE_ORPHAN_AGE || 120) * 1000;
+  const format = `{{.Label "${ID_LABEL}"}} {{.Label "${OWNER_LABEL}"}} {{.Label "${HOST_LABEL}"}} {{.ID}}`;
+  const rows = await docker(["ps", "--all", "--filter", `label=${GATEWAY_LABEL}`, "--format", format]);
+  // An empty row, or a gateway without an owner, has no host and no process ID: it is never touched.
+  for (const row of rows.split("\n")) {
+    const [id, owner, host, container] = row.split(" ");
+    const pid = Number(owner);
+    if (host !== hostname() || !(pid > 0) || alive(pid)) continue;
+    const created = Date.parse(await docker(["container", "inspect", "--format", "{{.Created}}", container as string]));
+    if (Date.now() - created >= age) await removeGateway(id as string);
+  }
+}
+
 export async function start(file: string | undefined): Promise<Outcome> {
   check(file, "name the LiteLLM config, like start litellm-config.yaml");
+  // First, also when this start fails: a gateway of a launcher that ended goes in any case. A Docker that does not
+  // answer has no gateway to remove, and an attached gateway needs no Docker.
+  await removeOrphans().catch(() => undefined);
   const text = readFileSync(file as string, "utf8");
   const proxy = attachedProxy(text);
   if (proxy) return attach(proxy);
@@ -39,7 +74,9 @@ export async function start(file: string | undefined): Promise<Outcome> {
     DATABASE_URL: `postgresql://litellm:${password}@db:5432/litellm`,
     LITELLM_MASTER_KEY: `sk-osf-${randomBytes(24).toString("hex")}`,
   };
-  const labels = ["--label", `${ID_LABEL}=${id}`];
+  const owner = process.env.OSF_INFERENCE_OWNER;
+  const ownerLabels = owner ? ["--label", `${OWNER_LABEL}=${owner}`, "--label", `${HOST_LABEL}=${hostname()}`] : [];
+  const labels = ["--label", `${ID_LABEL}=${id}`, ...ownerLabels];
   try {
     await docker(["network", "create", ...labels, name]);
     await docker(
