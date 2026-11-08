@@ -132,3 +132,11 @@ Feature: A module's servers and events
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-135 @status=implemented
+  Scenario: sut.http.output shows what every server of the scenario printed, the first one first
+    Given a module whose server writes "started" to its error output when it starts and "greeted" for each "GET /greeting"
+    And its system test starts it, stops it, starts it again, reads "/greeting" and expects the error output "started", "started" and "greeted"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

@@ -11,13 +11,12 @@ export const SUBJECTS = {
 } as const;
 
 const STREAM = "OSF";
-const SECOND_NS = 1_000_000_000;
 /** A message whose handling failed comes again after this time, at most MAX_DELIVER times. */
 const RETRY_MS = 5000;
 const MAX_DELIVER = 5;
 
 export interface Bus {
-  publish(subject: string, event: { id?: string }): Promise<void>;
+  publish(subject: string, event: unknown): Promise<void>;
   /**
    * Calls `handle` with the JSON and the subject of each message on the subjects, one after the other, through the durable consumer
    * `name`. A message is acknowledged after `handle` resolved. A message that is not JSON, or that `handle` fails on, is a
@@ -31,11 +30,11 @@ export async function openBus(url: string, warn: (text: string) => void): Promis
   const connection: NatsConnection = await connect({ servers: url });
   const manager = await jetstreamManager(connection);
   // Adding the stream again with the same configuration changes nothing, so every module can add it.
-  await manager.streams.add({ name: STREAM, subjects: ["osf.>"], max_age: 7 * 24 * 3600 * SECOND_NS });
+  await manager.streams.add({ name: STREAM, subjects: ["osf.>"] });
   const stream = jetstream(connection);
   return {
     async publish(subject, event) {
-      await stream.publish(subject, JSON.stringify(event), event.id ? { msgID: event.id } : {});
+      await stream.publish(subject, JSON.stringify(event));
     },
     async consume(name, subjects, handle) {
       await manager.consumers.add(STREAM, {
