@@ -35,7 +35,7 @@ make verify      # everything: lint, types, all system tests, all checks
 | `osf bundle <package>` | the package's `build` script, through `tools/bin/bundle.ts`, which loads only the bundler, so that a publish job that builds one package needs no other built package | Build a CLI package as one bundled file (ADR 0079): `src/cli.ts` becomes `dist/main.js` with a source map to the sources, `dist/cli.js` turns on Node's compile cache and imports it, and `dist/THIRD-PARTY-NOTICES.md` lists the name, version, license and license text of every package in the bundle. It fails on an import that the bundle cannot hold and on a bundled package without a license. |
 | `osf next-id <module>` | `make next-id MODULE=x` | Print the next free scenario ID of a module or prefix. |
 | `osf test-scenario <ID>` | `make test-scenario ID=…` | Run the one system test of a scenario. |
-| `osf install-tools` | `make install` | Download the checksum-pinned lychee, oasdiff, opa, temporal, nats-server, helm, kubectl and kind into `.tools/bin/`. |
+| `osf install-tools` | `make install` | Download the checksum-pinned lychee, oasdiff, opa, temporal, nats-server, helm, kubectl and kind, and the agent-sandbox manifest `agent-sandbox.yaml`, into `.tools/bin/`. When github.com fails to send a release file, it comes through the GitHub API, with `GITHUB_TOKEN` when it is set; CI sets it. |
 
 `make run-record` builds `modules/runlog` and runs `runlog export --latest --per-run` with `OUTPUT=runs` on the
 Claude Code project folder of this checkout, below `CLAUDE_CONFIG_DIR` when it is set and `~/.claude` when not, and
