@@ -3,9 +3,7 @@ import type { Item } from "../domain/doctor.ts";
 import { html } from "./html.ts";
 
 export function healthPage(items: Item[]) {
-  const failed = items.filter(({ ok }) => !ok).length;
   return html`<h1>Health</h1>
-    <p>${failed ? `${failed} of ${items.length} checks failed.` : `All ${items.length} checks are ok.`}</p>
     <table>
       <thead>
         <tr>

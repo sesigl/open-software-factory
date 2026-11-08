@@ -53,7 +53,8 @@ oauth2-proxy.
 Actions ([ADR 0089](../../docs/decisions/0089-console-actions.md)): set `CONSOLE_USER_HEADER` to the header in which
 your sign-in proxy sends the signed-in person, like `X-Forwarded-Email`. Then `/work` has the form "submit work"
 (title, type and description), which the console posts to intake with that person as the requester and the origin
-`console`. A form without the header answers 401, and a form from another site 403. Only set the variable behind a
+`console`; intake checks the fields. A form without the header answers 401, a form from another site 403, and a
+form that intake refuses 502 with intake's answer. Without `CONSOLE_INTAKE_URL` the console takes no form. Only set the variable behind a
 proxy that sets the header and removes it from the browser's requests.
 
 Several factories: list each foreman in `CONSOLE_FOREMAN_URL`, comma-separated, and their tokens in the same order in
@@ -78,12 +79,13 @@ run's history: `<url>/namespaces/<CONSOLE_TEMPORAL_NAMESPACE>/workflows/<runId>`
 1. Each foreman, intake and gatekeeper the console names: its `GET /v1/health`, one line per check the server reports
    (such as `foreman temporal` or `intake nats`), and whether it accepts the console's token. A server that does not
    answer names the variable of its URL; a refused token names the console's variable and the server's own.
-2. `factory`: the definition in `CONSOLE_FACTORY` can be read and declares an agent.
+2. `factory`: the definition in `CONSOLE_FACTORY` can be read.
 
 The links to the Temporal UI and the trace store are for the browser, so the console does not check them; the
 foreman's `temporal` check covers Temporal.
 
-A server of a release before `/v1/health` fails its check with the advice to update it.
+A server of a release before `/v1/health` fails its check with the advice to update it. When every check is ok,
+`console doctor` prints the count last, like `all 7 checks ok`.
 
 ## Configuration
 

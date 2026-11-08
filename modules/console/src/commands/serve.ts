@@ -163,24 +163,20 @@ export async function serve(env: Env) {
   app.addContentTypeParser("application/x-www-form-urlencoded", { parseAs: "string" }, (_request, body, done) =>
     done(null, Object.fromEntries(new URLSearchParams(body as string))),
   );
-  if (userHeader) {
+  if (userHeader && intake) {
     app.post<{ Body: Record<string, string> }>("/work", async (request, reply) => {
       const origin = request.headers.origin;
       if (origin && new URL(origin).host !== request.headers.host)
         return send(reply, 403, { title: "Work" }, problem("Forbidden", "the form came from another site"));
-      const person = request.headers[userHeader];
-      if (typeof person !== "string" || !person)
+      const person = String(request.headers[userHeader] ?? "");
+      if (!person)
         return send(
           reply,
           401,
           { title: "Work" },
           problem("Sign in", `sign in first: the console needs ${userHeader}`),
         );
-      if (!intake)
-        return send(reply, 404, { title: "Work" }, problem("No work items", "set CONSOLE_INTAKE_URL to submit work"));
       const submission = submissionOf(request.body ?? {}, person, new Date(now()).toISOString());
-      if (typeof submission === "string")
-        return send(reply, 400, { title: "Work" }, problem("The work is not complete", submission));
       const answer = await postJson(intake, "/v1/work-items", submission);
       if (!answer.ok) return send(reply, 502, { title: "Work" }, problem("Not submitted", answer.note));
       return reply.code(303).header("location", "/work").send();

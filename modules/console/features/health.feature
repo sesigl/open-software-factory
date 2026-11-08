@@ -34,3 +34,13 @@ Feature: Health
     Then the page answers 503
     And its table has the row "foreman token", "failing", "foreman refuses the token: set CONSOLE_FOREMAN_TOKEN to its FOREMAN_API_TOKEN"
     And the page's navigation links "/health"
+
+  @id=SCN-CONSOLE-048 @status=implemented
+  Scenario: "console doctor" names a missing foreman URL, a server without "/v1/health" and a factory it cannot read
+    Given a console without "CONSOLE_FOREMAN_URL"
+    And an intake whose "/v1/health" answers 404
+    And "CONSOLE_FACTORY" names a file that does not exist
+    When the user runs "console doctor"
+    Then it prints "FAIL  foreman: set CONSOLE_FOREMAN_URL to the base URL of the foreman's API"
+    And it prints "FAIL  intake: <URL>/v1/health answered 404: update intake to a release with /v1/health"
+    And it prints "FAIL  factory: ENOENT: no such file or directory, open '<file>': check CONSOLE_FACTORY"

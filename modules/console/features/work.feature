@@ -36,3 +36,10 @@ Feature: Work
     When a person opens "/work" and a program sends the form "submit work" of "/work"
     Then the page has no form
     And the form gets the status 405
+
+  @id=SCN-CONSOLE-049 @status=implemented
+  Scenario: A form from another site submits nothing
+    Given a console with "CONSOLE_USER_HEADER" set to "X-Forwarded-Email" and an intake that takes submissions
+    When the person "ada@acme.dev" sends the form "submit work" of "/work" with the origin "https://evil.example"
+    Then the answer has the status 403 and says "the form came from another site"
+    And intake received no submission
