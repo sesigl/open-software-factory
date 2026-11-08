@@ -196,8 +196,9 @@ A `run.completed@v1` that lists `pullRequests` also links them in the Slack thre
 [Slack](#slack). A `run.started@v1` that arrives after its run completed changes nothing. The events are kept in the JetStream stream
 `OSF` on `osf.>`, and the server reads the run events through its durable consumer `intake` ([ADR
 0085](../../docs/decisions/0085-durable-events.md)): run events published while the server is down reach it when it
-starts again. The outbox removes an event only after the stream stored it. While NATS is unreachable the server tries
-again every 2 seconds.
+starts again. The outbox removes an event only after the stream stored it. A run event that breaks its contract is a
+warning with its delivery count and comes again after 5 seconds, at most 5 times. While NATS is unreachable the server
+tries again every 2 seconds; a NATS without JetStream stops it at the start.
 
 ## Configuration
 
@@ -285,3 +286,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-INTAKE-041 | implemented | The Factory MCP server lists the fields of "submit_work" and "work_status" with their descriptions |
 | SCN-INTAKE-042 | implemented | A submission that is not a JSON object gets the status 400 |
 | SCN-INTAKE-043 | implemented | A run event of a time when the server was down reaches the work item when the server starts again |
+| SCN-INTAKE-049 | implemented | A run event that breaks its contract is a warning and comes again after 5 seconds |

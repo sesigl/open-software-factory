@@ -24,9 +24,7 @@ export async function publishToNats(server: string, events: { subject: string; e
   const sent = async () => {
     await streamOf(nats);
     const stream = jetstream(nats);
-    // The event's ID as the message ID: the stream keeps an event that the outbox sends twice once.
-    for (const { subject, event } of events)
-      await stream.publish(subject, JSON.stringify(event), { msgID: (event as { id: string }).id });
+    for (const { subject, event } of events) await stream.publish(subject, JSON.stringify(event));
   };
   await sent().finally(() => nats.close());
 }
@@ -75,12 +73,8 @@ export async function subscribeToNats(
       (connection) => {
         if (stopped) return connection.close();
         nats = connection;
-        // A NATS without JetStream is a warning; the server tries again.
-        return listen(connection).catch(async (failure: Error) => {
-          warn(`no durable consumer on NATS: ${failure.message}`);
-          await connection.close();
-          if (!stopped) timer = setTimeout(attempt, RETRY_MS);
-        });
+        // A NATS without JetStream fails here, so the server does not start without durable events.
+        return listen(connection);
       },
       () => {
         if (!stopped) timer = setTimeout(attempt, RETRY_MS);
