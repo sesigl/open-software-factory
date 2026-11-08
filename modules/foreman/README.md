@@ -477,4 +477,3 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-073 | implemented | A work item that intake publishes while the foreman is down starts a run when the foreman starts again |
 | SCN-FORE-074 | implemented | A gate decision that gatekeeper publishes while the foreman is down reaches the run when the foreman starts again |
 | SCN-FORE-082 | implemented | A work item that the foreman cannot start for a moment comes again and starts its run |
-| SCN-FORE-083 | implemented | A message that is not JSON is dropped and the next work item starts its run |

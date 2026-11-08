@@ -34,8 +34,8 @@ export async function publishToNats(server: string, events: { subject: string; e
 /**
  * Calls `handle` with each message's JSON on the subjects, one message after the other, through the durable consumer
  * "intake". It tries to reach NATS every 2 seconds until it does, then reconnects on its own. A message is
- * acknowledged after `handle` resolved; a message that is not JSON is a warning and is dropped, and a message that
- * `handle` fails on is a warning and comes again. Resolves after the first try, with the function that stops listening.
+ * acknowledged after `handle` resolved; a message that is not JSON, or that `handle` fails on, is a warning and comes
+ * again, at most MAX_DELIVER times. Resolves after the first try, with the function that stops listening.
  */
 export async function subscribeToNats(
   server: string,
@@ -62,10 +62,10 @@ export async function subscribeToNats(
           await handle(message.json());
           message.ack();
         } catch (failure) {
-          const dropped = failure instanceof SyntaxError;
-          warn(`${message.subject}: ${(failure as Error).message}${dropped ? "" : `, it comes again`}`);
-          if (dropped) message.term();
-          else message.nak(REDELIVER_MS);
+          warn(
+            `${message.subject}: ${(failure as Error).message} (delivery ${message.info.deliveryCount} of ${MAX_DELIVER})`,
+          );
+          message.nak(REDELIVER_MS);
         }
       }
     })();

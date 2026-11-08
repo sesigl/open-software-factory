@@ -20,8 +20,8 @@ export interface Bus {
   publish(subject: string, event: { id?: string }): Promise<void>;
   /**
    * Calls `handle` with the JSON and the subject of each message on the subjects, one after the other, through the durable consumer
-   * `name`. A message is acknowledged after `handle` resolved. A message that is not JSON is a warning and is dropped; a
-   * message that `handle` fails on is a warning and comes again.
+   * `name`. A message is acknowledged after `handle` resolved. A message that is not JSON, or that `handle` fails on, is a
+   * warning and comes again, at most MAX_DELIVER times.
    */
   consume(name: string, subjects: string[], handle: (event: unknown, subject: string) => Promise<void>): Promise<void>;
   close(): Promise<void>;
@@ -53,10 +53,6 @@ export async function openBus(url: string, warn: (text: string) => void): Promis
             .then(
               () => message.ack(),
               (failure: Error) => {
-                if (failure instanceof SyntaxError) {
-                  warn(`${message.subject}: ${failure.message}`);
-                  return message.term();
-                }
                 warn(
                   `${message.subject}: ${failure.message} (delivery ${message.info.deliveryCount} of ${MAX_DELIVER})`,
                 );

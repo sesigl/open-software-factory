@@ -33,10 +33,3 @@ Feature: Durability
     When intake publishes "work.received@v1" with the README's "work.json"
     And the file "factory.yaml" is back
     Then the server publishes "run.started@v1" for the work item
-
-  @id=SCN-FORE-083 @status=implemented
-  Scenario: A message that is not JSON is dropped and the next work item starts its run
-    Given "foreman serve" runs the README's "factory.yaml" with "FOREMAN_NATS_URL" set to a NATS server
-    When a program publishes the text "not json" on "osf.work.received.v1"
-    And intake publishes "work.received@v1" with the README's "work.json"
-    Then the server publishes "run.started@v1" for the work item, once
