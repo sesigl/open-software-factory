@@ -4,7 +4,7 @@ import type { WorkItemView } from "@opensoftware/contracts";
 import { publishToNats } from "../adapters/nats.ts";
 import type { Store } from "../adapters/store.ts";
 import { pullRequestReplies } from "../domain/sources.ts";
-import { receivedEvent, runFactOf, SUBJECT, viewOf } from "../domain/view.ts";
+import { receivedEvent, runFactOf, type Status, SUBJECT, viewOf } from "../domain/view.ts";
 import { workItemOf } from "../domain/work-item.ts";
 
 export interface InboxConfig {
@@ -40,6 +40,11 @@ export function inbox(store: Store, config: InboxConfig) {
   return {
     relay,
     view,
+    /** The latest work items, the one received last first, in the status if one is given. */
+    async latest(limit: number, status?: Status): Promise<WorkItemView[]> {
+      const views = await Promise.all((await store.latest(limit, status)).map(view));
+      return views.filter((found): found is WorkItemView => found !== undefined);
+    },
     /**
      * Moves the work item of a run event to the run's status, and gives the replies that link a finished run's pull
      * requests in the work item's Slack threads. A message that is not a run event is an error.

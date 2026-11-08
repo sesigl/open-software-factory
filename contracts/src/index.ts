@@ -34,6 +34,7 @@ export type GateView = Schemas["GateView"];
 export type ApiProblem = Schemas["ApiProblem"];
 export type WorkSubmission = Schemas["WorkSubmission"];
 export type WorkItemView = Schemas["WorkItemView"];
+export type WorkItemList = Schemas["WorkItemList"];
 export type WorkRequest = Schemas["WorkRequest"];
 export type RunView = Schemas["RunView"];
 export type StageView = Schemas["StageView"];

@@ -9,7 +9,7 @@ import { forgeAdapter } from "../adapters/forge.ts";
 import { subscribeToNats } from "../adapters/nats.ts";
 import { openStore } from "../adapters/store.ts";
 import { nowOf } from "../domain/time.ts";
-import { RUN_SUBJECTS } from "../domain/view.ts";
+import { inboxQueryOf, RUN_SUBJECTS } from "../domain/view.ts";
 import { workItemId } from "../domain/work-item.ts";
 import { type Env, required } from "./env.ts";
 import { forgeHook, problem, sentryHook, slackHook } from "./hooks.ts";
@@ -40,6 +40,11 @@ async function workItemRoutes(app: FastifyInstance, work: Inbox, apiToken: strin
       const found = await work.view(workItemId(key));
       if (!found) return problem(reply, 404, "No such work item", `the server has no work item with the key ${key}`);
       return found;
+    });
+    api.get<{ Querystring: { status?: string; limit?: string } }>("/v1/inbox", async (request, reply) => {
+      const query = inboxQueryOf(request.query);
+      if (typeof query === "string") return problem(reply, 400, "Bad query", query);
+      return { workItems: await work.latest(query.limit, query.status) };
     });
     api.get<{ Params: { id: string } }>("/v1/work-items/:id", async (request, reply) => {
       const found = await work.view(request.params.id);

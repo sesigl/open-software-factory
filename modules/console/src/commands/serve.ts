@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { UsageError } from "@opensoftware/cli";
-import type { GateView, RunView, WorkItemView, WorkRequest } from "@opensoftware/contracts";
+import type { GateView, RunView, WorkItemList, WorkItemView, WorkRequest } from "@opensoftware/contracts";
 import Fastify, { type FastifyReply } from "fastify";
 import { type Api, getJson } from "../adapters/apis.ts";
 import { readFactory } from "../adapters/factory-file.ts";
@@ -15,6 +15,7 @@ import { type Frame, page, problem } from "../pages/html.ts";
 import { inboxPage } from "../pages/inbox.ts";
 import { runPage } from "../pages/run.ts";
 import { runsPage } from "../pages/runs.ts";
+import { workPage } from "../pages/work.ts";
 import { examine } from "./doctor.ts";
 
 type Env = Record<string, string | undefined>;
@@ -55,13 +56,13 @@ export async function serve(env: Env) {
   const send = (
     reply: FastifyReply,
     status: number,
-    frame: Omit<Frame, "links" | "inbox">,
+    frame: Omit<Frame, "links" | "inbox" | "work">,
     content: Parameters<typeof page>[1],
   ) =>
     reply
       .code(status)
       .type("text/html; charset=utf-8")
-      .send(page({ ...frame, links, inbox: Boolean(inbox) }, content));
+      .send(page({ ...frame, links, inbox: Boolean(inbox), work: Boolean(intake) }, content));
 
   const app = Fastify({ logger: false });
   app.get("/pico.css", (_request, reply) => reply.type("text/css").send(PICO));
@@ -139,6 +140,19 @@ export async function serve(env: Env) {
     const answer = await proposals(forge, inbox, prefix);
     const notes = answer.ok ? [] : [answer.note];
     return send(reply, 200, { title: "Inbox", notes }, inboxPage(inbox, answer.ok ? answer.body : [], now()));
+  });
+
+  app.get("/work", async (_request, reply) => {
+    if (!intake)
+      return send(
+        reply,
+        404,
+        { title: "Work" },
+        problem("No work items", "no work items: set CONSOLE_INTAKE_URL to the base URL of intake's API"),
+      );
+    const answer = await getJson<WorkItemList>(intake, "/v1/inbox");
+    const notes = answer.ok ? [] : [answer.note];
+    return send(reply, 200, { title: "Work", refresh, notes }, workPage(answer.ok ? answer.body.workItems : [], now()));
   });
 
   app.get("/health", async (_request, reply) => {

@@ -49,6 +49,8 @@ export interface Store {
     event?: { subject: string; event: WorkReceived },
   ): Promise<{ created: boolean; added: boolean }>;
   get(id: string): Promise<Stored | undefined>;
+  /** The IDs of the latest work items, the one received last first, in the status if one is given. */
+  latest(limit: number, status?: Status): Promise<string[]>;
   /** Moves the work item to the run's status; "running" only moves a work item that is still "received". */
   followRun(fact: RunFact): Promise<void>;
   /** The events not yet published, oldest first. */
@@ -109,6 +111,13 @@ export async function openStore(url: string | undefined, folder: string): Promis
         receivedAt: Number(row.received_at),
         requests: requests.rows.map((request) => ({ ...request, at: Number(request.at) })),
       };
+    },
+    async latest(limit, status) {
+      const { rows } = await db.query<{ id: string }>(
+        `SELECT id FROM intake.work_items ${status ? "WHERE status = $2" : ""} ORDER BY received_at DESC, id LIMIT $1`,
+        status ? [limit, status] : [limit],
+      );
+      return rows.map(({ id }) => id);
     },
     async followRun({ workItemId, runId, status }) {
       await db.query(

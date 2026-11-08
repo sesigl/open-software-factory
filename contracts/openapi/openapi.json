@@ -149,6 +149,65 @@
         ]
       }
     },
+    "/v1/inbox": {
+      "get": {
+        "operationId": "IntakeApi_listWorkItems",
+        "description": "The latest work items, the one received last first; with `status`, only the work items in that status. At most `limit` (default 50, at most 200).",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/WorkItemStatus"
+            },
+            "explode": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkItemList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The server could not understand the request due to invalid syntax.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Access is unauthorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/runs": {
       "post": {
         "operationId": "ForemanApi_startRun",
@@ -3043,6 +3102,21 @@
           "dedupeKey"
         ],
         "description": "One unit of requested work: the `data` of a `work.received@v1` CloudEvent."
+      },
+      "WorkItemList": {
+        "type": "object",
+        "properties": {
+          "workItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkItemView"
+            }
+          }
+        },
+        "required": [
+          "workItems"
+        ],
+        "description": "intake: the latest work items, as `GET /v1/inbox` answers them, the one received last first."
       },
       "WorkItemStatus": {
         "type": "string",

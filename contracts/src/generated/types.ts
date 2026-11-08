@@ -51,6 +51,23 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/v1/inbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The latest work items, the one received last first; with `status`, only the work items in that status. At most `limit` (default 50, at most 200). */
+        get: operations["IntakeApi_listWorkItems"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/runs": {
         parameters: {
             query?: never;
@@ -1072,6 +1089,10 @@ export type components = {
             /** @description Related material: an error report, a change, a document. */
             links?: components["schemas"]["Link"][];
         };
+        /** @description intake: the latest work items, as `GET /v1/inbox` answers them, the one received last first. */
+        WorkItemList: {
+            workItems: components["schemas"]["WorkItemView"][];
+        };
         /**
          * @description Where a work item stands: received, then as its run in the foreman goes (ADR 0071).
          * @enum {string}
@@ -1258,6 +1279,47 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Health"];
+                };
+            };
+        };
+    };
+    IntakeApi_listWorkItems: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["WorkItemStatus"];
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkItemList"];
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Access is unauthorized. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
                 };
             };
         };

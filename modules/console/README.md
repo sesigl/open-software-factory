@@ -39,12 +39,13 @@ Open <http://localhost:8080>. The page lists the foreman's runs, the running one
 | `/` | The runs of every foreman: title, factory, state, source, requester, pull request and age. Runs that have not ended come first, the one that started last first, then the ended runs, the one that ended last first. A foreman that does not answer is named above the list. |
 | `/?state=<state>` | Only the runs in the state `running`, `blocked`, `complete`, `failed` or `cancelled`, as the foremen filter them. Another state answers 400. |
 | `/runs/<runId>` | One run: its state, factory and factory version, age, pull request, trace and Temporal history; its origin, or with `CONSOLE_INTAKE_URL` every request of its work item; and its stages as its evidence, each with its agent, state, transcript, gate, checks and the reason it failed. 404 when no foreman knows the run. |
+| `/work` | With `CONSOLE_INTAKE_URL`: intake's latest work items, the one received last first, each with its origin, type, status, source, requester, run and age, also work that waits without a run. 404 without `CONSOLE_INTAKE_URL`. |
 | `/factory` | The factory definition in `CONSOLE_FACTORY`: its name, description, providers and agents with their harness and model. |
 | `/factory/agents/<name>` | One agent's configuration, and the link to the file on the branch where it changes. 404 for an agent the factory does not declare. |
 | `/health` | The checks of `console doctor` as a table: each check, its state and what to do. 200 when every check is ok, else 503. |
 | `/inbox` | The self-improvement inbox: the open pull requests of `CONSOLE_INBOX_REPOSITORY` whose branch starts with `CONSOLE_INBOX_PREFIX` (default `observer/`), newest first, each with its link, branch, author, state ("approved", "changes requested" or "needs review") and age. A forge adapter that fails is named above the list. 404 without `CONSOLE_INBOX_REPOSITORY`. |
 
-Every page links the runs, the factory, the health page and the dashboards in `CONSOLE_LINKS`. The runs pages reload themselves every
+Every page links the runs, the work items (with `CONSOLE_INTAKE_URL`), the factory, the health page and the dashboards in `CONSOLE_LINKS`. The runs pages reload themselves every
 `CONSOLE_REFRESH` seconds. The console is read-only: it has no forms, and any method but `GET` and `HEAD` answers 405.
 It shows what the foreman and intake show, so run it behind your sign-in proxy, such as oauth2-proxy.
 
@@ -167,3 +168,5 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-040 | implemented | The page "/health" shows the checks and answers 503 when one fails |
 | SCN-CONSOLE-041 | implemented | The run page links the run's trace by its trace ID |
 | SCN-CONSOLE-042 | implemented | A trace link with "{traceId}" is left out for a run without a trace ID |
+| SCN-CONSOLE-043 | implemented | The work page lists each work item with its status and its run |
+| SCN-CONSOLE-044 | implemented | Without intake the work page answers 404 and names the variable |

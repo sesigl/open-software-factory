@@ -813,6 +813,10 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
 
 - **Done when:** the console lists work items (an intake list route), submits work, approves or rejects a gate, and
   steers, cancels, takes over and hands back a run, each through the existing APIs with the person's identity.
+- **Slices:**
+  - [x] intake's `GET /v1/inbox` and the console page `/work` (`SCN-INTAKE-046` to `-048`, `SCN-CONSOLE-043`, `-044`).
+  - [ ] Actions: forms that submit work, steer, cancel, take over and hand back a run, and decide a gate, with the
+    person's identity from the sign-in proxy (an ADR that ends the console's read-only rule).
 
 ### [ ] T-29 · one trace store (P1)
 
