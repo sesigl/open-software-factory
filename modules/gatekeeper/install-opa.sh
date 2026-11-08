@@ -2,7 +2,9 @@
 # Installs OPA 1.21.0 through the GitHub API when setup-opa could not download it from github.com, and checks the file
 # against its pinned SHA-256. Does nothing when OPA 1.21.0 is on the PATH. Used by action.yml only.
 set -euo pipefail
-if command -v opa >/dev/null && opa version 2>/dev/null | grep -q '^Version: 1\.21\.0$'; then exit 0; fi
+# Not "opa version | grep -q": grep can end first, and with pipefail the pipe then fails although OPA is there.
+version=$(opa version 2>/dev/null || true)
+case "$version" in *"Version: 1.21.0"*) exit 0 ;; esac
 case "$(uname -s)-$(uname -m)" in
   Linux-x86_64) name=opa_linux_amd64_static sha=5eef70644868bb04d0556bcc795ee42f2ab379e73f51d1bfa30f83e1305bc9b9 ;;
   Linux-aarch64) name=opa_linux_arm64_static sha=0ec34027c15b4d969c21d01ed570fe14fbebd508a08157043ab09f9a0dccbee6 ;;
