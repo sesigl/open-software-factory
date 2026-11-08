@@ -105,7 +105,11 @@ export async function serve(env: Env) {
     const temporal = env.CONSOLE_TEMPORAL_URL?.replace(/\/$/, "");
     const namespace = env.CONSOLE_TEMPORAL_NAMESPACE || "default";
     const runLinks = {
-      trace: env.CONSOLE_TRACE_URL && fill(env.CONSOLE_TRACE_URL, { runId }),
+      // {traceId} needs a foreman that names the run's trace (ADR 0087); without it the page has no trace link.
+      trace:
+        env.CONSOLE_TRACE_URL && (run.traceId || !env.CONSOLE_TRACE_URL.includes("{traceId}"))
+          ? fill(env.CONSOLE_TRACE_URL, { runId, ...(run.traceId ? { traceId: run.traceId } : {}) })
+          : undefined,
       history: temporal && `${temporal}/namespaces/${namespace}/workflows/${runId}`,
       transcript: (sessionId: string) => env.CONSOLE_SESSION_URL && fill(env.CONSOLE_SESSION_URL, { sessionId }),
     };

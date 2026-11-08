@@ -2504,6 +2504,10 @@
             "type": "string",
             "format": "date-time"
           },
+          "traceId": {
+            "$ref": "#/components/schemas/TraceId",
+            "description": "The OpenTelemetry trace of the run: the first 32 hex digits of the SHA-256 of `runId` (ADR 0087)."
+          },
           "stages": {
             "type": "array",
             "items": {

@@ -37,7 +37,7 @@
     },
     "CONSOLE_TRACE_URL": {
       "type": "string",
-      "description": "serve: the link to a run's trace in the trace store, with {runId}, like https://langfuse.acme.dev/traces?run={runId}."
+      "description": "serve: the link to a run's trace in the trace store, with {runId} or {traceId}, like https://langfuse.acme.dev/traces?run={runId} or Phoenix's http://127.0.0.1:6006/projects/UHJvamVjdDox/traces/{traceId}. A run without a traceId gets no link from a template with {traceId}."
     },
     "CONSOLE_SESSION_URL": {
       "type": "string",

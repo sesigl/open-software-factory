@@ -58,7 +58,8 @@ The inbox: observer opens each proposal as a pull request from a branch `observe
 Forgejo, such as Codeberg, set `CONSOLE_FORGE_ADAPTER=npx -y @opensoftware/forge-forgejo` and its URL.
 
 Links: `CONSOLE_TRACE_URL` and `CONSOLE_SESSION_URL` are URL templates of the trace store, such as Langfuse or
-Phoenix, with `{runId}` and `{sessionId}`. The foreman sets the run's ID as `osf.run.id` on every run's traces
+Phoenix, with `{runId}` or `{traceId}`, and `{sessionId}`. `{traceId}` is the run's `traceId`, which a foreman with
+traces names ([ADR 0087](../../docs/decisions/0087-run-traces.md)); Phoenix finds a trace by it. The foreman sets the run's ID as `osf.run.id` on every run's traces
 ([runlog](../runlog/README.md)), and a stage's harness session is its transcript. `CONSOLE_TEMPORAL_URL` links the
 run's history: `<url>/namespaces/<CONSOLE_TEMPORAL_NAMESPACE>/workflows/<runId>`.
 
@@ -90,7 +91,7 @@ A server of a release before `/v1/health` fails its check with the advice to upd
 | `CONSOLE_INTAKE_TOKEN` | string |  | serve: intake's INTAKE_API_TOKEN. |
 | `CONSOLE_GATEKEEPER_URL` | string |  | serve: the base URL of gatekeeper's API. Set, a run's page shows each gate's state and who it waits for. |
 | `CONSOLE_GATEKEEPER_TOKEN` | string |  | serve: gatekeeper's GATEKEEPER_API_TOKEN. |
-| `CONSOLE_TRACE_URL` | string |  | serve: the link to a run's trace in the trace store, with {runId}, like https://langfuse.acme.dev/traces?run={runId}. |
+| `CONSOLE_TRACE_URL` | string |  | serve: the link to a run's trace in the trace store, with {runId} or {traceId}, like https://langfuse.acme.dev/traces?run={runId} or Phoenix's http://127.0.0.1:6006/projects/UHJvamVjdDox/traces/{traceId}. A run without a traceId gets no link from a template with {traceId}. |
 | `CONSOLE_SESSION_URL` | string |  | serve: the link to a stage's transcript, with {sessionId}, like https://langfuse.acme.dev/sessions/{sessionId}. |
 | `CONSOLE_TEMPORAL_URL` | string |  | serve: the base URL of the Temporal UI. Set, a run's page links its history. |
 | `CONSOLE_TEMPORAL_NAMESPACE` | string | `"default"` | serve: the Temporal namespace of the runs, the foreman's FOREMAN_TEMPORAL_NAMESPACE. |
@@ -164,3 +165,5 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-038 | implemented | "console doctor" names each failing check and what to do |
 | SCN-CONSOLE-039 | implemented | A foreman that does not answer is named with the variable of its URL |
 | SCN-CONSOLE-040 | implemented | The page "/health" shows the checks and answers 503 when one fails |
+| SCN-CONSOLE-041 | implemented | The run page links the run's trace by its trace ID |
+| SCN-CONSOLE-042 | implemented | A trace link with "{traceId}" is left out for a run without a trace ID |

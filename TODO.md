@@ -814,6 +814,13 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
 
 - **Done when:** the profile runs one trace store, and runlog, scorekit and the console use the same one. An adopted
   service without a consumer leaves the profile.
+- **Decision:** Phoenix. It is one container on the profile's PostgreSQL and takes OTLP; Langfuse needs ClickHouse,
+  Redis and S3 more. scorekit and observer keep Langfuse as an option outside the profile.
+- **Slices:**
+  - [x] The run's view names its `traceId`, and `CONSOLE_TRACE_URL` takes `{traceId}` (`SCN-FORE-081`,
+    `SCN-CONSOLE-041`, `-042`).
+  - [ ] The profile: the foreman sends to Phoenix, the console links Phoenix's trace by `{traceId}`, and SeaweedFS
+    leaves the profile (no consumer, ADR 0088), once the images have these changes.
 
 ### [ ] T-30 · simple setup (P1)
 

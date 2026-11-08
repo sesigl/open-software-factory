@@ -17,3 +17,10 @@ Feature: Traces
     When a program posts the README's "work.json" to "/v1/runs" with the API token
     And the run completes
     Then the harness's session of each stage got a "TRACEPARENT" with the trace ID and the span ID of that stage's span
+
+  @id=SCN-FORE-081 @status=implemented
+  Scenario: A run's view names its trace ID
+    Given "foreman serve" runs the README's "factory.yaml" with "OTEL_EXPORTER_OTLP_ENDPOINT" set to an OTLP receiver
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    And the run completes
+    Then "/v1/runs/<id>" shows the "traceId" of the spans the receiver got

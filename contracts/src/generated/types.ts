@@ -871,6 +871,8 @@ export type components = {
             startedAt: string;
             /** Format: date-time */
             endedAt?: string;
+            /** @description The OpenTelemetry trace of the run: the first 32 hex digits of the SHA-256 of `runId` (ADR 0087). */
+            traceId?: components["schemas"]["TraceId"];
             /** @description The stages of the workflow, in order. */
             stages: components["schemas"]["StageView"][];
         };

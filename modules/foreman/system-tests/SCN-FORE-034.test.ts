@@ -27,8 +27,10 @@ scenario("SCN-FORE-034", async ({ sut, fakes, given, when, then }) => {
           "osf.stage=plan",
           `osf.factory.version=${server.commit}`,
         ].join(","),
-        // The agent's effort level (SCN-FORE-070); without a gateway the stage gets no other variable.
+        // The agent's effort level (SCN-FORE-070) and the stage's place in the run's trace (SCN-FORE-077); without a
+        // gateway the stage gets no other variable.
         OSF_EFFORT: "medium",
+        TRACEPARENT: expect.stringMatching(/^00-[0-9a-f]{32}-[0-9a-f]{16}-01$/),
       });
     },
   );

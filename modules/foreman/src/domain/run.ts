@@ -4,6 +4,7 @@
 import { createHash } from "node:crypto";
 import type { CheckView, RunCompleted, RunStarted, RunView, StageView, WorkItem } from "@opensoftware/contracts";
 import type { Definition } from "./definition.ts";
+import { traceIdOf } from "./trace.ts";
 
 export type { CheckView, RunView, StageView };
 export type RunState = RunView["state"];
@@ -74,6 +75,7 @@ export function firstView(workItem: WorkItem, definition: Definition, version: s
     factoryVersion: version,
     state: "running",
     startedAt,
+    traceId: traceIdOf(runIdOf(workItem.id)),
     stages: definition.stages.map(({ stage, agent }) => ({ stage, agent, state: "pending" })),
   };
 }

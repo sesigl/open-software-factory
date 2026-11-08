@@ -375,7 +375,8 @@ When a stage ends, the foreman sends the span `stage <stage>`, and when the run 
 `<url>/v1/traces`. The stage spans are children of the run's span. Every span has the resource `osf.run.id`,
 `osf.work_item.id` and `osf.factory.version`; a stage span also has `osf.stage`, `osf.agent`, `osf.harness.name`,
 `gen_ai.request.model`, `osf.effort`, `gen_ai.conversation.id` (the harness session) and `osf.outcome`. The trace ID
-is the first 32 hex digits of the SHA-256 of the run's ID, so a restarted foreman sends to the same trace.
+is the first 32 hex digits of the SHA-256 of the run's ID, so a restarted foreman sends to the same trace. The run's
+view names it as `traceId`, so the console links the trace.
 
 Each stage's harness gets `TRACEPARENT` with the trace and the stage's span, also in a sandbox, so the harness's own
 spans join the run's trace. A receiver that refuses a span is a warning; the stage goes on.
@@ -503,3 +504,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-078 | implemented | A stage that must produce evidence also waits for the check "proof" |
 | SCN-FORE-079 | implemented | A stage that must produce evidence fails when the check "proof" failed |
 | SCN-FORE-080 | implemented | A factory with a stage that must produce evidence but without a forge adapter stops the server at the start |
+| SCN-FORE-081 | implemented | A run's view names its trace ID |
