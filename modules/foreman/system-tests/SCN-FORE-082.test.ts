@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { readmeFiles, readmeWork, serving, WAIT_MS, workReceived } from "./foreman.ts";
+import { readmeFiles, readmeWork, serving, workReceived } from "./foreman.ts";
 
 scenario("SCN-FORE-082", async ({ sut, fakes, given, when, then }) => {
   let server: Awaited<ReturnType<typeof serving>>;
@@ -26,8 +26,21 @@ scenario("SCN-FORE-082", async ({ sut, fakes, given, when, then }) => {
     await sut.files.put("$INPUT/factory.yaml", readmeFiles(fakes)["factory.yaml"] as string);
   });
 
-  await then('the server publishes "run.started@v1" for the work item', async () => {
-    const [started] = await events.received("run.started@v1", { timeoutMs: WAIT_MS });
+  // JetStream sends an unacknowledged message again after 30 seconds; only the server's nak brings it back in 5.
+  await then('within 20 seconds the server publishes "run.started@v1" for the work item', async () => {
+    const [started] = await events.received("run.started@v1", { timeoutMs: 20_000 });
     expect(started?.data).toMatchObject({ workItemId: readmeWork(fakes).id });
   });
+
+  await then(
+    'it warned once about "osf.work.received.v1", for the delivery 1 of 5, and about no other subject',
+    async () => {
+      const warnings = sut.http
+        .output()
+        .stderr.split("\n")
+        .filter((line) => line.includes("osf."));
+      expect(warnings).toHaveLength(1);
+      expect(warnings[0]).toMatch(/^foreman: osf\.work\.received\.v1: .+ \(delivery 1 of 5\)$/);
+    },
+  );
 });

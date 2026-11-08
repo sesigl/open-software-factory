@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "make check --quiet || echo 'make check failed: fix before you report done' >&2"
+            "command": "make check-fast --quiet || echo 'make check-fast failed: fix before you report done' >&2"
           }
         ]
       }

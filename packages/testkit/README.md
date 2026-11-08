@@ -83,7 +83,8 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
   ([ADR 0074](../../docs/decisions/0074-compose-profile.md)). `run(args, { env })` runs `docker compose <args>` as the
   scenario's own project with `$INPUT/.env` as its `.env`; `services()` lists each service's state, health and exit
   code; `url(service, port)` is where the project publishes that container port. The project and its volumes are
-  removed when the scenario ends.
+  removed when the scenario ends. A project of a run that ended without that, because it was killed, is removed by
+  the next process that starts a project ([ADR 0090](../../docs/decisions/0090-no-leaked-containers.md)).
 - `sut.helm("<chart>")`: a Helm chart of the unit, like `helm/osf` of `deploy/`
   ([ADR 0075](../../docs/decisions/0075-helm-chart-and-images.md)), on the cluster of `KUBECONFIG`. `chart` is the
   chart's absolute path; `run(args)` runs `helm <args>` and `kubectl(args)` runs `kubectl <args>`, both in a namespace
@@ -442,3 +443,5 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-130 | implemented | The module's processes reach Docker through the Docker settings of the machine |
 | SCN-TK-131 | deprecated | sut.helm refuses a cluster that is not a local kind cluster |
 | SCN-TK-132 | implemented | sut.helm refuses a cluster that is not a local kind cluster |
+| SCN-TK-134 | implemented | sut.compose takes down the project of a run that ended without taking it down |
+| SCN-TK-135 | implemented | sut.http.output shows what every server of the scenario printed, the first one first |

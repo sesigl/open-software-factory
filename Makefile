@@ -19,7 +19,7 @@ OSF_BASE ?= $(shell git merge-base HEAD origin/main 2>/dev/null)
 export OSF_BASE
 AFFECTED := $(if $(OSF_BASE),--filter=...[$(OSF_BASE)])
 
-.PHONY: help install check verify verify-static verify-tests verify-checks test-scenario smoke smoke-paid mutation next-id new-module docs docs-affected \
+.PHONY: help install check check-fast verify verify-static verify-tests verify-checks test-scenario smoke smoke-paid mutation next-id new-module docs docs-affected \
         agents-sync run-record
 
 help: ## list the targets
@@ -33,6 +33,13 @@ install: ## install dependencies and the pinned lychee, oasdiff, opa, temporal, 
 
 check: ## affected lint, typecheck and system tests, then the fast repository checks
 	@$(TURBO) lint typecheck test:system $(AFFECTED)
+	@$(MAKE) check-repository
+
+check-fast: ## affected lint and typecheck, then the fast repository checks; no system test, no container (seconds)
+	@$(TURBO) lint typecheck $(AFFECTED)
+	@$(MAKE) check-repository
+
+check-repository:
 	@$(TURBO) build --filter=@opensoftware/spec-trace...
 	@status=0; $(SPEC_TRACE) check --only SPEC,TRACE,STEPS || status=1; $(OSF) check || status=1; exit $$status
 
