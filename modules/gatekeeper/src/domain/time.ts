@@ -4,7 +4,7 @@ import { UsageError } from "@opensoftware/cli";
 
 export function fromIso(text: string): number {
   const match = /^(.*T\d\d:\d\d:\d\d)(?:\.(\d{1,6}))?(Z|[+-]\d\d:\d\d)$/.exec(text);
-  const millis = match ? Date.parse(`${match[1]}${match[3]}`) : Number.NaN;
+  const millis = match ? Date.parse(match[1] + match[3]) : Number.NaN;
   if (!match || Number.isNaN(millis)) throw new UsageError(`${text} is not a time like 2026-01-01T05:00:00Z`);
   return millis * 1000 + Number((match[2] ?? "").padEnd(6, "0"));
 }
