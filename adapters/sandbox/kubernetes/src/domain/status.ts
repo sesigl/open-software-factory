@@ -13,17 +13,11 @@ export interface PodStatus {
   };
 }
 
-/** Waiting reasons after which a container does not start without a change to the pod. */
-const STUCK = [
-  "ErrImagePull",
-  "ImagePullBackOff",
-  "InvalidImageName",
-  "CrashLoopBackOff",
-  "CreateContainerError",
-  "CreateContainerConfigError",
-  "RunContainerError",
-  "StartError",
-];
+/**
+ * The waiting reasons of a container that is still starting. After every other reason, such as ErrImagePull,
+ * CrashLoopBackOff or CreateContainerError, the container does not start without a change to the pod.
+ */
+const STARTING = ["ContainerCreating", "PodInitializing"];
 
 /** Why the pod will not run, or undefined while it may still start. */
 export function podProblem(pod: PodStatus): string | undefined {
@@ -32,7 +26,7 @@ export function podProblem(pod: PodStatus): string | undefined {
   // A container that ends restarts and waits as CrashLoopBackOff, so the waiting reason says it all.
   for (const { name, state } of statuses) {
     const waiting = state?.waiting;
-    if (waiting?.reason && STUCK.includes(waiting.reason)) {
+    if (waiting?.reason && !STARTING.includes(waiting.reason)) {
       return `the container "${name}" is ${waiting.reason}${waiting.message ? `: ${waiting.message}` : ""}`;
     }
   }
