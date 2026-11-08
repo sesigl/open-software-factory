@@ -57,8 +57,9 @@ async function removeOrphans(): Promise<void> {
 
 export async function start(file: string | undefined): Promise<Outcome> {
   check(file, "name the LiteLLM config, like start litellm-config.yaml");
-  // First, also when this start fails: a gateway of a launcher that ended goes in any case.
-  await removeOrphans();
+  // First, also when this start fails: a gateway of a launcher that ended goes in any case. A Docker that does not
+  // answer has no gateway to remove, and an attached gateway needs no Docker.
+  await removeOrphans().catch(() => undefined);
   const text = readFileSync(file as string, "utf8");
   const proxy = attachedProxy(text);
   if (proxy) return attach(proxy);
