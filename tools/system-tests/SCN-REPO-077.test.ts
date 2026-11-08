@@ -11,7 +11,7 @@ scenario("SCN-REPO-077", async ({ sut, given, when, then }) => {
   );
 
   await given('".github/workflows/verify.yml" sets "OSF_TEST_CACHE: 1" for every event', async () => {
-    await putCached(sut, { ".github/workflows/verify.yml": verifyWorkflow("!@opensoftware/demo", "1") });
+    await putCached(sut, { ".github/workflows/verify.yml": verifyWorkflow({ cache: "1" }) });
   });
 
   let run: Awaited<ReturnType<typeof runAffected>>;

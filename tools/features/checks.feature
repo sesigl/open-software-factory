@@ -457,7 +457,7 @@ Feature: Repository checks
     Then the command exits with code 1
     And the output contains "AFFECTED modules/demo/system-tests/SCN-DEMO-001.test.ts:3 reads "../../other/features/a.feature" outside its package: declare the package or list the file in globalDependencies of turbo.json"
 
-  @id=SCN-REPO-072 @status=implemented
+  @id=SCN-REPO-072 @status=deprecated
   Scenario: AFFECTED rejects a package with system tests that no tests job of CI runs
     Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
     And the tests job "rest" of ".github/workflows/verify.yml" has the filter "!@opensoftware/demo !@opensoftware/other"
@@ -465,13 +465,86 @@ Feature: Repository checks
     Then the command exits with code 1
     And the output contains "AFFECTED modules/other/package.json:1 no tests job of .github/workflows/verify.yml runs the system tests of @opensoftware/other"
 
-  @id=SCN-REPO-073 @status=implemented
+  @id=SCN-REPO-073 @status=deprecated
   Scenario: AFFECTED rejects a package with system tests that two tests jobs of CI run
     Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
     And the tests job "rest" of ".github/workflows/verify.yml" has the filter "!@opensoftware/other"
     When the developer runs "osf check AFFECTED"
     Then the command exits with code 1
     And the output contains "AFFECTED modules/demo/package.json:1 the tests jobs demo and rest of .github/workflows/verify.yml both run the system tests of @opensoftware/demo"
+
+  @id=SCN-REPO-097 @status=implemented @replaces=SCN-REPO-072
+  Scenario: AFFECTED rejects a package with system tests that no suite of CI runs
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And the suite "rest" of ".github/test-suites.yml" has the filter "!@opensoftware/demo !@opensoftware/other"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED modules/other/package.json:1 no suite of .github/test-suites.yml runs the system tests of @opensoftware/other"
+
+  @id=SCN-REPO-098 @status=implemented @replaces=SCN-REPO-073
+  Scenario: AFFECTED rejects a package with system tests that two suites of CI run
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And the suite "rest" of ".github/test-suites.yml" has the filter "!@opensoftware/other"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED modules/demo/package.json:1 the suites demo and rest of .github/test-suites.yml both run the system tests of @opensoftware/demo"
+
+  @id=SCN-REPO-099 @status=implemented
+  Scenario: AFFECTED rejects a suite whose filter names no package with system tests
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And the suite "rest" of ".github/test-suites.yml" has the filter "!@opensoftware/demo !@opensoftware/gone"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED .github/test-suites.yml:3 the suite rest names @opensoftware/gone, which is no package with system tests"
+
+  @id=SCN-REPO-100 @status=implemented
+  Scenario: AFFECTED rejects a tests job with a list of suites of its own
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And the tests job of ".github/workflows/verify.yml" runs the suites "demo" and "rest" from its own matrix
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED .github/workflows/verify.yml:13 the tests job must run the suites of the job plan: include: ${{ fromJSON(needs.plan.outputs.suites) }}"
+
+  @id=SCN-REPO-101 @status=implemented
+  Scenario: AFFECTED rejects a job plan that does not read the suites
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And the job plan of ".github/workflows/verify.yml" reads no file
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED .github/workflows/verify.yml:4 the job plan must read the suites of .github/test-suites.yml"
+
+  @id=SCN-REPO-102 @status=implemented
+  Scenario: AFFECTED rejects a tests job that keeps the turbo cache in a cache of its own
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And the tests job of ".github/workflows/verify.yml" restores ".turbo/cache" from the cache "turbo-demo-"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED .github/workflows/verify.yml:13 the job tests must keep .turbo/cache in the cache turbo-tests-"
+
+  @id=SCN-REPO-103 @status=implemented
+  Scenario: DEPS accepts a package that has the exact peer version of its dependency
+    Given a lockfile in which "modules/demo" depends on "pair" 1.0.0, which needs its peer "base" exactly at 2.0.0
+    And "modules/demo" depends on "base" 2.0.0
+    When the developer runs "osf check DEPS"
+    Then the command exits with code 0
+    And the output contains "DEPS ok"
+
+  @id=SCN-REPO-104 @status=implemented
+  Scenario: DEPS rejects a package whose dependency needs another version of a peer
+    Given a lockfile in which "modules/demo" depends on "pair" 1.0.0, which needs its peer "base" exactly at 2.0.0
+    And "modules/demo" depends on "base" 2.0.1
+    When the developer runs "osf check DEPS"
+    Then the command exits with code 1
+    And the output contains "DEPS modules/demo/package.json:1 pair 1.0.0 needs base 2.0.0 exactly; the package has 2.0.1"
+
+  @id=SCN-REPO-105 @status=implemented
+  Scenario: DEPS rejects a package without the required peer of its dependency and accepts a missing optional one
+    Given a lockfile in which "modules/demo" depends on "pair" 1.0.0, which needs its peer "base" exactly at 2.0.0
+    And "pair" 1.0.0 also needs the optional peer "extra" exactly at 3.0.0
+    When the developer runs "osf check DEPS"
+    Then the command exits with code 1
+    And the output contains "DEPS modules/demo/package.json:1 pair 1.0.0 needs base 2.0.0 exactly; the package does not declare it"
+    And the output does not contain "extra"
 
   @id=SCN-REPO-074 @status=implemented
   Scenario: AFFECTED rejects a test suite that writes its JUnit results outside its own reports folder

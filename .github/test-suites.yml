@@ -1,0 +1,75 @@
+# The test suites of `make verify` (verify.yml, ADR 0094): each runs on its own runner, so suites never share cores and
+# BUDGET stays fair. The job "plan the suites" starts a runner only for a suite with a task that turbo cannot replay.
+# Fields: suite (the job's name), filter (turbo filters), images (the testkit's fakes to pull), pull (other images),
+# cluster: kind, kind (kind with agent-sandbox), kind-images (the chart's images in kind), browser, timeout (minutes).
+- suite: testkit
+  filter: "@opensoftware/testkit"
+  images: s3 forge
+  pull: curlimages/curl:8.17.0 nats:2.11.9-alpine node:24.11.1-bookworm-slim
+  # sut.helm installs a chart on kind (ADR 0075).
+  cluster: kind
+- suite: factory-spec
+  filter: "@opensoftware/factory-spec"
+  images: forge
+- suite: tools
+  filter: "@opensoftware/tools"
+- suite: runlog
+  filter: "@opensoftware/runlog"
+  images: collector
+- suite: proof
+  filter: "@opensoftware/proof"
+  images: s3 forge
+  browser: chromium
+- suite: ledger
+  filter: "@opensoftware/ledger"
+  images: postgres forge
+- suite: observer
+  filter: "@opensoftware/observer"
+  images: forge
+- suite: gatekeeper
+  filter: "@opensoftware/gatekeeper"
+- suite: intake
+  filter: "@opensoftware/intake"
+# Each scenario starts the Temporal dev server and runs the scripted harness behind harness-acp (ADR 0067).
+- suite: foreman
+  filter: "@opensoftware/foreman"
+# Each scenario starts sandboxes of the test template behind iron-proxy (ADR 0054).
+- suite: sandbox-docker
+  filter: "@opensoftware/sandbox-docker"
+  pull: ironsh/iron-proxy:0.54.0 curlimages/curl:8.17.0 hello-world:latest
+# The same scenarios on kind with agent-sandbox; each sandbox is a claim behind an egress pod (ADR 0055).
+- suite: sandbox-kubernetes
+  filter: "@opensoftware/sandbox-kubernetes"
+  kind: true
+# Each scenario starts its own gateway: LiteLLM and PostgreSQL containers (ADR 0056).
+- suite: inference-litellm
+  filter: "@opensoftware/inference-litellm"
+  pull: ghcr.io/berriai/litellm:v1.106.2 postgres:18-alpine
+# Each scenario starts its own Forgejo; the webhook scenarios wait for its deliveries (ADR 0057).
+- suite: forge-forgejo
+  filter: "@opensoftware/forge-forgejo"
+  images: forge
+# Each scenario starts the Compose profile as its own project (ADR 0074), or installs the Helm chart in a
+# namespace of its own on kind, which gets the images of the chart first (ADR 0075).
+- suite: deploy
+  filter: "@opensoftware/deploy"
+  cluster: kind
+  kind-images: true
+  # Four scenarios install the whole chart, each with PostgreSQL, NATS and Temporal of its own.
+  timeout: 40
+  pull: >-
+    pgvector/pgvector:0.8.7-pg17-trixie temporalio/admin-tools:1.31.4 temporalio/server:1.31.4
+    temporalio/ui:2.57.0 nats:2.11.9-alpine chrislusf/seaweedfs:3.97 arizephoenix/phoenix:version-20.26.1
+    ghcr.io/berriai/litellm:v1.106.2 openpolicyagent/opa:1.21.0-static node:24.11.1-bookworm-slim
+# The smoke scenarios start the Compose profile with every module from one image of the workspace, which
+# the suite builds first, and the testkit's fakes on the runner (ADR 0076).
+- suite: e2e
+  filter: "@opensoftware/e2e"
+  images: forge
+  pull: >-
+    pgvector/pgvector:0.8.7-pg17-trixie temporalio/admin-tools:1.31.4 temporalio/server:1.31.4
+    temporalio/ui:2.57.0 nats:2.11.9-alpine chrislusf/seaweedfs:3.97 arizephoenix/phoenix:version-20.26.1
+    ghcr.io/berriai/litellm:v1.106.2 openpolicyagent/opa:1.21.0-static node:24.11.1-bookworm
+# Every other package, so a new module runs without a change here.
+- suite: rest
+  filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper !@opensoftware/intake !@opensoftware/foreman !@opensoftware/sandbox-docker !@opensoftware/sandbox-kubernetes !@opensoftware/inference-litellm !@opensoftware/forge-forgejo !@opensoftware/deploy !@opensoftware/e2e"

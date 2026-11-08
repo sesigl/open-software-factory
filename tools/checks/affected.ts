@@ -1,7 +1,8 @@
 // AFFECTED: the inputs of the cached system tests (ADR 0081). On a pull request, turbo replays the results of a suite
 // whose hash did not change. The hash knows only what the suite declares, so this check makes the declarations
-// complete: the workspace packages a system test starts, imports or reads, the repository-wide files, the tests job
-// that runs each suite, where the suite writes its results, and that only pull requests use the cache.
+// complete: the workspace packages a system test starts, imports or reads, the repository-wide files, the suite of
+// .github/test-suites.yml that runs each package, the jobs of verify.yml that plan, run and cache the suites (ADR 0094),
+// where the suite writes its results, and that only pull requests use the cache.
 import { dirname, join, normalize, relative } from "node:path";
 import picomatch from "picomatch";
 import { Node, Project } from "ts-morph";
@@ -13,10 +14,23 @@ import { type Unit, workspace } from "./lib/workspace.ts";
 const ID = "AFFECTED";
 const TURBO = "turbo.json";
 const WORKFLOW = ".github/workflows/verify.yml";
+/** The test suites of verify.yml; the job plan reads them (ADR 0094). */
+const SUITES = ".github/test-suites.yml";
+/** The matrix of the tests job: the suites that the job plan found work for. */
+const PLANNED = "${{ fromJSON(needs.plan.outputs.suites) }}";
+/** The one turbo cache of the jobs plan, tests and cache. */
+const TESTS_CACHE = "turbo-tests-";
 const MAKEFILE = "Makefile";
 const JUNIT = "reports/junit.xml";
 /** The repository-wide files that every system test depends on: tool pins, Node, the workspace and the CI job. */
-export const TEST_GLOBALS = [MAKEFILE, ".nvmrc", "pnpm-workspace.yaml", "tools/scaffold/install-tools.ts", WORKFLOW];
+export const TEST_GLOBALS = [
+  MAKEFILE,
+  ".nvmrc",
+  "pnpm-workspace.yaml",
+  "tools/scaffold/install-tools.ts",
+  WORKFLOW,
+  SUITES,
+];
 const INPUTS = ["$TURBO_DEFAULT$"];
 const OUTPUTS = ["reports/**"];
 /** Set explicitly: turbo then keeps the cache per worktree and CI saves this folder. */
@@ -39,6 +53,7 @@ export function affected(context: Context): Finding[] {
     ...findings,
     ...cache(repo),
     ...suites(repo, units),
+    ...planned(repo),
     ...forced(repo),
     ...pullRequestsOnly(repo),
     ...withDependencies(repo),
@@ -161,35 +176,70 @@ function cache(repo: Repo): Finding[] {
   return findings;
 }
 
-/** Every package with system tests runs in exactly one tests job of verify.yml. */
+/** Every package with system tests runs in exactly one suite, and each filter names a package with system tests. */
 function suites(repo: Repo, units: Unit[]): Finding[] {
-  if (!repo.exists(WORKFLOW)) return [finding(WORKFLOW, 1, "the workflow that runs the system tests is missing")];
-  const text = repo.read(WORKFLOW);
-  const workflow = parse(text) as {
-    jobs?: { tests?: { strategy?: { matrix?: { include?: { suite?: string; filter?: string }[] } } } };
-  };
-  const jobs = (workflow.jobs?.tests?.strategy?.matrix?.include ?? []).map(({ suite, filter }) => {
+  if (!repo.exists(SUITES)) return [finding(SUITES, 1, "the list of the test suites of verify.yml is missing")];
+  const text = repo.read(SUITES);
+  const list = (parse(text) ?? []) as { suite?: string; filter?: string }[];
+  const tested = new Set(units.filter((unit) => unit.tested).map((unit) => unit.name));
+  const findings: Finding[] = [];
+  const jobs = list.map(({ suite, filter }) => {
     const parts = (filter ?? "").split(/\s+/).filter(Boolean);
+    for (const part of parts) {
+      const name = part.replace(/^!/, "");
+      if (tested.has(name)) continue;
+      const line = lineOf(text, `suite: ${suite}`);
+      findings.push(finding(SUITES, line, `the suite ${suite} names ${name}, which is no package with system tests`));
+    }
     const only = parts.filter((part) => !part.startsWith("!"));
     const not = new Set(parts.filter((part) => part.startsWith("!")).map((part) => part.slice(1)));
     return { suite: suite ?? "?", runs: (name: string) => (only.length > 0 ? only.includes(name) : !not.has(name)) };
   });
-  return units
-    .filter((unit) => unit.tested)
-    .flatMap((unit) => {
-      const running = jobs.filter((job) => job.runs(unit.name)).map((job) => job.suite);
-      const manifest = `${unit.dir}/package.json`;
-      if (running.length === 0) {
-        return [finding(manifest, 1, `no tests job of ${WORKFLOW} runs the system tests of ${unit.name}`)];
-      }
-      if (running.length > 1) {
-        const names = `${running.slice(0, -1).join(", ")} and ${running.at(-1)}`;
-        return [
-          finding(manifest, 1, `the tests jobs ${names} of ${WORKFLOW} both run the system tests of ${unit.name}`),
-        ];
-      }
-      return [];
-    });
+  for (const unit of units.filter((candidate) => candidate.tested)) {
+    const running = jobs.filter((job) => job.runs(unit.name)).map((job) => job.suite);
+    const manifest = `${unit.dir}/package.json`;
+    if (running.length === 0) {
+      findings.push(finding(manifest, 1, `no suite of ${SUITES} runs the system tests of ${unit.name}`));
+    } else if (running.length > 1) {
+      const names = `${running.slice(0, -1).join(", ")} and ${running.at(-1)}`;
+      findings.push(finding(manifest, 1, `the suites ${names} of ${SUITES} both run the system tests of ${unit.name}`));
+    }
+  }
+  return findings;
+}
+
+interface Step {
+  uses?: string;
+  run?: string;
+  with?: { path?: string; key?: string; "restore-keys"?: string };
+}
+
+/** The job plan reads the suites, the tests job runs the planned ones, and plan, tests and cache share one cache. */
+function planned(repo: Repo): Finding[] {
+  if (!repo.exists(WORKFLOW)) return [];
+  const text = repo.read(WORKFLOW);
+  const jobs = ((parse(text) ?? {}) as { jobs?: Record<string, { steps?: Step[]; strategy?: unknown }> }).jobs ?? {};
+  const findings: Finding[] = [];
+  const plan = jobs.plan?.steps ?? [];
+  if (!plan.some((step) => step.run?.includes(SUITES))) {
+    findings.push(finding(WORKFLOW, lineOf(text, "jobs:"), `the job plan must read the suites of ${SUITES}`));
+  }
+  const matrix = (jobs.tests?.strategy as { matrix?: { include?: unknown } } | undefined)?.matrix?.include;
+  if (matrix !== PLANNED) {
+    const line = lineOf(text, "  tests:");
+    findings.push(finding(WORKFLOW, line, `the tests job must run the suites of the job plan: include: ${PLANNED}`));
+  }
+  for (const name of ["plan", "tests", "cache"]) {
+    const caches = (jobs[name]?.steps ?? []).filter(
+      (step) => step.uses?.startsWith("actions/cache") && step.with?.path === CACHE_DIR,
+    );
+    const keys = caches.flatMap((step) => [step.with?.key, step.with?.["restore-keys"]]).filter(Boolean) as string[];
+    if (caches.length === 0 || keys.some((key) => !key.startsWith(TESTS_CACHE))) {
+      const line = lineOf(text, `  ${name}:`);
+      findings.push(finding(WORKFLOW, line, `the job ${name} must keep ${CACHE_DIR} in the cache ${TESTS_CACHE}`));
+    }
+  }
+  return findings;
 }
 
 /** `make verify-tests` and `make verify-static` run everything unless OSF_TEST_CACHE asks for the cache. */

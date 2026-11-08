@@ -47,6 +47,7 @@ A change is done only when `make verify` passes. `docs/quality/checks.md` lists 
 | ISOLATION | No module imports another module. |
 | AFFECTED | A system test declares every package it starts, imports or reads, so the test cache replays only unchanged results. |
 | RELEASE | Every published package has its publish workflow and release entries as `osf release-files` writes them. |
+| DEPS | A dependency that needs an exact version of a peer has that peer at that version in the same package. |
 | ARCH | Every module declares its layers in `architecture.json`; no file imports a layer above its own. |
 | DUP | Duplicated source lines stay under each unit's limit; no clone across modules. |
 | CONTRACT | No breaking change to `contracts/` without a major version. |

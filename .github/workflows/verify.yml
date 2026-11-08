@@ -75,85 +75,111 @@ jobs:
           path: .turbo/cache
           key: turbo-static-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
 
+  # Plans the test suites (ADR 0094). The suites are in .github/test-suites.yml. On a pull request, turbo's dry run
+  # finds each suite with a system test task that the cache cannot replay; this job replays the other suites and
+  # uploads their results, so only the suites with work start a runner. Outside pull requests every suite runs
+  # (ADR 0081).
+  plan:
+    name: plan the suites
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      suites: ${{ steps.plan.outputs.suites }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: ${{ inputs.pr && '0' || '1' }}
+      # A dispatched run tests the release pull request merged into main. GitHub's merge ref can lag behind main.
+      - name: Merge the release pull request into main
+        if: inputs.pr
+        env:
+          PR: ${{ inputs.pr }}
+        run: |
+          git fetch --no-tags origin "pull/$PR/head"
+          git -c user.name=verify -c user.email=verify@invalid merge --no-edit FETCH_HEAD
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      # The one turbo cache of the test suites, with the builds and the results of every suite.
+      - name: Restore the turbo cache of the tests
+        uses: actions/cache/restore@v4
+        with:
+          path: .turbo/cache
+          key: turbo-tests-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: turbo-tests-
+      # The pinned binaries of install-tools: a new pin in install-tools.ts makes a new key. Without it, each job
+      # downloads all eight from their sites, which takes about 8 s and failed when one site did not answer.
+      - name: Restore the pinned tools
+        uses: actions/cache@v4
+        with:
+          path: .tools/bin
+          key: tools-${{ runner.os }}-${{ hashFiles('tools/scaffold/install-tools.ts') }}
+      - run: make install
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      # A suite runs when one of its packages has a test task that is no cache hit. A filter names packages: the
+      # suite's own, or with "!" the packages that it leaves to the other suites.
+      - name: Plan the suites
+        id: plan
+        env:
+          OSF_TEST_CACHE: ${{ github.event_name == 'pull_request' && '1' || '' }}
+        run: |
+          suites=$(yq --output-format=json --indent=0 '.' .github/test-suites.yml)
+          if [ -z "$OSF_TEST_CACHE" ]; then
+            echo "suites=$suites" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          pnpm exec turbo run test:system --dry=json > "$RUNNER_TEMP/plan.json"
+          tasks='[.tasks[] | select(.task == "test:system" and .command != "<NONEXISTENT>")]'
+          jq -r "$tasks | .[] | \"\\(.taskId) \\(.hash) \\(.cache.status)\"" "$RUNNER_TEMP/plan.json"
+          tested=$(jq -c "$tasks | map(.package)" "$RUNNER_TEMP/plan.json")
+          misses=$(jq -c "$tasks | map(select(.cache.status != \"HIT\") | .package)" "$RUNNER_TEMP/plan.json")
+          run=$(jq -c --argjson tested "$tested" --argjson misses "$misses" '
+            map(select(
+              (.filter | split(" ") | map(select(. != ""))) as $parts
+              | ($parts | map(select(startswith("!") | not))) as $only
+              | ($parts | map(select(startswith("!")) | ltrimstr("!"))) as $not
+              | (if ($only | length) > 0 then $only else $tested - $not end) as $packages
+              | ($packages - ($packages - $misses) | length) > 0
+            ))' <<<"$suites")
+          jq -r --argjson run "$run" '($run | map(.suite)) as $names | .[] | select(.suite as $s | $names | index($s) | not) | .filter' \
+            <<<"$suites" > "$RUNNER_TEMP/replay"
+          echo "runs: $(jq -r 'map(.suite) | join(" ")' <<<"$run")"
+          echo "replays: $(wc -l < "$RUNNER_TEMP/replay") suites"
+          echo "suites=$run" >> "$GITHUB_OUTPUT"
+      # One suite at a time, as verify-tests runs them: a filter with "!" would leave out the packages of the others.
+      - name: Replay the suites without work
+        if: github.event_name == 'pull_request'
+        env:
+          OSF_TEST_CACHE: ${{ github.event_name == 'pull_request' && '1' || '' }}
+        run: |
+          status=0
+          while read -r filter; do
+            make verify-tests FILTER="$filter" || status=1
+          done < "$RUNNER_TEMP/replay"
+          exit $status
+      - uses: actions/upload-artifact@v4
+        if: always() && github.event_name == 'pull_request'
+        with:
+          name: reports-replayed
+          path: |
+            reports/junit/
+            reports/coverage/
+          if-no-files-found: ignore
+          retention-days: 7
+
   tests:
     name: tests (${{ matrix.suite }})
+    needs: plan
+    if: needs.plan.outputs.suites != '[]'
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ matrix.timeout || 20 }}
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - suite: testkit
-            filter: "@opensoftware/testkit"
-            images: s3 forge
-            pull: curlimages/curl:8.17.0 nats:2.11.9-alpine node:24.11.1-bookworm-slim
-            # sut.helm installs a chart on kind (ADR 0075).
-            cluster: kind
-          - suite: factory-spec
-            filter: "@opensoftware/factory-spec"
-            images: forge
-          - suite: tools
-            filter: "@opensoftware/tools"
-          - suite: runlog
-            filter: "@opensoftware/runlog"
-            images: collector
-          - suite: proof
-            filter: "@opensoftware/proof"
-            images: s3 forge
-            browser: chromium
-          - suite: ledger
-            filter: "@opensoftware/ledger"
-            images: postgres forge
-          - suite: observer
-            filter: "@opensoftware/observer"
-            images: forge
-          - suite: gatekeeper
-            filter: "@opensoftware/gatekeeper"
-          - suite: intake
-            filter: "@opensoftware/intake"
-          # Each scenario starts the Temporal dev server and runs the scripted harness behind harness-acp (ADR 0067).
-          - suite: foreman
-            filter: "@opensoftware/foreman"
-          # Each scenario starts sandboxes of the test template behind iron-proxy (ADR 0054).
-          - suite: sandbox-docker
-            filter: "@opensoftware/sandbox-docker"
-            pull: ironsh/iron-proxy:0.54.0 curlimages/curl:8.17.0 hello-world:latest
-          # The same scenarios on kind with agent-sandbox; each sandbox is a claim behind an egress pod (ADR 0055).
-          - suite: sandbox-kubernetes
-            filter: "@opensoftware/sandbox-kubernetes"
-            kind: true
-          # Each scenario starts its own gateway: LiteLLM and PostgreSQL containers (ADR 0056).
-          - suite: inference-litellm
-            filter: "@opensoftware/inference-litellm"
-            pull: ghcr.io/berriai/litellm:v1.106.2 postgres:18-alpine
-          # Each scenario starts its own Forgejo; the webhook scenarios wait for its deliveries (ADR 0057).
-          - suite: forge-forgejo
-            filter: "@opensoftware/forge-forgejo"
-            images: forge
-          # Each scenario starts the Compose profile as its own project (ADR 0074), or installs the Helm chart in a
-          # namespace of its own on kind, which gets the images of the chart first (ADR 0075).
-          - suite: deploy
-            filter: "@opensoftware/deploy"
-            cluster: kind
-            kind-images: true
-            # Four scenarios install the whole chart, each with PostgreSQL, NATS and Temporal of its own.
-            timeout: 40
-            pull: >-
-              pgvector/pgvector:0.8.7-pg17-trixie temporalio/admin-tools:1.31.4 temporalio/server:1.31.4
-              temporalio/ui:2.57.0 nats:2.11.9-alpine chrislusf/seaweedfs:3.97 arizephoenix/phoenix:version-20.26.1
-              ghcr.io/berriai/litellm:v1.106.2 openpolicyagent/opa:1.21.0-static node:24.11.1-bookworm-slim
-          # The smoke scenarios start the Compose profile with every module from one image of the workspace, which
-          # the suite builds first, and the testkit's fakes on the runner (ADR 0076).
-          - suite: e2e
-            filter: "@opensoftware/e2e"
-            images: forge
-            pull: >-
-              pgvector/pgvector:0.8.7-pg17-trixie temporalio/admin-tools:1.31.4 temporalio/server:1.31.4
-              temporalio/ui:2.57.0 nats:2.11.9-alpine chrislusf/seaweedfs:3.97 arizephoenix/phoenix:version-20.26.1
-              ghcr.io/berriai/litellm:v1.106.2 openpolicyagent/opa:1.21.0-static node:24.11.1-bookworm
-          # Every other package, so a new module runs without a change here.
-          - suite: rest
-            filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper !@opensoftware/intake !@opensoftware/foreman !@opensoftware/sandbox-docker !@opensoftware/sandbox-kubernetes !@opensoftware/inference-litellm !@opensoftware/forge-forgejo !@opensoftware/deploy !@opensoftware/e2e"
+        include: ${{ fromJSON(needs.plan.outputs.suites) }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -171,15 +197,15 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
-      # Pull requests replay the results of the suites whose inputs did not change; everything else runs all suites
-      # (ADR 0081). The cache of main is readable by every pull request. The key names the run: two runs of one merge
-      # commit, such as one cancelled by an edit of the description, must not share a key, or the first one wins.
-      - name: Restore the turbo cache of the suite
+      # The one turbo cache of the test suites, with the builds and the results of every suite (ADR 0094).
+      - name: Restore the turbo cache of the tests
         uses: actions/cache/restore@v4
         with:
           path: .turbo/cache
-          key: turbo-${{ matrix.suite }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: turbo-${{ matrix.suite }}-
+          key: turbo-tests-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: turbo-tests-
+      # The cache entries that this job writes are newer than this file.
+      - run: touch "$RUNNER_TEMP/restored"
       # The pinned binaries of install-tools: a new pin in install-tools.ts makes a new key. Without it, each job
       # downloads all eight from their sites, which takes about 8 s and failed when one site did not answer.
       - name: Restore the pinned tools
@@ -190,26 +216,9 @@ jobs:
       - run: make install
         env:
           GITHUB_TOKEN: ${{ github.token }}
-      # run=false when every system test task of the suite is a cache hit: the slow setup below is then not needed.
-      - name: Plan the suite
-        id: plan
-        env:
-          FILTER: ${{ matrix.filter }}
-          OSF_TEST_CACHE: ${{ github.event_name == 'pull_request' && '1' || '' }}
-        run: |
-          run=true
-          if [ -n "$OSF_TEST_CACHE" ]; then
-            filters=$(for f in $FILTER; do printf -- '--filter=%s ' "$f"; done)
-            # shellcheck disable=SC2086
-            pnpm exec turbo run test:system --dry=json $filters > "$RUNNER_TEMP/plan.json"
-            jq -r '.tasks[] | select(.task == "test:system") | "\(.taskId) \(.hash) \(.cache.status)"' "$RUNNER_TEMP/plan.json"
-            misses=$(jq '[.tasks[] | select(.task == "test:system" and .cache.status != "HIT")] | length' "$RUNNER_TEMP/plan.json")
-            if [ "$misses" = 0 ]; then run=false; fi
-          fi
-          echo "run=$run" >> "$GITHUB_OUTPUT"
       # The scenarios start these containers (ADR 0016). Pulling them now overlaps the download with the build.
       - name: Pull the container images in the background
-        if: steps.plan.outputs.run == 'true' && matrix.images
+        if: matrix.images
         env:
           IMAGES: ${{ matrix.images }}
         run: |
@@ -220,7 +229,7 @@ jobs:
           done
       # Images a suite needs besides the testkit's fakes, named in full.
       - name: Pull the suite's own images in the background
-        if: steps.plan.outputs.run == 'true' && matrix.pull
+        if: matrix.pull
         env:
           PULL: ${{ matrix.pull }}
         run: |
@@ -230,19 +239,19 @@ jobs:
           done
       # A kind cluster with agent-sandbox for the kubernetes sandbox adapter (ADR 0055).
       - name: Start kind with agent-sandbox
-        if: steps.plan.outputs.run == 'true' && matrix.kind
+        if: matrix.kind
         uses: ./.github/actions/kind-agent-sandbox
       # A kind cluster for the scenarios that install a Helm chart (ADR 0075).
       - name: Start kind
-        if: steps.plan.outputs.run == 'true' && matrix.cluster == 'kind'
+        if: matrix.cluster == 'kind'
         uses: ./.github/actions/kind
       # The images of the chart osf, pulled from GHCR or built at the pins of compose.yaml, loaded into kind.
       - name: Load the images of the Helm chart into kind
-        if: steps.plan.outputs.run == 'true' && matrix.kind-images
+        if: matrix.kind-images
         run: deploy/helm/kind-images.sh
       # proof capture opens pages in Chromium (ADR 0029); the testkit hands PLAYWRIGHT_BROWSERS_PATH to the module.
       - name: Install the browser of the capture scenarios
-        if: steps.plan.outputs.run == 'true' && matrix.browser
+        if: matrix.browser
         env:
           BROWSER: ${{ matrix.browser }}
         run: |
@@ -251,7 +260,7 @@ jobs:
             pnpm --filter @opensoftware/proof exec playwright-core install --with-deps "$BROWSER"
       # BUDGET measures the tests, not the pulls: a test that starts before its image is there waits for it.
       - name: Wait for the image pulls
-        if: steps.plan.outputs.run == 'true' && (matrix.images || matrix.pull)
+        if: (matrix.images || matrix.pull)
         run: |
           [ -f "$RUNNER_TEMP/pulls" ] || exit 0
           while read -r pid; do
@@ -288,12 +297,19 @@ jobs:
         if: always()
         continue-on-error: true
         run: pnpm --silent run osf check BUDGET
-      - name: Save the turbo cache of the suite
+      # The job cache joins the new entries of every suite into the turbo cache of the tests.
+      - name: Keep the new cache entries of the suite
         if: always() && steps.budget.outcome == 'success'
-        uses: actions/cache/save@v4
+        run: |
+          mkdir -p "$RUNNER_TEMP/turbo-new"
+          find .turbo/cache -maxdepth 1 -type f -newer "$RUNNER_TEMP/restored" -exec cp -p {} "$RUNNER_TEMP/turbo-new/" \;
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.budget.outcome == 'success'
         with:
-          path: .turbo/cache
-          key: turbo-${{ matrix.suite }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: turbo-${{ matrix.suite }}
+          path: ${{ runner.temp }}/turbo-new/
+          if-no-files-found: ignore
+          retention-days: 1
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -304,9 +320,38 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  # Joins the new cache entries of the suites into the turbo cache of the tests and saves it once. An entry that no
+  # run restored for 14 days goes, so the cache does not grow without end.
+  cache:
+    name: save the test cache
+    needs: [plan, tests]
+    if: always() && !cancelled() && needs.tests.result != 'skipped'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Restore the turbo cache of the tests
+        uses: actions/cache/restore@v4
+        with:
+          path: .turbo/cache
+          key: turbo-tests-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: turbo-tests-
+      - uses: actions/download-artifact@v5
+        continue-on-error: true
+        with:
+          pattern: turbo-*
+          path: .turbo/cache/
+          merge-multiple: true
+      - name: Remove the entries older than 14 days
+        run: find .turbo/cache -maxdepth 1 -type f -mtime +14 -delete
+      - name: Save the turbo cache of the tests
+        uses: actions/cache/save@v4
+        with:
+          path: .turbo/cache
+          key: turbo-tests-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+
   verify:
     name: verify
-    needs: [static, tests]
+    needs: [static, plan, tests]
     # The checks run even when tests fail, so PASS can name each failing scenario.
     if: always() && !cancelled()
     runs-on: ubuntu-24.04
@@ -406,13 +451,15 @@ jobs:
           rules: ""
           command: node modules/spec-trace/dist/cli.js
 
+      # The tests job is skipped when the plan replayed every suite.
       - name: Lint, typecheck, build and every test suite passed
         env:
           STATIC: ${{ needs.static.result }}
+          PLAN: ${{ needs.plan.result }}
           TESTS: ${{ needs.tests.result }}
         run: |
-          echo "lint, typecheck, build: $STATIC; tests: $TESTS"
-          [ "$STATIC" = success ] && [ "$TESTS" = success ]
+          echo "lint, typecheck, build: $STATIC; plan and replays: $PLAN; tests: $TESTS"
+          [ "$STATIC" = success ] && [ "$PLAN" = success ] && { [ "$TESTS" = success ] || [ "$TESTS" = skipped ]; }
 
       - uses: actions/upload-artifact@v4
         if: always()

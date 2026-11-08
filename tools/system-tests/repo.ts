@@ -301,6 +301,7 @@ export const TEST_GLOBALS = [
   "pnpm-workspace.yaml",
   "tools/scaffold/install-tools.ts",
   ".github/workflows/verify.yml",
+  ".github/test-suites.yml",
 ];
 
 /** A turbo.json that caches the system tests with these global dependencies and test inputs. */
@@ -313,24 +314,56 @@ export function cachedTurbo(
   return `${JSON.stringify({ cacheDir, globalDependencies: globals, tasks: { "test:system": task } })}\n`;
 }
 
-/** A verify.yml whose tests jobs run "demo" alone and the rest with `rest`; the cache only on pull requests. */
-export function verifyWorkflow(
-  rest = "!@opensoftware/demo",
-  cache = "${{ github.event_name == 'pull_request' && '1' || '' }}",
-): string {
+/** The suites of verify.yml: "demo" alone and the rest with `rest`. */
+export const suitesFile = (rest = "!@opensoftware/demo"): string =>
+  `- suite: demo\n  filter: "@opensoftware/demo"\n- suite: rest\n  filter: "${rest}"\n`;
+
+export interface WorkflowOptions {
+  /** The value of OSF_TEST_CACHE, on line 3. */
+  cache?: string;
+  /** What the job plan runs. */
+  plan?: string;
+  /** The matrix of the tests job, whose "  tests:" is on line 13. */
+  include?: string;
+  /** The cache in which the tests job keeps .turbo/cache. */
+  testsCache?: string;
+}
+
+/** A cache step that keeps .turbo/cache in `prefix`, at an indent of six spaces. */
+const cacheStep = (action: string, prefix: string): string[] => [
+  `      - uses: actions/cache/${action}@v4`,
+  "        with:",
+  "          path: .turbo/cache",
+  `          key: ${prefix}run`,
+];
+
+/** A verify.yml whose job plan reads the suites, whose tests job runs them, and whose jobs share the test cache. */
+export function verifyWorkflow(options: WorkflowOptions = {}): string {
+  const {
+    cache = "${{ github.event_name == 'pull_request' && '1' || '' }}",
+    plan = "yq '.' .github/test-suites.yml",
+    include = "${{ fromJSON(needs.plan.outputs.suites) }}",
+    testsCache = "turbo-tests-",
+  } = options;
   return [
     "name: verify",
     "env:",
     `  OSF_TEST_CACHE: ${cache}`,
     "jobs:",
+    "  plan:",
+    "    steps:",
+    ...cacheStep("restore", "turbo-tests-"),
+    "          restore-keys: turbo-tests-",
+    `      - run: ${plan}`,
     "  tests:",
     "    strategy:",
     "      matrix:",
-    "        include:",
-    "          - suite: demo",
-    '            filter: "@opensoftware/demo"',
-    "          - suite: rest",
-    `            filter: "${rest}"`,
+    `        include: ${include}`,
+    "    steps:",
+    ...cacheStep("restore", testsCache),
+    "  cache:",
+    "    steps:",
+    ...cacheStep("save", "turbo-tests-"),
     "",
   ].join("\n");
 }
@@ -372,6 +405,7 @@ export function cachedRepository(): Record<string, string> {
     "pnpm-workspace.yaml": "packages:\n  - modules/*\n  - adapters/*/*\n  - tools\n",
     "tools/scaffold/install-tools.ts": "export const PINS = {};\n",
     ".github/workflows/verify.yml": verifyWorkflow(),
+    ".github/test-suites.yml": suitesFile(),
     ...testedPackage("demo"),
     ...testedPackage("other"),
   };
