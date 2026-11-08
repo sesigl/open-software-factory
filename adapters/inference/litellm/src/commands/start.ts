@@ -46,12 +46,13 @@ async function removeOrphans(): Promise<void> {
   const age = Number(process.env.OSF_INFERENCE_ORPHAN_AGE || 120) * 1000;
   const format = `{{.Label "${ID_LABEL}"}} {{.Label "${OWNER_LABEL}"}} {{.Label "${HOST_LABEL}"}} {{.ID}}`;
   const rows = await docker(["ps", "--all", "--filter", `label=${GATEWAY_LABEL}`, "--format", format]);
-  for (const row of rows.split("\n").filter(Boolean)) {
+  // An empty row, or a gateway without an owner, has no host and no process ID: it is never touched.
+  for (const row of rows.split("\n")) {
     const [id, owner, host, container] = row.split(" ");
     const pid = Number(owner);
-    if (!id || !container || host !== hostname() || !(pid > 0) || alive(pid)) continue;
-    const created = Date.parse(await docker(["container", "inspect", "--format", "{{.Created}}", container]));
-    if (Date.now() - created >= age) await removeGateway(id);
+    if (host !== hostname() || !(pid > 0) || alive(pid)) continue;
+    const created = Date.parse(await docker(["container", "inspect", "--format", "{{.Created}}", container as string]));
+    if (Date.now() - created >= age) await removeGateway(id as string);
   }
 }
 
