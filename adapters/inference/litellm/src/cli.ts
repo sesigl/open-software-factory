@@ -35,6 +35,6 @@ const commands: Record<string, Command> = {
 process.exitCode = await runProgram({
   name: "inference-litellm",
   usage: USAGE,
-  command: name === undefined ? undefined : commands[name],
+  command: commands[String(name)],
   help: values.help,
 });

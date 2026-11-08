@@ -42,7 +42,8 @@ export function tokens(id: string): string[] {
   return existsSync(file) ? readFileSync(file, "utf8").split("\n").filter(Boolean) : [];
 }
 
+/** Removes the record, which must exist, and the file of its tokens, if any. */
 export function removeRecord(id: string): void {
-  rmSync(recordFile(id), { force: true });
+  rmSync(recordFile(id));
   rmSync(keysFile(id), { force: true });
 }

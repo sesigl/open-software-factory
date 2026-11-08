@@ -65,3 +65,15 @@ export function testProxy(fakes: Fakes, status: number) {
     { path: "/key/list?size=1", status, body: status === 200 ? { keys: [] } : { error: { message: "Unauthorized" } } },
   ]);
 }
+
+/**
+ * The test proxy with run keys: a fake of LiteLLM's key list, of "/key/generate", which answers with the key
+ * "sk-run-7" and its hashed token "token-7", and of "/key/delete".
+ */
+export function keyProxy(fakes: Fakes) {
+  return fakes.http([
+    { path: "/key/list?size=1", body: { keys: [] } },
+    { method: "POST", path: "/key/generate", body: { key: "sk-run-7", token: "token-7" } },
+    { method: "POST", path: "/key/delete", body: { deleted_keys: ["token-7"] } },
+  ]);
+}
