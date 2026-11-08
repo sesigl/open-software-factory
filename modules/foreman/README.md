@@ -505,3 +505,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-079 | implemented | A stage that must produce evidence fails when the check "proof" failed |
 | SCN-FORE-080 | implemented | A factory with a stage that must produce evidence but without a forge adapter stops the server at the start |
 | SCN-FORE-081 | implemented | A run's view names its trace ID |
+| SCN-FORE-082 | implemented | A work item that the foreman cannot start for a moment comes again and starts its run |
