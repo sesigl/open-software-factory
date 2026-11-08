@@ -89,6 +89,18 @@
     "FOREMAN_NATS_URL": {
       "type": "string",
       "description": "serve: the NATS server for work.received@v1 and gate.decided@v1 in, and run.started@v1 and run.completed@v1 out. Unset: no events."
+    },
+    "OTEL_EXPORTER_OTLP_ENDPOINT": {
+      "type": "string",
+      "description": "serve: the base URL of an OTLP/HTTP receiver, like http://phoenix:6006. Set, each run is one trace with a span per stage and one for the run, sent to <url>/v1/traces, and each stage's harness gets the trace in TRACEPARENT (ADR 0087)."
+    },
+    "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": {
+      "type": "string",
+      "description": "serve: the full URL of the OTLP/HTTP traces endpoint; takes precedence over OTEL_EXPORTER_OTLP_ENDPOINT."
+    },
+    "OTEL_EXPORTER_OTLP_HEADERS": {
+      "type": "string",
+      "description": "serve: headers for the OTLP receiver as key=value pairs, comma-separated, like a token from a secret store."
     }
   },
   "additionalProperties": false

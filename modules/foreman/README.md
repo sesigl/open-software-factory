@@ -363,6 +363,18 @@ reaches it when it starts again. A message is acknowledged after it is handled; 
 seconds, at most 5 times. A work item that is not valid, or a decision for a run that does not exist, is a warning
 and does not come again.
 
+## Traces
+
+With `OTEL_EXPORTER_OTLP_ENDPOINT`, each run is one OTLP trace ([ADR 0087](../../docs/decisions/0087-run-traces.md)).
+When a stage ends, the foreman sends the span `stage <stage>`, and when the run ends the span `run <factory>`, to
+`<url>/v1/traces`. The stage spans are children of the run's span. Every span has the resource `osf.run.id`,
+`osf.work_item.id` and `osf.factory.version`; a stage span also has `osf.stage`, `osf.agent`, `osf.harness.name`,
+`gen_ai.request.model`, `osf.effort`, `gen_ai.conversation.id` (the harness session) and `osf.outcome`. The trace ID
+is the first 32 hex digits of the SHA-256 of the run's ID, so a restarted foreman sends to the same trace.
+
+Each stage's harness gets `TRACEPARENT` with the trace and the stage's span, also in a sandbox, so the harness's own
+spans join the run's trace. A receiver that refuses a span is a warning; the stage goes on.
+
 ## Releases
 
 release-please opens a release pull request from the Conventional Commits under `modules/foreman/`. Merging it creates
@@ -396,6 +408,9 @@ the minor version. The one-time setup is the same as for contracts
 | `FOREMAN_GATEKEEPER_URL` | string |  | serve: the URL of gatekeeper serve, which a stage with a gate asks for a decision. Required for a factory with gates. |
 | `FOREMAN_GATEKEEPER_TOKEN` | string |  | serve: gatekeeper's API token, GATEKEEPER_API_TOKEN. |
 | `FOREMAN_NATS_URL` | string |  | serve: the NATS server for work.received@v1 and gate.decided@v1 in, and run.started@v1 and run.completed@v1 out. Unset: no events. |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | string |  | serve: the base URL of an OTLP/HTTP receiver, like http://phoenix:6006. Set, each run is one trace with a span per stage and one for the run, sent to <url>/v1/traces, and each stage's harness gets the trace in TRACEPARENT (ADR 0087). |
+| `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | string |  | serve: the full URL of the OTLP/HTTP traces endpoint; takes precedence over OTEL_EXPORTER_OTLP_ENDPOINT. |
+| `OTEL_EXPORTER_OTLP_HEADERS` | string |  | serve: headers for the OTLP receiver as key=value pairs, comma-separated, like a token from a secret store. |
 
 ## Scenarios
 
@@ -478,3 +493,5 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-073 | implemented | A work item that intake publishes while the foreman is down starts a run when the foreman starts again |
 | SCN-FORE-074 | implemented | A gate decision that gatekeeper publishes while the foreman is down reaches the run when the foreman starts again |
 | SCN-FORE-075 | implemented | A server that reaches Temporal and NATS is healthy, without a token |
+| SCN-FORE-076 | implemented | A run sends a span per stage and one for the run, in one trace |
+| SCN-FORE-077 | implemented | Each stage's harness gets the trace and the stage's span in "TRACEPARENT" |

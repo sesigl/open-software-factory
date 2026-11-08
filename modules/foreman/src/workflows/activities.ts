@@ -9,6 +9,7 @@ import type { Gatekeeper } from "../adapters/gatekeeper.ts";
 import { type HarnessTurn, startTurn } from "../adapters/harness.ts";
 import type { Gateway } from "../adapters/inference.ts";
 import { type Bus, SUBJECTS } from "../adapters/nats.ts";
+import type { Exporter } from "../adapters/otlp.ts";
 import { createSandbox } from "../adapters/sandbox.ts";
 import type { Definition } from "../domain/definition.ts";
 import {
@@ -26,6 +27,7 @@ import {
   runStarted,
   type Step,
 } from "../domain/run.ts";
+import { type Outcome, otlpOf, type SpanFacts, traceparentOf } from "../domain/trace.ts";
 
 export interface ActivityDeps {
   now(): string;
@@ -49,6 +51,9 @@ export interface ActivityDeps {
   control(runId: string): Promise<Control>;
   /** The factory's inference gateway, when it names an inference adapter. */
   gateway?: Gateway;
+  /** The OTLP receiver of the run's spans (ADR 0087), and where a span that cannot be sent is a warning. */
+  traces?: Exporter;
+  warn(text: string): void;
   env: Record<string, string | undefined>;
 }
 
@@ -58,7 +63,19 @@ export type Activities = ReturnType<typeof activities>;
 const commandLine = (lines: Record<string, string>, name: string, otherwise: string): string[] =>
   (lines[name] ?? otherwise).split(" ");
 
+/** The resource of every span of the run. */
+const resourceOf = (view: RunView): Record<string, string> => ({
+  "osf.run.id": view.runId,
+  "osf.work_item.id": view.workItem.id,
+  "osf.factory.version": view.factoryVersion,
+});
+
 export function activities(deps: ActivityDeps) {
+  /** Sends the span; a receiver that refuses it is a warning, never a failed stage. */
+  const trace = async (span: SpanFacts): Promise<void> => {
+    if (!deps.traces) return;
+    await deps.traces.send(otlpOf(span)).catch((failure: Error) => deps.warn(`the run's trace: ${failure.message}`));
+  };
   /** Each run's key of the gateway, made once per run while this worker lives; never in Temporal's history. */
   const keys = new Map<string, Promise<string>>();
   const keyOf = (gateway: Gateway, runId: string, budget?: number): Promise<string> => {
@@ -130,6 +147,15 @@ export function activities(deps: ActivityDeps) {
     },
     async publishCompleted(view: RunView): Promise<void> {
       await deps.bus?.publish(SUBJECTS.runCompleted, runCompleted(view));
+      await trace({
+        runId: view.runId,
+        name: `run ${view.factory}`,
+        start: view.startedAt,
+        end: view.endedAt ?? deps.now(),
+        outcome: view.state === "complete" ? "succeeded" : view.state === "cancelled" ? "cancelled" : "failed",
+        resource: resourceOf(view),
+        attributes: { "osf.factory": view.factory, "osf.pull_request": view.pullRequest },
+      });
     },
     async requestGate(view: RunView, definition: Definition, index: number): Promise<Fact> {
       const plan = definition.stages[index];
@@ -175,13 +201,21 @@ export function activities(deps: ActivityDeps) {
         "osf.stage": plan.stage,
         "osf.factory.version": view.factoryVersion,
       };
+      const started = deps.now();
       const resource = Object.entries(attributes)
         .map(([key, value]) => `${key}=${value}`)
         .join(",");
       const harness = commandLine(deps.harnesses, plan.harness, `npx -y @opensoftware/harness-${plan.harness} run`);
       const adapter = definition.sandboxAdapter;
       // The agent's model and gateway (ADR 0070) and its effort level (ADR 0078), with or without a sandbox.
-      const agentEnv = { ...(await gatewayEnv(view, definition, plan.model)), OSF_EFFORT: plan.effort };
+      const agentEnv = {
+        ...(await gatewayEnv(view, definition, plan.model)),
+        OSF_EFFORT: plan.effort,
+        // The harness's spans join the run's trace below the stage's span (ADR 0087).
+        TRACEPARENT: traceparentOf(view.runId, index),
+      };
+      let outcome: Outcome = "failed";
+      let sessionId: string | undefined;
       const sandbox = plan.sandbox
         ? await createSandbox(
             commandLine(deps.sandboxes, adapter, `npx -y @opensoftware/sandbox-${adapter}`),
@@ -209,7 +243,9 @@ export function activities(deps: ActivityDeps) {
                 prompt,
               },
         );
+        sessionId = turn.sessionId;
         const { stopReason, takenOver } = await untilDone(turn, view.runId, index, steered);
+        outcome = stopReason === "end_turn" ? "succeeded" : stopReason === "cancelled" ? "cancelled" : "failed";
         await sandbox?.copyOut();
         const pullRequest = lastPullRequestIn(turn.transcript());
         return {
@@ -222,6 +258,23 @@ export function activities(deps: ActivityDeps) {
         };
       } finally {
         await sandbox?.destroy();
+        await trace({
+          runId: view.runId,
+          index,
+          name: `stage ${plan.stage}`,
+          start: started,
+          end: deps.now(),
+          outcome,
+          resource: { ...resourceOf(view), "osf.stage": plan.stage },
+          attributes: {
+            "osf.stage": plan.stage,
+            "osf.agent": plan.agent,
+            "osf.harness.name": plan.harness,
+            "gen_ai.request.model": plan.model,
+            "osf.effort": plan.effort,
+            "gen_ai.conversation.id": sessionId,
+          },
+        });
       }
     },
   };

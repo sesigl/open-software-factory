@@ -442,3 +442,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-130 | implemented | The module's processes reach Docker through the Docker settings of the machine |
 | SCN-TK-131 | deprecated | sut.helm refuses a cluster that is not a local kind cluster |
 | SCN-TK-132 | implemented | sut.helm refuses a cluster that is not a local kind cluster |
+| SCN-TK-133 | implemented | The scripted harness records each session's trace context |

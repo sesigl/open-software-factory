@@ -767,6 +767,12 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
 - **Problem:** the improvement path sees a factory run only when someone exports its session by hand (P6).
 - **Done when:** the foreman gives each stage a `TRACEPARENT` and exports the stage's session with runlog to the trace
   store of the profile; the console links each stage to its trace.
+- **Slices:**
+  - [x] With `OTEL_EXPORTER_OTLP_ENDPOINT`, one trace per run: a span per stage and one for the run, and the stage's
+    `TRACEPARENT` for its harness (ADR 0087, `SCN-FORE-076`, `-077`, `SCN-TK-133`).
+  - [ ] After each stage, the session's run record (tokens, cost) joins the stage span through `runlog attach` or the
+    harness's `transcript`.
+  - [ ] The profile sets the endpoint to its trace store, and the console links each stage to its span.
 
 ### [ ] T-25 · doctor and a health page (P0)
 

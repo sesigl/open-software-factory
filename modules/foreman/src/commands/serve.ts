@@ -13,6 +13,7 @@ import { readFactory } from "../adapters/factory.ts";
 import { gatekeeper } from "../adapters/gatekeeper.ts";
 import { type Gateway, startGateway } from "../adapters/inference.ts";
 import { type Bus, openBus, SUBJECTS } from "../adapters/nats.ts";
+import { exporterOf } from "../adapters/otlp.ts";
 import type { Definition } from "../domain/definition.ts";
 import { isoNow } from "../domain/time.ts";
 import { activities } from "../workflows/activities.ts";
@@ -104,6 +105,7 @@ export async function serve(env: Env) {
   const taskQueue = env.FOREMAN_TASK_QUEUE || "foreman";
   const pollMs = Number(env.FOREMAN_POLL_MS || 1000);
   const bus = env.FOREMAN_NATS_URL ? await openBus(env.FOREMAN_NATS_URL, warn) : undefined;
+  const traces = exporterOf(env);
 
   const gateway = await gatewayOf(definition.inference, dirname(factoryPath), env);
   // A gateway stops with the server, also when the server cannot start.
@@ -132,6 +134,8 @@ export async function serve(env: Env) {
         pollMs,
         control: (runId) => work.control(runId),
         ...(gateway ? { gateway } : {}),
+        ...(traces ? { traces } : {}),
+        warn,
         env,
       }),
       maxHeartbeatThrottleInterval: pollMs,
