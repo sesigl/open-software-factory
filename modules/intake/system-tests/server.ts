@@ -44,6 +44,12 @@ export async function serving(sut: Sut, env: Record<string, string> = {}) {
     },
     workItem: async (id: string): Promise<WorkItemView | undefined> =>
       (await api().GET("/v1/work-items/{workItemId}", { params: { path: { workItemId: id } }, headers: AUTH })).data,
+    /** Stops the server. */
+    stop: () => sut.http.stop(),
+    /** Starts the stopped server again with the same data folder and these variables changed. */
+    async start(more: Record<string, string> = {}) {
+      url = await sut.http.start(["serve"], { env: { INTAKE_API_TOKEN: API_TOKEN, ...env, ...more } });
+    },
     /** Stops the server and starts it again with the same data folder and these variables changed. */
     async restart(more: Record<string, string> = {}) {
       await sut.http.stop();
@@ -230,7 +236,7 @@ const SUBJECTS: Record<string, string> = {
 export async function following(sut: Sut, fakes: Fakes, env: Record<string, string> = {}) {
   const nats = await fakes.nats();
   const server = await received(sut, fakes, { INTAKE_NATS_URL: nats.url, ...env });
-  const events = await sut.events.watch(nats);
+  const events = await sut.events.watch(nats, "osf.>");
   return {
     ...server,
     publish: (event: ReturnType<typeof runEvent>) => events.publish(SUBJECTS[event.type] as string, event as never),
@@ -250,7 +256,7 @@ export async function following(sut: Sut, fakes: Fakes, env: Record<string, stri
 export async function slackFollowing(sut: Sut, fakes: Fakes) {
   const nats = await fakes.nats();
   const server = await slackServing(sut, fakes, { INTAKE_NATS_URL: nats.url });
-  const events = await sut.events.watch(nats);
+  const events = await sut.events.watch(nats, "osf.>");
   const ts = (await server.slack.say({ channel: CHANNEL, text: `<@${server.slack.bot}> Export reports as CSV` })).ts;
   await expect.poll(() => server.replies().length, { timeout: 10_000, interval: 50 }).toBe(1);
   const id = /wi_[0-9a-f]{20}/.exec(server.replies()[0]?.text ?? "")?.[0] as string;

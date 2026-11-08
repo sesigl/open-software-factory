@@ -130,3 +130,45 @@ export async function servingInbox(
 
 /** The links of the page's navigation. */
 export const navLinks = (html: string) => links(/<header[\s\S]*?<\/header>/.exec(html)?.[0] ?? "");
+
+/** The answer of a server's /v1/health with these checks: 200 when every check is ok, else 503. */
+export const healthRoute = (checks: { name: string; ok: boolean; detail?: string }[]) => {
+  const ok = checks.every((check) => check.ok);
+  return { path: "/v1/health", status: ok ? 200 : 503, body: { status: ok ? "ok" : "failing", checks } };
+};
+
+/** A server's API with its /v1/health, and the route that needs its token answering `tokenStatus`. */
+export const healthyServer = (
+  fakes: Fakes,
+  checks: { name: string; ok: boolean; detail?: string }[],
+  tokenRoute: string,
+  tokenStatus = 200,
+) =>
+  fakes.http([
+    healthRoute(checks),
+    { path: tokenRoute, status: tokenStatus, body: tokenStatus === 200 ? { runs: [] } : { title: "Unauthorized" } },
+  ]);
+
+export const TOKEN_ROUTES = {
+  foreman: "/v1/runs",
+  intake: "/v1/work-items/wi_00000000000000000000",
+  gatekeeper: "/v1/gates/g0000000000000000",
+} as const;
+
+/** An intake that lists no work items and takes every submission, as intake answers it. */
+export const submittingIntake = (fakes: Fakes) =>
+  fakes.http([
+    { path: "/v1/inbox", body: { workItems: [] } },
+    { method: "POST", path: "/v1/work-items", status: 201, body: {} },
+  ]);
+
+/** Sends the form "submit work" to the console with these fields and headers, without following a redirect. */
+export async function sendWorkForm(url: string, fields: Record<string, string>, headers: Record<string, string> = {}) {
+  const response = await fetch(`${url}/work`, {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded", ...headers },
+    body: new URLSearchParams(fields).toString(),
+    redirect: "manual",
+  });
+  return { status: response.status, location: response.headers.get("location"), html: await response.text() };
+}

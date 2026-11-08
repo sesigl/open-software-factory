@@ -34,12 +34,15 @@ export type GateView = Schemas["GateView"];
 export type ApiProblem = Schemas["ApiProblem"];
 export type WorkSubmission = Schemas["WorkSubmission"];
 export type WorkItemView = Schemas["WorkItemView"];
+export type WorkItemList = Schemas["WorkItemList"];
 export type WorkRequest = Schemas["WorkRequest"];
 export type RunView = Schemas["RunView"];
 export type StageView = Schemas["StageView"];
 export type CheckView = Schemas["CheckView"];
 export type RunSignal = Schemas["RunSignal"];
 export type SandboxSpec = Schemas["SandboxSpec"];
+export type Health = Schemas["Health"];
+export type HealthCheck = Schemas["HealthCheck"];
 
 /** One reason a document does not match its format. `path` is a JSON Pointer into the document. */
 export interface Problem {

@@ -73,6 +73,8 @@ export interface Store {
   /** The events not yet published, oldest first, and a way to mark them published. */
   unpublished(): Promise<{ seq: number; subject: string; event: unknown }[]>;
   published(seqs: number[]): Promise<void>;
+  /** Resolves when the database answers a query. */
+  ping(): Promise<void>;
   close(): Promise<void>;
 }
 
@@ -171,6 +173,9 @@ export async function openStore(url: string): Promise<Store> {
     },
     async published(seqs) {
       await pool.query("UPDATE gatekeeper.outbox SET published_at = now() WHERE seq = ANY($1)", [seqs]);
+    },
+    async ping() {
+      await pool.query("SELECT 1");
     },
     close: () => pool.end(),
   };

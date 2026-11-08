@@ -43,6 +43,11 @@ model WorkRequest {
   receivedAt: utcDateTime;
 }
 
+/** intake: the latest work items, as `GET /v1/inbox` answers them, the one received last first. */
+model WorkItemList {
+  workItems: WorkItemView[];
+}
+
 /** intake: a work item as the HTTP API shows it (ADR 0063). */
 model WorkItemView {
   /** Its ID is "wi_" and 20 hex digits of the SHA-256 of its dedupe key. */

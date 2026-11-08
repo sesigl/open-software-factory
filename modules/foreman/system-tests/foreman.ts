@@ -25,6 +25,20 @@ export function readmeFiles(fakes: Fakes): Record<string, string> {
 
 export const readmeWork = (fakes: Fakes): WorkItem => JSON.parse(readmeFiles(fakes)["work.json"] as string);
 
+/** The CloudEvent work.received@v1 of the README's work item, as intake publishes it. */
+export const workReceived = (fakes: Fakes) => {
+  const workItem = readmeWork(fakes);
+  return {
+    specversion: "1.0",
+    id: workItem.id,
+    source: "/osf/intake",
+    type: "work.received@v1",
+    time: "2026-01-01T00:00:00Z",
+    subject: workItem.id,
+    data: workItem,
+  };
+};
+
 /** A second work item, besides the README's. */
 export const otherWork = (fakes: Fakes): WorkItem => ({
   ...readmeWork(fakes),
@@ -189,6 +203,10 @@ export async function servingCommit(sut: Sut, fakes: Fakes, commit: string, setu
         await new Promise((resolve) => setTimeout(resolve, 50));
       }
     },
+    /** Stops the server. */
+    stop: () => sut.http.stop(),
+    /** Starts the stopped server again with the same data folder and variables. */
+    startAgain: () => sut.http.start(["serve"], { env }),
     /** Stops the server and starts it again with the same data folder and variables. */
     async restart() {
       await sut.http.stop();
@@ -212,7 +230,8 @@ export async function started(sut: Sut, fakes: Fakes, setup: Setup = {}) {
 export async function waitingAtGate(sut: Sut, fakes: Fakes, setup: Setup = {}) {
   const run = await started(sut, fakes, { factory: gatedFactory(fakes), gatekeeper: true, nats: true, ...setup });
   await run.until(run.runId, "blocked");
-  const events = await sut.events.watch(run.nats as NonNullable<typeof run.nats>);
+  // Only the factory's subjects: a watcher of ">" would take the messages that NATS still sends to a stopped foreman.
+  const events = await sut.events.watch(run.nats as NonNullable<typeof run.nats>, "osf.>");
   /** Publishes gate.decided@v1 for the gate, as gatekeeper does. */
   const decide = (decision: "approved" | "rejected", gateId = GATE) =>
     events.publish("osf.gate.decided.v1", {
@@ -239,7 +258,16 @@ export interface ChecksSetup {
   /** Whether the "implement" turn replies with the pull request's link; default true. */
   linked?: boolean;
   nats?: boolean;
+  /** The text of factory.yaml; default: the README's "checks/factory.yaml". */
+  factory?: string;
 }
+
+/** The README's "checks/factory.yaml" whose stage "ship" must also produce evidence. */
+export const evidenceFactory = (fakes: Fakes): string =>
+  (readmeFiles(fakes)["checks/factory.yaml"] as string).replace(
+    "    checks: [verify]\n",
+    "    checks: [verify]\n    evidence: required\n",
+  );
 
 /**
  * "foreman serve" on the README's "checks/factory.yaml", with the fake GitHub, whose repository "tester/web" has the
@@ -253,18 +281,18 @@ export async function servingChecks(sut: Sut, fakes: Fakes, setup: ChecksSetup =
     title: TITLE,
     files: { "export.ts": "export const csv = true;\n" },
   });
-  /** Sets the check "verify" of the pull request's head commit, as CI does. */
-  const check = async (state: string) => {
+  /** Sets the check of the pull request's head commit, "verify" unless named, as CI does. */
+  const check = async (state: string, context = "verify") => {
     const response = await fetch(`${github.url}/repos/${github.owner}/web/statuses/${pr.sha}`, {
       method: "POST",
       headers: { authorization: `token ${github.token}`, "content-type": "application/json" },
-      body: JSON.stringify({ state, context: "verify" }),
+      body: JSON.stringify({ state, context }),
     });
     if (response.status !== 201) throw new Error(`the fake GitHub answered ${response.status} to the check`);
   };
   if (setup.check) await check(setup.check);
   const server = await serving(sut, fakes, {
-    factory: readmeFiles(fakes)["checks/factory.yaml"] as string,
+    factory: setup.factory ?? (readmeFiles(fakes)["checks/factory.yaml"] as string),
     turns: [
       { when: PLAN, reply: "plan.md is written" },
       { when: IMPLEMENT, reply: setup.linked === false ? "done" : `Opened ${pr.url} for review.` },

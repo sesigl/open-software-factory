@@ -55,13 +55,15 @@ with the same work item.
 | --- | --- |
 | `POST /v1/work-items` | Submit work: a work item without its `id`. 201 with the new work item, 200 with the work item that has the same dedupe key, 400 with a problem that names the field. |
 | `GET /v1/work-items?dedupeKey=<key>` | The work item with this dedupe key, such as an issue's link or `sentry:<issue ID>`. 404 when there is none, 400 without the key. |
+| `GET /v1/inbox` | The latest work items, the one received last first, each as `GET /v1/work-items/{workItemId}` shows it: `{ "workItems": [...] }`. At most 50. `?status=` keeps the work items in that status; another status is 400. |
 | `GET /v1/work-items/{workItemId}` | The work item, its `status` ([Events](#events)), its `runId` once the foreman started its run, `receivedAt`, and `requests`: the requester, origin and time of each submission, oldest first. 404 for a work item the server does not know. |
+| `GET /v1/health` | Whether the server reaches its database and, with `INTAKE_NATS_URL`, NATS: 200 with `status: ok`, else 503 with the failing check and what to fix ([ADR 0086](../../docs/decisions/0086-health-routes.md)). Needs no token. |
 | `POST /slack/events` | Slack's Events API, with `INTAKE_SLACK_TOKEN`: a message that mentions the bot becomes a work item. |
 | `POST /forge/events` | The forge's webhook, with `INTAKE_WEBHOOK_SECRET`: an issue that gets the label `factory` becomes a work item. |
 | `POST /sentry/events` | Sentry's webhook, with `INTAKE_SENTRY_SECRET`: an alert about a fatal error becomes a `bug`. |
 
 The OpenAPI of the `/v1` routes is in [`contracts/openapi/openapi.json`](../../contracts/openapi/openapi.json); the
-TypeScript type `paths` of `@opensoftware/contracts` types a client. The `/v1` routes need `Authorization: Bearer
+TypeScript type `paths` of `@opensoftware/contracts` types a client. The `/v1` routes except `/v1/health` need `Authorization: Bearer
 <INTAKE_API_TOKEN>`, the webhook routes their sender's signature; all answer 401 otherwise. Errors are
 `application/problem+json` with `title`, `status` and `detail`.
 
@@ -193,8 +195,11 @@ work item of a run follows it (ADR 0071):
 | `run.completed@v1` with the outcome `succeeded`, `failed` or `cancelled` | `complete`, `failed` or `cancelled` |
 
 A `run.completed@v1` that lists `pullRequests` also links them in the Slack threads of the work item, as described in
-[Slack](#slack). A `run.started@v1` that arrives after its run completed changes nothing. The subjects are core NATS: run events
-published while the server is down do not reach it. While NATS is unreachable the server tries again every 2 seconds.
+[Slack](#slack). A `run.started@v1` that arrives after its run completed changes nothing. The events are kept in the JetStream stream
+`OSF` on `osf.>`, and the server reads the run events through its durable consumer `intake` ([ADR
+0085](../../docs/decisions/0085-durable-events.md)): run events published while the server is down reach it when it
+starts again. The outbox removes an event only after the stream stored it. While NATS is unreachable the server tries
+again every 2 seconds.
 
 ## Configuration
 
@@ -281,3 +286,10 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-INTAKE-040 | implemented | A run's start adds no reply to the Slack thread, only its pull request does |
 | SCN-INTAKE-041 | implemented | The Factory MCP server lists the fields of "submit_work" and "work_status" with their descriptions |
 | SCN-INTAKE-042 | implemented | A submission that is not a JSON object gets the status 400 |
+| SCN-INTAKE-043 | implemented | A run event of a time when the server was down reaches the work item when the server starts again |
+| SCN-INTAKE-044 | implemented | A server that reaches its database and NATS is healthy |
+| SCN-INTAKE-045 | implemented | A server that does not reach NATS is failing and says what to fix |
+| SCN-INTAKE-046 | implemented | The inbox lists the work items, the one received last first |
+| SCN-INTAKE-047 | implemented | The inbox lists only the work items in the status the query names |
+| SCN-INTAKE-048 | implemented | The inbox refuses a status that no work item can have |
+| SCN-INTAKE-049 | implemented | A run event that breaks its contract is a warning and comes again after 2 seconds |

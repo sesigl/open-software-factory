@@ -49,11 +49,15 @@ export interface Store {
     event?: { subject: string; event: WorkReceived },
   ): Promise<{ created: boolean; added: boolean }>;
   get(id: string): Promise<Stored | undefined>;
+  /** The IDs of the latest work items, the one received last first, in the status if one is given. */
+  latest(status?: Status): Promise<string[]>;
   /** Moves the work item to the run's status; "running" only moves a work item that is still "received". */
   followRun(fact: RunFact): Promise<void>;
   /** The events not yet published, oldest first. */
   unpublished(): Promise<Outgoing[]>;
   published(seqs: number[]): Promise<void>;
+  /** Resolves when the database answers a query. */
+  ping(): Promise<void>;
   close(): Promise<void>;
 }
 
@@ -108,6 +112,13 @@ export async function openStore(url: string | undefined, folder: string): Promis
         requests: requests.rows.map((request) => ({ ...request, at: Number(request.at) })),
       };
     },
+    async latest(status) {
+      const { rows } = await db.query<{ id: string }>(
+        "SELECT id FROM intake.work_items WHERE $1::text IS NULL OR status = $1 ORDER BY received_at DESC, id LIMIT 50",
+        [status ?? null],
+      );
+      return rows.map(({ id }) => id);
+    },
     async followRun({ workItemId, runId, status }) {
       await db.query(
         "UPDATE intake.work_items SET status = $3, run_id = $2 WHERE id = $1 AND (status = 'received' OR $3 <> 'running')",
@@ -122,6 +133,9 @@ export async function openStore(url: string | undefined, folder: string): Promis
     },
     async published(seqs) {
       await db.query("UPDATE intake.outbox SET published = true WHERE seq = ANY($1::bigint[])", [seqs]);
+    },
+    async ping() {
+      await db.query("SELECT 1");
     },
     close: () => db.close(),
   };

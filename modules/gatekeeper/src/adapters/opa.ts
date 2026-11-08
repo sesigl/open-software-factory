@@ -1,5 +1,6 @@
 // Runs `opa eval` as a separate process (ADR 0047): the request is `input`, the answer is `data.gatekeeper`.
-import { spawn } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
+import { promisify } from "node:util";
 import { UsageError } from "@opensoftware/cli";
 
 interface OpaOutput {
@@ -33,4 +34,9 @@ export async function evaluate(opa: string, policy: string, input: unknown): Pro
     throw new UsageError(`OPA cannot evaluate ${policy}: ${errors.join("; ") || `exit ${code}`}`);
   }
   return output.result?.[0]?.expressions[0]?.value;
+}
+
+/** Resolves when the OPA program starts and prints its version. */
+export async function opaVersion(opa: string): Promise<void> {
+  await promisify(execFile)(opa, ["version"]);
 }

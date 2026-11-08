@@ -15,3 +15,4 @@ import "./intake-api.tsp";
 import "./foreman.tsp";
 import "./foreman-api.tsp";
 import "./sandbox.tsp";
+import "./health.tsp";

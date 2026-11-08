@@ -62,7 +62,7 @@ export interface HarnessCommand {
 /** A session the agent opened: its folder and the model and effort variables of its environment (ADR 0070, 0078). */
 export interface HarnessSession {
   cwd: string;
-  /** The variables `OPENAI_*`, `ANTHROPIC_*` and `OSF_EFFORT` the agent got, by name. */
+  /** The variables `OPENAI_*`, `ANTHROPIC_*`, `OSF_EFFORT` and `TRACEPARENT` the agent got, by name. */
   env: Record<string, string>;
 }
 

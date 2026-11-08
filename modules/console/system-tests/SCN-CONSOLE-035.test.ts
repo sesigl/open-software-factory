@@ -24,6 +24,6 @@ scenario("SCN-CONSOLE-035", async ({ sut, fakes, given, when, then }) => {
   );
 
   await then('the page\'s navigation does not link "/inbox"', async () => {
-    expect(navLinks(page.html).map((link) => link.href)).toEqual(["/", "/factory"]);
+    expect(navLinks(page.html).map((link) => link.href)).toEqual(["/", "/factory", "/health"]);
   });
 });

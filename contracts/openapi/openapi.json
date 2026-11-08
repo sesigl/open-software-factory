@@ -117,6 +117,87 @@
         }
       }
     },
+    "/v1/health": {
+      "get": {
+        "operationId": "HealthApi_getHealth",
+        "description": "The server's health. Needs no token, and names no secret. 503 when a check fails.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {}
+        ]
+      }
+    },
+    "/v1/inbox": {
+      "get": {
+        "operationId": "IntakeApi_listWorkItems",
+        "description": "The 50 latest work items, the one received last first; with `status`, only the work items in that status.",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/WorkItemStatus"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkItemList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The server could not understand the request due to invalid syntax.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Access is unauthorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/runs": {
       "post": {
         "operationId": "ForemanApi_startRun",
@@ -1388,6 +1469,55 @@
         ],
         "description": "gatekeeper: a gate as the HTTP API shows it (ADR 0048)."
       },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "ok"
+              },
+              {
+                "type": "string",
+                "const": "failing"
+              }
+            ]
+          },
+          "checks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HealthCheck"
+            }
+          }
+        },
+        "required": [
+          "status",
+          "checks"
+        ],
+        "description": "The state of a server: `ok` when every check is ok."
+      },
+      "HealthCheck": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "$ref": "#/components/schemas/Name",
+            "description": "The system, like \"database\", \"nats\" or \"temporal\"."
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "detail": {
+            "type": "string",
+            "description": "What failed and how to fix it, when `ok` is false. Never a secret."
+          }
+        },
+        "required": [
+          "name",
+          "ok"
+        ],
+        "description": "One system a server needs, such as its database or NATS, and whether the server reaches it now."
+      },
       "Hostname": {
         "type": "string",
         "pattern": "^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*$",
@@ -2423,6 +2553,10 @@
             "type": "string",
             "format": "date-time"
           },
+          "traceId": {
+            "$ref": "#/components/schemas/TraceId",
+            "description": "The OpenTelemetry trace of the run: the first 32 hex digits of the SHA-256 of `runId` (ADR 0087)."
+          },
           "stages": {
             "type": "array",
             "items": {
@@ -2958,6 +3092,21 @@
           "dedupeKey"
         ],
         "description": "One unit of requested work: the `data` of a `work.received@v1` CloudEvent."
+      },
+      "WorkItemList": {
+        "type": "object",
+        "properties": {
+          "workItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkItemView"
+            }
+          }
+        },
+        "required": [
+          "workItems"
+        ],
+        "description": "intake: the latest work items, as `GET /v1/inbox` answers them, the one received last first."
       },
       "WorkItemStatus": {
         "type": "string",

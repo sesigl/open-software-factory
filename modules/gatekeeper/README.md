@@ -201,11 +201,12 @@ curl -H "Authorization: Bearer $GATEKEEPER_API_TOKEN" -H "content-type: applicat
 | --- | --- |
 | `POST /v1/gates` | Ask for a decision on a request (the JSON of [Request](#request)). 201 with the new gate, 200 with the gate the same request made before, 400 with a problem that names the field. |
 | `GET /v1/gates/{gateId}` | The gate: `state` (`pending`, `approved`, `rejected` or `expired`), `waitingFor`, `requestedAt`, `expiresAt` and, once decided, the `record`. 404 for a gate the server does not know. |
+| `GET /v1/health` | Whether the server reaches its database, can start OPA and, with `GATEKEEPER_NATS_URL`, reaches NATS: 200 with `status: ok`, else 503 with the failing check and what to fix ([ADR 0086](../../docs/decisions/0086-health-routes.md)). Needs no token. |
 | `POST /slack/events` | Slack's Events API: a message in the channel makes the server read the threads of its pending gates, so a reply decides like `status`. |
 | `POST /slack/actions` | Slack's interactivity: a press of Approve or Reject decides like a reply `approve` or `reject`. |
 
 The OpenAPI of the `/v1` routes is in [`contracts/openapi/openapi.json`](../../contracts/openapi/openapi.json); the
-TypeScript type `paths` of `@opensoftware/contracts` types a client. The `/v1` routes need `Authorization: Bearer
+TypeScript type `paths` of `@opensoftware/contracts` types a client. The `/v1` routes except `/v1/health` need `Authorization: Bearer
 <GATEKEEPER_API_TOKEN>`, the Slack routes Slack's signature; both answer 401 otherwise. Errors are
 `application/problem+json` with `title`, `status` and `detail`.
 
@@ -243,7 +244,9 @@ request URL `https://<server>/slack/events`, and interactivity with the request 
 
 With `GATEKEEPER_NATS_URL`, each event is written to the outbox table in the same transaction as the gate's change
 and published right after. While NATS is unreachable the events wait in the outbox and go out once it is back, at
-least once, with the same event IDs.
+least once, with the same event IDs. The events go to the JetStream stream `OSF` on `osf.>`, which gatekeeper adds
+when it is missing; an event leaves the outbox only after the stream stored it, so a foreman that is down gets the
+decision when it starts ([ADR 0085](../../docs/decisions/0085-durable-events.md)).
 
 ## Records
 
@@ -399,3 +402,5 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-GATE-088 | implemented | The output of a request names the gate, the groups, the channel and the risk |
 | SCN-GATE-089 | implemented | The server with a wrong setting exits with code 2 and names the setting |
 | SCN-GATE-090 | implemented | A call without an Authorization header gets the status 401 and a problem that says how to send the token |
+| SCN-GATE-091 | implemented | A server that reaches its database, OPA and NATS is healthy |
+| SCN-GATE-092 | implemented | A server without OPA is failing and says what to fix |

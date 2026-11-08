@@ -751,6 +751,10 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
   durable consumer and acknowledges a message only after it handled it.
 - **Done when:** a work item and a gate decision sent while the foreman is down reach it when it starts, and a run
   event sent while intake is down reaches intake.
+- **Slices:**
+  - [x] The stream `OSF`, JetStream publishes with the event ID as message ID in intake, gatekeeper and the foreman,
+    and the durable consumers `foreman` and `intake` (ADR 0085, `SCN-FORE-073`, `-074`, `SCN-INTAKE-043`).
+  - [ ] Move the image pins of the Compose profile and the Helm chart to the releases with durable events.
 
 ### [ ] T-23 · sandbox on by default (P0)
 
@@ -763,6 +767,12 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
 - **Problem:** the improvement path sees a factory run only when someone exports its session by hand (P6).
 - **Done when:** the foreman gives each stage a `TRACEPARENT` and exports the stage's session with runlog to the trace
   store of the profile; the console links each stage to its trace.
+- **Slices:**
+  - [x] With `OTEL_EXPORTER_OTLP_ENDPOINT`, one trace per run: a span per stage and one for the run, and the stage's
+    `TRACEPARENT` for its harness (ADR 0087, `SCN-FORE-076`, `-077`, `SCN-TK-133`).
+  - [ ] After each stage, the session's run record (tokens, cost) joins the stage span through `runlog attach` or the
+    harness's `transcript`.
+  - [ ] The profile sets the endpoint to its trace store, and the console links each stage to its span.
 
 ### [ ] T-25 · doctor and a health page (P0)
 
@@ -770,25 +780,57 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
   below 500.
 - **Done when:** one command checks each service, token, model route, harness, sandbox, event path and trace store in
   order and prints one fix per failure; the console shows the same list; health routes check their dependencies.
+- **Slices:**
+  - [x] `GET /v1/health` on intake, gatekeeper and the foreman, with one check per dependency and its fix, without a
+    token; `healthOf` in `@opensoftware/cli` (ADR 0086, `SCN-CLI-017` to `-019`, `SCN-INTAKE-044`, `-045`,
+    `SCN-GATE-091`, `-092`, `SCN-FORE-075`).
+  - [x] `console doctor` and the console page `/health`: each server's health and token, and the factory definition,
+    with one fix per failure (`SCN-CONSOLE-037` to `-040`).
+  - [ ] The Compose profile and the Helm chart probe `/v1/health` and want a 2xx answer, and `deploy/README.md` starts
+    with `docker compose run --rm console doctor`, once the images have it.
+  - [ ] Deep checks: one model call per route through LiteLLM, the harness answers ACP `initialize`, a sandbox starts
+    and refuses a denied host, a test event reaches the foreman, a test span reaches the trace store.
 
 ### [ ] T-26 · evidence in the loop (P1)
 
 - **Done when:** a stage with `evidence: required` fails without a proof evidence bundle for its pull request.
+- **Slices:**
+  - [x] `evidence: required` adds the check `proof` to the stage's checks; without a forge adapter the server does not
+    start (ADR 0088, `SCN-FORE-078` to `-080`).
+  - [ ] The reference factory's README and `deploy/README.md` say to run proof in the target repository's CI, once the
+    profile pins the foreman with this change.
 
 ### [ ] T-27 · a reference factory that works on any repository (P1)
 
 - **Done when:** the work item or the factory names the repository, and the reference factory implements an issue of
   any GitHub repository with one token.
+- **Slices:**
+  - [x] The reference prompts clone the repository of the issue in the origin link, follow the repository's own
+    instructions and checks, and stop when a work item names no repository.
+  - [ ] A first run of the reference factory on a sample repository, with a paid model (ask the owner first).
 
 ### [ ] T-28 · console actions and the work inbox (P1)
 
 - **Done when:** the console lists work items (an intake list route), submits work, approves or rejects a gate, and
   steers, cancels, takes over and hands back a run, each through the existing APIs with the person's identity.
+- **Slices:**
+  - [x] intake's `GET /v1/inbox` and the console page `/work` (`SCN-INTAKE-046` to `-048`, `SCN-CONSOLE-043`, `-044`).
+  - [x] Actions behind the sign-in proxy's identity header, off by default; the form "submit work" on `/work`
+    (ADR 0089, `SCN-CONSOLE-045` to `-047`).
+  - [ ] Steer, cancel, take over and hand back a run, and decide a gate, from the console; each API records the
+    person who acted first.
 
 ### [ ] T-29 · one trace store (P1)
 
 - **Done when:** the profile runs one trace store, and runlog, scorekit and the console use the same one. An adopted
   service without a consumer leaves the profile.
+- **Decision:** Phoenix. It is one container on the profile's PostgreSQL and takes OTLP; Langfuse needs ClickHouse,
+  Redis and S3 more. scorekit and observer keep Langfuse as an option outside the profile.
+- **Slices:**
+  - [x] The run's view names its `traceId`, and `CONSOLE_TRACE_URL` takes `{traceId}` (`SCN-FORE-081`,
+    `SCN-CONSOLE-041`, `-042`).
+  - [ ] The profile: the foreman sends to Phoenix, the console links Phoenix's trace by `{traceId}`, and SeaweedFS
+    leaves the profile (no consumer, ADR 0088), once the images have these changes.
 
 ### [ ] T-30 · simple setup (P1)
 
@@ -808,6 +850,20 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
 ### [x] T-33 · current status lines (P2)
 
 - **Done when:** `README.md` and `AGENTS.md` describe the current phase as `TODO.md` does.
+
+### [ ] T-34 · faster mutation tests (P2)
+
+- **Done when:** a second push of the same pull request runs no mutant again whose unit, test and changed lines did
+  not change, and the before and after times of one pull request are in the ADR. No mutator is removed and the
+  MUTATION limit stays.
+- **Slices:**
+  - [ ] Each unit's shard report has the key of turbo's hash of the unit's mutation task and a hash of its changed
+    line ranges, not the base commit and the whole tree.
+  - [ ] Each mutant has a stable shard from a hash of its file, position and mutator.
+  - [ ] Stryker's incremental mode per unit. A change outside the unit's `src/` and `system-tests/` discards the
+    incremental file. The weekly full run stays.
+  - [ ] No mutation run on a draft pull request or before `verify` passes.
+  - [ ] Units with slow starts (litellm): smaller shards, and the fastest scenario runs first.
 
 ---
 

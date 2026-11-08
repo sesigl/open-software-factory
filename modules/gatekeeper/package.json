@@ -33,6 +33,7 @@
     "@types/pg": "8.23.1"
   },
   "dependencies": {
+    "@nats-io/jetstream": "3.4.0",
     "@nats-io/transport-node": "3.4.0",
     "@opensoftware/cli": "workspace:*",
     "@opensoftware/contracts": "workspace:*",

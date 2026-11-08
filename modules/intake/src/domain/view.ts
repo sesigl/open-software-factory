@@ -11,6 +11,14 @@ export interface Request {
 
 export type Status = WorkItemView["status"];
 
+export const STATUSES: Status[] = ["received", "running", "complete", "failed", "cancelled"];
+
+/** The status of GET /v1/inbox?status=, if any; or the problem with it. */
+export function inboxStatusOf(status: string | undefined): { status?: Status } | string {
+  if (status === undefined) return {};
+  return STATUSES.includes(status as Status) ? { status: status as Status } : `status: one of ${STATUSES.join(", ")}`;
+}
+
 export interface Stored {
   workItem: WorkItem;
   status: Status;

@@ -118,3 +118,11 @@ Feature: Scripted coding agent
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-133 @status=implemented
+  Scenario: The scripted harness records each session's trace context
+    Given a module whose CLI is an ACP client of the agent in "DEMO_AGENT_COMMAND" that opens a session in its folder and sends "fix the typo"
+    And its system test starts the module with "TRACEPARENT" set to "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01", and expects one session with that folder and that variable
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

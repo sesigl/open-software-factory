@@ -4,15 +4,16 @@
 import { timingSafeEqual } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { UsageError } from "@opensoftware/cli";
+import { type Health, healthOf, UsageError } from "@opensoftware/cli";
 import type { GateDecided, WorkItem } from "@opensoftware/contracts";
-import { Client, Connection } from "@temporalio/client";
+import { Client, Connection, WorkflowNotFoundError } from "@temporalio/client";
 import { NativeConnection, Worker } from "@temporalio/worker";
 import Fastify, { type FastifyReply } from "fastify";
 import { readFactory } from "../adapters/factory.ts";
 import { gatekeeper } from "../adapters/gatekeeper.ts";
 import { type Gateway, startGateway } from "../adapters/inference.ts";
 import { type Bus, openBus, SUBJECTS } from "../adapters/nats.ts";
+import { exporterOf } from "../adapters/otlp.ts";
 import type { Definition } from "../domain/definition.ts";
 import { isoNow } from "../domain/time.ts";
 import { activities } from "../workflows/activities.ts";
@@ -31,14 +32,20 @@ function authorized(header: string | undefined, token: string): boolean {
   return sent.length === wanted.length && timingSafeEqual(sent, wanted);
 }
 
-function api(work: Runs, token: string) {
+function api(work: Runs, token: string, health: () => Promise<Health>) {
   const app = Fastify();
   app.setErrorHandler((error: Error & { statusCode?: number }, _request, reply) => {
     if (error instanceof UsageError) return problem(reply, 400, "Bad request", error.message);
     if (error instanceof Conflict) return problem(reply, 409, error.title, error.message);
     return problem(reply, error.statusCode ?? 500, "The request failed", error.message);
   });
+  // The health route needs no token (ADR 0086).
+  app.get("/v1/health", async (_request, reply) => {
+    const answer = await health();
+    return reply.code(answer.status === "ok" ? 200 : 503).send(answer);
+  });
   app.addHook("onRequest", async (request, reply) => {
+    if (request.routeOptions.url === "/v1/health") return;
     if (!authorized(request.headers.authorization, token))
       return problem(reply, 401, "Unauthorized", "send Authorization: Bearer <FOREMAN_API_TOKEN>");
   });
@@ -62,14 +69,23 @@ function api(work: Runs, token: string) {
   return app;
 }
 
-/** Starts runs for work items from intake and hands gate decisions to the runs that wait for them. */
-function listen(bus: Bus, work: Runs): void {
-  bus.subscribe(SUBJECTS.workReceived, async (event) => {
-    await work.start((event as { data?: WorkItem }).data);
-  });
-  bus.subscribe(SUBJECTS.gateDecided, async (event) => {
-    const { data } = event as GateDecided;
-    await work.decided(data.workItemId, { gateId: data.gateId, state: data.decision });
+/**
+ * Starts runs for work items from intake and hands gate decisions to the runs that wait for them, through the durable
+ * consumer "foreman" (ADR 0085). An event that can never succeed, a work item that is not valid or a decision for a run
+ * that does not exist, is a warning and is acknowledged; another failure comes again.
+ */
+function listen(bus: Bus, work: Runs, warn: (text: string) => void): Promise<void> {
+  return bus.consume("foreman", [SUBJECTS.workReceived, SUBJECTS.gateDecided], async (event, subject) => {
+    const { data } = event as { data?: unknown };
+    try {
+      if (subject === SUBJECTS.gateDecided) {
+        const { workItemId, gateId, decision } = data as GateDecided["data"];
+        await work.decided(workItemId, { gateId, state: decision });
+      } else await work.start(data as WorkItem);
+    } catch (failure) {
+      if (!(failure instanceof UsageError || failure instanceof WorkflowNotFoundError)) throw failure;
+      warn(`${subject}: ${failure.message}`);
+    }
   });
 }
 
@@ -86,11 +102,13 @@ export async function serve(env: Env) {
   const taskQueue = env.FOREMAN_TASK_QUEUE || "foreman";
   const pollMs = Number(env.FOREMAN_POLL_MS || 1000);
   const bus = env.FOREMAN_NATS_URL ? await openBus(env.FOREMAN_NATS_URL, warn) : undefined;
+  const traces = exporterOf(env);
 
   const gateway = await gatewayOf(definition.inference, dirname(factoryPath), env);
   // A gateway stops with the server, also when the server cannot start.
   try {
-    const client = new Client({ connection: await Connection.connect({ address }), namespace });
+    const temporal = await Connection.connect({ address });
+    const client = new Client({ connection: temporal, namespace });
     const work = runs({ client, taskQueue, factory: () => readFactory(factoryPath), now });
     const worker = await Worker.create({
       connection: await NativeConnection.connect({ address }),
@@ -113,15 +131,37 @@ export async function serve(env: Env) {
         pollMs,
         control: (runId) => work.control(runId),
         ...(gateway ? { gateway } : {}),
+        ...(traces ? { traces } : {}),
+        warn,
         env,
       }),
       maxHeartbeatThrottleInterval: pollMs,
       defaultHeartbeatThrottleInterval: pollMs,
     });
     const running = worker.run();
-    if (bus) listen(bus, work);
+    if (bus) await listen(bus, work, warn);
 
-    const app = api(work, token);
+    const app = api(work, token, () =>
+      healthOf([
+        {
+          name: "temporal",
+          check: async () => {
+            await temporal.workflowService.getSystemInfo({});
+          },
+          fix: `check FOREMAN_TEMPORAL_ADDRESS (${address}) and that Temporal runs`,
+        },
+        ...(bus
+          ? [
+              {
+                name: "nats",
+                check: () => bus.ping(),
+                fix: "check FOREMAN_NATS_URL and that NATS runs",
+              },
+            ]
+          : []),
+      ]),
+    );
+
     const port = Number(env.PORT || 8080);
     await app.listen({ port, host: "0.0.0.0" });
     process.stdout.write(`foreman serves the run API on port ${port}, task queue ${taskQueue} at ${address}\n`);

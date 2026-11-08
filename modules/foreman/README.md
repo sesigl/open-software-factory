@@ -207,6 +207,11 @@ The forge adapter is the one the factory names under `providers.forge`; a factor
 `npx -y @opensoftware/forge-<name>`. It gets `FORGE_URL` and `FORGE_TOKEN` from `FOREMAN_FORGE_URL` and
 `FOREMAN_FORGE_TOKEN`.
 
+A stage with `evidence: required` also waits for the check `proof`: the commit status that
+[proof](../proof/README.md) sets when it attaches the evidence of a pull request
+([ADR 0088](../../docs/decisions/0088-evidence-check.md)). Run proof in the CI of the repository, or the stage stays
+blocked. Such a stage needs a forge adapter under `providers.forge`, as `checks` do.
+
 ## Inference gateway
 
 Give the factory's agents one model endpoint with a budget per run: name an
@@ -307,11 +312,12 @@ cancel ends a run that a person took over.
 | `POST /v1/runs` | Start the run of a work item (the [work item](../../contracts/work-item/work-item.schema.json) format). 201 with the new run, 200 with the run the same work item started before, 400 with a problem that names the field. |
 | `GET /v1/runs` | The runs of the server, running runs first, then the runs that ended, the one that ended last first: `{ "runs": [...] }`, each as `GET /v1/runs/{runId}` shows it. `?state=` with `running`, `blocked`, `complete`, `failed` or `cancelled` lists only the runs in that state; another state is 400. |
 | `GET /v1/runs/{runId}` | The run: `state`, `factory`, `factoryVersion`, `pullRequest`, `folder`, `startedAt`, `endedAt` and its `stages`. 404 for a run the server does not know. |
+| `GET /v1/health` | Whether the server reaches Temporal and, with `FOREMAN_NATS_URL`, NATS: 200 with `status: ok`, else 503 with the failing check and what to fix ([ADR 0086](../../docs/decisions/0086-health-routes.md)). Needs no token. |
 | `POST /v1/runs/{runId}/signals` | `{ "type": "steer", "message": "…" }` sends the message to the running stage's agent; `{ "type": "cancel" }` cancels the run; `{ "type": "take-over" }` and `{ "type": "hand-back" }` hand the running stage to a person and back ([Take over](#take-over)). 202 with the run, 409 when the run ended or the signal does not fit its state. |
 
 The OpenAPI of the routes is in [`contracts/openapi/openapi.json`](../../contracts/openapi/openapi.json); the
-TypeScript type `paths` of `@opensoftware/contracts` types a client. Every route needs `Authorization: Bearer
-<FOREMAN_API_TOKEN>`, else 401. Errors are `application/problem+json` with `title`, `status` and `detail`.
+TypeScript type `paths` of `@opensoftware/contracts` types a client. Every route except `/v1/health` needs
+`Authorization: Bearer <FOREMAN_API_TOKEN>`, else 401. Errors are `application/problem+json` with `title`, `status` and `detail`.
 
 A run's ID is `run_` and 20 hex digits of the SHA-256 of the work item's ID, so a work item has one run. A run is
 `running`, `blocked` (at a gate, waiting for checks, or taken over by a person), `complete`, `failed` or `cancelled`. A stage is `pending`,
@@ -357,7 +363,25 @@ on `osf.gate.decided.v1` to the run of its work item. A run publishes
 [`run.started@v1`](../../contracts/events/run-started/run-started.schema.json) on `osf.run.started.v1` when it starts and
 [`run.completed@v1`](../../contracts/events/run-completed/run-completed.schema.json) on `osf.run.completed.v1` when it
 ends, with the outcome `succeeded`, `failed` or `cancelled`. Their IDs are the run's ID with `.started` and
-`.completed`. The subjects are core NATS: work published while no foreman listens is not started.
+`.completed`. The events are kept in the JetStream stream `OSF` on `osf.>`, which the
+foreman adds when it is missing, and the foreman reads them through its durable consumer `foreman` ([ADR
+0085](../../docs/decisions/0085-durable-events.md)). A work item or a gate decision published while the foreman is down
+reaches it when it starts again. A message is acknowledged after it is handled; one that fails comes again after 2
+seconds, at most 5 times. A work item that is not valid, or a decision for a run that does not exist, is a warning
+and does not come again.
+
+## Traces
+
+With `OTEL_EXPORTER_OTLP_ENDPOINT`, each run is one OTLP trace ([ADR 0087](../../docs/decisions/0087-run-traces.md)).
+When a stage ends, the foreman sends the span `stage <stage>`, and when the run ends the span `run <factory>`, to
+`<url>/v1/traces`. The stage spans are children of the run's span. Every span has the resource `osf.run.id`,
+`osf.work_item.id` and `osf.factory.version`; a stage span also has `osf.stage`, `osf.agent`, `osf.harness.name`,
+`gen_ai.request.model`, `osf.effort`, `gen_ai.conversation.id` (the harness session) and `osf.outcome`. The trace ID
+is the first 32 hex digits of the SHA-256 of the run's ID, so a restarted foreman sends to the same trace. The run's
+view names it as `traceId`, so the console links the trace.
+
+Each stage's harness gets `TRACEPARENT` with the trace and the stage's span, also in a sandbox, so the harness's own
+spans join the run's trace. A receiver that refuses a span is a warning; the stage goes on.
 
 ## Releases
 
@@ -392,6 +416,9 @@ the minor version. The one-time setup is the same as for contracts
 | `FOREMAN_GATEKEEPER_URL` | string |  | serve: the URL of gatekeeper serve, which a stage with a gate asks for a decision. Required for a factory with gates. |
 | `FOREMAN_GATEKEEPER_TOKEN` | string |  | serve: gatekeeper's API token, GATEKEEPER_API_TOKEN. |
 | `FOREMAN_NATS_URL` | string |  | serve: the NATS server for work.received@v1 and gate.decided@v1 in, and run.started@v1 and run.completed@v1 out. Unset: no events. |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | string |  | serve: the base URL of an OTLP/HTTP receiver, like http://phoenix:6006. Set, each run is one trace with a span per stage and one for the run, sent to <url>/v1/traces, and each stage's harness gets the trace in TRACEPARENT (ADR 0087). |
+| `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | string |  | serve: the full URL of the OTLP/HTTP traces endpoint; takes precedence over OTEL_EXPORTER_OTLP_ENDPOINT. |
+| `OTEL_EXPORTER_OTLP_HEADERS` | string |  | serve: headers for the OTLP receiver as key=value pairs, comma-separated, like a token from a secret store. |
 
 ## Scenarios
 
@@ -471,3 +498,14 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-070 | implemented | A sandboxed stage gets its agent's effort in its sandbox's environment |
 | SCN-FORE-071 | implemented | A stage's prompt names the origin of the work item |
 | SCN-FORE-072 | implemented | A gate request links the run's pull request |
+| SCN-FORE-073 | implemented | A work item that intake publishes while the foreman is down starts a run when the foreman starts again |
+| SCN-FORE-074 | implemented | A gate decision that gatekeeper publishes while the foreman is down reaches the run when the foreman starts again |
+| SCN-FORE-075 | implemented | A server that reaches Temporal and NATS is healthy, without a token |
+| SCN-FORE-076 | implemented | A run sends a span per stage and one for the run, in one trace |
+| SCN-FORE-077 | implemented | Each stage's harness gets the trace and the stage's span in "TRACEPARENT" |
+| SCN-FORE-078 | implemented | A stage that must produce evidence also waits for the check "proof" |
+| SCN-FORE-079 | implemented | A stage that must produce evidence fails when the check "proof" failed |
+| SCN-FORE-080 | implemented | A factory with a stage that must produce evidence but without a forge adapter stops the server at the start |
+| SCN-FORE-081 | implemented | A run's view names its trace ID |
+| SCN-FORE-082 | implemented | A work item that the foreman cannot start for a moment comes again and starts its run |
+| SCN-FORE-083 | implemented | A work item that breaks its contract and a gate decision for no run are one warning each and come no second time |

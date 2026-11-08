@@ -35,6 +35,7 @@
   "dependencies": {
     "@electric-sql/pglite": "0.5.11",
     "@modelcontextprotocol/sdk": "1.32.1",
+    "@nats-io/jetstream": "3.4.0",
     "@nats-io/transport-node": "3.4.0",
     "@opensoftware/cli": "workspace:*",
     "@opensoftware/contracts": "workspace:*",

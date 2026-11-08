@@ -30,6 +30,7 @@ Open <http://localhost:8080>. The page lists the foreman's runs, the running one
 | Command | What it does |
 | --- | --- |
 | `console serve` | Serve the pages below on `PORT`. Exits 2 without `CONSOLE_FOREMAN_URL`. |
+| `console doctor` | Check the factory as [Health](#health) describes, print one line per check (`ok    <check>` or `FAIL  <check>: <what to do>`) and the count, and exit 1 when a check fails. |
 
 ## Pages
 
@@ -38,13 +39,23 @@ Open <http://localhost:8080>. The page lists the foreman's runs, the running one
 | `/` | The runs of every foreman: title, factory, state, source, requester, pull request and age. Runs that have not ended come first, the one that started last first, then the ended runs, the one that ended last first. A foreman that does not answer is named above the list. |
 | `/?state=<state>` | Only the runs in the state `running`, `blocked`, `complete`, `failed` or `cancelled`, as the foremen filter them. Another state answers 400. |
 | `/runs/<runId>` | One run: its state, factory and factory version, age, pull request, trace and Temporal history; its origin, or with `CONSOLE_INTAKE_URL` every request of its work item; and its stages as its evidence, each with its agent, state, transcript, gate, checks and the reason it failed. 404 when no foreman knows the run. |
+| `/work` | With `CONSOLE_INTAKE_URL`: intake's latest work items, the one received last first, each with its origin, type, status, source, requester, run and age, also work that waits without a run. 404 without `CONSOLE_INTAKE_URL`. |
 | `/factory` | The factory definition in `CONSOLE_FACTORY`: its name, description, providers and agents with their harness and model. |
 | `/factory/agents/<name>` | One agent's configuration, and the link to the file on the branch where it changes. 404 for an agent the factory does not declare. |
+| `/health` | The checks of `console doctor` as a table: each check, its state and what to do. 200 when every check is ok, else 503. |
 | `/inbox` | The self-improvement inbox: the open pull requests of `CONSOLE_INBOX_REPOSITORY` whose branch starts with `CONSOLE_INBOX_PREFIX` (default `observer/`), newest first, each with its link, branch, author, state ("approved", "changes requested" or "needs review") and age. A forge adapter that fails is named above the list. 404 without `CONSOLE_INBOX_REPOSITORY`. |
 
-Every page links the runs, the factory and the dashboards in `CONSOLE_LINKS`. The runs pages reload themselves every
-`CONSOLE_REFRESH` seconds. The console is read-only: it has no forms, and any method but `GET` and `HEAD` answers 405.
-It shows what the foreman and intake show, so run it behind your sign-in proxy, such as oauth2-proxy.
+Every page links the runs, the work items (with `CONSOLE_INTAKE_URL`), the factory, the health page and the dashboards in `CONSOLE_LINKS`. The runs pages reload themselves every
+`CONSOLE_REFRESH` seconds. Without `CONSOLE_USER_HEADER` the console is read-only: it has no forms, and any method but
+`GET` and `HEAD` answers 405. It shows what the foreman and intake show, so run it behind your sign-in proxy, such as
+oauth2-proxy.
+
+Actions ([ADR 0089](../../docs/decisions/0089-console-actions.md)): set `CONSOLE_USER_HEADER` to the header in which
+your sign-in proxy sends the signed-in person, like `X-Forwarded-Email`. Then `/work` has the form "submit work"
+(title, type and description), which the console posts to intake with that person as the requester and the origin
+`console`; intake checks the fields. A form without the header answers 401, a form from another site 403, and a
+form that intake refuses 502 with intake's answer. Without `CONSOLE_INTAKE_URL` the console takes no form. Only set the variable behind a
+proxy that sets the header and removes it from the browser's requests.
 
 Several factories: list each foreman in `CONSOLE_FOREMAN_URL`, comma-separated, and their tokens in the same order in
 `CONSOLE_FOREMAN_TOKEN`, or one token for all.
@@ -56,9 +67,25 @@ The inbox: observer opens each proposal as a pull request from a branch `observe
 Forgejo, such as Codeberg, set `CONSOLE_FORGE_ADAPTER=npx -y @opensoftware/forge-forgejo` and its URL.
 
 Links: `CONSOLE_TRACE_URL` and `CONSOLE_SESSION_URL` are URL templates of the trace store, such as Langfuse or
-Phoenix, with `{runId}` and `{sessionId}`. The foreman sets the run's ID as `osf.run.id` on every run's traces
+Phoenix, with `{runId}` or `{traceId}`, and `{sessionId}`. `{traceId}` is the run's `traceId`, which a foreman with
+traces names ([ADR 0087](../../docs/decisions/0087-run-traces.md)); Phoenix finds a trace by it. The foreman sets the run's ID as `osf.run.id` on every run's traces
 ([runlog](../runlog/README.md)), and a stage's harness session is its transcript. `CONSOLE_TEMPORAL_URL` links the
 run's history: `<url>/namespaces/<CONSOLE_TEMPORAL_NAMESPACE>/workflows/<runId>`.
+
+## Health
+
+`console doctor` and `/health` check, in this order ([ADR 0086](../../docs/decisions/0086-health-routes.md)):
+
+1. Each foreman, intake and gatekeeper the console names: its `GET /v1/health`, one line per check the server reports
+   (such as `foreman temporal` or `intake nats`), and whether it accepts the console's token. A server that does not
+   answer names the variable of its URL; a refused token names the console's variable and the server's own.
+2. `factory`: the definition in `CONSOLE_FACTORY` can be read.
+
+The links to the Temporal UI and the trace store are for the browser, so the console does not check them; the
+foreman's `temporal` check covers Temporal.
+
+A server of a release before `/v1/health` fails its check with the advice to update it. When every check is ok,
+`console doctor` prints the count last, like `all 7 checks ok`.
 
 ## Configuration
 
@@ -74,7 +101,7 @@ run's history: `<url>/namespaces/<CONSOLE_TEMPORAL_NAMESPACE>/workflows/<runId>`
 | `CONSOLE_INTAKE_TOKEN` | string |  | serve: intake's INTAKE_API_TOKEN. |
 | `CONSOLE_GATEKEEPER_URL` | string |  | serve: the base URL of gatekeeper's API. Set, a run's page shows each gate's state and who it waits for. |
 | `CONSOLE_GATEKEEPER_TOKEN` | string |  | serve: gatekeeper's GATEKEEPER_API_TOKEN. |
-| `CONSOLE_TRACE_URL` | string |  | serve: the link to a run's trace in the trace store, with {runId}, like https://langfuse.acme.dev/traces?run={runId}. |
+| `CONSOLE_TRACE_URL` | string |  | serve: the link to a run's trace in the trace store, with {runId} or {traceId}, like https://langfuse.acme.dev/traces?run={runId} or Phoenix's http://127.0.0.1:6006/projects/UHJvamVjdDox/traces/{traceId}. A run without a traceId gets no link from a template with {traceId}. |
 | `CONSOLE_SESSION_URL` | string |  | serve: the link to a stage's transcript, with {sessionId}, like https://langfuse.acme.dev/sessions/{sessionId}. |
 | `CONSOLE_TEMPORAL_URL` | string |  | serve: the base URL of the Temporal UI. Set, a run's page links its history. |
 | `CONSOLE_TEMPORAL_NAMESPACE` | string | `"default"` | serve: the Temporal namespace of the runs, the foreman's FOREMAN_TEMPORAL_NAMESPACE. |
@@ -89,6 +116,7 @@ run's history: `<url>/namespaces/<CONSOLE_TEMPORAL_NAMESPACE>/workflows/<runId>`
 | `CONSOLE_FORGE_ADAPTER` | string | `"npx -y @opensoftware/forge-github"` | serve: the command line of the forge port's adapter that /inbox runs with prs (ADR 0073). |
 | `CONSOLE_FORGE_URL` | string |  | serve: the forge's API, the adapter's FORGE_URL, like https://codeberg.org for forge-forgejo. Default: the adapter's own. |
 | `CONSOLE_FORGE_TOKEN` | string |  | serve: the adapter's FORGE_TOKEN; a token that may read pull requests is enough. |
+| `CONSOLE_USER_HEADER` | string |  | serve: the header in which the sign-in proxy sends the signed-in person, like X-Forwarded-Email. Set, the console takes actions in that person's name, such as submitting work on /work (ADR 0089); unset, it is read-only. Only set it behind a proxy that sets the header and removes it from the browser's requests. |
 
 ## Releases
 
@@ -144,3 +172,16 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-034 | implemented | A forge that refuses the token is named on the inbox |
 | SCN-CONSOLE-035 | implemented | Without a repository the inbox answers 404 and names the variable |
 | SCN-CONSOLE-036 | implemented | The factory page lists the agents with their harness, model and effort |
+| SCN-CONSOLE-037 | implemented | A healthy factory passes every check of "console doctor" |
+| SCN-CONSOLE-038 | implemented | "console doctor" names each failing check and what to do |
+| SCN-CONSOLE-039 | implemented | A foreman that does not answer is named with the variable of its URL |
+| SCN-CONSOLE-040 | implemented | The page "/health" shows the checks and answers 503 when one fails |
+| SCN-CONSOLE-041 | implemented | The run page links the run's trace by its trace ID |
+| SCN-CONSOLE-042 | implemented | A trace link with "{traceId}" is left out for a run without a trace ID |
+| SCN-CONSOLE-043 | implemented | The work page lists each work item with its status and its run |
+| SCN-CONSOLE-044 | implemented | Without intake the work page answers 404 and names the variable |
+| SCN-CONSOLE-045 | implemented | A signed-in person submits work from the work page |
+| SCN-CONSOLE-046 | implemented | A form without the signed-in person submits nothing |
+| SCN-CONSOLE-047 | implemented | Without "CONSOLE_USER_HEADER" the console stays read-only |
+| SCN-CONSOLE-048 | implemented | "console doctor" names a missing foreman URL, a server without "/v1/health" and a factory it cannot read |
+| SCN-CONSOLE-049 | implemented | A form from another site submits nothing |

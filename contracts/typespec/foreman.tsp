@@ -97,6 +97,9 @@ model RunView {
   startedAt: utcDateTime;
   endedAt?: utcDateTime;
 
+  /** The OpenTelemetry trace of the run: the first 32 hex digits of the SHA-256 of `runId` (ADR 0087). */
+  traceId?: TraceId;
+
   /** The stages of the workflow, in order. */
   stages: StageView[];
 }

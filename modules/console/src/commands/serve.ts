@@ -3,17 +3,21 @@
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { UsageError } from "@opensoftware/cli";
-import type { GateView, RunView, WorkItemView, WorkRequest } from "@opensoftware/contracts";
+import type { GateView, RunView, WorkItemList, WorkItemView, WorkRequest } from "@opensoftware/contracts";
 import Fastify, { type FastifyReply } from "fastify";
-import { type Api, getJson } from "../adapters/apis.ts";
+import { type Api, getJson, postJson } from "../adapters/apis.ts";
 import { readFactory } from "../adapters/factory-file.ts";
 import { proposals } from "../adapters/forge.ts";
 import { fill, isState, list, namedLinks, orderRuns, STATES } from "../domain/runs.ts";
+import { submissionOf } from "../domain/submit.ts";
 import { agentPage, factoryPage, type Source } from "../pages/factory.ts";
+import { healthPage } from "../pages/health.ts";
 import { type Frame, page, problem } from "../pages/html.ts";
 import { inboxPage } from "../pages/inbox.ts";
 import { runPage } from "../pages/run.ts";
 import { runsPage } from "../pages/runs.ts";
+import { workPage } from "../pages/work.ts";
+import { examine } from "./doctor.ts";
 
 type Env = Record<string, string | undefined>;
 
@@ -43,6 +47,7 @@ export async function serve(env: Env) {
   const repository = env.CONSOLE_REPOSITORY_URL?.replace(/\/$/, "");
   const source: Source = { path, branch, url: repository && `${repository}/blob/${branch}/${path}` };
   const inbox = env.CONSOLE_INBOX_REPOSITORY;
+  const userHeader = env.CONSOLE_USER_HEADER?.toLowerCase() || undefined;
   const prefix = env.CONSOLE_INBOX_PREFIX || "observer/";
   const forge = {
     command: env.CONSOLE_FORGE_ADAPTER || "npx -y @opensoftware/forge-github",
@@ -53,13 +58,13 @@ export async function serve(env: Env) {
   const send = (
     reply: FastifyReply,
     status: number,
-    frame: Omit<Frame, "links" | "inbox">,
+    frame: Omit<Frame, "links" | "inbox" | "work">,
     content: Parameters<typeof page>[1],
   ) =>
     reply
       .code(status)
       .type("text/html; charset=utf-8")
-      .send(page({ ...frame, links, inbox: Boolean(inbox) }, content));
+      .send(page({ ...frame, links, inbox: Boolean(inbox), work: Boolean(intake) }, content));
 
   const app = Fastify({ logger: false });
   app.get("/pico.css", (_request, reply) => reply.type("text/css").send(PICO));
@@ -103,7 +108,11 @@ export async function serve(env: Env) {
     const temporal = env.CONSOLE_TEMPORAL_URL?.replace(/\/$/, "");
     const namespace = env.CONSOLE_TEMPORAL_NAMESPACE || "default";
     const runLinks = {
-      trace: env.CONSOLE_TRACE_URL && fill(env.CONSOLE_TRACE_URL, { runId }),
+      // {traceId} needs a foreman that names the run's trace (ADR 0087); without it the page has no trace link.
+      trace:
+        env.CONSOLE_TRACE_URL && (run.traceId || !env.CONSOLE_TRACE_URL.includes("{traceId}"))
+          ? fill(env.CONSOLE_TRACE_URL, { runId, ...(run.traceId ? { traceId: run.traceId } : {}) })
+          : undefined,
       history: temporal && `${temporal}/namespaces/${namespace}/workflows/${runId}`,
       transcript: (sessionId: string) => env.CONSOLE_SESSION_URL && fill(env.CONSOLE_SESSION_URL, { sessionId }),
     };
@@ -133,6 +142,50 @@ export async function serve(env: Env) {
     const answer = await proposals(forge, inbox, prefix);
     const notes = answer.ok ? [] : [answer.note];
     return send(reply, 200, { title: "Inbox", notes }, inboxPage(inbox, answer.ok ? answer.body : [], now()));
+  });
+
+  app.get("/work", async (_request, reply) => {
+    if (!intake)
+      return send(
+        reply,
+        404,
+        { title: "Work" },
+        problem("No work items", "no work items: set CONSOLE_INTAKE_URL to the base URL of intake's API"),
+      );
+    const answer = await getJson<WorkItemList>(intake, "/v1/inbox");
+    const notes = answer.ok ? [] : [answer.note];
+    const items = answer.ok ? answer.body.workItems : [];
+    return send(reply, 200, { title: "Work", refresh, notes }, workPage(items, now(), Boolean(userHeader)));
+  });
+
+  // Actions (ADR 0089): only with CONSOLE_USER_HEADER, from the same origin, in the name of the signed-in person.
+  // Forms always parse, so a read-only console answers a form with 405, not 415.
+  app.addContentTypeParser("application/x-www-form-urlencoded", { parseAs: "string" }, (_request, body, done) =>
+    done(null, Object.fromEntries(new URLSearchParams(body as string))),
+  );
+  if (userHeader && intake) {
+    app.post<{ Body: Record<string, string> }>("/work", async (request, reply) => {
+      const origin = request.headers.origin;
+      if (origin && new URL(origin).host !== request.headers.host)
+        return send(reply, 403, { title: "Work" }, problem("Forbidden", "the form came from another site"));
+      const person = String(request.headers[userHeader] ?? "");
+      if (!person)
+        return send(
+          reply,
+          401,
+          { title: "Work" },
+          problem("Sign in", `sign in first: the console needs ${userHeader}`),
+        );
+      const submission = submissionOf(request.body ?? {}, person, new Date(now()).toISOString());
+      const answer = await postJson(intake, "/v1/work-items", submission);
+      if (!answer.ok) return send(reply, 502, { title: "Work" }, problem("Not submitted", answer.note));
+      return reply.code(303).header("location", "/work").send();
+    });
+  }
+
+  app.get("/health", async (_request, reply) => {
+    const items = await examine(env);
+    return send(reply, items.every(({ ok }) => ok) ? 200 : 503, { title: "Health" }, healthPage(items));
   });
 
   // Read-only: any method but GET and HEAD answers 405.

@@ -390,6 +390,9 @@ importers:
       '@agentclientprotocol/sdk':
         specifier: 1.9.0
         version: 1.9.0(zod@4.6.7)
+      '@nats-io/jetstream':
+        specifier: 3.4.0
+        version: 3.4.0
       '@nats-io/transport-node':
         specifier: 3.4.0
         version: 3.4.0
@@ -430,6 +433,9 @@ importers:
 
   modules/gatekeeper:
     dependencies:
+      '@nats-io/jetstream':
+        specifier: 3.4.0
+        version: 3.4.0
       '@nats-io/transport-node':
         specifier: 3.4.0
         version: 3.4.0
@@ -470,6 +476,9 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: 1.32.1
         version: 1.32.1(zod@4.6.7)
+      '@nats-io/jetstream':
+        specifier: 3.4.0
+        version: 3.4.0
       '@nats-io/transport-node':
         specifier: 3.4.0
         version: 3.4.0
@@ -1606,6 +1615,9 @@ packages:
     peerDependenciesMeta:
       '@cfworker/json-schema':
         optional: true
+
+  '@nats-io/jetstream@3.4.0':
+    resolution: {integrity: sha512-GzHQodNJ942+R5LRb8PuZ5ugVWVWMRiufxUYLLVWkXKfwDXYN+Owo0d7L/b9O7BPyrbYD7jQWAC6+ZVuXa9Gyw==}
 
   '@nats-io/nats-core@3.4.0':
     resolution: {integrity: sha512-QMDM86EUNm+wudlKC67HLar/KHHQUvJGLfb4jbahje3pUk3K9afeck9fwsxBZF0eUFox6T/TA6m/t+lQqf+QsQ==}
@@ -6325,6 +6337,10 @@ snapshots:
       zod-to-json-schema: 3.25.2(zod@4.6.7)
     transitivePeerDependencies:
       - supports-color
+
+  '@nats-io/jetstream@3.4.0':
+    dependencies:
+      '@nats-io/nats-core': 3.4.0
 
   '@nats-io/nats-core@3.4.0':
     dependencies:

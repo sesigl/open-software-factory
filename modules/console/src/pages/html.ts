@@ -15,6 +15,8 @@ export interface Frame {
   notes?: string[];
   /** Whether the navigation links the inbox: only when it has a repository. */
   inbox?: boolean;
+  /** Whether the navigation links the work items: only with intake's API. */
+  work?: boolean;
 }
 
 /** The whole document: head, the navigation with the dashboards, the notes, and the page's content. */
@@ -33,8 +35,10 @@ export function page(frame: Frame, content: VNode | VNode[]): string {
           <ul>
             <li><strong>console</strong></li>
             <li><a href="/">Runs</a></li>
+            ${frame.work ? html`<li><a href="/work">Work</a></li>` : null}
             <li><a href="/factory">Factory</a></li>
             ${frame.inbox ? html`<li><a href="/inbox">Inbox</a></li>` : null}
+            <li><a href="/health">Health</a></li>
           </ul>
           <ul>
             ${frame.links.map((link) => html`<li><a href=${link.url}>${link.name}</a></li>`)}

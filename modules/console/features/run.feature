@@ -63,3 +63,15 @@ Feature: The run page
     Given a foreman with a run whose origin is "javascript:alert(1)"
     When a person opens the run's page
     Then the page shows "slack asked by Varun" without a link to "javascript:alert(1)"
+
+  @id=SCN-CONSOLE-041 @status=implemented @realizes=SCN-FACTORY-VIS-002
+  Scenario: The run page links the run's trace by its trace ID
+    Given a foreman with a run whose trace ID is "0af7651916cd43dd8448eb211c80319c"
+    When a person opens the run's page with "CONSOLE_TRACE_URL" set to "http://127.0.0.1:6006/projects/UHJvamVjdDox/traces/{traceId}"
+    Then the page links the trace "http://127.0.0.1:6006/projects/UHJvamVjdDox/traces/0af7651916cd43dd8448eb211c80319c"
+
+  @id=SCN-CONSOLE-042 @status=implemented
+  Scenario: A trace link with "{traceId}" is left out for a run without a trace ID
+    Given a foreman with a run without a trace ID
+    When a person opens the run's page with "CONSOLE_TRACE_URL" set to "http://127.0.0.1:6006/projects/UHJvamVjdDox/traces/{traceId}"
+    Then the page has no link with the text "trace"
