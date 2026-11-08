@@ -71,6 +71,9 @@ the model the benchmark chose.
   runs and that is older than `OSF_INFERENCE_ORPHAN_AGE` seconds (120), like a foreman that was killed ([ADR 0090](../../../docs/decisions/0090-no-leaked-containers.md)).
 - **No state of its own.** `stop` removes both containers, the database's volume and the network. Only an attached
   gateway has a record in `OSF_DATA` (see below).
+- **One cache for all gateways.** The Docker volume `osf-inference-python` keeps LiteLLM's compiled Python files
+  (`PYTHONPYCACHEPREFIX`). The image ships almost none, so without the cache each start compiles LiteLLM again, which
+  is about half of a start's CPU time. `stop` keeps the volume; `docker volume rm osf-inference-python` removes it.
 
 ## Attach to a running proxy
 

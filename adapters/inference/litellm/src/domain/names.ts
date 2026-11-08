@@ -30,3 +30,11 @@ export const PROXY_PORT = 4000;
 
 /** Where the gateway's config lives in the LiteLLM container. */
 export const CONFIG_DIR = "/app/osf";
+
+/**
+ * The Docker volume that keeps the compiled Python files of LiteLLM for all gateways, and its path in the container.
+ * The image ships almost none, so without it each start compiles LiteLLM again: about half of a start's CPU time.
+ * Python compiles a file again when its source's time or size differs, so files of another image do no harm.
+ */
+export const PYTHON_CACHE = "osf-inference-python:/var/cache/osf-python";
+export const PYTHON_CACHE_ENV = "PYTHONPYCACHEPREFIX=/var/cache/osf-python";
