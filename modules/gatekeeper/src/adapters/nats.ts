@@ -13,17 +13,9 @@ export async function publishAll(url: string, events: { subject: string; event: 
   const connection = await connect({ servers: url, timeout: 2000 });
   try {
     // Adding the stream again with the same configuration changes nothing.
-    await (await jetstreamManager(connection)).streams.add({
-      name: "OSF",
-      subjects: ["osf.>"],
-      max_age: 7 * 24 * 3600 * 1_000_000_000,
-    });
+    await (await jetstreamManager(connection)).streams.add({ name: "OSF", subjects: ["osf.>"] });
     const stream = jetstream(connection);
-    // The event's ID as the message ID: the stream keeps an event that is sent twice once.
-    for (const { subject, event } of events)
-      await stream.publish(subject, JSON.stringify(event), {
-        msgID: (event as { id: string }).id,
-      });
+    for (const { subject, event } of events) await stream.publish(subject, JSON.stringify(event));
   } finally {
     await connection.drain();
   }
