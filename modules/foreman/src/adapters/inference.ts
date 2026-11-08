@@ -16,7 +16,8 @@ export async function startGateway(
   config: string,
   env: Record<string, string | undefined>,
 ): Promise<Gateway> {
-  const run = adapterRun("inference", adapter, env);
+  // The adapter labels the gateway with its owner, so a later start removes it when this foreman was killed (ADR 0090).
+  const run = adapterRun("inference", adapter, { ...env, OSF_INFERENCE_OWNER: String(process.pid) });
   const { id, url } = JSON.parse(lastLine(await run("start", config))) as { id: string; url: string };
   return {
     url,
