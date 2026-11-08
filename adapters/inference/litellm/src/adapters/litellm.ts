@@ -11,7 +11,8 @@ export async function admin(gateway: Gateway, path: string, body?: unknown): Pro
   const response = await fetch(`${gateway.origin}${path}`, {
     method: body === undefined ? "GET" : "POST",
     headers: { authorization: `Bearer ${gateway.masterKey}`, "content-type": "application/json" },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    // JSON.stringify(undefined) is undefined: a GET has no body.
+    body: JSON.stringify(body),
   });
   const text = await response.text();
   if (!response.ok) throw new Error(`LiteLLM answered ${path} with ${response.status}: ${text}`);

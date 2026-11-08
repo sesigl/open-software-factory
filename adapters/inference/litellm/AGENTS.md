@@ -34,7 +34,7 @@ layers.
   thirteen port scenarios start their own gateway, a LiteLLM and a PostgreSQL container, which takes 25 to 30 seconds
   while LiteLLM applies its database migrations; SCN-INFER-004 and -005 also wait eight seconds for the spend log. Of
   the adapter's own scenarios, only SCN-INFLITE-002 and -003 start a real proxy, as a Compose project; the others use
-  a fake of LiteLLM's admin API and take less than a second. On the main branch the port scenarios took 442 seconds.
+  a fake of LiteLLM's admin API or no proxy, and each takes less than two seconds. On the main branch the port scenarios took 442 seconds.
   Vitest runs the files side by side, so the suite ends in about 90 seconds. Docker must run; the images are pulled
   before the tests in CI.
 - `vitest.setup.ts` removes the containers and networks of gateways that a run started more than four minutes ago,
