@@ -44,3 +44,18 @@ export function shardsOf(stdout: string): string[] {
   const plan = JSON.parse(stdout) as { folder: string; shard: string }[];
   return plan.map(({ folder, shard }) => `${folder} ${shard}`);
 }
+
+/** The root files of a Turborepo whose units have a `mutation` task that depends on the builds of their packages. */
+export async function turboRoot(sut: Sut): Promise<void> {
+  const root = { name: "repo", private: true, packageManager: "pnpm@10.28.0" };
+  await sut.files.put("$INPUT/package.json", `${JSON.stringify(root, null, 2)}\n`);
+  await sut.files.put("$INPUT/pnpm-workspace.yaml", "packages:\n  - modules/*\n  - packages/*\n");
+  const turbo = { tasks: { build: { dependsOn: ["^build"] }, mutation: { dependsOn: ["^build"], cache: false } } };
+  await sut.files.put("$INPUT/turbo.json", `${JSON.stringify(turbo, null, 2)}\n`);
+}
+
+/** The `key` or `guard` of a shard of `osf mutation-plan --keys` output. */
+export function keyOf(stdout: string, folder: string, field: "key" | "guard", shard = "1/1"): string | undefined {
+  const plan = JSON.parse(stdout) as { folder: string; shard: string; key?: string; guard?: string }[];
+  return plan.find((entry) => entry.folder === folder && entry.shard === shard)?.[field];
+}

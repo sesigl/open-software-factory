@@ -20,9 +20,12 @@ const USAGE = `Usage: osf <command>
   next-id <module>        print the next free scenario ID of a module or prefix
   release-files           write the publish workflow and release-please entries of every published package
   test-scenario <ID>      run the one system test of a scenario
-  mutation <folder> [--all] [--list] [--shard i/n]
+  mutation <folder> [--all] [--list] [--shard i/n] [--incremental <file>]
                           Stryker on the lines of a module changed since OSF_BASE (--all: every line)
-  mutation-plan [--all]   the shards of a mutation run as JSON: changed lines since OSF_BASE, or every line
+  mutation-plan [--all] [--keys]
+                          the shards of a mutation run as JSON: changed lines since OSF_BASE, or every line
+  mutation-merge <plan> <folder>
+                          join the shard reports of each unit of a plan into its mutant results for the next push
   install-tools           download the pinned lychee, oasdiff, opa, temporal and nats-server binaries into .tools/bin
 `;
 
@@ -65,6 +68,8 @@ async function main(argv: string[]): Promise<number> {
       return (await import("../scaffold/mutation.ts")).mutation(root, args);
     case "mutation-plan":
       return (await import("../scaffold/mutation-plan.ts")).mutationPlan(root, args);
+    case "mutation-merge":
+      return (await import("../scaffold/mutation-merge.ts")).mutationMerge(root, args);
     case "install-tools":
       return (await import("../scaffold/install-tools.ts")).installTools(root);
     case undefined:

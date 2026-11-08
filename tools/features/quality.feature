@@ -139,3 +139,28 @@ Feature: Quality limits
     When the developer runs "osf mutation-plan" against the base commit
     Then the command exits with code 0
     And the output lists the shards "1/2" and "2/2" of "modules/demo" and no shard of "modules/small"
+
+  @id=SCN-REPO-094 @status=implemented
+  Scenario: osf mutation-plan with --keys keeps a unit's key while nothing of the unit changes
+    Given a Turborepo base commit with module "demo" whose "src/run.ts" has 3 lines, and module "other"
+    And a change that adds lines 4 to 6 to "src/run.ts"
+    When the developer runs "osf mutation-plan --keys" against the base commit, again after a change to "modules/other/README.md", and again after a change to "modules/demo/README.md"
+    Then each run exits with code 0
+    And the key of shard "1/1" of "modules/demo" is the same in the first two runs and different in the third run
+
+  @id=SCN-REPO-095 @status=implemented
+  Scenario: osf mutation-plan with --keys keeps a unit's guard when only its mutated file and its system tests change
+    Given a Turborepo base commit with library "packages/lib" and module "demo" that depends on it, whose "src/run.ts" has 3 lines
+    And a change that adds lines 4 to 6 to "src/run.ts"
+    When the developer runs "osf mutation-plan --keys" against the base commit, again after a change that adds line 7 to "src/run.ts" and changes "system-tests/SCN-DEMO-001.test.ts", and again after a change to "packages/lib/src/index.ts"
+    Then each run exits with code 0
+    And the guard of "modules/demo" is the same in the first two runs and different in the third run
+
+  @id=SCN-REPO-096 @status=implemented
+  Scenario: osf mutation-merge joins the shard reports of each unit whose shards all have a report
+    Given a plan with the shards "1/2" and "2/2" of "modules/demo" with the guard "aaaa" and of "modules/other" with the guard "bbbb"
+    And a report of shard 1 of "modules/demo" with a killed mutant, a report of its shard 2 with a survived mutant, and a report of shard 1 of "modules/other"
+    And the results file "modules-demo.cccc.json" of an earlier guard in "reports/mutation-incremental"
+    When the developer runs "osf mutation-merge plan.json reports/mutation-incremental"
+    Then the command exits with code 0
+    And "reports/mutation-incremental" holds only "modules-demo.aaaa.json", with the killed and the survived mutant

@@ -185,9 +185,11 @@ class ScenarioRunner {
           durations[file.name] = (durations[file.name] ?? 0) + (test.duration ?? 0);
           const failed = test.status !== "passed";
           // Status 0 is Success and 1 Failed in Stryker's TestStatus.
+          // With the file, Stryker's incremental mode runs a test again when its file changed (ADR 0091).
           tests.push({
             id,
             name: test.title,
+            fileName: file.name,
             timeSpentMs: test.duration ?? 0,
             status: failed ? 1 : 0,
             failureMessage: (test.failureMessages ?? []).join("\n").slice(0, 3000) || run.output,

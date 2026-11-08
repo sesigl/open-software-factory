@@ -1,9 +1,10 @@
 // `osf mutation <unit>`: Stryker on the source lines of one module that changed since OSF_BASE, or on every line
 // with --all (ADR 0037). The module's `mutation` script calls it; `osf check MUTATION` scores the report.
 // `--shard i/n` mutates the same lines in each of n runners, and each runner tests every n-th of their mutants
-// (ADR 0066), so that n runners share a large change.
+// (ADR 0066), so that n runners share a large change. `--incremental <file>` reuses the results of the mutants in that
+// earlier report whose code and tests did not change (Stryker's incremental mode, ADR 0091).
 import { spawnSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { availableParallelism } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
@@ -18,12 +19,14 @@ export async function mutation(root: string, args: string[]): Promise<number> {
   if (!path) return fail("Give a module folder: osf mutation <folder> [--all] [--list] [--shard i/n]");
   const shard = shardOf(args);
   if (typeof shard === "string") return fail(shard);
+  const given = flagValue(args, "--incremental");
+  const incremental = given === undefined ? undefined : resolve(given);
   const unit = relative(root, resolve(path)).split("\\").join("/");
   const repo = new Repo(root);
   const files = mutatedUnits(repo).get(unit);
   if (!files) return fail(`${unit} is no module with source files in src/ or bin/`);
 
-  const mutate = args.includes("--all") ? allLines(files) : changedLines(repo, files);
+  const mutate = mutatedRanges(repo, files, args.includes("--all"));
   if (typeof mutate === "string") return fail(mutate);
   const local = mutate.map((entry) => entry.slice(unit.length + 1));
   if (args.includes("--list")) {
@@ -55,6 +58,8 @@ export async function mutation(root: string, args: string[]): Promise<number> {
     concurrency: Number(settings.mutationConcurrency) || availableParallelism(),
     reporters: ["json", "progress-append-only"],
     jsonReporter: { fileName: report },
+    // Stryker reads the file, and at the end writes this run's report into it.
+    ...(incremental && { incremental: true, incrementalFile: incremental }),
     tempDirName: ".stryker-tmp",
     cleanTempDir: "always",
     allowEmpty: true,
@@ -64,6 +69,7 @@ export async function mutation(root: string, args: string[]): Promise<number> {
   try {
     await stryker.runMutationTest();
     if (shard) keepOwnMutants(report, shard);
+    if (shard && incremental && existsSync(incremental)) keepOwnMutants(incremental, shard);
   } finally {
     process.chdir(previous);
     // Stryker restores the source files but leaves the build of the last mutated source: build again, except on CI,
@@ -122,6 +128,12 @@ interface Shard {
   count: number;
 }
 
+/** The value after the flag, undefined without the flag. */
+function flagValue(args: string[], flag: string): string | undefined {
+  const at = args.indexOf(flag);
+  return at < 0 ? undefined : args[at + 1];
+}
+
 /** The value of `--shard i/n`, undefined without it, or the reason it is wrong. */
 function shardOf(args: string[]): Shard | undefined | string {
   const at = args.indexOf("--shard");
@@ -146,6 +158,11 @@ function keepOwnMutants(report: string, shard: Shard): void {
     file.mutants = (file.mutants ?? []).filter((mutant) => ownMutant(mutant.id, shard));
   }
   writeFileSync(report, JSON.stringify(json));
+}
+
+/** What Stryker mutates in a unit's files: each source file whole, or `file:start-end` of each run of added lines. */
+export function mutatedRanges(repo: Repo, files: string[], all: boolean): string[] | string {
+  return all ? allLines(files) : changedLines(repo, files);
 }
 
 /** Each TypeScript source file whole. */

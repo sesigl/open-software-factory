@@ -19,6 +19,10 @@ inputs:
     description: OSF_BASE, the base commit of the changed lines.
     required: false
     default: ""
+  incremental:
+    description: The unit's mutant results of an earlier push, for osf mutation --incremental (ADR 0091).
+    required: false
+    default: ""
 runs:
   using: composite
   steps:
@@ -71,6 +75,7 @@ runs:
         SHARD: ${{ inputs.shard }}
         ALL: ${{ inputs.all }}
         OSF_BASE: ${{ inputs.base }}
+        INCREMENTAL: ${{ inputs.incremental }}
       run: |
         echo 1000 > /proc/self/oom_score_adj
         # Each test runner process of Stryker writes the start of its live run into OSF_MUTATION_RUNS (mutation-runner.ts).
@@ -121,6 +126,7 @@ runs:
         sampler=$!
         args=(--shard "$SHARD")
         if [ "$ALL" = true ]; then args+=(--all); fi
+        if [ -n "$INCREMENTAL" ]; then args+=(--incremental "$INCREMENTAL"); fi
         status=0
         pnpm exec turbo run mutation --filter="$PACKAGE" --log-order=stream -- "${args[@]}" || status=$?
         kill "$sampler"
