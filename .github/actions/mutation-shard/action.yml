@@ -34,6 +34,8 @@ runs:
         key: tools-${{ runner.os }}-${{ hashFiles('tools/scaffold/install-tools.ts') }}
     - shell: bash
       run: make install
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
     # The pinned binaries of make install, such as opa for gatekeeper, for the commands that skip make.
     - shell: bash
       run: echo "$GITHUB_WORKSPACE/.tools/bin" >> "$GITHUB_PATH"

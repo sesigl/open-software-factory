@@ -50,7 +50,8 @@ allows no clone across units.
   init container copies it back. `OSF_SANDBOX_HOST_ALIASES` maps hostnames to IP addresses in the egress pod, so a
   kind cluster can reach `host.docker.internal` as Docker does.
 - **Conformance on kind in CI.** The suite `sandbox-kubernetes` starts kind with agent-sandbox v1.0.8
-  (`sandbox-with-extensions.yaml`), loads the test images into kind and runs the port's scenarios. The test gets the
+  (`sandbox-with-extensions.yaml`, checksum-pinned by `make install` as `.tools/bin/agent-sandbox.yaml`, with the
+  pinned kind), loads the test images into kind and runs the port's scenarios. The test gets the
   cluster through `KUBECONFIG` and the host's address on kind's network through `OSF_SANDBOX_HOST_ALIASES`.
 - **`factory render --k8s` writes a `SandboxTemplate`** named after each agent that declares `sandbox`: one
   container `sandbox` with the image `sandbox.template` and the CPU and memory as requests and limits. foreman names
