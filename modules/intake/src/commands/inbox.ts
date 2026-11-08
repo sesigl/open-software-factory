@@ -46,11 +46,7 @@ export function inbox(store: Store, config: InboxConfig) {
      */
     async followRun(event: unknown): Promise<{ thread: string; text: string }[]> {
       const fact = runFactOf(event);
-      // An event that is not a run event can never be followed: a warning, and it does not come again.
-      if (typeof fact === "string") {
-        config.warn(fact);
-        return [];
-      }
+      if (typeof fact === "string") throw new Error(fact);
       await store.followRun(fact);
       const followed = await view(fact.workItemId);
       return followed ? pullRequestReplies(followed, fact.pullRequests) : [];
