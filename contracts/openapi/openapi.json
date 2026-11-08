@@ -117,6 +117,38 @@
         }
       }
     },
+    "/v1/health": {
+      "get": {
+        "operationId": "HealthApi_getHealth",
+        "description": "The server's health. Needs no token, and names no secret. 503 when a check fails.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {}
+        ]
+      }
+    },
     "/v1/runs": {
       "post": {
         "operationId": "ForemanApi_startRun",
@@ -1387,6 +1419,55 @@
           "requestedAt"
         ],
         "description": "gatekeeper: a gate as the HTTP API shows it (ADR 0048)."
+      },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "ok"
+              },
+              {
+                "type": "string",
+                "const": "failing"
+              }
+            ]
+          },
+          "checks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HealthCheck"
+            }
+          }
+        },
+        "required": [
+          "status",
+          "checks"
+        ],
+        "description": "The state of a server: `ok` when every check is ok."
+      },
+      "HealthCheck": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "$ref": "#/components/schemas/Name",
+            "description": "The system, like \"database\", \"nats\" or \"temporal\"."
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "detail": {
+            "type": "string",
+            "description": "What failed and how to fix it, when `ok` is false. Never a secret."
+          }
+        },
+        "required": [
+          "name",
+          "ok"
+        ],
+        "description": "One system a server needs, such as its database or NATS, and whether the server reaches it now."
       },
       "Hostname": {
         "type": "string",

@@ -34,6 +34,23 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/v1/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The server's health. Needs no token, and names no secret. 503 when a check fails. */
+        get: operations["HealthApi_getHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/runs": {
         parameters: {
             query?: never;
@@ -439,6 +456,19 @@ export type components = {
             expiresAt?: string;
             /** @description The record, once the gate is decided. */
             record?: components["schemas"]["GateRecord"];
+        };
+        /** @description The state of a server: `ok` when every check is ok. */
+        Health: {
+            status: "ok" | "failing";
+            checks: components["schemas"]["HealthCheck"][];
+        };
+        /** @description One system a server needs, such as its database or NATS, and whether the server reaches it now. */
+        HealthCheck: {
+            /** @description The system, like "database", "nats" or "temporal". */
+            name: components["schemas"]["Name"];
+            ok: boolean;
+            /** @description What failed and how to fix it, when `ok` is false. Never a secret. */
+            detail?: string;
         };
         /** @description A hostname without scheme or port, for example "api.linear.app". */
         Hostname: string;
@@ -1197,6 +1227,35 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    HealthApi_getHealth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Health"];
+                };
+            };
+            /** @description Service unavailable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Health"];
                 };
             };
         };

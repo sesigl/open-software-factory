@@ -305,11 +305,12 @@ cancel ends a run that a person took over.
 | `POST /v1/runs` | Start the run of a work item (the [work item](../../contracts/work-item/work-item.schema.json) format). 201 with the new run, 200 with the run the same work item started before, 400 with a problem that names the field. |
 | `GET /v1/runs` | The runs of the server, running runs first, then the runs that ended, the one that ended last first: `{ "runs": [...] }`, each as `GET /v1/runs/{runId}` shows it. `?state=` with `running`, `blocked`, `complete`, `failed` or `cancelled` lists only the runs in that state; another state is 400. |
 | `GET /v1/runs/{runId}` | The run: `state`, `factory`, `factoryVersion`, `pullRequest`, `folder`, `startedAt`, `endedAt` and its `stages`. 404 for a run the server does not know. |
+| `GET /v1/health` | Whether the server reaches Temporal and, with `FOREMAN_NATS_URL`, NATS: 200 with `status: ok`, else 503 with the failing check and what to fix ([ADR 0086](../../docs/decisions/0086-health-routes.md)). Needs no token. |
 | `POST /v1/runs/{runId}/signals` | `{ "type": "steer", "message": "…" }` sends the message to the running stage's agent; `{ "type": "cancel" }` cancels the run; `{ "type": "take-over" }` and `{ "type": "hand-back" }` hand the running stage to a person and back ([Take over](#take-over)). 202 with the run, 409 when the run ended or the signal does not fit its state. |
 
 The OpenAPI of the routes is in [`contracts/openapi/openapi.json`](../../contracts/openapi/openapi.json); the
-TypeScript type `paths` of `@opensoftware/contracts` types a client. Every route needs `Authorization: Bearer
-<FOREMAN_API_TOKEN>`, else 401. Errors are `application/problem+json` with `title`, `status` and `detail`.
+TypeScript type `paths` of `@opensoftware/contracts` types a client. Every route except `/v1/health` needs
+`Authorization: Bearer <FOREMAN_API_TOKEN>`, else 401. Errors are `application/problem+json` with `title`, `status` and `detail`.
 
 A run's ID is `run_` and 20 hex digits of the SHA-256 of the work item's ID, so a work item has one run. A run is
 `running`, `blocked` (at a gate, waiting for checks, or taken over by a person), `complete`, `failed` or `cancelled`. A stage is `pending`,
@@ -474,3 +475,6 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-070 | implemented | A sandboxed stage gets its agent's effort in its sandbox's environment |
 | SCN-FORE-071 | implemented | A stage's prompt names the origin of the work item |
 | SCN-FORE-072 | implemented | A gate request links the run's pull request |
+| SCN-FORE-073 | implemented | A work item that intake publishes while the foreman is down starts a run when the foreman starts again |
+| SCN-FORE-074 | implemented | A gate decision that gatekeeper publishes while the foreman is down reaches the run when the foreman starts again |
+| SCN-FORE-075 | implemented | A server that reaches Temporal and NATS is healthy, without a token |

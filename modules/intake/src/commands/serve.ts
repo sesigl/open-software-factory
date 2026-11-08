@@ -2,7 +2,7 @@
 // (ADR 0063, ADR 0065), and the foreman's run events, which move a work item on (ADR 0071). It runs until SIGTERM or
 // SIGINT.
 import { timingSafeEqual } from "node:crypto";
-import { UsageError } from "@opensoftware/cli";
+import { healthOf, UsageError } from "@opensoftware/cli";
 import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
 import { type Channel, channelAdapter } from "../adapters/channel.ts";
 import { forgeAdapter } from "../adapters/forge.ts";
@@ -79,10 +79,27 @@ export async function serve(env: Env) {
   const follow = async (event: unknown) => {
     for (const { thread, text } of await work.followRun(event)) await channel?.reply(thread, text);
   };
-  const unsubscribe = nats ? await subscribeToNats(nats, RUN_SUBJECTS, follow, warn) : undefined;
+  const subscription = nats ? await subscribeToNats(nats, RUN_SUBJECTS, follow, warn) : undefined;
 
   const app = Fastify({ logger: false });
   app.setErrorHandler(answerError);
+  app.get("/v1/health", async (_request, reply) => {
+    const health = await healthOf([
+      { name: "database", check: () => store.ping(), fix: "check INTAKE_DATABASE_URL and that the database runs" },
+      ...(subscription
+        ? [
+            {
+              name: "nats",
+              check: async () => {
+                if (!subscription.attached()) throw new Error("the durable consumer of the run events is not attached");
+              },
+              fix: "check INTAKE_NATS_URL, and that NATS runs with JetStream",
+            },
+          ]
+        : []),
+    ]);
+    return reply.code(health.status === "ok" ? 200 : 503).send(health);
+  });
   await workItemRoutes(app, work, apiToken);
   if (channel) await slackHook(app, work, channel);
   const webhookSecret = env.INTAKE_WEBHOOK_SECRET;
@@ -102,7 +119,7 @@ export async function serve(env: Env) {
     process.once("SIGINT", resolve);
   });
   clearInterval(timer);
-  await unsubscribe?.();
+  await subscription?.stop();
   await app.close();
   await work.relay();
   await store.close();

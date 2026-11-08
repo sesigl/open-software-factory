@@ -56,12 +56,13 @@ with the same work item.
 | `POST /v1/work-items` | Submit work: a work item without its `id`. 201 with the new work item, 200 with the work item that has the same dedupe key, 400 with a problem that names the field. |
 | `GET /v1/work-items?dedupeKey=<key>` | The work item with this dedupe key, such as an issue's link or `sentry:<issue ID>`. 404 when there is none, 400 without the key. |
 | `GET /v1/work-items/{workItemId}` | The work item, its `status` ([Events](#events)), its `runId` once the foreman started its run, `receivedAt`, and `requests`: the requester, origin and time of each submission, oldest first. 404 for a work item the server does not know. |
+| `GET /v1/health` | Whether the server reaches its database and, with `INTAKE_NATS_URL`, whether its durable consumer is attached: 200 with `status: ok`, else 503 with the failing check and what to fix ([ADR 0086](../../docs/decisions/0086-health-routes.md)). Needs no token. |
 | `POST /slack/events` | Slack's Events API, with `INTAKE_SLACK_TOKEN`: a message that mentions the bot becomes a work item. |
 | `POST /forge/events` | The forge's webhook, with `INTAKE_WEBHOOK_SECRET`: an issue that gets the label `factory` becomes a work item. |
 | `POST /sentry/events` | Sentry's webhook, with `INTAKE_SENTRY_SECRET`: an alert about a fatal error becomes a `bug`. |
 
 The OpenAPI of the `/v1` routes is in [`contracts/openapi/openapi.json`](../../contracts/openapi/openapi.json); the
-TypeScript type `paths` of `@opensoftware/contracts` types a client. The `/v1` routes need `Authorization: Bearer
+TypeScript type `paths` of `@opensoftware/contracts` types a client. The `/v1` routes except `/v1/health` need `Authorization: Bearer
 <INTAKE_API_TOKEN>`, the webhook routes their sender's signature; all answer 401 otherwise. Errors are
 `application/problem+json` with `title`, `status` and `detail`.
 
@@ -284,3 +285,6 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-INTAKE-040 | implemented | A run's start adds no reply to the Slack thread, only its pull request does |
 | SCN-INTAKE-041 | implemented | The Factory MCP server lists the fields of "submit_work" and "work_status" with their descriptions |
 | SCN-INTAKE-042 | implemented | A submission that is not a JSON object gets the status 400 |
+| SCN-INTAKE-043 | implemented | A run event of a time when the server was down reaches the work item when the server starts again |
+| SCN-INTAKE-044 | implemented | A server that reaches its database and NATS is healthy |
+| SCN-INTAKE-045 | implemented | A server that does not reach NATS is failing and says what to fix |

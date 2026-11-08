@@ -40,6 +40,8 @@ export type StageView = Schemas["StageView"];
 export type CheckView = Schemas["CheckView"];
 export type RunSignal = Schemas["RunSignal"];
 export type SandboxSpec = Schemas["SandboxSpec"];
+export type Health = Schemas["Health"];
+export type HealthCheck = Schemas["HealthCheck"];
 
 /** One reason a document does not match its format. `path` is a JSON Pointer into the document. */
 export interface Problem {

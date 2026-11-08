@@ -24,11 +24,20 @@ export interface Bus {
    * message that `handle` fails on is a warning and comes again.
    */
   consume(name: string, subjects: string[], handle: (event: unknown, subject: string) => Promise<void>): Promise<void>;
+  /** Whether the connection to NATS is up now. */
+  connected(): boolean;
   close(): Promise<void>;
 }
 
 export async function openBus(url: string, warn: (text: string) => void): Promise<Bus> {
   const connection: NatsConnection = await connect({ servers: url });
+  let up = true;
+  // NATS's status events say when the connection drops and comes back.
+  void (async () => {
+    for await (const status of connection.status())
+      if (status.type === "disconnect") up = false;
+      else if (status.type === "reconnect") up = true;
+  })();
   const manager = await jetstreamManager(connection);
   // Adding the stream again with the same configuration changes nothing, so every module can add it.
   await manager.streams.add({ name: STREAM, subjects: ["osf.>"], max_age: 7 * 24 * 3600 * SECOND_NS });
@@ -65,6 +74,7 @@ export async function openBus(url: string, warn: (text: string) => void): Promis
             );
       })();
     },
+    connected: () => up && !connection.isClosed(),
     async close() {
       await connection.drain();
     },

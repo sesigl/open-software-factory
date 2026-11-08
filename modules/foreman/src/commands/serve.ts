@@ -4,7 +4,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { UsageError } from "@opensoftware/cli";
+import { type Health, healthOf, UsageError } from "@opensoftware/cli";
 import type { GateDecided, WorkItem } from "@opensoftware/contracts";
 import { Client, Connection, WorkflowNotFoundError } from "@temporalio/client";
 import { NativeConnection, Worker } from "@temporalio/worker";
@@ -31,14 +31,20 @@ function authorized(header: string | undefined, token: string): boolean {
   return sent.length === wanted.length && timingSafeEqual(sent, wanted);
 }
 
-function api(work: Runs, token: string) {
+function api(work: Runs, token: string, health: () => Promise<Health>) {
   const app = Fastify();
   app.setErrorHandler((error: Error & { statusCode?: number }, _request, reply) => {
     if (error instanceof UsageError) return problem(reply, 400, "Bad request", error.message);
     if (error instanceof Conflict) return problem(reply, 409, error.title, error.message);
     return problem(reply, error.statusCode ?? 500, "The request failed", error.message);
   });
+  // The health route needs no token (ADR 0086).
+  app.get("/v1/health", async (_request, reply) => {
+    const answer = await health();
+    return reply.code(answer.status === "ok" ? 200 : 503).send(answer);
+  });
   app.addHook("onRequest", async (request, reply) => {
+    if (request.routeOptions.url === "/v1/health") return;
     if (!authorized(request.headers.authorization, token))
       return problem(reply, 401, "Unauthorized", "send Authorization: Bearer <FOREMAN_API_TOKEN>");
   });
@@ -102,7 +108,8 @@ export async function serve(env: Env) {
   const gateway = await gatewayOf(definition.inference, dirname(factoryPath), env);
   // A gateway stops with the server, also when the server cannot start.
   try {
-    const client = new Client({ connection: await Connection.connect({ address }), namespace });
+    const temporal = await Connection.connect({ address });
+    const client = new Client({ connection: temporal, namespace });
     const work = runs({ client, taskQueue, factory: () => readFactory(factoryPath), now });
     const worker = await Worker.create({
       connection: await NativeConnection.connect({ address }),
@@ -133,7 +140,29 @@ export async function serve(env: Env) {
     const running = worker.run();
     if (bus) await listen(bus, work, warn);
 
-    const app = api(work, token);
+    const app = api(work, token, () =>
+      healthOf([
+        {
+          name: "temporal",
+          check: async () => {
+            await temporal.workflowService.getSystemInfo({});
+          },
+          fix: `check FOREMAN_TEMPORAL_ADDRESS (${address}) and that Temporal runs`,
+        },
+        ...(bus
+          ? [
+              {
+                name: "nats",
+                check: async () => {
+                  if (!bus.connected()) throw new Error("the connection to NATS is down");
+                },
+                fix: "check FOREMAN_NATS_URL and that NATS runs",
+              },
+            ]
+          : []),
+      ]),
+    );
+
     const port = Number(env.PORT || 8080);
     await app.listen({ port, host: "0.0.0.0" });
     process.stdout.write(`foreman serves the run API on port ${port}, task queue ${taskQueue} at ${address}\n`);

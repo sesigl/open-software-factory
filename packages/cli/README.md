@@ -42,6 +42,7 @@ process.exitCode = await runProgram({
 | `readInputs(paths, pattern)` | `{ file, text }` of each file named and of each file below each folder named whose path matches `pattern`, sorted by path. A missing path is a `UsageError`. |
 | `writeText(path, text)` | Writes the file and creates its folder. |
 | `outputPath(file, out?)` | `out` when the user gave `--out`, else `file` in `$OUTPUT`, else `file` in the current folder. |
+| `healthOf(probes)` | The answer of a server's `GET /v1/health` ([ADR 0086](../../docs/decisions/0086-health-routes.md)): runs each probe `{ name, check, fix }` at the same time, each within 2 seconds, and gives `{ status, checks }`. A probe that rejects or does not answer in time is `ok: false` with the detail `<what failed>: <fix>`. |
 | `packageVersion(url)` | The version in a `package.json`, for example `new URL("../package.json", import.meta.url)`. |
 
 ## Releases
@@ -84,3 +85,6 @@ the GitHub environment `npm`, a token only for the first version, then a trusted
 | SCN-CLI-014 | implemented | packageVersion reads the version of a package.json |
 | SCN-CLI-015 | implemented | check lets the command go on when its condition holds |
 | SCN-CLI-016 | implemented | outputPath puts the file into the current folder without $OUTPUT |
+| SCN-CLI-017 | implemented | A server whose probes all answer is ok |
+| SCN-CLI-018 | implemented | A probe that fails makes the server failing and says what failed and how to fix it |
+| SCN-CLI-019 | implemented | A probe that does not answer within 2 seconds fails |

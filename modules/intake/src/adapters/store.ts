@@ -54,6 +54,8 @@ export interface Store {
   /** The events not yet published, oldest first. */
   unpublished(): Promise<Outgoing[]>;
   published(seqs: number[]): Promise<void>;
+  /** Resolves when the database answers a query. */
+  ping(): Promise<void>;
   close(): Promise<void>;
 }
 
@@ -122,6 +124,9 @@ export async function openStore(url: string | undefined, folder: string): Promis
     },
     async published(seqs) {
       await db.query("UPDATE intake.outbox SET published = true WHERE seq = ANY($1::bigint[])", [seqs]);
+    },
+    async ping() {
+      await db.query("SELECT 1");
     },
     close: () => db.close(),
   };

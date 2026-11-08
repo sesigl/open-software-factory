@@ -28,3 +28,9 @@ export async function publishAll(url: string, events: { subject: string; event: 
     await connection.drain();
   }
 }
+
+/** Resolves when NATS accepts a connection. */
+export async function reachNats(url: string): Promise<void> {
+  const { connect } = await import("@nats-io/transport-node");
+  await (await connect({ servers: url, timeout: 1500 })).close();
+}

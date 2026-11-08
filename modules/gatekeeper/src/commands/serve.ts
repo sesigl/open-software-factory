@@ -2,9 +2,11 @@
 // check of the pending gates every minute (ADR 0048, ADR 0062), and with the forge token a read of the pull requests'
 // comments every GATEKEEPER_POLL_MS (ADR 0080). It runs until SIGTERM or SIGINT.
 import { timingSafeEqual } from "node:crypto";
-import { UsageError } from "@opensoftware/cli";
+import { healthOf, UsageError } from "@opensoftware/cli";
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
 import { readJson, readText } from "../adapters/files.ts";
+import { reachNats } from "../adapters/nats.ts";
+import { opaVersion } from "../adapters/opa.ts";
 import { openStore } from "../adapters/postgres.ts";
 import { receive } from "../adapters/slack.ts";
 import { pullRequestOf } from "../domain/pull-request.ts";
@@ -58,6 +60,8 @@ export async function serve(options: ServeOptions) {
   if (signingKey) signingKeyOf(signingKey);
 
   const store = await openStore(database);
+  const opa = env.GATEKEEPER_OPA || "opa";
+  const nats = env.GATEKEEPER_NATS_URL || undefined;
   const slack = options.channel === undefined ? undefined : slackOf(options.channel, env);
   const service = gates(
     {
@@ -67,9 +71,9 @@ export async function serve(options: ServeOptions) {
       groups,
       slack,
       forge: pullRequests ? (pr) => forgeFor(pr, env) : undefined,
-      opa: env.GATEKEEPER_OPA || "opa",
+      opa,
       signingKey,
-      nats: env.GATEKEEPER_NATS_URL || undefined,
+      nats,
       now,
       warn: (text) => process.stderr.write(`gatekeeper: ${text}\n`),
     },
@@ -84,6 +88,17 @@ export async function serve(options: ServeOptions) {
     return problem(reply, status, status === 500 ? "The server failed" : "Bad request", error.message);
   });
   app.setNotFoundHandler((request, reply) => problem(reply, 404, "Not found", `${request.method} ${request.url}`));
+
+  app.get("/v1/health", async (_request, reply) => {
+    const health = await healthOf([
+      { name: "database", check: () => store.ping(), fix: "check GATEKEEPER_DATABASE_URL and that the database runs" },
+      { name: "opa", check: () => opaVersion(opa), fix: "install OPA 1.x or set GATEKEEPER_OPA" },
+      ...(nats
+        ? [{ name: "nats", check: () => reachNats(nats), fix: "check GATEKEEPER_NATS_URL and that NATS runs" }]
+        : []),
+    ]);
+    return reply.code(health.status === "ok" ? 200 : 503).send(health);
+  });
 
   await app.register(async (api) => {
     const expected = Buffer.from(`Bearer ${apiToken}`);

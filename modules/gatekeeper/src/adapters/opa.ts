@@ -34,3 +34,13 @@ export async function evaluate(opa: string, policy: string, input: unknown): Pro
   }
   return output.result?.[0]?.expressions[0]?.value;
 }
+
+/** Resolves when the OPA program starts and prints its version. */
+export async function opaVersion(opa: string): Promise<void> {
+  const child = spawn(opa, ["version"], { stdio: "ignore" });
+  const code = await new Promise<number>((resolve, reject) => {
+    child.on("error", (error: NodeJS.ErrnoException) => reject(new Error(`could not start ${opa} (${error.code})`)));
+    child.on("close", (exit) => resolve(exit ?? 1));
+  });
+  if (code !== 0) throw new Error(`${opa} version exited with ${code}`);
+}
