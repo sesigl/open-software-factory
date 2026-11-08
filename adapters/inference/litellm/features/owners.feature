@@ -5,7 +5,8 @@ Feature: Gateways of a launcher that ended
   was killed leaves no gateway behind (ADR 0090).
 
   @id=SCN-INFLITE-017 @status=implemented
-  Scenario: Starting a gateway removes the gateway of an owner that no longer runs
+  Scenario: Any start removes the gateway of an owner that no longer runs, also one that fails itself
     Given a gateway started with "OSF_INFERENCE_OWNER" set to a process that ended
-    When a second gateway starts with "OSF_INFERENCE_OWNER" set to a process that runs and "OSF_INFERENCE_ORPHAN_AGE" set to "0"
-    Then "list" prints the second gateway and not the first
+    When "start" runs with "OSF_INFERENCE_ORPHAN_AGE" set to "0" and a config that does not exist
+    Then "start" exits with code 1
+    And "list" does not print the first gateway

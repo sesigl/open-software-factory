@@ -258,6 +258,8 @@ Serve it as in the quick start, with `export OSF_SECRET_ANTHROPIC_API_KEY=…` f
 
 1. `foreman serve` runs the adapter's `start` with the config, a path relative to `factory.yaml`, before it takes work,
    and `stop` when it stops. A `start` that fails stops the server with exit code 1 and the adapter's message.
+   `start` gets `OSF_INFERENCE_OWNER` with the foreman's process ID, so a later start removes the gateway of a foreman
+   that was killed ([ADR 0090](../../docs/decisions/0090-no-leaked-containers.md)).
 2. Before a run's first stage, the foreman asks the adapter for the run's key: `key <gateway> <run ID> --budget 5`. The
    gateway refuses the run's calls once it spent its budget. The key stays in the foreman's memory, not in Temporal.
 3. Each stage's harness adapter gets the gateway in the variables that the harness adapters read: `OPENAI_BASE_URL`
