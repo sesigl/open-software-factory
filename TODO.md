@@ -751,6 +751,10 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
   durable consumer and acknowledges a message only after it handled it.
 - **Done when:** a work item and a gate decision sent while the foreman is down reach it when it starts, and a run
   event sent while intake is down reaches intake.
+- **Slices:**
+  - [x] The stream `OSF`, JetStream publishes with the event ID as message ID in intake, gatekeeper and the foreman,
+    and the durable consumers `foreman` and `intake` (ADR 0085, `SCN-FORE-073`, `-074`, `SCN-INTAKE-043`).
+  - [ ] Move the image pins of the Compose profile and the Helm chart to the releases with durable events.
 
 ### [ ] T-23 · sandbox on by default (P0)
 

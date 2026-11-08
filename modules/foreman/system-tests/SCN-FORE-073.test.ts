@@ -27,7 +27,7 @@ scenario("SCN-FORE-073", async ({ sut, fakes, given, when, then }) => {
 
   await then('"/v1/runs/<id>" of the work item\'s run shows the state "complete"', async () => {
     const [started] = await events.received("run.started@v1", { timeoutMs: WAIT_MS });
-    const runId = (started?.data as { runId: string; workItemId: string }).runId;
+    const runId = (started?.data as { runId?: string } | undefined)?.runId as string;
     expect(started?.data).toMatchObject({ workItemId: readmeWork(fakes).id });
     expect((await server.until(runId, "complete")).workItem.id).toBe(readmeWork(fakes).id);
   });
