@@ -27,10 +27,13 @@ export interface Http {
   post(path: string, body?: unknown): Promise<HttpResponse>;
   /** A client typed by the module's OpenAPI `paths`, as generated from `contracts/` (openapi-fetch). */
   client<Paths extends {}>(): Client<Paths>;
+  /** What every server of the scenario printed so far, the first one first, so a test can read a warning. */
+  output(): { stdout: string; stderr: string };
 }
 
 export function makeHttp(launch: Launch, onStop: (stop: () => Promise<unknown>) => void): Http {
   let server: Server | undefined;
+  const servers: Server[] = [];
   const base = (): string => {
     if (!server) throw new Error("sut.http: call sut.http.start() before the first request");
     return `http://127.0.0.1:${server.port}`;
@@ -40,6 +43,7 @@ export function makeHttp(launch: Launch, onStop: (stop: () => Promise<unknown>) 
       if (server) throw new Error("sut.http: the server is already running");
       const { command, argv, cwd, env } = launch(args, options.env);
       server = await startServer(command, argv, cwd, env);
+      servers.push(server);
       const started = server;
       onStop(() => started.stop());
       return base();
@@ -48,6 +52,13 @@ export function makeHttp(launch: Launch, onStop: (stop: () => Promise<unknown>) 
       const running = server;
       server = undefined;
       await running?.stop();
+    },
+    output() {
+      const printed = servers.map((each) => each.output());
+      return {
+        stdout: printed.map(({ stdout }) => stdout).join(""),
+        stderr: printed.map(({ stderr }) => stderr).join(""),
+      };
     },
     async request(method, path, options = {}) {
       const response = await fetch(new URL(path, base()), {

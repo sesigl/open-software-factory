@@ -132,3 +132,19 @@ Feature: A module's servers and events
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-135 @status=implemented
+  Scenario: sut.http.output shows what every server of the scenario printed, the first one first
+    Given a module whose server writes "started" to its error output when it starts and "greeted" for each "GET /greeting"
+    And its system test starts it, stops it, starts it again, reads "/greeting" and expects the error output "started", "started" and "greeted"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-134 @status=implemented
+  Scenario: sut.compose takes down the project of a run that ended without taking it down
+    Given a module whose system test starts the service "events" of "compose.yaml" with sut.compose and then ends its process at once
+    And the developer ran "testkit run --junit first.xml" in the module, which left the project of that scenario running
+    When the developer runs "testkit run --junit report.xml" in the module with a system test that lists the Compose projects with sut.compose
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001", whose list does not hold the project of the first run
