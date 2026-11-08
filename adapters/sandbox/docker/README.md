@@ -42,6 +42,9 @@ npx @opensoftware/sandbox-docker destroy "$id"
 - **No way out but the proxy.** The sandbox's network is internal: it has no route to anywhere but its egress proxy,
   which it reaches as `egress`. `HTTP_PROXY` and `HTTPS_PROXY` point at `http://egress:8080`. A request around the
   proxy fails, and only HTTP and HTTPS leave the sandbox.
+- **A shared network.** With `OSF_SANDBOX_NETWORK`, the egress proxy also joins that Docker network, so an allowed
+  host on it resolves by its name: in the Compose profile the sandbox reaches `litellm` this way. The sandbox itself
+  stays on its own network.
 - **The egress allowlist.** The proxy refuses with HTTP 403 every host that is neither in `egress` nor the host of a
   declared MCP server. It maps `host.docker.internal` to the Docker host, as Docker Desktop does.
 - **Secrets.** Each secret's variable holds `osf-secret-placeholder-<NAME>` in the sandbox. The proxy swaps it in any
@@ -96,3 +99,4 @@ builds the package and publishes it to npm as `@opensoftware/sandbox-docker`. Th
 | `OSF_OPENBAO_TOKEN` | string |  | The token the egress proxy reads OpenBao with. The sandbox never gets it. |
 | `OSF_OPENBAO_MOUNT` | string | `"secret"` | The KV v2 mount of ref:openbao/<path>: the secret's field value at <mount>/data/<path>. |
 | `DOCKER_HOST` | string |  | The Docker daemon to use, as for any docker command. Default: the Docker CLI's current context. |
+| `OSF_SANDBOX_NETWORK` | string |  | A Docker network the egress proxy of each sandbox also joins, like the Compose profile's network, so a host on it that the spec's egress allows, like litellm, resolves. The sandbox itself stays on its own network. |

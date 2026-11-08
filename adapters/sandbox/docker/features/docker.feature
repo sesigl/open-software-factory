@@ -33,3 +33,10 @@ Feature: What the docker adapter checks before it starts a sandbox
     When the client runs "create" with the spec
     Then create exits with code 1 and says that the sandbox did not start and was removed
     And the sandbox list does not hold that sandbox
+
+  @id=SCN-SDOCKER-006 @status=implemented
+  Scenario: With "OSF_SANDBOX_NETWORK", a sandbox reaches an allowed host on that network through its egress proxy
+    Given a sandbox "server" whose container answers "hello" on port 8080
+    And a second sandbox created with "OSF_SANDBOX_NETWORK" set to the network of "server" and the egress allowlist that names the container of "server"
+    When the client runs "curl http://<container of server>:8080/" in the second sandbox
+    Then the request gets the answer "hello"

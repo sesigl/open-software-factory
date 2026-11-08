@@ -61,7 +61,10 @@ function sandboxArgs(spec: SandboxSpec): string[] {
   ];
 }
 
-/** The proxy joins the default bridge for the way out and the sandbox's network as "egress". */
+/**
+ * The proxy joins the default bridge for the way out, the sandbox's network as "egress" and, with
+ * OSF_SANDBOX_NETWORK, that network too, so an allowed host on it, like the Compose profile's "litellm", resolves.
+ */
 async function startEgress(id: string, spec: SandboxSpec, secrets: Secret[], secretsDir: string): Promise<void> {
   const proxy = egressName(id);
   // The Docker CLI copies the proxy's variables from its own environment, so no value is on its command line.
@@ -99,6 +102,8 @@ async function startEgress(id: string, spec: SandboxSpec, secrets: Secret[], sec
     await dockerText(["cp", "-L", join(secretsDir, file), `${proxy}:${PROXY_DIR}/secrets/${variable}`]);
   }
   await dockerText(["network", "connect", "--alias", "egress", sandboxName(id), proxy]);
+  const shared = process.env.OSF_SANDBOX_NETWORK;
+  if (shared) await dockerText(["network", "connect", shared, proxy]);
   await dockerText(["start", proxy]);
   await waitUntilReady(proxy);
 }
