@@ -86,7 +86,7 @@ async function startEgress({ kube, settings }: Context, id: string, spec: Sandbo
     return logs.code === 0 && logs.stdout.toString("utf8").includes(READY) ? true : undefined;
   });
   const certificate = await kube.text(["exec", name, "--", "cat", `${PROXY_DIR}/out/osf/egress-ca.crt`]);
-  await kube.apply(caConfig(id, `${certificate}\n`));
+  await kube.apply(caConfig(id, certificate));
 }
 
 /** Waits until agent-sandbox reports the claim ready, and stops early when the sandbox's pod cannot start. */

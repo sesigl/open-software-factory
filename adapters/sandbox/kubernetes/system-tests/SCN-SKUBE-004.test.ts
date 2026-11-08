@@ -1,14 +1,14 @@
-import { scenario } from "@opensoftware/testkit";
+import { type CliResult, scenario } from "@opensoftware/testkit";
 import { HELLO_WORLD, sandboxes } from "./sandbox.ts";
 
-scenario("SCN-SKUBE-003", async ({ sut, given, when, then }) => {
+scenario("SCN-SKUBE-004", async ({ sut, given, when, then }) => {
   const box = sandboxes(sut);
   let spec: Record<string, unknown> = {};
   await given('a sandbox spec with the template "hello-world:latest", an image without a shell', async () => {
     spec = { template: HELLO_WORLD };
   });
 
-  let run: Awaited<ReturnType<typeof sut.cli>>;
+  let run: CliResult;
   await when('the client runs "create" with the spec', async () => {
     run = await box.run(spec);
   });
@@ -19,6 +19,13 @@ scenario("SCN-SKUBE-003", async ({ sut, given, when, then }) => {
     id = /the sandbox ([0-9a-f]{12}) did not start and was removed/.exec(run.stderr)?.[1] ?? "";
     expect(id, run.stderr).not.toBe("");
   });
+
+  await then(
+    'it says that the container "sandbox" is in a waiting state, with the reason and Kubernetes\' message',
+    async () => {
+      expect(run.stderr).toMatch(/did not start and was removed: the container "sandbox" is [A-Za-z]+: \S/);
+    },
+  );
 
   await then("the sandbox list does not hold that sandbox", async () => {
     const list = await box.cli(["list"]);
