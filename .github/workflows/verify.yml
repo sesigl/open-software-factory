@@ -3,8 +3,9 @@ name: verify
 
 on:
   pull_request:
-    # edited: DOCS-AFFECTED reads `docs-reviewed:` lines from the description.
-    types: [opened, synchronize, reopened, edited]
+    # edited: DOCS-AFFECTED reads `docs-reviewed:` lines from the description. ready_for_review: a draft runs no
+    # mutation, so marking it ready starts it.
+    types: [opened, synchronize, reopened, edited, ready_for_review]
   push:
     branches: [main]
   # release-please.yml starts verify this way on release pull requests (docs/quality/checks.md). The run uses this
@@ -442,3 +443,11 @@ jobs:
           head=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq '.headRefOid')
           gh api "repos/$GITHUB_REPOSITORY/statuses/$head" -f state="$STATE" -f context=verify \
             -f target_url="$URL" -f description="make verify on the merge into main"
+
+  # MUTATION (mutation.yml), only after verify passed: a pull request whose checks fail starts no mutation runners. A
+  # run started by an edit of the description restores the reports of the shards that finished before (ADR 0092).
+  mutation:
+    name: mutation
+    needs: verify
+    if: github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.verify.result == 'success'
+    uses: ./.github/workflows/mutation.yml

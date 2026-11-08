@@ -864,8 +864,8 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
   - [x] No mutation run on a draft pull request.
   - [x] inference-litellm: 25 added lines per shard. Its runs already take the shortest scenario first (ADR 0084).
   - [x] The times of one pull request before and after, in ADR 0091.
-  - Not done, with the reason in ADR 0091: a stable shard per mutant (the joined results serve every shard), and a
-    start after `verify` passes (it adds the time of `verify` to every pull request).
+  - [x] Mutation starts only after `verify` passed (ADR 0092).
+  - Not done, with the reason in ADR 0091: a stable shard per mutant (the joined results serve every shard).
 
 ---
 
