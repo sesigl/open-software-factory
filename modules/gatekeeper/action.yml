@@ -28,9 +28,17 @@ outputs:
 runs:
   using: composite
   steps:
-    - uses: open-policy-agent/setup-opa@v2
+    - id: setup-opa
+      uses: open-policy-agent/setup-opa@v2
+      continue-on-error: true
       with:
         version: 1.21.0
+    # When github.com failed to send OPA's release file, the same file comes through the GitHub API, checked against
+    # its pinned SHA-256. With OPA 1.21.0 on the PATH, the script does nothing.
+    - shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+      run: bash "${{ github.action_path }}/install-opa.sh"
     - id: gatekeeper
       shell: bash
       env:

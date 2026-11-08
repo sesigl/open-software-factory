@@ -62,6 +62,8 @@ jobs:
           path: .tools/bin
           key: tools-${{ runner.os }}-${{ hashFiles('tools/scaffold/install-tools.ts') }}
       - run: make install
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       - run: make verify-static
         env:
           OSF_TEST_CACHE: ${{ github.event_name == 'pull_request' && '1' || '' }}
@@ -185,6 +187,8 @@ jobs:
           path: .tools/bin
           key: tools-${{ runner.os }}-${{ hashFiles('tools/scaffold/install-tools.ts') }}
       - run: make install
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       # run=false when every system test task of the suite is a cache hit: the slow setup below is then not needed.
       - name: Plan the suite
         id: plan
@@ -341,6 +345,8 @@ jobs:
           path: .tools/bin
           key: tools-${{ runner.os }}-${{ hashFiles('tools/scaffold/install-tools.ts') }}
       - run: make install
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Pull request context for DOCS-AFFECTED
         if: github.event.pull_request
