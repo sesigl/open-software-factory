@@ -15,6 +15,10 @@ export const GATEWAY_LABEL = "osf.inference.role=gateway";
 /** The label key that holds a gateway's ID on each of its parts. */
 export const ID_LABEL = "osf.inference.id";
 
+/** The label keys that hold the gateway's owner, OSF_INFERENCE_OWNER, a process ID, and its host (ADR 0090). */
+export const OWNER_LABEL = "osf.inference.owner";
+export const HOST_LABEL = "osf.inference.host";
+
 export const LITELLM_IMAGE =
   "ghcr.io/berriai/litellm:v1.106.2@sha256:7294b90f868c5c38c99b83021c7ba46f9b439e95f8e32964c925c7d2563a03f7";
 
