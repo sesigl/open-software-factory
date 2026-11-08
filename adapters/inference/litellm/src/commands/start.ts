@@ -19,6 +19,8 @@ import {
   OWNER_LABEL,
   POSTGRES_IMAGE,
   PROXY_PORT,
+  PYTHON_CACHE,
+  PYTHON_CACHE_ENV,
 } from "../domain/names.ts";
 import { attach } from "./attach.ts";
 import { origin } from "./gateway.ts";
@@ -92,7 +94,8 @@ export async function start(file: string | undefined): Promise<Outcome> {
     await docker(
       ["create", "--name", name, "--network", name, ...labels, "--label", GATEWAY_LABEL]
         .concat(["--add-host", "host.docker.internal:host-gateway", "--publish", `127.0.0.1::${PROXY_PORT}`])
-        .concat(["--env", "LITELLM_LOCAL_MODEL_COST_MAP=True", ...passed, LITELLM_IMAGE])
+        .concat(["--env", PYTHON_CACHE_ENV, "--volume", PYTHON_CACHE, "--env", "LITELLM_LOCAL_MODEL_COST_MAP=True"])
+        .concat([...passed, LITELLM_IMAGE])
         .concat(["--config", `${CONFIG_DIR}/config.yaml`, "--port", String(PROXY_PORT)]),
       secrets,
     );

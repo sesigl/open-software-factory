@@ -24,7 +24,11 @@ services:
       DATABASE_URL: postgresql://litellm:testkit@postgres:5432/litellm
       LITELLM_MASTER_KEY: sk-testkit-master
       LITELLM_LOCAL_MODEL_COST_MAP: "True"
+      # The compiled Python files of LiteLLM, shared with the gateways that start runs (vitest.setup.ts).
+      PYTHONPYCACHEPREFIX: /var/cache/osf-python
       PROVIDER_BASE: ${PROVIDER_BASE:?set PROVIDER_BASE in .env}
+    volumes:
+      - python:/var/cache/osf-python
     extra_hosts:
       - host.docker.internal:host-gateway
     configs:
@@ -37,6 +41,11 @@ services:
       interval: 1s
       timeout: 5s
       retries: 180
+
+volumes:
+  python:
+    name: osf-inference-python
+    external: true
 
 configs:
   litellm:
