@@ -18,6 +18,11 @@
     "OSF_INFERENCE_OWNER": {
       "type": "string",
       "description": "start: the process ID of the launcher that owns the gateway, like the foreman's. start labels the gateway with it and with this host, and removes the gateways whose owner on this host no longer runs (ADR 0090). Unset: the gateway has no owner and is never removed that way."
+    },
+    "OSF_INFERENCE_ORPHAN_AGE": {
+      "type": "string",
+      "default": "120",
+      "description": "start: the seconds after which a gateway whose owner no longer runs is removed (ADR 0090). The time leaves a gateway alone while another start still creates it."
     }
   }
 }

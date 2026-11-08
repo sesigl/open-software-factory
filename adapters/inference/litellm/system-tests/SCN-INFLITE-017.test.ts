@@ -13,11 +13,15 @@ scenario("SCN-INFLITE-017", async ({ sut, fakes, given, when, then }) => {
     });
 
     let second = { id: "", url: "" };
-    await when('a second gateway starts with "OSF_INFERENCE_OWNER" set to a process that runs', async () => {
-      second = await box.start(config(api.containerUrl as string, routes), {
-        OSF_INFERENCE_OWNER: String(process.pid),
-      });
-    });
+    await when(
+      'a second gateway starts with "OSF_INFERENCE_OWNER" set to a process that runs and "OSF_INFERENCE_ORPHAN_AGE" set to "0"',
+      async () => {
+        second = await box.start(config(api.containerUrl as string, routes), {
+          OSF_INFERENCE_OWNER: String(process.pid),
+          OSF_INFERENCE_ORPHAN_AGE: "0",
+        });
+      },
+    );
 
     await then('"list" prints the second gateway and not the first', async () => {
       const listed = (await sut.cli(["list"])).stdout.split("\n");

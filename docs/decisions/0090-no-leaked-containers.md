@@ -29,7 +29,9 @@ CI's mutation runner already removes the containers of a run that ended (ADR 008
   missing or names a process that no longer runs, with its volumes.
 - **Gateways name their owner.** The inference port's `start` takes `OSF_INFERENCE_OWNER`, the launcher's process ID;
   the foreman sets it to its own. inference-litellm labels the gateway with it and its host, and its `start` removes the gateways
-  whose owner on the same host no longer runs. A gateway without the label, or of another host, is never touched.
+  whose owner on the same host no longer runs, once they are older than `OSF_INFERENCE_ORPHAN_AGE` seconds (120). The
+  age leaves a gateway alone while a parallel `start` still creates it. A gateway without the label, or of another
+  host, is never touched.
 
 ## Options considered
 

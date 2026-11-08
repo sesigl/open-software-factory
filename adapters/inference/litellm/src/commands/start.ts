@@ -37,16 +37,21 @@ function alive(pid: number): boolean {
 }
 
 /**
- * Removes the gateways whose owner ran on this host and no longer runs: a foreman that was killed leaves its gateway
- * behind otherwise (ADR 0090). A gateway without an owner, or of another host, is never touched.
+ * Removes the gateways whose owner ran on this host and no longer runs, once they are older than
+ * OSF_INFERENCE_ORPHAN_AGE seconds (default 120): a foreman that was killed leaves its gateway behind otherwise (ADR
+ * 0090). The age leaves a gateway alone while another start still creates it. A gateway without an owner, or of
+ * another host, is never touched.
  */
 async function removeOrphans(): Promise<void> {
-  const format = `{{.Label "${ID_LABEL}"}} {{.Label "${OWNER_LABEL}"}} {{.Label "${HOST_LABEL}"}}`;
+  const age = Number(process.env.OSF_INFERENCE_ORPHAN_AGE || 120) * 1000;
+  const format = `{{.Label "${ID_LABEL}"}} {{.Label "${OWNER_LABEL}"}} {{.Label "${HOST_LABEL}"}} {{.ID}}`;
   const rows = await docker(["ps", "--all", "--filter", `label=${GATEWAY_LABEL}`, "--format", format]);
   for (const row of rows.split("\n").filter(Boolean)) {
-    const [id, owner, host] = row.split(" ");
+    const [id, owner, host, container] = row.split(" ");
     const pid = Number(owner);
-    if (id && host === hostname() && pid > 0 && !alive(pid)) await removeGateway(id);
+    if (!id || !container || host !== hostname() || !(pid > 0) || alive(pid)) continue;
+    const created = Date.parse(await docker(["container", "inspect", "--format", "{{.Created}}", container]));
+    if (Date.now() - created >= age) await removeGateway(id);
   }
 }
 

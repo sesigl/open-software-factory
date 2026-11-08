@@ -71,8 +71,13 @@ let swept: Promise<void> | undefined;
 function sweep(env: Record<string, string>, cwd: string): Promise<void> {
   swept ??= (async () => {
     const listed = await run("docker", ["compose", "ls", "--all", "--format", "json"], cwd, env);
-    if (listed.exitCode !== 0) return;
-    const projects = JSON.parse(listed.stdout.trim() || "[]") as { Name: string }[];
+    let projects: { Name: string }[] = [];
+    try {
+      projects = JSON.parse(listed.stdout.trim() || "[]");
+    } catch {
+      // A Compose that lists no JSON, like a stand-in plugin of a test, has no project to sweep.
+      return;
+    }
     for (const { Name } of projects) {
       if (!Name.startsWith("osf-sut-")) continue;
       const owner = join(OWNERS, `${Name}.pid`);

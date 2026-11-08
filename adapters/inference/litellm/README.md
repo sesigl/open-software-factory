@@ -68,7 +68,7 @@ the model the benchmark chose.
   `os.environ/OSF_SECRET_<NAME>`. A company that wants no bundled gateway points the harnesses at its own URL instead.
 - **No gateway of a launcher that ended.** With `OSF_INFERENCE_OWNER` (the process ID of the launcher, which the
   foreman sets), `start` labels the gateway with its owner and this host and first removes every gateway whose owner on this host no longer
-  runs, like a foreman that was killed ([ADR 0090](../../../docs/decisions/0090-no-leaked-containers.md)).
+  runs and that is older than `OSF_INFERENCE_ORPHAN_AGE` seconds (120), like a foreman that was killed ([ADR 0090](../../../docs/decisions/0090-no-leaked-containers.md)).
 - **No state of its own.** `stop` removes both containers, the database's volume and the network. Only an attached
   gateway has a record in `OSF_DATA` (see below).
 
@@ -139,3 +139,4 @@ No credential is stored in the repository.
 | `OSF_DATA` | string | `".inference-litellm"` | Folder where start records each gateway that it attached to a running proxy, as gateways/<ID>.json with the proxy's URL and the name of the master key's variable, and the hashed tokens of its run keys as gateways/<ID>.keys. It never holds a key's value. |
 | `OSF_SECRET_*` | string |  | OSF_SECRET_<NAME> holds a value the config names as os.environ/OSF_SECRET_<NAME>, such as a provider key, or the master key of a running proxy that osf.proxy.master_key names. The Docker CLI hands a provider key to the LiteLLM container only; it is never in the config. |
 | `OSF_INFERENCE_OWNER` | string |  | start: the process ID of the launcher that owns the gateway, like the foreman's. start labels the gateway with it and with this host, and removes the gateways whose owner on this host no longer runs (ADR 0090). Unset: the gateway has no owner and is never removed that way. |
+| `OSF_INFERENCE_ORPHAN_AGE` | string | `"120"` | start: the seconds after which a gateway whose owner no longer runs is removed (ADR 0090). The time leaves a gateway alone while another start still creates it. |
