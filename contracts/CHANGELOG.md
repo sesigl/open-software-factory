@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0](https://github.com/sesigl/open-software-factory/compare/contracts-v2.1.0...contracts-v2.2.0) (2026-11-08)
+
+
+### Features
+
+* TODO.md wave 5, the v1 gaps (durable events, health, doctor, traces, evidence, console work and actions) ([#226](https://github.com/sesigl/open-software-factory/issues/226)) ([2787352](https://github.com/sesigl/open-software-factory/commit/27873526013a268d71ca9c738e2088a9f22c9b76))
+
 ## [2.1.0](https://github.com/sesigl/open-software-factory/compare/contracts-v2.0.0...contracts-v2.1.0) (2026-11-05)
 
 

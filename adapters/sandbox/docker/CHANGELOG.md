@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.0](https://github.com/sesigl/open-software-factory/compare/sandbox-docker-v0.1.1...sandbox-docker-v0.2.0) (2026-11-08)
+
+
+### Features
+
+* **sandbox-docker:** OSF_SANDBOX_NETWORK, a network the egress proxy also joins ([#221](https://github.com/sesigl/open-software-factory/issues/221)) ([d0b2810](https://github.com/sesigl/open-software-factory/commit/d0b2810857b3f46e409092e392eb3e6806b4e284))
+
+
+### Performance Improvements
+
+* **ci:** shard the nightly mutation run and replay unchanged shards ([#187](https://github.com/sesigl/open-software-factory/issues/187)) ([e38b1b8](https://github.com/sesigl/open-software-factory/commit/e38b1b8607cca7dd46f2251df74465a26d84aaaf))
+
 ## [0.1.1](https://github.com/sesigl/open-software-factory/compare/sandbox-docker-v0.1.0...sandbox-docker-v0.1.1) (2026-11-05)
 
 

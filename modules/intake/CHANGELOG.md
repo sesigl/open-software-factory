@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/sesigl/open-software-factory/compare/intake-v0.3.1...intake-v0.4.0) (2026-11-08)
+
+
+### Features
+
+* TODO.md wave 5, the v1 gaps (durable events, health, doctor, traces, evidence, console work and actions) ([#226](https://github.com/sesigl/open-software-factory/issues/226)) ([2787352](https://github.com/sesigl/open-software-factory/commit/27873526013a268d71ca9c738e2088a9f22c9b76))
+
+
+### Performance Improvements
+
+* **ci:** shard the nightly mutation run and replay unchanged shards ([#187](https://github.com/sesigl/open-software-factory/issues/187)) ([e38b1b8](https://github.com/sesigl/open-software-factory/commit/e38b1b8607cca7dd46f2251df74465a26d84aaaf))
+
 ## [0.3.1](https://github.com/sesigl/open-software-factory/compare/intake-v0.3.0...intake-v0.3.1) (2026-11-05)
 
 

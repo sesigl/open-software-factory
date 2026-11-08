@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.31.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.30.0...testkit-v0.31.0) (2026-11-08)
+
+
+### Features
+
+* TODO.md wave 5, the v1 gaps (durable events, health, doctor, traces, evidence, console work and actions) ([#226](https://github.com/sesigl/open-software-factory/issues/226)) ([2787352](https://github.com/sesigl/open-software-factory/commit/27873526013a268d71ca9c738e2088a9f22c9b76))
+
+
+### Bug Fixes
+
+* no leaked containers from local runs ([#227](https://github.com/sesigl/open-software-factory/issues/227)) ([4d8afbc](https://github.com/sesigl/open-software-factory/commit/4d8afbc71d49366071f021731db3fec69b08567f))
+* **testkit:** local runs reach Docker as the machine does, and sut.helm uses only a local kind cluster ([#190](https://github.com/sesigl/open-software-factory/issues/190)) ([cd5d4aa](https://github.com/sesigl/open-software-factory/commit/cd5d4aaf6ba179d0e4e4fc93f6b1192e2a0d81f7))
+* **testkit:** SCN-TK-132 replaces SCN-TK-131 with a neutral context name ([#194](https://github.com/sesigl/open-software-factory/issues/194)) ([1923cae](https://github.com/sesigl/open-software-factory/commit/1923cae8f9ac31dc1419a3ddf026466bbdfe6e3c))
+* **testkit:** system tests pass on macOS with Rancher Desktop ([#197](https://github.com/sesigl/open-software-factory/issues/197)) ([dbb6422](https://github.com/sesigl/open-software-factory/commit/dbb6422b9ac9b28e48555d57b33cfaa032833116))
+* **testkit:** the removal of a scenario's workspace retries while a process still writes into it ([#201](https://github.com/sesigl/open-software-factory/issues/201)) ([39ddda7](https://github.com/sesigl/open-software-factory/commit/39ddda75e0a5160bf4c5b2acff106ebf0cc2d049))
+
+
+### Performance Improvements
+
+* **ci:** shard the nightly mutation run and replay unchanged shards ([#187](https://github.com/sesigl/open-software-factory/issues/187)) ([e38b1b8](https://github.com/sesigl/open-software-factory/commit/e38b1b8607cca7dd46f2251df74465a26d84aaaf))
+
 ## [0.30.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.29.0...testkit-v0.30.0) (2026-11-05)
 
 
