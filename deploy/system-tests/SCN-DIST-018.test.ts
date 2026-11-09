@@ -1,7 +1,7 @@
 import { scenario } from "@opensoftware/testkit";
 import { profile, words } from "./profile.ts";
 
-scenario("SCN-DIST-013", async ({ sut, given, when, then }) => {
+scenario("SCN-DIST-018", async ({ sut, given, when, then }) => {
   let compose: Awaited<ReturnType<typeof profile>>;
   await given('the Compose profile with every value of ".env.example" set in ".env"', async () => {
     compose = await profile(sut);
@@ -17,13 +17,20 @@ scenario("SCN-DIST-013", async ({ sut, given, when, then }) => {
   });
 
   await then(
-    'the output lists the images "gatekeeper", "intake", "foreman", "console" and "factory-spec" as "ghcr.io/sesigl/open-software-factory/<name>:<version>"',
+    'the output lists the images "gatekeeper", "intake", "foreman", "console", "factory-spec" and "harness-claude-code" as "ghcr.io/sesigl/open-software-factory/<name>:<version>"',
     async () => {
       const names = config.stdout
         .split("\n")
         .map((line) => /^ghcr\.io\/sesigl\/open-software-factory\/([a-z-]+):\d+\.\d+\.\d+(-r\d+)?$/.exec(line.trim()))
         .flatMap((match) => (match ? [match[1]] : []));
-      expect(names.sort()).toEqual(["console", "factory-spec", "foreman", "gatekeeper", "intake"]);
+      expect(names.sort()).toEqual([
+        "console",
+        "factory-spec",
+        "foreman",
+        "gatekeeper",
+        "harness-claude-code",
+        "intake",
+      ]);
     },
   );
 });

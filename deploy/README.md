@@ -42,6 +42,8 @@ published yet, like one whose pin moved a moment ago, is built from npm, which t
 | `factory-repo` | one-shot: copies `FACTORY_DIR` into the volume `factory` and commits it | none |
 | `gatekeeper` | approvals in Slack or on pull requests, with the policy and groups of the factory | `GATEKEEPER_PORT`, 8082 |
 | `intake` | work from Slack, the forge and Sentry | `INTAKE_PORT`, 8081 |
+| `docker-proxy` | the foreman's only way to the Docker API, for the agents' sandboxes; see [Sandboxes](#sandboxes) | none |
+| `agent-template` | one-shot: puts the image `harness-claude-code` on this machine, the template of the agents' sandboxes | none |
 | `foreman` | runs the factory's workflow on Temporal | `FOREMAN_PORT`, 8083 |
 | `console` | the web view of the runs and the factory | `CONSOLE_PORT`, 8080 |
 | `factory` | factory-spec for `docker compose run --rm factory <command>`; profile `tools` | none |
@@ -88,6 +90,21 @@ INTAKE_WEBHOOK_SECRET=...     # see "Receive GitHub issues on your machine"
 foreman runs Claude Code without a sandbox: its agents see foreman's environment, with both tokens and the master key
 of `litellm`. Run it on your own machine only.
 
+### Sandboxes
+
+An agent that declares `sandbox` runs in a container of the
+[docker sandbox adapter](../adapters/sandbox/docker/README.md), on its own network whose only way out is its egress
+proxy ([ADR 0096](../docs/decisions/0096-agents-in-sandboxes-in-the-profile.md)). The proxy also joins the profile's
+network, so a sandbox whose `egress` allows `litellm` reaches the gateway, and nothing else of the profile. The image
+`ghcr.io/sesigl/open-software-factory/harness-claude-code`, which `agent-template` pulls or builds, is the template
+with the harness adapter, `gh`, Git and `make`.
+
+foreman has no Docker socket. It reaches the Docker API through `docker-proxy`
+([wollomatic/socket-proxy](https://github.com/wollomatic/socket-proxy)), which holds the host's socket read-only,
+answers only foreman, allows only the API paths that the adapter calls, and refuses every bind mount. A request it
+refuses gets `403 Forbidden`. It does not read the rest of a request, so a compromised foreman can still start a
+privileged container: the proxy narrows what foreman can do, it does not make foreman safe to expose.
+
 Each agent of the reference factory names its effort level ([ADR 0078](../docs/decisions/0078-agent-effort.md)):
 `high` for triage and ship, which need a small model, and `medium` for spec, implement and review, which need a smart
 one. Point the routes in `compose/litellm/config.yaml` at models of those sizes. When you change a route to a model of
@@ -120,6 +137,7 @@ and names it, like `set FOREMAN_API_TOKEN in .env`.
 | `INTAKE_FORGE_ADAPTER` | `forge-github` | The forge adapter of intake's webhook: `forge-github` or `forge-forgejo`. |
 | `INTAKE_WEBHOOK_SECRET` | | The secret that the forge signs its webhook deliveries with. Set: intake takes them at `/forge/events`, and an issue labeled `factory` becomes a work item. Empty: intake takes no forge webhooks. |
 | `FACTORY_DIR` | `./factory` | The folder of the factory definition, its prompts, policy and groups. |
+| `DOCKER_SOCKET` | `/var/run/docker.sock` | The host's Docker socket, which only `docker-proxy` mounts. For rootless Docker, like `$XDG_RUNTIME_DIR/docker.sock`. |
 | `OSF_HOST` | `127.0.0.1` | The address every published port listens on. `0.0.0.0` makes them reachable from other machines. |
 | `CONSOLE_PORT` | `8080` | The port of the console. `0` picks a free port. |
 | `INTAKE_PORT` | `8081` | The port of intake, for the webhooks of Slack, the forge and Sentry. |
@@ -252,7 +270,9 @@ repository's Packages and sets its visibility to public, like the first npm rele
 | SCN-DIST-010 | implemented | The console of the Helm chart shows the agents of the reference factory |
 | SCN-DIST-011 | implemented | The test of the Helm chart plans the reference factory without problems |
 | SCN-DIST-012 | implemented | The verify stage of the reference factory waits for the check "verify" |
-| SCN-DIST-013 | implemented | The Compose profile takes the module images from the factory's registry |
+| SCN-DIST-013 | deprecated | The Compose profile takes the module images from the factory's registry |
 | SCN-DIST-014 | implemented | The intake of the Compose profile turns a GitHub issue labeled "factory" into a work item |
 | SCN-DIST-015 | implemented | The plan of this repository's factory adds the factory and finds no problems |
 | SCN-DIST-016 | implemented | Every service of the Compose profile is healthy after one command, and each server's health checks pass |
+| SCN-DIST-017 | implemented | The foreman of the Compose profile starts a sandbox from the agents' template through docker-proxy only |
+| SCN-DIST-018 | implemented | The Compose profile takes the module images and the agents' template from the factory's registry |

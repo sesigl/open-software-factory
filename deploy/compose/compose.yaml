@@ -247,9 +247,53 @@ services:
     ports:
       - ${OSF_HOST:-127.0.0.1}:${INTAKE_PORT:-8081}:8080
 
+  # The foreman's only way to the Docker API, for the sandboxes of the agents (ADR 0096): from the foreman only, the
+  # API paths that the docker sandbox adapter calls, and no bind mount. Never publish its port.
+  docker-proxy:
+    image: wollomatic/socket-proxy:1.13.2
+    restart: unless-stopped
+    # Root without capabilities opens the host's socket, which root owns, whatever group the host gives it.
+    user: "0:0"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges]
+    mem_limit: 64M
+    command:
+      - -listenip=0.0.0.0
+      - -allowfrom=foreman
+      - -allowhealthcheck
+      - -watchdoginterval=60
+      - -stoponwatchdog
+      # A folder that does not exist: no folder of the host is the source of a bind mount. The adapter copies files.
+      - -allowbindmountfrom=/osf-no-bind-mounts
+      - '-allowHEAD=(/v1\.[0-9]+)?(/_ping|/containers/[^/]+/archive)'
+      - '-allowGET=(/v1\.[0-9]+)?(/version|/containers/json|/containers/[^/]+/(json|logs|archive)|/exec/[^/]+/json|/networks/[^/]+|/images/.+/json)'
+      - '-allowPOST=(/v1\.[0-9]+)?(/containers/create|/containers/[^/]+/(start|rename|exec)|/exec/[^/]+/start|/networks/create|/networks/[^/]+/(connect|disconnect)|/images/create|/commit)'
+      - '-allowPUT=(/v1\.[0-9]+)?/containers/[^/]+/archive'
+      - '-allowDELETE=(/v1\.[0-9]+)?/(containers|networks)/[^/]+'
+    volumes:
+      - ${DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock:ro
+    healthcheck:
+      test: [CMD, ./healthcheck]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+
+  # The template of the agents' sandboxes (ADR 0096). It only makes sure that the image is on this machine, pulled or
+  # built, before the foreman starts a sandbox from it.
+  agent-template:
+    image: ghcr.io/sesigl/open-software-factory/harness-claude-code:0.5.1
+    build:
+      context: ../images
+      target: agent
+      secrets: [ca]
+      args:
+        PACKAGES: "@opensoftware/harness-claude-code@0.5.1"
+    entrypoint: ["true"]
+
   foreman:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/foreman:0.7.0
+    image: ghcr.io/sesigl/open-software-factory/foreman:0.7.0-r1
     build:
       context: ../images
       target: foreman
@@ -257,9 +301,13 @@ services:
       args:
         PACKAGES: >-
           @opensoftware/foreman@0.7.0 @opensoftware/harness-claude-code@0.5.1 @opensoftware/forge-github@0.5.1
-          @opensoftware/forge-forgejo@0.5.2 @opensoftware/inference-litellm@0.3.3
+          @opensoftware/forge-forgejo@0.5.2 @opensoftware/inference-litellm@0.3.3 @opensoftware/sandbox-docker@0.2.0
     command: [foreman, serve]
     depends_on:
+      docker-proxy:
+        condition: service_healthy
+      agent-template:
+        condition: service_completed_successfully
       factory-repo:
         condition: service_completed_successfully
       temporal-namespace:
@@ -285,6 +333,12 @@ services:
       FOREMAN_GATEKEEPER_TOKEN: ${GATEKEEPER_API_TOKEN:?set GATEKEEPER_API_TOKEN in .env}
       FOREMAN_HARNESSES: '{"claude-code": "harness-claude-code run"}'
       FOREMAN_FORGES: '{"github": "forge-github", "forgejo": "forge-forgejo"}'
+      # An agent with a sandbox runs in a container of the docker sandbox adapter, through docker-proxy (ADR 0096). Its
+      # egress proxy joins this project's network, so a sandbox whose egress allows litellm reaches it.
+      FOREMAN_SANDBOX: docker
+      FOREMAN_SANDBOXES: '{"docker": "sandbox-docker"}'
+      DOCKER_HOST: tcp://docker-proxy:2375
+      OSF_SANDBOX_NETWORK: ${COMPOSE_PROJECT_NAME}_default
       # A token that may read pull requests and their checks, for the verify stage's check "verify". Optional.
       FOREMAN_FORGE_TOKEN: ${FOREMAN_FORGE_TOKEN:-}
       # A factory with providers.inference litellm attaches to the service litellm with its master key (ADR 0080).
