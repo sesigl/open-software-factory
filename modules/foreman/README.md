@@ -139,7 +139,9 @@ stage then goes like this:
 5. It destroys the sandbox, also when the stage failed or was cancelled.
 
 `FOREMAN_SANDBOXES` maps an adapter's name to its command line; an adapter it does not name runs
-`npx -y @opensoftware/sandbox-<name>`. A factory names at most one sandbox adapter. An agent without `sandbox` runs on
+`npx -y @opensoftware/sandbox-<name>`. A factory names at most one sandbox adapter. A factory that names none runs
+its sandboxes with the adapter of `FOREMAN_SANDBOX` (`docker`), so one factory runs in Docker on one machine and in
+Kubernetes in a cluster ([ADR 0096](../../docs/decisions/0096-agents-in-sandboxes-in-the-profile.md)). An agent without `sandbox` runs on
 the foreman's machine in the run's folder. A sandboxed agent reaches no MCP server yet.
 
 ## Checks
@@ -406,7 +408,8 @@ the minor version. The one-time setup is the same as for contracts
 | `FOREMAN_TEMPORAL_NAMESPACE` | string | `"default"` | serve: the Temporal namespace of the runs. |
 | `FOREMAN_TASK_QUEUE` | string | `"foreman"` | serve: the Temporal task queue of the runs' workflows and activities. |
 | `FOREMAN_HARNESSES` | string | `"{}"` | serve: a JSON object from harness name to the command line of its adapter. A harness it does not name runs npx -y @opensoftware/harness-<name> run. |
-| `FOREMAN_SANDBOXES` | string | `"{}"` | serve: a JSON object from sandbox adapter name to the command line of the adapter. An adapter it does not name runs npx -y @opensoftware/sandbox-<name>. The factory names its adapter under providers.sandbox, docker by default. |
+| `FOREMAN_SANDBOXES` | string | `"{}"` | serve: a JSON object from sandbox adapter name to the command line of the adapter. An adapter it does not name runs npx -y @opensoftware/sandbox-<name>. The factory names its adapter under providers.sandbox, or else FOREMAN_SANDBOX picks it. |
+| `FOREMAN_SANDBOX` | string | `"docker"` | serve: the sandbox adapter of a factory that names none under providers.sandbox, like docker in the Compose profile and kubernetes in the Helm chart. |
 | `FOREMAN_FORGES` | string | `"{}"` | serve: a JSON object from forge adapter name to the command line of the adapter. An adapter it does not name runs npx -y @opensoftware/forge-<name>. The factory names its adapter under providers.forge. |
 | `FOREMAN_INFERENCES` | string | `"{}"` | serve: a JSON object from inference adapter name to the command line of the adapter. An adapter it does not name runs npx -y @opensoftware/inference-<name>. The factory names its adapter under providers.inference. |
 | `FOREMAN_FORGE_URL` | string |  | serve: the forge adapter's FORGE_URL, for a factory whose stages have checks. Default: the adapter's own default. |
@@ -509,3 +512,5 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-081 | implemented | A run's view names its trace ID |
 | SCN-FORE-082 | implemented | A work item that the foreman cannot start for a moment comes again and starts its run |
 | SCN-FORE-083 | implemented | A work item that breaks its contract and a gate decision for no run are one warning each and come no second time |
+| SCN-FORE-084 | implemented | A factory that names no sandbox adapter runs its sandboxes with the adapter of FOREMAN_SANDBOX |
+| SCN-FORE-085 | implemented | A factory that names no sandbox adapter runs its sandboxes with docker when FOREMAN_SANDBOX is not set |

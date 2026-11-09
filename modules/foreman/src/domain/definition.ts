@@ -22,8 +22,8 @@ export interface StagePlan {
 
 export interface Definition {
   factory: string;
-  /** The sandbox adapter under `providers.sandbox`; "docker" when the factory names none. */
-  sandboxAdapter: string;
+  /** The sandbox adapter under `providers.sandbox`; none, and the foreman's FOREMAN_SANDBOX picks it (ADR 0096). */
+  sandboxAdapter?: string;
   /** The forge adapter under `providers.forge`, which reads the checks. */
   forgeAdapter?: string;
   /** The inference adapter under `providers.inference`, its config as `factory.yaml` names it, and a run's budget. */
@@ -107,7 +107,7 @@ export function definitionOf(factory: FactoryDefinition, read: (path: string) =>
   const inference = Object.keys(factory.providers?.inference ?? {})[0];
   return {
     factory: factory.factory,
-    sandboxAdapter: Object.keys(factory.providers?.sandbox ?? {})[0] ?? "docker",
+    sandboxAdapter: Object.keys(factory.providers?.sandbox ?? {})[0],
     ...(forge ? { forgeAdapter: forge } : {}),
     ...(inference && factory.inference ? { inference: { adapter: inference, ...factory.inference } } : {}),
     stages: (factory.workflow ?? []).map((stage) => {

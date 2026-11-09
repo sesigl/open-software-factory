@@ -48,7 +48,12 @@
     "FOREMAN_SANDBOXES": {
       "type": "string",
       "default": "{}",
-      "description": "serve: a JSON object from sandbox adapter name to the command line of the adapter. An adapter it does not name runs npx -y @opensoftware/sandbox-<name>. The factory names its adapter under providers.sandbox, docker by default."
+      "description": "serve: a JSON object from sandbox adapter name to the command line of the adapter. An adapter it does not name runs npx -y @opensoftware/sandbox-<name>. The factory names its adapter under providers.sandbox, or else FOREMAN_SANDBOX picks it."
+    },
+    "FOREMAN_SANDBOX": {
+      "type": "string",
+      "default": "docker",
+      "description": "serve: the sandbox adapter of a factory that names none under providers.sandbox, like docker in the Compose profile and kubernetes in the Helm chart."
     },
     "FOREMAN_FORGES": {
       "type": "string",
