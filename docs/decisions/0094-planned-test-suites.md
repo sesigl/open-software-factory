@@ -28,7 +28,11 @@ changed suites again.
   --dry=json` once. On a pull request:
   - A suite with a package whose test task is no cache hit goes into the matrix of the tests job.
   - The job replays the other suites with `make verify-tests`, one suite at a time, and uploads their results as
-    `reports-replayed`.
+    `reports-replayed-a<attempt>`.
+- Each tests job uploads its results as `reports-<suite>-a<attempt>`. A rerun of a job adds its results under the new
+  attempt, and `verify` copies the attempts in order, so the newest result of each suite counts. Merged in any order,
+  a rerun of a suite over its budget still read the first, slow result (measured on 9 November 2026: 489.9 s read
+  after the rerun measured inside the budget).
 - Outside pull requests every suite runs, as before (ADR 0081).
 - The tests job restores `turbo-tests-`. When BUDGET passes, it uploads the cache entries it wrote as an artifact. The
   job `cache` joins these entries into `turbo-tests-`, removes the entries older than 14 days and saves the cache once.

@@ -163,7 +163,8 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always() && github.event_name == 'pull_request'
         with:
-          name: reports-replayed
+          # The attempt in the name: a rerun of a job adds its reports, and verify takes the newest (see there).
+          name: reports-replayed-a${{ github.run_attempt }}
           path: |
             reports/junit/
             reports/coverage/
@@ -313,7 +314,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: reports-${{ matrix.suite }}
+          name: reports-${{ matrix.suite }}-a${{ github.run_attempt }}
           path: |
             reports/junit/
             reports/coverage/
@@ -436,8 +437,13 @@ jobs:
       - uses: actions/download-artifact@v5
         with:
           pattern: reports-*
-          path: reports/
-          merge-multiple: true
+          path: ${{ runner.temp }}/reports/
+      # A rerun of a job uploads its reports again, under the new attempt. Merged in any order, the first attempt's
+      # JUnit file could win: BUDGET then read the slow run that the rerun was for. The newest attempt is copied last.
+      - name: Join the reports, the newest attempt of each job last
+        run: |
+          mkdir -p reports
+          for dir in $(ls -d "$RUNNER_TEMP"/reports/*/ | sort -V); do cp -R "$dir". reports/; done
 
       - run: make verify-checks
 
