@@ -10,6 +10,8 @@ const SECRETS: Record<string, string> = {
   gatekeeperSlackToken: "xoxb-gatekeeper-1",
   gatekeeperSlackSigningSecret: "slack-signing-secret-1",
   litellmMasterKey: "sk-litellm-master-1",
+  githubToken: "github-token-1",
+  claudeCodeOauthToken: "claude-code-token-1",
 };
 
 /**
@@ -66,4 +68,9 @@ export async function workloads(helm: Helm): Promise<Record<string, boolean>> {
       (item.status.readyReplicas ?? 0) === item.spec.replicas,
     ]),
   );
+}
+
+/** Runs a command in the container of the deployment foreman. */
+export function inForeman(helm: Helm, ...command: string[]): Promise<CliResult> {
+  return helm.kubectl(["exec", "deployment/osf-foreman", "--container", "foreman", "--", ...command]);
 }

@@ -1,0 +1,77 @@
+{{- /*
+The agents' sandboxes (ADR 0096): foreman starts each stage's sandbox with the kubernetes sandbox adapter, as a
+SandboxClaim of agent-sandbox, in a namespace of its own (ADR 0055). foreman's ServiceAccount has rights only there:
+the adapter makes a Secret per sandbox for its egress pod, and in this namespace foreman reads no other Secret.
+*/ -}}
+{{- $ctx := dict "root" . "component" "foreman" }}
+{{- $namespace := include "osf.sandboxNamespace" . }}
+{{- if .Values.sandboxes.createNamespace }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ $namespace }}
+  labels:
+    {{- include "osf.labels" (dict "root" . "component" "sandboxes") | nindent 4 }}
+---
+{{- end }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "osf.name" $ctx }}
+  labels:
+    {{- include "osf.labels" $ctx | nindent 4 }}
+---
+# Only what sandbox-kubernetes does: apply, read and delete the objects of a sandbox, exec and copy into its pod, and
+# read its egress pod's log.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "osf.name" $ctx }}
+  namespace: {{ $namespace }}
+  labels:
+    {{- include "osf.labels" $ctx | nindent 4 }}
+rules:
+  - apiGroups: [extensions.agents.x-k8s.io]
+    resources: [sandboxclaims, sandboxtemplates, sandboxwarmpools]
+    verbs: [get, list, watch, create, update, patch, delete]
+  - apiGroups: [""]
+    resources: [pods, services, configmaps, secrets, persistentvolumeclaims]
+    verbs: [get, list, watch, create, update, patch, delete]
+  - apiGroups: [""]
+    resources: [pods/exec]
+    verbs: [get, create]
+  - apiGroups: [""]
+    resources: [pods/log]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "osf.name" $ctx }}
+  namespace: {{ $namespace }}
+  labels:
+    {{- include "osf.labels" $ctx | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "osf.name" $ctx }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "osf.name" $ctx }}
+    namespace: {{ .Release.Namespace }}
+---
+# The reference factory's sandboxes reach the host "litellm", as in the Compose profile. In the sandboxes' namespace
+# this name points to the chart's LiteLLM, so the egress pods reach it and the factory stays the same.
+apiVersion: v1
+kind: Service
+metadata:
+  name: litellm
+  namespace: {{ $namespace }}
+  labels:
+    {{- include "osf.labels" (dict "root" . "component" "litellm") | nindent 4 }}
+spec:
+  type: ExternalName
+  externalName: {{ printf "litellm.%s.svc.%s" .Release.Namespace .Values.sandboxes.clusterDomain }}
+  ports:
+    - name: http
+      port: 4000

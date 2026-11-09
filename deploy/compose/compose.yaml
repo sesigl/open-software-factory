@@ -293,7 +293,7 @@ services:
 
   foreman:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/foreman:0.7.0-r2
+    image: ghcr.io/sesigl/open-software-factory/foreman:0.7.0-r3
     build:
       context: ../images
       target: foreman
@@ -302,6 +302,7 @@ services:
         PACKAGES: >-
           @opensoftware/foreman@0.7.0 @opensoftware/harness-claude-code@0.5.1 @opensoftware/forge-github@0.5.1
           @opensoftware/forge-forgejo@0.5.2 @opensoftware/inference-litellm@0.3.3 @opensoftware/sandbox-docker@0.2.0
+          @opensoftware/sandbox-kubernetes@0.1.2
     command: [foreman, serve]
     depends_on:
       docker-proxy:

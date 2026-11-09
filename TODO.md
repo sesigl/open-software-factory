@@ -757,7 +757,7 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
   - [x] Move the image pins of the Compose profile and the Helm chart to the releases with durable events; each
     release moves them from now on (ADR 0095).
 
-### [ ] T-23 · sandbox on by default (P0)
+### [x] T-23 · sandbox on by default (P0)
 
 - **Problem:** the profile runs agents in the foreman container, with every token in its environment (P11).
 - **Done when:** every stage of the reference factory runs in the Docker sandbox adapter in the Compose profile, and
@@ -776,8 +776,9 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
     chart runs LiteLLM, which the factory attaches to (`SCN-DIST-019`).
   - [ ] Once, with `make smoke-paid`: Claude Code in a sandbox runs on the subscription with the placeholder of
     `CLAUDE_CODE_OAUTH_TOKEN`.
-  - [ ] The chart: the foreman runs the sandboxes with the kubernetes adapter (`FOREMAN_SANDBOX: kubernetes`), with the
-    rights it needs in its namespace, and agent-sandbox as a documented prerequisite.
+  - [x] The chart: the foreman runs the sandboxes with the kubernetes adapter (`FOREMAN_SANDBOX: kubernetes`), with
+    rights only in the sandboxes' own namespace, and agent-sandbox as a documented prerequisite (ADR 0097,
+    `SCN-DIST-022`, `SCN-TK-137`).
 
 ### [ ] T-24 · a record of every factory run (P0)
 

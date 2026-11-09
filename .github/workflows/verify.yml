@@ -273,7 +273,7 @@ jobs:
           OSF_TEST_CACHE: ${{ github.event_name == 'pull_request' && '1' || '' }}
       # A release that did not get ready: the pods of every namespace and why they wait, for the log.
       - name: Show the state of the kind cluster
-        if: (failure() || cancelled()) && matrix.cluster == 'kind'
+        if: (failure() || cancelled()) && (matrix.cluster == 'kind' || matrix.kind)
         run: |
           kubectl=.tools/bin/kubectl
           $kubectl get pods --all-namespaces --output wide || true

@@ -2,12 +2,15 @@
 # pins (ADR 0074). Build it with the build argument PACKAGES, the packages separated by spaces, like
 # "@opensoftware/foreman@0.4.0 @opensoftware/forge-github@0.5.0". The target gatekeeper adds OPA. The target agent adds
 # GitHub's gh and make, for the agents that clone, build and push: with a harness adapter it is the template of the
-# agents' sandboxes (ADR 0096). The target foreman adds the Docker CLI to it, for the docker sandbox adapter.
+# agents' sandboxes (ADR 0096). The target foreman adds the Docker CLI to it, for the docker sandbox adapter, and
+# kubectl, for the kubernetes sandbox adapter of the Helm chart.
 ARG NODE_IMAGE=node:24.11.1-bookworm-slim
 
 FROM openpolicyagent/opa:1.21.0-static AS opa
 
 FROM docker:29.1.3-cli AS docker
+
+FROM registry.k8s.io/kubectl:v1.34.1 AS kubectl
 
 FROM ${NODE_IMAGE} AS module
 # GHCR links the published image to its repository through this label (ADR 0075).
@@ -48,3 +51,4 @@ USER node
 
 FROM agent AS foreman
 COPY --from=docker /usr/local/bin/docker /usr/local/bin/docker
+COPY --from=kubectl /bin/kubectl /usr/local/bin/kubectl

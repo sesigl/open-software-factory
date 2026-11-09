@@ -25,6 +25,11 @@ app.kubernetes.io/component: {{ .component }}
 {{- default (printf "%s-secrets" .Release.Name) .Values.secrets.existingSecret -}}
 {{- end -}}
 
+{{/* The namespace of the agents' sandboxes: sandboxes.namespace, or the release's namespace with -sandboxes. */}}
+{{- define "osf.sandboxNamespace" -}}
+{{- default (printf "%s-sandboxes" .Release.Namespace) .Values.sandboxes.namespace | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
 {{- define "osf.secretEnv" -}}
 - name: {{ .name }}
   valueFrom:

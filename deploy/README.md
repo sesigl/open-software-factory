@@ -188,8 +188,8 @@ page "Recent Deliveries".
 The chart `osf` installs LiteLLM, gatekeeper, intake, foreman and console with the reference factory on Kubernetes.
 PostgreSQL with pgvector, NATS and Temporal are in the chart, so one command installs a complete factory; a platform
 team turns each off and names its own. LiteLLM takes the model routes of the profile, and its Service is `litellm`,
-the address of the reference factory's `inference/litellm.yaml`, so install one release per namespace. The agents'
-sandboxes on Kubernetes are not in the chart yet. You need Helm 3.8 or later.
+the address of the reference factory's `inference/litellm.yaml`, so install one release per namespace. You need Helm
+3.8 or later, and agent-sandbox in the cluster for the agents' sandboxes (below).
 
 ```sh
 cat > values.yaml <<'YAML'
@@ -201,25 +201,52 @@ secrets:
   gatekeeperSlackToken: xoxb-change-me
   gatekeeperSlackSigningSecret: change-me
   litellmMasterKey: sk-change-me
+  githubToken: change-me            # GH_TOKEN of the agents
+  claudeCodeOauthToken: change-me   # a token of `claude setup-token`
 YAML
+kubectl apply -f https://github.com/kubernetes-sigs/agent-sandbox/releases/download/v1.0.8/sandbox-with-extensions.yaml
 helm install osf oci://ghcr.io/sesigl/open-software-factory/charts/osf --values values.yaml --wait --timeout 10m
 helm test osf --logs          # plans the factory definition with factory-spec
 kubectl port-forward service/osf-console 8080:8080
 ```
 
-From a clone, install `deploy/helm/osf` instead of the OCI address. Object storage, Langfuse, OpenBao and agent-sandbox
-are installed with their own charts; no module uses them yet, so the chart has no wiring for them.
+From a clone, install `deploy/helm/osf` instead of the OCI address. Object storage, Langfuse and OpenBao are installed
+with their own charts; no module uses them yet, so the chart has no wiring for them.
+
+### Sandboxes on Kubernetes
+
+Each stage of the reference factory runs in a sandbox of the
+[kubernetes sandbox adapter](../adapters/sandbox/kubernetes/README.md): a pod of
+[agent-sandbox](https://github.com/kubernetes-sigs/agent-sandbox), whose only way out is its egress pod
+([ADR 0097](../docs/decisions/0097-agents-in-sandboxes-in-the-chart.md)).
+
+- **Prerequisites.** agent-sandbox v1.0.8 with its extensions, and a network plugin that enforces NetworkPolicies.
+  Without agent-sandbox, the chart installs, but every stage fails when it starts its sandbox.
+- **A namespace of their own.** The sandboxes run in `<release namespace>-sandboxes`, or `sandboxes.namespace`, which
+  the chart creates unless `sandboxes.createNamespace` is `false` (ADR 0055).
+- **foreman's rights.** foreman's ServiceAccount has a Role in that namespace only: it applies, reads and deletes the
+  objects of a sandbox (claims, templates, warm pools, pods, services, config maps, secrets and volume claims), runs
+  `exec` in their pods and reads the egress pod's log. It reads no Secret of the release namespace.
+- **The gateway.** In the sandboxes' namespace, the Service `litellm` is a name for the chart's LiteLLM, so a sandbox
+  whose `egress` allows `litellm` reaches it with the run's own key, as in the Compose profile.
+- **The tokens.** `secrets.githubToken` and `secrets.claudeCodeOauthToken` are the secrets `ref:env/GH_TOKEN` and
+  `ref:env/CLAUDE_CODE_OAUTH_TOKEN` of the reference factory's agents. Only each sandbox's egress pod gets them; the
+  agent holds a placeholder.
 
 ### Helm values
 
 | Value | Default | Meaning |
 | --- | --- | --- |
-| `secrets.existingSecret` | | A Secret with the keys `postgres-password`, `foreman-api-token`, `intake-api-token`, `gatekeeper-api-token`, `gatekeeper-slack-token`, `gatekeeper-slack-signing-secret`, `litellm-master-key` and, optional, `forge-token`, for example filled from OpenBao by its operator or the External Secrets Operator. Set, the chart makes no Secret. |
+| `secrets.existingSecret` | | A Secret with the keys `postgres-password`, `foreman-api-token`, `intake-api-token`, `gatekeeper-api-token`, `gatekeeper-slack-token`, `gatekeeper-slack-signing-secret`, `litellm-master-key` and, optional, `forge-token`, `github-token` and `claude-code-oauth-token`, for example filled from OpenBao by its operator or the External Secrets Operator. Set, the chart makes no Secret. |
 | `secrets.postgresPassword` | | Required without `existingSecret`. The password of the database user; it goes into URLs, so use letters, digits, `-` and `_`. |
 | `secrets.foremanApiToken`, `secrets.intakeApiToken`, `secrets.gatekeeperApiToken` | | Required without `existingSecret`. The API tokens of foreman, intake and gatekeeper. |
 | `secrets.gatekeeperSlackToken`, `secrets.gatekeeperSlackSigningSecret` | | Required without `existingSecret`. The bot token and signing secret of gatekeeper's Slack app. |
 | `secrets.litellmMasterKey` | | Required without `existingSecret`. The master key of LiteLLM, like `sk-<random>`; foreman makes each run's key with it. |
 | `secrets.forgeToken` | | foreman's token for the checks of a pull request. |
+| `secrets.githubToken`, `secrets.claudeCodeOauthToken` | | The agents' `GH_TOKEN` and the token of `claude setup-token`, which only each sandbox's egress pod gets. Without them, a stage that needs them fails. |
+| `sandboxes.namespace` | `<release namespace>-sandboxes` | The namespace of the agents' sandboxes, where foreman has its rights. |
+| `sandboxes.createNamespace` | `true` | `false` when the namespace exists, or the installer may not create namespaces. |
+| `sandboxes.clusterDomain` | `cluster.local` | The cluster's DNS domain, for the name `litellm` in the sandboxes' namespace. |
 | `litellm.image`, `litellm.resources` | the pin of `compose.yaml` | The LLM gateway's image and its resources. |
 | `images.registry` | `ghcr.io/sesigl/open-software-factory` | Where the module images come from. |
 | `images.gatekeeper`, `images.intake`, `images.foreman`, `images.console`, `images.factorySpec` | the pins of `compose.yaml` | The tags of the module images. |
@@ -234,10 +261,12 @@ are installed with their own charts; no module uses them yet, so the chart has n
 | `temporal.enabled`, `externalTemporal.address` | `true` | Temporal on the PostgreSQL above, or the team's own. |
 | `temporalNamespace` | `default` | The Temporal namespace of the runs; foreman creates it when it is missing. |
 
-The chart's scenarios run on kind. To run them on your machine, start kind and load the chart's images first:
+The chart's scenarios run on kind with agent-sandbox. To run them on your machine, start kind with agent-sandbox and
+load the chart's images first:
 
 ```sh
 .tools/bin/kind create cluster
+kubectl apply -f .tools/bin/agent-sandbox.yaml
 deploy/helm/kind-images.sh    # pulls or builds the images of compose.yaml, then loads the chart's images
 make test-scenario ID=SCN-DIST-019
 ```
@@ -295,3 +324,4 @@ repository's Packages and sets its visibility to public, like the first npm rele
 | SCN-DIST-019 | implemented | Every workload of the Helm chart is ready after one command, the LLM gateway included |
 | SCN-DIST-020 | implemented | The plan of the reference factory adds the factory and finds no problems, with its inference config |
 | SCN-DIST-021 | implemented | The test of the Helm chart plans the reference factory without problems, with its inference config |
+| SCN-DIST-022 | implemented | The foreman of the Helm chart starts a sandbox of agent-sandbox from the agents' template, with rights only in the sandboxes' namespace |

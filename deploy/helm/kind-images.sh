@@ -17,8 +17,10 @@ compose pull --quiet --ignore-pull-failures || true
 for image in $(compose config --images); do
   docker image inspect "$image" >/dev/null 2>&1 || { compose build; break; }
 done
-images=$("$bin/helm" template osf "$deploy/helm/osf" --set secrets.existingSecret=unused 2>/dev/null \
-  | sed -n 's/^ *image: *"\{0,1\}\([^" ]*\)"\{0,1\}$/\1/p' | sort -u)
+# The images of the chart's pods, and the template of the agents' sandboxes in the reference factory.
+images=$( ("$bin/helm" template osf "$deploy/helm/osf" --set secrets.existingSecret=unused 2>/dev/null \
+  | sed -n 's/^ *image: *"\{0,1\}\([^" ]*\)"\{0,1\}$/\1/p'
+  sed -n 's/^ *template: *\([^ ]*\)$/\1/p' "$deploy/helm/osf/files/factory/factory.yaml") | sort -u)
 for image in $images; do
   docker image inspect "$image" >/dev/null 2>&1 || docker pull --quiet "$image"
   "$bin/kind" load docker-image --name "$cluster" "$image"
