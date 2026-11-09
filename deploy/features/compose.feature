@@ -84,12 +84,19 @@ Feature: The Compose profile installs a complete factory with one command
     Then the command exits with code 0
     And the stage "verify" of the resolved factory has the checks ["verify"] and the evidence "required"
 
-  @id=SCN-DIST-013 @status=implemented
+  @id=SCN-DIST-013 @status=deprecated
   Scenario: The Compose profile takes the module images from the factory's registry
     Given the Compose profile with every value of ".env.example" set in ".env"
     When the operator runs "docker compose config --images"
     Then the command exits with code 0
     And the output lists the images "gatekeeper", "intake", "foreman", "console" and "factory-spec" as "ghcr.io/sesigl/open-software-factory/<name>:<version>"
+
+  @id=SCN-DIST-018 @status=implemented @replaces=SCN-DIST-013
+  Scenario: The Compose profile takes the module images and the agents' template from the factory's registry
+    Given the Compose profile with every value of ".env.example" set in ".env"
+    When the operator runs "docker compose config --images"
+    Then the command exits with code 0
+    And the output lists the images "gatekeeper", "intake", "foreman", "console", "factory-spec" and "harness-claude-code" as "ghcr.io/sesigl/open-software-factory/<name>:<version>"
 
   @id=SCN-DIST-014 @status=implemented @realizes=SCN-FACTORY-ACCESS-001
   Scenario: The intake of the Compose profile turns a GitHub issue labeled "factory" into a work item
