@@ -72,7 +72,7 @@ async function startEgress({ kube, settings }: Context, id: string, spec: Sandbo
   const config = proxyConfig(spec, secrets, { openbaoMount: settings.openbaoMount });
   await kube.apply(
     list([
-      egressConfig(id, config),
+      egressConfig(id, config, secrets),
       egressEnv(id, proxyEnv(secrets, process.env)),
       egressPod(id, settings, files.length ? `${name}-files` : undefined),
       egressService(id),

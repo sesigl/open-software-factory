@@ -2,13 +2,16 @@
 export { type CopyEnds, copyEnds } from "./domain/copy.ts";
 export { type EgressEntry, egressEntries } from "./domain/egress-log.ts";
 export {
+  basicPlaceholder,
   CA_FILE,
   EGRESS_IMAGE,
   EGRESS_PORT,
+  GIT_USER,
   PROXY_DIR,
   placeholder,
   READY,
-  START_SCRIPT,
+  type ScriptSecret,
+  startScript,
   WORKSPACE,
 } from "./domain/names.ts";
 export { type ProxyOptions, proxyConfig } from "./domain/proxy-config.ts";

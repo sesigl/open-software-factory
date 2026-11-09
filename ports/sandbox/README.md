@@ -31,7 +31,9 @@ The spec is the format `sandbox-spec` in [contracts](../../contracts/README.md):
 - Every request that leaves the sandbox passes its egress proxy. The proxy refuses hosts outside `egress` and the
   MCP servers' hosts, and a request around the proxy does not leave the sandbox.
 - The sandbox holds a placeholder for each secret, never the real value. The proxy puts the real value in on the way
-  out, for the hosts of `egress`. Secret references follow the [secrets port](../secrets/README.md).
+  out, for the hosts of `egress`, also in git's Basic credentials `x-access-token:<placeholder>`, so git and `gh` can
+  clone and push with the placeholder as their token (ADR 0096). Secret references follow the
+  [secrets port](../secrets/README.md).
 - A call to an MCP server that the spec does not declare, or to a tool it does not list, is refused and logged.
 - `destroy` removes the sandbox's files.
 
