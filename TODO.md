@@ -770,9 +770,12 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
   - [x] The profile: wollomatic/socket-proxy with only the Docker API paths of the adapter and no bind mount, the
     foreman image with the Docker CLI and `sandbox-docker`, and the image `harness-claude-code` as the agents'
     template; a sandbox of it reaches `litellm` and nothing else of the profile (`SCN-DIST-017`).
-  - [ ] The reference factory runs each stage in a sandbox that reaches LiteLLM with the run's key and GitHub with a
-    placeholder, and an end-to-end scenario shows that the agent's environment holds no token of the foreman. Its
-    template pin in `factory.yaml` is moved by `osf profile-pins` and checked by PROFILE.
+  - [x] The reference factory runs each stage in a sandbox that reaches LiteLLM with the run's key and GitHub with a
+    placeholder, and an end-to-end scenario shows that the agent's environment holds no token of the foreman
+    (`SCN-E2E-006`). Its template pin in `factory.yaml` is moved by `osf profile-pins` and checked by PROFILE. The
+    chart runs LiteLLM, which the factory attaches to (`SCN-DIST-019`).
+  - [ ] Once, with `make smoke-paid`: Claude Code in a sandbox runs on the subscription with the placeholder of
+    `CLAUDE_CODE_OAUTH_TOKEN`.
   - [ ] The chart: the foreman runs the sandboxes with the kubernetes adapter (`FOREMAN_SANDBOX: kubernetes`), with the
     rights it needs in its namespace, and agent-sandbox as a documented prerequisite.
 

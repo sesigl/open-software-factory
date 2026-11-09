@@ -12,6 +12,7 @@ export type {
   HarnessToolCall,
   HarnessTurn,
 } from "./fakes/harness.ts";
+export { HARNESS_AGENT } from "./fakes/harness-agent-file.ts";
 export type { FakeHttp, HttpOptions, HttpRequest, HttpRoute } from "./fakes/http.ts";
 export type { Inference, InferenceOptions } from "./fakes/inference.ts";
 export type { ModelGateway, ModelGatewayOptions, ScriptedReply, ScriptedTool } from "./fakes/model-gateway.ts";

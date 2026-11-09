@@ -43,7 +43,7 @@ Three things stop the profile from using it:
 
 | Option | For | Against |
 | --- | --- | --- |
-| Basic form computed by the proxy (chosen) | The token stays out of the sandbox and out of the foreman's memory; one place for both adapters | GitHub's user name `x-access-token`; another forge with another user name needs its own form |
+| Basic form computed by the proxy (chosen) | The token stays out of the sandbox and out of the foreman's memory; one place for both adapters | GitHub's user name `x-access-token`; a forge that checks the user name needs its own form |
 | Git with the token in a plain header (`http.extraHeader`) | No change to the proxy | GitHub refuses it, measured |
 | The foreman clones and pushes for the agent | The agent needs no forge token | A new step in the foreman around every stage; the agents' prompts change; `gh pr checkout` and the API calls still need a token |
 | The adapter computes the Basic form | No change to the start script | The adapter would read the secret, which it never does |
@@ -72,5 +72,5 @@ Three things stop the profile from using it:
   proxy, `SCN-SEGRESS-022` the configuration.
 - A compromised foreman can still create a privileged container through the socket proxy. Revisit when Sockguard has
   more than one regular maintainer, or when wollomatic/socket-proxy reads the request body.
-- A forge whose git user name is not `x-access-token`, like Forgejo, needs its own Basic form before its agents push
-  from a sandbox.
+- Forgejo accepts the token with the user name `x-access-token`, so the same Basic form works for it: `SCN-E2E-006`
+  pushes to Forgejo from a sandbox. A forge that checks the user name needs its own Basic form.

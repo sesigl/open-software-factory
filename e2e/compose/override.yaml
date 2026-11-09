@@ -38,6 +38,8 @@ services:
       <<: *clock
       FOREMAN_HARNESSES: ${E2E_HARNESSES:?set E2E_HARNESSES in .env}
       FOREMAN_POLL_MS: "200"
+      # The forge token as the secret ref:env/FORGE_TOKEN of a sandboxed agent: only its egress proxy gets it.
+      OSF_SECRET_FORGE_TOKEN: ${E2E_FORGE_TOKEN:-}
     # The scripted agent's code with its dependencies, and its script and log, at the paths of the host.
     volumes:
       - ${E2E_AGENT_DIR:?set E2E_AGENT_DIR in .env}:${E2E_AGENT_DIR}:ro

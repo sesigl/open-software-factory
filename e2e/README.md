@@ -32,6 +32,9 @@ a proxy that inspects TLS, set `OSF_BUILD_CA` to the proxy's CA file, as for the
 - foreman starts the testkit's scripted agent with `harness-acp run`. The agent's turns edit files and run commands
   like a coding agent's tools: the implement turn clones the Forgejo repository, pushes a branch and opens a pull
   request.
+- A scenario's agent can run in a sandbox of the docker sandbox adapter, started from the workspace image, which holds
+  the scripted agent at `/opt/osf/harness-agent.ts`. The agent then takes its script over HTTP from the testkit, and
+  gets the forge token as the placeholder of the secret `ref:env/FORGE_TOKEN`.
 - observer and taskcapture are services of the Compose profile `tools`: `docker compose run --rm observer <command>`
   works on the scenario's folder as `/work`.
 - [`factory/`](factory/) is the scenario's factory: the agents' prompts, the group `maintainers` and the gate
@@ -49,7 +52,7 @@ The scenario writes these values into its `.env`, next to the profile's own valu
 | `E2E_AGENT_DIR` | The folder of the scripted agent's code and its dependencies, mounted read-only into foreman at the same path. |
 | `E2E_HARNESS_DIR` | The folder of the agent's script and log, mounted into foreman at the same path. |
 | `E2E_FORGE_URL` | The Forgejo of the scenario as containers reach it, for `docker compose run factory`. |
-| `E2E_FORGE_TOKEN` | Its API token, for factory, observer and taskcapture. |
+| `E2E_FORGE_TOKEN` | Its API token, for factory, observer and taskcapture, and foreman's `OSF_SECRET_FORGE_TOKEN`, the secret `ref:env/FORGE_TOKEN` of a sandboxed agent. |
 | `E2E_WEBHOOK_SECRET` | The secret of the webhooks that `factory apply` creates. |
 | `E2E_WORK_DIR` | The folder that observer and taskcapture see as `/work`. Default: `./work`. |
 | `E2E_USER` | The user and group that observer and taskcapture run as, `<uid>:<gid>`: the scenario's own, so it owns and removes what they write. Default: `node`. |
@@ -96,3 +99,4 @@ Each adapter gets only these variables, `PATH`, and its own temporary `HOME`, `O
 | SCN-E2E-003 | implemented | A repeated failure becomes a pull request to the factory |
 | SCN-E2E-004 | implemented | A benchmark result becomes a routing rule |
 | SCN-E2E-005 | implemented | A manual change to a running factory is reported as drift |
+| SCN-E2E-006 | implemented | An agent in a sandbox pushes to the forge with a placeholder, and holds no token of the foreman |

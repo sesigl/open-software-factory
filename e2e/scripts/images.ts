@@ -3,9 +3,10 @@
 // The overrides make each package take its sibling pack, not the release on npm.
 //   node scripts/images.ts    (in e2e/, after turbo built the packages)
 import { execFileSync } from "node:child_process";
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { HARNESS_AGENT } from "@opensoftware/testkit/harness-agent";
 
 export const IMAGE = "osf-e2e:workspace";
 
@@ -24,6 +25,7 @@ const PROGRAMS = [
   "@opensoftware/forge-github",
   "@opensoftware/harness-acp",
   "@opensoftware/inference-litellm",
+  "@opensoftware/sandbox-docker",
 ];
 
 const e2e = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -92,6 +94,8 @@ export function buildImage(): void {
   const files = Object.fromEntries(names.map((name) => [name, file(name)]));
   const manifest = { name: "osf-e2e", private: true, dependencies: files, overrides: files };
   writeFileSync(join(context, "package.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  // The scripted agent, for the sandboxes that start from this image (ADR 0096); it finds the ACP SDK of harness-acp.
+  copyFileSync(HARNESS_AGENT, join(context, "harness-agent.ts"));
   const ca = process.env.OSF_BUILD_CA || join(root, "deploy/images/no-ca.pem");
   const proxy = ["HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY"].flatMap((name) =>
     process.env[name] ? ["--build-arg", `${name}=${process.env[name]}`] : [],

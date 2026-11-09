@@ -3,6 +3,8 @@
 //   version, each module image at the tag of its packages, the chart's tags equal to the profile's.
 // - A module image's tag is the version of its own package, or that version with `-r<n>`.
 // - Compared with OSF_BASE: an image whose packages changed has a new tag, and a changed chart has a new version.
+// - Compared with OSF_BASE: an image whose stage of deploy/images/Dockerfile changed, or a stage or global ARG it builds
+//   on, has a new tag. Comments do not count. Else the publish keeps the old image under the tag, which never changes.
 // - Each image of the chart is in the profile.
 // - The `pull` list of a suite in .github/test-suites.yml holds each image of the Compose files its tests start; any
 //   other entry, like the base of a Dockerfile or an image that code starts, is named in a file of the suite's packages
@@ -26,18 +28,19 @@ const finding = (file: string, line: number, message: string): Finding => ({ che
 export function profile(context: Context): Finding[] {
   const { repo } = context;
   if (!repo.exists(COMPOSE)) return [];
-  return [...written(repo), ...ownTags(repo), ...chartImages(repo), ...moved(context), ...pulls(repo)];
+  return [
+    ...written(repo),
+    ...ownTags(repo),
+    ...chartImages(repo),
+    ...moved(context),
+    ...rebuilt(context),
+    ...pulls(repo),
+  ];
 }
 
 /** Each line that `osf profile-pins` would change. */
 function written(repo: Repo): Finding[] {
-  const wanted = pins(repo);
-  const files: [string, string][] = [
-    [COMPOSE, wanted.compose],
-    [VALUES, wanted.values],
-    [CHART, wanted.chart],
-  ];
-  return files.flatMap(([file, text]) => {
+  return pins(repo).files.flatMap(([file, text]) => {
     if (!repo.exists(file)) return [];
     const now = repo.read(file).split("\n");
     return text
@@ -99,6 +102,55 @@ function moved(context: Context): Finding[] {
     findings.push(finding(CHART, 1, `${chart.join(", ")} changed, so the chart's version must change too`));
   }
   return findings;
+}
+
+const DOCKERFILE = "deploy/images/Dockerfile";
+
+/** The text of each stage of a Dockerfile without comments, with the global ARGs and the stages it builds on. */
+function stages(text: string): Map<string, { text: string; on: string[] }> {
+  const found = new Map<string, { text: string; on: string[] }>();
+  let global = "";
+  let current: { name: string; lines: string[]; on: string[] } | undefined;
+  const close = () => current && found.set(current.name, { text: current.lines.join("\n"), on: current.on });
+  for (const line of text.split("\n").filter((entry) => entry.trim() && !entry.trim().startsWith("#"))) {
+    const from = /^FROM\s+(\S+)(?:\s+AS\s+(\S+))?/i.exec(line);
+    if (from) {
+      close();
+      current = { name: from[2] ?? from[1] ?? "", lines: [line], on: [from[1] ?? ""] };
+    } else if (current) {
+      current.lines.push(line);
+      current.on.push(...[...line.matchAll(/--from=(\S+)/g)].map((copy) => copy[1] as string));
+    } else {
+      global += `${line}\n`;
+    }
+  }
+  close();
+  for (const stage of found.values()) stage.on.push("");
+  found.set("", { text: global, on: [] });
+  return found;
+}
+
+/** Each image whose stage changed since the base has a new tag. */
+function rebuilt(context: Context): Finding[] {
+  const { repo } = context;
+  const base = context.base(ID);
+  if (!base || !repo.exists(DOCKERFILE)) return [];
+  const now = stages(repo.read(DOCKERFILE));
+  const before = stages(showAt(repo.root, base, DOCKERFILE) ?? "");
+  const changed = (name: string, seen = new Set<string>()): boolean => {
+    const stage = now.get(name);
+    if (!stage || seen.has(name)) return false;
+    seen.add(name);
+    return before.get(name)?.text !== stage.text || stage.on.some((on) => changed(on, seen));
+  };
+  const old = new Map(services(showAt(repo.root, base, COMPOSE) ?? "").map((service) => [service.name, service]));
+  return services(repo.read(COMPOSE)).flatMap((service) => {
+    const target = /^\s+target: (\S+)$/m.exec(service.text)?.[1];
+    const tag = old.get(service.name)?.image?.tag;
+    if (!service.image || !target || !tag || service.image.tag !== tag || !changed(target)) return [];
+    const message = `the stage ${target} of ${DOCKERFILE} changed, so the tag ${tag} of the image ${service.image.module} must change too`;
+    return [finding(COMPOSE, service.line, message)];
+  });
 }
 
 /** The images of a Compose file that it does not build itself. */

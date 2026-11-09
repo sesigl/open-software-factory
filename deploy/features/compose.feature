@@ -55,12 +55,19 @@ Feature: The Compose profile installs a complete factory with one command
     When the operator runs "docker compose up --detach --wait console"
     Then the console's page "/factory" lists the agents "triage", "spec", "implement", "review" and "ship"
 
-  @id=SCN-DIST-005 @status=implemented
+  @id=SCN-DIST-005 @status=deprecated
   Scenario: The plan of the reference factory adds the factory and finds no problems
     Given the Compose profile with every value of ".env.example" set in ".env"
     When the operator runs "docker compose run --rm factory plan"
     Then the command exits with code 0
     And the output contains "Plan: 7 to add, 0 to change, 0 to remove, 0 drifted."
+
+  @id=SCN-DIST-020 @status=implemented @replaces=SCN-DIST-005
+  Scenario: The plan of the reference factory adds the factory and finds no problems, with its inference config
+    Given the Compose profile with every value of ".env.example" set in ".env"
+    When the operator runs "docker compose run --rm factory plan"
+    Then the command exits with code 0
+    And the output contains "Plan: 8 to add, 0 to change, 0 to remove, 0 drifted."
 
   @id=SCN-DIST-006 @status=implemented
   Scenario: After the reference factory is applied, its plan shows no changes

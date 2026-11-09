@@ -28,6 +28,7 @@
     "@opensoftware/intake": "workspace:*",
     "@opensoftware/observer": "workspace:*",
     "@opensoftware/proof": "workspace:*",
+    "@opensoftware/sandbox-docker": "workspace:*",
     "@opensoftware/taskcapture": "workspace:*",
     "@opensoftware/testkit": "workspace:*"
   }

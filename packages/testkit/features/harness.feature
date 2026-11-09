@@ -119,6 +119,14 @@ Feature: Scripted coding agent
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-136 @status=implemented
+  Scenario: A scripted harness for sandboxes takes its script and sends its log over HTTP, with no folder of its script mounted
+    Given a module whose CLI is an ACP client of the agent in "DEMO_AGENT_COMMAND" that sends "fix the typo"
+    And its system test scripts fakes.harness for sandboxes to reply "done" for "fix the typo" and runs it with "docker run" with only the folder of the agent and its SDK
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-133 @status=implemented
   Scenario: The scripted harness records each session's trace context
     Given a module whose CLI is an ACP client of the agent in "DEMO_AGENT_COMMAND" that opens a session in its folder and sends "fix the typo"

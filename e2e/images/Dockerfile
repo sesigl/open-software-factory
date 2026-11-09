@@ -3,15 +3,21 @@
 # Compose profile runs its own command in it.
 FROM openpolicyagent/opa:1.21.0-static AS opa
 
+FROM docker:29.1.3-cli AS docker
+
 # The full Node image holds Git, which foreman and the forge adapters need, and curl for the scripted agents.
 FROM node:24.11.1-bookworm
 # The folders the Compose profile mounts volumes on: a new volume takes their owner.
 RUN mkdir -p /factory /home/node/data /home/node/state /home/node/rendered \
   && chown -R node:node /factory /home/node
 COPY --from=opa /opa /usr/local/bin/opa
+# foreman runs sandbox-docker, which calls the Docker CLI.
+COPY --from=docker /usr/local/bin/docker /usr/local/bin/docker
 WORKDIR /opt/osf
 COPY package.json ./
 COPY packs/ packs/
+# The scripted agent of the testkit, which a sandbox started from this image runs (ADR 0096).
+COPY harness-agent.ts ./
 # Behind a proxy that inspects TLS, npm needs the proxy's CA: images.ts passes OSF_BUILD_CA as the secret ca.
 RUN --mount=type=secret,id=ca,required=false \
   if [ -s /run/secrets/ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/ca; fi \

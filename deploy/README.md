@@ -63,9 +63,10 @@ each stage clones the repository of the issue in the work item's origin, reads t
 `CONTRIBUTING.md` and `README.md`, and runs the checks they name. Name your CI's check in the stage `verify` of
 `factory.yaml` when it is not `verify`. To run your own, copy the
 folder, change the prompts, `policy/spec.rego` and `groups.json`, and set `FACTORY_DIR` to it. Each
-`docker compose up` commits the folder into the volume `factory`, so a run's factory version is a commit. Add your
-models to `compose/litellm/config.yaml`, with their keys in `.env`. Its routes point at Anthropic's models without a
-key, for `CLAUDE_CODE_OAUTH_TOKEN`.
+`docker compose up` commits the folder into the volume `factory`, so a run's factory version is a commit. The factory
+attaches to `litellm` with `inference/litellm.yaml`, so its agents' models are the routes in
+`compose/litellm/config.yaml`. Add your models there, with their keys in `.env`. Its routes point at Anthropic's
+models without a key, for `CLAUDE_CODE_OAUTH_TOKEN`.
 
 A factory that names `providers.inference: litellm` with the config `osf.proxy` attaches to the service `litellm`:
 foreman gets a key with the factory's budget for each run, and the spend log names the run.
@@ -97,7 +98,17 @@ An agent that declares `sandbox` runs in a container of the
 proxy ([ADR 0096](../docs/decisions/0096-agents-in-sandboxes-in-the-profile.md)). The proxy also joins the profile's
 network, so a sandbox whose `egress` allows `litellm` reaches the gateway, and nothing else of the profile. The image
 `ghcr.io/sesigl/open-software-factory/harness-claude-code`, which `agent-template` pulls or builds, is the template
-with the harness adapter, `gh`, Git and `make`.
+with the harness adapter, `gh`, Git and `make`. Git takes its token from `gh` and commits as `factory`.
+
+Every agent of the reference factory runs in such a sandbox:
+
+- It reaches `litellm` with its run's own key, GitHub, and the package registries of npm, PyPI, Go and crates.io.
+  Every other host is refused. Add the hosts that your repositories' builds need to `egress` in `factory.yaml`.
+- It gets `GH_TOKEN` and `CLAUDE_CODE_OAUTH_TOKEN` as placeholders. foreman holds the real values as
+  `OSF_SECRET_GH_TOKEN` and `OSF_SECRET_CLAUDE_CODE_OAUTH_TOKEN`, and only the sandbox's egress proxy gets them; it
+  puts them in on the way to the hosts of `egress`. The agent never sees a token of foreman or the master key of
+  `litellm`.
+- `FACTORY_GIT_NAME` and `FACTORY_GIT_EMAIL` apply only to an agent without a sandbox.
 
 foreman has no Docker socket. It reaches the Docker API through `docker-proxy`
 ([wollomatic/socket-proxy](https://github.com/wollomatic/socket-proxy)), which holds the host's socket read-only,
@@ -174,9 +185,11 @@ page "Recent Deliveries".
 
 ## Helm chart
 
-The chart `osf` installs gatekeeper, intake, foreman and console with the reference factory on Kubernetes. PostgreSQL
-with pgvector, NATS and Temporal are in the chart, so one command installs a complete factory; a platform team turns
-each off and names its own. You need Helm 3.8 or later.
+The chart `osf` installs LiteLLM, gatekeeper, intake, foreman and console with the reference factory on Kubernetes.
+PostgreSQL with pgvector, NATS and Temporal are in the chart, so one command installs a complete factory; a platform
+team turns each off and names its own. LiteLLM takes the model routes of the profile, and its Service is `litellm`,
+the address of the reference factory's `inference/litellm.yaml`, so install one release per namespace. The agents'
+sandboxes on Kubernetes are not in the chart yet. You need Helm 3.8 or later.
 
 ```sh
 cat > values.yaml <<'YAML'
@@ -187,6 +200,7 @@ secrets:
   gatekeeperApiToken: change-me
   gatekeeperSlackToken: xoxb-change-me
   gatekeeperSlackSigningSecret: change-me
+  litellmMasterKey: sk-change-me
 YAML
 helm install osf oci://ghcr.io/sesigl/open-software-factory/charts/osf --values values.yaml --wait --timeout 10m
 helm test osf --logs          # plans the factory definition with factory-spec
@@ -200,11 +214,13 @@ are installed with their own charts; no module uses them yet, so the chart has n
 
 | Value | Default | Meaning |
 | --- | --- | --- |
-| `secrets.existingSecret` | | A Secret with the keys `postgres-password`, `foreman-api-token`, `intake-api-token`, `gatekeeper-api-token`, `gatekeeper-slack-token`, `gatekeeper-slack-signing-secret` and, optional, `forge-token`, for example filled from OpenBao by its operator or the External Secrets Operator. Set, the chart makes no Secret. |
+| `secrets.existingSecret` | | A Secret with the keys `postgres-password`, `foreman-api-token`, `intake-api-token`, `gatekeeper-api-token`, `gatekeeper-slack-token`, `gatekeeper-slack-signing-secret`, `litellm-master-key` and, optional, `forge-token`, for example filled from OpenBao by its operator or the External Secrets Operator. Set, the chart makes no Secret. |
 | `secrets.postgresPassword` | | Required without `existingSecret`. The password of the database user; it goes into URLs, so use letters, digits, `-` and `_`. |
 | `secrets.foremanApiToken`, `secrets.intakeApiToken`, `secrets.gatekeeperApiToken` | | Required without `existingSecret`. The API tokens of foreman, intake and gatekeeper. |
 | `secrets.gatekeeperSlackToken`, `secrets.gatekeeperSlackSigningSecret` | | Required without `existingSecret`. The bot token and signing secret of gatekeeper's Slack app. |
+| `secrets.litellmMasterKey` | | Required without `existingSecret`. The master key of LiteLLM, like `sk-<random>`; foreman makes each run's key with it. |
 | `secrets.forgeToken` | | foreman's token for the checks of a pull request. |
+| `litellm.image`, `litellm.resources` | the pin of `compose.yaml` | The LLM gateway's image and its resources. |
 | `images.registry` | `ghcr.io/sesigl/open-software-factory` | Where the module images come from. |
 | `images.gatekeeper`, `images.intake`, `images.foreman`, `images.console`, `images.factorySpec` | the pins of `compose.yaml` | The tags of the module images. |
 | `factory.files` | the reference factory | Your factory definition as path: content, like `factory.yaml: "version: 1 ..."`. foreman commits it into Git with a fixed author and date. |
@@ -223,7 +239,7 @@ The chart's scenarios run on kind. To run them on your machine, start kind and l
 ```sh
 .tools/bin/kind create cluster
 deploy/helm/kind-images.sh    # pulls or builds the images of compose.yaml, then loads the chart's images
-make test-scenario ID=SCN-DIST-007
+make test-scenario ID=SCN-DIST-019
 ```
 
 ## Releases
@@ -262,13 +278,13 @@ repository's Packages and sets its visibility to public, like the first npm rele
 | SCN-DIST-002 | implemented | The Compose profile names the value that .env is missing |
 | SCN-DIST-003 | implemented | The console of the Compose profile lists the runs of its foreman |
 | SCN-DIST-004 | implemented | The console of the Compose profile shows the agents of the reference factory |
-| SCN-DIST-005 | implemented | The plan of the reference factory adds the factory and finds no problems |
+| SCN-DIST-005 | deprecated | The plan of the reference factory adds the factory and finds no problems |
 | SCN-DIST-006 | implemented | After the reference factory is applied, its plan shows no changes |
-| SCN-DIST-007 | implemented | Every workload of the Helm chart is ready after one command |
+| SCN-DIST-007 | deprecated | Every workload of the Helm chart is ready after one command |
 | SCN-DIST-008 | implemented | The Helm chart names the secret that the values are missing |
 | SCN-DIST-009 | implemented | The console of the Helm chart lists the runs of its foreman |
 | SCN-DIST-010 | implemented | The console of the Helm chart shows the agents of the reference factory |
-| SCN-DIST-011 | implemented | The test of the Helm chart plans the reference factory without problems |
+| SCN-DIST-011 | deprecated | The test of the Helm chart plans the reference factory without problems |
 | SCN-DIST-012 | implemented | The verify stage of the reference factory waits for the check "verify" |
 | SCN-DIST-013 | deprecated | The Compose profile takes the module images from the factory's registry |
 | SCN-DIST-014 | implemented | The intake of the Compose profile turns a GitHub issue labeled "factory" into a work item |
@@ -276,3 +292,6 @@ repository's Packages and sets its visibility to public, like the first npm rele
 | SCN-DIST-016 | implemented | Every service of the Compose profile is healthy after one command, and each server's health checks pass |
 | SCN-DIST-017 | implemented | The foreman of the Compose profile starts a sandbox from the agents' template through docker-proxy only |
 | SCN-DIST-018 | implemented | The Compose profile takes the module images and the agents' template from the factory's registry |
+| SCN-DIST-019 | implemented | Every workload of the Helm chart is ready after one command, the LLM gateway included |
+| SCN-DIST-020 | implemented | The plan of the reference factory adds the factory and finds no problems, with its inference config |
+| SCN-DIST-021 | implemented | The test of the Helm chart plans the reference factory without problems, with its inference config |

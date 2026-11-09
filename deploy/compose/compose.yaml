@@ -282,7 +282,7 @@ services:
   # The template of the agents' sandboxes (ADR 0096). It only makes sure that the image is on this machine, pulled or
   # built, before the foreman starts a sandbox from it.
   agent-template:
-    image: ghcr.io/sesigl/open-software-factory/harness-claude-code:0.5.1
+    image: ghcr.io/sesigl/open-software-factory/harness-claude-code:0.5.1-r1
     build:
       context: ../images
       target: agent
@@ -293,7 +293,7 @@ services:
 
   foreman:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/foreman:0.7.0-r1
+    image: ghcr.io/sesigl/open-software-factory/foreman:0.7.0-r2
     build:
       context: ../images
       target: foreman
@@ -339,6 +339,10 @@ services:
       FOREMAN_SANDBOXES: '{"docker": "sandbox-docker"}'
       DOCKER_HOST: tcp://docker-proxy:2375
       OSF_SANDBOX_NETWORK: ${COMPOSE_PROJECT_NAME}_default
+      # The secrets ref:env/GH_TOKEN and ref:env/CLAUDE_CODE_OAUTH_TOKEN of the reference factory's agents: only the
+      # egress proxy of a sandbox gets them, and the agent a placeholder.
+      OSF_SECRET_GH_TOKEN: ${GH_TOKEN:-}
+      OSF_SECRET_CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
       # A token that may read pull requests and their checks, for the verify stage's check "verify". Optional.
       FOREMAN_FORGE_TOKEN: ${FOREMAN_FORGE_TOKEN:-}
       # A factory with providers.inference litellm attaches to the service litellm with its master key (ADR 0080).
