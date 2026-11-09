@@ -7,6 +7,7 @@ import { deps } from "./deps.ts";
 import { adr, docsAffected, docsGen, docsLinks } from "./docs.ts";
 import { type Check, Context } from "./lib/context.ts";
 import { type Finding, Repo } from "./lib/repo.ts";
+import { profile } from "./profile.ts";
 import { dup, mutation } from "./quality.ts";
 import { reach } from "./reach.ts";
 import { release } from "./release.ts";
@@ -28,6 +29,7 @@ export const FAST: Record<string, Check> = {
   AFFECTED: affected,
   RELEASE: release,
   DEPS: deps,
+  PROFILE: profile,
 };
 
 /** Checks that read test results or compare with OSF_BASE; `make verify` runs them after the tests. */

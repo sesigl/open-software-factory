@@ -19,7 +19,10 @@ through `kubectl port-forward` (`url`), `helm test` and the state of the workloa
 
 - Pin every image to an exact tag and every npm package to an exact version.
 - `compose.yaml` is the one list of module images and their packages. The chart's `images.*` tags equal its pins.
+- Each release moves the pins: the release workflow runs `osf profile-pins` in the release pull request, and PROFILE
+  fails on a pin that is not the released version (ADR 0095). Do not edit a pin by hand.
 - A published image tag never changes: a new adapter pin without a new module version takes `<version>-r<n>`.
+- A change to the chart moves its version in `Chart.yaml`; PROFILE compares with the base.
 - The chart shares the reference factory and Temporal's configuration with the profile through the links in
   `helm/osf/files/`; never copy them.
 - Never write a secret into a file of this folder: `.env` holds them and is ignored by Git.

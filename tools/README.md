@@ -219,3 +219,13 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-103 | implemented | DEPS accepts a package that has the exact peer version of its dependency |
 | SCN-REPO-104 | implemented | DEPS rejects a package whose dependency needs another version of a peer |
 | SCN-REPO-105 | implemented | DEPS rejects a package without the required peer of its dependency and accepts a missing optional one |
+| SCN-REPO-106 | implemented | PROFILE accepts a profile and a chart that osf profile-pins wrote |
+| SCN-REPO-107 | implemented | PROFILE rejects a profile that does not pin the workspace's version of a package |
+| SCN-REPO-108 | implemented | PROFILE rejects a module image whose tag is not the version of its own package |
+| SCN-REPO-109 | implemented | PROFILE rejects a chart whose image tag differs from the profile's |
+| SCN-REPO-110 | implemented | PROFILE rejects a chart image that the profile does not run |
+| SCN-REPO-111 | implemented | PROFILE rejects a suite that starts an image it does not pull and pulls one that its packages do not name |
+| SCN-REPO-112 | implemented | PROFILE rejects new packages of an image without a new tag, compared with the base |
+| SCN-REPO-113 | implemented | PROFILE rejects a changed chart without a new version, compared with the base |
+| SCN-REPO-114 | implemented | osf profile-pins moves a module image to the new version of its module |
+| SCN-REPO-115 | implemented | osf profile-pins gives an image the next release tag when only an adapter moved |
