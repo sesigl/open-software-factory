@@ -595,6 +595,14 @@ Feature: Repository checks
     And the output contains "PROFILE .github/test-suites.yml:1 the suite deploy starts the image postgres:18-alpine but does not pull it"
     And the output contains "PROFILE .github/test-suites.yml:1 the suite deploy pulls nats:2.11.9-alpine, which none of its packages names"
 
+  @id=SCN-REPO-116 @status=implemented
+  Scenario: PROFILE rejects a pull that only the testkit names, as a suite names the testkit's fakes in "images"
+    Given a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them
+    And the suite "deploy" of ".github/test-suites.yml" pulls "postgres:18-alpine chrislusf/seaweedfs:3.97", which only the testkit names
+    When the developer runs "osf check PROFILE"
+    Then the command exits with code 1
+    And the output contains "PROFILE .github/test-suites.yml:1 the suite deploy pulls chrislusf/seaweedfs:3.97, which none of its packages names"
+
   @id=SCN-REPO-112 @status=implemented
   Scenario: PROFILE rejects new packages of an image without a new tag, compared with the base
     Given a base commit with a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them

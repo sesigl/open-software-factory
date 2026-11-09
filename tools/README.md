@@ -229,3 +229,4 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-113 | implemented | PROFILE rejects a changed chart without a new version, compared with the base |
 | SCN-REPO-114 | implemented | osf profile-pins moves a module image to the new version of its module |
 | SCN-REPO-115 | implemented | osf profile-pins gives an image the next release tag when only an adapter moved |
+| SCN-REPO-116 | implemented | PROFILE rejects a pull that only the testkit names, as a suite names the testkit's fakes in "images" |

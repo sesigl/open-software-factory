@@ -6,7 +6,7 @@
 // - Each image of the chart is in the profile.
 // - The `pull` list of a suite in .github/test-suites.yml holds each image of the Compose files its tests start; any
 //   other entry, like the base of a Dockerfile or an image that code starts, is named in a file of the suite's packages
-//   or of the workspace packages they depend on.
+//   or of the workspace packages they depend on. The testkit does not count: a suite names its fakes in `images`.
 import { statSync } from "node:fs";
 import { dirname, join, normalize } from "node:path";
 import { parse } from "yaml";
@@ -14,10 +14,11 @@ import type { Context } from "./lib/context.ts";
 import { changedFiles, showAt } from "./lib/git.ts";
 import { CHART, COMPOSE, pins, services, VALUES } from "./lib/profile.ts";
 import type { Finding, Repo } from "./lib/repo.ts";
-import { workspace } from "./lib/workspace.ts";
+import { type Unit, workspace } from "./lib/workspace.ts";
 
 const ID = "PROFILE";
 const SUITES = ".github/test-suites.yml";
+const TESTKIT = "@opensoftware/testkit";
 const TAG = /^(\d+\.\d+\.\d+)(?:-r\d+)?$/;
 
 const finding = (file: string, line: number, message: string): Finding => ({ check: ID, file, line, message });
@@ -136,7 +137,8 @@ function pulls(repo: Repo): Finding[] {
     const not = new Set(parts.filter((part) => part.startsWith("!")).map((part) => part.slice(1)));
     const mine = units.filter((unit) => (only.length > 0 ? only.includes(unit.name) : !not.has(unit.name)));
     const tests = mine.flatMap((unit) => repo.match(`${unit.dir}/system-tests/**/*`)).map((file) => repo.read(file));
-    const named = [...mine, ...all.filter((unit) => mine.some((own) => own.declared.has(unit.name)))];
+    const used = (unit: Unit) => unit.name !== TESTKIT && mine.some((own) => own.declared.has(unit.name));
+    const named = [...mine, ...all.filter(used)];
     const regular = (file: string) => statSync(join(repo.root, file)).isFile();
     const files = named.flatMap((unit) => repo.match(`${unit.dir}/**`)).filter(regular);
     const sources = files.map((file) => repo.read(file)).join("\n");
