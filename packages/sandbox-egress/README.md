@@ -28,13 +28,15 @@ const sandboxVariables = sandboxEnv(spec, "http://egress:8080"); // placeholders
 | --- | --- |
 | `readSpec(file)` | The `sandbox-spec` (contracts) in the file. A document that is no sandbox spec is a `UsageError` that names `<file>: <path> <problem>` for each problem. |
 | `resolveSecrets(spec, secretsDir, env)` | The spec's secrets with their provider: `file` (the file below `secretsDir`), `env` (the variable `OSF_SECRET_<NAME>` of `env`) or `openbao` (a path in OpenBao). A reference that cannot be resolved is a `UsageError` (see below). `env` defaults to the process's environment. |
-| `proxyConfig(spec, secrets, { openbaoMount })` | iron-proxy's configuration: the allowlist of the egress hosts and the MCP servers' hosts, the secret swaps for the egress hosts only, and the MCP policy with the declared tools. JSON, which is YAML. |
+| `proxyConfig(spec, secrets, { openbaoMount })` | iron-proxy's configuration: the allowlist of the egress hosts and the MCP servers' hosts, the secret swaps for the egress hosts only, for each secret from a file or a variable also in git's Basic form in the header `Authorization`, and the MCP policy with the declared tools. JSON, which is YAML. |
 | `proxyEnv(secrets, env)` | The proxy's own variables: `<NAME>` for each `env` secret, and `VAULT_ADDR` and `VAULT_TOKEN` from `OSF_OPENBAO_ADDR` and `OSF_OPENBAO_TOKEN` when a secret comes from OpenBao. |
 | `sandboxEnv(spec, egressUrl)` | The sandbox's variables: the spec's `env`, a placeholder per secret, `HTTP_PROXY` and `HTTPS_PROXY` (also lower case) at `egressUrl`, and the CA variables at `CA_FILE`. |
 | `egressEntries(log)` | The egress log from iron-proxy's audit lines: host, method, path, `allowed` or `refused`, what refused it, the MCP server and tool, and the names of the secrets the proxy put in. Header values and MCP arguments are left out. |
 | `memoryBytes(quantity)` | A Kubernetes quantity such as `256Mi` in bytes. |
 | `placeholder(variable)`, `envVariable(name)` | `osf-secret-placeholder-<variable>`, and `OSF_SECRET_<name>`. |
-| `EGRESS_IMAGE`, `START_SCRIPT`, `READY`, `PROXY_DIR`, `EGRESS_PORT`, `CA_FILE`, `WORKSPACE` | The pinned iron-proxy image, its start script (it creates the CA and hands its certificate out in `<PROXY_DIR>/out/osf/`), the log line that says the proxy is ready, the proxy's folder `/osf`, its port 8080, the sandbox's CA file and working folder. |
+| `basicPlaceholder(variable)`, `GIT_USER` | The placeholder in git's Basic form, base64 of `x-access-token:<placeholder>`, and the user name `x-access-token` that gh's credential helper sends (ADR 0096). |
+| `startScript(secrets)` | The proxy's start script: it writes each secret from a file or a variable in git's Basic form to `<PROXY_DIR>/basic/`, creates the CA and hands its certificate out in `<PROXY_DIR>/out/osf/`, then runs iron-proxy. |
+| `EGRESS_IMAGE`, `READY`, `PROXY_DIR`, `EGRESS_PORT`, `CA_FILE`, `WORKSPACE` | The pinned iron-proxy image, the log line that says the proxy is ready, the proxy's folder `/osf`, its port 8080, the sandbox's CA file and working folder. |
 
 How secret references resolve (ADR 0055):
 
@@ -75,7 +77,7 @@ The library reads no variable itself. Its caller passes the environment to `reso
 | ID | Status | Scenario |
 | --- | --- | --- |
 | SCN-SEGRESS-001 | implemented | The proxy configuration allows the egress hosts and the hosts of the MCP servers |
-| SCN-SEGRESS-002 | implemented | A secret is swapped only for the hosts of the egress allowlist |
+| SCN-SEGRESS-002 | deprecated | A secret is swapped only for the hosts of the egress allowlist |
 | SCN-SEGRESS-003 | implemented | Without an egress allowlist no secret is swapped |
 | SCN-SEGRESS-004 | implemented | A secret from the environment is read by the proxy from a variable of its own |
 | SCN-SEGRESS-005 | implemented | A secret from OpenBao is read by the proxy with the adapter's OpenBao address and token |
@@ -95,3 +97,4 @@ The library reads no variable itself. Its caller passes the environment to `reso
 | SCN-SEGRESS-019 | implemented | A copy into a sandbox names a path below its working folder |
 | SCN-SEGRESS-020 | implemented | A copy out of a sandbox keeps an absolute path |
 | SCN-SEGRESS-021 | implemented | A copy that names a sandbox on both sides is refused |
+| SCN-SEGRESS-022 | implemented | A secret is swapped only for the hosts of the egress allowlist, also in git's Basic credentials |

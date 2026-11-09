@@ -62,6 +62,14 @@ Feature: Running commands in an isolated sandbox
     Then the API received "GET /viewer" with the header "Authorization: Bearer lin_real_7f3a"
     And the egress log holds an allowed request to "/viewer" in which the proxy put the secret "LINEAR_TOKEN"
 
+  @id=SCN-SANDBOX-023 @status=implemented @conformance @realizes=SCN-FACTORY-RUNTIME-006
+  Scenario: git's Basic credentials with a secret's placeholder reach the API with the real secret
+    Given the secret file "forge-token" with the value "ghp_real_51c2"
+    And an API at "host.docker.internal" that answers "GET /info/refs"
+    And a sandbox created from a spec with the test template, the egress allowlist "host.docker.internal" and the secret "GH_TOKEN" from "ref:file/forge-token"
+    When the client runs "curl -u x-access-token:$GH_TOKEN", as git sends a token, for "/info/refs" of the API in the sandbox
+    Then the API received "GET /info/refs" with the header "Authorization: Basic " and base64 of "x-access-token:ghp_real_51c2"
+
   @id=SCN-SANDBOX-009 @status=implemented @conformance @realizes=SCN-FACTORY-RUNTIME-007
   Scenario: A call to an MCP server that the spec does not declare is refused and logged
     Given a sandbox created from a spec with the test template and the MCP server "wiki" with the tool "search"

@@ -10,11 +10,19 @@ Feature: What every sandbox adapter shares about the egress proxy
     When the adapter calls proxyConfig with the spec
     Then the allowlist of the configuration is "api.linear.app" and "wiki.example.com"
 
-  @id=SCN-SEGRESS-002 @status=implemented
+  @id=SCN-SEGRESS-002 @status=deprecated
   Scenario: A secret is swapped only for the hosts of the egress allowlist
     Given a sandbox spec with the egress allowlist "api.linear.app" and the secret "LINEAR_TOKEN" from "ref:file/linear-token"
     When the adapter calls proxyConfig with the spec and its resolved secrets
     Then the configuration swaps "osf-secret-placeholder-LINEAR_TOKEN" for the file "/osf/secrets/LINEAR_TOKEN" on requests to "api.linear.app"
+
+  @id=SCN-SEGRESS-022 @status=implemented @replaces=SCN-SEGRESS-002
+  Scenario: A secret is swapped only for the hosts of the egress allowlist, also in git's Basic credentials
+    Given a sandbox spec with the egress allowlist "api.linear.app" and the secret "LINEAR_TOKEN" from "ref:file/linear-token"
+    When the adapter calls proxyConfig with the spec and its resolved secrets
+    Then the configuration swaps "osf-secret-placeholder-LINEAR_TOKEN" for the file "/osf/secrets/LINEAR_TOKEN" on requests to "api.linear.app"
+    And it swaps the placeholder in git's Basic form, base64 of "x-access-token:osf-secret-placeholder-LINEAR_TOKEN", for the file "/osf/basic/LINEAR_TOKEN" in the header "Authorization" on requests to "api.linear.app"
+    And the start script writes "/osf/basic/LINEAR_TOKEN" as base64 of "x-access-token:" and the secret's file
 
   @id=SCN-SEGRESS-003 @status=implemented
   Scenario: Without an egress allowlist no secret is swapped
