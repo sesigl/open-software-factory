@@ -204,8 +204,10 @@ make test-scenario ID=SCN-DIST-007
 
 ## Releases
 
+Each release moves the pins of `compose/compose.yaml` and `helm/osf/` to the released versions: the release workflow
+runs `osf profile-pins` in the release pull request ([ADR 0095](../docs/decisions/0095-profile-pins-move-with-releases.md)).
 The workflow `publish-images` publishes after each change to `compose/compose.yaml`, `images/` or `helm/osf/` on
-`main`. It builds every module image whose tag GHCR does not have yet for `linux/amd64` and `linux/arm64`, with an SBOM
+`main`, once npm serves the packages of the pins. It builds every module image whose tag GHCR does not have yet for `linux/amd64` and `linux/arm64`, with an SBOM
 and SLSA provenance attached by BuildKit, and signs it with cosign through the workflow's GitHub identity. A tag never
 changes: a new adapter pin without a new module version takes the tag `<version>-r<n>`. The chart goes to
 `oci://ghcr.io/sesigl/open-software-factory/charts/osf` at the version in `helm/osf/Chart.yaml`, signed the same way;
@@ -213,12 +215,14 @@ change the version with the chart.
 
 Verify an image, and read its SBOM and provenance:
 
+`<tag>` is the tag of the image in `compose/compose.yaml`.
+
 ```sh
-cosign verify ghcr.io/sesigl/open-software-factory/foreman:0.5.0 \
+cosign verify ghcr.io/sesigl/open-software-factory/foreman:<tag> \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   --certificate-identity-regexp '^https://github.com/sesigl/open-software-factory/'
-docker buildx imagetools inspect ghcr.io/sesigl/open-software-factory/foreman:0.5.0 --format '{{ json .SBOM }}'
-docker buildx imagetools inspect ghcr.io/sesigl/open-software-factory/foreman:0.5.0 --format '{{ json .Provenance }}'
+docker buildx imagetools inspect ghcr.io/sesigl/open-software-factory/foreman:<tag> --format '{{ json .SBOM }}'
+docker buildx imagetools inspect ghcr.io/sesigl/open-software-factory/foreman:<tag> --format '{{ json .Provenance }}'
 ```
 
 One-time setup: GHCR makes each new package private. After the first run, the owner opens each package under the

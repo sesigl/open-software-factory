@@ -19,6 +19,7 @@ const USAGE = `Usage: osf <command>
   new-module <name> [--prefix PREFIX]
   next-id <module>        print the next free scenario ID of a module or prefix
   release-files           write the publish workflow and release-please entries of every published package
+  profile-pins            write the released versions into the Compose profile and the Helm chart
   test-scenario <ID>      run the one system test of a scenario
   mutation <folder> [--all] [--list] [--shard i/n] [--incremental <file>]
                           Stryker on the lines of a module changed since OSF_BASE (--all: every line)
@@ -62,6 +63,8 @@ async function main(argv: string[]): Promise<number> {
       return (await import("../scaffold/next-id.ts")).nextId(root, args);
     case "release-files":
       return (await import("../scaffold/release-files.ts")).releaseFiles(root);
+    case "profile-pins":
+      return (await import("../scaffold/profile-pins.ts")).profilePins(root);
     case "test-scenario":
       return (await import("../scaffold/test-scenario.ts")).testScenario(root, args);
     case "mutation":
