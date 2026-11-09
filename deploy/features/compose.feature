@@ -1,16 +1,27 @@
 @module=deploy @owner=maintainers
 Feature: The Compose profile installs a complete factory with one command
   An operator copies ".env.example" to ".env", sets its values and runs "docker compose up" in "deploy/compose/".
-  The profile starts PostgreSQL with Temporal and pgvector, SeaweedFS, NATS, Phoenix, LiteLLM, gatekeeper, intake,
-  foreman and console, with the reference factory in "deploy/compose/factory/" (ADR 0074).
+  The profile starts PostgreSQL with Temporal and pgvector, NATS, Phoenix, LiteLLM, gatekeeper, intake, foreman and
+  console, with the reference factory in "deploy/compose/factory/" (ADR 0074). A module is healthy when its
+  "/v1/health" answers 2xx (ADR 0086).
 
-  @id=SCN-DIST-001 @status=implemented @realizes=SCN-FACTORY-OPEN-006
+  @id=SCN-DIST-001 @status=deprecated @realizes=SCN-FACTORY-OPEN-006
   Scenario: Every service of the Compose profile is healthy after one command
     Given the Compose profile with every value of ".env.example" set in ".env"
     When the operator runs "docker compose up --detach --wait"
     Then the command exits with code 0
     And the services "postgres", "temporal", "temporal-ui", "nats", "seaweedfs", "phoenix", "litellm", "gatekeeper", "intake", "foreman" and "console" are running and healthy
     And the services "temporal-schema", "temporal-namespace" and "factory-repo" exited with code 0
+
+  @id=SCN-DIST-016 @status=implemented @realizes=SCN-FACTORY-OPEN-006 @replaces=SCN-DIST-001
+  Scenario: Every service of the Compose profile is healthy after one command, and each server's health checks pass
+    Given the Compose profile with every value of ".env.example" set in ".env"
+    When the operator runs "docker compose up --detach --wait"
+    Then the command exits with code 0
+    And the services "postgres", "temporal", "temporal-ui", "nats", "phoenix", "litellm", "gatekeeper", "intake", "foreman" and "console" are running and healthy
+    And the services "temporal-schema", "temporal-namespace" and "factory-repo" exited with code 0
+    And "/v1/health" of "intake", "gatekeeper" and "foreman" answers 200 with the status "ok"
+    And "docker compose run --rm console console doctor" exits with code 0 and prints no line that starts with "FAIL"
 
   @id=SCN-DIST-002 @status=implemented
   Scenario: The Compose profile names the value that .env is missing

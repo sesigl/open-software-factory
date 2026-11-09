@@ -10,12 +10,13 @@ x-module: &module
   restart: unless-stopped
   init: true
   healthcheck:
-    # A module answers its API on PORT; any answer below 500, like 401 without a token, means it is up.
+    # A module is healthy when OSF_HEALTH_PATH answers 2xx: /v1/health checks the module's own dependencies, like its
+    # database and NATS, and needs no token (ADR 0086).
     test:
       - CMD
       - node
       - -e
-      - 'fetch("http://127.0.0.1:8080" + process.env.OSF_HEALTH_PATH).then((r) => process.exit(r.status < 500 ? 0 : 1), () => process.exit(1))'
+      - 'fetch("http://127.0.0.1:8080" + process.env.OSF_HEALTH_PATH).then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))'
     interval: 2s
     timeout: 5s
     retries: 60
@@ -119,19 +120,6 @@ services:
       timeout: 5s
       retries: 60
 
-  seaweedfs:
-    image: chrislusf/seaweedfs:3.97
-    restart: unless-stopped
-    # A single node bootstraps its own Raft cluster instead of waiting for an election.
-    command: [server, -s3, -dir=/data, -master.raftHashicorp, -master.raftBootstrap]
-    volumes:
-      - seaweedfs:/data
-    healthcheck:
-      test: [CMD-SHELL, "wget -q -O /dev/null http://127.0.0.1:8333/"]
-      interval: 2s
-      timeout: 5s
-      retries: 60
-
   phoenix:
     image: arizephoenix/phoenix:version-20.26.1
     restart: unless-stopped
@@ -218,7 +206,7 @@ services:
       nats:
         condition: service_healthy
     environment:
-      OSF_HEALTH_PATH: /v1/gates/none
+      OSF_HEALTH_PATH: /v1/health
       GATEKEEPER_API_TOKEN: ${GATEKEEPER_API_TOKEN:?set GATEKEEPER_API_TOKEN in .env}
       GATEKEEPER_DATABASE_URL: postgres://osf:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/gatekeeper
       GATEKEEPER_NATS_URL: nats://nats:4222
@@ -249,7 +237,7 @@ services:
       nats:
         condition: service_healthy
     environment:
-      OSF_HEALTH_PATH: /v1/work-items/none
+      OSF_HEALTH_PATH: /v1/health
       INTAKE_API_TOKEN: ${INTAKE_API_TOKEN:?set INTAKE_API_TOKEN in .env}
       INTAKE_DATABASE_URL: postgres://osf:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/intake
       INTAKE_NATS_URL: nats://nats:4222
@@ -282,9 +270,13 @@ services:
         condition: service_healthy
       litellm:
         condition: service_healthy
+      phoenix:
+        condition: service_healthy
     environment:
-      OSF_HEALTH_PATH: /v1/runs
+      OSF_HEALTH_PATH: /v1/health
       OSF_DATA: /home/node/data
+      # One trace per run in Phoenix, with a span per stage (ADR 0087).
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://phoenix:6006
       FOREMAN_API_TOKEN: ${FOREMAN_API_TOKEN:?set FOREMAN_API_TOKEN in .env}
       FOREMAN_FACTORY: /factory/factory.yaml
       FOREMAN_TEMPORAL_ADDRESS: temporal:7233
@@ -343,6 +335,8 @@ services:
       CONSOLE_FACTORY: /factory/factory.yaml
       CONSOLE_FORGE_ADAPTER: forge-github
       CONSOLE_TEMPORAL_URL: http://${OSF_HOST:-127.0.0.1}:${TEMPORAL_UI_PORT:-8233}
+      # Each run links its trace in Phoenix's default project.
+      CONSOLE_TRACE_URL: http://${OSF_HOST:-127.0.0.1}:${PHOENIX_PORT:-6006}/projects/UHJvamVjdDox/traces/{traceId}
       CONSOLE_LINKS: Phoenix=http://${OSF_HOST:-127.0.0.1}:${PHOENIX_PORT:-6006},LiteLLM=http://${OSF_HOST:-127.0.0.1}:${LITELLM_PORT:-4000}/ui
     volumes:
       - factory:/factory:ro
@@ -375,7 +369,6 @@ secrets:
 volumes:
   postgres:
   nats:
-  seaweedfs:
   factory:
   factory-state:
   factory-rendered:

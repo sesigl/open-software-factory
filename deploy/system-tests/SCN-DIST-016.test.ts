@@ -1,7 +1,7 @@
 import { scenario } from "@opensoftware/testkit";
 import { profile, words } from "./profile.ts";
 
-scenario("SCN-DIST-001", async ({ sut, given, when, then }) => {
+scenario("SCN-DIST-016", async ({ sut, given, when, then }) => {
   let compose: Awaited<ReturnType<typeof profile>>;
   await given('the Compose profile with every value of ".env.example" set in ".env"', async () => {
     compose = await profile(sut);
@@ -17,9 +17,9 @@ scenario("SCN-DIST-001", async ({ sut, given, when, then }) => {
   });
 
   await then(
-    'the services "postgres", "temporal", "temporal-ui", "nats", "seaweedfs", "phoenix", "litellm", "gatekeeper", "intake", "foreman" and "console" are running and healthy',
+    'the services "postgres", "temporal", "temporal-ui", "nats", "phoenix", "litellm", "gatekeeper", "intake", "foreman" and "console" are running and healthy',
     async () => {
-      const names = ["postgres", "temporal", "temporal-ui", "nats", "seaweedfs", "phoenix", "litellm"];
+      const names = ["postgres", "temporal", "temporal-ui", "nats", "phoenix", "litellm"];
       names.push("gatekeeper", "intake", "foreman", "console");
       const services = await compose.services();
       expect(
@@ -41,4 +41,22 @@ scenario("SCN-DIST-001", async ({ sut, given, when, then }) => {
       }),
     ).toEqual(names.map((name) => ({ name, state: "exited", exitCode: 0 })));
   });
+
+  await then('"/v1/health" of "intake", "gatekeeper" and "foreman" answers 200 with the status "ok"', async () => {
+    const intake = await fetch(`${await compose.url("intake", 8080)}/v1/health`);
+    const gatekeeper = await fetch(`${await compose.url("gatekeeper", 8080)}/v1/health`);
+    const foreman = await fetch(`${await compose.url("foreman", 8080)}/v1/health`);
+    expect([intake.status, gatekeeper.status, foreman.status]).toEqual([200, 200, 200]);
+    const bodies = await Promise.all([intake.json(), gatekeeper.json(), foreman.json()]);
+    expect(bodies.map((body) => (body as { status?: string }).status)).toEqual(["ok", "ok", "ok"]);
+  });
+
+  await then(
+    '"docker compose run --rm console console doctor" exits with code 0 and prints no line that starts with "FAIL"',
+    async () => {
+      const doctor = await compose.run(words("docker compose run --rm console console doctor"));
+      expect(doctor.exitCode, doctor.stdout + doctor.stderr).toBe(0);
+      expect(doctor.stdout.split("\n").filter((line) => line.startsWith("FAIL"))).toEqual([]);
+    },
+  );
 });

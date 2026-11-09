@@ -77,7 +77,7 @@ publish only the TypeScript package; clients for other languages are not built (
 | Profile | For | Stateful services |
 | --- | --- | --- |
 | Laptop | trying one tool | none: files, SQLite, DuckDB, local folder |
-| Single VM (Compose) | one team | PostgreSQL (with Temporal and pgvector), SeaweedFS, NATS, Phoenix as trace store; Docker sandboxes |
+| Single VM (Compose) | one team | PostgreSQL (with Temporal and pgvector), NATS, Phoenix as trace store; Docker sandboxes |
 | Kubernetes (Helm) | platform teams | managed PostgreSQL, object storage, NATS, Temporal, Langfuse (ClickHouse, Valkey), OpenBao, agent-sandbox |
 
 ## Smaller choices

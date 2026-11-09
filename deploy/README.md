@@ -5,7 +5,7 @@ covers: [deploy/compose/**, deploy/images/**, deploy/helm/**]
 # deploy
 
 Install a complete factory with one command. The Compose profile in [`compose/`](compose/compose.yaml) runs the
-factory on one machine for one team: PostgreSQL with Temporal and pgvector, SeaweedFS, NATS, Phoenix, LiteLLM,
+factory on one machine for one team: PostgreSQL with Temporal and pgvector, NATS, Phoenix, LiteLLM,
 gatekeeper, intake, foreman and console, with the [reference factory](compose/factory/factory.yaml). The
 [Helm chart](#helm-chart) in [`helm/osf/`](helm/osf/Chart.yaml) runs the same modules on Kubernetes for platform
 teams. Decisions: [ADR 0074](../docs/decisions/0074-compose-profile.md),
@@ -19,10 +19,12 @@ You need Docker with Compose 2.24 or later.
 cd deploy/compose
 cp .env.example .env    # set the tokens, the database password, and Slack or a forge token for gatekeeper
 docker compose up --detach --wait
+docker compose run --rm console console doctor    # one line per check, and one fix per failure
 docker compose run --rm factory plan
 ```
 
-Then open the console at http://127.0.0.1:8080. `up` pulls the signed module images from GHCR; an image that is not
+`console doctor` checks each server's health and token and the factory definition, in that order
+([ADR 0086](../docs/decisions/0086-health-routes.md)). Then open the console at http://127.0.0.1:8080. `up` pulls the signed module images from GHCR; an image that is not
 published yet, like one whose pin moved a moment ago, is built from npm, which takes a minute or two.
 
 ## What runs
@@ -35,7 +37,6 @@ published yet, like one whose pin moved a moment ago, is built from npm, which t
 | `temporal-namespace` | one-shot: the namespace `default` | none |
 | `temporal-ui` | the history of every run | `TEMPORAL_UI_PORT`, 8233 |
 | `nats` | NATS with JetStream for the events between the modules | none |
-| `seaweedfs` | object storage with the S3 API, for evidence | none |
 | `phoenix` | the trace store, on PostgreSQL | `PHOENIX_PORT`, 6006 |
 | `litellm` | the LLM gateway, configured by `litellm/config.yaml` | `LITELLM_PORT`, 4000 |
 | `factory-repo` | one-shot: copies `FACTORY_DIR` into the volume `factory` and commits it | none |
@@ -48,7 +49,8 @@ published yet, like one whose pin moved a moment ago, is built from npm, which t
 The module images are `ghcr.io/sesigl/open-software-factory/<module>:<version>`, built from
 [`images/Dockerfile`](images/Dockerfile): Node 24, Git and the module with its adapters from npm, at the versions
 `compose.yaml` pins. Compose pulls them, and builds one only when GHCR does not have it. A new release reaches the
-profile when its pin moves. See [Releases](#releases) for how they are published and verified.
+profile with the release itself, as each release moves the pins. See [Releases](#releases) for how they are published
+and verified.
 
 ## Your factory
 
@@ -90,6 +92,10 @@ Each agent of the reference factory names its effort level ([ADR 0078](../docs/d
 `high` for triage and ship, which need a small model, and `medium` for spec, implement and review, which need a smart
 one. Point the routes in `compose/litellm/config.yaml` at models of those sizes. When you change a route to a model of
 the other size, change the agent's `effort` too.
+
+The stage verify has `evidence: required`: it fails until a proof evidence bundle is attached to its pull request
+([ADR 0088](../docs/decisions/0088-evidence-check.md)). Run proof in the target repository's CI after its tests,
+with [proof's GitHub Action](../modules/proof/README.md#github-action) on the JUnit or Playwright reports.
 
 ## Configuration
 
@@ -234,7 +240,7 @@ repository's Packages and sets its visibility to public, like the first npm rele
 
 | ID | Status | Scenario |
 | --- | --- | --- |
-| SCN-DIST-001 | implemented | Every service of the Compose profile is healthy after one command |
+| SCN-DIST-001 | deprecated | Every service of the Compose profile is healthy after one command |
 | SCN-DIST-002 | implemented | The Compose profile names the value that .env is missing |
 | SCN-DIST-003 | implemented | The console of the Compose profile lists the runs of its foreman |
 | SCN-DIST-004 | implemented | The console of the Compose profile shows the agents of the reference factory |
@@ -249,3 +255,4 @@ repository's Packages and sets its visibility to public, like the first npm rele
 | SCN-DIST-013 | implemented | The Compose profile takes the module images from the factory's registry |
 | SCN-DIST-014 | implemented | The intake of the Compose profile turns a GitHub issue labeled "factory" into a work item |
 | SCN-DIST-015 | implemented | The plan of this repository's factory adds the factory and finds no problems |
+| SCN-DIST-016 | implemented | Every service of the Compose profile is healthy after one command, and each server's health checks pass |

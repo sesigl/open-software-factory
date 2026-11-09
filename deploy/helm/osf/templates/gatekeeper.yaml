@@ -43,7 +43,7 @@ spec:
           ports:
             - name: http
               containerPort: 8080
-          {{- include "osf.moduleProbe" "/v1/gates/none" | nindent 10 }}
+          {{- include "osf.moduleProbe" "/v1/health" | nindent 10 }}
           {{- with .Values.gatekeeper.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
