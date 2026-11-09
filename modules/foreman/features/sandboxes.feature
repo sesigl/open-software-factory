@@ -12,6 +12,19 @@ Feature: Sandboxes
     And the harness adapter ran in the sandbox of each stage
     And "/v1/runs/<id>" shows the state "complete"
 
+  @id=SCN-FORE-084 @status=implemented @realizes=SCN-FACTORY-RUNTIME-004
+  Scenario: A factory that names no sandbox adapter runs its sandboxes with the adapter of FOREMAN_SANDBOX
+    Given "foreman serve" runs the README's "sandboxed/factory.yaml" without "providers.sandbox", with "FOREMAN_SANDBOX" set to "kubernetes" and a fake sandbox adapter as "kubernetes"
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then the fake sandbox adapter "kubernetes" created the sandbox of each stage
+    And "/v1/runs/<id>" shows the state "complete"
+
+  @id=SCN-FORE-085 @status=implemented @realizes=SCN-FACTORY-RUNTIME-004
+  Scenario: A factory that names no sandbox adapter runs its sandboxes with docker when FOREMAN_SANDBOX is not set
+    Given "foreman serve" runs the README's "sandboxed/factory.yaml" without "providers.sandbox" and a fake sandbox adapter as "docker"
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then the fake sandbox adapter "docker" created the sandbox of each stage
+
   @id=SCN-FORE-033 @status=implemented @realizes=SCN-FACTORY-RUNTIME-006
   Scenario: The sandbox spec holds the agent's secret as a reference under its variable
     Given "foreman serve" runs the README's "sandboxed/factory.yaml" with a fake sandbox adapter as "docker" and a scripted harness that ends every turn

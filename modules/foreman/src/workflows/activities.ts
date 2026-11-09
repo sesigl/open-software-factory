@@ -37,6 +37,8 @@ export interface ActivityDeps {
   harnesses: Record<string, string>;
   /** The adapter's command line per sandbox adapter name; others run `npx -y @opensoftware/sandbox-<name>`. */
   sandboxes: Record<string, string>;
+  /** The sandbox adapter of a factory that names none, FOREMAN_SANDBOX. */
+  sandbox: string;
   /** The adapter's command line per forge adapter name; others run `npx -y @opensoftware/forge-<name>`. */
   forges: Record<string, string>;
   /** FORGE_URL and FORGE_TOKEN of the forge adapter. */
@@ -206,7 +208,7 @@ export function activities(deps: ActivityDeps) {
         .map(([key, value]) => `${key}=${value}`)
         .join(",");
       const harness = commandLine(deps.harnesses, plan.harness, `npx -y @opensoftware/harness-${plan.harness} run`);
-      const adapter = definition.sandboxAdapter;
+      const adapter = definition.sandboxAdapter ?? deps.sandbox;
       // The agent's model and gateway (ADR 0070) and its effort level (ADR 0078), with or without a sandbox.
       const agentEnv = {
         ...(await gatewayEnv(view, definition, plan.model)),

@@ -121,6 +121,7 @@ export async function serve(env: Env) {
         gatekeeper: gatekeeper(env.FOREMAN_GATEKEEPER_URL, env.FOREMAN_GATEKEEPER_TOKEN),
         harnesses: JSON.parse(env.FOREMAN_HARNESSES || "{}") as Record<string, string>,
         sandboxes: JSON.parse(env.FOREMAN_SANDBOXES || "{}") as Record<string, string>,
+        sandbox: env.FOREMAN_SANDBOX || "docker",
         forges: JSON.parse(env.FOREMAN_FORGES || "{}") as Record<string, string>,
         forgeEnv: {
           ...(env.FOREMAN_FORGE_URL ? { FORGE_URL: env.FOREMAN_FORGE_URL } : {}),
