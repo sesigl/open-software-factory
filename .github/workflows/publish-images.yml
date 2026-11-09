@@ -67,6 +67,21 @@ jobs:
             jq -r '.target | to_entries[] | select(.key != "factory-repo") | "\(.key) \(.value.tags[0])"')
           echo "targets=$targets" >> "$GITHUB_OUTPUT"
 
+      # A release pull request moves the pins and the npm versions together (ADR 0095), and publish-<name> runs at the
+      # same time as this workflow: wait until npm serves each package that an image installs.
+      - name: Wait for the packages of the images on npm
+        if: steps.targets.outputs.targets != ''
+        timeout-minutes: 30
+        run: |
+          for pin in $(grep -o '@opensoftware/[a-z0-9-]*@[0-9][0-9.]*' deploy/compose/compose.yaml | sort -u); do
+            name=${pin%@*}
+            version=${pin##*@}
+            until [ "$(curl -s -o /dev/null -w '%{http_code}' "https://registry.npmjs.org/$name/$version")" = 200 ]; do
+              echo "waiting for $name@$version on npm"
+              sleep 20
+            done
+          done
+
       - name: Build and push the images for amd64 and arm64, with SBOM and provenance
         if: steps.targets.outputs.targets != ''
         working-directory: deploy/compose

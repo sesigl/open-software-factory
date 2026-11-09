@@ -20,11 +20,11 @@ secrets:
 images:
   registry: ghcr.io/sesigl/open-software-factory
   pullPolicy: IfNotPresent
-  gatekeeper: "0.5.0"
-  intake: "0.2.0"
-  foreman: "0.6.0"
-  console: "0.3.0"
-  factorySpec: "0.6.0"
+  gatekeeper: "0.7.0"
+  intake: "0.4.1"
+  foreman: "0.7.0"
+  console: "0.4.0"
+  factorySpec: "0.6.1"
 
 # The factory definition with its prompts, policy and groups, as path: content. Empty: the reference factory in
 # files/factory/. foreman commits the files into Git, so a run's factory version is a commit.

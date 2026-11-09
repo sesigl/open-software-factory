@@ -546,6 +546,89 @@ Feature: Repository checks
     And the output contains "DEPS modules/demo/package.json:1 pair 1.0.0 needs base 2.0.0 exactly; the package does not declare it"
     And the output does not contain "extra"
 
+  @id=SCN-REPO-106 @status=implemented
+  Scenario: PROFILE accepts a profile and a chart that osf profile-pins wrote
+    Given a base commit with a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them
+    When the developer runs "osf check PROFILE" against the base commit
+    Then the command exits with code 0
+    And the output contains "PROFILE ok"
+
+  @id=SCN-REPO-107 @status=implemented
+  Scenario: PROFILE rejects a profile that does not pin the workspace's version of a package
+    Given a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them
+    And the workspace's version of "adapter" is 0.3.1
+    When the developer runs "osf check PROFILE"
+    Then the command exits with code 1
+    And the output contains "PROFILE deploy/compose/compose.yaml:8 is not the released pin; osf profile-pins writes "PACKAGES: "@opensoftware/demo@0.2.0 @opensoftware/adapter@0.3.1"""
+    And the output contains "PROFILE deploy/compose/compose.yaml:5 is not the released pin; osf profile-pins writes "image: ghcr.io/sesigl/open-software-factory/demo:0.2.0-r1""
+
+  @id=SCN-REPO-108 @status=implemented
+  Scenario: PROFILE rejects a module image whose tag is not the version of its own package
+    Given a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them
+    And the image of "demo" in the Compose profile has the tag 0.1.0
+    When the developer runs "osf check PROFILE"
+    Then the command exits with code 1
+    And the output contains "PROFILE deploy/compose/compose.yaml:4 the image demo:0.1.0 installs @opensoftware/demo@0.2.0: its tag must be 0.2.0 or 0.2.0-r<n>"
+
+  @id=SCN-REPO-109 @status=implemented
+  Scenario: PROFILE rejects a chart whose image tag differs from the profile's
+    Given a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them
+    And the Helm chart's tag of "demo" is 0.1.0
+    When the developer runs "osf check PROFILE"
+    Then the command exits with code 1
+    And the output contains "PROFILE deploy/helm/osf/values.yaml:2 is not the released pin; osf profile-pins writes "demo: "0.2.0"""
+
+  @id=SCN-REPO-110 @status=implemented
+  Scenario: PROFILE rejects a chart image that the profile does not run
+    Given a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them
+    And the Helm chart's PostgreSQL image is "postgres:17-alpine"
+    When the developer runs "osf check PROFILE"
+    Then the command exits with code 1
+    And the output contains "PROFILE deploy/helm/osf/values.yaml:4 the image postgres:17-alpine is not an image of deploy/compose/compose.yaml"
+
+  @id=SCN-REPO-111 @status=implemented
+  Scenario: PROFILE rejects a suite that starts an image it does not pull and pulls one that its packages do not name
+    Given a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them
+    And the suite "deploy" of ".github/test-suites.yml" pulls "nats:2.11.9-alpine"
+    When the developer runs "osf check PROFILE"
+    Then the command exits with code 1
+    And the output contains "PROFILE .github/test-suites.yml:1 the suite deploy starts the image postgres:18-alpine but does not pull it"
+    And the output contains "PROFILE .github/test-suites.yml:1 the suite deploy pulls nats:2.11.9-alpine, which none of its packages names"
+
+  @id=SCN-REPO-112 @status=implemented
+  Scenario: PROFILE rejects new packages of an image without a new tag, compared with the base
+    Given a base commit with a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them
+    And a change that moves "adapter" to 0.3.1 in the workspace and in the image of "demo", with its tag unchanged
+    When the developer runs "osf check PROFILE" against the base commit
+    Then the command exits with code 1
+    And the output contains "PROFILE deploy/compose/compose.yaml:4 the packages of the image demo changed, so its tag 0.2.0 must change too"
+
+  @id=SCN-REPO-113 @status=implemented
+  Scenario: PROFILE rejects a changed chart without a new version, compared with the base
+    Given a base commit with a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them
+    And a change that adds the file "deploy/helm/osf/templates.yaml" to the chart
+    When the developer runs "osf check PROFILE" against the base commit
+    Then the command exits with code 1
+    And the output contains "PROFILE deploy/helm/osf/Chart.yaml:1 deploy/helm/osf/templates.yaml changed, so the chart's version must change too"
+
+  @id=SCN-REPO-114 @status=implemented
+  Scenario: osf profile-pins moves a module image to the new version of its module
+    Given a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them
+    And the workspace's version of "demo" is 0.3.0
+    When the developer runs "osf profile-pins"
+    Then the command exits with code 0
+    And "deploy/compose/compose.yaml" pins the image "demo:0.3.0" with the packages "@opensoftware/demo@0.3.0 @opensoftware/adapter@0.3.0"
+    And the Helm chart's tag of "demo" is "0.3.0" and its version is 0.1.1
+
+  @id=SCN-REPO-115 @status=implemented
+  Scenario: osf profile-pins gives an image the next release tag when only an adapter moved
+    Given a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them
+    And the image of "demo" has the tag 0.2.0-r1 with "adapter" 0.3.1, and the workspace's version of "adapter" is 0.3.2
+    When the developer runs "osf profile-pins"
+    Then the command exits with code 0
+    And "deploy/compose/compose.yaml" pins the image "demo:0.2.0-r2" with the packages "@opensoftware/demo@0.2.0 @opensoftware/adapter@0.3.2"
+    And the Helm chart's tag of "demo" is "0.2.0-r2" and its version is 0.1.1
+
   @id=SCN-REPO-074 @status=implemented
   Scenario: AFFECTED rejects a test suite that writes its JUnit results outside its own reports folder
     Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081

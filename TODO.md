@@ -754,7 +754,8 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
 - **Slices:**
   - [x] The stream `OSF`, JetStream publishes with the event ID as message ID in intake, gatekeeper and the foreman,
     and the durable consumers `foreman` and `intake` (ADR 0085, `SCN-FORE-073`, `-074`, `SCN-INTAKE-043`).
-  - [ ] Move the image pins of the Compose profile and the Helm chart to the releases with durable events.
+  - [x] Move the image pins of the Compose profile and the Helm chart to the releases with durable events; each
+    release moves them from now on (ADR 0095).
 
 ### [ ] T-23 · sandbox on by default (P0)
 
