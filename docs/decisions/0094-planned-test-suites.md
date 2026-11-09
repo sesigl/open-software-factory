@@ -63,6 +63,14 @@ changed suites again.
 
 ## Consequences
 
+- Measured on the pull request of this decision:
+
+  | Push | Test jobs | `plan the suites` | Whole `verify` run |
+  | --- | --- | --- | --- |
+  | 1, a change to `verify.yml`, a global dependency | 17, each suite ran | 41 s | the slowest suite, deploy, 326 s |
+  | 2, a commit with no change | none; all 17 suites replayed | 44 s | plan, then `verify`, 74 s |
+
+  Before this decision, push 2 started all 17 test jobs, each with its own runner, install and cache restore.
 - A pull request that changes one module starts the jobs `static`, `plan`, the suites of that module and of the
   modules that depend on it, `cache` and `verify`.
 - A change to `turbo.json`, a global dependency or a library that every suite uses still runs every suite.
