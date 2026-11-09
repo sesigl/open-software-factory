@@ -88,9 +88,14 @@ export interface Smoke {
   until<T>(read: () => Promise<T> | T, expected: T): Promise<void>;
 }
 
+/** Where the workspace image holds the scripted agent, for the sandboxes that start from it (ADR 0096). */
+export const SANDBOX_AGENT = "/opt/osf/harness-agent.ts";
+
 /**
  * Writes the e2e factory with `factory` as its factory.yaml and the profile's .env, with the fake Slack and the scripted
  * agent with `turns`. The forge, when given, is the one the factory's tools reach. `more` adds E2E_ values to .env.
+ * With `sandboxes`, the agents run in sandboxes of the workspace image, which reach the testkit and the forge at
+ * host.docker.internal; foreman then mounts no folder of the agent.
  */
 export async function smoke(
   sut: Sut,
@@ -99,6 +104,7 @@ export async function smoke(
   turns: HarnessTurn[] = [],
   forge?: Forge,
   more: Record<string, string> = {},
+  options: { sandboxes?: boolean } = {},
 ): Promise<Smoke> {
   for (const [path, content] of Object.entries(fakes.fromRepository("e2e/factory")))
     await sut.files.put(`$INPUT/factory/${path}`, content);
@@ -107,8 +113,13 @@ export async function smoke(
   const [litellm] = Object.values(fakes.fromRepository("deploy/compose/litellm"));
   await sut.files.put("$INPUT/litellm/config.yaml", litellm as string);
   const slack = await fakes.slack({ containers: true });
-  const harness = await fakes.harness(turns, { containers: true });
-  const [agentDir, harnessDir] = harness.mounts as [string, string];
+  const harness = await fakes.harness(
+    turns,
+    options.sandboxes ? { sandboxes: { agent: SANDBOX_AGENT } } : { containers: true },
+  );
+  await sut.files.put("$INPUT/no-agent/.keep", "");
+  const none = sut.files.path("$INPUT/no-agent");
+  const [agentDir, harnessDir] = (harness.mounts ?? [none, none]) as [string, string];
   const values: Record<string, string> = {
     POSTGRES_PASSWORD: "postgres-password-1",
     LITELLM_MASTER_KEY: LITELLM_KEY,

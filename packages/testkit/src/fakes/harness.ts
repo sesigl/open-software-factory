@@ -1,11 +1,15 @@
 // A scripted coding agent that speaks ACP on stdio (ADR 0018). The module starts it like any ACP agent; the agent
 // performs the scripted file edits and commands and ends each turn. A prompt that matches no turn fails the scenario.
 // For containers, the agent runs with the container's node and names the folders the container must mount (ADR 0076).
-import { chmodSync, existsSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, extname, join, sep } from "node:path";
+// For sandboxes, which mount nothing, it takes its script from the testkit and sends its log to it over HTTP (ADR 0096).
+import { appendFileSync, chmodSync, existsSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
+import { dirname, join, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { StopReason, ToolKind } from "@agentclientprotocol/sdk";
 import { tempFolder } from "../support/temp.ts";
+import { HARNESS_AGENT as AGENT } from "./harness-agent-file.ts";
 
 export interface HarnessTool {
   /** The title of the tool call, for example "rm -rf build". */
@@ -93,6 +97,13 @@ export interface HarnessOptions {
    * of the host the container needs. Default false.
    */
   containers?: boolean;
+  /**
+   * The module runs the agent in a sandbox, which mounts no folder of the host: the sandbox's template holds the agent
+   * file `HARNESS_AGENT` at `agent`, with the ACP SDK where the file finds it. The agent takes its script from the
+   * testkit and sends its log to it over HTTP at `host.docker.internal`, through the sandbox's egress proxy, so the
+   * sandbox's egress must allow that host. Default: none.
+   */
+  sandboxes?: { agent: string };
 }
 
 /** One line of the agent's log: a prompt it received, a tool call it asked to approve, or a session it opened. */
@@ -101,9 +112,6 @@ export type HarnessLogEntry =
   | { tool: HarnessToolCall }
   | { command: HarnessCommand }
   | { session: HarnessSession };
-
-// Next to this file in the source tree and in the built package alike.
-const AGENT = fileURLToPath(new URL(`./harness-agent${extname(fileURLToPath(import.meta.url))}`, import.meta.url));
 
 /** The deepest folder that holds both paths. */
 function commonFolder(a: string, b: string): string {
@@ -120,16 +128,58 @@ function agentFolder(): string {
   return commonFolder(realpathSync(dirname(AGENT)), sdk);
 }
 
-export function startHarness(
+/** Serves the script at /script and appends each line posted to /log, for an agent in a sandbox; its port. */
+async function serveScript(script: HarnessTurn[], logFile: string): Promise<{ port: number; close(): Promise<void> }> {
+  const server = createServer((request, response) => {
+    if (request.method === "GET" && request.url === "/script") {
+      response.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify(script));
+      return;
+    }
+    if (request.method !== "POST" || request.url !== "/log") {
+      response.writeHead(404).end();
+      return;
+    }
+    let body = "";
+    request.setEncoding("utf8");
+    request.on("data", (chunk: string) => {
+      body += chunk;
+    });
+    request.on("end", () => {
+      appendFileSync(logFile, `${body}\n`);
+      response.writeHead(204).end();
+    });
+  });
+  await new Promise<void>((resolve) => server.listen(0, "0.0.0.0", resolve));
+  return {
+    port: (server.address() as AddressInfo).port,
+    close: () => new Promise<void>((resolve) => server.close(() => resolve())),
+  };
+}
+
+/** The agent's command line: in a sandbox the template's agent with the testkit's URLs, else this agent's files. */
+function commandOf(options: HarnessOptions, scriptFile: string, logFile: string, port?: number) {
+  if (options.sandboxes) {
+    const url = `http://host.docker.internal:${port}`;
+    // Node's fetch takes the sandbox's egress proxy from HTTP_PROXY only with NODE_USE_ENV_PROXY.
+    return {
+      command: "env",
+      args: ["NODE_USE_ENV_PROXY=1", "node", options.sandboxes.agent, `${url}/script`, `${url}/log`],
+    };
+  }
+  return { command: options.containers ? "node" : process.execPath, args: [AGENT, scriptFile, logFile] };
+}
+
+export async function startHarness(
   script: HarnessTurn[],
   options: HarnessOptions = {},
-): { harness: Harness; close(): Promise<string[]> } {
+): Promise<{ harness: Harness; close(): Promise<string[]> }> {
   const dir = tempFolder("osf-harness-");
   const scriptFile = join(dir, "script.json");
   const logFile = join(dir, "log.jsonl");
   writeFileSync(scriptFile, JSON.stringify(script));
   // The container's user is another than the test's: it may read the script and write the log.
   if (options.containers) chmodSync(dir, 0o777);
+  const server = options.sandboxes ? await serveScript(script, logFile) : undefined;
   const entries = (): HarnessLogEntry[] =>
     existsSync(logFile)
       ? readFileSync(logFile, "utf8")
@@ -140,8 +190,7 @@ export function startHarness(
   const prompts = () => entries().flatMap((entry) => ("prompt" in entry ? [entry] : []));
   return {
     harness: {
-      command: options.containers ? "node" : process.execPath,
-      args: [AGENT, scriptFile, logFile],
+      ...commandOf(options, scriptFile, logFile, server?.port),
       ...(options.containers ? { mounts: [agentFolder(), dir] } : {}),
       prompts: () => prompts().map((entry) => entry.prompt),
       steeringRequests: () => prompts().flatMap((entry) => (entry.steering ? [entry.prompt] : [])),
@@ -150,6 +199,7 @@ export function startHarness(
       commands: () => entries().flatMap((entry) => ("command" in entry ? [entry.command] : [])),
     },
     async close() {
+      await server?.close();
       const failed = entries()
         .flatMap((entry) => ("command" in entry && entry.command.exitCode !== 0 ? [entry.command] : []))
         .map(({ command, exitCode, output }) => `harness command failed with ${exitCode}: ${command}\n${output}`);

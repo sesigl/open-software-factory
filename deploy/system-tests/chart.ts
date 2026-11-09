@@ -9,6 +9,7 @@ const SECRETS: Record<string, string> = {
   gatekeeperApiToken: "gatekeeper-token-1",
   gatekeeperSlackToken: "xoxb-gatekeeper-1",
   gatekeeperSlackSigningSecret: "slack-signing-secret-1",
+  litellmMasterKey: "sk-litellm-master-1",
 };
 
 /**

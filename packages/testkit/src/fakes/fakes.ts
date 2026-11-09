@@ -110,7 +110,7 @@ export function makeFakes(moduleRoot: string): FakesHandle {
         return (await inProcess(startHttp(routes, options))).http;
       },
       async harness(script, options) {
-        return (await inProcess(Promise.resolve(startHarness(script, options)))).harness;
+        return (await inProcess(startHarness(script, options))).harness;
       },
       async sandbox(options) {
         return (await inProcess(Promise.resolve(startSandbox(options)))).sandbox;

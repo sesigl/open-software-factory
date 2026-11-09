@@ -2,7 +2,7 @@
 // PROFILE expects them. The release workflow runs it in the release pull request, so each release moves the pins.
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { CHART, COMPOSE, pins, VALUES } from "../checks/lib/profile.ts";
+import { COMPOSE, pins } from "../checks/lib/profile.ts";
 import { Repo } from "../checks/lib/repo.ts";
 
 export function profilePins(root: string): number {
@@ -12,12 +12,7 @@ export function profilePins(root: string): number {
     return 1;
   }
   const wanted = pins(repo);
-  const files: [string, string][] = [
-    [COMPOSE, wanted.compose],
-    [VALUES, wanted.values],
-    [CHART, wanted.chart],
-  ];
-  for (const [file, text] of files) {
+  for (const [file, text] of wanted.files) {
     if (!repo.exists(file) || repo.read(file) === text) continue;
     writeFileSync(join(root, file), text);
     process.stdout.write(`wrote ${file}\n`);

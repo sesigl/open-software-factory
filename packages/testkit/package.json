@@ -11,7 +11,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./readme": "./src/support/readme.ts"
+    "./readme": "./src/support/readme.ts",
+    "./harness-agent": "./src/fakes/harness-agent-file.ts"
   },
   "bin": {
     "testkit": "bin/testkit.ts"
@@ -29,6 +30,10 @@
       "./readme": {
         "types": "./dist/src/support/readme.d.ts",
         "default": "./dist/src/support/readme.js"
+      },
+      "./harness-agent": {
+        "types": "./dist/src/fakes/harness-agent-file.d.ts",
+        "default": "./dist/src/fakes/harness-agent-file.js"
       }
     },
     "bin": {

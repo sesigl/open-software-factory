@@ -1,4 +1,5 @@
-// The scripted ACP agent that fakes.harness() starts as a process: node harness-agent.ts <script.json> <log.jsonl>.
+// The scripted ACP agent that fakes.harness() starts as a process: node harness-agent.ts <script.json> <log.jsonl>. In a
+// sandbox both are URLs of the testkit: it gets the script and posts each log line, in order (ADR 0096).
 // For each prompt it takes the first unused turn whose `when` the prompt contains, asks the client to approve the
 // turn's tool calls, applies its edits, runs its commands, streams the reply and ends the turn. A prompt that a waiting turn waits for
 // is a steering message: it ends at once and lets that turn go on. The agent also takes a steering message as the
@@ -8,11 +9,21 @@ import { spawnSync } from "node:child_process";
 import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
-import { type AgentContext, agent, type ContentBlock, ndJsonStream, PROTOCOL_VERSION } from "@agentclientprotocol/sdk";
+import {
+  type AgentContext,
+  agent,
+  type ContentBlock,
+  ndJsonStream,
+  PROTOCOL_VERSION,
+  type PromptResponse,
+} from "@agentclientprotocol/sdk";
 import type { HarnessLogEntry, HarnessTurn } from "./harness.ts";
 
 const [scriptFile, logFile] = process.argv.slice(2) as [string, string];
-const script = JSON.parse(readFileSync(scriptFile, "utf8")) as HarnessTurn[];
+const remote = /^https?:\/\//.test(scriptFile);
+const script = (
+  remote ? await (await fetch(scriptFile)).json() : JSON.parse(readFileSync(scriptFile, "utf8"))
+) as HarnessTurn[];
 const used = new Set<number>();
 
 interface Session {
@@ -23,7 +34,13 @@ interface Session {
 const sessions = new Map<string, Session>();
 let writesThroughClient = false;
 let toolCalls = 0;
-const log = (entry: HarnessLogEntry): void => appendFileSync(logFile, `${JSON.stringify(entry)}\n`);
+/** The log lines posted so far; each answer waits for them, so the testkit has them when the module sees it. */
+let posted = Promise.resolve();
+const log = (entry: HarnessLogEntry): void => {
+  const line = JSON.stringify(entry);
+  if (remote) posted = posted.then(() => fetch(logFile, { method: "POST", body: line }).then(() => undefined));
+  else appendFileSync(logFile, `${line}\n`);
+};
 
 /** Asks the client to approve each tool call of the turn; true when it allowed every one. */
 async function approveTools(client: AgentContext, sessionId: string, turn: HarnessTurn): Promise<boolean> {
@@ -80,7 +97,7 @@ agent({ name: "testkit-scripted-harness" })
       authMethods: [],
     };
   })
-  .onRequest("session/new", ({ params }) => {
+  .onRequest("session/new", async ({ params }) => {
     const sessionId = `session-${sessions.size + 1}`;
     sessions.set(sessionId, { cwd: params.cwd });
     // The model variables (ADR 0070) and the effort level (ADR 0078) the agent got.
@@ -88,6 +105,7 @@ agent({ name: "testkit-scripted-harness" })
       /^(OPENAI_|ANTHROPIC_|OSF_EFFORT$|TRACEPARENT$)/.test(name),
     );
     log({ session: { cwd: params.cwd, env: Object.fromEntries(env) as Record<string, string> } });
+    await posted;
     return { sessionId };
   })
   .onNotification("session/cancel", ({ params }) => {
@@ -97,63 +115,68 @@ agent({ name: "testkit-scripted-harness" })
   .onRequest(
     "_session/steering",
     (params: unknown) => params as { sessionId: string; prompt: ContentBlock[] },
-    ({ params }) => {
+    async ({ params }) => {
       const prompt = textOf(params.prompt);
       const waiting = sessions.get(params.sessionId)?.waiting;
       const injected = waiting !== undefined && prompt.includes(waiting.text);
       log({ prompt, scripted: injected, steering: true });
       if (injected) waiting.wake("steered");
+      await posted;
       return { outcome: injected ? "injected" : "failed" };
     },
   )
   .onRequest("session/prompt", async ({ params, client }) => {
-    const prompt = textOf(params.prompt);
-    const session = sessions.get(params.sessionId) ?? { cwd: process.cwd() };
-    if (session.waiting && prompt.includes(session.waiting.text)) {
-      log({ prompt, scripted: true });
-      session.waiting.wake("steered");
-      return { stopReason: "end_turn" };
-    }
-    const index = script.findIndex((turn, at) => !used.has(at) && prompt.includes(turn.when));
-    log({ prompt, scripted: index >= 0 });
-    const turn = script[index];
-    if (!turn) return { stopReason: "refusal" };
-    used.add(index);
-    const allowed = await approveTools(client, params.sessionId, turn);
-    if (turn.waitsFor !== undefined) {
-      const text = turn.waitsFor;
-      const how = await new Promise<string>((wake) => {
-        session.waiting = { text, wake, ignoresCancel: turn.ignoresCancel === true };
-      });
-      session.waiting = undefined;
-      if (how === "cancelled") return { stopReason: "cancelled" };
-    }
-    for (const [path, content] of Object.entries(allowed ? (turn.edits ?? {}) : {})) {
-      const full = isAbsolute(path) ? path : resolve(session.cwd, path);
-      if (writesThroughClient) {
-        await client.request("fs/write_text_file", { sessionId: params.sessionId, path: full, content });
-      } else {
-        mkdirSync(dirname(full), { recursive: true });
-        writeFileSync(full, content);
+    const answer = await (async (): Promise<PromptResponse> => {
+      const prompt = textOf(params.prompt);
+      const session = sessions.get(params.sessionId) ?? { cwd: process.cwd() };
+      if (session.waiting && prompt.includes(session.waiting.text)) {
+        log({ prompt, scripted: true });
+        session.waiting.wake("steered");
+        return { stopReason: "end_turn" };
       }
-    }
-    const commands = runCommands(allowed ? (turn.commands ?? []) : [], session.cwd);
-    const reply = `${commands.output}${turn.reply ?? ""}`;
-    if (reply) {
-      await client.notify("session/update", {
-        sessionId: params.sessionId,
-        update: { sessionUpdate: "agent_message_chunk", content: { type: "text", text: reply } },
-      });
-    }
-    if (!commands.ok) return { stopReason: "refusal" };
-    if (turn.costUsd !== undefined) {
-      await client.notify("session/update", {
-        sessionId: params.sessionId,
-        update: { sessionUpdate: "usage_update", used: 0, size: 0, cost: { amount: turn.costUsd, currency: "USD" } },
-      });
-    }
-    const usage = turn.usage && { ...turn.usage, totalTokens: turn.usage.inputTokens + turn.usage.outputTokens };
-    return { stopReason: turn.stopReason ?? "end_turn", ...(usage ? { usage } : {}) };
+      const index = script.findIndex((turn, at) => !used.has(at) && prompt.includes(turn.when));
+      log({ prompt, scripted: index >= 0 });
+      const turn = script[index];
+      if (!turn) return { stopReason: "refusal" };
+      used.add(index);
+      const allowed = await approveTools(client, params.sessionId, turn);
+      if (turn.waitsFor !== undefined) {
+        const text = turn.waitsFor;
+        const how = await new Promise<string>((wake) => {
+          session.waiting = { text, wake, ignoresCancel: turn.ignoresCancel === true };
+        });
+        session.waiting = undefined;
+        if (how === "cancelled") return { stopReason: "cancelled" };
+      }
+      for (const [path, content] of Object.entries(allowed ? (turn.edits ?? {}) : {})) {
+        const full = isAbsolute(path) ? path : resolve(session.cwd, path);
+        if (writesThroughClient) {
+          await client.request("fs/write_text_file", { sessionId: params.sessionId, path: full, content });
+        } else {
+          mkdirSync(dirname(full), { recursive: true });
+          writeFileSync(full, content);
+        }
+      }
+      const commands = runCommands(allowed ? (turn.commands ?? []) : [], session.cwd);
+      const reply = `${commands.output}${turn.reply ?? ""}`;
+      if (reply) {
+        await client.notify("session/update", {
+          sessionId: params.sessionId,
+          update: { sessionUpdate: "agent_message_chunk", content: { type: "text", text: reply } },
+        });
+      }
+      if (!commands.ok) return { stopReason: "refusal" };
+      if (turn.costUsd !== undefined) {
+        await client.notify("session/update", {
+          sessionId: params.sessionId,
+          update: { sessionUpdate: "usage_update", used: 0, size: 0, cost: { amount: turn.costUsd, currency: "USD" } },
+        });
+      }
+      const usage = turn.usage && { ...turn.usage, totalTokens: turn.usage.inputTokens + turn.usage.outputTokens };
+      return { stopReason: turn.stopReason ?? "end_turn", ...(usage ? { usage } : {}) };
+    })();
+    await posted;
+    return answer;
   })
   .connect(
     ndJsonStream(

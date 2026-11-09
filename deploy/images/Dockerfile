@@ -35,9 +35,15 @@ COPY --from=opa /opa /usr/local/bin/opa
 
 FROM module AS agent
 USER root
+# In a sandbox, git takes the token from gh, whose GH_TOKEN is the secret's placeholder, and commits as the factory.
 RUN apt-get update \
   && apt-get install --yes --no-install-recommends gh make \
-  && rm -rf /var/lib/apt/lists/*
+  && rm -rf /var/lib/apt/lists/* \
+  && git config --system credential.https://github.com.helper '!gh auth git-credential' \
+  && git config --system user.name factory \
+  && git config --system user.email factory@localhost
+# Claude Code reaches only the hosts of the sandbox's egress: no telemetry, error reports or update checks.
+ENV CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
 USER node
 
 FROM agent AS foreman

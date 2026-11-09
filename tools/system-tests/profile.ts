@@ -22,7 +22,24 @@ export interface Profile {
   pull?: string;
   /** An image that only the testkit, a dependency of deploy, names. */
   testkitImage?: string;
+  /** The target of deploy/images/Dockerfile that the image demo builds, and that Dockerfile. */
+  target?: string;
+  dockerfile?: string;
+  /** A volume of compose.yaml with the name of the service demo. */
+  volume?: boolean;
+  /** The agents' template that the reference factory names. */
+  template?: string;
 }
+
+/** A Dockerfile whose stage demo builds on the stage base and the global ARG NODE. */
+export const DOCKERFILE = [
+  "ARG NODE=node:24",
+  "FROM ${NODE} AS base",
+  "RUN echo base",
+  "FROM base AS demo",
+  "RUN echo demo",
+  "",
+];
 
 export const REGISTRY = "ghcr.io/sesigl/open-software-factory";
 
@@ -37,6 +54,10 @@ export function profileRepository(profile: Profile = {}): Record<string, string>
     chartVersion = "0.1.0",
     pull = "postgres:18-alpine",
     testkitImage,
+    target,
+    dockerfile,
+    volume = false,
+    template,
   } = profile;
   const manifest = (name: string, version: string, tested = false) => {
     const scripts = tested ? { scripts: { "test:system": "vitest run" } } : {};
@@ -58,10 +79,16 @@ export function profileRepository(profile: Profile = {}): Record<string, string>
       "  demo:",
       `    image: ${REGISTRY}/demo:${tag}`,
       "    build:",
+      ...(target ? [`      target: ${target}`] : []),
       "      args:",
       `        PACKAGES: "${pins}"`,
+      ...(volume ? ["volumes:", "  demo:"] : []),
       "",
     ].join("\n"),
+    ...(dockerfile ? { "deploy/images/Dockerfile": dockerfile } : {}),
+    ...(template
+      ? { "deploy/compose/factory/factory.yaml": `agents:\n  a:\n    sandbox:\n      template: ${template}\n` }
+      : {}),
     "deploy/helm/osf/values.yaml": `images:\n  demo: "${chartTag}"\npostgres:\n  image: ${chartImage}\n`,
     "deploy/helm/osf/Chart.yaml": `name: osf\nversion: ${chartVersion}\n`,
     ".github/test-suites.yml": `- suite: deploy\n  filter: "@opensoftware/deploy"\n  pull: ${pull}\n`,

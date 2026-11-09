@@ -2,13 +2,15 @@
 // Each `@opensoftware/<name>@<version>` of deploy/compose/compose.yaml is the workspace's version of that package. A
 // module image whose packages change gets a new tag: the module's new version, or `<version>-r<n+1>` when only an
 // adapter of it moved, as a published tag never changes. The chart's `images.*` take the same tags, and the chart's
-// version moves by a patch when they change.
+// version moves by a patch when they change. The factories of deploy/ name the agents' template, an image of the
+// profile, at the same tag (ADR 0096).
 import type { Repo } from "./repo.ts";
 import { workspace } from "./workspace.ts";
 
 export const COMPOSE = "deploy/compose/compose.yaml";
 export const VALUES = "deploy/helm/osf/values.yaml";
 export const CHART = "deploy/helm/osf/Chart.yaml";
+export const FACTORIES = ["deploy/compose/factory/factory.yaml", "deploy/dogfood/factory/factory.yaml"];
 export const REGISTRY = "ghcr.io/sesigl/open-software-factory";
 
 const PIN = /@opensoftware\/([a-z0-9-]+)@(\d+\.\d+\.\d+)/g;
@@ -20,6 +22,8 @@ export interface Pins {
   compose: string;
   values: string;
   chart: string;
+  /** Each file that `osf profile-pins` writes, with its text as it writes it: the three above and the factories. */
+  files: [string, string][];
   /** The tag of each module image, by module name. */
   tags: Map<string, string>;
 }
@@ -37,8 +41,13 @@ export interface Service {
 /** The services of compose.yaml, each with its text. */
 export function services(compose: string): Service[] {
   const lines = compose.split("\n");
-  const starts = lines.flatMap((line, index) => (/^ {2}[a-z0-9-]+:$/.test(line) ? [index] : []));
-  const top = lines.findIndex((line, index) => index > (starts[0] ?? 0) && /^[a-z]/.test(line));
+  // Only the section services: volumes and secrets have entries at the same depth, some with a service's name.
+  const section = lines.indexOf("services:");
+  const after = lines.findIndex((line, index) => index > section && /^[a-z]/.test(line));
+  const top = after < 0 ? lines.length : after;
+  const starts = lines.flatMap((line, index) =>
+    section >= 0 && index > section && index < top && /^ {2}[a-z0-9-]+:$/.test(line) ? [index] : [],
+  );
   return starts.map((start, position) => {
     const end = starts[position + 1] ?? (top > start ? top : lines.length);
     const text = lines.slice(start, end).join("\n");
@@ -95,5 +104,17 @@ export function pins(repo: Repo): Pins {
       return `version: ${major}.${minor}.${Number(patch) + 1}`;
     });
   }
-  return { compose, values, chart, tags };
+  const files: [string, string][] = [
+    [COMPOSE, compose],
+    [VALUES, values],
+    [CHART, chart],
+  ];
+  for (const factory of FACTORIES.filter((file) => repo.exists(file))) {
+    let text = repo.read(factory);
+    for (const [module, tag] of tags) {
+      text = text.replaceAll(new RegExp(`(${ESCAPED}/${module}):[^\\s"']+`, "g"), `$1:${tag}`);
+    }
+    files.push([factory, text]);
+  }
+  return { compose, values, chart, files, tags };
 }

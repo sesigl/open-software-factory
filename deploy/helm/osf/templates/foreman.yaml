@@ -39,6 +39,16 @@ spec:
     spec:
       {{- include "osf.podSecurity" . | nindent 6 }}
       initContainers:
+        # foreman attaches to LiteLLM when it starts, so it waits until LiteLLM answers, as in the Compose profile.
+        - name: litellm
+          image: {{ include "osf.image" (dict "root" . "name" "foreman" "tag" .Values.images.foreman) }}
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          command: [sh, -c]
+          args:
+            - |
+              until node -e 'fetch("http://litellm:4000/health/liveliness").then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))'; do
+                sleep 1
+              done
         # The namespace of the runs, created when it is missing, as the Compose profile does.
         - name: temporal-namespace
           image: {{ .Values.temporal.adminToolsImage }}
@@ -119,6 +129,10 @@ spec:
               value: {{ .Values.foreman.harnesses | quote }}
             - name: FOREMAN_FORGES
               value: {{ .Values.foreman.forges | quote }}
+            # A factory with providers.inference litellm attaches to the service litellm with its master key.
+            - name: FOREMAN_INFERENCES
+              value: '{"litellm": "inference-litellm"}'
+            {{- include "osf.secretEnv" (dict "root" . "name" "OSF_SECRET_LITELLM_MASTER_KEY" "key" "litellm-master-key") | nindent 12 }}
           ports:
             - name: http
               containerPort: 8080

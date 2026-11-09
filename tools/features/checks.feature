@@ -619,6 +619,45 @@ Feature: Repository checks
     Then the command exits with code 1
     And the output contains "PROFILE deploy/helm/osf/Chart.yaml:1 deploy/helm/osf/templates.yaml changed, so the chart's version must change too"
 
+  @id=SCN-REPO-117 @status=implemented
+  Scenario: PROFILE rejects a changed stage of the image Dockerfile without a new tag, compared with the base
+    Given a base commit with a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them, with the image of "demo" built from the target "demo" of "deploy/images/Dockerfile"
+    And a change that adds a line to the stage "base" that the stage "demo" builds on, with the tag of "demo" unchanged
+    When the developer runs "osf check PROFILE" against the base commit
+    Then the command exits with code 1
+    And the output contains "PROFILE deploy/compose/compose.yaml:4 the stage demo of deploy/images/Dockerfile changed, so the tag 0.2.0 of the image demo must change too"
+
+  @id=SCN-REPO-118 @status=implemented
+  Scenario: PROFILE accepts a changed comment of the image Dockerfile without a new tag, compared with the base
+    Given a base commit with a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them, with the image of "demo" built from the target "demo" of "deploy/images/Dockerfile"
+    And a change that adds a comment to the stage "demo", with the tag of "demo" unchanged
+    When the developer runs "osf check PROFILE" against the base commit
+    Then the command exits with code 0
+
+  @id=SCN-REPO-119 @status=implemented
+  Scenario: PROFILE rejects new packages of an image without a new tag also when a volume has the name of its service
+    Given a base commit with a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them, and the volume "demo"
+    And a change that moves "adapter" to 0.3.1 in the workspace and in the image of "demo", with its tag unchanged
+    When the developer runs "osf check PROFILE" against the base commit
+    Then the command exits with code 1
+    And the output contains "PROFILE deploy/compose/compose.yaml:4 the packages of the image demo changed, so its tag 0.2.0 must change too"
+
+  @id=SCN-REPO-120 @status=implemented
+  Scenario: PROFILE rejects a template of the reference factory whose tag differs from the profile's image
+    Given a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them
+    And the reference factory names the template "ghcr.io/sesigl/open-software-factory/demo:0.1.0"
+    When the developer runs "osf check PROFILE"
+    Then the command exits with code 1
+    And the output contains "PROFILE deploy/compose/factory/factory.yaml:4 is not the released pin; osf profile-pins writes "template: ghcr.io/sesigl/open-software-factory/demo:0.2.0""
+
+  @id=SCN-REPO-121 @status=implemented
+  Scenario: osf profile-pins moves the template of the reference factory to the tag of the profile's image
+    Given a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them
+    And the reference factory names the template "ghcr.io/sesigl/open-software-factory/demo:0.1.0"
+    When the developer runs "osf profile-pins"
+    Then the command exits with code 0
+    And the reference factory names the template "ghcr.io/sesigl/open-software-factory/demo:0.2.0"
+
   @id=SCN-REPO-114 @status=implemented
   Scenario: osf profile-pins moves a module image to the new version of its module
     Given a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them

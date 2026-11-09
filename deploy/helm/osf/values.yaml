@@ -2,8 +2,8 @@
 
 # Every secret of the factory. Set each value, or name a Secret with the same keys in existingSecret, for example one
 # that OpenBao fills through its operator or the External Secrets Operator. The keys: postgres-password,
-# foreman-api-token, intake-api-token, gatekeeper-api-token, gatekeeper-slack-token, gatekeeper-slack-signing-secret
-# and, optional, forge-token.
+# foreman-api-token, intake-api-token, gatekeeper-api-token, gatekeeper-slack-token, gatekeeper-slack-signing-secret,
+# litellm-master-key and, optional, forge-token.
 secrets:
   existingSecret: ""
   postgresPassword: ""
@@ -12,6 +12,8 @@ secrets:
   gatekeeperApiToken: ""
   gatekeeperSlackToken: ""
   gatekeeperSlackSigningSecret: ""
+  # The master key of LiteLLM, like sk-<random>. foreman makes each run's own key with it.
+  litellmMasterKey: ""
   # A token that may read pull requests and their checks, for stages with checks. Optional.
   forgeToken: ""
 
@@ -22,7 +24,7 @@ images:
   pullPolicy: IfNotPresent
   gatekeeper: "0.7.0"
   intake: "0.4.1"
-  foreman: "0.7.0-r1"
+  foreman: "0.7.0-r2"
   console: "0.4.0"
   factorySpec: "0.6.1"
 
@@ -39,6 +41,11 @@ gatekeeper:
 
 intake:
   forgeAdapter: forge-github
+  resources: {}
+
+# The LLM gateway, with the model routes of files/litellm/config.yaml, the profile's.
+litellm:
+  image: ghcr.io/berriai/litellm:v1.106.2
   resources: {}
 
 foreman:

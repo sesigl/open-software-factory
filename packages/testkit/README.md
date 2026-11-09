@@ -158,7 +158,11 @@ Every server, client and subscription stops when the scenario ends, before the f
   `refusal` and fails the scenario with its output; `commands()` lists each with its `exitCode` and `output`.
   `fakes.harness(script, { containers: true })` lets a module run the agent in a container: `command` is then `node`
   and `mounts` names the agent's code folder and its script folder, which the container mounts at the same paths
-  ([ADR 0076](../../docs/decisions/0076-e2e-smoke-suite.md)).
+  ([ADR 0076](../../docs/decisions/0076-e2e-smoke-suite.md)). `fakes.harness(script, { sandboxes: { agent } })` is for
+  a sandbox, which mounts nothing: its template holds the file `HARNESS_AGENT` (also `@opensoftware/testkit/harness-agent`)
+  at `agent`, with the ACP SDK where the file finds it, and the agent takes its script and sends its log over HTTP at
+  `host.docker.internal`, which the sandbox's egress must allow
+  ([ADR 0096](../../docs/decisions/0096-agents-in-sandboxes-in-the-profile.md)).
 - `fakes.sandbox({ templates })`: a sandbox adapter with the commands `create`, `exec`, `copy`, `destroy` and `list`
   of the [sandbox port](../../ports/sandbox/README.md), whose sandboxes are folders on the host, for a module that
   drives the port without Docker ([ADR 0068](../../docs/decisions/0068-foreman-sandboxes.md)). Run it with its
@@ -445,3 +449,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-133 | implemented | The scripted harness records each session's trace context |
 | SCN-TK-134 | implemented | sut.compose takes down the project of a run that ended without taking it down |
 | SCN-TK-135 | implemented | sut.http.output shows what every server of the scenario printed, the first one first |
+| SCN-TK-136 | implemented | A scripted harness for sandboxes takes its script and sends its log over HTTP, with no folder of its script mounted |

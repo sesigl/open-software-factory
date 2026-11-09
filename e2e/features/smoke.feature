@@ -39,3 +39,12 @@ Feature: Key use cases across modules
     Given a factory applied from "factory.yaml"
     When a person changes a webhook directly in Forgejo
     Then "factory plan" reports the webhook as drift
+
+  @id=SCN-E2E-006 @status=implemented @realizes=SCN-FACTORY-RUNTIME-006
+  Scenario: An agent in a sandbox pushes to the forge with a placeholder, and holds no token of the foreman
+    Given a factory whose agent "implement" runs in a sandbox of the workspace image with the egress allowlist "host.docker.internal" and the secret "ref:env/FORGE_TOKEN"
+    And the scripted harness prints its environment and pushes the branch "sandboxed" with "$FORGE_TOKEN" as its password when asked to implement
+    When a program posts the work item to foreman's "/v1/runs" with the API token
+    Then the stage "implement" succeeded, and Forgejo has the branch "sandboxed"
+    And the agent's environment holds "FORGE_TOKEN" as "osf-secret-placeholder-FORGE_TOKEN"
+    And it holds none of the forge token, the master key of litellm and the API tokens of foreman, intake and gatekeeper

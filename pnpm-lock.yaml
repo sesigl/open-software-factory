@@ -313,6 +313,9 @@ importers:
       '@opensoftware/proof':
         specifier: workspace:*
         version: link:../modules/proof
+      '@opensoftware/sandbox-docker':
+        specifier: workspace:*
+        version: link:../adapters/sandbox/docker
       '@opensoftware/taskcapture':
         specifier: workspace:*
         version: link:../modules/taskcapture

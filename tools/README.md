@@ -230,3 +230,8 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-114 | implemented | osf profile-pins moves a module image to the new version of its module |
 | SCN-REPO-115 | implemented | osf profile-pins gives an image the next release tag when only an adapter moved |
 | SCN-REPO-116 | implemented | PROFILE rejects a pull that only the testkit names, as a suite names the testkit's fakes in "images" |
+| SCN-REPO-117 | implemented | PROFILE rejects a changed stage of the image Dockerfile without a new tag, compared with the base |
+| SCN-REPO-118 | implemented | PROFILE accepts a changed comment of the image Dockerfile without a new tag, compared with the base |
+| SCN-REPO-119 | implemented | PROFILE rejects new packages of an image without a new tag also when a volume has the name of its service |
+| SCN-REPO-120 | implemented | PROFILE rejects a template of the reference factory whose tag differs from the profile's image |
+| SCN-REPO-121 | implemented | osf profile-pins moves the template of the reference factory to the tag of the profile's image |

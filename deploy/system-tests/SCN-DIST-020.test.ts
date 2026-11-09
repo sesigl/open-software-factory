@@ -1,7 +1,7 @@
 import { scenario } from "@opensoftware/testkit";
 import { profile, words } from "./profile.ts";
 
-scenario("SCN-DIST-005", async ({ sut, given, when, then }) => {
+scenario("SCN-DIST-020", async ({ sut, given, when, then }) => {
   let compose: Awaited<ReturnType<typeof profile>>;
   await given('the Compose profile with every value of ".env.example" set in ".env"', async () => {
     compose = await profile(sut);
@@ -16,7 +16,7 @@ scenario("SCN-DIST-005", async ({ sut, given, when, then }) => {
     expect(plan.exitCode, plan.stderr).toBe(0);
   });
 
-  await then('the output contains "Plan: 7 to add, 0 to change, 0 to remove, 0 drifted."', async () => {
-    expect(plan.stdout).toContain("Plan: 7 to add, 0 to change, 0 to remove, 0 drifted.");
+  await then('the output contains "Plan: 8 to add, 0 to change, 0 to remove, 0 drifted."', async () => {
+    expect(plan.stdout).toContain("Plan: 8 to add, 0 to change, 0 to remove, 0 drifted.");
   });
 });

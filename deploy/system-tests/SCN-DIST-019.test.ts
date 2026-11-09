@@ -1,7 +1,7 @@
 import { scenario } from "@opensoftware/testkit";
 import { cluster, install, values, workloads } from "./chart.ts";
 
-scenario("SCN-DIST-007", async ({ sut, given, when, then }) => {
+scenario("SCN-DIST-019", async ({ sut, given, when, then }) => {
   let helm: Awaited<ReturnType<typeof cluster>>;
   await given("a kind cluster with the images of the Compose profile", async () => {
     helm = await cluster(sut);
@@ -24,9 +24,9 @@ scenario("SCN-DIST-007", async ({ sut, given, when, then }) => {
   });
 
   await then(
-    'the workloads "postgres", "nats", "temporal", "gatekeeper", "intake", "foreman" and "console" are ready',
+    'the workloads "postgres", "nats", "temporal", "litellm", "gatekeeper", "intake", "foreman" and "console" are ready',
     async () => {
-      const names = ["postgres", "nats", "temporal", "gatekeeper", "intake", "foreman", "console"];
+      const names = ["postgres", "nats", "temporal", "litellm", "gatekeeper", "intake", "foreman", "console"];
       const ready = await workloads(helm);
       expect(names.map((name) => ({ name, ready: ready[name] }))).toEqual(names.map((name) => ({ name, ready: true })));
     },
