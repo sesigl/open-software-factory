@@ -22,7 +22,7 @@ images:
   pullPolicy: IfNotPresent
   gatekeeper: "0.7.0"
   intake: "0.4.1"
-  foreman: "0.7.0"
+  foreman: "0.7.0-r1"
   console: "0.4.0"
   factorySpec: "0.6.1"
 

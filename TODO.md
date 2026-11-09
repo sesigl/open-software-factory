@@ -767,11 +767,12 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
     from a sandbox with the placeholder as their token (`SCN-SANDBOX-023`, `SCN-SEGRESS-022`).
   - [x] A factory that names no sandbox adapter runs its sandboxes with the foreman's `FOREMAN_SANDBOX` (`docker`), so
     the profile and the chart share the reference factory (`SCN-FORE-084`, `-085`).
-  - [ ] The profile: wollomatic/socket-proxy with only the Docker API paths of the adapter, the foreman image with the
-    Docker CLI and `sandbox-docker`, and the image `harness-claude-code` as the agents' template, its pin in
-    `factory.yaml` moved by `osf profile-pins` and checked by PROFILE.
+  - [x] The profile: wollomatic/socket-proxy with only the Docker API paths of the adapter and no bind mount, the
+    foreman image with the Docker CLI and `sandbox-docker`, and the image `harness-claude-code` as the agents'
+    template; a sandbox of it reaches `litellm` and nothing else of the profile (`SCN-DIST-017`).
   - [ ] The reference factory runs each stage in a sandbox that reaches LiteLLM with the run's key and GitHub with a
-    placeholder, and an end-to-end scenario shows that the agent's environment holds no token of the foreman.
+    placeholder, and an end-to-end scenario shows that the agent's environment holds no token of the foreman. Its
+    template pin in `factory.yaml` is moved by `osf profile-pins` and checked by PROFILE.
   - [ ] The chart: the foreman runs the sandboxes with the kubernetes adapter (`FOREMAN_SANDBOX: kubernetes`), with the
     rights it needs in its namespace, and agent-sandbox as a documented prerequisite.
 

@@ -3,7 +3,8 @@ Feature: The Compose profile installs a complete factory with one command
   An operator copies ".env.example" to ".env", sets its values and runs "docker compose up" in "deploy/compose/".
   The profile starts PostgreSQL with Temporal and pgvector, NATS, Phoenix, LiteLLM, gatekeeper, intake, foreman and
   console, with the reference factory in "deploy/compose/factory/" (ADR 0074). A module is healthy when its
-  "/v1/health" answers 2xx (ADR 0086).
+  "/v1/health" answers 2xx (ADR 0086). The foreman starts the agents' sandboxes from the image of "agent-template",
+  through "docker-proxy", its only way to the Docker API (ADR 0096).
 
   @id=SCN-DIST-001 @status=deprecated @realizes=SCN-FACTORY-OPEN-006
   Scenario: Every service of the Compose profile is healthy after one command
@@ -22,6 +23,17 @@ Feature: The Compose profile installs a complete factory with one command
     And the services "temporal-schema", "temporal-namespace" and "factory-repo" exited with code 0
     And "/v1/health" of "intake", "gatekeeper" and "foreman" answers 200 with the status "ok"
     And "docker compose run --rm console console doctor" exits with code 0 and prints no line that starts with "FAIL"
+
+  @id=SCN-DIST-017 @status=implemented @realizes=SCN-FACTORY-RUNTIME-004
+  Scenario: The foreman of the Compose profile starts a sandbox from the agents' template through docker-proxy only
+    Given the Compose profile with every value of ".env.example" set in ".env"
+    And the operator ran "docker compose up --detach --wait"
+    When the service "foreman" runs "sandbox-docker create" with a spec of the image of "agent-template" and the egress allowlist "litellm"
+    Then the sandbox has the programs "harness-claude-code", "gh", "git" and "make"
+    And in the sandbox, "GET http://litellm:4000/health/liveliness" answers 200, and a request to "http://postgres:5432" fails
+    And after "sandbox-docker destroy", "sandbox-docker list" in the service "foreman" does not list the sandbox
+    And in the service "foreman", "docker version" exits with code 0, and "docker volume ls" and a container with the bind mount "/:/host" fail with "Forbidden"
+    And the service "foreman" has no file "/var/run/docker.sock", and "docker-proxy" answers 403 to the service "console"
 
   @id=SCN-DIST-002 @status=implemented
   Scenario: The Compose profile names the value that .env is missing
