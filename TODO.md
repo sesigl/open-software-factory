@@ -773,7 +773,7 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
     `TRACEPARENT` for its harness (ADR 0087, `SCN-FORE-076`, `-077`, `SCN-TK-133`).
   - [ ] After each stage, the session's run record (tokens, cost) joins the stage span through `runlog attach` or the
     harness's `transcript`.
-  - [ ] The profile sets the endpoint to its trace store, and the console links each stage to its span.
+  - [x] The profile sets the endpoint to its trace store, Phoenix, and the console links each run to its trace.
 
 ### [ ] T-25 · doctor and a health page (P0)
 
@@ -787,8 +787,8 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
     `SCN-GATE-091`, `-092`, `SCN-FORE-075`).
   - [x] `console doctor` and the console page `/health`: each server's health and token, and the factory definition,
     with one fix per failure (`SCN-CONSOLE-037` to `-040`).
-  - [ ] The Compose profile and the Helm chart probe `/v1/health` and want a 2xx answer, and `deploy/README.md` starts
-    with `docker compose run --rm console doctor`, once the images have it.
+  - [x] The Compose profile and the Helm chart probe `/v1/health` and want a 2xx answer, and the quick start of
+    `deploy/README.md` runs `docker compose run --rm console console doctor` (`SCN-DIST-016`).
   - [ ] Deep checks: one model call per route through LiteLLM, the harness answers ACP `initialize`, a sandbox starts
     and refuses a denied host, a test event reaches the foreman, a test span reaches the trace store.
 
@@ -798,8 +798,8 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
 - **Slices:**
   - [x] `evidence: required` adds the check `proof` to the stage's checks; without a forge adapter the server does not
     start (ADR 0088, `SCN-FORE-078` to `-080`).
-  - [ ] The reference factory's README and `deploy/README.md` say to run proof in the target repository's CI, once the
-    profile pins the foreman with this change.
+  - [x] `deploy/README.md` says to run proof in the target repository's CI, as the profile pins the foreman with this
+    change.
 
 ### [ ] T-27 · a reference factory that works on any repository (P1)
 
@@ -830,8 +830,8 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
 - **Slices:**
   - [x] The run's view names its `traceId`, and `CONSOLE_TRACE_URL` takes `{traceId}` (`SCN-FORE-081`,
     `SCN-CONSOLE-041`, `-042`).
-  - [ ] The profile: the foreman sends to Phoenix, the console links Phoenix's trace by `{traceId}`, and SeaweedFS
-    leaves the profile (no consumer, ADR 0088), once the images have these changes.
+  - [x] The profile: the foreman sends to Phoenix, the console links Phoenix's trace by `{traceId}`, and SeaweedFS
+    leaves the profile (no consumer, ADR 0088).
 
 ### [ ] T-30 · simple setup (P1)
 

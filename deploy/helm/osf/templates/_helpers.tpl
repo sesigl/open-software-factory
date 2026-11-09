@@ -134,7 +134,7 @@ readinessProbe:
     command:
       - node
       - -e
-      - 'fetch("http://127.0.0.1:8080{{ . }}").then((r) => process.exit(r.status < 500 ? 0 : 1), () => process.exit(1))'
+      - 'fetch("http://127.0.0.1:8080{{ . }}").then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))'
   periodSeconds: 3
   timeoutSeconds: 5
   failureThreshold: 3
