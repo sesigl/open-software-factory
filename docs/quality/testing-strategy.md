@@ -76,7 +76,9 @@ docs/vision/           factory-level requirements; source for module scenarios, 
   pod reaches the runner as `host.docker.internal` through `OSF_SANDBOX_HOST_ALIASES` (ADR 0055).
 - A module that drives the sandbox port, such as the foreman, gets `fakes.sandbox()`, whose sandboxes are folders on
   the host, and not the built docker adapter: a real sandbox would need Docker and an image with the module's harness
-  in it, and the adapters' own scenarios already prove isolation (ADR 0068).
+  in it, and the adapters' own scenarios already prove isolation (ADR 0068). One end-to-end scenario runs the scripted
+  agent in a real docker sandbox of the workspace image, with `fakes.harness(script, { sandboxes })`, to prove that
+  the agent holds no token of the foreman (ADR 0096).
 - Scenario files share Vitest workers (ADR 0051): a worker imports the testkit once and runs many files, so a test
   keeps all its state inside its scenario and never changes the test process's environment or globals.
 - No unit tests by default (ADR 0007). A module's `AGENTS.md` may allow them for a pure algorithm.
