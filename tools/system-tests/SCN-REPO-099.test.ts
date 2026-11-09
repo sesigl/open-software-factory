@@ -1,8 +1,8 @@
 import { scenario } from "@opensoftware/testkit";
 import { putCached, runAffected } from "./affected.ts";
-import { verifyWorkflow } from "./repo.ts";
+import { suitesFile } from "./repo.ts";
 
-scenario("SCN-REPO-073", async ({ sut, given, when, then }) => {
+scenario("SCN-REPO-099", async ({ sut, given, when, then }) => {
   await given(
     'a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081',
     async () => {
@@ -11,9 +11,9 @@ scenario("SCN-REPO-073", async ({ sut, given, when, then }) => {
   );
 
   await given(
-    'the tests job "rest" of ".github/workflows/verify.yml" has the filter "!@opensoftware/other"',
+    'the suite "rest" of ".github/test-suites.yml" has the filter "!@opensoftware/demo !@opensoftware/gone"',
     async () => {
-      await putCached(sut, { ".github/workflows/verify.yml": verifyWorkflow("!@opensoftware/other") });
+      await putCached(sut, { ".github/test-suites.yml": suitesFile("!@opensoftware/demo !@opensoftware/gone") });
     },
   );
 
@@ -27,10 +27,10 @@ scenario("SCN-REPO-073", async ({ sut, given, when, then }) => {
   });
 
   await then(
-    'the output contains "AFFECTED modules/demo/package.json:1 the tests jobs demo and rest of .github/workflows/verify.yml both run the system tests of @opensoftware/demo"',
+    'the output contains "AFFECTED .github/test-suites.yml:3 the suite rest names @opensoftware/gone, which is no package with system tests"',
     async () => {
       expect(run.stdout).toContain(
-        "AFFECTED modules/demo/package.json:1 the tests jobs demo and rest of .github/workflows/verify.yml both run the system tests of @opensoftware/demo",
+        "AFFECTED .github/test-suites.yml:3 the suite rest names @opensoftware/gone, which is no package with system tests",
       );
     },
   );

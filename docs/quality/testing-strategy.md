@@ -99,6 +99,7 @@ Where the time went, and what each step changed:
 | ADR 0081 | A pull request that changed one README ran all 17 suites: 8 minutes | Pull requests replay the results of unchanged suites and skip their setup |
 | ADR 0061 | Every mutant reran the whole suite: 25 minutes for one forge adapter change of 65 mutants | Each mutant reruns only the scenarios whose module processes ran it |
 | ADR 0084 | The nightly mutation run took one runner per unit, up to the 5-hour limit, and failed every night | Shards of about 600 lines, shortest scenarios first, no coverage during mutation; unchanged shards replay their reports |
+| ADR 0094 | A pull request started 17 test jobs, and the jobs of unchanged suites spent 1 to 2 minutes each to replay | One job plans the suites and replays the unchanged ones; only suites with work start a runner |
 
 In October 2026 a full pull request run took about 4 minutes for `verify`. The longest suites were
 inference-litellm (each scenario starts LiteLLM and PostgreSQL), sandbox-kubernetes (kind) and the catch-all
@@ -122,8 +123,8 @@ Rules for new scenarios, tests and test tooling:
   short in the test's config, or wait for the result the module produces.
 - A new suite's time counts against its `AGENTS.md` budget (BUDGET). When a suite gets close to it, split slow
   scenarios or find a faster stand-in before raising the budget.
-- Measure before you change how tests run: the JUnit times in `reports/junit/` show each scenario, and the
-  `verify` job list shows each suite.
+- Measure before you change how tests run: the JUnit times in `reports/junit/` show each scenario, the `verify` job
+  list shows each suite that ran, and the job `plan` lists the suites it replayed.
 
 ## Why no unit tests, and what replaces their safety
 

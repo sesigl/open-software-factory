@@ -185,8 +185,8 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-069 | implemented | AFFECTED rejects a system test that starts an adapter its package does not declare |
 | SCN-REPO-070 | implemented | AFFECTED rejects a system test that imports a workspace package its package does not declare |
 | SCN-REPO-071 | implemented | AFFECTED rejects a system test that reads a file of another package its package does not declare |
-| SCN-REPO-072 | implemented | AFFECTED rejects a package with system tests that no tests job of CI runs |
-| SCN-REPO-073 | implemented | AFFECTED rejects a package with system tests that two tests jobs of CI run |
+| SCN-REPO-072 | deprecated | AFFECTED rejects a package with system tests that no tests job of CI runs |
+| SCN-REPO-073 | deprecated | AFFECTED rejects a package with system tests that two tests jobs of CI run |
 | SCN-REPO-074 | implemented | AFFECTED rejects a test suite that writes its JUnit results outside its own reports folder |
 | SCN-REPO-075 | implemented | AFFECTED rejects a test cache whose inputs leave out files of the package |
 | SCN-REPO-076 | implemented | AFFECTED rejects a test cache without a repository-wide file that the tests depend on |
@@ -210,3 +210,12 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-094 | implemented | osf mutation-plan with --keys keeps a unit's key while nothing of the unit changes |
 | SCN-REPO-095 | implemented | osf mutation-plan with --keys keeps a unit's guard when only its mutated file and its system tests change |
 | SCN-REPO-096 | implemented | osf mutation-merge joins the shard reports of each unit whose shards all have a report |
+| SCN-REPO-097 | implemented | AFFECTED rejects a package with system tests that no suite of CI runs |
+| SCN-REPO-098 | implemented | AFFECTED rejects a package with system tests that two suites of CI run |
+| SCN-REPO-099 | implemented | AFFECTED rejects a suite whose filter names no package with system tests |
+| SCN-REPO-100 | implemented | AFFECTED rejects a tests job with a list of suites of its own |
+| SCN-REPO-101 | implemented | AFFECTED rejects a job plan that does not read the suites |
+| SCN-REPO-102 | implemented | AFFECTED rejects a tests job that keeps the turbo cache in a cache of its own |
+| SCN-REPO-103 | implemented | DEPS accepts a package that has the exact peer version of its dependency |
+| SCN-REPO-104 | implemented | DEPS rejects a package whose dependency needs another version of a peer |
+| SCN-REPO-105 | implemented | DEPS rejects a package without the required peer of its dependency and accepts a missing optional one |

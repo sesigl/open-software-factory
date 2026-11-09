@@ -3,6 +3,7 @@ import { affected } from "./affected.ts";
 import { arch } from "./arch.ts";
 import { boundaryEnv, boundaryStatic, assert as checkAssert, isolation, noskip } from "./boundary.ts";
 import { contract } from "./contract.ts";
+import { deps } from "./deps.ts";
 import { adr, docsAffected, docsGen, docsLinks } from "./docs.ts";
 import { type Check, Context } from "./lib/context.ts";
 import { type Finding, Repo } from "./lib/repo.ts";
@@ -26,6 +27,7 @@ export const FAST: Record<string, Check> = {
   ADR: adr,
   AFFECTED: affected,
   RELEASE: release,
+  DEPS: deps,
 };
 
 /** Checks that read test results or compare with OSF_BASE; `make verify` runs them after the tests. */
