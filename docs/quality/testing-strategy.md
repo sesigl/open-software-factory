@@ -6,6 +6,44 @@ covers: [modules/*/system-tests/**, e2e/**, tools/checks/**, packages/testkit/**
 
 How this repository proves that everything works when agents write the code.
 
+## Kinds of tests
+
+Use these names. The column "Elsewhere" gives the common name of the same kind outside this repository.
+
+| Kind | What it runs | Outside systems | Deterministic | Runs in | Counts for checks | Elsewhere |
+| --- | --- | --- | --- | --- | --- | --- |
+| Static check | The checks of `tools/checks/` on the files of the repository; nothing starts | none | yes | `make check-fast`, `verify` | is a check | lint, static analysis |
+| Unit test | One pure function of `src/`, imported; only where a module's `AGENTS.md` allows it | none | yes | the module's own script | no | unit test |
+| System test | One built module or adapter from outside, for one scenario | fakes of the testkit | yes | `make check`, `verify` | TRACE, PASS, BUDGET, MUTATION | component test, black-box test |
+| Conformance scenario | A system test of an adapter for a scenario of its port | fakes of the testkit | yes | `make check`, `verify` | as a system test | contract test of an implementation |
+| Deployment scenario | The Compose profile with `sut.compose`, or the Helm chart on kind with `sut.helm` | fakes of the testkit | yes | `make check`, `verify` | as a system test | deployment test |
+| Smoke scenario | The whole factory on the Compose profile, every module from the workspace image (`e2e/features/`) | fakes of the testkit on the Docker host | yes | `make smoke`, `verify` | as a system test | hermetic end-to-end test |
+| Live test | A harness adapter with a real model, through the real service (`e2e/paid/`) | real, paid | no | `make smoke-paid` only | no | live integration test, provider contract test |
+
+- **Mutation testing** is no kind of test: MUTATION measures how many mutants the system tests detect.
+- A **scenario** is the requirement. Each system test, conformance scenario, deployment scenario and smoke scenario
+  proves one scenario. A live test has no scenario.
+- A **fake** stands in for an outside system and behaves like it for what the module uses (ADR 0049). A **live**
+  test uses the outside system itself, so it shows what no fake can: that the real service still accepts what the
+  factory sends. Such a test fails when the service changes, not only when this repository changes.
+
+### Live tests
+
+The live tests are the paid smoke run `SMOKE-PAID` (ADR 0077). They are no system tests: they have no scenario, no
+fakes and no network guard, `make verify` never runs them, and no check counts them. They are not run once: a new
+version of a harness or a change of the provider can break them at any time.
+
+| Live test | Proves | When it runs |
+| --- | --- | --- |
+| opencode | opencode fixes a typo with a real model through OpenRouter. | Every week in `weekly-paid.yml`, and before a release. |
+| claude-code | Claude Code fixes a typo on a developer's subscription. | By hand only; a subscription is one person's, never CI's. |
+| claude-code in a sandbox | Claude Code runs in a sandbox of the agents' template, holds only the placeholder of `CLAUDE_CODE_OAUTH_TOKEN`, and reaches Anthropic through the egress proxy, which puts the token in (ADR 0096). | By hand only, as claude-code. |
+
+Run the claude-code live tests again when one of these changes: the template of the reference factory's sandboxes,
+the version of `@opensoftware/harness-claude-code` or of Claude Code in it, or the egress hosts of the reference
+factory. Run them also before a release of the profile or the chart, and when a stage fails at its first turn with
+an error of authentication.
+
 ## The boundary
 
 A system test drives the **built** module from outside and checks only what the module produces. Everything
@@ -142,10 +180,9 @@ pull request diff, where the review catches them.
 
 ## Smoke tests
 
-Five deterministic scenarios in [`e2e/features/smoke.feature`](../../e2e/features/smoke.feature) on the Compose
-profile, plus `SMOKE-PAID`: one small real task with a real model for opencode, weekly and before releases, and
-for claude-code on a developer's subscription; never on pull requests. `SMOKE-PAID` lives in [`e2e/paid/`](../../e2e/paid/harness.paid.ts) and is no
-system test: it has no scenario and no fakes, and no check counts it (ADR 0077). The smoke scenarios run every module from one image built from the workspace,
+The deterministic smoke scenarios in [`e2e/features/smoke.feature`](../../e2e/features/smoke.feature) run on the
+Compose profile. The live tests of [`e2e/paid/`](../../e2e/paid/harness.paid.ts) are described in
+[Live tests](#live-tests). The smoke scenarios run every module from one image built from the workspace,
 with the testkit's fakes on the Docker host: the scripted agent runs inside foreman's container, and a turn's
 `commands` push a branch and open a pull request on Forgejo like a coding agent's tools (ADR 0076). The profile's own scenarios in [`deploy/features/`](../../deploy/features/compose.feature)
 start it with `sut.compose`, each as a Compose project of its own, and check that every service is healthy and wired
