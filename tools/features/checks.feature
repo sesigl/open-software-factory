@@ -175,6 +175,20 @@ Feature: Repository checks
     And the output contains "BUDGET modules/demo/AGENTS.md"
     And the output contains "12.5 s"
 
+  @id=SCN-REPO-123 @status=implemented
+  Scenario: BUDGET divides the time of a module's system tests by the slowdown of the runner that ran them
+    Given a repository whose module "demo" has a budget of 10 seconds and runs its system tests with "testkit timed"
+    And a JUnit report in which the system tests of "demo" took 12.5 seconds, on a runner whose slowdown was 1.5
+    When the developer runs "osf check BUDGET"
+    Then the command exits with code 0
+
+  @id=SCN-REPO-124 @status=implemented
+  Scenario: BUDGET rejects a package whose system tests do not run with "testkit timed"
+    Given a repository whose module "demo" has system tests and runs them with "vitest run"
+    When the developer runs "osf check BUDGET"
+    Then the command exits with code 1
+    And the output contains "BUDGET modules/demo/package.json" and "testkit timed"
+
   @id=SCN-REPO-015 @status=implemented
   Scenario: CONTRACT rejects a removed schema property without a major version
     Given a base commit with the schema "contracts/demo/demo.schema.json" at version "1.2.0"
