@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.0](https://github.com/sesigl/open-software-factory/compare/foreman-v0.7.0...foreman-v0.8.0) (2026-11-10)
+
+
+### Features
+
+* **foreman:** FOREMAN_SANDBOX picks the sandbox adapter of a factory that names none ([#243](https://github.com/sesigl/open-software-factory/issues/243)) ([d46c5a6](https://github.com/sesigl/open-software-factory/commit/d46c5a60998b5e0d727542421b4015290ee27698))
+
+
+### Performance Improvements
+
+* **foreman:** start the inference gateway in the background, so foreman does not wait for LiteLLM ([#251](https://github.com/sesigl/open-software-factory/issues/251)) ([0b683e9](https://github.com/sesigl/open-software-factory/commit/0b683e941ddd7adfd7f0bfa9bf150ec60f8cc071))
+
 ## [0.7.0](https://github.com/sesigl/open-software-factory/compare/foreman-v0.6.1...foreman-v0.7.0) (2026-11-08)
 
 
