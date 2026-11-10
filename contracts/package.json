@@ -35,7 +35,7 @@
     "build": "node scripts/build.ts",
     "lint": "biome check . && node scripts/build.ts --check",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test:system": "vitest run",
+    "test:system": "testkit timed vitest run",
     "docs": "node ../tools/bin/osf.ts docs ."
   },
   "dependencies": {

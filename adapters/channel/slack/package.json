@@ -22,7 +22,7 @@
     "build": "node ../../../tools/bin/bundle.ts .",
     "lint": "biome check .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test:system": "vitest run",
+    "test:system": "testkit timed vitest run",
     "docs": "node ../../../tools/bin/osf.ts docs .",
     "mutation": "node ../../../tools/bin/osf.ts mutation ."
   },

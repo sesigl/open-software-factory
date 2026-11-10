@@ -11,7 +11,7 @@
     "lint": "biome check .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "check": "node bin/osf.ts check",
-    "test:system": "vitest run",
+    "test:system": "testkit timed vitest run",
     "docs": "node bin/osf.ts docs ."
   },
   "dependencies": {
