@@ -120,22 +120,22 @@ services:
       timeout: 5s
       retries: 60
 
-  phoenix:
-    image: arizephoenix/phoenix:version-20.26.1
+  # The trace store (ADR 0100): Jaeger v2 takes the runs' spans by OTLP/HTTP and keeps them on the volume "jaeger".
+  jaeger:
+    image: jaegertracing/jaeger:2.22.0
     restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      PHOENIX_SQL_DATABASE_URL: postgresql://osf:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/phoenix
-      PHOENIX_TELEMETRY_ENABLED: "false"
+    command: [--config, /etc/jaeger/config.yaml]
+    volumes:
+      - ./jaeger/config.yaml:/etc/jaeger/config.yaml:ro
+      # /tmp of the image may be written by Jaeger's user, so the new volume may too.
+      - jaeger:/tmp
     ports:
-      - ${OSF_HOST:-127.0.0.1}:${PHOENIX_PORT:-6006}:6006
+      - ${OSF_HOST:-127.0.0.1}:${JAEGER_PORT:-16686}:16686
     healthcheck:
-      test: [CMD, /usr/bin/python3.13, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:6006/healthz')"]
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1:13133/status]
       interval: 2s
       timeout: 5s
-      retries: 90
+      retries: 60
 
   litellm:
     # LiteLLM with its bytecode compiled (ADR 0098), built FROM ghcr.io/berriai/litellm:v1.106.2.
@@ -324,13 +324,14 @@ services:
       litellm:
         # foreman attaches to LiteLLM in the background and is healthy only once it did (ADR 0099).
         condition: service_started
-      phoenix:
-        condition: service_healthy
+      jaeger:
+        # foreman sends a span when a stage ends, and one it cannot send is a warning, not a failure (ADR 0100).
+        condition: service_started
     environment:
       OSF_HEALTH_PATH: /v1/health
       OSF_DATA: /home/node/data
-      # One trace per run in Phoenix, with a span per stage (ADR 0087).
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://phoenix:6006
+      # One trace per run in Jaeger, with a span per stage (ADR 0087, ADR 0100).
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
       FOREMAN_API_TOKEN: ${FOREMAN_API_TOKEN:?set FOREMAN_API_TOKEN in .env}
       FOREMAN_FACTORY: /factory/factory.yaml
       FOREMAN_TEMPORAL_ADDRESS: temporal:7233
@@ -399,9 +400,9 @@ services:
       CONSOLE_FACTORY: /factory/factory.yaml
       CONSOLE_FORGE_ADAPTER: forge-github
       CONSOLE_TEMPORAL_URL: http://${OSF_HOST:-127.0.0.1}:${TEMPORAL_UI_PORT:-8233}
-      # Each run links its trace in Phoenix's default project.
-      CONSOLE_TRACE_URL: http://${OSF_HOST:-127.0.0.1}:${PHOENIX_PORT:-6006}/projects/UHJvamVjdDox/traces/{traceId}
-      CONSOLE_LINKS: Phoenix=http://${OSF_HOST:-127.0.0.1}:${PHOENIX_PORT:-6006},LiteLLM=http://${OSF_HOST:-127.0.0.1}:${LITELLM_PORT:-4000}/ui
+      # Each run links its trace in Jaeger.
+      CONSOLE_TRACE_URL: http://${OSF_HOST:-127.0.0.1}:${JAEGER_PORT:-16686}/trace/{traceId}
+      CONSOLE_LINKS: Jaeger=http://${OSF_HOST:-127.0.0.1}:${JAEGER_PORT:-16686},LiteLLM=http://${OSF_HOST:-127.0.0.1}:${LITELLM_PORT:-4000}/ui
     volumes:
       - factory:/factory:ro
     ports:
@@ -433,6 +434,7 @@ secrets:
 volumes:
   postgres:
   nats:
+  jaeger:
   factory:
   factory-state:
   factory-rendered:

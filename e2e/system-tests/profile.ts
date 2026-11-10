@@ -141,7 +141,7 @@ export async function smoke(
     ...more,
   };
   // Port 0 lets Docker pick free ports, so scenarios that run side by side do not collide.
-  const ports = ["CONSOLE_PORT", "INTAKE_PORT", "GATEKEEPER_PORT", "FOREMAN_PORT", "TEMPORAL_UI_PORT", "PHOENIX_PORT"];
+  const ports = ["CONSOLE_PORT", "INTAKE_PORT", "GATEKEEPER_PORT", "FOREMAN_PORT", "TEMPORAL_UI_PORT", "JAEGER_PORT"];
   const lines = [...Object.entries(values), ...[...ports, "LITELLM_PORT"].map((name) => [name, "0"])];
   await sut.files.put("$INPUT/.env", `${lines.map(([name, value]) => `${name}=${value}`).join("\n")}\n`);
   const compose = sut.compose("compose/compose.yaml");
