@@ -24,7 +24,8 @@ come from another runner than the job that checks them.
   reference time. turbo stores that file with the JUnit report of the same run, so a replay has the speed of the
   runner that made the times.
 - The reference time is the benchmark's median time on the test jobs of one CI run, in
-  `packages/testkit/src/support/runner-speed.ts`. A budget is a time on that reference runner.
+  `packages/testkit/src/support/runner-speed.ts`: 200 ms, from 16 jobs that took 127 to 226 ms. A budget is a time on
+  that reference runner.
 - `osf collect-reports` copies the file to `reports/speed/<package>.json`. BUDGET divides a module's time by its
   slowdown before it compares the time with the budget, and names both times when it fails. Without the file, as in a
   local `make verify`, the slowdown is 1.

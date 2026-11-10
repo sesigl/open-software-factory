@@ -3,10 +3,11 @@
 import { spawnSync } from "node:child_process";
 
 /**
- * The benchmark's time on the reference runner, GitHub's `ubuntu-24.04` for public repositories, as the median of the
- * test jobs of one CI run. Change it with the benchmark: BUDGET's budgets are times on that runner.
+ * The benchmark's time on the reference runner, GitHub's `ubuntu-24.04` for public repositories: the median of the 16
+ * test jobs of one CI run, which took 127 to 226 ms. Change it with the benchmark: BUDGET's budgets are times on
+ * that runner.
  */
-export const REFERENCE_MS = 1000;
+export const REFERENCE_MS = 200;
 
 /** The milliseconds that the benchmark takes on this machine now. */
 export function benchmark(): number {
