@@ -258,8 +258,11 @@ model_list:
 
 Serve it as in the quick start, with `export OSF_SECRET_ANTHROPIC_API_KEY=…` for the adapter. Then:
 
-1. `foreman serve` runs the adapter's `start` with the config, a path relative to `factory.yaml`, before it takes work,
-   and `stop` when it stops. A `start` that fails stops the server with exit code 1 and the adapter's message.
+1. `foreman serve` runs the adapter's `start` with the config, a path relative to `factory.yaml`, in the background,
+   and `stop` when it stops. The server takes work at once; a stage waits for the gateway before it gets its key. A
+   `start` that fails is a warning with the adapter's message, and the server tries again after
+   `FOREMAN_INFERENCE_RETRY_MS`. Until a start succeeds, the check `inference` of `/v1/health` fails with that message
+   ([ADR 0099](../../docs/decisions/0099-foreman-starts-the-gateway-in-the-background.md)).
    `start` gets `OSF_INFERENCE_OWNER` with the foreman's process ID, so a later start removes the gateway of a foreman
    that was killed ([ADR 0090](../../docs/decisions/0090-no-leaked-containers.md)).
 2. Before a run's first stage, the foreman asks the adapter for the run's key: `key <gateway> <run ID> --budget 5`. The
@@ -415,6 +418,7 @@ the minor version. The one-time setup is the same as for contracts
 | `FOREMAN_FORGE_URL` | string |  | serve: the forge adapter's FORGE_URL, for a factory whose stages have checks. Default: the adapter's own default. |
 | `FOREMAN_FORGE_TOKEN` | string |  | serve: the forge adapter's FORGE_TOKEN: a token that may read the pull requests and their checks. Never written to a file. |
 | `FOREMAN_CHECK_POLL_MS` | string | `"30000"` | serve: how long a stage that waits for pending checks waits before it reads them again, in milliseconds. |
+| `FOREMAN_INFERENCE_RETRY_MS` | string | `"1000"` | serve: how long the server waits before it starts the factory's inference gateway again after a failed start, in milliseconds. Until a start succeeds, the health check inference fails. |
 | `FOREMAN_POLL_MS` | string | `"1000"` | serve: how often a running stage looks for steering messages and a cancel, in milliseconds. |
 | `FOREMAN_GATEKEEPER_URL` | string |  | serve: the URL of gatekeeper serve, which a stage with a gate asks for a decision. Required for a factory with gates. |
 | `FOREMAN_GATEKEEPER_TOKEN` | string |  | serve: gatekeeper's API token, GATEKEEPER_API_TOKEN. |
@@ -484,7 +488,7 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-053 | implemented | Each run gets its own key with the factory's budget |
 | SCN-FORE-054 | implemented | A sandboxed stage gets the gateway in its sandbox's environment |
 | SCN-FORE-055 | implemented | The foreman stops the gateway when it stops serving |
-| SCN-FORE-056 | implemented | A gateway that does not start stops the server at the start |
+| SCN-FORE-056 | deprecated | A gateway that does not start stops the server at the start |
 | SCN-FORE-057 | implemented | A factory with an inference adapter but without its config stops the server at the start |
 | SCN-FORE-058 | implemented | A person takes over the running stage |
 | SCN-FORE-059 | implemented | The next stage starts from the files of the person who handed the run back |
@@ -514,3 +518,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-083 | implemented | A work item that breaks its contract and a gate decision for no run are one warning each and come no second time |
 | SCN-FORE-084 | implemented | A factory that names no sandbox adapter runs its sandboxes with the adapter of FOREMAN_SANDBOX |
 | SCN-FORE-085 | implemented | A factory that names no sandbox adapter runs its sandboxes with docker when FOREMAN_SANDBOX is not set |
+| SCN-FORE-086 | implemented | Until the factory's gateway starts, the server serves and its health names the failure |

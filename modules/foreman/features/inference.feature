@@ -46,7 +46,7 @@ Feature: Inference gateway
     When the server gets the signal SIGTERM
     Then the inference adapter's list is empty
 
-  @id=SCN-FORE-056 @status=implemented
+  @id=SCN-FORE-056 @status=deprecated
   Scenario: A gateway that does not start stops the server at the start
     Given the README's "gateway/factory.yaml" with an inference adapter "litellm" that fails every command with "docker is not running"
     When the developer runs "foreman serve"
@@ -57,3 +57,10 @@ Feature: Inference gateway
     Given the README's "gateway/factory.yaml" without "inference"
     When the developer runs "foreman serve"
     Then the command exits with code 2 and names "/inference" and "inference.config"
+
+  @id=SCN-FORE-086 @status=implemented @replaces=SCN-FORE-056
+  Scenario: Until the factory's gateway starts, the server serves and its health names the failure
+    Given "foreman serve" runs the README's "gateway/factory.yaml" with a fake inference adapter as "litellm" whose start fails with "LiteLLM is not ready"
+    When a program reads "/v1/health" without a token
+    Then the answer is 503 with the check "inference" failing with "LiteLLM is not ready"
+    And after the adapter is ready, "/v1/health" answers 200 with the check "inference" ok, and the adapter started one gateway

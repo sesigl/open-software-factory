@@ -32,6 +32,7 @@ function gateway(id: string | undefined): string {
 
 const commands: Record<string, () => void> = {
   start() {
+    if (options.startFails && !existsSync(join(state, "ready"))) fail(options.startFails);
     const config = readFileSync(args[0] as string, "utf8");
     const id = counted("started").toString(16).padStart(12, "0");
     mkdirSync(root, { recursive: true });

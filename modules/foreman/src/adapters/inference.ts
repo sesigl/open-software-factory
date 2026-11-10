@@ -28,3 +28,59 @@ export async function startGateway(
     stop: async () => void (await run("stop", id)),
   };
 }
+
+export interface Attached {
+  /** Resolves with the gateway once a start succeeded. */
+  gateway: Promise<Gateway>;
+  /** Resolves when the gateway runs; rejects with the last failed start before. */
+  check(): Promise<void>;
+  /** Stops trying, and stops the gateway when it runs. */
+  stop(): Promise<void>;
+}
+
+/**
+ * Starts the gateway in the background and tries again every `retryMs` until a start succeeds, so the server starts
+ * while the gateway, like the profile's LiteLLM, is not ready yet. Each new failure is a warning.
+ */
+export function attachGateway(start: () => Promise<Gateway>, retryMs: number, warn: (text: string) => void): Attached {
+  let failure: Error = new Error("the inference gateway is starting");
+  let running: Gateway | undefined;
+  let stopped = false;
+  let timer: NodeJS.Timeout | undefined;
+  let wake: (() => void) | undefined;
+  const gateway = (async () => {
+    while (!stopped) {
+      try {
+        const started = await start();
+        if (stopped) {
+          await started.stop();
+          break;
+        }
+        running = started;
+        return started;
+      } catch (error) {
+        if ((error as Error).message !== failure.message) warn(`${(error as Error).message}; trying again`);
+        failure = error as Error;
+      }
+      await new Promise<void>((resolve) => {
+        wake = resolve;
+        timer = setTimeout(resolve, retryMs);
+      });
+    }
+    throw new Error("the server stopped before the inference gateway started");
+  })();
+  // A stage awaits the gateway; while none does, a rejection is no unhandled one.
+  gateway.catch(() => undefined);
+  return {
+    gateway,
+    check: async () => {
+      if (!running) throw failure;
+    },
+    stop: async () => {
+      stopped = true;
+      clearTimeout(timer);
+      wake?.();
+      await running?.stop();
+    },
+  };
+}
