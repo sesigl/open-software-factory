@@ -29,6 +29,8 @@ export interface Profile {
   volume?: boolean;
   /** The agents' template that the reference factory names. */
   template?: string;
+  /** The tag of the image litellm that the profile builds, which the chart's LiteLLM uses too. */
+  gateway?: string;
 }
 
 /** A Dockerfile whose stage demo builds on the stage base and the global ARG NODE. */
@@ -58,6 +60,7 @@ export function profileRepository(profile: Profile = {}): Record<string, string>
     dockerfile,
     volume = false,
     template,
+    gateway,
   } = profile;
   const manifest = (name: string, version: string, tested = false) => {
     const scripts = tested ? { scripts: { "test:system": "vitest run" } } : {};
@@ -82,6 +85,9 @@ export function profileRepository(profile: Profile = {}): Record<string, string>
       ...(target ? [`      target: ${target}`] : []),
       "      args:",
       `        PACKAGES: "${pins}"`,
+      ...(gateway
+        ? ["  litellm:", `    image: ${REGISTRY}/litellm:${gateway}`, "    build:", "      target: litellm"]
+        : []),
       ...(volume ? ["volumes:", "  demo:"] : []),
       "",
     ].join("\n"),
@@ -89,7 +95,9 @@ export function profileRepository(profile: Profile = {}): Record<string, string>
     ...(template
       ? { "deploy/compose/factory/factory.yaml": `agents:\n  a:\n    sandbox:\n      template: ${template}\n` }
       : {}),
-    "deploy/helm/osf/values.yaml": `images:\n  demo: "${chartTag}"\npostgres:\n  image: ${chartImage}\n`,
+    "deploy/helm/osf/values.yaml": `images:\n  demo: "${chartTag}"\npostgres:\n  image: ${chartImage}\n${
+      gateway ? `litellm:\n  image: ${REGISTRY}/litellm:${gateway}\n` : ""
+    }`,
     "deploy/helm/osf/Chart.yaml": `name: osf\nversion: ${chartVersion}\n`,
     ".github/test-suites.yml": `- suite: deploy\n  filter: "@opensoftware/deploy"\n  pull: ${pull}\n`,
   };
