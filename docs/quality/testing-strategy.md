@@ -161,8 +161,9 @@ Rules for new scenarios, tests and test tooling:
   each mutant of the lines it reaches.
 - Never wait for time to pass. When a module flushes or polls on an interval, make the interval configurable and
   short in the test's config, or wait for the result the module produces.
-- A new suite's time counts against its `AGENTS.md` budget (BUDGET). When a suite gets close to it, split slow
-  scenarios or find a faster stand-in before raising the budget.
+- A new suite's time counts against its `AGENTS.md` budget (BUDGET), a time on the reference runner: on CI, BUDGET
+  divides the time by the slowdown that `testkit timed` measured on the runner of the same run (ADR 0103). When a
+  suite gets close to it, split slow scenarios or find a faster stand-in before raising the budget.
 - Measure before you change how tests run: the JUnit times in `reports/junit/` show each scenario, the `verify` job
   list shows each suite that ran, and the job `plan` lists the suites it replayed.
 

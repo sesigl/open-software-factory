@@ -77,7 +77,7 @@ publish only the TypeScript package; clients for other languages are not built (
 | Profile | For | Stateful services |
 | --- | --- | --- |
 | Laptop | trying one tool | none: files, SQLite, DuckDB, local folder |
-| Single VM (Compose) | one team | PostgreSQL (with Temporal and pgvector), NATS, Phoenix as trace store; Docker sandboxes |
+| Single VM (Compose) | one team | PostgreSQL (with Temporal and pgvector), NATS, Jaeger as trace store; Docker sandboxes |
 | Kubernetes (Helm) | platform teams | managed PostgreSQL, object storage, NATS, Temporal, Langfuse (ClickHouse, Valkey), OpenBao, agent-sandbox |
 
 ## Smaller choices
@@ -86,7 +86,7 @@ publish only the TypeScript package; clients for other languages are not built (
 | --- | --- | --- |
 | Cache and queues for Langfuse | Valkey | Redis changed its license twice |
 | Secrets | OpenBao | Vault moved to the Business Source License |
-| Trace store | Langfuse (full); Arize Phoenix (light) | Langfuse brings ClickHouse, Valkey and S3 |
+| Trace store | Langfuse (full); Jaeger (light, traces only, ADR 0100) | Langfuse brings ClickHouse, Valkey and S3; Arize Phoenix has the Elastic License 2.0 |
 | Agent memory | pgvector first | no extra service |
 | Gate policies | OPA (Rego) through its CLI | Cedar answers only allow or deny; the factory definition names Rego (ADR 0047) |
 | A server's store on a laptop | PGlite, PostgreSQL in process, in the data folder (intake, ADR 0063) | SQLite would be a second SQL dialect beside PostgreSQL |
@@ -96,7 +96,7 @@ publish only the TypeScript package; clients for other languages are not built (
 
 - the maintainer works mostly outside Java and that slows delivery: the foreman may move to Java on Temporal; its
   contract is language-neutral;
-- users complain about install size: make Phoenix the default trace store;
+- a module needs scores or LLM views in the trace store: Langfuse instead of Jaeger (ADR 0100);
 - scorekit or observer need real machine learning: add a separate Python service behind an HTTP contract, with
   its own ADR (see ADR 0009);
 - the repository grows past a few hundred packages or needs finer dependency analysis than Turborepo gives:

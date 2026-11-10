@@ -8,7 +8,7 @@
   "scripts": {
     "lint": "biome check .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test:system": "vitest run"
+    "test:system": "testkit timed vitest run"
   },
   "devDependencies": {
     "@opensoftware/testkit": "workspace:*"
