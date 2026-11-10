@@ -38,7 +38,7 @@ published yet, like one whose pin moved a moment ago, is built from npm, which t
 | `temporal-ui` | the history of every run | `TEMPORAL_UI_PORT`, 8233 |
 | `nats` | NATS with JetStream for the events between the modules | none |
 | `phoenix` | the trace store, on PostgreSQL | `PHOENIX_PORT`, 6006 |
-| `litellm` | the LLM gateway, configured by `litellm/config.yaml`: LiteLLM's image with its bytecode compiled, so it starts sooner ([ADR 0098](../docs/decisions/0098-litellm-image-with-bytecode.md)) | `LITELLM_PORT`, 4000 |
+| `litellm` | the LLM gateway, configured by `litellm/config.yaml`: LiteLLM's image with its bytecode compiled, so it starts sooner ([ADR 0098](../docs/decisions/0098-litellm-image-with-bytecode.md)), and without BerriAI's enterprise code, whose license allows no changed copies ([ADR 0102](../docs/decisions/0102-litellm-image-without-enterprise-code.md)) | `LITELLM_PORT`, 4000 |
 | `factory-repo` | one-shot: copies `FACTORY_DIR` into the volume `factory` and commits it | none |
 | `gatekeeper` | approvals in Slack or on pull requests, with the policy and groups of the factory | `GATEKEEPER_PORT`, 8082 |
 | `intake` | work from Slack, the forge and Sentry | `INTAKE_PORT`, 8081 |
@@ -326,3 +326,4 @@ repository's Packages and sets its visibility to public, like the first npm rele
 | SCN-DIST-021 | implemented | The test of the Helm chart plans the reference factory without problems, with its inference config |
 | SCN-DIST-022 | implemented | The foreman of the Helm chart starts a sandbox of agent-sandbox from the agents' template, with rights only in the sandboxes' namespace |
 | SCN-DIST-023 | implemented | The Compose profile takes the module images, the agents' template and the LLM gateway from the factory's registry |
+| SCN-DIST-027 | implemented | The profile's LLM gateway holds no code under BerriAI's enterprise license |

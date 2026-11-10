@@ -112,6 +112,13 @@ Feature: The Compose profile installs a complete factory with one command
     Then the command exits with code 0
     And the output lists the images "gatekeeper", "intake", "foreman", "console", "factory-spec", "harness-claude-code" and "litellm" as "ghcr.io/sesigl/open-software-factory/<name>:<version>"
 
+  @id=SCN-DIST-027 @status=implemented
+  Scenario: The profile's LLM gateway holds no code under BerriAI's enterprise license
+    Given the Compose profile with every value of ".env.example" set in ".env"
+    When the operator runs "docker compose run --rm --no-deps" in the service "litellm" to look for LiteLLM's enterprise code
+    Then the command exits with code 0
+    And the output says "no enterprise code"
+
   @id=SCN-DIST-014 @status=implemented @realizes=SCN-FACTORY-ACCESS-001
   Scenario: The intake of the Compose profile turns a GitHub issue labeled "factory" into a work item
     Given the Compose profile with every value of ".env.example" set in ".env" and "INTAKE_WEBHOOK_SECRET" set

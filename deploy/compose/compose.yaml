@@ -139,7 +139,7 @@ services:
 
   litellm:
     # LiteLLM with its bytecode compiled (ADR 0098), built FROM ghcr.io/berriai/litellm:v1.106.2.
-    image: ghcr.io/sesigl/open-software-factory/litellm:1.106.2
+    image: ghcr.io/sesigl/open-software-factory/litellm:1.106.2-r1
     build:
       context: ../images
       target: litellm
