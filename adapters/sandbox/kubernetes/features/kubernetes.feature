@@ -109,3 +109,9 @@ Feature: What the kubernetes adapter checks before it starts a sandbox
     When the client runs "curl --noproxy '*'" for the API's address in the sandbox
     Then curl fails
     And the API received no request
+
+  @id=SCN-SKUBE-018 @status=implemented
+  Scenario: list in a namespace without sandboxes prints nothing
+    Given a namespace "osf-skube-empty" without sandboxes
+    When the client runs "list" in that namespace
+    Then list exits with code 0 and prints nothing

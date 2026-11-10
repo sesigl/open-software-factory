@@ -90,7 +90,7 @@ npx @opensoftware/sandbox-kubernetes destroy "$id"
 | `sandbox-kubernetes exec <ID> -- <command>...` | Run the command in `/workspace` and exit with its code. |
 | `sandbox-kubernetes copy <from> <to>` | Copy a file or folder into or out of a sandbox with `kubectl cp`. The sandbox's side is `<ID>:<path>`; a relative path is below `/workspace`. |
 | `sandbox-kubernetes snapshot <ID>` | Copy the sandbox's `/workspace` into a PersistentVolumeClaim of `OSF_SANDBOX_SNAPSHOT_SIZE` and print the name of a `SandboxTemplate` that starts with it, a template for `create`. |
-| `sandbox-kubernetes destroy <ID>` | Remove the sandbox, its files and its egress pod. |
+| `sandbox-kubernetes destroy <ID>` | Remove the sandbox, its files and its egress pod. It ends when the sandbox's claim is gone; Kubernetes stops the pods in the background, in some seconds. |
 | `sandbox-kubernetes list` | Print the IDs of the sandboxes in the namespace. |
 | `sandbox-kubernetes egress-log <ID>` | Print one JSON line per request that left the sandbox. |
 
