@@ -173,13 +173,14 @@ Every server, client and subscription stops when the scenario ends, before the f
   to that folder. With `templates`, `create` refuses another template with `no template <name>` and exit code 1.
   `created()` lists each sandbox's ID and spec, `execs()` each command with the files in the folder when it started,
   and `list()` the sandboxes that exist. It isolates nothing.
-- `fakes.inference({ url, fails })`: an inference adapter with the commands `start`, `key`, `spend-log`, `stop` and
+- `fakes.inference({ url, fails, startFails })`: an inference adapter with the commands `start`, `key`, `spend-log`, `stop` and
   `list` of the [inference port](../../ports/inference/README.md), for a module that drives the port without LiteLLM
   and Docker ([ADR 0070](../../docs/decisions/0070-foreman-gateway-and-take-over.md)). Run it with its `command` and
   `args`, then the port's command. `start <config>` prints `{"id", "url"}` with the IDs `000000000001` and on and the
   `url` of the options (default `http://127.0.0.1:4000/v1`); it serves nothing there, so pass the URL of
   `fakes.modelGateway` when a test needs answers. `key <ID> <run ID> [--budget <USD>]` prints `sk-fake-1` and on;
-  `spend-log` prints nothing; `stop` removes the gateway. With `fails`, every command exits 1 with that message.
+  `spend-log` prints nothing; `stop` removes the gateway. With `fails`, every command exits 1 with that message. With
+  `startFails`, `start` exits 1 with that message until the test calls `ready()`.
   `started()` lists each gateway's ID and the text of its config, `keys()` each key with its `gateway`, `run` and
   `budget`, and `list()` the gateways that exist.
 - `fakes.postgres()`: PostgreSQL 18 for this scenario, as PGlite in the test's process behind a small
@@ -453,3 +454,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-135 | implemented | sut.http.output shows what every server of the scenario printed, the first one first |
 | SCN-TK-136 | implemented | A scripted harness for sandboxes takes its script and sends its log over HTTP, with no folder of its script mounted |
 | SCN-TK-137 | implemented | sut.helm uninstalls the scenario's releases when the scenario ends, with their objects outside its namespace |
+| SCN-TK-138 | implemented | The fake inference adapter fails start with its message until the test makes it ready |

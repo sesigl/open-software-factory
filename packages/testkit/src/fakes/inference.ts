@@ -11,6 +11,8 @@ export interface InferenceOptions {
   url?: string;
   /** Every command exits 1 and writes this message to standard error. */
   fails?: string;
+  /** `start` exits 1 and writes this message to standard error until the test calls `ready()`. */
+  startFails?: string;
 }
 
 /** One line of the fake's log: a gateway it started, or a key it made. */
@@ -28,6 +30,8 @@ export interface Inference {
   keys(): { key: string; gateway: string; run: string; budget?: string }[];
   /** The IDs of the gateways that exist now. */
   list(): string[];
+  /** From now on, `start` works, also with `startFails`. */
+  ready(): void;
 }
 
 // Next to this file in the source tree and in the built package alike.
@@ -54,6 +58,7 @@ export function startInference(options: InferenceOptions = {}): { inference: Inf
         entries().flatMap((entry) => ("start" in entry ? [{ id: entry.start, config: entry.config }] : [])),
       keys: () => entries().flatMap((entry) => ("key" in entry ? [entry] : [])),
       list: () => (existsSync(join(state, "gateways")) ? readdirSync(join(state, "gateways")).sort() : []),
+      ready: () => writeFileSync(join(state, "ready"), ""),
     },
     async close() {
       rmSync(state, { recursive: true, force: true });

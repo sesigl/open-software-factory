@@ -78,6 +78,11 @@
       "default": "30000",
       "description": "serve: how long a stage that waits for pending checks waits before it reads them again, in milliseconds."
     },
+    "FOREMAN_INFERENCE_RETRY_MS": {
+      "type": "string",
+      "default": "1000",
+      "description": "serve: how long the server waits before it starts the factory's inference gateway again after a failed start, in milliseconds. Until a start succeeds, the health check inference fails."
+    },
     "FOREMAN_POLL_MS": {
       "type": "string",
       "default": "1000",

@@ -109,6 +109,30 @@ export function buildImage(): void {
     ]),
     { stdio: ["ignore", "ignore", "inherit"] },
   );
+  gatewayImage();
+}
+
+/**
+ * The profile's LiteLLM image (ADR 0098): on this machine, else pulled, else built from deploy/images/Dockerfile, as
+ * before its first publish. A scenario that built it would spend its time budget on the build.
+ */
+function gatewayImage(): void {
+  const compose = readFileSync(join(root, "deploy/compose/compose.yaml"), "utf8");
+  const image = /image: (\S+\/litellm:\S+)/.exec(compose)?.[1];
+  if (!image) throw new Error("no LiteLLM image in deploy/compose/compose.yaml");
+  const docker = (...args: string[]) => {
+    try {
+      execFileSync("docker", args, { stdio: "ignore" });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  if (!docker("image", "inspect", image) && !docker("pull", "--quiet", image)) {
+    execFileSync("docker", ["build", "--quiet", "--target", "litellm", "--tag", image, join(root, "deploy/images")], {
+      stdio: ["ignore", "ignore", "inherit"],
+    });
+  }
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) buildImage();

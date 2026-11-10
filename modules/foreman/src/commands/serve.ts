@@ -11,7 +11,7 @@ import { NativeConnection, Worker } from "@temporalio/worker";
 import Fastify, { type FastifyReply } from "fastify";
 import { readFactory } from "../adapters/factory.ts";
 import { gatekeeper } from "../adapters/gatekeeper.ts";
-import { type Gateway, startGateway } from "../adapters/inference.ts";
+import { type Attached, attachGateway, startGateway } from "../adapters/inference.ts";
 import { type Bus, openBus, SUBJECTS } from "../adapters/nats.ts";
 import { exporterOf } from "../adapters/otlp.ts";
 import type { Definition } from "../domain/definition.ts";
@@ -104,7 +104,9 @@ export async function serve(env: Env) {
   const bus = env.FOREMAN_NATS_URL ? await openBus(env.FOREMAN_NATS_URL, warn) : undefined;
   const traces = exporterOf(env);
 
-  const gateway = await gatewayOf(definition.inference, dirname(factoryPath), env);
+  // The gateway starts in the background, so the server does not wait for it (ADR 0099).
+  const retryMs = Number(env.FOREMAN_INFERENCE_RETRY_MS || 1000);
+  const gateway = gatewayOf(definition.inference, dirname(factoryPath), env, retryMs, warn);
   // A gateway stops with the server, also when the server cannot start.
   try {
     const temporal = await Connection.connect({ address });
@@ -131,7 +133,7 @@ export async function serve(env: Env) {
         data: resolve(env.OSF_DATA || ".foreman"),
         pollMs,
         control: (runId) => work.control(runId),
-        ...(gateway ? { gateway } : {}),
+        ...(gateway ? { gateway: gateway.gateway } : {}),
         ...(traces ? { traces } : {}),
         warn,
         env,
@@ -160,6 +162,15 @@ export async function serve(env: Env) {
               },
             ]
           : []),
+        ...(gateway
+          ? [
+              {
+                name: "inference",
+                check: () => gateway.check(),
+                fix: "check the factory's inference config and that its gateway runs",
+              },
+            ]
+          : []),
       ]),
     );
 
@@ -176,10 +187,16 @@ export async function serve(env: Env) {
   return { lines: [] };
 }
 
-/** Starts the gateway of the factory's inference adapter from its config, a path relative to the factory's folder. */
-async function gatewayOf(inference: Definition["inference"], folder: string, env: Env): Promise<Gateway | undefined> {
+/** The gateway of the factory's inference adapter from its config, a path relative to the factory's folder. */
+function gatewayOf(
+  inference: Definition["inference"],
+  folder: string,
+  env: Env,
+  retryMs: number,
+  warn: (text: string) => void,
+): Attached | undefined {
   if (!inference) return undefined;
   const lines = JSON.parse(env.FOREMAN_INFERENCES || "{}") as Record<string, string>;
   const adapter = lines[inference.adapter] ?? `npx -y @opensoftware/inference-${inference.adapter}`;
-  return startGateway(adapter.split(" "), resolve(folder, inference.config), env);
+  return attachGateway(() => startGateway(adapter.split(" "), resolve(folder, inference.config), env), retryMs, warn);
 }

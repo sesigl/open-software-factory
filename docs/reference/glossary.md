@@ -61,6 +61,9 @@ Use these terms in scenarios, code, UI text and docs.
 | Clone | Source code of 50 tokens or more that appears twice. DUP limits clones inside a unit and forbids them across units. |
 | Layer | A named group of a module's source files in its `architecture.json`; a file imports only its own layer and the layers below it. |
 | Conformance scenario | A port scenario every adapter of the port must pass. |
+| System test | The one test of an implemented scenario: it drives the built module or adapter from outside, with fakes for every outside system, and is deterministic. The kinds of tests are in `docs/quality/testing-strategy.md`. |
+| Smoke scenario | A scenario of `e2e/features/` that runs the whole factory on the Compose profile, with fakes at its edges. |
+| Live test | A test against a real, paid outside service, without fakes: the paid smoke run `SMOKE-PAID`. It is no system test, and no check counts it. |
 | Product engineer | A person who delivers product value through the factory. |
 | Factory engineer | A person who improves the factory itself. |
 | Drift | A difference between the factory definition and the running factory. |

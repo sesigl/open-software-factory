@@ -774,8 +774,8 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
     placeholder, and an end-to-end scenario shows that the agent's environment holds no token of the foreman
     (`SCN-E2E-006`). Its template pin in `factory.yaml` is moved by `osf profile-pins` and checked by PROFILE. The
     chart runs LiteLLM, which the factory attaches to (`SCN-DIST-019`).
-  - [ ] Once, with `make smoke-paid`: Claude Code in a sandbox runs on the subscription with the placeholder of
-    `CLAUDE_CODE_OAUTH_TOKEN`.
+  - [x] A live test of `make smoke-paid`: Claude Code in a sandbox of the agents' template runs on the subscription
+    with the placeholder of `CLAUDE_CODE_OAUTH_TOKEN`; it runs again by hand when the template or its egress changes.
   - [x] The chart: the foreman runs the sandboxes with the kubernetes adapter (`FOREMAN_SANDBOX: kubernetes`), with
     rights only in the sandboxes' own namespace, and agent-sandbox as a documented prerequisite (ADR 0097,
     `SCN-DIST-022`, `SCN-TK-137`).
