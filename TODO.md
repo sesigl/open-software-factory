@@ -901,6 +901,8 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
   - [ ] sandbox-kubernetes: fewer kubectl calls in `create` (11 calls of 0.3 to 0.45 s each).
   - [ ] foreman's scenarios: one Temporal dev server per Vitest worker with a namespace per scenario, if the
     isolation rules allow it (about 1 s of each of 85 scenarios).
+  - [x] BUDGET divides a suite's time by the slowdown of its runner, which `testkit timed` measures in the same run
+    (ADR 0103, `SCN-TK-139`, `SCN-REPO-123`, `-124`): the same code took 224 s and 324 s on two runners.
   - [ ] Measure the four suites again on CI, and raise a budget only with the measured reason.
   - Not done: the inference-litellm adapter keeps the upstream image. Its gateways already share LiteLLM's compiled
     bytecode in the volume `osf-inference-python`, so our image would save almost nothing there.

@@ -168,6 +168,7 @@ jobs:
           path: |
             reports/junit/
             reports/coverage/
+            reports/speed/
           if-no-files-found: ignore
           retention-days: 7
 
@@ -318,6 +319,7 @@ jobs:
           path: |
             reports/junit/
             reports/coverage/
+            reports/speed/
           if-no-files-found: ignore
           retention-days: 7
 

@@ -8,7 +8,7 @@
   "scripts": {
     "lint": "biome check .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test:system": "node scripts/images.ts && vitest run",
+    "test:system": "node scripts/images.ts && testkit timed vitest run",
     "test:paid": "vitest run --config vitest.paid.config.ts"
   },
   "devDependencies": {

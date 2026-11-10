@@ -236,3 +236,5 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-120 | implemented | PROFILE rejects a template of the reference factory whose tag differs from the profile's image |
 | SCN-REPO-121 | implemented | osf profile-pins moves the template of the reference factory to the tag of the profile's image |
 | SCN-REPO-122 | implemented | PROFILE accepts a chart image that the profile builds |
+| SCN-REPO-123 | implemented | BUDGET divides the time of a module's system tests by the slowdown of the runner that ran them |
+| SCN-REPO-124 | implemented | BUDGET rejects a package whose system tests do not run with "testkit timed" |

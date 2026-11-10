@@ -2,18 +2,23 @@
 // `testkit run` runs the system tests of the module in the current directory with the testkit's settings and
 // writes a JUnit report in which every test case carries its scenario ID. `testkit conformance <features>` does
 // the same for an adapter and then reports, for every @conformance scenario of the port, whether it passed.
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+// `testkit timed <command>...` runs a package's system tests; with CI set it also writes the runner's slowdown for
+// BUDGET (ADR 0103).
+import { spawn } from "node:child_process";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import type { RunnerTask } from "vitest";
-import { startVitest } from "vitest/node";
 
-const USAGE = "usage: testkit run --junit <file>\n       testkit conformance <port features folder> --junit <file>\n";
+const USAGE =
+  "usage: testkit run --junit <file>\n       testkit conformance <port features folder> --junit <file>\n" +
+  "       testkit timed <command>...\n";
 const self = fileURLToPath(import.meta.url);
 const testkitEntry = join(dirname(self), "..", "src", `index${extname(self)}`);
 
 const [command, ...rest] = process.argv.slice(2);
+if (command === "timed") process.exit(await timed(rest));
 if (command !== "run" && command !== "conformance") {
   process.stderr.write(`testkit: unknown command ${command ?? ""}\n${USAGE}`);
   process.exit(2);
@@ -45,6 +50,7 @@ if (command === "conformance") {
   }
 }
 
+const { startVitest } = await import("vitest/node");
 const vitest = await startVitest("test", [], {
   root,
   config: false,
@@ -86,6 +92,38 @@ if (command === "conformance") {
   if (passed < required.length) process.exitCode = 1;
 }
 process.exit(process.exitCode ?? 0);
+
+/**
+ * Runs the command and gives its exit code. With CI set, it measures the runner before and after the command and writes
+ * `reports/runner-speed.json`, which turbo stores and replays with the JUnit report of the same run.
+ */
+async function timed(command: string[]): Promise<number> {
+  const [program, ...args] = command;
+  if (!program) {
+    process.stderr.write(`testkit: name the command to run\n${USAGE}`);
+    return 2;
+  }
+  const speed = join(dirname(self), "..", "src", "support", `runner-speed${extname(self)}`);
+  const { benchmark, REFERENCE_MS } = (await import(speed)) as typeof import("../src/support/runner-speed.ts");
+  const measured = process.env.CI ? [benchmark()] : [];
+  const code = await new Promise<number>((done) => {
+    const child = spawn(program, args, { stdio: "inherit" });
+    child.on("error", (error) => {
+      process.stderr.write(`testkit: ${program} did not start: ${error.message}\n`);
+      done(1);
+    });
+    child.on("close", (exit) => done(exit ?? 1));
+  });
+  if (measured.length === 0) return code;
+  measured.push(benchmark());
+  const ms = measured.map(Math.round);
+  const slowdown = Math.round((ms.reduce((sum, each) => sum + each, 0) / ms.length / REFERENCE_MS) * 1000) / 1000;
+  mkdirSync("reports", { recursive: true });
+  const file = join("reports", "runner-speed.json");
+  writeFileSync(file, `${JSON.stringify({ benchmarkMs: ms, referenceMs: REFERENCE_MS, slowdown })}\n`);
+  process.stderr.write(`testkit: the benchmark took ${ms.join(" and ")} ms, ${slowdown} times the reference\n`);
+  return code;
+}
 
 function leaves(task: RunnerTask): RunnerTask[] {
   return "tasks" in task ? task.tasks.flatMap(leaves) : [task];
