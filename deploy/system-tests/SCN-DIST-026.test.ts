@@ -1,7 +1,7 @@
 import { scenario } from "@opensoftware/testkit";
 import { profile, words } from "./profile.ts";
 
-scenario("SCN-DIST-016", async ({ sut, given, when, then }) => {
+scenario("SCN-DIST-026", async ({ sut, given, when, then }) => {
   let compose: Awaited<ReturnType<typeof profile>>;
   await given('the Compose profile with every value of ".env.example" set in ".env"', async () => {
     compose = await profile(sut);
@@ -17,9 +17,9 @@ scenario("SCN-DIST-016", async ({ sut, given, when, then }) => {
   });
 
   await then(
-    'the services "postgres", "temporal", "temporal-ui", "nats", "phoenix", "litellm", "gatekeeper", "intake", "foreman" and "console" are running and healthy',
+    'the services "postgres", "temporal", "temporal-ui", "nats", "jaeger", "litellm", "gatekeeper", "intake", "foreman" and "console" are running and healthy',
     async () => {
-      const names = ["postgres", "temporal", "temporal-ui", "nats", "phoenix", "litellm"];
+      const names = ["postgres", "temporal", "temporal-ui", "nats", "jaeger", "litellm"];
       names.push("gatekeeper", "intake", "foreman", "console");
       const services = await compose.services();
       expect(

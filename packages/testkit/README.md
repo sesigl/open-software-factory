@@ -84,7 +84,7 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
   ([ADR 0074](../../docs/decisions/0074-compose-profile.md)). `run(args, { env })` runs `docker compose <args>` as the
   scenario's own project with `$INPUT/.env` as its `.env`; `services()` lists each service's state, health and exit
   code; `url(service, port)` is where the project publishes that container port. The project and its volumes are
-  removed when the scenario ends.
+  removed when the scenario ends, without a grace period for its containers to stop.
 - `sut.helm("<chart>")`: a Helm chart of the unit, like `helm/osf` of `deploy/`
   ([ADR 0075](../../docs/decisions/0075-helm-chart-and-images.md)), on the cluster of `KUBECONFIG`. `chart` is the
   chart's absolute path; `run(args)` runs `helm <args>` and `kubectl(args)` runs `kubectl <args>`, both in a namespace
