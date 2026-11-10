@@ -51,8 +51,8 @@ export interface ActivityDeps {
   pollMs: number;
   /** The steering messages the workflow of the run received so far, and the stage a person takes over. */
   control(runId: string): Promise<Control>;
-  /** The factory's inference gateway, when it names an inference adapter. */
-  gateway?: Gateway;
+  /** The factory's inference gateway, when it names an inference adapter; it resolves once the gateway started. */
+  gateway?: Promise<Gateway>;
   /** The OTLP receiver of the run's spans (ADR 0087), and where a span that cannot be sent is a warning. */
   traces?: Exporter;
   warn(text: string): void;
@@ -88,8 +88,8 @@ export function activities(deps: ActivityDeps) {
 
   /** The variables of the gateway that every harness adapter finds its own in (ADR 0070); none without a gateway. */
   async function gatewayEnv(view: RunView, definition: Definition, model: string): Promise<Record<string, string>> {
-    const { gateway } = deps;
-    if (!gateway) return {};
+    if (!deps.gateway) return {};
+    const gateway = await deps.gateway;
     const key = await keyOf(gateway, view.runId, definition.inference?.budget);
     return {
       OPENAI_BASE_URL: gateway.url,

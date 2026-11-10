@@ -27,3 +27,11 @@ Feature: Fake inference adapter
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-138 @status=implemented
+  Scenario: The fake inference adapter fails start with its message until the test makes it ready
+    Given a module whose CLI starts a gateway with the adapter in "DEMO_INFERENCE_COMMAND" and prints the exit code and the error
+    And its system test starts fakes.inference whose start fails with "LiteLLM is not ready", expects the exit code 1 and that message, calls ready() and expects the next start to print exit code 0 and the gateway "000000000001"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
