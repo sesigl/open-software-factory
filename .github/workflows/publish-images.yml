@@ -78,16 +78,20 @@ jobs:
           echo "targets=$targets" >> "$GITHUB_OUTPUT"
 
       # A release pull request moves the pins and the npm versions together (ADR 0095), and publish-<name> runs at the
-      # same time as this workflow: wait until npm serves each package that an image installs.
+      # same time as this workflow: wait until npm can install each package that an image installs, with its
+      # dependencies. A dependency that no pin names, like @opensoftware/sandbox-egress of the sandbox adapters, can be
+      # published after the pinned packages, so the step tries the install itself, as the image build does.
       - name: Wait for the packages of the images on npm
         if: steps.targets.outputs.targets != ''
         timeout-minutes: 30
         run: |
-          for pin in $(grep -o '@opensoftware/[a-z0-9-]*@[0-9][0-9.]*' deploy/compose/compose.yaml | sort -u); do
-            name=${pin%@*}
-            version=${pin##*@}
-            until [ "$(curl -s -o /dev/null -w '%{http_code}' "https://registry.npmjs.org/$name/$version")" = 200 ]; do
-              echo "waiting for $name@$version on npm"
+          pins=$(grep -o '@opensoftware/[a-z0-9-]*@[0-9][0-9.]*' deploy/compose/compose.yaml | sort -u)
+          mkdir -p "$RUNNER_TEMP/npm-check/lib"
+          for pin in $pins; do
+            # shellcheck disable=SC2086
+            until npm install --dry-run --global --prefer-online --no-fund --no-audit --registry https://registry.npmjs.org \
+              --prefix "$RUNNER_TEMP/npm-check" "$pin" >/dev/null 2>"$RUNNER_TEMP/npm-check.log"; do
+              echo "waiting for $pin and its dependencies on npm: $(grep -m1 'notarget\|ETARGET\|E404' "$RUNNER_TEMP/npm-check.log")"
               sleep 20
             done
           done
