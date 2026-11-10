@@ -37,7 +37,7 @@ published yet, like one whose pin moved a moment ago, is built from npm, which t
 | `temporal-namespace` | one-shot: the namespace `default` | none |
 | `temporal-ui` | the history of every run | `TEMPORAL_UI_PORT`, 8233 |
 | `nats` | NATS with JetStream for the events between the modules | none |
-| `phoenix` | the trace store, on PostgreSQL | `PHOENIX_PORT`, 6006 |
+| `phoenix` | the trace store, on PostgreSQL: Phoenix's image with its bytecode compiled, so it starts sooner ([ADR 0100](../docs/decisions/0100-phoenix-image-with-bytecode.md)) | `PHOENIX_PORT`, 6006 |
 | `litellm` | the LLM gateway, configured by `litellm/config.yaml`: LiteLLM's image with its bytecode compiled, so it starts sooner ([ADR 0098](../docs/decisions/0098-litellm-image-with-bytecode.md)) | `LITELLM_PORT`, 4000 |
 | `factory-repo` | one-shot: copies `FACTORY_DIR` into the volume `factory` and commits it | none |
 | `gatekeeper` | approvals in Slack or on pull requests, with the policy and groups of the factory | `GATEKEEPER_PORT`, 8082 |
@@ -325,4 +325,5 @@ repository's Packages and sets its visibility to public, like the first npm rele
 | SCN-DIST-020 | implemented | The plan of the reference factory adds the factory and finds no problems, with its inference config |
 | SCN-DIST-021 | implemented | The test of the Helm chart plans the reference factory without problems, with its inference config |
 | SCN-DIST-022 | implemented | The foreman of the Helm chart starts a sandbox of agent-sandbox from the agents' template, with rights only in the sandboxes' namespace |
-| SCN-DIST-023 | implemented | The Compose profile takes the module images, the agents' template and the LLM gateway from the factory's registry |
+| SCN-DIST-023 | deprecated | The Compose profile takes the module images, the agents' template and the LLM gateway from the factory's registry |
+| SCN-DIST-024 | implemented | The Compose profile takes the module images, the agents' template, the LLM gateway and the trace store from the factory's registry |

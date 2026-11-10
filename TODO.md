@@ -899,6 +899,9 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
   - [x] `publish-images` waits until npm can install each image's packages with their dependencies: after a release,
     it built before npm had `@opensoftware/sandbox-egress@0.2.0`, which no pin names, and failed.
   - [ ] sandbox-kubernetes: fewer kubectl calls in `create` (11 calls of 0.3 to 0.45 s each).
+  - [x] Phoenix with its bytecode compiled, foreman does not wait until Phoenix is healthy, and the testkit stops a
+    scenario's Compose project without a grace period (ADR 0100, `SCN-DIST-024`). The deploy suite took 543 to 870 s
+    on CI for the same code, at its budget of 600 s.
   - [ ] foreman's scenarios: one Temporal dev server per Vitest worker with a namespace per scenario, if the
     isolation rules allow it (about 1 s of each of 85 scenarios).
   - [ ] Measure the four suites again on CI, and raise a budget only with the measured reason.

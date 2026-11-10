@@ -122,11 +122,12 @@ export function makeCompose(
       // The owner of the project, so a later run takes it down when this process ends without doing so.
       mkdirSync(OWNERS, { recursive: true });
       writeFileSync(join(OWNERS, `${project}.pid`), String(process.pid));
-      // Without the file: a project whose .env misses a value can still be taken down.
+      // Without the file: a project whose .env misses a value can still be taken down. Its containers and volumes go,
+      // so they get no time to stop cleanly: a service that stops slowly, like LiteLLM, took seconds of each scenario.
       onStop(async () => {
         await run(
           "docker",
-          ["compose", "--project-name", project, "down", "--volumes", "--timeout", "5"],
+          ["compose", "--project-name", project, "down", "--volumes", "--timeout", "0"],
           dirs.input,
           env,
         );

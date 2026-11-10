@@ -109,17 +109,18 @@ export function buildImage(): void {
     ]),
     { stdio: ["ignore", "ignore", "inherit"] },
   );
-  gatewayImage();
+  for (const target of ["litellm", "phoenix"]) pythonImage(target);
 }
 
 /**
- * The profile's LiteLLM image (ADR 0098): on this machine, else pulled, else built from deploy/images/Dockerfile, as
- * before its first publish. A scenario that built it would spend its time budget on the build.
+ * The profile's LiteLLM or Phoenix image with compiled bytecode (ADR 0098, ADR 0100): on this machine, else pulled,
+ * else built from deploy/images/Dockerfile, as before its first publish. A scenario that built it would spend its time
+ * budget on the build.
  */
-function gatewayImage(): void {
+function pythonImage(target: string): void {
   const compose = readFileSync(join(root, "deploy/compose/compose.yaml"), "utf8");
-  const image = /image: (\S+\/litellm:\S+)/.exec(compose)?.[1];
-  if (!image) throw new Error("no LiteLLM image in deploy/compose/compose.yaml");
+  const image = new RegExp(`image: (\\S+/${target}:\\S+)`).exec(compose)?.[1];
+  if (!image) throw new Error(`no ${target} image in deploy/compose/compose.yaml`);
   const docker = (...args: string[]) => {
     try {
       execFileSync("docker", args, { stdio: "ignore" });
@@ -129,7 +130,7 @@ function gatewayImage(): void {
     }
   };
   if (!docker("image", "inspect", image) && !docker("pull", "--quiet", image)) {
-    execFileSync("docker", ["build", "--quiet", "--target", "litellm", "--tag", image, join(root, "deploy/images")], {
+    execFileSync("docker", ["build", "--quiet", "--target", target, "--tag", image, join(root, "deploy/images")], {
       stdio: ["ignore", "ignore", "inherit"],
     });
   }

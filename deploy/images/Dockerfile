@@ -4,7 +4,8 @@
 # GitHub's gh and make, for the agents that clone, build and push: with a harness adapter it is the template of the
 # agents' sandboxes (ADR 0096). The target foreman adds the Docker CLI to it, for the docker sandbox adapter, and
 # kubectl, for the kubernetes sandbox adapter of the Helm chart. The target litellm is the LLM gateway of the profile
-# and the chart, with its Python bytecode compiled (ADR 0098).
+# and the chart, with its Python bytecode compiled (ADR 0098). The target phoenix is the trace store of the profile,
+# with its bytecode compiled too (ADR 0100).
 ARG NODE_IMAGE=node:24.11.1-bookworm-slim
 
 FROM openpolicyagent/opa:1.21.0-static AS opa
@@ -60,3 +61,11 @@ FROM ghcr.io/berriai/litellm:v1.106.2 AS litellm
 LABEL org.opencontainers.image.source="https://github.com/sesigl/open-software-factory" \
   org.opencontainers.image.licenses="MIT"
 RUN python -m compileall -q -j 0 /app/.venv/lib/python3.13/site-packages
+
+# The upstream image has no bytecode either (0 .pyc for 15884 .py files), and Phoenix is the last service of the
+# profile to be ready. The image has no shell, so the RUN is in exec form. Phoenix has the Elastic License 2.0, whose
+# text and IP notice stay in the image, in arize_phoenix-<version>.dist-info/licenses.
+FROM arizephoenix/phoenix:version-20.26.1 AS phoenix
+LABEL org.opencontainers.image.source="https://github.com/sesigl/open-software-factory" \
+  org.opencontainers.image.licenses="Elastic-2.0"
+RUN ["/usr/bin/python3.13", "-m", "compileall", "-q", "-j", "0", "/phoenix/.venv/lib/python3.13/site-packages"]

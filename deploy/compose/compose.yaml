@@ -121,7 +121,11 @@ services:
       retries: 60
 
   phoenix:
-    image: arizephoenix/phoenix:version-20.26.1
+    # Phoenix with its bytecode compiled (ADR 0100), built FROM arizephoenix/phoenix:version-20.26.1.
+    image: ghcr.io/sesigl/open-software-factory/phoenix:20.26.1
+    build:
+      context: ../images
+      target: phoenix
     restart: unless-stopped
     depends_on:
       postgres:
@@ -325,7 +329,8 @@ services:
         # foreman attaches to LiteLLM in the background and is healthy only once it did (ADR 0099).
         condition: service_started
       phoenix:
-        condition: service_healthy
+        # foreman sends a span when a stage ends, and one it cannot send is a warning, not a failure (ADR 0100).
+        condition: service_started
     environment:
       OSF_HEALTH_PATH: /v1/health
       OSF_DATA: /home/node/data
