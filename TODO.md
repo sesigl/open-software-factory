@@ -899,8 +899,10 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
   - [x] `publish-images` waits until npm can install each image's packages with their dependencies: after a release,
     it built before npm had `@opensoftware/sandbox-egress@0.2.0`, which no pin names, and failed.
   - [ ] sandbox-kubernetes: fewer kubectl calls in `create` (11 calls of 0.3 to 0.45 s each).
-  - [ ] foreman's scenarios: one Temporal dev server per Vitest worker with a namespace per scenario, if the
-    isolation rules allow it (about 1 s of each of 85 scenarios).
+  - [x] foreman stops at once on SIGTERM with a running stage (ADR 0101, `SCN-FORE-087`): it waited for SIGKILL, 5 s
+    of SCN-FORE-062.
+  - [ ] foreman's scenarios: each start of `foreman serve` takes about 1 s, about half of the suite's time on a laptop.
+    Measure where it goes before a change. One Temporal dev server per Vitest worker saves only about 0.15 s each.
   - [ ] Measure the four suites again on CI, and raise a budget only with the measured reason.
   - Not done: the inference-litellm adapter keeps the upstream image. Its gateways already share LiteLLM's compiled
     bytecode in the volume `osf-inference-python`, so our image would save almost nothing there.

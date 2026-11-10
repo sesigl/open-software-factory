@@ -130,7 +130,11 @@ export function activities(deps: ActivityDeps) {
       );
     }, deps.pollMs);
     try {
-      return { stopReason: await turn.done, takenOver };
+      const stopReason = await turn.done;
+      // At a shutdown of the worker the attempt fails, not the stage, so Temporal runs it again soon (ADR 0101).
+      const { aborted, reason } = context.cancellationSignal;
+      if (aborted && (reason as Error | undefined)?.message === "WORKER_SHUTDOWN") throw reason;
+      return { stopReason, takenOver };
     } finally {
       clearInterval(watch);
       await turn.close();
