@@ -4,7 +4,6 @@ CREATE DATABASE temporal;
 CREATE DATABASE temporal_visibility;
 CREATE DATABASE gatekeeper;
 CREATE DATABASE intake;
-CREATE DATABASE phoenix;
 CREATE DATABASE litellm;
 -- Agent memory starts with pgvector in the factory's own database (docs/architecture/stack.md).
 CREATE EXTENSION IF NOT EXISTS vector;

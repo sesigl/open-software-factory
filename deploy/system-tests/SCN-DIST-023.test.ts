@@ -1,7 +1,7 @@
 import { scenario } from "@opensoftware/testkit";
 import { profile, words } from "./profile.ts";
 
-scenario("SCN-DIST-024", async ({ sut, given, when, then }) => {
+scenario("SCN-DIST-023", async ({ sut, given, when, then }) => {
   let compose: Awaited<ReturnType<typeof profile>>;
   await given('the Compose profile with every value of ".env.example" set in ".env"', async () => {
     compose = await profile(sut);
@@ -17,7 +17,7 @@ scenario("SCN-DIST-024", async ({ sut, given, when, then }) => {
   });
 
   await then(
-    'the output lists the images "gatekeeper", "intake", "foreman", "console", "factory-spec", "harness-claude-code", "litellm" and "phoenix" as "ghcr.io/sesigl/open-software-factory/<name>:<version>"',
+    'the output lists the images "gatekeeper", "intake", "foreman", "console", "factory-spec", "harness-claude-code" and "litellm" as "ghcr.io/sesigl/open-software-factory/<name>:<version>"',
     async () => {
       const names = config.stdout
         .split("\n")
@@ -31,7 +31,6 @@ scenario("SCN-DIST-024", async ({ sut, given, when, then }) => {
         "harness-claude-code",
         "intake",
         "litellm",
-        "phoenix",
       ]);
     },
   );
