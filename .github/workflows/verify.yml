@@ -273,7 +273,7 @@ jobs:
           OSF_TEST_CACHE: ${{ github.event_name == 'pull_request' && '1' || '' }}
       # A release that did not get ready: the pods of every namespace and why they wait, for the log.
       - name: Show the state of the kind cluster
-        if: (failure() || cancelled()) && matrix.cluster == 'kind'
+        if: (failure() || cancelled()) && (matrix.cluster == 'kind' || matrix.kind)
         run: |
           kubectl=.tools/bin/kubectl
           $kubectl get pods --all-namespaces --output wide || true
@@ -440,10 +440,16 @@ jobs:
           path: ${{ runner.temp }}/reports/
       # A rerun of a job uploads its reports again, under the new attempt. Merged in any order, the first attempt's
       # JUnit file could win: BUDGET then read the slow run that the rerun was for. The newest attempt is copied last.
+      # When the plan replayed every suite, there is one artifact, and download-artifact puts its files straight into the
+      # path, without a folder of the artifact's name: then the path holds junit/ and coverage/ themselves.
       - name: Join the reports, the newest attempt of each job last
         run: |
           mkdir -p reports
-          for dir in $(ls -d "$RUNNER_TEMP"/reports/*/ | sort -V); do cp -R "$dir". reports/; done
+          if [ -d "$RUNNER_TEMP/reports/junit" ] || [ -d "$RUNNER_TEMP/reports/coverage" ]; then
+            cp -R "$RUNNER_TEMP/reports/." reports/
+          else
+            for dir in $(ls -d "$RUNNER_TEMP"/reports/*/ | sort -V); do cp -R "$dir". reports/; done
+          fi
 
       - run: make verify-checks
 

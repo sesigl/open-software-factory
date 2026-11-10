@@ -46,7 +46,15 @@ export function makeHelm(
       await localKindCluster(dirs.input, env);
       const result = await run(program("kubectl"), ["create", "namespace", namespace], dirs.input, env);
       if (result.exitCode !== 0) throw new Error(`sut.helm: kubectl create namespace failed: ${result.stderr}`);
-      onStop(() => run(program("kubectl"), ["delete", "namespace", namespace, "--wait=false"], dirs.input, env));
+      onStop(async () => {
+        // Objects of a release outside the namespace, like a namespace of its own, go only with the release.
+        const list = ["list", "--short", "--namespace", namespace];
+        const releases = (await run(program("helm"), list, dirs.input, env)).stdout.split("\n").filter(Boolean);
+        for (const release of releases) {
+          await run(program("helm"), ["uninstall", release, "--namespace", namespace], dirs.input, env);
+        }
+        await run(program("kubectl"), ["delete", "namespace", namespace, "--wait=false"], dirs.input, env);
+      });
     })();
     return created;
   };

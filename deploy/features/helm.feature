@@ -59,3 +59,13 @@ Feature: The Helm chart installs a complete factory on Kubernetes with one comma
     When the operator runs "helm test osf --logs"
     Then the command exits with code 0
     And the output contains "Plan: 8 to add, 0 to change, 0 to remove, 0 drifted."
+
+  @id=SCN-DIST-022 @status=implemented @realizes=SCN-FACTORY-RUNTIME-004
+  Scenario: The foreman of the Helm chart starts a sandbox of agent-sandbox from the agents' template, with rights only in the sandboxes' namespace
+    Given a kind cluster with agent-sandbox and the images of the Compose profile
+    And the operator installed the chart with a values file that sets every value under "secrets"
+    When the deployment "foreman" runs "sandbox-kubernetes create" with a spec of the agents' template of the reference factory and the egress allowlist "litellm"
+    Then the sandbox has the programs "harness-claude-code", "gh", "git" and "make"
+    And in the sandbox, "GET http://litellm:4000/health/liveliness" answers 200, and a request to the chart's PostgreSQL fails
+    And after "sandbox-kubernetes destroy", "sandbox-kubernetes list" in the deployment "foreman" does not list the sandbox
+    And the service account of "foreman" may create sandbox claims in the namespace "<release namespace>-sandboxes", and may read no secret of the release namespace

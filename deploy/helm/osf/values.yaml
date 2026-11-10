@@ -3,7 +3,7 @@
 # Every secret of the factory. Set each value, or name a Secret with the same keys in existingSecret, for example one
 # that OpenBao fills through its operator or the External Secrets Operator. The keys: postgres-password,
 # foreman-api-token, intake-api-token, gatekeeper-api-token, gatekeeper-slack-token, gatekeeper-slack-signing-secret,
-# litellm-master-key and, optional, forge-token.
+# litellm-master-key and, optional, forge-token, github-token and claude-code-oauth-token.
 secrets:
   existingSecret: ""
   postgresPassword: ""
@@ -16,6 +16,10 @@ secrets:
   litellmMasterKey: ""
   # A token that may read pull requests and their checks, for stages with checks. Optional.
   forgeToken: ""
+  # The agents' GitHub token, GH_TOKEN in their sandboxes, and the token of `claude setup-token`. Only each sandbox's
+  # egress pod gets them; the agent holds a placeholder. Without them, a stage that needs them fails.
+  githubToken: ""
+  claudeCodeOauthToken: ""
 
 # The module images, published and signed by the workflow publish-images. The tags equal the pins in
 # deploy/compose/compose.yaml.
@@ -24,7 +28,7 @@ images:
   pullPolicy: IfNotPresent
   gatekeeper: "0.7.0"
   intake: "0.4.1"
-  foreman: "0.7.0-r2"
+  foreman: "0.7.0-r3"
   console: "0.4.0"
   factorySpec: "0.6.1"
 
@@ -47,6 +51,16 @@ intake:
 litellm:
   image: ghcr.io/sesigl/open-software-factory/litellm:1.106.2
   resources: {}
+
+# The agents' sandboxes (ADR 0096). The cluster needs agent-sandbox with its extensions and a network plugin that
+# enforces NetworkPolicies. foreman has rights only in their namespace.
+sandboxes:
+  # Empty: the release's namespace with -sandboxes.
+  namespace: ""
+  # false when the namespace exists, or the installer may not create namespaces.
+  createNamespace: true
+  # The cluster's DNS domain, for the name litellm in the sandboxes' namespace.
+  clusterDomain: cluster.local
 
 foreman:
   harnesses: '{"claude-code": "harness-claude-code run"}'

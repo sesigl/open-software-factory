@@ -88,7 +88,9 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
   ([ADR 0075](../../docs/decisions/0075-helm-chart-and-images.md)), on the cluster of `KUBECONFIG`. `chart` is the
   chart's absolute path; `run(args)` runs `helm <args>` and `kubectl(args)` runs `kubectl <args>`, both in a namespace
   of the scenario, with $INPUT as the current directory; `url(service, port)` forwards a local port to that port of
-  the service. The namespace is deleted when the scenario ends. `make install` pins helm, kubectl and kind.
+  the service. When the scenario ends, each release of the namespace is uninstalled, with its objects outside the
+  namespace, like a namespace of its own, and then the namespace is deleted (SCN-TK-137). `make install` pins helm,
+  kubectl and kind.
 - `sut.adapter("<port>/<name>")`: the command line of a port adapter of this repository, `adapters/<port>/<name>/` in
   the module's folder or above it: Node and the adapter's built `bin`. Pass it to a module that runs adapters as
   programs in its documented variable; the adapter runs as the module's child, with its network guard. The adapter
@@ -451,4 +453,5 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-134 | implemented | sut.compose takes down the project of a run that ended without taking it down |
 | SCN-TK-135 | implemented | sut.http.output shows what every server of the scenario printed, the first one first |
 | SCN-TK-136 | implemented | A scripted harness for sandboxes takes its script and sends its log over HTTP, with no folder of its script mounted |
+| SCN-TK-137 | implemented | sut.helm uninstalls the scenario's releases when the scenario ends, with their objects outside its namespace |
 | SCN-TK-138 | implemented | The fake inference adapter fails start with its message until the test makes it ready |

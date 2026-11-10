@@ -186,9 +186,9 @@ Compose profile. The live tests of [`e2e/paid/`](../../e2e/paid/harness.paid.ts)
 with the testkit's fakes on the Docker host: the scripted agent runs inside foreman's container, and a turn's
 `commands` push a branch and open a pull request on Forgejo like a coding agent's tools (ADR 0076). The profile's own scenarios in [`deploy/features/`](../../deploy/features/compose.feature)
 start it with `sut.compose`, each as a Compose project of its own, and check that every service is healthy and wired
-(ADR 0074). The Helm chart's scenarios install it with `sut.helm` on kind, each release in a namespace of its own, and
-check the same subset: every workload ready, the console wired to foreman, and `helm test` planning the reference
-factory (ADR 0075).
+(ADR 0074). The Helm chart's scenarios install it with `sut.helm` on kind with agent-sandbox, each release in a namespace of
+its own, and check the same subset: every workload ready, the console wired to foreman, `helm test` planning the
+reference factory (ADR 0075), and a sandbox that the chart's foreman starts (ADR 0097).
 
 ## Evergreen docs
 

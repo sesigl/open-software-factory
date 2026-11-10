@@ -38,6 +38,9 @@ spec:
         checksum/factory: {{ include "osf.factoryFiles" . | sha256sum }}
     spec:
       {{- include "osf.podSecurity" . | nindent 6 }}
+      # kubectl of the kubernetes sandbox adapter uses this ServiceAccount, which has rights only in the sandboxes'
+      # namespace.
+      serviceAccountName: {{ include "osf.name" $ctx }}
       initContainers:
         # foreman attaches to LiteLLM when it starts, so it waits until LiteLLM answers, as in the Compose profile.
         - name: litellm
@@ -133,6 +136,27 @@ spec:
             - name: FOREMAN_INFERENCES
               value: '{"litellm": "inference-litellm"}'
             {{- include "osf.secretEnv" (dict "root" . "name" "OSF_SECRET_LITELLM_MASTER_KEY" "key" "litellm-master-key") | nindent 12 }}
+            # Each stage runs in a sandbox of agent-sandbox in the sandboxes' namespace (ADR 0096).
+            - name: FOREMAN_SANDBOX
+              value: kubernetes
+            - name: FOREMAN_SANDBOXES
+              value: '{"kubernetes": "sandbox-kubernetes"}'
+            - name: OSF_SANDBOX_NAMESPACE
+              value: {{ include "osf.sandboxNamespace" . | quote }}
+            # The secrets ref:env/GH_TOKEN and ref:env/CLAUDE_CODE_OAUTH_TOKEN of the reference factory's agents: only
+            # each sandbox's egress pod gets them; the agent holds a placeholder.
+            - name: OSF_SECRET_GH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "osf.secret" . }}
+                  key: github-token
+                  optional: true
+            - name: OSF_SECRET_CLAUDE_CODE_OAUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "osf.secret" . }}
+                  key: claude-code-oauth-token
+                  optional: true
           ports:
             - name: http
               containerPort: 8080

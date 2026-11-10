@@ -133,6 +133,15 @@ Feature: A module's servers and events
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-137 @status=implemented
+  Scenario: sut.helm uninstalls the scenario's releases when the scenario ends, with their objects outside its namespace
+    Given a module whose chart "chart" creates the namespace that its value "extra" names
+    And its system test runs "install extra chart" with sut.helm and "extra" set to a namespace of this scenario
+    And the developer ran "testkit run --junit first.xml" in the module
+    When the developer changes the system test to expect that the namespace is deleted or in deletion and runs "testkit run --junit report.xml"
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-135 @status=implemented
   Scenario: sut.http.output shows what every server of the scenario printed, the first one first
     Given a module whose server writes "started" to its error output when it starts and "greeted" for each "GET /greeting"
