@@ -291,7 +291,8 @@ repository's Packages and sets its visibility to public, like the first npm rele
 | SCN-DIST-015 | implemented | The plan of this repository's factory adds the factory and finds no problems |
 | SCN-DIST-016 | implemented | Every service of the Compose profile is healthy after one command, and each server's health checks pass |
 | SCN-DIST-017 | implemented | The foreman of the Compose profile starts a sandbox from the agents' template through docker-proxy only |
-| SCN-DIST-018 | implemented | The Compose profile takes the module images and the agents' template from the factory's registry |
+| SCN-DIST-018 | deprecated | The Compose profile takes the module images and the agents' template from the factory's registry |
 | SCN-DIST-019 | implemented | Every workload of the Helm chart is ready after one command, the LLM gateway included |
 | SCN-DIST-020 | implemented | The plan of the reference factory adds the factory and finds no problems, with its inference config |
 | SCN-DIST-021 | implemented | The test of the Helm chart plans the reference factory without problems, with its inference config |
+| SCN-DIST-023 | implemented | The Compose profile takes the module images, the agents' template and the LLM gateway from the factory's registry |
