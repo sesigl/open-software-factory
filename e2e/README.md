@@ -62,7 +62,8 @@ The scenario writes these values into its `.env`, next to the profile's own valu
 
 ## Paid smoke run
 
-`SMOKE-PAID` ([`paid/harness.paid.ts`](paid/harness.paid.ts)) starts each first-party harness with a real model and
+`SMOKE-PAID` ([`paid/harness.paid.ts`](paid/harness.paid.ts)) holds the live tests: tests against the real, paid
+service, without fakes ([kinds of tests](../docs/quality/testing-strategy.md#kinds-of-tests)). It starts each first-party harness with a real model and
 asks it to fix the typo "helo" in `notes.md`. A run passes when the turn ends with `end_turn`, the file says "hello
 world", and the run record has output tokens and, when the harness reports a cost, a cost of at most 0.20 USD. It is
 no system test: it has no scenario, uses no fakes and runs without the network guard. Decision:
@@ -71,7 +72,12 @@ no system test: it has no scenario, uses no fakes and runs without the network g
 - **opencode** calls [OpenRouter](https://openrouter.ai) on its chat completions API. The workflow `weekly-paid.yml`
   runs it once a week in the environment `smoke-paid`.
 - **claude-code** runs only on your own machine, on your Claude subscription. It never runs in CI: a subscription
-  belongs to one person.
+  belongs to one person. It runs twice: once directly, and once in a sandbox of the docker sandbox adapter, from the
+  agents' template of the reference factory. In the sandbox, `CLAUDE_CODE_OAUTH_TOKEN` holds only its placeholder,
+  and the run passes only when the egress proxy put the token in on the way to `api.anthropic.com`. The sandboxed
+  run needs Docker. Run both again when the sandboxes' template, its Claude Code or the reference factory's egress
+  hosts change, before a release of the profile or the chart, and when a stage fails at its first turn with an error
+  of authentication ([live tests](../docs/quality/testing-strategy.md#live-tests)).
 - **codex** has no paid run yet: Codex offers its edit tool only to models it knows, and the OpenRouter key allows none.
 
 ```sh

@@ -1,6 +1,7 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "cacheDir": ".turbo/cache",
+  "globalPassThroughEnv": ["DOCKER_HOST", "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE", "TESTCONTAINERS_HOST_OVERRIDE"],
   "globalDependencies": [
     "biome.json",
     "tsconfig.base.json",
