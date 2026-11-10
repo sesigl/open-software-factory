@@ -38,7 +38,7 @@ published yet, like one whose pin moved a moment ago, is built from npm, which t
 | `temporal-ui` | the history of every run | `TEMPORAL_UI_PORT`, 8233 |
 | `nats` | NATS with JetStream for the events between the modules | none |
 | `jaeger` | the trace store: the runs' traces from foreman, by OTLP, kept on the volume `jaeger` ([ADR 0100](../docs/decisions/0100-jaeger-trace-store.md)) | `JAEGER_PORT`, 16686 |
-| `litellm` | the LLM gateway, configured by `litellm/config.yaml`: LiteLLM's image with its bytecode compiled, so it starts sooner ([ADR 0098](../docs/decisions/0098-litellm-image-with-bytecode.md)) | `LITELLM_PORT`, 4000 |
+| `litellm` | the LLM gateway, configured by `litellm/config.yaml`: LiteLLM's image with its bytecode compiled, so it starts sooner ([ADR 0098](../docs/decisions/0098-litellm-image-with-bytecode.md)), and without BerriAI's enterprise code, whose license allows no changed copies ([ADR 0102](../docs/decisions/0102-litellm-image-without-enterprise-code.md)) | `LITELLM_PORT`, 4000 |
 | `factory-repo` | one-shot: copies `FACTORY_DIR` into the volume `factory` and commits it | none |
 | `gatekeeper` | approvals in Slack or on pull requests, with the policy and groups of the factory | `GATEKEEPER_PORT`, 8082 |
 | `intake` | work from Slack, the forge and Sentry | `INTAKE_PORT`, 8081 |
@@ -304,7 +304,7 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | Image | License | What the image holds |
 | --- | --- | --- |
 | The module images and the agents' templates | Apache-2.0, as this repository | The packages of this repository from npm, and their dependencies |
-| `litellm` | MIT, LiteLLM's license | BerriAI's image of LiteLLM, with compiled bytecode ([ADR 0098](../docs/decisions/0098-litellm-image-with-bytecode.md)) |
+| `litellm` | MIT, LiteLLM's license | BerriAI's image of LiteLLM, with compiled bytecode ([ADR 0098](../docs/decisions/0098-litellm-image-with-bytecode.md)) and without BerriAI's enterprise code, which has a license of its own (`SCN-DIST-027`, [ADR 0102](../docs/decisions/0102-litellm-image-without-enterprise-code.md)) |
 
 ## Scenarios
 
@@ -336,3 +336,4 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-022 | implemented | The foreman of the Helm chart starts a sandbox of agent-sandbox from the agents' template, with rights only in the sandboxes' namespace |
 | SCN-DIST-023 | implemented | The Compose profile takes the module images, the agents' template and the LLM gateway from the factory's registry |
 | SCN-DIST-026 | implemented | Every service of the Compose profile is healthy after one command, Jaeger as the trace store, and each server's health checks pass |
+| SCN-DIST-027 | implemented | The profile's LLM gateway holds no code under BerriAI's enterprise license |

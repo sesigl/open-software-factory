@@ -56,7 +56,11 @@ COPY --from=kubectl /bin/kubectl /usr/local/bin/kubectl
 
 # The upstream image has no bytecode, so each new container compiled LiteLLM's modules again when it started: about a
 # third of its start. Compiled once here, the gateway is ready sooner, also in every scenario that starts it.
+# BerriAI's enterprise code has a license of its own, which allows changed copies only with a subscription, so the image
+# holds none of it (ADR 0102); the profile and the chart use no enterprise feature.
 FROM ghcr.io/berriai/litellm:v1.106.2 AS litellm
 LABEL org.opencontainers.image.source="https://github.com/sesigl/open-software-factory" \
   org.opencontainers.image.licenses="MIT"
-RUN python -m compileall -q -j 0 /app/.venv/lib/python3.13/site-packages
+RUN rm -rf /app/enterprise /app/.venv/lib/python3.13/site-packages/litellm_enterprise \
+    /app/.venv/lib/python3.13/site-packages/litellm_enterprise-*.dist-info \
+  && python -m compileall -q -j 0 /app/.venv/lib/python3.13/site-packages

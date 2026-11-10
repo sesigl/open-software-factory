@@ -4,7 +4,7 @@ apiVersion: v2
 name: osf
 description: The open software factory on Kubernetes, installed with one command.
 type: application
-version: 0.1.8
+version: 0.1.9
 home: https://github.com/sesigl/open-software-factory
 sources:
   - https://github.com/sesigl/open-software-factory/tree/main/deploy/helm/osf
