@@ -5,7 +5,7 @@
 // - Compared with OSF_BASE: an image whose packages changed has a new tag, and a changed chart has a new version.
 // - Compared with OSF_BASE: an image whose stage of deploy/images/Dockerfile changed, or a stage or global ARG it builds
 //   on, has a new tag. Comments do not count. Else the publish keeps the old image under the tag, which never changes.
-// - Each image of the chart is in the profile.
+// - Each image of the chart is an image of the profile, pulled or built.
 // - The `pull` list of a suite in .github/test-suites.yml holds each image of the Compose files its tests start; any
 //   other entry, like the base of a Dockerfile or an image that code starts, is named in a file of the suite's packages
 //   or of the workspace packages they depend on. The testkit does not count: a suite names its fakes in `images`.
@@ -65,10 +65,10 @@ function ownTags(repo: Repo): Finding[] {
   });
 }
 
-/** The images that the chart's values name, like postgres.image, are images of the profile. */
+/** The images that the chart's values name, like postgres.image, are images of the profile, also one it builds. */
 function chartImages(repo: Repo): Finding[] {
   if (!repo.exists(VALUES)) return [];
-  const profile = new Set(imagesOf(repo.read(COMPOSE)));
+  const profile = new Set(imagesOf(repo.read(COMPOSE), true));
   return repo
     .read(VALUES)
     .split("\n")
@@ -153,13 +153,13 @@ function rebuilt(context: Context): Finding[] {
   });
 }
 
-/** The images of a Compose file that it does not build itself. */
-function imagesOf(compose: string): string[] {
+/** The images of a Compose file that it does not build itself, or with `built` all of them. */
+function imagesOf(compose: string, built = false): string[] {
   const parsed = (parse(compose, { logLevel: "error" }) ?? {}) as {
     services?: Record<string, { image?: string; build?: unknown }>;
   };
   return Object.values(parsed.services ?? {}).flatMap((service) =>
-    service.image && !service.build ? [service.image] : [],
+    service.image && (built || !service.build) ? [service.image] : [],
   );
 }
 
