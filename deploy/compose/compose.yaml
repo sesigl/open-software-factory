@@ -138,7 +138,11 @@ services:
       retries: 90
 
   litellm:
-    image: ghcr.io/berriai/litellm:v1.106.2
+    # LiteLLM with its bytecode compiled (ADR 0098), built FROM ghcr.io/berriai/litellm:v1.106.2.
+    image: ghcr.io/sesigl/open-software-factory/litellm:1.106.2
+    build:
+      context: ../images
+      target: litellm
     restart: unless-stopped
     depends_on:
       postgres:

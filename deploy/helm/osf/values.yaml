@@ -45,7 +45,7 @@ intake:
 
 # The LLM gateway, with the model routes of files/litellm/config.yaml, the profile's.
 litellm:
-  image: ghcr.io/berriai/litellm:v1.106.2
+  image: ghcr.io/sesigl/open-software-factory/litellm:1.106.2
   resources: {}
 
 foreman:

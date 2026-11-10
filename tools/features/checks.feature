@@ -586,6 +586,13 @@ Feature: Repository checks
     Then the command exits with code 1
     And the output contains "PROFILE deploy/helm/osf/values.yaml:4 the image postgres:17-alpine is not an image of deploy/compose/compose.yaml"
 
+  @id=SCN-REPO-122 @status=implemented
+  Scenario: PROFILE accepts a chart image that the profile builds
+    Given a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them
+    And the Compose profile builds the image "litellm" with the tag 1.106.2, and the Helm chart's LiteLLM image is that image
+    When the developer runs "osf check PROFILE"
+    Then the command exits with code 0
+
   @id=SCN-REPO-111 @status=implemented
   Scenario: PROFILE rejects a suite that starts an image it does not pull and pulls one that its packages do not name
     Given a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them

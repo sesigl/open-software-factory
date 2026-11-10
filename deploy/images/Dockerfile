@@ -2,7 +2,8 @@
 # pins (ADR 0074). Build it with the build argument PACKAGES, the packages separated by spaces, like
 # "@opensoftware/foreman@0.4.0 @opensoftware/forge-github@0.5.0". The target gatekeeper adds OPA. The target agent adds
 # GitHub's gh and make, for the agents that clone, build and push: with a harness adapter it is the template of the
-# agents' sandboxes (ADR 0096). The target foreman adds the Docker CLI to it, for the docker sandbox adapter.
+# agents' sandboxes (ADR 0096). The target foreman adds the Docker CLI to it, for the docker sandbox adapter. The
+# target litellm is the LLM gateway of the profile and the chart, with its Python bytecode compiled (ADR 0098).
 ARG NODE_IMAGE=node:24.11.1-bookworm-slim
 
 FROM openpolicyagent/opa:1.21.0-static AS opa
@@ -48,3 +49,10 @@ USER node
 
 FROM agent AS foreman
 COPY --from=docker /usr/local/bin/docker /usr/local/bin/docker
+
+# The upstream image has no bytecode, so each new container compiled LiteLLM's modules again when it started: about a
+# third of its start. Compiled once here, the gateway is ready sooner, also in every scenario that starts it.
+FROM ghcr.io/berriai/litellm:v1.106.2 AS litellm
+LABEL org.opencontainers.image.source="https://github.com/sesigl/open-software-factory" \
+  org.opencontainers.image.licenses="MIT"
+RUN python -m compileall -q -j 0 /app/.venv/lib/python3.13/site-packages

@@ -235,3 +235,4 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-119 | implemented | PROFILE rejects new packages of an image without a new tag also when a volume has the name of its service |
 | SCN-REPO-120 | implemented | PROFILE rejects a template of the reference factory whose tag differs from the profile's image |
 | SCN-REPO-121 | implemented | osf profile-pins moves the template of the reference factory to the tag of the profile's image |
+| SCN-REPO-122 | implemented | PROFILE accepts a chart image that the profile builds |
