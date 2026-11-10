@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/sesigl/open-software-factory/compare/sandbox-docker-v0.2.0...sandbox-docker-v0.3.0) (2026-11-10)
+
+
+### Features
+
+* **sandbox:** the egress proxy swaps a secret's placeholder also in git's Basic credentials ([#240](https://github.com/sesigl/open-software-factory/issues/240)) ([e8a1c74](https://github.com/sesigl/open-software-factory/commit/e8a1c745a9b75160d1ddc1b4cd7599651da64982))
+
 ## [0.2.0](https://github.com/sesigl/open-software-factory/compare/sandbox-docker-v0.1.1...sandbox-docker-v0.2.0) (2026-11-08)
 
 

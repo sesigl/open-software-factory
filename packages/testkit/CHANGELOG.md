@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.32.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.31.1...testkit-v0.32.0) (2026-11-10)
+
+
+### Features
+
+* **deploy:** every agent of the reference factory runs in a sandbox, on LiteLLM with its run's key ([#245](https://github.com/sesigl/open-software-factory/issues/245)) ([1d7774b](https://github.com/sesigl/open-software-factory/commit/1d7774bf452431c8ed8b790dc8a656a0bf18aab5))
+* **deploy:** the chart's foreman runs the agents' sandboxes on agent-sandbox, with rights only in their namespace ([#249](https://github.com/sesigl/open-software-factory/issues/249)) ([87bd259](https://github.com/sesigl/open-software-factory/commit/87bd259b739f90a4acccc036eaf8863446bbb14e))
+
+
+### Performance Improvements
+
+* **foreman:** start the inference gateway in the background, so foreman does not wait for LiteLLM ([#251](https://github.com/sesigl/open-software-factory/issues/251)) ([0b683e9](https://github.com/sesigl/open-software-factory/commit/0b683e941ddd7adfd7f0bfa9bf150ec60f8cc071))
+
 ## [0.31.1](https://github.com/sesigl/open-software-factory/compare/testkit-v0.31.0...testkit-v0.31.1) (2026-11-08)
 
 

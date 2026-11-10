@@ -1,6 +1,6 @@
 {
   "contracts": "2.2.0",
-  "packages/testkit": "0.31.1",
+  "packages/testkit": "0.32.0",
   "packages/cli": "0.2.0",
   "packages/spec-files": "0.1.1",
   "modules/factory-spec": "0.6.1",
@@ -17,9 +17,9 @@
   "adapters/harness/claude-code": "0.5.1",
   "adapters/harness/codex": "0.2.1",
   "adapters/harness/opencode": "0.2.2",
-  "adapters/sandbox/docker": "0.2.0",
-  "adapters/sandbox/kubernetes": "0.1.2",
-  "packages/sandbox-egress": "0.1.1",
+  "adapters/sandbox/docker": "0.3.0",
+  "adapters/sandbox/kubernetes": "0.2.0",
+  "packages/sandbox-egress": "0.2.0",
   "adapters/inference/litellm": "0.3.3",
   "adapters/forge/forgejo": "0.5.2",
   "adapters/forge/github": "0.5.1",
@@ -28,6 +28,6 @@
   "packages/channel-kit": "0.2.1",
   "packages/postgres": "0.1.0",
   "modules/intake": "0.4.1",
-  "modules/foreman": "0.7.0",
+  "modules/foreman": "0.8.0",
   "modules/console": "0.4.0"
 }
