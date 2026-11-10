@@ -42,16 +42,8 @@ spec:
       # namespace.
       serviceAccountName: {{ include "osf.name" $ctx }}
       initContainers:
-        # foreman attaches to LiteLLM when it starts, so it waits until LiteLLM answers, as in the Compose profile.
-        - name: litellm
-          image: {{ include "osf.image" (dict "root" . "name" "foreman" "tag" .Values.images.foreman) }}
-          imagePullPolicy: {{ .Values.images.pullPolicy }}
-          command: [sh, -c]
-          args:
-            - |
-              until node -e 'fetch("http://litellm:4000/health/liveliness").then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))'; do
-                sleep 1
-              done
+        # No init container waits for LiteLLM: foreman attaches to it in the background and is ready only once it did
+        # (ADR 0099), so the two start side by side.
         # The namespace of the runs, created when it is missing, as the Compose profile does.
         - name: temporal-namespace
           image: {{ .Values.temporal.adminToolsImage }}

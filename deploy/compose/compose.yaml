@@ -322,7 +322,8 @@ services:
       gatekeeper:
         condition: service_healthy
       litellm:
-        condition: service_healthy
+        # foreman attaches to LiteLLM in the background and is healthy only once it did (ADR 0099).
+        condition: service_started
       phoenix:
         condition: service_healthy
     environment:
