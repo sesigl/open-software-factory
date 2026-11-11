@@ -5,7 +5,7 @@ import { existsSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { repoRoot, workspaceOf } from "../support/module.ts";
-import { freePort } from "../support/server.ts";
+import { freePort, SERVICE_PORTS } from "../support/server.ts";
 import { tempFolder } from "../support/temp.ts";
 import type { Nats, Temporal } from "./services.ts";
 
@@ -15,6 +15,7 @@ interface Running<T> {
 }
 
 const START_TIMEOUT_MS = 30_000;
+const servicePort = () => freePort(SERVICE_PORTS);
 const START_ATTEMPTS = 3;
 
 /**
@@ -36,7 +37,7 @@ export function startTemporal(): Promise<Running<Temporal>> {
 }
 
 async function startTemporalOnce(): Promise<Running<Temporal>> {
-  const [port, httpPort, metricsPort] = [await freePort(), await freePort(), await freePort()];
+  const [port, httpPort, metricsPort] = [await servicePort(), await servicePort(), await servicePort()];
   const httpUrl = `http://127.0.0.1:${httpPort}`;
   return start(
     "temporal",
@@ -54,7 +55,7 @@ export function startNats(): Promise<Running<Nats>> {
 }
 
 async function startNatsOnce(): Promise<Running<Nats>> {
-  const [port, monitorPort] = [await freePort(), await freePort()];
+  const [port, monitorPort] = [await servicePort(), await servicePort()];
   return start(
     "nats-server",
     (home) => ["-js", "-a", "127.0.0.1", "-p", String(port), "-m", String(monitorPort), "-sd", home],

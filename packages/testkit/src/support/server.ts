@@ -14,11 +14,15 @@ export interface Server {
 // A port the OS hands out there could be taken by a fake of a parallel scenario between this check and the module's
 // listen, and the module's readiness check would then reach the fake.
 const MODULE_PORTS = { from: 20_000, to: 32_767 };
+// The services the testkit starts on ports it picks, like Temporal and NATS, use a range of their own: a service of a
+// parallel scenario could take a module's port before the module listens, and its readiness check would reach the
+// service.
+export const SERVICE_PORTS = { from: 10_000, to: 19_999 };
 
-/** A port that was free a moment ago on 127.0.0.1, outside the ephemeral range. */
-export async function freePort(): Promise<number> {
+/** A port that was free a moment ago on 127.0.0.1, by default in the range of module ports. */
+export async function freePort(range = MODULE_PORTS): Promise<number> {
   for (;;) {
-    const port = MODULE_PORTS.from + Math.floor(Math.random() * (MODULE_PORTS.to - MODULE_PORTS.from + 1));
+    const port = range.from + Math.floor(Math.random() * (range.to - range.from + 1));
     if (await bindable(port)) return port;
   }
 }
