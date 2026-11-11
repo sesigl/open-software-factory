@@ -906,12 +906,11 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
   - [x] Jaeger replaces Phoenix as the profile's trace store and foreman does not wait for it, and the testkit stops
     a scenario's Compose project without a grace period (ADR 0100, `SCN-DIST-026`). The deploy suite took 543 to 870 s
     on CI for the same code, at its budget of 600 s.
-  - [ ] foreman's scenarios: measured on a laptop, `foreman serve` listens after about 445 ms and stops in 12 ms.
-    Of that, the imports take about 240 ms (`@temporalio/worker` loads 635 CommonJS files, 226 of them rxjs),
-    `Worker.create` 110 ms and reading the factory 55 ms; Node's compile cache alone saves nothing. In
-    `SCN-FORE-001` (1.9 s), the `given` takes 800 ms and the run of its two stages 750 ms. Next: trace where one
-    stage's 375 ms go before a change. A bundle must keep the Temporal SDK's native addon and workflow threads
-    outside (ADR 0079).
+  - [x] foreman's scenarios: a stage took about 330 ms on a laptop: 200 ms to start the harness and its agent,
+    and 110 ms to stop them, of which 100 ms were a fixed wait of harness-proxy after its client hung up. The proxy
+    now ends at once when its client hung up (`SCN-HPROXY-019`): foreman's suite went from 194 s to 182 s on a
+    laptop. `foreman serve` listens after about 445 ms (imports 240 ms, `Worker.create` 110 ms); a bundle must keep
+    the Temporal SDK's native addon and workflow threads outside (ADR 0079), so it stays a later option.
   - [x] BUDGET divides a suite's time by the slowdown of its runner, which `testkit timed` measures in the same run
     (ADR 0103, `SCN-TK-139`, `SCN-REPO-123`, `-124`): the same code took 224 s and 324 s on two runners.
   - [x] Measure the four suites again on CI, and raise a budget only with the measured reason. On `main` after all

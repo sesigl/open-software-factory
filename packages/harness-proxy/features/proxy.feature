@@ -128,3 +128,10 @@ Feature: The ACP proxy of a harness adapter
     Then the harness received "use the existing date helper" as the request "_session/steering"
     And both prompts end with "end_turn"
     And "add a test" reached the harness as a new turn that ends with "end_turn"
+
+  @id=SCN-HPROXY-019 @status=implemented
+  Scenario: serveProxy ends at once when its client hangs up
+    Given a harness scripted to end every turn
+    And serveProxy runs that harness for a client that initialized the connection
+    When the client hangs up
+    Then serveProxy ends within 100 milliseconds
