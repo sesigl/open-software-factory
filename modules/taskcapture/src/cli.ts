@@ -14,9 +14,10 @@ import { TEST_FILES } from "./domain/task.ts";
 const HELP = `Usage: taskcapture <command> [options]
 
 Commands:
-  capture [--suite <folder>] [--git <folder>] [--forge github|forgejo] [--tests <regex>] [--image <image>] [--setup <command>] [--test-command <command>] [--run <run record>] <pull request URL>
+  capture [--suite <folder>] [--git <folder>] [--forge github|forgejo] [--tests <regex>] [--image <image>] [--setup <command>] [--test-command <command>] [--run <run record>] [--commit <commit>] <pull request URL>
          Write the merged pull request as a Harbor task into --suite ($OUTPUT/suite), with the suite's prompt-injection task.
          With --run, the pull request of the run record; the task names the run.
+         With --commit, the merged change is that commit, not the merge commit the forge names (after a rewrite of the history).
   run --agent <agent> [--model <model>]... [--configuration <name>[=<Harbor config file>]]... [--suite <folder>] [--jobs <folder>] [--allow-host <host>]... [--out <file>] [--markdown <file>] [--chart <file>]
          Run the suite with harbor, one job per configuration into --jobs ($OUTPUT/jobs), then report like "report".
   report [--out <file>] [--markdown <file>] [--chart <file>] <job folder or result.json>...
@@ -36,6 +37,7 @@ const { positionals, values } = parseArgs({
     image: { type: "string" },
     setup: { type: "string" },
     "test-command": { type: "string" },
+    commit: { type: "string" },
     out: { type: "string" },
     markdown: { type: "string" },
     chart: { type: "string" },
@@ -77,6 +79,7 @@ const commands: Record<string, Command> = {
       image: values.image,
       setup: values.setup,
       testCommand: values["test-command"],
+      commit: values.commit,
       run: source,
     });
     return { lines: [line] };
