@@ -895,10 +895,12 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
 - **Slices:**
   - [x] LiteLLM with its bytecode compiled, in the profile and the chart (ADR 0098, `SCN-REPO-122`, `SCN-DIST-023`).
   - [x] foreman starts the inference gateway in the background (ADR 0099, `SCN-FORE-086`, `SCN-TK-138`).
-  - [ ] The profile and the chart do not wait for LiteLLM before foreman starts, after the release of that foreman.
+  - [x] The profile and the chart do not wait for LiteLLM before foreman starts, after the release of that foreman.
   - [x] `publish-images` waits until npm can install each image's packages with their dependencies: after a release,
     it built before npm had `@opensoftware/sandbox-egress@0.2.0`, which no pin names, and failed.
-  - [ ] sandbox-kubernetes: fewer kubectl calls in `create` (11 calls of 0.3 to 0.45 s each).
+  - [x] sandbox-kubernetes: `destroy` does not wait for the pods to stop (3.4 s of each sandbox), and `create` gets the
+    claim and its pod in one kubectl call per round. The suite's test times went from 498 s to 272 s on kind on a
+    laptop. `list` in a namespace without sandboxes no longer fails (`SCN-SKUBE-018`).
   - [x] foreman stops at once on SIGTERM with a running stage (ADR 0101, `SCN-FORE-087`): it waited for SIGKILL, 5 s
     of SCN-FORE-062.
   - [x] Jaeger replaces Phoenix as the profile's trace store and foreman does not wait for it, and the testkit stops
