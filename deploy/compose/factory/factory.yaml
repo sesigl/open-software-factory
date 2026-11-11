@@ -32,7 +32,7 @@ agents:
     prompt: ./agents/triage.md
     secrets: &secrets [ref:env/GH_TOKEN, ref:env/CLAUDE_CODE_OAUTH_TOKEN]
     sandbox: &sandbox
-      template: ghcr.io/sesigl/open-software-factory/harness-claude-code:0.5.1-r1
+      template: ghcr.io/sesigl/open-software-factory/harness-claude-code:0.6.0
       cpu: 2
       memory: 4Gi
       egress:
