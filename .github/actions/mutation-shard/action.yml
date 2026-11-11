@@ -44,16 +44,21 @@ runs:
     - shell: bash
       run: echo "$GITHUB_WORKSPACE/.tools/bin" >> "$GITHUB_PATH"
     # Capture scenarios open pages in Chromium: install it when the unit depends on playwright-core.
-    - name: Install the browser of a unit that captures pages
+    - name: Find out if the unit captures pages
+      id: captures
       shell: bash
       env:
         PACKAGE: ${{ inputs.package }}
       run: |
         if grep -l "\"name\": \"$PACKAGE\"" modules/*/package.json packages/*/package.json adapters/*/*/package.json \
           | xargs grep -q '"playwright-core"'; then
-          echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/playwright" >> "$GITHUB_ENV"
-          PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/playwright" .github/scripts/install-browser.sh "$PACKAGE" chromium
+          echo "browser=true" >> "$GITHUB_OUTPUT"
         fi
+    - name: Install the browser of a unit that captures pages
+      if: steps.captures.outputs.browser == 'true'
+      uses: ./.github/actions/capture-browser
+      with:
+        package: ${{ inputs.package }}
     # The kubernetes sandbox adapter's tests need a cluster with agent-sandbox (ADR 0055).
     - name: Start kind with agent-sandbox
       if: inputs.package == '@opensoftware/sandbox-kubernetes'

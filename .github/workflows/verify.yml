@@ -254,11 +254,10 @@ jobs:
       # proof capture opens pages in Chromium (ADR 0029); the testkit hands PLAYWRIGHT_BROWSERS_PATH to the module.
       - name: Install the browser of the capture scenarios
         if: matrix.browser
-        env:
-          BROWSER: ${{ matrix.browser }}
-        run: |
-          echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/playwright" >> "$GITHUB_ENV"
-          PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/playwright" .github/scripts/install-browser.sh @opensoftware/proof "$BROWSER"
+        uses: ./.github/actions/capture-browser
+        with:
+          package: "@opensoftware/proof"
+          browser: ${{ matrix.browser }}
       # BUDGET measures the tests, not the pulls: a test that starts before its image is there waits for it.
       - name: Wait for the image pulls
         if: (matrix.images || matrix.pull)
