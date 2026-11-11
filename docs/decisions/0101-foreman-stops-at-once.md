@@ -23,8 +23,9 @@ Temporal then ran the stage again only after its heartbeat timeout of 1 minute. 
 
 - foreman's worker has `shutdownGraceTime` of 1 second: a short activity, like publishing an event, can end; then
   the worker cancels the running activities with the reason `WORKER_SHUTDOWN`.
-- A stage that gets that cancel cancels its turn and throws the cancel. Temporal marks the attempt as failed, not the
-  stage, and runs the stage again soon on the next worker, up to the stage's 3 attempts.
+- A stage that gets a cancel cancels its turn and throws the cancel. For the `WORKER_SHUTDOWN` cancel, Temporal marks
+  the attempt as failed, not the stage, and runs the stage again soon on the next worker, up to the stage's 3
+  attempts. For the cancel of a run, the run ends as cancelled, as before.
 - The run API's queries to a workflow get an abort signal, which foreman aborts once its worker stopped. Then foreman
   closes its connections and exits.
 
