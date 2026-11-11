@@ -13,7 +13,7 @@ import {
   resolveSecrets,
   type Secret,
 } from "@opensoftware/sandbox-egress";
-import { egressName, ID_LABEL, isImage } from "../domain/names.ts";
+import { egressName, ID_LABEL, isImage, sandboxName } from "../domain/names.ts";
 import type { PodTemplate } from "../domain/pod.ts";
 import {
   caConfig,
@@ -28,7 +28,7 @@ import {
 } from "../domain/resources.ts";
 import { type PodStatus, podProblem } from "../domain/status.ts";
 import { destroySandbox } from "./destroy.ts";
-import { type Context, sandboxPod, waitFor } from "./sandbox.ts";
+import { type Context, waitFor } from "./sandbox.ts";
 
 const EGRESS_TIMEOUT_MS = 60_000;
 const SANDBOX_TIMEOUT_MS = 120_000;
@@ -89,18 +89,26 @@ async function startEgress({ kube, settings }: Context, id: string, spec: Sandbo
   await kube.apply(caConfig(id, certificate));
 }
 
-/** Waits until agent-sandbox reports the claim ready, and stops early when the sandbox's pod cannot start. */
-async function waitUntilRunning(context: Context, id: string): Promise<void> {
+/**
+ * Waits until agent-sandbox reports the claim ready, and stops early when the sandbox's pod cannot start. One kubectl
+ * call per round gets both: the pod has the claim's name.
+ */
+async function waitUntilRunning({ kube }: Context, id: string): Promise<void> {
+  const name = sandboxName(id);
   await waitFor("the sandbox did not start", SANDBOX_TIMEOUT_MS, async () => {
-    const pod = await context.kube.get<PodStatus>(["pod", await sandboxPod(context, id)]);
+    const found = await kube.get<{ items: Item[] }>([`sandboxclaim/${name}`, `pod/${name}`]);
+    const claim = found?.items.find((item) => item.kind === "SandboxClaim");
+    const pod = found?.items.find((item) => item.kind === "Pod");
     const problem = pod && podProblem(pod);
     if (problem) throw new Error(problem);
-    const ready = await context.kube.get<{ status?: { conditions?: { type: string; status: string }[] } }>([
-      "sandboxclaim",
-      `osf-sandbox-${id}`,
-    ]);
-    return ready?.status?.conditions?.some((condition) => condition.type === "Ready" && condition.status === "True")
+    return claim?.status?.conditions?.some((condition) => condition.type === "Ready" && condition.status === "True")
       ? true
       : undefined;
   });
+}
+
+/** A claim or a pod, from a List of both. */
+interface Item extends PodStatus {
+  kind: string;
+  status?: PodStatus["status"] & { conditions?: { type: string; status: string }[] };
 }

@@ -12,7 +12,10 @@ export async function destroy(context: Context, id: string | undefined): Promise
   return { lines: [`destroyed ${id}`] };
 }
 
-/** Removes whatever objects of the sandbox exist, and waits until its pods and their files are gone. */
+/**
+ * Removes whatever objects of the sandbox exist. The claim goes at once, so no command finds the sandbox after this;
+ * Kubernetes stops its pods and removes their files in the background, which takes seconds.
+ */
 export async function destroySandbox({ kube }: Context, id: string): Promise<void> {
-  await kube.run(["delete", KINDS, "--selector", `${ID_LABEL}=${id}`, "--cascade=foreground", "--wait=true"]);
+  await kube.run(["delete", KINDS, "--selector", `${ID_LABEL}=${id}`, "--wait=false"]);
 }
