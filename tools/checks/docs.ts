@@ -6,7 +6,8 @@ import { parse as parseYaml } from "yaml";
 import { refreshDocs } from "../scaffold/docs.ts";
 import type { Context } from "./lib/context.ts";
 import { changedFiles, showAt } from "./lib/git.ts";
-import { type Finding, lineOf } from "./lib/repo.ts";
+import { CHART, COMPOSE, FACTORIES, pins, VALUES } from "./lib/profile.ts";
+import { type Finding, lineOf, Repo } from "./lib/repo.ts";
 import { findTool } from "./lib/tools.ts";
 
 export function docsGen(context: Context): Finding[] {
@@ -32,7 +33,10 @@ export function docsAffected(context: Context): Finding[] {
   const base = context.base("DOCS-AFFECTED");
   if (!base) return [];
   const { repo } = context;
-  const changed = changedFiles(repo.root, base).filter((file) => !isReleaseOnly(context, base, file));
+  const pinned = pinsAtBase(repo.root, base);
+  const changed = changedFiles(repo.root, base).filter(
+    (file) => !isReleaseOnly(context, base, file) && !(repo.exists(file) && pinned.get(file) === repo.read(file)),
+  );
   const body =
     process.env.OSF_PR_BODY && repo.exists(process.env.OSF_PR_BODY) ? repo.read(process.env.OSF_PR_BODY) : "";
   const reviewed = new Set([...body.matchAll(/^\s*docs-reviewed:\s*(\S+)/gm)].map((match) => match[1] as string));
@@ -76,6 +80,20 @@ function isReleaseOnly({ repo }: Context, base: string, file: string): boolean {
   } catch {
     return false;
   }
+}
+
+/** The profile's files as `osf profile-pins` writes them from the base commit's files, for the versions of the workspace. */
+function pinsAtBase(root: string, base: string): Map<string, string> {
+  const files = new Set([COMPOSE, VALUES, CHART, ...FACTORIES]);
+  const atBase = new (class extends Repo {
+    override read(file: string): string {
+      return files.has(file) ? (showAt(root, base, file) ?? "") : super.read(file);
+    }
+    override exists(file: string): boolean {
+      return files.has(file) ? showAt(root, base, file) !== undefined : super.exists(file);
+    }
+  })(root);
+  return atBase.exists(COMPOSE) ? new Map(pins(atBase).files) : new Map();
 }
 
 /** The jsonpath, as keys, that release-please-config.json at the base commit gives a JSON extra file. */
