@@ -3,7 +3,7 @@ import { acpAgentModule, testCases } from "./module.ts";
 
 scenario("SCN-TK-141", async ({ sut, given, when, then }) => {
   let module: Record<string, string> = {};
-  await given('a module whose ACP agent exits when its standard input ends', async () => {
+  await given("a module whose ACP agent exits when its standard input ends", async () => {
     module = acpAgentModule(
       ["When the client hangs up", "Then the module exits with code 0"],
       [
@@ -20,7 +20,7 @@ scenario("SCN-TK-141", async ({ sut, given, when, then }) => {
     );
   });
 
-  await given('its system test connects with sut.acp, hangs up and expects the exit code 0', async () => {
+  await given("its system test connects with sut.acp, hangs up and expects the exit code 0", async () => {
     for (const [path, content] of Object.entries(module)) await sut.files.put(path, content);
   });
 
