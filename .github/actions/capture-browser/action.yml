@@ -1,6 +1,6 @@
 # Installs the Playwright browser of a package's capture scenarios (ADR 0029) into $RUNNER_TEMP/playwright, without
 # Ubuntu's mirrors when it can: the browser's system packages come from GitHub's cache, the browser from Playwright's
-# own download. On a cache miss in an outage of the mirrors, install-browser.sh falls back as it describes.
+# own download. apt-mirror.sh and install-browser.sh describe what happens when the mirrors are out of reach.
 name: Install the capture browser
 description: Installs a Playwright browser and its system packages for a package's capture scenarios.
 inputs:
@@ -25,7 +25,10 @@ runs:
         version=$(pnpm --filter "$PACKAGE" exec node -p 'require("playwright-core/package.json").version')
         echo "packages=$packages" >> "$GITHUB_OUTPUT"
         echo "version=playwright-$version" >> "$GITHUB_OUTPUT"
-    # On a cache miss the action installs from the mirrors; when they are out of reach, the script below goes on.
+    - name: Point apt at a mirror that resolves
+      shell: bash
+      run: "$GITHUB_ACTION_PATH/../../scripts/apt-mirror.sh"
+    # On a cache miss the action installs the packages with apt and stores them; the script below then goes on.
     - name: Restore the system packages from the cache
       if: steps.deps.outputs.packages != ''
       continue-on-error: true
