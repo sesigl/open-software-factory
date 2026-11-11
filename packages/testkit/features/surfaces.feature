@@ -68,6 +68,14 @@ Feature: A module's servers and events
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-141 @status=implemented
+  Scenario: sut.acp hangs up, and a module that ends with its client exits
+    Given a module whose ACP agent exits when its standard input ends
+    And its system test connects with sut.acp, hangs up and expects the exit code 0
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-071 @status=implemented
   Scenario: sut.acp.serve connects to an ACP agent that runs in the test's own process
     Given a library whose exported function serves an ACP agent on the streams it gets and answers "greet Ada" with "hello Ada"
