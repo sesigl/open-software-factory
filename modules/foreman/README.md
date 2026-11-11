@@ -358,7 +358,9 @@ took it over, and a `reason` when it failed for a reason the foreman knows.
   run is `cancelled`. A person takes a running stage over and hands the run back with the signals `take-over` and
   `hand-back` ([Take over](#take-over)).
 - **Restarts.** The runs live in Temporal's history. A foreman that stops and starts again goes on with them; a stage
-  that ran when it stopped runs again, up to 3 times.
+  that ran when it stopped runs again, up to 3 times. On SIGTERM, foreman gives running activities 1 second, then
+  cancels the turns of running stages and exits; Temporal runs those stages again when a foreman starts ([ADR
+  0101](../../docs/decisions/0101-foreman-stops-at-once.md)).
 
 ## Events
 
@@ -519,3 +521,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-084 | implemented | A factory that names no sandbox adapter runs its sandboxes with the adapter of FOREMAN_SANDBOX |
 | SCN-FORE-085 | implemented | A factory that names no sandbox adapter runs its sandboxes with docker when FOREMAN_SANDBOX is not set |
 | SCN-FORE-086 | implemented | Until the factory's gateway starts, the server serves and its health names the failure |
+| SCN-FORE-087 | implemented | A stage that runs a turn when the foreman stops runs its turn again when the foreman starts again |

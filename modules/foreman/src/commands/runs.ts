@@ -68,13 +68,16 @@ export function runs(options: {
   taskQueue: string;
   factory: () => Promise<Factory>;
   now: () => string;
+  /** Aborts the queries still open: once the worker stopped, no worker answers them. */
+  stopping: AbortSignal;
 }): Runs {
   const { client, taskQueue } = options;
   const handle = (runId: string) => client.workflow.getHandle(runId);
+  const ask = <T>(query: () => Promise<T>): Promise<T> => client.connection.withAbortSignal(options.stopping, query);
   const view = (runId: string): Promise<RunView | undefined> =>
-    handle(runId)
-      .query(viewQuery)
-      .catch((error: Error) => (error instanceof WorkflowNotFoundError ? undefined : Promise.reject(error)));
+    ask(() => handle(runId).query(viewQuery)).catch((error: Error) =>
+      error instanceof WorkflowNotFoundError ? undefined : Promise.reject(error),
+    );
   return {
     async start(document) {
       const workItem = checked<WorkItem>("work-item", document, "the body is not a work item");
@@ -132,7 +135,7 @@ export function runs(options: {
       return current;
     },
     async control(runId) {
-      return handle(runId).query(controlQuery);
+      return ask(() => handle(runId).query(controlQuery));
     },
     async decided(workItemId, decision) {
       await handle(runIdOf(workItemId)).signal(gateSignal, decision);
