@@ -238,3 +238,5 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-122 | implemented | PROFILE accepts a chart image that the profile builds |
 | SCN-REPO-123 | implemented | BUDGET divides the time of a module's system tests by the slowdown of the runner that ran them |
 | SCN-REPO-124 | implemented | BUDGET rejects a package whose system tests do not run with "testkit timed" |
+| SCN-REPO-125 | implemented | DOCS-AFFECTED ignores the pins that osf profile-pins writes for a release |
+| SCN-REPO-126 | implemented | DOCS-AFFECTED lists a doc when the profile changes more than its pins |
