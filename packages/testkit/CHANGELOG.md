@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.33.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.32.0...testkit-v0.33.0) (2026-11-11)
+
+
+### Features
+
+* **checks:** BUDGET takes the speed of the runner into account ([#258](https://github.com/sesigl/open-software-factory/issues/258)) ([051c519](https://github.com/sesigl/open-software-factory/commit/051c5192d5eb04d5718e6d8b7363e6603d130567))
+* **deploy:** Jaeger replaces Phoenix as the profile's trace store, and the testkit stops a profile at once ([#255](https://github.com/sesigl/open-software-factory/issues/255)) ([d764741](https://github.com/sesigl/open-software-factory/commit/d764741609c59342becd5603cd08811db87aa8ca))
+
 ## [0.32.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.31.1...testkit-v0.32.0) (2026-11-10)
 
 

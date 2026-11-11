@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/sesigl/open-software-factory/compare/gatekeeper-v0.7.0...gatekeeper-v0.8.0) (2026-11-11)
+
+
+### Features
+
+* **checks:** BUDGET takes the speed of the runner into account ([#258](https://github.com/sesigl/open-software-factory/issues/258)) ([051c519](https://github.com/sesigl/open-software-factory/commit/051c5192d5eb04d5718e6d8b7363e6603d130567))
+
 ## [0.7.0](https://github.com/sesigl/open-software-factory/compare/gatekeeper-v0.6.0...gatekeeper-v0.7.0) (2026-11-08)
 
 

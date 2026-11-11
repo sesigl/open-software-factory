@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.0](https://github.com/sesigl/open-software-factory/compare/foreman-v0.8.0...foreman-v0.9.0) (2026-11-11)
+
+
+### Features
+
+* **checks:** BUDGET takes the speed of the runner into account ([#258](https://github.com/sesigl/open-software-factory/issues/258)) ([051c519](https://github.com/sesigl/open-software-factory/commit/051c5192d5eb04d5718e6d8b7363e6603d130567))
+
+
+### Bug Fixes
+
+* **foreman:** stop at once on SIGTERM, and a stage that ran then runs again soon ([#256](https://github.com/sesigl/open-software-factory/issues/256)) ([87201de](https://github.com/sesigl/open-software-factory/commit/87201de9974c9d8c367f1b49936843cb7382d753))
+
 ## [0.8.0](https://github.com/sesigl/open-software-factory/compare/foreman-v0.7.0...foreman-v0.8.0) (2026-11-10)
 
 

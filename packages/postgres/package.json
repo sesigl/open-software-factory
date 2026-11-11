@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/postgres",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "What the modules of the open software factory share around node-postgres: a pool that survives a lost connection, and transactions.",
   "license": "Apache-2.0",
   "repository": {

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/sesigl/open-software-factory/compare/sandbox-kubernetes-v0.2.0...sandbox-kubernetes-v0.3.0) (2026-11-11)
+
+
+### Features
+
+* **checks:** BUDGET takes the speed of the runner into account ([#258](https://github.com/sesigl/open-software-factory/issues/258)) ([051c519](https://github.com/sesigl/open-software-factory/commit/051c5192d5eb04d5718e6d8b7363e6603d130567))
+
+
+### Performance Improvements
+
+* **sandbox:** the kubernetes adapter's destroy does not wait for the pods to stop, and list works in an empty namespace ([#254](https://github.com/sesigl/open-software-factory/issues/254)) ([e4e99b9](https://github.com/sesigl/open-software-factory/commit/e4e99b90ca84902d6ea1510ab9f5677cf3c936d3))
+
 ## [0.2.0](https://github.com/sesigl/open-software-factory/compare/sandbox-kubernetes-v0.1.2...sandbox-kubernetes-v0.2.0) (2026-11-10)
 
 
