@@ -1,0 +1,49 @@
+# Installs the Playwright browser of a package's capture scenarios (ADR 0029) into $RUNNER_TEMP/playwright, without
+# Ubuntu's mirrors when it can: the browser's system packages come from GitHub's cache, the browser from Playwright's
+# own download. apt-mirror.sh and install-browser.sh describe what happens when the mirrors are out of reach.
+name: Install the capture browser
+description: Installs a Playwright browser and its system packages for a package's capture scenarios.
+inputs:
+  package:
+    description: The package whose playwright-core installs the browser.
+    required: true
+  browser:
+    description: The Playwright browser, for example chromium.
+    default: chromium
+runs:
+  using: composite
+  steps:
+    - name: List the browser's system packages
+      id: deps
+      shell: bash
+      env:
+        PACKAGE: ${{ inputs.package }}
+        BROWSER: ${{ inputs.browser }}
+      run: |
+        dry=$(pnpm --filter "$PACKAGE" exec playwright-core install-deps --dry-run "$BROWSER")
+        packages=$(printf '%s\n' "$dry" | grep -oE -- '--no-install-recommends [^"]*' | cut -d' ' -f2-)
+        version=$(pnpm --filter "$PACKAGE" exec node -p 'require("playwright-core/package.json").version')
+        echo "packages=$packages" >> "$GITHUB_OUTPUT"
+        echo "version=playwright-$version" >> "$GITHUB_OUTPUT"
+    - name: Point apt at a mirror that resolves
+      id: mirror
+      shell: bash
+      run: "$GITHUB_ACTION_PATH/../../scripts/apt-mirror.sh"
+    # On a cache miss the action installs the packages with apt and stores them, also when apt failed: so it runs only
+    # when apt reaches a mirror. Else the script below installs the browser alone.
+    - name: Restore the system packages from the cache
+      if: steps.deps.outputs.packages != '' && steps.mirror.outputs.reachable == 'true'
+      continue-on-error: true
+      uses: awalsh128/cache-apt-pkgs-action@553a35bb8ebd9fcabcb1c9451aa4c98e1b4ca8a9 # v1.6.3
+      with:
+        packages: ${{ steps.deps.outputs.packages }}
+        version: ${{ steps.deps.outputs.version }}
+    - name: Install the browser
+      shell: bash
+      env:
+        PACKAGE: ${{ inputs.package }}
+        BROWSER: ${{ inputs.browser }}
+      run: |
+        echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/playwright" >> "$GITHUB_ENV"
+        PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/playwright" "$GITHUB_ACTION_PATH/../../scripts/install-browser.sh" \
+          "$PACKAGE" "$BROWSER"
