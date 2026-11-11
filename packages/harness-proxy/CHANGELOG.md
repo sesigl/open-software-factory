@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/sesigl/open-software-factory/compare/harness-proxy-v0.3.0...harness-proxy-v0.3.1) (2026-11-11)
+
+
+### Performance Improvements
+
+* **harness-proxy:** serveProxy ends at once when its client hung up ([#261](https://github.com/sesigl/open-software-factory/issues/261)) ([77f0e2f](https://github.com/sesigl/open-software-factory/commit/77f0e2f15220fdeec904dcc38a6505e865607f35))
+
 ## [0.3.0](https://github.com/sesigl/open-software-factory/compare/harness-proxy-v0.2.1...harness-proxy-v0.3.0) (2026-11-11)
 
 

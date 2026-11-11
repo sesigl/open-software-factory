@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.33.1](https://github.com/sesigl/open-software-factory/compare/testkit-v0.33.0...testkit-v0.33.1) (2026-11-11)
+
+
+### Bug Fixes
+
+* **testkit:** Temporal and NATS take their ports from a range of their own ([#266](https://github.com/sesigl/open-software-factory/issues/266)) ([0495857](https://github.com/sesigl/open-software-factory/commit/0495857eba816f8c0b8ecd524e1089db0cc1603d))
+
+
+### Performance Improvements
+
+* **harness-proxy:** serveProxy ends at once when its client hung up ([#261](https://github.com/sesigl/open-software-factory/issues/261)) ([77f0e2f](https://github.com/sesigl/open-software-factory/commit/77f0e2f15220fdeec904dcc38a6505e865607f35))
+
 ## [0.33.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.32.0...testkit-v0.33.0) (2026-11-11)
 
 
