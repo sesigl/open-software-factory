@@ -16,10 +16,17 @@ starts() {
     'require("playwright-core")[process.argv[1]].launch().then((b) => b.close())' "$browser"
 }
 
-# A mirror that does not answer fails at once, instead of after the job's time limit.
-echo 'Acquire::Retries "1";' | sudo tee /etc/apt/apt.conf.d/99-osf-retries >/dev/null
+# The hosts of apt's sources resolve: else apt waits for each package until the job's time limit.
+mirrors_resolve() {
+  local host
+  for host in $(grep -hoE 'https?://[^/ ]+' /etc/apt/sources.list.d/*.sources /etc/apt/sources.list 2>/dev/null \
+    | sed -E 's#https?://##' | sort -u); do
+    getent hosts "$host" >/dev/null || return 1
+  done
+}
 
-if playwright install --with-deps "$browser"; then exit 0; fi
+echo 'Acquire::Retries "1";' | sudo tee /etc/apt/apt.conf.d/99-osf-retries >/dev/null
+if mirrors_resolve && playwright install --with-deps "$browser"; then exit 0; fi
 echo "::warning::the system packages of $browser did not install; trying the browser alone"
 playwright install "$browser"
 if starts; then exit 0; fi
