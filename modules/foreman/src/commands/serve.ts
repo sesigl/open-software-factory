@@ -111,7 +111,8 @@ export async function serve(env: Env) {
   try {
     const temporal = await Connection.connect({ address });
     const client = new Client({ connection: temporal, namespace });
-    const work = runs({ client, taskQueue, factory: () => readFactory(factoryPath), now });
+    const stopping = new AbortController();
+    const work = runs({ client, taskQueue, factory: () => readFactory(factoryPath), now, stopping: stopping.signal });
     const worker = await Worker.create({
       connection: await NativeConnection.connect({ address }),
       namespace,
@@ -140,6 +141,8 @@ export async function serve(env: Env) {
       }),
       maxHeartbeatThrottleInterval: pollMs,
       defaultHeartbeatThrottleInterval: pollMs,
+      // At SIGTERM a short activity may end; after this time the worker cancels the running stages (ADR 0101).
+      shutdownGraceTime: "1 second",
     });
     const running = worker.run();
     if (bus) await listen(bus, work, warn);
@@ -179,8 +182,10 @@ export async function serve(env: Env) {
     process.stdout.write(`foreman serves the run API on port ${port}, task queue ${taskQueue} at ${address}\n`);
     // Temporal's runtime stops the worker on SIGTERM and SIGINT; the server stops with it.
     await running;
+    stopping.abort();
     await app.close();
     await bus?.close();
+    await temporal.close();
   } finally {
     await gateway?.stop();
   }

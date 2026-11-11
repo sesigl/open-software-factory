@@ -901,11 +901,13 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
   - [x] sandbox-kubernetes: `destroy` does not wait for the pods to stop (3.4 s of each sandbox), and `create` gets the
     claim and its pod in one kubectl call per round. The suite's test times went from 498 s to 272 s on kind on a
     laptop. `list` in a namespace without sandboxes no longer fails (`SCN-SKUBE-018`).
+  - [x] foreman stops at once on SIGTERM with a running stage (ADR 0101, `SCN-FORE-087`): it waited for SIGKILL, 5 s
+    of SCN-FORE-062.
   - [x] Jaeger replaces Phoenix as the profile's trace store and foreman does not wait for it, and the testkit stops
     a scenario's Compose project without a grace period (ADR 0100, `SCN-DIST-026`). The deploy suite took 543 to 870 s
     on CI for the same code, at its budget of 600 s.
-  - [ ] foreman's scenarios: one Temporal dev server per Vitest worker with a namespace per scenario, if the
-    isolation rules allow it (about 1 s of each of 85 scenarios).
+  - [ ] foreman's scenarios: each start of `foreman serve` takes about 1 s, about half of the suite's time on a laptop.
+    Measure where it goes before a change. One Temporal dev server per Vitest worker saves only about 0.15 s each.
   - [x] BUDGET divides a suite's time by the slowdown of its runner, which `testkit timed` measures in the same run
     (ADR 0103, `SCN-TK-139`, `SCN-REPO-123`, `-124`): the same code took 224 s and 324 s on two runners.
   - [x] Measure the four suites again on CI, and raise a budget only with the measured reason. On `main` after all

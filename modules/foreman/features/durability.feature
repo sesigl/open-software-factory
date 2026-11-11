@@ -10,6 +10,13 @@ Feature: Durability
     Then "/v1/runs/<id>" shows the state "complete" with the stages "plan" and "implement" "succeeded"
     And the harness received the prompt "Write a plan" only once
 
+  @id=SCN-FORE-087 @status=implemented @realizes=SCN-FACTORY-RUNTIME-001
+  Scenario: A stage that runs a turn when the foreman stops runs its turn again when the foreman starts again
+    Given a run whose stage "implement" runs a turn that waits for "never"
+    When the foreman stops and starts again
+    Then within 20 seconds the harness received the prompt "Implement plan.md" a second time
+    And "/v1/runs/<id>" shows the stage "implement" "running"
+
   @id=SCN-FORE-073 @status=implemented @realizes=SCN-FACTORY-RUNTIME-001
   Scenario: A work item that intake publishes while the foreman is down starts a run when the foreman starts again
     Given "foreman serve" runs the README's "factory.yaml" with "FOREMAN_NATS_URL" set to a NATS server
