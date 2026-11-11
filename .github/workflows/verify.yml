@@ -258,8 +258,7 @@ jobs:
           BROWSER: ${{ matrix.browser }}
         run: |
           echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/playwright" >> "$GITHUB_ENV"
-          PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/playwright" \
-            pnpm --filter @opensoftware/proof exec playwright-core install --with-deps "$BROWSER"
+          PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/playwright" .github/scripts/install-browser.sh @opensoftware/proof "$BROWSER"
       # BUDGET measures the tests, not the pulls: a test that starts before its image is there waits for it.
       - name: Wait for the image pulls
         if: (matrix.images || matrix.pull)

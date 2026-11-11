@@ -52,8 +52,7 @@ runs:
         if grep -l "\"name\": \"$PACKAGE\"" modules/*/package.json packages/*/package.json adapters/*/*/package.json \
           | xargs grep -q '"playwright-core"'; then
           echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/playwright" >> "$GITHUB_ENV"
-          PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/playwright" \
-            pnpm --filter "$PACKAGE" exec playwright-core install --with-deps chromium
+          PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/playwright" .github/scripts/install-browser.sh "$PACKAGE" chromium
         fi
     # The kubernetes sandbox adapter's tests need a cluster with agent-sandbox (ADR 0055).
     - name: Start kind with agent-sandbox
