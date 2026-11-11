@@ -57,6 +57,13 @@ Feature: Services and outside systems
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-142 @status=implemented
+  Scenario: fakes.temporal and fakes.nats listen below the range of module ports
+    Given a module whose system test starts fakes.temporal and fakes.nats and expects each of their ports between 10000 and 19999
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-011 @status=implemented
   Scenario: fakes.s3 gives the module an S3 API that stores objects
     Given a module whose CLI creates the bucket "demo", puts "notes.txt" with "hello" at "DEMO_S3_ENDPOINT" and prints the object it reads back

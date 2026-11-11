@@ -194,7 +194,9 @@ Every server, client and subscription stops when the scenario ends, before the f
 - `fakes.nats()`, `fakes.temporal()`: NATS with JetStream and the Temporal CLI's dev server for this scenario, each
   the real server as a process on the host with its data in a temporary folder, with no Docker
   ([ADR 0067](../../docs/decisions/0067-foreman.md)). `make install` pins `nats-server` 2.11.9 and `temporal` 1.4.1 in
-  `.tools/bin`; on other platforms put the same versions on PATH. Each starts in about a second.
+  `.tools/bin`; on other platforms put the same versions on PATH. Each starts in about a second. Their ports come
+  from 10000 to 19999 and a module's port from 20000 to 32767, so a service of a parallel scenario cannot take the port
+  of a module that does not listen yet.
 - `fakes.s3()`: a real service in a container for this scenario
   ([ADR 0016](../../docs/decisions/0016-testkit-service-fakes.md)). Each fake gives only what a module needs
   to reach it: a URL, an address or an endpoint with keys. Docker must run.
@@ -460,3 +462,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-139 | implemented | testkit timed runs the command, and with CI set it writes the runner's slowdown |
 | SCN-TK-140 | implemented | testkit timed without CI only runs the command |
 | SCN-TK-141 | implemented | sut.acp hangs up, and a module that ends with its client exits |
+| SCN-TK-142 | implemented | fakes.temporal and fakes.nats listen below the range of module ports |
