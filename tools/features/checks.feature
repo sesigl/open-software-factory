@@ -393,6 +393,21 @@ Feature: Repository checks
     When the developer runs "osf docs-affected" against the base commit
     Then the command exits with code 0
 
+  @id=SCN-REPO-125 @status=implemented
+  Scenario: DOCS-AFFECTED ignores the pins that osf profile-pins writes for a release
+    Given a base commit with a doc "docs/how-to/deploy.md" that covers "deploy/**" and a Compose profile and Helm chart that pin "demo" 0.2.0 as osf profile-pins writes them
+    And a change that sets the workspace's version of "demo" to 0.3.0 and runs "osf profile-pins"
+    When the developer runs "osf docs-affected" against the base commit
+    Then the command exits with code 0
+
+  @id=SCN-REPO-126 @status=implemented
+  Scenario: DOCS-AFFECTED lists a doc when the profile changes more than its pins
+    Given a base commit with a doc "docs/how-to/deploy.md" that covers "deploy/**" and a Compose profile and Helm chart that pin "demo" 0.2.0 as osf profile-pins writes them
+    And a change that sets the workspace's version of "demo" to 0.3.0, runs "osf profile-pins" and adds a comment to "deploy/compose/compose.yaml"
+    When the developer runs "osf docs-affected" against the base commit
+    Then the command exits with code 1
+    And the output names "docs/how-to/deploy.md" and "deploy/compose/compose.yaml"
+
   @id=SCN-REPO-038 @status=implemented
   Scenario: RUNS rejects a run record with prompt content
     Given a run record "runs/run-1.jsonl" whose chat span has the attribute "gen_ai.input.messages"
