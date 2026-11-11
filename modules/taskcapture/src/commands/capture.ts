@@ -20,6 +20,8 @@ export interface CaptureOptions {
   image?: string;
   setup?: string;
   testCommand?: string;
+  /** The commit of the merged change, instead of the merge commit the forge names (--commit). */
+  commit?: string;
   /** The run the pull request came from (--run). */
   run?: SourceRun;
 }
@@ -38,7 +40,8 @@ export function readRun(file: string): SourceRun {
 }
 
 export async function capture(ref: PullRef, options: CaptureOptions): Promise<string> {
-  const pull = mergedPull(ref, (await readPull(ref, options.token)) as Parameters<typeof mergedPull>[1]);
+  const merged = mergedPull(ref, (await readPull(ref, options.token)) as Parameters<typeof mergedPull>[1]);
+  const pull = { ...merged, mergeCommit: options.commit ?? merged.mergeCommit };
   const repository = await openRepository(options.git, ref.cloneUrl, options.token);
   try {
     const { dir } = repository;

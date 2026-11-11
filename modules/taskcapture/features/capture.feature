@@ -149,6 +149,14 @@ Feature: Capture a merged pull request as a Harbor task
     Then the command exits with code 1
     And the error output says the commit or its parent is not in the repository
 
+  @id=SCN-TASK-068 @status=implemented
+  Scenario: "--commit" names the commit of the merged change when the forge's merge commit is not in the clone
+    Given a merged GitHub pull request 7 that changes "src/sum.js" from "a - b" to "a + b", and a GitHub API that names a merge commit the Git repository does not have
+    When the user runs "taskcapture capture --git . --commit <commit of the change> https://github.com/acme/web/pull/7" with "TASKCAPTURE_FORGE_URL" set to the GitHub API
+    Then the command exits with code 0
+    And "suite/web-7/solution/files/src/sum.js" holds "a + b"
+    And "suite/web-7/task.toml" names the commit of the change as "merge_commit"
+
   @id=SCN-TASK-039 @status=implemented
   Scenario: A "--tests" that is not a regular expression exits 2
     When the user runs "taskcapture capture --tests ( https://github.com/acme/web/pull/7"

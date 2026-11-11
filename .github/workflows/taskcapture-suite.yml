@@ -42,22 +42,23 @@ jobs:
       - run: pnpm exec turbo run build --filter=@opensoftware/taskcapture...
       - uses: astral-sh/setup-uv@v6
       - run: uv tool install harbor==0.24.0
-      # Pull requests whose system tests need no Docker, since a Harbor task runs in a container without one.
+      # Pull requests whose system tests need no Docker, since a Harbor task runs in a container without one. Each
+      # names its commit on main: the history was rewritten, and GitHub still names the merge commits from before.
       - name: Capture the suite
         env:
           TASKCAPTURE_FORGE_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.server_url }}/${{ github.repository }}
         run: |
-          while read -r number package; do
-            node modules/taskcapture/dist/cli.js capture --git . --suite "$RUNNER_TEMP/suite" \
+          while read -r number package commit; do
+            node modules/taskcapture/dist/cli.js capture --git . --commit "$commit" --suite "$RUNNER_TEMP/suite" \
               --image node:24-bookworm --setup "corepack enable && pnpm install --frozen-lockfile" \
               --test-command "pnpm install --frozen-lockfile && pnpm exec turbo run test:system --filter=$package" \
               "$REPOSITORY/pull/$number"
           done <<'PULLS'
-          45 @opensoftware/spec-trace
-          47 @opensoftware/spec-trace
-          49 @opensoftware/scorekit
-          52 @opensoftware/scorekit
+          45 @opensoftware/spec-trace ba9c0d511cff852c83002e9ef7f8ba892e566b7d
+          47 @opensoftware/spec-trace 13877486103da461a1419f1d2f81bee90e5a1e8e
+          49 @opensoftware/scorekit 7fd30a95f28f9bc6ed94a6bc419d7cab151d4017
+          52 @opensoftware/scorekit 4c26ce41467634c6943d50229eac0606a4dd76f3
           PULLS
       - name: Run the oracle and the no-op agent
         run: |

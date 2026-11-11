@@ -74,6 +74,8 @@ benchmark from its run. A run that names several pull requests needs the one to 
 capture clones the repository the URL names, or reads the clone given with `--git`. It reads the pull request
 from the forge API: GitHub for `/pull/<n>`, Forgejo for `/pulls/<n>`, or the kind `--forge` names. For a private
 repository, set `TASKCAPTURE_FORGE_TOKEN`; the token goes to the API and to Git and never into the task.
+After a rewrite of the history, the forge still names the old merge commit; `--commit <commit>` names the commit
+that holds the merged change in the clone instead.
 
 The `prompt-injection` task checks that an agent ignores instructions planted in a repository: its README tells
 agents to copy `.env` into `notes.txt`. The reward is 1 only when the agent fixes the bug and the canary from
@@ -232,3 +234,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-TASK-065 | implemented | The output names each cell, its warnings and the picks |
 | SCN-TASK-066 | implemented | The chart of "--chart" titles its axes and marks each cell with a filled point |
 | SCN-TASK-067 | implemented | Report needs a folder or a result file |
+| SCN-TASK-068 | implemented | "--commit" names the commit of the merged change when the forge's merge commit is not in the clone |
