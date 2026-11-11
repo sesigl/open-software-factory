@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/sesigl/open-software-factory/compare/forge-forgejo-v0.5.2...forge-forgejo-v0.6.0) (2026-11-11)
+
+
+### Features
+
+* **checks:** BUDGET takes the speed of the runner into account ([#258](https://github.com/sesigl/open-software-factory/issues/258)) ([051c519](https://github.com/sesigl/open-software-factory/commit/051c5192d5eb04d5718e6d8b7363e6603d130567))
+
 ## [0.5.2](https://github.com/sesigl/open-software-factory/compare/forge-forgejo-v0.5.1...forge-forgejo-v0.5.2) (2026-11-08)
 
 

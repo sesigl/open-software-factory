@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/sesigl/open-software-factory/compare/taskcapture-v0.2.1...taskcapture-v0.3.0) (2026-11-11)
+
+
+### Features
+
+* **checks:** BUDGET takes the speed of the runner into account ([#258](https://github.com/sesigl/open-software-factory/issues/258)) ([051c519](https://github.com/sesigl/open-software-factory/commit/051c5192d5eb04d5718e6d8b7363e6603d130567))
+
+
+### Bug Fixes
+
+* **taskcapture:** capture --commit, so the nightly suite captures the pull requests again ([#260](https://github.com/sesigl/open-software-factory/issues/260)) ([29b8c54](https://github.com/sesigl/open-software-factory/commit/29b8c54df9d488953049c4481ff0bbe1c076122d))
+
 ## [0.2.1](https://github.com/sesigl/open-software-factory/compare/taskcapture-v0.2.0...taskcapture-v0.2.1) (2026-11-05)
 
 

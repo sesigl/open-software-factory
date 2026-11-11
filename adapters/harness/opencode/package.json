@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/harness-opencode",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "harness-opencode: runs opencode behind the harness port through its own ACP server, asking before each edit and command, with a tool allowlist, cancel within 5 seconds and a run record with tokens.",
   "license": "Apache-2.0",
   "repository": {

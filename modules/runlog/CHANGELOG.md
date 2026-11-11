@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/sesigl/open-software-factory/compare/runlog-v0.4.1...runlog-v0.5.0) (2026-11-11)
+
+
+### Features
+
+* **checks:** BUDGET takes the speed of the runner into account ([#258](https://github.com/sesigl/open-software-factory/issues/258)) ([051c519](https://github.com/sesigl/open-software-factory/commit/051c5192d5eb04d5718e6d8b7363e6603d130567))
+
 ## [0.4.1](https://github.com/sesigl/open-software-factory/compare/runlog-v0.4.0...runlog-v0.4.1) (2026-11-05)
 
 
