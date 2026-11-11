@@ -37,6 +37,8 @@ export interface AcpClient {
   permissionRequests(): AcpPermissionRequest[];
   /** Waits until the module's process exits and gives its exit code. */
   exited(): Promise<number | null>;
+  /** Hangs up: closes the connection and ends the module's standard input, as a client that ends does. */
+  hangUp(): Promise<void>;
 }
 
 export interface Acp {
@@ -153,6 +155,10 @@ async function connectClient(
     agent: { name: initialized.agentInfo?.name, version: initialized.agentInfo?.version },
     permissionRequests: () => [...requests],
     exited: () => exit,
+    async hangUp() {
+      connection.close();
+      streams.output.end();
+    },
     async newSession(folder = "$INPUT") {
       const sessionCwd = hooks.inside(folder);
       mkdirSync(sessionCwd, { recursive: true });

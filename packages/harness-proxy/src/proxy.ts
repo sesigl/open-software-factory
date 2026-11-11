@@ -131,8 +131,14 @@ export function serveProxy(options: ProxyOptions): Promise<void> {
     })
     .connect(streamOf(output, input));
 
-  // A client that hangs up ends the session: the agent stops, and so does the proxy.
-  void upstream.closed.then(() => child.kill());
-  // The proxy ends with its agent, after the answers to cancelled turns reached the client.
-  return new Promise<void>((resolve) => child.on("exit", () => setTimeout(resolve, 100)));
+  return new Promise<void>((resolve) => {
+    // A client that hangs up ends the session: the agent stops, and the proxy ends with it, since no client waits
+    // for an answer.
+    void upstream.closed.then(() => {
+      child.once("exit", () => resolve());
+      child.kill();
+    });
+    // An agent that ends by itself: the proxy ends after the answers to cancelled turns reached the client.
+    child.on("exit", () => setTimeout(resolve, 100));
+  });
 }

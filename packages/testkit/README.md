@@ -72,8 +72,8 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
   `$INPUT`, created when missing) and returns its `id`, `prompt(text)`, which waits for the end of the turn and gives
   its `stopReason` and the `reply` streamed meanwhile, and `cancel()`. A second `prompt` before the first ends steers
   the running turn. The client approves every tool call the module asks about, or refuses each one with
-  `approve: false`, and lists them in `permissionRequests()`. `exited()` waits for the module to exit and gives its exit code. It
-  offers the module no file system and no terminal.
+  `approve: false`, and lists them in `permissionRequests()`. `exited()` waits for the module to exit and gives its exit code.
+  `hangUp()` closes the connection and ends the module's standard input, as a client that ends does. It offers the module no file system and no terminal.
 - `sut.acp.serve(start, { approve })`: the same client for a library that serves ACP in the test's own process, such
   as `@opensoftware/harness-proxy` ([ADR 0052](../../docs/decisions/0052-harness-claude-code.md)). `start` gets the
   streams `{ input, output }` to serve on; `exited()` gives 0 when its promise resolved and 1 when it rejected.
@@ -459,3 +459,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-138 | implemented | The fake inference adapter fails start with its message until the test makes it ready |
 | SCN-TK-139 | implemented | testkit timed runs the command, and with CI set it writes the runner's slowdown |
 | SCN-TK-140 | implemented | testkit timed without CI only runs the command |
+| SCN-TK-141 | implemented | sut.acp hangs up, and a module that ends with its client exits |

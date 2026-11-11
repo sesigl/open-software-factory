@@ -50,7 +50,9 @@ How `serveProxy` behaves:
   agent's reject option from the proxy, and the client is never asked. A tool call without a kind is outside every
   list. Without `allow`, the client decides every tool call the agent asks about.
 - **Cancel.** `session/cancel` goes to the agent. When the turn has not ended 3 seconds later, the proxy stops the
-  agent and ends the turn with `cancelled`. A client that hangs up stops the agent.
+  agent and ends the turn with `cancelled`. A client that hangs up stops the agent, and `serveProxy` ends as soon as
+  the agent exited. An agent that exits by itself: `serveProxy` ends 100 ms later, so the answers to cancelled turns
+  reach the client.
 - **The session record.** Every prompt, update, permission decision (`allowed`, `refused` or `refused by the
   allowlist`) and stop reason with its usage is one JSON line in `<data>/sessions/<session ID>.jsonl`, after a first
   line with the folder, the agent's name and version, and `resource` (default: `OTEL_RESOURCE_ATTRIBUTES` and
@@ -106,3 +108,4 @@ the GitHub environment `npm`, a token only for the first version, then a trusted
 | SCN-HPROXY-016 | implemented | runAdapter's "transcript" without a session ID is a usage error |
 | SCN-HPROXY-017 | implemented | runAdapter prints the adapter's usage for "--help" |
 | SCN-HPROXY-018 | implemented | A prompt sent while a turn runs reaches the agent as the steering request the adapter names |
+| SCN-HPROXY-019 | implemented | serveProxy ends at once when its client hangs up |
