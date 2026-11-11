@@ -4,6 +4,9 @@ import { sandboxes, TEMPLATE } from "./sandbox.ts";
 // busybox's nc answers one request per loop; nohup keeps it running after exec returns.
 const SERVER =
   "nohup sh -c 'while true; do printf \"HTTP/1.0 200 OK\\r\\nContent-Length: 5\\r\\n\\r\\nhello\" | nc -l -p 8080; done' >/dev/null 2>&1 &";
+// The server answers in its own sandbox before the step ends: on a slow runner, nc listened only after the request.
+const ANSWERS =
+  'i=0; until [ "$(curl -s --noproxy "*" --max-time 1 http://127.0.0.1:8080/)" = hello ]; do i=$((i+1)); [ $i -lt 50 ] || exit 1; sleep 0.1; done';
 
 scenario("SCN-SDOCKER-006", async ({ sut, given, when, then }) => {
   const servers = sandboxes(sut);
@@ -14,6 +17,8 @@ scenario("SCN-SDOCKER-006", async ({ sut, given, when, then }) => {
       const id = await servers.create({ template: TEMPLATE });
       const started = await servers.sh(id, SERVER);
       expect(started.exitCode, started.stderr).toBe(0);
+      const answers = await servers.sh(id, ANSWERS);
+      expect(answers.exitCode, "the server did not answer on port 8080 within 5 seconds").toBe(0);
       // Each sandbox's container and its network are named osf-sandbox-<ID> (README, "No state of its own").
       host = `osf-sandbox-${id}`;
     });
