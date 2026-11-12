@@ -26,7 +26,7 @@ npx @opensoftware/forge-github event delivery.json                # a pr.opened@
 ## How it behaves
 
 - **The token** is sent as a bearer token with the API version `2022-11-28`. It needs write access to contents, pull
-  requests and commit statuses, and administration of the repository for `protect` and `webhook`. A token GitHub
+  requests and commit statuses, read access to checks (`Checks: read`), and administration of the repository for `protect` and `webhook`. A token GitHub
   refuses exits 1 with `the forge refused the token`; a repository it does not show exits 1 with
   `no repository <repo>`.
 - **Usage errors** exit 2 before any call to GitHub: a repository that is not `<owner>/<name>`, a pull request
@@ -34,8 +34,16 @@ npx @opensoftware/forge-github event delivery.json                # a pr.opened@
 - **Comments.** `comments` marks the token's own comments as `mine` with its user from `GET /user`. GitHub refuses
   that call for a GitHub Actions token; its user is then `github-actions[bot]`, who writes its comments.
 - **Branches** are refs: `branch` creates `refs/heads/<branch>` at the commit of `--from` or of the default branch.
-- **Checks** are commit statuses with the check's name as their context; GitHub Apps' check runs are not used.
-  `pr` lists the latest status per name from the combined status of the head commit.
+- **Checks** are the commit statuses and the check runs of the head commit, one per name
+  ([ADR 0104](../../../docs/decisions/0104-forge-github-check-runs.md)). A job of GitHub Actions is a check run.
+  `check` writes a commit status. `pr` lists the latest status per name from the combined status, and reads every
+  page of check runs, 100 per page. A check run is `pending` until it completed; then `success` for the conclusions
+  `success`, `neutral` and `skipped` (GitHub's branch protection counts them as passing), `failure` for `failure`,
+  and `error` for any other (`timed_out`, `cancelled`, `action_required`, `stale`, `startup_failure`). Of several
+  check runs with one name, as after a re-run, the newest counts. Of a status and a check run with one name, the
+  worse state counts, in the order `success`, `pending`, `failure`, `error`. A check run's description is its
+  output's title, and its URL its page on GitHub. A token that may not read check runs makes `pr` exit 1 with
+  `the token may not read the check runs of <repo>: give it the permission "Checks: read"`.
 - **Merge state.** GitHub computes whether a new pull request can merge in the background and answers
   `mergeable: null` until it knows. `pr` asks again for up to 10 seconds. `mergeCommit` is set only once the pull
   request is merged; GitHub's test merge of an open pull request is not printed.
@@ -97,5 +105,5 @@ breaking change raises the minor version. The one-time setup is the same as for 
 | Variable | Type | Default | Meaning |
 | --- | --- | --- | --- |
 | `FORGE_URL` | string | `"https://api.github.com"` | The base URL of GitHub's REST API; for GitHub Enterprise Server https://<host>/api/v3. |
-| `FORGE_TOKEN` | string |  | A GitHub token that may write contents, pull requests, commit statuses and the repository's administration (branch protection, webhooks). Required by every command but event. |
+| `FORGE_TOKEN` | string |  | A GitHub token that may write contents, pull requests, commit statuses and the repository's administration (branch protection, webhooks), and read checks (Checks: read) for the check runs that pr lists. Required by every command but event. |
 | `FORGE_WEBHOOK_SECRET` | string |  | The secret of the webhooks that webhook registers. When it is set, event refuses a delivery whose X-Hub-Signature-256 does not match. |

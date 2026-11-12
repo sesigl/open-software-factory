@@ -108,3 +108,19 @@ Feature: A fake of GitHub's REST API
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-143 @status=implemented
+  Scenario: fakes.github lists the check runs that a test adds to a pull request's head commit, page by page
+    Given a module whose CLI prints the total and the name, status and conclusion of each check run on page 2 of 2 per page at "DEMO_GITHUB_URL"
+    And its system test adds the check runs "lint" queued, "test" failed and "verify" succeeded to a pull request in fakes.github and expects "3 verify completed success"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-144 @status=implemented
+  Scenario: fakes.github refuses to list check runs to a token that may not read them
+    Given a module whose CLI prints the HTTP status of the check runs of a pull request's head commit at "DEMO_GITHUB_URL"
+    And its system test passes the token of fakes.github that may not read check runs and expects "403"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

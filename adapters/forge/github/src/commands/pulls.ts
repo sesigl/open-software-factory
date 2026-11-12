@@ -1,7 +1,15 @@
 // pr, check, comment, protect and merge: the merge state of a pull request and what changes it.
 import { check as ensure, type Outcome } from "@opensoftware/cli";
 import { type GitHub, GitHubError } from "../adapters/github.ts";
-import { CHECK_STATES, type CommentJson, commentLine, MERGE_METHODS, protection } from "../domain/repository.ts";
+import {
+  CHECK_STATES,
+  type CheckRun,
+  type CommentJson,
+  checksOf,
+  commentLine,
+  MERGE_METHODS,
+  protection,
+} from "../domain/repository.ts";
 import type { PullJson } from "./branches.ts";
 import { connect, count, numberOf, print } from "./shared.ts";
 
@@ -15,6 +23,24 @@ const CONFLICT = "Pull Request is not mergeable";
 const PATHS = 100;
 /** The user of an Actions token, which GitHub does not let read GET /user. */
 const ACTIONS_USER = "github-actions[bot]";
+
+/** The most check runs GitHub gives on one page. */
+const RUNS_PAGE = 100;
+
+/** Every check run of the commit, page by page; a token that may not read them names the permission it needs. */
+async function checkRuns(api: GitHub, repo: string, sha: string): Promise<CheckRun[]> {
+  const runs: CheckRun[] = [];
+  for (let page = 1; ; page++) {
+    const answer = await api
+      .request<{ check_runs: CheckRun[] }>("GET", `/commits/${sha}/check-runs?per_page=${RUNS_PAGE}&page=${page}`)
+      .catch((error: unknown) => {
+        if (!(error instanceof GitHubError) || error.status !== 403) throw error;
+        throw new Error(`the token may not read the check runs of ${repo}: give it the permission "Checks: read"`);
+      });
+    runs.push(...answer.check_runs);
+    if (answer.check_runs.length < RUNS_PAGE) return runs;
+  }
+}
 
 /** Runs a call about the pull request and names a pull request the repository does not have. */
 async function about<T>(repo: string, number: number, call: () => Promise<T>): Promise<T> {
@@ -43,6 +69,7 @@ export async function pr(repo: string | undefined, number: string | undefined): 
   const status = await api.request<{
     statuses: { context: string; state: string; description: string | null; target_url: string | null }[];
   }>("GET", `/commits/${pull.head.sha}/status`);
+  const runs = await checkRuns(api, repo as string, pull.head.sha);
   return print({
     number: pull.number,
     url: pull.html_url,
@@ -58,12 +85,15 @@ export async function pr(repo: string | undefined, number: string | undefined): 
     labels: (pull.labels ?? []).map((label) => label.name),
     draft: pull.draft === true,
     paths: files.map((file) => file.filename),
-    checks: status.statuses.map((entry) => ({
-      name: entry.context,
-      state: entry.state,
-      description: entry.description ?? "",
-      url: entry.target_url ?? "",
-    })),
+    checks: checksOf(
+      status.statuses.map((entry) => ({
+        name: entry.context,
+        state: entry.state,
+        description: entry.description ?? "",
+        url: entry.target_url ?? "",
+      })),
+      runs,
+    ),
   });
 }
 

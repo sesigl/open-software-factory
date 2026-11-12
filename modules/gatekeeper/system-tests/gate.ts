@@ -131,6 +131,7 @@ export async function forge(
     },
     { path: `${base}/pulls/12/files?per_page=100`, body: [{ filename: "AGENTS.md" }] },
     { path: `${base}/commits/${SHA}/status`, body: { statuses: [] } },
+    { path: `${base}/commits/${SHA}/check-runs?per_page=100&page=1`, body: { total_count: 0, check_runs: [] } },
     { path: "/user", body: { login: "gatekeeper-bot" } },
     ...(before ? [{ path: `${base}/issues/12/comments?per_page=100`, body: before.map(commentJson), times: 1 }] : []),
     reads,

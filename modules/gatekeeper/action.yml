@@ -10,7 +10,7 @@ inputs:
     description: The groups file, which maps each group to its members.
     required: true
   token:
-    description: A token that may comment on the pull request and set commit statuses.
+    description: A token that may comment on the pull request, set commit statuses and read checks (the forge adapter's pr lists the check runs).
     default: ${{ github.token }}
   record:
     description: Where to write the record. Default $RUNNER_TEMP/gatekeeper/record.json.

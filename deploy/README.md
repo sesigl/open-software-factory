@@ -61,7 +61,11 @@ The reference factory in `compose/factory/` has the stages triage, spec, impleme
 evidence) and ship. foreman reads that check with `FOREMAN_FORGE_TOKEN`. Its prompts work on any GitHub repository:
 each stage clones the repository of the issue in the work item's origin, reads the repository's own `AGENTS.md`,
 `CONTRIBUTING.md` and `README.md`, and runs the checks they name. Name your CI's check in the stage `verify` of
-`factory.yaml` when it is not `verify`. To run your own, copy the
+`factory.yaml` when it is not `verify`. On GitHub, a job of GitHub Actions is a check run named after the job: its
+`name:`, or its key under `jobs:` when it has no `name:`. The workflow's name is not part of it. A job of a matrix
+without its own `name:` adds the matrix values in parentheses, like `test (ubuntu-latest, 24)`. A job of a reusable
+workflow is named `<calling job> / <called job>`, like `ci / verify`. The forge adapter `github` reads check runs and
+commit statuses ([ADR 0104](../docs/decisions/0104-forge-github-check-runs.md)), so its token needs `Checks: read`. To run your own, copy the
 folder, change the prompts, `policy/spec.rego` and `groups.json`, and set `FACTORY_DIR` to it. Each
 `docker compose up` commits the folder into the volume `factory`, so a run's factory version is a commit. The factory
 attaches to `litellm` with `inference/litellm.yaml`, so its agents' models are the routes in
@@ -82,7 +86,7 @@ wait for the check `verify` and mark the pull request ready. The owner merges it
 ```sh
 FACTORY_DIR=../dogfood/factory
 CLAUDE_CODE_OAUTH_TOKEN=...   # claude setup-token
-GH_TOKEN=...                  # fine-grained: this repository only, Contents, Issues and Pull requests write
+GH_TOKEN=...                  # fine-grained: this repository only, Contents, Issues and Pull requests write, Commit statuses write, Checks read
 GATEKEEPER_FORGE_TOKEN=...    # the same token
 FOREMAN_FORGE_TOKEN=...       # the same token
 INTAKE_WEBHOOK_SECRET=...     # see "Receive GitHub issues on your machine"
@@ -140,8 +144,8 @@ and names it, like `set FOREMAN_API_TOKEN in .env`.
 | `GATEKEEPER_SLACK_CHANNEL` | | The ID of the Slack channel where gatekeeper asks, like `C0GATES`. Set it, `GATEKEEPER_FORGE_TOKEN` or both. |
 | `GATEKEEPER_SLACK_TOKEN` | | With a Slack channel: the bot token of gatekeeper's Slack app. |
 | `GATEKEEPER_SLACK_SIGNING_SECRET` | | With a Slack channel: the signing secret of gatekeeper's Slack app. |
-| `GATEKEEPER_FORGE_TOKEN` | | A token that may comment on pull requests and set their commit status. Set: a gate request that links a pull request is asked on it, and decided by `/approve` or `/reject` comments. |
-| `FOREMAN_FORGE_TOKEN` | | A token that may read pull requests and their checks, for the verify stage's check `verify`. |
+| `GATEKEEPER_FORGE_TOKEN` | | A token that may comment on pull requests, set their commit status and read their checks (on GitHub: `Checks: read`, since the forge adapter's `pr` lists the check runs). Set: a gate request that links a pull request is asked on it, and decided by `/approve` or `/reject` comments. |
+| `FOREMAN_FORGE_TOKEN` | | A token that may read pull requests and their checks (on GitHub: commit statuses and `Checks: read`), for the verify stage's check `verify`. |
 | `CLAUDE_CODE_OAUTH_TOKEN` | | A token of `claude setup-token`. Set: Claude Code runs on that person's subscription, and its calls still go through `litellm` with the run's key ([ADR 0080](../docs/decisions/0080-dogfood-on-a-subscription.md)). |
 | `GH_TOKEN` | | A token with which the agents clone, push and open pull requests on github.com with `gh` and Git. |
 | `FACTORY_GIT_NAME`, `FACTORY_GIT_EMAIL` | `factory`, `factory@localhost` | The author of the agents' commits. |
@@ -242,7 +246,7 @@ Each stage of the reference factory runs in a sandbox of the
 | `secrets.foremanApiToken`, `secrets.intakeApiToken`, `secrets.gatekeeperApiToken` | | Required without `existingSecret`. The API tokens of foreman, intake and gatekeeper. |
 | `secrets.gatekeeperSlackToken`, `secrets.gatekeeperSlackSigningSecret` | | Required without `existingSecret`. The bot token and signing secret of gatekeeper's Slack app. |
 | `secrets.litellmMasterKey` | | Required without `existingSecret`. The master key of LiteLLM, like `sk-<random>`; foreman makes each run's key with it. |
-| `secrets.forgeToken` | | foreman's token for the checks of a pull request. |
+| `secrets.forgeToken` | | foreman's token for the checks of a pull request; on GitHub it needs `Checks: read`. |
 | `secrets.githubToken`, `secrets.claudeCodeOauthToken` | | The agents' `GH_TOKEN` and the token of `claude setup-token`, which only each sandbox's egress pod gets. Without them, a stage that needs them fails. |
 | `sandboxes.namespace` | `<release namespace>-sandboxes` | The namespace of the agents' sandboxes, where foreman has its rights. |
 | `sandboxes.createNamespace` | `true` | `false` when the namespace exists, or the installer may not create namespaces. |
