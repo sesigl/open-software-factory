@@ -126,12 +126,11 @@ export function runs(options: {
       if (!before) return undefined;
       const later = runIdOf(before.workItem.id, (before.attempt ?? 1) + 1);
       const again = new Conflict(`${runId} already ran again as ${later}`, NOT_AGAIN);
-      if (await exists(later)) throw again;
       const { definition, version } = await options.factory();
       const next = retried(before, retry, definition, version, options.now());
       if ("status" in next)
         throw next.status === 400 ? new UsageError(next.message) : new Conflict(next.message, NOT_AGAIN);
-      // Two retries at once both name the run `later`; Temporal starts one workflow.
+      // A run that ran again, or two retries at once, name the run `later`, which Temporal starts once.
       if (!(await launch({ ...next, definition }))) throw again;
       return next.view;
     },

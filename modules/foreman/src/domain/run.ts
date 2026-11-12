@@ -109,8 +109,8 @@ export function retryOf(body: unknown): RunRetry | string {
   const { kind, id } = (typeof by === "object" && by !== null ? by : {}) as Record<string, unknown>;
   if ((kind !== "person" && kind !== "trigger") || typeof id !== "string" || id === "")
     return '/by: a retry needs the actor who asks, as { "kind": "person", "id": "<source>:<ID>" }';
-  if (from !== undefined && (typeof from !== "string" || from === "")) return "/from: must be the name of a stage";
-  return { by: by as RunRetry["by"], ...(from === undefined ? {} : { from }) };
+  // A `from` that names no stage of the run is refused when the run is known (`retried`).
+  return { by: by as RunRetry["by"], ...(from === undefined ? {} : { from: from as string }) };
 }
 
 /** Why a run cannot run again: 400 for a `from` that does not fit, 409 for the run's state. */
