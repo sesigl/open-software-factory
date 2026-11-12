@@ -22,7 +22,8 @@ scenario("SCN-FORE-092", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then('"/v1/runs/<new id>" shows the state "complete"', async () => {
-    await run.until(newId, "complete");
+    const view = await run.until(newId, "complete");
+    expect(view.stages.map(({ state }) => state)).toEqual(["succeeded", "succeeded"]);
   });
 
   await then('the harness received the prompt "Write a plan" twice', async () => {
