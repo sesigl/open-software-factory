@@ -101,6 +101,14 @@ Feature: The Compose profile installs a complete factory with one command
     Then the command exits with code 0
     And the stage "verify" of the resolved factory has the checks ["verify"] and the evidence "required"
 
+  @id=SCN-DIST-028 @status=implemented
+  Scenario: The reference factory asks for approval of the spec after the stage "spec" and before "implement"
+    Given the Compose profile with every value of ".env.example" set in ".env"
+    When the operator runs "docker compose run --rm factory resolve"
+    Then the command exits with code 0
+    And the stage "spec" of the resolved factory has no gate
+    And the stage "implement" of the resolved factory has the gate of "maintainers" with the policy "./policy/spec.rego"
+
   @id=SCN-DIST-013 @status=deprecated
   Scenario: The Compose profile takes the module images from the factory's registry
     Given the Compose profile with every value of ".env.example" set in ".env"

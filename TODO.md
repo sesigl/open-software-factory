@@ -889,7 +889,7 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
 [`docs/vision/`](docs/vision/). These items are defects and gaps in what exists. A new feature is not here: it starts
 as a vision scenario. Each item names the place in the code, so start there, and write the scenario before the fix.
 
-### [ ] T-36 · the reference factory asks for approval of the spec (P0)
+### [x] T-36 · the reference factory asks for approval of the spec (P0)
 
 - **Problem:** a gate comes before its stage (`nextStep` in `modules/foreman/src/domain/run.ts`), and the reference
   factory has its gate on `spec`. A maintainer is asked before the spec exists, and `implement` starts without an
@@ -898,9 +898,9 @@ as a vision scenario. Each item names the place in the code, so start there, and
 - **Done when:** a run of the reference factory waits after `spec`, its approval request links the spec's pull request,
   and `implement` starts only after the approval.
 - **Slices:**
-  - [ ] The gate moves to `implement` in `deploy/compose/factory/factory.yaml` and in the chart's copy under
+  - [x] The gate moves to `implement` in `deploy/compose/factory/factory.yaml` and in the chart's copy under
     `deploy/helm/osf/files/factory/`; the comment of `policy/spec.rego` and `deploy/README.md` follow.
-  - [ ] A scenario of the distribution shows the order: `spec` ran, the run is blocked, the request links the pull
+  - [x] A scenario of the distribution shows the order: `spec` ran, the run is blocked, the request links the pull
     request (`SCN-DIST`).
 
 ### [ ] T-37 · checks from GitHub Actions (P0)

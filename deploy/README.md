@@ -56,8 +56,8 @@ and verified.
 
 ## Your factory
 
-The reference factory in `compose/factory/` has the stages triage, spec (behind a gate that a member of
-`maintainers` approves in Slack), implement, review, verify (after the pull request's check `verify` succeeded, with
+The reference factory in `compose/factory/` has the stages triage, spec, implement (behind a gate that a member of
+`maintainers` approves in Slack, so the spec's pull request is approved before implement starts), review, verify (after the pull request's check `verify` succeeded, with
 evidence) and ship. foreman reads that check with `FOREMAN_FORGE_TOKEN`. Its prompts work on any GitHub repository:
 each stage clones the repository of the issue in the work item's origin, reads the repository's own `AGENTS.md`,
 `CONTRIBUTING.md` and `README.md`, and runs the checks they name. Name your CI's check in the stage `verify` of
@@ -337,3 +337,4 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-023 | implemented | The Compose profile takes the module images, the agents' template and the LLM gateway from the factory's registry |
 | SCN-DIST-026 | implemented | Every service of the Compose profile is healthy after one command, Jaeger as the trace store, and each server's health checks pass |
 | SCN-DIST-027 | implemented | The profile's LLM gateway holds no code under BerriAI's enterprise license |
+| SCN-DIST-028 | implemented | The reference factory asks for approval of the spec after the stage "spec" and before "implement" |
