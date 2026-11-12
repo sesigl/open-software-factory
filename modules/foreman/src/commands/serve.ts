@@ -66,6 +66,10 @@ function api(work: Runs, token: string, health: () => Promise<Health>) {
     const view = await work.signal(request.params.runId, request.body);
     return view ? reply.code(202).send(view) : unknown(reply, request.params.runId);
   });
+  app.post<{ Params: { runId: string } }>("/v1/runs/:runId/retry", async (request, reply) => {
+    const view = await work.retry(request.params.runId, request.body);
+    return view ? reply.code(201).send(view) : unknown(reply, request.params.runId);
+  });
   return app;
 }
 

@@ -1,5 +1,5 @@
 // The runs of the foreman as Temporal workflows (ADR 0067): start one per work item, read its view, list them by state
-// (ADR 0071), signal them: steer, cancel, take over and hand back (ADR 0070).
+// (ADR 0071), signal them: steer, cancel, take over and hand back (ADR 0070), and run one again (ADR 0105).
 import { UsageError } from "@opensoftware/cli";
 import { validate, type WorkItem } from "@opensoftware/contracts";
 import {
@@ -16,7 +16,10 @@ import {
   hasEnded,
   isRunState,
   listed,
+  type RunInput,
   type RunView,
+  retried,
+  retryOf,
   runIdOf,
   signalOf,
 } from "../domain/run.ts";
@@ -39,9 +42,10 @@ export class Conflict extends Error {
 }
 
 const NOT_NOW = "The signal does not fit the run's state";
+const NOT_AGAIN = "The run does not run again";
 
 export interface Runs {
-  /** Starts the run of the work item, or finds the one it started before. */
+  /** Starts the run of the work item, or finds its newest run. */
   start(workItem: unknown): Promise<{ created: boolean; view: RunView }>;
   view(runId: string): Promise<RunView | undefined>;
   /** The runs of the task queue, running ones first, then the latest ended first; with a state, only the runs in it. Another state is a usage error. */
@@ -50,7 +54,9 @@ export interface Runs {
   signal(runId: string, signal: unknown): Promise<RunView | undefined>;
   /** The run's steering messages and the stage a person takes over, for its running stage. */
   control(runId: string): Promise<Control>;
-  /** Hands a gate's decision to the run of its work item. */
+  /** The new run of a run that failed or was cancelled, or undefined for an unknown run; another run is a conflict. */
+  retry(runId: string, retry: unknown): Promise<RunView | undefined>;
+  /** Hands a gate's decision to the newest run of its work item. */
   decided(workItemId: string, decision: GateDecision): Promise<void>;
 }
 
@@ -78,24 +84,56 @@ export function runs(options: {
     ask(() => handle(runId).query(viewQuery)).catch((error: Error) =>
       error instanceof WorkflowNotFoundError ? undefined : Promise.reject(error),
     );
+  const exists = (runId: string): Promise<boolean> =>
+    handle(runId)
+      .describe()
+      .then(
+        () => true,
+        (error: Error) => (error instanceof WorkflowNotFoundError ? false : Promise.reject(error)),
+      );
+  /** The ID of the work item's newest run: run 1, 2, … until one is not found (ADR 0105). */
+  const newest = async (workItemId: string): Promise<string> => {
+    let n = 1;
+    while (await exists(runIdOf(workItemId, n + 1))) n++;
+    return runIdOf(workItemId, n);
+  };
+  /** Starts the run's workflow; false when a workflow with its ID started before. */
+  const launch = (input: RunInput): Promise<boolean> =>
+    client.workflow
+      .start(factoryRun, {
+        workflowId: input.view.runId,
+        taskQueue,
+        // Each run ID starts one workflow, also after it ended.
+        workflowIdReusePolicy: WorkflowIdReusePolicy.REJECT_DUPLICATE,
+        args: [input],
+      })
+      .then(
+        () => true,
+        (error: Error) => (error instanceof WorkflowExecutionAlreadyStartedError ? false : Promise.reject(error)),
+      );
   return {
     async start(document) {
       const workItem = checked<WorkItem>("work-item", document, "the body is not a work item");
       const { definition, version } = await options.factory();
       const first = firstView(workItem, definition, version, options.now());
-      try {
-        await client.workflow.start(factoryRun, {
-          workflowId: first.runId,
-          taskQueue,
-          // One run per work item, also after it ended.
-          workflowIdReusePolicy: WorkflowIdReusePolicy.REJECT_DUPLICATE,
-          args: [{ view: first, definition }],
-        });
-        return { created: true, view: first };
-      } catch (error) {
-        if (!(error instanceof WorkflowExecutionAlreadyStartedError)) throw error;
-        return { created: false, view: (await view(first.runId)) as RunView };
-      }
+      if (await launch({ view: first, definition })) return { created: true, view: first };
+      return { created: false, view: (await view(await newest(workItem.id))) as RunView };
+    },
+    async retry(runId, document) {
+      const retry = retryOf(document);
+      if (typeof retry === "string") throw new UsageError(`the body is not a retry: ${retry}`);
+      const before = await view(runId);
+      if (!before) return undefined;
+      const later = runIdOf(before.workItem.id, (before.attempt ?? 1) + 1);
+      const again = new Conflict(`${runId} already ran again as ${later}`, NOT_AGAIN);
+      if (await exists(later)) throw again;
+      const { definition, version } = await options.factory();
+      const next = retried(before, retry, definition, version, options.now());
+      if ("status" in next)
+        throw next.status === 400 ? new UsageError(next.message) : new Conflict(next.message, NOT_AGAIN);
+      // Two retries at once both name the run `later`; Temporal starts one workflow.
+      if (!(await launch({ ...next, definition }))) throw again;
+      return next.view;
     },
     view,
     async list(state) {
@@ -138,7 +176,7 @@ export function runs(options: {
       return ask(() => handle(runId).query(controlQuery));
     },
     async decided(workItemId, decision) {
-      await handle(runIdOf(workItemId)).signal(gateSignal, decision);
+      await handle(await newest(workItemId)).signal(gateSignal, decision);
     },
   };
 }

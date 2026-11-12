@@ -193,7 +193,7 @@ Serve it as in the quick start, with the forge adapter's token: `export FOREMAN_
 
 1. The run's pull request is the last pull request link that an agent of an earlier stage wrote, in its messages or
    in its tool calls' output: `https://<host>/<owner>/<name>/pull/<n>` (GitHub) or `…/pulls/<n>` (Forgejo). The run
-   shows it as `pullRequest`, every later stage's prompt ends with `Pull request: <link>`, and `run.completed@v1` lists
+   shows it as `pullRequest`, every later stage's prompt has the line `Pull request: <link>`, and `run.completed@v1` lists
    it in `pullRequests`.
 2. Before the stage `ship` starts, and before its gate if it has one, the foreman runs the
    [forge adapter](../../ports/forge/README.md)'s `pr <owner>/<name> <n>` and reads the named checks. The stage lists
@@ -304,6 +304,32 @@ curl -H "Authorization: Bearer dev-token" -H "content-type: application/json" \
 A take-over needs a running stage, and a hand-back a stage that a person took over; otherwise the answer is 409. A
 cancel ends a run that a person took over.
 
+## Run again
+
+A run that `failed` or was `cancelled` runs again as a new run
+([ADR 0105](../../docs/decisions/0105-run-a-work-item-again.md)):
+
+```sh
+curl -H "Authorization: Bearer dev-token" -H "content-type: application/json" \
+  --data '{"by": {"kind": "person", "id": "github:ada"}}' http://localhost:8080/v1/runs/run_…/retry
+```
+
+1. The new run has an ID of its own, `attempt` 2 (3, …), `retryOf` with the run before and `retriedBy` with the person.
+   The run before keeps its view.
+2. It starts at the first stage that did not succeed, or at `from`, a stage at or before it: `{"by": …, "from":
+   "plan"}`. The stages before are copied from the run before, as they ended. When the factory's stages changed since
+   the run before, the new run starts at the first stage.
+3. It moves the folder `OSF_DATA/runs/<run ID>` of the run before to its own, and keeps the run's pull request. A
+   failed check is read again, a cancelled stage runs a fresh turn, and a rejected gate asks gatekeeper again.
+4. The prompt of its first stage has one more line that says how the run before ended, for example `Run before:
+   run_… failed in the stage ship: the check verify ended with failure`. The later stages do not get it.
+5. It has a trace of its own, whose run span has `osf.run.retry_of`, and its own key of the gateway with the
+   factory's budget.
+
+Only the newest run of a work item runs again. A run that is `running`, `blocked` or `complete` is refused with 409
+and its state, a run that already ran again with 409 that names the later run. Two retries at once start one run;
+the other gets 409.
+
 ## Commands
 
 | Command | What it does |
@@ -314,17 +340,19 @@ cancel ends a run that a person took over.
 
 | Route | What it does |
 | --- | --- |
-| `POST /v1/runs` | Start the run of a work item (the [work item](../../contracts/work-item/work-item.schema.json) format). 201 with the new run, 200 with the run the same work item started before, 400 with a problem that names the field. |
+| `POST /v1/runs` | Start the run of a work item (the [work item](../../contracts/work-item/work-item.schema.json) format). 201 with the new run, 200 with the newest run the same work item started before, 400 with a problem that names the field. |
 | `GET /v1/runs` | The runs of the server, running runs first, then the runs that ended, the one that ended last first: `{ "runs": [...] }`, each as `GET /v1/runs/{runId}` shows it. `?state=` with `running`, `blocked`, `complete`, `failed` or `cancelled` lists only the runs in that state; another state is 400. |
-| `GET /v1/runs/{runId}` | The run: `state`, `factory`, `factoryVersion`, `pullRequest`, `folder`, `startedAt`, `endedAt` and its `stages`. 404 for a run the server does not know. |
+| `GET /v1/runs/{runId}` | The run: `state`, `factory`, `factoryVersion`, `pullRequest`, `folder`, `startedAt`, `endedAt` and its `stages`; for a run that runs a run before it again, `attempt`, `retryOf` and `retriedBy`. 404 for a run the server does not know. |
 | `GET /v1/health` | Whether the server reaches Temporal and, with `FOREMAN_NATS_URL`, NATS: 200 with `status: ok`, else 503 with the failing check and what to fix ([ADR 0086](../../docs/decisions/0086-health-routes.md)). Needs no token. |
 | `POST /v1/runs/{runId}/signals` | `{ "type": "steer", "message": "…" }` sends the message to the running stage's agent; `{ "type": "cancel" }` cancels the run; `{ "type": "take-over" }` and `{ "type": "hand-back" }` hand the running stage to a person and back ([Take over](#take-over)). 202 with the run, 409 when the run ended or the signal does not fit its state. |
+| `POST /v1/runs/{runId}/retry` | `{ "by": { "kind": "person", "id": "…" }, "from": "<stage>" }` runs a run that failed or was cancelled again ([Run again](#run-again)); `from` is optional. 201 with the new run, 400 without `by` or with a `from` after the first stage that did not succeed, 404 for an unknown run, 409 for a run in another state, a run that already ran again, or a `from` other than the first stage when the factory's stages changed. |
 
 The OpenAPI of the routes is in [`contracts/openapi/openapi.json`](../../contracts/openapi/openapi.json); the
 TypeScript type `paths` of `@opensoftware/contracts` types a client. Every route except `/v1/health` needs
 `Authorization: Bearer <FOREMAN_API_TOKEN>`, else 401. Errors are `application/problem+json` with `title`, `status` and `detail`.
 
-A run's ID is `run_` and 20 hex digits of the SHA-256 of the work item's ID, so a work item has one run. A run is
+A run's ID is `run_` and 20 hex digits of the SHA-256 of the work item's ID; the `n`-th run of a work item, `n` ≥ 2,
+takes the SHA-256 of `<work item ID>#<n>` ([Run again](#run-again)). A run is
 `running`, `blocked` (at a gate, waiting for checks, or taken over by a person), `complete`, `failed` or `cancelled`. A stage is `pending`,
 `blocked`, `running`, `succeeded`, `failed`, `rejected` (by its gate) or `cancelled`; it has its harness `sessionId` once
 it started, its `gateId` once its gate was asked, its `checks` once they were read, its `takenOverAt` once a person
@@ -341,7 +369,8 @@ took it over, and a `reason` when it failed for a reason the foreman knows.
   sandbox when the stage's agent declares one ([Sandboxes](#sandboxes)). The foreman
   starts the stage's harness adapter from `FOREMAN_HARNESSES`, speaks ACP to it, opens a session and sends one prompt:
   the agent's prompt file, then the work item's ID, title and description, and `Origin: <url>` when the work item
-  has an origin's link, like the issue it came from. It allows the tool calls the adapter asks
+  has an origin's link, like the issue it came from, `Pull request: <link>` once the run has one, and `Run before: …`
+  in the first stage of a run that runs a run before it again ([Run again](#run-again)). It allows the tool calls the adapter asks
   about; limit them with the adapter's `--allow`. A turn that ends with `end_turn` succeeds the stage; any other end
   fails or cancels it, ends the run, and leaves the later stages `pending`. The adapter gets
   `OTEL_RESOURCE_ATTRIBUTES` with `osf.run.id`, `osf.work_item.id`, `osf.stage` and `osf.factory.version`, and the
@@ -350,8 +379,8 @@ took it over, and a `reason` when it failed for a reason the foreman knows.
   request; a failing one fails the run ([Checks](#checks)).
 - **Gates.** Before a stage with a `gate` starts, the foreman asks gatekeeper at `FOREMAN_GATEKEEPER_URL`
   ([gatekeeper](../gatekeeper/README.md#server)): the work item's ID, the stage, the summary `<title>: start the
-  stage <stage>`, the origin's link and the run's pull request as `links` (`Origin`, `Pull request`), and the gate's
-  `policy` and `approvers` in `change`. The run is `blocked` until a
+  stage <stage>`, the origin's link and the run's pull request as `links` (`Origin`, `Pull request`), and the run's ID
+  and the gate's `policy` and `approvers` in `change`, so each run's request is a new one. The run is `blocked` until a
   `gate.decided@v1` for that gate arrives on NATS. `approved` starts the stage; `rejected` or `expired` fails the run.
 - **Signals.** A steering message reaches the running stage's agent within `FOREMAN_POLL_MS` as a prompt in its
   session, which the harness port treats as steering. A cancel ends the agent's turn, or the wait at a gate, and the
@@ -366,7 +395,7 @@ took it over, and a `reason` when it failed for a reason the foreman knows.
 
 With `FOREMAN_NATS_URL`, the foreman starts a run for each [`work.received@v1`](../../contracts/events/work-received/work-received.schema.json)
 on `osf.work.received.v1`, and hands each [`gate.decided@v1`](../../contracts/events/gate-decided/gate-decided.schema.json)
-on `osf.gate.decided.v1` to the run of its work item. A run publishes
+on `osf.gate.decided.v1` to the newest run of its work item. A run publishes
 [`run.started@v1`](../../contracts/events/run-started/run-started.schema.json) on `osf.run.started.v1` when it starts and
 [`run.completed@v1`](../../contracts/events/run-completed/run-completed.schema.json) on `osf.run.completed.v1` when it
 ends, with the outcome `succeeded`, `failed` or `cancelled`. Their IDs are the run's ID with `.started` and
@@ -384,7 +413,8 @@ When a stage ends, the foreman sends the span `stage <stage>`, and when the run 
 `<url>/v1/traces`. The stage spans are children of the run's span. Every span has the resource `osf.run.id`,
 `osf.work_item.id` and `osf.factory.version`; a stage span also has `osf.stage`, `osf.agent`, `osf.harness.name`,
 `gen_ai.request.model`, `osf.effort`, `gen_ai.conversation.id` (the harness session) and `osf.outcome`. The trace ID
-is the first 32 hex digits of the SHA-256 of the run's ID, so a restarted foreman sends to the same trace. The run's
+is the first 32 hex digits of the SHA-256 of the run's ID, so a restarted foreman sends to the same trace. A run that
+runs a run before it again has a trace of its own, and its run span has `osf.run.retry_of` with the run before. The run's
 view names it as `traceId`, so the console links the trace.
 
 Each stage's harness gets `TRACEPARENT` with the trace and the stage's span, also in a sandbox, so the harness's own
@@ -522,24 +552,24 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-085 | implemented | A factory that names no sandbox adapter runs its sandboxes with docker when FOREMAN_SANDBOX is not set |
 | SCN-FORE-086 | implemented | Until the factory's gateway starts, the server serves and its health names the failure |
 | SCN-FORE-087 | implemented | A stage that runs a turn when the foreman stops runs its turn again when the foreman starts again |
-| SCN-FORE-088 | planned | A retry of a failed run starts a new run at the stage that failed |
-| SCN-FORE-089 | planned | The new run works in the folder and on the pull request of the run before |
-| SCN-FORE-090 | planned | A retry of a cancelled run starts the cancelled stage again |
-| SCN-FORE-091 | planned | A retry of a run whose gate was rejected asks gatekeeper again |
-| SCN-FORE-092 | planned | A retry from an earlier stage runs that stage again |
-| SCN-FORE-093 | planned | A retry from a stage after the stage that failed is refused |
-| SCN-FORE-094 | planned | A retry without the person who asks is refused |
-| SCN-FORE-095 | planned | A retry of a run that is still going is refused |
-| SCN-FORE-096 | planned | A retry of a run that succeeded is refused |
-| SCN-FORE-097 | planned | A retry of a run the server does not know is 404 |
-| SCN-FORE-098 | planned | Two retries of the same run at the same time start one run |
-| SCN-FORE-099 | planned | A retry of a run that already ran again is refused and names the later run |
-| SCN-FORE-100 | planned | The runs list shows the run before and the new run |
-| SCN-FORE-101 | planned | The same work item again answers the newest run |
+| SCN-FORE-088 | implemented | A retry of a failed run starts a new run at the stage that failed |
+| SCN-FORE-089 | implemented | The new run works in the folder and on the pull request of the run before |
+| SCN-FORE-090 | implemented | A retry of a cancelled run starts the cancelled stage again |
+| SCN-FORE-091 | implemented | A retry of a run whose gate was rejected asks gatekeeper again |
+| SCN-FORE-092 | implemented | A retry from an earlier stage runs that stage again |
+| SCN-FORE-093 | implemented | A retry from a stage after the stage that failed is refused |
+| SCN-FORE-094 | implemented | A retry without the person who asks is refused |
+| SCN-FORE-095 | implemented | A retry of a run that is still going is refused |
+| SCN-FORE-096 | implemented | A retry of a run that succeeded is refused |
+| SCN-FORE-097 | implemented | A retry of a run the server does not know is 404 |
+| SCN-FORE-098 | implemented | Two retries of the same run at the same time start one run |
+| SCN-FORE-099 | implemented | A retry of a run that already ran again is refused and names the later run |
+| SCN-FORE-100 | implemented | The runs list shows the run before and the new run |
+| SCN-FORE-101 | implemented | The same work item again answers the newest run |
 | SCN-FORE-102 | planned | The new run publishes its events with its own IDs and the run before |
-| SCN-FORE-103 | planned | A gate decision reaches the newest run of the work item |
+| SCN-FORE-103 | implemented | A gate decision reaches the newest run of the work item |
 | SCN-FORE-104 | planned | A retry request from intake runs the work item again |
 | SCN-FORE-105 | planned | A second retry request for the same run starts no third run |
-| SCN-FORE-106 | planned | The new run gets its own key with the factory's budget |
-| SCN-FORE-107 | planned | The new run has a trace of its own that names the run before |
-| SCN-FORE-108 | planned | The first stage of the new run is told why the run before ended |
+| SCN-FORE-106 | implemented | The new run gets its own key with the factory's budget |
+| SCN-FORE-107 | implemented | The new run has a trace of its own that names the run before |
+| SCN-FORE-108 | implemented | The first stage of the new run is told why the run before ended |

@@ -2,7 +2,15 @@
 // how each fact changes the view, and the events it publishes. The workflow asks for each step and applies each fact
 // through local activities, so this code runs in the worker's own thread, not in Temporal's sandbox.
 import { createHash } from "node:crypto";
-import type { CheckView, RunCompleted, RunStarted, RunView, StageView, WorkItem } from "@opensoftware/contracts";
+import type {
+  CheckView,
+  RunCompleted,
+  RunRetry,
+  RunStarted,
+  RunView,
+  StageView,
+  WorkItem,
+} from "@opensoftware/contracts";
 import type { Definition } from "./definition.ts";
 import { traceIdOf } from "./trace.ts";
 
@@ -10,10 +18,18 @@ export type { CheckView, RunView, StageView };
 export type RunState = RunView["state"];
 export type StageState = StageView["state"];
 
+/** The line of the run before that the first stage of a new run gets in its prompt (ADR 0105). */
+export interface RunBefore {
+  index: number;
+  line: string;
+}
+
 /** What the workflow gets when the run starts: the run's first view and the factory as it was then. */
 export interface RunInput {
   view: RunView;
   definition: Definition;
+  /** For a run that runs a run before it again. */
+  before?: RunBefore;
 }
 
 /** What the workflow does next for the stage at `index`. */
@@ -63,21 +79,99 @@ export const isRunState = (text: string): text is RunState => STATES.has(text);
 export const listed = (views: RunView[], state?: RunState): RunView[] =>
   views.filter((view) => !state || view.state === state);
 
-/** "run_" and 20 hex digits of the SHA-256 of the work item's ID: one run per work item. */
-export const runIdOf = (workItemId: string): string =>
-  `run_${createHash("sha256").update(workItemId).digest("hex").slice(0, 20)}`;
+/**
+ * The ID of the work item's `n`-th run: "run_" and 20 hex digits of the SHA-256 of the work item's ID, and for
+ * `n` ≥ 2 of "<work item ID>#<n>" (ADR 0105).
+ */
+export const runIdOf = (workItemId: string, n = 1): string =>
+  `run_${createHash("sha256")
+    .update(n === 1 ? workItemId : `${workItemId}#${n}`)
+    .digest("hex")
+    .slice(0, 20)}`;
 
 export function firstView(workItem: WorkItem, definition: Definition, version: string, startedAt: string): RunView {
+  const runId = runIdOf(workItem.id);
   return {
-    runId: runIdOf(workItem.id),
+    runId,
     workItem,
     factory: definition.factory,
     factoryVersion: version,
     state: "running",
     startedAt,
-    traceId: traceIdOf(runIdOf(workItem.id)),
+    traceId: traceIdOf(runId),
     stages: definition.stages.map(({ stage, agent }) => ({ stage, agent, state: "pending" })),
   };
+}
+
+/** The retry in a request's body, or the problem with it as "<JSON Pointer>: <what is wrong>". */
+export function retryOf(body: unknown): RunRetry | string {
+  const { by, from } = (typeof body === "object" && body !== null ? body : {}) as Record<string, unknown>;
+  const { kind, id } = (typeof by === "object" && by !== null ? by : {}) as Record<string, unknown>;
+  if ((kind !== "person" && kind !== "trigger") || typeof id !== "string" || id === "")
+    return '/by: a retry needs the actor who asks, as { "kind": "person", "id": "<source>:<ID>" }';
+  if (from !== undefined && (typeof from !== "string" || from === "")) return "/from: must be the name of a stage";
+  return { by: by as RunRetry["by"], ...(from === undefined ? {} : { from }) };
+}
+
+/** Why a run cannot run again: 400 for a `from` that does not fit, 409 for the run's state. */
+export interface Refusal {
+  status: 400 | 409;
+  message: string;
+}
+
+/**
+ * The new run of a run that failed or was cancelled (ADR 0105): it starts at the first stage that did not succeed, or
+ * at `from` before it, with the stages before that copied as they ended, and the pull request of the run before.
+ */
+export function retried(
+  before: RunView,
+  retry: RunRetry,
+  definition: Definition,
+  version: string,
+  startedAt: string,
+): { view: RunView; before: RunBefore } | Refusal {
+  if (before.state !== "failed" && before.state !== "cancelled")
+    return { status: 409, message: `${before.runId} is ${before.state}` };
+  const failed = before.stages.findIndex((stage) => stage.state !== "succeeded");
+  const stage = before.stages[failed] as StageView;
+  const from = retry.from === undefined ? failed : before.stages.findIndex((at) => at.stage === retry.from);
+  if (from < 0 || from > failed)
+    return {
+      status: 400,
+      message: `from: "${retry.from}" is no stage at or before the stage ${stage.stage}, the first stage of ${before.runId} that did not succeed`,
+    };
+  // A changed factory starts at its first stage: the stages of the run before do not fit it.
+  const same = before.stages.map((at) => at.stage).join() === definition.stages.map((at) => at.stage).join();
+  if (!same && from > 0)
+    return { status: 409, message: `from: the factory's stages changed since ${before.runId}; leave out "from"` };
+  const attempt = (before.attempt ?? 1) + 1;
+  const runId = runIdOf(before.workItem.id, attempt);
+  return {
+    view: {
+      runId,
+      attempt,
+      retryOf: before.runId,
+      retriedBy: retry.by,
+      workItem: before.workItem,
+      factory: definition.factory,
+      factoryVersion: version,
+      state: "running",
+      ...(before.pullRequest ? { pullRequest: before.pullRequest } : {}),
+      startedAt,
+      traceId: traceIdOf(runId),
+      stages: definition.stages.map(({ stage, agent }, index) =>
+        index < from ? { ...(before.stages[index] as StageView) } : { stage, agent, state: "pending" },
+      ),
+    },
+    before: { index: from, line: `Run before: ${before.runId}${endOf(stage)}` },
+  };
+}
+
+/** How the stage that did not succeed ended, as the rest of the line "Run before: <run ID>". */
+function endOf(stage: StageView): string {
+  if (stage.state === "rejected") return `: the gate before the stage ${stage.stage} was rejected`;
+  if (stage.state === "cancelled") return ` was cancelled in the stage ${stage.stage}`;
+  return ` failed in the stage ${stage.stage}${stage.reason ? `: ${stage.reason}` : ""}`;
 }
 
 export const hasEnded = (view: RunView): boolean => ENDED.has(view.state);
@@ -200,13 +294,17 @@ export function stageStateOf(stopReason: string): StageState {
   return "failed";
 }
 
-/** The prompt of a stage: the agent's prompt, then the work item with its origin, and the run's pull request. */
-export function promptOf(agentPrompt: string, workItem: WorkItem, pullRequest?: string): string {
+/**
+ * The prompt of a stage: the agent's prompt, then the work item with its origin, the run's pull request and, for the
+ * first stage of a new run, how the run before ended (ADR 0105).
+ */
+export function promptOf(agentPrompt: string, workItem: WorkItem, pullRequest?: string, before?: string): string {
   const description = workItem.description ? `\n\n${workItem.description}` : "";
   // The origin tells the agent where the work is, like the issue of a repository (ADR 0080).
   const origin = workItem.origin.url ? `\n\nOrigin: ${workItem.origin.url}` : "";
   const link = pullRequest ? `\n\nPull request: ${pullRequest}` : "";
-  return `${agentPrompt.trimEnd()}\n\n# Work item ${workItem.id}\n\n${workItem.title}${description}${origin}${link}\n`;
+  const run = before ? `\n\n${before}` : "";
+  return `${agentPrompt.trimEnd()}\n\n# Work item ${workItem.id}\n\n${workItem.title}${description}${origin}${link}${run}\n`;
 }
 
 /** What a running stage asks its run for: the steering messages so far, and the stage a person takes over. */

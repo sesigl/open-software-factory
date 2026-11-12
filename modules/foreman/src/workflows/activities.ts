@@ -1,7 +1,7 @@
 // The activities of a run (ADR 0067). `next` and `apply` are local activities around the domain, so a run's logic runs
 // in the worker's thread; the others reach outside: the sandbox, the harness, the forge, gatekeeper and NATS. Each
 // stage's agent gets the factory's inference gateway with the run's key (ADR 0070).
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, renameSync } from "node:fs";
 import { join } from "node:path";
 import { Context } from "@temporalio/activity";
 import { pullRequestChecks } from "../adapters/forge.ts";
@@ -22,6 +22,7 @@ import {
   nextStep,
   promptOf,
   pullRequestOf,
+  type RunBefore,
   type RunView,
   runCompleted,
   runStarted,
@@ -160,8 +161,17 @@ export function activities(deps: ActivityDeps) {
         end: view.endedAt ?? deps.now(),
         outcome: outcomeOf(view.state),
         resource: resourceOf(view),
-        attributes: { "osf.factory": view.factory, "osf.pull_request": view.pullRequest },
+        attributes: {
+          "osf.factory": view.factory,
+          "osf.pull_request": view.pullRequest,
+          "osf.run.retry_of": view.retryOf,
+        },
       });
+    },
+    /** Moves the folder of the run before to the new run's; it may run again after a crash, so a moved folder stays. */
+    async moveFolder(before: string, runId: string): Promise<void> {
+      const [from, to] = [join(deps.data, "runs", before), join(deps.data, "runs", runId)];
+      if (existsSync(from) && !existsSync(to)) renameSync(from, to);
     },
     async requestGate(view: RunView, definition: Definition, index: number): Promise<Fact> {
       const plan = definition.stages[index];
@@ -176,7 +186,13 @@ export function activities(deps: ActivityDeps) {
         stage: plan?.stage ?? "",
         summary: gateSummaryOf(view, index),
         ...(links.length ? { links } : {}),
-        change: { factory: definition.factory, policy: plan?.gate?.policy, approvers: plan?.gate?.approvers ?? [] },
+        // The run makes each run's request a new one, which gatekeeper asks again (ADR 0105).
+        change: {
+          run: view.runId,
+          factory: definition.factory,
+          policy: plan?.gate?.policy,
+          approvers: plan?.gate?.approvers ?? [],
+        },
       });
       return { kind: "gate", index, gateId: gate.id, state: gate.state };
     },
@@ -195,8 +211,17 @@ export function activities(deps: ActivityDeps) {
       );
       return { kind: "checks", index, checks: checksOf(names, printed) };
     },
-    /** Runs the stage's agent, in a sandbox when it declares one; steering messages from the `steered`-th on are for it. */
-    async runStage(view: RunView, definition: Definition, index: number, steered: number): Promise<Fact> {
+    /**
+     * Runs the stage's agent, in a sandbox when it declares one; steering messages from the `steered`-th on are for it.
+     * The first stage of a new run is told how the run before ended.
+     */
+    async runStage(
+      view: RunView,
+      definition: Definition,
+      index: number,
+      steered: number,
+      before?: RunBefore,
+    ): Promise<Fact> {
       const plan = definition.stages[index];
       if (!plan) throw new Error(`no stage ${index}`);
       const cwd = join(deps.data, "runs", view.runId);
@@ -232,7 +257,12 @@ export function activities(deps: ActivityDeps) {
           )
         : undefined;
       try {
-        const prompt = promptOf(plan.prompt, view.workItem, view.pullRequest);
+        const prompt = promptOf(
+          plan.prompt,
+          view.workItem,
+          view.pullRequest,
+          before?.index === index ? before.line : undefined,
+        );
         const turn = await startTurn(
           sandbox
             ? { command: sandbox.exec(harness), cwd, folder: await sandbox.copyIn(), env: deps.env, prompt }

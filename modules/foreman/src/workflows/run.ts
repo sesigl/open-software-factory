@@ -33,7 +33,7 @@ const remote = proxyActivities<Activities>({
   cancellationType: ActivityCancellationType.WAIT_CANCELLATION_COMPLETED,
 });
 
-export async function factoryRun({ view, definition }: RunInput): Promise<RunView> {
+export async function factoryRun({ view, definition, before }: RunInput): Promise<RunView> {
   let run = view;
   const steering: string[] = [];
   const decisions: GateDecision[] = [];
@@ -54,6 +54,8 @@ export async function factoryRun({ view, definition }: RunInput): Promise<RunVie
   };
   try {
     await remote.publishStarted(run);
+    // A new run of a run before it goes on in that run's folder (ADR 0105).
+    if (run.retryOf) await remote.moveFolder(run.retryOf, run.runId);
     for (let step = await local.next(run, definition); step.kind !== "end"; step = await local.next(run, definition)) {
       const { index } = step;
       if (step.kind === "read-checks") {
@@ -72,7 +74,7 @@ export async function factoryRun({ view, definition }: RunInput): Promise<RunVie
         run = await local.apply(run, { kind: "handed-back", index });
       } else {
         run = await local.apply(run, { kind: "stage-started", index });
-        await settle(await remote.runStage(run, definition, index, steering.length));
+        await settle(await remote.runStage(run, definition, index, steering.length, before));
       }
     }
   } catch (error) {
