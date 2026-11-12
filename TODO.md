@@ -904,7 +904,7 @@ as a vision scenario. Each item names the place in the code, so start there, and
     factory: the foreman's `SCN-FORE-072` shows that a gate before `implement` asks with the pull request of the stage
     before it, and a run of the whole reference factory is T-27's.
 
-### [ ] T-37 · checks from GitHub Actions (P0)
+### [x] T-37 · checks from GitHub Actions (P0)
 
 - **Problem:** the forge adapter `github` reads only commit statuses (`GET /commits/<sha>/status` in
   `adapters/forge/github/src/commands/pulls.ts`). A job of GitHub Actions is a check run, not a commit status. A stage
@@ -913,9 +913,13 @@ as a vision scenario. Each item names the place in the code, so start there, and
 - **Done when:** `pr` of `forge-github` lists the check runs of the head commit next to its commit statuses, and a
   stage starts after a job of GitHub Actions with the check's name succeeded.
 - **Slices:**
-  - [ ] `pr` reads `GET /commits/<sha>/check-runs` and maps each conclusion to `success`, `failure`, `error` or
-    `pending` (`SCN-FGITHUB`); `fakes.github` serves check runs.
-  - [ ] The forge port's README says what a check is on each forge, and `deploy/README.md` says which name to put under
+  - [x] `pr` reads `GET /commits/<sha>/check-runs` and maps each conclusion to `success`, `failure`, `error` or
+    `pending` (`SCN-FGITHUB`); `fakes.github` serves check runs. Done (ADR 0104): the mapping SCN-FGITHUB-005, the
+    newest re-run SCN-FGITHUB-006, the worse of a status and a check run SCN-FGITHUB-007, every page SCN-FGITHUB-008,
+    a token without `Checks: read` SCN-FGITHUB-009; `fakes.github` serves check runs by page SCN-TK-143 and refuses
+    them to `noChecksToken` SCN-TK-144. That a stage starts once `pr` reports its check as `success` is foreman's
+    existing scenarios; no scenario runs a real GitHub Actions job.
+  - [x] The forge port's README says what a check is on each forge, and `deploy/README.md` says which name to put under
     `checks`.
 
 ### [ ] T-38 · run a work item again (P0)

@@ -58,7 +58,13 @@ Every adapter reads three variables:
 - A branch that exists is refused; a token the forge refuses exits 1 with `the forge refused the token`; a repository
   the forge does not have exits 1 with `no repository <repo>`; `pr`, `comments` and `comment` on a pull request the
   repository does not have exit 1 with `no pull request <repo>#<number>`.
-- A check is a commit status with the check's name as its context, which is what the merge rules require.
+- A check has a name and one of the states `success`, `failure`, `error` and `pending`. `check` writes it as a commit
+  status with the check's name as its context, which is what the merge rules require. What `pr` lists depends on the
+  forge:
+  - Forgejo: the commit statuses of the head commit. Forgejo Actions posts a commit status for each job.
+  - GitHub: the commit statuses and the check runs of the head commit, one per name. A job of GitHub Actions is a
+    check run, not a status. Of a status and a check run with one name, the worse state counts
+    ([ADR 0104](../../docs/decisions/0104-forge-github-check-runs.md)).
 - `merge` exits 1 with an error that names the pull request when the merge rules refuse it or it conflicts with its
   base, and leaves it open. `protect` replaces the branch's rules each time.
 - `webhook` keeps one webhook per URL: a second call for the same URL updates it and replaces its events.
