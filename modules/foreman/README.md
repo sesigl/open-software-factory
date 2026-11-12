@@ -317,8 +317,9 @@ curl -H "Authorization: Bearer dev-token" -H "content-type: application/json" \
 1. The new run has an ID of its own, `attempt` 2 (3, …), `retryOf` with the run before and `retriedBy` with the person.
    The run before keeps its view.
 2. It starts at the first stage that did not succeed, or at `from`, a stage at or before it: `{"by": …, "from":
-   "plan"}`. The stages before are copied from the run before, as they ended. When the factory's stages changed since
-   the run before, the new run starts at the first stage.
+   "plan"}`. The stages before are copied from the run before, as they ended. When the names of the factory's stages,
+   in order, changed since the run before, the new run starts at the factory's first stage with every stage
+   `pending`; a `from` other than that stage is 409.
 3. It moves the folder `OSF_DATA/runs/<run ID>` of the run before to its own, and keeps the run's pull request. A
    failed check is read again, a cancelled stage runs a fresh turn, and a rejected gate asks gatekeeper again.
 4. The prompt of its first stage has one more line that says how the run before ended, for example `Run before:
@@ -345,7 +346,7 @@ the other gets 409.
 | `GET /v1/runs/{runId}` | The run: `state`, `factory`, `factoryVersion`, `pullRequest`, `folder`, `startedAt`, `endedAt` and its `stages`; for a run that runs a run before it again, `attempt`, `retryOf` and `retriedBy`. 404 for a run the server does not know. |
 | `GET /v1/health` | Whether the server reaches Temporal and, with `FOREMAN_NATS_URL`, NATS: 200 with `status: ok`, else 503 with the failing check and what to fix ([ADR 0086](../../docs/decisions/0086-health-routes.md)). Needs no token. |
 | `POST /v1/runs/{runId}/signals` | `{ "type": "steer", "message": "…" }` sends the message to the running stage's agent; `{ "type": "cancel" }` cancels the run; `{ "type": "take-over" }` and `{ "type": "hand-back" }` hand the running stage to a person and back ([Take over](#take-over)). 202 with the run, 409 when the run ended or the signal does not fit its state. |
-| `POST /v1/runs/{runId}/retry` | `{ "by": { "kind": "person", "id": "…" }, "from": "<stage>" }` runs a run that failed or was cancelled again ([Run again](#run-again)); `from` is optional. 201 with the new run, 400 without `by` or with a `from` after the first stage that did not succeed, 404 for an unknown run, 409 for a run in another state, a run that already ran again, or a `from` other than the first stage when the factory's stages changed. |
+| `POST /v1/runs/{runId}/retry` | `{ "by": { "kind": "person", "id": "…" }, "from": "<stage>" }` runs a run that failed or was cancelled again ([Run again](#run-again)); `from` is optional. 201 with the new run, 400 without `by`, with a `from` the run does not have or a `from` after the first stage that did not succeed, 404 for an unknown run, 409 for a run in another state, a run that already ran again, or a `from` other than the first stage when the factory's stages changed. |
 
 The OpenAPI of the routes is in [`contracts/openapi/openapi.json`](../../contracts/openapi/openapi.json); the
 TypeScript type `paths` of `@opensoftware/contracts` types a client. Every route except `/v1/health` needs
@@ -573,3 +574,6 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-106 | implemented | The new run gets its own key with the factory's budget |
 | SCN-FORE-107 | implemented | The new run has a trace of its own that names the run before |
 | SCN-FORE-108 | implemented | The first stage of the new run is told why the run before ended |
+| SCN-FORE-109 | implemented | A retry after the factory's stages changed starts at the first stage |
+| SCN-FORE-110 | implemented | A retry from a later stage after the factory's stages changed is refused |
+| SCN-FORE-111 | implemented | A retry from a stage the run does not have is refused |

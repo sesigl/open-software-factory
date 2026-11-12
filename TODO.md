@@ -936,7 +936,7 @@ as a vision scenario. Each item names the place in the code, so start there, and
     `retriedBy` in `RunView`; `runIdOf(workItemId, n)`, the
     copied stages, the moved folder, the run in the gate request's `change`, `gate.decided@v1` routed to the newest run, `POST /v1/runs`
     answering the newest run, the line "Run before:" in the first stage's prompt (`SCN-FORE-088` to `-101`, `-103`,
-    `-106` to `-108`, implemented). The budget is 390 s, with the measured reason in `modules/foreman/AGENTS.md`.
+    `-106` to `-111`, implemented). The budget is 390 s, with the measured reason in `modules/foreman/AGENTS.md`.
   - [ ] The foreman's events of a second run: `retryOf` in its events, and the event `work.retry-requested@v1` in the
     contract with the foreman as its consumer (`SCN-FORE-102`, `-104`, `-105`).
   - [ ] intake follows the newest run (`SCN-INTAKE-050` to `-052`).

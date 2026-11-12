@@ -134,16 +134,22 @@ export function retried(
     return { status: 409, message: `${before.runId} is ${before.state}` };
   const failed = before.stages.findIndex((stage) => stage.state !== "succeeded");
   const stage = before.stages[failed] as StageView;
-  const from = retry.from === undefined ? failed : before.stages.findIndex((at) => at.stage === retry.from);
-  if (from < 0 || from > failed)
+  // The stages changed when their names in order are not those of the run before; the new run then starts at the
+  // factory's first stage.
+  const same = before.stages.map((at) => at.stage).join() === definition.stages.map((at) => at.stage).join();
+  const first = definition.stages[0]?.stage;
+  if (!same && retry.from !== undefined && retry.from !== first)
+    return {
+      status: 409,
+      message: `from: the factory's stages changed since ${before.runId}, so the new run starts at the stage ${first}`,
+    };
+  const from = !same ? 0 : retry.from === undefined ? failed : before.stages.findIndex((at) => at.stage === retry.from);
+  if (from < 0) return { status: 400, message: `from: ${before.runId} has no stage "${retry.from}"` };
+  if (from > failed)
     return {
       status: 400,
       message: `from: "${retry.from}" is no stage at or before the stage ${stage.stage}, the first stage of ${before.runId} that did not succeed`,
     };
-  // A changed factory starts at its first stage: the stages of the run before do not fit it.
-  const same = before.stages.map((at) => at.stage).join() === definition.stages.map((at) => at.stage).join();
-  if (!same && from > 0)
-    return { status: 409, message: `from: the factory's stages changed since ${before.runId}; leave out "from"` };
   const attempt = (before.attempt ?? 1) + 1;
   const runId = runIdOf(before.workItem.id, attempt);
   return {

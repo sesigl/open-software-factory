@@ -358,3 +358,15 @@ export async function waitingForCheck(sut: Sut, fakes: Fakes) {
   await server.untilStage(runId, 2, "blocked");
   return { ...server, runId };
 }
+
+/** Commits the README's factory with the stage "review" after "implement", which runs the prompt of "implement". */
+export async function reviewAdded(sut: Sut, fakes: Fakes): Promise<void> {
+  const reviewed = (readmeFiles(fakes)["factory.yaml"] as string)
+    .replace(
+      "workflow:\n",
+      "  review:\n    harness: acp\n    model: routes/default\n    effort: medium\n    prompt: ./agents/implement.md\nworkflow:\n",
+    )
+    .concat("  - stage: review\n");
+  await sut.files.put("$INPUT/factory.yaml", reviewed);
+  await sut.git.commit("a review stage");
+}

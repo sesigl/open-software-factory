@@ -139,3 +139,26 @@ Feature: Run a work item again
     When "github:ada" posts a retry of the run from the stage "implement"
     Then the "implement" prompt of the new run has the line "Run before: <id> failed in the stage ship: the check verify ended with failure"
     And no later prompt of the new run has a line that starts with "Run before:"
+
+  @id=SCN-FORE-109 @status=implemented
+  Scenario: A retry after the factory's stages changed starts at the first stage
+    Given the server ran the README's "work.json" with "OSF_DATA" set to "$OUTPUT/foreman", the "plan" turn wrote "plan.md" and replied with the link "https://github.com/tester/web/pull/7", and the "implement" turn ended with "refusal"
+    And a new commit adds the stage "review" to "factory.yaml", so the stage names in order are no longer those of the run
+    When "github:ada" posts a retry of the run to "/v1/runs/<id>/retry"
+    Then the answer has the status 201 with the stages "plan", "implement" and "review" "pending" and the pull request "https://github.com/tester/web/pull/7"
+    And the "plan" prompt of the new run has the line "Run before: <id> failed in the stage implement"
+    And the "plan" turn of the new run ran in "$OUTPUT/foreman/runs/<new id>", which holds the "plan.md" of the run before
+
+  @id=SCN-FORE-110 @status=implemented
+  Scenario: A retry from a later stage after the factory's stages changed is refused
+    Given the server ran the README's "work.json" and the "implement" turn ended with "refusal"
+    And a new commit adds the stage "review" to "factory.yaml", so the stage names in order are no longer those of the run
+    When "github:ada" posts a retry of the run from the stage "implement"
+    Then the answer has the status 409 and a problem that says the factory's stages changed and the new run starts at the stage "plan"
+    And "/v1/runs" lists one run
+
+  @id=SCN-FORE-111 @status=implemented
+  Scenario: A retry from a stage the run does not have is refused
+    Given the server ran the README's "work.json" and the "implement" turn ended with "refusal"
+    When "github:ada" posts a retry of the run from the stage "implemnt"
+    Then the answer has the status 400 and a problem that names "from" and says the run has no stage "implemnt"
