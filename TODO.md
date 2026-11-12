@@ -900,8 +900,9 @@ as a vision scenario. Each item names the place in the code, so start there, and
 - **Slices:**
   - [x] The gate moves to `implement` in `deploy/compose/factory/factory.yaml` and in the chart's copy under
     `deploy/helm/osf/files/factory/`; the comment of `policy/spec.rego` and `deploy/README.md` follow.
-  - [x] A scenario of the distribution shows the order: `spec` ran, the run is blocked, the request links the pull
-    request (`SCN-DIST`).
+  - [x] A scenario of the distribution shows the gate's place in the resolved factory (`SCN-DIST-028`). It runs no
+    factory: the foreman's `SCN-FORE-072` shows that a gate before `implement` asks with the pull request of the stage
+    before it, and a run of the whole reference factory is T-27's.
 
 ### [ ] T-37 · checks from GitHub Actions (P0)
 
