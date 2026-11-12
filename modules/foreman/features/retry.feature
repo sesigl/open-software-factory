@@ -132,3 +132,10 @@ Feature: Run a work item again
     Given "foreman serve" runs the README's "factory.yaml" with an OTLP receiver, and its run of the README's "work.json" failed in the stage "implement"
     When "github:ada" posts a retry of the run to "/v1/runs/<id>/retry"
     Then the receiver got the new run's span in a trace other than the first run's, with the attribute "osf.run.retry_of" "<id>"
+
+  @id=SCN-FORE-108 @status=planned
+  Scenario: The first stage of the new run is told why the run before ended
+    Given the server ran the README's factory with the check "verify" before the stage "implement", and the check ended with "failure"
+    When "github:ada" posts a retry of the run from the stage "implement"
+    Then the "implement" prompt of the new run has the line "Run before: <id> failed in the stage implement: the check verify ended with failure"
+    And no later prompt of the new run has a line that starts with "Run before:"

@@ -935,7 +935,10 @@ as a vision scenario. Each item names the place in the code, so start there, and
   - [ ] The contract and the foreman's retry: `RunRetry`, `POST /v1/runs/<run ID>/retry`, `attempt`, `retryOf` and
     `retriedBy` in `RunView`, `retryOf` in `run.started@v1` and `run.completed@v1`; `runIdOf(workItemId, n)`, the
     copied stages, the moved folder, the run in the gate request's `change`, `gate.decided@v1` routed to the newest run, `POST /v1/runs`
-    answering the newest run (`SCN-FORE-088` to `-101`, `-103`, `-106`, `-107`).
+    answering the newest run, the line "Run before:" in the first stage's prompt (`SCN-FORE-088` to `-101`, `-103`,
+    `-106` to `-108`). The foreman's suite is near its budget: the implementer measures it on the new scenarios, makes it
+    faster first where the time goes to something avoidable, and changes the budget only with the measured reason in
+    `modules/foreman/AGENTS.md`, as the wave 5 note there did.
   - [ ] The foreman's events of a second run: `retryOf` in its events, and the event `work.retry-requested@v1` in the
     contract with the foreman as its consumer (`SCN-FORE-102`, `-104`, `-105`).
   - [ ] intake follows the newest run (`SCN-INTAKE-050` to `-052`).

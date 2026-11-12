@@ -60,6 +60,14 @@ before; the stages before it are copied from the run before, as they ended. This
 - A run a person cancelled starts the cancelled stage again with a fresh turn.
 - A run whose gate was rejected asks gatekeeper again, as a new request.
 
+**The new run tells its agent why the run before ended.** The prompt of the first stage the new run runs gets one
+more line after the pull request link, made only from what the old run's view holds: `Run before: <old ID> failed in
+the stage <stage>: <reason>` for a failed stage with a `reason`, the same without `: <reason>` when the stage has
+none, `Run before: <old ID> was cancelled in the stage <stage>` for a cancelled one, and `Run before: <old ID>: the
+gate before the stage <stage> was rejected` for a rejected gate. Only that stage gets the line: the stages after it
+run on the work of the new run, and an old failure in their prompt would point them at a problem that the first
+stage may have fixed. No new field holds the reason.
+
 The person may name `from`: a stage at or before the first stage that did not succeed. A later stage is refused
 with 400. The new run takes the factory as it is now. When its stages are not the stages of the run before, the run
 starts at the first stage, and a `from` other than the first stage is refused with 409.

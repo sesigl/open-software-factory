@@ -542,3 +542,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-105 | planned | A second retry request for the same run starts no third run |
 | SCN-FORE-106 | planned | The new run gets its own key with the factory's budget |
 | SCN-FORE-107 | planned | The new run has a trace of its own that names the run before |
+| SCN-FORE-108 | planned | The first stage of the new run is told why the run before ended |
