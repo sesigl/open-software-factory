@@ -6,6 +6,57 @@ export const REPOSITORY = /^[\w.-]+\/[\w.-]+$/;
 /** The states a check may have; GitHub's commit statuses have the same four. */
 export const CHECK_STATES = ["pending", "success", "failure", "error"] as const;
 
+/** A check as pr prints it. */
+export interface Check {
+  name: string;
+  state: string;
+  description: string;
+  url: string;
+}
+
+/** A check run of GitHub's checks API, like a job of GitHub Actions. */
+export interface CheckRun {
+  id: number;
+  name: string;
+  status: string;
+  conclusion: string | null;
+  html_url: string | null;
+  output?: { title: string | null };
+}
+
+/** The conclusions that GitHub's branch protection counts as passing (ADR 0104). */
+const PASSING = ["success", "neutral", "skipped"];
+/** The states from best to worst: of a status and a check run with one name, the worse counts. */
+const WORSE = ["success", "pending", "failure", "error"];
+
+/** The state of a check run: pending until it completed, then success, failure, or error for any other end. */
+function stateOf(run: CheckRun): string {
+  if (run.status !== "completed") return "pending";
+  if (PASSING.includes(run.conclusion ?? "")) return "success";
+  return run.conclusion === "failure" ? "failure" : "error";
+}
+
+/**
+ * The commit statuses and the check runs of a commit as one list of checks, one per name. Of several check runs with
+ * one name the newest counts; of a status and a check run with one name, the worse state.
+ */
+export function checksOf(statuses: Check[], runs: CheckRun[]): Check[] {
+  const newest = new Map<string, CheckRun>();
+  for (const run of runs) if (run.id > (newest.get(run.name)?.id ?? 0)) newest.set(run.name, run);
+  const checks = new Map(statuses.map((status) => [status.name, status]));
+  for (const run of newest.values()) {
+    const check = {
+      name: run.name,
+      state: stateOf(run),
+      description: run.output?.title ?? "",
+      url: run.html_url ?? "",
+    };
+    const status = checks.get(run.name);
+    if (!status || WORSE.indexOf(check.state) > WORSE.indexOf(status.state)) checks.set(run.name, check);
+  }
+  return [...checks.values()];
+}
+
 /** GitHub's merge methods. */
 export const MERGE_METHODS = ["merge", "squash", "rebase"] as const;
 

@@ -1,6 +1,6 @@
 // An in-process fake of the part of GitHub's REST API that a forge client calls (ADR 0058), with the same Forge
 // interface as fakes.forge. It keeps repositories with their commits and files, branches, pull requests, commit
-// statuses, comments, reviews, branch protection, issues with labels and webhooks. Webhooks deliver signed events to URLs on the local
+// statuses, check runs, comments, reviews, branch protection, issues with labels and webhooks. Webhooks deliver signed events to URLs on the local
 // host. IDs, SHAs and times come from counters and the fixed clock. A call it does not know fails the scenario.
 import { createHmac } from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
@@ -27,6 +27,13 @@ export interface FakeGitHub extends Forge {
   conversation(pr: PullRequest): Promise<GitHubComment[]>;
   /** A token like a GitHub Actions token: its user is "github-actions[bot]", and GET /user answers 403 (ADR 0062). */
   actionsToken: string;
+  /**
+   * Adds a check run to the head commit of the pull request, like a job of GitHub Actions (ADR 0104). A run with a
+   * conclusion is `completed`; one without is `queued` unless `status` says otherwise.
+   */
+  checkRun(pr: PullRequest, run: { name: string; status?: string; conclusion?: string; title?: string }): Promise<void>;
+  /** A token of the user `tester` that may not read check runs: GET .../check-runs answers 403 (ADR 0104). */
+  noChecksToken: string;
 }
 
 export interface RunningGitHub {
@@ -38,12 +45,17 @@ const OWNER = "tester";
 const REVIEWER = "reviewer";
 const ACTIONS = "github-actions[bot]";
 const ACTIONS_TOKEN = "ghs_testkit_actions";
+const NO_CHECKS_TOKEN = "github_pat_testkit_no_checks";
 const TOKENS: Record<string, string> = {
   ghp_testkit_tester: OWNER,
   ghp_testkit_reviewer: REVIEWER,
   [ACTIONS_TOKEN]: ACTIONS,
+  [NO_CHECKS_TOKEN]: OWNER,
 };
 const OWNER_TOKEN = "ghp_testkit_tester";
+/** GitHub's default and largest page of check runs. */
+const RUNS_PAGE = 30;
+const RUNS_MAX = 100;
 const CHECK_STATES = ["pending", "success", "failure", "error"];
 /** The REST API versions the fake takes in X-GitHub-Api-Version; a request without the header gets the first. */
 const API_VERSIONS = ["2022-11-28"];
@@ -87,6 +99,15 @@ interface Status {
   createdAt: string;
 }
 
+interface CheckRun {
+  id: number;
+  sha: string;
+  name: string;
+  status: string;
+  conclusion: string | null;
+  title: string | null;
+}
+
 interface Rule {
   contexts: string[];
   approvals: number;
@@ -110,6 +131,7 @@ interface Repository {
   pulls: Pull[];
   issues: IssueEntry[];
   statuses: Status[];
+  runs: CheckRun[];
   comments: { id: number; number: number; body: string; user: string; createdAt: string }[];
   reviews: { id: number; number: number; user: string; state: string; body: string }[];
   rules: Map<string, Rule>;
@@ -487,6 +509,32 @@ export async function startGitHub(): Promise<RunningGitHub> {
       },
     ],
     [
+      "GET",
+      /^\/commits\/([^/]+)\/check-runs$/,
+      (repo, [ref = ""], _body, _user, query) => {
+        const sha = repo.branches.get(ref) ?? commits.find(ref)?.sha;
+        if (!sha) throw new Answer(422, `No commit found for SHA: ${ref}`);
+        const runs = repo.runs.filter((run) => run.sha === sha);
+        const size = Math.min(Number(query.get("per_page") ?? RUNS_PAGE), RUNS_MAX);
+        const start = (Number(query.get("page") ?? 1) - 1) * size;
+        return [
+          200,
+          {
+            total_count: runs.length,
+            check_runs: runs.slice(start, start + size).map((run) => ({
+              id: run.id,
+              head_sha: run.sha,
+              name: run.name,
+              status: run.status,
+              conclusion: run.conclusion,
+              html_url: `${url}/${OWNER}/${repo.name}/runs/${run.id}`,
+              output: { title: run.title },
+            })),
+          },
+        ];
+      },
+    ],
+    [
       "POST",
       /^\/statuses\/([0-9a-f]{40})$/,
       (repo, [sha = ""], body) => {
@@ -697,6 +745,8 @@ export async function startGitHub(): Promise<RunningGitHub> {
       if (user === ACTIONS) return send(403, { message: "Resource not accessible by integration", status: "403" });
       return send(200, userJson(user));
     }
+    if (token === NO_CHECKS_TOKEN && path.endsWith("/check-runs"))
+      return send(403, { message: "Resource not accessible by personal access token", status: "403" });
     const repoMatch = new RegExp(`^/repos/${OWNER}/([^/]+)(.*)$`).exec(path);
     const route = repoMatch && routes.find(([verb, pattern]) => verb === method && pattern.test(repoMatch[2] ?? ""));
     if (!repoMatch || !route) {
@@ -739,6 +789,7 @@ export async function startGitHub(): Promise<RunningGitHub> {
     url,
     token: OWNER_TOKEN,
     actionsToken: ACTIONS_TOKEN,
+    noChecksToken: NO_CHECKS_TOKEN,
     owner: OWNER,
     async createRepository(name, files = {}) {
       const initial = Object.keys(files).length > 0 ? files : { "README.md": `# ${name}\n` };
@@ -750,6 +801,7 @@ export async function startGitHub(): Promise<RunningGitHub> {
         pulls: [],
         issues: [],
         statuses: [],
+        runs: [],
         comments: [],
         reviews: [],
         rules: new Map(),
@@ -811,6 +863,17 @@ export async function startGitHub(): Promise<RunningGitHub> {
         .filter((status) => status.sha === head)
         .reverse()
         .map(({ context, state, description }) => ({ context, state, description: description ?? "" }));
+    },
+    async checkRun(pr, run) {
+      const { repo, pr: found } = ref(pr);
+      repo.runs.push({
+        id: nextId(),
+        sha: tip(repo, found.head),
+        name: run.name,
+        status: run.status ?? (run.conclusion ? "completed" : "queued"),
+        conclusion: run.conclusion ?? null,
+        title: run.title ?? null,
+      });
     },
     async createBranch(name, change) {
       const repo = repository(name);

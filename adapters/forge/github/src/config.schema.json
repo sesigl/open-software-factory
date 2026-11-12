@@ -9,7 +9,7 @@
     },
     "FORGE_TOKEN": {
       "type": "string",
-      "description": "A GitHub token that may write contents, pull requests, commit statuses and the repository's administration (branch protection, webhooks). Required by every command but event."
+      "description": "A GitHub token that may write contents, pull requests, commit statuses and the repository's administration (branch protection, webhooks), and read checks (Checks: read) for the check runs that pr lists. Required by every command but event."
     },
     "FORGE_WEBHOOK_SECRET": {
       "type": "string",
