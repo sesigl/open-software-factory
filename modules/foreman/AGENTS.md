@@ -48,7 +48,7 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
   (durable events, health, traces, evidence), two of which start the foreman twice. The same 72 scenarios took 261 s
   in another run on the same runner type, so the budget keeps about 10% for the runner.
 - Measured for 390 s: T-38's retry (ADR 0105) adds 18 scenarios. On a development machine whose runner benchmark took
-  1.6 times the reference, the 86 scenarios before it took 286 s and the 18 new ones 65 s, 351 s in total (3.6 s
+  1.6 times the reference, the 86 scenarios before it took 286 s and the 18 new ones 65 s, 351 s in total, and 373 s in a second run (3.6 s
   each; the two refusals that need no run 1.7 s, which is the start of Temporal and `foreman serve`). Each new run is
   a second workflow with its own stages, so most new scenarios run two runs. The budget keeps about 10% for the runner.
 
