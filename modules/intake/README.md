@@ -294,3 +294,10 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-INTAKE-047 | implemented | The inbox lists only the work items in the status the query names |
 | SCN-INTAKE-048 | implemented | The inbox refuses a status that no work item can have |
 | SCN-INTAKE-049 | implemented | A run event that breaks its contract is a warning and comes again after 2 seconds |
+| SCN-INTAKE-050 | planned | A new run of a failed work item moves it back to running |
+| SCN-INTAKE-051 | planned | A late "run.completed@v1" of the run before leaves the work item with the new run |
+| SCN-INTAKE-052 | planned | A new run's "run.completed@v1" that comes before its "run.started@v1" completes the work item |
+| SCN-INTAKE-053 | planned | The label put again on the issue of a failed work item asks the foreman to run it again |
+| SCN-INTAKE-054 | planned | The label put again on the issue of a running work item asks for nothing |
+| SCN-INTAKE-055 | planned | The label put again on the issue of a complete work item asks for nothing |
+| SCN-INTAKE-056 | planned | The label put again twice on the same failed run asks once |
