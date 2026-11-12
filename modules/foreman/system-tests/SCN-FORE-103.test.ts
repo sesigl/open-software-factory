@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { GATE, newRunOf, waitingAtGate } from "./foreman.ts";
+import { GATE, IMPLEMENT, newRunOf, waitingAtGate } from "./foreman.ts";
 
 const SECOND = "g9f8e7d6c5b4a3f2e";
 
@@ -30,6 +30,9 @@ scenario("SCN-FORE-103", async ({ sut, fakes, given, when, then }) => {
     async () => {
       const view = await run.until(newId, "complete");
       expect(view.stages.map(({ state }) => state)).toEqual(["succeeded", "succeeded"]);
+      expect(run.prompts(IMPLEMENT)).toEqual([
+        expect.stringContaining(`\n\nRun before: ${run.runId}: the gate before the stage implement was rejected\n`),
+      ]);
     },
   );
 });

@@ -31,5 +31,8 @@ scenario("SCN-FORE-090", async ({ sut, fakes, given, when, then }) => {
       { stage: "implement", state: "running" },
     ]);
     expect(run.prompts(PLAN)).toHaveLength(1);
+    await expect
+      .poll(() => run.prompts(IMPLEMENT)[1])
+      .toContain(`\n\nRun before: ${run.runId} was cancelled in the stage implement\n`);
   });
 });
