@@ -75,8 +75,8 @@ agents:
 workflow:
   - stage: triage
   - stage: spec
-    gate: { policy: ./policy/spec.rego }
   - stage: implement
+    gate: { policy: ./policy/spec.rego }
   - stage: review
   - stage: verify
     evidence: required
