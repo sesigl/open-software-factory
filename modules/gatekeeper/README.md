@@ -163,6 +163,7 @@ permissions:
   issues: write
   pull-requests: write
   statuses: write
+  checks: read # the forge adapter's pr lists the check runs of the head commit
 jobs:
   gate:
     if: github.event_name != 'issue_comment' || github.event.issue.pull_request
@@ -287,7 +288,7 @@ the decision. The event ID is the gate's ID with `.requested` or `.decided`.
 | `GATEKEEPER_SLACK_SIGNING_SECRET` | string |  | serve: the signing secret of the Slack app, the adapter's CHANNEL_SIGNING_SECRET, which checks every request from Slack. Required for serve with a Slack channel. |
 | `GATEKEEPER_FORGE_ADAPTER` | string |  | The command line of the forge port's adapter for --pull-request (ADR 0062). Default: npx -y @opensoftware/forge-github for github.com, npx -y @opensoftware/forge-forgejo for any other host. |
 | `GATEKEEPER_FORGE_URL` | string |  | The forge adapter's FORGE_URL. Default: https://api.github.com for github.com, the pull request's origin for Forgejo. |
-| `GATEKEEPER_FORGE_TOKEN` | string |  | The forge adapter's FORGE_TOKEN: a token that may read the pull request, comment on it and set its commit status. serve: with it, a request that links a pull request is asked on the pull request. Never written to a file. |
+| `GATEKEEPER_FORGE_TOKEN` | string |  | The forge adapter's FORGE_TOKEN: a token that may read the pull request and its checks (on GitHub: Checks: read, since the adapter's pr lists the check runs), comment on it and set its commit status. serve: with it, a request that links a pull request is asked on the pull request. Never written to a file. |
 | `GATEKEEPER_POLL_MS` | string | `"30000"` | serve: the milliseconds between two reads of the comments of the pull requests with a pending gate (ADR 0080). Only with GATEKEEPER_FORGE_TOKEN. |
 | `GATEKEEPER_SIGNING_KEY` | string |  | Ed25519 private key in PEM that signs each record. Without it the record is unsigned. |
 | `GATEKEEPER_NATS_URL` | string |  | NATS server, like nats://localhost:4222, for the events gate.requested@v1 and gate.decided@v1. Unset: no events. serve keeps them in its outbox while NATS is unreachable. |

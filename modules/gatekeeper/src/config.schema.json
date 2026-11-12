@@ -48,7 +48,7 @@
     },
     "GATEKEEPER_FORGE_TOKEN": {
       "type": "string",
-      "description": "The forge adapter's FORGE_TOKEN: a token that may read the pull request, comment on it and set its commit status. serve: with it, a request that links a pull request is asked on the pull request. Never written to a file."
+      "description": "The forge adapter's FORGE_TOKEN: a token that may read the pull request and its checks (on GitHub: Checks: read, since the adapter's pr lists the check runs), comment on it and set its commit status. serve: with it, a request that links a pull request is asked on the pull request. Never written to a file."
     },
     "GATEKEEPER_POLL_MS": {
       "type": "string",

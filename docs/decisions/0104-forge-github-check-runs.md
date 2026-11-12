@@ -63,4 +63,5 @@ reads. `check` still writes a commit status, and the merge rules still require c
 - A stage with `checks: [<job name>]` starts once that job of GitHub Actions succeeded, without a status posted by
   hand.
 - The token of `pr` needs `Checks: read` too. A token without it fails with that name, not with a stage that waits.
+- gatekeeper runs `pr` too, so its token, and the token of its GitHub Action, need `Checks: read` as well.
 - The forgejo adapter is unchanged: Forgejo's Actions post commit statuses.

@@ -15,6 +15,7 @@ permissions:
   issues: write # the request and the decision as comments
   pull-requests: write
   statuses: write # the commit status gatekeeper
+  checks: read # forge-github pr lists the check runs of the head commit (ADR 0104)
 
 concurrency:
   group: gatekeeper-${{ github.event.pull_request.number || github.event.issue.number }}
