@@ -885,6 +885,203 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
   - [x] Mutation starts only after `verify` passed (ADR 0092).
   - Not done, with the reason in ADR 0091: a stable shard per mutant (the joined results serve every shard).
 
+**Review of the assembled factory (T-36 to T-50).** A review on 2026-11-12 read the code of the delivery loop against
+[`docs/vision/`](docs/vision/). These items are defects and gaps in what exists. A new feature is not here: it starts
+as a vision scenario. Each item names the place in the code, so start there, and write the scenario before the fix.
+
+### [ ] T-36 · the reference factory asks for approval of the spec (P0)
+
+- **Problem:** a gate comes before its stage (`nextStep` in `modules/foreman/src/domain/run.ts`), and the reference
+  factory has its gate on `spec`. A maintainer is asked before the spec exists, and `implement` starts without an
+  approval of it. `agents/spec.md`, `agents/implement.md` and `deploy/README.md` say that a maintainer approved the
+  scenarios. The dogfood factory has the gate on `implement`.
+- **Done when:** a run of the reference factory waits after `spec`, its approval request links the spec's pull request,
+  and `implement` starts only after the approval.
+- **Slices:**
+  - [ ] The gate moves to `implement` in `deploy/compose/factory/factory.yaml` and in the chart's copy under
+    `deploy/helm/osf/files/factory/`; the comment of `policy/spec.rego` and `deploy/README.md` follow.
+  - [ ] A scenario of the distribution shows the order: `spec` ran, the run is blocked, the request links the pull
+    request (`SCN-DIST`).
+
+### [ ] T-37 · checks from GitHub Actions (P0)
+
+- **Problem:** the forge adapter `github` reads only commit statuses (`GET /commits/<sha>/status` in
+  `adapters/forge/github/src/commands/pulls.ts`). A job of GitHub Actions is a check run, not a commit status. A stage
+  with `checks: [verify]` waits forever on a repository whose CI does not post a status by hand, as `verify.yml` of this
+  repository does. T-27 promises any GitHub repository.
+- **Done when:** `pr` of `forge-github` lists the check runs of the head commit next to its commit statuses, and a
+  stage starts after a job of GitHub Actions with the check's name succeeded.
+- **Slices:**
+  - [ ] `pr` reads `GET /commits/<sha>/check-runs` and maps each conclusion to `success`, `failure`, `error` or
+    `pending` (`SCN-FGITHUB`); `fakes.github` serves check runs.
+  - [ ] The forge port's README says what a check is on each forge, and `deploy/README.md` says which name to put under
+    `checks`.
+
+### [ ] T-38 · run a work item again (P0)
+
+- **Problem:** the foreman starts one run per work item, also after the run ended (`REJECT_DUPLICATE` in
+  `modules/foreman/src/commands/runs.ts`), and intake gives an issue the same work item each time. A run that failed
+  or was cancelled can never run again; the only way is a new issue.
+- **Done when:** a person starts a work item's run again through the API and the console, the new run names the run
+  before it, and intake's work item follows the new run.
+- **Slices:**
+  - [ ] An ADR: the ID of a second run, which stage it starts at, and what it keeps of the run's folder and pull
+    request.
+  - [ ] `POST /v1/runs/<run ID>/signals` with `retry`, or a route of its own, for a run that ended without success
+    (`SCN-FORE`); `run.started@v1` of the new run moves intake's work item back to `running` (`SCN-INTAKE`).
+  - [ ] The label put on an issue again starts the run again (`SCN-INTAKE`).
+
+### [ ] T-39 · waits that end (P1)
+
+- **Problem:** a stage reads pending checks every `FOREMAN_CHECK_POLL_MS` without a limit, and waits for a gate until
+  a decision comes (`await condition` in `modules/foreman/src/workflows/run.ts`). A check with a wrong name, or a gate
+  whose policy has no `expire_after`, blocks a run forever, and the run does not say what it waits for.
+- **Done when:** a stage that waited longer than its limit fails with a reason that names the check or the gate, and
+  the run's view shows since when it waits.
+- **Slices:**
+  - [ ] A limit for the wait for checks, as a setting of the foreman with a default, and per stage if the contract
+    gets the field (`SCN-FORE`).
+  - [ ] A check that the pull request's head commit does not have at all is named as missing in the stage's reason,
+    apart from one that is pending.
+  - [ ] A gate without a decision after the foreman's own limit ends as `expired`, also when the policy names none.
+
+### [ ] T-40 · a verify stage that runs no second implement session (P1)
+
+- **Problem:** the stage `verify` of the reference factory has `agent: implement`, because every stage runs an agent.
+  After the checks passed, the implement agent runs again with the implement prompt: a second full session, which may
+  push commits that no check has seen. `ship` does not read the checks again.
+- **Done when:** the reference factory waits for the checks and the evidence without a model call, and `ship` starts
+  only when the checks of the pull request's head commit succeeded.
+- **Slices:**
+  - [ ] An ADR: a stage without an agent, or an agent `verify` with a prompt of its own that changes no file.
+  - [ ] The reference factory and the dogfood factory use it, and `ship` has the same `checks` (`SCN-DIST`, `SCN-FORE`).
+
+### [ ] T-41 · one key and one budget per run (P1)
+
+- **Problem:** the foreman keeps each run's key of the gateway in memory (`keys` in
+  `modules/foreman/src/workflows/activities.ts`). After a restart it asks for a new key, and `inference.budget`
+  starts again from zero. A run's keys live until the gateway stops.
+- **Done when:** a run spends at most its budget across restarts of the foreman, and its key stops working when the run
+  ended.
+- **Slices:**
+  - [ ] The inference port's `key` answers the same key for the same run, or the budget is on the run and not on the
+    key (`SCN-INFER`, `SCN-INFLITE`).
+  - [ ] The foreman revokes the run's key when the run ended (`SCN-FORE`).
+
+### [ ] T-42 · the run's pull request, stated and not guessed (P1)
+
+- **Problem:** the run's pull request is the last pull request link in what the stage's agent wrote
+  (`lastPullRequestIn`). An agent that names another pull request after its own gives the run the wrong one, and the
+  checks and the gate then read that one.
+- **Done when:** a run takes only a pull request of the work item's repository whose head is the run's branch, or one
+  that the agent names in a stated form, and says so when it finds none.
+- **Slices:**
+  - [ ] An ADR: how a stage states its results (a line of a fixed form, a file in the run's folder, or the forge
+    adapter's `prs` for the run's branch).
+  - [ ] The foreman refuses a link of another repository than the work item's (`SCN-FORE`).
+
+### [ ] T-43 · versions a run can trust (P1)
+
+- **Problem:** the factory version is the commit of `HEAD` also when `factory.yaml` or a prompt has changes that are
+  not committed (`modules/foreman/src/adapters/factory.ts`), so a run can name a version that it did not run. An
+  adapter without a command line in `FOREMAN_HARNESSES`, `FOREMAN_SANDBOXES`, `FOREMAN_FORGES` or
+  `FOREMAN_INFERENCES` runs `npx -y @opensoftware/<port>-<name>` at the newest version; the ranges under `providers`
+  are not read. A command line is split at each space, so a path with a space breaks it.
+- **Done when:** the foreman refuses a factory with changes that are not committed, each adapter runs at a version
+  inside the factory's range, and the run's view names the versions.
+- **Slices:**
+  - [ ] `foreman serve` and a run's start fail with the changed files named when the factory's folder is not clean
+    (`SCN-FORE`).
+  - [ ] The fallback command line takes the version that `factory plan` pinned in `factory.lock`, or the range of
+    `providers` (`SCN-FORE`, `SCN-FSPEC`).
+  - [ ] The adapter maps take a command line as a list of arguments too.
+
+### [ ] T-44 · what factory.yaml declares takes effect (P1)
+
+- **Problem:** a factory declares more than a run uses. The foreman opens each session with `mcpServers: []` and gives
+  the agent only its prompt, so an agent's `mcp`, `skills` and `repositories` do nothing in a run. A `cron` automation
+  is only rendered for gh-aw. `benchmarks` is only linted. A stage's result does not reach the next stage: it gets the
+  work item, the pull request link and the shared folder, so what triage found is lost.
+- **Done when:** each field of the factory definition takes effect in a run of the foreman, or `factory lint` and
+  `factory plan` name it as declared without effect.
+- **Slices:**
+  - [ ] The foreman renders the stage's agent with factory-spec into the session's folder: skills and MCP servers,
+    also in a sandbox, whose egress allows the MCP servers' hosts (`SCN-FORE`, `SCN-SANDBOX`).
+  - [ ] The next stage's prompt holds the last message of the stage before it, or a file of the run's folder that the
+    reference prompts name.
+  - [ ] `factory lint` warns about a `cron` automation without `--gh-aw`, and about `benchmarks` and `scorers` that no
+    job of the profile runs (until T-31).
+
+### [ ] T-45 · the requester hears about the run (P1)
+
+- **Problem:** intake answers a Slack mention with the work item's ID and, when the run finished, with its pull
+  request. A person hears nothing when the run starts, waits at a gate or fails, and an issue gets no comment at all.
+- **Done when:** the origin of each request of a work item, a Slack thread or an issue, gets one message when its run
+  is blocked and one when it ended, with the reason of a failure and a link to the run in the console.
+- **Slices:**
+  - [ ] `run.completed@v1` with the outcome `failed` or `cancelled` adds a reply with the failed stage (`SCN-INTAKE`).
+  - [ ] A comment on the issue of a work item through the forge port (`SCN-INTAKE`).
+  - [ ] An event when a run blocks at a gate or at checks, if the contract gets it (`contracts/events/`).
+
+### [ ] T-46 · the dogfood factory in sandboxes (P1)
+
+- **Problem:** the agents of `deploy/dogfood/factory/` declare no sandbox. They run in the foreman's container with
+  its forge tokens and the master key of `litellm`, against P11, and `deploy/README.md` says so.
+- **Done when:** every stage of the dogfood factory runs in a sandbox as the reference factory's stages do, and the
+  warning leaves `deploy/README.md`.
+- **Slices:**
+  - [ ] The agents get `sandbox` and `secrets`; the egress allows what `make install` and `make verify` of this
+    repository need.
+  - [ ] SCN-DIST-015 plans the changed factory.
+
+### [ ] T-47 · a first run without guessing (P1)
+
+- **Problem:** next to T-30: the root `README.md` has no path to a running factory. The reference `groups.json` names
+  a Slack user that does not exist, so the first gate asks nobody. The chart requires the Slack secrets, while the
+  Compose profile takes gates on pull requests alone.
+- **Done when:** the root README leads to the quick start in three lines, `console doctor` fails on an approver group
+  without a real member, and the chart installs with `secrets.forgeToken` and without Slack.
+- **Slices:**
+  - [ ] "Run a factory" in `README.md`, with a link to `deploy/README.md`.
+  - [ ] `console doctor` and gatekeeper's start name a group whose members are the example's (`SCN-CONSOLE`,
+    `SCN-GATE`).
+  - [ ] The chart takes Slack, a forge token or both, as `compose.yaml` does (`SCN-DIST`).
+
+### [ ] T-48 · lists that stay fast (P2)
+
+- **Problem:** `GET /v1/runs` asks Temporal once for each run and has no page (`list` in
+  `modules/foreman/src/commands/runs.ts`); the console calls it every 10 seconds. intake's inbox is cut at 50 work
+  items without a way to the next ones (`latest` in `modules/intake/src/adapters/store.ts`).
+- **Done when:** both lists take a page size and a cursor, and the console's runs page loads 1000 runs' first page in
+  under a second in a measured run.
+- **Slices:**
+  - [ ] `limit` and `cursor` on `GET /v1/runs` and `GET /v1/inbox` (`contracts/typespec/`, `SCN-FORE`, `SCN-INTAKE`).
+  - [ ] The run list reads what it shows from Temporal's visibility, without a query per run.
+  - [ ] The console's pages link the next page (`SCN-CONSOLE`).
+
+### [ ] T-49 · events that are not lost without a trace (P2)
+
+- **Problem:** the stream `OSF` has no limit of age or size, so it grows until the disk is full. An event that failed
+  5 times is dropped with a warning in the log only, and intake's outbox keeps every published row.
+- **Done when:** the stream has a limit, a dropped event can be found and sent again, and a health check fails while
+  dropped events wait.
+- **Slices:**
+  - [ ] `max_age` of the stream as a setting, with a default in the profile and the chart (ADR, after ADR 0085).
+  - [ ] A subject for events that reached `max_deliver`, and a check of `/v1/health` on intake and the foreman.
+  - [ ] intake removes published rows of the outbox after a time.
+
+### [ ] T-50 · current status lines, again (P2)
+
+- **Problem:** all 82 scenarios of `docs/vision/software-factory.feature` are `@status=planned`, and 14 of them have
+  no module scenario with `@realizes=` for them. T-22, T-26 and T-29 are open with every slice ticked. T-24 and T-29
+  name Phoenix, which Jaeger replaced (ADR 0100). T-33 fixed the status lines once; nothing keeps them right.
+- **Done when:** a check fails when a vision scenario's status differs from the module scenarios that realize it, and
+  this file's open items have an open slice.
+- **Slices:**
+  - [ ] A report of the vision scenarios with the module scenarios that realize each, from spec-trace, in `make docs`.
+  - [ ] A check on that report, and on an item of this file that is open without an open slice (`SCN-REPO`).
+  - [ ] Tick or correct T-22, T-26 and T-29, and name Jaeger in T-24 and T-29.
+
 ---
 
 ## After the plan: phase 3 and 4

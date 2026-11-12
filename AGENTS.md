@@ -17,7 +17,7 @@ A family of independent open-source tools that together form a software factory.
 ## Current phase
 
 Phase 2 is done: every tool module of `TODO.md` T-00 to T-20 is built and released, and CI of this repository runs
-our own tools (ADR 0083). The work now is wave 5 of `TODO.md` (T-22 to T-33): a v1 factory that people can trust
+our own tools (ADR 0083). The work now is wave 5 of `TODO.md` (T-22 to T-50): a v1 factory that people can trust
 with real work, then phase 3, in which the factory implements this repository's issues (T-21). Run `make install`
 once after cloning (Node 24, pnpm); the tooling is described in `tools/README.md`. Every pull request is reviewed
 by a person. `docs/explanation/bootstrapping.md` describes the phases and what changes in each.
