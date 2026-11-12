@@ -522,3 +522,24 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-085 | implemented | A factory that names no sandbox adapter runs its sandboxes with docker when FOREMAN_SANDBOX is not set |
 | SCN-FORE-086 | implemented | Until the factory's gateway starts, the server serves and its health names the failure |
 | SCN-FORE-087 | implemented | A stage that runs a turn when the foreman stops runs its turn again when the foreman starts again |
+| SCN-FORE-088 | planned | A retry of a failed run starts a new run at the stage that failed |
+| SCN-FORE-089 | planned | The new run works in the folder and on the pull request of the run before |
+| SCN-FORE-090 | planned | A retry of a cancelled run starts the cancelled stage again |
+| SCN-FORE-091 | planned | A retry of a run whose gate was rejected asks gatekeeper again |
+| SCN-FORE-092 | planned | A retry from an earlier stage runs that stage again |
+| SCN-FORE-093 | planned | A retry from a stage after the stage that failed is refused |
+| SCN-FORE-094 | planned | A retry without the person who asks is refused |
+| SCN-FORE-095 | planned | A retry of a run that is still going is refused |
+| SCN-FORE-096 | planned | A retry of a run that succeeded is refused |
+| SCN-FORE-097 | planned | A retry of a run the server does not know is 404 |
+| SCN-FORE-098 | planned | Two retries of the same run at the same time start one run |
+| SCN-FORE-099 | planned | A retry of a run that already ran again is refused and names the later run |
+| SCN-FORE-100 | planned | The runs list shows the run before and the new run |
+| SCN-FORE-101 | planned | The same work item again answers the newest run |
+| SCN-FORE-102 | planned | The new run publishes its events with its own IDs and the run before |
+| SCN-FORE-103 | planned | A gate decision reaches the newest run of the work item |
+| SCN-FORE-104 | planned | A retry request from intake runs the work item again |
+| SCN-FORE-105 | planned | A second retry request for the same run starts no third run |
+| SCN-FORE-106 | planned | The new run gets its own key with the factory's budget |
+| SCN-FORE-107 | planned | The new run has a trace of its own that names the run before |
+| SCN-FORE-108 | planned | The first stage of the new run is told why the run before ended |

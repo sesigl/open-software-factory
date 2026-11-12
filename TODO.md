@@ -928,13 +928,22 @@ as a vision scenario. Each item names the place in the code, so start there, and
   `modules/foreman/src/commands/runs.ts`), and intake gives an issue the same work item each time. A run that failed
   or was cancelled can never run again; the only way is a new issue.
 - **Done when:** a person starts a work item's run again through the API and the console, the new run names the run
-  before it, and intake's work item follows the new run.
-- **Slices:**
-  - [ ] An ADR: the ID of a second run, which stage it starts at, and what it keeps of the run's folder and pull
-    request.
-  - [ ] `POST /v1/runs/<run ID>/signals` with `retry`, or a route of its own, for a run that ended without success
-    (`SCN-FORE`); `run.started@v1` of the new run moves intake's work item back to `running` (`SCN-INTAKE`).
-  - [ ] The label put on an issue again starts the run again (`SCN-INTAKE`).
+  before it, and intake's work item follows the new run; and putting the label on an issue again starts the run again.
+- **Slices** (ADR 0105):
+  - [x] An ADR: the ID of a second run, which stage it starts at, and what it keeps of the run's folder and pull
+    request; the planned scenarios of the foreman, intake and the console.
+  - [ ] The contract and the foreman's retry: `RunRetry`, `POST /v1/runs/<run ID>/retry`, `attempt`, `retryOf` and
+    `retriedBy` in `RunView`, `retryOf` in `run.started@v1` and `run.completed@v1`; `runIdOf(workItemId, n)`, the
+    copied stages, the moved folder, the run in the gate request's `change`, `gate.decided@v1` routed to the newest run, `POST /v1/runs`
+    answering the newest run, the line "Run before:" in the first stage's prompt (`SCN-FORE-088` to `-101`, `-103`,
+    `-106` to `-108`). The foreman's suite is near its budget: the implementer measures it on the new scenarios, makes it
+    faster first where the time goes to something avoidable, and changes the budget only with the measured reason in
+    `modules/foreman/AGENTS.md`, as the wave 5 note there did.
+  - [ ] The foreman's events of a second run: `retryOf` in its events, and the event `work.retry-requested@v1` in the
+    contract with the foreman as its consumer (`SCN-FORE-102`, `-104`, `-105`).
+  - [ ] intake follows the newest run (`SCN-INTAKE-050` to `-052`).
+  - [ ] The label put on an issue again publishes `work.retry-requested@v1` (`SCN-INTAKE-053` to `-056`).
+  - [ ] The console's form "run again" and the link to the run before (`SCN-CONSOLE-050` to `-054`).
 
 ### [ ] T-39 · waits that end (P1)
 
