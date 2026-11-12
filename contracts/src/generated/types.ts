@@ -78,7 +78,7 @@ export type paths = {
         /** @description The runs of the server, running runs first, then the runs that ended, the one that ended last first; with `state`, only the runs in that state (ADR 0071). */
         get: operations["ForemanApi_listRuns"];
         put?: never;
-        /** @description Start a run of the factory's workflow for a work item. The same work item again answers the run it started. */
+        /** @description Start a run of the factory's workflow for a work item. The same work item again answers its newest run. */
         post: operations["ForemanApi_startRun"];
         delete?: never;
         options?: never;
@@ -97,6 +97,23 @@ export type paths = {
         get: operations["ForemanApi_getRun"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/runs/{runId}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Run a run that failed or was cancelled again, as a new run that names it (ADR 0105). */
+        post: operations["ForemanApi_retryRun"];
         delete?: never;
         options?: never;
         head?: never;
@@ -780,6 +797,15 @@ export type components = {
             "osf.harness.version"?: string;
         };
         /**
+         * @description foreman: run a run that failed or was cancelled again, as a new run (ADR 0105). The new run starts at the first stage
+         *     that did not succeed, or at `from`, a stage at or before it.
+         */
+        RunRetry: {
+            /** @description The person who asks. */
+            by: components["schemas"]["Actor"];
+            from?: components["schemas"]["Name"];
+        };
+        /**
          * @description foreman: a signal to a run: "steer" with a message for the running stage's agent, "cancel", "take-over" of the running
          *     stage by a person, or "hand-back" of that stage (ADR 0070).
          */
@@ -869,8 +895,14 @@ export type components = {
         RunState: "running" | "blocked" | "complete" | "failed" | "cancelled";
         /** @description foreman: a run of the factory's workflow for one work item, as the HTTP API shows it (ADR 0067). */
         RunView: {
-            /** @description "run_" and 20 hex digits of the SHA-256 of the work item's ID. */
+            /** @description "run_" and 20 hex digits of the SHA-256 of the work item's ID; for the n-th run of the work item, n ≥ 2, of "<work item ID>#<n>" (ADR 0105). */
             runId: string;
+            /** @description Which run of the work item this is: 1 when absent (ADR 0105). */
+            attempt?: number;
+            /** @description The run before this one, which a person ran again (ADR 0105). */
+            retryOf?: string;
+            /** @description The person who ran the run before again (ADR 0105). */
+            retriedBy?: components["schemas"]["Actor"];
             workItem: components["schemas"]["WorkItem"];
             /** @description The name of the factory. */
             factory: components["schemas"]["Name"];
@@ -1445,6 +1477,68 @@ export interface operations {
             };
             /** @description The server cannot find the requested resource. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    ForemanApi_retryRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunRetry"];
+            };
+        };
+        responses: {
+            /** @description The request has succeeded and a new resource has been created as a result. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunView"];
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Access is unauthorized. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
