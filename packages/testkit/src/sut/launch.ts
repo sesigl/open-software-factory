@@ -1,5 +1,6 @@
 // How the testkit starts the module's artifact: one command, one working folder and a checked environment.
 import { existsSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { artifactOf, moduleEnv, repoRoot, workspaceOf } from "../support/module.ts";
 import { baseEnv, FIXED_DATE, FIXED_SEED } from "../support/process.ts";
@@ -17,6 +18,10 @@ export type Launch = (
 const preload = (name: string): string => `--import=${new URL(`../support/${name}.js`, import.meta.url).href}`;
 // The recorder comes first, so it also sees the guard run.
 const NODE_OPTIONS = `${preload("coverage")} ${preload("guard")}`;
+// Node's compile cache, which every process of every scenario shares: a process and the processes it starts, like the
+// adapters and the scripted agent, load the code an earlier start compiled. Each start of a Node process then takes
+// about 0.1 to 0.3 s less. Node keys the cache by the source, so a changed file compiles again.
+const NODE_COMPILE_CACHE = join(tmpdir(), "osf-testkit-compile-cache");
 
 function builtArtifact(moduleRoot: string): string {
   const artifact = artifactOf(moduleRoot);
@@ -69,6 +74,7 @@ export function makeLaunch(moduleRoot: string, dirs: Folders, hosts: () => strin
       OSF_NOW: FIXED_DATE,
       OSF_SEED: FIXED_SEED,
       NODE_OPTIONS,
+      NODE_COMPILE_CACHE,
       OSF_TESTKIT_NOREAL_LOG: dirs.noreal,
       OSF_TESTKIT_ALLOWED_HOSTS: hosts().join(","),
       ...coverage,
