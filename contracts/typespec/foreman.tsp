@@ -45,8 +45,8 @@ model CheckView {
 model StageView {
   stage: Name;
 
-  /** The agent that runs the stage. */
-  agent: Name;
+  /** The agent that runs the stage; none for a stage that only waits (ADR 0107). */
+  agent?: Name;
 
   state: StageState;
 

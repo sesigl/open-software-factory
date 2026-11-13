@@ -295,6 +295,10 @@
               "optional"
             ],
             "description": "Whether the stage must produce an evidence bundle."
+          },
+          "wait": {
+            "type": "boolean",
+            "description": "The stage runs no agent: it only waits for its checks, its evidence and its gate, then succeeds (ADR 0107). It\nnames no agent and at least one of checks, evidence \"required\" or gate."
           }
         },
         "required": [
@@ -302,7 +306,7 @@
         ],
         "additionalProperties": false
       },
-      "description": "Stages in order. Each stage runs one agent; the agent defaults to the stage name."
+      "description": "Stages in order. Each stage runs one agent, which defaults to the stage name, or only waits (ADR 0107)."
     },
     "automations": {
       "type": "array",

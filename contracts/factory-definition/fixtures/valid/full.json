@@ -63,6 +63,12 @@
       "agent": "implement",
       "checks": ["verify"],
       "evidence": "required"
+    },
+    {
+      "stage": "ship",
+      "wait": true,
+      "checks": ["verify"],
+      "evidence": "required"
     }
   ],
   "automations": [
