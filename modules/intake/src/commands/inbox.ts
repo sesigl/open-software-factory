@@ -4,7 +4,7 @@ import type { WorkItemView } from "@opensoftware/contracts";
 import { publishToNats } from "../adapters/nats.ts";
 import type { Store } from "../adapters/store.ts";
 import { pullRequestReplies } from "../domain/sources.ts";
-import { receivedEvent, runFactOf, type Status, SUBJECT, viewOf } from "../domain/view.ts";
+import { RETRY_SUBJECT, receivedEvent, retryEvent, runFactOf, type Status, SUBJECT, viewOf } from "../domain/view.ts";
 import { workItemOf } from "../domain/work-item.ts";
 
 export interface InboxConfig {
@@ -63,6 +63,20 @@ export function inbox(store: Store, config: InboxConfig) {
       const { created, added } = await store.submit(workItem, at, event);
       if (created) await relay();
       return { created, added, view: (await view(workItem.id)) as WorkItemView };
+    },
+    /**
+     * The label put on an issue again: asks the foreman once per run to run a failed or cancelled work item again
+     * (ADR 0105); a new issue becomes a work item as by `submit`.
+     */
+    async labeled(submission: unknown): Promise<void> {
+      // A new work item, or one of a server without NATS, is "received" and asks for nothing.
+      const { view: submitted } = await this.submit(submission);
+      const at = config.now();
+      await store.askRetry(submitted.workItem.id, (workItem, runId) => ({
+        subject: RETRY_SUBJECT,
+        event: retryEvent(workItem, runId, at),
+      }));
+      await relay();
     },
   };
 }

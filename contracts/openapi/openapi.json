@@ -2258,6 +2258,10 @@
           "evidenceBundle": {
             "type": "string",
             "format": "uri"
+          },
+          "retryOf": {
+            "$ref": "#/components/schemas/Identifier",
+            "description": "The run before, when this run runs a work item again (ADR 0105)."
           }
         },
         "required": [
@@ -2583,6 +2587,10 @@
           },
           "source": {
             "$ref": "#/components/schemas/Name"
+          },
+          "retryOf": {
+            "$ref": "#/components/schemas/Identifier",
+            "description": "The run before, when this run runs a work item again (ADR 0105)."
           }
         },
         "required": [
@@ -3345,6 +3353,81 @@
           "receivedAt"
         ],
         "description": "intake: one submission that asked for a work item."
+      },
+      "WorkRetryRequested": {
+        "type": "object",
+        "properties": {
+          "specversion": {
+            "type": "string",
+            "const": "1.0"
+          },
+          "id": {
+            "$ref": "#/components/schemas/Identifier",
+            "description": "Unique per source. A consumer that sees the same source and id twice handles the event once."
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The producing module, for example \"/osf/intake\"."
+          },
+          "type": {
+            "type": "string",
+            "const": "work.retry-requested@v1"
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The ID of the thing the event is about: work item, gate, run, score or pull request."
+          },
+          "datacontenttype": {
+            "type": "string",
+            "const": "application/json"
+          },
+          "dataschema": {
+            "type": "string",
+            "format": "uri"
+          },
+          "traceparent": {
+            "type": "string",
+            "description": "W3C trace context (CloudEvents distributed tracing extension)."
+          },
+          "data": {
+            "$ref": "#/components/schemas/WorkRetryRequestedData"
+          }
+        },
+        "required": [
+          "specversion",
+          "id",
+          "source",
+          "type",
+          "time",
+          "data"
+        ],
+        "description": "intake: a person asked to run a work item's run again (ADR 0105). The ID is `<run ID>.retry`."
+      },
+      "WorkRetryRequestedData": {
+        "type": "object",
+        "properties": {
+          "workItemId": {
+            "$ref": "#/components/schemas/Identifier"
+          },
+          "runId": {
+            "$ref": "#/components/schemas/Identifier",
+            "description": "The run to run again: the run the work item follows."
+          },
+          "requester": {
+            "$ref": "#/components/schemas/Actor",
+            "description": "The person who asked."
+          }
+        },
+        "required": [
+          "workItemId",
+          "runId",
+          "requester"
+        ]
       },
       "WorkSubmission": {
         "type": "object",

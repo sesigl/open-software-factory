@@ -15,7 +15,7 @@ The only ways a system test or another program may use this module:
   `FOREMAN_GATEKEEPER_URL`, Temporal at `FOREMAN_TEMPORAL_ADDRESS`
 - Server state: the workflows in Temporal and the runs' folders in `OSF_DATA`; private to the module, except the folder
   of a run that a person took over, which the run shows as `folder` (ADR 0070)
-- Events: `work.received@v1` and `gate.decided@v1` in, `run.started@v1` and `run.completed@v1` out
+- Events: `work.received@v1`, `work.retry-requested@v1` and `gate.decided@v1` in, `run.started@v1` and `run.completed@v1` out
   (`contracts/events/`), on NATS at `FOREMAN_NATS_URL`
 - Environment variables: the list in `README.md#configuration` (generated from `src/config.schema.json`)
 
@@ -38,7 +38,7 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
 
 ## Budget
 
-- System tests: 430 seconds in total on the CI runner (107 scenarios; each starts the Temporal dev server and NATS as
+- System tests: 430 seconds in total on the CI runner (110 scenarios; each starts the Temporal dev server and NATS as
   pinned binaries on the host, ADR 0067, and the built `harness-acp` adapter with the testkit's scripted agent, which
   `turbo.json` builds before the tests; sandboxed stages use the testkit's fake sandbox adapter, ADR 0068; checks use
   `fakes.github` and the built `forge-github` adapter, ADR 0069; the gateway uses the testkit's fake inference adapter,
@@ -52,7 +52,8 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
   ones took 82 s (3.9 s each; the two refusals that need no run 1.7 s, which is the start of Temporal and `foreman
   serve`), 393 s in total, and 405 s in a third run; its runner benchmark took 1.25 times the reference. Each new
   run is a second workflow with its own stages, so most new scenarios run two runs. The budget keeps about 6% above
-  the slowest run.
+  the slowest run. The events of a second run (SCN-FORE-102, -104, -105) add 15 s: the 110 scenarios took 358 s in
+  one run on a development machine, so the budget stays.
 
 ## Quality limits
 

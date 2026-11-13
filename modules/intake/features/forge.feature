@@ -1,7 +1,8 @@
 @module=intake @owner=maintainers
 Feature: Work from issues on the forge
   An issue on the forge that gets the label "factory" becomes a work item through the forge port's adapter. The issue's
-  link is the dedupe key, so labeling it again adds nothing (ADR 0065).
+  link is the dedupe key, so labeling it again makes no second work item (ADR 0065). The label put on again asks to
+  run a failed or cancelled work item again (ADR 0105).
 
   @id=SCN-INTAKE-021 @status=implemented @realizes=SCN-FACTORY-ACCESS-001 @realizes=SCN-FACTORY-AUTO-001
   Scenario: A GitHub issue labeled "factory" becomes a work item with a link to the issue

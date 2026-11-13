@@ -16,7 +16,7 @@ The only ways a system test or another program may use this module:
 - Outside systems it calls: the foreman's HTTP API at `INTAKE_FOREMAN_URL`, from `intake mcp` for `run_evidence`
 - Server state: the schema `intake` in the PostgreSQL database at `INTAKE_DATABASE_URL`, or the embedded PostgreSQL
   in `OSF_DATA`; private to the module
-- Events: `work.received@v1` out, `run.started@v1` and `run.completed@v1` in (`contracts/events/`), on NATS at
+- Events: `work.received@v1` and `work.retry-requested@v1` out, `run.started@v1` and `run.completed@v1` in (`contracts/events/`), on NATS at
   `INTAKE_NATS_URL`
 - Environment variables: the list in `README.md#configuration` (generated from `src/config.schema.json`)
 
@@ -35,8 +35,8 @@ MCP server. The ARCH check enforces the layers.
 
 ## Budget
 
-- System tests: 300 seconds in total on the CI runner (40 scenarios; most start a server with a fresh embedded
-  PostgreSQL, which starts from PGlite's empty data folder in about 0.4 seconds instead of running initdb, ADR 0093). SCN-INTAKE-010 to -012 and -030 to -034 and -038 to -040
+- System tests: 300 seconds in total on the CI runner (56 scenarios, 142 s in one run on a development machine; most start a server with a fresh embedded
+  PostgreSQL, which starts from PGlite's empty data folder in about 0.4 seconds instead of running initdb, ADR 0093). SCN-INTAKE-010 to -012, -030 to -034, -038 to -040 and -050 to -056
   start NATS on the host (ADR 0067); -039 and -040 also run the Slack adapter, about 15 seconds each; SCN-INTAKE-008
   runs PostgreSQL in process (PGlite, ADR 0049); the other server scenarios use the embedded PGlite. The Slack
   scenarios run the built `channel-slack` adapter and the forge scenarios the built `forge-github` adapter against

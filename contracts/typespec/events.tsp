@@ -39,6 +39,9 @@ model CloudEvent<Type extends string, Data> {
 /** intake: a work item was accepted. */
 model WorkReceived is CloudEvent<"work.received@v1", WorkItem>;
 
+/** intake: a person asked to run a work item's run again (ADR 0105). The ID is `<run ID>.retry`. */
+model WorkRetryRequested is CloudEvent<"work.retry-requested@v1", WorkRetryRequestedData>;
+
 /** foreman: a run started (ADR 0067). */
 model RunStarted is CloudEvent<"run.started@v1", RunStartedData>;
 
@@ -81,6 +84,9 @@ model RunStartedData {
   startedAt: utcDateTime;
   requester: Actor;
   source: Name;
+
+  /** The run before, when this run runs a work item again (ADR 0105). */
+  retryOf?: Identifier;
 }
 
 model RunCompletedData {
@@ -100,6 +106,19 @@ model RunCompletedData {
   traceId?: TraceId;
   pullRequests?: url[];
   evidenceBundle?: url;
+
+  /** The run before, when this run runs a work item again (ADR 0105). */
+  retryOf?: Identifier;
+}
+
+model WorkRetryRequestedData {
+  workItemId: Identifier;
+
+  /** The run to run again: the run the work item follows. */
+  runId: Identifier;
+
+  /** The person who asked. */
+  requester: Actor;
 }
 
 model GateRequestedData {

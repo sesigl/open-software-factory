@@ -26,7 +26,7 @@
     },
     "INTAKE_NATS_URL": {
       "type": "string",
-      "description": "serve: the NATS server for work.received@v1 on osf.work.received.v1, and for the foreman's run.started@v1 and run.completed@v1, which move a work item's status (ADR 0071). Unset: no events."
+      "description": "serve: the NATS server for work.received@v1 on osf.work.received.v1 and work.retry-requested@v1 on osf.work.retry-requested.v1, and for the foreman's run.started@v1 and run.completed@v1, which move a work item's status (ADR 0071). Unset: no events."
     },
     "INTAKE_SLACK_ADAPTER": {
       "type": "string",

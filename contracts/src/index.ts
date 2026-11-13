@@ -19,6 +19,7 @@ export type RunRecord = Schemas["RunRecord"];
 export type EvidenceManifest = Schemas["EvidenceManifest"];
 export type Score = Schemas["Score"];
 export type WorkReceived = Schemas["WorkReceived"];
+export type WorkRetryRequested = Schemas["WorkRetryRequested"];
 export type RunStarted = Schemas["RunStarted"];
 export type RunCompleted = Schemas["RunCompleted"];
 export type GateRequested = Schemas["GateRequested"];

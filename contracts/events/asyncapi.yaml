@@ -19,6 +19,12 @@ channels:
     messages:
       WorkReceived:
         $ref: '#/components/messages/WorkReceived'
+  work-retry-requested:
+    address: osf.work.retry-requested.v1
+    description: A person asked to run a work item's run again.
+    messages:
+      WorkRetryRequested:
+        $ref: '#/components/messages/WorkRetryRequested'
   run-started:
     address: osf.run.started.v1
     description: A run started.
@@ -81,6 +87,13 @@ operations:
       $ref: '#/channels/work-received'
     messages:
       - $ref: '#/channels/work-received/messages/WorkReceived'
+  publishWorkRetryRequested:
+    action: send
+    summary: Published by intake.
+    channel:
+      $ref: '#/channels/work-retry-requested'
+    messages:
+      - $ref: '#/channels/work-retry-requested/messages/WorkRetryRequested'
   publishRunStarted:
     action: send
     summary: Published by foreman.
@@ -154,6 +167,14 @@ components:
         schemaFormat: application/schema+json;version=draft-2020-12
         schema:
           $ref: './work-received/work-received.schema.json'
+    WorkRetryRequested:
+      name: work.retry-requested@v1
+      title: work.retry-requested@v1
+      contentType: application/cloudevents+json
+      payload:
+        schemaFormat: application/schema+json;version=draft-2020-12
+        schema:
+          $ref: './work-retry-requested/work-retry-requested.schema.json'
     RunStarted:
       name: run.started@v1
       title: run.started@v1

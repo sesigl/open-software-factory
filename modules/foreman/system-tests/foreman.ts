@@ -370,3 +370,21 @@ export async function reviewAdded(sut: Sut, fakes: Fakes): Promise<void> {
   await sut.files.put("$INPUT/factory.yaml", reviewed);
   await sut.git.commit("a review stage");
 }
+
+/** The CloudEvent work.retry-requested@v1 for the run, as intake publishes it when the label is put on again. */
+export const retryRequested = (fakes: Fakes, runId: string) => ({
+  specversion: "1.0",
+  id: `${runId}.retry`,
+  source: "/osf/intake",
+  type: "work.retry-requested@v1",
+  time: "2026-01-01T00:00:00Z",
+  subject: readmeWork(fakes).id,
+  data: { workItemId: readmeWork(fakes).id, runId, requester: { kind: "person", id: "github:tester" } },
+});
+
+/** A run of the README's "work.json" that failed in the stage "implement", with NATS and a watcher of its events. */
+export async function failedWithEvents(sut: Sut, fakes: Fakes) {
+  const run = await failed(sut, fakes, { nats: true });
+  const events = await sut.events.watch(run.nats as NonNullable<typeof run.nats>, "osf.>");
+  return { ...run, events };
+}

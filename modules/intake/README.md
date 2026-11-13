@@ -47,7 +47,7 @@ with the same work item.
 
 | Command | What it does |
 | --- | --- |
-| `intake serve` | Serve the work item API on `PORT`, Slack's events with `INTAKE_SLACK_TOKEN`, the forge's with `INTAKE_WEBHOOK_SECRET`, Sentry's with `INTAKE_SENTRY_SECRET`, and, with `INTAKE_NATS_URL`, publish `work.received@v1` and follow the foreman's run events. |
+| `intake serve` | Serve the work item API on `PORT`, Slack's events with `INTAKE_SLACK_TOKEN`, the forge's with `INTAKE_WEBHOOK_SECRET`, Sentry's with `INTAKE_SENTRY_SECRET`, and, with `INTAKE_NATS_URL`, publish `work.received@v1` and `work.retry-requested@v1` and follow the foreman's run events. |
 | `intake mcp` | Serve the Factory MCP server on stdio for a local agent: the tools `submit_work` and `work_status` call the server at `INTAKE_URL`, and `run_evidence` also the foreman at `INTAKE_FOREMAN_URL`. |
 
 ## API
@@ -96,7 +96,8 @@ With `INTAKE_WEBHOOK_SECRET`, the server hands each request to `/forge/events` t
 delivery's event. An `issue.labeled@v1` whose issue has the label in `INTAKE_FORGE_LABEL` (default `factory`) becomes
 a `task` with the issue's title and body. Its requester is the issue's author, like `github:varun`; its origin is the
 forge with the issue's link and `<owner>/<name>#<number>`; its dedupe key is the issue's link, so labeling the issue
-again adds nothing. Any other delivery gets 200 and makes nothing. One server reads one forge: for Forgejo, set
+again makes no second work item. With `INTAKE_NATS_URL`, the label put on again asks the foreman to run a work item
+that is `failed` or `cancelled` again ([Events](#events)); for any other status it adds nothing. Any other delivery gets 200 and makes nothing. One server reads one forge: for Forgejo, set
 `INTAKE_FORGE_ADAPTER` to `npx -y @opensoftware/forge-forgejo`.
 
 Register the webhook with the adapter, or let factory-spec register it for a `github.issue.labeled` automation:
@@ -184,6 +185,14 @@ event's `id` is the work item's ID and its `data` the work item. While NATS is u
 outbox and go out once it is back: after the next commit, when the server starts, or within a minute. A second
 request for the same work item publishes nothing.
 
+The label put on the issue of a work item again, after a person removed it, publishes
+[`work.retry-requested@v1`](../../contracts/events/work-retry-requested/work-retry-requested.schema.json) on
+`osf.work.retry-requested.v1` when the work item is `failed` or `cancelled` ([ADR
+0105](../../docs/decisions/0105-run-a-work-item-again.md)). Its `id` is `<run ID>.retry`, and its `data` names the work
+item, the run it follows and the requester, the issue's author. The server asks once per run: the event and the mark
+that it asked are written to the outbox in one transaction, and the label put on again for the same run publishes
+nothing. For a work item in any other status nothing is published.
+
 With `INTAKE_NATS_URL` the server also listens for the foreman's
 [`run.started@v1`](../../contracts/events/run-started/run-started.schema.json) on `osf.run.started.v1` and
 [`run.completed@v1`](../../contracts/events/run-completed/run-completed.schema.json) on `osf.run.completed.v1`, and the
@@ -196,7 +205,9 @@ work item of a run follows it (ADR 0071):
 | `run.completed@v1` with the outcome `succeeded`, `failed` or `cancelled` | `complete`, `failed` or `cancelled` |
 
 A `run.completed@v1` that lists `pullRequests` also links them in the Slack threads of the work item, as described in
-[Slack](#slack). A `run.started@v1` that arrives after its run completed changes nothing. The events are kept in the JetStream stream
+[Slack](#slack). A `run.started@v1` that arrives after its run completed changes nothing. The work item follows the
+newest run: an event whose `retryOf` is the work item's run moves the work item to the new run, also from `failed` or
+`cancelled`. Once the work item follows a run, an event of another run changes nothing. The events are kept in the JetStream stream
 `OSF` on `osf.>`, and the server reads the run events through its durable consumer `intake` ([ADR
 0085](../../docs/decisions/0085-durable-events.md)): run events published while the server is down reach it when it
 starts again. The outbox removes an event only after the stream stored it. While NATS is unreachable the server tries
@@ -213,7 +224,7 @@ again every 2 seconds.
 | `OSF_NOW` | string |  | The current time, like 2026-01-01T00:00:00Z, for the time a work item and a request were received. Default: the clock. |
 | `INTAKE_API_TOKEN` | string |  | serve: the token that callers of /v1 send as Authorization: Bearer <token>. Required. mcp: the token it sends to the server. Required. |
 | `INTAKE_DATABASE_URL` | string |  | serve: the PostgreSQL database of the work items, schema intake. Default: an embedded PostgreSQL in OSF_DATA. |
-| `INTAKE_NATS_URL` | string |  | serve: the NATS server for work.received@v1 on osf.work.received.v1, and for the foreman's run.started@v1 and run.completed@v1, which move a work item's status (ADR 0071). Unset: no events. |
+| `INTAKE_NATS_URL` | string |  | serve: the NATS server for work.received@v1 on osf.work.received.v1 and work.retry-requested@v1 on osf.work.retry-requested.v1, and for the foreman's run.started@v1 and run.completed@v1, which move a work item's status (ADR 0071). Unset: no events. |
 | `INTAKE_SLACK_ADAPTER` | string | `"npx -y @opensoftware/channel-slack"` | serve: the command line of the channel port's slack adapter, which reads Slack's deliveries and replies (ADR 0063). |
 | `INTAKE_SLACK_URL` | string |  | serve: base URL of the Slack Web API, ending in a slash: the adapter's CHANNEL_API_URL. Default: the adapter's, https://slack.com/api/. |
 | `INTAKE_SLACK_TOKEN` | string |  | serve: Slack bot token with chat:write, the adapter's CHANNEL_TOKEN. Set, the server takes Slack's events at /slack/events. |
@@ -294,10 +305,10 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-INTAKE-047 | implemented | The inbox lists only the work items in the status the query names |
 | SCN-INTAKE-048 | implemented | The inbox refuses a status that no work item can have |
 | SCN-INTAKE-049 | implemented | A run event that breaks its contract is a warning and comes again after 2 seconds |
-| SCN-INTAKE-050 | planned | A new run of a failed work item moves it back to running |
-| SCN-INTAKE-051 | planned | A late "run.completed@v1" of the run before leaves the work item with the new run |
-| SCN-INTAKE-052 | planned | A new run's "run.completed@v1" that comes before its "run.started@v1" completes the work item |
-| SCN-INTAKE-053 | planned | The label put again on the issue of a failed work item asks the foreman to run it again |
-| SCN-INTAKE-054 | planned | The label put again on the issue of a running work item asks for nothing |
-| SCN-INTAKE-055 | planned | The label put again on the issue of a complete work item asks for nothing |
-| SCN-INTAKE-056 | planned | The label put again twice on the same failed run asks once |
+| SCN-INTAKE-050 | implemented | A new run of a failed work item moves it back to running |
+| SCN-INTAKE-051 | implemented | A late "run.completed@v1" of the run before leaves the work item with the new run |
+| SCN-INTAKE-052 | implemented | A new run's "run.completed@v1" that comes before its "run.started@v1" completes the work item |
+| SCN-INTAKE-053 | implemented | The label put again on the issue of a failed work item asks the foreman to run it again |
+| SCN-INTAKE-054 | implemented | The label put again on the issue of a running work item asks for nothing |
+| SCN-INTAKE-055 | implemented | The label put again on the issue of a complete work item asks for nothing |
+| SCN-INTAKE-056 | implemented | The label put again twice on the same failed run asks once |

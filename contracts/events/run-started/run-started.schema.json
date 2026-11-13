@@ -113,6 +113,12 @@
           "type": "string",
           "pattern": "^[a-z][a-z0-9-]{0,62}$",
           "description": "A lowercase name: letters, digits and hyphens, starting with a letter. Agents, stages, adapters, sources."
+        },
+        "retryOf": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "The run before, when this run runs a work item again (ADR 0105)."
         }
       },
       "required": [
