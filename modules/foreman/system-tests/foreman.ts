@@ -1,7 +1,7 @@
 // Shared setup of the foreman scenarios: the README's factory and work item, Temporal, the scripted harness behind the
 // built harness-acp adapter, a fake sandbox adapter, a fake inference adapter, a scripted gatekeeper, the fake GitHub
 // with the built forge-github adapter, and the server with its token.
-import type { paths, RunView, WorkItem } from "@opensoftware/contracts";
+import type { paths, RunRetry, RunView, WorkItem } from "@opensoftware/contracts";
 import type { Fakes, HarnessTurn, InferenceOptions, SandboxOptions, Sut } from "@opensoftware/testkit";
 
 export const API_TOKEN = "testkit-api-token";
@@ -11,6 +11,8 @@ export const PLAN = "Write a plan";
 export const IMPLEMENT = "Implement plan.md";
 export const SHIP = "Merge the pull request";
 export const TITLE = "Export reports as CSV";
+/** The person who runs a run again. */
+export const ADA: RunRetry["by"] = { kind: "person", id: "github:ada" };
 /** How long a scenario waits for a run or an event; a run takes seconds, a busy runner (a mutation run) longer. */
 export const WAIT_MS = 45_000;
 
@@ -80,6 +82,8 @@ export interface Setup {
   factory?: string;
   /** A scripted gatekeeper that answers each request with GATE in the state "pending". */
   gatekeeper?: boolean;
+  /** The gates the scripted gatekeeper answers, one per request in this order; the last one answers every later request. */
+  gates?: string[];
   /** NATS for the events. */
   nats?: boolean;
   /** A fake sandbox adapter, in FOREMAN_SANDBOXES under the name `sandboxAs`. */
@@ -118,15 +122,17 @@ export async function serving(sut: Sut, fakes: Fakes, setup: Setup = {}) {
 export async function servingCommit(sut: Sut, fakes: Fakes, commit: string, setup: Setup = {}) {
   const temporal = await fakes.temporal();
   const harness = await fakes.harness(setup.turns ?? endingTurns);
+  const gates = setup.gates ?? [GATE];
   const gatekeeper = setup.gatekeeper
-    ? await fakes.http([
-        {
+    ? await fakes.http(
+        gates.map((id, at) => ({
           method: "POST",
           path: "/v1/gates",
           status: 201,
-          body: { id: GATE, state: "pending", workItem: "", stage: "implement", summary: "", approvers: [] },
-        },
-      ])
+          body: { id, state: "pending", workItem: "", stage: "implement", summary: "", approvers: [] },
+          ...(at < gates.length - 1 ? { times: 1 } : {}),
+        })),
+      )
     : undefined;
   const nats = setup.nats ? await fakes.nats() : undefined;
   const sandbox = setup.sandbox ? await fakes.sandbox(setup.sandbox) : undefined;
@@ -181,6 +187,13 @@ export async function servingCommit(sut: Sut, fakes: Fakes, commit: string, setu
         body: body as { type: "cancel" },
         headers: AUTH,
       }),
+    /** Posts a retry of the run, by ADA unless the body says otherwise. */
+    retry: (runId: string, body: unknown = { by: ADA }) =>
+      api().POST("/v1/runs/{runId}/retry", {
+        params: { path: { runId } },
+        body: body as RunRetry,
+        headers: AUTH,
+      }),
     /** Reads the run until it is in the state, and returns that view. */
     async until(runId: string, state: RunView["state"], timeoutMs = WAIT_MS): Promise<RunView> {
       const deadline = Date.now() + timeoutMs;
@@ -226,6 +239,32 @@ export async function started(sut: Sut, fakes: Fakes, setup: Setup = {}) {
   return { ...server, runId: data.runId };
 }
 
+/** The line that only the prompt of a new run's first stage has (ADR 0105). */
+export const RUN_BEFORE = "Run before:";
+
+/**
+ * Turns whose "implement" turn ends with "refusal", and ends at once in a new run. Each stage starts the agent anew,
+ * so a turn answers once per stage, not once per scenario: the new run's turn matches the line "Run before:".
+ */
+export const refusedOnce: HarnessTurn[] = [
+  { when: PLAN, reply: "plan.md is written" },
+  { when: RUN_BEFORE, reply: "done" },
+  { when: IMPLEMENT, stopReason: "refusal" },
+];
+
+/** The server ran the README's work item and the "implement" turn ended with "refusal"; returns the run's ID too. */
+export async function failed(sut: Sut, fakes: Fakes, setup: Setup = {}) {
+  const run = await started(sut, fakes, { turns: refusedOnce, ...setup });
+  await run.until(run.runId, "failed");
+  return run;
+}
+
+/** The ID of the new run in a 201 answer to a retry. */
+export const newRunOf = (answer: { response: Response; data?: RunView }): string => {
+  if (answer.response.status !== 201 || !answer.data) throw new Error(`the retry answered ${answer.response.status}`);
+  return answer.data.runId;
+};
+
 /** A run of the README's factory that waits at the gate GATE before "implement", with NATS. */
 export async function waitingAtGate(sut: Sut, fakes: Fakes, setup: Setup = {}) {
   const run = await started(sut, fakes, { factory: gatedFactory(fakes), gatekeeper: true, nats: true, ...setup });
@@ -260,6 +299,8 @@ export interface ChecksSetup {
   nats?: boolean;
   /** The text of factory.yaml; default: the README's "checks/factory.yaml". */
   factory?: string;
+  /** More harness turns, after the turns of the three stages. */
+  turns?: HarnessTurn[];
 }
 
 /** The README's "checks/factory.yaml" whose stage "ship" must also produce evidence. */
@@ -297,6 +338,7 @@ export async function servingChecks(sut: Sut, fakes: Fakes, setup: ChecksSetup =
       { when: PLAN, reply: "plan.md is written" },
       { when: IMPLEMENT, reply: setup.linked === false ? "done" : `Opened ${pr.url} for review.` },
       { when: SHIP, reply: "merged" },
+      ...(setup.turns ?? []),
     ],
     nats: setup.nats,
     env: {
@@ -315,4 +357,16 @@ export async function waitingForCheck(sut: Sut, fakes: Fakes) {
   const runId = (await server.start(readmeWork(fakes))).data?.runId as string;
   await server.untilStage(runId, 2, "blocked");
   return { ...server, runId };
+}
+
+/** Commits the README's factory with the stage "review" after "implement", which runs the prompt of "implement". */
+export async function reviewAdded(sut: Sut, fakes: Fakes): Promise<void> {
+  const reviewed = (readmeFiles(fakes)["factory.yaml"] as string)
+    .replace(
+      "workflow:\n",
+      "  review:\n    harness: acp\n    model: routes/default\n    effort: medium\n    prompt: ./agents/implement.md\nworkflow:\n",
+    )
+    .concat("  - stage: review\n");
+  await sut.files.put("$INPUT/factory.yaml", reviewed);
+  await sut.git.commit("a review stage");
 }

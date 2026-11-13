@@ -201,7 +201,7 @@
     "/v1/runs": {
       "post": {
         "operationId": "ForemanApi_startRun",
-        "description": "Start a run of the factory's workflow for a work item. The same work item again answers the run it started.",
+        "description": "Start a run of the factory's workflow for a work item. The same work item again answers its newest run.",
         "parameters": [],
         "responses": {
           "200": {
@@ -346,6 +346,84 @@
                 "schema": {
                   "$ref": "#/components/schemas/ApiProblem"
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/runs/{runId}/retry": {
+      "post": {
+        "operationId": "ForemanApi_retryRun",
+        "description": "Run a run that failed or was cancelled again, as a new run that names it (ADR 0105).",
+        "parameters": [
+          {
+            "name": "runId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The request has succeeded and a new resource has been created as a result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The server could not understand the request due to invalid syntax.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Access is unauthorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The server cannot find the requested resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state of the server.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunRetry"
               }
             }
           }
@@ -2286,6 +2364,22 @@
         ],
         "description": "Set at launch through OTEL_RESOURCE_ATTRIBUTES, so it is on every span of the run."
       },
+      "RunRetry": {
+        "type": "object",
+        "properties": {
+          "by": {
+            "$ref": "#/components/schemas/Actor",
+            "description": "The person who asks."
+          },
+          "from": {
+            "$ref": "#/components/schemas/Name"
+          }
+        },
+        "required": [
+          "by"
+        ],
+        "description": "foreman: run a run that failed or was cancelled again, as a new run (ADR 0105). The new run starts at the first stage\nthat did not succeed, or at `from`, a stage at or before it."
+      },
       "RunSignal": {
         "type": "object",
         "properties": {
@@ -2519,7 +2613,21 @@
           "runId": {
             "type": "string",
             "pattern": "^run_[0-9a-f]{20}$",
-            "description": "\"run_\" and 20 hex digits of the SHA-256 of the work item's ID."
+            "description": "\"run_\" and 20 hex digits of the SHA-256 of the work item's ID; for the n-th run of the work item, n ≥ 2, of \"<work item ID>#<n>\" (ADR 0105)."
+          },
+          "attempt": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Which run of the work item this is: 1 when absent (ADR 0105)."
+          },
+          "retryOf": {
+            "type": "string",
+            "pattern": "^run_[0-9a-f]{20}$",
+            "description": "The run before this one, which a person ran again (ADR 0105)."
+          },
+          "retriedBy": {
+            "$ref": "#/components/schemas/Actor",
+            "description": "The person who ran the run before again (ADR 0105)."
           },
           "workItem": {
             "$ref": "#/components/schemas/WorkItem"

@@ -40,6 +40,7 @@ export type RunView = Schemas["RunView"];
 export type StageView = Schemas["StageView"];
 export type CheckView = Schemas["CheckView"];
 export type RunSignal = Schemas["RunSignal"];
+export type RunRetry = Schemas["RunRetry"];
 export type SandboxSpec = Schemas["SandboxSpec"];
 export type Health = Schemas["Health"];
 export type HealthCheck = Schemas["HealthCheck"];

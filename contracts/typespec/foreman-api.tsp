@@ -10,7 +10,7 @@ using TypeSpec.Http;
 namespace Osf.Contracts;
 
 namespace ForemanApi {
-  /** Start a run of the factory's workflow for a work item. The same work item again answers the run it started. */
+  /** Start a run of the factory's workflow for a work item. The same work item again answers its newest run. */
   @route("/v1/runs")
   @post
   op startRun(@body workItem: WorkItem):
@@ -41,6 +41,19 @@ namespace ForemanApi {
   op signalRun(@path runId: string, @body signal: RunSignal):
     | {
         @statusCode statusCode: 202;
+        @body run: RunView;
+      }
+    | GatekeeperApi.Failure<400>
+    | GatekeeperApi.Failure<401>
+    | GatekeeperApi.Failure<404>
+    | GatekeeperApi.Failure<409>;
+
+  /** Run a run that failed or was cancelled again, as a new run that names it (ADR 0105). */
+  @route("/v1/runs/{runId}/retry")
+  @post
+  op retryRun(@path runId: string, @body retry: RunRetry):
+    | {
+        @statusCode statusCode: 201;
         @body run: RunView;
       }
     | GatekeeperApi.Failure<400>

@@ -73,9 +73,20 @@ model StageView {
 
 /** foreman: a run of the factory's workflow for one work item, as the HTTP API shows it (ADR 0067). */
 model RunView {
-  /** "run_" and 20 hex digits of the SHA-256 of the work item's ID. */
+  /** "run_" and 20 hex digits of the SHA-256 of the work item's ID; for the n-th run of the work item, n ≥ 2, of "<work item ID>#<n>" (ADR 0105). */
   @pattern("^run_[0-9a-f]{20}$")
   runId: string;
+
+  /** Which run of the work item this is: 1 when absent (ADR 0105). */
+  @minValue(1)
+  attempt?: safeint;
+
+  /** The run before this one, which a person ran again (ADR 0105). */
+  @pattern("^run_[0-9a-f]{20}$")
+  retryOf?: string;
+
+  /** The person who ran the run before again (ADR 0105). */
+  retriedBy?: Actor;
 
   workItem: WorkItem;
 
@@ -127,4 +138,15 @@ model RunSignal {
   /** The steering message. Required with "steer". */
   @minLength(1)
   message?: string;
+}
+
+/**
+ * foreman: run a run that failed or was cancelled again, as a new run (ADR 0105). The new run starts at the first stage
+ * that did not succeed, or at `from`, a stage at or before it.
+ */
+model RunRetry {
+  /** The person who asks. */
+  by: Actor;
+
+  from?: Name;
 }

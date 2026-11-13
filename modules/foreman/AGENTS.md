@@ -38,7 +38,7 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
 
 ## Budget
 
-- System tests: 320 seconds in total on the CI runner (83 scenarios; each starts the Temporal dev server and NATS as
+- System tests: 430 seconds in total on the CI runner (107 scenarios; each starts the Temporal dev server and NATS as
   pinned binaries on the host, ADR 0067, and the built `harness-acp` adapter with the testkit's scripted agent, which
   `turbo.json` builds before the tests; sandboxed stages use the testkit's fake sandbox adapter, ADR 0068; checks use
   `fakes.github` and the built `forge-github` adapter, ADR 0069; the gateway uses the testkit's fake inference adapter,
@@ -47,6 +47,12 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
   Temporal dev server and most of the rest the start of `foreman serve`). Wave 5 adds 11 scenarios of about 4 s each
   (durable events, health, traces, evidence), two of which start the foreman twice. The same 72 scenarios took 261 s
   in another run on the same runner type, so the budget keeps about 10% for the runner.
+- Measured for 430 s: T-38's retry (ADR 0105) adds 21 scenarios. On a development machine, the 86 scenarios before
+  it took 286 s in one run and 312 s in another, so the machine varies by about 10%. In the second run the 21 new
+  ones took 82 s (3.9 s each; the two refusals that need no run 1.7 s, which is the start of Temporal and `foreman
+  serve`), 393 s in total, and 405 s in a third run; its runner benchmark took 1.25 times the reference. Each new
+  run is a second workflow with its own stages, so most new scenarios run two runs. The budget keeps about 6% above
+  the slowest run.
 
 ## Quality limits
 
