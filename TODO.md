@@ -1012,10 +1012,12 @@ as a vision scenario. Each item names the place in the code, so start there, and
   inside the factory's range, and the run's view names the versions.
 - **Slices:**
   - [x] `foreman serve` and a run's start fail with the changed files named when the factory's folder is not clean
-    (SCN-FORE-131, SCN-FORE-132, ADR 0110).
+    (SCN-FORE-131, SCN-FORE-132, ADR 0110); a prompt that Git does not track counts too, and the paths come sorted
+    (SCN-FORE-135).
   - [ ] The fallback command line takes the version that `factory plan` pinned in `factory.lock`, or the range of
     `providers` (`SCN-FORE`, `SCN-FSPEC`). Done: the range of `providers`, and the run's `adapters` name it with the
-    command line (SCN-FORE-133). Open: `factory plan` pins adapters in `factory.lock`, a contract the foreman reads.
+    command line (SCN-FORE-133), for every port, and npx runs each package at its range (SCN-FORE-136). Open, not
+    built yet: `factory plan` pins adapters in `factory.lock`, a contract the foreman reads.
   - [x] The adapter maps take a command line as a list of arguments too (SCN-FORE-134).
 
 ### [ ] T-44 · what factory.yaml declares takes effect (P1)

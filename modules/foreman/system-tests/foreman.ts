@@ -101,6 +101,11 @@ export interface Setup {
   lingers?: boolean;
   /** FOREMAN_HARNESSES names "acp" as a JSON list whose program is a script at this path that runs the adapter. */
   harnessIn?: string;
+  /**
+   * No adapter maps: an "npx" first on PATH writes its arguments to $OUTPUT/npx.log, one line per call, and runs the
+   * scripted harness, the fake sandbox or the fake inference adapter for the package of that port.
+   */
+  npx?: boolean;
   env?: Record<string, string>;
 }
 
@@ -153,6 +158,7 @@ export async function servingCommit(sut: Sut, fakes: Fakes, commit: string, setu
     await sut.files.put(setup.harnessIn, 'exec "$@"\n');
     acp.unshift("sh", sut.files.path(setup.harnessIn));
   }
+  const npx = setup.npx ? await npxOnPath(sut, acp, sandbox, inference) : {};
   const env = {
     FOREMAN_API_TOKEN: API_TOKEN,
     FOREMAN_TEMPORAL_ADDRESS: temporal.address,
@@ -170,6 +176,7 @@ export async function servingCommit(sut: Sut, fakes: Fakes, commit: string, setu
     ...(inference
       ? { FOREMAN_INFERENCES: JSON.stringify({ litellm: [inference.command, ...inference.args].join(" ") }) }
       : {}),
+    ...npx,
     ...setup.env,
   };
   await sut.http.start(["serve"], { env });
@@ -240,6 +247,42 @@ export async function servingCommit(sut: Sut, fakes: Fakes, commit: string, setu
     prompts: (text: string) => harness.prompts().filter((prompt) => prompt.includes(text)),
   };
   return server;
+}
+
+/** A shell word of the text. */
+const word = (text: string) => `'${text.replaceAll("'", "'\\''")}'`;
+
+/** Writes the "npx" of Setup.npx; returns the variables that put it first on PATH and leave every map empty. */
+async function npxOnPath(
+  sut: Sut,
+  acp: string[],
+  sandbox?: { command: string; args: string[] },
+  inference?: { command: string; args: string[] },
+): Promise<Record<string, string>> {
+  const fake = (adapter?: { command: string; args: string[] }) =>
+    adapter ? `${[adapter.command, ...adapter.args].map(word).join(" ")} "$@"` : "exit 1";
+  await sut.files.put(
+    "$OUTPUT/bin/npx",
+    [
+      "#!/bin/sh",
+      `echo "$*" >> ${word(sut.files.path("$OUTPUT/npx.log"))}`,
+      "shift; package=$1; shift",
+      'case "$package" in',
+      `  @opensoftware/harness-*) exec ${acp.map(word).join(" ")} ;;`,
+      `  @opensoftware/sandbox-*) exec ${fake(sandbox)} ;;`,
+      `  @opensoftware/inference-*) exec ${fake(inference)} ;;`,
+      "esac",
+      "exit 1",
+      "",
+    ].join("\n"),
+    { executable: true },
+  );
+  return {
+    PATH: `${sut.files.path("$OUTPUT/bin")}:${process.env.PATH ?? ""}`,
+    FOREMAN_HARNESSES: "{}",
+    FOREMAN_SANDBOXES: "{}",
+    FOREMAN_INFERENCES: "{}",
+  };
 }
 
 /** The server runs the README's work item; returns the run's ID. */

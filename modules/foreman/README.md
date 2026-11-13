@@ -507,6 +507,7 @@ the minor version. The one-time setup is the same as for contracts
 | `FOREMAN_SANDBOX` | string | `"docker"` | serve: the sandbox adapter of a factory that names none under providers.sandbox, like docker in the Compose profile and kubernetes in the Helm chart. |
 | `FOREMAN_FORGES` | string | `"{}"` | serve: a JSON object from forge adapter name to the command line of the adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. An adapter it does not name runs npx -y @opensoftware/forge-<name>@<range>, at the range under providers.forge (ADR 0110). The factory names its adapter under providers.forge. |
 | `FOREMAN_INFERENCES` | string | `"{}"` | serve: a JSON object from inference adapter name to the command line of the adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. An adapter it does not name runs npx -y @opensoftware/inference-<name>@<range>, at the range under providers.inference (ADR 0110). The factory names its adapter under providers.inference. |
+| `PATH` | string |  | serve: the folders where the foreman finds git, npx for an adapter without a command line, and the programs of the adapter maps. |
 | `FOREMAN_FORGE_URL` | string |  | serve: the forge adapter's FORGE_URL, for a factory whose stages have checks. Default: the adapter's own default. |
 | `FOREMAN_FORGE_TOKEN` | string |  | serve: the forge adapter's FORGE_TOKEN: a token that may read the pull requests and their checks. Never written to a file. |
 | `FOREMAN_CHECK_POLL_MS` | string | `"30000"` | serve: how long a stage that waits for pending checks waits before it reads them again, in milliseconds. |
@@ -661,3 +662,5 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-132 | implemented | A run does not start while the factory has changes that are not committed |
 | SCN-FORE-133 | implemented | The run's view names each adapter's version and the fallback's command line |
 | SCN-FORE-134 | implemented | An adapter's command line is a JSON list of arguments, and a path may hold a space |
+| SCN-FORE-135 | implemented | A prompt that Git does not track counts as a change, and the error lists the paths sorted |
+| SCN-FORE-136 | implemented | Every adapter without a command line runs its package at the factory's range |

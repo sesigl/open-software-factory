@@ -73,3 +73,18 @@ Feature: Factory definition
     Given "foreman serve" runs the README's "factory.yaml" with "FOREMAN_HARNESSES" naming "acp" as a JSON list whose program is a script in a folder "with space"
     When a program posts the README's "work.json" to "/v1/runs" with the API token
     Then the run completes and the scripted harness got a session for "plan" and for "implement"
+
+  @id=SCN-FORE-135 @status=implemented
+  Scenario: A prompt that Git does not track counts as a change, and the error lists the paths sorted
+    Given the README's "factory.yaml" is committed in the factory's repository without "agents/plan.md"
+    And "agents/plan.md" is written but not added, "factory.yaml" has a change and "notes.md" is not tracked
+    When the user runs "foreman serve"
+    Then the command exits with code 2
+    And the output contains "factory.yaml: commit the changed files agents/plan.md, factory.yaml; a run's factory version is its commit"
+
+  @id=SCN-FORE-136 @status=implemented
+  Scenario: Every adapter without a command line runs its package at the factory's range
+    Given "foreman serve" runs a factory with "codex" at "^1" under "providers.harness", "docker" at "^2" under "providers.sandbox", "github" at "^0" under "providers.forge" and "litellm" at "^3" under "providers.inference", with no adapter maps and an "npx" that runs the fake adapters
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then the answer's "adapters" holds each adapter at its range with the command line "npx -y @opensoftware/<port>-<name>@<range>", and "run" after it for the harness
+    And the run completes, and "npx" ran "@opensoftware/inference-litellm@^3", "@opensoftware/sandbox-docker@^2" and "@opensoftware/harness-codex@^1 run"
