@@ -45,6 +45,8 @@ How `serveProxy` behaves:
   and its answer is the answer of the running turn; codex-acp takes steering as `_session/steering` (ADR 0053).
   `newSession` changes each `session/new` request before the agent gets it, for example to set the product's
   permission mode.
+- **The agent starts first.** The proxy loads the ACP SDK and the run's resource while the agent starts, so a
+  session starts about 0.1 s sooner; `transcript` loads neither.
 - **The agent works in its folder itself.** The proxy offers it no client file system and no terminal.
 - **The allowlist.** With `allow`, a permission request for a tool call of an ACP tool kind outside the list gets the
   agent's reject option from the proxy, and the client is never asked. A tool call without a kind is outside every

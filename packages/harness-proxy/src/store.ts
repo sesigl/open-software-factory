@@ -1,7 +1,6 @@
 // The session records in the adapter's data folder: <data>/sessions/<session ID>.jsonl.
 import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { detectResources, envDetector } from "@opentelemetry/resources";
 import type { SessionLine } from "./domain/session.ts";
 
 const fileOf = (data: string, sessionId: string): string =>
@@ -17,7 +16,9 @@ export function append(data: string, sessionId: string, line: SessionLine): void
 export const readSession = (data: string, sessionId: string): string => readFileSync(fileOf(data, sessionId), "utf8");
 
 /** The resource of the run from OTEL_RESOURCE_ATTRIBUTES and OTEL_SERVICE_NAME, as the OpenTelemetry SDK reads them. */
-export function resourceOfEnvironment(): Record<string, string> {
+export async function resourceOfEnvironment(): Promise<Record<string, string>> {
+  // Loaded when a run starts, so `transcript` does not load the OpenTelemetry SDK.
+  const { detectResources, envDetector } = await import("@opentelemetry/resources");
   const { attributes } = detectResources({ detectors: [envDetector] });
   return Object.fromEntries(Object.entries(attributes).map(([key, value]) => [key, String(value)]));
 }

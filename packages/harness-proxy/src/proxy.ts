@@ -3,14 +3,7 @@
 // seconds, and records every session in the data folder.
 import { spawn } from "node:child_process";
 import { Readable, Writable } from "node:stream";
-import {
-  type AgentConnection,
-  agent,
-  client,
-  type NewSessionRequest,
-  ndJsonStream,
-  type PromptResponse,
-} from "@agentclientprotocol/sdk";
+import type { AgentConnection, NewSessionRequest, PromptResponse } from "@agentclientprotocol/sdk";
 import { type Allowlist, decisionOf, permits, refusal } from "./domain/allowlist.ts";
 import { append, resourceOfEnvironment } from "./store.ts";
 
@@ -38,17 +31,21 @@ export interface ProxyOptions {
   io?: { input: Readable; output: Writable };
 }
 
-const streamOf = (output: Writable, input: Readable) =>
-  ndJsonStream(
-    Writable.toWeb(output) as WritableStream<Uint8Array>,
-    Readable.toWeb(input) as ReadableStream<Uint8Array>,
-  );
-
-/** Runs the agent behind the proxy; the promise resolves when the agent has exited. */
-export function serveProxy(options: ProxyOptions): Promise<void> {
+/**
+ * Runs the agent behind the proxy; the promise resolves when the agent has exited. The agent starts first: the proxy
+ * loads the ACP SDK and the resource of the run while the agent starts, so a session starts sooner.
+ */
+export async function serveProxy(options: ProxyOptions): Promise<void> {
   const { command, args, env } = options.agent;
   const { input, output } = options.io ?? { input: process.stdin, output: process.stdout };
   const child = spawn(command, args, { stdio: ["pipe", "pipe", "inherit"], env: { ...process.env, ...env } });
+  const exited = new Promise<void>((resolve) => child.once("exit", () => resolve()));
+  const [{ agent, client, ndJsonStream }, resource] = await Promise.all([
+    import("@agentclientprotocol/sdk"),
+    options.resource ?? resourceOfEnvironment(),
+  ]);
+  const streamOf = (to: Writable, from: Readable) =>
+    ndJsonStream(Writable.toWeb(to) as WritableStream<Uint8Array>, Readable.toWeb(from) as ReadableStream<Uint8Array>);
   const record = append.bind(undefined, options.data);
   const running = new Map<string, number>();
   // The answer of the turn that runs in each session, for a steering message to end with.
@@ -58,7 +55,6 @@ export function serveProxy(options: ProxyOptions): Promise<void> {
   const stopped = new Promise<PromptResponse>((resolve) => {
     stopAgent = () => resolve({ stopReason: "cancelled" });
   });
-  const resource = options.resource ?? resourceOfEnvironment();
   let agentInfo: { name?: string; version?: string } = {};
   let upstream: AgentConnection | undefined;
 
@@ -135,10 +131,10 @@ export function serveProxy(options: ProxyOptions): Promise<void> {
     // A client that hangs up ends the session: the agent stops, and the proxy ends with it, since no client waits
     // for an answer.
     void upstream.closed.then(() => {
-      child.once("exit", () => resolve());
+      void exited.then(resolve);
       child.kill();
     });
     // An agent that ends by itself: the proxy ends after the answers to cancelled turns reached the client.
-    child.on("exit", () => setTimeout(resolve, 100));
+    void exited.then(() => setTimeout(resolve, 100));
   });
 }
