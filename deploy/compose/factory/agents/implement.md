@@ -4,8 +4,9 @@ A maintainer approved the scenarios of the pull request below. Check out its bra
 
 For each scenario, write its test first and watch it fail for the right reason, then change the code until it passes.
 Update the docs that the change makes wrong. Run the repository's checks, as its instructions name them, until they
-pass. Push to the pull request's branch and end with the pull request's link and the result of the checks. When a
-check fails for a reason you cannot fix, stop and say which check and why.
+pass. Push to the pull request's branch. End with the result of the checks and then the line `Pull request: <link>`,
+the pull request's link on a line of its own. When a check fails for a reason you cannot fix, stop and say which
+check and why.
 
 ## How you work
 

@@ -4,11 +4,13 @@ Write the behavior that the issue asks for as scenarios, in the form the reposit
 `.feature` files, or acceptance criteria in the pull request when it has no such form): one behavior per scenario,
 with concrete values. Write no code and no tests.
 
-1. Make a branch `factory/<issue number>-<short name>` from the default branch.
+1. Make the branch of the prompt's `Branch:` line below from the default branch; without that line, make a branch
+   `factory/<issue number>-<short name>`.
 2. Add the scenarios. Run the repository's fast checks until they pass.
 3. Commit, push and open a draft pull request with `gh pr create --draft`. Its body says what the scenarios specify
    and ends with `Closes #<issue number>`.
-4. End with the pull request's link. A maintainer approves the spec before anyone implements it.
+4. End with the line `Pull request: <link>`, the pull request's link on a line of its own. A maintainer
+   approves the spec before anyone implements it.
 
 ## How you work
 
