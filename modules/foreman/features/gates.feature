@@ -39,3 +39,18 @@ Feature: Gates
     And gatekeeper answers a request with the gate "g0a1b2c3d4e5f6a7b"
     When a program posts the README's "work.json" with the origin "https://github.com/tester/web/issues/3" to "/v1/runs"
     Then gatekeeper received a request for the stage "implement" with the links "Origin" and "Pull request", in this order
+
+  @id=SCN-FORE-115 @status=implemented
+  Scenario: A gate without a decision after the foreman's limit ends as expired
+    Given a run of the README's factory with "FOREMAN_GATE_TIMEOUT_MS" "1000" waits at the gate "g0a1b2c3d4e5f6a7b" before the stage "implement", whose policy names no "expire_after"
+    When no "gate.decided@v1" comes for the gate
+    Then "/v1/runs/<id>" shows the state "failed" with the stage "implement" "rejected" and the reason "the gate g0a1b2c3d4e5f6a7b expired: no decision after 1000 ms"
+    And the harness never received the prompt "Implement plan.md"
+
+  @id=SCN-FORE-116 @status=implemented
+  Scenario: A decision after the foreman's limit ended the gate changes nothing
+    Given a run of the README's factory with "FOREMAN_GATE_TIMEOUT_MS" "1000" that failed because the gate "g0a1b2c3d4e5f6a7b" expired
+    When gatekeeper publishes "gate.decided@v1" with the decision "approved" for the gate
+    Then the server warns "osf.gate.decided.v1: <id> is failed: the decision of the gate g0a1b2c3d4e5f6a7b came too late"
+    And "/v1/runs/<id>" still shows the state "failed" with the stage "implement" "rejected" and the same reason
+    And the harness never received the prompt "Implement plan.md"

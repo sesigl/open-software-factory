@@ -175,7 +175,12 @@ export function runs(options: {
       return ask(() => handle(runId).query(controlQuery));
     },
     async decided(workItemId, decision) {
-      await handle(await newest(workItemId)).signal(gateSignal, decision);
+      const runId = await newest(workItemId);
+      // A run that ended, also because its gate expired at the foreman's limit, takes no decision (ADR 0106).
+      const current = await view(runId);
+      if (current && hasEnded(current))
+        throw new Conflict(`${runId} is ${current.state}: the decision of the gate ${decision.gateId} came too late`);
+      await handle(runId).signal(gateSignal, decision);
     },
   };
 }

@@ -10,7 +10,8 @@ foreman, and Temporal's UI shows its history. Decisions: [ADR 0067](../../docs/d
 [ADR 0004](../../docs/decisions/0004-temporal.md), [ADR 0068](../../docs/decisions/0068-foreman-sandboxes.md) for
 sandboxes, [ADR 0069](../../docs/decisions/0069-foreman-checks.md) for checks, and
 [ADR 0070](../../docs/decisions/0070-foreman-gateway-and-take-over.md) for the inference gateway and take over, and
-[ADR 0078](../../docs/decisions/0078-agent-effort.md) for the effort level of each agent.
+[ADR 0078](../../docs/decisions/0078-agent-effort.md) for the effort level of each agent, and
+[ADR 0106](../../docs/decisions/0106-waits-that-end.md) for the limits of the waits.
 
 ## Quick start
 
@@ -201,8 +202,13 @@ Serve it as in the quick start, with the forge adapter's token: `export FOREMAN_
 3. Every check `success`: the stage starts. A check `failure` or `error`: the stage is `failed` without running its
    agent, with the `reason` `the check verify ended with failure`, and the run is `failed`. A check `pending`, or one
    the pull request does not have yet: the run and the stage are `blocked`, and the foreman reads the checks again
-   every `FOREMAN_CHECK_POLL_MS`. A cancel ends the wait.
-4. Without a pull request link, the stage is `failed` with the reason `no earlier stage linked a pull request`.
+   every `FOREMAN_CHECK_POLL_MS`. The stage shows since when it waits as `waitingSince`. A cancel ends the wait.
+4. Checks that did not all succeed after `FOREMAN_CHECK_TIMEOUT_MS` (2 hours) fail the stage and the run, with a
+   `reason` that names each check that did not end:
+   `the checks did not succeed after 7200000 ms: verify is pending; proof is missing on the pull request's head commit`.
+   A check is missing when the forge lists no check of that name on the head commit at all, as for a wrong name
+   ([ADR 0106](../../docs/decisions/0106-waits-that-end.md)).
+5. Without a pull request link, the stage is `failed` with the reason `no earlier stage linked a pull request`.
 
 The forge adapter is the one the factory names under `providers.forge`; a factory with `checks` names exactly one.
 `FOREMAN_FORGES` maps an adapter's name to its command line; an adapter it does not name runs
@@ -383,7 +389,12 @@ took it over, and a `reason` when it failed for a reason the foreman knows.
   ([gatekeeper](../gatekeeper/README.md#server)): the work item's ID, the stage, the summary `<title>: start the
   stage <stage>`, the origin's link and the run's pull request as `links` (`Origin`, `Pull request`), and the run's ID
   and the gate's `policy` and `approvers` in `change`, so each run's request is a new one. The run is `blocked` until a
-  `gate.decided@v1` for that gate arrives on NATS. `approved` starts the stage; `rejected` or `expired` fails the run.
+  `gate.decided@v1` for that gate arrives on NATS, and the stage shows since when it waits as `waitingSince`.
+  `approved` starts the stage; `rejected` or `expired` fails the run. Without a decision after
+  `FOREMAN_GATE_TIMEOUT_MS` (7 days) the gate expires at the foreman, also when its policy names no `expire_after`:
+  the stage is `rejected` with the reason `the gate <id> expired: no decision after 604800000 ms`, and the run is
+  `failed`. gatekeeper's record of the gate stays as it is; a decision that comes later is a warning and changes no
+  run ([ADR 0106](../../docs/decisions/0106-waits-that-end.md)).
 - **Signals.** A steering message reaches the running stage's agent within `FOREMAN_POLL_MS` as a prompt in its
   session, which the harness port treats as steering. A cancel ends the agent's turn, or the wait at a gate, and the
   run is `cancelled`. A person takes a running stage over and hands the run back with the signals `take-over` and
@@ -456,6 +467,8 @@ the minor version. The one-time setup is the same as for contracts
 | `FOREMAN_FORGE_URL` | string |  | serve: the forge adapter's FORGE_URL, for a factory whose stages have checks. Default: the adapter's own default. |
 | `FOREMAN_FORGE_TOKEN` | string |  | serve: the forge adapter's FORGE_TOKEN: a token that may read the pull requests and their checks. Never written to a file. |
 | `FOREMAN_CHECK_POLL_MS` | string | `"30000"` | serve: how long a stage that waits for pending checks waits before it reads them again, in milliseconds. |
+| `FOREMAN_CHECK_TIMEOUT_MS` | string | `"7200000"` | serve: how long a stage waits for its checks to succeed, in milliseconds; then it fails with a reason that names each check that did not end (ADR 0106). |
+| `FOREMAN_GATE_TIMEOUT_MS` | string | `"604800000"` | serve: how long a stage waits for the decision of its gate, in milliseconds; then the gate expires and the stage is rejected (ADR 0106). |
 | `FOREMAN_INFERENCE_RETRY_MS` | string | `"1000"` | serve: how long the server waits before it starts the factory's inference gateway again after a failed start, in milliseconds. Until a start succeeds, the health check inference fails. |
 | `FOREMAN_POLL_MS` | string | `"1000"` | serve: how often a running stage looks for steering messages and a cancel, in milliseconds. |
 | `FOREMAN_GATEKEEPER_URL` | string |  | serve: the URL of gatekeeper serve, which a stage with a gate asks for a decision. Required for a factory with gates. |
@@ -582,3 +595,8 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-109 | implemented | A retry after the factory's stages changed starts at the first stage |
 | SCN-FORE-110 | implemented | A retry from a later stage after the factory's stages changed is refused |
 | SCN-FORE-111 | implemented | A retry from a stage the run does not have is refused |
+| SCN-FORE-112 | implemented | A check that stays pending past the foreman's limit fails the stage |
+| SCN-FORE-113 | implemented | A check that the pull request's head commit does not have is named as missing when the limit ends the wait |
+| SCN-FORE-114 | implemented | A stage that waits for a check shows since when it waits |
+| SCN-FORE-115 | implemented | A gate without a decision after the foreman's limit ends as expired |
+| SCN-FORE-116 | implemented | A decision after the foreman's limit ended the gate changes nothing |

@@ -38,7 +38,7 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
 
 ## Budget
 
-- System tests: 430 seconds in total on the CI runner (110 scenarios; each starts the Temporal dev server and NATS as
+- System tests: 430 seconds in total on the CI runner (115 scenarios; each starts the Temporal dev server and NATS as
   pinned binaries on the host, ADR 0067, and the built `harness-acp` adapter with the testkit's scripted agent, which
   `turbo.json` builds before the tests; sandboxed stages use the testkit's fake sandbox adapter, ADR 0068; checks use
   `fakes.github` and the built `forge-github` adapter, ADR 0069; the gateway uses the testkit's fake inference adapter,
@@ -54,6 +54,10 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
   run is a second workflow with its own stages, so most new scenarios run two runs. The budget keeps about 6% above
   the slowest run. The events of a second run (SCN-FORE-102, -104, -105) add 15 s: the 110 scenarios took 358 s in
   one run on a development machine, so the budget stays.
+- T-39's limits of the waits (ADR 0106) add 5 scenarios, which set the limits to 1 second. On a development machine
+  the 115 scenarios took 450 s, of which the 110 before took 427 s: that machine is about 1.19 times slower than the
+  one of the 358 s. The 5 new ones took 23 s (4.5 s each), about 19 s on the faster machine, so the 115 come to about
+  377 s there and the budget stays.
 
 ## Quality limits
 

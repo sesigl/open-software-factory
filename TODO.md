@@ -944,7 +944,7 @@ as a vision scenario. Each item names the place in the code, so start there, and
     implemented; `fakes.github` removes a label, `SCN-TK-145`).
   - [x] The console's form "run again" and the link to the run before (`SCN-CONSOLE-050` to `-054`, implemented).
 
-### [ ] T-39 · waits that end (P1)
+### [x] T-39 · waits that end (P1)
 
 - **Problem:** a stage reads pending checks every `FOREMAN_CHECK_POLL_MS` without a limit, and waits for a gate until
   a decision comes (`await condition` in `modules/foreman/src/workflows/run.ts`). A check with a wrong name, or a gate
@@ -952,11 +952,12 @@ as a vision scenario. Each item names the place in the code, so start there, and
 - **Done when:** a stage that waited longer than its limit fails with a reason that names the check or the gate, and
   the run's view shows since when it waits.
 - **Slices:**
-  - [ ] A limit for the wait for checks, as a setting of the foreman with a default, and per stage if the contract
-    gets the field (`SCN-FORE`).
-  - [ ] A check that the pull request's head commit does not have at all is named as missing in the stage's reason,
-    apart from one that is pending.
-  - [ ] A gate without a decision after the foreman's own limit ends as `expired`, also when the policy names none.
+  - [x] A limit for the wait for checks, as a setting of the foreman with a default, and per stage if the contract
+    gets the field (`SCN-FORE-112`, `SCN-FORE-114`; ADR 0106 leaves the per-stage limit for later).
+  - [x] A check that the pull request's head commit does not have at all is named as missing in the stage's reason,
+    apart from one that is pending (`SCN-FORE-113`).
+  - [x] A gate without a decision after the foreman's own limit ends as `expired`, also when the policy names none
+    (`SCN-FORE-115`, `SCN-FORE-116`).
 
 ### [ ] T-40 · a verify stage that runs no second implement session (P1)
 

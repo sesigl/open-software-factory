@@ -35,9 +35,13 @@ export interface RunInput {
 /** What the workflow does next for the stage at `index`. */
 export type Step =
   | { kind: "request-gate"; index: number }
-  /** Read the stage's checks on the run's pull request, after `delayMs` when they were read before (ADR 0069). */
-  | { kind: "read-checks"; index: number; delayMs: number }
-  | { kind: "await-gate"; index: number; gateId: string }
+  /**
+   * Read the stage's checks on the run's pull request, after `delayMs` when they were read before (ADR 0069), for at
+   * most `limitMs` in all (ADR 0106).
+   */
+  | { kind: "read-checks"; index: number; delayMs: number; limitMs: number }
+  /** Wait for the gate's decision for at most `limitMs` (ADR 0106). */
+  | { kind: "await-gate"; index: number; gateId: string; limitMs: number }
   /** Wait until the person who took the stage over hands the run back (ADR 0070). */
   | { kind: "await-hand-back"; index: number }
   | { kind: "run-stage"; index: number }
@@ -51,10 +55,22 @@ export interface GateDecision {
   state: GateState;
 }
 
+/** How long a stage waits: between two reads of its checks, for its checks, and for its gate (ADR 0106). */
+export interface Waits {
+  checkPollMs: number;
+  checkTimeoutMs: number;
+  gateTimeoutMs: number;
+}
+
 /** Something that happened to a run. Each fact moves the view on. */
 export type Fact =
-  | ({ kind: "gate"; index: number } & GateDecision)
-  | { kind: "checks"; index: number; checks: CheckView[]; reason?: string }
+  /** A gate's decision; `afterMs` when the foreman's limit ended the wait without one. */
+  | ({ kind: "gate"; index: number; afterMs?: number } & GateDecision)
+  /**
+   * The checks as read; `afterMs` when this was the last read, after the foreman's limit, with the checks that the
+   * pull request's head commit does not have at all in `missing`.
+   */
+  | { kind: "checks"; index: number; checks: CheckView[]; reason?: string; afterMs?: number; missing?: string[] }
   | { kind: "stage-started"; index: number }
   | {
       kind: "stage-ended";
@@ -183,23 +199,37 @@ function endOf(stage: StageView): string {
 export const hasEnded = (view: RunView): boolean => ENDED.has(view.state);
 
 /** The next step; a stage whose checks are pending reads them again after `checkPollMs`. */
-export function nextStep(view: RunView, definition: Definition, checkPollMs: number): Step {
+export function nextStep(view: RunView, definition: Definition, waits: Waits): Step {
   if (hasEnded(view)) return { kind: "end" };
   // A run whose last stage succeeded is complete, so a run that goes on has a stage that did not succeed.
   const index = view.stages.findIndex((stage) => stage.state !== "succeeded");
   const stage = view.stages[index] as StageView;
   const plan = definition.stages[index];
   if (stage.state === "blocked" && stage.takenOverAt) return { kind: "await-hand-back", index };
-  if (stage.state === "blocked" && stage.gateId) return { kind: "await-gate", index, gateId: stage.gateId };
+  if (stage.state === "blocked" && stage.gateId)
+    return { kind: "await-gate", index, gateId: stage.gateId, limitMs: waits.gateTimeoutMs };
   // Checks come before the gate: nobody is asked to approve a change whose checks fail.
   if (plan?.checks?.length && !stage.checks?.every((check) => check.state === "success"))
-    return { kind: "read-checks", index, delayMs: stage.checks ? checkPollMs : 0 };
+    return {
+      kind: "read-checks",
+      index,
+      delayMs: stage.checks ? waits.checkPollMs : 0,
+      limitMs: waits.checkTimeoutMs,
+    };
   if (plan?.gate && !stage.gateId) return { kind: "request-gate", index };
   return { kind: "run-stage", index };
 }
 
-/** The view after the fact, at the time `at`. */
+/** The view after the fact, at the time `at`; a blocked stage shows since when it waits (ADR 0106). */
 export function apply(view: RunView, fact: Fact, at: string): RunView {
+  const next = applied(view, fact, at);
+  for (const stage of next.stages)
+    if (stage.state !== "blocked") delete stage.waitingSince;
+    else stage.waitingSince ??= at;
+  return next;
+}
+
+function applied(view: RunView, fact: Fact, at: string): RunView {
   const next: RunView = { ...view, stages: view.stages.map((stage) => ({ ...stage })) };
   const end = (state: RunState): RunView => ({ ...next, state, endedAt: at });
   switch (fact.kind) {
@@ -241,7 +271,7 @@ function stageEnded(next: RunView, index: number, state: StageState, at: string)
   return index === next.stages.length - 1 ? { ...next, state: "complete", endedAt: at } : next;
 }
 
-function gate(next: RunView, fact: GateDecision & { index: number }, end: (state: RunState) => RunView): RunView {
+function gate(next: RunView, fact: Extract<Fact, { kind: "gate" }>, end: (state: RunState) => RunView): RunView {
   const stage = next.stages[fact.index] as StageView;
   stage.gateId = fact.gateId;
   if (fact.state === "pending") {
@@ -253,6 +283,8 @@ function gate(next: RunView, fact: GateDecision & { index: number }, end: (state
     return { ...next, state: "running" };
   }
   stage.state = "rejected";
+  if (fact.afterMs !== undefined)
+    stage.reason = `the gate ${fact.gateId} expired: no decision after ${fact.afterMs} ms`;
   return end("failed");
 }
 
@@ -260,7 +292,7 @@ function checks(next: RunView, fact: Extract<Fact, { kind: "checks" }>, end: (st
   const stage = next.stages[fact.index] as StageView;
   if (fact.checks.length) stage.checks = fact.checks;
   const failed = fact.checks.find((check) => check.state === "failure" || check.state === "error");
-  const reason = fact.reason ?? (failed && `the check ${failed.name} ended with ${failed.state}`);
+  const reason = fact.reason ?? (failed ? `the check ${failed.name} ended with ${failed.state}` : timedOut(fact));
   if (reason) {
     Object.assign(stage, { state: "failed", reason });
     return end("failed");
@@ -272,6 +304,19 @@ function checks(next: RunView, fact: Extract<Fact, { kind: "checks" }>, end: (st
   stage.state = "blocked";
   return { ...next, state: "blocked" };
 }
+
+/** Why the checks' last read after the limit fails the stage: each check that did not end, and how (ADR 0106). */
+function timedOut({ checks, afterMs, missing }: Extract<Fact, { kind: "checks" }>): string | undefined {
+  const waiting = checks.filter((check) => check.state === "pending");
+  if (afterMs === undefined || !waiting.length) return undefined;
+  const how = (name: string) =>
+    missing?.includes(name) ? `${name} is missing on the pull request's head commit` : `${name} is pending`;
+  return `the checks did not succeed after ${afterMs} ms: ${waiting.map((check) => how(check.name)).join("; ")}`;
+}
+
+/** The named checks that the forge port's `pr` does not list at all. */
+export const missingOf = (names: string[], printed: { name: string }[]): string[] =>
+  names.filter((name) => !printed.some((check) => check.name === name));
 
 /** The states of the named checks in what the forge port's `pr` printed; a check it does not list is pending. */
 export function checksOf(names: string[], printed: { name: string; state: string }[]): CheckView[] {

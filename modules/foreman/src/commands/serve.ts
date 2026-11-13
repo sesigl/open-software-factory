@@ -140,7 +140,11 @@ export async function serve(env: Env) {
           ...(env.FOREMAN_FORGE_URL ? { FORGE_URL: env.FOREMAN_FORGE_URL } : {}),
           ...(env.FOREMAN_FORGE_TOKEN ? { FORGE_TOKEN: env.FOREMAN_FORGE_TOKEN } : {}),
         },
-        checkPollMs: Number(env.FOREMAN_CHECK_POLL_MS || 30_000),
+        waits: {
+          checkPollMs: Number(env.FOREMAN_CHECK_POLL_MS || 30_000),
+          checkTimeoutMs: Number(env.FOREMAN_CHECK_TIMEOUT_MS || 7_200_000),
+          gateTimeoutMs: Number(env.FOREMAN_GATE_TIMEOUT_MS || 604_800_000),
+        },
         data: resolve(env.OSF_DATA || ".foreman"),
         pollMs,
         control: (runId) => work.control(runId),

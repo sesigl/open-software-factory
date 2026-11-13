@@ -49,6 +49,8 @@ export async function factoryRun({ view, definition, before }: RunInput): Promis
   setHandler(handBackSignal, () => {
     handedBack = true;
   });
+  // When the stage at the index began to wait for its checks, in Temporal's workflow time, which replays the same.
+  let checksSince = { index: -1, at: 0 };
   const settle = async (fact: Fact) => {
     run = await CancellationScope.nonCancellable(() => local.apply(run, fact));
   };
@@ -59,15 +61,25 @@ export async function factoryRun({ view, definition, before }: RunInput): Promis
     for (let step = await local.next(run, definition); step.kind !== "end"; step = await local.next(run, definition)) {
       const { index } = step;
       if (step.kind === "read-checks") {
-        if (step.delayMs) await sleep(step.delayMs);
-        run = await local.apply(run, await remote.readChecks(run, definition, index));
+        if (checksSince.index !== index) checksSince = { index, at: Date.now() };
+        // The wait sleeps at most until its limit, then reads the checks one last time (ADR 0106).
+        const left = step.limitMs - (Date.now() - checksSince.at);
+        if (step.delayMs) await sleep(Math.max(1, Math.min(step.delayMs, left)));
+        const last = Date.now() - checksSince.at >= step.limitMs ? step.limitMs : undefined;
+        run = await local.apply(run, await remote.readChecks(run, definition, index, last));
       } else if (step.kind === "request-gate") {
         run = await local.apply(run, await remote.requestGate(run, definition, index));
       } else if (step.kind === "await-gate") {
         const { gateId } = step;
-        await condition(() => decisions.some((decision) => decision.gateId === gateId));
-        const decision = decisions.find((candidate) => candidate.gateId === gateId) as GateDecision;
-        run = await local.apply(run, { kind: "gate", index, ...decision });
+        const decided = await condition(() => decisions.some((decision) => decision.gateId === gateId), step.limitMs);
+        // Without a decision in the foreman's limit the gate expires (ADR 0106).
+        const decision = decisions.find((candidate) => candidate.gateId === gateId);
+        run = await local.apply(
+          run,
+          decided && decision
+            ? { kind: "gate", index, ...decision }
+            : { kind: "gate", index, gateId, state: "expired", afterMs: step.limitMs },
+        );
       } else if (step.kind === "await-hand-back") {
         await condition(() => handedBack);
         [handedBack, takeOver] = [false, undefined];
