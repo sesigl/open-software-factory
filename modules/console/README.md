@@ -188,7 +188,7 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-047 | implemented | Without "CONSOLE_USER_HEADER" the console stays read-only |
 | SCN-CONSOLE-048 | implemented | "console doctor" names a missing foreman URL, a server without "/v1/health" and a factory it cannot read |
 | SCN-CONSOLE-049 | implemented | A form from another site submits nothing |
-| SCN-CONSOLE-050 | implemented | The run page of a failed run has the form "run again" for a signed-in person |
+| SCN-CONSOLE-050 | implemented | The run page of a failed or cancelled run has the form "run again" for a signed-in person |
 | SCN-CONSOLE-051 | implemented | A person runs a failed run again from the run page |
 | SCN-CONSOLE-052 | implemented | The run page of a run that is running or complete has no form "run again" |
 | SCN-CONSOLE-053 | implemented | A retry the foreman refuses shows the foreman's problem |

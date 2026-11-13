@@ -77,10 +77,10 @@ Feature: The run page
     Then the page has no link with the text "trace"
 
   @id=SCN-CONSOLE-050 @status=implemented
-  Scenario: The run page of a failed run has the form "run again" for a signed-in person
-    Given a console with "CONSOLE_USER_HEADER" set to "X-Forwarded-Email" and a foreman with a run whose stage "implement" failed
-    When the person "ada@acme.dev" opens the run's page
-    Then the page has the form "run again"
+  Scenario: The run page of a failed or cancelled run has the form "run again" for a signed-in person
+    Given a console with "CONSOLE_USER_HEADER" set to "X-Forwarded-Email" and a foreman with a run whose stage "implement" failed and a cancelled run
+    When the person "ada@acme.dev" opens the page of each run
+    Then both pages have the form "run again"
 
   @id=SCN-CONSOLE-051 @status=implemented
   Scenario: A person runs a failed run again from the run page

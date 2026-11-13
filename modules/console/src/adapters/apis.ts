@@ -14,8 +14,8 @@ const auth = (api: Api): Record<string, string> => (api.token ? { authorization:
 
 /** The `detail` of an RFC 9457 problem, if the answer is one. */
 async function problemDetail(response: Response): Promise<string | undefined> {
-  const body = await response.json().catch(() => undefined);
-  return typeof body?.detail === "string" ? body.detail : undefined;
+  const body: { detail?: string } = await response.json().catch(() => ({}));
+  return body.detail;
 }
 
 async function request<T>(api: Api, path: string, init: { method?: string; body?: string } = {}): Promise<Answer<T>> {

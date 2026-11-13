@@ -5,7 +5,7 @@ import { createRequire } from "node:module";
 import { UsageError } from "@opensoftware/cli";
 import type { GateView, RunRetry, RunView, WorkItemList, WorkItemView, WorkRequest } from "@opensoftware/contracts";
 import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
-import { type Answer, type Api, getJson, postJson } from "../adapters/apis.ts";
+import { type Api, getJson, postJson } from "../adapters/apis.ts";
 import { readFactory } from "../adapters/factory-file.ts";
 import { proposals } from "../adapters/forge.ts";
 import { fill, isState, list, namedLinks, orderRuns, STATES } from "../domain/runs.ts";
@@ -48,6 +48,7 @@ export async function serve(env: Env) {
   const source: Source = { path, branch, url: repository && `${repository}/blob/${branch}/${path}` };
   const inbox = env.CONSOLE_INBOX_REPOSITORY;
   const userHeader = env.CONSOLE_USER_HEADER?.toLowerCase() || undefined;
+  const actions = Boolean(userHeader);
   const prefix = env.CONSOLE_INBOX_PREFIX || "observer/";
   const forge = {
     command: env.CONSOLE_FORGE_ADAPTER || "npx -y @opensoftware/forge-github",
@@ -85,14 +86,21 @@ export async function serve(env: Env) {
     return send(reply, 200, { title: "Runs", refresh, notes }, runsPage(runs, state, now()));
   });
 
-  app.get<{ Params: { runId: string } }>("/runs/:runId", async (request, reply) => {
-    const { runId } = request.params;
+  /** The run and the foreman that knows it, or the answer 404. */
+  const findRun = async (runId: string, reply: FastifyReply) => {
     const answers = await Promise.all(
       sources.map((api) => getJson<RunView>(api, `/v1/runs/${encodeURIComponent(runId)}`)),
     );
-    const found = answers.find((answer) => answer.ok);
-    if (!found?.ok) return send(reply, 404, { title: runId }, problem("Not found", `no run ${runId}`));
-    const run = found.body;
+    const index = answers.findIndex((answer) => answer.ok);
+    const found = answers[index];
+    if (!found?.ok) return { missing: send(reply, 404, { title: runId }, problem("Not found", `no run ${runId}`)) };
+    return { run: found.body, api: sources[index] as Api };
+  };
+
+  app.get<{ Params: { runId: string } }>("/runs/:runId", async (request, reply) => {
+    const { runId } = request.params;
+    const { run, missing } = await findRun(runId, reply);
+    if (!run) return missing;
     const workItem = intake ? await getJson<WorkItemView>(intake, `/v1/work-items/${run.workItem.id}`) : undefined;
     const own: WorkRequest = {
       requester: run.workItem.requester,
@@ -120,7 +128,7 @@ export async function serve(env: Env) {
       reply,
       200,
       { title: run.workItem.title, refresh },
-      runPage(run, requests, gates, runLinks, now(), Boolean(userHeader)),
+      runPage(run, requests, gates, runLinks, now(), actions),
     );
   });
 
@@ -160,7 +168,7 @@ export async function serve(env: Env) {
     const answer = await getJson<WorkItemList>(intake, "/v1/inbox");
     const notes = answer.ok ? [] : [answer.note];
     const items = answer.ok ? answer.body.workItems : [];
-    return send(reply, 200, { title: "Work", refresh, notes }, workPage(items, now(), Boolean(userHeader)));
+    return send(reply, 200, { title: "Work", refresh, notes }, workPage(items, now(), actions));
   });
 
   // Actions (ADR 0089): only with CONSOLE_USER_HEADER, from the same origin, in the name of the signed-in person.
@@ -191,20 +199,17 @@ export async function serve(env: Env) {
     });
   }
   if (userHeader) {
-    // The foreman that knows the run answers; the others answer 404.
     app.post<{ Params: { runId: string } }>("/runs/:runId/retry", async (request, reply) => {
       const { runId } = request.params;
       const { person, refused } = signedIn(request, reply, runId);
       if (refused) return refused;
+      const { api, missing } = await findRun(runId, reply);
+      if (!api) return missing;
       const retry: RunRetry = { by: { kind: "person", id: person } };
-      let answer: Answer<RunView> = { ok: false, status: 404, note: `no run ${runId}` };
-      for (const api of sources) {
-        answer = await postJson<RunView>(api, `/v1/runs/${encodeURIComponent(runId)}/retry`, retry);
-        if (answer.ok || answer.status !== 404) break;
-      }
+      const answer = await postJson<RunView>(api, `/v1/runs/${encodeURIComponent(runId)}/retry`, retry);
       if (answer.ok) return reply.code(303).header("location", `/runs/${answer.body.runId}`).send();
-      const status = answer.status >= 400 && answer.status < 500 ? answer.status : 502;
-      return send(reply, status, { title: runId }, problem("Not run again", answer.detail ?? answer.note));
+      const detail = answer.detail ?? answer.note;
+      return send(reply, answer.status || 502, { title: runId }, problem("Not run again", detail));
     });
   }
 

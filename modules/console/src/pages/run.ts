@@ -49,7 +49,7 @@ export function runPage(
   gates: Map<string, GateView>,
   links: RunLinks,
   now: number,
-  actions = false,
+  actions: boolean,
 ) {
   return html`<h1>${run.workItem.title}</h1>
     <dl>
