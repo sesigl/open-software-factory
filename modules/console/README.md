@@ -83,6 +83,10 @@ run's history: `<url>/namespaces/<CONSOLE_TEMPORAL_NAMESPACE>/workflows/<runId>`
    (such as `foreman temporal` or `intake nats`), and whether it accepts the console's token. A server that does not
    answer names the variable of its URL; a refused token names the console's variable and the server's own.
 2. `factory`: the definition in `CONSOLE_FACTORY` can be read.
+3. `groups`, with `CONSOLE_GROUPS`: each group of the gatekeeper's groups file has a member who is not the example's
+   `slack:U0EXAMPLE`, the member the reference `groups.json` ships in place of a person
+   ([ADR 0114](../../docs/decisions/0114-the-example-member-of-the-reference-groups.md)). The check reads every group,
+   not only the policy's approvers, and cannot tell whether a Slack ID belongs to a real person.
 
 The links to the Temporal UI and the trace store are for the browser, so the console does not check them; the
 foreman's `temporal` check covers Temporal.
@@ -111,6 +115,7 @@ A server of a release before `/v1/health` fails its check with the advice to upd
 | `CONSOLE_LINKS` | string |  | serve: the dashboards every page links, as name=url, comma-separated, like Grafana=https://grafana.acme.dev. |
 | `CONSOLE_REFRESH` | string | `"10"` | serve: the seconds after which the browser reloads the runs pages. |
 | `CONSOLE_FACTORY` | string | `"factory.yaml"` | serve: the factory definition that /factory shows, read-only. |
+| `CONSOLE_GROUPS` | string |  | doctor and /health: the groups file of the factory's gatekeeper, like /factory/groups.json. Set, a group without a member but the example's slack:U0EXAMPLE fails the check groups. |
 | `CONSOLE_FACTORY_PATH` | string | `"factory.yaml"` | serve: the path of the factory definition in its Git repository. |
 | `CONSOLE_REPOSITORY_URL` | string |  | serve: the web URL of the factory's Git repository, like https://github.com/acme/factory. Set, the configuration pages link the file. |
 | `CONSOLE_BRANCH` | string | `"main"` | serve: the branch where the factory definition changes. |
@@ -194,3 +199,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-053 | implemented | A retry the foreman refuses shows the foreman's problem |
 | SCN-CONSOLE-054 | implemented | The run page of a run that ran again links the run before it |
 | SCN-CONSOLE-055 | implemented | The run page shows a stage that only waits with "waits" instead of an agent |
+| SCN-CONSOLE-056 | implemented | "console doctor" fails on a group whose only member is the example's |

@@ -51,3 +51,15 @@ export function report(items: Item[]): string[] {
   const lines = items.map(({ name, ok, detail }) => (ok ? `ok    ${name}` : `FAIL  ${name}: ${detail}`));
   return items.every(({ ok }) => ok) ? [...lines, `all ${items.length} checks ok`] : lines;
 }
+
+/** The member that the reference groups.json ships in place of a person (ADR 0114). */
+export const EXAMPLE_MEMBER = "slack:U0EXAMPLE";
+
+/** The check groups: the names of the groups whose members are all the example's, from the parsed groups file. */
+export function groupsItem(groups: unknown, file: string): Item {
+  const empty = Object.entries(groups ?? {}).flatMap(([name, members]: [string, unknown]) =>
+    Array.isArray(members) && !members.some((member) => member !== EXAMPLE_MEMBER) ? [`"${name}"`] : [],
+  );
+  const detail = `${empty.join(", ")} has no member but the example's ${EXAMPLE_MEMBER}: put its people in ${file}`;
+  return { name: "groups", ok: empty.length === 0, detail };
+}

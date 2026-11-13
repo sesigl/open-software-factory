@@ -31,10 +31,14 @@ export async function cluster(sut: Sut): Promise<Helm> {
   return helm;
 }
 
-/** Writes `values.yaml` with every secret but `except`. */
-export async function values(sut: Sut, except?: string): Promise<void> {
-  const lines = Object.entries(SECRETS)
-    .filter(([name]) => name !== except)
+/** Writes `values.yaml` with every secret but those in `except`, and the secrets of `more`. */
+export async function values(
+  sut: Sut,
+  except: string[] | string = [],
+  more: Record<string, string> = {},
+): Promise<void> {
+  const lines = Object.entries({ ...SECRETS, ...more })
+    .filter(([name]) => ![except].flat().includes(name))
     .map(([name, value]) => `  ${name}: ${value}`);
   await sut.files.put("$INPUT/values.yaml", ["secrets:", ...lines, ""].join("\n"));
 }

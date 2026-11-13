@@ -9,6 +9,7 @@ import { reachNats } from "../adapters/nats.ts";
 import { opaVersion } from "../adapters/opa.ts";
 import { openStore } from "../adapters/postgres.ts";
 import { receive } from "../adapters/slack.ts";
+import { EXAMPLE_MEMBER, groupsWithoutPeople } from "../domain/policy.ts";
 import { pullRequestOf } from "../domain/pull-request.ts";
 import { signingKeyOf } from "../domain/record.ts";
 import { parseRequest } from "../domain/request.ts";
@@ -54,6 +55,10 @@ export async function serve(options: ServeOptions) {
   const pollMs = Number(env.GATEKEEPER_POLL_MS) || POLL_MS;
   const policyText = readText(options.policy);
   const groups = readJson(options.groups);
+  for (const name of groupsWithoutPeople(groups))
+    process.stderr.write(
+      `gatekeeper: the group "${name}" in ${options.groups} has no member but the example's ${EXAMPLE_MEMBER}, so nobody decides its gates: put its people in ${options.groups}\n`,
+    );
   const now = () => nowOf(env.OSF_NOW);
   const signingKey = env.GATEKEEPER_SIGNING_KEY || undefined;
   // A key that cannot sign stops the server before it starts, not at the first decision.

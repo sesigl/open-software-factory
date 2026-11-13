@@ -37,7 +37,8 @@ through `kubectl port-forward` (`url`), `helm test` and the state of the workloa
 - System tests: 660 seconds in total on the CI runner. SCN-DIST-003, -004, -017, -022 and -026 each start the
   profile with Compose, 56 to 67 seconds with the images the CI job loaded before. SCN-DIST-009, -010, -019 and -021
   each install the chart on kind, 47 to 57 seconds. SCN-DIST-014 starts only intake with PostgreSQL and NATS, about
-  10 seconds.
+  10 seconds. SCN-DIST-033 only renders the chart with `helm template` in its kind namespace, about 2 seconds; a
+  scenario of the chart's rendering stays at that level, not a new install.
 - Measured for 660 s: these nine scenarios are about 525 s of the suite. In four CI runs the suite took 568 s to
   715 s of raw time, and 433 s to 619 s at BUDGET's measure; the 619 s came from the fastest raw run (568 s), whose
   CPU benchmark took 0.918 times the reference. The suite waits on Docker and kind I/O, which the CPU benchmark does

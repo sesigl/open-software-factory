@@ -11,6 +11,12 @@ open-source project already exists, the factory adopts it and builds only the ad
 > repository's CI uses them on its own pull requests. The factory does not yet implement this repository's issues on
 > its own: [`TODO.md`](TODO.md) wave 5 lists what a trustworthy v1 still needs.
 
+## Run a factory
+
+Install Docker with Compose, then follow the [quick start](deploy/README.md#quick-start): copy `.env.example`, put
+your people in `groups.json` and run `docker compose up` in `deploy/compose/`. `console doctor` names what is missing.
+On Kubernetes, the [Helm chart](deploy/README.md#helm-chart) installs the same factory.
+
 ## Start here
 
 | You want to | Read |

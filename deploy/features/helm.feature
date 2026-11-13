@@ -69,3 +69,12 @@ Feature: The Helm chart installs a complete factory on Kubernetes with one comma
     And in the sandbox, "GET http://litellm:4000/health/liveliness" answers 200, and a request to the chart's PostgreSQL fails
     And after "sandbox-kubernetes destroy", "sandbox-kubernetes list" in the deployment "foreman" does not list the sandbox
     And the service account of "foreman" may create sandbox claims in the namespace "<release namespace>-sandboxes", and may read no secret of the release namespace
+
+  @id=SCN-DIST-033 @status=implemented
+  Scenario: The chart takes a forge token without Slack, and asks on pull requests only
+    Given a kind cluster with the images of the Compose profile
+    And a values file that sets every value under "secrets" but the two Slack secrets, and sets "forgeToken"
+    When the operator runs "helm template osf deploy/helm/osf --values values.yaml"
+    Then the command exits with code 0
+    And the deployment "gatekeeper" runs "gatekeeper serve" without "--channel", with "GATEKEEPER_FORGE_TOKEN" from the key "forge-token" and without a Slack variable
+    And the release's Secret has no key "gatekeeper-slack-token" or "gatekeeper-slack-signing-secret"

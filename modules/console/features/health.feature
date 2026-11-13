@@ -44,3 +44,11 @@ Feature: Health
     Then it prints "FAIL  foreman: set CONSOLE_FOREMAN_URL to the base URL of the foreman's API"
     And it prints "FAIL  intake: <URL>/v1/health answered 404: update intake to a release with /v1/health"
     And it prints "FAIL  factory: ENOENT: no such file or directory, open '<file>': check CONSOLE_FACTORY"
+
+  @id=SCN-CONSOLE-056 @status=implemented
+  Scenario: "console doctor" fails on a group whose only member is the example's
+    Given "CONSOLE_GROUPS" names a groups file whose group "maintainers" has only the example's member "slack:U0EXAMPLE" and whose group "leads" has "slack:U0LEO"
+    When the user runs "console doctor"
+    Then the command exits with code 1
+    And it prints "FAIL  groups: \"maintainers\" has no member but the example's slack:U0EXAMPLE: put its people in <file>"
+    And it prints no line about the group "leads"

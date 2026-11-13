@@ -44,6 +44,17 @@ export function parseRules(value: unknown, policy: string): Rules {
   };
 }
 
+/** The member that the reference groups.json ships in place of a person (ADR 0114). */
+export const EXAMPLE_MEMBER = "slack:U0EXAMPLE";
+
+/** The groups of a groups file in which nobody decides: each has no member but the example's. */
+export function groupsWithoutPeople(value: unknown): string[] {
+  if (!value || typeof value !== "object") return [];
+  return Object.entries(value)
+    .filter(([, members]) => Array.isArray(members) && members.every((id) => id === EXAMPLE_MEMBER))
+    .map(([name]) => name);
+}
+
 /** Each group lists its members as identities like "slack:U024BE7LH" or "github:octocat". */
 export function parseGroups(value: unknown, file: string, rules: Rules): Groups {
   const valid =

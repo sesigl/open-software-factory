@@ -168,3 +168,10 @@ spec:
     - name: http
       port: 8080
 {{- end -}}
+
+{{/* "true" when gatekeeper asks in Slack: with the Slack token in secrets, or with existingSecret and a channel. */}}
+{{- define "osf.gatekeeperSlack" -}}
+{{- if .Values.secrets.existingSecret -}}
+{{- if .Values.gatekeeper.slackChannel }}true{{ end -}}
+{{- else if .Values.secrets.gatekeeperSlackToken }}true{{ end -}}
+{{- end -}}

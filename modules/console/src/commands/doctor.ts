@@ -1,8 +1,9 @@
 // console doctor: checks each server of the factory, its token and the factory definition, and prints one fix per
 // failure (ADR 0086). It exits 1 when a check fails. The page /health shows the same.
+import { readFileSync } from "node:fs";
 import { type Api, probe } from "../adapters/apis.ts";
 import { readFactory } from "../adapters/factory-file.ts";
-import { type Item, report, type Server, serverItems } from "../domain/doctor.ts";
+import { groupsItem, type Item, report, type Server, serverItems } from "../domain/doctor.ts";
 import { list } from "../domain/runs.ts";
 
 type Env = Record<string, string | undefined>;
@@ -30,6 +31,15 @@ function servers(env: Env): (Server & Api)[] {
   return found;
 }
 
+/** The check groups of the gatekeeper's groups file (ADR 0114). */
+function groups(file: string): Item {
+  try {
+    return groupsItem(JSON.parse(readFileSync(file, "utf8")), file);
+  } catch (failure) {
+    return { name: "groups", ok: false, detail: `${(failure as Error).message}: check CONSOLE_GROUPS` };
+  }
+}
+
 export async function examine(env: Env): Promise<Item[]> {
   const items = (
     await Promise.all(
@@ -55,6 +65,7 @@ export async function examine(env: Env): Promise<Item[]> {
   } catch (failure) {
     items.push({ name: "factory", ok: false, detail: `${(failure as Error).message}: check CONSOLE_FACTORY` });
   }
+  if (env.CONSOLE_GROUPS) items.push(groups(env.CONSOLE_GROUPS));
   return items;
 }
 

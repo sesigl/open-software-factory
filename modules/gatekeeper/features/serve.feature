@@ -199,3 +199,10 @@ Feature: Serve the gate API
     Given the server runs with the README policy and groups for the channel "slack:C0GATES"
     When a program posts the README request to "/v1/gates" without an Authorization header
     Then the answer has the status 401 and a problem whose detail says "send Authorization: Bearer <GATEKEEPER_API_TOKEN>"
+
+  @id=SCN-GATE-093 @status=implemented
+  Scenario: The server names a group whose only member is the example's when it starts
+    Given the README policy and a groups file whose group "maintainers" has only the example's member "slack:U0EXAMPLE"
+    When the server starts for the channel "slack:C0GATES"
+    Then its error output says 'gatekeeper: the group "maintainers" in groups.json has no member but the example's slack:U0EXAMPLE, so nobody decides its gates: put its people in groups.json'
+    And its error output names no other group
