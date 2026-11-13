@@ -37,3 +37,10 @@ Feature: The run's pull request
     When a program posts the README's "work.json" with the origin "tester/web#3" to "/v1/runs" with the API token
     Then "/v1/runs/<id>" shows the state "failed" with no "pullRequest" and the stage "ship" "failed" with the reason "no earlier stage linked a pull request"
     And the stage "implement" has the note "no pull request of tester/web has the head osf/<run ID>, and the agent stated none"
+
+  @id=SCN-FORE-130 @status=implemented
+  Scenario: A stage whose forge adapter cannot list the pull requests succeeds and names the adapter's error
+    Given "foreman serve" runs the README's "checks/factory.yaml" with the fake GitHub, whose pull request "tester/web#1" has the head "osf/<run ID>", and a forge adapter whose "prs" fails with "the forge is down"
+    And the scripted "implement" turn replies with "done"
+    When a program posts the README's "work.json" with the origin "tester/web#3" to "/v1/runs" with the API token
+    Then "/v1/runs/<id>" shows the stage "implement" "succeeded" with the note "the forge adapter's prs failed: the forge is down"

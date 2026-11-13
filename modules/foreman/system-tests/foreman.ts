@@ -404,6 +404,8 @@ export interface PullRequestsSetup {
   pulls: { repository: "web" | "app"; branch: string }[];
   /** The "implement" turn's reply, from the links of the pull requests in their order. */
   reply(links: string[]): string;
+  /** The forge adapter's `prs` fails with this error; its other commands work. */
+  prsFails?: string;
 }
 
 /**
@@ -411,6 +413,16 @@ export interface PullRequestsSetup {
  * "tester/app" have the pull requests; the first one has the check "verify" in the state "success". `work` is the
  * README's work item whose origin is the issue "tester/web#3" of the fake GitHub.
  */
+/** The built forge-github adapter's command line, behind a script whose `prs` fails with the error when one is given. */
+async function forgeAdapter(sut: Sut, prsFails?: string): Promise<string> {
+  if (!prsFails) return sut.adapter("forge/github");
+  await sut.files.put(
+    "$INPUT/forge.sh",
+    `if [ "$1" = prs ]; then echo '${prsFails}' >&2; exit 1; fi\nexec ${sut.adapter("forge/github")} "$@"\n`,
+  );
+  return `sh ${sut.files.path("$INPUT/forge.sh")}`;
+}
+
 export async function servingPullRequests(sut: Sut, fakes: Fakes, setup: PullRequestsSetup) {
   const github = await fakes.github();
   await github.createRepository("web", { "README.md": "# web\n" });
@@ -439,7 +451,7 @@ export async function servingPullRequests(sut: Sut, fakes: Fakes, setup: PullReq
       { when: SHIP, reply: "merged" },
     ],
     env: {
-      FOREMAN_FORGES: JSON.stringify({ github: sut.adapter("forge/github") }),
+      FOREMAN_FORGES: JSON.stringify({ github: await forgeAdapter(sut, setup.prsFails) }),
       FOREMAN_FORGE_URL: github.url,
       FOREMAN_FORGE_TOKEN: github.token,
       FOREMAN_CHECK_POLL_MS: "100",

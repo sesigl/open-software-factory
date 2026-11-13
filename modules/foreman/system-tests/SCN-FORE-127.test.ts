@@ -11,7 +11,10 @@ scenario("SCN-FORE-127", async ({ sut, fakes, given, when, then }) => {
           { repository: "web", branch: "export-csv" },
           { repository: "web", branch: "osf/run_other" },
         ],
-        reply: ([mine, other]) => `Done.\nPull request: ${mine}\nSee also ${other} for the import.`,
+        // A stated line may end in spaces; a link after "Pull request:" in the middle of a line, or one with text after it,
+        // is not a stated line.
+        reply: ([mine, other]) =>
+          `Done.\nPull request: ${mine} \nIt builds on the Pull request: ${other}\nPull request: ${other} has the import.`,
       });
     },
   );

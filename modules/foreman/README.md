@@ -640,3 +640,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-127 | implemented | The pull request the agent states is the run's when the forge has none of the run's branch |
 | SCN-FORE-128 | implemented | A stated pull request of another repository than the work item's is refused |
 | SCN-FORE-129 | implemented | A stage says so when the forge has no pull request of the run's branch and the agent states none |
+| SCN-FORE-130 | implemented | A stage whose forge adapter cannot list the pull requests succeeds and names the adapter's error |
