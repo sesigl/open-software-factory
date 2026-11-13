@@ -8,7 +8,7 @@ scenario("SCN-FORE-126", async ({ sut, fakes, given, when, then }) => {
     async () => {
       server = await servingPullRequests(sut, fakes, {
         pulls: [
-          { repository: "web", branch: `osf/${firstRunOf(fakes)}` },
+          { repository: "web", branch: `osf/${await firstRunOf(fakes)}` },
           { repository: "web", branch: "export-csv" },
         ],
         reply: ([mine, other]) => `Opened ${mine}. It builds on ${other}.`,

@@ -1,7 +1,6 @@
 // Shared setup of the foreman scenarios: the README's factory and work item, Temporal, the scripted harness behind the
 // built harness-acp adapter, a fake sandbox adapter, a fake inference adapter, a scripted gatekeeper, the fake GitHub
 // with the built forge-github adapter, and the server with its token.
-import { createHash } from "node:crypto";
 import type { paths, RunRetry, RunView, WorkItem } from "@opensoftware/contracts";
 import type { Fakes, HarnessTurn, InferenceOptions, SandboxOptions, Sut } from "@opensoftware/testkit";
 
@@ -393,9 +392,12 @@ export async function failedWithEvents(sut: Sut, fakes: Fakes) {
   return { ...run, events };
 }
 
-/** The ID of the README's work item's first run (ADR 0105), and so its branch "osf/<run ID>" (ADR 0109). */
-export const firstRunOf = (fakes: Fakes): string =>
-  `run_${createHash("sha256").update(readmeWork(fakes).id).digest("hex").slice(0, 20)}`;
+/** The ID of the README's work item's first run as ADR 0105 states it, and so its branch "osf/<run ID>" (ADR 0109). */
+export async function firstRunOf(fakes: Fakes): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(readmeWork(fakes).id));
+  const hex = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `run_${hex.slice(0, 20)}`;
+}
 
 export interface PullRequestsSetup {
   /** The pull requests to open, in this order, each in its repository of the fake GitHub ("web" or "app"). */
@@ -447,5 +449,5 @@ export async function servingPullRequests(sut: Sut, fakes: Fakes, setup: PullReq
     ...readmeWork(fakes),
     origin: { source: "github", url: `${github.url}/${github.owner}/web/issues/3` },
   };
-  return { ...server, github, pulls, work, branch: `osf/${firstRunOf(fakes)}` };
+  return { ...server, github, pulls, work, branch: `osf/${await firstRunOf(fakes)}` };
 }
