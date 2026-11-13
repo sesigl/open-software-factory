@@ -255,7 +255,7 @@ function applied(view: RunView, fact: Fact, at: string): RunView {
       const stage = next.stages[fact.index] as StageView;
       if (fact.sessionId) stage.sessionId = fact.sessionId;
       if (fact.pullRequest) next.pullRequest = fact.pullRequest;
-      if (fact.note) stage.note = fact.note;
+      stage.note = fact.note;
       if (fact.takenOver) {
         Object.assign(stage, { state: "blocked", takenOverAt: at });
         return { ...next, state: "blocked", folder: fact.takenOver.folder };
@@ -350,7 +350,7 @@ export interface Repository {
 }
 
 // The page of an issue or a pull request of a forge: <forge>/<owner>/<name>/issues|pull|pulls/<n>.
-const FORGE_PAGE = /^(https?:\/\/[^\s"'<>()]+?)\/([^/\s"'<>()]+)\/([^/\s"'<>()]+)\/(?:issues|pulls?)\/\d+/;
+const FORGE_PAGE = /^(https?:\/\/[^\s"'<>()]+?)\/([^/\s"'<>()]+)\/([^/\s"'<>()]+)\/(?:issues|pulls?)\/\d/;
 
 /** The repository of a page of an issue or a pull request of a forge; none for any other link (ADR 0109). */
 export function repositoryOf(url: string | undefined): Repository | undefined {
@@ -393,7 +393,7 @@ export function stagePullRequest(
   const stated = [...transcript.matchAll(STATED)]
     .map((line) => line[1])
     .findLast((link) => lastPullRequestIn(link ?? "") === link);
-  if (stated && repositoryOf(stated)?.page === repository.page) return { pullRequest: stated };
+  if (stated && (repositoryOf(stated) as Repository).page === repository.page) return { pullRequest: stated };
   if (stated) return { note: `the pull request ${stated} is not of the work item's repository ${repository.page}` };
   if (had) return {};
   if (listed instanceof Error) return { note: listed.message };
