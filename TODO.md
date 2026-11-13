@@ -994,9 +994,12 @@ as a vision scenario. Each item names the place in the code, so start there, and
 - **Done when:** a run takes only a pull request of the work item's repository whose head is the run's branch, or one
   that the agent names in a stated form, and says so when it finds none.
 - **Slices:**
-  - [ ] An ADR: how a stage states its results (a line of a fixed form, a file in the run's folder, or the forge
-    adapter's `prs` for the run's branch).
-  - [ ] The foreman refuses a link of another repository than the work item's (`SCN-FORE`).
+  - [x] An ADR: how a stage states its results (a line of a fixed form, a file in the run's folder, or the forge
+    adapter's `prs` for the run's branch). ADR 0109: the forge's `prs` for the branch `osf/<run ID>`, else the line
+    `Pull request: <link>` (SCN-FORE-126, SCN-FORE-127).
+  - [x] The foreman refuses a link of another repository than the work item's (SCN-FORE-128), and a stage says so
+    when it finds none (SCN-FORE-129). Only for a work item whose origin is a forge's issue or pull request; any
+    other origin keeps the last link (ADR 0109).
 
 ### [ ] T-43 · versions a run can trust (P1)
 
