@@ -54,3 +54,10 @@ Feature: Gates
     Then the server warns "osf.gate.decided.v1: <id> is failed: the decision of the gate g0a1b2c3d4e5f6a7b came too late"
     And "/v1/runs/<id>" still shows the state "failed" with the stage "implement" "rejected" and the same reason
     And the harness never received the prompt "Implement plan.md"
+
+  @id=SCN-FORE-120 @status=implemented
+  Scenario: A stage that only waits at a gate succeeds after the approval, without a session
+    Given a run of the README's factory with the stage "approve" after "implement" that has "wait: true" and a gate, which waits at the gate "g0a1b2c3d4e5f6a7b" before the stage "approve"
+    When gatekeeper publishes "gate.decided@v1" with the decision "approved" for the gate
+    Then "/v1/runs/<id>" shows the state "complete" with the stage "approve" "succeeded", its gate "g0a1b2c3d4e5f6a7b", marked as a stage that only waits and with no session
+    And the harness received the prompts of the stages "plan" and "implement" and no other

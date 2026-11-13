@@ -61,7 +61,8 @@ function rules(definition: FactoryDefinition, exists: (path: string) => boolean)
   }
   (definition.workflow ?? []).forEach((stage, index) => {
     const agent = stage.agent ?? stage.stage;
-    if (!Object.hasOwn(definition.agents, agent)) {
+    if (stage.wait) findings.push(...waitFindings(stage, index));
+    else if (!Object.hasOwn(definition.agents, agent)) {
       findings.push([
         ["workflow", String(index), "stage"],
         `stage "${stage.stage}" runs the agent "${agent}", which agents does not declare`,
@@ -75,6 +76,23 @@ function rules(definition: FactoryDefinition, exists: (path: string) => boolean)
     files.push([["benchmarks", name, "suite"], suite.suite]);
   for (const [path, file] of files) if (!exists(file)) findings.push([path, `the file "${file}" does not exist`]);
   return findings;
+}
+
+/** A stage that only waits names no agent and something to wait for (ADR 0107). */
+function waitFindings(stage: NonNullable<FactoryDefinition["workflow"]>[number], index: number): Finding[] {
+  const at = (field: string): string[] => ["workflow", String(index), field];
+  const waits = Boolean(stage.checks?.length || stage.gate || stage.evidence === "required");
+  return [
+    ...(stage.agent ? [[at("agent"), `stage "${stage.stage}" only waits, so it names no agent`] as Finding] : []),
+    ...(waits
+      ? []
+      : [
+          [
+            at("wait"),
+            `stage "${stage.stage}" only waits, so it names checks, the evidence "required" or a gate`,
+          ] as Finding,
+        ]),
+  ];
 }
 
 function place(lines: LineCounter, offset: number): Place {

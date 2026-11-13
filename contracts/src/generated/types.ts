@@ -321,7 +321,7 @@ export type components = {
             agents: {
                 [key: string]: components["schemas"]["Agent"];
             };
-            /** @description Stages in order. Each stage runs one agent; the agent defaults to the stage name. */
+            /** @description Stages in order. Each stage runs one agent, which defaults to the stage name, or only waits (ADR 0107). */
             workflow?: components["schemas"]["Stage"][];
             /** @description What starts work without a person asking. */
             automations?: components["schemas"]["Automation"][];
@@ -1070,6 +1070,11 @@ export type components = {
             checks?: components["schemas"]["CheckName"][];
             /** @description Whether the stage must produce an evidence bundle. */
             evidence?: components["schemas"]["EvidenceRequirement"];
+            /**
+             * @description The stage runs no agent: it only waits for its checks, its evidence and its gate, then succeeds (ADR 0107). It
+             *     names no agent and at least one of checks, evidence "required" or gate.
+             */
+            wait?: boolean;
         };
         /**
          * @description foreman: where a stage of a run stands.
@@ -1079,8 +1084,10 @@ export type components = {
         /** @description foreman: one stage of a run (ADR 0067). */
         StageView: {
             stage: components["schemas"]["Name"];
-            /** @description The agent that runs the stage. */
+            /** @description The agent that runs the stage; the stage's name for a stage that only waits (ADR 0107). */
             agent: components["schemas"]["Name"];
+            /** @description True for a stage that only waits: it runs no agent and starts no session (ADR 0107). */
+            wait?: boolean;
             state: components["schemas"]["StageState"];
             /** @description The harness session of the stage's agent, once it started. */
             sessionId?: string;

@@ -37,3 +37,9 @@ export async function profile(sut: Sut, except?: string, more: Record<string, st
 export function words(command: string): string[] {
   return command.replace(/^docker compose /, "").split(" ");
 }
+
+/** A stage of the factory that "factory resolve" printed; the first build of the image prints its log before the JSON. */
+export function stageOf(stdout: string, name: string): Record<string, unknown> | undefined {
+  const factory = JSON.parse(stdout.slice(stdout.search(/^\{$/m))) as { workflow: { stage: string }[] };
+  return factory.workflow.find((stage) => stage.stage === name);
+}

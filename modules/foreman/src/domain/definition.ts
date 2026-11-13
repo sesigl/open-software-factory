@@ -3,8 +3,8 @@
 // sandbox, its checks and its gate. Checked once against the contract and once for what only the foreman sees.
 import type { FactoryDefinition, SandboxSpec } from "@opensoftware/contracts";
 
-export interface StagePlan {
-  stage: string;
+/** The agent of a stage that runs one; a stage that only waits has none (ADR 0107). */
+export interface AgentPlan {
   agent: string;
   harness: string;
   /** The agent's model: a model ID or a routing alias of the inference gateway. */
@@ -13,12 +13,16 @@ export interface StagePlan {
   effort: FactoryDefinition["agents"][string]["effort"];
   /** The text of the agent's prompt file. */
   prompt: string;
-  gate?: { policy: string; approvers?: string[] };
-  /** The checks that must succeed on the run's pull request before the stage starts. */
-  checks?: string[];
   /** The sandbox the agent declares, as a spec without the run's variables; none runs the stage on the host. */
   sandbox?: SandboxSpec;
 }
+
+export type StagePlan = {
+  stage: string;
+  gate?: { policy: string; approvers?: string[] };
+  /** The checks that must succeed on the run's pull request before the stage starts. */
+  checks?: string[];
+} & (AgentPlan | { agent?: undefined });
 
 export interface Definition {
   factory: string;
@@ -91,11 +95,28 @@ const checksOf = (stage: NonNullable<FactoryDefinition["workflow"]>[number]): st
 
 function stageAgentProblems(factory: FactoryDefinition): DefinitionProblem[] {
   return (factory.workflow ?? []).flatMap((stage, index) => {
+    if (stage.wait) return waitProblems(stage, index);
     const agent = agentOf(stage);
     return factory.agents[agent]
       ? []
       : [{ path: `/workflow/${index}/${stage.agent ? "agent" : "stage"}`, message: `no agent "${agent}"` }];
   });
+}
+
+/** A stage that only waits names no agent and something to wait for (ADR 0107). */
+function waitProblems(stage: NonNullable<FactoryDefinition["workflow"]>[number], index: number): DefinitionProblem[] {
+  const waits = Boolean(stage.checks?.length || stage.gate || stage.evidence === "required");
+  return [
+    ...(stage.agent ? [{ path: `/workflow/${index}/agent`, message: "a stage that only waits names no agent" }] : []),
+    ...(waits
+      ? []
+      : [
+          {
+            path: `/workflow/${index}/wait`,
+            message: 'a stage that only waits names checks, the evidence "required" or a gate',
+          },
+        ]),
+  ];
 }
 
 /** A stage's agent defaults to the agent with the stage's name. */
@@ -110,18 +131,22 @@ export function definitionOf(factory: FactoryDefinition, read: (path: string) =>
     sandboxAdapter: Object.keys(factory.providers?.sandbox ?? {})[0],
     ...(forge ? { forgeAdapter: forge } : {}),
     ...(inference && factory.inference ? { inference: { adapter: inference, ...factory.inference } } : {}),
-    stages: (factory.workflow ?? []).map((stage) => {
+    stages: (factory.workflow ?? []).map((stage): StagePlan => {
+      const waits = {
+        stage: stage.stage,
+        ...(stage.gate ? { gate: stage.gate } : {}),
+        ...(checksOf(stage).length ? { checks: checksOf(stage) } : {}),
+      };
+      if (stage.wait) return waits;
       const agent = agentOf(stage);
       const declared = factory.agents[agent] as FactoryDefinition["agents"][string];
       return {
-        stage: stage.stage,
+        ...waits,
         agent,
         harness: declared.harness,
         model: declared.model,
         effort: declared.effort,
         prompt: read(declared.prompt),
-        ...(stage.gate ? { gate: stage.gate } : {}),
-        ...(checksOf(stage).length ? { checks: checksOf(stage) } : {}),
         ...(declared.sandbox ? { sandbox: { ...declared.sandbox, secrets: secretsOf(declared.secrets ?? []) } } : {}),
       };
     }),

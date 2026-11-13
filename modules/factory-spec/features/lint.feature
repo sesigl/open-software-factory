@@ -17,6 +17,27 @@ Feature: Lint a factory definition
     Then the command exits with code 0
     And the output is "factory.yaml: no problems"
 
+  @id=SCN-FSPEC-059 @status=implemented
+  Scenario: Lint accepts a stage that only waits, without an agent of its name
+    Given a factory.yaml whose stage "verify" has "wait: true", the evidence "required" and the forge "github", no checks and no agent "verify"
+    When the factory engineer runs "factory lint"
+    Then the command exits with code 0
+    And the output is "factory.yaml: no problems"
+
+  @id=SCN-FSPEC-060 @status=implemented
+  Scenario: Lint reports a stage that waits and names an agent
+    Given a factory.yaml whose stage "verify" has "wait: true", the checks ["verify"] and on line 17 the agent "ship"
+    When the factory engineer runs "factory lint"
+    Then the command exits with code 1
+    And the output contains "factory.yaml:17:5 stage \"verify\" only waits, so it names no agent"
+
+  @id=SCN-FSPEC-061 @status=implemented
+  Scenario: Lint reports a stage that waits for nothing
+    Given a factory.yaml whose stage "verify" has "wait: true" on line 16 and no checks, no evidence "required" and no gate
+    When the factory engineer runs "factory lint"
+    Then the command exits with code 1
+    And the output contains "factory.yaml:16:5 stage \"verify\" only waits, so it names checks, the evidence \"required\" or a gate"
+
   @id=SCN-FSPEC-003 @status=implemented @realizes=SCN-FACTORY-CODE-001
   Scenario: Lint names the line of a secret whose provider is not declared
     Given a factory.yaml whose agent "triage" has the secret "ref:vault/linear-token" on line 14

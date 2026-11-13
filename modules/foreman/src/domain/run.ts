@@ -115,9 +115,17 @@ export function firstView(workItem: WorkItem, definition: Definition, version: s
     state: "running",
     startedAt,
     traceId: traceIdOf(runId),
-    stages: definition.stages.map(({ stage, agent }) => ({ stage, agent, state: "pending" })),
+    stages: definition.stages.map(pendingStage),
   };
 }
+
+/** A stage that did not start yet; a stage that only waits names itself as its agent and says so (ADR 0107). */
+const pendingStage = ({ stage, agent }: { stage: string; agent?: string }): StageView => ({
+  stage,
+  agent: agent ?? stage,
+  ...(agent ? {} : { wait: true }),
+  state: "pending",
+});
 
 /** The retry in a request's body, or the problem with it as "<JSON Pointer>: <what is wrong>". */
 export function retryOf(body: unknown): RunRetry | string {
@@ -182,7 +190,7 @@ export function retried(
       startedAt,
       traceId: traceIdOf(runId),
       stages: definition.stages.map(({ stage, agent }, index) =>
-        index < from ? { ...(before.stages[index] as StageView) } : { stage, agent, state: "pending" },
+        index < from ? { ...(before.stages[index] as StageView) } : pendingStage({ stage, agent }),
       ),
     },
     before: { index: from, line: `Run before: ${before.runId}${endOf(stage)}` },

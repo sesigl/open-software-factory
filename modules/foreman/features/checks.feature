@@ -105,3 +105,25 @@ Feature: Checks before a stage
     When a program gets "/v1/runs/<id>" with the API token
     Then the stage "ship" shows "waitingSince" "2026-01-01T00:00:00.000Z"
     And the stages that do not wait show no "waitingSince"
+
+  @id=SCN-FORE-117 @status=implemented
+  Scenario: A stage that only waits succeeds when its checks succeeded, without a session
+    Given "foreman serve" runs the README's "checks/factory.yaml" with the stage "verify" before "ship" that has "wait: true" and "evidence: required", with the fake GitHub, whose pull request "tester/web#1" has the check "proof" in the state "success"
+    And the scripted "implement" turn replies with the link of that pull request
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then "/v1/runs/<id>" shows the state "complete" with the stage "verify" "succeeded", its check "proof" "success", marked as a stage that only waits and with no session
+    And the harness received the prompts of the stages "plan", "implement" and "ship" and no other
+
+  @id=SCN-FORE-118 @status=implemented
+  Scenario: A factory with a stage that only waits and names an agent stops the server at the start
+    Given the README's "checks/factory.yaml" whose stage "ship" has "wait: true" and the agent "ship"
+    When the user runs "foreman serve"
+    Then the command exits with code 2
+    And the output contains "factory.yaml: /workflow/2/agent: a stage that only waits names no agent"
+
+  @id=SCN-FORE-119 @status=implemented
+  Scenario: A factory with a stage that only waits for nothing stops the server at the start
+    Given the README's "checks/factory.yaml" whose stage "ship" has "wait: true" and no checks
+    When the user runs "foreman serve"
+    Then the command exits with code 2
+    And the output contains "factory.yaml: /workflow/2/wait: a stage that only waits names checks, the evidence \"required\" or a gate"

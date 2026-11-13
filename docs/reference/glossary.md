@@ -18,7 +18,7 @@ Use these terms in scenarios, code, UI text and docs.
 | Product surface | A part of a product with its own factory, for example "web" or "server". |
 | Work item | One unit of requested work (idea, bug, automated trigger) as a CloudEvent. |
 | Dedupe key | The key that makes requests one work item: intake keeps one work item per key and lists every request that sent it. |
-| Stage | One step of the delivery loop: triage, spec, implement, review, verify, ship, monitor. |
+| Stage | One step of the delivery loop: triage, spec, implement, review, verify, ship, monitor. A stage runs one agent, or with `wait: true` only waits for its checks, evidence and gate (ADR 0107). |
 | Gate | A point where work waits for a deterministic check or a human decision. |
 | Approval record | What gatekeeper writes when a gate is decided: the request, the policy, who decided, what and when; signed with Ed25519. |
 | Outbox | A table where a server writes its events in the same transaction as the change they report; a relay publishes them to NATS later, so no event is lost (ADR 0003, ADR 0048). |

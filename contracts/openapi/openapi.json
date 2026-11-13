@@ -1078,7 +1078,7 @@
             "items": {
               "$ref": "#/components/schemas/Stage"
             },
-            "description": "Stages in order. Each stage runs one agent; the agent defaults to the stage name."
+            "description": "Stages in order. Each stage runs one agent, which defaults to the stage name, or only waits (ADR 0107)."
           },
           "automations": {
             "type": "array",
@@ -3061,6 +3061,10 @@
           "evidence": {
             "$ref": "#/components/schemas/EvidenceRequirement",
             "description": "Whether the stage must produce an evidence bundle."
+          },
+          "wait": {
+            "type": "boolean",
+            "description": "The stage runs no agent: it only waits for its checks, its evidence and its gate, then succeeds (ADR 0107). It\nnames no agent and at least one of checks, evidence \"required\" or gate."
           }
         },
         "required": [
@@ -3089,7 +3093,11 @@
           },
           "agent": {
             "$ref": "#/components/schemas/Name",
-            "description": "The agent that runs the stage."
+            "description": "The agent that runs the stage; the stage's name for a stage that only waits (ADR 0107)."
+          },
+          "wait": {
+            "type": "boolean",
+            "description": "True for a stage that only waits: it runs no agent and starts no session (ADR 0107)."
           },
           "state": {
             "$ref": "#/components/schemas/StageState"

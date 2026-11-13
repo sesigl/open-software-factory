@@ -967,8 +967,12 @@ as a vision scenario. Each item names the place in the code, so start there, and
 - **Done when:** the reference factory waits for the checks and the evidence without a model call, and `ship` starts
   only when the checks of the pull request's head commit succeeded.
 - **Slices:**
-  - [ ] An ADR: a stage without an agent, or an agent `verify` with a prompt of its own that changes no file.
+  - [x] An ADR: a stage without an agent, or an agent `verify` with a prompt of its own that changes no file
+    ([ADR 0107](docs/decisions/0107-a-stage-that-only-waits.md): `wait: true`; `SCN-FSPEC-059` to `-062`,
+    `SCN-FORE-117` to `-119`).
   - [ ] The reference factory and the dogfood factory use it, and `ship` has the same `checks` (`SCN-DIST`, `SCN-FORE`).
+    `ship` has the checks `[verify]` and `evidence: required` in both (`SCN-DIST-029`, `-030`). `verify` switches to
+    `wait: true` after the release of contracts, factory-spec and foreman (`SCN-DIST-031`, `-032`, planned).
 
 ### [ ] T-41 · one key and one budget per run (P1)
 

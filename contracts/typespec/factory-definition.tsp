@@ -36,7 +36,7 @@ model FactoryDefinition {
   @minProperties(1)
   agents: Record<Agent>;
 
-  /** Stages in order. Each stage runs one agent; the agent defaults to the stage name. */
+  /** Stages in order. Each stage runs one agent, which defaults to the stage name, or only waits (ADR 0107). */
   workflow?: Stage[];
 
   /** What starts work without a person asking. */
@@ -155,6 +155,12 @@ model Stage {
 
   /** Whether the stage must produce an evidence bundle. */
   evidence?: EvidenceRequirement;
+
+  /**
+   * The stage runs no agent: it only waits for its checks, its evidence and its gate, then succeeds (ADR 0107). It
+   * names no agent and at least one of checks, evidence "required" or gate.
+   */
+  wait?: boolean;
 }
 
 /** The name of a check on the forge: a commit status context. */
