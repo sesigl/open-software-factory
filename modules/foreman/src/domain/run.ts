@@ -24,6 +24,21 @@ export interface RunBefore {
   line: string;
 }
 
+/** What a stage's agent wrote, bounded by `resultOf`, under the name of its stage (ADR 0111). */
+export interface StageResult {
+  stage: string;
+  text: string;
+}
+
+/** How many characters of a stage's result the next stage's prompt holds (ADR 0111). */
+export const RESULT_LIMIT = 4000;
+
+/** The last RESULT_LIMIT characters of what the agent wrote, after a line that says how many were cut. */
+export function resultOf(text: string): string {
+  const cut = text.length - RESULT_LIMIT;
+  return cut > 0 ? `[… the first ${cut} characters are cut]\n${text.slice(cut)}` : text;
+}
+
 /** What the workflow gets when the run starts: the run's first view and the factory as it was then. */
 export interface RunInput {
   view: RunView;
@@ -82,6 +97,8 @@ export type Fact =
       note?: string;
       /** A person took the stage over; the run's files are in `folder`. */
       takenOver?: { folder: string };
+      /** What the agent wrote, bounded, for the next stage's prompt (ADR 0111). */
+      result?: StageResult;
     }
   | { kind: "handed-back"; index: number }
   | { kind: "cancelled" }
@@ -419,7 +436,8 @@ export function stageStateOf(stopReason: string): StageState {
 
 /**
  * The prompt of a stage: the agent's prompt, then the work item with its origin, the run's branch, its pull request
- * and, for the first stage of a new run, how the run before ended (ADR 0105, ADR 0109).
+ * and, for the first stage of a new run, how the run before ended (ADR 0105, ADR 0109); last, the result of the stage
+ * before it (ADR 0111).
  */
 export function promptOf(
   agentPrompt: string,
@@ -427,6 +445,7 @@ export function promptOf(
   pullRequest?: string,
   before?: string,
   branch?: string,
+  previous?: StageResult,
 ): string {
   const description = workItem.description ? `\n\n${workItem.description}` : "";
   // The origin tells the agent where the work is, like the issue of a repository (ADR 0080).
@@ -435,7 +454,8 @@ export function promptOf(
   const pushTo = branch ? `\n\nBranch: ${branch}` : "";
   const link = pullRequest ? `\n\nPull request: ${pullRequest}` : "";
   const run = before ? `\n\n${before}` : "";
-  return `${agentPrompt.trimEnd()}\n\n# Work item ${workItem.id}\n\n${workItem.title}${description}${origin}${pushTo}${link}${run}\n`;
+  const result = previous ? `\n\n# Result of the stage ${previous.stage}\n\n${previous.text}` : "";
+  return `${agentPrompt.trimEnd()}\n\n# Work item ${workItem.id}\n\n${workItem.title}${description}${origin}${pushTo}${link}${run}${result}\n`;
 }
 
 /** What a running stage asks its run for: the steering messages so far, and the stage a person takes over. */

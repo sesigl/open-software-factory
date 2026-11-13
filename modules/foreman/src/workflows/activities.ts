@@ -29,9 +29,11 @@ import {
   type RunBefore,
   type RunView,
   repositoryOf,
+  resultOf,
   runCompleted,
   runStarted,
   type StagePullRequest,
+  type StageResult,
   type Step,
   stagePullRequest,
   type Waits,
@@ -265,6 +267,7 @@ export function activities(deps: ActivityDeps) {
       index: number,
       steered: number,
       before?: RunBefore,
+      previous?: StageResult,
     ): Promise<Fact> {
       const plan = definition.stages[index];
       if (!plan) throw new Error(`no stage ${index}`);
@@ -311,6 +314,7 @@ export function activities(deps: ActivityDeps) {
           view.pullRequest,
           before?.index === index ? before.line : undefined,
           repository ? branchOf(view.runId) : undefined,
+          previous,
         );
         const turn = await startTurn(
           sandbox
@@ -333,6 +337,7 @@ export function activities(deps: ActivityDeps) {
         outcome = outcomeOf(stopReason);
         await sandbox?.copyOut();
         const { pullRequest, note } = await pullRequestAfter(view, definition, repository, turn.transcript());
+        const said = turn.messages();
         return {
           kind: "stage-ended",
           index,
@@ -341,6 +346,7 @@ export function activities(deps: ActivityDeps) {
           ...(pullRequest ? { pullRequest } : {}),
           ...(note ? { note } : {}),
           ...(takenOver ? { takenOver: { folder: cwd } } : {}),
+          ...(said ? { result: { stage: plan.stage, text: resultOf(said) } } : {}),
         };
       } finally {
         await sandbox?.destroy();

@@ -12,7 +12,9 @@ sandboxes, [ADR 0069](../../docs/decisions/0069-foreman-checks.md) for checks, a
 [ADR 0070](../../docs/decisions/0070-foreman-gateway-and-take-over.md) for the inference gateway and take over, and
 [ADR 0078](../../docs/decisions/0078-agent-effort.md) for the effort level of each agent, and
 [ADR 0106](../../docs/decisions/0106-waits-that-end.md) for the limits of the waits, and
-[ADR 0107](../../docs/decisions/0107-a-stage-that-only-waits.md) for a stage that only waits.
+[ADR 0107](../../docs/decisions/0107-a-stage-that-only-waits.md) for a stage that only waits, and
+[ADR 0111](../../docs/decisions/0111-the-result-of-a-stage-in-the-next-prompt.md) for the result of a stage in the next
+stage's prompt.
 
 ## Quick start
 
@@ -421,7 +423,9 @@ took it over, and a `reason` when it failed for a reason the foreman knows.
   the agent's prompt file, then the work item's ID, title and description, and `Origin: <url>` when the work item
   has an origin's link, like the issue it came from, `Branch: osf/<run ID>` when the run's pull request comes from the
   forge ([Checks](#checks)), `Pull request: <link>` once the run has one, and `Run before: …`
-  in the first stage of a run that runs a run before it again ([Run again](#run-again)). It allows the tool calls the adapter asks
+  in the first stage of a run that runs a run before it again ([Run again](#run-again)), and last the section
+  `# Result of the stage <stage>` with what the agent of the stage before wrote, without its tool calls: its last 4000
+  characters, after the line `[… the first <n> characters are cut]` when it wrote more (ADR 0111). It allows the tool calls the adapter asks
   about; limit them with the adapter's `--allow`. A turn that ends with `end_turn` succeeds the stage; any other end
   fails or cancels it, ends the run, and leaves the later stages `pending`. The adapter gets
   `OTEL_RESOURCE_ATTRIBUTES` with `osf.run.id`, `osf.work_item.id`, `osf.stage` and `osf.factory.version`, and the
@@ -667,3 +671,5 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-137 | implemented | A forge adapter without a command line runs its package at the factory's range |
 | SCN-FORE-138 | implemented | An inference config that Git does not track counts as a change, in a factory below the repository's root |
 | SCN-FORE-139 | implemented | A sandbox adapter that the factory does not name runs its package without a range |
+| SCN-FORE-140 | implemented | The next stage's prompt holds the result of the stage before it |
+| SCN-FORE-141 | implemented | A result of more than 4000 characters reaches the next stage cut to its last 4000 |

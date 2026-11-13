@@ -10,6 +10,8 @@ export interface HarnessTurn {
   sessionId: string;
   /** What the agent wrote so far: its messages, and its tool calls as JSON. */
   transcript(): string;
+  /** The text of the agent's messages, without its tool calls: the stage's result (ADR 0111). */
+  messages(): string;
   /** The turn's stop reason, or "exited" when the adapter ended before the turn did. */
   done: Promise<string>;
   steer(text: string): void;
@@ -38,13 +40,15 @@ export async function startTurn(options: TurnOptions): Promise<HarnessTurn> {
     child.on("error", () => resolve("exited"));
   });
   let transcript = "";
+  let messages = "";
   const connection = client({ name: "opensoftware-foreman" })
     .onNotification("session/update", ({ params }) => {
       const { update } = params;
       // Message chunks join, so a link split across chunks stays whole.
-      if (update.sessionUpdate === "agent_message_chunk" && update.content.type === "text")
+      if (update.sessionUpdate === "agent_message_chunk" && update.content.type === "text") {
         transcript += update.content.text;
-      else if (update.sessionUpdate.startsWith("tool_call")) transcript += `\n${JSON.stringify(update)}\n`;
+        messages += update.content.text;
+      } else if (update.sessionUpdate.startsWith("tool_call")) transcript += `\n${JSON.stringify(update)}\n`;
     })
     // The adapter refuses tool kinds outside its --allow list itself; the foreman allows the rest (ADR 0067).
     .onRequest("session/request_permission", ({ params }) => {
@@ -81,6 +85,7 @@ export async function startTurn(options: TurnOptions): Promise<HarnessTurn> {
     return {
       sessionId,
       transcript: () => transcript,
+      messages: () => messages,
       done: Promise.race([turn, exited]),
       steer: (text) => void send(text).catch(() => undefined),
       cancel: () => void agent.notify("session/cancel", { sessionId }).catch(() => undefined),
