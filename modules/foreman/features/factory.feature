@@ -44,3 +44,32 @@ Feature: Factory definition
     When a program posts the README's "work.json" to "/v1/runs" with the API token
     Then the "plan" session's agent got "medium" as "OSF_EFFORT"
     And the "implement" session's agent got "high" as "OSF_EFFORT"
+
+  @id=SCN-FORE-131 @status=implemented
+  Scenario: A factory with changes that are not committed stops the server at the start
+    Given the README's "factory.yaml" is committed in the factory's repository
+    And "agents/plan.md" has a change that is not committed and "agents/implement.md" is deleted
+    When the user runs "foreman serve"
+    Then the command exits with code 2
+    And the output contains "factory.yaml: commit the changed files agents/implement.md, agents/plan.md; a run's factory version is its commit"
+
+  @id=SCN-FORE-132 @status=implemented
+  Scenario: A run does not start while the factory has changes that are not committed
+    Given "foreman serve" runs the README's "factory.yaml" with a scripted harness that ends every turn
+    And "factory.yaml" gets a change that is not committed
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then the answer has the status 400 and a problem that says "commit the changed files factory.yaml"
+    And the scripted harness got no session
+
+  @id=SCN-FORE-133 @status=implemented
+  Scenario: The run's view names each adapter's version and the fallback's command line
+    Given "foreman serve" runs the README's "factory.yaml" with "github" at "^0" under "providers.forge" and no "FOREMAN_FORGES"
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then the answer's "adapters" holds the harness "acp" at "^0" from "FOREMAN_HARNESSES"
+    And it holds the forge "github" at "^0" with the command line "npx -y @opensoftware/forge-github@^0"
+
+  @id=SCN-FORE-134 @status=implemented
+  Scenario: An adapter's command line is a JSON list of arguments, and a path may hold a space
+    Given "foreman serve" runs the README's "factory.yaml" with "FOREMAN_HARNESSES" naming "acp" as a JSON list whose program is a script in a folder "with space"
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then the run completes and the scripted harness got a session for "plan" and for "implement"

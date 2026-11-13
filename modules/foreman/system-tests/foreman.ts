@@ -99,6 +99,8 @@ export interface Setup {
   inference?: InferenceOptions;
   /** The harness keeps running after its agent exited, until the foreman stops it. */
   lingers?: boolean;
+  /** FOREMAN_HARNESSES names "acp" as a JSON list whose program is a script at this path that runs the adapter. */
+  harnessIn?: string;
   env?: Record<string, string>;
 }
 
@@ -142,15 +144,19 @@ export async function servingCommit(sut: Sut, fakes: Fakes, commit: string, setu
   const nats = setup.nats ? await fakes.nats() : undefined;
   const sandbox = setup.sandbox ? await fakes.sandbox(setup.sandbox) : undefined;
   const inference = setup.inference ? await fakes.inference(setup.inference) : undefined;
-  const acp = [sut.adapter("harness/acp"), "run", "--", harness.command, ...harness.args];
+  const acp = [...sut.adapter("harness/acp").split(" "), "run", "--", harness.command, ...harness.args];
   if (setup.lingers) {
     await sut.files.put("$INPUT/lingers.sh", '"$@"\nexec sleep 60\n');
     acp.unshift("sh", sut.files.path("$INPUT/lingers.sh"));
   }
+  if (setup.harnessIn) {
+    await sut.files.put(setup.harnessIn, 'exec "$@"\n');
+    acp.unshift("sh", sut.files.path(setup.harnessIn));
+  }
   const env = {
     FOREMAN_API_TOKEN: API_TOKEN,
     FOREMAN_TEMPORAL_ADDRESS: temporal.address,
-    FOREMAN_HARNESSES: JSON.stringify({ acp: acp.join(" ") }),
+    FOREMAN_HARNESSES: JSON.stringify({ acp: setup.harnessIn ? acp : acp.join(" ") }),
     FOREMAN_POLL_MS: "100",
     ...(gatekeeper ? { FOREMAN_GATEKEEPER_URL: gatekeeper.url, FOREMAN_GATEKEEPER_TOKEN: "gatekeeper-token" } : {}),
     ...(nats ? { FOREMAN_NATS_URL: nats.url } : {}),
