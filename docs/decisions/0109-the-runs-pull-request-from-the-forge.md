@@ -68,7 +68,8 @@ requests by it. The forge port's `prs --head` (ADR 0073) already does this for e
 
 - A run of a forge's issue reads the checks and asks the gate on the pull request of its own branch, whatever else the
   agent links.
-- A reference prompt should push to the branch the prompt names and end with the line `Pull request: <link>`.
+- A reference prompt should push to the branch the prompt names; an agent may state its pull request in the line
+  `Pull request: <link>`.
 - A run whose work item has no forge origin still guesses its pull request; revisit when T-44 gives the agents'
   `repositories` an effect, or when a work item names its repository.
 - A run of a work item again (ADR 0105) has a new run ID and so a new branch; it keeps the pull request of the run

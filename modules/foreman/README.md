@@ -185,7 +185,7 @@ workflow:
 
 ```markdown agents/implement-pr.md
 Implement plan.md on the branch the prompt names, or on a new branch, push it and open a pull request. End with
-the line `Pull request: <link>`.
+the pull request's link.
 ```
 
 ```markdown agents/ship.md
