@@ -6,8 +6,8 @@ export interface Gateway {
   masterKey: string;
 }
 
-/** Calls the admin API; an answer other than 2xx rejects with LiteLLM's message. */
-export async function admin(gateway: Gateway, path: string, body?: unknown): Promise<unknown> {
+/** Calls the admin API; an answer other than 2xx rejects with LiteLLM's message, unless its status is `allowed`. */
+export async function admin(gateway: Gateway, path: string, body?: unknown, allowed?: number): Promise<unknown> {
   const response = await fetch(`${gateway.origin}${path}`, {
     method: body === undefined ? "GET" : "POST",
     headers: { authorization: `Bearer ${gateway.masterKey}`, "content-type": "application/json" },
@@ -15,6 +15,7 @@ export async function admin(gateway: Gateway, path: string, body?: unknown): Pro
     body: JSON.stringify(body),
   });
   const text = await response.text();
+  if (response.status === allowed) return { status: allowed, error: JSON.parse(text).error };
   if (!response.ok) throw new Error(`LiteLLM answered ${path} with ${response.status}: ${text}`);
   return JSON.parse(text);
 }

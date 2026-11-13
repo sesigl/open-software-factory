@@ -1,7 +1,7 @@
 import { scenario } from "@opensoftware/testkit";
 import { attached, cli, keyProxy } from "./proxy.ts";
 
-scenario("SCN-INFLITE-012", async ({ sut, fakes, given, when, then }) => {
+scenario("SCN-INFLITE-020", async ({ sut, fakes, given, when, then }) => {
   let proxy: Awaited<ReturnType<typeof keyProxy>>;
   await given(
     'a test proxy that answers "/key/list", "/key/generate" with the key "sk-run-7" and the token "token-7", and "/key/delete"',
@@ -31,7 +31,7 @@ scenario("SCN-INFLITE-012", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then(
-    'the test proxy received "/key/generate" as JSON with "max_budget" 0 and the "osf.run.id" "run-7" in "metadata.spend_logs_metadata"',
+    'the test proxy received "/key/generate" as JSON with "max_budget" 0, the "osf.run.id" "run-7" in "metadata.spend_logs_metadata", the "key_alias" "osf-run-<ID>-run-7" and a "key" of "sk-osf-run-" and 48 hex digits',
     async () => {
       const generate = proxy.headers().filter((request) => request.path === "/key/generate");
       expect(generate.map((request) => request.headers["content-type"])).toEqual(["application/json"]);
@@ -39,7 +39,12 @@ scenario("SCN-INFLITE-012", async ({ sut, fakes, given, when, then }) => {
         {
           method: "POST",
           path: "/key/generate",
-          body: { max_budget: 0, metadata: { spend_logs_metadata: { "osf.run.id": "run-7" } } },
+          body: {
+            key: expect.stringMatching(/^sk-osf-run-[0-9a-f]{48}$/),
+            key_alias: `osf-run-${gateway.id}-run-7`,
+            max_budget: 0,
+            metadata: { spend_logs_metadata: { "osf.run.id": "run-7" } },
+          },
         },
       ]);
     },

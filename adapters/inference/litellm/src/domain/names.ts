@@ -1,4 +1,6 @@
-// What the parts of one gateway are called on the Docker host, and the images they run (ADR 0056).
+// What the parts of one gateway are called on the Docker host, the images they run (ADR 0056), and a run's key and its
+// alias (ADR 0108).
+import { createHmac } from "node:crypto";
 
 /** A gateway's ID: 12 random hex digits that start made. */
 export const ID = /^[0-9a-f]{12}$/;
@@ -38,3 +40,10 @@ export const CONFIG_DIR = "/app/osf";
  */
 export const PYTHON_CACHE = "osf-inference-python:/var/cache/osf-python";
 export const PYTHON_CACHE_ENV = "PYTHONPYCACHEPREFIX=/var/cache/osf-python";
+
+/** The alias of a run's key; LiteLLM keeps aliases unique, so a second key for the run is refused (ADR 0108). */
+export const runKeyAlias = (id: string, run: string): string => `osf-run-${id}-${run}`;
+
+/** A run's key: the same for the same run of a gateway, and only a holder of the gateway's master key can make it. */
+export const runKeyValue = (masterKey: string, id: string, run: string): string =>
+  `sk-osf-run-${createHmac("sha256", masterKey).update(`${id}\n${run}`).digest("hex").slice(0, 48)}`;
