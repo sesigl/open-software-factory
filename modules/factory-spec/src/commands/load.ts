@@ -3,7 +3,7 @@ import { dirname, join, resolve } from "node:path";
 import type { FactoryDefinition } from "@opensoftware/contracts";
 import { exists, readLock, readText } from "../adapters/files.ts";
 import { FactoryError } from "../domain/errors.ts";
-import { lint } from "../domain/lint.ts";
+import { lint, type Problem } from "../domain/lint.ts";
 import type { Lock } from "../domain/mcp.ts";
 import { resolveDefinition } from "../domain/resolve.ts";
 
@@ -14,15 +14,16 @@ export interface Factory {
   lock: Lock;
 }
 
-/** Lints the file; each problem is one line "factory.yaml:12:9 message". */
-export function lintFile(file: string): { dir: string; definition?: FactoryDefinition; problems: string[] } {
+/** Lints the file; each problem and each warning is one line "factory.yaml:12:9 message". */
+export function lintFile(
+  file: string,
+  ghAw = false,
+): { dir: string; definition?: FactoryDefinition; problems: string[]; warnings: string[] } {
   const dir = dirname(resolve(file));
-  const { definition, problems } = lint(readText(file), (path) => exists(join(dir, path)));
-  return {
-    dir,
-    definition,
-    problems: problems.map((problem) => `${file}:${problem.line}:${problem.column} ${problem.message}`),
-  };
+  const { definition, problems, warnings } = lint(readText(file), (path) => exists(join(dir, path)), ghAw);
+  const lines = (found: Problem[]) =>
+    found.map((problem) => `${file}:${problem.line}:${problem.column} ${problem.message}`);
+  return { dir, definition, problems: lines(problems), warnings: lines(warnings) };
 }
 
 export function load(file: string): Factory {

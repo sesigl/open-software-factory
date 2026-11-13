@@ -98,3 +98,24 @@ Feature: Lint a factory definition
     Then the command exits with code 1
     And the output contains "harness \"codex\" is not declared under providers.harness"
     And the output folder is empty
+
+  @id=SCN-FSPEC-063 @status=implemented
+  Scenario: Lint warns about a cron automation that only a gh-aw workflow runs
+    Given a factory.yaml whose automation on line 13 has the cron "0 10 * * *" that runs "self-triage-report"
+    When the factory engineer runs "factory lint"
+    Then the command exits with code 0
+    And the output is "factory.yaml:13:5 warning /automations/0/cron: only a gh-aw workflow runs a cron automation, so render it with --gh-aw" and then "factory.yaml: no problems, 1 warning"
+
+  @id=SCN-FSPEC-064 @status=implemented
+  Scenario: Lint with --gh-aw does not warn about a cron automation
+    Given a factory.yaml whose automation on line 13 has the cron "0 10 * * *" that runs "self-triage-report"
+    When the factory engineer runs "factory lint --gh-aw"
+    Then the command exits with code 0
+    And the output is "factory.yaml: no problems"
+
+  @id=SCN-FSPEC-065 @status=implemented
+  Scenario: Lint warns about scorers and benchmarks, which no job of the profile runs yet
+    Given a factory.yaml with the scorer "pr-quality" on line 13 and the benchmark "smoke" on line 16
+    When the factory engineer runs "factory lint"
+    Then the command exits with code 0
+    And the output is "factory.yaml:13:3 warning /scorers/pr-quality: no job of the profile runs a scorer yet, so it has no effect" and then "factory.yaml:16:3 warning /benchmarks/smoke: no job of the profile runs a benchmark yet, so it has no effect" and then "factory.yaml: no problems, 2 warnings"
