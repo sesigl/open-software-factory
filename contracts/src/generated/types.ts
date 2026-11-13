@@ -759,6 +759,8 @@ export type components = {
             pullRequests?: string[];
             /** Format: uri */
             evidenceBundle?: string;
+            /** @description The run before, when this run runs a work item again (ADR 0105). */
+            retryOf?: components["schemas"]["Identifier"];
         };
         /** @description foreman: the runs of the server, running runs first, then the runs that ended, the one that ended last first, as `GET /v1/runs` answers them (ADR 0071). */
         RunList: {
@@ -887,6 +889,8 @@ export type components = {
             startedAt: string;
             requester: components["schemas"]["Actor"];
             source: components["schemas"]["Name"];
+            /** @description The run before, when this run runs a work item again (ADR 0105). */
+            retryOf?: components["schemas"]["Identifier"];
         };
         /**
          * @description foreman: where a run stands (vision scenario ORCH-008).
@@ -1172,6 +1176,35 @@ export type components = {
             origin: components["schemas"]["Origin"];
             /** Format: date-time */
             receivedAt: string;
+        };
+        /** @description intake: a person asked to run a work item's run again (ADR 0105). The ID is `<run ID>.retry`. */
+        WorkRetryRequested: {
+            /** @constant */
+            specversion: "1.0";
+            /** @description Unique per source. A consumer that sees the same source and id twice handles the event once. */
+            id: components["schemas"]["Identifier"];
+            /** @description The producing module, for example "/osf/intake". */
+            source: string;
+            /** @constant */
+            type: "work.retry-requested@v1";
+            /** Format: date-time */
+            time: string;
+            /** @description The ID of the thing the event is about: work item, gate, run, score or pull request. */
+            subject?: string;
+            /** @constant */
+            datacontenttype?: "application/json";
+            /** Format: uri */
+            dataschema?: string;
+            /** @description W3C trace context (CloudEvents distributed tracing extension). */
+            traceparent?: string;
+            data: components["schemas"]["WorkRetryRequestedData"];
+        };
+        WorkRetryRequestedData: {
+            workItemId: components["schemas"]["Identifier"];
+            /** @description The run to run again: the run the work item follows. */
+            runId: components["schemas"]["Identifier"];
+            /** @description The person who asked. */
+            requester: components["schemas"]["Actor"];
         };
         /** @description intake: work to put into the inbox, a work item without its ID (ADR 0063). */
         WorkSubmission: {

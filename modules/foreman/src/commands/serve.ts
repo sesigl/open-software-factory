@@ -1,11 +1,11 @@
 // foreman serve: the run API on PORT and a Temporal worker that runs the factory's workflow (ADR 0067). With
-// FOREMAN_NATS_URL it also starts runs for work.received@v1 and passes gate.decided@v1 to the waiting runs. A factory
+// FOREMAN_NATS_URL it also starts runs for work.received@v1, runs a run again for work.retry-requested@v1, and passes gate.decided@v1 to the waiting runs. A factory
 // with an inference adapter gets its gateway while the server runs (ADR 0070). It runs until SIGTERM or SIGINT.
 import { timingSafeEqual } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { type Health, healthOf, UsageError } from "@opensoftware/cli";
-import type { GateDecided, WorkItem } from "@opensoftware/contracts";
+import type { GateDecided, WorkItem, WorkRetryRequested } from "@opensoftware/contracts";
 import { Client, Connection, WorkflowNotFoundError } from "@temporalio/client";
 import { NativeConnection, Worker } from "@temporalio/worker";
 import Fastify, { type FastifyReply } from "fastify";
@@ -74,20 +74,26 @@ function api(work: Runs, token: string, health: () => Promise<Health>) {
 }
 
 /**
- * Starts runs for work items from intake and hands gate decisions to the runs that wait for them, through the durable
- * consumer "foreman" (ADR 0085). An event that can never succeed, a work item that is not valid or a decision for a run
- * that does not exist, is a warning and is acknowledged; another failure comes again.
+ * Starts runs for work items from intake, runs a run again when intake asks (ADR 0105), and hands gate decisions to the
+ * runs that wait for them, through the durable consumer "foreman" (ADR 0085). An event that can never succeed, a work
+ * item that is not valid, a decision for a run that does not exist, or a retry of a run that cannot run again, is a
+ * warning and is acknowledged; another failure comes again.
  */
 function listen(bus: Bus, work: Runs, warn: (text: string) => void): Promise<void> {
-  return bus.consume("foreman", [SUBJECTS.workReceived, SUBJECTS.gateDecided], async (event, subject) => {
+  const subjects = [SUBJECTS.workReceived, SUBJECTS.workRetryRequested, SUBJECTS.gateDecided];
+  return bus.consume("foreman", subjects, async (event, subject) => {
     const { data } = event as { data?: unknown };
     try {
       if (subject === SUBJECTS.gateDecided) {
         const { workItemId, gateId, decision } = data as GateDecided["data"];
         await work.decided(workItemId, { gateId, state: decision });
+      } else if (subject === SUBJECTS.workRetryRequested) {
+        const { runId, requester } = data as WorkRetryRequested["data"];
+        if (!(await work.retry(runId, { by: requester }))) warn(`${subject}: the server has no run ${runId}`);
       } else await work.start(data as WorkItem);
     } catch (failure) {
-      if (!(failure instanceof UsageError || failure instanceof WorkflowNotFoundError)) throw failure;
+      if (!(failure instanceof UsageError || failure instanceof WorkflowNotFoundError || failure instanceof Conflict))
+        throw failure;
       warn(`${subject}: ${failure.message}`);
     }
   });

@@ -354,6 +354,7 @@ export function runStarted(view: RunView): RunStarted {
       startedAt: view.startedAt,
       requester: view.workItem.requester,
       source: view.workItem.origin.source,
+      ...(view.retryOf ? { retryOf: view.retryOf } : {}),
     },
   };
 }
@@ -380,6 +381,7 @@ export function runCompleted(view: RunView): RunCompleted {
       requester: view.workItem.requester,
       source: view.workItem.origin.source,
       ...(view.pullRequest ? { pullRequests: [view.pullRequest] } : {}),
+      ...(view.retryOf ? { retryOf: view.retryOf } : {}),
     },
   };
 }

@@ -1,0 +1,27 @@
+{
+  "specversion": "1.0",
+  "id": "run_0f3c7e91a2b44d6e8c05.started",
+  "source": "/osf/foreman",
+  "type": "run.started@v1",
+  "time": "2026-10-19T08:10:00Z",
+  "subject": "run_0f3c7e91a2b44d6e8c05",
+  "datacontenttype": "application/json",
+  "data": {
+    "runId": "run_0f3c7e91a2b44d6e8c05",
+    "workItemId": "wi_3c5e7a9b1d2f4a6c8e0b",
+    "factory": "hello",
+    "factoryVersion": "3f2a9c1",
+    "stages": [
+      "plan",
+      "implement"
+    ],
+    "startedAt": "2026-10-19T08:10:00Z",
+    "requester": {
+      "kind": "person",
+      "id": "slack:U024BE7LH",
+      "displayName": "Varun"
+    },
+    "source": "slack",
+    "retryOf": "run_6e0f4c4b9d2a1f3e5c7b"
+  }
+}

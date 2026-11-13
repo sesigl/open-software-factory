@@ -94,7 +94,7 @@ Feature: Run a work item again
     When a program posts the README's "work.json" to "/v1/runs" again
     Then the answer has the status 200 and the run ID "<new id>"
 
-  @id=SCN-FORE-102 @status=planned
+  @id=SCN-FORE-102 @status=implemented
   Scenario: The new run publishes its events with its own IDs and the run before
     Given "foreman serve" runs the README's "factory.yaml" with "FOREMAN_NATS_URL" set to a NATS server, and its run of the README's "work.json" failed in the stage "implement"
     When "github:ada" posts a retry of the run to "/v1/runs/<id>/retry"
@@ -107,14 +107,14 @@ Feature: Run a work item again
     When gatekeeper publishes "gate.decided@v1" with the decision "approved" for the gate "g9f8e7d6c5b4a3f2e" of the work item
     Then "/v1/runs/<new id>" shows the state "complete" with the stages "plan" and "implement" "succeeded"
 
-  @id=SCN-FORE-104 @status=planned
+  @id=SCN-FORE-104 @status=implemented
   Scenario: A retry request from intake runs the work item again
     Given "foreman serve" runs the README's "factory.yaml" with "FOREMAN_NATS_URL" set to a NATS server, and its run of the README's "work.json" failed in the stage "implement"
     When intake publishes "work.retry-requested@v1" for the run with the requester "github:tester"
     Then the server publishes "run.started@v1" of a new run with the "retryOf" "<id>"
     And "/v1/runs/<new id>" names the person "github:tester" who retried it
 
-  @id=SCN-FORE-105 @status=planned
+  @id=SCN-FORE-105 @status=implemented
   Scenario: A second retry request for the same run starts no third run
     Given the foreman ran the README's "work.json" again after intake's "work.retry-requested@v1" for its failed run
     When intake publishes the same "work.retry-requested@v1" again after the duplicate window

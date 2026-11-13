@@ -1,0 +1,18 @@
+{
+  "specversion": "1.0",
+  "id": "run_6e0f4c4b9d2a1f3e5c7b.retry",
+  "source": "/osf/intake",
+  "type": "work.retry-requested@v1",
+  "time": "2026-10-19T09:20:00Z",
+  "subject": "wi_3c5e7a9b1d2f4a6c8e0b",
+  "datacontenttype": "application/json",
+  "data": {
+    "workItemId": "wi_3c5e7a9b1d2f4a6c8e0b",
+    "runId": "run_6e0f4c4b9d2a1f3e5c7b",
+    "requester": {
+      "kind": "person",
+      "id": "github:octocat",
+      "displayName": "octocat"
+    }
+  }
+}

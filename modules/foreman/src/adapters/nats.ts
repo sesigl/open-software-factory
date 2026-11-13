@@ -1,10 +1,11 @@
 // NATS (ADR 0067, 0085): the foreman publishes run.started@v1 and run.completed@v1 to the JetStream stream "OSF" and
-// reads work.received@v1 and gate.decided@v1 through its durable consumer, so it gets the events of a time it was down.
+// reads work.received@v1, work.retry-requested@v1 and gate.decided@v1 through its durable consumer, so it gets the events of a time it was down.
 import { AckPolicy, DeliverPolicy, jetstream, jetstreamManager } from "@nats-io/jetstream";
 import { connect, type NatsConnection } from "@nats-io/transport-node";
 
 export const SUBJECTS = {
   workReceived: "osf.work.received.v1",
+  workRetryRequested: "osf.work.retry-requested.v1",
   gateDecided: "osf.gate.decided.v1",
   runStarted: "osf.run.started.v1",
   runCompleted: "osf.run.completed.v1",
