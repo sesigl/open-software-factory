@@ -60,7 +60,8 @@ The reference factory in `compose/factory/` has the stages triage, spec, impleme
 `maintainers` approves in Slack, so the spec's pull request is approved before implement starts), review, verify (after the pull request's check `verify` succeeded, with
 evidence) and ship (again only after `verify` and the evidence succeeded on the pull request's head commit). foreman reads that check with `FOREMAN_FORGE_TOKEN`. Its prompts work on any GitHub repository:
 each stage clones the repository of the issue in the work item's origin, reads the repository's own `AGENTS.md`,
-`CONTRIBUTING.md` and `README.md`, and runs the checks they name. Name your CI's check in the stage `verify` of
+`CONTRIBUTING.md` and `README.md`, runs the checks they name, and starts from what the stage before it wrote, which
+the foreman puts at the end of its prompt ([ADR 0111](../docs/decisions/0111-the-result-of-a-stage-in-the-next-prompt.md)). Name your CI's check in the stage `verify` of
 `factory.yaml` when it is not `verify`. On GitHub, a job of GitHub Actions is a check run named after the job: its
 `name:`, or its key under `jobs:` when it has no `name:`. The workflow's name is not part of it. A job of a matrix
 without its own `name:` adds the matrix values in parentheses, like `test (ubuntu-latest, 24)`. A job of a reusable
