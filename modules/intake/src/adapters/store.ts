@@ -23,6 +23,9 @@ CREATE TABLE IF NOT EXISTS intake.requests (
   received_at bigint NOT NULL,
   UNIQUE (work_item, origin_key)
 );
+CREATE TABLE IF NOT EXISTS intake.told (
+  event text PRIMARY KEY
+);
 CREATE TABLE IF NOT EXISTS intake.outbox (
   seq bigserial PRIMARY KEY,
   subject text NOT NULL,
@@ -66,6 +69,10 @@ export interface Store {
     id: string,
     retry: (workItem: WorkItem, runId: string) => { subject: string; event: WorkRetryRequested },
   ): Promise<void>;
+  /** Whether the requesters heard of the event with this key, its source and ID (ADR 0113). */
+  told(event: string): Promise<boolean>;
+  /** Marks that the requesters heard of the event; marking it again changes nothing. */
+  tell(event: string): Promise<void>;
   /** The events not yet published, oldest first. */
   unpublished(): Promise<Outgoing[]>;
   published(seqs: number[]): Promise<void>;
@@ -151,6 +158,13 @@ export async function openStore(url: string | undefined, folder: string): Promis
           await sql.query("INSERT INTO intake.outbox (subject, event) VALUES ($1, $2)", [subject, event]);
         }
       }),
+    async told(event) {
+      const { rows } = await db.query("SELECT 1 FROM intake.told WHERE event = $1", [event]);
+      return rows.length > 0;
+    },
+    async tell(event) {
+      await db.query("INSERT INTO intake.told (event) VALUES ($1) ON CONFLICT (event) DO NOTHING", [event]);
+    },
     async unpublished() {
       const { rows } = await db.query<{ seq: string; subject: string; event: Outgoing["event"] }>(
         "SELECT seq, subject, event FROM intake.outbox WHERE NOT published ORDER BY seq",

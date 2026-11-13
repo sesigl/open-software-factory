@@ -82,9 +82,8 @@ With `INTAKE_SLACK_TOKEN` and `INTAKE_SLACK_SIGNING_SECRET`, the server hands ea
 channel port's adapter in `INTAKE_SLACK_ADAPTER` ([`ports/channel`](../../ports/channel/README.md)). A message that
 mentions the bot becomes a work item whose dedupe key is the thread, whose requester is the person and whose origin
 links the message. A new work item gets the reply `Received as work item <id>.` in the thread; another mention in the
-thread is the same work item and gets no reply. When the work item's run completes with pull requests, each thread
-of a Slack request for it gets one reply `Pull request: <link>` per pull request (needs `INTAKE_NATS_URL`,
-see [Events](#events)).
+thread is the same work item and gets no reply. Each thread of a Slack request for the work item hears of its run
+(needs `INTAKE_NATS_URL`, see [Run replies](#run-replies)).
 
 Set up a Slack app with the bot scope `chat:write`, the events `app_mention` or `message.channels`, and the request
 URL `https://<server>/slack/events`.
@@ -97,7 +96,9 @@ delivery's event. An `issue.labeled@v1` whose issue has the label in `INTAKE_FOR
 a `task` with the issue's title and body. Its requester is the issue's author, like `github:varun`; its origin is the
 forge with the issue's link and `<owner>/<name>#<number>`; its dedupe key is the issue's link, so labeling the issue
 again makes no second work item. With `INTAKE_NATS_URL`, the label put on again asks the foreman to run a work item
-that is `failed` or `cancelled` again ([Events](#events)); for any other status it adds nothing. Any other delivery gets 200 and makes nothing. One server reads one forge: for Forgejo, set
+that is `failed` or `cancelled` again ([Events](#events)); for any other status it adds nothing. With
+`INTAKE_FORGE_TOKEN`, a token that may comment on the issues, and `INTAKE_FORGE_URL` for a forge other than the
+adapter's default, the issue hears of the work item's run as comments ([Run replies](#run-replies)). Any other delivery gets 200 and makes nothing. One server reads one forge: for Forgejo, set
 `INTAKE_FORGE_ADAPTER` to `npx -y @opensoftware/forge-forgejo`.
 
 Register the webhook with the adapter, or let factory-spec register it for a `github.issue.labeled` automation:
@@ -106,6 +107,24 @@ Register the webhook with the adapter, or let factory-spec register it for a `gi
 FORGE_TOKEN=… FORGE_WEBHOOK_SECRET=$INTAKE_WEBHOOK_SECRET \
   npx -y @opensoftware/forge-github webhook acme/web https://<server>/forge/events --event issue.labeled
 ```
+
+## Run replies
+
+With `INTAKE_NATS_URL`, each origin of a request for a work item hears of its run ([ADR
+0113](../../docs/decisions/0113-the-requester-hears-about-the-run.md)): the thread of a Slack request gets a reply, and
+the issue of a forge request a comment through the forge adapter's `comment`, with `INTAKE_FORGE_TOKEN`. A request from
+Sentry or the API hears nothing. `<run>` is `<INTAKE_CONSOLE_URL>/runs/<run ID>`, the run's page in the console, or
+the run's ID without `INTAKE_CONSOLE_URL`.
+
+| Event | The message |
+| --- | --- |
+| `run.started@v1` | none |
+| `gate.requested@v1` of the gatekeeper | `The run waits for a decision at the stage <stage>: <summary> <run>`; without a run the link is left out |
+| `run.completed@v1` with the outcome `succeeded` | `Pull request: <link>`, one per pull request of the run |
+| `run.completed@v1` with the outcome `failed` or `cancelled` | `The run ended with the outcome <outcome> at the stage <stage>: <run>`; without a stage in the event, `at the stage <stage>` is left out |
+
+Each event is told once: the server keeps the source and ID of each event it told of, and the same event again adds
+nothing. A reply or comment that fails is a warning on stderr and is not sent again.
 
 ## One work item across surfaces
 
@@ -196,7 +215,8 @@ nothing. For a work item in any other status nothing is published.
 With `INTAKE_NATS_URL` the server also listens for the foreman's
 [`run.started@v1`](../../contracts/events/run-started/run-started.schema.json) on `osf.run.started.v1` and
 [`run.completed@v1`](../../contracts/events/run-completed/run-completed.schema.json) on `osf.run.completed.v1`, and the
-work item of a run follows it (ADR 0071):
+gatekeeper's [`gate.requested@v1`](../../contracts/events/gate-requested/gate-requested.schema.json) on
+`osf.gate.requested.v1`, which only the [run replies](#run-replies) read. The work item of a run follows it (ADR 0071):
 
 | Event | The work item's `status` |
 | --- | --- |
@@ -224,16 +244,19 @@ again every 2 seconds.
 | `OSF_NOW` | string |  | The current time, like 2026-01-01T00:00:00Z, for the time a work item and a request were received. Default: the clock. |
 | `INTAKE_API_TOKEN` | string |  | serve: the token that callers of /v1 send as Authorization: Bearer <token>. Required. mcp: the token it sends to the server. Required. |
 | `INTAKE_DATABASE_URL` | string |  | serve: the PostgreSQL database of the work items, schema intake. Default: an embedded PostgreSQL in OSF_DATA. |
-| `INTAKE_NATS_URL` | string |  | serve: the NATS server for work.received@v1 on osf.work.received.v1 and work.retry-requested@v1 on osf.work.retry-requested.v1, and for the foreman's run.started@v1 and run.completed@v1, which move a work item's status (ADR 0071). Unset: no events. |
+| `INTAKE_NATS_URL` | string |  | serve: the NATS server for work.received@v1 on osf.work.received.v1 and work.retry-requested@v1 on osf.work.retry-requested.v1, and for the foreman's run.started@v1 and run.completed@v1, which move a work item's status (ADR 0071), and the gatekeeper's gate.requested@v1, which its requesters hear of (ADR 0113). Unset: no events. |
 | `INTAKE_SLACK_ADAPTER` | string | `"npx -y @opensoftware/channel-slack"` | serve: the command line of the channel port's slack adapter, which reads Slack's deliveries and replies (ADR 0063). |
 | `INTAKE_SLACK_URL` | string |  | serve: base URL of the Slack Web API, ending in a slash: the adapter's CHANNEL_API_URL. Default: the adapter's, https://slack.com/api/. |
 | `INTAKE_SLACK_TOKEN` | string |  | serve: Slack bot token with chat:write, the adapter's CHANNEL_TOKEN. Set, the server takes Slack's events at /slack/events. |
 | `INTAKE_SLACK_SIGNING_SECRET` | string |  | serve: the signing secret of the Slack app, the adapter's CHANNEL_SIGNING_SECRET. Required with INTAKE_SLACK_TOKEN. |
 | `INTAKE_WEBHOOK_SECRET` | string |  | serve: the secret the forge signs its webhook deliveries with, the forge adapter's FORGE_WEBHOOK_SECRET. Set, the server takes the forge's deliveries at /forge/events. |
 | `INTAKE_FORGE_ADAPTER` | string | `"npx -y @opensoftware/forge-github"` | serve: the command line of the forge port's adapter, whose event command checks and reads the forge's deliveries (ADR 0065). |
+| `INTAKE_FORGE_URL` | string |  | serve: the forge's base URL, the forge adapter's FORGE_URL. Default: the adapter's, like https://api.github.com. |
+| `INTAKE_FORGE_TOKEN` | string |  | serve: an API token that may comment on the issues, the forge adapter's FORGE_TOKEN, for the comments about a work item's run on its issue (ADR 0113). Unset: the issue gets no comment. |
 | `INTAKE_FORGE_LABEL` | string | `"factory"` | serve: the label that makes an issue a work item. |
 | `INTAKE_SENTRY_SECRET` | string |  | serve: the client secret of the Sentry integration, which signs its deliveries. Set, the server takes Sentry's alerts at /sentry/events. |
 | `INTAKE_SENTRY_CHANGE_URL` | string |  | serve: the link to the change of a Sentry alert, with {release} for the event's release, like https://github.com/acme/web/commit/{release}. Unset: no link to the change. |
+| `INTAKE_CONSOLE_URL` | string |  | serve: the console's base URL without a trailing slash, like https://console.example, for the link <url>/runs/<run ID> in the replies about a run. Unset: the replies name the run's ID. |
 | `INTAKE_URL` | string |  | mcp: the base URL of intake serve, like http://localhost:8080. Required. |
 | `INTAKE_REQUESTER` | string |  | mcp: the person the agent works for, <source>:<id> like github:varun, the requester of its work. Required. |
 | `INTAKE_FOREMAN_URL` | string |  | mcp: the base URL of foreman serve, like http://localhost:8081, for the tool run_evidence (ADR 0071). Unset: run_evidence is an error that names it. |
@@ -312,3 +335,6 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-INTAKE-054 | implemented | The label put again on the issue of a running work item asks for nothing |
 | SCN-INTAKE-055 | implemented | The label put again on the issue of a complete work item asks for nothing |
 | SCN-INTAKE-056 | implemented | The label put again twice on the same failed run asks once |
+| SCN-INTAKE-057 | implemented | The Slack thread of a work item names the stage its run failed at and links the run in the console |
+| SCN-INTAKE-058 | implemented | The Slack thread of a work item hears once that its run waits at a gate |
+| SCN-INTAKE-059 | implemented | The issue of a work item gets a comment when its run was cancelled |

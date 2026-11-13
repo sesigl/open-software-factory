@@ -1,7 +1,7 @@
 // Shared setup of the intake scenarios: the README's work, the server with its token, fake Slack, fake GitHub with a
 // webhook to the server, and the MCP client.
 import type { paths, WorkItemView, WorkSubmission } from "@opensoftware/contracts";
-import type { Fakes, Sut } from "@opensoftware/testkit";
+import type { FakeGitHub, Fakes, Sut } from "@opensoftware/testkit";
 
 export const API_TOKEN = "testkit-api-token";
 export const AUTH = { authorization: `Bearer ${API_TOKEN}` };
@@ -123,8 +123,8 @@ export const forgeEnv = (sut: Sut): Record<string, string> => ({
  * Fake GitHub with the repository "tester/web" and a webhook for labels on issues to `url`, as
  * `forge-github webhook tester/web <url> --event issue.labeled` registers it, signed with `secret`.
  */
-export async function githubTo(fakes: Fakes, url: string, secret = WEBHOOK_SECRET) {
-  const github = await fakes.github();
+export async function githubTo(fakes: Fakes, url: string, secret = WEBHOOK_SECRET, started?: FakeGitHub) {
+  const github = started ?? (await fakes.github());
   await github.createRepository("web");
   const answer = await fetch(`${github.url}/repos/tester/web/hooks`, {
     method: "POST",
@@ -227,7 +227,23 @@ export function runEvent(workItemId: string, outcome?: "succeeded" | "failed" | 
 const SUBJECTS: Record<string, string> = {
   "run.started@v1": "osf.run.started.v1",
   "run.completed@v1": "osf.run.completed.v1",
+  "gate.requested@v1": "osf.gate.requested.v1",
 };
+
+export const CONSOLE_URL = "https://console.example";
+
+/** The gatekeeper's "gate.requested@v1" for the work item at the stage, as gatekeeper publishes it: without the run. */
+export function gateEvent(workItemId: string, stage: string, summary: string) {
+  return {
+    specversion: "1.0",
+    id: "gate_7f3a.requested",
+    source: "/osf/gatekeeper",
+    type: "gate.requested@v1",
+    time: "2026-01-01T00:02:00Z",
+    subject: "gate_7f3a",
+    data: { gateId: "gate_7f3a", workItemId, stage, policy: "policies/deploy.rego", approvers: ["leads"], summary },
+  } as unknown as ReturnType<typeof runEvent>;
+}
 
 /**
  * The server, with NATS, received the README's work; `publish` sends a run event of its work item as the foreman does,
@@ -253,9 +269,9 @@ export async function following(sut: Sut, fakes: Fakes, env: Record<string, stri
  * The server, with NATS and the Slack channel adapter, made a work item of a mention in CHANNEL; `publish` sends a run
  * event of its work item as the foreman does.
  */
-export async function slackFollowing(sut: Sut, fakes: Fakes) {
+export async function slackFollowing(sut: Sut, fakes: Fakes, env: Record<string, string> = {}) {
   const nats = await fakes.nats();
-  const server = await slackServing(sut, fakes, { INTAKE_NATS_URL: nats.url });
+  const server = await slackServing(sut, fakes, { INTAKE_NATS_URL: nats.url, ...env });
   const events = await sut.events.watch(nats, "osf.>");
   const ts = (await server.slack.say({ channel: CHANNEL, text: `<@${server.slack.bot}> Export reports as CSV` })).ts;
   await expect.poll(() => server.replies().length, { timeout: 10_000, interval: 50 }).toBe(1);
@@ -319,5 +335,30 @@ export async function labeledFollowing(sut: Sut, fakes: Fakes, runEvents: Return
     },
     /** The events that arrived on RETRY_SUBJECT. */
     retries,
+  };
+}
+
+/**
+ * The server, with NATS, the GitHub forge adapter and a token of fake GitHub, made a work item of the issue ISSUE
+ * labeled "factory"; `publish` sends a run event of its work item, and `comments` reads the issue's comments.
+ */
+export async function issueFollowing(sut: Sut, fakes: Fakes) {
+  const nats = await fakes.nats();
+  const started = await fakes.github();
+  const server = await serving(sut, {
+    ...forgeEnv(sut),
+    INTAKE_NATS_URL: nats.url,
+    INTAKE_FORGE_URL: started.url,
+    INTAKE_FORGE_TOKEN: started.token,
+  });
+  const { github, labeled } = await githubTo(fakes, `${server.url}/forge/events`, WEBHOOK_SECRET, started);
+  const events = await sut.events.watch(nats, "osf.>");
+  const issue = await labeled("factory");
+  const { workItem } = await eventually(server, issue.url);
+  return {
+    ...server,
+    id: workItem.id,
+    publish: (event: ReturnType<typeof runEvent>) => events.publish(SUBJECTS[event.type] as string, event as never),
+    comments: () => github.comments({ repository: "web", number: issue.number }),
   };
 }

@@ -209,7 +209,7 @@ Every server, client and subscription stops when the scenario ends, before the f
 - `fakes.forge()`: a real Forgejo with a user and an API token (`url`, `token`, `owner`). The test process starts one
   and gives each scenario that asks for it the forge without the repositories of the scenarios before
   ([ADR 0064](../../docs/decisions/0064-shared-forge-per-test-process.md)). The test can
-  `createRepository`, `openPullRequest` and `mergePullRequest`, read a pull request's `comments` and `statuses`,
+  `createRepository`, `openPullRequest` and `mergePullRequest`, read the `comments` of a pull request or an issue and a pull request's `statuses`,
   list the repository's `pullRequests` (title, body, head and base branch, state, URL) a module opened, and read a
   `file` on a branch ([ADR 0046](../../docs/decisions/0046-observer.md)). It can `createBranch` with a commit of
   files, list the `branches` with their head commits and the `hooks` with their URL, events and state, and `review` a
@@ -234,7 +234,8 @@ Every server, client and subscription stops when the scenario ends, before the f
   comments can be listed, `say(pr, text, as)` comments as a person (`reviewer` by default) and delivers the
   `issue_comment` event, and `conversation(pr)` gives each comment with its author
   ([ADR 0059](../../docs/decisions/0059-channel-port.md)). `openIssue` and `label` keep issues numbered with the pull
-  requests, and `GET /repos/{owner}/{repo}/issues/{number}` answers one with its labels (ADR 0065).
+  requests, and `GET /repos/{owner}/{repo}/issues/{number}` answers one with its labels (ADR 0065). `POST
+  /repos/{owner}/{repo}/issues/{number}/comments` also comments on an issue, without a webhook delivery (ADR 0113).
 - `fakes.sentry()`: a fake of Sentry's integration platform with a `clientSecret`. `alert(url, {title, level,
   release, rule})` sends the URL an `event_alert` of the rule (default "Fatal errors") signed in
   `Sentry-Hook-Signature` with the client secret, or with a third argument instead, and gives the Sentry issue's ID,

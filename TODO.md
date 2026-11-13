@@ -1047,9 +1047,10 @@ as a vision scenario. Each item names the place in the code, so start there, and
 - **Done when:** the origin of each request of a work item, a Slack thread or an issue, gets one message when its run
   is blocked and one when it ended, with the reason of a failure and a link to the run in the console.
 - **Slices:**
-  - [ ] `run.completed@v1` with the outcome `failed` or `cancelled` adds a reply with the failed stage (`SCN-INTAKE`).
-  - [ ] A comment on the issue of a work item through the forge port (`SCN-INTAKE`).
-  - [ ] An event when a run blocks at a gate or at checks, if the contract gets it (`contracts/events/`).
+  - [x] `run.completed@v1` with the outcome `failed` or `cancelled` adds a reply with the failed stage (SCN-INTAKE-057).
+  - [x] A comment on the issue of a work item through the forge port (SCN-INTAKE-059, SCN-FORGE-034).
+  - [ ] An event when a run blocks at a gate or at checks, if the contract gets it (`contracts/events/`). A gate is
+    done with `gate.requested@v1` (SCN-INTAKE-058, ADR 0113); a run blocked at its checks has no event yet.
 
 ### [ ] T-46 · the dogfood factory in sandboxes (P1)
 

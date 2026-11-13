@@ -23,3 +23,9 @@ Feature: Work from issues on the forge
     When a delivery of the label "factory" on an issue arrives signed with "whsec-other"
     Then the answer has the status 401
     And "/v1/work-items/<id of the issue's link>" answers the status 404
+
+  @id=SCN-INTAKE-059 @status=implemented
+  Scenario: The issue of a work item gets a comment when its run was cancelled
+    Given the server, with "INTAKE_NATS_URL" set to a NATS server and the GitHub forge adapter with "INTAKE_FORGE_TOKEN", made a work item of the issue "Export reports as CSV" labeled "factory"
+    When the foreman publishes "run.completed@v1" for the work item with the outcome "cancelled"
+    Then the issue has the one comment "The run ended with the outcome cancelled: run_5d41402abc4b2a76b971"

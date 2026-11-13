@@ -23,7 +23,7 @@ command line. A repository is `<owner>/<name>`; every command prints JSON lines.
 | merge state | `<adapter> pr <repo> <number>` prints `{"number", "url", "title", "state", "mergeable", "head", "base", "sha", "mergeCommit", "author", "labels", "draft", "paths", "checks"}` |
 | list pull requests | `<adapter> prs <repo> [--head <prefix>] [--state open\|closed\|all]` prints one `{"number", "url", "title", "state", "head", "base", "author", "created", "draft", "review"}` per pull request, the highest number first |
 | checks | `<adapter> check <repo> <sha> <name> <pending\|success\|failure\|error> [--description <text>] [--url <url>]` |
-| comment | `<adapter> comment <repo> <number> <text>` prints `{"id", "url"}` |
+| comment | `<adapter> comment <repo> <number> <text>` comments on the pull request or the issue with the number, and prints `{"id", "url"}` |
 | comments | `<adapter> comments <repo> <number>` prints one `{"id", "url", "author", "time", "text", "mine"}` per comment of the conversation, oldest first |
 | merge rules | `<adapter> protect <repo> <branch> [--check <name>]... [--approvals <n>]` |
 | merge | `<adapter> merge <repo> <number> [--method merge\|squash\|rebase]` prints `{"sha"}` |

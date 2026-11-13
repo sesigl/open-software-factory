@@ -1,6 +1,7 @@
 // What a delivery from the forge, Sentry or a Slack mention asks of the inbox, without I/O (ADR 0065).
 import { createHmac, timingSafeEqual } from "node:crypto";
-import type { IssueLabeled, WorkItem, WorkItemView } from "@opensoftware/contracts";
+import type { GateRequested, IssueLabeled, WorkItem, WorkItemView } from "@opensoftware/contracts";
+import type { RunFact } from "./view.ts";
 
 type Submission = Omit<WorkItem, "id"> & { id?: string };
 
@@ -26,15 +27,46 @@ export function replyTo(thread: string, outcome: { created: boolean; added: bool
   return outcome.added && fromThread.length === 1 ? `Added to work item ${id}.` : undefined;
 }
 
-/** The replies that link a finished run's pull requests: one per pull request in the thread of each Slack request. */
-export function pullRequestReplies(view: WorkItemView, pullRequests: string[]): { thread: string; text: string }[] {
+/** Where a request hears of its work item's run: the thread of a Slack request, or the issue "<owner>/<name>#<n>". */
+export interface Reply {
+  to: "slack" | "issue";
+  at: string;
+  text: string;
+}
+
+/** An issue's request has the external ID "<owner>/<name>#<number>" (issueWork). */
+const ISSUE = /^[^/\s]+\/[^/\s#]+#\d+$/;
+
+/** The replies of the texts: each text once in the thread of each Slack request and on each issue of the work item. */
+export function replies(view: WorkItemView, texts: string[]): Reply[] {
   // A Slack request's external ID is its thread.
-  const threads = view.requests
-    .filter(({ origin }) => origin.source === "slack")
-    .map(({ origin }) => origin.externalId as string);
-  return [...new Set(threads)].flatMap((thread) =>
-    pullRequests.map((url) => ({ thread, text: `Pull request: ${url}` })),
-  );
+  const places = view.requests.flatMap(({ origin }): Omit<Reply, "text">[] => {
+    const at = origin.externalId as string;
+    if (origin.source === "slack") return [{ to: "slack", at }];
+    return ISSUE.test(at) ? [{ to: "issue", at }] : [];
+  });
+  const unique = [...new Map(places.map((place) => [`${place.to} ${place.at}`, place])).values()];
+  return unique.flatMap((place) => texts.map((text) => ({ ...place, text })));
+}
+
+/** The run's page in the console after a space, like " https://console.example/runs/run_1"; empty without either. */
+const runLink = (console: string | undefined, runId: string | undefined) =>
+  console && runId ? ` ${console}/runs/${runId}` : "";
+
+/**
+ * What the requesters hear of a run event (ADR 0113): a link per pull request of a run that succeeded, and the
+ * outcome and stage of a run that failed or was cancelled, with the run's link; nothing of a run that started.
+ */
+export function runTexts(fact: RunFact, console: string | undefined): string[] {
+  if (fact.status === "complete") return fact.pullRequests.map((url) => `Pull request: ${url}`);
+  if (fact.status === "running") return [];
+  const stage = fact.stage ? ` at the stage ${fact.stage}` : "";
+  return [`The run ended with the outcome ${fact.status}${stage}:${runLink(console, fact.runId) || ` ${fact.runId}`}`];
+}
+
+/** What the requesters hear of a gate.requested@v1: the stage that waits, what is asked, and the run's link. */
+export function gateText(gate: GateRequested["data"], runId: string | undefined, console: string | undefined): string {
+  return `The run waits for a decision at the stage ${gate.stage}: ${gate.summary}${runLink(console, runId)}`;
 }
 
 /** The task of an issue that carries the label, with the issue's link as its key; undefined for any other issue. */

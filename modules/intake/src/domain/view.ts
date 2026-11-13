@@ -71,8 +71,11 @@ export const retryEvent = (workItem: WorkItem, runId: string, at: number): WorkR
   data: { workItemId: workItem.id, runId, requester: workItem.requester },
 });
 
-/** The foreman's run events that move a work item on (ADR 0071). */
-export const RUN_SUBJECTS = ["osf.run.started.v1", "osf.run.completed.v1"];
+/**
+ * The foreman's run events that move a work item on (ADR 0071), and the gatekeeper's request for a decision, which
+ * its requesters hear about (ADR 0113).
+ */
+export const RUN_SUBJECTS = ["osf.run.started.v1", "osf.run.completed.v1", "osf.gate.requested.v1"];
 
 /** What a run event says about its work item: its run, the status it moves to, and the run's pull requests. */
 export interface RunFact {
@@ -80,6 +83,8 @@ export interface RunFact {
   runId: string;
   status: Exclude<Status, "received">;
   pullRequests: string[];
+  /** The stage the run ended at, when the foreman names it. */
+  stage?: string;
   /** The run before, whose work item this run takes over (ADR 0105). */
   retryOf?: string;
 }
@@ -90,6 +95,7 @@ type RunEvent = {
     workItemId: string;
     outcome?: "succeeded" | "failed" | "cancelled";
     pullRequests?: string[];
+    stage?: string;
     retryOf?: string;
   };
 };
@@ -99,7 +105,7 @@ export function runFactOf(event: unknown): RunFact | string {
   const type = (event as { type?: unknown } | undefined)?.type;
   const format = type === "run.started@v1" ? "run-started" : type === "run.completed@v1" ? "run-completed" : undefined;
   if (!format || !isValid(format, event)) return `not a run.started@v1 or run.completed@v1: ${JSON.stringify(event)}`;
-  const { runId, workItemId, outcome, pullRequests = [], retryOf } = (event as RunEvent).data;
+  const { runId, workItemId, outcome, pullRequests = [], stage, retryOf } = (event as RunEvent).data;
   const status = !outcome ? "running" : outcome === "succeeded" ? "complete" : outcome;
-  return { workItemId, runId, status, pullRequests, ...(retryOf ? { retryOf } : {}) };
+  return { workItemId, runId, status, pullRequests, ...(stage ? { stage } : {}), ...(retryOf ? { retryOf } : {}) };
 }

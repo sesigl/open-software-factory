@@ -58,3 +58,16 @@ Feature: A work item follows its run
     Given the server, with "INTAKE_NATS_URL" set to a NATS server, received the README's "work.json"
     When the foreman publishes "run.completed@v1" for the work item with the outcome "merged"
     Then within 10 seconds the server warns twice about "osf.run.completed.v1", for the delivery 1 and 2 of 5
+
+  @id=SCN-INTAKE-057 @status=implemented
+  Scenario: The Slack thread of a work item names the stage its run failed at and links the run in the console
+    Given the server, with "INTAKE_NATS_URL" set to a NATS server, "INTAKE_CONSOLE_URL" set to "https://console.example" and the Slack channel adapter, made a work item of the mention "<@bot> Export reports as CSV" in the Slack channel "C0WORK"
+    When the foreman publishes "run.completed@v1" for the work item with the outcome "failed" at the stage "implement"
+    Then the thread has the replies "Received as work item <id>." and "The run ended with the outcome failed at the stage implement: https://console.example/runs/run_5d41402abc4b2a76b971"
+
+  @id=SCN-INTAKE-058 @status=implemented
+  Scenario: The Slack thread of a work item hears once that its run waits at a gate
+    Given the server, with "INTAKE_NATS_URL" set to a NATS server, "INTAKE_CONSOLE_URL" set to "https://console.example" and the Slack channel adapter, made a work item of the mention "<@bot> Export reports as CSV" in the Slack channel "C0WORK"
+    And the foreman published "run.started@v1" for the work item with the run "run_5d41402abc4b2a76b971"
+    When the gatekeeper publishes "gate.requested@v1" for the work item at the stage "deploy" with the summary "Deploy to production?" twice, then the foreman publishes "run.completed@v1" with the outcome "failed"
+    Then the thread has the replies "Received as work item <id>.", "The run waits for a decision at the stage deploy: Deploy to production? https://console.example/runs/run_5d41402abc4b2a76b971" and "The run ended with the outcome failed: https://console.example/runs/run_5d41402abc4b2a76b971"
