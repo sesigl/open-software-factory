@@ -69,8 +69,8 @@ export function inbox(store: Store, config: InboxConfig) {
      * (ADR 0105); a new issue becomes a work item as by `submit`.
      */
     async labeled(submission: unknown): Promise<void> {
-      const { created, view: submitted } = await this.submit(submission);
-      if (created || !config.nats) return;
+      // A new work item, or one of a server without NATS, is "received" and asks for nothing.
+      const { view: submitted } = await this.submit(submission);
       const at = config.now();
       const asked = await store.askRetry(submitted.workItem.id, (workItem, runId) => ({
         subject: RETRY_SUBJECT,

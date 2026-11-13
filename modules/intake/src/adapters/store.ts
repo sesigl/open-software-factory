@@ -146,11 +146,11 @@ export async function openStore(url: string | undefined, folder: string): Promis
              AND retry_asked IS DISTINCT FROM run_id RETURNING item, run_id`,
           [id],
         );
-        const [row] = rows;
-        if (!row) return false;
-        const { subject, event } = retry(row.item, row.run_id);
-        await sql.query("INSERT INTO intake.outbox (subject, event) VALUES ($1, $2)", [subject, event]);
-        return true;
+        for (const row of rows) {
+          const { subject, event } = retry(row.item, row.run_id);
+          await sql.query("INSERT INTO intake.outbox (subject, event) VALUES ($1, $2)", [subject, event]);
+        }
+        return rows.length > 0;
       }),
     async unpublished() {
       const { rows } = await db.query<{ seq: string; subject: string; event: Outgoing["event"] }>(
