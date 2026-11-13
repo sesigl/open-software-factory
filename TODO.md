@@ -1052,16 +1052,16 @@ as a vision scenario. Each item names the place in the code, so start there, and
   - [ ] An event when a run blocks at a gate or at checks, if the contract gets it (`contracts/events/`). A gate is
     done with `gate.requested@v1` (SCN-INTAKE-058, ADR 0113); a run blocked at its checks has no event yet.
 
-### [ ] T-46 · the dogfood factory in sandboxes (P1)
+### [x] T-46 · the dogfood factory in sandboxes (P1)
 
 - **Problem:** the agents of `deploy/dogfood/factory/` declare no sandbox. They run in the foreman's container with
   its forge tokens and the master key of `litellm`, against P11, and `deploy/README.md` says so.
 - **Done when:** every stage of the dogfood factory runs in a sandbox as the reference factory's stages do, and the
   warning leaves `deploy/README.md`.
 - **Slices:**
-  - [ ] The agents get `sandbox` and `secrets`; the egress allows what `make install` and `make verify` of this
+  - [x] The agents get `sandbox` and `secrets`; the egress allows what `make install` and `make verify` of this
     repository need.
-  - [ ] SCN-DIST-015 plans the changed factory.
+  - [x] SCN-DIST-015 plans the changed factory.
 
 ### [ ] T-47 · a first run without guessing (P1)
 

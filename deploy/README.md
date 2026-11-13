@@ -93,8 +93,11 @@ FOREMAN_FORGE_TOKEN=...       # the same token
 INTAKE_WEBHOOK_SECRET=...     # see "Receive GitHub issues on your machine"
 ```
 
-foreman runs Claude Code without a sandbox: its agents see foreman's environment, with both tokens and the master key
-of `litellm`. Run it on your own machine only.
+Every agent of this factory runs in a sandbox, as the reference factory's agents do (see [Sandboxes](#sandboxes)): it
+gets `GH_TOKEN` and `CLAUDE_CODE_OAUTH_TOKEN` as placeholders and never sees a token of foreman or the master key of
+`litellm`. Its egress allows what `make install` and `make verify` of this repository download: `litellm`, GitHub and
+its release files, `registry.npmjs.org`, `get.helm.sh` and `dl.k8s.io`. The sandbox has no Docker, so the system tests
+that start containers do not run in it; the stage `verify` waits for the check `verify` of the pull request instead.
 
 ### Sandboxes
 

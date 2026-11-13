@@ -12,6 +12,9 @@ providers:
     github: "^0.5"
   inference:
     litellm: "^0"
+  # The agents' secrets are variables of the foreman, OSF_SECRET_<NAME>, which only the sandbox's egress proxy gets.
+  secrets:
+    env: "^0"
 # Attaches to the profile's litellm. The budget is in USD at LiteLLM's list prices: a stop for a run that does not
 # end, not the subscription's limit.
 inference:
@@ -19,32 +22,62 @@ inference:
   budget: 10
 # Each agent names its effort level (ADR 0078): Opus for spec and implement, Sonnet for review, Haiku for triage and
 # ship, routed in the profile's litellm/config.yaml.
+#
+# Each agent runs in a sandbox of the agents' template (ADR 0096), as the reference factory's agents do, and never sees
+# a token of foreman or the master key of litellm. The egress allows what `make install` and `make verify` of this
+# repository download: GitHub and its release files (lychee, oasdiff, opa, temporal, nats-server, kind), the npm
+# registry (pnpm and the packages), get.helm.sh (helm) and dl.k8s.io (kubectl); see tools/scaffold/install-tools.ts.
 agents:
   triage:
     harness: claude-code
     model: routes/triage
     effort: high
     prompt: ./agents/triage.md
+    secrets: &secrets [ref:env/GH_TOKEN, ref:env/CLAUDE_CODE_OAUTH_TOKEN]
+    sandbox: &sandbox
+      template: ghcr.io/sesigl/open-software-factory/harness-claude-code:0.6.0
+      cpu: 4
+      memory: 8Gi
+      egress:
+        - litellm
+        - github.com
+        - api.github.com
+        - codeload.github.com
+        - uploads.github.com
+        - objects.githubusercontent.com
+        - raw.githubusercontent.com
+        - release-assets.githubusercontent.com
+        - registry.npmjs.org
+        - get.helm.sh
+        - dl.k8s.io
   spec:
     harness: claude-code
     model: routes/spec
     effort: medium
     prompt: ./agents/spec.md
+    secrets: *secrets
+    sandbox: *sandbox
   implement:
     harness: claude-code
     model: routes/implement
     effort: medium
     prompt: ./agents/implement.md
+    secrets: *secrets
+    sandbox: *sandbox
   review:
     harness: claude-code
     model: routes/review
     effort: medium
     prompt: ./agents/review.md
+    secrets: *secrets
+    sandbox: *sandbox
   ship:
     harness: claude-code
     model: routes/ship
     effort: high
     prompt: ./agents/ship.md
+    secrets: *secrets
+    sandbox: *sandbox
 workflow:
   - stage: triage
   - stage: spec
