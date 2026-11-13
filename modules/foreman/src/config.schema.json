@@ -98,7 +98,7 @@
     },
     "FOREMAN_NATS_URL": {
       "type": "string",
-      "description": "serve: the NATS server for work.received@v1 and gate.decided@v1 in, and run.started@v1 and run.completed@v1 out. Unset: no events."
+      "description": "serve: the NATS server for work.received@v1, work.retry-requested@v1 and gate.decided@v1 in, and run.started@v1 and run.completed@v1 out. Unset: no events."
     },
     "OTEL_EXPORTER_OTLP_ENDPOINT": {
       "type": "string",

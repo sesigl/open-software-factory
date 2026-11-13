@@ -329,13 +329,14 @@ curl -H "Authorization: Bearer dev-token" -H "content-type: application/json" \
 
 Only the newest run of a work item runs again. A run that is `running`, `blocked` or `complete` is refused with 409
 and its state, a run that already ran again with 409 that names the later run. Two retries at once start one run;
-the other gets 409.
+the other gets 409. The new run's `run.started@v1` and `run.completed@v1` have `retryOf`, and intake's
+`work.retry-requested@v1` runs a run again as this route does ([Events](#events)).
 
 ## Commands
 
 | Command | What it does |
 | --- | --- |
-| `foreman serve` | Serve the run API on `PORT` and run the workflow of `FOREMAN_FACTORY` on the Temporal server at `FOREMAN_TEMPORAL_ADDRESS`; with `FOREMAN_NATS_URL`, start a run for each `work.received@v1`. |
+| `foreman serve` | Serve the run API on `PORT` and run the workflow of `FOREMAN_FACTORY` on the Temporal server at `FOREMAN_TEMPORAL_ADDRESS`; with `FOREMAN_NATS_URL`, start a run for each `work.received@v1` and run a run again for each `work.retry-requested@v1`. |
 
 ## API
 
@@ -396,16 +397,20 @@ took it over, and a `reason` when it failed for a reason the foreman knows.
 
 With `FOREMAN_NATS_URL`, the foreman starts a run for each [`work.received@v1`](../../contracts/events/work-received/work-received.schema.json)
 on `osf.work.received.v1`, and hands each [`gate.decided@v1`](../../contracts/events/gate-decided/gate-decided.schema.json)
-on `osf.gate.decided.v1` to the newest run of its work item. A run publishes
+on `osf.gate.decided.v1` to the newest run of its work item. For each
+[`work.retry-requested@v1`](../../contracts/events/work-retry-requested/work-retry-requested.schema.json) on
+`osf.work.retry-requested.v1` it runs the run in `runId` again, by the `requester`, as `POST /v1/runs/<run ID>/retry`
+does ([Run again](#run-again)). A run publishes
 [`run.started@v1`](../../contracts/events/run-started/run-started.schema.json) on `osf.run.started.v1` when it starts and
 [`run.completed@v1`](../../contracts/events/run-completed/run-completed.schema.json) on `osf.run.completed.v1` when it
 ends, with the outcome `succeeded`, `failed` or `cancelled`. Their IDs are the run's ID with `.started` and
-`.completed`. The events are kept in the JetStream stream `OSF` on `osf.>`, which the
+`.completed`; a run that runs a run before it again names that run in `retryOf`. The events are kept in the JetStream stream `OSF` on `osf.>`, which the
 foreman adds when it is missing, and the foreman reads them through its durable consumer `foreman` ([ADR
 0085](../../docs/decisions/0085-durable-events.md)). A work item or a gate decision published while the foreman is down
 reaches it when it starts again. A message is acknowledged after it is handled; one that fails comes again after 2
-seconds, at most 5 times. A work item that is not valid, or a decision for a run that does not exist, is a warning
-and does not come again.
+seconds, at most 5 times. A work item that is not valid, a decision for a run that does not exist, or a retry request
+for a run that is unknown, not `failed` or `cancelled`, or already ran again, is a warning and does not come again:
+a second request for the same run starts no third run.
 
 ## Traces
 
@@ -455,7 +460,7 @@ the minor version. The one-time setup is the same as for contracts
 | `FOREMAN_POLL_MS` | string | `"1000"` | serve: how often a running stage looks for steering messages and a cancel, in milliseconds. |
 | `FOREMAN_GATEKEEPER_URL` | string |  | serve: the URL of gatekeeper serve, which a stage with a gate asks for a decision. Required for a factory with gates. |
 | `FOREMAN_GATEKEEPER_TOKEN` | string |  | serve: gatekeeper's API token, GATEKEEPER_API_TOKEN. |
-| `FOREMAN_NATS_URL` | string |  | serve: the NATS server for work.received@v1 and gate.decided@v1 in, and run.started@v1 and run.completed@v1 out. Unset: no events. |
+| `FOREMAN_NATS_URL` | string |  | serve: the NATS server for work.received@v1, work.retry-requested@v1 and gate.decided@v1 in, and run.started@v1 and run.completed@v1 out. Unset: no events. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | string |  | serve: the base URL of an OTLP/HTTP receiver, like http://phoenix:6006. Set, each run is one trace with a span per stage and one for the run, sent to <url>/v1/traces, and each stage's harness gets the trace in TRACEPARENT (ADR 0087). |
 | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | string |  | serve: the full URL of the OTLP/HTTP traces endpoint; takes precedence over OTEL_EXPORTER_OTLP_ENDPOINT. |
 | `OTEL_EXPORTER_OTLP_HEADERS` | string |  | serve: headers for the OTLP receiver as key=value pairs, comma-separated, like a token from a secret store. |
@@ -567,10 +572,10 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-099 | implemented | A retry of a run that already ran again is refused and names the later run |
 | SCN-FORE-100 | implemented | The runs list shows the run before and the new run |
 | SCN-FORE-101 | implemented | The same work item again answers the newest run |
-| SCN-FORE-102 | planned | The new run publishes its events with its own IDs and the run before |
+| SCN-FORE-102 | implemented | The new run publishes its events with its own IDs and the run before |
 | SCN-FORE-103 | implemented | A gate decision reaches the newest run of the work item |
-| SCN-FORE-104 | planned | A retry request from intake runs the work item again |
-| SCN-FORE-105 | planned | A second retry request for the same run starts no third run |
+| SCN-FORE-104 | implemented | A retry request from intake runs the work item again |
+| SCN-FORE-105 | implemented | A second retry request for the same run starts no third run |
 | SCN-FORE-106 | implemented | The new run gets its own key with the factory's budget |
 | SCN-FORE-107 | implemented | The new run has a trace of its own that names the run before |
 | SCN-FORE-108 | implemented | The first stage of the new run is told why the run before ended |

@@ -15,7 +15,7 @@ The only ways a system test or another program may use this module:
   `FOREMAN_GATEKEEPER_URL`, Temporal at `FOREMAN_TEMPORAL_ADDRESS`
 - Server state: the workflows in Temporal and the runs' folders in `OSF_DATA`; private to the module, except the folder
   of a run that a person took over, which the run shows as `folder` (ADR 0070)
-- Events: `work.received@v1` and `gate.decided@v1` in, `run.started@v1` and `run.completed@v1` out
+- Events: `work.received@v1`, `work.retry-requested@v1` and `gate.decided@v1` in, `run.started@v1` and `run.completed@v1` out
   (`contracts/events/`), on NATS at `FOREMAN_NATS_URL`
 - Environment variables: the list in `README.md#configuration` (generated from `src/config.schema.json`)
 
