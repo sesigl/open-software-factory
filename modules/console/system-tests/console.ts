@@ -172,3 +172,26 @@ export async function sendWorkForm(url: string, fields: Record<string, string>, 
   });
   return { status: response.status, location: response.headers.get("location"), html: await response.text() };
 }
+
+export const NEW_RUN = "run_0f3c7e91a2b44d6e8c05";
+export const ADA = { "x-forwarded-email": "ada@acme.dev" };
+
+/** The page at the path of the console at this URL, opened with these headers. */
+export async function openWith(url: string, path: string, headers: Record<string, string> = {}) {
+  const response = await fetch(`${url}${path}`, { headers });
+  return { status: response.status, html: await response.text() };
+}
+
+/** The form "run again" of a run page, if it has one. */
+export const retryForm = (html: string) => /<form[^>]*action="\/runs\/[^"]*\/retry"[\s\S]*?<\/form>/.exec(html)?.[0];
+
+/** Sends the form "run again" of the run page at this path, without following a redirect. */
+export async function sendRetryForm(url: string, runPath: string, headers: Record<string, string> = {}) {
+  const response = await fetch(`${url}${runPath}/retry`, {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded", ...headers },
+    body: "",
+    redirect: "manual",
+  });
+  return { status: response.status, location: response.headers.get("location"), html: await response.text() };
+}

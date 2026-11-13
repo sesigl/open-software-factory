@@ -38,7 +38,7 @@ Open <http://localhost:8080>. The page lists the foreman's runs, the running one
 | --- | --- |
 | `/` | The runs of every foreman: title, factory, state, source, requester, pull request and age. Runs that have not ended come first, the one that started last first, then the ended runs, the one that ended last first. A foreman that does not answer is named above the list. |
 | `/?state=<state>` | Only the runs in the state `running`, `blocked`, `complete`, `failed` or `cancelled`, as the foremen filter them. Another state answers 400. |
-| `/runs/<runId>` | One run: its state, factory and factory version, age, pull request, trace and Temporal history; its origin, or with `CONSOLE_INTAKE_URL` every request of its work item; and its stages as its evidence, each with its agent, state, transcript, gate, checks and the reason it failed. 404 when no foreman knows the run. |
+| `/runs/<runId>` | One run: its state, factory and factory version, age, pull request, trace and Temporal history; its origin, or with `CONSOLE_INTAKE_URL` every request of its work item; and its stages as its evidence, each with its agent, state, transcript, gate, checks and the reason it failed. A run that a person ran again names its attempt and links the run before it. 404 when no foreman knows the run. |
 | `/work` | With `CONSOLE_INTAKE_URL`: intake's latest work items, the one received last first, each with its origin, type, status, source, requester, run and age, also work that waits without a run. 404 without `CONSOLE_INTAKE_URL`. |
 | `/factory` | The factory definition in `CONSOLE_FACTORY`: its name, description, providers and agents with their harness and model. |
 | `/factory/agents/<name>` | One agent's configuration, and the link to the file on the branch where it changes. 404 for an agent the factory does not declare. |
@@ -54,7 +54,10 @@ Actions ([ADR 0089](../../docs/decisions/0089-console-actions.md)): set `CONSOLE
 your sign-in proxy sends the signed-in person, like `X-Forwarded-Email`. Then `/work` has the form "submit work"
 (title, type and description), which the console posts to intake with that person as the requester and the origin
 `console`; intake checks the fields. A form without the header answers 401, a form from another site 403, and a
-form that intake refuses 502 with intake's answer. Without `CONSOLE_INTAKE_URL` the console takes no form. Only set the variable behind a
+form that intake refuses 502 with intake's answer. Without `CONSOLE_INTAKE_URL` the console takes no form "submit work".
+The page of a `failed` or `cancelled` run has the form "run again" ([ADR 0105](../../docs/decisions/0105-run-a-work-item-again.md)),
+which the console posts to the foreman's `POST /v1/runs/<runId>/retry` with that person as `by`; it then leads to the
+new run's page. A retry that the foreman refuses answers with the foreman's status and its problem's detail. Only set the variable behind a
 proxy that sets the header and removes it from the browser's requests.
 
 Several factories: list each foreman in `CONSOLE_FOREMAN_URL`, comma-separated, and their tokens in the same order in
@@ -185,8 +188,8 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-047 | implemented | Without "CONSOLE_USER_HEADER" the console stays read-only |
 | SCN-CONSOLE-048 | implemented | "console doctor" names a missing foreman URL, a server without "/v1/health" and a factory it cannot read |
 | SCN-CONSOLE-049 | implemented | A form from another site submits nothing |
-| SCN-CONSOLE-050 | planned | The run page of a failed run has the form "run again" for a signed-in person |
-| SCN-CONSOLE-051 | planned | A person runs a failed run again from the run page |
-| SCN-CONSOLE-052 | planned | The run page of a run that is running or complete has no form "run again" |
-| SCN-CONSOLE-053 | planned | A retry the foreman refuses shows the foreman's problem |
-| SCN-CONSOLE-054 | planned | The run page of a run that ran again links the run before it |
+| SCN-CONSOLE-050 | implemented | The run page of a failed or cancelled run has the form "run again" for a signed-in person |
+| SCN-CONSOLE-051 | implemented | A person runs a failed run again from the run page |
+| SCN-CONSOLE-052 | implemented | The run page of a run that is running or complete has no form "run again" |
+| SCN-CONSOLE-053 | implemented | A retry the foreman refuses shows the foreman's problem |
+| SCN-CONSOLE-054 | implemented | The run page of a run that ran again links the run before it |

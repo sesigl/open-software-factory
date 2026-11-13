@@ -3,8 +3,8 @@
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { UsageError } from "@opensoftware/cli";
-import type { GateView, RunView, WorkItemList, WorkItemView, WorkRequest } from "@opensoftware/contracts";
-import Fastify, { type FastifyReply } from "fastify";
+import type { GateView, RunRetry, RunView, WorkItemList, WorkItemView, WorkRequest } from "@opensoftware/contracts";
+import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 import { type Api, getJson, postJson } from "../adapters/apis.ts";
 import { readFactory } from "../adapters/factory-file.ts";
 import { proposals } from "../adapters/forge.ts";
@@ -48,6 +48,7 @@ export async function serve(env: Env) {
   const source: Source = { path, branch, url: repository && `${repository}/blob/${branch}/${path}` };
   const inbox = env.CONSOLE_INBOX_REPOSITORY;
   const userHeader = env.CONSOLE_USER_HEADER?.toLowerCase() || undefined;
+  const actions = Boolean(userHeader);
   const prefix = env.CONSOLE_INBOX_PREFIX || "observer/";
   const forge = {
     command: env.CONSOLE_FORGE_ADAPTER || "npx -y @opensoftware/forge-github",
@@ -85,14 +86,21 @@ export async function serve(env: Env) {
     return send(reply, 200, { title: "Runs", refresh, notes }, runsPage(runs, state, now()));
   });
 
-  app.get<{ Params: { runId: string } }>("/runs/:runId", async (request, reply) => {
-    const { runId } = request.params;
+  /** The run and the foreman that knows it, or the answer 404. */
+  const findRun = async (runId: string, reply: FastifyReply) => {
     const answers = await Promise.all(
       sources.map((api) => getJson<RunView>(api, `/v1/runs/${encodeURIComponent(runId)}`)),
     );
-    const found = answers.find((answer) => answer.ok);
-    if (!found?.ok) return send(reply, 404, { title: runId }, problem("Not found", `no run ${runId}`));
-    const run = found.body;
+    const index = answers.findIndex((answer) => answer.ok);
+    const found = answers[index];
+    if (!found?.ok) return { missing: send(reply, 404, { title: runId }, problem("Not found", `no run ${runId}`)) };
+    return { run: found.body, api: sources[index] as Api };
+  };
+
+  app.get<{ Params: { runId: string } }>("/runs/:runId", async (request, reply) => {
+    const { runId } = request.params;
+    const { run, missing } = await findRun(runId, reply);
+    if (!run) return missing;
     const workItem = intake ? await getJson<WorkItemView>(intake, `/v1/work-items/${run.workItem.id}`) : undefined;
     const own: WorkRequest = {
       requester: run.workItem.requester,
@@ -116,7 +124,12 @@ export async function serve(env: Env) {
       history: temporal && `${temporal}/namespaces/${namespace}/workflows/${runId}`,
       transcript: (sessionId: string) => env.CONSOLE_SESSION_URL && fill(env.CONSOLE_SESSION_URL, { sessionId }),
     };
-    return send(reply, 200, { title: run.workItem.title, refresh }, runPage(run, requests, gates, runLinks, now()));
+    return send(
+      reply,
+      200,
+      { title: run.workItem.title, refresh },
+      runPage(run, requests, gates, runLinks, now(), actions),
+    );
   });
 
   app.get("/factory", async (_request, reply) => {
@@ -155,7 +168,7 @@ export async function serve(env: Env) {
     const answer = await getJson<WorkItemList>(intake, "/v1/inbox");
     const notes = answer.ok ? [] : [answer.note];
     const items = answer.ok ? answer.body.workItems : [];
-    return send(reply, 200, { title: "Work", refresh, notes }, workPage(items, now(), Boolean(userHeader)));
+    return send(reply, 200, { title: "Work", refresh, notes }, workPage(items, now(), actions));
   });
 
   // Actions (ADR 0089): only with CONSOLE_USER_HEADER, from the same origin, in the name of the signed-in person.
@@ -163,23 +176,40 @@ export async function serve(env: Env) {
   app.addContentTypeParser("application/x-www-form-urlencoded", { parseAs: "string" }, (_request, body, done) =>
     done(null, Object.fromEntries(new URLSearchParams(body as string))),
   );
+  /** The signed-in person of a form from the same site, or the answer that refuses it. */
+  const signedIn = (request: FastifyRequest, reply: FastifyReply, title: string) => {
+    const origin = request.headers.origin;
+    if (origin && new URL(origin).host !== request.headers.host)
+      return { refused: send(reply, 403, { title }, problem("Forbidden", "the form came from another site")) };
+    const person = String(request.headers[userHeader as string] ?? "");
+    if (!person)
+      return {
+        refused: send(reply, 401, { title }, problem("Sign in", `sign in first: the console needs ${userHeader}`)),
+      };
+    return { person };
+  };
   if (userHeader && intake) {
     app.post<{ Body: Record<string, string> }>("/work", async (request, reply) => {
-      const origin = request.headers.origin;
-      if (origin && new URL(origin).host !== request.headers.host)
-        return send(reply, 403, { title: "Work" }, problem("Forbidden", "the form came from another site"));
-      const person = String(request.headers[userHeader] ?? "");
-      if (!person)
-        return send(
-          reply,
-          401,
-          { title: "Work" },
-          problem("Sign in", `sign in first: the console needs ${userHeader}`),
-        );
+      const { person, refused } = signedIn(request, reply, "Work");
+      if (refused) return refused;
       const submission = submissionOf(request.body ?? {}, person, new Date(now()).toISOString());
       const answer = await postJson(intake, "/v1/work-items", submission);
       if (!answer.ok) return send(reply, 502, { title: "Work" }, problem("Not submitted", answer.note));
       return reply.code(303).header("location", "/work").send();
+    });
+  }
+  if (userHeader) {
+    app.post<{ Params: { runId: string } }>("/runs/:runId/retry", async (request, reply) => {
+      const { runId } = request.params;
+      const { person, refused } = signedIn(request, reply, runId);
+      if (refused) return refused;
+      const { api, missing } = await findRun(runId, reply);
+      if (!api) return missing;
+      const retry: RunRetry = { by: { kind: "person", id: person } };
+      const answer = await postJson<RunView>(api, `/v1/runs/${encodeURIComponent(runId)}/retry`, retry);
+      if (answer.ok) return reply.code(303).header("location", `/runs/${answer.body.runId}`).send();
+      const detail = answer.detail ?? answer.note;
+      return send(reply, answer.status || 502, { title: runId }, problem("Not run again", detail));
     });
   }
 

@@ -18,6 +18,21 @@ const gateText = (stage: StageView, gates: Map<string, GateView>) => {
   return `${gate.id} ${gate.state}${waiting}`;
 };
 
+/** The form "run again", shown when the console takes actions and the run failed or was cancelled (ADR 0105). */
+const retryForm = (run: RunView, actions: boolean) =>
+  actions && (run.state === "failed" || run.state === "cancelled")
+    ? html`<form method="post" action=${`/runs/${run.runId}/retry`}>
+        <button type="submit">Run again</button>
+      </form>`
+    : null;
+
+/** The attempt and the run before, for a run that a person ran again. */
+const runBefore = (run: RunView) =>
+  run.retryOf
+    ? html`<dt>Attempt</dt>
+        <dd>Attempt ${run.attempt}, after <a href=${`/runs/${run.retryOf}`}>${run.retryOf}</a></dd>`
+    : null;
+
 const stageRow = (stage: StageView, gates: Map<string, GateView>, links: RunLinks) => html`<tr>
   <td>${stage.stage}</td>
   <td>${stage.agent}</td>
@@ -34,11 +49,13 @@ export function runPage(
   gates: Map<string, GateView>,
   links: RunLinks,
   now: number,
+  actions: boolean,
 ) {
   return html`<h1>${run.workItem.title}</h1>
     <dl>
       <dt>Run</dt>
       <dd>${run.runId}</dd>
+      ${runBefore(run)}
       <dt>State</dt>
       <dd>${run.state}</dd>
       <dt>Factory</dt>
@@ -52,6 +69,7 @@ export function runPage(
       <dt>History</dt>
       <dd>${linkOr(links.history, "Temporal")}</dd>
     </dl>
+    ${retryForm(run, actions)}
     <h2>Origin</h2>
     <ul>
       ${requests.map(

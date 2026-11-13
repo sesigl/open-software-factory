@@ -76,32 +76,32 @@ Feature: The run page
     When a person opens the run's page with "CONSOLE_TRACE_URL" set to "http://127.0.0.1:6006/projects/UHJvamVjdDox/traces/{traceId}"
     Then the page has no link with the text "trace"
 
-  @id=SCN-CONSOLE-050 @status=planned
-  Scenario: The run page of a failed run has the form "run again" for a signed-in person
-    Given a console with "CONSOLE_USER_HEADER" set to "X-Forwarded-Email" and a foreman with a run whose stage "implement" failed
-    When the person "ada@acme.dev" opens the run's page
-    Then the page has the form "run again"
+  @id=SCN-CONSOLE-050 @status=implemented
+  Scenario: The run page of a failed or cancelled run has the form "run again" for a signed-in person
+    Given a console with "CONSOLE_USER_HEADER" set to "X-Forwarded-Email" and a foreman with a run whose stage "implement" failed and a cancelled run
+    When the person "ada@acme.dev" opens the page of each run
+    Then both pages have the form "run again"
 
-  @id=SCN-CONSOLE-051 @status=planned
+  @id=SCN-CONSOLE-051 @status=implemented
   Scenario: A person runs a failed run again from the run page
     Given a console with "CONSOLE_USER_HEADER" set to "X-Forwarded-Email" and a foreman with a failed run "run_5d41402abc4b2a76b971" whose retry starts the run "run_0f3c7e91a2b44d6e8c05"
     When the person "ada@acme.dev" sends the form "run again" of "/runs/run_5d41402abc4b2a76b971"
     Then the answer redirects to "/runs/run_0f3c7e91a2b44d6e8c05"
     And the foreman received a retry of "run_5d41402abc4b2a76b971" by the person "ada@acme.dev"
 
-  @id=SCN-CONSOLE-052 @status=planned
+  @id=SCN-CONSOLE-052 @status=implemented
   Scenario: The run page of a run that is running or complete has no form "run again"
     Given a console with "CONSOLE_USER_HEADER" set to "X-Forwarded-Email" and a foreman with a running run and a complete run
     When the person "ada@acme.dev" opens the page of each run
     Then neither page has the form "run again"
 
-  @id=SCN-CONSOLE-053 @status=planned
+  @id=SCN-CONSOLE-053 @status=implemented
   Scenario: A retry the foreman refuses shows the foreman's problem
     Given a console with "CONSOLE_USER_HEADER" set to "X-Forwarded-Email" and a foreman that answers a retry of "run_5d41402abc4b2a76b971" with 409 and "run_5d41402abc4b2a76b971 already ran again as run_0f3c7e91a2b44d6e8c05"
     When the person "ada@acme.dev" sends the form "run again" of "/runs/run_5d41402abc4b2a76b971"
     Then the page answers 409 and says "run_5d41402abc4b2a76b971 already ran again as run_0f3c7e91a2b44d6e8c05"
 
-  @id=SCN-CONSOLE-054 @status=planned
+  @id=SCN-CONSOLE-054 @status=implemented
   Scenario: The run page of a run that ran again links the run before it
     Given a foreman with the run "run_0f3c7e91a2b44d6e8c05", the attempt 2 of the run "run_5d41402abc4b2a76b971"
     When a person opens the run's page
