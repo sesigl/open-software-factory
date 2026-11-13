@@ -38,7 +38,7 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
 
 ## Budget
 
-- System tests: 430 seconds in total on the CI runner (115 scenarios; each starts the Temporal dev server and NATS as
+- System tests: 430 seconds in total on the CI runner (124 scenarios; each starts the Temporal dev server and NATS as
   pinned binaries on the host, ADR 0067, and the built `harness-acp` adapter with the testkit's scripted agent, which
   `turbo.json` builds before the tests; sandboxed stages use the testkit's fake sandbox adapter, ADR 0068; checks use
   `fakes.github` and the built `forge-github` adapter, ADR 0069; the gateway uses the testkit's fake inference adapter,
@@ -58,6 +58,9 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
   the 115 scenarios took 450 s, of which the 110 before took 427 s: that machine is about 1.19 times slower than the
   one of the 358 s. The 5 new ones took 23 s (4.5 s each), about 19 s on the faster machine, so the 115 come to about
   377 s there and the budget stays.
+- T-41's run keys (ADR 0108) add 5 scenarios, of 4.5 to 8 s each (SCN-FORE-121 restarts the foreman). On a
+  development machine whose benchmark took 1.61 times the reference, the 124 scenarios took 565 s, of which the 5 new
+  ones 32 s; BUDGET divides by the slowdown, 351 s, so the budget stays.
 
 ## Quality limits
 
