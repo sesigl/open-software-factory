@@ -2,6 +2,7 @@
 // inference adapters, and its stages in order, each with its agent, the agent's harness, model, effort, prompt text and
 // sandbox, its checks and its gate. Checked once against the contract and once for what only the foreman sees.
 import type { FactoryDefinition, SandboxSpec } from "@opensoftware/contracts";
+import type { AdapterVersion, Ranges } from "./adapters.ts";
 
 /** The agent of a stage that runs one; a stage that only waits has none (ADR 0107). */
 export interface AgentPlan {
@@ -33,6 +34,10 @@ export interface Definition {
   /** The inference adapter under `providers.inference`, its config as `factory.yaml` names it, and a run's budget. */
   inference?: { adapter: string; config: string; budget?: number };
   stages: StagePlan[];
+  /** The ranges under `providers` of the ports that are programs (ADR 0110). */
+  ranges: Ranges;
+  /** The adapters and their versions that the run's view names; the server fills it from its maps (ADR 0110). */
+  adapters?: AdapterVersion[];
 }
 
 /** One reason a factory cannot run: a JSON Pointer into the file and what is wrong there. */
@@ -124,13 +129,15 @@ export const agentOf = (stage: { stage: string; agent?: string }): string => sta
 
 /** The definition of a checked factory, with the text of each prompt from `read`. */
 export function definitionOf(factory: FactoryDefinition, read: (path: string) => string): Definition {
-  const forge = Object.keys(factory.providers?.forge ?? {})[0];
-  const inference = Object.keys(factory.providers?.inference ?? {})[0];
+  const { harness = {}, sandbox = {}, forge = {}, inference = {} } = factory.providers ?? {};
+  const forgeAdapter = Object.keys(forge)[0];
   return {
     factory: factory.factory,
-    sandboxAdapter: Object.keys(factory.providers?.sandbox ?? {})[0],
-    ...(forge ? { forgeAdapter: forge } : {}),
-    ...(inference && factory.inference ? { inference: { adapter: inference, ...factory.inference } } : {}),
+    sandboxAdapter: Object.keys(sandbox)[0],
+    ranges: { harness, sandbox, forge, inference },
+    ...(forgeAdapter ? { forgeAdapter } : {}),
+    // The foreman's checks give an inference config only with its one adapter.
+    ...(factory.inference ? { inference: { adapter: Object.keys(inference)[0] as string, ...factory.inference } } : {}),
     stages: (factory.workflow ?? []).map((stage): StagePlan => {
       const waits = {
         stage: stage.stage,

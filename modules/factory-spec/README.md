@@ -80,6 +80,18 @@ stage when it names an `agent` (`stage "verify" only waits, so it names no agent
 (`stage "verify" only waits, so it names checks, the evidence "required" or a gate`). `factory resolve` gives it no
 agent.
 
+## Warnings
+
+`factory lint` also warns about the fields that take no effect in a run (T-44). A warning is no problem: the command
+still exits with 0, and the last line counts the warnings, for example `factory.yaml: no problems, 1 warning`. Each
+warning names its field as a JSON Pointer:
+
+- `factory.yaml:13:5 warning /automations/0/cron: only a gh-aw workflow runs a cron automation, so render it with
+  --gh-aw`. The foreman starts no run on a schedule; `factory render --gh-aw` writes a scheduled workflow for it.
+  `factory lint --gh-aw` gives no such warning.
+- `warning /scorers/<name>: no job of the profile runs a scorer yet, so it has no effect`, and the same for each of
+  `benchmarks`, until the profile's jobs run them (T-31).
+
 ## MCP servers and factory.lock
 
 - `<package>@<version>`, for example `@modelcontextprotocol/server-filesystem@2025.8.21`: an npm package that the
@@ -193,7 +205,7 @@ the minor version. The one-time setup is the same as for contracts
 
 | Command | What it does |
 | --- | --- |
-| `factory lint` | Check factory.yaml; print each problem with its file, line and column. |
+| `factory lint [--gh-aw]` | Check factory.yaml; print each problem and each warning with its file, line and column. --gh-aw: the factory is rendered with gh-aw, so a cron automation runs. |
 | `factory render [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]` | Write AGENTS.md, the MCP servers and the skill links of one agent to $OUTPUT. --harness all writes every declared harness; --k8s adds its kagent resources and SandboxTemplate; --gh-aw adds a gh-aw workflow per GitHub automation. |
 | `factory plan` | Pin registry MCP servers in factory.lock; show what apply changes and what drifted, rendered files and webhooks. |
 | `factory apply [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]` | Render like render, register the webhooks of forgejo and github automations (github ones not with --gh-aw), and record what was applied in OSF_DATA. |
@@ -287,3 +299,6 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FSPEC-060 | implemented | Lint reports a stage that waits and names an agent |
 | SCN-FSPEC-061 | implemented | Lint reports a stage that waits for nothing |
 | SCN-FSPEC-062 | implemented | Resolve gives a stage that only waits no agent |
+| SCN-FSPEC-063 | implemented | Lint warns about a cron automation that only a gh-aw workflow runs |
+| SCN-FSPEC-064 | implemented | Lint with --gh-aw does not warn about a cron automation |
+| SCN-FSPEC-065 | implemented | Lint warns about scorers and benchmarks, which no job of the profile runs yet |

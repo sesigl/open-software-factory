@@ -23,7 +23,7 @@
     "FOREMAN_FACTORY": {
       "type": "string",
       "default": "factory.yaml",
-      "description": "serve: the factory definition. Its folder must be in a Git repository: a run's factory version is its commit."
+      "description": "serve: the factory definition. Its folder must be in a Git repository and clean, with every tracked file and every file the foreman reads committed: a run's factory version is its commit (ADR 0110)."
     },
     "FOREMAN_TEMPORAL_ADDRESS": {
       "type": "string",
@@ -43,12 +43,12 @@
     "FOREMAN_HARNESSES": {
       "type": "string",
       "default": "{}",
-      "description": "serve: a JSON object from harness name to the command line of its adapter. A harness it does not name runs npx -y @opensoftware/harness-<name> run."
+      "description": "serve: a JSON object from harness name to the command line of its adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. A harness it does not name runs npx -y @opensoftware/harness-<name>@<range> run, at the range under providers.harness (ADR 0110)."
     },
     "FOREMAN_SANDBOXES": {
       "type": "string",
       "default": "{}",
-      "description": "serve: a JSON object from sandbox adapter name to the command line of the adapter. An adapter it does not name runs npx -y @opensoftware/sandbox-<name>. The factory names its adapter under providers.sandbox, or else FOREMAN_SANDBOX picks it."
+      "description": "serve: a JSON object from sandbox adapter name to the command line of the adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. An adapter it does not name runs npx -y @opensoftware/sandbox-<name>@<range>, at the range under providers.sandbox (ADR 0110). The factory names its adapter under providers.sandbox, or else FOREMAN_SANDBOX picks it."
     },
     "FOREMAN_SANDBOX": {
       "type": "string",
@@ -58,12 +58,16 @@
     "FOREMAN_FORGES": {
       "type": "string",
       "default": "{}",
-      "description": "serve: a JSON object from forge adapter name to the command line of the adapter. An adapter it does not name runs npx -y @opensoftware/forge-<name>. The factory names its adapter under providers.forge."
+      "description": "serve: a JSON object from forge adapter name to the command line of the adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. An adapter it does not name runs npx -y @opensoftware/forge-<name>@<range>, at the range under providers.forge (ADR 0110). The factory names its adapter under providers.forge."
     },
     "FOREMAN_INFERENCES": {
       "type": "string",
       "default": "{}",
-      "description": "serve: a JSON object from inference adapter name to the command line of the adapter. An adapter it does not name runs npx -y @opensoftware/inference-<name>. The factory names its adapter under providers.inference."
+      "description": "serve: a JSON object from inference adapter name to the command line of the adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. An adapter it does not name runs npx -y @opensoftware/inference-<name>@<range>, at the range under providers.inference (ADR 0110). The factory names its adapter under providers.inference."
+    },
+    "PATH": {
+      "type": "string",
+      "description": "serve: the folders where the foreman finds git, npx for an adapter without a command line, and the programs of the adapter maps."
     },
     "FOREMAN_FORGE_URL": {
       "type": "string",

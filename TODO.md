@@ -1011,11 +1011,15 @@ as a vision scenario. Each item names the place in the code, so start there, and
 - **Done when:** the foreman refuses a factory with changes that are not committed, each adapter runs at a version
   inside the factory's range, and the run's view names the versions.
 - **Slices:**
-  - [ ] `foreman serve` and a run's start fail with the changed files named when the factory's folder is not clean
-    (`SCN-FORE`).
+  - [x] `foreman serve` and a run's start fail with the changed files named when the factory's folder is not clean
+    (SCN-FORE-131, SCN-FORE-132, ADR 0110); a prompt or inference config that Git does not track counts too, and the
+    paths come sorted (SCN-FORE-135, SCN-FORE-138).
   - [ ] The fallback command line takes the version that `factory plan` pinned in `factory.lock`, or the range of
-    `providers` (`SCN-FORE`, `SCN-FSPEC`).
-  - [ ] The adapter maps take a command line as a list of arguments too.
+    `providers` (`SCN-FORE`, `SCN-FSPEC`). Done: the range of `providers`, and the run's `adapters` name it with the
+    command line (SCN-FORE-133), for every port, and npx runs each package at its range (SCN-FORE-136,
+    SCN-FORE-137), or without one for an adapter the factory does not name (SCN-FORE-139). Open, not built yet:
+    `factory plan` pins adapters in `factory.lock`, a contract the foreman reads.
+  - [x] The adapter maps take a command line as a list of arguments too (SCN-FORE-134).
 
 ### [ ] T-44 · what factory.yaml declares takes effect (P1)
 
@@ -1028,9 +1032,9 @@ as a vision scenario. Each item names the place in the code, so start there, and
 - **Slices:**
   - [ ] The foreman renders the stage's agent with factory-spec into the session's folder: skills and MCP servers,
     also in a sandbox, whose egress allows the MCP servers' hosts (`SCN-FORE`, `SCN-SANDBOX`).
-  - [ ] The next stage's prompt holds the last message of the stage before it, or a file of the run's folder that the
+  - [x] The next stage's prompt holds the last message of the stage before it, or a file of the run's folder that the
     reference prompts name.
-  - [ ] `factory lint` warns about a `cron` automation without `--gh-aw`, and about `benchmarks` and `scorers` that no
+  - [x] `factory lint` warns about a `cron` automation without `--gh-aw`, and about `benchmarks` and `scorers` that no
     job of the profile runs (until T-31).
 
 ### [ ] T-45 · the requester hears about the run (P1)

@@ -14,7 +14,7 @@ import {
   setHandler,
   sleep,
 } from "@temporalio/workflow";
-import type { Control, Fact, GateDecision, RunInput, RunView } from "../domain/run.ts";
+import type { Control, Fact, GateDecision, RunInput, RunView, StageResult } from "../domain/run.ts";
 import type { Activities } from "./activities.ts";
 
 export const viewQuery = defineQuery<RunView>("view");
@@ -51,6 +51,9 @@ export async function factoryRun({ view, definition, before }: RunInput): Promis
   });
   // When the stage at the index began to wait for its checks, in Temporal's workflow time, which replays the same.
   let checksSince = { index: -1, at: 0 };
+  // The result of the last stage that wrote one, for the next stage's prompt (ADR 0111). A fact recorded before ADR
+  // 0111 has none, so a replay of an older run schedules the same activities.
+  let previous: StageResult | undefined;
   const settle = async (fact: Fact) => {
     run = await CancellationScope.nonCancellable(() => local.apply(run, fact));
   };
@@ -88,7 +91,9 @@ export async function factoryRun({ view, definition, before }: RunInput): Promis
         run = await local.apply(run, { kind: "handed-back", index });
       } else {
         run = await local.apply(run, { kind: "stage-started", index });
-        await settle(await remote.runStage(run, definition, index, steering.length, before));
+        const ended = await remote.runStage(run, definition, index, steering.length, before, previous);
+        if (ended.kind === "stage-ended" && ended.result) previous = ended.result;
+        await settle(ended);
       }
     }
   } catch (error) {

@@ -11,27 +11,56 @@ export interface Linted {
   /** Only when there is no problem. */
   definition?: FactoryDefinition;
   problems: Problem[];
+  /** Fields that take no effect in a run; a warning is no problem (T-44). */
+  warnings: Problem[];
 }
 
-/** Lints the text of factory.yaml; `exists` says whether a path relative to the file exists. */
-export function lint(text: string, exists: (path: string) => boolean): Linted {
+/**
+ * Lints the text of factory.yaml; `exists` says whether a path relative to the file exists, and `ghAw` whether the
+ * factory is rendered with gh-aw workflows.
+ */
+export function lint(text: string, exists: (path: string) => boolean, ghAw = false): Linted {
   const lines = new LineCounter();
   const document = parseDocument(text, { lineCounter: lines, prettyErrors: false });
   if (document.errors.length > 0) {
     return {
       problems: document.errors.map((error) => ({ ...place(lines, error.pos[0]), message: firstLine(error.message) })),
+      warnings: [],
     };
   }
   const data = document.toJS() as unknown;
   const at = (path: string[], message: string): Problem => ({ ...locate(document, lines, path), message });
   const schema = validate("factory-definition", data);
   if (schema.length > 0)
-    return { problems: schema.map((problem) => at(segments(problem.path), `${problem.path}: ${problem.message}`)) };
+    return {
+      problems: schema.map((problem) => at(segments(problem.path), `${problem.path}: ${problem.message}`)),
+      warnings: [],
+    };
   const definition = data as FactoryDefinition;
-  const problems = rules(definition, exists)
-    .map(([path, message]) => at(path, message))
-    .sort((a, b) => a.line - b.line || a.column - b.column);
-  return problems.length > 0 ? { problems } : { definition, problems };
+  const placed = (findings: Finding[]): Problem[] =>
+    findings.map(([path, message]) => at(path, message)).sort((a, b) => a.line - b.line || a.column - b.column);
+  const problems = placed(rules(definition, exists));
+  // A warning names its field as a JSON Pointer, like a problem of the schema.
+  const warnings = placed(
+    warningFindings(definition, ghAw).map(([path, message]) => [path, `warning /${path.join("/")}: ${message}`]),
+  );
+  return problems.length > 0 ? { problems, warnings } : { definition, problems, warnings };
+}
+
+/** The fields that a run does not use: a cron automation without gh-aw, and every scorer and benchmark (T-31). */
+function warningFindings(definition: FactoryDefinition, ghAw: boolean): Finding[] {
+  const findings: Finding[] = [];
+  if (!ghAw)
+    (definition.automations ?? []).forEach((automation, index) => {
+      if (automation.cron === undefined) return;
+      const message = "only a gh-aw workflow runs a cron automation, so render it with --gh-aw";
+      findings.push([["automations", String(index), "cron"], message]);
+    });
+  const unrun = (kind: "scorer" | "benchmark", names: string[]): Finding[] =>
+    names.map((name) => [[`${kind}s`, name], `no job of the profile runs a ${kind} yet, so it has no effect`]);
+  findings.push(...unrun("scorer", Object.keys(definition.scorers ?? {})));
+  findings.push(...unrun("benchmark", Object.keys(definition.benchmarks ?? {})));
+  return findings;
 }
 
 type Finding = [path: string[], message: string];

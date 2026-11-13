@@ -11,6 +11,7 @@ import { type Gateway, hasKey } from "../adapters/inference.ts";
 import { type Bus, SUBJECTS } from "../adapters/nats.ts";
 import type { Exporter } from "../adapters/otlp.ts";
 import { createSandbox } from "../adapters/sandbox.ts";
+import { type CommandLines, commandOf } from "../domain/adapters.ts";
 import type { Definition } from "../domain/definition.ts";
 import {
   apply,
@@ -28,9 +29,11 @@ import {
   type RunBefore,
   type RunView,
   repositoryOf,
+  resultOf,
   runCompleted,
   runStarted,
   type StagePullRequest,
+  type StageResult,
   type Step,
   stagePullRequest,
   type Waits,
@@ -41,14 +44,17 @@ export interface ActivityDeps {
   now(): string;
   bus?: Bus;
   gatekeeper: Gatekeeper;
-  /** The adapter's command line per harness name; others run `npx -y @opensoftware/harness-<name> run`. */
-  harnesses: Record<string, string>;
-  /** The adapter's command line per sandbox adapter name; others run `npx -y @opensoftware/sandbox-<name>`. */
-  sandboxes: Record<string, string>;
+  /**
+   * The adapter's command line per harness name; others run `npx -y @opensoftware/harness-<name>@<range> run` at the
+   * factory's range (ADR 0110).
+   */
+  harnesses: CommandLines;
+  /** The adapter's command line per sandbox adapter name; others run `npx -y @opensoftware/sandbox-<name>@<range>`. */
+  sandboxes: CommandLines;
   /** The sandbox adapter of a factory that names none, FOREMAN_SANDBOX. */
   sandbox: string;
-  /** The adapter's command line per forge adapter name; others run `npx -y @opensoftware/forge-<name>`. */
-  forges: Record<string, string>;
+  /** The adapter's command line per forge adapter name; others run `npx -y @opensoftware/forge-<name>@<range>`. */
+  forges: CommandLines;
   /** FORGE_URL and FORGE_TOKEN of the forge adapter. */
   forgeEnv: Record<string, string | undefined>;
   /** How long a stage waits before it reads pending checks again, for its checks, and for its gate (ADR 0106). */
@@ -71,10 +77,6 @@ export interface ActivityDeps {
 
 export type Activities = ReturnType<typeof activities>;
 
-/** The command line of an adapter by its name, as program and arguments. */
-const commandLine = (lines: Record<string, string>, name: string, otherwise: string): string[] =>
-  (lines[name] ?? otherwise).split(" ");
-
 /** The resource of every span of the run. */
 const resourceOf = (view: RunView): Record<string, string> => ({
   "osf.run.id": view.runId,
@@ -84,8 +86,8 @@ const resourceOf = (view: RunView): Record<string, string> => ({
 
 export function activities(deps: ActivityDeps) {
   /** The forge adapter's command line and variables. */
-  const forge = (adapter: string): [string[], Record<string, string | undefined>] => [
-    commandLine(deps.forges, adapter, `npx -y @opensoftware/forge-${adapter}`),
+  const forge = (definition: Definition): [string[], Record<string, string | undefined>] => [
+    commandOf(deps.forges, "forge", definition.forgeAdapter as string, definition.ranges),
     { ...deps.env, ...deps.forgeEnv },
   ];
 
@@ -101,7 +103,7 @@ export function activities(deps: ActivityDeps) {
   ): Promise<StagePullRequest> {
     if (!definition.forgeAdapter || !repository) return { pullRequest: lastPullRequestIn(transcript) };
     const branch = branchOf(view.runId);
-    const listed = await pullRequestsOf(...forge(definition.forgeAdapter), repository.repo, branch).catch(
+    const listed = await pullRequestsOf(...forge(definition), repository.repo, branch).catch(
       (failure: Error) => failure,
     );
     return stagePullRequest(repository, branch, listed, transcript, Boolean(view.pullRequest));
@@ -252,7 +254,7 @@ export function activities(deps: ActivityDeps) {
       if (!view.pullRequest)
         return { kind: "checks", index, checks: [], reason: "no earlier stage linked a pull request" };
       const { repo, number } = pullRequestOf(view.pullRequest);
-      const printed = await pullRequestChecks(...forge(definition.forgeAdapter as string), repo, number);
+      const printed = await pullRequestChecks(...forge(definition), repo, number);
       return { kind: "checks", index, checks: checksOf(names, printed), afterMs, missing: missingOf(names, printed) };
     },
     /**
@@ -265,6 +267,7 @@ export function activities(deps: ActivityDeps) {
       index: number,
       steered: number,
       before?: RunBefore,
+      previous?: StageResult,
     ): Promise<Fact> {
       const plan = definition.stages[index];
       if (!plan) throw new Error(`no stage ${index}`);
@@ -282,7 +285,7 @@ export function activities(deps: ActivityDeps) {
       const resource = Object.entries(attributes)
         .map(([key, value]) => `${key}=${value}`)
         .join(",");
-      const harness = commandLine(deps.harnesses, plan.harness, `npx -y @opensoftware/harness-${plan.harness} run`);
+      const harness = commandOf(deps.harnesses, "harness", plan.harness, definition.ranges);
       const adapter = definition.sandboxAdapter ?? deps.sandbox;
       // The agent's model and gateway (ADR 0070) and its effort level (ADR 0078), with or without a sandbox.
       const agentEnv = {
@@ -295,7 +298,7 @@ export function activities(deps: ActivityDeps) {
       let sessionId: string | undefined;
       const sandbox = plan.sandbox
         ? await createSandbox(
-            commandLine(deps.sandboxes, adapter, `npx -y @opensoftware/sandbox-${adapter}`),
+            commandOf(deps.sandboxes, "sandbox", adapter, definition.ranges),
             { ...plan.sandbox, env: { OTEL_RESOURCE_ATTRIBUTES: resource, ...agentEnv } },
             cwd,
             view.runId,
@@ -311,6 +314,7 @@ export function activities(deps: ActivityDeps) {
           view.pullRequest,
           before?.index === index ? before.line : undefined,
           repository ? branchOf(view.runId) : undefined,
+          previous,
         );
         const turn = await startTurn(
           sandbox
@@ -333,6 +337,7 @@ export function activities(deps: ActivityDeps) {
         outcome = outcomeOf(stopReason);
         await sandbox?.copyOut();
         const { pullRequest, note } = await pullRequestAfter(view, definition, repository, turn.transcript());
+        const said = turn.messages();
         return {
           kind: "stage-ended",
           index,
@@ -341,6 +346,7 @@ export function activities(deps: ActivityDeps) {
           ...(pullRequest ? { pullRequest } : {}),
           ...(note ? { note } : {}),
           ...(takenOver ? { takenOver: { folder: cwd } } : {}),
+          ...(said ? { result: { stage: plan.stage, text: resultOf(said) } } : {}),
         };
       } finally {
         await sandbox?.destroy();

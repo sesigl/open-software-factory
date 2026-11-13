@@ -82,6 +82,26 @@ model StageView {
 }
 
 /** foreman: a run of the factory's workflow for one work item, as the HTTP API shows it (ADR 0067). */
+/** An adapter of the factory's `providers` and the version a run of it asks for (ADR 0110). */
+model AdapterVersion {
+  /** The port under `providers`: harness, sandbox, forge or inference. */
+  port: "harness" | "sandbox" | "forge" | "inference";
+
+  @minLength(1)
+  name: string;
+
+  /** The range under `providers.<port>.<name>` that the fallback runs. */
+  @minLength(1)
+  version?: string;
+
+  /** The command line the foreman builds when no map names the adapter: npx at the version. */
+  command?: string[];
+
+  /** The variable whose map gives the adapter's command line instead, for example "FOREMAN_HARNESSES". */
+  @minLength(1)
+  configured?: string;
+}
+
 model RunView {
   /** "run_" and 20 hex digits of the SHA-256 of the work item's ID; for the n-th run of the work item, n ≥ 2, of "<work item ID>#<n>" (ADR 0105). */
   @pattern("^run_[0-9a-f]{20}$")
@@ -105,6 +125,9 @@ model RunView {
 
   /** The commit of the factory definition the run started with. */
   factoryVersion: CommitHash;
+
+  /** The adapters of the factory's `providers` and the versions the run asks for (ADR 0110). */
+  adapters?: AdapterVersion[];
 
   state: RunState;
 

@@ -1,6 +1,6 @@
 # AGENTS.md for module `foreman`
 
-Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0004, ADR 0067, ADR 0068, ADR 0069, ADR 0070, ADR 0071, ADR 0107, ADR 0109.
+Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0004, ADR 0067, ADR 0068, ADR 0069, ADR 0070, ADR 0071, ADR 0107, ADR 0109, ADR 0111.
 
 ## Public surface
 
@@ -38,7 +38,7 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
 
 ## Budget
 
-- System tests: 430 seconds in total on the CI runner (124 scenarios; each starts the Temporal dev server and NATS as
+- System tests: 480 seconds in total on the CI runner (140 scenarios; each starts the Temporal dev server and NATS as
   pinned binaries on the host, ADR 0067, and the built `harness-acp` adapter with the testkit's scripted agent, which
   `turbo.json` builds before the tests; sandboxed stages use the testkit's fake sandbox adapter, ADR 0068; checks use
   `fakes.github` and the built `forge-github` adapter, ADR 0069; the gateway uses the testkit's fake inference adapter,
@@ -69,6 +69,17 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
   before it loads the ACP SDK, and `fromRepository` reads a file when the test takes it. `foreman serve` listens
   after 1.0 s and a stage starts in 0.3 s: on a development machine the 129 scenarios took 469 s and 499 s before,
   394 s to 411 s in four runs after, 17% less. That is about 380 s on the reference runner, so the budget stays.
+- T-43's factory version and ADR 0111's stage result took the 140 scenarios to 437 s on the reference runner (the
+  138 before them 405 s, the 129 of main 396 s to 406 s, BUDGET's measure). A start of `foreman serve` takes 1.0 s:
+  0.55 s imports (`@temporalio/worker` alone 0.53 s, webpack and memfs of its bundler 0.12 s of it), 0.15 s to read
+  the factory (the contract's validator compiles in 0.06 to 0.1 s, Git 0.02 s) and 0.35 s for `Worker.create` after
+  the connection; a stop takes 0.2 s, 1.2 s when a stage runs (the shutdown grace, ADR 0101). The check that the
+  factory is committed now runs `git rev-parse` and one `git status` at once instead of three processes in a row. Not
+  faster: opening the connections while the factory is read, the client on the worker's connection (a retry race
+  of SCN-FORE-098 failed once), and a module hook that stubs webpack (Node's hooks cost more than they save). On a
+  development machine the same code took 398 s and 434 s, so one run cannot show a change under 5%.
+  The 11 new scenarios cost 27 s and main already took up to 406 s, so the budget is 480 s, about 10% above the
+  437 s. Getting well below 400 s needs fewer starts of `foreman serve` per scenario, not a faster start.
 
 ## Quality limits
 

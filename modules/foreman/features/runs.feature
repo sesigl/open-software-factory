@@ -74,3 +74,17 @@ Feature: Runs
     When a program posts the README's "work.json" with the origin "https://github.com/tester/web/issues/3" to "/v1/runs"
     Then every prompt the harness received has the line "Origin: https://github.com/tester/web/issues/3"
     And no prompt has two empty lines in a row
+
+  @id=SCN-FORE-140 @status=implemented
+  Scenario: The next stage's prompt holds the result of the stage before it
+    Given "foreman serve" runs the README's "factory.yaml" with a scripted harness whose stage "plan" ends with a message of 4000 characters
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then the prompt of the stage "implement" ends with the section "# Result of the stage plan" that holds the whole message
+    And the prompt of the stage "plan" has no section "# Result of the stage"
+
+  @id=SCN-FORE-141 @status=implemented
+  Scenario: A result of more than 4000 characters reaches the next stage cut to its last 4000
+    Given "foreman serve" runs the README's "factory.yaml" with a scripted harness whose stage "plan" ends with a message of 4100 characters
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then the section "# Result of the stage plan" of the prompt of the stage "implement" starts with the line "[… the first 100 characters are cut]"
+    And then holds the last 4000 characters of the message

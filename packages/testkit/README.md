@@ -198,7 +198,8 @@ Every server, client and subscription stops when the scenario ends, before the f
   ([ADR 0067](../../docs/decisions/0067-foreman.md)). `make install` pins `nats-server` 2.11.9 and `temporal` 1.4.1 in
   `.tools/bin`; on other platforms put the same versions on PATH. Each starts in about a second. Their ports come
   from 10000 to 19999 and a module's port from 20000 to 32767, so a service of a parallel scenario cannot take the port
-  of a module that does not listen yet.
+  of a module that does not listen yet. A server that another process beats to a port, or that is not ready after
+  10 s, starts again on new ports, at most three times; the error names what it wrote.
 - `fakes.s3()`: a real service in a container for this scenario
   ([ADR 0016](../../docs/decisions/0016-testkit-service-fakes.md)). Each fake gives only what a module needs
   to reach it: a URL, an address or an endpoint with keys. Docker must run.
