@@ -3,9 +3,9 @@
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { UsageError } from "@opensoftware/cli";
-import type { GateView, RunView, WorkItemList, WorkItemView, WorkRequest } from "@opensoftware/contracts";
-import Fastify, { type FastifyReply } from "fastify";
-import { type Api, getJson, postJson } from "../adapters/apis.ts";
+import type { GateView, RunRetry, RunView, WorkItemList, WorkItemView, WorkRequest } from "@opensoftware/contracts";
+import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
+import { type Answer, type Api, getJson, postJson } from "../adapters/apis.ts";
 import { readFactory } from "../adapters/factory-file.ts";
 import { proposals } from "../adapters/forge.ts";
 import { fill, isState, list, namedLinks, orderRuns, STATES } from "../domain/runs.ts";
@@ -116,7 +116,12 @@ export async function serve(env: Env) {
       history: temporal && `${temporal}/namespaces/${namespace}/workflows/${runId}`,
       transcript: (sessionId: string) => env.CONSOLE_SESSION_URL && fill(env.CONSOLE_SESSION_URL, { sessionId }),
     };
-    return send(reply, 200, { title: run.workItem.title, refresh }, runPage(run, requests, gates, runLinks, now()));
+    return send(
+      reply,
+      200,
+      { title: run.workItem.title, refresh },
+      runPage(run, requests, gates, runLinks, now(), Boolean(userHeader)),
+    );
   });
 
   app.get("/factory", async (_request, reply) => {
@@ -163,23 +168,43 @@ export async function serve(env: Env) {
   app.addContentTypeParser("application/x-www-form-urlencoded", { parseAs: "string" }, (_request, body, done) =>
     done(null, Object.fromEntries(new URLSearchParams(body as string))),
   );
+  /** The signed-in person of a form from the same site, or the answer that refuses it. */
+  const signedIn = (request: FastifyRequest, reply: FastifyReply, title: string) => {
+    const origin = request.headers.origin;
+    if (origin && new URL(origin).host !== request.headers.host)
+      return { refused: send(reply, 403, { title }, problem("Forbidden", "the form came from another site")) };
+    const person = String(request.headers[userHeader as string] ?? "");
+    if (!person)
+      return {
+        refused: send(reply, 401, { title }, problem("Sign in", `sign in first: the console needs ${userHeader}`)),
+      };
+    return { person };
+  };
   if (userHeader && intake) {
     app.post<{ Body: Record<string, string> }>("/work", async (request, reply) => {
-      const origin = request.headers.origin;
-      if (origin && new URL(origin).host !== request.headers.host)
-        return send(reply, 403, { title: "Work" }, problem("Forbidden", "the form came from another site"));
-      const person = String(request.headers[userHeader] ?? "");
-      if (!person)
-        return send(
-          reply,
-          401,
-          { title: "Work" },
-          problem("Sign in", `sign in first: the console needs ${userHeader}`),
-        );
+      const { person, refused } = signedIn(request, reply, "Work");
+      if (refused) return refused;
       const submission = submissionOf(request.body ?? {}, person, new Date(now()).toISOString());
       const answer = await postJson(intake, "/v1/work-items", submission);
       if (!answer.ok) return send(reply, 502, { title: "Work" }, problem("Not submitted", answer.note));
       return reply.code(303).header("location", "/work").send();
+    });
+  }
+  if (userHeader) {
+    // The foreman that knows the run answers; the others answer 404.
+    app.post<{ Params: { runId: string } }>("/runs/:runId/retry", async (request, reply) => {
+      const { runId } = request.params;
+      const { person, refused } = signedIn(request, reply, runId);
+      if (refused) return refused;
+      const retry: RunRetry = { by: { kind: "person", id: person } };
+      let answer: Answer<RunView> = { ok: false, status: 404, note: `no run ${runId}` };
+      for (const api of sources) {
+        answer = await postJson<RunView>(api, `/v1/runs/${encodeURIComponent(runId)}/retry`, retry);
+        if (answer.ok || answer.status !== 404) break;
+      }
+      if (answer.ok) return reply.code(303).header("location", `/runs/${answer.body.runId}`).send();
+      const status = answer.status >= 400 && answer.status < 500 ? answer.status : 502;
+      return send(reply, status, { title: runId }, problem("Not run again", answer.detail ?? answer.note));
     });
   }
 

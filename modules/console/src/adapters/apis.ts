@@ -7,10 +7,16 @@ export interface Api {
   token?: string;
 }
 
-export type Answer<T> = { ok: true; body: T } | { ok: false; status: number; note: string };
+export type Answer<T> = { ok: true; body: T } | { ok: false; status: number; note: string; detail?: string };
 
 const urlOf = (api: Api, path: string) => `${api.url.replace(/\/$/, "")}${path}`;
 const auth = (api: Api): Record<string, string> => (api.token ? { authorization: `Bearer ${api.token}` } : {});
+
+/** The `detail` of an RFC 9457 problem, if the answer is one. */
+async function problemDetail(response: Response): Promise<string | undefined> {
+  const body = await response.json().catch(() => undefined);
+  return typeof body?.detail === "string" ? body.detail : undefined;
+}
 
 async function request<T>(api: Api, path: string, init: { method?: string; body?: string } = {}): Promise<Answer<T>> {
   const headers = { ...auth(api), ...(init.body ? { "content-type": "application/json" } : {}) };
@@ -20,6 +26,7 @@ async function request<T>(api: Api, path: string, init: { method?: string; body?
     return {
       ok: false,
       status: response.status,
+      detail: await problemDetail(response),
       note: `the ${api.name} at ${api.url} did not answer: ${response.status}`,
     };
   } catch {

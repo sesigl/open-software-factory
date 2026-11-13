@@ -9,9 +9,11 @@ The only ways a system test or another program may use this module:
 - CLI: `console <command>` (see `README.md#commands`)
 - Web pages of `console serve` on `PORT`: `/`, `/runs/<runId>`, `/factory`, `/factory/agents/<name>`, `/inbox` and
   `/pico.css`
-  (see `README.md#pages`). Read-only: any method but `GET` and `HEAD` answers 405.
+  (see `README.md#pages`). Read-only: any method but `GET` and `HEAD` answers 405, except the forms `POST /work` and
+  `POST /runs/<runId>/retry` with `CONSOLE_USER_HEADER` (ADR 0089, ADR 0105).
 - Outside systems it calls: the foremen's HTTP API at `CONSOLE_FOREMAN_URL`, intake's at `CONSOLE_INTAKE_URL` and
-  gatekeeper's at `CONSOLE_GATEKEEPER_URL` (`contracts/openapi/openapi.json`), only with `GET`; the forge port's
+  gatekeeper's at `CONSOLE_GATEKEEPER_URL` (`contracts/openapi/openapi.json`), only with `GET`, and with `POST` for the actions (intake's
+  `/v1/work-items`, the foreman's `/v1/runs/<runId>/retry`); the forge port's
   adapter in `CONSOLE_FORGE_ADAPTER`, only with its read-only command `prs` (ADR 0073)
 - Input: the factory definition in `CONSOLE_FACTORY`
 - Server state: none
@@ -32,7 +34,7 @@ Fastify server. The ARCH check enforces the layers.
 
 ## Budget
 
-- System tests: 60 seconds in total on the CI runner (35 scenarios; each starts one server, and the foremen, intake
+- System tests: 60 seconds in total on the CI runner (53 scenarios; each starts one server, and the foremen, intake
   and gatekeeper are `fakes.http`; the inbox's forge is `fakes.github` behind the built forge-github adapter).
 
 ## Quality limits

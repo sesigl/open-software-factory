@@ -922,7 +922,7 @@ as a vision scenario. Each item names the place in the code, so start there, and
   - [x] The forge port's README says what a check is on each forge, and `deploy/README.md` says which name to put under
     `checks`.
 
-### [ ] T-38 · run a work item again (P0)
+### [x] T-38 · run a work item again (P0)
 
 - **Problem:** the foreman starts one run per work item, also after the run ended (`REJECT_DUPLICATE` in
   `modules/foreman/src/commands/runs.ts`), and intake gives an issue the same work item each time. A run that failed
@@ -942,7 +942,7 @@ as a vision scenario. Each item names the place in the code, so start there, and
   - [x] intake follows the newest run (`SCN-INTAKE-050` to `-052`, implemented).
   - [x] The label put on an issue again publishes `work.retry-requested@v1` (`SCN-INTAKE-053` to `-056`,
     implemented; `fakes.github` removes a label, `SCN-TK-145`).
-  - [ ] The console's form "run again" and the link to the run before (`SCN-CONSOLE-050` to `-054`).
+  - [x] The console's form "run again" and the link to the run before (`SCN-CONSOLE-050` to `-054`, implemented).
 
 ### [ ] T-39 · waits that end (P1)
 
