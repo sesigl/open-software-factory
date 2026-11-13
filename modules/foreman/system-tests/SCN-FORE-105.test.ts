@@ -10,7 +10,7 @@ scenario("SCN-FORE-105", async ({ sut, fakes, given, when, then }) => {
       run = await failedWithEvents(sut, fakes);
       await run.events.publish("osf.work.retry-requested.v1", retryRequested(fakes, run.runId));
       const [started] = await run.events.received("run.started@v1", { timeoutMs: WAIT_MS });
-      newId = (started?.data as { runId: string }).runId;
+      newId = (started?.data as { runId: string } | undefined)?.runId as string;
       await run.until(newId, "complete");
     },
   );

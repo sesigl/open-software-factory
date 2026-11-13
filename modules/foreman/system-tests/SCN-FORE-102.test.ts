@@ -15,11 +15,14 @@ scenario("SCN-FORE-102", async ({ sut, fakes, given, when, then }) => {
     newId = newRunOf(await run.retry(run.runId));
   });
 
-  await then('the server publishes "run.started@v1" with the ID "<new id>.started" and the "retryOf" "<id>"', async () => {
-    const [started] = await run.events.received("run.started@v1", { timeoutMs: WAIT_MS });
-    expect(started?.id).toBe(`${newId}.started`);
-    expect(started?.data).toMatchObject({ runId: newId, retryOf: run.runId });
-  });
+  await then(
+    'the server publishes "run.started@v1" with the ID "<new id>.started" and the "retryOf" "<id>"',
+    async () => {
+      const [started] = await run.events.received("run.started@v1", { timeoutMs: WAIT_MS });
+      expect(started?.id).toBe(`${newId}.started`);
+      expect(started?.data).toMatchObject({ runId: newId, retryOf: run.runId });
+    },
+  );
 
   await then(
     'then "run.completed@v1" with the ID "<new id>.completed", the outcome "succeeded" and the "retryOf" "<id>"',

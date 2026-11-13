@@ -3,17 +3,20 @@ import { demoModule, GITHUB_README, testCases } from "./module.ts";
 
 scenario("SCN-TK-145", async ({ sut, given, when, then }) => {
   let bin = "";
-  await given('a module whose CLI prints the title and the number of labels of issue 1 at "DEMO_GITHUB_URL"', async () => {
-    bin = [
-      "const api = (path) =>",
-      "  fetch(`${process.env.DEMO_GITHUB_URL}${path}`, {",
-      "    headers: { authorization: `Bearer ${process.env.DEMO_GITHUB_TOKEN}` },",
-      "  }).then((response) => response.json());",
-      'const issue = await api("/repos/tester/demo/issues/1");',
-      'process.stdout.write(`${issue.title}: ${issue.labels.length} labels`);',
-      "",
-    ].join("\n");
-  });
+  await given(
+    'a module whose CLI prints the title and the number of labels of issue 1 at "DEMO_GITHUB_URL"',
+    async () => {
+      bin = [
+        "const api = (path) =>",
+        "  fetch(`${process.env.DEMO_GITHUB_URL}${path}`, {",
+        "    headers: { authorization: `Bearer ${process.env.DEMO_GITHUB_TOKEN}` },",
+        "  }).then((response) => response.json());",
+        'const issue = await api("/repos/tester/demo/issues/1");',
+        "process.stdout.write(`${issue.title}: ${issue.labels.length} labels`);",
+        "",
+      ].join("\n");
+    },
+  );
 
   await given(
     'its system test opens the issue "Export reports as CSV" in fakes.github, adds the label "factory", removes it and expects "Export reports as CSV: 0 labels"',

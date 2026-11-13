@@ -17,7 +17,7 @@ scenario("SCN-FORE-104", async ({ sut, fakes, given, when, then }) => {
   let newId = "";
   await then('the server publishes "run.started@v1" of a new run with the "retryOf" "<id>"', async () => {
     const [started] = await run.events.received("run.started@v1", { timeoutMs: WAIT_MS });
-    newId = (started?.data as { runId: string }).runId;
+    newId = (started?.data as { runId: string } | undefined)?.runId as string;
     expect(newId).not.toBe(run.runId);
     expect(started?.data).toMatchObject({ retryOf: run.runId });
   });
