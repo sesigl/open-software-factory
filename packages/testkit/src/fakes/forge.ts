@@ -62,8 +62,8 @@ export interface Forge {
   label(repository: string, number: number, name: string): Promise<void>;
   /** Merges the pull request into `main` with a merge commit and returns that commit. */
   mergePullRequest(pr: PullRequest): Promise<string>;
-  /** The bodies of the pull request's comments, oldest first. */
-  comments(pr: PullRequest): Promise<string[]>;
+  /** The bodies of the comments of the pull request or the issue, oldest first. */
+  comments(on: Pick<PullRequest, "repository" | "number">): Promise<string[]>;
   /** The commit statuses of the pull request's head commit. */
   statuses(pr: PullRequest): Promise<{ context: string; state: string; description: string }[]>;
   /** Commits the files on a new branch from `main` (or `from`) and returns the branch's head commit. */

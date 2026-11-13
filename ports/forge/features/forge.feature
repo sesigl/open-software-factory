@@ -45,6 +45,13 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     Then the test forge shows the comment "Evidence: 14 scenarios passed" on the pull request
     And comment prints the comment's ID and URL
 
+  @id=SCN-FORGE-034 @status=implemented @conformance
+  Scenario: A comment is posted on an issue
+    Given an issue in "tester/web"
+    When the client runs "comment" on it with the text "The run ended with the outcome failed"
+    Then the test forge shows the comment "The run ended with the outcome failed" on the issue
+    And comment prints the comment's ID and the issue's URL with the comment's anchor
+
   @id=SCN-FORGE-006 @status=implemented @conformance
   Scenario: pr reads the merge state of an open pull request with its checks
     Given an open pull request in "tester/web" whose head commit has the status "verify" with "success"

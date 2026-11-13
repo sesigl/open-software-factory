@@ -415,6 +415,18 @@ export async function startGitHub(): Promise<RunningGitHub> {
     return json;
   };
 
+  /** A comment on an issue, which is not a pull request; no webhook hears of it. */
+  const issueComment = (repo: Repository, entry: IssueEntry, user: string, body: string) => {
+    const stored = { id: nextId(), number: entry.number, body, user, createdAt: now() };
+    repo.comments.push(stored);
+    return {
+      id: stored.id,
+      body,
+      user: userJson(user),
+      html_url: `${issueUrl(repo, entry)}#issuecomment-${stored.id}`,
+    };
+  };
+
   /** Commits the files on top of `from` onto `branch`, creating the branch when it is new. */
   const commitOn = (repo: Repository, branch: string, from: string, message: string, files: Files) => {
     const parent = tip(repo, from);
@@ -659,6 +671,8 @@ export async function startGitHub(): Promise<RunningGitHub> {
       /^\/issues\/(\d+)\/comments$/,
       (repo, [number = ""], body, user) => {
         if (!body.body) throw new Answer(422, "Validation Failed: body is missing");
+        const onIssue = repo.issues.find((entry) => entry.number === Number(number));
+        if (onIssue) return [201, issueComment(repo, onIssue, user, String(body.body))];
         return [201, comment(repo, pull(repo, Number(number)), user, String(body.body))];
       },
     ],
@@ -852,8 +866,8 @@ export async function startGitHub(): Promise<RunningGitHub> {
       return mergePull(found.repo, found.pr, OWNER, "merge");
     },
     async comments(pr) {
-      return ref(pr)
-        .repo.comments.filter((entry) => entry.number === pr.number)
+      return repository(pr.repository)
+        .comments.filter((entry) => entry.number === pr.number)
         .map((entry) => entry.body);
     },
     async say(pr, text, as = REVIEWER) {
