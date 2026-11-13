@@ -119,10 +119,11 @@ export function firstView(workItem: WorkItem, definition: Definition, version: s
   };
 }
 
-/** A stage that did not start yet; a stage that only waits shows no agent (ADR 0107). */
+/** A stage that did not start yet; a stage that only waits names itself as its agent and says so (ADR 0107). */
 const pendingStage = ({ stage, agent }: { stage: string; agent?: string }): StageView => ({
   stage,
-  ...(agent ? { agent } : {}),
+  agent: agent ?? stage,
+  ...(agent ? {} : { wait: true }),
   state: "pending",
 });
 

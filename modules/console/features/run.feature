@@ -5,7 +5,7 @@ Feature: The run page
 
   @id=SCN-CONSOLE-055 @status=implemented
   Scenario: The run page shows a stage that only waits with "waits" instead of an agent
-    Given a foreman with a run whose stage "verify" has no agent and succeeded
+    Given a foreman with a run whose stage "verify" only waits and succeeded
     When a person opens the run's page
     Then the page shows the stage "verify" with "waits" in the column of the agent, as "succeeded"
     And the page does not contain "undefined"

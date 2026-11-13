@@ -3093,7 +3093,11 @@
           },
           "agent": {
             "$ref": "#/components/schemas/Name",
-            "description": "The agent that runs the stage; none for a stage that only waits (ADR 0107)."
+            "description": "The agent that runs the stage; the stage's name for a stage that only waits (ADR 0107)."
+          },
+          "wait": {
+            "type": "boolean",
+            "description": "True for a stage that only waits: it runs no agent and starts no session (ADR 0107)."
           },
           "state": {
             "$ref": "#/components/schemas/StageState"
@@ -3140,6 +3144,7 @@
         },
         "required": [
           "stage",
+          "agent",
           "state"
         ],
         "description": "foreman: one stage of a run (ADR 0067)."

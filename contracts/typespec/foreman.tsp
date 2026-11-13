@@ -45,8 +45,11 @@ model CheckView {
 model StageView {
   stage: Name;
 
-  /** The agent that runs the stage; none for a stage that only waits (ADR 0107). */
-  agent?: Name;
+  /** The agent that runs the stage; the stage's name for a stage that only waits (ADR 0107). */
+  agent: Name;
+
+  /** True for a stage that only waits: it runs no agent and starts no session (ADR 0107). */
+  wait?: boolean;
 
   state: StageState;
 

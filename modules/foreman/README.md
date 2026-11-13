@@ -223,7 +223,7 @@ blocked. Such a stage needs a forge adapter under `providers.forge`, as `checks`
 
 A stage with `wait: true` runs no agent ([ADR 0107](../../docs/decisions/0107-a-stage-that-only-waits.md)): it waits
 for its checks, for `proof` when it has `evidence: required`, and for its gate, and then succeeds, with no harness
-session, no sandbox and no model call. The run shows it without `agent` and `sessionId`. Such a stage names no
+session, no sandbox and no model call. The run shows it with `wait: true`, its own name as `agent` and no `sessionId`. Such a stage names no
 `agent`, and it names `checks`, `evidence: required` or a `gate`; `foreman serve` stops at the start otherwise, with
 `factory.yaml: /workflow/<n>/agent: a stage that only waits names no agent` or
 `factory.yaml: /workflow/<n>/wait: a stage that only waits names checks, the evidence "required" or a gate`. A later

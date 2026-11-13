@@ -3,9 +3,11 @@ import { foreman, open, RUN, rows, runOf, serving } from "./console.ts";
 
 scenario("SCN-CONSOLE-055", async ({ sut, fakes, given, when, then }) => {
   let api: Awaited<ReturnType<typeof foreman>>;
-  await given('a foreman with a run whose stage "verify" has no agent and succeeded', async () => {
+  await given('a foreman with a run whose stage "verify" only waits and succeeded', async () => {
     api = await foreman(fakes, [
-      runOf("Add diagnostics to cloud agent runs", { stages: [{ stage: "verify", state: "succeeded" }] }),
+      runOf("Add diagnostics to cloud agent runs", {
+        stages: [{ stage: "verify", agent: "verify", wait: true, state: "succeeded" }],
+      }),
     ]);
   });
 

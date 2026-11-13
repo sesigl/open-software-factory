@@ -111,7 +111,7 @@ Feature: Checks before a stage
     Given "foreman serve" runs the README's "checks/factory.yaml" with the stage "verify" before "ship" that has "wait: true" and "evidence: required", with the fake GitHub, whose pull request "tester/web#1" has the check "proof" in the state "success"
     And the scripted "implement" turn replies with the link of that pull request
     When a program posts the README's "work.json" to "/v1/runs" with the API token
-    Then "/v1/runs/<id>" shows the state "complete" with the stage "verify" "succeeded", its check "proof" "success", no agent and no session
+    Then "/v1/runs/<id>" shows the state "complete" with the stage "verify" "succeeded", its check "proof" "success", marked as a stage that only waits and with no session
     And the harness received the prompts of the stages "plan", "implement" and "ship" and no other
 
   @id=SCN-FORE-118 @status=implemented

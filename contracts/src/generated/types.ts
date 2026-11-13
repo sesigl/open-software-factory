@@ -1084,8 +1084,10 @@ export type components = {
         /** @description foreman: one stage of a run (ADR 0067). */
         StageView: {
             stage: components["schemas"]["Name"];
-            /** @description The agent that runs the stage; none for a stage that only waits (ADR 0107). */
-            agent?: components["schemas"]["Name"];
+            /** @description The agent that runs the stage; the stage's name for a stage that only waits (ADR 0107). */
+            agent: components["schemas"]["Name"];
+            /** @description True for a stage that only waits: it runs no agent and starts no session (ADR 0107). */
+            wait?: boolean;
             state: components["schemas"]["StageState"];
             /** @description The harness session of the stage's agent, once it started. */
             sessionId?: string;

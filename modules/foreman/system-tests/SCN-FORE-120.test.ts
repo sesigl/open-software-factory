@@ -19,12 +19,12 @@ scenario("SCN-FORE-120", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then(
-    '"/v1/runs/<id>" shows the state "complete" with the stage "approve" "succeeded", its gate "g0a1b2c3d4e5f6a7b", no agent and no session',
+    '"/v1/runs/<id>" shows the state "complete" with the stage "approve" "succeeded", its gate "g0a1b2c3d4e5f6a7b", marked as a stage that only waits and with no session',
     async () => {
       const view = await run.until(run.runId, "complete");
       const approve = view.stages[2];
       expect(approve).toMatchObject({ stage: "approve", state: "succeeded", gateId: GATE });
-      expect(approve && "agent" in approve).toBe(false);
+      expect(approve?.wait).toBe(true);
       expect(approve?.sessionId).toBeUndefined();
     },
   );

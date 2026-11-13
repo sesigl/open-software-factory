@@ -21,8 +21,9 @@ does not read the checks again (`TODO.md` T-40).
 - A stage with `wait: true` names no `agent`, and it names at least one of `checks`, `evidence: required` or `gate`: a
   stage that waits for nothing is a mistake. `factory lint` and `foreman serve` refuse both, with the JSON Pointer of
   the field, as for the other rules a schema cannot express.
-- The run's view shows such a stage without `agent` and without `sessionId`. `StageView.agent` becomes optional; the
-  contract keeps every document valid that was valid before, so it is an addition (CONTRACT).
+- The run's view shows such a stage with `wait: true` and without `sessionId`. `StageView.agent` stays required, because
+  a response field that becomes optional breaks a client that reads it (CONTRACT); for a stage that only waits it holds
+  the stage's name, as a stage without `agent` names its agent today. `StageView.wait` is an optional addition.
 - `factory resolve` fills in a stage's agent only for a stage that runs one.
 - The reference factory and this repository's factory give `ship` the checks `[verify]` and `evidence: required`, so
   `ship` starts only when `verify` and `proof` succeeded on the head commit of the run's pull request (the forge port's

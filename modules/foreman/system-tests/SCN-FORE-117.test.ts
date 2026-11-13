@@ -25,7 +25,7 @@ scenario("SCN-FORE-117", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then(
-    '"/v1/runs/<id>" shows the state "complete" with the stage "verify" "succeeded", its check "proof" "success", no agent and no session',
+    '"/v1/runs/<id>" shows the state "complete" with the stage "verify" "succeeded", its check "proof" "success", marked as a stage that only waits and with no session',
     async () => {
       const view = await server.until(runId, "complete");
       expect(view.stages.map((stage) => [stage.stage, stage.state])).toEqual([
@@ -36,7 +36,7 @@ scenario("SCN-FORE-117", async ({ sut, fakes, given, when, then }) => {
       ]);
       const verify = view.stages[2];
       expect(verify?.checks).toEqual([{ name: "proof", state: "success" }]);
-      expect(verify && "agent" in verify).toBe(false);
+      expect(verify?.wait).toBe(true);
       expect(verify?.sessionId).toBeUndefined();
       expect(view.stages[3]?.sessionId).toBeDefined();
     },
