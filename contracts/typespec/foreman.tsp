@@ -60,6 +60,9 @@ model StageView {
   /** The checks the stage waits for, once the foreman read them (ADR 0069). */
   checks?: CheckView[];
 
+  /** Since when the stage waits for its checks, its gate or a person, while it is blocked (ADR 0106). */
+  waitingSince?: utcDateTime;
+
   /** When a person took the stage over from its agent (ADR 0070). */
   takenOverAt?: utcDateTime;
 

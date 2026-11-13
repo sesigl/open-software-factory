@@ -1090,6 +1090,11 @@ export type components = {
             checks?: components["schemas"]["CheckView"][];
             /**
              * Format: date-time
+             * @description Since when the stage waits for its checks, its gate or a person, while it is blocked (ADR 0106).
+             */
+            waitingSince?: string;
+            /**
+             * Format: date-time
              * @description When a person took the stage over from its agent (ADR 0070).
              */
             takenOverAt?: string;
