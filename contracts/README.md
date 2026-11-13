@@ -54,7 +54,7 @@ first is gatekeeper's: `POST /v1/gates` and `GET /v1/gates/{gateId}` with the mo
 `GET /v1/work-items/{workItemId}` with the models `WorkSubmission`, `WorkItemView` and `WorkRequest`, and
 `GET /v1/inbox` with `WorkItemList`. The third is the
 foreman's (ADR 0067): `POST /v1/runs`, `GET /v1/runs/{runId}`, `POST /v1/runs/{runId}/signals` and
-`POST /v1/runs/{runId}/retry` (ADR 0105) with the models `RunView`, `StageView`, `CheckView` (ADR 0069), `RunSignal`
+`POST /v1/runs/{runId}/retry` (ADR 0105) with the models `RunView`, `StageView` (its `waitingSince`, ADR 0106), `CheckView` (ADR 0069), `RunSignal`
 and `RunRetry`. All three answer `GET /v1/health` with the models
 `Health` and `HealthCheck` (`HealthApi`, ADR 0086). `pnpm build` compiles the operations with the TypeSpec OpenAPI 3 emitter and copies their
 paths next to the named models; an operation that uses a type that is no model fails the build. The package exports

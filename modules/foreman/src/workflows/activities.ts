@@ -19,6 +19,7 @@ import {
   type Fact,
   gateSummaryOf,
   lastPullRequestIn,
+  missingOf,
   nextStep,
   promptOf,
   pullRequestOf,
@@ -27,6 +28,7 @@ import {
   runCompleted,
   runStarted,
   type Step,
+  type Waits,
 } from "../domain/run.ts";
 import { type Outcome, otlpOf, outcomeOf, type SpanFacts, traceparentOf } from "../domain/trace.ts";
 
@@ -44,8 +46,8 @@ export interface ActivityDeps {
   forges: Record<string, string>;
   /** FORGE_URL and FORGE_TOKEN of the forge adapter. */
   forgeEnv: Record<string, string | undefined>;
-  /** How long a stage waits before it reads pending checks again. */
-  checkPollMs: number;
+  /** How long a stage waits before it reads pending checks again, for its checks, and for its gate (ADR 0106). */
+  waits: Waits;
   /** The foreman's data folder: each run works in `runs/<run ID>`. */
   data: string;
   /** How often a running stage looks for steering messages and reports that it lives. */
@@ -144,7 +146,7 @@ export function activities(deps: ActivityDeps) {
 
   return {
     async next(view: RunView, definition: Definition): Promise<Step> {
-      return nextStep(view, definition, deps.checkPollMs);
+      return nextStep(view, definition, deps.waits);
     },
     async apply(view: RunView, fact: Fact): Promise<RunView> {
       return apply(view, fact, deps.now());
@@ -196,8 +198,11 @@ export function activities(deps: ActivityDeps) {
       });
       return { kind: "gate", index, gateId: gate.id, state: gate.state };
     },
-    /** The stage's checks on the run's pull request, through the forge adapter that the factory names. */
-    async readChecks(view: RunView, definition: Definition, index: number): Promise<Fact> {
+    /**
+     * The stage's checks on the run's pull request, through the forge adapter that the factory names; `afterMs` when
+     * this is the last read, after the foreman's limit (ADR 0106).
+     */
+    async readChecks(view: RunView, definition: Definition, index: number, afterMs?: number): Promise<Fact> {
       const names = definition.stages[index]?.checks ?? [];
       if (!view.pullRequest)
         return { kind: "checks", index, checks: [], reason: "no earlier stage linked a pull request" };
@@ -209,7 +214,7 @@ export function activities(deps: ActivityDeps) {
         repo,
         number,
       );
-      return { kind: "checks", index, checks: checksOf(names, printed) };
+      return { kind: "checks", index, checks: checksOf(names, printed), afterMs, missing: missingOf(names, printed) };
     },
     /**
      * Runs the stage's agent, in a sandbox when it declares one; steering messages from the `steered`-th on are for it.

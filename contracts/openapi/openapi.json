@@ -3110,6 +3110,11 @@
             },
             "description": "The checks the stage waits for, once the foreman read them (ADR 0069)."
           },
+          "waitingSince": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Since when the stage waits for its checks, its gate or a person, while it is blocked (ADR 0106)."
+          },
           "takenOverAt": {
             "type": "string",
             "format": "date-time",

@@ -83,3 +83,25 @@ Feature: Checks before a stage
     When the user runs "foreman serve"
     Then the command exits with code 2
     And the output contains "factory.yaml: /workflow/2/evidence: name one forge adapter under providers.forge: the stage waits for the check \"proof\""
+
+  @id=SCN-FORE-112 @status=implemented
+  Scenario: A check that stays pending past the foreman's limit fails the stage
+    Given "foreman serve" runs the README's "checks/factory.yaml" with "FOREMAN_CHECK_TIMEOUT_MS" "1000" and the fake GitHub, whose pull request "tester/web#1" has the check "verify" in the state "pending"
+    And the scripted "implement" turn replies with the link of that pull request
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then "/v1/runs/<id>" shows the state "failed" with the stage "ship" "failed" and the reason "the checks did not succeed after 1000 ms: verify is pending"
+    And the harness never received the prompt "Merge the pull request"
+
+  @id=SCN-FORE-113 @status=implemented
+  Scenario: A check that the pull request's head commit does not have is named as missing when the limit ends the wait
+    Given "foreman serve" runs the README's "checks/factory.yaml" whose stage "ship" has "evidence: required", with "FOREMAN_CHECK_TIMEOUT_MS" "1000" and the fake GitHub, whose pull request "tester/web#1" has the check "verify" in the state "success" and no check "proof"
+    And the scripted "implement" turn replies with the link of that pull request
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then "/v1/runs/<id>" shows the state "failed" with the stage "ship" "failed" and the reason "the checks did not succeed after 1000 ms: proof is missing on the pull request's head commit"
+
+  @id=SCN-FORE-114 @status=implemented
+  Scenario: A stage that waits for a check shows since when it waits
+    Given a run of the README's "checks/factory.yaml" that is "blocked" with the stage "ship" "blocked" because the check "verify" of its pull request is "pending"
+    When a program gets "/v1/runs/<id>" with the API token
+    Then the stage "ship" shows "waitingSince" "2026-01-01T00:00:00.000Z"
+    And the stages that do not wait show no "waitingSince"

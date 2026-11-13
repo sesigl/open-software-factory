@@ -301,6 +301,8 @@ export interface ChecksSetup {
   factory?: string;
   /** More harness turns, after the turns of the three stages. */
   turns?: HarnessTurn[];
+  /** More variables of the server. */
+  env?: Record<string, string>;
 }
 
 /** The README's "checks/factory.yaml" whose stage "ship" must also produce evidence. */
@@ -346,6 +348,7 @@ export async function servingChecks(sut: Sut, fakes: Fakes, setup: ChecksSetup =
       FOREMAN_FORGE_URL: github.url,
       FOREMAN_FORGE_TOKEN: github.token,
       FOREMAN_CHECK_POLL_MS: "100",
+      ...setup.env,
     },
   });
   return { ...server, github, pr, check };

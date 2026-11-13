@@ -78,6 +78,16 @@
       "default": "30000",
       "description": "serve: how long a stage that waits for pending checks waits before it reads them again, in milliseconds."
     },
+    "FOREMAN_CHECK_TIMEOUT_MS": {
+      "type": "string",
+      "default": "7200000",
+      "description": "serve: how long a stage waits for its checks to succeed, in milliseconds; then it fails with a reason that names each check that did not end (ADR 0106)."
+    },
+    "FOREMAN_GATE_TIMEOUT_MS": {
+      "type": "string",
+      "default": "604800000",
+      "description": "serve: how long a stage waits for the decision of its gate, in milliseconds; then the gate expires and the stage is rejected (ADR 0106)."
+    },
     "FOREMAN_INFERENCE_RETRY_MS": {
       "type": "string",
       "default": "1000",
