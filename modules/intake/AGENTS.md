@@ -16,7 +16,7 @@ The only ways a system test or another program may use this module:
 - Outside systems it calls: the foreman's HTTP API at `INTAKE_FOREMAN_URL`, from `intake mcp` for `run_evidence`
 - Server state: the schema `intake` in the PostgreSQL database at `INTAKE_DATABASE_URL`, or the embedded PostgreSQL
   in `OSF_DATA`; private to the module
-- Events: `work.received@v1` out, `run.started@v1` and `run.completed@v1` in (`contracts/events/`), on NATS at
+- Events: `work.received@v1` and `work.retry-requested@v1` out, `run.started@v1` and `run.completed@v1` in (`contracts/events/`), on NATS at
   `INTAKE_NATS_URL`
 - Environment variables: the list in `README.md#configuration` (generated from `src/config.schema.json`)
 

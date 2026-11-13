@@ -267,3 +267,57 @@ export async function slackFollowing(sut: Sut, fakes: Fakes) {
     publish: (event: ReturnType<typeof runEvent>) => events.publish(SUBJECTS[event.type] as string, event as never),
   };
 }
+
+/** The run that runs the work item of RUN again (ADR 0105). */
+export const RUN_AGAIN = "run_0f3c7e91a2b44d6e8c05";
+
+/** The run event as the new run RUN_AGAIN publishes it, with the "retryOf" RUN. */
+export function rerunEvent(event: ReturnType<typeof runEvent>): ReturnType<typeof runEvent> {
+  const id = event.id.replace(RUN, RUN_AGAIN);
+  const data = { ...event.data, runId: RUN_AGAIN, retryOf: RUN };
+  return { ...event, id, subject: RUN_AGAIN, data } as ReturnType<typeof runEvent>;
+}
+
+export const RETRY_SUBJECT = "osf.work.retry-requested.v1";
+
+/**
+ * The server, with NATS and the GitHub forge adapter, made a work item of the issue ISSUE labeled "factory", and the
+ * foreman published these run events of RUN for it; `relabel` removes the label and adds it again, and `settled`
+ * resolves once the server handled every delivery before it: it labels another issue and waits for its work item's
+ * "work.received@v1", which the outbox publishes after any event of an earlier delivery.
+ */
+export async function labeledFollowing(sut: Sut, fakes: Fakes, runEvents: ReturnType<typeof runEvent>[]) {
+  const nats = await fakes.nats();
+  const server = await serving(sut, { ...forgeEnv(sut), INTAKE_NATS_URL: nats.url });
+  const forge = await githubTo(fakes, `${server.url}/forge/events`);
+  const events = await sut.events.watch(nats, "osf.>");
+  const retries = await sut.events.watch(nats, RETRY_SUBJECT);
+  const issue = await forge.labeled("factory");
+  const { workItem } = await eventually(server, issue.url);
+  for (const event of runEvents) {
+    const ours = { ...event, data: { ...event.data, workItemId: workItem.id } };
+    await events.publish(SUBJECTS[event.type] as string, ours as never);
+  }
+  await expect
+    .poll(async () => (await server.workItem(workItem.id))?.runId, { timeout: 10_000, interval: 50 })
+    .toBe(RUN);
+  let others = 0;
+  return {
+    ...server,
+    ...forge,
+    id: workItem.id,
+    events,
+    async relabel() {
+      await forge.github.unlabel("web", issue.number, "factory");
+      await forge.github.label("web", issue.number, "factory");
+    },
+    async settled() {
+      others++;
+      const other = await forge.github.openIssue("web", { title: `Other ${others}` });
+      await forge.github.label("web", other.number, "factory");
+      await events.received("work.received@v1", { count: 1 + others });
+    },
+    /** The events that arrived on RETRY_SUBJECT. */
+    retries,
+  };
+}

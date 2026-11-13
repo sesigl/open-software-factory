@@ -1,5 +1,5 @@
 // The work items, the requests that asked for them, and the event outbox, in the schema "intake" (ADR 0063).
-import type { WorkItem, WorkReceived } from "@opensoftware/contracts";
+import type { WorkItem, WorkReceived, WorkRetryRequested } from "@opensoftware/contracts";
 import type { Request, RunFact, Status, Stored } from "../domain/view.ts";
 import { originKey } from "../domain/work-item.ts";
 import { openDatabase, type Sql } from "./database.ts";
@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS intake.work_items (
 );
 ALTER TABLE intake.work_items ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'received';
 ALTER TABLE intake.work_items ADD COLUMN IF NOT EXISTS run_id text;
+ALTER TABLE intake.work_items ADD COLUMN IF NOT EXISTS retry_asked text;
 CREATE TABLE IF NOT EXISTS intake.requests (
   seq bigserial PRIMARY KEY,
   work_item text NOT NULL REFERENCES intake.work_items (id),
@@ -35,7 +36,7 @@ const TABLES_LOCK = 4_716_063;
 export interface Outgoing {
   seq: number;
   subject: string;
-  event: WorkReceived;
+  event: WorkReceived | WorkRetryRequested;
 }
 
 export interface Store {
@@ -51,8 +52,20 @@ export interface Store {
   get(id: string): Promise<Stored | undefined>;
   /** The IDs of the latest work items, the one received last first, in the status if one is given. */
   latest(status?: Status): Promise<string[]>;
-  /** Moves the work item to the run's status; "running" only moves a work item that is still "received". */
+  /**
+   * Moves the work item to the run's status. An event of the run the work item follows, or of a first run, moves it;
+   * "running" only while it is still "received". An event of the run after it, whose `retryOf` is the work item's run,
+   * moves the work item to that run from any status (ADR 0105). An event of another run changes nothing.
+   */
   followRun(fact: RunFact): Promise<void>;
+  /**
+   * Puts the event of `retry` for the work item's run in the outbox, in one transaction with the mark that it asked
+   * for that run, when the work item is "failed" or "cancelled" and did not ask for its run before; true when it did.
+   */
+  askRetry(
+    id: string,
+    retry: (workItem: WorkItem, runId: string) => { subject: string; event: WorkRetryRequested },
+  ): Promise<boolean>;
   /** The events not yet published, oldest first. */
   unpublished(): Promise<Outgoing[]>;
   published(seqs: number[]): Promise<void>;
@@ -119,14 +132,28 @@ export async function openStore(url: string | undefined, folder: string): Promis
       );
       return rows.map(({ id }) => id);
     },
-    async followRun({ workItemId, runId, status }) {
+    async followRun({ workItemId, runId, status, retryOf }) {
       await db.query(
-        "UPDATE intake.work_items SET status = $3, run_id = $2 WHERE id = $1 AND (status = 'received' OR $3 <> 'running')",
-        [workItemId, runId, status],
+        `UPDATE intake.work_items SET status = $3, run_id = $2 WHERE id = $1 AND (run_id = $4
+           OR (run_id IS NULL OR run_id = $2) AND (status = 'received' OR $3 <> 'running'))`,
+        [workItemId, runId, status, retryOf ?? null],
       );
     },
+    askRetry: (id, retry) =>
+      db.transaction(async (sql) => {
+        const { rows } = await sql.query<{ item: WorkItem; run_id: string }>(
+          `UPDATE intake.work_items SET retry_asked = run_id WHERE id = $1 AND status IN ('failed', 'cancelled')
+             AND retry_asked IS DISTINCT FROM run_id RETURNING item, run_id`,
+          [id],
+        );
+        const [row] = rows;
+        if (!row) return false;
+        const { subject, event } = retry(row.item, row.run_id);
+        await sql.query("INSERT INTO intake.outbox (subject, event) VALUES ($1, $2)", [subject, event]);
+        return true;
+      }),
     async unpublished() {
-      const { rows } = await db.query<{ seq: string; subject: string; event: WorkReceived }>(
+      const { rows } = await db.query<{ seq: string; subject: string; event: Outgoing["event"] }>(
         "SELECT seq, subject, event FROM intake.outbox WHERE NOT published ORDER BY seq",
       );
       return rows.map((row) => ({ ...row, seq: Number(row.seq) }));

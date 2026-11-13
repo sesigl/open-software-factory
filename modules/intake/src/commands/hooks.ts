@@ -45,14 +45,14 @@ export const slackHook = (app: FastifyInstance, work: Inbox, channel: Channel) =
     return reply.code(200).send();
   });
 
-/** The forge's deliveries: an issue that gets the label becomes a work item. */
+/** The forge's deliveries: an issue that gets the label becomes a work item, or asks to run its work item again. */
 export const forgeHook = (app: FastifyInstance, work: Inbox, forge: Forge, label: string) =>
   webhook(app, "/forge/events", async (delivery, reply) => {
     const events = await forge.events(delivery);
     if (!events) return problem(reply, 401, "Unauthorized", "the forge's signature does not match");
     for (const event of events) {
       const submission = event.type === "issue.labeled@v1" && issueWork(event as unknown as IssueLabeled, label);
-      if (submission) await work.submit(submission);
+      if (submission) await work.labeled(submission);
     }
     return reply.code(200).send();
   });

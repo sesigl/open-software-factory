@@ -1,5 +1,11 @@
-// What the API shows of a work item, and the event a new one publishes.
-import { isValid, type WorkItem, type WorkItemView, type WorkReceived } from "@opensoftware/contracts";
+// What the API shows of a work item, the event a new one publishes, and the event that asks to run it again.
+import {
+  isValid,
+  type WorkItem,
+  type WorkItemView,
+  type WorkReceived,
+  type WorkRetryRequested,
+} from "@opensoftware/contracts";
 import { isoOf } from "./time.ts";
 
 /** One submission that asked for a work item. */
@@ -51,6 +57,20 @@ export const receivedEvent = (workItem: WorkItem, at: number): WorkReceived => (
   data: workItem,
 });
 
+export const RETRY_SUBJECT = "osf.work.retry-requested.v1";
+
+/** The event that asks the foreman to run the run again (ADR 0105); its ID is the run's, so it is asked once per run. */
+export const retryEvent = (workItem: WorkItem, runId: string, at: number): WorkRetryRequested => ({
+  specversion: "1.0",
+  id: `${runId}.retry`,
+  source: "/osf/intake",
+  type: "work.retry-requested@v1",
+  time: isoOf(at),
+  subject: workItem.id,
+  datacontenttype: "application/json",
+  data: { workItemId: workItem.id, runId, requester: workItem.requester },
+});
+
 /** The foreman's run events that move a work item on (ADR 0071). */
 export const RUN_SUBJECTS = ["osf.run.started.v1", "osf.run.completed.v1"];
 
@@ -60,10 +80,18 @@ export interface RunFact {
   runId: string;
   status: Exclude<Status, "received">;
   pullRequests: string[];
+  /** The run before, whose work item this run takes over (ADR 0105). */
+  retryOf?: string;
 }
 
 type RunEvent = {
-  data: { runId: string; workItemId: string; outcome?: "succeeded" | "failed" | "cancelled"; pullRequests?: string[] };
+  data: {
+    runId: string;
+    workItemId: string;
+    outcome?: "succeeded" | "failed" | "cancelled";
+    pullRequests?: string[];
+    retryOf?: string;
+  };
 };
 
 /** The fact of a "run.started@v1" or "run.completed@v1", or a problem for any other message. */
@@ -71,7 +99,7 @@ export function runFactOf(event: unknown): RunFact | string {
   const type = (event as { type?: unknown } | undefined)?.type;
   const format = type === "run.started@v1" ? "run-started" : type === "run.completed@v1" ? "run-completed" : undefined;
   if (!format || !isValid(format, event)) return `not a run.started@v1 or run.completed@v1: ${JSON.stringify(event)}`;
-  const { runId, workItemId, outcome, pullRequests = [] } = (event as RunEvent).data;
+  const { runId, workItemId, outcome, pullRequests = [], retryOf } = (event as RunEvent).data;
   const status = !outcome ? "running" : outcome === "succeeded" ? "complete" : outcome;
-  return { workItemId, runId, status, pullRequests };
+  return { workItemId, runId, status, pullRequests, ...(retryOf ? { retryOf } : {}) };
 }
