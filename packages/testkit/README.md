@@ -48,7 +48,8 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
   `quickStartOutput()` (the first `$OUTPUT/<file>` it names).
 - `sut.git`: `$INPUT` is a Git repository with a fixed author and clock.
 - `sut.http.start(args, { env })`: starts the module's `bin` as a server with the same environment as `sut.cli`
-  plus `PORT`, waits until it listens on `127.0.0.1:PORT` and returns the base URL. Then `get`, `post` and
+  plus `PORT`, waits until it listens on `127.0.0.1:PORT` and returns the base URL. `PORT` is a free port that no
+  other worker process picked in the last minute, so a parallel scenario's server cannot answer for this one. Then `get`, `post` and
   `request` call it (the body is parsed for `application/json` and any `+json` type, such as
   `application/problem+json`), `stop()` stops it so the test can start it again, for example with another
   environment, and `client<paths>()` gives an [openapi-fetch](https://openapi-ts.dev/openapi-fetch/) client

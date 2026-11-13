@@ -1,6 +1,9 @@
 // A long-running child process that listens on a port, for modules that run as servers.
 import { type ChildProcess, spawn } from "node:child_process";
+import { closeSync, mkdirSync, openSync, statSync, utimesSync } from "node:fs";
 import { connect, createServer } from "node:net";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 export interface Server {
   port: number;
@@ -19,11 +22,33 @@ const MODULE_PORTS = { from: 20_000, to: 32_767 };
 // service.
 export const SERVICE_PORTS = { from: 10_000, to: 19_999 };
 
-/** A port that was free a moment ago on 127.0.0.1, by default in the range of module ports. */
+/**
+ * A port that was free a moment ago on 127.0.0.1, by default in the range of module ports, and that no other process
+ * of the testkit picked in the last minute.
+ */
 export async function freePort(range = MODULE_PORTS): Promise<number> {
   for (;;) {
     const port = range.from + Math.floor(Math.random() * (range.to - range.from + 1));
-    if (await bindable(port)) return port;
+    if (claimed(port) && (await bindable(port))) return port;
+  }
+}
+
+// Scenarios run in several worker processes. Two of them can pick the same free port before either listens: the
+// second server then fails to listen, while its readiness check reaches the first. A file per port in the temporary
+// folder claims it for a minute, the time a server needs to listen.
+const CLAIMS = join(tmpdir(), "osf-testkit-ports");
+const CLAIM_MS = 60_000;
+
+function claimed(port: number): boolean {
+  const file = join(CLAIMS, String(port));
+  mkdirSync(CLAIMS, { recursive: true });
+  try {
+    closeSync(openSync(file, "wx"));
+    return true;
+  } catch {
+    if (Date.now() - statSync(file).mtimeMs < CLAIM_MS) return false;
+    utimesSync(file, new Date(), new Date());
+    return true;
   }
 }
 
