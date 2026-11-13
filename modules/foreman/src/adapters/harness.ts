@@ -1,10 +1,12 @@
 // A stage's agent through the harness port (ADR 0050, ADR 0067): the adapter runs as a program that speaks ACP on
-// stdio, and the foreman is its client. One session per stage, in the run's folder, with one prompt; a prompt sent
-// while the turn runs is a steering message. In a sandbox, the program is the sandbox adapter's exec (ADR 0068). The
-// foreman keeps what the agent wrote, to find the run's pull request in it (ADR 0069).
+// stdio, and the foreman is its client. One session per stage, in the run's folder, with the agent's MCP servers
+// (ADR 0112) and one prompt; a prompt sent while the turn runs is a steering message. In a sandbox, the program is the
+// sandbox adapter's exec (ADR 0068). The foreman keeps what the agent wrote, to find the run's pull request in it
+// (ADR 0069).
 import { spawn } from "node:child_process";
 import { Readable, Writable } from "node:stream";
 import { client, ndJsonStream, PROTOCOL_VERSION } from "@agentclientprotocol/sdk";
+import type { SessionMcpServer } from "../domain/tools.ts";
 
 export interface HarnessTurn {
   sessionId: string;
@@ -29,6 +31,8 @@ export interface TurnOptions {
   folder: string;
   env: Record<string, string | undefined>;
   prompt: string;
+  /** The agent's MCP servers, which the session gets (ADR 0112). */
+  mcpServers: SessionMcpServer[];
 }
 
 export async function startTurn(options: TurnOptions): Promise<HarnessTurn> {
@@ -72,7 +76,7 @@ export async function startTurn(options: TurnOptions): Promise<HarnessTurn> {
   try {
     const handshake = (async () => {
       await agent.request("initialize", { protocolVersion: PROTOCOL_VERSION, clientCapabilities: {} });
-      return agent.request("session/new", { cwd: options.folder, mcpServers: [] });
+      return agent.request("session/new", { cwd: options.folder, mcpServers: options.mcpServers });
     })();
     const answer = await Promise.race([handshake, exited]);
     if (typeof answer === "string") throw new Error(`the harness ${options.command.join(" ")} exited`);

@@ -11,6 +11,7 @@ import { type Gateway, hasKey } from "../adapters/inference.ts";
 import { type Bus, SUBJECTS } from "../adapters/nats.ts";
 import type { Exporter } from "../adapters/otlp.ts";
 import { createSandbox } from "../adapters/sandbox.ts";
+import { writeSkills } from "../adapters/skills.ts";
 import { type CommandLines, commandOf } from "../domain/adapters.ts";
 import type { Definition } from "../domain/definition.ts";
 import {
@@ -275,6 +276,7 @@ export function activities(deps: ActivityDeps) {
       if (plan.agent === undefined) return { kind: "stage-ended", index, stopReason: "end_turn" };
       const cwd = join(deps.data, "runs", view.runId);
       mkdirSync(cwd, { recursive: true });
+      writeSkills(cwd, plan.skills ?? []);
       const attributes = {
         "osf.run.id": view.runId,
         "osf.work_item.id": view.workItem.id,
@@ -316,9 +318,10 @@ export function activities(deps: ActivityDeps) {
           repository ? branchOf(view.runId) : undefined,
           previous,
         );
+        const mcpServers = plan.mcpServers ?? [];
         const turn = await startTurn(
           sandbox
-            ? { command: sandbox.exec(harness), cwd, folder: await sandbox.copyIn(), env: deps.env, prompt }
+            ? { command: sandbox.exec(harness), cwd, folder: await sandbox.copyIn(), env: deps.env, prompt, mcpServers }
             : {
                 command: harness,
                 cwd,
@@ -330,6 +333,7 @@ export function activities(deps: ActivityDeps) {
                   ...agentEnv,
                 },
                 prompt,
+                mcpServers,
               },
         );
         sessionId = turn.sessionId;

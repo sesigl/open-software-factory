@@ -63,11 +63,16 @@ export interface HarnessCommand {
   output: string;
 }
 
-/** A session the agent opened: its folder and the model and effort variables of its environment (ADR 0070, 0078). */
+/**
+ * A session the agent opened: its folder, the model and effort variables of its environment (ADR 0070, 0078) and the
+ * MCP servers of `session/new` (ADR 0112).
+ */
 export interface HarnessSession {
   cwd: string;
   /** The variables `OPENAI_*`, `ANTHROPIC_*`, `OSF_EFFORT` and `TRACEPARENT` the agent got, by name. */
   env: Record<string, string>;
+  /** The MCP servers the client gave the session, as ACP sends them. */
+  mcpServers: unknown[];
 }
 
 export interface Harness {

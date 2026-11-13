@@ -92,3 +92,10 @@ Feature: Sandboxes
     Given "foreman serve" runs the README's "sandboxed/factory.yaml" with a fake sandbox adapter as "docker" and a scripted harness that ends every turn
     When a program posts the README's "work.json" to "/v1/runs" with the API token
     Then the spec of each stage's sandbox sets "OSF_EFFORT" to "medium"
+
+  @id=SCN-FORE-143 @status=implemented @realizes=SCN-FACTORY-RUNTIME-004
+  Scenario: A sandboxed stage's egress allows the host of its agent's remote MCP server
+    Given "foreman serve" runs the README's "sandboxed/factory.yaml" whose agent "plan" declares the MCP server "registry:io.github.acme/tickets@^1", which "factory.lock" pins as the remote "https://mcp.acme.example/mcp", with a fake sandbox adapter as "docker"
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then the sandbox adapter got for "plan" the egress hosts "registry.npmjs.org", "api.anthropic.com" and "mcp.acme.example", and for "implement" only the first two
+    And the harness opened the session of "plan" with the MCP server "tickets" at "https://mcp.acme.example/mcp" over HTTP

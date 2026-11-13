@@ -14,7 +14,8 @@ sandboxes, [ADR 0069](../../docs/decisions/0069-foreman-checks.md) for checks, a
 [ADR 0106](../../docs/decisions/0106-waits-that-end.md) for the limits of the waits, and
 [ADR 0107](../../docs/decisions/0107-a-stage-that-only-waits.md) for a stage that only waits, and
 [ADR 0111](../../docs/decisions/0111-the-result-of-a-stage-in-the-next-prompt.md) for the result of a stage in the next
-stage's prompt.
+stage's prompt, and [ADR 0112](../../docs/decisions/0112-an-agents-mcp-servers-and-skills-in-its-session.md) for an
+agent's MCP servers and skills.
 
 ## Quick start
 
@@ -162,7 +163,8 @@ stage then goes like this:
 `npx -y @opensoftware/sandbox-<name>@<range>` at the factory's range ([Versions](#versions)). A factory names at most one sandbox adapter. A factory that names none runs
 its sandboxes with the adapter of `FOREMAN_SANDBOX` (`docker`), so one factory runs in Docker on one machine and in
 Kubernetes in a cluster ([ADR 0096](../../docs/decisions/0096-agents-in-sandboxes-in-the-profile.md)). An agent without `sandbox` runs on
-the foreman's machine in the run's folder. A sandboxed agent reaches no MCP server yet.
+the foreman's machine in the run's folder. A sandboxed agent's egress also allows the host of each of its remote MCP
+servers; a server that runs with `npx` needs `registry.npmjs.org` in the agent's own `egress`.
 
 ## Checks
 
@@ -419,14 +421,19 @@ took it over, and a `reason` when it failed for a reason the foreman knows.
   file.
 - **Stages.** The stages run in the order of `workflow`, each in the run's folder `OSF_DATA/runs/<run ID>`, or in a
   sandbox when the stage's agent declares one ([Sandboxes](#sandboxes)). The foreman
-  starts the stage's harness adapter from `FOREMAN_HARNESSES`, speaks ACP to it, opens a session and sends one prompt:
+  starts the stage's harness adapter from `FOREMAN_HARNESSES`, speaks ACP to it, opens a session with the agent's MCP
+  servers and sends one prompt:
   the agent's prompt file, then the work item's ID, title and description, and `Origin: <url>` when the work item
   has an origin's link, like the issue it came from, `Branch: osf/<run ID>` when the run's pull request comes from the
   forge ([Checks](#checks)), `Pull request: <link>` once the run has one, and `Run before: …`
   in the first stage of a run that runs a run before it again ([Run again](#run-again)), and last the section
   `# Result of the stage <stage>` with what the agent of the stage before wrote, without its tool calls: its last 4000
   characters, after the line `[… the first <n> characters are cut]` when it wrote more (ADR 0111). It allows the tool calls the adapter asks
-  about; limit them with the adapter's `--allow`. A turn that ends with `end_turn` succeeds the stage; any other end
+  about; limit them with the adapter's `--allow`. Before the session, the foreman writes the files of each of the
+  agent's `skills` into the run's folder below `.claude/skills/<name>` and `.agents/skills/<name>`, replacing a folder
+  of that name (ADR 0112). The session's MCP servers are the agent's `mcp`: `<package>@<version>` runs as
+  `npx -y <package>@<version>`, and `registry:<name>@<range>` as `factory plan` pinned it in `factory.lock`, a package
+  run with `npx` or a remote URL over HTTP; a registry server without a pin stops the run. A turn that ends with `end_turn` succeeds the stage; any other end
   fails or cancels it, ends the run, and leaves the later stages `pending`. The adapter gets
   `OTEL_RESOURCE_ATTRIBUTES` with `osf.run.id`, `osf.work_item.id`, `osf.stage` and `osf.factory.version`, and the
   factory's inference gateway with the run's key and the agent's model ([Inference gateway](#inference-gateway)).
@@ -673,3 +680,5 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-139 | implemented | A sandbox adapter that the factory does not name runs its package without a range |
 | SCN-FORE-140 | implemented | The next stage's prompt holds the result of the stage before it |
 | SCN-FORE-141 | implemented | A result of more than 4000 characters reaches the next stage cut to its last 4000 |
+| SCN-FORE-142 | implemented | A stage's agent gets its MCP servers in its session and its skills in its folder |
+| SCN-FORE-143 | implemented | A sandboxed stage's egress allows the host of its agent's remote MCP server |

@@ -1,9 +1,9 @@
 // Reads the factory (ADR 0067): factory.yaml, checked against the contract and for its stages' agents, the text of
-// each agent's prompt, and the factory version, the commit of the folder that holds the file, which must be clean
-// (ADR 0110).
+// each agent's prompt, the files of its skills and its MCP servers with their pins in factory.lock (ADR 0112), and the
+// factory version, the commit of the folder that holds the file, which must be clean (ADR 0110).
 import { execFile } from "node:child_process";
-import { readFileSync } from "node:fs";
-import { basename, dirname, relative, resolve } from "node:path";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { basename, dirname, join, relative, resolve } from "node:path";
 import { promisify } from "node:util";
 import { UsageError } from "@opensoftware/cli";
 import { type FactoryDefinition, validate } from "@opensoftware/contracts";
@@ -27,8 +27,22 @@ export async function readFactory(path: string): Promise<Factory> {
     throw new UsageError(problems.map((problem) => `${name}: ${problem.path}: ${problem.message}`).join("\n"));
   const folder = dirname(file);
   const version = await mustBeClean(folder, name, filesOf(document as FactoryDefinition, folder, file));
-  const read = (prompt: string) => readFileSync(resolve(folder, prompt), "utf8");
-  return { definition: definitionOf(document as FactoryDefinition, read), version };
+  const read = (path: string) => readFileSync(resolve(folder, path), "utf8");
+  const lock = join(folder, "factory.lock");
+  const pins = existsSync(lock) ? JSON.parse(read(lock)).mcp : {};
+  const files = { read, folder: (path: string) => filesBelow(resolve(folder, path)), pins };
+  return { definition: definitionOf(document as FactoryDefinition, files), version };
+}
+
+/** The text of every file below the folder, by its path relative to it (ADR 0112). */
+function filesBelow(folder: string): Record<string, string> {
+  const entries = readdirSync(folder, { recursive: true, withFileTypes: true }).filter((entry) => entry.isFile());
+  return Object.fromEntries(
+    entries.map((entry) => {
+      const path = join(entry.parentPath, entry.name);
+      return [relative(folder, path), readFileSync(path, "utf8")];
+    }),
+  );
 }
 
 /** The files the foreman reads, relative to the factory's folder: factory.yaml, the prompts and the inference config. */
