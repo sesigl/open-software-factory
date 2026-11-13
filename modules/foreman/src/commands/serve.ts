@@ -14,6 +14,7 @@ import { gatekeeper } from "../adapters/gatekeeper.ts";
 import { type Attached, attachGateway, startGateway } from "../adapters/inference.ts";
 import { type Bus, openBus, SUBJECTS } from "../adapters/nats.ts";
 import { exporterOf } from "../adapters/otlp.ts";
+import { adaptersOf, type CommandLines, commandOf, MAP_OF, PORTS, type Port } from "../domain/adapters.ts";
 import type { Definition } from "../domain/definition.ts";
 import { isoNow } from "../domain/time.ts";
 import { activities } from "../workflows/activities.ts";
@@ -104,6 +105,9 @@ export async function serve(env: Env) {
   if (!token) throw new UsageError("set FOREMAN_API_TOKEN: the token that callers of the API send");
   const factoryPath = resolve(env.FOREMAN_FACTORY || "factory.yaml");
   const { definition } = await readFactory(factoryPath);
+  const maps = Object.fromEntries(
+    PORTS.map((port) => [port, JSON.parse(env[MAP_OF[port]] || "{}") as CommandLines]),
+  ) as Record<Port, CommandLines>;
   const now = () => isoNow(env.OSF_NOW);
   const warn = (text: string) => process.stderr.write(`foreman: ${text}\n`);
   const address = env.FOREMAN_TEMPORAL_ADDRESS || "localhost:7233";
@@ -118,7 +122,7 @@ export async function serve(env: Env) {
   const retryMs = Number(env.FOREMAN_INFERENCE_RETRY_MS || 1000);
   const data = resolve(env.OSF_DATA || ".foreman");
   const gatewayFolder = join(data, "inference");
-  const gateway = gatewayOf(definition.inference, dirname(factoryPath), gatewayFolder, env, retryMs, warn);
+  const gateway = gatewayOf(definition, maps.inference, dirname(factoryPath), gatewayFolder, env, retryMs, warn);
   // A gateway stops with the server, also when the server cannot start.
   try {
     const stopping = new AbortController();
@@ -133,10 +137,10 @@ export async function serve(env: Env) {
           now,
           bus,
           gatekeeper: gatekeeper(env.FOREMAN_GATEKEEPER_URL, env.FOREMAN_GATEKEEPER_TOKEN),
-          harnesses: JSON.parse(env.FOREMAN_HARNESSES || "{}") as Record<string, string>,
-          sandboxes: JSON.parse(env.FOREMAN_SANDBOXES || "{}") as Record<string, string>,
+          harnesses: maps.harness,
+          sandboxes: maps.sandbox,
           sandbox: env.FOREMAN_SANDBOX || "docker",
-          forges: JSON.parse(env.FOREMAN_FORGES || "{}") as Record<string, string>,
+          forges: maps.forge,
           forgeEnv: {
             ...(env.FOREMAN_FORGE_URL ? { FORGE_URL: env.FOREMAN_FORGE_URL } : {}),
             ...(env.FOREMAN_FORGE_TOKEN ? { FORGE_TOKEN: env.FOREMAN_FORGE_TOKEN } : {}),
@@ -162,7 +166,12 @@ export async function serve(env: Env) {
     );
     const [temporal, worker] = await Promise.all([Connection.connect({ address }), loading]);
     const client = new Client({ connection: temporal, namespace });
-    const work = runs({ client, taskQueue, factory: () => readFactory(factoryPath), now, stopping: stopping.signal });
+    // Each run names its adapters and the versions it asks for (ADR 0110).
+    const factory = async () => {
+      const read = await readFactory(factoryPath);
+      return { ...read, definition: { ...read.definition, adapters: adaptersOf(read.definition.ranges, maps) } };
+    };
+    const work = runs({ client, taskQueue, factory, now, stopping: stopping.signal });
     const running = worker.run();
     if (bus) await listen(bus, work, warn);
 
@@ -213,7 +222,8 @@ export async function serve(env: Env) {
 
 /** The gateway of the factory's inference adapter from its config, a path relative to the factory's folder. */
 function gatewayOf(
-  inference: Definition["inference"],
+  { inference, ranges }: Definition,
+  lines: CommandLines,
   folder: string,
   gatewayFolder: string,
   env: Env,
@@ -221,10 +231,9 @@ function gatewayOf(
   warn: (text: string) => void,
 ): Attached | undefined {
   if (!inference) return undefined;
-  const lines = JSON.parse(env.FOREMAN_INFERENCES || "{}") as Record<string, string>;
-  const adapter = lines[inference.adapter] ?? `npx -y @opensoftware/inference-${inference.adapter}`;
+  const adapter = commandOf(lines, "inference", inference.adapter, ranges);
   return attachGateway(
-    () => startGateway(adapter.split(" "), resolve(folder, inference.config), env, gatewayFolder),
+    () => startGateway(adapter, resolve(folder, inference.config), env, gatewayFolder),
     retryMs,
     warn,
   );

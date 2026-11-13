@@ -2,6 +2,7 @@
 // inference adapters, and its stages in order, each with its agent, the agent's harness, model, effort, prompt text and
 // sandbox, its checks and its gate. Checked once against the contract and once for what only the foreman sees.
 import type { FactoryDefinition, SandboxSpec } from "@opensoftware/contracts";
+import type { AdapterVersion, Ranges } from "./adapters.ts";
 
 /** The agent of a stage that runs one; a stage that only waits has none (ADR 0107). */
 export interface AgentPlan {
@@ -33,6 +34,10 @@ export interface Definition {
   /** The inference adapter under `providers.inference`, its config as `factory.yaml` names it, and a run's budget. */
   inference?: { adapter: string; config: string; budget?: number };
   stages: StagePlan[];
+  /** The ranges under `providers` of the ports that are programs (ADR 0110). */
+  ranges: Ranges;
+  /** The adapters and their versions that the run's view names; the server fills it from its maps (ADR 0110). */
+  adapters?: AdapterVersion[];
 }
 
 /** One reason a factory cannot run: a JSON Pointer into the file and what is wrong there. */
@@ -129,6 +134,12 @@ export function definitionOf(factory: FactoryDefinition, read: (path: string) =>
   return {
     factory: factory.factory,
     sandboxAdapter: Object.keys(factory.providers?.sandbox ?? {})[0],
+    ranges: {
+      harness: factory.providers?.harness ?? {},
+      sandbox: factory.providers?.sandbox ?? {},
+      forge: factory.providers?.forge ?? {},
+      inference: factory.providers?.inference ?? {},
+    },
     ...(forge ? { forgeAdapter: forge } : {}),
     ...(inference && factory.inference ? { inference: { adapter: inference, ...factory.inference } } : {}),
     stages: (factory.workflow ?? []).map((stage): StagePlan => {

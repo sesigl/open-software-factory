@@ -83,6 +83,22 @@ curl -H "Authorization: Bearer dev-token" http://localhost:8080/v1/runs/run_…
 The first call answers 201 with the run `run_…` in the state `running`. Once both agents ended their turns, the run is
 `complete` and both stages are `succeeded`. Temporal's UI at http://localhost:8233 shows the workflow `run_…`.
 
+## Versions
+
+A run names the versions it runs ([ADR 0110](../../docs/decisions/0110-versions-a-run-can-trust.md)):
+
+- Its `factoryVersion` is the commit of the factory's folder. The folder must be clean: `foreman serve`, a run's start
+  and a retry refuse a tracked file of the folder that differs from that commit, and a file the foreman reads
+  (`factory.yaml`, the prompts, the inference config) that Git does not track, with
+  `factory.yaml: commit the changed files <path>, <path>; a run's factory version is its commit`. The server exits
+  with code 2; `POST /v1/runs` and a retry answer 400. Other untracked files and ignored files do not count.
+- An adapter that `FOREMAN_HARNESSES`, `FOREMAN_SANDBOXES`, `FOREMAN_FORGES` or `FOREMAN_INFERENCES` does not name
+  runs `npx -y @opensoftware/<port>-<name>@<range>`, at the range under `providers.<port>.<name>` (`run` follows for
+  a harness). A map entry is a JSON list of the program and its arguments, for a path that holds a space, or a
+  string that the foreman splits at each space.
+- The run's `adapters` lists each adapter under `providers` with its range as `version`, and either the command line
+  the foreman builds as `command` or the map that names it as `configured`.
+
 ## Sandboxes
 
 The quick start runs both agents on your machine. Run an agent you do not trust with that machine in a sandbox: give
@@ -141,7 +157,7 @@ stage then goes like this:
 5. It destroys the sandbox, also when the stage failed or was cancelled.
 
 `FOREMAN_SANDBOXES` maps an adapter's name to its command line; an adapter it does not name runs
-`npx -y @opensoftware/sandbox-<name>`. A factory names at most one sandbox adapter. A factory that names none runs
+`npx -y @opensoftware/sandbox-<name>@<range>` at the factory's range ([Versions](#versions)). A factory names at most one sandbox adapter. A factory that names none runs
 its sandboxes with the adapter of `FOREMAN_SANDBOX` (`docker`), so one factory runs in Docker on one machine and in
 Kubernetes in a cluster ([ADR 0096](../../docs/decisions/0096-agents-in-sandboxes-in-the-profile.md)). An agent without `sandbox` runs on
 the foreman's machine in the run's folder. A sandboxed agent reaches no MCP server yet.
@@ -221,7 +237,7 @@ Serve it as in the quick start, with the forge adapter's token: `export FOREMAN_
 
 The forge adapter is the one the factory names under `providers.forge`; a factory with `checks` names exactly one.
 `FOREMAN_FORGES` maps an adapter's name to its command line; an adapter it does not name runs
-`npx -y @opensoftware/forge-<name>`. It gets `FORGE_URL` and `FORGE_TOKEN` from `FOREMAN_FORGE_URL` and
+`npx -y @opensoftware/forge-<name>@<range>` at the factory's range ([Versions](#versions)). It gets `FORGE_URL` and `FORGE_TOKEN` from `FOREMAN_FORGE_URL` and
 `FOREMAN_FORGE_TOKEN`.
 
 A stage with `evidence: required` also waits for the check `proof`: the commit status that
@@ -305,7 +321,7 @@ Serve it as in the quick start, with `export OSF_SECRET_ANTHROPIC_API_KEY=…` f
    alias of the config). A sandboxed stage gets them in its sandbox's environment.
 
 `FOREMAN_INFERENCES` maps an adapter's name to its command line; an adapter it does not name runs
-`npx -y @opensoftware/inference-<name>`. A factory names at most one inference adapter. Without one, the foreman sets
+`npx -y @opensoftware/inference-<name>@<range>` at the factory's range ([Versions](#versions)). A factory names at most one inference adapter. Without one, the foreman sets
 none of these variables, and each harness adapter calls the model API it is configured for.
 
 ## Effort level
@@ -482,15 +498,15 @@ the minor version. The one-time setup is the same as for contracts
 | `OSF_DATA` | string | `".foreman"` | serve: the folder of the runs' working folders, runs/<run ID>, and of the harness adapters' session records. |
 | `OSF_NOW` | string |  | The current time, like 2026-01-01T00:00:00Z, for the times of runs and stages. Default: the clock. |
 | `FOREMAN_API_TOKEN` | string |  | serve: the token that callers of /v1 send as Authorization: Bearer <token>. Required. |
-| `FOREMAN_FACTORY` | string | `"factory.yaml"` | serve: the factory definition. Its folder must be in a Git repository: a run's factory version is its commit. |
+| `FOREMAN_FACTORY` | string | `"factory.yaml"` | serve: the factory definition. Its folder must be in a Git repository and clean, with every tracked file and every file the foreman reads committed: a run's factory version is its commit (ADR 0110). |
 | `FOREMAN_TEMPORAL_ADDRESS` | string | `"localhost:7233"` | serve: the gRPC address of the Temporal server. |
 | `FOREMAN_TEMPORAL_NAMESPACE` | string | `"default"` | serve: the Temporal namespace of the runs. |
 | `FOREMAN_TASK_QUEUE` | string | `"foreman"` | serve: the Temporal task queue of the runs' workflows and activities. |
-| `FOREMAN_HARNESSES` | string | `"{}"` | serve: a JSON object from harness name to the command line of its adapter. A harness it does not name runs npx -y @opensoftware/harness-<name> run. |
-| `FOREMAN_SANDBOXES` | string | `"{}"` | serve: a JSON object from sandbox adapter name to the command line of the adapter. An adapter it does not name runs npx -y @opensoftware/sandbox-<name>. The factory names its adapter under providers.sandbox, or else FOREMAN_SANDBOX picks it. |
+| `FOREMAN_HARNESSES` | string | `"{}"` | serve: a JSON object from harness name to the command line of its adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. A harness it does not name runs npx -y @opensoftware/harness-<name>@<range> run, at the range under providers.harness (ADR 0110). |
+| `FOREMAN_SANDBOXES` | string | `"{}"` | serve: a JSON object from sandbox adapter name to the command line of the adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. An adapter it does not name runs npx -y @opensoftware/sandbox-<name>@<range>, at the range under providers.sandbox (ADR 0110). The factory names its adapter under providers.sandbox, or else FOREMAN_SANDBOX picks it. |
 | `FOREMAN_SANDBOX` | string | `"docker"` | serve: the sandbox adapter of a factory that names none under providers.sandbox, like docker in the Compose profile and kubernetes in the Helm chart. |
-| `FOREMAN_FORGES` | string | `"{}"` | serve: a JSON object from forge adapter name to the command line of the adapter. An adapter it does not name runs npx -y @opensoftware/forge-<name>. The factory names its adapter under providers.forge. |
-| `FOREMAN_INFERENCES` | string | `"{}"` | serve: a JSON object from inference adapter name to the command line of the adapter. An adapter it does not name runs npx -y @opensoftware/inference-<name>. The factory names its adapter under providers.inference. |
+| `FOREMAN_FORGES` | string | `"{}"` | serve: a JSON object from forge adapter name to the command line of the adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. An adapter it does not name runs npx -y @opensoftware/forge-<name>@<range>, at the range under providers.forge (ADR 0110). The factory names its adapter under providers.forge. |
+| `FOREMAN_INFERENCES` | string | `"{}"` | serve: a JSON object from inference adapter name to the command line of the adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. An adapter it does not name runs npx -y @opensoftware/inference-<name>@<range>, at the range under providers.inference (ADR 0110). The factory names its adapter under providers.inference. |
 | `FOREMAN_FORGE_URL` | string |  | serve: the forge adapter's FORGE_URL, for a factory whose stages have checks. Default: the adapter's own default. |
 | `FOREMAN_FORGE_TOKEN` | string |  | serve: the forge adapter's FORGE_TOKEN: a token that may read the pull requests and their checks. Never written to a file. |
 | `FOREMAN_CHECK_POLL_MS` | string | `"30000"` | serve: how long a stage that waits for pending checks waits before it reads them again, in milliseconds. |
@@ -641,3 +657,7 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-128 | implemented | A stated pull request of another repository than the work item's is refused |
 | SCN-FORE-129 | implemented | A stage says so when the forge has no pull request of the run's branch and the agent states none |
 | SCN-FORE-130 | implemented | A stage whose forge adapter cannot list the pull requests succeeds and names the adapter's error |
+| SCN-FORE-131 | implemented | A factory with changes that are not committed stops the server at the start |
+| SCN-FORE-132 | implemented | A run does not start while the factory has changes that are not committed |
+| SCN-FORE-133 | implemented | The run's view names each adapter's version and the fallback's command line |
+| SCN-FORE-134 | implemented | An adapter's command line is a JSON list of arguments, and a path may hold a space |
