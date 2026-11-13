@@ -11,7 +11,8 @@ foreman, and Temporal's UI shows its history. Decisions: [ADR 0067](../../docs/d
 sandboxes, [ADR 0069](../../docs/decisions/0069-foreman-checks.md) for checks, and
 [ADR 0070](../../docs/decisions/0070-foreman-gateway-and-take-over.md) for the inference gateway and take over, and
 [ADR 0078](../../docs/decisions/0078-agent-effort.md) for the effort level of each agent, and
-[ADR 0106](../../docs/decisions/0106-waits-that-end.md) for the limits of the waits.
+[ADR 0106](../../docs/decisions/0106-waits-that-end.md) for the limits of the waits, and
+[ADR 0107](../../docs/decisions/0107-a-stage-that-only-waits.md) for a stage that only waits.
 
 ## Quick start
 
@@ -219,6 +220,15 @@ A stage with `evidence: required` also waits for the check `proof`: the commit s
 [proof](../proof/README.md) sets when it attaches the evidence of a pull request
 ([ADR 0088](../../docs/decisions/0088-evidence-check.md)). Run proof in the CI of the repository, or the stage stays
 blocked. Such a stage needs a forge adapter under `providers.forge`, as `checks` do.
+
+A stage with `wait: true` runs no agent ([ADR 0107](../../docs/decisions/0107-a-stage-that-only-waits.md)): it waits
+for its checks, for `proof` when it has `evidence: required`, and for its gate, and then succeeds, with no harness
+session, no sandbox and no model call. The run shows it without `agent` and `sessionId`. Such a stage names no
+`agent`, and it names `checks`, `evidence: required` or a `gate`; `foreman serve` stops at the start otherwise, with
+`factory.yaml: /workflow/<n>/agent: a stage that only waits names no agent` or
+`factory.yaml: /workflow/<n>/wait: a stage that only waits names checks, the evidence "required" or a gate`. A later
+stage that must start only on checks that succeeded on the pull request's head commit, like `ship`, names the same
+checks again, so the foreman reads them once more before it starts.
 
 ## Inference gateway
 
@@ -600,3 +610,6 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-114 | implemented | A stage that waits for a check shows since when it waits |
 | SCN-FORE-115 | implemented | A gate without a decision after the foreman's limit ends as expired |
 | SCN-FORE-116 | implemented | A decision after the foreman's limit ended the gate changes nothing |
+| SCN-FORE-117 | implemented | A stage that only waits succeeds when its checks succeeded, without a session |
+| SCN-FORE-118 | implemented | A factory with a stage that only waits and names an agent stops the server at the start |
+| SCN-FORE-119 | implemented | A factory with a stage that only waits for nothing stops the server at the start |
