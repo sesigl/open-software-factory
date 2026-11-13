@@ -58,7 +58,7 @@ and verified.
 
 The reference factory in `compose/factory/` has the stages triage, spec, implement (behind a gate that a member of
 `maintainers` approves in Slack, so the spec's pull request is approved before implement starts), review, verify (after the pull request's check `verify` succeeded, with
-evidence) and ship. foreman reads that check with `FOREMAN_FORGE_TOKEN`. Its prompts work on any GitHub repository:
+evidence) and ship (again only after `verify` and the evidence succeeded on the pull request's head commit). foreman reads that check with `FOREMAN_FORGE_TOKEN`. Its prompts work on any GitHub repository:
 each stage clones the repository of the issue in the work item's origin, reads the repository's own `AGENTS.md`,
 `CONTRIBUTING.md` and `README.md`, and runs the checks they name. Name your CI's check in the stage `verify` of
 `factory.yaml` when it is not `verify`. On GitHub, a job of GitHub Actions is a check run named after the job: its
@@ -128,6 +128,10 @@ the other size, change the agent's `effort` too.
 The stage verify has `evidence: required`: it fails until a proof evidence bundle is attached to its pull request
 ([ADR 0088](../docs/decisions/0088-evidence-check.md)). Run proof in the target repository's CI after its tests,
 with [proof's GitHub Action](../modules/proof/README.md#github-action) on the JUnit or Playwright reports.
+
+The stage verify still runs the agent `implement` once more after its checks. Once the released foreman and
+factory-spec carry [ADR 0107](../docs/decisions/0107-a-stage-that-only-waits.md), it becomes `wait: true`: a stage that
+only waits for its checks and its evidence, with no model call.
 
 ## Configuration
 
@@ -342,3 +346,7 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-026 | implemented | Every service of the Compose profile is healthy after one command, Jaeger as the trace store, and each server's health checks pass |
 | SCN-DIST-027 | implemented | The profile's LLM gateway holds no code under BerriAI's enterprise license |
 | SCN-DIST-028 | implemented | The reference factory asks for approval of the spec after the stage "spec" and before "implement" |
+| SCN-DIST-029 | implemented | The ship stage of the reference factory starts only when the checks "verify" and "proof" succeeded |
+| SCN-DIST-030 | implemented | The ship stage of this repository's factory starts only when the checks "verify" and "proof" succeeded |
+| SCN-DIST-031 | planned | The verify stage of the reference factory only waits and runs no agent |
+| SCN-DIST-032 | planned | The verify stage of this repository's factory only waits and runs no agent |

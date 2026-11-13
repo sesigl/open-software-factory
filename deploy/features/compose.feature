@@ -109,6 +109,34 @@ Feature: The Compose profile installs a complete factory with one command
     And the stage "spec" of the resolved factory has no gate
     And the stage "implement" of the resolved factory has the gate of "maintainers" with the policy "./policy/spec.rego"
 
+  @id=SCN-DIST-029 @status=implemented
+  Scenario: The ship stage of the reference factory starts only when the checks "verify" and "proof" succeeded
+    Given the Compose profile with every value of ".env.example" set in ".env"
+    When the operator runs "docker compose run --rm factory resolve"
+    Then the command exits with code 0
+    And the stage "ship" of the resolved factory has the checks ["verify"] and the evidence "required"
+
+  @id=SCN-DIST-030 @status=implemented
+  Scenario: The ship stage of this repository's factory starts only when the checks "verify" and "proof" succeeded
+    Given the Compose profile with every value of ".env.example" set in ".env" and "FACTORY_DIR" set to "../dogfood/factory"
+    When the operator runs "docker compose run --rm factory resolve"
+    Then the command exits with code 0
+    And the stage "ship" of the resolved factory has the checks ["verify"] and the evidence "required"
+
+  @id=SCN-DIST-031 @status=planned
+  Scenario: The verify stage of the reference factory only waits and runs no agent
+    Given the Compose profile with every value of ".env.example" set in ".env"
+    When the operator runs "docker compose run --rm factory resolve"
+    Then the command exits with code 0
+    And the stage "verify" of the resolved factory has "wait: true", no agent, the checks ["verify"] and the evidence "required"
+
+  @id=SCN-DIST-032 @status=planned
+  Scenario: The verify stage of this repository's factory only waits and runs no agent
+    Given the Compose profile with every value of ".env.example" set in ".env" and "FACTORY_DIR" set to "../dogfood/factory"
+    When the operator runs "docker compose run --rm factory resolve"
+    Then the command exits with code 0
+    And the stage "verify" of the resolved factory has "wait: true", no agent, the checks ["verify"] and the evidence "required"
+
   @id=SCN-DIST-013 @status=deprecated
   Scenario: The Compose profile takes the module images from the factory's registry
     Given the Compose profile with every value of ".env.example" set in ".env"

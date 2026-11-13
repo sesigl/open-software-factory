@@ -93,4 +93,7 @@ workflow:
     agent: implement
     checks: [verify]
     evidence: required
+  # Merges only when "verify" and proof's check succeeded on the pull request's head commit, read again after verify.
   - stage: ship
+    checks: [verify]
+    evidence: required
