@@ -112,6 +112,9 @@ docs/vision/           factory-level requirements; source for module scenarios, 
   sandbox calls are `fakes.http(routes, { containers: true })`, which the sandbox reaches at `host.docker.internal`
   through its egress proxy (ADR 0054). The kubernetes adapter's tests run on kind with agent-sandbox in CI; the egress
   pod reaches the runner as `host.docker.internal` through `OSF_SANDBOX_HOST_ALIASES` (ADR 0055).
+- A scenario of an adapter without a command line, which the foreman runs with `npx` at the factory's range, puts a
+  script named `npx` first on `PATH` that logs its arguments and runs the fake adapter, so no package is downloaded
+  (ADR 0110).
 - A module that drives the sandbox port, such as the foreman, gets `fakes.sandbox()`, whose sandboxes are folders on
   the host, and not the built docker adapter: a real sandbox would need Docker and an image with the module's harness
   in it, and the adapters' own scenarios already prove isolation (ADR 0068). One end-to-end scenario runs the scripted

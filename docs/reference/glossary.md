@@ -10,7 +10,7 @@ Use these terms in scenarios, code, UI text and docs.
 | --- | --- |
 | Factory | A closed loop of agents and people that turns work items into shipped, verified changes, declared in one factory definition. |
 | Factory definition | `factory.yaml` plus prompts, skills and policies in Git; the desired state of a factory. |
-| Factory version | The commit hash of the factory definition a run used. |
+| Factory version | The commit hash of the factory definition a run used; the foreman refuses a factory folder with changes that are not committed (ADR 0110). |
 | Lock file | `factory.lock` next to `factory.yaml`: the exact version of each MCP server from a registry, pinned by `factory plan`. |
 | Compose profile | `deploy/compose/`: the factory with all its services on one machine, started with one `docker compose up` (ADR 0074). |
 | Helm chart | `deploy/helm/osf/`: the factory on Kubernetes for platform teams, installed with one `helm install`; PostgreSQL, NATS and Temporal are in it or the team's own (ADR 0075). |

@@ -45,7 +45,8 @@ policies, in one Git repository. We copy Terraform's four pillars:
 | Plan, apply, drift | `plan`, `apply`, state | `factory plan` shows changes; `factory apply` registers webhooks, writes harness configs, sets gateway routes, upserts scorers; nightly plan reports drift |
 | Modules | reusable blocks | stage packs, for example `osf/modules/code-review@1.2` |
 
-Every run records the hash of the factory version it ran on.
+Every run records the hash of the factory version it ran on, and each adapter under `providers` with its range and
+command line (ADR 0110).
 
 ```yaml
 # Illustrative
