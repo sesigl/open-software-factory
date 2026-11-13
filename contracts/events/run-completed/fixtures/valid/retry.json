@@ -22,9 +22,7 @@
     "source": "slack",
     "costUsd": 1.42,
     "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
-    "pullRequests": [
-      "https://github.com/acme/web/pull/7"
-    ],
+    "pullRequests": ["https://github.com/acme/web/pull/7"],
     "retryOf": "01JABCDRUN00000000000000001"
   }
 }
