@@ -1,7 +1,8 @@
 // The inference adapter that fakes.inference() hands a module: node inference-adapter.ts <state folder> <command> ...
-// It has the commands start, key, spend-log, stop and list of the inference port (ADR 0056). A gateway is the file
-// <state>/gateways/<ID>; start prints the URL from the options and serves nothing there (ADR 0070). It logs each
-// config and each key for the test.
+// It has the commands start, key, revoke, spend-log, stop and list of the inference port (ADR 0056, ADR 0108). A gateway
+// is the file <state>/gateways/<ID>; start prints the URL from the options and serves nothing there (ADR 0070). A
+// run's key is the file <state>/run-keys/<ID>-<run ID>, so key prints the same key for the same run. It logs each config,
+// each new key and each revoke for the test.
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { InferenceLogEntry, InferenceOptions } from "./inference.ts";
@@ -42,9 +43,20 @@ const commands: Record<string, () => void> = {
   },
   key() {
     const [id, run, flag, budget] = args;
-    const key = `sk-fake-${counted("keys")}`;
-    log({ key, gateway: gateway(id), run: run as string, ...(flag === "--budget" ? { budget } : {}) });
-    process.stdout.write(`${key}\n`);
+    const file = join(state, "run-keys", `${gateway(id)}-${run}`);
+    if (!existsSync(file)) {
+      const key = `sk-fake-${counted("keys")}`;
+      mkdirSync(join(state, "run-keys"), { recursive: true });
+      writeFileSync(file, key);
+      log({ key, gateway: id as string, run: run as string, ...(flag === "--budget" ? { budget } : {}) });
+    }
+    process.stdout.write(`${readFileSync(file, "utf8")}\n`);
+  },
+  revoke() {
+    const [id, run] = args;
+    if (options.revokeFails) fail(options.revokeFails);
+    rmSync(join(state, "run-keys", `${gateway(id)}-${run}`), { force: true });
+    log({ revoke: run as string, gateway: id as string });
   },
   "spend-log"() {
     gateway(args[0]);
