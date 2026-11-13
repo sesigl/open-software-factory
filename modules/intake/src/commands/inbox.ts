@@ -72,11 +72,11 @@ export function inbox(store: Store, config: InboxConfig) {
       // A new work item, or one of a server without NATS, is "received" and asks for nothing.
       const { view: submitted } = await this.submit(submission);
       const at = config.now();
-      const asked = await store.askRetry(submitted.workItem.id, (workItem, runId) => ({
+      await store.askRetry(submitted.workItem.id, (workItem, runId) => ({
         subject: RETRY_SUBJECT,
         event: retryEvent(workItem, runId, at),
       }));
-      if (asked) await relay();
+      await relay();
     },
   };
 }

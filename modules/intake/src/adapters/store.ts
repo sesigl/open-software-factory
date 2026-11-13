@@ -60,12 +60,12 @@ export interface Store {
   followRun(fact: RunFact): Promise<void>;
   /**
    * Puts the event of `retry` for the work item's run in the outbox, in one transaction with the mark that it asked
-   * for that run, when the work item is "failed" or "cancelled" and did not ask for its run before; true when it did.
+   * for that run, when the work item is "failed" or "cancelled" and did not ask for its run before.
    */
   askRetry(
     id: string,
     retry: (workItem: WorkItem, runId: string) => { subject: string; event: WorkRetryRequested },
-  ): Promise<boolean>;
+  ): Promise<void>;
   /** The events not yet published, oldest first. */
   unpublished(): Promise<Outgoing[]>;
   published(seqs: number[]): Promise<void>;
@@ -150,7 +150,6 @@ export async function openStore(url: string | undefined, folder: string): Promis
           const { subject, event } = retry(row.item, row.run_id);
           await sql.query("INSERT INTO intake.outbox (subject, event) VALUES ($1, $2)", [subject, event]);
         }
-        return rows.length > 0;
       }),
     async unpublished() {
       const { rows } = await db.query<{ seq: string; subject: string; event: Outgoing["event"] }>(
