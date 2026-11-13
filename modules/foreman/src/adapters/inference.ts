@@ -1,31 +1,66 @@
 // The factory's inference gateway through the inference port (ADR 0056, ADR 0070). The adapter is a program; the
-// foreman starts one gateway while it serves, asks it for a key per run, and stops it at the end.
+// foreman starts one gateway while it serves, asks it for a key per run, and revokes the key when the run ended. A
+// gateway outlives a restart of the foreman while a run has a key, so the run keeps its key and its spend (ADR 0108):
+// its folder holds the gateway's ID and URL in `gateway.json` and a file per run with a key in `runs/`.
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { adapterRun, lastLine } from "./program.ts";
 
 export interface Gateway {
   /** The base URL of the gateway's OpenAI-compatible API, ending in `/v1`. */
   url: string;
-  /** A new key for the run, with the most it may spend in USD. */
+  /** The run's key, the same for the same run, with the most it may spend in USD. */
   key(runId: string, budget?: number): Promise<string>;
+  /** Deletes the run's key; once it was tried, the run no longer keeps the gateway at a stop. */
+  revoke(runId: string): Promise<void>;
+  /** Stops the gateway, unless a run still has a key. */
   stop(): Promise<void>;
 }
 
-/** Starts a gateway from the adapter's config file. */
+/** Whether the run got a key of the gateway whose folder this is, and the key is not revoked. */
+export const hasKey = (folder: string, runId: string): boolean => existsSync(join(folder, "runs", runId));
+
+/** Takes the gateway of the folder when the adapter still lists it, or starts one from the adapter's config file. */
 export async function startGateway(
   adapter: string[],
   config: string,
   env: Record<string, string | undefined>,
+  folder: string,
 ): Promise<Gateway> {
   // The adapter labels the gateway with its owner, so a later start removes it when this foreman was killed (ADR 0090).
   // `env` is the foreman's own environment, so its process ID belongs there.
   env.OSF_INFERENCE_OWNER = String(process.pid);
   const run = adapterRun("inference", adapter, env);
-  const { id, url } = JSON.parse(lastLine(await run("start", config))) as { id: string; url: string };
+  const saved = join(folder, "gateway.json");
+  const runs = join(folder, "runs");
+  const kept = existsSync(saved) ? (JSON.parse(readFileSync(saved, "utf8")) as { id: string; url: string }) : undefined;
+  const listed = kept ? (await run("list")).split("\n") : [];
+  const { id, url } =
+    kept && listed.includes(kept.id)
+      ? kept
+      : (JSON.parse(lastLine(await run("start", config))) as { id: string; url: string });
+  mkdirSync(runs, { recursive: true });
+  writeFileSync(saved, `${JSON.stringify({ id, url })}\n`);
   return {
     url,
-    key: async (runId, budget) =>
-      lastLine(await run("key", id, runId, ...(budget === undefined ? [] : ["--budget", String(budget)]))),
-    stop: async () => void (await run("stop", id)),
+    key: async (runId, budget) => {
+      const key = lastLine(await run("key", id, runId, ...(budget === undefined ? [] : ["--budget", String(budget)])));
+      writeFileSync(join(runs, runId), "");
+      return key;
+    },
+    revoke: async (runId) => {
+      try {
+        await run("revoke", id, runId);
+      } finally {
+        // A key that the adapter could not revoke lives until the gateway stops.
+        rmSync(join(runs, runId), { force: true });
+      }
+    },
+    stop: async () => {
+      if (readdirSync(runs).length > 0) return;
+      await run("stop", id);
+      rmSync(saved);
+    },
   };
 }
 

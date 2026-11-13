@@ -64,3 +64,37 @@ Feature: Inference gateway
     When a program reads "/v1/health" without a token
     Then the answer is 503 with the check "inference" failing with "LiteLLM is not ready"
     And after the adapter is ready, "/v1/health" answers 200 with the check "inference" ok, and the adapter started one gateway
+
+  @id=SCN-FORE-121 @status=implemented
+  Scenario: A run keeps its key and its spent budget when the foreman restarts during a stage
+    Given a run of the README's "gateway/factory.yaml" with a fake inference adapter as "litellm", whose stage "implement" runs a turn that waits for "never"
+    When the foreman stops and starts again
+    Then within 20 seconds the harness received the prompt "Implement plan.md" a second time
+    And every turn of the run got the key "sk-fake-1" as "OPENAI_API_KEY"
+    And the inference adapter started one gateway and made one key, for the run with the budget "5"
+
+  @id=SCN-FORE-122 @status=implemented
+  Scenario: The foreman revokes the run's key when the run completed
+    Given "foreman serve" runs the README's "gateway/factory.yaml" with a fake inference adapter as "litellm"
+    When a program posts the README's "work.json" to "/v1/runs" with the API token and the run completes
+    Then the inference adapter revoked the key of the run once, on the gateway "000000000001"
+
+  @id=SCN-FORE-123 @status=implemented
+  Scenario: The foreman revokes the run's key when the run was cancelled
+    Given a run of the README's "gateway/factory.yaml" with a fake inference adapter as "litellm", whose stage "implement" runs a turn that waits for "never"
+    When a program cancels the run
+    Then "/v1/runs/<id>" shows the state "cancelled"
+    And the inference adapter revoked the key of the run once
+
+  @id=SCN-FORE-124 @status=implemented
+  Scenario: A revoke that fails is a warning and the run completes all the same
+    Given "foreman serve" runs the README's "gateway/factory.yaml" with a fake inference adapter as "litellm" whose revoke fails with "LiteLLM is down"
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then "/v1/runs/<id>" shows the state "complete"
+    And the server warned that it could not revoke the run's key, with "LiteLLM is down"
+
+  @id=SCN-FORE-125 @status=implemented
+  Scenario: The foreman stops the gateway when it stops serving after every run's key was revoked
+    Given "foreman serve" runs the README's "gateway/factory.yaml" with a fake inference adapter as "litellm", and its run of the README's "work.json" completed
+    When the server gets the signal SIGTERM
+    Then the inference adapter's list is empty
