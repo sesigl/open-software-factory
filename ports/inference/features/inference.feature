@@ -1,6 +1,6 @@
 @port=inference @owner=maintainers
 Feature: One model endpoint for every harness, with routing, budgets and spend logs
-  An inference adapter is a program with the commands start, key, spend-log, stop and list. start runs a gateway
+  An inference adapter is a program with the commands start, key, revoke, spend-log, stop and list. start runs a gateway
   from the adapter's config and prints its ID and URL. Harnesses call the gateway's OpenAI-compatible chat
   completions API with a routing alias as the model and a key per run; the gateway routes the alias to a model of a
   provider, stops a run at its budget and logs the spend of every call with the run's ID (ADR 0056). The test

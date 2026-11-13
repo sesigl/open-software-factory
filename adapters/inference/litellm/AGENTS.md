@@ -6,7 +6,7 @@ Adds rules for this adapter. The root `AGENTS.md` applies in full. Decision: ADR
 
 The only ways a system test or another program may use this adapter:
 
-- CLI: `inference-litellm start | key | spend-log | stop | list` (see `README.md#commands`)
+- CLI: `inference-litellm start | key | revoke | spend-log | stop | list` (see `README.md#commands`)
 - HTTP: the gateway's OpenAI-compatible API at the URL `start` printed, called with a key from `key`
 - Input: the LiteLLM config named on the command line, and the variables `OSF_SECRET_*` it names, including the
   master key of a running proxy that `osf.proxy` names

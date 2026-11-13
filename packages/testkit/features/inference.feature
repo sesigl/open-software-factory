@@ -1,6 +1,6 @@
 @module=testkit @owner=maintainers
 Feature: Fake inference adapter
-  fakes.inference is a program with the commands start, key, spend-log, stop and list of the inference port. It serves
+  fakes.inference is a program with the commands start, key, revoke, spend-log, stop and list of the inference port. It serves
   no gateway: start prints the URL from its options. It shows what a module asks of the port without LiteLLM and
   Docker (ADR 0070).
 

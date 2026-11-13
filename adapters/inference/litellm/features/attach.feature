@@ -143,3 +143,4 @@ Feature: Attach to a LiteLLM proxy that already runs
     And the test proxy received "/key/generate" as JSON with "max_budget" 0, the "osf.run.id" "run-7" in "metadata.spend_logs_metadata", the "key_alias" "osf-run-<ID>-run-7" and a "key" of "sk-osf-run-" and 48 hex digits
     And the test proxy received "/key/delete" with the keys "token-7" only
     And stop prints "stopped" and the gateway's ID
+    And list does not print the gateway's ID

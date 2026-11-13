@@ -18,16 +18,15 @@ scenario("SCN-INFER-015", async ({ sut, fakes, given, when, then }) => {
       key = await box.key(gateway.id, "run-7");
     });
 
-    const revokes: Awaited<ReturnType<typeof sut.cli>>[] = [];
+    let first: Awaited<ReturnType<typeof sut.cli>>;
+    let second: Awaited<ReturnType<typeof sut.cli>>;
     await when('the client runs "revoke" for the run "run-7" twice', async () => {
-      for (let index = 0; index < 2; index++) revokes.push(await sut.cli(["revoke", gateway.id, "run-7"]));
+      first = await sut.cli(["revoke", gateway.id, "run-7"]);
+      second = await sut.cli(["revoke", gateway.id, "run-7"]);
     });
 
     await then("both exit with code 0", async () => {
-      expect(revokes.map((revoke) => [revoke.exitCode, revoke.stderr])).toEqual([
-        [0, ""],
-        [0, ""],
-      ]);
+      expect([first.exitCode, first.stderr, second.exitCode, second.stderr]).toEqual([0, "", 0, ""]);
     });
 
     await then('a call of the run to "routes/triage" with its key gets the status 401', async () => {

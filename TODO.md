@@ -974,7 +974,7 @@ as a vision scenario. Each item names the place in the code, so start there, and
     `ship` has the checks `[verify]` and `evidence: required` in both (`SCN-DIST-029`, `-030`). `verify` switches to
     `wait: true` after the release of contracts, factory-spec and foreman (`SCN-DIST-031`, `-032`, planned).
 
-### [ ] T-41 · one key and one budget per run (P1)
+### [x] T-41 · one key and one budget per run (P1)
 
 - **Problem:** the foreman keeps each run's key of the gateway in memory (`keys` in
   `modules/foreman/src/workflows/activities.ts`). After a restart it asks for a new key, and `inference.budget`
@@ -982,9 +982,9 @@ as a vision scenario. Each item names the place in the code, so start there, and
 - **Done when:** a run spends at most its budget across restarts of the foreman, and its key stops working when the run
   ended.
 - **Slices:**
-  - [ ] The inference port's `key` answers the same key for the same run, or the budget is on the run and not on the
-    key (`SCN-INFER`, `SCN-INFLITE`).
-  - [ ] The foreman revokes the run's key when the run ended (`SCN-FORE`).
+  - [x] The inference port's `key` answers the same key for the same run, or the budget is on the run and not on the
+    key (`SCN-INFER`, `SCN-INFLITE`). ADR 0108: the same key, SCN-INFER-014 and -015, SCN-INFLITE-018 to -020.
+  - [x] The foreman revokes the run's key when the run ended (`SCN-FORE`). SCN-FORE-121 to -125.
 
 ### [ ] T-42 · the run's pull request, stated and not guessed (P1)
 

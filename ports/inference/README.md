@@ -16,7 +16,8 @@ command line:
 | Port operation | Command |
 | --- | --- |
 | start a gateway | `<adapter> start <config>` prints one JSON line `{"id", "url"}`; `url` ends in `/v1`. The launcher sets `OSF_INFERENCE_OWNER` to its process ID, and an adapter removes the gateways of an owner on its host that no longer runs (ADR 0090) |
-| a key per run | `<adapter> key <ID> <run ID> [--budget <USD>]` prints the run's key |
+| a key per run | `<adapter> key <ID> <run ID> [--budget <USD>]` prints the run's key, the same key for the same run |
+| revoke | `<adapter> revoke <ID> <run ID>` deletes the run's key; a run without a key is no error (ADR 0108) |
 | spend log | `<adapter> spend-log <ID>` prints one JSON line per call the gateway answered |
 | stop | `<adapter> stop <ID>` removes the gateway and all its data |
 | list | `<adapter> list` prints the IDs of the gateways |
@@ -34,6 +35,9 @@ proxy config, the format `taskcapture route` writes. An unknown gateway ID exits
 - On a subscription, Claude Code sends the key as `x-litellm-api-key: Bearer <key>` and the subscription's token as
   `Authorization: Bearer <token>`; the gateway takes the key from that header and forwards the token to Anthropic
   ([ADR 0080](../../docs/decisions/0080-dogfood-on-a-subscription.md)).
+- `key` prints the same key for the same run of a gateway, with the spend the run has: a budget counts once per run,
+  and the budget of the first `key` stays ([ADR 0108](../../docs/decisions/0108-one-key-and-one-budget-per-run.md)).
+- After `revoke`, a call with the run's key gets 401; a second `revoke` exits 0. The key's spend log lines stay.
 - A call needs a key from `key`: another key gets 401. An alias the config does not route gets 400 with its name.
 - A run's calls are refused with a 4xx status and the error type `budget_exceeded` once its spend passed its budget.
   The gateway counts a call's spend just after its answer, so a call sent at that moment may still pass; by the time
