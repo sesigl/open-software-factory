@@ -1011,11 +1011,12 @@ as a vision scenario. Each item names the place in the code, so start there, and
 - **Done when:** the foreman refuses a factory with changes that are not committed, each adapter runs at a version
   inside the factory's range, and the run's view names the versions.
 - **Slices:**
-  - [ ] `foreman serve` and a run's start fail with the changed files named when the factory's folder is not clean
-    (`SCN-FORE`).
+  - [x] `foreman serve` and a run's start fail with the changed files named when the factory's folder is not clean
+    (SCN-FORE-131, SCN-FORE-132, ADR 0110).
   - [ ] The fallback command line takes the version that `factory plan` pinned in `factory.lock`, or the range of
-    `providers` (`SCN-FORE`, `SCN-FSPEC`).
-  - [ ] The adapter maps take a command line as a list of arguments too.
+    `providers` (`SCN-FORE`, `SCN-FSPEC`). Done: the range of `providers`, and the run's `adapters` name it with the
+    command line (SCN-FORE-133). Open: `factory plan` pins adapters in `factory.lock`, a contract the foreman reads.
+  - [x] The adapter maps take a command line as a list of arguments too (SCN-FORE-134).
 
 ### [ ] T-44 · what factory.yaml declares takes effect (P1)
 
