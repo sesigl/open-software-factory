@@ -101,6 +101,14 @@ Feature: A fake of GitHub's REST API
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-145 @status=implemented
+  Scenario: fakes.github removes a label from an issue
+    Given a module whose CLI prints the title and the number of labels of issue 1 at "DEMO_GITHUB_URL"
+    And its system test opens the issue "Export reports as CSV" in fakes.github, adds the label "factory", removes it and expects "Export reports as CSV: 0 labels"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-113 @status=implemented
   Scenario: fakes.github lists the open pull requests and the reviews of a pull request
     Given a module whose CLI prints the head branch of each open pull request and the review states of each at "DEMO_GITHUB_URL"

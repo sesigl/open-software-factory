@@ -221,7 +221,7 @@ Every server, client and subscription stops when the scenario ends, before the f
   and gets 403, [ADR 0104](../../docs/decisions/0104-forge-github-check-runs.md)),
   comments, reviews, which it lists per pull request, branch protection that holds for admins only with `enforce_admins`, and webhooks, which it lists, updates and deletes: a
   signed `ping` when one is created, then
-  `pull_request`, `pull_request_review`, `issue_comment` and `issues` (`opened`, `labeled`) deliveries with
+  `pull_request`, `pull_request_review`, `issue_comment` and `issues` (`opened`, `labeled`, and `unlabeled` after `unlabel(repository, number, label)`) deliveries with
   `X-Hub-Signature-256`, sent only to URLs on
   `127.0.0.1` or `localhost`. IDs, SHAs and times come from counters and the fixed clock. A call it does not know
   answers 404 and fails the scenario. For a chat client, `GET /user` answers the token's user, a pull request's
@@ -467,3 +467,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-142 | implemented | fakes.temporal and fakes.nats listen below the range of module ports |
 | SCN-TK-143 | implemented | fakes.github lists the check runs that a test adds to a pull request's head commit, page by page |
 | SCN-TK-144 | implemented | fakes.github refuses to list check runs to a token that may not read them |
+| SCN-TK-145 | implemented | fakes.github removes a label from an issue |
