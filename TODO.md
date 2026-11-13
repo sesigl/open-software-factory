@@ -1030,12 +1030,15 @@ as a vision scenario. Each item names the place in the code, so start there, and
 - **Done when:** each field of the factory definition takes effect in a run of the foreman, or `factory lint` and
   `factory plan` name it as declared without effect.
 - **Slices:**
-  - [ ] The foreman renders the stage's agent with factory-spec into the session's folder: skills and MCP servers,
-    also in a sandbox, whose egress allows the MCP servers' hosts (`SCN-FORE`, `SCN-SANDBOX`).
+  - [x] The foreman gives the stage's agent its MCP servers in its ACP session and writes its skills into the
+    session's folder, also in a sandbox, whose egress allows the remote MCP servers' hosts (ADR 0112, `SCN-FORE-142`,
+    `SCN-FORE-143`). It resolves them itself, not with factory-spec, which it may not import.
   - [x] The next stage's prompt holds the last message of the stage before it, or a file of the run's folder that the
     reference prompts name.
   - [x] `factory lint` warns about a `cron` automation without `--gh-aw`, and about `benchmarks` and `scorers` that no
     job of the profile runs (until T-31).
+  - [ ] An agent's `repositories` take effect in a run, or `factory lint` warns that they do not. No slice covered
+    them yet.
 
 ### [ ] T-45 · the requester hears about the run (P1)
 

@@ -3,6 +3,7 @@
 // sandbox, its checks and its gate. Checked once against the contract and once for what only the foreman sees.
 import type { FactoryDefinition, SandboxSpec } from "@opensoftware/contracts";
 import type { AdapterVersion, Ranges } from "./adapters.ts";
+import { hostsOf, type LockPin, type SessionMcpServer, type Skill, sessionServer } from "./tools.ts";
 
 /** The agent of a stage that runs one; a stage that only waits has none (ADR 0107). */
 export interface AgentPlan {
@@ -16,6 +17,10 @@ export interface AgentPlan {
   prompt: string;
   /** The sandbox the agent declares, as a spec without the run's variables; none runs the stage on the host. */
   sandbox?: SandboxSpec;
+  /** The agent's MCP servers, for its session (ADR 0112); a run that started before has none. */
+  mcpServers?: SessionMcpServer[];
+  /** The agent's skills, which the foreman writes into the session's folder (ADR 0112). */
+  skills?: Skill[];
 }
 
 export type StagePlan = {
@@ -127,8 +132,18 @@ function waitProblems(stage: NonNullable<FactoryDefinition["workflow"]>[number],
 /** A stage's agent defaults to the agent with the stage's name. */
 export const agentOf = (stage: { stage: string; agent?: string }): string => stage.agent ?? stage.stage;
 
-/** The definition of a checked factory, with the text of each prompt from `read`. */
-export function definitionOf(factory: FactoryDefinition, read: (path: string) => string): Definition {
+/** What the definition reads from the factory's folder besides factory.yaml. */
+export interface FactoryFiles {
+  /** The text of the file at the path, relative to factory.yaml. */
+  read(path: string): string;
+  /** The files of the folder at the path, relative to factory.yaml. */
+  folder(path: string): Record<string, string>;
+  /** The pins of factory.lock by their reference; none without the file. */
+  pins: Record<string, LockPin>;
+}
+
+/** The definition of a checked factory, with the text of each prompt and skill from `files`. */
+export function definitionOf(factory: FactoryDefinition, files: FactoryFiles): Definition {
   const { harness = {}, sandbox = {}, forge = {}, inference = {} } = factory.providers ?? {};
   const forgeAdapter = Object.keys(forge)[0];
   return {
@@ -147,17 +162,31 @@ export function definitionOf(factory: FactoryDefinition, read: (path: string) =>
       if (stage.wait) return waits;
       const agent = agentOf(stage);
       const declared = factory.agents[agent] as FactoryDefinition["agents"][string];
+      const mcpServers = (declared.mcp ?? []).map((reference) => sessionServer(reference, files.pins));
+      const skills = (declared.skills ?? []).map((path) => ({
+        name: path.split("/").filter(Boolean).pop() as string,
+        files: files.folder(path),
+      }));
       return {
         ...waits,
         agent,
         harness: declared.harness,
         model: declared.model,
         effort: declared.effort,
-        prompt: read(declared.prompt),
-        ...(declared.sandbox ? { sandbox: { ...declared.sandbox, secrets: secretsOf(declared.secrets ?? []) } } : {}),
+        prompt: files.read(declared.prompt),
+        mcpServers,
+        skills,
+        ...(declared.sandbox ? { sandbox: sandboxOf(declared, hostsOf(mcpServers)) } : {}),
       };
     }),
   };
+}
+
+/** The agent's sandbox, whose egress also allows the hosts of its MCP servers, with its secrets by variable. */
+function sandboxOf(declared: FactoryDefinition["agents"][string], hosts: string[]): SandboxSpec {
+  const sandbox = declared.sandbox as NonNullable<typeof declared.sandbox>;
+  const egress = [...new Set([...(sandbox.egress ?? []), ...hosts])];
+  return { ...sandbox, ...(egress.length ? { egress } : {}), secrets: secretsOf(declared.secrets ?? []) };
 }
 
 /** The variable of a secret reference: its name in upper case, every character outside A-Z and 0-9 as "_". */

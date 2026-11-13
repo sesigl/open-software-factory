@@ -109,3 +109,11 @@ Feature: Factory definition
     Given "foreman serve" runs the README's "sandboxed/factory.yaml" without "providers.sandbox", with no adapter maps and an "npx" that runs the fake adapters
     When a program posts the README's "work.json" to "/v1/runs" with the API token
     Then the run completes, and "npx" ran "@opensoftware/sandbox-docker" with no range, the adapter of "FOREMAN_SANDBOX"
+
+  @id=SCN-FORE-142 @status=implemented @realizes=SCN-FACTORY-CODE-001
+  Scenario: A stage's agent gets its MCP servers in its session and its skills in its folder
+    Given "foreman serve" runs the README's "factory.yaml" whose agent "plan" declares the MCP server "@modelcontextprotocol/server-everything@2026.1.26" and the skill "./skills/review", with a scripted harness whose "plan" turn prints the skill's files
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then the harness opened the session of "plan" with the MCP server "server-everything" that runs "npx -y @modelcontextprotocol/server-everything@2026.1.26"
+    And the harness opened the session of "implement" with no MCP server
+    And the agent of "plan" found the skill's "SKILL.md" in ".claude/skills/review" and ".agents/skills/review" of its folder
