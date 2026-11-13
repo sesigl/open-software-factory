@@ -77,3 +77,16 @@ export function keyProxy(fakes: Fakes) {
     { method: "POST", path: "/key/delete", body: { deleted_keys: ["token-7"] } },
   ]);
 }
+
+/**
+ * The test proxy with keys of two runs: a fake of LiteLLM's key list, of "/key/generate", which answers with the token
+ * "token-7" and then "token-8", and of "/key/delete".
+ */
+export function twoKeysProxy(fakes: Fakes) {
+  return fakes.http([
+    { path: "/key/list?size=1", body: { keys: [] } },
+    { method: "POST", path: "/key/generate", times: 1, body: { key: "sk-run-7", token: "token-7" } },
+    { method: "POST", path: "/key/generate", times: 1, body: { key: "sk-run-8", token: "token-8" } },
+    { method: "POST", path: "/key/delete", body: { deleted_keys: [] } },
+  ]);
+}

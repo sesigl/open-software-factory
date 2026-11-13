@@ -2,7 +2,7 @@
 // FOREMAN_NATS_URL it also starts runs for work.received@v1, runs a run again for work.retry-requested@v1, and passes gate.decided@v1 to the waiting runs. A factory
 // with an inference adapter gets its gateway while the server runs (ADR 0070). It runs until SIGTERM or SIGINT.
 import { timingSafeEqual } from "node:crypto";
-import { dirname, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { type Health, healthOf, UsageError } from "@opensoftware/cli";
 import type { GateDecided, WorkItem, WorkRetryRequested } from "@opensoftware/contracts";
@@ -116,7 +116,9 @@ export async function serve(env: Env) {
 
   // The gateway starts in the background, so the server does not wait for it (ADR 0099).
   const retryMs = Number(env.FOREMAN_INFERENCE_RETRY_MS || 1000);
-  const gateway = gatewayOf(definition.inference, dirname(factoryPath), env, retryMs, warn);
+  const data = resolve(env.OSF_DATA || ".foreman");
+  const gatewayFolder = join(data, "inference");
+  const gateway = gatewayOf(definition.inference, dirname(factoryPath), gatewayFolder, env, retryMs, warn);
   // A gateway stops with the server, also when the server cannot start.
   try {
     const temporal = await Connection.connect({ address });
@@ -145,10 +147,10 @@ export async function serve(env: Env) {
           checkTimeoutMs: Number(env.FOREMAN_CHECK_TIMEOUT_MS || 7_200_000),
           gateTimeoutMs: Number(env.FOREMAN_GATE_TIMEOUT_MS || 604_800_000),
         },
-        data: resolve(env.OSF_DATA || ".foreman"),
+        data,
         pollMs,
         control: (runId) => work.control(runId),
-        ...(gateway ? { gateway: gateway.gateway } : {}),
+        ...(gateway ? { gateway: gateway.gateway, gatewayFolder } : {}),
         ...(traces ? { traces } : {}),
         warn,
         env,
@@ -210,6 +212,7 @@ export async function serve(env: Env) {
 function gatewayOf(
   inference: Definition["inference"],
   folder: string,
+  gatewayFolder: string,
   env: Env,
   retryMs: number,
   warn: (text: string) => void,
@@ -217,5 +220,9 @@ function gatewayOf(
   if (!inference) return undefined;
   const lines = JSON.parse(env.FOREMAN_INFERENCES || "{}") as Record<string, string>;
   const adapter = lines[inference.adapter] ?? `npx -y @opensoftware/inference-${inference.adapter}`;
-  return attachGateway(() => startGateway(adapter.split(" "), resolve(folder, inference.config), env), retryMs, warn);
+  return attachGateway(
+    () => startGateway(adapter.split(" "), resolve(folder, inference.config), env, gatewayFolder),
+    retryMs,
+    warn,
+  );
 }

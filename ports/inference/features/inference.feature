@@ -1,6 +1,6 @@
 @port=inference @owner=maintainers
 Feature: One model endpoint for every harness, with routing, budgets and spend logs
-  An inference adapter is a program with the commands start, key, spend-log, stop and list. start runs a gateway
+  An inference adapter is a program with the commands start, key, revoke, spend-log, stop and list. start runs a gateway
   from the adapter's config and prints its ID and URL. Harnesses call the gateway's OpenAI-compatible chat
   completions API with a routing alias as the model and a key per run; the gateway routes the alias to a model of a
   provider, stops a run at its budget and logs the spend of every call with the run's ID (ADR 0056). The test
@@ -98,3 +98,21 @@ Feature: One model endpoint for every harness, with routing, budgets and spend l
     Then the test provider received a call for the model "ft:triage-2026-10"
     And the run gets a Responses answer with the output text "triaged"
     And the same call with the key "sk-unknown" gets the status 401
+
+  @id=SCN-INFER-014 @status=implemented @conformance
+  Scenario: key prints the same key for the same run, and the run's spend counts against one budget
+    Given a gateway started from a config that prices "routes/triage" at 0.000001 USD per prompt token and 0 per completion token
+    And a key for the run "run-7" with the budget 0.0015 USD
+    When the run calls "routes/triage" twice, the client runs "spend-log", and the client runs "key" for the run "run-7" with the budget 0.0015 USD again
+    Then the second "key" prints the same key
+    And the run's next call with that key is refused with the error type "budget_exceeded"
+    And the test provider received two calls
+
+  @id=SCN-INFER-015 @status=implemented @conformance
+  Scenario: revoke deletes the run's key, and a second revoke is no error
+    Given a gateway started from a config that routes "routes/triage" to the test provider's model "model-c"
+    And a key for the run "run-7"
+    When the client runs "revoke" for the run "run-7" twice
+    Then both exit with code 0
+    And a call of the run to "routes/triage" with its key gets the status 401
+    And the test provider received no call

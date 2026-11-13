@@ -1,5 +1,5 @@
-// A fake inference adapter (ADR 0070): a program with the commands start, key, spend-log, stop and list of the inference
-// port. It serves no gateway: start prints the URL from its options. The module runs it like any inference adapter; the
+// A fake inference adapter (ADR 0070): a program with the commands start, key, revoke, spend-log, stop and list of the
+// inference port (ADR 0108). It serves no gateway: start prints the URL from its options. The module runs it like any inference adapter; the
 // test reads the configs it started from, the keys it made and the gateways that still exist.
 import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { extname, join } from "node:path";
@@ -13,12 +13,15 @@ export interface InferenceOptions {
   fails?: string;
   /** `start` exits 1 and writes this message to standard error until the test calls `ready()`. */
   startFails?: string;
+  /** `revoke` exits 1 and writes this message to standard error. */
+  revokeFails?: string;
 }
 
-/** One line of the fake's log: a gateway it started, or a key it made. */
+/** One line of the fake's log: a gateway it started, a key it made, or a run whose key it revoked. */
 export type InferenceLogEntry =
   | { start: string; config: string }
-  | { key: string; gateway: string; run: string; budget?: string };
+  | { key: string; gateway: string; run: string; budget?: string }
+  | { revoke: string; gateway: string };
 
 export interface Inference {
   /** Run the adapter with this command and these arguments, then the port's command, like `start config.yaml`. */
@@ -26,8 +29,10 @@ export interface Inference {
   args: string[];
   /** Each gateway it started, by ID, with the text of its config, in order. */
   started(): { id: string; config: string }[];
-  /** Each key it made, with its gateway, its run and its budget as the command line gave it, in order. */
+  /** Each key it made, with its gateway, its run and its budget as the command line gave it, in order; one per run. */
   keys(): { key: string; gateway: string; run: string; budget?: string }[];
+  /** Each revoke that succeeded, with its gateway and its run, in order. */
+  revoked(): { gateway: string; run: string }[];
   /** The IDs of the gateways that exist now. */
   list(): string[];
   /** From now on, `start` works, also with `startFails`. */
@@ -57,6 +62,8 @@ export function startInference(options: InferenceOptions = {}): { inference: Inf
       started: () =>
         entries().flatMap((entry) => ("start" in entry ? [{ id: entry.start, config: entry.config }] : [])),
       keys: () => entries().flatMap((entry) => ("key" in entry ? [entry] : [])),
+      revoked: () =>
+        entries().flatMap((entry) => ("revoke" in entry ? [{ gateway: entry.gateway, run: entry.revoke }] : [])),
       list: () => (existsSync(join(state, "gateways")) ? readdirSync(join(state, "gateways")).sort() : []),
       ready: () => writeFileSync(join(state, "ready"), ""),
     },

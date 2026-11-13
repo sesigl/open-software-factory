@@ -1,6 +1,6 @@
 @module=testkit @owner=maintainers
 Feature: Fake inference adapter
-  fakes.inference is a program with the commands start, key, spend-log, stop and list of the inference port. It serves
+  fakes.inference is a program with the commands start, key, revoke, spend-log, stop and list of the inference port. It serves
   no gateway: start prints the URL from its options. It shows what a module asks of the port without LiteLLM and
   Docker (ADR 0070).
 
@@ -32,6 +32,22 @@ Feature: Fake inference adapter
   Scenario: The fake inference adapter fails start with its message until the test makes it ready
     Given a module whose CLI starts a gateway with the adapter in "DEMO_INFERENCE_COMMAND" and prints the exit code and the error
     And its system test starts fakes.inference whose start fails with "LiteLLM is not ready", expects the exit code 1 and that message, calls ready() and expects the next start to print exit code 0 and the gateway "000000000001"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-146 @status=implemented
+  Scenario: The fake inference adapter prints the same key for the same run of a gateway and revokes it
+    Given a module whose CLI starts a gateway with the adapter in "DEMO_INFERENCE_COMMAND", asks for a key for the run "run-7" twice, revokes the run's key twice, and prints the keys and the exit codes
+    And its system test expects the key "sk-fake-1" twice, exit codes 0, the one key the fake recorded and the two revokes of "run-7" it recorded
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-147 @status=implemented
+  Scenario: The fake inference adapter fails revoke with its message
+    Given a module whose CLI starts a gateway with the adapter in "DEMO_INFERENCE_COMMAND", asks for a key for the run "run-7", revokes it, and prints the exit code and the error
+    And its system test starts fakes.inference whose revoke fails with "LiteLLM is down" and expects the exit code 1 and that message
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"

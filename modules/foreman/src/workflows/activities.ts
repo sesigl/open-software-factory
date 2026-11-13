@@ -7,7 +7,7 @@ import { Context } from "@temporalio/activity";
 import { pullRequestChecks } from "../adapters/forge.ts";
 import type { Gatekeeper } from "../adapters/gatekeeper.ts";
 import { type HarnessTurn, startTurn } from "../adapters/harness.ts";
-import type { Gateway } from "../adapters/inference.ts";
+import { type Gateway, hasKey } from "../adapters/inference.ts";
 import { type Bus, SUBJECTS } from "../adapters/nats.ts";
 import type { Exporter } from "../adapters/otlp.ts";
 import { createSandbox } from "../adapters/sandbox.ts";
@@ -56,6 +56,8 @@ export interface ActivityDeps {
   control(runId: string): Promise<Control>;
   /** The factory's inference gateway, when it names an inference adapter; it resolves once the gateway started. */
   gateway?: Promise<Gateway>;
+  /** The gateway's folder, which knows the runs with a key (ADR 0108). */
+  gatewayFolder?: string;
   /** The OTLP receiver of the run's spans (ADR 0087), and where a span that cannot be sent is a warning. */
   traces?: Exporter;
   warn(text: string): void;
@@ -81,13 +83,25 @@ export function activities(deps: ActivityDeps) {
     if (!deps.traces) return;
     await deps.traces.send(otlpOf(span)).catch((failure: Error) => deps.warn(`the run's trace: ${failure.message}`));
   };
-  /** Each run's key of the gateway, made once per run while this worker lives; never in Temporal's history. */
+  /**
+   * Each run's key of the gateway, asked once per run while this worker lives; never in Temporal's history. The port
+   * gives the same key for the same run, also after a restart (ADR 0108).
+   */
   const keys = new Map<string, Promise<string>>();
   const keyOf = (gateway: Gateway, runId: string, budget?: number): Promise<string> => {
     const key = keys.get(runId) ?? gateway.key(runId, budget);
     keys.set(runId, key);
     return key;
   };
+
+  /** Revokes the run's key when it has one; a revoke that fails is a warning, never a failed run (ADR 0108). */
+  async function revokeKey(runId: string): Promise<void> {
+    if (!deps.gateway || !hasKey(deps.gatewayFolder as string, runId)) return;
+    keys.delete(runId);
+    await (await deps.gateway)
+      .revoke(runId)
+      .catch((failure: Error) => deps.warn(`the key of the run ${runId}: ${failure.message}`));
+  }
 
   /** The variables of the gateway that every harness adapter finds its own in (ADR 0070); none without a gateway. */
   async function gatewayEnv(view: RunView, definition: Definition, model: string): Promise<Record<string, string>> {
@@ -169,6 +183,8 @@ export function activities(deps: ActivityDeps) {
           "osf.run.retry_of": view.retryOf,
         },
       });
+      // Every end of a run comes here, completed, failed or cancelled; its key then stops working.
+      await revokeKey(view.runId);
     },
     /** Moves the folder of the run before to the new run's; it may run again after a crash, so a moved folder stays. */
     async moveFolder(before: string, runId: string): Promise<void> {

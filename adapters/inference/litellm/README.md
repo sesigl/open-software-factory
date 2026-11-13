@@ -57,6 +57,11 @@ the model the benchmark chose.
   `spend_logs_metadata: {"osf.run.id": <run ID>}`. Once the run's spend passed the budget, LiteLLM answers its calls
   with HTTP 400 or 422, the error type `budget_exceeded` and `Budget has been exceeded`. A key the gateway did not
   make gets 401, an alias the config does not route gets 400 with its name.
+- **One key per run** ([ADR 0108](../../../docs/decisions/0108-one-key-and-one-budget-per-run.md)). The key's value
+  is `sk-osf-run-` and an HMAC-SHA256 of the gateway's ID and the run's ID under the master key, and its `key_alias`
+  is `osf-run-<ID>-<run ID>`. LiteLLM refuses a second key with that alias, so `key` for the same run prints the same
+  key with its spend and the budget of its first `key`. `revoke` deletes the key with `POST /key/delete`; a key that
+  is gone already (404) is no error.
 - **The spend log** is LiteLLM's spend rows as `GET /spend/logs` returns them, one JSON line each, oldest first: the
   format ledger reads. `metadata.spend_logs_metadata."osf.run.id"` names the run. LiteLLM writes rows every one to
   six seconds, so `spend-log` waits eight seconds before it reads.
@@ -106,8 +111,8 @@ npx @opensoftware/inference-litellm start attach.yaml   # {"id":"3f2a...","url":
   `OSF_DATA/gateways/<ID>.json`, never the key's value. `key`, `spend-log`, `stop` and `list` look there first, then on
   the Docker host.
 - **Shared proxy.** Other clients can use the same proxy. `spend-log` prints only the calls of the run keys that this
-  gateway made. `stop` deletes these keys with `POST /key/delete` and removes the record; the proxy and its spend
-  rows stay.
+  gateway made. `stop` deletes the keys that `revoke` did not delete with `POST /key/delete` and removes the record;
+  the proxy and its spend rows stay.
 
 Without `osf.proxy`, `start` runs its own LiteLLM and PostgreSQL as above.
 
@@ -116,7 +121,8 @@ Without `osf.proxy`, `start` runs its own LiteLLM and PostgreSQL as above.
 | Command | What it does |
 | --- | --- |
 | `inference-litellm start <config.yaml>` | Start a gateway from the LiteLLM config and print `{"id", "url"}` once LiteLLM answers and reaches its database. With `osf.proxy`, attach to that proxy instead. |
-| `inference-litellm key <ID> <run ID> [--budget <USD>]` | Print a key for the run, refused once its spend passed the budget. |
+| `inference-litellm key <ID> <run ID> [--budget <USD>]` | Print the run's key, the same for the same run, refused once its spend passed the budget. |
+| `inference-litellm revoke <ID> <run ID>` | Delete the run's key; its calls then get 401. A run without a key is no error. |
 | `inference-litellm spend-log <ID>` | Print one JSON line per call the gateway answered. |
 | `inference-litellm stop <ID>` | Remove the gateway with its keys and spend log. For an attached gateway: delete its run keys and its record. |
 | `inference-litellm list` | Print the IDs of the attached gateways and of the gateways on the Docker host. |
@@ -139,7 +145,7 @@ No credential is stored in the repository.
 | Variable | Type | Default | Meaning |
 | --- | --- | --- | --- |
 | `DOCKER_HOST` | string |  | The Docker daemon to use, as for any docker command. Default: the Docker CLI's current context. |
-| `OSF_DATA` | string | `".inference-litellm"` | Folder where start records each gateway that it attached to a running proxy, as gateways/<ID>.json with the proxy's URL and the name of the master key's variable, and the hashed tokens of its run keys as gateways/<ID>.keys. It never holds a key's value. |
+| `OSF_DATA` | string | `".inference-litellm"` | Folder where start records each gateway that it attached to a running proxy, as gateways/<ID>.json with the proxy's URL and the name of the master key's variable, the hashed tokens of its run keys with their runs as gateways/<ID>.keys, and the runs whose key revoke deleted as gateways/<ID>.revoked. It never holds a key's value. |
 | `OSF_SECRET_*` | string |  | OSF_SECRET_<NAME> holds a value the config names as os.environ/OSF_SECRET_<NAME>, such as a provider key, or the master key of a running proxy that osf.proxy.master_key names. The Docker CLI hands a provider key to the LiteLLM container only; it is never in the config. |
 | `OSF_INFERENCE_OWNER` | string |  | start: the process ID of the launcher that owns the gateway, like the foreman's. start labels the gateway with it and with this host, and removes the gateways whose owner on this host no longer runs (ADR 0090). Unset: the gateway has no owner and is never removed that way. |
 | `OSF_INFERENCE_ORPHAN_AGE` | string | `"120"` | start: the seconds after which a gateway whose owner no longer runs is removed (ADR 0090). The time leaves a gateway alone while another start still creates it. |

@@ -81,7 +81,7 @@ Feature: Attach to a LiteLLM proxy that already runs
     Then start exits with code 2 with the error "inference-litellm: set OSF_SECRET_PROXY_MASTER_KEY to the master key of the proxy at http://127.0.0.1:4000"
     And start prints nothing on standard output
 
-  @id=SCN-INFLITE-012 @status=implemented
+  @id=SCN-INFLITE-012 @status=deprecated
   Scenario: stop deletes the run key that key made with the budget 0 on an attached gateway
     Given a test proxy that answers "/key/list", "/key/generate" with the key "sk-run-7" and the token "token-7", and "/key/delete"
     And a gateway attached to the test proxy
@@ -120,3 +120,43 @@ Feature: Attach to a LiteLLM proxy that already runs
     When the client runs "list" with "DOCKER_HOST" set to "unix:///nonexistent/docker.sock"
     Then list exits with code 1 and prints one line on standard error
     And the line starts with "inference-litellm: docker ps: ", names "/nonexistent/docker.sock" and does not have the text "Command failed"
+
+  @id=SCN-INFLITE-018 @status=implemented
+  Scenario: revoke refuses a call without a run ID
+    When the client runs "revoke 0123456789ab"
+    Then revoke exits with code 2 with the error "inference-litellm: name the run, like revoke <ID> run-7"
+
+  @id=SCN-INFLITE-019 @status=implemented
+  Scenario: revoke deletes only its run's key of an attached gateway, and stop does not delete it again
+    Given a test proxy that answers "/key/list", "/key/generate" with the token "token-7" and then "token-8", and "/key/delete"
+    And a gateway attached to the test proxy, with a key for the run "run-7" and one for the run "run-8"
+    When the client runs "revoke" for the run "run-7", "revoke" for the run "run-9" without a key, and then "stop" for the gateway
+    Then each exits with code 0 and prints nothing but the line of stop
+    And the test proxy received "/key/generate" with a different "key" for each run
+    And the test proxy received "/key/delete" with the keys "token-7", and then with the keys "token-8"
+
+  @id=SCN-INFLITE-020 @status=implemented @replaces=SCN-INFLITE-012
+  Scenario: key makes the run key of an attached gateway with a key and an alias of the run, and stop deletes it
+    Given a test proxy that answers "/key/list", "/key/generate" with the key "sk-run-7" and the token "token-7", and "/key/delete"
+    And a gateway attached to the test proxy
+    When the client runs "key" for the run "run-7" with "--budget 0", and then "stop" for the gateway
+    Then key prints "sk-run-7"
+    And the test proxy received "/key/generate" as JSON with "max_budget" 0, the "osf.run.id" "run-7" in "metadata.spend_logs_metadata", the "key_alias" "osf-run-<ID>-run-7" and a "key" of "sk-osf-run-" and 48 hex digits
+    And the test proxy received "/key/delete" with the keys "token-7" only
+    And stop prints "stopped" and the gateway's ID
+    And list does not print the gateway's ID
+
+  @id=SCN-INFLITE-021 @status=implemented
+  Scenario: key fails with LiteLLM's message when the proxy refuses the key for another reason than its alias
+    Given a test proxy that answers "/key/list", and "/key/generate" with the status 400 and the error "max_budget must be a number" for "max_budget"
+    And a gateway attached to the test proxy
+    When the client runs "key" for the run "run-7"
+    Then key exits with code 1 with an error that names "/key/generate", the status 400 and "max_budget must be a number"
+    And key prints nothing on standard output
+
+  @id=SCN-INFLITE-022 @status=implemented
+  Scenario: spend-log of an attached gateway keeps the calls of a run whose key revoke deleted
+    Given a test proxy that answers "/key/list", "/key/generate" with the key "sk-run-7" and the token "token-7", "/key/delete", and "/spend/logs" with a call of "token-7" and one of "token-other"
+    And a gateway attached to the test proxy, and a key of it for the run "run-7"
+    When the client runs "revoke" for the run "run-7", and then "spend-log" for the gateway
+    Then spend-log prints one line, whose "api_key" is "token-7"

@@ -275,15 +275,23 @@ model_list:
 Serve it as in the quick start, with `export OSF_SECRET_ANTHROPIC_API_KEY=…` for the adapter. Then:
 
 1. `foreman serve` runs the adapter's `start` with the config, a path relative to `factory.yaml`, in the background,
-   and `stop` when it stops. The server takes work at once; a stage waits for the gateway before it gets its key. A
+   and `stop` when it stops (see 4). The server takes work at once; a stage waits for the gateway before it gets its key. A
    `start` that fails is a warning with the adapter's message, and the server tries again after
    `FOREMAN_INFERENCE_RETRY_MS`. Until a start succeeds, the check `inference` of `/v1/health` fails with that message
    ([ADR 0099](../../docs/decisions/0099-foreman-starts-the-gateway-in-the-background.md)).
    `start` gets `OSF_INFERENCE_OWNER` with the foreman's process ID, so a later start removes the gateway of a foreman
    that was killed ([ADR 0090](../../docs/decisions/0090-no-leaked-containers.md)).
 2. Before a run's first stage, the foreman asks the adapter for the run's key: `key <gateway> <run ID> --budget 5`. The
-   gateway refuses the run's calls once it spent its budget. The key stays in the foreman's memory, not in Temporal.
-3. Each stage's harness adapter gets the gateway in the variables that the harness adapters read: `OPENAI_BASE_URL`
+   gateway refuses the run's calls once it spent its budget. The key is never in Temporal; the adapter gives the same
+   key for the same run, so a stage after a restart of the foreman goes on with the run's key and its spend
+   ([ADR 0108](../../docs/decisions/0108-one-key-and-one-budget-per-run.md)).
+3. When the run ended, completed, failed or cancelled, the foreman runs `revoke <gateway> <run ID>`, and the key no
+   longer works. A revoke that fails is a warning (`the key of the run <ID>: …`); the run ends as it would, and the
+   key lives until the gateway stops.
+4. The foreman keeps the gateway's ID and URL in `OSF_DATA/inference/gateway.json`, and a file per run with a key in
+   `OSF_DATA/inference/runs/`. At its start it takes the gateway of that file when the adapter's `list` still prints
+   it. At its stop it runs `stop` only when no run has a key; otherwise the gateway runs on for the next foreman.
+5. Each stage's harness adapter gets the gateway in the variables that the harness adapters read: `OPENAI_BASE_URL`
    (the URL `start` printed) and `ANTHROPIC_BASE_URL` (the same without `/v1`), `OPENAI_API_KEY` and
    `ANTHROPIC_API_KEY` (the run's key), and `OPENAI_MODEL` and `ANTHROPIC_MODEL` (the agent's `model`, a routing
    alias of the config). A sandboxed stage gets them in its sandbox's environment.
@@ -614,3 +622,8 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-118 | implemented | A factory with a stage that only waits and names an agent stops the server at the start |
 | SCN-FORE-119 | implemented | A factory with a stage that only waits for nothing stops the server at the start |
 | SCN-FORE-120 | implemented | A stage that only waits at a gate succeeds after the approval, without a session |
+| SCN-FORE-121 | implemented | A run keeps its key and its spent budget when the foreman restarts during a stage |
+| SCN-FORE-122 | implemented | The foreman revokes the run's key when the run completed |
+| SCN-FORE-123 | implemented | The foreman revokes the run's key when the run was cancelled |
+| SCN-FORE-124 | implemented | A revoke that fails is a warning and the run completes all the same |
+| SCN-FORE-125 | implemented | The foreman stops the gateway when it stops serving after every run's key was revoked |

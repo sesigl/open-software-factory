@@ -9,7 +9,7 @@
     "OSF_DATA": {
       "type": "string",
       "default": ".inference-litellm",
-      "description": "Folder where start records each gateway that it attached to a running proxy, as gateways/<ID>.json with the proxy's URL and the name of the master key's variable, and the hashed tokens of its run keys as gateways/<ID>.keys. It never holds a key's value."
+      "description": "Folder where start records each gateway that it attached to a running proxy, as gateways/<ID>.json with the proxy's URL and the name of the master key's variable, the hashed tokens of its run keys with their runs as gateways/<ID>.keys, and the runs whose key revoke deleted as gateways/<ID>.revoked. It never holds a key's value."
     },
     "OSF_SECRET_*": {
       "type": "string",
