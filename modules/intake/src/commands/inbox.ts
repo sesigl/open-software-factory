@@ -1,17 +1,25 @@
 // The inbox of the server: submit and read work items, relay the outbox to NATS (ADR 0063), and move a work item on
 // with its run's events (ADR 0071).
-import type { WorkItemView } from "@opensoftware/contracts";
+import { type GateRequested, isValid, type WorkItemView } from "@opensoftware/contracts";
 import { publishToNats } from "../adapters/nats.ts";
 import type { Store } from "../adapters/store.ts";
-import { pullRequestReplies } from "../domain/sources.ts";
+import { gateText, type Reply, replies, runTexts } from "../domain/sources.ts";
 import { RETRY_SUBJECT, receivedEvent, retryEvent, runFactOf, type Status, SUBJECT, viewOf } from "../domain/view.ts";
 import { workItemOf } from "../domain/work-item.ts";
 
 export interface InboxConfig {
   nats: string | undefined;
+  /** The console's base URL, for the link to a run in a reply. */
+  console: string | undefined;
   now: () => number;
   warn: (text: string) => void;
 }
+
+/** An event is the same event when its source and ID are (CloudEvents). */
+const keyOf = (event: unknown) => {
+  const { source, id } = (event ?? {}) as { source?: unknown; id?: unknown };
+  return `${source} ${id}`;
+};
 
 export function inbox(store: Store, config: InboxConfig) {
   let relaying: Promise<void> = Promise.resolve();
@@ -45,16 +53,23 @@ export function inbox(store: Store, config: InboxConfig) {
       return (await Promise.all((await store.latest(status)).map(view))) as WorkItemView[];
     },
     /**
-     * Moves the work item of a run event to the run's status, and gives the replies that link a finished run's pull
-     * requests in the work item's Slack threads. A message that is not a run event is an error.
+     * Moves the work item of a run event to the run's status, and gives the replies its Slack threads and issues get
+     * of a run event or of a gate.requested@v1 (ADR 0113), once per event. A message that is neither is an error.
      */
-    async followRun(event: unknown): Promise<{ thread: string; text: string }[]> {
+    async followRun(event: unknown): Promise<Reply[]> {
+      if (await store.told(keyOf(event))) return [];
+      if (isValid<GateRequested>("gate-requested", event)) {
+        const waiting = await view(event.data.workItemId);
+        return waiting ? replies(waiting, [gateText(event.data, waiting.runId, config.console)]) : [];
+      }
       const fact = runFactOf(event);
       if (typeof fact === "string") throw new Error(fact);
       await store.followRun(fact);
       const followed = await view(fact.workItemId);
-      return followed ? pullRequestReplies(followed, fact.pullRequests) : [];
+      return followed ? replies(followed, runTexts(fact, config.console)) : [];
     },
+    /** Marks the event as told, once its replies were sent. */
+    told: (event: unknown) => store.tell(keyOf(event)),
     /** The work item of the submission, whether this submission created it, and whether it added its request. */
     async submit(submission: unknown): Promise<{ created: boolean; added: boolean; view: WorkItemView }> {
       const workItem = workItemOf(submission);

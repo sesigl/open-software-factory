@@ -5,7 +5,7 @@ import { timingSafeEqual } from "node:crypto";
 import { healthOf, UsageError } from "@opensoftware/cli";
 import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
 import { type Channel, channelAdapter } from "../adapters/channel.ts";
-import { forgeAdapter } from "../adapters/forge.ts";
+import { type Forge, forgeAdapter } from "../adapters/forge.ts";
 import { subscribeToNats } from "../adapters/nats.ts";
 import { openStore } from "../adapters/store.ts";
 import { nowOf } from "../domain/time.ts";
@@ -71,18 +71,37 @@ function slackChannel(env: Env): Channel | undefined {
   });
 }
 
+/** The forge adapter, with INTAKE_WEBHOOK_SECRET; it comments on issues with INTAKE_FORGE_TOKEN. */
+function forgeOf(env: Env): Forge | undefined {
+  const webhookSecret = env.INTAKE_WEBHOOK_SECRET;
+  if (!webhookSecret) return undefined;
+  return forgeAdapter({
+    command: env.INTAKE_FORGE_ADAPTER || "npx -y @opensoftware/forge-github",
+    webhookSecret,
+    url: env.INTAKE_FORGE_URL,
+    token: env.INTAKE_FORGE_TOKEN,
+  });
+}
+
 export async function serve(env: Env) {
   const apiToken = required(env, "INTAKE_API_TOKEN", "the token that callers of the API send");
   const channel = slackChannel(env);
+  const forge = forgeOf(env);
   const now = () => nowOf(env.OSF_NOW);
   const store = await openStore(env.INTAKE_DATABASE_URL || undefined, env.OSF_DATA || ".intake");
   const warn = (text: string) => process.stderr.write(`intake: ${text}\n`);
   const nats = env.INTAKE_NATS_URL || undefined;
-  const work = inbox(store, { nats, now, warn });
+  const work = inbox(store, { nats, console: env.INTAKE_CONSOLE_URL || undefined, now, warn });
   await work.relay();
-  // A finished run's pull requests are linked in the Slack threads of its work item.
+  // The Slack threads and the issues of a work item hear when its run waits at a gate and when it ended (ADR 0113).
+  // A reply that fails is a warning, so the event does not come again to the places that heard of it.
+  const issues = env.INTAKE_FORGE_TOKEN ? forge : undefined;
   const follow = async (event: unknown) => {
-    for (const { thread, text } of await work.followRun(event)) await channel?.reply(thread, text);
+    for (const { to, at, text } of await work.followRun(event))
+      await (to === "slack" ? channel?.reply(at, text) : issues?.comment(at, text))?.catch((error: Error) =>
+        warn(`no reply on ${at}: ${error.message}`),
+      );
+    await work.told(event);
   };
   const subscription = nats ? await subscribeToNats(nats, RUN_SUBJECTS, follow, warn) : undefined;
 
@@ -105,11 +124,7 @@ export async function serve(env: Env) {
   });
   await workItemRoutes(app, work, apiToken);
   if (channel) await slackHook(app, work, channel);
-  const webhookSecret = env.INTAKE_WEBHOOK_SECRET;
-  if (webhookSecret) {
-    const forge = forgeAdapter(env.INTAKE_FORGE_ADAPTER || "npx -y @opensoftware/forge-github", webhookSecret);
-    await forgeHook(app, work, forge, env.INTAKE_FORGE_LABEL || "factory");
-  }
+  if (forge) await forgeHook(app, work, forge, env.INTAKE_FORGE_LABEL || "factory");
   if (env.INTAKE_SENTRY_SECRET)
     await sentryHook(app, work, env.INTAKE_SENTRY_SECRET, env.INTAKE_SENTRY_CHANGE_URL || undefined);
 

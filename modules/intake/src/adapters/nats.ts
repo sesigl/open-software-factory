@@ -46,13 +46,16 @@ export async function subscribeToNats(
   let timer: NodeJS.Timeout | undefined;
   const listen = async (connection: NatsConnection) => {
     const manager = await streamOf(connection);
-    await manager.consumers.add(STREAM, {
-      durable_name: CONSUMER,
-      filter_subjects: subjects,
-      ack_policy: AckPolicy.Explicit,
-      deliver_policy: DeliverPolicy.All,
-      max_deliver: MAX_DELIVER,
-    });
+    // The consumer of an earlier version listens on fewer subjects; it then gets this version's (ADR 0113).
+    await manager.consumers
+      .add(STREAM, {
+        durable_name: CONSUMER,
+        filter_subjects: subjects,
+        ack_policy: AckPolicy.Explicit,
+        deliver_policy: DeliverPolicy.All,
+        max_deliver: MAX_DELIVER,
+      })
+      .catch(() => manager.consumers.update(STREAM, CONSUMER, { filter_subjects: subjects }));
     const messages = await (await jetstream(connection).consumers.get(STREAM, CONSUMER)).consume();
     void (async () => {
       for await (const message of messages) {
