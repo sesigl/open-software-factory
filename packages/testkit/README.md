@@ -155,7 +155,9 @@ Every server, client and subscription stops when the scenario ends, before the f
   ([ADR 0053](../../docs/decisions/0053-harness-codex-opencode.md)). `sessions()` lists each session the agent opened,
   with its `cwd` and the variables `OPENAI_*`, `ANTHROPIC_*` and `OSF_EFFORT` the agent got in `env`, so a test sees
   which model gateway, key, model and effort level a module handed the harness
-  ([ADR 0070](../../docs/decisions/0070-foreman-gateway-and-take-over.md), [ADR 0078](../../docs/decisions/0078-agent-effort.md)).
+  ([ADR 0070](../../docs/decisions/0070-foreman-gateway-and-take-over.md), [ADR 0078](../../docs/decisions/0078-agent-effort.md)),
+  and the `mcpServers` of `session/new` as ACP sent them
+  ([ADR 0112](../../docs/decisions/0112-an-agents-mcp-servers-and-skills-in-its-session.md)).
   A turn with `commands` runs each with `sh -c` in the session's folder after its edits, as a coding agent's tools
   do; their output comes before the `reply`. A command that exits with another code than 0 ends the turn with
   `refusal` and fails the scenario with its output; `commands()` lists each with its `exitCode` and `output`.

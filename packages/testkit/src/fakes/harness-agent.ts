@@ -4,7 +4,8 @@
 // turn's tool calls, applies its edits, runs its commands, streams the reply and ends the turn. A prompt that a waiting turn waits for
 // is a steering message: it ends at once and lets that turn go on. The agent also takes a steering message as the
 // request `_session/steering`, as codex-acp does (ADR 0053). The agent logs every prompt and tool call so the testkit
-// can show the prompts nobody scripted, and each session it opens with the model variables it got (ADR 0070).
+// can show the prompts nobody scripted, and each session it opens with the model variables (ADR 0070) and the MCP
+// servers (ADR 0112) it got.
 import { spawnSync } from "node:child_process";
 import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
@@ -104,7 +105,13 @@ agent({ name: "testkit-scripted-harness" })
     const env = Object.entries(process.env).filter(([name]) =>
       /^(OPENAI_|ANTHROPIC_|OSF_EFFORT$|TRACEPARENT$)/.test(name),
     );
-    log({ session: { cwd: params.cwd, env: Object.fromEntries(env) as Record<string, string> } });
+    log({
+      session: {
+        cwd: params.cwd,
+        env: Object.fromEntries(env) as Record<string, string>,
+        mcpServers: params.mcpServers,
+      },
+    });
     await posted;
     return { sessionId };
   })
