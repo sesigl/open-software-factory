@@ -11,7 +11,10 @@ export function resolveDefinition(definition: FactoryDefinition, lock: Lock): Fa
   );
   const resolved: FactoryDefinition = { ...definition, agents };
   if (definition.workflow)
-    resolved.workflow = definition.workflow.map((stage) => ({ ...stage, agent: stage.agent ?? stage.stage }));
+    // A stage that only waits runs no agent (ADR 0107).
+    resolved.workflow = definition.workflow.map((stage) =>
+      stage.wait ? stage : { ...stage, agent: stage.agent ?? stage.stage },
+    );
   if (definition.scorers) {
     resolved.scorers = Object.fromEntries(
       Object.entries(definition.scorers).map(([name, scorer]) => [name, { ...scorer, sample: scorer.sample ?? 1 }]),

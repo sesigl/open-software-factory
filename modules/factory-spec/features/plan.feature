@@ -88,3 +88,11 @@ Feature: Plan, apply, diff and resolve
     And it runs the stage "spec" with the agent "spec"
     And it samples the scorer "redundant-tests" at 1
     And it lists the MCP server "registry:io.github.acme/tracker@1.4.2"
+
+  @id=SCN-FSPEC-062 @status=implemented
+  Scenario: Resolve gives a stage that only waits no agent
+    Given a factory.yaml whose stage "verify" has "wait: true" and the checks ["verify"], and no agent "verify"
+    When the factory engineer runs "factory resolve"
+    Then the command exits with code 0
+    And the printed definition is a valid factory-definition
+    And its stage "verify" has "wait: true" and no agent

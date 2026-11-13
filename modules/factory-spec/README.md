@@ -7,7 +7,7 @@ covers: [modules/factory-spec/src/**]
 One `factory.yaml` rendered for every harness. Claude Code, Codex and OpenCode read the same prompt, skills and MCP
 servers, and `factory plan` shows what a change does before `factory apply` writes it. It also registers the forge
 webhooks of automations and writes kagent and gh-aw files. Decisions:
-[ADR 0020](../../docs/decisions/0020-factory-spec.md), [ADR 0022](../../docs/decisions/0022-factory-spec-automations-and-targets.md), [ADR 0060](../../docs/decisions/0060-factory-spec-forge-port.md) and [ADR 0078](../../docs/decisions/0078-agent-effort.md). The format is the `factory-definition` contract
+[ADR 0020](../../docs/decisions/0020-factory-spec.md), [ADR 0022](../../docs/decisions/0022-factory-spec-automations-and-targets.md), [ADR 0060](../../docs/decisions/0060-factory-spec-forge-port.md), [ADR 0078](../../docs/decisions/0078-agent-effort.md) and [ADR 0107](../../docs/decisions/0107-a-stage-that-only-waits.md). The format is the `factory-definition` contract
 ([`contracts/`](../../contracts/README.md)).
 
 ## Quick start
@@ -70,6 +70,15 @@ before it answers (ADR 0078). Both are required, so the file shows what each age
 
 `factory lint` does not check the rule: a model can be a routing alias like `routes/implement`, which hides its
 family. The review of the factory's pull request does.
+
+## Stages
+
+Each stage of `workflow` runs an agent, the one with the stage's name unless it names `agent`. A stage with
+`wait: true` runs none ([ADR 0107](../../docs/decisions/0107-a-stage-that-only-waits.md)): the foreman waits for its
+`checks`, its `evidence: required` and its `gate`, and then goes on without a model call. `factory lint` reports such a
+stage when it names an `agent` (`stage "verify" only waits, so it names no agent`) or waits for nothing
+(`stage "verify" only waits, so it names checks, the evidence "required" or a gate`). `factory resolve` gives it no
+agent.
 
 ## MCP servers and factory.lock
 
@@ -274,3 +283,7 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FSPEC-056 | implemented | Apply names the forge adapter it cannot start |
 | SCN-FSPEC-057 | implemented | Lint accepts a stage that waits for the check "verify" and asks for evidence |
 | SCN-FSPEC-058 | implemented | Lint names the line of an effort the format does not know, with the allowed levels |
+| SCN-FSPEC-059 | implemented | Lint accepts a stage that only waits, without an agent of its name |
+| SCN-FSPEC-060 | implemented | Lint reports a stage that waits and names an agent |
+| SCN-FSPEC-061 | implemented | Lint reports a stage that waits for nothing |
+| SCN-FSPEC-062 | implemented | Resolve gives a stage that only waits no agent |
