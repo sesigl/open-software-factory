@@ -20,18 +20,20 @@ scenario("SCN-INFLITE-019", async ({ sut, fakes, given, when, then }) => {
     },
   );
 
-  const runs: Awaited<ReturnType<typeof cli>>[] = [];
+  let first: Awaited<ReturnType<typeof cli>>;
+  let second: Awaited<ReturnType<typeof cli>>;
+  let stop: Awaited<ReturnType<typeof cli>>;
   await when(
     'the client runs "revoke" for the run "run-7", "revoke" for the run "run-9" without a key, and then "stop" for the gateway',
     async () => {
-      runs.push(await cli(sut, ["revoke", gateway.id, "run-7"]));
-      runs.push(await cli(sut, ["revoke", gateway.id, "run-9"]));
-      runs.push(await cli(sut, ["stop", gateway.id]));
+      first = await cli(sut, ["revoke", gateway.id, "run-7"]);
+      second = await cli(sut, ["revoke", gateway.id, "run-9"]);
+      stop = await cli(sut, ["stop", gateway.id]);
     },
   );
 
   await then("each exits with code 0 and prints nothing but the line of stop", async () => {
-    expect(runs.map((run) => [run.exitCode, run.stdout, run.stderr])).toEqual([
+    expect([first, second, stop].map((run) => [run.exitCode, run.stdout, run.stderr])).toEqual([
       [0, "", ""],
       [0, "", ""],
       [0, `stopped ${gateway.id}\n`, ""],
