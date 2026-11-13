@@ -14,20 +14,23 @@ interface Running<T> {
   close(): Promise<string[]>;
 }
 
-const START_TIMEOUT_MS = 30_000;
+// A server is ready in under a second, also with a dozen starting at once. One that is not ready after this time
+// hangs, as Temporal did once under Stryker's parallel runners, and starts again on new ports.
+const START_TIMEOUT_MS = 10_000;
 const servicePort = () => freePort(SERVICE_PORTS);
 const START_ATTEMPTS = 3;
 
 /**
  * Starts a server on free ports, and again on new ones when another process took a port between the pick and the
- * bind: scenarios in parallel workers pick ports at the same time.
+ * bind, or when the server did not get ready: scenarios in parallel workers pick ports at the same time.
  */
 async function onFreePorts<T>(attempt: () => Promise<Running<T>>): Promise<Running<T>> {
   for (let tries = 1; ; tries++) {
     try {
       return await attempt();
     } catch (error) {
-      if (tries >= START_ATTEMPTS || !/address already in use/.test((error as Error).message)) throw error;
+      const retry = /address already in use|did not start within/.test((error as Error).message);
+      if (tries >= START_ATTEMPTS || !retry) throw error;
     }
   }
 }
@@ -79,17 +82,19 @@ async function start<T>(
   const home = tempFolder(`osf-${name}-`);
   const child = spawn(program(name), args(home), {
     env: { PATH: process.env.PATH ?? "", HOME: home },
-    stdio: ["ignore", "ignore", "pipe"],
+    stdio: ["ignore", "pipe", "pipe"],
   });
-  let stderr = "";
-  child.stderr?.on("data", (chunk) => (stderr += chunk));
+  // Both streams, so that an error names what the server wrote on either.
+  let output = "";
+  child.stdout?.on("data", (chunk) => (output += chunk));
+  child.stderr?.on("data", (chunk) => (output += chunk));
   const close = async () => {
     await stop(child);
     rmSync(home, { recursive: true, force: true });
     return [];
   };
   try {
-    await ready(child, readyUrl, () => `${name} ${stderr}`.trim());
+    await ready(child, readyUrl, () => `${name} ${output}`.trim());
   } catch (error) {
     await close();
     throw error;
