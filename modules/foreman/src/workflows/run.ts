@@ -62,10 +62,12 @@ export async function factoryRun({ view, definition, before }: RunInput): Promis
       const { index } = step;
       if (step.kind === "read-checks") {
         if (checksSince.index !== index) checksSince = { index, at: Date.now() };
-        // The wait sleeps at most until its limit, then reads the checks one last time (ADR 0106).
-        const left = step.limitMs - (Date.now() - checksSince.at);
+        // The wait sleeps at most until its limit, then reads the checks one last time (ADR 0106). A step recorded
+        // before ADR 0106 has no limit, so a replay of an older run waits as it did then.
+        const limitMs = step.limitMs ?? Number.POSITIVE_INFINITY;
+        const left = limitMs - (Date.now() - checksSince.at);
         if (step.delayMs) await sleep(Math.max(1, Math.min(step.delayMs, left)));
-        const last = Date.now() - checksSince.at >= step.limitMs ? step.limitMs : undefined;
+        const last = Date.now() - checksSince.at >= limitMs ? limitMs : undefined;
         run = await local.apply(run, await remote.readChecks(run, definition, index, last));
       } else if (step.kind === "request-gate") {
         run = await local.apply(run, await remote.requestGate(run, definition, index));
