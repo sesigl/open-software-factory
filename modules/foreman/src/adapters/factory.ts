@@ -35,10 +35,9 @@ export async function readFactory(path: string): Promise<Factory> {
 /** The files the foreman reads, relative to the factory's folder: factory.yaml, the prompts and the inference config. */
 function filesOf(factory: FactoryDefinition, folder: string, file: string): string[] {
   const prompts = Object.values(factory.agents ?? {}).map((agent) => agent.prompt);
-  const config = factory.inference?.config;
-  return [file, ...prompts.map((prompt) => resolve(folder, prompt)), ...(config ? [resolve(folder, config)] : [])].map(
-    (path) => relative(folder, path),
-  );
+  return [file, ...prompts, factory.inference?.config]
+    .filter((path): path is string => path !== undefined)
+    .map((path) => relative(folder, resolve(folder, path)));
 }
 
 /**

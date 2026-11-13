@@ -131,15 +131,13 @@ export const agentOf = (stage: { stage: string; agent?: string }): string => sta
 export function definitionOf(factory: FactoryDefinition, read: (path: string) => string): Definition {
   const { harness = {}, sandbox = {}, forge = {}, inference = {} } = factory.providers ?? {};
   const forgeAdapter = Object.keys(forge)[0];
-  const inferenceAdapter = Object.keys(inference)[0];
   return {
     factory: factory.factory,
     sandboxAdapter: Object.keys(sandbox)[0],
     ranges: { harness, sandbox, forge, inference },
     ...(forgeAdapter ? { forgeAdapter } : {}),
-    ...(inferenceAdapter && factory.inference
-      ? { inference: { adapter: inferenceAdapter, ...factory.inference } }
-      : {}),
+    // The foreman's checks give an inference config only with its one adapter.
+    ...(factory.inference ? { inference: { adapter: Object.keys(inference)[0] as string, ...factory.inference } } : {}),
     stages: (factory.workflow ?? []).map((stage): StagePlan => {
       const waits = {
         stage: stage.stage,
