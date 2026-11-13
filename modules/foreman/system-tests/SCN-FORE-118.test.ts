@@ -11,6 +11,9 @@ scenario("SCN-FORE-118", async ({ sut, fakes, given, when, then }) => {
       );
       expect(factory).toContain("    wait: true\n    agent: ship\n");
       await sut.files.put("$INPUT/factory.yaml", factory);
+      // The prompts the factory names, so that only the stage that waits can stop the server.
+      for (const [path, text] of Object.entries(readmeFiles(fakes)))
+        if (path.startsWith("agents/")) await sut.files.put(`$INPUT/${path}`, text);
       await sut.git.commit("a stage that only waits and names an agent");
     },
   );
