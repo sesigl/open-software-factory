@@ -127,12 +127,13 @@ Feature: Attach to a LiteLLM proxy that already runs
     Then revoke exits with code 2 with the error "inference-litellm: name the run, like revoke <ID> run-7"
 
   @id=SCN-INFLITE-019 @status=implemented
-  Scenario: stop of an attached gateway does not delete a run key again that revoke deleted
-    Given a test proxy that answers "/key/list", "/key/generate" with the key "sk-run-7" and the token "token-7", and "/key/delete"
-    And a gateway attached to the test proxy, and a key of it for the run "run-7"
-    When the client runs "revoke" for the run "run-7", and then "stop" for the gateway
-    Then revoke and stop exit with code 0
-    And the test proxy received "/key/delete" once, with the keys "token-7"
+  Scenario: revoke deletes only its run's key of an attached gateway, and stop does not delete it again
+    Given a test proxy that answers "/key/list", "/key/generate" with the token "token-7" and then "token-8", and "/key/delete"
+    And a gateway attached to the test proxy, with a key for the run "run-7" and one for the run "run-8"
+    When the client runs "revoke" for the run "run-7", "revoke" for the run "run-9" without a key, and then "stop" for the gateway
+    Then each exits with code 0 and prints nothing but the line of stop
+    And the test proxy received "/key/generate" with a different "key" for each run
+    And the test proxy received "/key/delete" with the keys "token-7", and then with the keys "token-8"
 
   @id=SCN-INFLITE-020 @status=implemented @replaces=SCN-INFLITE-012
   Scenario: key makes the run key of an attached gateway with a key and an alias of the run, and stop deletes it
@@ -144,3 +145,18 @@ Feature: Attach to a LiteLLM proxy that already runs
     And the test proxy received "/key/delete" with the keys "token-7" only
     And stop prints "stopped" and the gateway's ID
     And list does not print the gateway's ID
+
+  @id=SCN-INFLITE-021 @status=implemented
+  Scenario: key fails with LiteLLM's message when the proxy refuses the key for another reason than its alias
+    Given a test proxy that answers "/key/list", and "/key/generate" with the status 400 and the error "max_budget must be a number" for "max_budget"
+    And a gateway attached to the test proxy
+    When the client runs "key" for the run "run-7"
+    Then key exits with code 1 with an error that names "/key/generate", the status 400 and "max_budget must be a number"
+    And key prints nothing on standard output
+
+  @id=SCN-INFLITE-022 @status=implemented
+  Scenario: spend-log of an attached gateway keeps the calls of a run whose key revoke deleted
+    Given a test proxy that answers "/key/list", "/key/generate" with the key "sk-run-7" and the token "token-7", "/key/delete", and "/spend/logs" with a call of "token-7" and one of "token-other"
+    And a gateway attached to the test proxy, and a key of it for the run "run-7"
+    When the client runs "revoke" for the run "run-7", and then "spend-log" for the gateway
+    Then spend-log prints one line, whose "api_key" is "token-7"
