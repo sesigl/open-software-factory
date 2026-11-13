@@ -189,6 +189,18 @@ export type components = {
          * @enum {string}
          */
         ActorKind: "person" | "trigger";
+        /** @description foreman: a run of the factory's workflow for one work item, as the HTTP API shows it (ADR 0067).An adapter of the factory's `providers` and the version a run of it asks for (ADR 0110). */
+        AdapterVersion: {
+            /** @description The port under `providers`: harness, sandbox, forge or inference. */
+            port: "harness" | "sandbox" | "forge" | "inference";
+            name: string;
+            /** @description The range under `providers.<port>.<name>` that the fallback runs. */
+            version?: string;
+            /** @description The command line the foreman builds when no map names the adapter: npx at the version. */
+            command?: string[];
+            /** @description The variable whose map gives the adapter's command line instead, for example "FOREMAN_HARNESSES". */
+            configured?: string;
+        };
         Agent: {
             description?: string;
             /** @description Harness adapter, declared under `providers.harness`, for example "claude-code". */
@@ -897,7 +909,6 @@ export type components = {
          * @enum {string}
          */
         RunState: "running" | "blocked" | "complete" | "failed" | "cancelled";
-        /** @description foreman: a run of the factory's workflow for one work item, as the HTTP API shows it (ADR 0067). */
         RunView: {
             /** @description "run_" and 20 hex digits of the SHA-256 of the work item's ID; for the n-th run of the work item, n ≥ 2, of "<work item ID>#<n>" (ADR 0105). */
             runId: string;
@@ -912,6 +923,8 @@ export type components = {
             factory: components["schemas"]["Name"];
             /** @description The commit of the factory definition the run started with. */
             factoryVersion: components["schemas"]["CommitHash"];
+            /** @description The adapters of the factory's `providers` and the versions the run asks for (ADR 0110). */
+            adapters?: components["schemas"]["AdapterVersion"][];
             state: components["schemas"]["RunState"];
             /**
              * Format: uri

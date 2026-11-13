@@ -710,6 +710,58 @@
         ],
         "description": "Who caused something: a person, or an automated trigger such as a cron rule or an alert."
       },
+      "AdapterVersion": {
+        "type": "object",
+        "properties": {
+          "port": {
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "harness"
+              },
+              {
+                "type": "string",
+                "const": "sandbox"
+              },
+              {
+                "type": "string",
+                "const": "forge"
+              },
+              {
+                "type": "string",
+                "const": "inference"
+              }
+            ],
+            "description": "The port under `providers`: harness, sandbox, forge or inference."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The range under `providers.<port>.<name>` that the fallback runs."
+          },
+          "command": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The command line the foreman builds when no map names the adapter: npx at the version."
+          },
+          "configured": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The variable whose map gives the adapter's command line instead, for example \"FOREMAN_HARNESSES\"."
+          }
+        },
+        "required": [
+          "port",
+          "name"
+        ],
+        "description": "foreman: a run of the factory's workflow for one work item, as the HTTP API shows it (ADR 0067).An adapter of the factory's `providers` and the version a run of it asks for (ADR 0110)."
+      },
       "Agent": {
         "type": "object",
         "properties": {
@@ -2648,6 +2700,13 @@
             "$ref": "#/components/schemas/CommitHash",
             "description": "The commit of the factory definition the run started with."
           },
+          "adapters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdapterVersion"
+            },
+            "description": "The adapters of the factory's `providers` and the versions the run asks for (ADR 0110)."
+          },
           "state": {
             "$ref": "#/components/schemas/RunState"
           },
@@ -2689,8 +2748,7 @@
           "state",
           "startedAt",
           "stages"
-        ],
-        "description": "foreman: a run of the factory's workflow for one work item, as the HTTP API shows it (ADR 0067)."
+        ]
       },
       "Sandbox": {
         "type": "object",
