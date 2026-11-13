@@ -35,7 +35,7 @@ const runBefore = (run: RunView) =>
 
 const stageRow = (stage: StageView, gates: Map<string, GateView>, links: RunLinks) => html`<tr>
   <td>${stage.stage}</td>
-  <td>${stage.agent}</td>
+  <td>${stage.agent ?? "waits"}</td>
   <td>${stage.state}</td>
   <td>${stage.sessionId ? linkOr(links.transcript(stage.sessionId), stage.sessionId) : ""}</td>
   <td>${gateText(stage, gates)}</td>

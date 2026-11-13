@@ -3,6 +3,13 @@ Feature: The run page
   The page "/runs/<runId>" shows one run: its origin, its stages as its evidence, and links to its trace, transcripts
   and history (ADR 0072).
 
+  @id=SCN-CONSOLE-055 @status=implemented
+  Scenario: The run page shows a stage that only waits with "waits" instead of an agent
+    Given a foreman with a run whose stage "verify" has no agent and succeeded
+    When a person opens the run's page
+    Then the page shows the stage "verify" with "waits" in the column of the agent, as "succeeded"
+    And the page does not contain "undefined"
+
   @id=SCN-CONSOLE-015 @status=implemented @realizes=SCN-FACTORY-VIS-002
   Scenario: The run page shows the stages with their agent and state
     Given a foreman with the run "Add diagnostics to cloud agent runs" whose stage "plan" succeeded and whose stage "implement" runs
