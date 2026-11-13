@@ -38,7 +38,7 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
 
 ## Budget
 
-- System tests: 430 seconds in total on the CI runner (124 scenarios; each starts the Temporal dev server and NATS as
+- System tests: 480 seconds in total on the CI runner (140 scenarios; each starts the Temporal dev server and NATS as
   pinned binaries on the host, ADR 0067, and the built `harness-acp` adapter with the testkit's scripted agent, which
   `turbo.json` builds before the tests; sandboxed stages use the testkit's fake sandbox adapter, ADR 0068; checks use
   `fakes.github` and the built `forge-github` adapter, ADR 0069; the gateway uses the testkit's fake inference adapter,
@@ -78,6 +78,8 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
   faster: opening the connections while the factory is read, the client on the worker's connection (a retry race
   of SCN-FORE-098 failed once), and a module hook that stubs webpack (Node's hooks cost more than they save). On a
   development machine the same code took 398 s and 434 s, so one run cannot show a change under 5%.
+  The 11 new scenarios cost 27 s and main already took up to 406 s, so the budget is 480 s, about 10% above the
+  437 s. Getting well below 400 s needs fewer starts of `foreman serve` per scenario, not a faster start.
 
 ## Quality limits
 
