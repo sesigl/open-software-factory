@@ -18,8 +18,8 @@ export const MAP_OF: Record<Port, string> = {
   inference: "FOREMAN_INFERENCES",
 };
 
-/** The ranges under the factory's `providers`, per port and adapter name. */
-export type Ranges = Partial<Record<Port, Record<string, string>>>;
+/** The ranges under the factory's `providers`, per port and adapter name; a port without adapters has none. */
+export type Ranges = Record<Port, Record<string, string>>;
 
 /** npx with the adapter's package at the range, if the factory declares one; a harness adapter's command is `run`. */
 export function fallbackOf(port: Port, name: string, range?: string): string[] {
@@ -33,14 +33,15 @@ export function fallbackOf(port: Port, name: string, range?: string): string[] {
  */
 export function commandOf(lines: CommandLines, port: Port, name: string, ranges: Ranges | undefined): string[] {
   const line = lines[name];
-  if (line === undefined) return fallbackOf(port, name, ranges?.[port]?.[name]);
+  // Stryker disable next-line OptionalChaining: only a run that started before ADR 0110 has no ranges, and no scenario can start one
+  if (line === undefined) return fallbackOf(port, name, ranges?.[port][name]);
   return typeof line === "string" ? line.split(" ") : line;
 }
 
 /** Every adapter under the factory's `providers`, with the range it asks for and where its command line comes from. */
 export function adaptersOf(ranges: Ranges, maps: Record<Port, CommandLines>): AdapterVersion[] {
   return PORTS.flatMap((port) =>
-    Object.entries(ranges[port] ?? {}).map(([name, version]) =>
+    Object.entries(ranges[port]).map(([name, version]) =>
       name in maps[port]
         ? { port, name, version, configured: MAP_OF[port] }
         : { port, name, version, command: fallbackOf(port, name, version) },

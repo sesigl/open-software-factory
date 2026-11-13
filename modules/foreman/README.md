@@ -664,3 +664,6 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-134 | implemented | An adapter's command line is a JSON list of arguments, and a path may hold a space |
 | SCN-FORE-135 | implemented | A prompt that Git does not track counts as a change, and the error lists the paths sorted |
 | SCN-FORE-136 | implemented | Every adapter without a command line runs its package at the factory's range |
+| SCN-FORE-137 | implemented | A forge adapter without a command line runs its package at the factory's range |
+| SCN-FORE-138 | implemented | An inference config that Git does not track counts as a change, in a factory below the repository's root |
+| SCN-FORE-139 | implemented | A sandbox adapter that the factory does not name runs its package without a range |

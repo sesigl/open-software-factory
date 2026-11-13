@@ -129,19 +129,17 @@ export const agentOf = (stage: { stage: string; agent?: string }): string => sta
 
 /** The definition of a checked factory, with the text of each prompt from `read`. */
 export function definitionOf(factory: FactoryDefinition, read: (path: string) => string): Definition {
-  const forge = Object.keys(factory.providers?.forge ?? {})[0];
-  const inference = Object.keys(factory.providers?.inference ?? {})[0];
+  const { harness = {}, sandbox = {}, forge = {}, inference = {} } = factory.providers ?? {};
+  const forgeAdapter = Object.keys(forge)[0];
+  const inferenceAdapter = Object.keys(inference)[0];
   return {
     factory: factory.factory,
-    sandboxAdapter: Object.keys(factory.providers?.sandbox ?? {})[0],
-    ranges: {
-      harness: factory.providers?.harness ?? {},
-      sandbox: factory.providers?.sandbox ?? {},
-      forge: factory.providers?.forge ?? {},
-      inference: factory.providers?.inference ?? {},
-    },
-    ...(forge ? { forgeAdapter: forge } : {}),
-    ...(inference && factory.inference ? { inference: { adapter: inference, ...factory.inference } } : {}),
+    sandboxAdapter: Object.keys(sandbox)[0],
+    ranges: { harness, sandbox, forge, inference },
+    ...(forgeAdapter ? { forgeAdapter } : {}),
+    ...(inferenceAdapter && factory.inference
+      ? { inference: { adapter: inferenceAdapter, ...factory.inference } }
+      : {}),
     stages: (factory.workflow ?? []).map((stage): StagePlan => {
       const waits = {
         stage: stage.stage,

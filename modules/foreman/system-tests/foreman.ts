@@ -103,9 +103,10 @@ export interface Setup {
   harnessIn?: string;
   /**
    * No adapter maps: an "npx" first on PATH writes its arguments to $OUTPUT/npx.log, one line per call, and runs the
-   * scripted harness, the fake sandbox or the fake inference adapter for the package of that port.
+   * scripted harness, the fake sandbox, the fake inference adapter or this forge adapter's command line for the package
+   * of that port.
    */
-  npx?: boolean;
+  npx?: boolean | { forge: string };
   env?: Record<string, string>;
 }
 
@@ -158,7 +159,9 @@ export async function servingCommit(sut: Sut, fakes: Fakes, commit: string, setu
     await sut.files.put(setup.harnessIn, 'exec "$@"\n');
     acp.unshift("sh", sut.files.path(setup.harnessIn));
   }
-  const npx = setup.npx ? await npxOnPath(sut, acp, sandbox, inference) : {};
+  const npx = setup.npx
+    ? await npxOnPath(sut, acp, sandbox, inference, setup.npx === true ? undefined : setup.npx.forge)
+    : {};
   const env = {
     FOREMAN_API_TOKEN: API_TOKEN,
     FOREMAN_TEMPORAL_ADDRESS: temporal.address,
@@ -258,6 +261,7 @@ async function npxOnPath(
   acp: string[],
   sandbox?: { command: string; args: string[] },
   inference?: { command: string; args: string[] },
+  forge?: string,
 ): Promise<Record<string, string>> {
   const fake = (adapter?: { command: string; args: string[] }) =>
     adapter ? `${[adapter.command, ...adapter.args].map(word).join(" ")} "$@"` : "exit 1";
@@ -271,6 +275,7 @@ async function npxOnPath(
       `  @opensoftware/harness-*) exec ${acp.map(word).join(" ")} ;;`,
       `  @opensoftware/sandbox-*) exec ${fake(sandbox)} ;;`,
       `  @opensoftware/inference-*) exec ${fake(inference)} ;;`,
+      `  @opensoftware/forge-*) exec ${forge ?? "exit 1"} "$@" ;;`,
       "esac",
       "exit 1",
       "",
@@ -282,6 +287,7 @@ async function npxOnPath(
     FOREMAN_HARNESSES: "{}",
     FOREMAN_SANDBOXES: "{}",
     FOREMAN_INFERENCES: "{}",
+    FOREMAN_FORGES: "{}",
   };
 }
 
@@ -460,6 +466,8 @@ export interface PullRequestsSetup {
   reply(links: string[]): string;
   /** The forge adapter's `prs` fails with this error; its other commands work. */
   prsFails?: string;
+  /** No FOREMAN_FORGES: the "npx" of Setup.npx runs the forge adapter. */
+  npx?: boolean;
 }
 
 /**
@@ -504,8 +512,9 @@ export async function servingPullRequests(sut: Sut, fakes: Fakes, setup: PullReq
       { when: IMPLEMENT, reply: setup.reply(pulls.map((pull) => pull.url)) },
       { when: SHIP, reply: "merged" },
     ],
+    ...(setup.npx ? { npx: { forge: await forgeAdapter(sut, setup.prsFails) } } : {}),
     env: {
-      FOREMAN_FORGES: JSON.stringify({ github: await forgeAdapter(sut, setup.prsFails) }),
+      ...(setup.npx ? {} : { FOREMAN_FORGES: JSON.stringify({ github: await forgeAdapter(sut, setup.prsFails) }) }),
       FOREMAN_FORGE_URL: github.url,
       FOREMAN_FORGE_TOKEN: github.token,
       FOREMAN_CHECK_POLL_MS: "100",

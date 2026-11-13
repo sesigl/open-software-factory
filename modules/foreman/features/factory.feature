@@ -88,3 +88,24 @@ Feature: Factory definition
     When a program posts the README's "work.json" to "/v1/runs" with the API token
     Then the answer's "adapters" holds each adapter at its range with the command line "npx -y @opensoftware/<port>-<name>@<range>", and "run" after it for the harness
     And the run completes, and "npx" ran "@opensoftware/inference-litellm@^3", "@opensoftware/sandbox-docker@^2" and "@opensoftware/harness-codex@^1 run"
+
+  @id=SCN-FORE-137 @status=implemented
+  Scenario: A forge adapter without a command line runs its package at the factory's range
+    Given "foreman serve" runs the README's "checks/factory.yaml" with the fake GitHub, whose pull request "tester/web#1" has the head "osf/<run ID>" and the check "verify" in the state "success", with no "FOREMAN_FORGES" and an "npx" that runs the forge adapter
+    When a program posts the README's "work.json" with the origin "tester/web#3" to "/v1/runs" with the API token
+    Then "/v1/runs/<id>" shows the state "complete" and the link of "tester/web#1" as "pullRequest"
+    And "npx" ran "@opensoftware/forge-github@^0" for "prs" and for "pr"
+
+  @id=SCN-FORE-138 @status=implemented
+  Scenario: An inference config that Git does not track counts as a change, in a factory below the repository's root
+    Given the README's "gateway/factory.yaml" is committed in the folder "hello" of the factory's repository without "inference/litellm.yaml"
+    And "hello/inference/litellm.yaml" is written but not added
+    When the user runs "foreman serve" with "FOREMAN_FACTORY" set to "hello/factory.yaml"
+    Then the command exits with code 2
+    And the output contains "factory.yaml: commit the changed files inference/litellm.yaml; a run's factory version is its commit"
+
+  @id=SCN-FORE-139 @status=implemented
+  Scenario: A sandbox adapter that the factory does not name runs its package without a range
+    Given "foreman serve" runs the README's "sandboxed/factory.yaml" without "providers.sandbox", with no adapter maps and an "npx" that runs the fake adapters
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then the run completes, and "npx" ran "@opensoftware/sandbox-docker" with no range, the adapter of "FOREMAN_SANDBOX"

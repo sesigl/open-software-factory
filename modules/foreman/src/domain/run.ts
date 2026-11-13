@@ -114,16 +114,14 @@ export function firstView(workItem: WorkItem, definition: Definition, version: s
     workItem,
     factory: definition.factory,
     factoryVersion: version,
-    ...adaptersOf(definition),
+    // The adapters and their versions, which the server names for every run (ADR 0110).
+    adapters: definition.adapters,
     state: "running",
     startedAt,
     traceId: traceIdOf(runId),
     stages: definition.stages.map(pendingStage),
   };
 }
-
-/** The view's adapters and their versions (ADR 0110), when the factory declares any. */
-const adaptersOf = ({ adapters }: Definition): Pick<RunView, "adapters"> => (adapters?.length ? { adapters } : {});
 
 /** A stage that did not start yet; a stage that only waits names itself as its agent and says so (ADR 0107). */
 const pendingStage = ({ stage, agent }: { stage: string; agent?: string }): StageView => ({
@@ -191,7 +189,8 @@ export function retried(
       workItem: before.workItem,
       factory: definition.factory,
       factoryVersion: version,
-      ...adaptersOf(definition),
+      // The adapters and their versions, which the server names for every run (ADR 0110).
+      adapters: definition.adapters,
       state: "running",
       ...(before.pullRequest ? { pullRequest: before.pullRequest } : {}),
       startedAt,
