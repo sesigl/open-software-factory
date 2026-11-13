@@ -1032,9 +1032,9 @@ as a vision scenario. Each item names the place in the code, so start there, and
 - **Slices:**
   - [ ] The foreman renders the stage's agent with factory-spec into the session's folder: skills and MCP servers,
     also in a sandbox, whose egress allows the MCP servers' hosts (`SCN-FORE`, `SCN-SANDBOX`).
-  - [ ] The next stage's prompt holds the last message of the stage before it, or a file of the run's folder that the
+  - [x] The next stage's prompt holds the last message of the stage before it, or a file of the run's folder that the
     reference prompts name.
-  - [ ] `factory lint` warns about a `cron` automation without `--gh-aw`, and about `benchmarks` and `scorers` that no
+  - [x] `factory lint` warns about a `cron` automation without `--gh-aw`, and about `benchmarks` and `scorers` that no
     job of the profile runs (until T-31).
 
 ### [ ] T-45 · the requester hears about the run (P1)
