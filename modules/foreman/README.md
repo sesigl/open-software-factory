@@ -613,3 +613,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-117 | implemented | A stage that only waits succeeds when its checks succeeded, without a session |
 | SCN-FORE-118 | implemented | A factory with a stage that only waits and names an agent stops the server at the start |
 | SCN-FORE-119 | implemented | A factory with a stage that only waits for nothing stops the server at the start |
+| SCN-FORE-120 | implemented | A stage that only waits at a gate succeeds after the approval, without a session |
