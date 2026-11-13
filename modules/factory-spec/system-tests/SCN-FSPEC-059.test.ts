@@ -4,10 +4,10 @@ import { waitingFactory } from "./waits.ts";
 
 scenario("SCN-FSPEC-059", async ({ sut, given, when, then }) => {
   await given(
-    'a factory.yaml whose stage "verify" has "wait: true", the checks ["verify"], the evidence "required" and the forge "github", and no agent "verify"',
+    'a factory.yaml whose stage "verify" has "wait: true", the evidence "required" and the forge "github", no checks and no agent "verify"',
     async () => {
-      const yaml = waitingFactory(["wait: true", "checks: [verify]", "evidence: required"]);
-      expect(yaml).not.toContain("  verify:\n");
+      const yaml = waitingFactory(["wait: true", "evidence: required"]);
+      expect(yaml).not.toMatch(/ {2}verify:\n|checks|gate/);
       await sut.files.put("$INPUT/factory.yaml", yaml);
       await sut.files.put("$INPUT/agents/ship.md", prompt("ship"));
     },

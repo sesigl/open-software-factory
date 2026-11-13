@@ -19,7 +19,7 @@ Feature: Lint a factory definition
 
   @id=SCN-FSPEC-059 @status=implemented
   Scenario: Lint accepts a stage that only waits, without an agent of its name
-    Given a factory.yaml whose stage "verify" has "wait: true", the checks ["verify"], the evidence "required" and the forge "github", and no agent "verify"
+    Given a factory.yaml whose stage "verify" has "wait: true", the evidence "required" and the forge "github", no checks and no agent "verify"
     When the factory engineer runs "factory lint"
     Then the command exits with code 0
     And the output is "factory.yaml: no problems"

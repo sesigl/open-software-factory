@@ -230,7 +230,7 @@ export function activities(deps: ActivityDeps) {
       const plan = definition.stages[index];
       if (!plan) throw new Error(`no stage ${index}`);
       // A stage that only waits ends here: its checks and its gate came before it (ADR 0107).
-      if ("wait" in plan) return { kind: "stage-ended", index, stopReason: "end_turn" };
+      if (plan.agent === undefined) return { kind: "stage-ended", index, stopReason: "end_turn" };
       const cwd = join(deps.data, "runs", view.runId);
       mkdirSync(cwd, { recursive: true });
       const attributes = {

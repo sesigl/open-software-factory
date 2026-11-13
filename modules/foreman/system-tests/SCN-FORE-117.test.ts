@@ -4,14 +4,15 @@ import { IMPLEMENT, PLAN, readmeFiles, readmeWork, SHIP, servingChecks } from ".
 scenario("SCN-FORE-117", async ({ sut, fakes, given, when, then }) => {
   let server: Awaited<ReturnType<typeof servingChecks>>;
   await given(
-    '"foreman serve" runs the README\'s "checks/factory.yaml" with the stage "verify" before "ship" that has "wait: true" and the checks ["verify"], with the fake GitHub, whose pull request "tester/web#1" has the check "verify" in the state "success"',
+    '"foreman serve" runs the README\'s "checks/factory.yaml" with the stage "verify" before "ship" that has "wait: true" and "evidence: required", with the fake GitHub, whose pull request "tester/web#1" has the check "proof" in the state "success"',
     async () => {
       const factory = (readmeFiles(fakes)["checks/factory.yaml"] as string).replace(
         "  - stage: ship\n    checks: [verify]\n",
-        "  - stage: verify\n    wait: true\n    checks: [verify]\n  - stage: ship\n",
+        "  - stage: verify\n    wait: true\n    evidence: required\n  - stage: ship\n",
       );
       expect(factory).toContain("    wait: true\n");
-      server = await servingChecks(sut, fakes, { factory, check: "success" });
+      server = await servingChecks(sut, fakes, { factory });
+      await server.check("success", "proof");
     },
   );
   await given('the scripted "implement" turn replies with the link of that pull request', async () => {
@@ -24,7 +25,7 @@ scenario("SCN-FORE-117", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then(
-    '"/v1/runs/<id>" shows the state "complete" with the stage "verify" "succeeded", its check "verify" "success", no agent and no session',
+    '"/v1/runs/<id>" shows the state "complete" with the stage "verify" "succeeded", its check "proof" "success", no agent and no session',
     async () => {
       const view = await server.until(runId, "complete");
       expect(view.stages.map((stage) => [stage.stage, stage.state])).toEqual([
@@ -34,7 +35,7 @@ scenario("SCN-FORE-117", async ({ sut, fakes, given, when, then }) => {
         ["ship", "succeeded"],
       ]);
       const verify = view.stages[2];
-      expect(verify?.checks).toEqual([{ name: "verify", state: "success" }]);
+      expect(verify?.checks).toEqual([{ name: "proof", state: "success" }]);
       expect(verify && "agent" in verify).toBe(false);
       expect(verify?.sessionId).toBeUndefined();
       expect(view.stages[3]?.sessionId).toBeDefined();

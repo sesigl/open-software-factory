@@ -22,7 +22,7 @@ export type StagePlan = {
   gate?: { policy: string; approvers?: string[] };
   /** The checks that must succeed on the run's pull request before the stage starts. */
   checks?: string[];
-} & (AgentPlan | { agent?: undefined; wait: true });
+} & (AgentPlan | { agent?: undefined });
 
 export interface Definition {
   factory: string;
@@ -137,7 +137,7 @@ export function definitionOf(factory: FactoryDefinition, read: (path: string) =>
         ...(stage.gate ? { gate: stage.gate } : {}),
         ...(checksOf(stage).length ? { checks: checksOf(stage) } : {}),
       };
-      if (stage.wait) return { ...waits, wait: true };
+      if (stage.wait) return waits;
       const agent = agentOf(stage);
       const declared = factory.agents[agent] as FactoryDefinition["agents"][string];
       return {
