@@ -280,6 +280,8 @@ A `planned` scenario's test must fail; when it passes, the testkit fails it and 
   A process whose entry script is another package of this repository, like an adapter the module starts, records
   nothing: it cannot run the module's code (ISOLATION), and V8's coverage makes each start slower. Both guards are plain JavaScript, so a
   process loads them without stripping types.
+- Every Node process of the module, and the processes it starts, shares Node's compile cache (`NODE_COMPILE_CACHE`
+  in the system's temporary folder): a start loads the code an earlier one compiled, which saves 0.1 to 0.3 s each.
 - The clock and the seed are fixed through `OSF_NOW` and `OSF_SEED`; a module reads them instead of the system
   clock and a random seed.
 

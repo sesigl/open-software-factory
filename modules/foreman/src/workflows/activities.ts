@@ -4,7 +4,7 @@
 import { existsSync, mkdirSync, renameSync } from "node:fs";
 import { join } from "node:path";
 import { Context } from "@temporalio/activity";
-import { pullRequestChecks } from "../adapters/forge.ts";
+import { pullRequestChecks, pullRequestsOf } from "../adapters/forge.ts";
 import type { Gatekeeper } from "../adapters/gatekeeper.ts";
 import { type HarnessTurn, startTurn } from "../adapters/harness.ts";
 import { type Gateway, hasKey } from "../adapters/inference.ts";
@@ -14,6 +14,7 @@ import { createSandbox } from "../adapters/sandbox.ts";
 import type { Definition } from "../domain/definition.ts";
 import {
   apply,
+  branchOf,
   type Control,
   checksOf,
   type Fact,
@@ -23,11 +24,15 @@ import {
   nextStep,
   promptOf,
   pullRequestOf,
+  type Repository,
   type RunBefore,
   type RunView,
+  repositoryOf,
   runCompleted,
   runStarted,
+  type StagePullRequest,
   type Step,
+  stagePullRequest,
   type Waits,
 } from "../domain/run.ts";
 import { type Outcome, otlpOf, outcomeOf, type SpanFacts, traceparentOf } from "../domain/trace.ts";
@@ -78,6 +83,30 @@ const resourceOf = (view: RunView): Record<string, string> => ({
 });
 
 export function activities(deps: ActivityDeps) {
+  /** The forge adapter's command line and variables. */
+  const forge = (adapter: string): [string[], Record<string, string | undefined>] => [
+    commandLine(deps.forges, adapter, `npx -y @opensoftware/forge-${adapter}`),
+    { ...deps.env, ...deps.forgeEnv },
+  ];
+
+  /**
+   * What the stage gives the run: with a forge adapter and a repository of the work item, the forge's pull request of
+   * the run's branch or the one the agent stated (ADR 0109); else the last link the agent wrote (ADR 0069).
+   */
+  async function pullRequestAfter(
+    view: RunView,
+    definition: Definition,
+    repository: Repository | undefined,
+    transcript: string,
+  ): Promise<StagePullRequest> {
+    if (!definition.forgeAdapter || !repository) return { pullRequest: lastPullRequestIn(transcript) };
+    const branch = branchOf(view.runId);
+    const listed = await pullRequestsOf(...forge(definition.forgeAdapter), repository.repo, branch).catch(
+      (failure: Error) => failure,
+    );
+    return stagePullRequest(repository, branch, listed, transcript, Boolean(view.pullRequest));
+  }
+
   /** Sends the span; a receiver that refuses it is a warning, never a failed stage. */
   const trace = async (span: SpanFacts): Promise<void> => {
     if (!deps.traces) return;
@@ -223,13 +252,7 @@ export function activities(deps: ActivityDeps) {
       if (!view.pullRequest)
         return { kind: "checks", index, checks: [], reason: "no earlier stage linked a pull request" };
       const { repo, number } = pullRequestOf(view.pullRequest);
-      const adapter = definition.forgeAdapter as string;
-      const printed = await pullRequestChecks(
-        commandLine(deps.forges, adapter, `npx -y @opensoftware/forge-${adapter}`),
-        { ...deps.env, ...deps.forgeEnv },
-        repo,
-        number,
-      );
+      const printed = await pullRequestChecks(...forge(definition.forgeAdapter as string), repo, number);
       return { kind: "checks", index, checks: checksOf(names, printed), afterMs, missing: missingOf(names, printed) };
     },
     /**
@@ -279,12 +302,15 @@ export function activities(deps: ActivityDeps) {
             deps.env,
           )
         : undefined;
+      // The work item's repository, whose pull request of the run's branch the forge gives the run (ADR 0109).
+      const repository = definition.forgeAdapter ? repositoryOf(view.workItem.origin.url) : undefined;
       try {
         const prompt = promptOf(
           plan.prompt,
           view.workItem,
           view.pullRequest,
           before?.index === index ? before.line : undefined,
+          repository ? branchOf(view.runId) : undefined,
         );
         const turn = await startTurn(
           sandbox
@@ -306,13 +332,14 @@ export function activities(deps: ActivityDeps) {
         const { stopReason, takenOver } = await untilDone(turn, view.runId, index, steered);
         outcome = outcomeOf(stopReason);
         await sandbox?.copyOut();
-        const pullRequest = lastPullRequestIn(turn.transcript());
+        const { pullRequest, note } = await pullRequestAfter(view, definition, repository, turn.transcript());
         return {
           kind: "stage-ended",
           index,
           stopReason,
           sessionId: turn.sessionId,
           ...(pullRequest ? { pullRequest } : {}),
+          ...(note ? { note } : {}),
           ...(takenOver ? { takenOver: { folder: cwd } } : {}),
         };
       } finally {

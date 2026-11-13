@@ -2654,7 +2654,7 @@
           "pullRequest": {
             "type": "string",
             "format": "uri",
-            "description": "The last pull request link that an agent of the run wrote (ADR 0069)."
+            "description": "The run's pull request: the forge's of the run's branch, the one an agent stated, or else the last link an agent wrote (ADR 0069, ADR 0109)."
           },
           "folder": {
             "type": "string",
@@ -3132,6 +3132,11 @@
             "type": "string",
             "minLength": 1,
             "description": "Why the stage ended without success, when the foreman knows."
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Why the stage gave the run no pull request: a refused link, a branch the forge has none of, or the forge adapter's error (ADR 0109)."
           },
           "startedAt": {
             "type": "string",

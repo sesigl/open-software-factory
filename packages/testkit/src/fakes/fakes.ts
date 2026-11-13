@@ -100,7 +100,23 @@ export function makeFakes(moduleRoot: string): FakesHandle {
       fromRepository(dir) {
         const root = join(repoRoot(), dir);
         const tree: Record<string, string> = {};
-        for (const file of listFiles(root)) tree[relative(root, file)] = readFileSync(file, "utf8");
+        // Each file is read when the test first takes it: a module's folder also holds its reports, which can be
+        // thousands of files and a hundred MB, and most tests take one file, like the README.
+        for (const file of listFiles(root)) {
+          const name = relative(root, file);
+          Object.defineProperty(tree, name, {
+            enumerable: true,
+            configurable: true,
+            get() {
+              const text = readFileSync(file, "utf8");
+              Object.defineProperty(tree, name, { value: text, enumerable: true, writable: true, configurable: true });
+              return text;
+            },
+            set(value: string) {
+              Object.defineProperty(tree, name, { value, enumerable: true, writable: true, configurable: true });
+            },
+          });
+        }
         return tree;
       },
       async modelGateway(script, options) {

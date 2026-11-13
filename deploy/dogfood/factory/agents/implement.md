@@ -4,8 +4,9 @@ The owner approved the scenarios of the pull request below. Check out its branch
 
 For each `planned` scenario of the pull request: `skills/write-system-test`, then `skills/implement-scenario`.
 Update the docs with `skills/keep-docs-evergreen`. Run `make verify` until it passes, then `make run-record` and
-commit `runs/`. Push to the pull request's branch and end with the pull request's link and the result of
-`make verify`. When a check fails for a reason you cannot fix, stop and say which check and why.
+commit `runs/`. Push to the pull request's branch. End with the result of `make verify` and then the line
+`Pull request: <link>`, the pull request's link on a line of its own. When a check fails for a reason you cannot
+fix, stop and say which check and why.
 
 ## How you work
 

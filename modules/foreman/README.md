@@ -184,7 +184,8 @@ workflow:
 ```
 
 ```markdown agents/implement-pr.md
-Implement plan.md on a new branch, push it and open a pull request. End with the pull request's link.
+Implement plan.md on the branch the prompt names, or on a new branch, push it and open a pull request. End with
+the pull request's link.
 ```
 
 ```markdown agents/ship.md
@@ -193,10 +194,17 @@ Merge the pull request.
 
 Serve it as in the quick start, with the forge adapter's token: `export FOREMAN_FORGE_TOKEN=…`. Then:
 
-1. The run's pull request is the last pull request link that an agent of an earlier stage wrote, in its messages or
-   in its tool calls' output: `https://<host>/<owner>/<name>/pull/<n>` (GitHub) or `…/pulls/<n>` (Forgejo). The run
-   shows it as `pullRequest`, every later stage's prompt has the line `Pull request: <link>`, and `run.completed@v1` lists
-   it in `pullRequests`.
+1. The run's pull request ([ADR 0109](../../docs/decisions/0109-the-runs-pull-request-from-the-forge.md)). When the
+   work item's origin is an issue or a pull request of a forge, `<forge>/<owner>/<name>/issues/<n>`, that is the work
+   item's repository, the run's branch is `osf/<run ID>`, and every stage's prompt has the line `Branch: osf/<run ID>`.
+   After each stage the foreman runs the forge adapter's `prs <owner>/<name> --head osf/<run ID> --state all`: the
+   pull request with exactly that head is the run's. Else it takes the agent's last line
+   `Pull request: <link>`, but only of the work item's repository; a link the agent only mentions is not taken. A
+   stage that refuses a link, or leaves the run without a pull request, says why in its `note`, for example
+   `no pull request of tester/web has the head osf/run_…, and the agent stated none`. For any other origin the run's
+   pull request is the last pull request link that an agent wrote, in its messages or in its tool calls' output:
+   `https://<host>/<owner>/<name>/pull/<n>` (GitHub) or `…/pulls/<n>` (Forgejo). The run shows it as `pullRequest`,
+   every later stage's prompt has the line `Pull request: <link>`, and `run.completed@v1` lists it in `pullRequests`.
 2. Before the stage `ship` starts, and before its gate if it has one, the foreman runs the
    [forge adapter](../../ports/forge/README.md)'s `pr <owner>/<name> <n>` and reads the named checks. The stage lists
    them under `checks`, each with `name` and `state`.
@@ -395,7 +403,8 @@ took it over, and a `reason` when it failed for a reason the foreman knows.
   sandbox when the stage's agent declares one ([Sandboxes](#sandboxes)). The foreman
   starts the stage's harness adapter from `FOREMAN_HARNESSES`, speaks ACP to it, opens a session and sends one prompt:
   the agent's prompt file, then the work item's ID, title and description, and `Origin: <url>` when the work item
-  has an origin's link, like the issue it came from, `Pull request: <link>` once the run has one, and `Run before: …`
+  has an origin's link, like the issue it came from, `Branch: osf/<run ID>` when the run's pull request comes from the
+  forge ([Checks](#checks)), `Pull request: <link>` once the run has one, and `Run before: …`
   in the first stage of a run that runs a run before it again ([Run again](#run-again)). It allows the tool calls the adapter asks
   about; limit them with the adapter's `--allow`. A turn that ends with `end_turn` succeeds the stage; any other end
   fails or cancels it, ends the run, and leaves the later stages `pending`. The adapter gets
@@ -627,3 +636,8 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-123 | implemented | The foreman revokes the run's key when the run was cancelled |
 | SCN-FORE-124 | implemented | A revoke that fails is a warning and the run completes all the same |
 | SCN-FORE-125 | implemented | The foreman stops the gateway when it stops serving after every run's key was revoked |
+| SCN-FORE-126 | implemented | The run's pull request is the forge's pull request of the run's branch, not the last link the agent wrote |
+| SCN-FORE-127 | implemented | The pull request the agent states is the run's when the forge has none of the run's branch |
+| SCN-FORE-128 | implemented | A stated pull request of another repository than the work item's is refused |
+| SCN-FORE-129 | implemented | A stage says so when the forge has no pull request of the run's branch and the agent states none |
+| SCN-FORE-130 | implemented | A stage whose forge adapter cannot list the pull requests succeeds and names the adapter's error |

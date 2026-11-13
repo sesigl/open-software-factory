@@ -915,7 +915,7 @@ export type components = {
             state: components["schemas"]["RunState"];
             /**
              * Format: uri
-             * @description The last pull request link that an agent of the run wrote (ADR 0069).
+             * @description The run's pull request: the forge's of the run's branch, the one an agent stated, or else the last link an agent wrote (ADR 0069, ADR 0109).
              */
             pullRequest?: string;
             /** @description The run's folder on the foreman's machine, where a person who took over a stage goes on (ADR 0070). */
@@ -1107,6 +1107,8 @@ export type components = {
             takenOverAt?: string;
             /** @description Why the stage ended without success, when the foreman knows. */
             reason?: string;
+            /** @description Why the stage gave the run no pull request: a refused link, a branch the forge has none of, or the forge adapter's error (ADR 0109). */
+            note?: string;
             /** Format: date-time */
             startedAt?: string;
             /** Format: date-time */

@@ -16,13 +16,18 @@ export const ADA: RunRetry["by"] = { kind: "person", id: "github:ada" };
 /** How long a scenario waits for a run or an event; a run takes seconds, a busy runner (a mutation run) longer. */
 export const WAIT_MS = 45_000;
 
+/** The README's blocks, read once per test process: the README does not change while the tests run. */
+let readmeBlocks: Record<string, string> | undefined;
+
 /** The fenced blocks of the README that name a file, like ```json work.json. */
 export function readmeFiles(fakes: Fakes): Record<string, string> {
-  const readme = fakes.fromRepository("modules/foreman")["README.md"] as string;
-  const files: Record<string, string> = {};
-  for (const block of readme.matchAll(/^```\w+ (\S+)\n([\s\S]*?)^```$/gm))
-    files[block[1] as string] = block[2] as string;
-  return files;
+  if (!readmeBlocks) {
+    const readme = fakes.fromRepository("modules/foreman")["README.md"] as string;
+    readmeBlocks = {};
+    for (const block of readme.matchAll(/^```\w+ (\S+)\n([\s\S]*?)^```$/gm))
+      readmeBlocks[block[1] as string] = block[2] as string;
+  }
+  return { ...readmeBlocks };
 }
 
 export const readmeWork = (fakes: Fakes): WorkItem => JSON.parse(readmeFiles(fakes)["work.json"] as string);
@@ -390,4 +395,76 @@ export async function failedWithEvents(sut: Sut, fakes: Fakes) {
   const run = await failed(sut, fakes, { nats: true });
   const events = await sut.events.watch(run.nats as NonNullable<typeof run.nats>, "osf.>");
   return { ...run, events };
+}
+
+/** The ID of the README's work item's first run as ADR 0105 states it, and so its branch "osf/<run ID>" (ADR 0109). */
+export async function firstRunOf(fakes: Fakes): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(readmeWork(fakes).id));
+  const hex = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `run_${hex.slice(0, 20)}`;
+}
+
+export interface PullRequestsSetup {
+  /** The pull requests to open, in this order, each in its repository of the fake GitHub ("web" or "app"). */
+  pulls: { repository: "web" | "app"; branch: string }[];
+  /** The "implement" turn's reply, from the links of the pull requests in their order. */
+  reply(links: string[]): string;
+  /** The forge adapter's `prs` fails with this error; its other commands work. */
+  prsFails?: string;
+}
+
+/**
+ * "foreman serve" on the README's "checks/factory.yaml" with the fake GitHub, whose repositories "tester/web" and
+ * "tester/app" have the pull requests; the first one has the check "verify" in the state "success". `work` is the
+ * README's work item whose origin is the issue "tester/web#3" of the fake GitHub.
+ */
+/** The built forge-github adapter's command line, behind a script whose `prs` fails with the error when one is given. */
+async function forgeAdapter(sut: Sut, prsFails?: string): Promise<string> {
+  if (!prsFails) return sut.adapter("forge/github");
+  await sut.files.put(
+    "$INPUT/forge.sh",
+    `if [ "$1" = prs ]; then echo '${prsFails}' >&2; exit 1; fi\nexec ${sut.adapter("forge/github")} "$@"\n`,
+  );
+  return `sh ${sut.files.path("$INPUT/forge.sh")}`;
+}
+
+export async function servingPullRequests(sut: Sut, fakes: Fakes, setup: PullRequestsSetup) {
+  const github = await fakes.github();
+  await github.createRepository("web", { "README.md": "# web\n" });
+  await github.createRepository("app", { "README.md": "# app\n" });
+  const pulls = [];
+  for (const [at, pull] of setup.pulls.entries())
+    pulls.push(
+      await github.openPullRequest(pull.repository, {
+        branch: pull.branch,
+        title: `${TITLE} ${at + 1}`,
+        files: { [`export-${at + 1}.ts`]: "export const csv = true;\n" },
+      }),
+    );
+  const first = pulls[0] as (typeof pulls)[number];
+  const response = await fetch(`${github.url}/repos/${github.owner}/${first.repository}/statuses/${first.sha}`, {
+    method: "POST",
+    headers: { authorization: `token ${github.token}`, "content-type": "application/json" },
+    body: JSON.stringify({ state: "success", context: "verify" }),
+  });
+  if (response.status !== 201) throw new Error(`the fake GitHub answered ${response.status} to the check`);
+  const server = await serving(sut, fakes, {
+    factory: readmeFiles(fakes)["checks/factory.yaml"] as string,
+    turns: [
+      { when: PLAN, reply: "plan.md is written" },
+      { when: IMPLEMENT, reply: setup.reply(pulls.map((pull) => pull.url)) },
+      { when: SHIP, reply: "merged" },
+    ],
+    env: {
+      FOREMAN_FORGES: JSON.stringify({ github: await forgeAdapter(sut, setup.prsFails) }),
+      FOREMAN_FORGE_URL: github.url,
+      FOREMAN_FORGE_TOKEN: github.token,
+      FOREMAN_CHECK_POLL_MS: "100",
+    },
+  });
+  const work: WorkItem = {
+    ...readmeWork(fakes),
+    origin: { source: "github", url: `${github.url}/${github.owner}/web/issues/3` },
+  };
+  return { ...server, github, pulls, work, branch: `osf/${await firstRunOf(fakes)}` };
 }

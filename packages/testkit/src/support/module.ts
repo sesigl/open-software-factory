@@ -65,10 +65,15 @@ export function scenarioStatus(moduleRoot: string, id: string): string | undefin
 export function listFiles(dir: string): string[] {
   if (!existsSync(dir)) return [];
   const out: string[] = [];
-  for (const entry of readdirSync(dir).sort()) {
-    if (entry === ".git" || entry === "node_modules") continue;
-    const full = join(dir, entry);
-    if (statSync(full).isDirectory()) out.push(...listFiles(full));
+  // The entries' types come with the listing, so only a link needs a stat of its own.
+  const entries = readdirSync(dir, { withFileTypes: true }).sort((a, b) =>
+    a.name < b.name ? -1 : a.name > b.name ? 1 : 0,
+  );
+  for (const entry of entries) {
+    if (entry.name === ".git" || entry.name === "node_modules") continue;
+    const full = join(dir, entry.name);
+    const folder = entry.isSymbolicLink() ? statSync(full).isDirectory() : entry.isDirectory();
+    if (folder) out.push(...listFiles(full));
     else out.push(full);
   }
   return out;

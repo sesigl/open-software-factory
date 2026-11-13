@@ -73,6 +73,10 @@ model StageView {
   @minLength(1)
   reason?: string;
 
+  /** Why the stage gave the run no pull request: a refused link, a branch the forge has none of, or the forge adapter's error (ADR 0109). */
+  @minLength(1)
+  note?: string;
+
   startedAt?: utcDateTime;
   endedAt?: utcDateTime;
 }
@@ -104,7 +108,7 @@ model RunView {
 
   state: RunState;
 
-  /** The last pull request link that an agent of the run wrote (ADR 0069). */
+  /** The run's pull request: the forge's of the run's branch, the one an agent stated, or else the last link an agent wrote (ADR 0069, ADR 0109). */
   pullRequest?: url;
 
   /** The run's folder on the foreman's machine, where a person who took over a stage goes on (ADR 0070). */
