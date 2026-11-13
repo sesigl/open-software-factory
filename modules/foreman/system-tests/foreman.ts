@@ -16,13 +16,18 @@ export const ADA: RunRetry["by"] = { kind: "person", id: "github:ada" };
 /** How long a scenario waits for a run or an event; a run takes seconds, a busy runner (a mutation run) longer. */
 export const WAIT_MS = 45_000;
 
+/** The README's blocks, read once per test process: the README does not change while the tests run. */
+let readmeBlocks: Record<string, string> | undefined;
+
 /** The fenced blocks of the README that name a file, like ```json work.json. */
 export function readmeFiles(fakes: Fakes): Record<string, string> {
-  const readme = fakes.fromRepository("modules/foreman")["README.md"] as string;
-  const files: Record<string, string> = {};
-  for (const block of readme.matchAll(/^```\w+ (\S+)\n([\s\S]*?)^```$/gm))
-    files[block[1] as string] = block[2] as string;
-  return files;
+  if (!readmeBlocks) {
+    const readme = fakes.fromRepository("modules/foreman")["README.md"] as string;
+    readmeBlocks = {};
+    for (const block of readme.matchAll(/^```\w+ (\S+)\n([\s\S]*?)^```$/gm))
+      readmeBlocks[block[1] as string] = block[2] as string;
+  }
+  return { ...readmeBlocks };
 }
 
 export const readmeWork = (fakes: Fakes): WorkItem => JSON.parse(readmeFiles(fakes)["work.json"] as string);

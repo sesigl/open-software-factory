@@ -61,6 +61,14 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
 - T-41's run keys (ADR 0108) add 5 scenarios, of 4.5 to 8 s each (SCN-FORE-121 restarts the foreman). On a
   development machine whose benchmark took 1.61 times the reference, the 124 scenarios took 565 s, of which the 5 new
   ones 32 s; BUDGET divides by the slowdown, 351 s, so the budget stays.
+- T-42's pull requests of the forge took the 129 scenarios to 458 s on the reference runner, over the budget. The
+  time went to process starts: `foreman serve` took 1.4 s to listen (0.7 to 0.9 s of it imports), each stage 0.45 s to
+  start its two Node processes (the harness adapter, then the scripted agent), and each read of the README 0.2 s, as
+  `fakes.fromRepository` read every report of the module. Now the foreman and the testkit's processes use Node's
+  compile cache, the worker loads the workflow bundle while the client connects, the harness proxy starts its agent
+  before it loads the ACP SDK, and `fromRepository` reads a file when the test takes it. `foreman serve` listens
+  after 1.0 s and a stage starts in 0.3 s: on a development machine the 129 scenarios took 469 s and 499 s before,
+  394 s to 411 s in four runs after, 17% less. That is about 380 s on the reference runner, so the budget stays.
 
 ## Quality limits
 
