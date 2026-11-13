@@ -121,45 +121,48 @@ export async function serve(env: Env) {
   const gateway = gatewayOf(definition.inference, dirname(factoryPath), gatewayFolder, env, retryMs, warn);
   // A gateway stops with the server, also when the server cannot start.
   try {
-    const temporal = await Connection.connect({ address });
-    const client = new Client({ connection: temporal, namespace });
     const stopping = new AbortController();
-    const work = runs({ client, taskQueue, factory: () => readFactory(factoryPath), now, stopping: stopping.signal });
-    const worker = await Worker.create({
-      connection: await NativeConnection.connect({ address }),
-      namespace,
-      taskQueue,
-      workflowBundle: { codePath: BUNDLE },
-      activities: activities({
-        now,
-        bus,
-        gatekeeper: gatekeeper(env.FOREMAN_GATEKEEPER_URL, env.FOREMAN_GATEKEEPER_TOKEN),
-        harnesses: JSON.parse(env.FOREMAN_HARNESSES || "{}") as Record<string, string>,
-        sandboxes: JSON.parse(env.FOREMAN_SANDBOXES || "{}") as Record<string, string>,
-        sandbox: env.FOREMAN_SANDBOX || "docker",
-        forges: JSON.parse(env.FOREMAN_FORGES || "{}") as Record<string, string>,
-        forgeEnv: {
-          ...(env.FOREMAN_FORGE_URL ? { FORGE_URL: env.FOREMAN_FORGE_URL } : {}),
-          ...(env.FOREMAN_FORGE_TOKEN ? { FORGE_TOKEN: env.FOREMAN_FORGE_TOKEN } : {}),
-        },
-        waits: {
-          checkPollMs: Number(env.FOREMAN_CHECK_POLL_MS || 30_000),
-          checkTimeoutMs: Number(env.FOREMAN_CHECK_TIMEOUT_MS || 7_200_000),
-          gateTimeoutMs: Number(env.FOREMAN_GATE_TIMEOUT_MS || 604_800_000),
-        },
-        data,
-        pollMs,
-        control: (runId) => work.control(runId),
-        ...(gateway ? { gateway: gateway.gateway, gatewayFolder } : {}),
-        ...(traces ? { traces } : {}),
-        warn,
-        env,
+    // The worker loads the workflow bundle, the longest step of the start, while the client connects (ADR 0067).
+    const loading = NativeConnection.connect({ address }).then((connection) =>
+      Worker.create({
+        connection,
+        namespace,
+        taskQueue,
+        workflowBundle: { codePath: BUNDLE },
+        activities: activities({
+          now,
+          bus,
+          gatekeeper: gatekeeper(env.FOREMAN_GATEKEEPER_URL, env.FOREMAN_GATEKEEPER_TOKEN),
+          harnesses: JSON.parse(env.FOREMAN_HARNESSES || "{}") as Record<string, string>,
+          sandboxes: JSON.parse(env.FOREMAN_SANDBOXES || "{}") as Record<string, string>,
+          sandbox: env.FOREMAN_SANDBOX || "docker",
+          forges: JSON.parse(env.FOREMAN_FORGES || "{}") as Record<string, string>,
+          forgeEnv: {
+            ...(env.FOREMAN_FORGE_URL ? { FORGE_URL: env.FOREMAN_FORGE_URL } : {}),
+            ...(env.FOREMAN_FORGE_TOKEN ? { FORGE_TOKEN: env.FOREMAN_FORGE_TOKEN } : {}),
+          },
+          waits: {
+            checkPollMs: Number(env.FOREMAN_CHECK_POLL_MS || 30_000),
+            checkTimeoutMs: Number(env.FOREMAN_CHECK_TIMEOUT_MS || 7_200_000),
+            gateTimeoutMs: Number(env.FOREMAN_GATE_TIMEOUT_MS || 604_800_000),
+          },
+          data,
+          pollMs,
+          control: (runId) => work.control(runId),
+          ...(gateway ? { gateway: gateway.gateway, gatewayFolder } : {}),
+          ...(traces ? { traces } : {}),
+          warn,
+          env,
+        }),
+        maxHeartbeatThrottleInterval: pollMs,
+        defaultHeartbeatThrottleInterval: pollMs,
+        // At SIGTERM a short activity may end; after this time the worker cancels the running stages (ADR 0101).
+        shutdownGraceTime: "1 second",
       }),
-      maxHeartbeatThrottleInterval: pollMs,
-      defaultHeartbeatThrottleInterval: pollMs,
-      // At SIGTERM a short activity may end; after this time the worker cancels the running stages (ADR 0101).
-      shutdownGraceTime: "1 second",
-    });
+    );
+    const [temporal, worker] = await Promise.all([Connection.connect({ address }), loading]);
+    const client = new Client({ connection: temporal, namespace });
+    const work = runs({ client, taskQueue, factory: () => readFactory(factoryPath), now, stopping: stopping.signal });
     const running = worker.run();
     if (bus) await listen(bus, work, warn);
 
