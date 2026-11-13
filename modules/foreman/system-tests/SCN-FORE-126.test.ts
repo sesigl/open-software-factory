@@ -15,9 +15,12 @@ scenario("SCN-FORE-126", async ({ sut, fakes, given, when, then }) => {
       });
     },
   );
-  await given('the scripted "implement" turn replies with the link of "tester/web#1" and then the link of "tester/web#2"', async () => {
-    expect(server.pulls.map((pull) => pull.number)).toEqual([1, 2]);
-  });
+  await given(
+    'the scripted "implement" turn replies with the link of "tester/web#1" and then the link of "tester/web#2"',
+    async () => {
+      expect(server.pulls.map((pull) => pull.number)).toEqual([1, 2]);
+    },
+  );
 
   let runId = "";
   await when(
@@ -30,11 +33,8 @@ scenario("SCN-FORE-126", async ({ sut, fakes, given, when, then }) => {
   await then('"/v1/runs/<id>" shows the state "complete" and the link of "tester/web#1" as "pullRequest"', async () => {
     const view = await server.until(runId, "complete");
     expect(view.pullRequest).toBe(server.pulls[0]?.url);
-    expect(view.stages.map((stage) => (stage as { note?: string }).note)).toEqual([
-      `no pull request of tester/web has the head ${server.branch}, and the agent stated none`,
-      undefined,
-      undefined,
-    ]);
+    // The forge has the pull request of the run's branch from the first stage on, so no stage needs a note.
+    expect(view.stages.map((stage) => stage.note)).toEqual([undefined, undefined, undefined]);
   });
 
   await then('every prompt the harness received has the line "Branch: osf/<run ID>"', async () => {

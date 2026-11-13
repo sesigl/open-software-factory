@@ -78,6 +78,8 @@ export type Fact =
       stopReason: string;
       sessionId?: string;
       pullRequest?: string;
+      /** Why the stage gave the run no pull request (ADR 0109). */
+      note?: string;
       /** A person took the stage over; the run's files are in `folder`. */
       takenOver?: { folder: string };
     }
@@ -253,6 +255,7 @@ function applied(view: RunView, fact: Fact, at: string): RunView {
       const stage = next.stages[fact.index] as StageView;
       if (fact.sessionId) stage.sessionId = fact.sessionId;
       if (fact.pullRequest) next.pullRequest = fact.pullRequest;
+      if (fact.note) stage.note = fact.note;
       if (fact.takenOver) {
         Object.assign(stage, { state: "blocked", takenOverAt: at });
         return { ...next, state: "blocked", folder: fact.takenOver.folder };
@@ -340,6 +343,63 @@ const PULL_REQUEST = /https?:\/\/[^\s"'<>()]+\/([^/\s"'<>()]+)\/([^/\s"'<>()]+)\
 /** The last pull request link in the text. */
 export const lastPullRequestIn = (text: string): string | undefined => [...text.matchAll(PULL_REQUEST)].pop()?.[0];
 
+/** A repository of a forge: its page `<forge>/<owner>/<name>` and its name `<owner>/<name>` for the forge port. */
+export interface Repository {
+  page: string;
+  repo: string;
+}
+
+// The page of an issue or a pull request of a forge: <forge>/<owner>/<name>/issues|pull|pulls/<n>.
+const FORGE_PAGE = /^(https?:\/\/[^\s"'<>()]+?)\/([^/\s"'<>()]+)\/([^/\s"'<>()]+)\/(?:issues|pulls?)\/\d+/;
+
+/** The repository of a page of an issue or a pull request of a forge; none for any other link (ADR 0109). */
+export function repositoryOf(url: string | undefined): Repository | undefined {
+  const [, forge, owner, name] = FORGE_PAGE.exec(url ?? "") ?? [];
+  return forge ? { page: `${forge}/${owner}/${name}`, repo: `${owner}/${name}` } : undefined;
+}
+
+/** The run's branch, which the forge's pull request of the run has as its head (ADR 0109). */
+export const branchOf = (runId: string): string => `osf/${runId}`;
+
+// The line in which an agent states its pull request, the same line the foreman gives the later stages (ADR 0069).
+const STATED = /^Pull request: (\S+)\s*$/gm;
+
+/** A pull request as the forge port's `prs` prints it. */
+export interface ListedPullRequest {
+  url: string;
+  head: string;
+}
+
+/** What a stage gives the run: its pull request, or a note why it gives none (ADR 0109). */
+export interface StagePullRequest {
+  pullRequest?: string;
+  note?: string;
+}
+
+/**
+ * The run's pull request after a stage, for a work item of the repository: the one the forge lists with the run's
+ * branch as its head, else the one the agent's last stated line links when it is of the repository. `listed` is what
+ * the forge port's `prs` listed, the highest number first, or the adapter's error; `had` whether the run has one.
+ */
+export function stagePullRequest(
+  repository: Repository,
+  branch: string,
+  listed: ListedPullRequest[] | Error,
+  transcript: string,
+  had: boolean,
+): StagePullRequest {
+  const forge = listed instanceof Error ? undefined : listed.find((pull) => pull.head === branch);
+  if (forge) return { pullRequest: forge.url };
+  const stated = [...transcript.matchAll(STATED)]
+    .map((line) => line[1])
+    .findLast((link) => lastPullRequestIn(link ?? "") === link);
+  if (stated && repositoryOf(stated)?.page === repository.page) return { pullRequest: stated };
+  if (stated) return { note: `the pull request ${stated} is not of the work item's repository ${repository.page}` };
+  if (had) return {};
+  if (listed instanceof Error) return { note: listed.message };
+  return { note: `no pull request of ${repository.repo} has the head ${branch}, and the agent stated none` };
+}
+
 /** The repository `<owner>/<name>` and number of a pull request link. */
 export function pullRequestOf(url: string): { repo: string; number: string } {
   const [, owner, name, number] = [...url.matchAll(PULL_REQUEST)][0] as RegExpMatchArray;
@@ -354,16 +414,24 @@ export function stageStateOf(stopReason: string): StageState {
 }
 
 /**
- * The prompt of a stage: the agent's prompt, then the work item with its origin, the run's pull request and, for the
- * first stage of a new run, how the run before ended (ADR 0105).
+ * The prompt of a stage: the agent's prompt, then the work item with its origin, the run's branch, its pull request
+ * and, for the first stage of a new run, how the run before ended (ADR 0105, ADR 0109).
  */
-export function promptOf(agentPrompt: string, workItem: WorkItem, pullRequest?: string, before?: string): string {
+export function promptOf(
+  agentPrompt: string,
+  workItem: WorkItem,
+  pullRequest?: string,
+  before?: string,
+  branch?: string,
+): string {
   const description = workItem.description ? `\n\n${workItem.description}` : "";
   // The origin tells the agent where the work is, like the issue of a repository (ADR 0080).
   const origin = workItem.origin.url ? `\n\nOrigin: ${workItem.origin.url}` : "";
+  // The branch whose pull request the forge gives the run (ADR 0109).
+  const pushTo = branch ? `\n\nBranch: ${branch}` : "";
   const link = pullRequest ? `\n\nPull request: ${pullRequest}` : "";
   const run = before ? `\n\n${before}` : "";
-  return `${agentPrompt.trimEnd()}\n\n# Work item ${workItem.id}\n\n${workItem.title}${description}${origin}${link}${run}\n`;
+  return `${agentPrompt.trimEnd()}\n\n# Work item ${workItem.id}\n\n${workItem.title}${description}${origin}${pushTo}${link}${run}\n`;
 }
 
 /** What a running stage asks its run for: the steering messages so far, and the stage a person takes over. */

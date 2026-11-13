@@ -41,7 +41,7 @@ scenario("SCN-FORE-129", async ({ sut, fakes, given, when, then }) => {
     'the stage "implement" has the note "no pull request of tester/web has the head osf/<run ID>, and the agent stated none"',
     async () => {
       const view = await server.view(runId);
-      expect((view.stages[1] as { note?: string }).note).toBe(
+      expect(view.stages[1]?.note).toBe(
         `no pull request of tester/web has the head ${server.branch}, and the agent stated none`,
       );
     },

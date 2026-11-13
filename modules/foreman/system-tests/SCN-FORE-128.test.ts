@@ -12,9 +12,12 @@ scenario("SCN-FORE-128", async ({ sut, fakes, given, when, then }) => {
       });
     },
   );
-  await given('the scripted "implement" turn replies with the line "Pull request: <link of tester/app#1>"', async () => {
-    expect(server.pulls[0]?.url).toBe(`${server.github.url}/tester/app/pull/1`);
-  });
+  await given(
+    'the scripted "implement" turn replies with the line "Pull request: <link of tester/app#1>"',
+    async () => {
+      expect(server.pulls[0]?.url).toBe(`${server.github.url}/tester/app/pull/1`);
+    },
+  );
 
   let runId = "";
   await when(
@@ -42,7 +45,7 @@ scenario("SCN-FORE-128", async ({ sut, fakes, given, when, then }) => {
     'the stage "implement" has the note "the pull request <link of tester/app#1> is not of the work item\'s repository <fake GitHub>/tester/web"',
     async () => {
       const view = await server.view(runId);
-      expect((view.stages[1] as { note?: string }).note).toBe(
+      expect(view.stages[1]?.note).toBe(
         `the pull request ${server.pulls[0]?.url} is not of the work item's repository ${server.github.url}/tester/web`,
       );
     },

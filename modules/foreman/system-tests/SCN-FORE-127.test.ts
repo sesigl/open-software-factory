@@ -33,6 +33,6 @@ scenario("SCN-FORE-127", async ({ sut, fakes, given, when, then }) => {
   await then('"/v1/runs/<id>" shows the state "complete" and the link of "tester/web#1" as "pullRequest"', async () => {
     const view = await server.until(runId, "complete");
     expect(view.pullRequest).toBe(server.pulls[0]?.url);
-    expect((view.stages[1] as { note?: string }).note).toBeUndefined();
+    expect(view.stages[1]?.note).toBeUndefined();
   });
 });
