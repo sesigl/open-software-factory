@@ -32,6 +32,8 @@ images:
   foreman: "0.10.0"
   console: "0.6.0"
   factorySpec: "0.8.0"
+  # The image of the improvement jobs: observer, scorekit and ledger.
+  observer: "0.2.0"
 
 # The factory definition with its prompts, policy and groups, as path: content. Empty: the reference factory in
 # files/factory/. foreman commits the files into Git, so a run's factory version is a commit.
@@ -78,6 +80,19 @@ console:
   temporalUrl: ""
   # The dashboards every page links, as name=url, comma-separated, like Langfuse=https://langfuse.acme.dev.
   links: ""
+  resources: {}
+
+# The improvement path (ADR 0123): a CronJob that copies foreman's run records into a claim that console's /improvement
+# reads, and writes the reports of scorekit, ledger and observer. Its pod and console then run on foreman's node.
+improve:
+  enabled: false
+  schedule: "17 * * * *"
+  # The scorers that judge each run, like "redundant-tests scope-creep". Each judgment is a paid model call through
+  # litellm. Empty: no scoring.
+  scorers: ""
+  persistence:
+    size: 1Gi
+    storageClass: ""
   resources: {}
 
 # PostgreSQL with pgvector in the cluster. Set enabled to false and fill externalDatabase for a managed PostgreSQL.

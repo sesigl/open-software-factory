@@ -175,3 +175,14 @@ spec:
 {{- if .Values.gatekeeper.slackChannel }}true{{ end -}}
 {{- else if .Values.secrets.gatekeeperSlackToken }}true{{ end -}}
 {{- end -}}
+
+{{/* A pod that mounts foreman's ReadWriteOnce claim, or improve's, runs on foreman's node (ADR 0123). */}}
+{{- define "osf.onForemansNode" -}}
+affinity:
+  podAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - topologyKey: kubernetes.io/hostname
+        labelSelector:
+          matchLabels:
+            {{- include "osf.selector" (dict "root" . "component" "foreman") | nindent 12 }}
+{{- end -}}

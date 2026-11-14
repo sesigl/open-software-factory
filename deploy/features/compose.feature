@@ -173,3 +173,10 @@ Feature: The Compose profile installs a complete factory with one command
     And a GitHub webhook for issues to intake's "/forge/events", signed with the value of "INTAKE_WEBHOOK_SECRET"
     When "tester" adds the label "factory" to the issue "Export reports as CSV"
     Then intake shows a work item "Export reports as CSV" in the state "received" with the issue's link as its dedupe key
+
+  @id=SCN-DIST-034 @status=implemented
+  Scenario: The service improve writes the reports of ledger and observer and judges no run without scorers
+    Given the Compose profile with every value of ".env.example" set in ".env" and "IMPROVE_INTERVAL" set to "0"
+    When the operator runs "docker compose --profile improve run --rm improve"
+    Then the command exits with code 0
+    And the volume "improve" holds "reports/ledger.json" and "reports/problems.json" and no "scores/scores.jsonl"
