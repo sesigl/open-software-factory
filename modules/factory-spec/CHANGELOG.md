@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/sesigl/open-software-factory/compare/factory-spec-v0.9.0...factory-spec-v0.10.0) (2026-11-14)
+
+
+### Features
+
+* **factory-spec:** factory edit and factory plan --check (T-58) ([#321](https://github.com/sesigl/open-software-factory/issues/321)) ([f755c1f](https://github.com/sesigl/open-software-factory/commit/f755c1ffd5f7f5ba9d55a15d448aa8b459d9b158))
+
 ## [0.9.0](https://github.com/sesigl/open-software-factory/compare/factory-spec-v0.8.0...factory-spec-v0.9.0) (2026-11-14)
 
 
