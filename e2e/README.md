@@ -117,3 +117,13 @@ reference factory's implement stage on opencode, with LiteLLM in front of OpenRo
 submits the issue as a work item and succeeds when the run completed and the sample repository has an open pull
 request. Only the workflow `paid-reference-run.yml` runs it, started by a maintainer or an admin; `make smoke-paid`
 does not ([ADR 0128](../docs/decisions/0128-paid-reference-run.md)).
+
+## Paid factory run
+
+[`paid/factory/run.sh`](paid/factory/run.sh) runs the factory of [`paid/factory/factory/`](paid/factory/factory/) on
+one issue of this repository on github.com: it fails unless the issue is open and carries the label `factory`, then
+the implement stage on opencode, with the same model and budget, follows `AGENTS.md`, runs `make check-fast`, pushes
+`factory/issue-<n>` and opens the pull request. The forge token reaches only `~/.netrc` of foreman's container. Only
+the workflow `paid-factory-run.yml` runs it, started by a maintainer or an admin with
+`gh workflow run paid-factory-run.yml -f issue=<number>`; a pull request it opens starts no CI until a maintainer
+pushes to it or re-runs its checks, and a person reviews it. Both paid runs share [`paid/lib.sh`](paid/lib.sh).

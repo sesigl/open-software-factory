@@ -1,0 +1,22 @@
+# The factory of the paid factory run (ADR 0128): the implement stage alone, on opencode, with the profile's LiteLLM as
+# the model gateway and a budget of 0.50 USD for the whole run. It implements one issue, labeled `factory`, of this
+# repository on github.com. e2e/paid/factory/run.sh starts it.
+version: 1
+factory: paid-factory
+description: Implements one issue of this repository labeled factory and opens its pull request, with a paid model.
+providers:
+  harness:
+    opencode: "^0"
+  inference:
+    litellm: "^0"
+inference:
+  config: ./inference/litellm.yaml
+  budget: 0.5
+agents:
+  implement:
+    harness: opencode
+    model: routes/implement
+    effort: medium
+    prompt: ./agents/implement.md
+workflow:
+  - stage: implement

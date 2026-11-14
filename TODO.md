@@ -1148,11 +1148,12 @@ owner before each slice: which model or service, and its budget.
     pins of `deploy/compose/compose.yaml` and the Helm chart to them, and give the agents of the reference factory
     `deploy/compose/factory/factory.yaml` their levels: `high` for triage and ship (a small model), `medium` for spec,
     implement and review (a smart one). The released images before them reject `effort` as an unknown field.
-  - [ ] foreman (from T-17): run `foreman serve` with a real harness and model next to the public intake below; done
-    when an issue labeled `factory` in this repository is implemented by the foreman (phase 3). Every model call goes
-    through LiteLLM, also on the owner's Claude subscription: LiteLLM forwards the subscription's token, and the
-    foreman hands Claude Code the run's key in `ANTHROPIC_CUSTOM_HEADERS` (`x-litellm-api-key`) in place of
-    `ANTHROPIC_API_KEY`. Models: Opus for spec and implement, Sonnet for review, Haiku for triage and ship.
+  - [ ] foreman (from T-17): the foreman implements an issue labeled `factory` in this repository (phase 3). The
+    workflow `paid-factory-run.yml` exists (ADR 0128): a maintainer or an admin starts it with
+    `gh workflow run paid-factory-run.yml -f issue=<number>`; it checks the label `factory`, and the implement stage on
+    opencode, with `deepseek/deepseek-v4.1-flash-1017` on OpenRouter through LiteLLM and a budget of 0.50 USD, pushes
+    `factory/issue-<n>` and opens the pull request with the job's `GITHUB_TOKEN`. Done when a maintainer's run opens a
+    pull request that a person merges.
   - [x] intake (from T-16): the Compose profile on a developer's machine takes the `issues` webhook of
     `sesigl/open-software-factory` through a smee.io relay; `INTAKE_WEBHOOK_SECRET` turns on the profile's
     `/forge/events` (`SCN-DIST-014`), and `deploy/README.md` describes the relay and the webhook (ADR 0065). Issue #150,

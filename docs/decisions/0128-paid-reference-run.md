@@ -39,11 +39,25 @@ a task that a maintainer points at a branch and starts, ideally only maintainers
   artifact `paid-reference-run` holds the summary, the logs of the services and foreman's data folder with the run's
   transcripts and run records.
 
+- **The factory run on this repository (T-21 foreman).** A second workflow,
+  [`paid-factory-run.yml`](../../.github/workflows/paid-factory-run.yml), uses the same guard, environment, model and
+  budget on a real issue of this repository: input `issue`, the number of an open issue that carries the label
+  `factory` (`e2e/paid/factory/run.sh` fails before any model call otherwise), and `model`. The factory of
+  `e2e/paid/factory/factory/` is the implement stage alone on opencode; its prompt clones this repository, follows
+  `AGENTS.md`, runs `make check-fast`, pushes the branch `factory/issue-<n>` and opens the pull request with GitHub's
+  API. The job's `GITHUB_TOKEN` (`contents: write`, `pull-requests: write`, `issues: read`) is the forge credential:
+  run.sh masks it and writes it only into `~/.netrc` of foreman's container, for `github.com` and `api.github.com`;
+  the checkout keeps no credential. The job's timeout is 60 minutes, the wait for the run 45 minutes. A pull request
+  that `GITHUB_TOKEN` opens starts no workflow (GitHub's rule against recursive runs), so a maintainer pushes to it or
+  re-runs its checks, and a person reviews it before it is merged, as every pull request (AGENTS.md). The token cannot
+  change files in `.github/workflows/`. `e2e/paid/lib.sh` holds the part both scripts share.
+
 Start it:
 
 ```sh
 gh workflow run paid-reference-run.yml -f ref=<branch or commit>
 gh workflow run paid-reference-run.yml -f ref=main -f model=<openrouter model>
+gh workflow run paid-factory-run.yml -f issue=<number of an issue labeled factory>
 ```
 
 ## Options considered
@@ -64,5 +78,7 @@ No new dependency or service: Forgejo (ADR 0016), opencode (ADR 0052), LiteLLM (
 - A maintainer can run the reference factory with a real model on any branch for a few cents.
 - T-27's slice is done when a maintainer's run of the workflow opens the pull request; it moved to T-21, the paid
   runs at the end of `TODO.md`.
+- T-21's foreman slice is done when a maintainer's run of `paid-factory-run.yml` opens a pull request for an issue
+  labeled `factory` and a person merges it.
 - Revisit when the stages triage, review and ship can run on opencode, or when the profile runs a sample on GitHub
   with a token of its own.
