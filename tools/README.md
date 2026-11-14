@@ -23,7 +23,7 @@ make verify      # everything: lint, types, all system tests, all checks
 
 | Command | Make target | What it does |
 | --- | --- | --- |
-| `osf check [ID ...]` | `make check` | Run the named checks. No ID runs the fast set: NOSKIP, ASSERT, BOUNDARY-STATIC, BOUNDARY-ENV, ISOLATION, ARCH, DUP, DOCS-GEN, DOCS-LINKS, ADR, AFFECTED, RELEASE, DEPS, PROFILE, VISION, TODO. `make check` also runs `spec-trace check --only SPEC,TRACE,STEPS`. |
+| `osf check [ID ...]` | `make check` | Run the named checks. No ID runs the fast set: NOSKIP, ASSERT, UI-QUERY, BOUNDARY-STATIC, BOUNDARY-ENV, ISOLATION, ARCH, TEMPLATE, SURFACE, CONTRAST, TOKENS, DUP, DOCS-GEN, DOCS-LINKS, ADR, AFFECTED, RELEASE, DEPS, DEPS-RUNTIME, PROFILE, VISION, TODO. `make check` also runs `spec-trace check --only SPEC,TRACE,STEPS`. |
 | `osf check --all` | `make verify` | Also FLAKE, BUDGET (they read `reports/junit/`), DOCS-AFFECTED and CONTRACT (they compare with `OSF_BASE`; CONTRACT with the last `contracts-v*` tag when there is one), REACH (it reads `reports/coverage/` and compares with `OSF_BASE`) and RUNS (the run records in `runs/`; it compares the commits with `OSF_BASE`). |
 | `osf check MUTATION [--total]` | `make mutation` | Score the Stryker reports in `reports/mutation/`: the mutants in the lines changed since `OSF_BASE` against each module's first limit, or with `--total` every mutant against the second limit (ADR 0037). Neither `make check` nor `make verify` runs it. |
 | `osf mutation-plan [--all] [--keys]` | `nightly.yml`, `mutation.yml` | Print the shards of a mutation run as JSON, one object per runner with `package`, `folder` and `shard`. With `--keys`, from one `turbo run mutation --dry=json`, also the `key` of the shard's report (turbo's hash of the unit's `mutation` task and its added line ranges), the `guard` of the unit's mutant results (turbo's global inputs, its external dependencies, the builds it depends on and its input files except its TypeScript sources and, for a module or an adapter, its `*.test.ts` files) and `results`, the file name of those results (ADR 0091). Without `--all`, each unit that the change since `OSF_BASE` adds source lines to, one shard per about 100 added lines (at most 10, or `osf.mutationLinesPerShard`). With `--all`, every unit with a mutation script, one shard per about 600 lines (at most 20, or `osf.mutationAllLinesPerShard`) (ADR 0084). |
@@ -67,6 +67,9 @@ still takes its README as an input, because its tests read the quick start.
 `make verify` is three targets that CI runs as parallel jobs: `make verify-static` (lint, typecheck, build),
 `make verify-tests` (the system test suites, one at a time; `FILTER="pkg !pkg"` limits them to some packages) and
 `make verify-checks` (`spec-trace check` and every `osf` check, on the results in `reports/`).
+
+DEPS-RUNTIME builds nothing: it parses the TypeScript sources that the entry points of each published package reach
+through relative imports ([ADR 0138](../docs/decisions/0138-a-published-package-runs-on-its-dependencies.md)).
 
 Each failure prints one line: the check ID, `file:line`, and what to fix. Each check ends with `ID ok` or
 `ID failed: N`. The exit code is 1 when any check failed.
@@ -286,3 +289,7 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-159 | implemented | make docs and DOCS-GEN leave out a nested Git checkout |
 | SCN-REPO-160 | implemented | The checks leave out a nested Git checkout, in a Git repository and outside one |
 | SCN-REPO-161 | implemented | osf next-id counts only the feature files of this repository |
+| SCN-REPO-162 | implemented | DEPS-RUNTIME rejects a devDependency that the shipped code imports or resolves at run time |
+| SCN-REPO-163 | implemented | DEPS-RUNTIME rejects a package in no dependency list that the shipped code loads at run time |
+| SCN-REPO-164 | implemented | DEPS-RUNTIME accepts type imports, built-ins, dependencies and files that no entry point loads |
+| SCN-REPO-165 | implemented | DEPS-RUNTIME accepts the imports that osf bundle compiles in and rejects a lookup by name |

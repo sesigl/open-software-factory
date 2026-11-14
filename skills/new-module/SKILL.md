@@ -36,3 +36,6 @@ description: Create a new module or adapter from the template. Use when a tool o
 - The public surface is declared in `README.md` and `contracts/`: CLI commands, HTTP endpoints, MCP tools,
   events, input and output folders. Everything else is private.
 - An adapter implements one port and passes that port's `@conformance` scenarios.
+- What the module's code loads at run time is in `dependencies` (or `peerDependencies`): npm does not install
+  `devDependencies` with a published package. A file it needs from a library that is only a devDependency, like a
+  picture of the design system, its build copies into `dist/`. DEPS-RUNTIME enforces this (ADR 0138).

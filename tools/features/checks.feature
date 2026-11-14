@@ -1047,3 +1047,43 @@ Feature: Repository checks
     When the developer runs "osf next-id DEMO"
     Then the command exits with code 0
     And the output is "SCN-DEMO-002"
+
+  @id=SCN-REPO-162 @status=implemented
+  Scenario: DEPS-RUNTIME rejects a devDependency that the shipped code imports or resolves at run time
+    Given the published module "demo" whose bin "dist/cli.js" is built from "src/cli.ts", which imports "./serve.js"
+    And "ui" is only in the devDependencies of "demo"
+    And "src/serve.ts" imports "ui" on line 2 and resolves "ui/brand/favicon.svg" with "createRequire(import.meta.url).resolve" on line 3
+    When the developer runs "osf check DEPS-RUNTIME"
+    Then the command exits with code 1
+    And the output contains "DEPS-RUNTIME modules/demo/src/serve.ts:2 ui is only a devDependency, which npm does not install with @opensoftware/demo: move it to dependencies, or stop loading it at run time"
+    And the output contains "DEPS-RUNTIME modules/demo/src/serve.ts:3 ui is only a devDependency, which npm does not install with @opensoftware/demo: move it to dependencies, or stop loading it at run time"
+
+  @id=SCN-REPO-163 @status=implemented
+  Scenario: DEPS-RUNTIME rejects a package in no dependency list that the shipped code loads at run time
+    Given the published module "demo" whose bin "dist/cli.js" is built from "src/cli.ts", which imports "./serve.js"
+    And "src/serve.ts" loads "left-pad" with "import()" on line 1, with a require of "createRequire" on line 4 and with "import.meta.resolve" on line 5
+    When the developer runs "osf check DEPS-RUNTIME"
+    Then the command exits with code 1
+    And the output contains "DEPS-RUNTIME modules/demo/src/serve.ts:1 left-pad is no dependency of @opensoftware/demo: add it to dependencies, or stop loading it at run time"
+    And the output names "src/serve.ts:4" and "src/serve.ts:5" with the same message
+
+  @id=SCN-REPO-164 @status=implemented
+  Scenario: DEPS-RUNTIME accepts type imports, built-ins, dependencies and files that no entry point loads
+    Given the published module "demo" whose bin "dist/cli.js" is built from "src/cli.ts", which imports "./serve.js"
+    And "ui" is only in the devDependencies of "demo", "yaml" in its dependencies, "preact" in its peerDependencies and "fsevents" in its optionalDependencies
+    And "src/serve.ts" has "import type" and "export type" of "ui", imports "node:fs", "fs/promises", "yaml", "preact", "fsevents" and "@opensoftware/demo/package.json", and resolves "./page.html"
+    And the Astro template "src/web/pages/index.astro", the file "src/web/theme.ts" and the system test "system-tests/SCN-DEMO-001.test.ts" import "ui"
+    And the private package "tools" imports "ui" in its bin "bin/osf.ts"
+    When the developer runs "osf check DEPS-RUNTIME"
+    Then the command exits with code 0
+    And the output contains "DEPS-RUNTIME ok"
+
+  @id=SCN-REPO-165 @status=implemented
+  Scenario: DEPS-RUNTIME accepts the imports that osf bundle compiles in and rejects a lookup by name
+    Given the published module "demo" whose bin "dist/cli.js" is built from "src/cli.ts", which imports "./serve.js"
+    And its build script is "node ../../tools/bin/bundle.ts ." and "chat" is only in its devDependencies
+    And "src/serve.ts" imports "chat" on line 1 and resolves "chat/package.json" with "createRequire(import.meta.url).resolve" on line 3
+    When the developer runs "osf check DEPS-RUNTIME"
+    Then the command exits with code 1
+    And the output contains "DEPS-RUNTIME modules/demo/src/serve.ts:3 chat is only a devDependency, which npm does not install with @opensoftware/demo: move it to dependencies, or stop loading it at run time"
+    And the output does not name "src/serve.ts:1"
