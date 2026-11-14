@@ -14,6 +14,8 @@ scenario("SCN-FORE-146", async ({ sut, fakes, given, when, then }) => {
 
   await then('the answer has the status 400 and a problem that names "cursor"', async () => {
     expect(answer.response.status).toBe(400);
-    expect((answer.error as { detail: string }).detail).toMatch(/^cursor: /);
+    expect((answer.error as { detail: string }).detail).toBe(
+      'cursor: "bm90LWEtcGFnZQ" is not the next of a page of the runs',
+    );
   });
 });

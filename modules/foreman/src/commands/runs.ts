@@ -83,6 +83,23 @@ function pageSizeOf(limit: string | undefined): number {
   return size;
 }
 
+/**
+ * The cursor of Temporal's page token: `{"page": "<token in base64>"}` in base64url, so a cursor the foreman did not
+ * write is refused before Temporal, whose client retries what it cannot read (ADR 0115).
+ */
+const cursorOf = (token: Uint8Array): string =>
+  Buffer.from(JSON.stringify({ page: Buffer.from(token).toString("base64") })).toString("base64url");
+
+function tokenOf(cursor: string): Buffer {
+  let page: unknown;
+  try {
+    page = JSON.parse(Buffer.from(cursor, "base64url").toString()).page;
+  } catch {}
+  if (typeof page !== "string" || !page)
+    throw new UsageError(`cursor: "${cursor}" is not the next of a page of the runs`);
+  return Buffer.from(page, "base64");
+}
+
 export function runs(options: {
   client: Client;
   taskQueue: string;
@@ -158,16 +175,12 @@ export function runs(options: {
       const query = `WorkflowType = '${factoryRun.name}' AND TaskQueue = '${taskQueue}'`;
       // Temporal's visibility lists running runs first, then the runs that ended, the latest first. Each run keeps its
       // view in its memo (ADR 0115), so a page is one call. A run that started before has no memo and answers the query.
-      const page = await client.workflowService
-        .listWorkflowExecutions({
-          namespace: client.options.namespace,
-          query,
-          pageSize,
-          nextPageToken: cursor === undefined ? undefined : Buffer.from(cursor, "base64url"),
-        })
-        .catch((error: Error) =>
-          Promise.reject(cursor === undefined ? error : new UsageError(`cursor: ${error.message}`)),
-        );
+      const page = await client.workflowService.listWorkflowExecutions({
+        namespace: client.options.namespace,
+        query,
+        pageSize,
+        nextPageToken: cursor === undefined ? undefined : tokenOf(cursor),
+      });
       const views = await Promise.all(
         page.executions.map((run) => {
           const memo = run.memo?.fields?.view;
@@ -176,7 +189,7 @@ export function runs(options: {
           return view(run.execution?.workflowId as string) as Promise<RunView>;
         }),
       );
-      const token = page.nextPageToken?.length ? Buffer.from(page.nextPageToken).toString("base64url") : undefined;
+      const token = page.nextPageToken?.length ? cursorOf(page.nextPageToken) : undefined;
       return { runs: listed(views, state), ...(token ? { next: token } : {}) };
     },
     async signal(runId, document) {

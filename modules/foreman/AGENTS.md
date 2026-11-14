@@ -80,8 +80,10 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
   development machine the same code took 398 s and 434 s, so one run cannot show a change under 5%.
   The 11 new scenarios cost 27 s and main already took up to 406 s, so the budget is 480 s, about 10% above the
   437 s. Getting well below 400 s needs fewer starts of `foreman serve` per scenario, not a faster start.
-- T-48's pages (ADR 0115) add 3 scenarios: one completes two runs and reads them in pages of one, two are refusals
-  that start no run.
+- T-48's pages (ADR 0115) add 3 scenarios: one completes two runs and reads them in pages of one (3 s), two are
+  refusals that start no run (1.3 s each). A cursor the foreman did not write is refused before Temporal: Temporal's
+  client retried an unreadable page token for 21 s. The full suite of 145 took 584 s summed in one run on a
+  development machine while a second copy of the suite and intake's ran at the same time, so it shows no budget.
 - The run list in pages, measured once on a development machine (ADR 0115): 1000 runs in the Temporal dev server,
   started through `POST /v1/runs` with a harness that fails, so each ended as "failed". `GET /v1/runs` answered the
   first page of 50 with a `next` in 13 to 15 ms, and the console's `/` with one foreman in 17 to 23 ms (51 ms for the

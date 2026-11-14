@@ -17,7 +17,9 @@ foreman's worker busy. intake's `GET /v1/inbox` answered the 50 latest work item
 - Both lists take `limit` (1 to 500, 50 by default) and `cursor`, and answer `next`, the cursor of the next page,
   while more follow. Another `limit` or a cursor that is no page of the list is a usage error (400). The parameters
   and `next` are optional additions to `contracts/typespec/` (no major version).
-- The foreman's cursor is Temporal's `nextPageToken` in base64url; a page is one `ListWorkflowExecutions` call. With
+- The foreman's cursor is Temporal's `nextPageToken` in a JSON envelope `{"page": …}` in base64url, so a cursor the
+  foreman did not write is refused at once (Temporal's client retries a token the server cannot read for about 20
+  seconds); a page is one `ListWorkflowExecutions` call. With
   `state`, the foreman filters the page, so a page may hold fewer runs than `limit` and still have a `next`.
 - Each run keeps its view in its memo: the foreman starts the workflow with the memo `view`, and the workflow upserts it
   after each fact it applies, behind the patch `memo-view`, so a replay of a run that started before schedules the
