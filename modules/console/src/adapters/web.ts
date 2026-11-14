@@ -19,14 +19,20 @@ const handler = (): Promise<Handler> => {
   return loaded;
 };
 
-/** Answers the request with the template of its path, which reads `page`, and this status. */
+/** Answers the request with the template of its path, or of `template`, which reads `page`, and this status. */
 export async function render(
   request: FastifyRequest,
   reply: FastifyReply,
   status: number,
   page: unknown,
+  template?: string,
 ): Promise<void> {
   const astro = await handler();
+  // Astro writes the answer itself: the headers the route set, like a cookie, go to the answer first.
+  for (const [name, value] of Object.entries(reply.getHeaders()))
+    if (value !== undefined) reply.raw.setHeader(name, value);
   reply.hijack();
+  // Astro picks the template by the request's path.
+  if (template) request.raw.url = `/${template}`;
   await astro(request.raw, reply.raw, undefined, { page, status, statusText: STATUS_CODES[status] as string });
 }

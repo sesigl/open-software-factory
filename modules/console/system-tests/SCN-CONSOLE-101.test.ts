@@ -6,7 +6,8 @@ scenario("SCN-CONSOLE-101", async ({ sut, fakes, given, when, then }) => {
     'a collector at "CONSOLE_OTLP_URL" that takes the span but whose trace store at "CONSOLE_TRACES_URL" keeps none',
     async () => {
       const store = await fakes.traceStore({ keep: false });
-      env = { CONSOLE_OTLP_URL: store.otlpUrl, CONSOLE_TRACES_URL: store.queryUrl };
+      // The test clock: the doctor's 5 s pass on it at once.
+      env = { CONSOLE_OTLP_URL: store.otlpUrl, CONSOLE_TRACES_URL: store.queryUrl, OSF_NOW: "2026-01-01T00:00:00Z" };
     },
   );
 

@@ -68,8 +68,8 @@ person removed by a merge loses access at the next request.
 
 The library `@opensoftware/factory-files` reads a factory's files from a folder or from `git+<url>#<ref>` (the
 foreman's fetch of ADR 0124 moves there) and reads and checks the access file; `factory lint` reports its findings.
-The console reads it at each request through a cache of 30 seconds; when it cannot read it, it keeps the last one it
-read for 10 minutes and then refuses everyone, and the sign-in page says why. Whoever may write to the factory's
+The console reads it again at each request, a small file; when it cannot read it, it keeps the last one it read for 10
+minutes and then refuses everyone, and the sign-in page says why. Whoever may write to the factory's
 repository can make themselves `admin`: the docs say so, and that the repository should be private, since it holds
 emails.
 

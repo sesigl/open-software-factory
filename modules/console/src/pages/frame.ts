@@ -8,6 +8,8 @@ export interface FrameData {
   inbox: boolean;
   work: boolean;
   improvement: boolean;
+  /** The signed-in person and their role; empty without the own sign-in. */
+  person: { email: string; role: string } | undefined;
 }
 
 export const frameData = (frame: Frame): FrameData => ({
@@ -16,4 +18,5 @@ export const frameData = (frame: Frame): FrameData => ({
   inbox: Boolean(frame.inbox),
   work: Boolean(frame.work),
   improvement: Boolean(frame.improvement),
+  person: frame.person,
 });

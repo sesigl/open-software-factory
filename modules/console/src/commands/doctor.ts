@@ -76,7 +76,7 @@ async function pingForemen(env: Env, url: string): Promise<PingOutcome> {
     (await Promise.all(foremen.map((foreman) => probe(foreman, `/v1/doctor/pings/${id}`)))).some(
       ({ status }) => status === 200,
     );
-  return (await within(10_000, seen)) ? "seen" : "not seen";
+  return (await within(10_000, seen, Boolean(env.OSF_NOW))) ? "seen" : "not seen";
 }
 
 /**
@@ -95,7 +95,7 @@ async function deepItems(env: Env, routes: string[]): Promise<Item[]> {
       : { name: "harness", ok: false, detail: "set CONSOLE_HARNESS_COMMAND to the command that starts the harness" },
   );
   const traces = env.CONSOLE_TRACES_URL;
-  if (traces) items.push(traceItem(await traceRoundTrip(env.CONSOLE_OTLP_URL ?? "", traces)));
+  if (traces) items.push(traceItem(await traceRoundTrip(env.CONSOLE_OTLP_URL ?? "", traces, Boolean(env.OSF_NOW))));
   const sandbox = env.CONSOLE_SANDBOX_COMMAND;
   const template = env.CONSOLE_SANDBOX_TEMPLATE || "curlimages/curl:8.17.0";
   if (sandbox) items.push(sandboxItem(await probeSandbox(sandbox, template, DENIED_HOST)));

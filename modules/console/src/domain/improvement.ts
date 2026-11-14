@@ -49,6 +49,3 @@ export function improvementOf(records: unknown[]): Improvement {
   }
   return { stages, scorers: [...scorers.values()] };
 }
-
-/** An amount like "0.75 USD". */
-export const usd = (amount: number) => `${amount.toFixed(2)} USD`;

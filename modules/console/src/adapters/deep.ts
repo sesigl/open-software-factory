@@ -4,8 +4,6 @@
 import { spawn } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import { createInterface } from "node:readline";
-import { jetstream } from "@nats-io/jetstream";
-import { connect } from "@nats-io/transport-node";
 
 /** The status of one chat completion of one token with this model, or 0 when the gateway does not answer. */
 export async function callRoute(url: string, token: string | undefined, model: string): Promise<number> {
@@ -48,7 +46,11 @@ export function initializeHarness(command: string): Promise<boolean> {
  * query API for its trace every 250 ms for 5 s: "sent" false when the collector does not take it, "found" whether
  * the trace store has it.
  */
-export async function traceRoundTrip(otlpUrl: string, tracesUrl: string): Promise<{ sent: boolean; found: boolean }> {
+export async function traceRoundTrip(
+  otlpUrl: string,
+  tracesUrl: string,
+  frozen: boolean,
+): Promise<{ sent: boolean; found: boolean }> {
   const traceId = randomBytes(16).toString("hex");
   const now = BigInt(Date.now()) * 1_000_000n;
   const span = {
@@ -70,17 +72,22 @@ export async function traceRoundTrip(otlpUrl: string, tracesUrl: string): Promis
     () => false,
   );
   if (!sent) return { sent, found: false };
-  return { sent, found: await within(5_000, async () => (await fetch(`${tracesUrl}/api/traces/${traceId}`)).ok) };
+  return {
+    sent,
+    found: await within(5_000, async () => (await fetch(`${tracesUrl}/api/traces/${traceId}`)).ok, frozen),
+  };
 }
 
-/** Asks `found` every 250 ms until it gives true, for `ms` at least once: whether it did. A failure counts as false. */
-export async function within(ms: number, found: () => Promise<boolean>): Promise<boolean> {
-  const deadline = Date.now() + ms;
-  do {
+/**
+ * Asks `found` every 250 ms until it gives true, for `ms` at least once: whether it did. A failure counts as false.
+ * With the test clock OSF_NOW, `frozen`, the 250 ms pass on that clock without a wait: a test sets no real clock.
+ */
+export async function within(ms: number, found: () => Promise<boolean>, frozen: boolean): Promise<boolean> {
+  for (let left = ms; ; left -= 250) {
     if (await found().catch(() => false)) return true;
-    await new Promise((resolve) => setTimeout(resolve, 250));
-  } while (Date.now() < deadline);
-  return false;
+    if (left <= 0) return false;
+    if (!frozen) await new Promise((resolve) => setTimeout(resolve, 250));
+  }
 }
 
 /** The ID of the doctor's ping: random, or from OSF_SEED when it is set, so a test knows it (ADR 0120). */
@@ -92,6 +99,11 @@ export const pingId = (seed: string | undefined): string =>
  * "no stream" when none takes the subject, "no answer" when NATS does not answer.
  */
 export async function publishPing(url: string, id: string): Promise<"sent" | "no stream" | "no answer"> {
+  // NATS loads only for the ping of `console doctor --deep`: `serve` starts faster without it.
+  const [{ connect }, { jetstream }] = await Promise.all([
+    import("@nats-io/transport-node"),
+    import("@nats-io/jetstream"),
+  ]);
   const connection = await connect({ servers: url, timeout: 5_000 }).catch(() => undefined);
   if (!connection) return "no answer";
   const ping = { specversion: "1.0", id, source: "/osf/console", type: "doctor.ping@v1", time: new Date(), data: {} };

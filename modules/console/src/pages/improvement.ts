@@ -1,5 +1,6 @@
 // The page "/improvement": cost and scores of the factory's runs, from the improvement jobs' files (ADR 0123).
-import { type Improvement, usd } from "../domain/improvement.ts";
+import type { Improvement } from "../domain/improvement.ts";
+import { usd } from "../domain/money.ts";
 import { html } from "./html.ts";
 
 export function improvementPage({ stages, scorers }: Improvement) {

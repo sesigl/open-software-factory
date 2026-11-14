@@ -85,7 +85,8 @@ export async function startServer(
       await stop(child, exited);
       throw new Error(`the server did not listen on PORT ${port} within ${timeoutMs} ms:\n${stderr}`);
     }
-    await new Promise((resolvePromise) => setTimeout(resolvePromise, 50));
+    // A server starts in about 0.2 s: every 10 ms, so a scenario waits for its start and not for the poll.
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 10));
   }
   return {
     port,

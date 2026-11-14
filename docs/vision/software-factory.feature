@@ -188,7 +188,7 @@ Feature: Cloud execution, sandboxes and governance
       When the person tries to change the factory definition
       Then the change is refused
 
-    @scenario_id=SCN-FACTORY-RUNTIME-011 @status=planned @evidence=derived @source=owner-2026-11
+    @scenario_id=SCN-FACTORY-RUNTIME-011 @status=implemented @evidence=derived @source=owner-2026-11
     Scenario: Only a person on the factory's access list signs in to the factory UI
       Given the factory's access file in Git lists "ada@example.com" with the role "member"
       When "ada@example.com" signs in to the factory UI

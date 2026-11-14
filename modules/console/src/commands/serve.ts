@@ -2,6 +2,7 @@
 // when it is opened, and keeps nothing. It runs until SIGTERM or SIGINT.
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
 import { UsageError } from "@opensoftware/cli";
 import type {
   GateDecisionRequest,
@@ -21,6 +22,7 @@ import { proposals } from "../adapters/forge.ts";
 import { readImprovement } from "../adapters/improve-files.ts";
 import { render } from "../adapters/web.ts";
 import { cursorsOf, fill, isState, list, namedLinks, nextPageOf, orderRuns, queryOf, STATES } from "../domain/runs.ts";
+import { signInOf } from "../domain/signin.ts";
 import { submissionOf } from "../domain/submit.ts";
 import { agentPage, factoryPage, type Source } from "../pages/factory.ts";
 import { frameData } from "../pages/frame.ts";
@@ -32,6 +34,7 @@ import { runPage } from "../pages/run.ts";
 import { runsPage } from "../pages/runs.ts";
 import { workPage } from "../pages/work.ts";
 import { examine } from "./doctor.ts";
+import { fromConsole, personOf } from "./person.ts";
 
 type Env = Record<string, string | undefined>;
 
@@ -66,7 +69,11 @@ export async function serve(env: Env) {
   const source: Source = { path, branch, url: repository && `${repository}/blob/${branch}/${path}` };
   const inbox = env.CONSOLE_INBOX_REPOSITORY;
   const userHeader = env.CONSOLE_USER_HEADER?.toLowerCase() || undefined;
-  const actions = Boolean(userHeader);
+  // The own sign-in is switched on by name; a setting it misses stops the console (ADR 0134).
+  const sign = signInOf(env);
+  if (Array.isArray(sign)) throw new UsageError(sign.join("\n"));
+  const accessPath = env.CONSOLE_ACCESS || join(dirname(factoryFile), "access.yaml");
+  const actions = Boolean(userHeader) || Boolean(sign);
   const prefix = env.CONSOLE_INBOX_PREFIX || "observer/";
   const improve = env.CONSOLE_IMPROVE_DIR || undefined;
   const forge = {
@@ -87,14 +94,25 @@ export async function serve(env: Env) {
     reply
       .code(status)
       .type("text/html; charset=utf-8")
-      .send(page({ ...frame, ...frameOf() }, content));
+      .send(page({ ...frame, ...frameOf(), person: personOf(reply.request) }, content));
 
   const app = Fastify({ logger: false });
   // Every answer, also one that Astro writes itself, allows only the console's own files and no script (ADR 0132).
   app.addHook("onRequest", async (_request, reply) => {
     reply.raw.setHeader("content-security-policy", POLICY);
   });
+  // The sign-in's libraries load only with the sign-in: a console without it starts faster.
+  if (sign) (await import("./signin.ts")).useSignIn(app, sign, accessPath, now);
   app.get("/pico.css", (_request, reply) => reply.type("text/css").send(PICO));
+  // The probe of the profile's and the chart's health checks: the console runs and reads its factory, without a session.
+  app.get("/v1/ready", (_request, reply) => {
+    try {
+      readFactory(factoryFile);
+      return reply.send({ status: "ok" });
+    } catch (error) {
+      return reply.code(503).send({ status: "failing", detail: (error as Error).message });
+    }
+  });
 
   app.get<{ Querystring: { state?: string; page?: string } }>("/", async (request, reply) => {
     const { state, page: at } = request.query;
@@ -206,7 +224,7 @@ export async function serve(env: Env) {
           "no cost and scores: set CONSOLE_IMPROVE_DIR to the folder of the improvement jobs",
         ),
       );
-    return send(reply, 200, { title: "Cost and scores" }, improvementPage(readImprovement(improve)));
+    return send(reply, 200, { title: "Cost and scores" }, improvementPage(await readImprovement(improve)));
   });
 
   app.get<{ Querystring: { cursor?: string } }>("/work", async (request, reply) => {
@@ -232,6 +250,12 @@ export async function serve(env: Env) {
   );
   /** The signed-in person of a form from the same site, or the answer that refuses it. */
   const signedIn = (request: FastifyRequest, reply: FastifyReply, title: string) => {
+    if (sign) {
+      // With the own sign-in a form names the console's own address in Origin (ADR 0134).
+      if (!fromConsole(request, sign))
+        return { refused: send(reply, 403, { title }, problem("Forbidden", "the form came from another site")) };
+      return { person: personOf(request)?.email ?? "" };
+    }
     const origin = request.headers.origin;
     if (origin && new URL(origin).host !== request.headers.host)
       return { refused: send(reply, 403, { title }, problem("Forbidden", "the form came from another site")) };
@@ -242,7 +266,7 @@ export async function serve(env: Env) {
       };
     return { person };
   };
-  if (userHeader && intake) {
+  if (actions && intake) {
     app.post<{ Body: Record<string, string> }>("/work", async (request, reply) => {
       const { person, refused } = signedIn(request, reply, "Work");
       if (refused) return refused;
@@ -252,7 +276,7 @@ export async function serve(env: Env) {
       return reply.code(303).header("location", "/work").send();
     });
   }
-  if (userHeader) {
+  if (actions) {
     app.post<{ Params: { runId: string } }>("/runs/:runId/retry", async (request, reply) => {
       const { runId } = request.params;
       const { person, refused } = signedIn(request, reply, runId);
@@ -267,7 +291,7 @@ export async function serve(env: Env) {
     });
   }
 
-  if (userHeader) {
+  if (actions) {
     // Steer, cancel, take over or hand back a run (ADR 0118): the foreman records the person with the signal.
     app.post<{ Params: { runId: string }; Body: Record<string, string> }>(
       "/runs/:runId/signals",
@@ -285,7 +309,7 @@ export async function serve(env: Env) {
       },
     );
   }
-  if (userHeader && gatekeeper) {
+  if (actions && gatekeeper) {
     // Approve or reject a run's gate (ADR 0118): gatekeeper checks that the person may decide it, and records them.
     app.post<{ Params: { runId: string; gateId: string }; Body: Record<string, string> }>(
       "/runs/:runId/gates/:gateId",
@@ -315,7 +339,12 @@ export async function serve(env: Env) {
   app.get("/health", async (request, reply) => {
     const items = await examine(env);
     const status = items.every(({ ok }) => ok) ? 200 : 503;
-    await render(request, reply, status, healthData(frameData({ ...frameOf(), title: "Health" }), items));
+    await render(
+      request,
+      reply,
+      status,
+      healthData(frameData({ ...frameOf(), title: "Health", person: personOf(request) }), items),
+    );
   });
 
   // Read-only: any method but GET and HEAD answers 405.

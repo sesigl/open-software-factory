@@ -1618,8 +1618,9 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   - [ ] The access file in `contracts/`, the library and `factory lint` (`SCN-CTR`, the library's prefix,
     `SCN-FSPEC`).
   - [x] `fakes.oidc()` and GitHub's sign-in in `fakes.github` (`SCN-TK`).
-  - [ ] The hook, sign-in, session and sign-out in the console, with the sign-in page and the probe route
-    (`SCN-CONSOLE`).
+  - [x] The hook, sign-in, session and sign-out in the console, with the sign-in page and the probe route
+    (`SCN-CONSOLE`). Until `@opensoftware/factory-files` is published, the console reads `access.yaml` with an
+    adapter of its own; the library takes it over with its first publish.
   - [ ] The roles on every page and form (`SCN-CONSOLE`).
   - [ ] The shell and the runs list in the new look, with the two journeys and the console's own suite with
     `browser: chromium` (`SCN-CONSOLE`).
