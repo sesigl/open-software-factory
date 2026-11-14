@@ -1,0 +1,80 @@
+# The paid reference run (ADR 0128, T-27): the reference factory of a branch implements one issue of a tiny sample
+# repository with a paid model on OpenRouter. Only a person starts it, and only a maintainer or an admin of this
+# repository: GitHub lets only people with write access dispatch a workflow, and the job guard narrows that to the
+# permissions maintain and admin. The sample repository and its issue live in a Forgejo of the job, so the run pushes
+# nowhere outside the job. Expected cost: about 0.01 to 0.05 USD; LiteLLM stops the run's model calls at 0.50 USD.
+#
+#   gh workflow run paid-reference-run.yml -f ref=<branch or commit>
+name: paid reference run
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: The branch or commit of this repository whose factory runs.
+        required: true
+        default: main
+      model:
+        description: The OpenRouter model; the default is the one weekly-paid.yml uses. Expected cost 0.01 to 0.05 USD.
+        required: true
+        default: deepseek/deepseek-v4.1-flash-1017
+
+permissions:
+  contents: read
+
+concurrency:
+  group: paid-reference-run
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Allow only a maintainer or an admin of this repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ACTOR: ${{ github.triggering_actor }}
+        run: |
+          permission=$(gh api "repos/$GITHUB_REPOSITORY/collaborators/$ACTOR/permission" --jq .permission)
+          echo "$ACTOR has the permission $permission."
+          case "$permission" in
+            admin | maintain) ;;
+            *) echo "::error::Only a maintainer or an admin starts the paid reference run." && exit 1 ;;
+          esac
+
+  run:
+    needs: guard
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    # The environment that holds the OpenRouter key of the paid runs (ADR 0077).
+    environment: smoke-paid
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build the e2e image of this checkout
+        run: |
+          pnpm exec turbo run build --filter=@opensoftware/e2e...
+          node e2e/scripts/images.ts
+      # The key goes only into this step, and run.sh gives it only to the service litellm.
+      - name: Run the reference factory on the sample repository
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          MODEL: ${{ inputs.model }}
+          OUT: ${{ runner.temp }}/reference-run
+        run: e2e/paid/reference/run.sh
+      - name: Write the summary
+        if: always()
+        run: cat "$RUNNER_TEMP/reference-run/summary.md" >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: paid-reference-run
+          path: ${{ runner.temp }}/reference-run/

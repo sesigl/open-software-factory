@@ -143,6 +143,14 @@ The stage verify still runs the agent `implement` once more after its checks. On
 factory-spec carry [ADR 0107](../docs/decisions/0107-a-stage-that-only-waits.md), it becomes `wait: true`: a stage that
 only waits for its checks and its evidence, with no model call.
 
+### A paid run of the reference factory
+
+The workflow [`paid-reference-run.yml`](../.github/workflows/paid-reference-run.yml) runs the implement stage of
+the reference factory, from the branch you name, on one issue of a tiny sample repository with a paid model on
+OpenRouter. Only a maintainer or an admin of this repository starts it:
+`gh workflow run paid-reference-run.yml -f ref=<branch>`. It costs about 0.01 to 0.05 USD and stops at 0.50 USD
+([ADR 0128](../docs/decisions/0128-paid-reference-run.md)).
+
 ## Configuration
 
 `compose.yaml` reads these values from `compose/.env` or the environment. It refuses to start without a required one

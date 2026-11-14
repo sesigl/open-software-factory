@@ -106,3 +106,12 @@ Each adapter gets only these variables, `PATH`, and its own temporary `HOME`, `O
 | SCN-E2E-004 | implemented | A benchmark result becomes a routing rule |
 | SCN-E2E-005 | implemented | A manual change to a running factory is reported as drift |
 | SCN-E2E-006 | implemented | An agent in a sandbox pushes to the forge with a placeholder, and holds no token of the foreman |
+
+## Paid reference run
+
+[`paid/reference/run.sh`](paid/reference/run.sh) starts a Forgejo with a tiny sample repository and an issue, starts
+the profile from the workspace image with the factory of [`paid/reference/factory/`](paid/reference/factory/): the
+reference factory's implement stage on opencode, with LiteLLM in front of OpenRouter and a budget of 0.50 USD. It
+submits the issue as a work item and succeeds when the run completed and the sample repository has an open pull
+request. Only the workflow `paid-reference-run.yml` runs it, started by a maintainer or an admin; `make smoke-paid`
+does not ([ADR 0128](../docs/decisions/0128-paid-reference-run.md)).
