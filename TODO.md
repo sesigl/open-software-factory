@@ -1090,16 +1090,16 @@ as a vision scenario. Each item names the place in the code, so start there, and
     in its memo (ADR 0115).
   - [x] The console's pages link the next page (SCN-CONSOLE-057, -058).
 
-### [ ] T-49 · events that are not lost without a trace (P2)
+### [x] T-49 · events that are not lost without a trace (P2)
 
 - **Problem:** the stream `OSF` has no limit of age or size, so it grows until the disk is full. An event that failed
   5 times is dropped with a warning in the log only, and intake's outbox keeps every published row.
 - **Done when:** the stream has a limit, a dropped event can be found and sent again, and a health check fails while
   dropped events wait.
 - **Slices:**
-  - [ ] `max_age` of the stream as a setting, with a default in the profile and the chart (ADR, after ADR 0085).
-  - [ ] A subject for events that reached `max_deliver`, and a check of `/v1/health` on intake and the foreman.
-  - [ ] intake removes published rows of the outbox after a time.
+  - [x] `max_age` of the stream as a setting, with a default in the profile and the chart (ADR 0116).
+  - [x] A subject for events that reached `max_deliver`, and a check of `/v1/health` on intake and the foreman.
+  - [x] intake removes published rows of the outbox after a time.
 
 ### [ ] T-50 · current status lines, again (P2)
 
