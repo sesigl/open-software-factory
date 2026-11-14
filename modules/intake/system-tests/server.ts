@@ -333,8 +333,9 @@ export const RETRY_SUBJECT = "osf.work.retry-requested.v1";
 /**
  * The server, with NATS and the GitHub forge adapter, made a work item of the issue ISSUE labeled "factory", and the
  * foreman published these run events of RUN for it; `relabel` removes the label and adds it again, and `settled`
- * resolves once the server handled every delivery before it: it labels another issue and waits for its work item's
- * "work.received@v1", which the outbox publishes after any event of an earlier delivery.
+ * resolves once the server handled every delivery before it and published their events: it waits until the server
+ * answered every delivery, then labels another issue and waits for its work item's "work.received@v1", which the
+ * outbox publishes after any event of an earlier delivery.
  */
 export async function labeledFollowing(sut: Sut, fakes: Fakes, runEvents: ReturnType<typeof runEvent>[]) {
   const nats = await fakes.nats();
@@ -362,6 +363,8 @@ export async function labeledFollowing(sut: Sut, fakes: Fakes, runEvents: Return
       await forge.github.label("web", issue.number, "factory");
     },
     async settled() {
+      // Fake GitHub sends its deliveries at the same time, so the other issue's could be answered first (run 43594999256).
+      await forge.github.delivered();
       others++;
       const other = await forge.github.openIssue("web", { title: `Other ${others}` });
       await forge.github.label("web", other.number, "factory");
