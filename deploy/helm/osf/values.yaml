@@ -86,7 +86,8 @@ console:
   signIn:
     provider: ""
     # Where people open the console; the provider's callback is <url>/signin/callback. It must be https:// or
-    # loopback. Empty: http://localhost:8080, for kubectl port-forward.
+    # loopback. Empty: CONSOLE_URL stays unset, and the console takes its own default http://localhost:8080, for
+    # kubectl port-forward.
     url: ""
     # With oidc: the provider's issuer, like https://accounts.google.com.
     issuer: ""

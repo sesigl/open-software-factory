@@ -8,7 +8,10 @@ const CLIENT_SECRET = "github-oauth-secret-1";
 // no outgoing connection or port of another scenario takes it; no other scenario of the suite uses it.
 const PORT = "18080";
 
-/** A browser without script: it keeps the console's cookies and follows no redirect, so each step sees one answer. */
+/**
+ * A browser without script: it keeps the console's cookies and follows no redirect, so each step sees one answer.
+ * sut.pages reads only pages of a server that sut.http started, and the profile's console runs in a container.
+ */
 function browser(base: string) {
   const jar = new Map<string, string>();
   return async (path: string) => {
@@ -22,18 +25,6 @@ function browser(base: string) {
     return { status: response.status, location: response.headers.get("location") ?? "", html: await response.text() };
   };
 }
-
-/** The text of a page as a person reads it: without its tags, with its entities decoded. */
-const text = (html: string) =>
-  html
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => String.fromCodePoint(Number.parseInt(hex, 16)))
-    .replace(/&#(\d+);/g, (_, decimal: string) => String.fromCodePoint(Number(decimal)))
-    .replace(/&middot;/g, "·")
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
-    .replace(/&amp;/g, "&")
-    .replace(/\s+/g, " ");
 
 scenario("SCN-DIST-037", async ({ sut, fakes, given, when, then }) => {
   let compose: Awaited<ReturnType<typeof profile>>;
@@ -121,7 +112,7 @@ scenario("SCN-DIST-037", async ({ sut, fakes, given, when, then }) => {
       expect({ status: runs.status, location: runs.location }).toEqual({ status: 303, location: "/signin?next=%2F" });
       const signIn = await open(runs.location);
       expect(signIn.status).toBe(200);
-      expect(text(signIn.html)).toContain("Sign in with GitHub");
+      expect(signIn.html).toContain("Sign in with GitHub");
     },
   );
 
@@ -165,8 +156,8 @@ scenario("SCN-DIST-037", async ({ sut, fakes, given, when, then }) => {
       });
       const runs = await open("/");
       expect(runs.status).toBe(200);
-      expect(runs.html).toMatch(/<h1[^>]*>\s*Runs\s*<\/h1>/);
-      expect(text(runs.html)).toContain("ada@acme.dev · admin");
+      expect(runs.html).toContain("<h1>Runs</h1>");
+      expect(runs.html).toContain("ada@acme.dev · admin");
     },
   );
 
@@ -175,7 +166,8 @@ scenario("SCN-DIST-037", async ({ sut, fakes, given, when, then }) => {
     async () => {
       const refused = await back(await start(), "github-code-mallory");
       expect(refused.status).toBe(403);
-      expect(text(refused.html)).toContain("mallory@acme.dev is not on this factory's access list");
+      // The page as the console sends it: the apostrophe escaped, as in every text the console writes into HTML.
+      expect(refused.html).toContain("mallory@acme.dev is not on this factory&#39;s access list");
     },
   );
 });

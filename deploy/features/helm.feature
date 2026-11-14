@@ -95,5 +95,5 @@ Feature: The Helm chart installs a complete factory on Kubernetes with one comma
     When the operator runs "helm template osf deploy/helm/osf --values values.yaml"
     Then the command exits with code 0
     And the deployment "console" sets "CONSOLE_SIGN_IN", "CONSOLE_URL", "CONSOLE_OIDC_ISSUER" and "CONSOLE_OIDC_CLIENT_ID" to the values, and "CONSOLE_SESSION_SECRET" and "CONSOLE_OIDC_CLIENT_SECRET" from the keys "session-secret" and "client-secret" of the Secret "osf-sign-in"
-    And the console's readiness probe asks "/v1/ready" for the host "factory.acme.dev"
+    And the console's readiness probe asks "/v1/ready", which needs no session
     And no manifest of the chart is a Secret with a key of the sign-in

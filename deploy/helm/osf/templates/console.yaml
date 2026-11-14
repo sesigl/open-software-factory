@@ -92,18 +92,8 @@ spec:
           ports:
             - name: http
               containerPort: 8080
-          readinessProbe:
-            # /v1/ready answers without a session whether the console reads its factory. The probe names the console's
-            # own host, as a browser does: with the sign-in on, the console sends a request for another host there.
-            httpGet:
-              path: /v1/ready
-              port: http
-              httpHeaders:
-                - name: Host
-                  value: {{ (urlParse (default "http://localhost:8080" .Values.console.signIn.url)).host | quote }}
-            periodSeconds: 3
-            timeoutSeconds: 5
-            failureThreshold: 3
+          {{- /* Without a session, whether the console reads its factory: a page needs a session with the sign-in on. */}}
+          {{- include "osf.moduleProbe" "/v1/ready" | nindent 10 }}
           {{- with .Values.console.resources }}
           resources:
             {{- toYaml . | nindent 12 }}

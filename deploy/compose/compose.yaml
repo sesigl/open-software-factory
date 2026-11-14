@@ -393,18 +393,9 @@ services:
         condition: service_healthy
       gatekeeper:
         condition: service_healthy
-    healthcheck:
-      # /v1/ready answers without a session whether the console reads its factory. The probe names the console's own
-      # host, as a browser does: with the sign-in on, the console sends a request for another host to CONSOLE_URL.
-      test:
-        - CMD
-        - node
-        - -e
-        - 'require("node:http").get({ host: "127.0.0.1", port: 8080, path: "/v1/ready", headers: { host: new URL(process.env.CONSOLE_URL).host } }, (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on("error", () => process.exit(1))'
-      interval: 2s
-      timeout: 5s
-      retries: 60
     environment:
+      # Without a session, whether the console reads its factory: a page needs a session with the sign-in on.
+      OSF_HEALTH_PATH: /v1/ready
       CONSOLE_FOREMAN_URL: http://foreman:8080
       CONSOLE_FOREMAN_TOKEN: ${FOREMAN_API_TOKEN:?set FOREMAN_API_TOKEN in .env}
       CONSOLE_INTAKE_URL: http://intake:8080

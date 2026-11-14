@@ -92,7 +92,8 @@ foreman gets a key with the factory's budget for each run, and the spend log nam
 owner's Claude subscription ([ADR 0080](../docs/decisions/0080-dogfood-on-a-subscription.md)). Its agents clone the
 issue's repository with `gh`, follow its `AGENTS.md` and open a draft pull request with the scenarios. The gate before
 `implement` asks the owner on that pull request; the owner comments `/approve`, and the agents implement, review,
-wait for the check `verify` and mark the pull request ready. The owner merges it. In `.env`:
+wait for the check `verify` and mark the pull request ready. The owner merges it. It has no `access.yaml`, so with
+the [sign-in](#turn-on-the-sign-in) on nobody gets in until the owner adds one with their own email. In `.env`:
 
 ```sh
 FACTORY_DIR=../dogfood/factory
@@ -370,7 +371,7 @@ Each stage of the reference factory runs in a sandbox of the
 | `foreman.persistence.size` | `1Gi` | The volume of the runs' working folders. |
 | `console.temporalUrl`, `console.links` | | The Temporal UI and the dashboards the console links, like `Langfuse=https://langfuse.acme.dev`. |
 | `console.signIn.provider` | | The console's own sign-in, `oidc` or `github` ([ADR 0134](../docs/decisions/0134-console-sign-in-roles-and-modes.md)); only the people of the factory's `access.yaml` sign in. Empty: the console is open and read-only. |
-| `console.signIn.url` | `http://localhost:8080` | Where people open the console; the provider's callback is `<url>/signin/callback`. The default suits `kubectl port-forward`; behind an Ingress with TLS, its `https://` address. The readiness probe asks `/v1/ready` for this host. |
+| `console.signIn.url` | the console's own, `http://localhost:8080` | Where people open the console, its `CONSOLE_URL`; the provider's callback is `<url>/signin/callback`. Empty, the chart sets no `CONSOLE_URL`; the default suits `kubectl port-forward`. Behind an Ingress with TLS, its `https://` address. |
 | `console.signIn.issuer`, `console.signIn.clientId` | | With `oidc` the provider's issuer; the client ID of the provider's client or of the GitHub OAuth app. |
 | `console.signIn.secret` | | Required with a provider: a Secret you make, with the keys `session-secret`, the key of the session cookie, and `client-secret`, the client's secret. |
 | `improve.enabled` | `false` | The CronJob `improve` with the commands of the Compose service `improve`, and the claim `osf-improve` that the console's `/improvement` reads. Its pod and the console then run on foreman's node, as the claims are ReadWriteOnce. |

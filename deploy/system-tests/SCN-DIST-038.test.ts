@@ -56,9 +56,9 @@ scenario("SCN-DIST-038", async ({ sut, given, when, then }) => {
     },
   );
 
-  await then('the console\'s readiness probe asks "/v1/ready" for the host "factory.acme.dev"', async () => {
+  await then('the console\'s readiness probe asks "/v1/ready", which needs no session', async () => {
     expect(rendered(result.stdout, "console.yaml")).toMatch(
-      /readinessProbe:\n(?:\s+#.*\n)*\s+httpGet:\n\s+path: \/v1\/ready\n\s+port: http\n\s+httpHeaders:\n\s+- name: Host\n\s+value: "factory.acme.dev"\n/,
+      /readinessProbe:\n\s+exec:\n\s+command:\n\s+- node\n\s+- -e\n\s+- 'fetch\("http:\/\/127\.0\.0\.1:8080\/v1\/ready"\)/,
     );
   });
 
