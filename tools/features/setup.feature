@@ -62,3 +62,29 @@ Feature: Setup of a factory from a clone
     Then the command exits with code 1
     And the output contains "FAIL  groups: put a real member"
     And the fake docker ran "compose run --rm console console doctor" in "deploy/compose"
+
+  @id=SCN-REPO-156 @status=implemented
+  Scenario: osf init generates the console's session key
+    Given a "deploy/compose/.env.example" with "CONSOLE_SESSION_SECRET=" and "CONSOLE_SIGN_IN="
+    When the developer runs "osf init"
+    Then the command exits with code 0
+    And "deploy/compose/.env" sets "CONSOLE_SESSION_SECRET" to 64 hex digits and keeps "CONSOLE_SIGN_IN=" empty
+
+  @id=SCN-REPO-157 @status=implemented
+  Scenario: osf up names each setting that the console's sign-in misses
+    Given a "deploy/compose/compose.yaml" that requires "POSTGRES_PASSWORD" with "${POSTGRES_PASSWORD:?...}"
+    And a fake docker that logs its arguments
+    When the developer runs "osf up" with a ".env" that sets "CONSOLE_SIGN_IN=oidc" and "CONSOLE_OIDC_ISSUER", but not the client's ID and secret
+    Then the command exits with code 1
+    And the output contains "set CONSOLE_OIDC_CLIENT_ID in deploy/compose/.env: CONSOLE_SIGN_IN=oidc needs it"
+    And the output contains "set CONSOLE_OIDC_CLIENT_SECRET in deploy/compose/.env: CONSOLE_SIGN_IN=oidc needs it"
+    And the fake docker was not called
+
+  @id=SCN-REPO-158 @status=implemented
+  Scenario: osf up names what the sign-in with GitHub misses, and a provider it does not know
+    Given a "deploy/compose/compose.yaml" that requires "POSTGRES_PASSWORD" with "${POSTGRES_PASSWORD:?...}"
+    And a fake docker that logs its arguments
+    When the developer runs "osf up" with "CONSOLE_SIGN_IN=github" and no other setting of the sign-in, and again with "CONSOLE_SIGN_IN=saml"
+    Then the first run prints only "set CONSOLE_SESSION_SECRET in deploy/compose/.env: CONSOLE_SIGN_IN=github needs it" and the same for "CONSOLE_GITHUB_CLIENT_ID" and "CONSOLE_GITHUB_CLIENT_SECRET"
+    And the second run prints only "set CONSOLE_SIGN_IN in deploy/compose/.env to oidc or github, not saml"
+    And both exit with code 1 and the fake docker was not called
