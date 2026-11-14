@@ -220,6 +220,16 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/testkit
 
+  adapters/secrets/openbao:
+    dependencies:
+      '@opensoftware/cli':
+        specifier: workspace:*
+        version: link:../../../packages/cli
+    devDependencies:
+      '@opensoftware/testkit':
+        specifier: workspace:*
+        version: link:../../../packages/testkit
+
   contracts:
     dependencies:
       ajv:
