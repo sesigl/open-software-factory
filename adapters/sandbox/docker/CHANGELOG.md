@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/sesigl/open-software-factory/compare/sandbox-docker-v0.5.0...sandbox-docker-v0.6.0) (2026-11-14)
+
+
+### Features
+
+* **e2e:** the paid factory run implements a factory issue of this repository (T-21) ([#301](https://github.com/sesigl/open-software-factory/issues/301)) ([81db796](https://github.com/sesigl/open-software-factory/commit/81db796a747da7e7eb06ca78862b9192f7c29ed8))
+
 ## [0.5.0](https://github.com/sesigl/open-software-factory/compare/sandbox-docker-v0.4.0...sandbox-docker-v0.5.0) (2026-11-14)
 
 
