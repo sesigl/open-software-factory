@@ -34,7 +34,9 @@ scenario("SCN-SDOCKER-006", async ({ sut, given, when, then }) => {
 
     let run: Awaited<ReturnType<typeof sut.cli>>;
     await when('the client runs "curl http://<container of server>:8080/" in the second sandbox', async () => {
-      run = await box.sh(id, `curl -s --max-time 10 http://${host}:8080/`);
+      // nc serves one request per loop: a request between two loops meets no listener, and the proxy answers 502, which
+      // curl retries; -f keeps the 502 page out of the answer (runs 43586767158, 43588000647).
+      run = await box.sh(id, `curl -sf --max-time 10 --retry 5 --retry-delay 1 http://${host}:8080/`);
     });
 
     await then('the request gets the answer "hello"', async () => {

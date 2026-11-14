@@ -148,7 +148,9 @@ The workflow [`paid-reference-run.yml`](../.github/workflows/paid-reference-run.
 the reference factory, from the branch you name, on one issue of a tiny sample repository with a paid model on
 OpenRouter. Only a maintainer or an admin of this repository starts it:
 `gh workflow run paid-reference-run.yml -f ref=<branch>`. It costs about 0.01 to 0.05 USD and stops at 0.50 USD
-([ADR 0128](../docs/decisions/0128-paid-reference-run.md)).
+([ADR 0128](../docs/decisions/0128-paid-reference-run.md)). The workflow
+[`paid-factory-run.yml`](../.github/workflows/paid-factory-run.yml) runs the same stage on an issue of this
+repository labeled `factory` and opens its pull request: `gh workflow run paid-factory-run.yml -f issue=<number>`.
 
 ### The improvement path
 
