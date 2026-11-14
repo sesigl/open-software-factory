@@ -22,7 +22,7 @@ export async function probeEgress(
     const url = `https://${host}/`;
     await context.kube.run(["exec", sandboxName(id), "--", "curl", "-s", "-o", "/dev/null", "--max-time", "10", url]);
     const refused = egressEntries(await context.kube.text(["logs", egressName(id)])).some(
-      (e) => e.outcome === "refused",
+      (e) => e.refusedBy === "allowlist",
     );
     return { lines: [`${refused ? "refused" : "reached"} ${host}`], errors: [`sandbox ${id}`], exitCode: 0 };
   } finally {

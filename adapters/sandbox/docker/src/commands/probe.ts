@@ -1,6 +1,6 @@
 // probe <template> <host> [--allow]: the deep check of `console doctor --deep` (ADR 0120). A sandbox with no allowed
 // host, or with only the host under --allow, sends one HTTPS request to the host; the host is refused when the egress
-// proxy's log holds a refusal. The sandbox goes afterwards; standard error names it.
+// proxy's log holds a refusal by its allowlist (an allowed host that does not resolve is reached). The sandbox goes afterwards; standard error names it.
 import { check, type Outcome } from "@opensoftware/cli";
 import { egressEntries } from "@opensoftware/sandbox-egress";
 import { docker } from "../adapters/docker.ts";
@@ -21,7 +21,7 @@ export async function probe(
   try {
     await docker(["exec", sandboxName(id), "curl", "-s", "-o", "/dev/null", "--max-time", "10", `https://${host}/`]);
     const logs = await docker(["logs", egressName(id)]);
-    const refused = egressEntries(logs.stdout.toString("utf8") + logs.stderr).some((e) => e.outcome === "refused");
+    const refused = egressEntries(logs.stdout.toString("utf8") + logs.stderr).some((e) => e.refusedBy === "allowlist");
     return { lines: [`${refused ? "refused" : "reached"} ${host}`], errors: [`sandbox ${id}`], exitCode: 0 };
   } finally {
     await destroySandbox(id);
