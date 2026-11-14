@@ -15,13 +15,16 @@ export interface Factory {
   lock: Lock;
 }
 
-/** Lints the file; each problem and each warning is one line "factory.yaml:12:9 message". */
+/**
+ * Lints the file, or the text given for it; each problem and each warning is one line "factory.yaml:12:9 message".
+ */
 export function lintFile(
   file: string,
   ghAw = false,
+  text = readText(file),
 ): { dir: string; definition?: FactoryDefinition; problems: string[]; warnings: string[] } {
   const dir = dirname(resolve(file));
-  const { definition, problems, warnings } = lint(readText(file), (path) => exists(join(dir, path)), ghAw);
+  const { definition, problems, warnings } = lint(text, (path) => exists(join(dir, path)), ghAw);
   const lines = (found: Problem[]) =>
     found.map((problem) => `${file}:${problem.line}:${problem.column} ${problem.message}`);
   return { dir, definition, problems: lines(problems), warnings: lines(warnings) };

@@ -1,0 +1,39 @@
+import { scenario } from "@opensoftware/testkit";
+import { agent, factoryYaml, prompt, TRACKER_LOCK } from "./factory.ts";
+
+scenario("SCN-FSPEC-091", async ({ sut, fakes, given, when, then }) => {
+  await given(
+    'a factory.yaml whose agent "triage" uses the MCP servers "registry:io.github.acme/tracker@1.4" and "@modelcontextprotocol/server-filesystem@2025.8.21"',
+    async () => {
+      const yaml = factoryYaml({
+        agents: agent("triage", [
+          'mcp: [registry:io.github.acme/tracker@1.4, "@modelcontextprotocol/server-filesystem@2025.8.21"]',
+        ]),
+      });
+      await sut.files.put("$INPUT/factory.yaml", yaml);
+      await sut.files.put("$INPUT/agents/triage.md", prompt("triage"));
+    },
+  );
+
+  await given('factory.lock pins the registry server to the version "1.4.2"', async () => {
+    await sut.files.put("$INPUT/factory.lock", TRACKER_LOCK);
+  });
+
+  let registry: Awaited<ReturnType<typeof fakes.http>>;
+  await given("the MCP Registry answers no request", async () => {
+    registry = await fakes.http([]);
+  });
+
+  let run: Awaited<ReturnType<typeof sut.cli>>;
+  await when('the factory engineer runs "factory plan --check"', async () => {
+    run = await sut.cli(["plan", "--check"], { env: { FACTORY_MCP_REGISTRY: registry.url } });
+  });
+
+  await then("the command exits with code 0", async () => {
+    expect(run.exitCode, run.stdout + run.stderr).toBe(0);
+  });
+
+  await then('the output is "factory.lock is current."', async () => {
+    expect(run.stdout).toBe("factory.lock is current.\n");
+  });
+});
