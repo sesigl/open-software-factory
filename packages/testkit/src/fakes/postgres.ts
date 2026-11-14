@@ -2,7 +2,7 @@
 // database in it. The scenario reaches its database through a relay on a port of its own, so that a test can stop
 // "its" PostgreSQL while the server keeps running for the next scenario.
 import { connect, createServer, type Socket } from "node:net";
-import { GenericContainer, type StartedTestContainer, Wait } from "testcontainers";
+import type { StartedTestContainer } from "testcontainers";
 import { IMAGES, runLabels } from "./services.ts";
 
 export interface Postgres {
@@ -42,7 +42,9 @@ export async function startPostgres(): Promise<{ postgres: Postgres; close(): Pr
   };
 }
 
-function startServer(): Promise<StartedTestContainer> {
+async function startServer(): Promise<StartedTestContainer> {
+  // testcontainers loads with the first container a scenario starts: most test processes start none (0.25 s).
+  const { GenericContainer, Wait } = await import("testcontainers");
   return (
     new GenericContainer(IMAGES.postgres)
       .withLabels(runLabels())
