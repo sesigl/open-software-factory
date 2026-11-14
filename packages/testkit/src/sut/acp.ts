@@ -3,7 +3,7 @@ import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { mkdirSync } from "node:fs";
 import { PassThrough, Readable, Writable } from "node:stream";
-import { client, ndJsonStream, PROTOCOL_VERSION, type StopReason, type ToolKind } from "@agentclientprotocol/sdk";
+import type { StopReason, ToolKind } from "@agentclientprotocol/sdk";
 import type { Launch } from "./launch.ts";
 
 export interface AcpTurn {
@@ -123,6 +123,8 @@ async function connectClient(
   const listeners = new Map<string, Set<(text: string) => void>>();
   const requests: AcpPermissionRequest[] = [];
   const wanted = approve === false ? "reject" : "allow";
+  // The ACP client loads with the first agent a scenario connects to: most test processes connect to none.
+  const { client, ndJsonStream, PROTOCOL_VERSION } = await import("@agentclientprotocol/sdk");
   const connection = client({ name: "opensoftware-testkit" })
     .onNotification("session/update", ({ params }) => {
       const { update } = params;

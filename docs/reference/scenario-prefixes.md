@@ -12,6 +12,7 @@ adds a row.
 | CTR | contracts | `contracts/features/` |
 | TK | testkit | `packages/testkit/features/` |
 | CLI | cli library | `packages/cli/features/` |
+| UI | ui library, the design system | `packages/ui/features/` |
 | SPECFILES | spec-files library | `packages/spec-files/features/` |
 | HPROXY | harness-proxy library | `packages/harness-proxy/features/` |
 | SEGRESS | sandbox-egress library | `packages/sandbox-egress/features/` |

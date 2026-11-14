@@ -267,3 +267,8 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-144 | implemented | TEMPLATE rejects a template whose markup computes |
 | SCN-REPO-145 | implemented | TEMPLATE rejects a template that imports a layer above its own |
 | SCN-REPO-146 | implemented | DUP rejects a clone between the templates of two modules |
+| SCN-REPO-147 | implemented | CONTRAST accepts tokens whose texts meet WCAG 2.2 AA on every background in both themes |
+| SCN-REPO-148 | implemented | CONTRAST rejects a text token below WCAG 2.2 AA in the light theme |
+| SCN-REPO-149 | implemented | TOKENS rejects a colour value in a stylesheet of the console |
+| SCN-REPO-150 | implemented | TOKENS rejects a font named outside the tokens |
+| SCN-REPO-151 | implemented | TOKENS accepts a stylesheet that names only tokens |
