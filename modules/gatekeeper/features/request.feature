@@ -100,3 +100,11 @@ Feature: Request an approval
     When the user runs the quick start command from the README with "GATEKEEPER_SLACK_ADAPTER" set to "echo hello"
     Then the command exits with code 1
     And the error output says 'the adapter "echo hello" printed a line that is not JSON'
+
+  @id=SCN-GATE-094 @status=implemented
+  Scenario: A request reaches a stream "OSF" that another module added with a max age, and the stream keeps its age
+    Given the README policy, groups and request
+    And "GATEKEEPER_NATS_URL" set to a NATS server whose stream "OSF" keeps an event at most 7 days
+    When the user runs "gatekeeper request" for the channel "slack:C0GATES"
+    Then the event "gate.requested@v1" arrives on "osf.gate.requested.v1"
+    And the stream "OSF" keeps an event at most 7 days

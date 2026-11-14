@@ -389,6 +389,7 @@ the other gets 409. The new run's `run.started@v1` and `run.completed@v1` have `
 | Command | What it does |
 | --- | --- |
 | `foreman serve` | Serve the run API on `PORT` and run the workflow of `FOREMAN_FACTORY` on the Temporal server at `FOREMAN_TEMPORAL_ADDRESS`; with `FOREMAN_NATS_URL`, start a run for each `work.received@v1` and run a run again for each `work.retry-requested@v1`. |
+| `foreman resend` | Send the events that failed 5 times, the dead letters of the consumer `foreman` on the NATS server at `FOREMAN_NATS_URL`, again, and print the subject of each ([ADR 0116](../../docs/decisions/0116-events-not-lost-without-a-trace.md)). |
 
 ## API
 
@@ -397,7 +398,7 @@ the other gets 409. The new run's `run.started@v1` and `run.completed@v1` have `
 | `POST /v1/runs` | Start the run of a work item (the [work item](../../contracts/work-item/work-item.schema.json) format). 201 with the new run, 200 with the newest run the same work item started before, 400 with a problem that names the field. |
 | `GET /v1/runs` | The runs of the server, running runs first, then the runs that ended, the one that ended last first: `{ "runs": [...] }`, each as `GET /v1/runs/{runId}` shows it. `?state=` with `running`, `blocked`, `complete`, `failed` or `cancelled` lists only the runs in that state; another state is 400. One page at a time ([ADR 0115](../../docs/decisions/0115-lists-in-pages.md)): `?limit=` runs at most, 1 to 500, 50 by default; the answer's `next` is the `?cursor=` of the next page while more runs follow. With `?state=` a page may hold fewer runs than `limit`. Another `limit` or a cursor that is no page of the list is 400. Each run keeps its view in its Temporal memo, so a page is one call to Temporal's visibility. |
 | `GET /v1/runs/{runId}` | The run: `state`, `factory`, `factoryVersion`, `pullRequest`, `folder`, `startedAt`, `endedAt` and its `stages`; for a run that runs a run before it again, `attempt`, `retryOf` and `retriedBy`. 404 for a run the server does not know. |
-| `GET /v1/health` | Whether the server reaches Temporal and, with `FOREMAN_NATS_URL`, NATS: 200 with `status: ok`, else 503 with the failing check and what to fix ([ADR 0086](../../docs/decisions/0086-health-routes.md)). Needs no token. |
+| `GET /v1/health` | Whether the server reaches Temporal and, with `FOREMAN_NATS_URL`, NATS without a dead letter (ADR 0116): 200 with `status: ok`, else 503 with the failing check and what to fix ([ADR 0086](../../docs/decisions/0086-health-routes.md)). Needs no token. |
 | `POST /v1/runs/{runId}/signals` | `{ "type": "steer", "message": "…" }` sends the message to the running stage's agent; `{ "type": "cancel" }` cancels the run; `{ "type": "take-over" }` and `{ "type": "hand-back" }` hand the running stage to a person and back ([Take over](#take-over)). 202 with the run, 409 when the run ended or the signal does not fit its state. |
 | `POST /v1/runs/{runId}/retry` | `{ "by": { "kind": "person", "id": "…" }, "from": "<stage>" }` runs a run that failed or was cancelled again ([Run again](#run-again)); `from` is optional. 201 with the new run, 400 without `by`, with a `from` the run does not have or a `from` after the first stage that did not succeed, 404 for an unknown run, 409 for a run in another state, a run that already ran again, or a `from` other than the first stage when the factory's stages changed. |
 
@@ -477,6 +478,13 @@ seconds, at most 5 times. A work item that is not valid, a decision for a run th
 for a run that is unknown, not `failed` or `cancelled`, or already ran again, is a warning and does not come again:
 a second request for the same run starts no third run.
 
+A message that fails the 5th time is a dead letter ([ADR
+0116](../../docs/decisions/0116-events-not-lost-without-a-trace.md)): the foreman keeps its body on
+`osf.dead.foreman.<subject without osf.>`, like `osf.dead.foreman.work.received.v1`, its warning names that subject,
+and the check `nats` of `/v1/health` fails while one waits. After fixing the cause, `foreman resend` sends each one
+again on `osf.resend.foreman.…`, which only the consumer `foreman` reads, and removes it. With `OSF_STREAM_MAX_AGE`,
+like `7d`, the stream drops an event, a dead letter too, after that time; the profile and the chart set `7d`.
+
 ## Traces
 
 With `OTEL_EXPORTER_OTLP_ENDPOINT`, each run is one OTLP trace ([ADR 0087](../../docs/decisions/0087-run-traces.md)).
@@ -529,6 +537,7 @@ the minor version. The one-time setup is the same as for contracts
 | `FOREMAN_GATEKEEPER_URL` | string |  | serve: the URL of gatekeeper serve, which a stage with a gate asks for a decision. Required for a factory with gates. |
 | `FOREMAN_GATEKEEPER_TOKEN` | string |  | serve: gatekeeper's API token, GATEKEEPER_API_TOKEN. |
 | `FOREMAN_NATS_URL` | string |  | serve: the NATS server for work.received@v1, work.retry-requested@v1 and gate.decided@v1 in, and run.started@v1 and run.completed@v1 out. Unset: no events. |
+| `OSF_STREAM_MAX_AGE` | string |  | serve, resend: the age after which the stream OSF drops an event, like 7d, 12h, 30m or 90s (ADR 0116). The server adds the stream with it, or sets it on a stream that another module added. Unset: a new stream keeps its events without a limit of age, and an existing one keeps its own. The profile and the chart set 7d. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | string |  | serve: the base URL of an OTLP/HTTP receiver, like http://phoenix:6006. Set, each run is one trace with a span per stage and one for the run, sent to <url>/v1/traces, and each stage's harness gets the trace in TRACEPARENT (ADR 0087). |
 | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | string |  | serve: the full URL of the OTLP/HTTP traces endpoint; takes precedence over OTEL_EXPORTER_OTLP_ENDPOINT. |
 | `OTEL_EXPORTER_OTLP_HEADERS` | string |  | serve: headers for the OTLP receiver as key=value pairs, comma-separated, like a token from a secret store. |
@@ -685,3 +694,5 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-144 | implemented | A person reads the runs page by page |
 | SCN-FORE-145 | implemented | A page size out of range is refused |
 | SCN-FORE-146 | implemented | A cursor that is no page of the run list is refused |
+| SCN-FORE-147 | implemented | A work item that failed 5 times waits as a dead letter, fails "/v1/health" while it waits, and "foreman resend" starts its run |
+| SCN-FORE-148 | implemented | The foreman adds the stream "OSF" with the max age of "OSF_STREAM_MAX_AGE" |

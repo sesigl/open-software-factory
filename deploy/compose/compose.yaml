@@ -245,6 +245,8 @@ services:
       INTAKE_API_TOKEN: ${INTAKE_API_TOKEN:?set INTAKE_API_TOKEN in .env}
       INTAKE_DATABASE_URL: postgres://osf:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/intake
       INTAKE_NATS_URL: nats://nats:4222
+      # The stream OSF keeps an event, a dead letter too, 7 days (ADR 0116).
+      OSF_STREAM_MAX_AGE: ${OSF_STREAM_MAX_AGE:-7d}
       INTAKE_SLACK_ADAPTER: channel-slack
       INTAKE_FORGE_ADAPTER: ${INTAKE_FORGE_ADAPTER:-forge-github}
       INTAKE_WEBHOOK_SECRET: ${INTAKE_WEBHOOK_SECRET:-}
@@ -336,6 +338,8 @@ services:
       FOREMAN_FACTORY: /factory/factory.yaml
       FOREMAN_TEMPORAL_ADDRESS: temporal:7233
       FOREMAN_NATS_URL: nats://nats:4222
+      # The stream OSF keeps an event, a dead letter too, 7 days (ADR 0116).
+      OSF_STREAM_MAX_AGE: ${OSF_STREAM_MAX_AGE:-7d}
       FOREMAN_GATEKEEPER_URL: http://gatekeeper:8080
       FOREMAN_GATEKEEPER_TOKEN: ${GATEKEEPER_API_TOKEN:?set GATEKEEPER_API_TOKEN in .env}
       FOREMAN_HARNESSES: '{"claude-code": "harness-claude-code run"}'

@@ -12,15 +12,18 @@ enableCompileCache();
 const HELP = `Usage: foreman <command>
 
 Commands:
-  serve  Serve the run API on PORT and run the factory's workflow in FOREMAN_FACTORY on Temporal at
-         FOREMAN_TEMPORAL_ADDRESS.
+  serve   Serve the run API on PORT and run the factory's workflow in FOREMAN_FACTORY on Temporal at
+          FOREMAN_TEMPORAL_ADDRESS.
+  resend  Send the events that failed 5 times, the dead letters in NATS at FOREMAN_NATS_URL, again.
 `;
 
 const { positionals, values } = parseArgs({ allowPositionals: true, options: { help: { type: "boolean" } } });
 const serving: Command = async () => (await import("./commands/serve.ts")).serve(process.env);
+const resending: Command = async () => (await import("./commands/resend.ts")).resend(process.env);
+const commands: Record<string, Command> = { serve: serving, resend: resending };
 process.exitCode = await runProgram({
   name: "foreman",
   usage: HELP,
-  command: positionals[0] === "serve" ? serving : undefined,
+  command: positionals[0] ? commands[positionals[0]] : undefined,
   help: values.help,
 });

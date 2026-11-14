@@ -108,6 +108,9 @@ nats:
 externalNats:
   url: ""
 
+# How long the stream OSF keeps an event, a dead letter too, like 7d or 12h; intake and foreman set it (ADR 0116).
+natsStreamMaxAge: 7d
+
 # Temporal on the PostgreSQL above. Set enabled to false and externalTemporal.address for the team's own.
 temporal:
   enabled: true

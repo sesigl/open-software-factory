@@ -3,6 +3,7 @@
 import { parseArgs } from "node:util";
 import { type Command, runProgram } from "@opensoftware/cli";
 import { mcp } from "./commands/mcp.ts";
+import { resend } from "./commands/resend.ts";
 import { serve } from "./commands/serve.ts";
 
 const HELP = `Usage: intake <command>
@@ -12,12 +13,14 @@ Commands:
          and follow the runs' events with INTAKE_NATS_URL.
   mcp    Serve the Factory MCP server on stdio: submit_work and work_status call the server at INTAKE_URL,
          run_evidence also the foreman at INTAKE_FOREMAN_URL.
+  resend Send the run events that failed 5 times, the dead letters in NATS at INTAKE_NATS_URL, again.
 `;
 
 const { positionals, values } = parseArgs({ allowPositionals: true, options: { help: { type: "boolean" } } });
 const commands: Record<string, Command> = {
   serve: () => serve(process.env),
   mcp: () => mcp(process.env),
+  resend: () => resend(process.env),
 };
 const chosen = positionals[0] ? commands[positionals[0]] : undefined;
 process.exitCode = await runProgram({ name: "intake", usage: HELP, command: chosen, help: values.help });

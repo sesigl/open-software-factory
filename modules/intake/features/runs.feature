@@ -71,3 +71,25 @@ Feature: A work item follows its run
     And the foreman published "run.started@v1" for the work item with the run "run_5d41402abc4b2a76b971"
     When the gatekeeper publishes "gate.requested@v1" for the work item at the stage "deploy" with the summary "Deploy to production?" twice, then the foreman publishes "run.completed@v1" with the outcome "failed"
     Then the thread has the replies "Received as work item <id>.", "The run waits for a decision at the stage deploy: Deploy to production? https://console.example/runs/run_5d41402abc4b2a76b971" and "The run ended with the outcome failed: https://console.example/runs/run_5d41402abc4b2a76b971"
+
+  @id=SCN-INTAKE-063 @status=implemented
+  Scenario: A run event that failed 5 times waits as a dead letter, fails "/v1/health" while it waits, and "intake resend" sends it again
+    Given the server, with "INTAKE_NATS_URL" set to a NATS server, received the README's "work.json"
+    When the foreman publishes "run.completed@v1" for the work item with the outcome "merged"
+    Then within 15 seconds "/v1/health" answers 503 with the check "nats" failing for 1 dead letter
+    When the user runs "intake resend" with "INTAKE_NATS_URL" set to the NATS server
+    Then it prints "resent osf.run.completed.v1" and "intake resent 1 dead letters"
+    And "/v1/health" answers 200, and the server warns about "osf.run.completed.v1" again, for the delivery 1 of 5
+
+  @id=SCN-INTAKE-064 @status=implemented
+  Scenario: A stream "OSF" without a limit gets the max age of "OSF_STREAM_MAX_AGE" when the server starts
+    Given a NATS server whose stream "OSF" keeps its events without a limit of age
+    When the server starts with "INTAKE_NATS_URL" set to the NATS server and "OSF_STREAM_MAX_AGE" set to "7d"
+    Then the stream "OSF" keeps an event at most 7 days
+
+  @id=SCN-INTAKE-065 @status=implemented
+  Scenario: The server removes the events it published from its outbox once they are older than "INTAKE_OUTBOX_KEEP"
+    Given the server, with "INTAKE_NATS_URL" set to a NATS server, "INTAKE_OUTBOX_KEEP" set to "7d" and "OSF_NOW" set to "2026-01-01T00:00:00Z", received the README's "work.json"
+    And the server stops
+    When the server starts again with "OSF_NOW" set to "2026-01-08T00:00:01Z"
+    Then it prints "intake removed 1 published events from the outbox", which its first start did not print

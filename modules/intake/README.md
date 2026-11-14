@@ -49,6 +49,7 @@ with the same work item.
 | --- | --- |
 | `intake serve` | Serve the work item API on `PORT`, Slack's events with `INTAKE_SLACK_TOKEN`, the forge's with `INTAKE_WEBHOOK_SECRET`, Sentry's with `INTAKE_SENTRY_SECRET`, and, with `INTAKE_NATS_URL`, publish `work.received@v1` and `work.retry-requested@v1` and follow the foreman's run events. |
 | `intake mcp` | Serve the Factory MCP server on stdio for a local agent: the tools `submit_work` and `work_status` call the server at `INTAKE_URL`, and `run_evidence` also the foreman at `INTAKE_FOREMAN_URL`. |
+| `intake resend` | Send the run events that failed 5 times, the dead letters of the consumer `intake` on the NATS server at `INTAKE_NATS_URL`, again, and print the subject of each ([ADR 0116](../../docs/decisions/0116-events-not-lost-without-a-trace.md)). |
 
 ## API
 
@@ -58,7 +59,7 @@ with the same work item.
 | `GET /v1/work-items?dedupeKey=<key>` | The work item with this dedupe key, such as an issue's link or `sentry:<issue ID>`. 404 when there is none, 400 without the key. |
 | `GET /v1/inbox` | The latest work items, the one received last first, each as `GET /v1/work-items/{workItemId}` shows it: `{ "workItems": [...] }`. `?status=` keeps the work items in that status; another status is 400. One page at a time ([ADR 0115](../../docs/decisions/0115-lists-in-pages.md)): `?limit=` work items at most, 1 to 500, 50 by default; the answer's `next` is the `?cursor=` of the next page while more follow. Another `limit` or a cursor that is no page of the inbox is 400. |
 | `GET /v1/work-items/{workItemId}` | The work item, its `status` ([Events](#events)), its `runId` once the foreman started its run, `receivedAt`, and `requests`: the requester, origin and time of each submission, oldest first. 404 for a work item the server does not know. |
-| `GET /v1/health` | Whether the server reaches its database and, with `INTAKE_NATS_URL`, NATS: 200 with `status: ok`, else 503 with the failing check and what to fix ([ADR 0086](../../docs/decisions/0086-health-routes.md)). Needs no token. |
+| `GET /v1/health` | Whether the server reaches its database and, with `INTAKE_NATS_URL`, NATS without a dead letter (ADR 0116): 200 with `status: ok`, else 503 with the failing check and what to fix ([ADR 0086](../../docs/decisions/0086-health-routes.md)). Needs no token. |
 | `POST /slack/events` | Slack's Events API, with `INTAKE_SLACK_TOKEN`: a message that mentions the bot becomes a work item. |
 | `POST /forge/events` | The forge's webhook, with `INTAKE_WEBHOOK_SECRET`: an issue that gets the label `factory` becomes a work item. |
 | `POST /sentry/events` | Sentry's webhook, with `INTAKE_SENTRY_SECRET`: an alert about a fatal error becomes a `bug`. |
@@ -230,8 +231,16 @@ newest run: an event whose `retryOf` is the work item's run moves the work item 
 `cancelled`. Once the work item follows a run, an event of another run changes nothing. The events are kept in the JetStream stream
 `OSF` on `osf.>`, and the server reads the run events through its durable consumer `intake` ([ADR
 0085](../../docs/decisions/0085-durable-events.md)): run events published while the server is down reach it when it
-starts again. The outbox removes an event only after the stream stored it. While NATS is unreachable the server tries
-again every 2 seconds.
+starts again. The outbox marks an event published only after the stream stored it, and removes it
+`INTAKE_OUTBOX_KEEP` (default `7d`) later, at a relay that prints how many it removed. While NATS is unreachable the
+server tries again every 2 seconds.
+
+A run event that fails comes again after 2 seconds, at most 5 times. On the 5th failure it is a dead letter ([ADR
+0116](../../docs/decisions/0116-events-not-lost-without-a-trace.md)): the server keeps its body on
+`osf.dead.intake.<subject without osf.>`, its warning names that subject, and the check `nats` of `/v1/health` fails
+while one waits. After fixing the cause, `intake resend` sends each one again on `osf.resend.intake.…`, which only the
+consumer `intake` reads, and removes it. With `OSF_STREAM_MAX_AGE`, like `7d`, the stream drops an event, a dead
+letter too, after that time; the profile and the chart set `7d`.
 
 ## Configuration
 
@@ -245,6 +254,8 @@ again every 2 seconds.
 | `INTAKE_API_TOKEN` | string |  | serve: the token that callers of /v1 send as Authorization: Bearer <token>. Required. mcp: the token it sends to the server. Required. |
 | `INTAKE_DATABASE_URL` | string |  | serve: the PostgreSQL database of the work items, schema intake. Default: an embedded PostgreSQL in OSF_DATA. |
 | `INTAKE_NATS_URL` | string |  | serve: the NATS server for work.received@v1 on osf.work.received.v1 and work.retry-requested@v1 on osf.work.retry-requested.v1, and for the foreman's run.started@v1 and run.completed@v1, which move a work item's status (ADR 0071), and the gatekeeper's gate.requested@v1, which its requesters hear of (ADR 0113). Unset: no events. |
+| `OSF_STREAM_MAX_AGE` | string |  | serve, resend: the age after which the stream OSF drops an event, like 7d, 12h, 30m or 90s (ADR 0116). The server adds the stream with it, or sets it on a stream that another module added. Unset: a new stream keeps its events without a limit of age, and an existing one keeps its own. The profile and the chart set 7d. |
+| `INTAKE_OUTBOX_KEEP` | string | `"7d"` | serve: how long an event that the server published stays in its outbox, like 7d, 12h, 30m or 90s; the relay removes older ones (ADR 0116). |
 | `INTAKE_SLACK_ADAPTER` | string | `"npx -y @opensoftware/channel-slack"` | serve: the command line of the channel port's slack adapter, which reads Slack's deliveries and replies (ADR 0063). |
 | `INTAKE_SLACK_URL` | string |  | serve: base URL of the Slack Web API, ending in a slash: the adapter's CHANNEL_API_URL. Default: the adapter's, https://slack.com/api/. |
 | `INTAKE_SLACK_TOKEN` | string |  | serve: Slack bot token with chat:write, the adapter's CHANNEL_TOKEN. Set, the server takes Slack's events at /slack/events. |
@@ -341,3 +352,6 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-INTAKE-060 | implemented | A person reads the inbox page by page |
 | SCN-INTAKE-061 | implemented | The inbox refuses a page size out of range |
 | SCN-INTAKE-062 | implemented | The inbox refuses a cursor that is no page of it |
+| SCN-INTAKE-063 | implemented | A run event that failed 5 times waits as a dead letter, fails "/v1/health" while it waits, and "intake resend" sends it again |
+| SCN-INTAKE-064 | implemented | A stream "OSF" without a limit gets the max age of "OSF_STREAM_MAX_AGE" when the server starts |
+| SCN-INTAKE-065 | implemented | The server removes the events it published from its outbox once they are older than "INTAKE_OUTBOX_KEEP" |
