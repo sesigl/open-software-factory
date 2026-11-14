@@ -196,7 +196,7 @@
     },
     "OSF_NOW": {
       "type": "string",
-      "description": "The current time, like 2026-01-01T00:00:00Z, for the age of a run. Default: the clock."
+      "description": "The current time, like 2026-01-01T00:00:00Z, for the age of a run, the sign-in and the waits of `console doctor --deep`, which then pass at once. Default: the clock."
     },
     "OSF_SEED": {
       "type": "string",

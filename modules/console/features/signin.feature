@@ -97,3 +97,23 @@ Feature: Sign-in
     And GitHub signs in "ada" with the verified primary email "ada@acme.dev"
     When the person opens "/" and presses "Sign in with GitHub"
     Then the person lands on "/" with the heading "Runs" and "ada@acme.dev · admin" in the navigation
+
+  @id=SCN-CONSOLE-154 @status=implemented
+  Scenario: Without an access file nobody can sign in, and the page names the file
+    Given a console that signs in with OpenID Connect and no access file
+    And the provider signs in "ada@acme.dev"
+    When the person opens "/" and presses "Sign in"
+    Then the page answers 403 and says "Nobody can sign in: <access file>: no such file"
+
+  @id=SCN-CONSOLE-155 @status=implemented
+  Scenario: The probe "/v1/ready" answers 503 when the console cannot read its factory
+    Given a console whose "CONSOLE_FACTORY" names a file that does not exist
+    When a program asks for "/v1/ready"
+    Then the answer has the status 503 and the status "failing" with a detail that names the file
+
+  @id=SCN-CONSOLE-156 @status=implemented
+  Scenario: With the sign-in a form without a session answers 401
+    Given a console that signs in with OpenID Connect and intake
+    When a program sends the form "submit work" without a session
+    Then the answer has the status 401 and says "sign in first"
+    And intake received no submission

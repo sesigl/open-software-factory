@@ -8,7 +8,8 @@ scenario("SCN-CONSOLE-131", async ({ sut, fakes, given, when, then }) => {
   });
 
   await given("a foreman that has received no ping", async () => {
-    env = { ...env, ...(await pingedForeman(fakes, false)) };
+    // The test clock: the doctor's 10 s pass on it at once.
+    env = { ...env, ...(await pingedForeman(fakes, false)), OSF_NOW: "2026-01-01T00:00:00Z" };
   });
 
   let run: Awaited<ReturnType<typeof sut.cli>>;

@@ -30,12 +30,13 @@ export function providerOf(sign: SignIn, now: () => number): Provider {
 
 function oidc(sign: SignIn, now: () => number): Provider {
   const settings = sign.oidc as NonNullable<SignIn["oidc"]>;
-  let found: Promise<client.Configuration> | undefined;
-  const configuration = () => {
+  // The discovery that answered: one that failed is asked again at the next sign-in.
+  let found: client.Configuration | undefined;
+  const configuration = async () => {
     const issuer = new URL(settings.issuer);
     // A provider on loopback, like a test's, answers over HTTP; any other needs HTTPS.
     const loopback = ["localhost", "127.0.0.1", "[::1]"].includes(issuer.hostname);
-    found ??= client.discovery(
+    found ??= await client.discovery(
       issuer,
       settings.clientId,
       // The console's clock: OSF_NOW in tests, so the provider's tokens of that time are valid.
@@ -43,9 +44,6 @@ function oidc(sign: SignIn, now: () => number): Provider {
       client.ClientSecretPost(settings.clientSecret),
       loopback ? { execute: [client.allowInsecureRequests] } : undefined,
     );
-    found.catch(() => {
-      found = undefined;
-    });
     return found;
   };
   return {

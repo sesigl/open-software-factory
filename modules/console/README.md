@@ -215,7 +215,7 @@ A server of a release before `/v1/health` fails its check with the advice to upd
 | `CONSOLE_TRACE_URL` | string |  | serve: the link to a run's trace in the trace store, with {runId} or {traceId}, like https://langfuse.acme.dev/traces?run={runId} or Phoenix's http://127.0.0.1:6006/projects/UHJvamVjdDox/traces/{traceId}. A run without a traceId gets no link from a template with {traceId}. |
 | `CONSOLE_URL` | string |  | serve: the console's own address, the source of the provider's callback address and of the same-origin rule of forms with the sign-in. Default http://localhost:<PORT>. With the sign-in it must be https:// or loopback, else the console does not start. A request for another host is sent to this address. |
 | `CONSOLE_USER_HEADER` | string |  | serve: the header in which the sign-in proxy sends the signed-in person, like X-Forwarded-Email. Set, the console takes actions in that person's name, such as submitting work on /work (ADR 0089); unset, it is read-only. Only set it behind a proxy that sets the header and removes it from the browser's requests. |
-| `OSF_NOW` | string |  | The current time, like 2026-01-01T00:00:00Z, for the age of a run. Default: the clock. |
+| `OSF_NOW` | string |  | The current time, like 2026-01-01T00:00:00Z, for the age of a run, the sign-in and the waits of `console doctor --deep`, which then pass at once. Default: the clock. |
 | `OSF_SEED` | string |  | doctor --deep: set, the ID of the doctor's ping comes from it instead of from chance, so a test knows it. Leave it unset in a factory. |
 | `PORT` | string | `"8080"` | serve: the port the web pages are served on. |
 
@@ -340,3 +340,6 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-148 | implemented | A person signs in with GitHub |
 | SCN-CONSOLE-149 | implemented | The console with the sign-in does not start on an address that is neither loopback nor HTTPS |
 | SCN-CONSOLE-150 | implemented | The console does not start when it signs people in and a sign-in proxy names the person too |
+| SCN-CONSOLE-154 | implemented | Without an access file nobody can sign in, and the page names the file |
+| SCN-CONSOLE-155 | implemented | The probe "/v1/ready" answers 503 when the console cannot read its factory |
+| SCN-CONSOLE-156 | implemented | With the sign-in a form without a session answers 401 |
