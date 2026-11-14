@@ -109,7 +109,7 @@ A new module starts with `skills/new-module`. A new dependency or service starts
 ## Commands
 
 ```text
-make install               install dependencies and the pinned lychee, oasdiff, opa, temporal, nats-server, helm, kubectl and kind binaries
+make install               install dependencies and the pinned lychee, oasdiff, opa, temporal, nats-server, bao, helm, kubectl and kind binaries
 make check-fast            lint, typecheck and the static checks; no system test, no container (seconds)
 make check                 the same, and the system tests of the changed units (minutes)
 make verify                all checks; required before you report done
