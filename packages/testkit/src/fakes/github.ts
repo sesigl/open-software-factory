@@ -786,13 +786,12 @@ export async function startGitHub(): Promise<RunningGitHub> {
       "POST",
       /^\/git\/trees$/,
       (_repo, _match, body) => {
-        const base = trees.get(String(body.base_tree ?? "")) ?? {};
-        const files = { ...base };
-        for (const entry of (body.tree as { path: string; content?: string; sha?: string | null }[] | undefined) ??
-          []) {
-          if (entry.sha === null) delete files[entry.path];
-          else if (typeof entry.content === "string") files[entry.path] = entry.content;
-          else throw new Answer(422, "Invalid tree info: give each entry its content");
+        // A tree on `base_tree` keeps its files; each entry adds or replaces one file with its content.
+        const files = { ...trees.get(String(body.base_tree ?? "")) };
+        for (const entry of (body.tree as { path: string; content?: string }[] | undefined) ?? []) {
+          if (typeof entry.content !== "string")
+            throw new Answer(422, "fake GitHub takes a tree entry with its content");
+          files[entry.path] = entry.content;
         }
         return [201, { sha: treeOf(files) }];
       },

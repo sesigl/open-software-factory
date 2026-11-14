@@ -3,7 +3,8 @@ Feature: A fake of GitHub's REST API
   fakes.github is an in-process fake of the part of GitHub's REST API that a forge client calls, with the same
   interface as fakes.forge (ADR 0058). It has the user "tester" with a token, keeps repositories with their commits,
   branches, pull requests, commit statuses, comments, reviews, branch protection and webhooks, and delivers signed
-  webhook events to URLs on the local host.
+  webhook events to URLs on the local host. Its Git Data API writes commits without a checkout, and the part of
+  GitHub's GraphQL API that auto-merge needs merges a pull request once its merge rules hold (ADR 0136).
 
   @id=SCN-TK-084 @status=implemented
   Scenario: fakes.github shows the pull request, the status and the comment a module posts
@@ -137,6 +138,54 @@ Feature: A fake of GitHub's REST API
   Scenario: fakes.github signs in the person a test names with GitHub's OAuth flow and gives their primary email
     Given a module whose CLI signs in at GitHub in "DEMO_GITHUB_URL" with its OAuth app, and prints the state, the login, the name and the primary email with its verification
     And its system test signs in "ada" with the email "ada@acme.dev" named "Ada" at fakes.github and expects them, the email as verified
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-165 @status=implemented
+  Scenario: fakes.github answers the protection of a protected branch, and 404 for a branch without
+    Given a module whose CLI protects "main" with the required check "verify" and one approval, and prints the checks and approvals of the protection of "main" and the status and message of the protection of "dev" at "DEMO_GITHUB_URL"
+    And its system test creates the branch "dev" in fakes.github and expects "verify 1 404 Branch not protected"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-166 @status=implemented
+  Scenario: fakes.github closes a pull request without merging and deletes its branch's ref
+    Given a module whose CLI closes pull request 1, deletes the ref of its branch twice and prints the state, "merged" and the two statuses at "DEMO_GITHUB_URL"
+    And its system test opens a pull request from "fix" in fakes.github and expects "closed false 204 422", the pull request closed and no branch "fix"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-167 @status=implemented
+  Scenario: fakes.github writes one commit of several files with the Git Data API
+    Given a module whose CLI reads the ref and the commit of "fix", makes a tree on its tree that changes "notes.md" and adds "docs/new.md", a commit of it on the branch's head, moves "fix" there without force, and prints the status and whether the ref and the parent are right at "DEMO_GITHUB_URL"
+    And its system test creates the branch "fix" with "notes.md" in fakes.github and expects "200 true true", both files on "fix", "README.md" kept and "main" unchanged
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-168 @status=implemented
+  Scenario: fakes.github moves a branch back only when the update is forced
+    Given a module whose CLI moves "fix" to the head commit of "main" without force and then with force, and prints the status and message of the first and the status of the second at "DEMO_GITHUB_URL"
+    And its system test creates the branch "fix" in fakes.github and expects "422 Update is not a fast forward 200" and "fix" at the head commit of "main"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-169 @status=implemented
+  Scenario: fakes.github merges a pull request with auto-merge once its required check passes
+    Given a module whose CLI requires the check "verify" on "main", reads the merge state of pull request 1 with GitHub's GraphQL API, enables auto-merge with the method "SQUASH", posts "verify" as "success" on its head and prints the merge state, the state before, "merged" after and the merge commit's number of parents at "DEMO_GITHUB_URL"
+    And its system test allows auto-merge in the repository of fakes.github, opens the pull request and expects "BLOCKED open true 1"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-170 @status=implemented
+  Scenario: fakes.github refuses auto-merge where the repository does not allow it and for a pull request that can merge now
+    Given a module whose CLI reads the merge state of pull request 1 with GitHub's GraphQL API, enables auto-merge and prints the merge state and GitHub's error at "DEMO_GITHUB_URL"
+    And its system test runs it before and after it allows auto-merge in the repository of fakes.github and expects "CLEAN Pull request Auto merge is not allowed for this repository" and "CLEAN Pull request Pull request is in clean status"
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
