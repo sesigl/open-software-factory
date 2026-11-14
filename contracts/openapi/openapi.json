@@ -117,6 +117,94 @@
         }
       }
     },
+    "/v1/gates/{gateId}/decisions": {
+      "post": {
+        "operationId": "GatekeeperApi_decideGate",
+        "description": "A person decides a pending gate (ADR 0118): 403 when they are in no group the gate waits for, 409 when the gate\nis no longer pending.",
+        "parameters": [
+          {
+            "name": "gateId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GateView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The server could not understand the request due to invalid syntax.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Access is unauthorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access is forbidden.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The server cannot find the requested resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state of the server.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GateDecisionRequest"
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/health": {
       "get": {
         "operationId": "HealthApi_getHealth",
@@ -1329,6 +1417,37 @@
           "expired"
         ]
       },
+      "GateDecisionRequest": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "approved"
+              },
+              {
+                "type": "string",
+                "const": "rejected"
+              }
+            ]
+          },
+          "by": {
+            "$ref": "#/components/schemas/Actor",
+            "description": "The person who decides; their `id` must be a member of a group in `waitingFor`."
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The reason of a rejection."
+          }
+        },
+        "required": [
+          "decision",
+          "by"
+        ],
+        "description": "gatekeeper: a person's decision of a pending gate through the API, as a member of a group the gate waits for\n(ADR 0118). It decides like a reply \"approve\" or \"reject <reason>\" in the gate's channel."
+      },
       "GateRecord": {
         "type": "object",
         "properties": {
@@ -2251,6 +2370,34 @@
           "commented"
         ]
       },
+      "RunAction": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/RunSignalType"
+          },
+          "by": {
+            "$ref": "#/components/schemas/Actor",
+            "description": "The person who sent it."
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the foreman took it."
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The steering message of \"steer\"."
+          }
+        },
+        "required": [
+          "type",
+          "by",
+          "at"
+        ],
+        "description": "foreman: a signal a person sent a run, as the run records it (ADR 0118)."
+      },
       "RunCompleted": {
         "type": "object",
         "properties": {
@@ -2495,6 +2642,10 @@
             "type": "string",
             "minLength": 1,
             "description": "The steering message. Required with \"steer\"."
+          },
+          "by": {
+            "$ref": "#/components/schemas/Actor",
+            "description": "The person who sends the signal; the run then records it in `actions` (ADR 0118)."
           }
         },
         "required": [
@@ -2787,6 +2938,13 @@
               "$ref": "#/components/schemas/StageView"
             },
             "description": "The stages of the workflow, in order."
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunAction"
+            },
+            "description": "The signals that named their person, oldest first (ADR 0118)."
           }
         },
         "required": [

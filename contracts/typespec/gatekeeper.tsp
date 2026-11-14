@@ -132,3 +132,18 @@ model ApiProblem {
   /** What went wrong this time, for example the field that is missing. */
   detail?: string;
 }
+
+/**
+ * gatekeeper: a person's decision of a pending gate through the API, as a member of a group the gate waits for
+ * (ADR 0118). It decides like a reply "approve" or "reject <reason>" in the gate's channel.
+ */
+model GateDecisionRequest {
+  decision: "approved" | "rejected";
+
+  /** The person who decides; their `id` must be a member of a group in `waitingFor`. */
+  by: Actor;
+
+  /** The reason of a rejection. */
+  @minLength(1)
+  reason?: string;
+}

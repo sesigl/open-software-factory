@@ -34,6 +34,26 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/v1/gates/{gateId}/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description A person decides a pending gate (ADR 0118): 403 when they are in no group the gate waits for, 409 when the gate
+         *     is no longer pending.
+         */
+        post: operations["GatekeeperApi_decideGate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/health": {
         parameters: {
             query?: never;
@@ -398,6 +418,17 @@ export type components = {
         };
         /** @enum {string} */
         GateDecision: "approved" | "rejected" | "expired";
+        /**
+         * @description gatekeeper: a person's decision of a pending gate through the API, as a member of a group the gate waits for
+         *     (ADR 0118). It decides like a reply "approve" or "reject <reason>" in the gate's channel.
+         */
+        GateDecisionRequest: {
+            decision: "approved" | "rejected";
+            /** @description The person who decides; their `id` must be a member of a group in `waitingFor`. */
+            by: components["schemas"]["Actor"];
+            /** @description The reason of a rejection. */
+            reason?: string;
+        };
         /** @description gatekeeper: who decided what and when, signed with Ed25519 (ADR 0047). */
         GateRecord: {
             gate: string;
@@ -739,6 +770,19 @@ export type components = {
         };
         /** @enum {string} */
         ReviewState: "approved" | "changes_requested" | "commented";
+        /** @description foreman: a signal a person sent a run, as the run records it (ADR 0118). */
+        RunAction: {
+            type: components["schemas"]["RunSignalType"];
+            /** @description The person who sent it. */
+            by: components["schemas"]["Actor"];
+            /**
+             * Format: date-time
+             * @description When the foreman took it.
+             */
+            at: string;
+            /** @description The steering message of "steer". */
+            message?: string;
+        };
         /** @description foreman: a run ended. */
         RunCompleted: {
             /** @constant */
@@ -836,6 +880,8 @@ export type components = {
             type: components["schemas"]["RunSignalType"];
             /** @description The steering message. Required with "steer". */
             message?: string;
+            /** @description The person who sends the signal; the run then records it in `actions` (ADR 0118). */
+            by?: components["schemas"]["Actor"];
         };
         /**
          * @description foreman: what a person tells a run.
@@ -950,6 +996,8 @@ export type components = {
             traceId?: components["schemas"]["TraceId"];
             /** @description The stages of the workflow, in order. */
             stages: components["schemas"]["StageView"][];
+            /** @description The signals that named their person, oldest first (ADR 0118). */
+            actions?: components["schemas"]["RunAction"][];
         };
         Sandbox: {
             /** @description Sandbox template name, for example "node-24". */
@@ -1348,6 +1396,77 @@ export interface operations {
             };
             /** @description The server cannot find the requested resource. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    GatekeeperApi_decideGate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gateId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GateDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GateView"];
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Access is unauthorized. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Access is forbidden. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

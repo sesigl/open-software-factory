@@ -4,9 +4,11 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { UsageError } from "@opensoftware/cli";
 import type {
+  GateDecisionRequest,
   GateView,
   RunList,
   RunRetry,
+  RunSignal,
   RunView,
   WorkItemList,
   WorkItemView,
@@ -145,7 +147,7 @@ export async function serve(env: Env) {
       reply,
       200,
       { title: run.workItem.title, refresh },
-      runPage(run, requests, gates, runLinks, now(), actions),
+      runPage(run, requests, gates, runLinks, now(), actions, Boolean(gatekeeper)),
     );
   });
 
@@ -230,6 +232,51 @@ export async function serve(env: Env) {
       const detail = answer.detail ?? answer.note;
       return send(reply, answer.status || 502, { title: runId }, problem("Not run again", detail));
     });
+  }
+
+  if (userHeader) {
+    // Steer, cancel, take over or hand back a run (ADR 0118): the foreman records the person with the signal.
+    app.post<{ Params: { runId: string }; Body: Record<string, string> }>(
+      "/runs/:runId/signals",
+      async (request, reply) => {
+        const { runId } = request.params;
+        const { person, refused } = signedIn(request, reply, runId);
+        if (refused) return refused;
+        const { api, missing } = await findRun(runId, reply);
+        if (!api) return missing;
+        const { type, message } = request.body ?? {};
+        const signal = { type, ...(message ? { message } : {}), by: { kind: "person", id: person } } as RunSignal;
+        const answer = await postJson<RunView>(api, `/v1/runs/${encodeURIComponent(runId)}/signals`, signal);
+        if (answer.ok) return reply.code(303).header("location", `/runs/${runId}`).send();
+        return send(reply, answer.status || 502, { title: runId }, problem("Not sent", answer.detail ?? answer.note));
+      },
+    );
+  }
+  if (userHeader && gatekeeper) {
+    // Approve or reject a run's gate (ADR 0118): gatekeeper checks that the person may decide it, and records them.
+    app.post<{ Params: { runId: string; gateId: string }; Body: Record<string, string> }>(
+      "/runs/:runId/gates/:gateId",
+      async (request, reply) => {
+        const { runId, gateId } = request.params;
+        const { person, refused } = signedIn(request, reply, runId);
+        if (refused) return refused;
+        const { decision, reason } = request.body ?? {};
+        const body = {
+          decision,
+          by: { kind: "person", id: person },
+          ...(reason ? { reason } : {}),
+        } as GateDecisionRequest;
+        const path = `/v1/gates/${encodeURIComponent(gateId)}/decisions`;
+        const answer = await postJson<GateView>(gatekeeper, path, body);
+        if (answer.ok) return reply.code(303).header("location", `/runs/${runId}`).send();
+        return send(
+          reply,
+          answer.status || 502,
+          { title: runId },
+          problem("Not decided", answer.detail ?? answer.note),
+        );
+      },
+    );
   }
 
   app.get("/health", async (_request, reply) => {

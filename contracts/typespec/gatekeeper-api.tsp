@@ -36,4 +36,18 @@ namespace GatekeeperApi {
   @route("/v1/gates/{gateId}")
   @get
   op getGate(@path gateId: string): GateView | Failure<401> | Failure<404>;
+
+  /**
+   * A person decides a pending gate (ADR 0118): 403 when they are in no group the gate waits for, 409 when the gate
+   * is no longer pending.
+   */
+  @route("/v1/gates/{gateId}/decisions")
+  @post
+  op decideGate(@path gateId: string, @body decision: GateDecisionRequest):
+    | GateView
+    | Failure<400>
+    | Failure<401>
+    | Failure<403>
+    | Failure<404>
+    | Failure<409>;
 }

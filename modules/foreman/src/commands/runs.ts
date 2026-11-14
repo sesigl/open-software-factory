@@ -11,6 +11,7 @@ import {
 } from "@temporalio/client";
 import type { Factory } from "../adapters/factory.ts";
 import {
+  actionOf,
   type Control,
   firstView,
   type GateDecision,
@@ -25,6 +26,7 @@ import {
   signalOf,
 } from "../domain/run.ts";
 import {
+  actedSignal,
   controlQuery,
   factoryRun,
   gateSignal,
@@ -198,17 +200,25 @@ export function runs(options: {
       const current = await view(runId);
       if (!current) return undefined;
       if (hasEnded(current)) throw new Conflict(`${runId} is ${current.state}`);
+      const acted = () =>
+        signal.by
+          ? handle(runId).signal(actedSignal, actionOf({ ...signal, by: signal.by }, options.now()))
+          : undefined;
       if (signal.type === "steer") {
+        await acted();
         await handle(runId).signal(steerSignal, signal.message);
       } else if (signal.type === "take-over") {
         const index = current.stages.findIndex((stage) => stage.state === "running");
         if (index < 0) throw new Conflict(`no stage of ${runId} is running`, NOT_NOW);
+        await acted();
         await handle(runId).signal(takeOverSignal, index);
       } else if (signal.type === "hand-back") {
         if (!current.stages.some((stage) => stage.state === "blocked" && stage.takenOverAt))
           throw new Conflict(`nobody took over ${runId}`, NOT_NOW);
+        await acted();
         await handle(runId).signal(handBackSignal);
       } else {
+        await acted();
         await handle(runId).cancel();
       }
       return current;

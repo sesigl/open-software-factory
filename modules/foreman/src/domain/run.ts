@@ -4,6 +4,7 @@
 import { createHash } from "node:crypto";
 import type {
   CheckView,
+  RunAction,
   RunCompleted,
   RunRetry,
   RunStarted,
@@ -13,6 +14,8 @@ import type {
 } from "@opensoftware/contracts";
 import type { Definition } from "./definition.ts";
 import { traceIdOf } from "./trace.ts";
+
+type Actor = RunAction["by"];
 
 export type { CheckView, RunView, StageView };
 export type RunState = RunView["state"];
@@ -464,16 +467,30 @@ export interface Control {
   takeOver?: number;
 }
 
-export type Signal = { type: "steer"; message: string } | { type: "cancel" | "take-over" | "hand-back" };
+export type Signal = ({ type: "steer"; message: string } | { type: "cancel" | "take-over" | "hand-back" }) & {
+  by?: Actor;
+};
 
 /** The signal in a request's body, or the problem with it as "<JSON Pointer>: <what is wrong>". */
 export function signalOf(body: unknown): Signal | string {
-  const { type, message } = (typeof body === "object" && body !== null ? body : {}) as Record<string, unknown>;
-  if (type === "cancel" || type === "take-over" || type === "hand-back") return { type };
+  const { type, message, by } = (typeof body === "object" && body !== null ? body : {}) as Record<string, unknown>;
+  const person = by as Actor | undefined;
+  if (by !== undefined && !(typeof person?.id === "string" && person.id && typeof person.kind === "string"))
+    return "/by: must name the person with kind and id";
+  const sender = person ? { by: person } : {};
+  if (type === "cancel" || type === "take-over" || type === "hand-back") return { type, ...sender };
   if (type !== "steer") return `/type: must be "steer", "cancel", "take-over" or "hand-back"`;
   if (typeof message !== "string" || message === "") return "/message: a steering message needs the text";
-  return { type, message };
+  return { type, message, ...sender };
 }
+
+/** What the run records of a signal that names its person (ADR 0118). */
+export const actionOf = (signal: Signal & { by: Actor }, at: string): RunAction => ({
+  type: signal.type,
+  by: signal.by,
+  at,
+  ...("message" in signal ? { message: signal.message } : {}),
+});
 
 /** The summary gatekeeper shows the approvers. */
 export const gateSummaryOf = (view: RunView, index: number): string =>

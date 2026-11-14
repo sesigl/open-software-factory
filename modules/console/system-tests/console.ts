@@ -195,3 +195,48 @@ export async function sendRetryForm(url: string, runPath: string, headers: Recor
   });
   return { status: response.status, location: response.headers.get("location"), html: await response.text() };
 }
+
+/** Sends a form of a run page to its action with these fields and headers, without following a redirect. */
+export async function sendForm(
+  url: string,
+  action: string,
+  fields: Record<string, string>,
+  headers: Record<string, string> = {},
+) {
+  const response = await fetch(`${url}${action}`, {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded", ...headers },
+    body: new URLSearchParams(fields).toString(),
+    redirect: "manual",
+  });
+  return { status: response.status, location: response.headers.get("location"), html: await response.text() };
+}
+
+/** The labels of the submit buttons of the page's forms. */
+export const buttons = (html: string): string[] =>
+  [...html.matchAll(/<button type="submit">([\s\S]*?)<\/button>/g)].map(([, label]) => text(label as string));
+
+export const GATE = "g0123456789abcdef";
+
+/** A blocked run whose stage "ship" waits at the gate GATE. */
+export const gatedRun = () =>
+  runOf("Export reports as CSV", {
+    state: "blocked",
+    stages: [
+      { stage: "plan", agent: "planner", state: "succeeded" },
+      { stage: "ship", agent: "shipper", state: "blocked", gateId: GATE },
+    ],
+  });
+
+/** gatekeeper's view of GATE, pending for "leads". */
+export const pendingGate = {
+  id: GATE,
+  workItem: "wi_0123456789abcdef0123",
+  stage: "ship",
+  summary: "Ship the CSV export",
+  approvers: ["leads"],
+  channel: "slack:C0GATES",
+  state: "pending",
+  waitingFor: ["leads"],
+  requestedAt: "2025-12-31T23:58:00.000Z",
+} as const;
