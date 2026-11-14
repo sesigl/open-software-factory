@@ -121,6 +121,7 @@ function frontMatter(folder: string, text: string, result: SkillFindings): Needs
     result.warnings.push({ file, line: 1, column: 1, message });
   }
   const end = lines.indexOf("---", 1);
+  // Stryker disable next-line EqualityOperator: indexOf from 1 gives -1 or 1 and more, never 0
   if (lines[0] !== "---" || end < 0) {
     const message =
       'SKILL.md has no front matter: it starts with a line "---", the fields name and description and a line "---"';
