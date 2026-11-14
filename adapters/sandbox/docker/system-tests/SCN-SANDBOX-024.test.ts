@@ -3,11 +3,8 @@ import { OUTSIDE, TEMPLATE } from "./sandbox.ts";
 
 // Needs Docker: runs in CI only.
 scenario("SCN-SANDBOX-024", async ({ sut, given, when, then }) => {
-  let before: string[] = [];
-  await given("the sandbox list before the probe", async () => {
-    const run = await sut.cli(["list"]);
-    expect(run.exitCode, run.stderr).toBe(0);
-    before = run.stdout.split("\n").filter(Boolean).sort();
+  await given("the test template", async () => {
+    expect(TEMPLATE).not.toBe("");
   });
 
   let run: Awaited<ReturnType<typeof sut.cli>>;
@@ -20,8 +17,10 @@ scenario("SCN-SANDBOX-024", async ({ sut, given, when, then }) => {
     expect(run.exitCode).toBe(0);
   });
 
-  await then("the sandbox list is the same as before the probe", async () => {
+  await then("the sandbox that probe names on standard error is not in the sandbox list", async () => {
+    const id = /sandbox (\S+)/.exec(run.stderr)?.[1];
+    expect(id, run.stderr).toBeTruthy();
     const list = await sut.cli(["list"]);
-    expect(list.stdout.split("\n").filter(Boolean).sort()).toEqual(before);
+    expect(list.stdout.split("\n")).not.toContain(id);
   });
 });

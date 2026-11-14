@@ -32,7 +32,7 @@ export async function probeEgress(
     await context.kube.run(["exec", sandboxName(id), "--", "curl", "-s", "-o", "/dev/null", "--max-time", "10", url]);
     const entries = egressEntries(await context.kube.text(["logs", egressName(id)]));
     const refused = entries.some((entry) => entry.host === host && entry.outcome === "refused");
-    return { lines: [`${refused ? "refused" : "reached"} ${host}`] };
+    return { lines: [`${refused ? "refused" : "reached"} ${host}`], errors: [`sandbox ${id}`], exitCode: 0 };
   } finally {
     await destroySandbox(context, id);
   }

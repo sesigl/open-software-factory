@@ -121,7 +121,7 @@ Feature: Running commands in an isolated sandbox
 
   @id=SCN-SANDBOX-024 @status=implemented @conformance @realizes=SCN-FACTORY-RUNTIME-003
   Scenario: probe starts a sandbox with no allowed host, finds a denied host refused and removes the sandbox
-    Given the sandbox list before the probe
+    Given the test template
     When the client runs "probe" with the test template and the host "api.example.invalid"
     Then probe prints "refused api.example.invalid" and exits with code 0
-    And the sandbox list is the same as before the probe
+    And the sandbox that probe names on standard error is not in the sandbox list
