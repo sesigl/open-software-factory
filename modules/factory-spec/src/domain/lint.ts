@@ -2,9 +2,12 @@
 import { type FactoryDefinition, validate } from "@opensoftware/contracts";
 import { LineCounter, parseDocument } from "yaml";
 import { locate, type Place, segments } from "./locate.ts";
+import { type Finding, type FolderFiles, skillRules } from "./skills.ts";
 
 export interface Problem extends Place {
   message: string;
+  /** The skill's file the problem is in, relative to the factory's folder; none for factory.yaml. */
+  file?: string;
 }
 
 export interface Linted {
@@ -16,10 +19,10 @@ export interface Linted {
 }
 
 /**
- * Lints the text of factory.yaml; `exists` says whether a path relative to the file exists, and `ghAw` whether the
- * factory is rendered with gh-aw workflows.
+ * Lints the text of factory.yaml; `exists` says whether a path relative to the file exists, `files` gives the files of
+ * a skill folder, and `ghAw` says whether the factory is rendered with gh-aw workflows.
  */
-export function lint(text: string, exists: (path: string) => boolean, ghAw = false): Linted {
+export function lint(text: string, exists: (path: string) => boolean, files: FolderFiles, ghAw = false): Linted {
   const lines = new LineCounter();
   const document = parseDocument(text, { lineCounter: lines, prettyErrors: false });
   if (document.errors.length > 0) {
@@ -39,11 +42,16 @@ export function lint(text: string, exists: (path: string) => boolean, ghAw = fal
   const definition = data as FactoryDefinition;
   const placed = (findings: Finding[]): Problem[] =>
     findings.map(([path, message]) => at(path, message)).sort((a, b) => a.line - b.line || a.column - b.column);
-  const problems = placed(rules(definition, exists));
+  // The problems of the skills' own files follow those of factory.yaml, skill by skill.
+  const skills = skillRules(definition, exists, files);
+  const problems = [...placed([...rules(definition, exists), ...skills.findings]), ...skills.problems];
   // A warning names its field as a JSON Pointer, like a problem of the schema.
-  const warnings = placed(
-    warningFindings(definition, ghAw).map(([path, message]) => [path, `warning /${path.join("/")}: ${message}`]),
-  );
+  const warnings = [
+    ...placed(
+      warningFindings(definition, ghAw).map(([path, message]) => [path, `warning /${path.join("/")}: ${message}`]),
+    ),
+    ...skills.warnings,
+  ];
   return problems.length > 0 ? { problems, warnings } : { definition, problems, warnings };
 }
 
@@ -62,8 +70,6 @@ function warningFindings(definition: FactoryDefinition, ghAw: boolean): Finding[
   findings.push(...unrun("benchmark", Object.keys(definition.benchmarks ?? {})));
   return findings;
 }
-
-type Finding = [path: string[], message: string];
 
 function rules(definition: FactoryDefinition, exists: (path: string) => boolean): Finding[] {
   const findings: Finding[] = [];
@@ -84,9 +90,6 @@ function rules(definition: FactoryDefinition, exists: (path: string) => boolean)
       findings.push([["agents", name, "secrets", String(index)], message]);
     });
     files.push([["agents", name, "prompt"], agent.prompt]);
-    (agent.skills ?? []).forEach((skill, index) => {
-      files.push([["agents", name, "skills", String(index)], skill]);
-    });
   }
   (definition.workflow ?? []).forEach((stage, index) => {
     const agent = stage.agent ?? stage.stage;

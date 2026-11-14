@@ -8,7 +8,7 @@ One `factory.yaml` rendered for every harness. Claude Code, Codex and OpenCode r
 servers, and `factory plan` shows what a change does before `factory apply` writes it. It also registers the forge
 webhooks of automations, writes kagent and gh-aw files, and `factory edit` changes `factory.yaml` for a program such as
 the console. Decisions:
-[ADR 0020](../../docs/decisions/0020-factory-spec.md), [ADR 0022](../../docs/decisions/0022-factory-spec-automations-and-targets.md), [ADR 0060](../../docs/decisions/0060-factory-spec-forge-port.md), [ADR 0078](../../docs/decisions/0078-agent-effort.md), [ADR 0107](../../docs/decisions/0107-a-stage-that-only-waits.md) and [ADR 0135](../../docs/decisions/0135-one-job-and-a-listed-surface.md). The format is the `factory-definition` contract
+[ADR 0020](../../docs/decisions/0020-factory-spec.md), [ADR 0022](../../docs/decisions/0022-factory-spec-automations-and-targets.md), [ADR 0060](../../docs/decisions/0060-factory-spec-forge-port.md), [ADR 0078](../../docs/decisions/0078-agent-effort.md), [ADR 0107](../../docs/decisions/0107-a-stage-that-only-waits.md), [ADR 0135](../../docs/decisions/0135-one-job-and-a-listed-surface.md) and [ADR 0140](../../docs/decisions/0140-skills-in-the-agent-skills-format.md). The format is the `factory-definition` contract
 ([`contracts/`](../../contracts/README.md)).
 
 ## Quick start
@@ -93,6 +93,56 @@ warning names its field as a JSON Pointer:
 - `warning /scorers/<name>: no job of the profile runs a scorer yet, so it has no effect`, and the same for each of
   `benchmarks`, until the profile's jobs run them (T-31).
 
+## Skills
+
+A skill is a folder with a `SKILL.md` in the [Agent Skills](https://agentskills.io/specification) format, which
+Claude Code, Codex and OpenCode read ([ADR 0140](../../docs/decisions/0140-skills-in-the-agent-skills-format.md)). An
+agent names its skills by folder (`skills: [./skills/release-notes]`); `render` links each one into every harness's
+folder, and the foreman copies its files into the run's session (ADR 0112). The front matter names the skill and says
+what it does and when to use it. What the skill needs from the factory goes into `metadata`, each as one text of names
+separated by spaces:
+
+```markdown
+---
+name: release-notes
+description: Write the release notes of a change from its Linear issues. Use when a change ships.
+metadata:
+  opensoftware/secrets: LINEAR_TOKEN
+  opensoftware/hosts: api.linear.app
+---
+
+# Release notes
+
+Read the Linear issues that the commits name, then ...
+```
+
+- `opensoftware/secrets` names each secret by the variable that holds it in a sandbox: the name of the agent's
+  reference in upper case, every character outside `A-Z` and `0-9` as `_`. `ref:openbao/linear-token` and
+  `ref:env/LINEAR_TOKEN` both give `LINEAR_TOKEN`.
+- `opensoftware/hosts` names each host the skill reaches, as `sandbox.egress` names it.
+
+`factory lint` checks every skill an agent uses. Each of these is a problem, which also stops `render`, `plan`,
+`apply` and `edit`:
+
+- The folder has no `SKILL.md`, or `SKILL.md` has no front matter, or its front matter does not parse.
+- `name` is missing, is not lowercase letters and digits with single hyphens between them, is longer than 64
+  characters or is not the folder's name.
+- `description` is missing or longer than 1024 characters; `compatibility` is longer than 500.
+- `metadata` is no mapping, a need is no text, or it names a secret or a host that does not fit its form.
+- A file of the folder is not UTF-8 text: the foreman copies a skill's files as text.
+- Two folders of one name: `the skill "./shared/release-notes" has the name "release-notes" of the skill
+  "./skills/release-notes": a factory uses one skill of a name`. One folder for several agents is one skill.
+- The agent lacks a secret or, in a sandbox, a host its skill needs, named at the agent's skill entry:
+  `factory.yaml:14:14 agent "triage" lacks the secret LINEAR_TOKEN that its skill "release-notes" needs: add a
+  reference such as "ref:<provider>/linear-token" to agents.triage.secrets`. An agent without a sandbox reaches every
+  host, so lint asks it for none.
+
+A `SKILL.md` of 500 lines or more is a warning: the format asks for fewer, with the details in files beside it. A
+problem in a skill's own file names that file, its line and its column, for example
+`skills/release-notes/SKILL.md:2:1 the skill has no description: say what it does and when to use it`. Other fields,
+such as `license`, `allowed-tools`, Claude Code's `disable-model-invocation` or OpenCode's
+`metadata.opencode/autoinvoke`, stay as they are.
+
 ## MCP servers and factory.lock
 
 - `<package>@<version>`, for example `@modelcontextprotocol/server-filesystem@2025.8.21`: an npm package that the
@@ -172,8 +222,9 @@ factory edit add-secret spec ref:env/LINEAR_TOKEN > edited.yaml
   the same range changes nothing; one declared at another range is refused.
 - **A refused edit prints nothing.** It names the reason in one line on stderr and exits with 1: a usage error, an
   agent the factory does not declare, a `factory.yaml` that does not pass `factory lint`, or an edit whose result
-  would not pass it, such as a secret whose provider is not declared, a skill folder that does not exist or an egress
-  host for an agent without a sandbox.
+  would not pass it, such as a secret whose provider is not declared, a skill folder that does not exist, a skill
+  whose secret or host the agent lacks, or an egress host for an agent without a sandbox. To give an agent a skill
+  with needs, add its secret reference and its host first, each with its own edit, then the skill.
 - **A value is one string.** It is quoted, or written as a block, wherever YAML needs it, so no argument becomes
   YAML. A value that starts with `-` follows `--`, as in `factory edit add-skill triage -- -skills/x`.
 
@@ -258,7 +309,7 @@ the minor version. The one-time setup is the same as for contracts
 
 | Command | What it does |
 | --- | --- |
-| `factory lint [--gh-aw]` | Check factory.yaml and the access.yaml beside it; print each problem and each warning with its file, line and column. --gh-aw: the factory is rendered with gh-aw, so a cron automation runs. |
+| `factory lint [--gh-aw]` | Check factory.yaml, the skills its agents use and the access.yaml beside it; print each problem and each warning with its file, line and column. --gh-aw: the factory is rendered with gh-aw, so a cron automation runs. |
 | `factory render [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]` | Write AGENTS.md, the MCP servers and the skill links of one agent to $OUTPUT. --harness all writes every declared harness; --k8s adds its kagent resources and SandboxTemplate; --gh-aw adds a gh-aw workflow per GitHub automation. |
 | `factory plan [--adapters] [--check]` | Pin registry MCP servers in factory.lock; show what apply changes and what drifted, rendered files and webhooks. --adapters also pins each adapter under providers to the newest npm version in its range. --check only names what factory.lock does not pin, exits with 1 then, and writes nothing. |
 | `factory apply [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]` | Render like render, register the webhooks of forgejo and github automations (github ones not with --gh-aw), and record what was applied in OSF_DATA. |
@@ -386,3 +437,20 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FSPEC-092 | implemented | Plan with --check names a registry server that factory.lock does not pin and writes no lock |
 | SCN-FSPEC-093 | implemented | Plan with --check names each adapter that factory.lock does not pin for its range |
 | SCN-FSPEC-094 | implemented | Edit keeps an anchor that no alias uses |
+| SCN-FSPEC-095 | implemented | Lint refuses a skill without a description |
+| SCN-FSPEC-096 | implemented | Lint names the secret an agent lacks for its skill |
+| SCN-FSPEC-097 | implemented | Lint names the host an agent's sandbox lacks for its skill |
+| SCN-FSPEC-098 | implemented | Lint accepts an agent that declares the secret and the host its skill needs |
+| SCN-FSPEC-099 | implemented | Lint accepts a SKILL.md with the fields of Claude Code and the metadata of Codex and OpenCode |
+| SCN-FSPEC-100 | implemented | Lint asks an agent without a sandbox for no host of its skill |
+| SCN-FSPEC-101 | implemented | Lint names a skill folder without a SKILL.md |
+| SCN-FSPEC-102 | implemented | Lint names a SKILL.md without front matter |
+| SCN-FSPEC-103 | implemented | Lint names the line of front matter that does not parse, and a front matter that is no mapping |
+| SCN-FSPEC-104 | implemented | Lint names each name the format does not allow |
+| SCN-FSPEC-105 | implemented | Lint names a skill whose name is not the name of its folder |
+| SCN-FSPEC-106 | implemented | Lint accepts a name, a description and a compatibility at the format's limits and names each over them |
+| SCN-FSPEC-107 | implemented | Lint names metadata that is no mapping and needs it cannot read |
+| SCN-FSPEC-108 | implemented | Lint warns about a SKILL.md of 500 lines and accepts one of 499 |
+| SCN-FSPEC-109 | implemented | Lint refuses a skill with a file that is not UTF-8 text |
+| SCN-FSPEC-110 | implemented | Lint refuses two skills with one name and accepts one skill for two agents |
+| SCN-FSPEC-111 | implemented | Edit refuses a skill whose secret the agent lacks and names it |

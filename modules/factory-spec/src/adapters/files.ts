@@ -7,6 +7,7 @@ import {
   readdirSync,
   readFileSync,
   rmSync,
+  statSync,
   symlinkSync,
   writeFileSync,
 } from "node:fs";
@@ -19,6 +20,18 @@ export function readText(path: string): string {
 
 export function exists(path: string): boolean {
   return existsSync(path);
+}
+
+/** The bytes of every file below a folder, by its path relative to it; none for a path that is no folder. */
+export function filesBelow(folder: string): Record<string, Uint8Array> {
+  if (!existsSync(folder) || !statSync(folder).isDirectory()) return {};
+  const entries = readdirSync(folder, { recursive: true, withFileTypes: true }).filter((entry) => entry.isFile());
+  return Object.fromEntries(
+    entries.map((entry) => {
+      const path = join(entry.parentPath, entry.name);
+      return [relative(folder, path), readFileSync(path)];
+    }),
+  );
 }
 
 /** The folder the module writes to: $OUTPUT, or the current folder. */

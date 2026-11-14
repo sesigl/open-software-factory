@@ -8,7 +8,10 @@ scenario("SCN-FSPEC-012", async ({ sut, given, when, then }) => {
       factoryYaml({ agents: agent("implement", ["skills: [./skills/testing]"]) }),
     );
     await sut.files.put("$INPUT/agents/implement.md", prompt("implement"));
-    await sut.files.put("$INPUT/skills/testing/SKILL.md", "# Testing\n");
+    await sut.files.put(
+      "$INPUT/skills/testing/SKILL.md",
+      "---\nname: testing\ndescription: Write a system test.\n---\n\n# Testing\n",
+    );
   });
 
   await given('the factory engineer ran "factory render"', async () => {
