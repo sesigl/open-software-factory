@@ -1,5 +1,5 @@
 // The deep checks of `console doctor --deep` (ADR 0120): one model call per route through the gateway, the
-// harness's answer to ACP `initialize`, and one span from the collector to the trace store. Each costs, starts or
+// harness's answer to ACP `initialize`, one span from the collector to the trace store, and a sandbox adapter's probe. Each costs, starts or
 // writes something, so only `--deep` runs them.
 import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
@@ -75,4 +75,29 @@ export async function traceRoundTrip(otlpUrl: string, tracesUrl: string): Promis
     await new Promise((resolve) => setTimeout(resolve, 250));
   } while (Date.now() < deadline);
   return { sent, found: false };
+}
+
+/**
+ * Runs `<command> probe <template> <host>` of a sandbox adapter with `sh -c` (ports/sandbox), which starts a sandbox,
+ * sends one request to the host and removes the sandbox; gives what it printed. A cluster may take minutes to start it.
+ */
+export function probeSandbox(
+  command: string,
+  template: string,
+  host: string,
+): Promise<{ stdout: string; stderr: string }> {
+  return new Promise((resolve) => {
+    // The template and the host are sh's $0 and $1, so no quoting of their own is needed.
+    // Stryker disable next-line ObjectLiteral: a probe that never ends would take the timeout of 5 minutes to test
+    const child = spawn("sh", ["-c", `${command} probe "$0" "$1"`, template, host], { timeout: 300_000 });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk;
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk;
+    });
+    child.on("close", () => resolve({ stdout, stderr }));
+  });
 }

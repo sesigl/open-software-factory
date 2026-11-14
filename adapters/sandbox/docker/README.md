@@ -78,6 +78,7 @@ npx @opensoftware/sandbox-docker destroy "$id"
 | `sandbox-docker destroy <ID>` | Remove the sandbox, its files, its network and its egress proxy. |
 | `sandbox-docker list` | Print the IDs of the sandboxes on the Docker host. |
 | `sandbox-docker egress-log <ID>` | Print one JSON line per request that left the sandbox. |
+| `sandbox-docker probe <template> <host>` | Start a sandbox from the template with no allowed host, send one HTTPS request to the host with `curl`, remove the sandbox, and print `refused <host>` when its egress proxy refused the request, else `reached <host>`. The deep check `sandbox` of `console doctor --deep` runs it (ADR 0120). |
 
 An unknown sandbox ID exits 1 with `no sandbox <ID>`.
 

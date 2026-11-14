@@ -18,7 +18,8 @@ The only ways a system test or another program may use this module:
   `/v1/gates/<gateId>/decisions`); the forge port's
   adapter in `CONSOLE_FORGE_ADAPTER`, only with its read-only command `prs` (ADR 0073); with `console doctor --deep`
   only, the model gateway at `CONSOLE_MODEL_URL` (one `POST /chat/completions` per route) and the harness started by
-  `CONSOLE_HARNESS_COMMAND` (ACP `initialize`, ADR 0120)
+  `CONSOLE_HARNESS_COMMAND` (ACP `initialize`, ADR 0120), the trace store, and the sandbox adapter in
+  `CONSOLE_SANDBOX_COMMAND`, only with its command `probe` (ADR 0120)
 - Input: the factory definition in `CONSOLE_FACTORY`
 - Server state: none
 - Environment variables: the list in `README.md#configuration` (generated from `src/config.schema.json`)

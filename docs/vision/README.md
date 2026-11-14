@@ -27,7 +27,7 @@ not `deprecated` is `implemented`; otherwise it says `planned`. The check VISION
 | SCN-FACTORY-LOOP-013 | implemented | SCN-FSPEC-031 (implemented) |
 | SCN-FACTORY-RUNTIME-001 | implemented | SCN-FORE-021 (implemented), SCN-FORE-087 (implemented), SCN-FORE-073 (implemented), SCN-FORE-074 (implemented), SCN-INTAKE-043 (implemented) |
 | SCN-FACTORY-RUNTIME-002 | implemented | SCN-INTAKE-024 (implemented), SCN-INTAKE-025 (implemented) |
-| SCN-FACTORY-RUNTIME-003 | implemented | SCN-SANDBOX-005 (implemented), SCN-SANDBOX-006 (implemented) |
+| SCN-FACTORY-RUNTIME-003 | implemented | SCN-SANDBOX-005 (implemented), SCN-SANDBOX-006 (implemented), SCN-SANDBOX-024 (implemented) |
 | SCN-FACTORY-RUNTIME-004 | implemented | SCN-DIST-017 (implemented), SCN-DIST-022 (implemented), SCN-FSPEC-048 (implemented), SCN-FORE-032 (implemented), SCN-FORE-084 (implemented), SCN-FORE-085 (implemented), SCN-FORE-036 (implemented), SCN-FORE-143 (implemented), SCN-SANDBOX-001 (implemented), SCN-SANDBOX-003 (implemented), SCN-SANDBOX-015 (implemented) |
 | SCN-FACTORY-RUNTIME-005 | planned | none |
 | SCN-FACTORY-RUNTIME-006 | implemented | SCN-E2E-006 (implemented), SCN-FORE-033 (implemented), SCN-SANDBOX-007 (implemented), SCN-SANDBOX-008 (implemented), SCN-SANDBOX-023 (implemented), SCN-SANDBOX-016 (implemented), SCN-SANDBOX-017 (implemented), SCN-SANDBOX-018 (implemented), SCN-SANDBOX-019 (implemented) |

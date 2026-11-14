@@ -13,7 +13,8 @@ Commands:
   doctor Check each server of the factory, its token and the factory definition, and print one fix per failure.
          Exits 1 when a check fails. --deep also makes one model call per route of the factory definition through
          CONSOLE_MODEL_URL, asks the harness in CONSOLE_HARNESS_COMMAND to answer ACP initialize and, with
-         CONSOLE_TRACES_URL, sends one span to CONSOLE_OTLP_URL and finds it in the trace store.
+         CONSOLE_TRACES_URL, sends one span to CONSOLE_OTLP_URL and finds it in the trace store and, with
+         CONSOLE_SANDBOX_COMMAND, wants a sandbox to refuse a denied host.
 `;
 
 const { positionals, values } = parseArgs({

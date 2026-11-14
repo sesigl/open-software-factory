@@ -135,3 +135,33 @@ Feature: Health
     When the user runs "console doctor --deep"
     Then the command exits with code 1
     And it prints "FAIL  traces: no collector took the span: check CONSOLE_OTLP_URL and that the collector runs"
+
+  @id=SCN-CONSOLE-120 @status=implemented
+  Scenario: "console doctor --deep" asks the sandbox adapter to probe a denied host and finds it refused
+    Given a sandbox adapter in "CONSOLE_SANDBOX_COMMAND" whose probe finds the denied host refused
+    And "CONSOLE_SANDBOX_TEMPLATE" is "alpine:3"
+    When the user runs "console doctor --deep"
+    Then it prints "ok    sandbox"
+    And the adapter ran one probe of the template "alpine:3" for the host "example.com" and left no sandbox
+
+  @id=SCN-CONSOLE-121 @status=implemented
+  Scenario: "console doctor --deep" names the egress proxy when a sandbox reaches the denied host
+    Given a sandbox adapter in "CONSOLE_SANDBOX_COMMAND" whose probe reaches the denied host
+    When the user runs "console doctor --deep"
+    Then the command exits with code 1
+    And it prints "FAIL  sandbox: a sandbox reached example.com, which its egress does not allow: check the egress proxy of the sandbox adapter"
+    And the adapter probed the default template "curlimages/curl:8.17.0"
+
+  @id=SCN-CONSOLE-122 @status=implemented
+  Scenario: "console doctor --deep" names the adapter's reason and the variables when no sandbox starts
+    Given a sandbox adapter in "CONSOLE_SANDBOX_COMMAND" that has only the template "alpine:3"
+    And "CONSOLE_SANDBOX_TEMPLATE" is "node:24"
+    When the user runs "console doctor --deep"
+    Then the command exits with code 1
+    And it prints "FAIL  sandbox: no template node:24: check CONSOLE_SANDBOX_COMMAND and CONSOLE_SANDBOX_TEMPLATE"
+
+  @id=SCN-CONSOLE-123 @status=implemented
+  Scenario: "console doctor --deep" without "CONSOLE_SANDBOX_COMMAND" skips the sandbox
+    Given a console without "CONSOLE_SANDBOX_COMMAND"
+    When the user runs "console doctor --deep"
+    Then it prints no line about the sandbox

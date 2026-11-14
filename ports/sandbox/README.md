@@ -21,6 +21,11 @@ command line:
 | destroy | `<adapter> destroy <ID>` removes the sandbox and all its data |
 | list | `<adapter> list` prints the IDs of the sandboxes |
 | egress log | `<adapter> egress-log <ID>` prints one JSON line per request that left the sandbox |
+| probe | `<adapter> probe <template> <host>` starts a sandbox from the template with no allowed host, sends one HTTPS request to the host, removes the sandbox and prints `refused <host>` or `reached <host>` |
+
+`probe` is the deep check of `console doctor --deep` (ADR 0120). It prints `refused <host>` only when the egress log
+holds a refused request to the host; otherwise `reached <host>`. Both exit 0; a sandbox that does not start exits 1
+with the reason. The template needs `curl`.
 
 The spec is the format `sandbox-spec` in [contracts](../../contracts/README.md): `template`, `cpu`, `memory`,
 `egress`, `env`, `secrets` and `mcp`. An unknown sandbox ID exits 1 with `no sandbox <ID>`.

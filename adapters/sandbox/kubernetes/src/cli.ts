@@ -9,6 +9,7 @@ import { destroy } from "./commands/destroy.ts";
 import { egressLog } from "./commands/egress-log.ts";
 import { exec } from "./commands/exec.ts";
 import { list } from "./commands/list.ts";
+import { probeEgress } from "./commands/probe.ts";
 import type { Context } from "./commands/sandbox.ts";
 import { snapshot } from "./commands/snapshot.ts";
 import { settingsOf } from "./domain/settings.ts";
@@ -23,6 +24,8 @@ Commands:
   destroy <ID>                Remove the sandbox and all its data.
   list                        Print the IDs of the sandboxes.
   egress-log <ID>             Print one JSON line per request that left the sandbox.
+  probe <template> <host>     Start a sandbox with no allowed host, send one HTTPS request to the host, remove the
+                              sandbox, and print "refused <host>" or "reached <host>".
 `;
 
 const { positionals, values } = parseArgs({ allowPositionals: true, options: { help: { type: "boolean" } } });
@@ -43,6 +46,7 @@ const commands: Record<string, Command> = {
   destroy: () => destroy(context, first),
   list: () => list(context),
   "egress-log": () => egressLog(context, first),
+  probe: () => probeEgress(context, first, second),
 };
 
 process.exitCode = await runProgram({

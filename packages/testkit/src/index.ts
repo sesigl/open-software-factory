@@ -17,7 +17,7 @@ export type { FakeHttp, HttpOptions, HttpRequest, HttpRoute } from "./fakes/http
 export type { Inference, InferenceOptions } from "./fakes/inference.ts";
 export type { ModelGateway, ModelGatewayOptions, ScriptedReply, ScriptedTool } from "./fakes/model-gateway.ts";
 export type { Postgres } from "./fakes/postgres.ts";
-export type { Sandbox, SandboxExec, SandboxOptions, SandboxSpec } from "./fakes/sandbox.ts";
+export type { Sandbox, SandboxExec, SandboxOptions, SandboxProbe, SandboxSpec } from "./fakes/sandbox.ts";
 export type { FakeSentry, SentryAlert } from "./fakes/sentry.ts";
 export type { Nats, S3, Temporal } from "./fakes/services.ts";
 export type { FakeSlack, SlackMessage, SlackOptions } from "./fakes/slack.ts";
