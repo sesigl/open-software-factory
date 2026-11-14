@@ -321,3 +321,9 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     And the client ran "merge tester/web <number> --when-green"
     When the client runs "merge tester/web <number> --when-green" again
     Then merge prints "queued" true and exits with code 0, and the pull request is still open
+
+  @id=SCN-FORGE-045 @status=implemented @conformance
+  Scenario: commit writes a file's bytes exactly, also bytes that are not UTF-8
+    Given the branch "console/add-logo" of "tester/web" made from "main"
+    When the client runs "commit tester/web console/add-logo --message 'Add the logo' logo.bin=<file>" with a file whose bytes are not UTF-8
+    Then the branch's "logo.bin" holds exactly the bytes of the local file

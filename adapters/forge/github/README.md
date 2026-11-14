@@ -64,7 +64,8 @@ npx @opensoftware/forge-github event delivery.json                # a pr.opened@
   needs the repository's setting "Allow auto-merge", which a new repository has off and which GitHub offers for
   private repositories only on its paid plans; without it the command exits 1 with
   `the forge cannot merge <repo>#<number> when its checks pass: allow auto-merge in the repository's settings`.
-- **Commit** uses the Git Data API: a tree with the files' text on the tree of the branch's head, a commit with the
+- **Commit** uses the Git Data API: a blob of each file's bytes in base64, so a file that is not UTF-8 stays as it
+  is, a tree of them on the tree of the branch's head, a commit with the
   head as its parent, and the branch moved there without force, so a branch that moved in between is not
   overwritten: GitHub answers `Update is not a fast forward`.
 - **Close** sets the pull request's state to `closed`; with `--delete-branch` it then deletes the head branch's ref.

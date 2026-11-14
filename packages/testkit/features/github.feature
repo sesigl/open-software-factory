@@ -213,3 +213,11 @@ Feature: A fake of GitHub's REST API
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-174 @status=implemented
+  Scenario: fakes.github keeps a blob's bytes and puts it into a tree by its SHA
+    Given a module whose CLI posts the bytes "ff fe 00 80 41 0a c3 28" as a base64 blob, makes a tree on the tree of "fix" with "logo.bin" as that blob, commits it on "fix", moves "fix" there, and prints the blob's status and SHA at "DEMO_GITHUB_URL"
+    And its system test creates the branch "fix" in fakes.github and expects "201 702e1e879fdef58f4ee3b5229825b123b436cf5d", Git's SHA of these bytes, and the bytes of "logo.bin" on "fix"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

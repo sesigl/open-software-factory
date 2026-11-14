@@ -21,7 +21,7 @@ command line. A repository is `<owner>/<name>`; every command prints JSON lines.
 | Port operation | Command |
 | --- | --- |
 | branch | `<adapter> branch <repo> <branch> [--from <ref>]` prints `{"branch", "sha"}`; `--from` takes a branch or a commit, by default the default branch |
-| commit | `<adapter> commit <repo> <branch> --message <text> <path>=<file>...` writes one commit with these files, the text of the local files, on top of the branch's head, and prints `{"sha"}`; a branch the repository does not have exits 1 with `no branch <repo>:<branch>` |
+| commit | `<adapter> commit <repo> <branch> --message <text> <path>=<file>...` writes one commit with these files, the bytes of the local files exactly, on top of the branch's head, and prints `{"sha"}`; a branch the repository does not have exits 1 with `no branch <repo>:<branch>` |
 | open a pull request | `<adapter> open-pr <repo> <head> --title <text> [--body <text>] [--base <branch>]` prints `{"number", "url", "head", "base", "sha"}` |
 | merge state | `<adapter> pr <repo> <number>` prints `{"number", "url", "title", "state", "mergeable", "head", "base", "sha", "mergeCommit", "author", "labels", "draft", "paths", "checks"}` |
 | list pull requests | `<adapter> prs <repo> [--head <prefix>] [--state open\|closed\|all] [--limit <n>]` prints one `{"number", "url", "title", "state", "head", "base", "author", "created", "draft", "review"}` per pull request, the highest number first, at most n; a merged one also has `mergeCommit` |

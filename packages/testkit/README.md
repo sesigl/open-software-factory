@@ -43,7 +43,8 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
 - `sut.files`: `put`, `read`, `list`, `remove` and `clear` in the module's input and output folders. Every path
   starts with `$INPUT/` or `$OUTPUT/` and stays inside that folder; any other path fails the test. `path` gives
   the absolute path of a file there, for a library in `packages/` whose functions take paths (ADR 0039).
-  `put(path, content, { executable: true })` writes a file its owner can run, like a fake program or plugin.
+  `put(path, content, { executable: true })` writes a file its owner can run, like a fake program or plugin. `put`
+  writes a text as UTF-8 and a `Uint8Array`, such as a `Buffer`, byte for byte.
 - `sut.readme`: `quickStartArgs()` (the arguments of the README's `npx <package> ...` line) and
   `quickStartOutput()` (the first `$OUTPUT/<file>` it names).
 - `sut.git`: `$INPUT` is a Git repository with a fixed author and clock.
@@ -253,8 +254,9 @@ Every server, client and subscription stops when the scenario ends, before the f
   `checkRun(pr, { name, status, conclusion, title })` and that it lists by page (`noChecksToken` may not read them
   and gets 403, [ADR 0104](../../docs/decisions/0104-forge-github-check-runs.md)),
   comments, reviews, which it lists per pull request, branch protection that holds for admins only with `enforce_admins` and that it reads back (404
-  `Branch not protected` without one), closing a pull request, the Git Data API's refs, commits and trees on a
-  `base_tree`, which moves a branch only forward unless the update is forced
+  `Branch not protected` without one), closing a pull request, the Git Data API's refs, commits, blobs (`utf-8` or `base64`, named
+  by Git's SHA) and trees on a `base_tree` of entries with their text or a blob's `sha`; `fileBytes(repository,
+  path, ref)` gives a file's bytes, which moves a branch only forward unless the update is forced
   ([ADR 0136](../../docs/decisions/0136-forge-port-changes-from-the-ui.md)), auto-merge through `POST /graphql`
   (a pull request's `mergeStateStatus`, its `autoMergeRequest` and its repository's `autoMergeAllowed`, and
   `enablePullRequestAutoMerge`, refused unless `allowAutoMerge(repository)` allowed it and for a pull request that
@@ -557,3 +559,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-171 | implemented | fakes.github answers the auto-merge request of a pull request whose auto-merge a module enabled |
 | SCN-TK-172 | implemented | Enabling auto-merge twice in fakes.github fails the test with the pull request named |
 | SCN-TK-173 | implemented | fakes.github lists the calls a module made, with their query |
+| SCN-TK-174 | implemented | fakes.github keeps a blob's bytes and puts it into a tree by its SHA |

@@ -57,6 +57,8 @@ export interface FakeGitHub extends Forge {
   allowAutoMerge(repository: string): Promise<void>;
   /** Each call the fake answered so far, oldest first, as `<method> <path with its query>`, like `GET /user`. */
   calls(): string[];
+  /** The bytes of a file on a branch or at a commit, or undefined when it has no such file; `file` gives its text. */
+  fileBytes(repository: string, path: string, ref: string): Promise<Buffer | undefined>;
 }
 
 export interface RunningGitHub {
@@ -186,6 +188,12 @@ export async function startGitHub(): Promise<RunningGitHub> {
   const commits = new Commits();
   // The trees of the Git Data API: a tree is the files of a commit, named by a hash of their paths and texts.
   const trees = new Map<string, Files>();
+  // The blobs of the Git Data API by their Git SHA. A file's content is its bytes, one character per byte (latin1);
+  // the text that a test or a tree entry gives is UTF-8.
+  const blobs = new Map<string, string>();
+  const bytesOf = (text: string): string => Buffer.from(text).toString("latin1");
+  const filesOf = (files: Record<string, string>): Files =>
+    Object.fromEntries(Object.entries(files).map(([path, text]) => [path, bytesOf(text)]));
   const treeOf = (files: Files): string => {
     const sha = createHash("sha1")
       .update(JSON.stringify(Object.entries(files).sort()))
@@ -486,7 +494,7 @@ export async function startGitHub(): Promise<RunningGitHub> {
   /** Commits the files on top of `from` onto `branch`, creating the branch when it is new. */
   const commitOn = (repo: Repository, branch: string, from: string, message: string, files: Files) => {
     const parent = tip(repo, from);
-    const sha = commits.add([parent], message, { ...commits.get(parent)?.files, ...files });
+    const sha = commits.add([parent], message, { ...commits.get(parent)?.files, ...filesOf(files) });
     repo.branches.set(branch, sha);
     return sha;
   };
@@ -787,14 +795,30 @@ export async function startGitHub(): Promise<RunningGitHub> {
     ],
     [
       "POST",
+      /^\/git\/blobs$/,
+      (repo, _match, body) => {
+        if (body.encoding !== "base64" && body.encoding !== "utf-8")
+          throw new Answer(422, "Invalid request.\n\nencoding must be utf-8 or base64.");
+        const bytes = Buffer.from(String(body.content ?? ""), body.encoding === "base64" ? "base64" : "utf8");
+        // Git names a blob by the SHA-1 of its header and its bytes.
+        const header = Buffer.from(`blob ${bytes.length}\0`);
+        const sha = createHash("sha1")
+          .update(Buffer.concat([header, bytes]))
+          .digest("hex");
+        blobs.set(sha, bytes.toString("latin1"));
+        return [201, { sha, url: `${url}/repos/${OWNER}/${repo.name}/git/blobs/${sha}` }];
+      },
+    ],
+    [
+      "POST",
       /^\/git\/trees$/,
       (_repo, _match, body) => {
-        // A tree on `base_tree` keeps its files; each entry adds or replaces one file with its content.
+        // A tree on `base_tree` keeps its files; each entry adds or replaces one file with its text or a blob's bytes.
         const files = { ...trees.get(String(body.base_tree ?? "")) };
-        for (const entry of (body.tree as { path: string; content?: string }[] | undefined) ?? []) {
-          if (typeof entry.content !== "string")
-            throw new Answer(422, "fake GitHub takes a tree entry with its content");
-          files[entry.path] = entry.content;
+        for (const entry of (body.tree as { path: string; content?: string; sha?: string }[] | undefined) ?? []) {
+          const bytes = typeof entry.content === "string" ? bytesOf(entry.content) : blobs.get(String(entry.sha));
+          if (bytes === undefined) throw new Answer(422, "fake GitHub takes a tree entry with its content or a blob");
+          files[entry.path] = bytes;
         }
         return [201, { sha: treeOf(files) }];
       },
@@ -1071,7 +1095,7 @@ export async function startGitHub(): Promise<RunningGitHub> {
     owner: OWNER,
     async createRepository(name, files = {}) {
       const initial = Object.keys(files).length > 0 ? files : { "README.md": `# ${name}\n` };
-      const sha = commits.add([], "Initial commit", initial);
+      const sha = commits.add([], "Initial commit", filesOf(initial));
       repositories.set(name, {
         name,
         numbered: 0,
@@ -1202,9 +1226,13 @@ export async function startGitHub(): Promise<RunningGitHub> {
       }));
     },
     async file(name, path, at) {
+      return (await github.fileBytes(name, path, at))?.toString("utf8");
+    },
+    async fileBytes(name, path, at) {
       const repo = repository(name);
       const sha = repo.branches.get(at) ?? commits.find(at)?.sha;
-      return sha ? commits.get(sha)?.files[path] : undefined;
+      const bytes = sha ? commits.get(sha)?.files[path] : undefined;
+      return bytes === undefined ? undefined : Buffer.from(bytes, "latin1");
     },
   };
 
