@@ -69,6 +69,10 @@ flowchart LR
   T -. "✕ read or write its data (BOUNDARY-RUNTIME)" .-> D
 ```
 
+The built module runs with every package of the workspace installed, its devDependencies too, which npm does not
+install with a published package. So no system test sees a package that the module loads at run time but declares
+only for development; the static check DEPS-RUNTIME does (ADR 0138).
+
 Because the module runs as its artifact in its own process, a test cannot pass by reaching inside it.
 
 A web page is read the same way (ADR 0131): `sut.pages` opens the pages of the server `sut.http` started, without a
