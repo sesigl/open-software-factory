@@ -94,6 +94,12 @@ jobs:
               echo "waiting for $pin and its dependencies on npm: $(grep -m1 'notarget\|ETARGET\|E404' "$RUNNER_TEMP/npm-check.log")"
               sleep 20
             done
+            # npm answers a new version's metadata minutes before its tarball (run 43581450016): the build downloads it.
+            tarball=$(npm view --registry https://registry.npmjs.org "$pin" dist.tarball)
+            until curl -fsI -o /dev/null "$tarball"; do
+              echo "waiting for the tarball of $pin on npm"
+              sleep 20
+            done
           done
 
       - name: Build and push the images for amd64 and arm64, with SBOM and provenance
@@ -126,6 +132,14 @@ jobs:
             exit 0
           fi
           helm package deploy/helm/osf --destination "$RUNNER_TEMP/chart"
-          helm push "$RUNNER_TEMP/chart/osf-$version.tgz" "oci://$REGISTRY/charts" 2>&1 | tee "$RUNNER_TEMP/push.log"
+          # GHCR sometimes answers the tag of a manifest it just took with "not found" (run 43576804028): try again,
+          # and fail here, not at cosign, when no push printed a digest.
+          set -o pipefail
+          for attempt in 1 2 3; do
+            helm push "$RUNNER_TEMP/chart/osf-$version.tgz" "oci://$REGISTRY/charts" 2>&1 | tee "$RUNNER_TEMP/push.log" && break
+            [ "$attempt" = 3 ] && exit 1
+            sleep $((attempt * 10))
+          done
           digest=$(sed -n 's/^Digest: *//p' "$RUNNER_TEMP/push.log")
+          [ -n "$digest" ] || { echo "::error::helm push printed no digest"; exit 1; }
           cosign sign --yes "$REGISTRY/charts/osf@$digest"

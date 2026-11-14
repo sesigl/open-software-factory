@@ -31,7 +31,7 @@
     },
     "OPENAI_MODEL": {
       "type": "string",
-      "description": "The model Codex asks for, for example gpt-5.5. Default: Codex's default model."
+      "description": "The model Codex asks for, for example gpt-5.5. A model Codex does not know gets Codex's edit tool too. Default: Codex's default model."
     },
     "OSF_EFFORT": {
       "type": "string",

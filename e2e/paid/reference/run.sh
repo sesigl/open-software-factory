@@ -133,8 +133,9 @@ item="$(curl -fsS -H "authorization: Bearer $intake_token" -H 'content-type: app
   --data "$(jq -n --arg url "$issue" '{type: "task", title: "Add a function add(a, b)",
     description: "Implement the issue in the origin link.", requester: {kind: "person", id: "github:maintainer"},
     origin: {source: "forgejo", url: $url}, dedupeKey: $url}')" \
-  http://127.0.0.1:8081/v1/work-items | jq -r .id)"
+  http://127.0.0.1:8081/v1/work-items | jq -r '.workItem.id // empty')"
 echo "Work item: $item" | tee -a "$summary"
+[ -n "$item" ] || fail "intake answered the submission without a work item ID"
 
 status=received
 for _ in $(seq $((WAIT_SECONDS / 10))); do

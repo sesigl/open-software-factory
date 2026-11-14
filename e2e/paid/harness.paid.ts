@@ -11,7 +11,8 @@ import { client, ndJsonStream, PROTOCOL_VERSION } from "@agentclientprotocol/sdk
 const MAX_USD_PER_RUN = 0.2;
 const ADAPTERS = resolve(import.meta.dirname, "../../adapters/harness");
 
-// opencode calls OpenRouter's chat completions API. The key's credit limit is the hard limit of the budget.
+// opencode calls OpenRouter's chat completions API, codex its Responses API, both on the one model OPENAI_MODEL
+// that the key allows. The key's credit limit is the hard limit of the budget.
 const OPENROUTER = "https://openrouter.ai/api/v1";
 
 function required(name: string): string {
@@ -20,16 +21,16 @@ function required(name: string): string {
   return value;
 }
 
-// codex has no paid run yet: Codex offers its edit tool only to models it knows, and the key allows none of them.
+const openRouter = () => ({
+  OPENAI_BASE_URL: OPENROUTER,
+  OPENAI_API_KEY: required("OPENROUTER_API_KEY"),
+  OPENAI_MODEL: required("OPENAI_MODEL"),
+});
+
+// Codex knows no OpenRouter model; harness-codex adds the model to Codex's model catalog, so Codex offers it apply_patch.
 const harnesses: { name: string; env: () => Record<string, string> }[] = [
-  {
-    name: "opencode",
-    env: () => ({
-      OPENAI_BASE_URL: OPENROUTER,
-      OPENAI_API_KEY: required("OPENROUTER_API_KEY"),
-      OPENAI_MODEL: required("OPENAI_MODEL"),
-    }),
-  },
+  { name: "opencode", env: openRouter },
+  { name: "codex", env: openRouter },
 ];
 
 // claude-code runs only on a developer's machine, on that person's subscription: a token of `claude setup-token`, and

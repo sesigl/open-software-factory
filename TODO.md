@@ -1133,8 +1133,8 @@ owner before each slice: which model or service, and its budget.
     OpenRouter, `scorekit score --model` (`SCN-SCORE-046`), and the README links the report (ADR 0077).
   - [x] taskcapture (from T-09): the weekly job `models` of `taskcapture-suite.yml` runs opencode with a real model
     on OpenRouter on the small `prompt-injection` task, next to the oracle and reports it in the job summary (ADR 0077).
-  - [ ] taskcapture route (from T-09): route with the report's pick, once the OpenRouter key allows more than one
-    model (ADR 0077).
+  - [x] taskcapture route (from T-09): the owner's one model is enough; the weekly models job routes with the
+    report's pick (ADR 0077).
   - [ ] observer (from T-10): the job `observe` of `weekly-paid.yml` runs `observer analyze` on the scores of the
     scorekit slice above, `observer propose` for the first problem without an observer pull request, and
     `observer check` for the merged ones (ADR 0046, ADR 0077). Open: done when one observer pull request to this
@@ -1160,8 +1160,9 @@ owner before each slice: which model or service, and its budget.
   - [x] harness (from T-12, T-20): `e2e/paid/` and the script `test:paid`: one SMOKE-PAID run for opencode, weekly on
     OpenRouter with `deepseek/deepseek-v4.1-flash-1017`, and one for claude-code on a developer's subscription with
     `claude-haiku-5-5` (ADR 0052, ADR 0053, ADR 0076, ADR 0077).
-  - [ ] codex (from T-12): a SMOKE-PAID run of harness-codex with a model Codex knows, once the owner picks one
-    (ADR 0077).
+  - [ ] codex (from T-12): a SMOKE-PAID run of harness-codex, weekly on OpenRouter's Responses API with
+    `deepseek/deepseek-v4.1-flash-1017`; harness-codex adds a model Codex does not know to its model catalog, so Codex
+    offers it apply_patch (`SCN-HCODEX-012`, ADR 0077). Open: done when a run of `weekly-paid.yml` passes for codex.
   - [ ] reference factory (from T-27): a first run of the reference factory on a sample repository, with a paid
     model. The workflow `paid-reference-run.yml` exists (ADR 0128): a maintainer or an admin starts it with
     `gh workflow run paid-reference-run.yml -f ref=<branch>`; the implement stage on opencode implements an issue of a

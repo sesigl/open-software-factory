@@ -139,7 +139,10 @@ and a real model on OpenRouter, and
 reports it next to the oracle and the no-op agent, with the exception of each trial. With Harbor 0.24.0 opencode
 exits with `EPIPE` after its last step, so every trial has an exception, but its hidden tests still decide the
 reward. Its result does not fail the run: it measures the model
-([ADR 0077](../../docs/decisions/0077-paid-dogfood.md)).
+([ADR 0077](../../docs/decisions/0077-paid-dogfood.md)). Then `taskcapture route --tag dogfood --alias
+routes/implement --config deploy/compose/litellm/config.yaml` routes with the pick of a report of opencode alone
+(the oracle calls no model, and with a cost of 0 it would be the most efficient cell), and the job summary and the
+artifact hold the profile's LiteLLM config with that route.
 
 ## Releases
 

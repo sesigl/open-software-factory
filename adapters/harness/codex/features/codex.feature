@@ -76,3 +76,10 @@ Feature: What the codex adapter adds to the harness port
     And the adapter runs Codex with that gateway and "OPENAI_API_KEY" "testkit-other-key"
     When the client sends the prompt "fix the typo"
     Then the Responses API call has the header "authorization" "Bearer testkit-other-key"
+
+  @id=SCN-HCODEX-012 @status=implemented
+  Scenario: Codex offers a model it does not know its edit tool
+    Given a model gateway scripted to reply "done" when the prompt says "fix the typo"
+    And the adapter runs Codex with that gateway and "OPENAI_MODEL" "deepseek/deepseek-v4.1-flash-1017"
+    When the client sends the prompt "fix the typo"
+    Then the Responses API call for the model "deepseek/deepseek-v4.1-flash-1017" offers the tool "apply_patch"
