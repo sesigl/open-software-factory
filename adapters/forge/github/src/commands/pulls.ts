@@ -174,10 +174,12 @@ export async function rules(repo: string | undefined, branch: string | undefined
   const api = connect(repo);
   ensure(branch, "name the branch, like rules tester/web main");
   const path = `/branches/${encodeURIComponent(branch as string)}/protection`;
-  const found: Protection = await api.request<Protection>("GET", path).catch((error: unknown) => {
-    if (error instanceof GitHubError && error.status === 404 && /not protected/i.test(error.message)) return {};
-    throw error;
-  });
+  // GitHub answers 404 "Branch not protected" for a branch without protection, and 404 "Branch not found".
+  const unprotected = (error: unknown) =>
+    error instanceof GitHubError && error.status === 404 && /not protected/i.test(error.message);
+  const found: Protection = await api
+    .request<Protection>("GET", path)
+    .catch((error: unknown) => (unprotected(error) ? {} : Promise.reject(error)));
   return print({
     checks: found.required_status_checks?.contexts ?? [],
     approvals: found.required_pull_request_reviews?.required_approving_review_count ?? 0,

@@ -28,10 +28,11 @@ export async function commit(
   const ref = headRef(branch as string);
   const head = await api
     .request<{ object: { sha: string } }>("GET", ref.replace("/git/refs/", "/git/ref/"))
-    .catch((error: unknown) => {
-      if (error instanceof GitHubError && error.status === 404) throw new Error(`no branch ${repo}:${branch}`);
-      throw error;
-    });
+    .catch((error: unknown) =>
+      Promise.reject(
+        error instanceof GitHubError && error.status === 404 ? new Error(`no branch ${repo}:${branch}`) : error,
+      ),
+    );
   const parent = head.object.sha;
   const { tree } = await api.request<{ tree: { sha: string } }>("GET", `/git/commits/${parent}`);
   const entries = files.map(({ path, content }) => ({ path, mode: "100644", type: "blob", content }));
