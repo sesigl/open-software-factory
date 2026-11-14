@@ -137,6 +137,26 @@ jobs:
             --markdown "$RUNNER_TEMP/report.md" "$RUNNER_TEMP/jobs/oracle" "$RUNNER_TEMP/jobs/nop" \
             "$RUNNER_TEMP/jobs/opencode"
           cat "$RUNNER_TEMP/report.md" >> "$GITHUB_STEP_SUMMARY"
+      # The route of the report's pick (ADR 0077): routes/implement with the tag dogfood goes to the model, in the
+      # profile's LiteLLM config. From a report of opencode alone: the oracle and the no-op agent call no model, and an
+      # oracle with a cost of 0 would be the most efficient cell. A run without a scored, priced trial routes nothing.
+      - name: Route with the report's pick
+        if: always()
+        run: |
+          {
+            echo "## Route"
+            echo
+            if node modules/taskcapture/dist/cli.js report --out "$RUNNER_TEMP/route/report.json" "$RUNNER_TEMP/jobs/opencode" >/dev/null &&
+              node modules/taskcapture/dist/cli.js route --tag dogfood --alias routes/implement \
+                --config deploy/compose/litellm/config.yaml --out "$RUNNER_TEMP/route/litellm-config.yaml" "$RUNNER_TEMP/route/report.json"; then
+              echo
+              echo '```yaml'
+              cat "$RUNNER_TEMP/route/litellm-config.yaml"
+              echo '```'
+            else
+              echo "No route: the report has no scored opencode cell with a cost."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
       # Why a trial failed: Harbor's exception of each trial, so the summary explains a low correctness.
       - name: List the exceptions of the trials
         if: always()
@@ -158,3 +178,4 @@ jobs:
           path: |
             ${{ runner.temp }}/jobs/opencode/**/result.json
             ${{ runner.temp }}/report.*
+            ${{ runner.temp }}/route/
