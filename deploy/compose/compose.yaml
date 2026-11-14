@@ -299,14 +299,14 @@ services:
 
   foreman:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/foreman:0.10.0
+    image: ghcr.io/sesigl/open-software-factory/foreman:0.11.0
     build:
       context: ../images
       target: foreman
       secrets: [ca]
       args:
         PACKAGES: >-
-          @opensoftware/foreman@0.10.0 @opensoftware/harness-claude-code@0.6.0 @opensoftware/forge-github@0.7.0
+          @opensoftware/foreman@0.11.0 @opensoftware/harness-claude-code@0.6.0 @opensoftware/forge-github@0.7.0
           @opensoftware/forge-forgejo@0.7.0 @opensoftware/inference-litellm@0.5.0 @opensoftware/sandbox-docker@0.5.0
           @opensoftware/sandbox-kubernetes@0.4.0
     command: [foreman, serve]
