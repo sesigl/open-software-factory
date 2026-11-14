@@ -78,8 +78,12 @@
     temporalio/ui:2.57.0 nats:2.11.9-alpine jaegertracing/jaeger:2.22.0
     openpolicyagent/opa:1.21.0-static node:24.11.1-bookworm
     wollomatic/socket-proxy:1.13.2
+# The console's journeys open its pages in Chromium (ADR 0131).
+- suite: console
+  filter: "@opensoftware/console"
+  browser: chromium
 # Every other package, so a new module runs without a change here.
 - suite: rest
-  filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper !@opensoftware/intake !@opensoftware/foreman !@opensoftware/sandbox-docker !@opensoftware/sandbox-kubernetes !@opensoftware/inference-litellm !@opensoftware/forge-forgejo !@opensoftware/deploy !@opensoftware/e2e"
+  filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper !@opensoftware/intake !@opensoftware/foreman !@opensoftware/sandbox-docker !@opensoftware/sandbox-kubernetes !@opensoftware/inference-litellm !@opensoftware/forge-forgejo !@opensoftware/deploy !@opensoftware/e2e !@opensoftware/console"
   # packages/postgres uses fakes.postgres (ADR 0129).
   images: postgres

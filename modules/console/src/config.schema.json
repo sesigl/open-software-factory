@@ -132,7 +132,7 @@
     "CONSOLE_REFRESH": {
       "type": "string",
       "default": "10",
-      "description": "serve: the seconds after which the browser reloads the runs pages."
+      "description": "serve: the seconds after which the browser reloads the runs pages; 0 turns the reload off."
     },
     "CONSOLE_REPOSITORY_URL": {
       "type": "string",

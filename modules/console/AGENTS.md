@@ -42,6 +42,18 @@ Fastify server. The ARCH check enforces the layers.
 
 - Unit tests: none.
 
+## Journeys
+
+A journey runs in Chromium (`@kind=journey`, ADR 0131) only for a main flow. Each has its reason here:
+
+- SCN-CONSOLE-163, sign in and land on the runs: the first thing every person does, across the provider and three
+  pages, and the only proof that the shell's styles show the navigation on a desktop.
+- SCN-CONSOLE-164, the shell on a phone: only a browser lays out the page, so only it shows that the navigation
+  folds away behind "Menu" and opens again.
+
+Both start the console with `CONSOLE_REFRESH=0`: axe's rule `meta-refresh` (WCAG 2.2.1) flags the runs page's reload,
+which stays until live updates replace it (`TODO.md`, T-60).
+
 ## Budget
 
 - System tests: 60 seconds in total on the CI runner (88 scenarios in about 47 seconds of test time and 17.5 seconds

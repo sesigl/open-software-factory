@@ -1625,10 +1625,9 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   - [x] The roles on every page and form (`SCN-CONSOLE`): the own sign-in and the proxy mode with an access file
     refuse a person who is not on it. The pages that need `factory-engineer` or `admin` come with T-57 and T-58 and
     check the role there.
-  - [ ] The shell and the runs list in the new look, with the two journeys and the console's own suite with
-    `browser: chromium` (`SCN-CONSOLE`). Done: the shell, the theme link and the runs list (SCN-CONSOLE-157 to
-    -162). The two journeys and the suite follow; the shell names the factory, its version follows with
-    `@opensoftware/factory-files`.
+  - [x] The shell and the runs list in the new look, with the two journeys and the console's own suite with
+    `browser: chromium` (`SCN-CONSOLE`). The shell names the factory; its version follows with
+    `@opensoftware/factory-files`, and the cards in place of the table on a phone with T-60.
   - [ ] `osf init`, `osf up`, the profile, the chart, `console doctor`, the tutorial; one scenario of the profile
     with sign-in on (`SCN-REPO`, `SCN-DIST`, `SCN-CONSOLE`). After the console's release.
 
@@ -1905,9 +1904,11 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   scenario that still names it becomes `deprecated` in the same change.
 - **Watch out:** a page that shows nothing useful for a setting that is not there stays out of the navigation, as
   today's 404 of the inbox without its repository. The reload of the runs every `CONSOLE_REFRESH` seconds stays until
-  the foreman has a stream of run changes; a live island is its own item then.
+  the foreman has a stream of run changes; a live island is its own item then. axe flags the reload (`meta-refresh`,
+  WCAG 2.2.1), so the console's journeys run with `CONSOLE_REFRESH=0` until then.
 - **Done when:** no page uses Pico CSS, and `modules/console/package.json` has no dependency on Preact or htm.
 - **Slices:**
+  - [ ] The runs list as cards on a phone, with the main action at the bottom (`docs/design/runs-phone.html`).
   - [ ] The run page with its forms.
   - [ ] The work form and the inbox.
   - [ ] The factory pages, the improvement page and the health page (on Astro since T-53, in Pico's look).

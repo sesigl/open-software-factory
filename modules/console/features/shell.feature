@@ -38,3 +38,19 @@ Feature: The shell of the pages in the new look
     When a person opens "/"
     Then the page's first link is "Skip to the content", to "#content"
     And the page has the banner, the navigation "Main", the region "Account" and the main content "#content"
+
+  @id=SCN-CONSOLE-163 @status=implemented @kind=journey @realizes=SCN-FACTORY-RUNTIME-011
+  Scenario: A person signs in and lands on the runs in the shell (journey)
+    Given a console that signs in with OpenID Connect, an access file with "ada@acme.dev" as "admin" and a foreman with the run "Export reports as CSV"
+    And the provider signs in "ada@acme.dev"
+    When the person opens "/" in Chromium and presses "Sign in"
+    Then the person sees the heading "Runs", the run "Export reports as CSV" and "ada@acme.dev · admin" in the navigation
+    And the page passes the accessibility checks, and its screenshot is kept as "runs"
+
+  @id=SCN-CONSOLE-164 @status=implemented @kind=journey
+  Scenario: On a phone the navigation folds away behind "Menu" (journey)
+    Given a foreman with the run "Export reports as CSV"
+    When a person opens "/" on a phone
+    Then the run "Export reports as CSV" shows and the navigation's link "Health" does not
+    And after "Menu" the navigation shows "Runs", "Factory" and "Health"
+    And the page passes the accessibility checks, and its screenshot is kept as "phone-menu"

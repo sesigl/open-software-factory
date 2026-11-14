@@ -207,7 +207,7 @@ A server of a release before `/v1/health` fails its check with the advice to upd
 | `CONSOLE_OIDC_CLIENT_SECRET` | string |  | serve, with CONSOLE_SIGN_IN=oidc: the client's secret. |
 | `CONSOLE_OIDC_ISSUER` | string |  | serve, with CONSOLE_SIGN_IN=oidc: the provider's issuer, whose discovery document is <issuer>/.well-known/openid-configuration, like https://accounts.google.com. |
 | `CONSOLE_OTLP_URL` | string |  | doctor --deep: the OTLP/HTTP base URL of the collector, like http://jaeger:4318; it gets one span "console doctor" of the service "console" at /v1/traces. |
-| `CONSOLE_REFRESH` | string | `"10"` | serve: the seconds after which the browser reloads the runs pages. |
+| `CONSOLE_REFRESH` | string | `"10"` | serve: the seconds after which the browser reloads the runs pages; 0 turns the reload off. |
 | `CONSOLE_REPOSITORY_URL` | string |  | serve: the web URL of the factory's Git repository, like https://github.com/acme/factory. Set, the configuration pages link the file. |
 | `CONSOLE_SANDBOX_COMMAND` | string |  | doctor --deep: the command line, run with sh -c, of a sandbox adapter, like sandbox-docker. Set, doctor --deep runs its probe <template> example.com, which starts a sandbox with no allowed host, and wants "refused example.com". |
 | `CONSOLE_SANDBOX_TEMPLATE` | string | `"curlimages/curl:8.17.0"` | doctor --deep: the template of the sandbox probe; it needs curl. |
@@ -359,5 +359,7 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-160 | implemented | The link "Runs" counts the runs that wait for a person |
 | SCN-CONSOLE-161 | implemented | A person switches to the light theme and back, and stays on the page |
 | SCN-CONSOLE-162 | implemented | The shell has a skip link to the content and its landmarks |
+| SCN-CONSOLE-163 | implemented | A person signs in and lands on the runs in the shell (journey) |
+| SCN-CONSOLE-164 | implemented | On a phone the navigation folds away behind "Menu" (journey) |
 | SCN-CONSOLE-165 | implemented | A page without a session redirects to the sign-in and comes back to that page |
 | SCN-CONSOLE-166 | implemented | A session before its end stays valid |
