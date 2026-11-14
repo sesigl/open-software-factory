@@ -26,6 +26,52 @@ const retryForm = (run: RunView, actions: boolean) =>
       </form>`
     : null;
 
+/** The forms that signal a running or blocked run, shown when the console takes actions (ADR 0118). */
+const signalForms = (run: RunView, actions: boolean) => {
+  if (!actions || (run.state !== "running" && run.state !== "blocked")) return null;
+  const action = `/runs/${run.runId}/signals`;
+  const button = (type: string, label: string) =>
+    html`<form method="post" action=${action}>
+      <input type="hidden" name="type" value=${type} />
+      <button type="submit">${label}</button>
+    </form>`;
+  const running = run.stages.some((stage) => stage.state === "running");
+  const takenOver = run.stages.some((stage) => stage.state === "blocked" && stage.takenOverAt);
+  return html`<form method="post" action=${action}>
+      <input type="hidden" name="type" value="steer" />
+      <label>Steer <input name="message" required /></label>
+      <button type="submit">Steer</button>
+    </form>
+    ${running ? button("take-over", "Take over") : null} ${takenOver ? button("hand-back", "Hand back") : null}
+    ${button("cancel", "Cancel")}`;
+};
+
+/** The forms that approve or reject a pending gate, shown when the console takes actions with gatekeeper (ADR 0118). */
+const gateForms = (run: RunView, gate: GateView | undefined, decides: boolean) =>
+  decides && gate?.state === "pending"
+    ? html`<form method="post" action=${`/runs/${run.runId}/gates/${gate.id}`}>
+          <input type="hidden" name="decision" value="approved" />
+          <button type="submit">Approve</button>
+        </form>
+        <form method="post" action=${`/runs/${run.runId}/gates/${gate.id}`}>
+          <input type="hidden" name="decision" value="rejected" />
+          <label>Reason <input name="reason" /></label>
+          <button type="submit">Reject</button>
+        </form>`
+    : null;
+
+/** The signals people sent the run, with who sent them (ADR 0118). */
+const actionList = (run: RunView) =>
+  run.actions?.length
+    ? html`<h2>Actions</h2>
+        <ul>
+          ${run.actions.map(
+            (action) =>
+              html`<li>${action.type}${action.message ? `: ${action.message}` : ""} by ${action.by.displayName ?? action.by.id} at ${action.at}</li>`,
+          )}
+        </ul>`
+    : null;
+
 /** The attempt and the run before, for a run that a person ran again. */
 const runBefore = (run: RunView) =>
   run.retryOf
@@ -33,12 +79,12 @@ const runBefore = (run: RunView) =>
         <dd>Attempt ${run.attempt}, after <a href=${`/runs/${run.retryOf}`}>${run.retryOf}</a></dd>`
     : null;
 
-const stageRow = (stage: StageView, gates: Map<string, GateView>, links: RunLinks) => html`<tr>
+const stageRow = (stage: StageView, gates: Map<string, GateView>, links: RunLinks, gate: unknown) => html`<tr>
   <td>${stage.stage}</td>
   <td>${stage.wait ? "waits" : stage.agent}</td>
   <td>${stage.state}</td>
   <td>${stage.sessionId ? linkOr(links.transcript(stage.sessionId), stage.sessionId) : ""}</td>
-  <td>${gateText(stage, gates)}</td>
+  <td>${gateText(stage, gates)} ${gate}</td>
   <td>${(stage.checks ?? []).map((check) => `${check.name}: ${check.state}`).join(", ")}</td>
   <td>${stage.reason ?? ""}</td>
 </tr>`;
@@ -50,6 +96,7 @@ export function runPage(
   links: RunLinks,
   now: number,
   actions: boolean,
+  decides = false,
 ) {
   return html`<h1>${run.workItem.title}</h1>
     <dl>
@@ -69,7 +116,7 @@ export function runPage(
       <dt>History</dt>
       <dd>${linkOr(links.history, "Temporal")}</dd>
     </dl>
-    ${retryForm(run, actions)}
+    ${retryForm(run, actions)} ${signalForms(run, actions)}
     <h2>Origin</h2>
     <ul>
       ${requests.map(
@@ -91,7 +138,15 @@ export function runPage(
         </tr>
       </thead>
       <tbody>
-        ${run.stages.map((stage) => stageRow(stage, gates, links))}
+        ${run.stages.map((stage) =>
+          stageRow(
+            stage,
+            gates,
+            links,
+            gateForms(run, stage.gateId ? gates.get(stage.gateId) : undefined, actions && decides),
+          ),
+        )}
       </tbody>
-    </table>`;
+    </table>
+    ${actionList(run)}`;
 }

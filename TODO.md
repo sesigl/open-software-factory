@@ -828,7 +828,7 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
     instructions and checks, and stop when a work item names no repository.
   - [ ] A first run of the reference factory on a sample repository, with a paid model (ask the owner first).
 
-### [ ] T-28 · console actions and the work inbox (P1)
+### [x] T-28 · console actions and the work inbox (P1)
 
 - **Done when:** the console lists work items (an intake list route), submits work, approves or rejects a gate, and
   steers, cancels, takes over and hands back a run, each through the existing APIs with the person's identity.
@@ -836,8 +836,8 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
   - [x] intake's `GET /v1/inbox` and the console page `/work` (`SCN-INTAKE-046` to `-048`, `SCN-CONSOLE-043`, `-044`).
   - [x] Actions behind the sign-in proxy's identity header, off by default; the form "submit work" on `/work`
     (ADR 0089, `SCN-CONSOLE-045` to `-047`).
-  - [ ] Steer, cancel, take over and hand back a run, and decide a gate, from the console; each API records the
-    person who acted first.
+  - [x] Steer, cancel, take over and hand back a run, and decide a gate, from the console; each API records the
+    person who acted first (ADR 0118, `SCN-FORE-149`, `SCN-GATE-095` to `-097`, `SCN-CONSOLE-060` to `-063`).
 
 ### [x] T-29 · one trace store (P1)
 

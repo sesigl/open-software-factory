@@ -113,3 +113,33 @@ Feature: The run page
     Given a foreman with the run "run_0f3c7e91a2b44d6e8c05", the attempt 2 of the run "run_5d41402abc4b2a76b971"
     When a person opens the run's page
     Then the page names the attempt 2 and links the run before "/runs/run_5d41402abc4b2a76b971"
+
+  @id=SCN-CONSOLE-060 @status=implemented
+  Scenario: A person steers a running run from the run page
+    Given a console with "CONSOLE_USER_HEADER" set to "X-Forwarded-Email" and a foreman with the running run "run_5d41402abc4b2a76b971" whose stage "implement" runs
+    When the person "ada@acme.dev" opens the run's page and sends its form "Steer" with the message "use the existing date helper"
+    Then the page has the forms "Steer", "Take over" and "Cancel", and no form "Hand back"
+    And the answer redirects to "/runs/run_5d41402abc4b2a76b971"
+    And the foreman received the signal "steer" with the message "use the existing date helper" by the person "ada@acme.dev"
+
+  @id=SCN-CONSOLE-061 @status=implemented
+  Scenario: A person takes over, hands back and cancels a run from the run page
+    Given a console with "CONSOLE_USER_HEADER" set to "X-Forwarded-Email" and a foreman with the run "run_5d41402abc4b2a76b971" whose stage "implement" a person took over
+    When the person "ada@acme.dev" sends the forms "Take over", "Hand back" and "Cancel" of the run's page
+    Then the page has the form "Hand back"
+    And each answer redirects to "/runs/run_5d41402abc4b2a76b971"
+    And the foreman received the signals "take-over", "hand-back" and "cancel", each by the person "ada@acme.dev"
+
+  @id=SCN-CONSOLE-062 @status=implemented
+  Scenario: A person approves and rejects a run's pending gate from the run page
+    Given a console with "CONSOLE_USER_HEADER" set to "X-Forwarded-Email", a foreman with a run whose stage "ship" waits at the gate "g0123456789abcdef", and gatekeeper whose gate is "pending" for "leads"
+    When the person "ada@acme.dev" sends the form "Approve" of the run's page, and the form "Reject" with the reason "needs a test"
+    Then the page has the forms "Approve" and "Reject"
+    And each answer redirects to "/runs/run_5d41402abc4b2a76b971"
+    And gatekeeper received the decisions "approved" and "rejected" with the reason "needs a test", each by the person "ada@acme.dev"
+
+  @id=SCN-CONSOLE-063 @status=implemented
+  Scenario: A decision gatekeeper refuses shows gatekeeper's problem
+    Given a console with "CONSOLE_USER_HEADER" set to "X-Forwarded-Email" and gatekeeper that answers a decision of the gate "g0123456789abcdef" with 403 and "ada@acme.dev is not in leads"
+    When the person "ada@acme.dev" sends the form "Approve" of the run's page
+    Then the page answers 403 and says "ada@acme.dev is not in leads"

@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { ADA, foreman, NEW_RUN, openWith, RUN, retryForm, runOf, serving } from "./console.ts";
+import { ADA, buttons, foreman, NEW_RUN, openWith, RUN, retryForm, runOf, serving } from "./console.ts";
 
 scenario("SCN-CONSOLE-052", async ({ sut, fakes, given, when, then }) => {
   let url = "";
@@ -19,6 +19,7 @@ scenario("SCN-CONSOLE-052", async ({ sut, fakes, given, when, then }) => {
   await then('neither page has the form "run again"', async () => {
     expect(pages.map(({ status }) => status)).toEqual([200, 200]);
     expect(pages.map(({ html }) => retryForm(html))).toEqual([undefined, undefined]);
-    expect(pages.map(({ html }) => html.includes("<form"))).toEqual([false, false]);
+    // The running run has the forms that signal it (ADR 0118), the complete run none.
+    expect(pages.map(({ html }) => buttons(html))).toEqual([["Steer", "Cancel"], []]);
   });
 });

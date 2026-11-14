@@ -57,7 +57,15 @@ your sign-in proxy sends the signed-in person, like `X-Forwarded-Email`. Then `/
 form that intake refuses 502 with intake's answer. Without `CONSOLE_INTAKE_URL` the console takes no form "submit work".
 The page of a `failed` or `cancelled` run has the form "run again" ([ADR 0105](../../docs/decisions/0105-run-a-work-item-again.md)),
 which the console posts to the foreman's `POST /v1/runs/<runId>/retry` with that person as `by`; it then leads to the
-new run's page. A retry that the foreman refuses answers with the foreman's status and its problem's detail. Only set the variable behind a
+new run's page. A retry that the foreman refuses answers with the foreman's status and its problem's detail.
+The page of a `running` or `blocked` run has the forms "Steer" (with a message), "Take over" (while a stage runs),
+"Hand back" (while a person holds a stage) and "Cancel", which the console posts to the foreman's
+`POST /v1/runs/<runId>/signals` with that person as `by`; the run lists them under "Actions"
+([ADR 0118](../../docs/decisions/0118-actions-record-the-person.md)). With `CONSOLE_GATEKEEPER_URL` a pending gate of a
+stage has the forms "Approve" and "Reject" (with a reason), which the console posts to gatekeeper's
+`POST /v1/gates/<gateId>/decisions` with that person as `by`: gatekeeper refuses a person who is in no group the gate
+waits for, so list the identity the proxy sends, like `ada@acme.dev`, in gatekeeper's groups. Each form leads back to
+the run's page, or answers with the API's status and its problem's detail. Only set the variable behind a
 proxy that sets the header and removes it from the browser's requests.
 
 Several factories: list each foreman in `CONSOLE_FOREMAN_URL`, comma-separated, and their tokens in the same order in
@@ -203,3 +211,7 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-057 | implemented | The runs page links the next page while a foreman has more runs |
 | SCN-CONSOLE-058 | implemented | The work page links the next page of intake's inbox |
 | SCN-CONSOLE-059 | implemented | "console doctor" fails on a groups file it cannot read |
+| SCN-CONSOLE-060 | implemented | A person steers a running run from the run page |
+| SCN-CONSOLE-061 | implemented | A person takes over, hands back and cancels a run from the run page |
+| SCN-CONSOLE-062 | implemented | A person approves and rejects a run's pending gate from the run page |
+| SCN-CONSOLE-063 | implemented | A decision gatekeeper refuses shows gatekeeper's problem |
