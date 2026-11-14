@@ -78,6 +78,9 @@ Layers 00–03 can be vendor-hosted or self-hosted.
 
 These are the first places to add our own requirements.
 
+[`talk-analysis-improves-itself.md`](talk-analysis-improves-itself.md) records the speaker's later answers to
+points 2, 6, 8 and 9.
+
 1. How to prove that self-improvement works (sample size, when to revert a change).
 2. Whether LLM judges can be trusted; calibration against human labels is not discussed.
 3. How benchmark replay avoids real side effects.

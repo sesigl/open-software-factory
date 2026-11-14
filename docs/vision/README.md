@@ -1,7 +1,8 @@
 # Vision
 
 [`software-factory.feature`](software-factory.feature) holds the factory-level requirements, derived from
-[`talk-analysis.md`](talk-analysis.md). Module scenarios link to them with `@realizes=SCN-FACTORY-...`. A vision
+[`talk-analysis.md`](talk-analysis.md); [`talk-analysis-improves-itself.md`](talk-analysis-improves-itself.md) is a second
+reference that adds answers to some of its open points. Module scenarios link to them with `@realizes=SCN-FACTORY-...`. A vision
 scenario says `@status=implemented` when at least one module scenario realizes it and every realizing scenario that is
 not `deprecated` is `implemented`; otherwise it says `planned`. The check VISION keeps the status lines to that rule
 ([ADR 0117](../decisions/0117-vision-status-from-realizing-scenarios.md)); `make docs` writes the table below.
