@@ -1148,12 +1148,6 @@ owner before each slice: which model or service, and its budget.
     pins of `deploy/compose/compose.yaml` and the Helm chart to them, and give the agents of the reference factory
     `deploy/compose/factory/factory.yaml` their levels: `high` for triage and ship (a small model), `medium` for spec,
     implement and review (a smart one). The released images before them reject `effort` as an unknown field.
-  - [ ] foreman (from T-17): the foreman implements an issue labeled `factory` in this repository (phase 3). The
-    workflow `paid-factory-run.yml` exists (ADR 0128): a maintainer or an admin starts it with
-    `gh workflow run paid-factory-run.yml -f issue=<number>`; it checks the label `factory`, and the implement stage on
-    opencode, with `deepseek/deepseek-v4.1-flash-1017` on OpenRouter through LiteLLM and a budget of 0.50 USD, pushes
-    `factory/issue-<n>` and opens the pull request with the job's `GITHUB_TOKEN`. Done when a maintainer's run opens a
-    pull request that a person merges.
   - [x] intake (from T-16): the Compose profile on a developer's machine takes the `issues` webhook of
     `sesigl/open-software-factory` through a smee.io relay; `INTAKE_WEBHOOK_SECRET` turns on the profile's
     `/forge/events` (`SCN-DIST-014`), and `deploy/README.md` describes the relay and the webhook (ADR 0065). Issue #150,
@@ -1164,16 +1158,20 @@ owner before each slice: which model or service, and its budget.
   - [ ] codex (from T-12): a SMOKE-PAID run of harness-codex, weekly on OpenRouter's Responses API with
     `deepseek/deepseek-v4.1-flash-1017`; harness-codex adds a model Codex does not know to its model catalog, so Codex
     offers it apply_patch (`SCN-HCODEX-012`, ADR 0077). Open: done when a run of `weekly-paid.yml` passes for codex.
-  - [ ] reference factory (from T-27): a first run of the reference factory on a sample repository, with a paid
-    model. The workflow `paid-reference-run.yml` exists (ADR 0128): a maintainer or an admin starts it with
+  - [ ] reference factory and foreman (from T-27, T-17): a first run of the reference factory on a sample
+    repository, with a paid model. The workflow `paid-reference-run.yml` exists (ADR 0128): a maintainer or an admin starts it with
     `gh workflow run paid-reference-run.yml -f ref=<branch>`; the implement stage on opencode implements an issue of a
     tiny sample repository in a Forgejo of the job, with `deepseek/deepseek-v4.1-flash-1017` and a budget of 0.50 USD.
-    Done when a maintainer's run of it opens the pull request.
+    It is also the foreman slice (from T-17): the foreman with a real harness and model, opencode and
+    `deepseek/deepseek-v4.1-flash-1017`. Done when a maintainer's run of it opens the pull request on the sample
+    repository.
 
 ---
 
 ## After the plan: phase 3 and 4
 
 When T-17 is done, follow `docs/explanation/bootstrapping.md`: the factory implements this repository's
-`factory` issues with people at the gates, then observer improves our own `factory.yaml`. Add each new
-requirement as a vision scenario first, then as module scenarios and a new item here.
+`factory` issues with people at the gates, then observer improves our own `factory.yaml`. In phase 3 the factory
+implements an issue labeled `factory` of this repository and opens its pull request, and a person reviews and merges
+it; that run is not part of T-21. Add each new requirement as a vision scenario first, then as module scenarios and
+a new item here.

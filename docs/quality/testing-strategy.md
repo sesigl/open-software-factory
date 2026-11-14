@@ -39,7 +39,6 @@ version of a harness or a change of the provider can break them at any time.
 | claude-code | Claude Code fixes a typo on a developer's subscription. | By hand only; a subscription is one person's, never CI's. |
 | claude-code in a sandbox | Claude Code runs in a sandbox of the agents' template, holds only the placeholder of `CLAUDE_CODE_OAUTH_TOKEN`, and reaches Anthropic through the egress proxy, which puts the token in (ADR 0096). | By hand only, as claude-code. |
 | reference run | The reference factory's implement stage, on opencode through LiteLLM, turns an issue of a sample repository in a Forgejo of the job into a pull request (ADR 0128). | By hand only: `paid-reference-run.yml`, started by a maintainer or an admin. |
-| factory run | The same stage turns an issue of this repository labeled `factory` into a pull request on `factory/issue-<n>` (ADR 0128). | By hand only: `paid-factory-run.yml`, started by a maintainer or an admin. |
 
 Run the claude-code live tests again when one of these changes: the template of the reference factory's sandboxes,
 the version of `@opensoftware/harness-claude-code` or of Claude Code in it, or the egress hosts of the reference
