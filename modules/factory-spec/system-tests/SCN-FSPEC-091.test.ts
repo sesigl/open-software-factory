@@ -3,15 +3,19 @@ import { agent, factoryYaml, prompt, TRACKER_LOCK } from "./factory.ts";
 
 scenario("SCN-FSPEC-091", async ({ sut, fakes, given, when, then }) => {
   await given(
-    'a factory.yaml whose agent "triage" uses the MCP server "registry:io.github.acme/tracker@1.4"',
+    'a factory.yaml whose agent "triage" uses the MCP servers "registry:io.github.acme/tracker@1.4" and "@modelcontextprotocol/server-filesystem@2025.8.21"',
     async () => {
-      const yaml = factoryYaml({ agents: agent("triage", ["mcp: [registry:io.github.acme/tracker@1.4]"]) });
+      const yaml = factoryYaml({
+        agents: agent("triage", [
+          'mcp: [registry:io.github.acme/tracker@1.4, "@modelcontextprotocol/server-filesystem@2025.8.21"]',
+        ]),
+      });
       await sut.files.put("$INPUT/factory.yaml", yaml);
       await sut.files.put("$INPUT/agents/triage.md", prompt("triage"));
     },
   );
 
-  await given('factory.lock pins it to the version "1.4.2"', async () => {
+  await given('factory.lock pins the registry server to the version "1.4.2"', async () => {
     await sut.files.put("$INPUT/factory.lock", TRACKER_LOCK);
   });
 

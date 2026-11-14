@@ -17,8 +17,8 @@ const CHANGES = new Map<string, Change>([
 const USAGE = `usage: factory edit ${[...CHANGES.keys()].slice(0, -1).join("|")} <agent> <value>, or factory edit add-secrets-provider <name> <range>`;
 
 /** The text of the file after the edit; an edit of a file or into a text that does not pass lint fails. */
-export function edit(file: string, [operation = "", ...values]: string[]): string {
-  const change = CHANGES.get(operation);
+export function edit(file: string, [operation, ...values]: string[]): string {
+  const change = CHANGES.get(String(operation));
   if (!change || values.length !== 2) fail(USAGE);
   const text = readText(file);
   passes(file, text, `${file} does not pass "factory lint"`);
@@ -28,6 +28,6 @@ export function edit(file: string, [operation = "", ...values]: string[]): strin
 }
 
 function passes(file: string, text: string, refusal: string): void {
-  const { problems } = lintFile(file, false, text);
+  const { problems } = lintFile(file, undefined, text);
   if (problems.length > 0) fail(`${refusal}: ${problems.join("; ")}`);
 }

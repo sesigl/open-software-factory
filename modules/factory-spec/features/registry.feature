@@ -92,8 +92,8 @@ Feature: Pin MCP servers from the registry
 
   @id=SCN-FSPEC-091 @status=implemented
   Scenario: Plan with --check accepts a factory.lock that pins every registry server and no adapter
-    Given a factory.yaml whose agent "triage" uses the MCP server "registry:io.github.acme/tracker@1.4"
-    And factory.lock pins it to the version "1.4.2"
+    Given a factory.yaml whose agent "triage" uses the MCP servers "registry:io.github.acme/tracker@1.4" and "@modelcontextprotocol/server-filesystem@2025.8.21"
+    And factory.lock pins the registry server to the version "1.4.2"
     And the MCP Registry answers no request
     When the factory engineer runs "factory plan --check"
     Then the command exits with code 0
@@ -110,10 +110,10 @@ Feature: Pin MCP servers from the registry
     And the factory still has no factory.lock
 
   @id=SCN-FSPEC-093 @status=implemented
-  Scenario: Plan with --check names an adapter whose range changed since factory.lock pinned it
-    Given a factory.yaml with "claude-code" at "^2" under "providers.harness" and "github" at "^1" under "providers.forge"
-    And factory.lock pins the harness "claude-code" at "^2" to "2.0.0" and the forge "github" at "^0" to "0.3.1"
+  Scenario: Plan with --check names each adapter that factory.lock does not pin for its range
+    Given a factory.yaml with "claude-code" at "^2" and "codex" at "^1" under "providers.harness", "docker" at "^0" under "providers.sandbox" and "github" at "^1" under "providers.forge"
+    And factory.lock pins only the harness "claude-code" at "^2" to "2.0.0" and the forge "github" at "^0" to "0.3.1"
     When the factory engineer runs "factory plan --check"
     Then the command exits with code 1
-    And the output is "factory.lock has no pin of the forge \"github\" for \"^1\": run \"factory plan --adapters\""
+    And the output names, one line each, the harness "codex" for "^1", the sandbox "docker" for "^0" and the forge "github" for "^1", with "run \"factory plan --adapters\""
     And "factory.lock" still pins the forge "github" at "^0" to "0.3.1"

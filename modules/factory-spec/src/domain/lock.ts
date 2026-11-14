@@ -7,8 +7,10 @@ export const PROGRAM_PORTS = ["harness", "sandbox", "forge", "inference"] as con
 
 /** The registry servers of every agent, each once. */
 export function registryReferences(definition: FactoryDefinition): string[] {
-  const references = Object.values(definition.agents).flatMap((agent) => agent.mcp ?? []);
-  return [...new Set(references)].filter((reference) => parseReference(reference).registry);
+  const references = Object.values(definition.agents).flatMap(
+    ({ mcp }) => mcp?.filter((reference) => parseReference(reference).registry) ?? [],
+  );
+  return [...new Set(references)];
 }
 
 /**
@@ -20,9 +22,10 @@ export function staleLock(definition: FactoryDefinition, lock: Lock): string[] {
     .filter((reference) => !lock.mcp[reference])
     .map(missingEntry);
   const { adapters } = lock;
+  const { providers = {} } = definition;
   if (adapters)
     for (const port of PROGRAM_PORTS)
-      for (const [name, range] of Object.entries(definition.providers?.[port] ?? {}))
+      for (const [name, range] of Object.entries(providers[port] ?? {}))
         if (adapters[port]?.[name]?.range !== range)
           lines.push(`factory.lock has no pin of the ${port} "${name}" for "${range}": run "factory plan --adapters"`);
   return lines;

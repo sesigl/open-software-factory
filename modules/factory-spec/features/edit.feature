@@ -115,11 +115,11 @@ Feature: Edit factory.yaml
     And the error is the one line "factory.yaml declares no agent \"deploy\""
 
   @id=SCN-FSPEC-087 @status=implemented
-  Scenario: Edit refuses a factory.yaml that does not pass lint
-    Given a factory.yaml whose agent "triage" names the harness "codex", which providers.harness does not declare
+  Scenario: Edit refuses a factory.yaml that does not pass lint and names every problem on one line
+    Given a factory.yaml whose agent "triage" names the harness "codex" and the secret "ref:vault/linear-token", neither of them declared
     When the console runs "factory edit add-skill triage ./skills/review"
     Then the command exits with code 1
-    And the error is the one line "factory.yaml does not pass \"factory lint\": factory.yaml:8:5 harness \"codex\" is not declared under providers.harness"
+    And the error is the one line "factory.yaml does not pass \"factory lint\": factory.yaml:8:5 harness \"codex\" is not declared under providers.harness; factory.yaml:11:15 secret \"ref:vault/linear-token\" uses the provider \"vault\", which providers.secrets does not declare"
 
   @id=SCN-FSPEC-088 @status=implemented
   Scenario: Edit writes a value with YAML syntax in it as one string
@@ -141,3 +141,10 @@ Feature: Edit factory.yaml
     When the console runs "factory edit add-skill triage"
     Then the command exits with code 1
     And the error is the one line "usage: factory edit add-skill|remove-skill|add-secret|remove-secret|add-egress|remove-egress <agent> <value>, or factory edit add-secrets-provider <name> <range>"
+
+  @id=SCN-FSPEC-094 @status=implemented
+  Scenario: Edit keeps an anchor that no alias uses
+    Given a factory.yaml whose agent "triage" has the line "skills: &skills [./skills/review]" and the skill folders "skills/review" and "skills/testing"
+    When the console runs "factory edit add-skill triage ./skills/testing"
+    Then the command exits with code 0
+    And the output has the line "skills: &skills [./skills/review, ./skills/testing]" in place of "skills: &skills [./skills/review]"

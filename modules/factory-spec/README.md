@@ -378,10 +378,11 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FSPEC-084 | implemented | Edit refuses a secret reference whose provider is not declared and changes nothing |
 | SCN-FSPEC-085 | implemented | Edit refuses an egress host for an agent without a sandbox |
 | SCN-FSPEC-086 | implemented | Edit refuses an agent the factory does not declare |
-| SCN-FSPEC-087 | implemented | Edit refuses a factory.yaml that does not pass lint |
+| SCN-FSPEC-087 | implemented | Edit refuses a factory.yaml that does not pass lint and names every problem on one line |
 | SCN-FSPEC-088 | implemented | Edit writes a value with YAML syntax in it as one string |
 | SCN-FSPEC-089 | implemented | Edit names its usage for an edit it does not know |
 | SCN-FSPEC-090 | implemented | Edit names its usage when an argument is missing |
 | SCN-FSPEC-091 | implemented | Plan with --check accepts a factory.lock that pins every registry server and no adapter |
 | SCN-FSPEC-092 | implemented | Plan with --check names a registry server that factory.lock does not pin and writes no lock |
-| SCN-FSPEC-093 | implemented | Plan with --check names an adapter whose range changed since factory.lock pinned it |
+| SCN-FSPEC-093 | implemented | Plan with --check names each adapter that factory.lock does not pin for its range |
+| SCN-FSPEC-094 | implemented | Edit keeps an anchor that no alias uses |

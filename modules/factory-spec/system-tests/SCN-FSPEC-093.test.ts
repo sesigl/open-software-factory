@@ -3,16 +3,24 @@ import { adapterLock, agent, factoryYaml, prompt } from "./factory.ts";
 
 scenario("SCN-FSPEC-093", async ({ sut, given, when, then }) => {
   await given(
-    'a factory.yaml with "claude-code" at "^2" under "providers.harness" and "github" at "^1" under "providers.forge"',
+    'a factory.yaml with "claude-code" at "^2" and "codex" at "^1" under "providers.harness", "docker" at "^0" under "providers.sandbox" and "github" at "^1" under "providers.forge"',
     async () => {
-      const providers = ["harness:", '  claude-code: "^2"', "forge:", '  github: "^1"'];
+      const providers = [
+        "harness:",
+        '  claude-code: "^2"',
+        '  codex: "^1"',
+        "sandbox:",
+        '  docker: "^0"',
+        "forge:",
+        '  github: "^1"',
+      ];
       await sut.files.put("$INPUT/factory.yaml", factoryYaml({ providers, agents: agent("triage") }));
       await sut.files.put("$INPUT/agents/triage.md", prompt("triage"));
     },
   );
 
   await given(
-    'factory.lock pins the harness "claude-code" at "^2" to "2.0.0" and the forge "github" at "^0" to "0.3.1"',
+    'factory.lock pins only the harness "claude-code" at "^2" to "2.0.0" and the forge "github" at "^0" to "0.3.1"',
     async () => {
       const lock = adapterLock({
         harness: { "claude-code": { range: "^2", version: "2.0.0" } },
@@ -32,11 +40,11 @@ scenario("SCN-FSPEC-093", async ({ sut, given, when, then }) => {
   });
 
   await then(
-    'the output is "factory.lock has no pin of the forge \\"github\\" for \\"^1\\": run \\"factory plan --adapters\\""',
+    'the output names, one line each, the harness "codex" for "^1", the sandbox "docker" for "^0" and the forge "github" for "^1", with "run \\"factory plan --adapters\\""',
     async () => {
-      expect(run.stdout).toBe(
-        'factory.lock has no pin of the forge "github" for "^1": run "factory plan --adapters"\n',
-      );
+      const missing = ['harness "codex" for "^1"', 'sandbox "docker" for "^0"', 'forge "github" for "^1"'];
+      const lines = missing.map((pin) => `factory.lock has no pin of the ${pin}: run "factory plan --adapters"`);
+      expect(run.stdout).toBe(`${lines.join("\n")}\n`);
     },
   );
 
