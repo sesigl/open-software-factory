@@ -7,6 +7,7 @@ import { versionsOf } from "../adapters/registry.ts";
 import { readState, writeState } from "../adapters/state.ts";
 import { diff, summary } from "../domain/diff.ts";
 import { fail } from "../domain/errors.ts";
+import { PROGRAM_PORTS, registryReferences, staleLock } from "../domain/lock.ts";
 import { type AdapterPin, type Lock, type LockEntry, parseReference } from "../domain/mcp.ts";
 import { resolveDefinition } from "../domain/resolve.ts";
 import type { Factory } from "./load.ts";
@@ -19,9 +20,7 @@ import { applyWebhooks, webhookDrift } from "./webhooks.ts";
  * stay as they are.
  */
 export async function pin(factory: Factory, adapters = false): Promise<Factory> {
-  const references = [...new Set(Object.values(factory.definition.agents).flatMap((agent) => agent.mcp ?? []))].filter(
-    (reference) => parseReference(reference).registry,
-  );
+  const references = registryReferences(factory.definition);
   const lock: Lock = { version: 1, mcp: {} };
   for (const reference of references)
     lock.mcp[reference] = factory.lock.mcp[reference] ?? (await fromRegistry(reference));
@@ -30,9 +29,6 @@ export async function pin(factory: Factory, adapters = false): Promise<Factory> 
   if (references.length > 0 || pins) writeLock(factory.dir, lock);
   return { ...factory, lock };
 }
-
-/** The ports whose adapters the foreman starts with npx when its maps do not name them (ADR 0110). */
-const PROGRAM_PORTS = ["harness", "sandbox", "forge", "inference"] as const;
 
 /** Each adapter's pin: kept while its range is unchanged, else the newest npm version inside the range. */
 async function pinAdapters(factory: Factory): Promise<Record<string, Record<string, AdapterPin>>> {
@@ -80,6 +76,9 @@ function model(factory: Factory): Record<string, unknown> {
   );
   return { ...resolveDefinition(factory.definition, factory.lock), prompts };
 }
+
+/** "factory plan --check": one line per pin that factory.lock lacks, none when it is current. It writes nothing. */
+export const checkLock = (factory: Factory): string[] => staleLock(factory.definition, factory.lock);
 
 export async function plan(loaded: Factory, output: string, adapters = false): Promise<string[]> {
   const factory = await pin(loaded, adapters);

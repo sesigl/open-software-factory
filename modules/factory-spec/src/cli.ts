@@ -8,10 +8,11 @@ const HELP = `factory: one factory.yaml rendered for every harness, with lint, p
 Commands:
   factory lint [--gh-aw]                          Check factory.yaml and the access.yaml beside it; print each problem and each warning with its file, line and column. --gh-aw: the factory is rendered with gh-aw, so a cron automation runs.
   factory render [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]   Write AGENTS.md, the MCP servers and the skill links of one agent to $OUTPUT. --harness all writes every declared harness; --k8s adds its kagent resources and SandboxTemplate; --gh-aw adds a gh-aw workflow per GitHub automation.
-  factory plan [--adapters]                       Pin registry MCP servers in factory.lock; show what apply changes and what drifted, rendered files and webhooks. --adapters also pins each adapter under providers to the newest npm version in its range.
+  factory plan [--adapters] [--check]             Pin registry MCP servers in factory.lock; show what apply changes and what drifted, rendered files and webhooks. --adapters also pins each adapter under providers to the newest npm version in its range. --check only names what factory.lock does not pin, exits with 1 then, and writes nothing.
   factory apply [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]    Render like render, register the webhooks of forgejo and github automations (github ones not with --gh-aw), and record what was applied in OSF_DATA.
   factory diff <old> [<new>]                      Show the changes between two versions of factory.yaml, as files or Git revisions.
   factory resolve                                 Print the resolved definition as JSON: defaults filled in, registry servers pinned.
+  factory edit <edit> <agent> <value>             Print factory.yaml with one edit, comments and anchors kept; the file stays as it is. <edit> is add-skill, remove-skill, add-secret, remove-secret, add-egress or remove-egress; "factory edit add-secrets-provider <name> <range>" declares a secrets provider.
 
 Options:
   --file <path>   The factory definition. Default factory.yaml.
@@ -27,6 +28,7 @@ async function main(): Promise<number> {
       harness: { type: "string" },
       k8s: { type: "boolean" },
       adapters: { type: "boolean" },
+      check: { type: "boolean" },
       "gh-aw": { type: "boolean" },
       help: { type: "boolean" },
     },
@@ -53,9 +55,17 @@ async function main(): Promise<number> {
       return 0;
     },
     async plan() {
-      const [{ load }, { plan }] = await Promise.all([import("./commands/load.ts"), import("./commands/plan.ts")]);
-      print(await plan(load(file), outputFolder(), values.adapters));
-      return 0;
+      const [{ load }, { checkLock, plan }] = await Promise.all([
+        import("./commands/load.ts"),
+        import("./commands/plan.ts"),
+      ]);
+      if (!values.check) {
+        print(await plan(load(file), outputFolder(), values.adapters));
+        return 0;
+      }
+      const stale = checkLock(load(file));
+      print(stale.length > 0 ? stale : ["factory.lock is current."]);
+      return stale.length > 0 ? 1 : 0;
     },
     async apply() {
       const [{ load }, { apply }] = await Promise.all([import("./commands/load.ts"), import("./commands/plan.ts")]);
@@ -64,6 +74,10 @@ async function main(): Promise<number> {
     },
     async diff() {
       print((await import("./commands/diff.ts")).diffVersions(rest[0] ?? "", rest[1] ?? file));
+      return 0;
+    },
+    async edit() {
+      process.stdout.write((await import("./commands/edit.ts")).edit(file, rest));
       return 0;
     },
     async resolve() {

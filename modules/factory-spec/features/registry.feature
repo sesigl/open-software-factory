@@ -1,7 +1,8 @@
 @module=factory-spec @owner=maintainers
 Feature: Pin MCP servers from the registry
   An MCP server "registry:<name>@<range>" comes from the MCP Registry. "factory plan" pins the exact version, its
-  package or remote URL in factory.lock once; render and later plans read only the lock.
+  package or remote URL in factory.lock once; render and later plans read only the lock. "factory plan --check" only
+  names what the lock does not pin, so a check of a pull request fails while the lock is stale.
 
   @id=SCN-FSPEC-016 @status=implemented @realizes=SCN-FACTORY-RUNTIME-007
   Scenario: Plan pins an MCP server from the registry to an exact version in factory.lock
@@ -88,3 +89,31 @@ Feature: Pin MCP servers from the registry
     When the factory engineer runs "factory plan --adapters"
     Then the command exits with code 1
     And the output contains "the npm registry has no version of \"@opensoftware/harness-claude-code\" that matches \"^4\""
+
+  @id=SCN-FSPEC-091 @status=implemented
+  Scenario: Plan with --check accepts a factory.lock that pins every registry server and no adapter
+    Given a factory.yaml whose agent "triage" uses the MCP server "registry:io.github.acme/tracker@1.4"
+    And factory.lock pins it to the version "1.4.2"
+    And the MCP Registry answers no request
+    When the factory engineer runs "factory plan --check"
+    Then the command exits with code 0
+    And the output is "factory.lock is current."
+
+  @id=SCN-FSPEC-092 @status=implemented
+  Scenario: Plan with --check names a registry server that factory.lock does not pin and writes no lock
+    Given a factory.yaml whose agent "triage" uses the MCP server "registry:io.github.acme/tracker@1.4"
+    And the factory has no factory.lock
+    And the MCP Registry answers no request
+    When the factory engineer runs "factory plan --check"
+    Then the command exits with code 1
+    And the output is "factory.lock has no entry for \"registry:io.github.acme/tracker@1.4\": run \"factory plan\""
+    And the factory still has no factory.lock
+
+  @id=SCN-FSPEC-093 @status=implemented
+  Scenario: Plan with --check names an adapter whose range changed since factory.lock pinned it
+    Given a factory.yaml with "claude-code" at "^2" under "providers.harness" and "github" at "^1" under "providers.forge"
+    And factory.lock pins the harness "claude-code" at "^2" to "2.0.0" and the forge "github" at "^0" to "0.3.1"
+    When the factory engineer runs "factory plan --check"
+    Then the command exits with code 1
+    And the output is "factory.lock has no pin of the forge \"github\" for \"^1\": run \"factory plan --adapters\""
+    And "factory.lock" still pins the forge "github" at "^0" to "0.3.1"

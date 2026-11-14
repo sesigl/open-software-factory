@@ -43,8 +43,11 @@ export function serverKey(name: string): string {
   return name.split("/").pop() as string;
 }
 
+export const missingEntry = (reference: string): string =>
+  `factory.lock has no entry for "${reference}": run "factory plan"`;
+
 export function locked(lock: Lock, reference: string): LockEntry {
-  return lock.mcp[reference] ?? fail(`factory.lock has no entry for "${reference}": run "factory plan"`);
+  return lock.mcp[reference] ?? fail(missingEntry(reference));
 }
 
 /** The reference with the exact version factory.lock pins; npm references stay as written. */
