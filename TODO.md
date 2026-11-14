@@ -852,10 +852,19 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
   - [x] The profile: the foreman sends to Phoenix, the console links Phoenix's trace by `{traceId}`, and SeaweedFS
     leaves the profile (no consumer, ADR 0088). Jaeger then replaced Phoenix in the same places (ADR 0100).
 
-### [ ] T-30 · simple setup (P1)
+### [x] T-30 · simple setup (P1)
 
 - **Done when:** `osf init`, `osf up` and `osf doctor` (or their Compose equivalents) take a new team from a clone to a
   healthy factory, and one tutorial describes the first run.
+- **Slices:**
+  - [x] `osf init` writes `deploy/compose/.env` from `.env.example` with the factory's own secrets generated and the
+    rest empty, keeps an existing `.env`, and with `--factory <dir>` copies the reference factory for the team
+    (SCN-REPO-132 to -134, ADR 0119).
+  - [x] `osf up` refuses a missing `.env`, an empty value that `compose.yaml` requires and gatekeeper without Slack or
+    a forge token, and otherwise runs `docker compose up --detach --wait` in `deploy/compose/` (SCN-REPO-135, -136).
+  - [x] `osf doctor` runs `console doctor` in the profile and exits with its code (SCN-REPO-137).
+  - [x] The tutorial `docs/tutorials/first-run.md`, linked from "Run a factory" in `README.md` and from the quick
+    start of `deploy/README.md`.
 
 ### [ ] T-31 · the improvement path in the profile (P2)
 
