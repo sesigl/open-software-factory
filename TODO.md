@@ -1179,12 +1179,14 @@ working without an identity provider.
 
 | Mode | Set by | What a person gets |
 | --- | --- | --- |
-| Open, read-only | Nothing (today's default) | Today's pages, read-only, as ADR 0072 says. Every page of this wave that needs a role (Secrets, Changes, the switches of Skills) answers 404, like the inbox without its repository. |
-| Behind a proxy | `CONSOLE_USER_HEADER` (ADR 0089) | The person comes from the proxy's header. The roles of the access file apply. |
-| Own sign-in | The provider's settings (T-56) | The sign-in page, the session and the roles. Every page needs a session. |
+| Open, read-only | Nothing (today's default) | Today's pages, read-only, as ADR 0072 says. Every page and form of this wave that needs a role (Secrets, the forms of Changes, the switches of Skills) answers 404, like the inbox without its repository. |
+| Behind a proxy | `CONSOLE_USER_HEADER` (ADR 0089) | The person comes from the proxy's header. Without an access file, as today: every person behind the proxy acts as a `member`, and what needs `factory-engineer` or `admin` answers 404. With an access file, its roles apply, and a person who is not in it gets 403. |
+| Own sign-in | One explicit setting that names this mode (T-56) | The sign-in page, the session and the roles. Every page needs a session. |
 
-The profile and the chart turn on the own sign-in only when the provider's settings are in `.env` or the values, as
-they do for Slack. A check of `console doctor` exists only for what is turned on, so a fresh profile still passes.
+The own sign-in is switched on by name, never inferred from which other settings are present: with it on, a provider
+setting that is missing stops the console at its start. So a lost setting can never open a console that was closed.
+The profile and the chart switch it on only when the operator asks for it in `.env` or the values. A check of
+`console doctor` exists only for what is turned on, so a fresh profile still passes.
 
 ### Order
 
@@ -1194,19 +1196,21 @@ by side.
 | Unit | Order of the slices |
 | --- | --- |
 | docs, `docs/vision/` | T-51 first, before anything else |
-| `packages/testkit` | T-52 → T-55 → T-56 (`fakes.oidc`, sign-in of `fakes.github`) → T-57 (`fakes.openbao`) → T-58 (`fakes.github`: commit, merge) |
-| `modules/console` | T-53 → T-56 → T-57 → T-58 → T-59 → T-60 → T-61 |
-| `packages/ui` (new) | T-54, its slices with T-56, T-57 and T-59 |
+| `packages/testkit` | T-52 → T-56 (`fakes.oidc`, sign-in of `fakes.github`) → T-57 (`fakes.openbao`) → T-58 (`fakes.github`: commit, merge) → T-55 |
+| `modules/console` | T-52 (its tests on the page reader) → T-53 → T-56 → T-57 → T-58 → T-59 → T-60 → T-61 |
+| `packages/ui` (new) | T-54, its slices with T-56, T-57 and T-59; then T-55 with the first island |
 | `packages/factory-files` (new) | T-56 (read a factory, the access file) → T-58 (edits) → T-59 (skills) |
 | `contracts` | T-56 (access file) → T-59 (lock) → T-61 |
 | `modules/factory-spec` | T-56 (`lint` of the access file) → T-58 (the check `factory`) → T-59 |
-| `modules/foreman` | T-56 (uses the library's fetch) → T-59 (pinned skills) → T-61 |
-| secrets port, `adapters/secrets/openbao` (new), `packages/sandbox-egress` | T-57 |
+| `modules/foreman` | T-56 (uses the library's fetch) → T-57 (a stage without its secret) → T-59 (pinned skills) → T-61 |
+| secrets port, `adapters/secrets/openbao` (new), `packages/sandbox-egress`, the two sandbox adapters | T-57 |
 | forge port and its two adapters | T-58 |
 | `deploy/`, `tools/` setup commands | T-53 → T-56 → T-57 → T-58, each after the release of the packages it pins |
+| `e2e/` | T-57 → T-58 → T-59 |
 | `tools/checks` | T-52 → T-53 → T-54 → T-55 |
 
-T-52, T-53's first two slices and T-54's first two slices can start together after T-51. A slice of `deploy/` tests
+After T-51, these start together: the first two slices of T-52, the first slice of T-53 and the first slice of T-54.
+T-55 waits until a page needs its first island; the first release needs none (T-54). A slice of `deploy/` tests
 released packages (ADR 0095): it starts when the release it pins is published (`skills/release-packages`). Each new
 package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-module` and a first publish.
 
@@ -1223,8 +1227,9 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   item says so.
 - **Done when:** the vision scenarios, the ADR and the architecture page are merged, and the items below name them.
 - **Slices:**
-  - [ ] New vision scenarios in `docs/vision/software-factory.feature`, `@status=planned`, `@evidence=derived`, with
-    the owner's request of November 2026 as their source, then `make docs`. Write at least these, with the next free
+  - [ ] New vision scenarios in `docs/vision/software-factory.feature`, `@status=planned`, `@evidence=derived`, then
+    `make docs`. Every `@source` of the file is a time of the talk, and its header says so: give the owner's request of
+    November 2026 a form of its own, like `@source=owner-2026-11`, and add it to the header's legend. Write at least these, with the next free
     number of each area:
     - RUNTIME: only a person on the factory's access list signs in to the factory UI.
     - RUNTIME: a person stores the value of a secret in the factory UI; no page, log or agent shows it again; an agent
@@ -1256,7 +1261,8 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   matches `<tbody>`, `<tr>` and `<td>` without attributes), so a test breaks when the markup changes although the page
   still works. And no test can prove a sign-in redirect, an island or the layout on a phone.
 - **Build:** three kinds of UI test in `@opensoftware/testkit`. Each is a system test: one scenario, one test, the
-  built artifact from outside, and every check counts it (TRACE, STEPS, PASS, BUDGET, MUTATION).
+  built artifact from outside, counted by TRACE, STEPS, PASS and BUDGET. A page scenario and an island scenario also
+  count for MUTATION; a journey counts for no mutant (T-55).
 
   | Kind | Runs | Proves | Cost |
   | --- | --- | --- | --- |
@@ -1266,8 +1272,10 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
 
 - **In the testkit (this item):**
   - A page reader for HTTP: it fetches a page, parses the HTML and finds elements by role, accessible name, label and
-    text; it follows a link and sends a form with its fields, and follows the redirect. Adopt a DOM parser and the
-    queries of Testing Library's DOM package if they work without a browser; a test never names a CSS class or a tag.
+    text; it follows a link and sends a form with its fields, and follows the redirect. It also answers what today's tests ask of a document:
+    its title, whether and when it reloads itself, its stylesheets, whether it has a script, and its forms (a form
+    without a name has no role). Adopt a DOM parser and the queries of Testing Library's DOM package if they work
+    without a browser; a test never names a CSS class or a tag.
   - `sut.browser`: Playwright with Chromium. One browser per test process and a new context per scenario, like the
     database per scenario of ADR 0129. The same queries as the page reader: role, name, label, text.
   - Determinism: the clock of the testkit, reduced motion, one fixed locale and time zone, named viewport sizes (phone,
@@ -1277,18 +1285,21 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   - Evidence instead of pixel tests: each journey writes its screenshots, and the pull request shows them through
     proof, so the reviewer sees the UI. This repository uses its own tool.
   - A static file server for a built folder, for the workbench of T-54.
-  - One Playwright version in the repository (proof pins `playwright-core`); `make install` installs its Chromium.
+  - One Playwright version in the repository (proof pins `playwright-core`). CI installs Chromium only for a suite
+    with `browser`, through the existing action `capture-browser`; a developer installs it with a target of its own,
+    not with `make install`.
 - **Rules (the owner's decision; write them into `docs/quality/testing-strategy.md`):**
   - A behavior is a page scenario unless it needs a browser.
   - A journey scenario only for a main flow. In this wave: sign in and land on the runs; the shell on a phone; store
     a secret; switch a skill on and see the change go live. A new journey needs its reason in the module's
     `AGENTS.md`.
-  - An island scenario for each island, at the level of the island, and only when the island needs nothing heavy: no
-    server, no fake. An island that needs the console is proven inside a journey.
+  - An island scenario for each island, at the level of the island. An island needs nothing heavy: it gets its data
+    as properties on its page of the workbench, and one that loads data takes the address as a property, which the
+    workbench points at a static file. No island is proven only by a journey.
   - No test of a component inside an island, and none of a single `.astro` component. No component test that imports
     from `src/` (BOUNDARY).
   - A check, not prose: a UI test finds elements only by role, label or text (no CSS selector, no XPath, no test ID),
-    never waits for time to pass, and uses only the named viewport sizes.
+    or the page reader's facts of the document, never waits for time to pass, and uses only the named viewport sizes.
 - **What the new kinds replace:** no kind goes away. The smoke scenarios of `e2e/` prove the whole factory, not the
   UI. Unit tests stay excluded. The console's own readers move from tag patterns to the page reader in this item,
   before any page changes its markup; a scenario's text does not change and its test proves no less.
@@ -1306,8 +1317,9 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   queries exists, and the testing strategy names the three kinds.
 - **Slices:**
   - [ ] The ADR: the three kinds, the adopted libraries, the measured times.
-  - [ ] The page reader (`SCN-TK`), and the console's shared readers in `system-tests/console.ts` on it. This is the
-    only slice of the item that touches the console; it comes before T-53's page slice.
+  - [ ] The page reader (`SCN-TK`), and the console's tests on it: the shared readers in `system-tests/console.ts`
+    and the 14 test files that match literal tags themselves. This is the only slice of the item that touches the
+    console; it comes before T-53's page slice.
   - [ ] `sut.browser` with its guards, the accessibility helper, the screenshots as evidence and the static file
     server (`SCN-TK`); the browser in the suites and in the mutation shards, with its check (`SCN-REPO`).
   - [ ] The check on the queries of UI tests (`SCN-REPO`), and the rules in `docs/quality/testing-strategy.md` and
@@ -1323,7 +1335,8 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
 - **Build:** Astro in `modules/console`, with its Node adapter in middleware mode inside the Fastify server of
   `console serve`. Fastify keeps the CLI, every old page, and for a new page the route itself: the route checks the
   session and the role, loads the page's data with the code of `commands`, `adapters` and `domain` as today, and
-  hands it to Astro, which only renders the template. The SolidJS integration for islands. The module's `build`
+  hands it to Astro, which only renders the template. The SolidJS integration comes with the first island (T-55),
+  not before. The module's `build`
   script runs the Astro build, and the `bin` runs only built files (BOUNDARY-RUNTIME).
 - **Adopt (check first, record in the ADR):** Astro, `@astrojs/node`, `@astrojs/solid-js`, and Tailwind CSS or plain
   CSS on the tokens. The owner chose Astro; the ADR still records what was compared: Preact with hand-made islands
@@ -1331,7 +1344,11 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
 - **Rules for the code:**
   - A template holds no logic. A route in `.ts` computes plain values and passes them to the template (verify that
     the adapter's handler takes the page's data, Astro's `locals`). So REACH and MUTATION keep counting the logic as
-    they do today, and a template never calls an API.
+    they do today, and a template never calls an API. "No logic" means: the part above the markup holds only imports
+    and the page's data; an expression reads a property, loops over a list or switches on a boolean that the route
+    computed. The check of the templates enforces exactly this.
+  - A page keeps its HTTP status: many pages answer 404, 400, 502 or 503 with a page that names the problem. Check how
+    the route sets the status of a page that Astro renders.
   - Astro's source folder is not `src/pages`: that folder is today's layer `pages` of `.ts` files, and Astro would
     treat each as a route. Use a folder of its own, like `src/web/`.
   - A form is an HTML form that answers 303 to a page, or a page that names the problem. It works with script turned
@@ -1371,8 +1388,8 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
     start and suite times.
   - [ ] The build: Astro behind Fastify in `console serve`, `astro check` in the typecheck, the layers, turbo's
     inputs, and the checks' rules for templates (`SCN-REPO` scenarios for each changed check).
-  - [ ] The first page on Astro: the health page, the smallest one, after T-52's page reader. Its scenarios keep
-    their text.
+  - [ ] The first page on Astro: the health page, the smallest one, after T-52's page reader. It keeps the look of
+    Pico CSS; T-60 gives it the new look. Its scenarios keep their text.
   - [ ] The package and the image hold the built files; the profile and the chart pin the release (`SCN-DIST`).
 
 ### [ ] T-54 · the design system: `@opensoftware/ui` (P0)
@@ -1411,8 +1428,10 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   - Components as `.astro` files, built when a page of this wave needs them and not before: button, link, field with
     label, hint and error, input, select, switch, table, state badge, panel, page header, empty state, banner, dialog
     (the HTML `dialog` element), the shell with its navigation, an ID in monospace, a time.
-  - Islands in SolidJS, only the ones a page of this wave needs (candidates: the theme switch, the navigation on a
-    phone, copy to clipboard). Every island of the product lives here.
+  - No island in the first release. The shell works without script: the theme follows the system and a form sets it
+    in a cookie, so the server renders the right theme and nothing flashes; the navigation on a phone is a `details`
+    element. An island (SolidJS) comes only when a page needs one that a form cannot replace, like copy to clipboard
+    or a live state; every island of the product lives here, and its first one starts T-55.
   - The brand: wordmark and icon as SVG, with the favicon files.
   - The workbench: a static site built by Astro inside the package, with one page per component and per state of an
     island. It is the reference of the design system and the place where island scenarios run, served by the
@@ -1427,14 +1446,14 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
 - **Watch out:**
   - Accessibility is part of each component: a visible focus, the keyboard, a state never shown by colour alone (icon
     and word too), reduced motion, touch targets on a phone.
-  - The theme is set before the first paint, without a flash, and inside the Content-Security-Policy of T-53.
+  - The existing scenario SCN-CONSOLE-014 says that the runs page has no script element. It stays true, and it is a
+    good rule for every page of the first release.
   - An Astro library ships its `.astro` sources; the console compiles them. Say in the ADR how BOUNDARY, REACH and
     MUTATION treat this library.
   - It is a published package: `osf release-files` writes its release files (RELEASE), its first publish follows
     `skills/release-packages`, and its `AGENTS.md` sets the limits of DUP and MUTATION and its budget.
   - Do not build a zoo: a component without a page that uses it is removed.
-- **Done when:** the pages of T-56 to T-59 use only its components and tokens, both checks pass, and each island has
-  its island scenario.
+- **Done when:** the pages of T-56 to T-59 use only its components and tokens, and both checks pass.
 - **Slices:**
   - [ ] The approved mock-up (the owner's export of the canvas) and its values in `docs/design/`, with a short
     `README.md` of the direction.
@@ -1442,33 +1461,32 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   - [ ] The components and the workbench that the sign-in page and the shell need (with T-56).
   - [ ] The components that Secrets and Skills need (with T-57 and T-59).
 
-### [ ] T-55 · code that runs in the browser counts (P0)
+### [ ] T-55 · the first island: code in the browser counts (P2)
 
-- **Problem:** REACH and MUTATION see only the module's Node processes. The code of an island runs in the browser, so
-  no check would know whether a test reaches it or notices a change to it.
+- **Starts when:** a page needs its first island (T-54). The first release needs none, so this item waits and blocks
+  nothing.
+- **Problem:** MUTATION sees only code that runs in Node. An island's code runs in the browser, and
+  `tools/checks/quality.ts` counts added lines only for files that end in `.ts`. So no check would know whether a test
+  notices a change to an island.
 - **Build:**
-  - REACH for browser code: Chromium's V8 coverage through Playwright, mapped to source lines through source maps,
-    for `.tsx` files of `packages/ui`.
-  - MUTATION for browser code: Stryker's active mutant set in the page before its first script, and the mutants a
-    scenario ran read back from the page. Verify in the installed Stryker how the instrumented code holds both.
-  - The rule for journeys: a journey counts only for mutants of browser code. A mutant of server code that only a
-    journey reached counts as not covered. This is stricter than today, never weaker (ADR 0061), and it keeps a
-    journey out of the rerun of every server mutant: each such rerun would start Chromium again.
-  - The first island with its island scenario, and the first journey in the console, as the proof.
+  - `packages/ui` is a library: Stryker reruns all its tests for each mutant, without coverage (ADR 0039,
+    `tools/scaffold/mutation.ts`). So MUTATION for an island needs one thing: the active mutant set in the page before
+    its first script. Verify in the installed Stryker how the instrumented code reads it. REACH does not apply to a
+    library; MUTATION covers its lines.
+  - `.tsx` files count as source in the checks that read added lines.
+  - The rule for journeys: a journey proves a flow (TRACE, STEPS, PASS, BUDGET) and counts for no mutant. Every
+    island has island scenarios in `packages/ui`, which notice its mutants. Server code is noticed by page scenarios,
+    as today. So a mutant never starts the console with a browser.
+  - The first island with its island scenarios, as the proof.
 - **Watch out:**
-  - A mutant reruns every scenario file that ran it, each in a new test run (ADR 0061). Keep an island small, and
-    keep what it decides in its props, which the server computes.
-  - `modules/console` and `packages/ui` each need a suite in `.github/test-suites.yml` with `browser: chromium`; the
-    console is in the suite `rest` today.
-  - Measure one island scenario, one journey and one mutation shard with a browser, and write the numbers into the
-    ADR. The console's budget rises only with a measured reason.
-- **Done when:** one island scenario and one journey scenario pass in `make verify` on CI, a line of an island that
-  no test reaches fails REACH, and a missed mutant in an island fails MUTATION.
+  - Keep an island small, and keep what it decides in its properties, which the server computes.
+  - `packages/ui` needs a suite in `.github/test-suites.yml` with `browser: chromium`, and the console's suite too
+    once it has a journey (T-56); the console is in the suite `rest` today.
+  - Measure one island scenario and one mutation shard with a browser, and write the numbers into the ADR.
+- **Done when:** an island scenario passes in `make verify` on CI, and a missed mutant in an island fails MUTATION.
 - **Slices:**
-  - [ ] The ADR; coverage from the browser in REACH (`SCN-TK`, `SCN-REPO`).
-  - [ ] Mutants in the browser and the rule for journeys in MUTATION (`SCN-TK`, `SCN-REPO`).
-  - [ ] The first island scenario in `packages/ui` and the first journey in the console, with their suites
-    (`SCN-UI`, `SCN-CONSOLE`). Needs T-53 and T-54's second slice.
+  - [ ] The ADR; `.tsx` in the checks; the active mutant in the page (`SCN-TK`, `SCN-REPO`).
+  - [ ] The first island with its island scenarios and its suite (`SCN-UI`).
 
 ### [ ] T-56 · sign-in, roles and the shell (P0)
 
@@ -1493,6 +1511,8 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
     | `factory-engineer` | The same, and change the factory from the UI (T-58, T-59) |
     | `admin` | The same, and store and delete secrets (T-57) |
 
+  - **The mode.** One setting switches the own sign-in on by name ("The console's three modes"). With it on, the
+    console does not start without the provider's settings, the session key, its address and an access file.
   - **One hook for the person.** A Fastify hook in front of every page, old and new, finds the person (the session or
     the proxy's header), reads the role, and answers. Not Astro's middleware: the old pages do not pass through it.
     Without a session: `/signin`, the provider's callback, the static files and a new probe route. The probe route
@@ -1509,9 +1529,14 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
     is `CONSOLE_SESSION_SECRET`; the console accepts two keys, so a key can change without signing everyone out. A
     page without a session redirects to `/signin` and comes back to the page the person asked for (local paths only);
     a form without a session answers 401, and without the role 403.
-  - **Only over loopback or HTTPS.** On any other host the sign-in page refuses and says why: the cookie and, later,
-    a secret's value would cross the network in clear text. A team on a private network puts its own TLS proxy in
-    front; a setting tells the console that it is behind one.
+  - **The console's own address.** One setting, like `CONSOLE_URL` with the default `http://localhost:8080`, is the
+    source of the provider's callback address, of the same-origin rule and of the rule below. Inside a container the
+    console cannot see where a request came from, so it never decides this from the connection. A request for another
+    host is sent to this address before the sign-in starts; otherwise the cookie of the sign-in would be set on one
+    host and missed on the other.
+  - **Only over loopback or HTTPS.** When the address is neither, the console with sign-in on does not start and says
+    why: the cookie and, later, a secret's value would cross the network in clear text. A team on a private network
+    puts its own TLS proxy in front and sets the address to its `https://` URL.
   - **The person in every action** stays `by: { kind: "person", id: <email> }` (ADR 0118), so the members of
     gatekeeper's groups file match the same emails.
   - **The sign-in page.** The first screen of the product, as approved in T-54: the icon, the name, one button per
@@ -1519,15 +1544,16 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
     where the list lives.
   - **The shell.** The layout of every new page: the navigation (only what works, what the mode offers and what the
     role may open), the factory's name and version, the account with the name, the role and "Sign out", the theme
-    switch. On a phone the navigation folds away. A skip link and landmarks. The pages that still have the old look
-    stay reachable from the navigation.
+    form. It has no script (T-54). On a phone the navigation folds away. A skip link and landmarks. The pages that
+    still have the old look stay reachable from the navigation.
   - **The runs list** `/` in the new look. SCN-CONSOLE-001 names the stylesheet `/pico.css` of this page: write its
     successor with `@replaces`, mark the old one `deprecated` and delete its test, in the same change. The other
-    scenarios of the runs list keep their text.
+    scenarios of the runs list keep their text, SCN-CONSOLE-014 ("the page has no script element") among them.
   - **Setup.** `osf init` generates `CONSOLE_SESSION_SECRET` (today it generates only names that end in `_PASSWORD`,
-    `_API_TOKEN` or `_MASTER_KEY`) and asks for nothing else; `osf up` names a provider setting that is half filled.
-    `deploy/README.md` and `docs/tutorials/first-run.md` get a part "turn on sign-in" for Google and for GitHub, with
-    the callback on `http://localhost`. `console doctor` checks, with sign-in on, that the provider's discovery
+    `_API_TOKEN` or `_MASTER_KEY`) and asks for nothing else; `osf up` names each provider setting that is missing
+    when sign-in is on. `deploy/README.md` and `docs/tutorials/first-run.md` tell a person to open the console at
+    `http://localhost:8080` (today they say `127.0.0.1`), and get a part "turn on sign-in" for Google and for GitHub
+    with the callback on that address. `console doctor` checks, with sign-in on, that the provider's discovery
     answers and that the access file has an admin who is not the example.
   - **In the testkit:** `fakes.oidc()`, an identity provider that signs in the person a test names (discovery,
     authorize, token, keys), reachable from a container for the scenarios of `deploy/`, and the sign-in endpoints in
@@ -1539,9 +1565,12 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
 - **Watch out:**
   - The existing scenarios of the open mode and of the proxy mode stay as they are (for example SCN-CONSOLE-026,
     -046 and -047): the own sign-in is a third mode, not a change of the two.
-  - A browser sends a cookie of `localhost` to every port of `localhost`. The profile opens the console on
-    `localhost` and links Jaeger, LiteLLM and the Temporal UI on `127.0.0.1` (`OSF_HOST`), so they never get the
-    session cookie. Keep it that way and say it in the docs.
+  - A browser sends a cookie of a host to every port of that host. Today the docs open the console on `127.0.0.1`,
+    the same host as the links to Jaeger, LiteLLM and the Temporal UI (`OSF_HOST`), so these tools would get the
+    session cookie. Make it so that the console is on `localhost` and the tools stay on `127.0.0.1`, and say why in
+    the docs.
+  - GitHub takes a token for Git over HTTPS only as Basic credentials (ADR 0096): the library's fetch of a private
+    repository sends it that way.
   - Google and most providers accept `http://localhost` as a callback, but no other host without HTTPS.
   - Some providers send no "verified" flag for the email. Do not guess: a provider without it needs an explicit
     setting that names the risk.
@@ -1552,28 +1581,34 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   - Whoever may write to the factory's repository can make themselves `admin`: `access.yaml` lives there. The docs
     say that write access to that repository is admin access to the factory, and that the repository should be
     private, since it holds emails.
-  - When `CONSOLE_USER_HEADER` and a provider are both set, the console does not start and names both.
+  - When `CONSOLE_USER_HEADER` is set and the own sign-in is on, the console does not start and names both.
 - **Realizes:** the new RUNTIME scenario of the access list and the new ACCESS scenario of the phone (T-51).
 - **First scenarios:** a person on the access list signs in and lands on the runs; a person who is not on it is
   refused and reads why; an email that the provider did not verify is refused; a page without a session redirects to
   the sign-in and comes back; `next` with another host is ignored; "Sign out" ends the session; a session past its
   end asks to sign in again; a cookie of the second key is accepted; a person removed from the access file loses
   access without a restart; an access file that cannot be read refuses everyone after the set time; a member does not
-  see Secrets and gets 403 for its form; a host that is neither loopback nor HTTPS refuses the sign-in; the open mode
-  shows no page that needs a role; the navigation shows only what works; the probe route answers without a session;
+  see Secrets and gets 403 for its form; a console whose address is neither loopback nor HTTPS does not start with
+  sign-in on; a person who opens the console on `127.0.0.1` is sent to its address and signs in; with sign-in on and
+  a provider setting missing, the console does not start; the open mode shows no page that needs a role; behind a
+  proxy without an access file a person acts as a member and Secrets answers 404; behind a proxy with an access file a
+  person who is not in it gets 403; the navigation shows only what works; the probe route answers without a session;
   on a phone the navigation folds away (journey); sign in and land on the runs (journey).
 - **Done when:** the Compose profile on a laptop, with a provider in `.env`, shows the sign-in page, a person of
   `access.yaml` signs in with Google or GitHub and sees the runs in the new shell, nobody else gets past the sign-in,
   and a profile without a provider works as today.
 - **Slices:**
   - [ ] The ADR: the library, the session, the roles, the modes and the hook.
-  - [ ] `@opensoftware/factory-files` with the fetch, used by the foreman, and the access file in `contracts/`, the
-    library and `factory lint` (its own prefix, `SCN-CTR`, `SCN-FSPEC`, `SCN-FORE` unchanged).
+  - [ ] `@opensoftware/factory-files` with the fetch, used by the foreman (its own prefix; the foreman's `SCN-FORE`
+    scenarios of ADR 0124 pass unchanged); its first publish.
+  - [ ] The access file in `contracts/`, the library and `factory lint` (`SCN-CTR`, the library's prefix,
+    `SCN-FSPEC`).
   - [ ] `fakes.oidc()` and GitHub's sign-in in `fakes.github` (`SCN-TK`).
   - [ ] The hook, sign-in, session and sign-out in the console, with the sign-in page and the probe route
     (`SCN-CONSOLE`).
   - [ ] The roles on every page and form (`SCN-CONSOLE`).
-  - [ ] The shell and the runs list in the new look, with the two journeys (`SCN-CONSOLE`).
+  - [ ] The shell and the runs list in the new look, with the two journeys and the console's own suite with
+    `browser: chromium` (`SCN-CONSOLE`).
   - [ ] `osf init`, `osf up`, the profile, the chart, `console doctor`, the tutorial; one scenario of the profile
     with sign-in on (`SCN-REPO`, `SCN-DIST`, `SCN-CONSOLE`). After the console's release.
 
@@ -1601,14 +1636,17 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
     with a token stored in the UI. Close that gap in `packages/sandbox-egress` and the sandbox port's conformance
     scenarios, and say in the ADR when a changed value takes effect (at the start of the sandbox, or per request).
   - **A run that cannot work says so first.** A stage whose agent declares an OpenBao secret without a value fails
-    before its first turn and names the secret.
+    before its first turn and names the secret. The check asks only whether the secret exists: the read token may read
+    a secret's metadata for this.
   - **Two tokens with two policies.** The console's token may write and delete values and read names and metadata; it
     may not read a value. The egress proxy's token may only read. So a fault in the console cannot show a secret. One
     mount per factory; the read token of a factory's sandboxes reads that whole mount.
   - **In the testkit:** `fakes.openbao()`, the real OpenBao binary in development mode, pinned by `make install`, one
     server per test process and a mount per scenario (ADR 0049, ADR 0129). It is the first real OpenBao in the tests
     of the sandbox adapters too.
-  - **The Compose profile.** An `openbao` service with its data on a volume and its audit log on. Decide in the ADR,
+  - **The Compose profile.** An `openbao` service, always on, with its data on a volume and its audit log on. The
+    scenarios of `deploy/` and `e2e/` start the profile once per scenario: measure what the service adds to both
+    suites before it is added. Decide in the ADR,
     and prove with a scenario that restarts the profile: who initializes it and where the unseal key and the root
     token go; how it unseals after a restart without a person (OpenBao's own automatic unseal for one node if the
     pinned version has one); and how the two tokens reach the services. `osf init` generates the two token IDs into
@@ -1620,7 +1658,7 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
     tokens of the team's own OpenBao, and the docs give the two policies.
   - **The page `/secrets`** (role `admin`), as approved in T-54. One list of the secrets that the factory's agents
     declare and of the names in the store, each with a state: "set" (who and when), "missing" (declared without a
-    value; names the agents and skills that need it) or "not used" (stored, declared by no agent). A form sets or
+    value; names the agents that need it, and from T-59 on the skills) or "not used" (stored, declared by no agent). A form sets or
     replaces a value in a field that never shows it again; "Delete" asks first. Secrets of the providers `env` and
     `file` are listed as set outside the UI. The page says when a new value takes effect and that it is sent only to
     the hosts the agent may reach.
@@ -1688,18 +1726,26 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
     the edit>` from that commit, commits, opens the pull request with what changes and who asked for it, asks the
     forge to merge when green, and answers 303 to `/changes`. The branch starts at the commit that was read, so a
     change that arrived in between shows as a conflict and overwrites nothing.
-  - **The page `/changes`:** the newest pull requests whose branch starts with `console/`, like the inbox lists
-    `observer/` (ADR 0073). The states: "checking", "live" with the factory version, "failed" with the name of the
+  - **The page `/changes`:** the newest pull requests whose branch starts with `console/` and whose author is the
+    user of the console's token, like the inbox lists `observer/` (ADR 0073). A branch that somebody else pushed under
+    that name is not a change of the console and gets no button. Every signed-in person sees the page; its buttons
+    need the role. The states: "checking", "live" with the factory version, "failed" with the name of the
     failed check and the link to the pull request, "conflict", "discarded". The page asks `pr` only for the changes
     that are still open. A failed or conflicting change has two buttons: "Try again" closes the pull request, deletes
-    its branch and makes the change again on the newest commit; "Discard" closes it and deletes its branch. So no
+    its branch and makes the change again on the newest commit; "Discard" closes it and deletes its branch. The
+    console keeps no state, so it reads the edit of "Try again" from a line that it wrote into the pull request for a
+    program to read; it checks that line like a form (anyone who may write to the repository can change it) and checks
+    the person's role again. So no
     failed change stays armed to merge later without the person. A change that is not live yet also shows where it
     applies, for example beside the skill. While a change is checking, the page reloads itself.
   - **The check comes first.** The console asks for a merge only for a change whose check `factory` it can rely on:
     - The main branch requires the check (`rules`): the forge merges when it is green.
-    - The forge cannot merge when green for this repository: the change waits as "checking", and when the check is
-      green the page shows "ready" with one button "Merge", which the console refuses while the check is not green.
-    - The repository has no check `factory` at all: the console opens no change and says what is missing.
+    - The forge cannot merge when green for this repository: the change waits as "checking". Every open change of
+      the console whose check `factory` is green shows "ready" with one button "Merge"; the console refuses the
+      button while the check is not green.
+    - The repository has no check `factory`: the console opens no change and says what is missing. It knows this
+      without state: the branch's rules do not require the check, and the newest commit of the main branch carries
+      no check of that name.
     A workflow in the reference factory's folder runs `factory lint` and `factory plan --check` (fails when the lock
     is not current) and posts the check `factory`.
   - **The profile.** A factory from a local folder (`FACTORY_DIR`) stays the default: the pages then show the
@@ -1707,7 +1753,8 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
     `factory-repo` clones it into the same volume at each start, so gatekeeper's policy and groups, the console's
     groups and the `factory` tools read it as today, and a change to them takes effect at a restart, as today. The
     foreman and the console read `factory.yaml`, the access file and the skills from the repository at each run and
-    request (`git+<url>#main`, ADR 0124) with the token of T-56's library. The chart gets the same choice.
+    request (`git+<url>#main`, ADR 0124). The clone of `factory-repo` and both fetches use the token of T-56's library
+    for a private repository. The chart gets the same choice.
 - **Adopt (check first):** the forge's own merge-when-green (GitHub's auto-merge, Forgejo's merge when checks
   succeed) before any loop of our own; a merge step in the factory repository's own workflow as the alternative for a
   forge without it; the `yaml` package's document API for edits that keep comments (already a dependency);
@@ -1783,7 +1830,8 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
     (fix the form in the ADR, in line with `git+<url>#<ref>`). `factory plan` writes its commit and a hash of its
     files to `factory.lock` (an added optional field; check with CONTRACT that it is no breaking change). The foreman
     fetches it at that commit and refuses a reference without a pin, as it does for an MCP server of the registry
-    (ADR 0112). `factory render` links it for a person's checkout.
+    (ADR 0112). `factory render` links it for a person's checkout. The fetch of a pinned skill is the library's, with
+    its token and its cache, for the foreman, `render` and the console's catalog alike.
   - **The page `/skills`:** every skill the factory can use, from the folders of its repository and the pins of its
     lock: name, description, source with its commit, the agents that use it, and what it needs, with the state of
     each secret from T-57. `/skills/<name>`, as approved in T-54, shows the `SKILL.md` as rendered Markdown and its
@@ -1827,8 +1875,8 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
 
 ### [ ] T-60 · the remaining pages in the new look (P2)
 
-- **Problem:** after T-56 the run page, the work form, the inbox, the factory pages and the improvement page still
-  have the old look, and the console carries two stacks.
+- **Problem:** after T-56 the run page, the work form, the inbox, the factory pages, the improvement page and the
+  health page still have the old look, and the console carries two stacks.
 - **Build:** move one page per slice to Astro and the design system. A scenario keeps its text and its test proves
   no less; a scenario whose text names what the move takes away is replaced with `@replaces`. When the last page
   moved, remove Preact, htm and Pico CSS and the route `/pico.css`; the route is part of the public surface, so a
@@ -1840,7 +1888,7 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
 - **Slices:**
   - [ ] The run page with its forms.
   - [ ] The work form and the inbox.
-  - [ ] The factory pages and the improvement page.
+  - [ ] The factory pages, the improvement page and the health page (on Astro since T-53, in Pico's look).
   - [ ] Remove the old stack and the route `/pico.css`.
 
 ### [ ] T-61 · the person, proven to every module (P2)
