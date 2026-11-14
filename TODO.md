@@ -1821,7 +1821,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
 - **Slices:**
   - [x] The ADR; the forge port's new operations in both adapters and `fakes.github` (`SCN-FORGE`, `SCN-FGITHUB`,
     `SCN-FFORGEJO`, `SCN-TK`).
-  - [ ] The forge port, hardened for the console: `rules` also reads GitHub's rulesets, `commit` writes a file's
+  - [x] The forge port, hardened for the console: `rules` also reads GitHub's rulesets, `commit` writes a file's
     bytes exactly, `merge --when-green` twice is one request, `prs --limit` stops paging, and `close` without
     `--delete-branch` keeps the branch (`SCN-FORGE`, `SCN-FGITHUB`, `SCN-TK`).
   - [x] `factory edit` and `factory plan --check` in `factory-spec` (`SCN-FSPEC`).
