@@ -11,6 +11,7 @@ import { type Harness, type HarnessOptions, type HarnessTurn, startHarness } fro
 import { type FakeHttp, type HttpOptions, type HttpRoute, startHttp } from "./http.ts";
 import { type Inference, type InferenceOptions, startInference } from "./inference.ts";
 import { type ModelGateway, type ModelGatewayOptions, type ScriptedReply, startModelGateway } from "./model-gateway.ts";
+import { type FakeOidc, type OidcOptions, startOidc } from "./oidc.ts";
 import { type Postgres, startPostgres } from "./postgres.ts";
 import { type Sandbox, type SandboxOptions, startSandbox } from "./sandbox.ts";
 import { type FakeSentry, startSentry } from "./sentry.ts";
@@ -69,6 +70,12 @@ export interface Fakes {
    * reaches it at `containerUrl` (ADR 0076).
    */
   slack(options?: SlackOptions): Promise<FakeSlack>;
+  /**
+   * An OpenID Connect provider in the test process (ADR 0134): discovery, authorize, token and keys. It signs in the
+   * person of `signIn` at the next authorization, with ID tokens on the testkit's clock, and checks PKCE and the
+   * client's secret. With `containers: true`, a container reaches it at `containerUrl`.
+   */
+  oidc(options?: OidcOptions): Promise<FakeOidc>;
   /** A fake of Sentry that sends a webhook a signed alert about an event (ADR 0065). */
   sentry(): Promise<FakeSentry>;
   /** The OpenTelemetry Collector in a container, running `config`; it exports to OTEL_EXPORTER_OTLP_ENDPOINT. */
@@ -160,6 +167,9 @@ export function makeFakes(moduleRoot: string): FakesHandle {
       },
       async sentry() {
         return startSentry();
+      },
+      async oidc(options) {
+        return (await inProcess(startOidc(options))).oidc;
       },
       async slack(options) {
         return (await inProcess(startSlack(options))).slack;

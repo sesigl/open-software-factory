@@ -1611,7 +1611,7 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   `access.yaml` signs in with Google or GitHub and sees the runs in the new shell, nobody else gets past the sign-in,
   and a profile without a provider works as today.
 - **Slices:**
-  - [ ] The ADR: the library, the session, the roles, the modes and the hook.
+  - [x] The ADR: the library, the session, the roles, the modes and the hook (ADR 0134).
   - [ ] `@opensoftware/factory-files` with the fetch, used by the foreman (its own prefix; the foreman's `SCN-FORE`
     scenarios of ADR 0124 pass unchanged); its first publish.
   - [ ] The access file in `contracts/`, the library and `factory lint` (`SCN-CTR`, the library's prefix,

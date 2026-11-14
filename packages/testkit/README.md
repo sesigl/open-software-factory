@@ -262,6 +262,13 @@ Every server, client and subscription stops when the scenario ends, before the f
   ([ADR 0059](../../docs/decisions/0059-channel-port.md)). `openIssue` and `label` keep issues numbered with the pull
   requests, and `GET /repos/{owner}/{repo}/issues/{number}` answers one with its labels (ADR 0065). `POST
   /repos/{owner}/{repo}/issues/{number}/comments` also comments on an issue, without a webhook delivery (ADR 0113).
+- `fakes.oidc({ containers })`: an OpenID Connect provider in the test process
+  ([ADR 0134](../../docs/decisions/0134-console-sign-in-roles-and-modes.md)) at `url`, with its discovery document,
+  authorization and token endpoints and keys, and the client `clientId` and `clientSecret`. `signIn({ email, name,
+  verified })` names the person whom the next authorization signs in; the authorization endpoint redirects at once with
+  a code, or with `error=access_denied` when nobody was named. The ID token is signed with RS256 and dated on the
+  testkit's clock (2026-01-01T00:00:00Z), so a module with `OSF_NOW` accepts it. A token request with another client,
+  secret, redirect address or PKCE verifier fails the scenario. `received()` lists the paths it was asked for.
 - `fakes.sentry()`: a fake of Sentry's integration platform with a `clientSecret`. `alert(url, {title, level,
   release, rule})` sends the URL an `event_alert` of the rule (default "Fatal errors") signed in
   `Sentry-Hook-Signature` with the client secret, or with a third argument instead, and gives the Sentry issue's ID,
@@ -523,3 +530,5 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-158 | implemented | A request of the browser that leaves loopback fails the scenario and names the address |
 | SCN-TK-159 | implemented | An error in the browser's console fails the scenario |
 | SCN-TK-160 | implemented | A page with an accessibility violation fails the accessibility check |
+| SCN-TK-161 | implemented | fakes.oidc signs in the person a test names with a signed ID token on the testkit's clock |
+| SCN-TK-162 | implemented | fakes.oidc refuses a sign-in when the test named nobody |
