@@ -9,7 +9,7 @@ import { type Forge, forgeAdapter } from "../adapters/forge.ts";
 import { subscribeToNats } from "../adapters/nats.ts";
 import { openStore } from "../adapters/store.ts";
 import { nowOf } from "../domain/time.ts";
-import { inboxStatusOf, RUN_SUBJECTS } from "../domain/view.ts";
+import { inboxPageOf, RUN_SUBJECTS } from "../domain/view.ts";
 import { workItemId } from "../domain/work-item.ts";
 import { type Env, required } from "./env.ts";
 import { forgeHook, problem, sentryHook, slackHook } from "./hooks.ts";
@@ -41,11 +41,14 @@ async function workItemRoutes(app: FastifyInstance, work: Inbox, apiToken: strin
       if (!found) return problem(reply, 404, "No such work item", `the server has no work item with the key ${key}`);
       return found;
     });
-    api.get<{ Querystring: { status?: string } }>("/v1/inbox", async (request, reply) => {
-      const query = inboxStatusOf(request.query.status);
-      if (typeof query === "string") return problem(reply, 400, "Bad query", query);
-      return { workItems: await work.latest(query.status) };
-    });
+    api.get<{ Querystring: { status?: string; limit?: string; cursor?: string } }>(
+      "/v1/inbox",
+      async (request, reply) => {
+        const page = inboxPageOf(request.query);
+        if (typeof page === "string") return problem(reply, 400, "Bad query", page);
+        return work.latest(page);
+      },
+    );
     api.get<{ Params: { id: string } }>("/v1/work-items/:id", async (request, reply) => {
       const found = await work.view(request.params.id);
       if (!found) return problem(reply, 404, "No such work item", `the server has no work item ${request.params.id}`);

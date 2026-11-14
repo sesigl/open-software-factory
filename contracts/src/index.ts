@@ -38,6 +38,7 @@ export type WorkItemView = Schemas["WorkItemView"];
 export type WorkItemList = Schemas["WorkItemList"];
 export type WorkRequest = Schemas["WorkRequest"];
 export type RunView = Schemas["RunView"];
+export type RunList = Schemas["RunList"];
 export type StageView = Schemas["StageView"];
 export type CheckView = Schemas["CheckView"];
 export type RunSignal = Schemas["RunSignal"];

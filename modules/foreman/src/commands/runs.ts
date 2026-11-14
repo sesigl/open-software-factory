@@ -4,6 +4,7 @@ import { UsageError } from "@opensoftware/cli";
 import { validate, type WorkItem } from "@opensoftware/contracts";
 import {
   type Client,
+  defaultPayloadConverter,
   WorkflowExecutionAlreadyStartedError,
   WorkflowIdReusePolicy,
   WorkflowNotFoundError,
@@ -48,8 +49,12 @@ export interface Runs {
   /** Starts the run of the work item, or finds its newest run. */
   start(workItem: unknown): Promise<{ created: boolean; view: RunView }>;
   view(runId: string): Promise<RunView | undefined>;
-  /** The runs of the task queue, running ones first, then the latest ended first; with a state, only the runs in it. Another state is a usage error. */
-  list(state?: string): Promise<RunView[]>;
+  /**
+   * A page of the runs of the task queue, running ones first, then the latest ended first; with a state, only the runs
+   * in it, so a page may hold fewer. Another state, a limit outside 1 to 500 or a cursor Temporal does not know is a
+   * usage error (ADR 0115).
+   */
+  list(page?: { state?: string; limit?: string; cursor?: string }): Promise<{ runs: RunView[]; next?: string }>;
   /** The run's view after the signal, or undefined for an unknown run; a run that ended is a conflict. */
   signal(runId: string, signal: unknown): Promise<RunView | undefined>;
   /** The run's steering messages and the stage a person takes over, for its running stage. */
@@ -67,6 +72,32 @@ function checked<T>(format: string, document: unknown, what: string): T {
       `${what}: ${problems.map((problem) => `${problem.path || "/"}: ${problem.message}`).join("; ")}`,
     );
   return document as T;
+}
+
+/** The page size of `limit`: 50 without one, else a whole number from 1 to 500 (ADR 0115). */
+function pageSizeOf(limit: string | undefined): number {
+  if (limit === undefined) return 50;
+  const size = Number(limit);
+  if (!Number.isInteger(size) || size < 1 || size > 500)
+    throw new UsageError(`limit: "${limit}" is not a whole number from 1 to 500`);
+  return size;
+}
+
+/**
+ * The cursor of Temporal's page token: `{"page": "<token in base64>"}` in base64url, so a cursor the foreman did not
+ * write is refused before Temporal, whose client retries what it cannot read (ADR 0115).
+ */
+const cursorOf = (token: Uint8Array): string =>
+  Buffer.from(JSON.stringify({ page: Buffer.from(token).toString("base64") })).toString("base64url");
+
+function tokenOf(cursor: string): Buffer {
+  let page: unknown;
+  try {
+    page = JSON.parse(Buffer.from(cursor, "base64url").toString()).page;
+  } catch {}
+  if (typeof page !== "string" || !page)
+    throw new UsageError(`cursor: "${cursor}" is not the next of a page of the runs`);
+  return Buffer.from(page, "base64");
 }
 
 export function runs(options: {
@@ -106,6 +137,8 @@ export function runs(options: {
         // Each run ID starts one workflow, also after it ended.
         workflowIdReusePolicy: WorkflowIdReusePolicy.REJECT_DUPLICATE,
         args: [input],
+        // The run list reads the view from the memo, which the workflow keeps current (ADR 0115).
+        memo: { view: input.view },
       })
       .then(
         () => true,
@@ -135,20 +168,29 @@ export function runs(options: {
       return next.view;
     },
     view,
-    async list(state) {
+    async list({ state, limit, cursor } = {}) {
       if (state !== undefined && !isRunState(state))
         throw new UsageError(`state: no run is "${state}"; ask for running, blocked, complete, failed or cancelled`);
-      const views: RunView[] = [];
+      const pageSize = pageSizeOf(limit);
       const query = `WorkflowType = '${factoryRun.name}' AND TaskQueue = '${taskQueue}'`;
-      // Temporal's visibility lists running runs first, then the runs that ended, the latest first. A closed run's
-      // result is its last view, which is quicker to read than a query that replays its history.
-      for await (const run of client.workflow.list({ query }))
-        views.push(
-          (run.status.name === "COMPLETED"
-            ? await handle(run.workflowId).result()
-            : await view(run.workflowId)) as RunView,
-        );
-      return listed(views, state);
+      // Temporal's visibility lists running runs first, then the runs that ended, the latest first. Each run keeps its
+      // view in its memo (ADR 0115), so a page is one call. A run that started before has no memo and answers the query.
+      const page = await client.workflowService.listWorkflowExecutions({
+        namespace: client.options.namespace,
+        query,
+        pageSize,
+        nextPageToken: cursor === undefined ? undefined : tokenOf(cursor),
+      });
+      const views = await Promise.all(
+        page.executions.map((run) => {
+          const memo = run.memo?.fields?.view;
+          // Stryker disable next-line ConditionalExpression: only a run that started before ADR 0115 has no memo, and no scenario can start one
+          if (memo) return defaultPayloadConverter.fromPayload<RunView>(memo);
+          return view(run.execution?.workflowId as string) as Promise<RunView>;
+        }),
+      );
+      const token = page.nextPageToken?.length ? cursorOf(page.nextPageToken) : undefined;
+      return { runs: listed(views, state), ...(token ? { next: token } : {}) };
     },
     async signal(runId, document) {
       const signal = signalOf(document);

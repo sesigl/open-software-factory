@@ -202,6 +202,8 @@ export async function servingCommit(sut: Sut, fakes: Fakes, commit: string, setu
         params: { query: state ? { state: state as RunView["state"] } : {} },
         headers: AUTH,
       }),
+    /** The answer of GET /v1/runs with this page size and cursor (ADR 0115). */
+    page: (query: { limit?: number; cursor?: string }) => api().GET("/v1/runs", { params: { query }, headers: AUTH }),
     signal: (runId: string, body: unknown) =>
       api().POST("/v1/runs/{runId}/signals", {
         params: { path: { runId } },

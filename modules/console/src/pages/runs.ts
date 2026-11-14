@@ -1,9 +1,10 @@
 // The runs page "/": every run of every foreman, with a filter per state (VIS-001, ORCH-008).
 import type { RunView } from "@opensoftware/contracts";
 import { age, STATES } from "../domain/runs.ts";
-import { html, linkOr } from "./html.ts";
+import { html, linkOr, nextLink } from "./html.ts";
 
-export function runsPage(runs: RunView[], state: string | undefined, now: number) {
+/** The runs page, with a link to the next page when a foreman has more runs (ADR 0115). */
+export function runsPage(runs: RunView[], state: string | undefined, now: number, next?: string) {
   return html`<h1>Runs</h1>
     <nav>
       <ul>
@@ -39,5 +40,6 @@ export function runsPage(runs: RunView[], state: string | undefined, now: number
           </tr>`,
         )}
       </tbody>
-    </table>`;
+    </table>
+    ${nextLink(next)}`;
 }

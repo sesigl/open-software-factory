@@ -395,7 +395,7 @@ the other gets 409. The new run's `run.started@v1` and `run.completed@v1` have `
 | Route | What it does |
 | --- | --- |
 | `POST /v1/runs` | Start the run of a work item (the [work item](../../contracts/work-item/work-item.schema.json) format). 201 with the new run, 200 with the newest run the same work item started before, 400 with a problem that names the field. |
-| `GET /v1/runs` | The runs of the server, running runs first, then the runs that ended, the one that ended last first: `{ "runs": [...] }`, each as `GET /v1/runs/{runId}` shows it. `?state=` with `running`, `blocked`, `complete`, `failed` or `cancelled` lists only the runs in that state; another state is 400. |
+| `GET /v1/runs` | The runs of the server, running runs first, then the runs that ended, the one that ended last first: `{ "runs": [...] }`, each as `GET /v1/runs/{runId}` shows it. `?state=` with `running`, `blocked`, `complete`, `failed` or `cancelled` lists only the runs in that state; another state is 400. One page at a time ([ADR 0115](../../docs/decisions/0115-lists-in-pages.md)): `?limit=` runs at most, 1 to 500, 50 by default; the answer's `next` is the `?cursor=` of the next page while more runs follow. With `?state=` a page may hold fewer runs than `limit`. Another `limit` or a cursor that is no page of the list is 400. Each run keeps its view in its Temporal memo, so a page is one call to Temporal's visibility. |
 | `GET /v1/runs/{runId}` | The run: `state`, `factory`, `factoryVersion`, `pullRequest`, `folder`, `startedAt`, `endedAt` and its `stages`; for a run that runs a run before it again, `attempt`, `retryOf` and `retriedBy`. 404 for a run the server does not know. |
 | `GET /v1/health` | Whether the server reaches Temporal and, with `FOREMAN_NATS_URL`, NATS: 200 with `status: ok`, else 503 with the failing check and what to fix ([ADR 0086](../../docs/decisions/0086-health-routes.md)). Needs no token. |
 | `POST /v1/runs/{runId}/signals` | `{ "type": "steer", "message": "…" }` sends the message to the running stage's agent; `{ "type": "cancel" }` cancels the run; `{ "type": "take-over" }` and `{ "type": "hand-back" }` hand the running stage to a person and back ([Take over](#take-over)). 202 with the run, 409 when the run ended or the signal does not fit its state. |
@@ -682,3 +682,6 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-141 | implemented | A result of more than 4000 characters reaches the next stage cut to its last 4000 |
 | SCN-FORE-142 | implemented | A stage's agent gets its MCP servers in its session and its skills in its folder |
 | SCN-FORE-143 | implemented | A sandboxed stage's egress allows the host of its agent's remote MCP server |
+| SCN-FORE-144 | implemented | A person reads the runs page by page |
+| SCN-FORE-145 | implemented | A page size out of range is refused |
+| SCN-FORE-146 | implemented | A cursor that is no page of the run list is refused |

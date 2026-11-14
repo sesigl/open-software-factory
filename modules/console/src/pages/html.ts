@@ -62,3 +62,7 @@ export const linkOr = (url: string | undefined, text: string) => {
 /** The content of a page for a request the console cannot answer, with the reason. */
 export const problem = (title: string, detail: string) => html`<h1>${title}</h1>
   <p>${detail}</p>`;
+
+/** The link to the next page of a list, when one follows (ADR 0115). */
+export const nextLink = (next: string | undefined) =>
+  next ? html`<p><a href=${next} rel="next">Next page</a></p>` : null;

@@ -9,10 +9,12 @@ import {
   defineQuery,
   defineSignal,
   isCancellation,
+  patched,
   proxyActivities,
   proxyLocalActivities,
   setHandler,
   sleep,
+  upsertMemo,
 } from "@temporalio/workflow";
 import type { Control, Fact, GateDecision, RunInput, RunView, StageResult } from "../domain/run.ts";
 import type { Activities } from "./activities.ts";
@@ -32,6 +34,19 @@ const remote = proxyActivities<Activities>({
   retry: { maximumAttempts: 3 },
   cancellationType: ActivityCancellationType.WAIT_CANCELLATION_COMPLETED,
 });
+
+/** Hold a run's memo of its view (ADR 0115). */
+const MEMO_PATCH = "memo-view";
+
+/**
+ * The view after the fact, which the run's memo also holds for the run list (ADR 0115). A run that started before
+ * replays without the patch, so its history schedules the same commands; from the patch on it keeps its memo current.
+ */
+async function apply(run: RunView, fact: Fact): Promise<RunView> {
+  const next = await local.apply(run, fact);
+  if (patched(MEMO_PATCH)) upsertMemo({ view: next });
+  return next;
+}
 
 export async function factoryRun({ view, definition, before }: RunInput): Promise<RunView> {
   let run = view;
@@ -55,7 +70,7 @@ export async function factoryRun({ view, definition, before }: RunInput): Promis
   // 0111 has none, so a replay of an older run schedules the same activities.
   let previous: StageResult | undefined;
   const settle = async (fact: Fact) => {
-    run = await CancellationScope.nonCancellable(() => local.apply(run, fact));
+    run = await CancellationScope.nonCancellable(() => apply(run, fact));
   };
   try {
     await remote.publishStarted(run);
@@ -71,15 +86,15 @@ export async function factoryRun({ view, definition, before }: RunInput): Promis
         const left = limitMs - (Date.now() - checksSince.at);
         if (step.delayMs) await sleep(Math.max(1, Math.min(step.delayMs, left)));
         const last = Date.now() - checksSince.at >= limitMs ? limitMs : undefined;
-        run = await local.apply(run, await remote.readChecks(run, definition, index, last));
+        run = await apply(run, await remote.readChecks(run, definition, index, last));
       } else if (step.kind === "request-gate") {
-        run = await local.apply(run, await remote.requestGate(run, definition, index));
+        run = await apply(run, await remote.requestGate(run, definition, index));
       } else if (step.kind === "await-gate") {
         const { gateId } = step;
         const decided = await condition(() => decisions.some((decision) => decision.gateId === gateId), step.limitMs);
         // Without a decision in the foreman's limit the gate expires (ADR 0106).
         const decision = decisions.find((candidate) => candidate.gateId === gateId);
-        run = await local.apply(
+        run = await apply(
           run,
           decided && decision
             ? { kind: "gate", index, ...decision }
@@ -88,9 +103,9 @@ export async function factoryRun({ view, definition, before }: RunInput): Promis
       } else if (step.kind === "await-hand-back") {
         await condition(() => handedBack);
         [handedBack, takeOver] = [false, undefined];
-        run = await local.apply(run, { kind: "handed-back", index });
+        run = await apply(run, { kind: "handed-back", index });
       } else {
-        run = await local.apply(run, { kind: "stage-started", index });
+        run = await apply(run, { kind: "stage-started", index });
         const ended = await remote.runStage(run, definition, index, steering.length, before, previous);
         if (ended.kind === "stage-ended" && ended.result) previous = ended.result;
         await settle(ended);

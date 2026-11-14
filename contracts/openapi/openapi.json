@@ -152,7 +152,7 @@
     "/v1/inbox": {
       "get": {
         "operationId": "IntakeApi_listWorkItems",
-        "description": "The 50 latest work items, the one received last first; with `status`, only the work items in that status.",
+        "description": "A page of the latest work items, the one received last first; with `status`, only the work items in that status.\n`limit` work items at most, 50 by default; `cursor` is the `next` of the page before (ADR 0115).",
         "parameters": [
           {
             "name": "status",
@@ -160,6 +160,28 @@
             "required": false,
             "schema": {
               "$ref": "#/components/schemas/WorkItemStatus"
+            },
+            "explode": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1,
+              "maximum": 500
+            },
+            "explode": false
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
             },
             "explode": false
           }
@@ -258,7 +280,7 @@
       },
       "get": {
         "operationId": "ForemanApi_listRuns",
-        "description": "The runs of the server, running runs first, then the runs that ended, the one that ended last first; with `state`, only the runs in that state (ADR 0071).",
+        "description": "A page of the runs of the server, running runs first, then the runs that ended, the one that ended last first; with\n`state`, only the runs in that state (ADR 0071). `limit` runs at most, 50 by default; `cursor` is the `next` of the\npage before (ADR 0115). With `state`, a page may hold fewer runs than `limit` and still have a `next`.",
         "parameters": [
           {
             "name": "state",
@@ -266,6 +288,28 @@
             "required": false,
             "schema": {
               "$ref": "#/components/schemas/RunState"
+            },
+            "explode": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1,
+              "maximum": 500
+            },
+            "explode": false
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
             },
             "explode": false
           }
@@ -2335,6 +2379,11 @@
             "items": {
               "$ref": "#/components/schemas/RunView"
             }
+          },
+          "next": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The cursor of the next page, while more runs follow (ADR 0115)."
           }
         },
         "required": [
@@ -3293,6 +3342,11 @@
             "items": {
               "$ref": "#/components/schemas/WorkItemView"
             }
+          },
+          "next": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The cursor of the next page, while more work items follow (ADR 0115)."
           }
         },
         "required": [

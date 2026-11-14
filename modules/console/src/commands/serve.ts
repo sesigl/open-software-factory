@@ -3,12 +3,20 @@
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { UsageError } from "@opensoftware/cli";
-import type { GateView, RunRetry, RunView, WorkItemList, WorkItemView, WorkRequest } from "@opensoftware/contracts";
+import type {
+  GateView,
+  RunList,
+  RunRetry,
+  RunView,
+  WorkItemList,
+  WorkItemView,
+  WorkRequest,
+} from "@opensoftware/contracts";
 import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 import { type Api, getJson, postJson } from "../adapters/apis.ts";
 import { readFactory } from "../adapters/factory-file.ts";
 import { proposals } from "../adapters/forge.ts";
-import { fill, isState, list, namedLinks, orderRuns, STATES } from "../domain/runs.ts";
+import { cursorsOf, fill, isState, list, namedLinks, nextPageOf, orderRuns, queryOf, STATES } from "../domain/runs.ts";
 import { submissionOf } from "../domain/submit.ts";
 import { agentPage, factoryPage, type Source } from "../pages/factory.ts";
 import { healthPage } from "../pages/health.ts";
@@ -70,8 +78,8 @@ export async function serve(env: Env) {
   const app = Fastify({ logger: false });
   app.get("/pico.css", (_request, reply) => reply.type("text/css").send(PICO));
 
-  app.get<{ Querystring: { state?: string } }>("/", async (request, reply) => {
-    const state = request.query.state;
+  app.get<{ Querystring: { state?: string; page?: string } }>("/", async (request, reply) => {
+    const { state, page: at } = request.query;
     if (state !== undefined && !isState(state))
       return send(
         reply,
@@ -79,11 +87,20 @@ export async function serve(env: Env) {
         { title: "Runs" },
         problem("No such state", `no state ${state}: ${STATES.slice(0, -1).join(", ")} or ${STATES.at(-1)}`),
       );
-    const query = state ? `?state=${state}` : "";
-    const answers = await Promise.all(sources.map((api) => getJson<{ runs: RunView[] }>(api, `/v1/runs${query}`)));
-    const runs = orderRuns(answers.flatMap((answer) => (answer.ok ? answer.body.runs : [])));
-    const notes = answers.flatMap((answer) => (answer.ok ? [] : [answer.note]));
-    return send(reply, 200, { title: "Runs", refresh, notes }, runsPage(runs, state, now()));
+    const cursors = cursorsOf(at, sources.length);
+    if (!cursors) return send(reply, 400, { title: "Runs" }, problem("No such page", `no page ${at} of the runs`));
+    // Each foreman answers one page of its runs; one whose runs ended on an earlier page is not asked (ADR 0115).
+    const answers = await Promise.all(
+      sources.map((api, index) => {
+        const cursor = cursors[index];
+        return cursor === null ? undefined : getJson<RunList>(api, `/v1/runs${queryOf({ state, cursor })}`);
+      }),
+    );
+    const runs = orderRuns(answers.flatMap((answer) => (answer?.ok ? answer.body.runs : [])));
+    const notes = answers.flatMap((answer) => (answer && !answer.ok ? [answer.note] : []));
+    const page = nextPageOf(answers.map((answer) => (answer?.ok && answer.body.next) || null));
+    const next = page && `/${queryOf({ state, page })}`;
+    return send(reply, 200, { title: "Runs", refresh, notes }, runsPage(runs, state, now(), next));
   });
 
   /** The run and the foreman that knows it, or the answer 404. */
@@ -157,7 +174,7 @@ export async function serve(env: Env) {
     return send(reply, 200, { title: "Inbox", notes }, inboxPage(inbox, answer.ok ? answer.body : [], now()));
   });
 
-  app.get("/work", async (_request, reply) => {
+  app.get<{ Querystring: { cursor?: string } }>("/work", async (request, reply) => {
     if (!intake)
       return send(
         reply,
@@ -165,10 +182,12 @@ export async function serve(env: Env) {
         { title: "Work" },
         problem("No work items", "no work items: set CONSOLE_INTAKE_URL to the base URL of intake's API"),
       );
-    const answer = await getJson<WorkItemList>(intake, "/v1/inbox");
+    const answer = await getJson<WorkItemList>(intake, `/v1/inbox${queryOf({ cursor: request.query.cursor })}`);
     const notes = answer.ok ? [] : [answer.note];
     const items = answer.ok ? answer.body.workItems : [];
-    return send(reply, 200, { title: "Work", refresh, notes }, workPage(items, now(), actions));
+    // intake's cursor of the next page is the console's (ADR 0115).
+    const next = answer.ok && answer.body.next ? `/work${queryOf({ cursor: answer.body.next })}` : undefined;
+    return send(reply, 200, { title: "Work", refresh, notes }, workPage(items, now(), actions, next));
   });
 
   // Actions (ADR 0089): only with CONSOLE_USER_HEADER, from the same origin, in the name of the signed-in person.

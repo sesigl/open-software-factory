@@ -46,6 +46,10 @@ model WorkRequest {
 /** intake: the latest work items, as `GET /v1/inbox` answers them, the one received last first. */
 model WorkItemList {
   workItems: WorkItemView[];
+
+  /** The cursor of the next page, while more work items follow (ADR 0115). */
+  @minLength(1)
+  next?: string;
 }
 
 /** intake: a work item as the HTTP API shows it (ADR 0063). */

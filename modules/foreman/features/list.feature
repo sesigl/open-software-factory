@@ -25,3 +25,22 @@ Feature: The run list
     Given a run of the README's "work.json" waits at the gate before "implement"
     When a program reads "/v1/runs?state=blocked" with the API token
     Then the answer lists the run in the state "blocked" with the stage "implement" "blocked"
+
+  @id=SCN-FORE-144 @status=implemented @realizes=SCN-FACTORY-ORCH-008
+  Scenario: A person reads the runs page by page
+    Given the server completed the runs of the README's "work.json" and of the work item "Import reports from CSV"
+    When a program reads "/v1/runs?limit=1" and then the page of its "next" cursor with the API token
+    Then the first page lists only the run of "Import reports from CSV" and names a "next" cursor
+    And the next page lists only the run of the README's "work.json"
+
+  @id=SCN-FORE-145 @status=implemented
+  Scenario: A page size out of range is refused
+    Given "foreman serve" runs the README's "factory.yaml"
+    When a program reads "/v1/runs?limit=0" with the API token
+    Then the answer has the status 400 and a problem that names "limit"
+
+  @id=SCN-FORE-146 @status=implemented
+  Scenario: A cursor that is no page of the run list is refused
+    Given "foreman serve" runs the README's "factory.yaml"
+    When a program reads "/v1/runs?cursor=bm90LWEtcGFnZQ" with the API token
+    Then the answer has the status 400 and a problem that names "cursor"

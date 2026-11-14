@@ -56,7 +56,7 @@ with the same work item.
 | --- | --- |
 | `POST /v1/work-items` | Submit work: a work item without its `id`. 201 with the new work item, 200 with the work item that has the same dedupe key, 400 with a problem that names the field. |
 | `GET /v1/work-items?dedupeKey=<key>` | The work item with this dedupe key, such as an issue's link or `sentry:<issue ID>`. 404 when there is none, 400 without the key. |
-| `GET /v1/inbox` | The latest work items, the one received last first, each as `GET /v1/work-items/{workItemId}` shows it: `{ "workItems": [...] }`. At most 50. `?status=` keeps the work items in that status; another status is 400. |
+| `GET /v1/inbox` | The latest work items, the one received last first, each as `GET /v1/work-items/{workItemId}` shows it: `{ "workItems": [...] }`. `?status=` keeps the work items in that status; another status is 400. One page at a time ([ADR 0115](../../docs/decisions/0115-lists-in-pages.md)): `?limit=` work items at most, 1 to 500, 50 by default; the answer's `next` is the `?cursor=` of the next page while more follow. Another `limit` or a cursor that is no page of the inbox is 400. |
 | `GET /v1/work-items/{workItemId}` | The work item, its `status` ([Events](#events)), its `runId` once the foreman started its run, `receivedAt`, and `requests`: the requester, origin and time of each submission, oldest first. 404 for a work item the server does not know. |
 | `GET /v1/health` | Whether the server reaches its database and, with `INTAKE_NATS_URL`, NATS: 200 with `status: ok`, else 503 with the failing check and what to fix ([ADR 0086](../../docs/decisions/0086-health-routes.md)). Needs no token. |
 | `POST /slack/events` | Slack's Events API, with `INTAKE_SLACK_TOKEN`: a message that mentions the bot becomes a work item. |
@@ -338,3 +338,6 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-INTAKE-057 | implemented | The Slack thread of a work item names the stage its run failed at and links the run in the console |
 | SCN-INTAKE-058 | implemented | The Slack thread of a work item hears once that its run waits at a gate |
 | SCN-INTAKE-059 | implemented | The issue of a work item gets a comment when its run was cancelled |
+| SCN-INTAKE-060 | implemented | A person reads the inbox page by page |
+| SCN-INTAKE-061 | implemented | The inbox refuses a page size out of range |
+| SCN-INTAKE-062 | implemented | The inbox refuses a cursor that is no page of it |
