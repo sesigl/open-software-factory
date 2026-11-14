@@ -55,6 +55,8 @@ export interface FakeGitHub extends Forge {
    * as on GitHub (ADR 0136).
    */
   allowAutoMerge(repository: string): Promise<void>;
+  /** Each call the fake answered so far, oldest first, as `<method> <path with its query>`, like `GET /user`. */
+  calls(): string[];
 }
 
 export interface RunningGitHub {
@@ -193,6 +195,7 @@ export async function startGitHub(): Promise<RunningGitHub> {
   };
   const repositories = new Map<string, Repository>();
   const problems: string[] = [];
+  const called: string[] = [];
   const deliveries: Promise<void>[] = [];
   let ids = 0;
   let seconds = 0;
@@ -961,6 +964,7 @@ export async function startGitHub(): Promise<RunningGitHub> {
       response.end(JSON.stringify(value));
     };
     const method = request.method ?? "GET";
+    called.push(`${method} ${request.url ?? ""}`);
     const [path = "", search = ""] = (request.url ?? "").split("?");
     let text = "";
     for await (const chunk of request) text += chunk;
@@ -1083,6 +1087,7 @@ export async function startGitHub(): Promise<RunningGitHub> {
         autoMergeAllowed: false,
       });
     },
+    calls: () => [...called],
     async allowAutoMerge(name) {
       repository(name).autoMergeAllowed = true;
     },

@@ -64,3 +64,10 @@ Feature: GitHub's own rules for the forge port
     When the client runs "merge tester/web <number> --when-green"
     Then merge exits with code 1 and prints "the forge cannot merge tester/web#1 when its checks pass: allow auto-merge in the repository's settings"
     And the pull request is still open
+
+  @id=SCN-FGITHUB-011 @status=implemented
+  Scenario: prs --limit stops reading pages once it has as many pull requests as asked
+    Given 101 open pull requests in "tester/web", more than one page of GitHub's list
+    When the client runs "prs tester/web --limit 1"
+    Then prs prints the newest pull request only
+    And the client asked GitHub for one page of the list of pull requests

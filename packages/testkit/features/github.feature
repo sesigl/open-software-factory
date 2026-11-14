@@ -205,3 +205,11 @@ Feature: A fake of GitHub's REST API
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 1
     And the output contains "fake GitHub: auto-merge of tester/demo#1 is enabled already"
+
+  @id=SCN-TK-173 @status=implemented
+  Scenario: fakes.github lists the calls a module made, with their query
+    Given a module whose CLI reads repository "tester/demo" and the first page of its pull requests at "DEMO_GITHUB_URL"
+    And its system test expects the calls "GET /repos/tester/demo" and "GET /repos/tester/demo/pulls?per_page=1&page=1" of fakes.github
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

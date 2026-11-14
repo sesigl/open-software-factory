@@ -14,14 +14,22 @@ type Listed = Pull & { created_at: string };
 /** The most pages prs reads of one list: 1,000 pull requests, or 1,000 reviews of one. */
 const PAGES = 20;
 
-/** Forgejo pages its answers; this reads pages until one is not full. */
-async function pages<T>(api: Repository, path: string): Promise<T[]> {
+/**
+ * Forgejo pages its answers; this reads pages until one is not full, and keeps the items that `keep` takes. It stops
+ * once it kept `most`: Forgejo lists the newest pull requests first.
+ */
+async function pages<T>(
+  api: Repository,
+  path: string,
+  keep: (item: T) => boolean = () => true,
+  most = Number.POSITIVE_INFINITY,
+): Promise<T[]> {
   const all: T[] = [];
   const joiner = path.includes("?") ? "&" : "?";
   for (let page = 1; page <= PAGES; page++) {
     const batch = await api.call<T[]>("GET", `${path}${joiner}limit=${LIMIT}&page=${page}`);
-    all.push(...batch);
-    if (batch.length < LIMIT) break;
+    all.push(...batch.filter(keep));
+    if (batch.length < LIMIT || all.length >= most) break;
   }
   return all;
 }
@@ -31,11 +39,8 @@ export async function prs(repo: string | undefined, head = "", state = "open", l
   check(LIST_STATES.includes(state), `--state is one of ${LIST_STATES.join(", ")}`);
   const most = limit === undefined ? Number.POSITIVE_INFINITY : Number(limit);
   check(limit === undefined || (Number.isInteger(most) && most >= 1), "--limit takes a number, like --limit 20");
-  const listed = await pages<Listed>(api, `/pulls?state=${state}`);
-  const chosen = listed
-    .filter((pull) => pull.head.ref.startsWith(head))
-    .sort((a, b) => b.number - a.number)
-    .slice(0, most);
+  const listed = await pages<Listed>(api, `/pulls?state=${state}`, (pull) => pull.head.ref.startsWith(head), most);
+  const chosen = listed.sort((a, b) => b.number - a.number).slice(0, most);
   const lines = await Promise.all(
     chosen.map(async (pull) => {
       const reviews = await pages<Review>(api, `/pulls/${pull.number}/reviews`);

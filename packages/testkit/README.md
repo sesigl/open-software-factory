@@ -259,7 +259,8 @@ Every server, client and subscription stops when the scenario ends, before the f
   (a pull request's `mergeStateStatus`, its `autoMergeRequest` and its repository's `autoMergeAllowed`, and
   `enablePullRequestAutoMerge`, refused unless `allowAutoMerge(repository)` allowed it and for a pull request that
   can merge now, and failing the scenario when auto-merge is on already, since GitHub does not document that
-  answer; a commit status that makes the merge rules hold merges it), and webhooks, which it lists, updates and deletes: a
+  answer; a commit status that makes the merge rules hold merges it), `calls()` with each call it answered as
+  `<method> <path with its query>`, and webhooks, which it lists, updates and deletes: a
   signed `ping` when one is created, then
   `pull_request`, `pull_request_review`, `issue_comment` and `issues` (`opened`, `labeled`, and `unlabeled` after `unlabel(repository, number, label)`) deliveries with
   `X-Hub-Signature-256`, sent only to URLs on
@@ -555,3 +556,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-170 | implemented | fakes.github refuses auto-merge where the repository does not allow it and for a pull request that can merge now |
 | SCN-TK-171 | implemented | fakes.github answers the auto-merge request of a pull request whose auto-merge a module enabled |
 | SCN-TK-172 | implemented | Enabling auto-merge twice in fakes.github fails the test with the pull request named |
+| SCN-TK-173 | implemented | fakes.github lists the calls a module made, with their query |
