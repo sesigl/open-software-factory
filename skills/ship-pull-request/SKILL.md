@@ -7,7 +7,8 @@ description: Open a pull request and bring its checks to green. Use when you pus
 
 ## Before you push
 
-- Work on a branch in the main checkout, not in a git worktree: turbo then keeps one cache for all branches.
+- Work on a branch: in the main checkout, or in a git worktree of your own when agents work in parallel (root
+  `AGENTS.md`, "How to work").
 - Run `make check`, then `make run-record`, and commit `runs/`.
 
 ## The description
