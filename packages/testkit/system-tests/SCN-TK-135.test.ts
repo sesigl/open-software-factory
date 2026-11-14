@@ -39,7 +39,8 @@ scenario("SCN-TK-135", async ({ sut, given, when, then }) => {
           '  await sut.http.get("/greeting");',
           "});",
           'await then(\'the error output is "started", "started", "greeted"\', async () => {',
-          '  expect(sut.http.output().stderr).toBe("started\\nstarted\\ngreeted\\n");',
+          // The line reaches the test through a pipe, and the answer through a socket: the answer can be first.
+          '  await expect.poll(() => sut.http.output().stderr).toBe("started\\nstarted\\ngreeted\\n");',
           "});",
         ],
       });
