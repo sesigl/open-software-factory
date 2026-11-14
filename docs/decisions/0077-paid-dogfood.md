@@ -31,7 +31,7 @@ The owner chose:
 
 1. **The harness slice comes first, with claude-code and opencode.** `e2e/paid/harness.paid.ts` starts each of
    them with a real model and asks it to fix one typo. `make smoke-paid` runs it; the job `smoke-paid` of
-   `weekly-paid.yml` runs opencode once a week. It is no system test: it has no scenario, no fakes and no network guard,
+   `weekly-paid.yml` runs opencode and codex once a week. It is no system test: it has no scenario, no fakes and no network guard,
    so `make verify` never runs it and no check counts it.
 2. **One small model through OpenRouter, 20 USD a month.** The owner has an OpenRouter key and no API keys of
    Anthropic or OpenAI. opencode calls OpenRouter's chat completions API with that one key, which allows only the
@@ -40,9 +40,11 @@ The owner chose:
 3. **claude-code runs only on a developer's machine,** on that person's Claude subscription through a token of
    `claude setup-token`, with the small model `claude-haiku-5-5`. It never runs in CI: a subscription belongs to one person, and OpenRouter promises Claude
    Code only with Anthropic's models, which the key does not allow.
-4. **codex has no paid run for now.** With that model Codex warned that it has no metadata for it, offered no edit
-   tool, and the model tried a shell command, which the allowlist refused. The owner uses claude-code and opencode;
-   codex can get a paid run later, with a model Codex knows or Codex's model catalog from OpenRouter.
+4. **codex runs weekly on the same key and model, on OpenRouter's Responses API.** At first Codex warned that it has
+   no metadata for the model, offered no edit tool, and the model tried a shell command, which the allowlist refused:
+   Codex offers apply_patch only to the models of its catalog. The owner then picked the same model for codex.
+   harness-codex adds a model Codex does not know to Codex's model catalog (`model_catalog_json`), with Codex's own
+   metadata for an unknown model and apply_patch (`SCN-HCODEX-012`).
 5. **scorekit scores `runs/` once a week** with the same key and model: the job `score` of `weekly-paid.yml` runs every
    scorer of the pack with `scorekit score --model`, which replaces the scorer's gateway alias `judge` with the
    OpenRouter model. The scores of earlier weeks stay in the Actions cache, so a week pays only for new runs. The
@@ -59,7 +61,10 @@ The owner chose:
    solved only `prompt-injection` and cost 0.90 USD: a task from one of this repository's pull requests costs about
    0.20 USD, the `prompt-injection` task a fraction of a cent. So the paid job runs only the small task, on the
    owner's request to keep test runs cheap; the free job still runs every task with the oracle.
-   Routing with the report's pick (`taskcapture route`) waits: the key allows one model, so there is no choice.
+   The owner's one model is enough to route with: after the report, the job runs `taskcapture route --tag dogfood
+   --alias routes/implement --config deploy/compose/litellm/config.yaml` on a report of opencode alone, and writes
+   the LiteLLM config into the job summary and the artifact. The oracle and the no-op agent stay out of that report:
+   they call no model, and an oracle with a cost of 0 would be the most efficient cell.
 8. **observer proposes one fix a week at most,** with the same key and model: the job `observe` of
    `weekly-paid.yml` runs `observer analyze --min-failures 2` on all scores so far and `observer propose` for the
    first problem that has no observer pull request yet, open, closed or merged. So the model is called at most once a

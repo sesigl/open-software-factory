@@ -46,7 +46,9 @@ It writes `$OUTPUT/run-record.json` and `$OUTPUT/transcript.jsonl`.
   Analytics, web search and the features that call another service are off: Codex offers the model no `web_search`
   tool.
 - **The model gateway.** Codex calls the Responses API at `OPENAI_BASE_URL` with `OPENAI_API_KEY` as its bearer
-  token and the model `OPENAI_MODEL`.
+  token and the model `OPENAI_MODEL`. Codex offers its edit tool `apply_patch` only to the models of its catalog, so
+  for a model that Codex's bundled catalog lacks, such as one of OpenRouter, the adapter writes `models.json` next to
+  `config.toml`: the bundled catalog and that model, with the metadata Codex gives an unknown model and `apply_patch`.
 - **The run record** has `osf.harness.name` `codex`, `osf.harness.version` the bridge's version and the tokens of all
   turns in `gen_ai.usage.*`. Codex reports no cost.
 - **Titles.** After the first turn of a session Codex asks the model once more, for the session's title.
@@ -78,7 +80,7 @@ breaking change raises the minor version. The one-time setup is the same as for 
 | `OTEL_SERVICE_NAME` | string |  | The service.name of the run record. Default: harness-codex. |
 | `OPENAI_BASE_URL` | string | `"https://api.openai.com/v1"` | Base URL of the OpenAI Responses API that Codex calls, ending in /v1, for example the inference gateway. |
 | `OPENAI_API_KEY` | string |  | The key Codex sends to the model API, for example a gateway key or a placeholder that the egress proxy replaces. |
-| `OPENAI_MODEL` | string |  | The model Codex asks for, for example gpt-5.5. Default: Codex's default model. |
+| `OPENAI_MODEL` | string |  | The model Codex asks for, for example gpt-5.5. A model Codex does not know gets Codex's edit tool too. Default: Codex's default model. |
 | `OSF_EFFORT` | string |  | The effort level of the session's model, set by the launcher (ADR 0078). The adapter sets it as Codex's model_reasoning_effort. Default: Codex's default for the model. |
 
 ## Scenarios

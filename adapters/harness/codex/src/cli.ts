@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // harness-codex <command>: runs Codex through its ACP bridge behind the harness proxy (ADR 0053).
+import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -32,9 +33,10 @@ const OFF = [
  * Codex's config.toml: the one model provider "osf", the gateway, on the Responses API, with no analytics, no web
  * search and no feature that calls another service. TOML takes JSON strings.
  */
-const configOf = (env: NodeJS.ProcessEnv): string =>
+const configOf = (env: NodeJS.ProcessEnv, catalog: string | undefined): string =>
   [
     'model_provider = "osf"',
+    ...(catalog ? [`model_catalog_json = ${JSON.stringify(catalog)}`] : []),
     'web_search = "disabled"',
     "check_for_update_on_startup = false",
     "",
@@ -52,6 +54,53 @@ const configOf = (env: NodeJS.ProcessEnv): string =>
     "",
   ].join("\n");
 
+interface Catalog {
+  models: { slug: string; base_instructions: string; tool_mode?: string }[];
+}
+
+/**
+ * Codex offers its edit tool apply_patch only to the models of its catalog. For a model it does not know, the catalog
+ * file `models.json` in `home`: Codex's bundled catalog and that model, with the metadata Codex gives an unknown model
+ * (its model_info_from_slug) and apply_patch, with the instructions of a model that calls tools directly, not in
+ * code mode. Undefined when there is no model or Codex knows it.
+ */
+function catalogOf(model: string | undefined, home: string): string | undefined {
+  if (!model) return undefined;
+  const bundled = execFileSync(process.execPath, [BRIDGE, "cli", "debug", "models", "--bundled"], {
+    env: { PATH: process.env.PATH ?? "", HOME: home, CODEX_HOME: home },
+    encoding: "utf8",
+  });
+  const catalog = JSON.parse(bundled) as Catalog;
+  const direct = catalog.models.find((known) => known.tool_mode === undefined);
+  if (!direct || catalog.models.some((known) => known.slug === model)) return undefined;
+  const unknown = {
+    slug: model,
+    display_name: model,
+    description: null,
+    supported_reasoning_levels: [],
+    shell_type: "unified_exec",
+    visibility: "none",
+    supported_in_api: true,
+    priority: 99,
+    availability_nux: null,
+    upgrade: null,
+    support_verbosity: false,
+    default_verbosity: null,
+    apply_patch_tool_type: "freeform",
+    web_search_tool_type: "text",
+    truncation_policy: { mode: "bytes", limit: 10_000 },
+    supports_image_detail_original: false,
+    context_window: 272_000,
+    max_context_window: 272_000,
+    effective_context_window_percent: 95,
+    experimental_supported_tools: [],
+    base_instructions: direct.base_instructions,
+  };
+  const file = join(home, "models.json");
+  writeFileSync(file, JSON.stringify({ ...catalog, models: [...catalog.models, unknown] }));
+  return file;
+}
+
 /** The model and, from the port's OSF_EFFORT (ADR 0078), the reasoning effort of every session, as CODEX_CONFIG. */
 const sessionConfig = (env: NodeJS.ProcessEnv): string =>
   JSON.stringify({ model: env.OPENAI_MODEL, model_reasoning_effort: env.OSF_EFFORT });
@@ -64,7 +113,7 @@ const code = await runAdapter({
     // Codex keeps its settings, logins and sessions in the adapter's data folder, never in the user's ~/.codex.
     const home = resolve(data, "codex");
     mkdirSync(home, { recursive: true });
-    writeFileSync(join(home, "config.toml"), configOf(process.env));
+    writeFileSync(join(home, "config.toml"), configOf(process.env, catalogOf(process.env.OPENAI_MODEL, home)));
     return {
       command: process.execPath,
       args: [BRIDGE],
