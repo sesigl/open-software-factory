@@ -78,7 +78,9 @@ no system test: it has no scenario, uses no fakes and runs without the network g
   run needs Docker. Run both again when the sandboxes' template, its Claude Code or the reference factory's egress
   hosts change, before a release of the profile or the chart, and when a stage fails at its first turn with an error
   of authentication ([live tests](../docs/quality/testing-strategy.md#live-tests)).
-- **codex** has no paid run yet: Codex offers its edit tool only to models it knows, and the OpenRouter key allows none.
+- **codex** calls OpenRouter on its Responses API with the same key and model, also once a week. Codex knows no
+  OpenRouter model, so harness-codex adds the model to Codex's model catalog, and Codex offers it its edit tool
+  `apply_patch` (`SCN-HCODEX-012`). harness-codex reports no cost; the key's credit limit is the hard limit.
 
 ```sh
 OPENROUTER_API_KEY=<key> OPENAI_MODEL=deepseek/deepseek-v4.1-flash-1017 make smoke-paid
@@ -87,8 +89,8 @@ CLAUDE_CODE_OAUTH_TOKEN=<token of claude setup-token> pnpm --filter @opensoftwar
 
 | Variable | Meaning |
 | --- | --- |
-| `OPENROUTER_API_KEY` | The OpenRouter key of opencode. Its credit limit is the hard limit of the budget, and it allows only the weekly run's model. |
-| `OPENAI_MODEL` | The OpenRouter model of opencode. Weekly: `deepseek/deepseek-v4.1-flash-1017`. |
+| `OPENROUTER_API_KEY` | The OpenRouter key of opencode and codex. Its credit limit is the hard limit of the budget, and it allows only the weekly run's model. |
+| `OPENAI_MODEL` | The OpenRouter model of opencode and codex. Weekly: `deepseek/deepseek-v4.1-flash-1017`. |
 | `CLAUDE_CODE_OAUTH_TOKEN` | A token of `claude setup-token`. Only when it is set does claude-code run, on your subscription; the run fails when `CI` is set too. |
 | `ANTHROPIC_MODEL` | The model of claude-code. Default, also when it is empty: `claude-haiku-5-5`. |
 
