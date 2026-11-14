@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/sesigl/open-software-factory/compare/spec-trace-v0.4.0...spec-trace-v0.5.0) (2026-11-14)
+
+
+### Features
+
+* sut.browser and UI checks (T-52 done), Astro renders the health page (T-53) ([#312](https://github.com/sesigl/open-software-factory/issues/312)) ([488ec0a](https://github.com/sesigl/open-software-factory/commit/488ec0ab2d325258191be2bbb216fb3de00352c2))
+
 ## [0.4.0](https://github.com/sesigl/open-software-factory/compare/spec-trace-v0.3.1...spec-trace-v0.4.0) (2026-11-11)
 
 
