@@ -95,7 +95,7 @@ async function startEgress(id: string, spec: SandboxSpec, secrets: Secret[], sec
   const config = proxyConfig(spec, secrets, { openbaoMount: process.env.OSF_OPENBAO_MOUNT });
   const files = {
     "proxy.yaml": `${JSON.stringify(config, null, 2)}\n`,
-    "start.sh": startScript(secrets),
+    "start.sh": startScript(),
     "secrets/.keep": "",
   };
   await withFolder(files, (folder) => dockerText(["cp", `${folder}/.`, `${proxy}:${PROXY_DIR}`]));

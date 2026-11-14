@@ -8,7 +8,8 @@ What every sandbox adapter shares about the egress proxy of a sandbox: it reads 
 the spec's secret references, writes the configuration and the variables of iron-proxy, gives the sandbox's
 environment, and turns iron-proxy's audit lines into the egress log. A library: the sandbox adapters depend on it,
 it has no command of its own. Decisions: [ADR 0054](../../docs/decisions/0054-sandbox-port.md),
-[ADR 0055](../../docs/decisions/0055-sandbox-kubernetes.md).
+[ADR 0055](../../docs/decisions/0055-sandbox-kubernetes.md),
+[ADR 0139](../../docs/decisions/0139-git-basic-form-value-timing-and-the-check-before-a-stage.md).
 
 ## Quick start
 
@@ -28,14 +29,13 @@ const sandboxVariables = sandboxEnv(spec, "http://egress:8080"); // placeholders
 | --- | --- |
 | `readSpec(file)` | The `sandbox-spec` (contracts) in the file. A document that is no sandbox spec is a `UsageError` that names `<file>: <path> <problem>` for each problem. |
 | `resolveSecrets(spec, secretsDir, env)` | The spec's secrets with their provider: `file` (the file below `secretsDir`), `env` (the variable `OSF_SECRET_<NAME>` of `env`) or `openbao` (a path in OpenBao). A reference that cannot be resolved is a `UsageError` (see below). `env` defaults to the process's environment. |
-| `proxyConfig(spec, secrets, { openbaoMount })` | iron-proxy's configuration: the allowlist of the egress hosts and the MCP servers' hosts, the secret swaps for the egress hosts only, for each secret from a file or a variable also in git's Basic form in the header `Authorization`, and the MCP policy with the declared tools. JSON, which is YAML. |
+| `proxyConfig(spec, secrets, { openbaoMount })` | iron-proxy's configuration: the allowlist of the egress hosts and the MCP servers' hosts, one swap per secret in every header for the egress hosts only, and the MCP policy with the declared tools. JSON, which is YAML. iron-proxy also swaps a placeholder inside git's Basic credentials, `Authorization: Basic` of `<user>:<placeholder>`, so `git clone` and `git push` over HTTPS work with a secret of any provider and any user name ([ADR 0139](../../docs/decisions/0139-git-basic-form-value-timing-and-the-check-before-a-stage.md)). |
 | `proxyEnv(secrets, env)` | The proxy's own variables: `<NAME>` for each `env` secret, and `VAULT_ADDR` and `VAULT_TOKEN` from `OSF_OPENBAO_ADDR` and `OSF_OPENBAO_TOKEN` when a secret comes from OpenBao. |
 | `sandboxEnv(spec, egressUrl)` | The sandbox's variables: the spec's `env`, a placeholder per secret, `HTTP_PROXY` and `HTTPS_PROXY` (also lower case) at `egressUrl`, and the CA variables at `CA_FILE`. |
 | `egressEntries(log)` | The egress log from iron-proxy's audit lines: host, method, path, `allowed` or `refused`, what refused it, the MCP server and tool, and the names of the secrets the proxy put in. Header values and MCP arguments are left out. |
 | `memoryBytes(quantity)` | A Kubernetes quantity such as `256Mi` in bytes. |
 | `placeholder(variable)`, `envVariable(name)` | `osf-secret-placeholder-<variable>`, and `OSF_SECRET_<name>`. |
-| `basicPlaceholder(variable)`, `GIT_USER` | The placeholder in git's Basic form, base64 of `x-access-token:<placeholder>`, and the user name `x-access-token` that gh's credential helper sends (ADR 0096). |
-| `startScript(secrets)` | The proxy's start script: it writes each secret from a file or a variable in git's Basic form to `<PROXY_DIR>/basic/`, creates the CA and hands its certificate out in `<PROXY_DIR>/out/osf/`, then runs iron-proxy. |
+| `startScript()` | The proxy's start script: it creates the CA and hands its certificate out in `<PROXY_DIR>/out/osf/`, then runs iron-proxy. It writes nothing of a secret. |
 | `EGRESS_IMAGE`, `READY`, `PROXY_DIR`, `EGRESS_PORT`, `CA_FILE`, `WORKSPACE` | The pinned iron-proxy image, the log line that says the proxy is ready, the proxy's folder `/osf`, its port 8080, the sandbox's CA file and working folder. |
 
 How secret references resolve (ADR 0055):
@@ -47,6 +47,9 @@ How secret references resolve (ADR 0055):
 | `ref:openbao/<path>` | The field `value` of the KV v2 secret `<path>` in the mount `openbaoMount` (default `secret`) | `OSF_OPENBAO_ADDR` or `OSF_OPENBAO_TOKEN` is not set |
 
 Any other provider is refused. Each problem is one line of the `UsageError`.
+
+The proxy reads a secret from OpenBao at the sandbox's first request to an allowed host and keeps that value until
+the sandbox ends: a new value reaches the sandboxes that start after it is stored (ADR 0139).
 
 ## Releases
 
@@ -98,4 +101,4 @@ The library reads no variable itself. Its caller passes the environment to `reso
 | SCN-SEGRESS-020 | implemented | A copy out of a sandbox keeps an absolute path |
 | SCN-SEGRESS-021 | implemented | A copy that names a sandbox on both sides is refused |
 | SCN-SEGRESS-022 | deprecated | A secret is swapped only for the hosts of the egress allowlist, also in git's Basic credentials |
-| SCN-SEGRESS-023 | planned | Each secret is swapped by one rule in every header for the hosts of the egress allowlist, whatever its provider |
+| SCN-SEGRESS-023 | implemented | Each secret is swapped by one rule in every header for the hosts of the egress allowlist, whatever its provider |

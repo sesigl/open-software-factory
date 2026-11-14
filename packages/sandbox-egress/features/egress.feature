@@ -24,10 +24,10 @@ Feature: What every sandbox adapter shares about the egress proxy
     And it swaps the placeholder in git's Basic form, base64 of "x-access-token:osf-secret-placeholder-LINEAR_TOKEN", for the file "/osf/basic/LINEAR_TOKEN" in the header "Authorization" on requests to "api.linear.app"
     And the start script writes "/osf/basic/LINEAR_TOKEN" as base64 of "x-access-token:" and the secret's file
 
-  @id=SCN-SEGRESS-023 @status=planned @replaces=SCN-SEGRESS-022
+  @id=SCN-SEGRESS-023 @status=implemented @replaces=SCN-SEGRESS-022
   Scenario: Each secret is swapped by one rule in every header for the hosts of the egress allowlist, whatever its provider
     Given a sandbox spec with the egress allowlist "api.linear.app" and the secrets "LINEAR_TOKEN" from "ref:file/linear-token", "SLACK_TOKEN" from "ref:env/SLACK_TOKEN" and "GH_TOKEN" from "ref:openbao/forge-token"
-    When the adapter calls proxyConfig and startScript with the spec and its resolved secrets
+    When the adapter calls proxyConfig with the spec and its resolved secrets, and startScript
     Then the configuration swaps each of the three placeholders by one rule in every header, on requests to "api.linear.app" only
     And the start script writes no secret to a file
 
