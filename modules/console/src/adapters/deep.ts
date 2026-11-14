@@ -1,9 +1,11 @@
 // The deep checks of `console doctor --deep` (ADR 0120): one model call per route through the gateway, the
-// harness's answer to ACP `initialize`, one span from the collector to the trace store, and a sandbox adapter's probe. Each costs, starts or
-// writes something, so only `--deep` runs them.
+// harness's answer to ACP `initialize`, one span from the collector to the trace store, a sandbox adapter's probe and
+// one ping on NATS. Each costs, starts or writes something, so only `--deep` runs them.
 import { spawn } from "node:child_process";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { createInterface } from "node:readline";
+import { jetstream } from "@nats-io/jetstream";
+import { connect } from "@nats-io/transport-node";
 
 /** The status of one chat completion of one token with this model, or 0 when the gateway does not answer. */
 export async function callRoute(url: string, token: string | undefined, model: string): Promise<number> {
@@ -68,13 +70,39 @@ export async function traceRoundTrip(otlpUrl: string, tracesUrl: string): Promis
     () => false,
   );
   if (!sent) return { sent, found: false };
-  const deadline = Date.now() + 5_000;
+  return { sent, found: await within(5_000, async () => (await fetch(`${tracesUrl}/api/traces/${traceId}`)).ok) };
+}
+
+/** Asks `found` every 250 ms until it gives true, for `ms` at least once: whether it did. A failure counts as false. */
+export async function within(ms: number, found: () => Promise<boolean>): Promise<boolean> {
+  const deadline = Date.now() + ms;
   do {
-    const answer = await fetch(`${tracesUrl}/api/traces/${traceId}`).catch(() => undefined);
-    if (answer?.ok) return { sent, found: true };
+    if (await found().catch(() => false)) return true;
     await new Promise((resolve) => setTimeout(resolve, 250));
   } while (Date.now() < deadline);
-  return { sent, found: false };
+  return false;
+}
+
+/** The ID of the doctor's ping: random, or from OSF_SEED when it is set, so a test knows it (ADR 0120). */
+export const pingId = (seed: string | undefined): string =>
+  `ping_${seed ? createHash("sha256").update(seed).digest("hex").slice(0, 20) : randomBytes(10).toString("hex")}`;
+
+/**
+ * Publishes `doctor.ping@v1` with this ID on "osf.doctor.ping.v1" through JetStream: "sent" when a stream stored it,
+ * "no stream" when none takes the subject, "no answer" when NATS does not answer.
+ */
+export async function publishPing(url: string, id: string): Promise<"sent" | "no stream" | "no answer"> {
+  const connection = await connect({ servers: url, timeout: 5_000 }).catch(() => undefined);
+  if (!connection) return "no answer";
+  const ping = { specversion: "1.0", id, source: "/osf/console", type: "doctor.ping@v1", time: new Date(), data: {} };
+  try {
+    await jetstream(connection).publish("osf.doctor.ping.v1", JSON.stringify(ping), { timeout: 5_000 });
+    return "sent";
+  } catch {
+    return "no stream";
+  } finally {
+    await connection.close();
+  }
 }
 
 /**

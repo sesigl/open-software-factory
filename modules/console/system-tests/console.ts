@@ -240,3 +240,22 @@ export const pendingGate = {
   waitingFor: ["leads"],
   requestedAt: "2025-12-31T23:58:00.000Z",
 } as const;
+
+/** The ID of the doctor's ping with the testkit's seed 1 (ADR 0120). */
+export const PING = "ping_6b86b273ff34fce19d6b";
+
+/** A NATS server in CONSOLE_NATS_URL, with the stream "OSF" of the foreman unless `stream` is false. */
+export async function natsEnv(sut: Sut, fakes: Fakes, stream = true): Promise<Record<string, string>> {
+  const nats = await fakes.nats();
+  if (stream) await sut.events.stream(nats, "OSF", { subjects: ["osf.>"] });
+  return { CONSOLE_NATS_URL: nats.url };
+}
+
+/** A healthy foreman in CONSOLE_FOREMAN_URL that shows the doctor's ping as received, or answers 404 for it. */
+export async function pingedForeman(fakes: Fakes, received: boolean): Promise<Record<string, string>> {
+  const ping = received
+    ? { path: `/v1/doctor/pings/${PING}`, body: { id: PING, receivedAt: "2026-01-01T00:00:00Z" } }
+    : { path: `/v1/doctor/pings/${PING}`, status: 404, body: { title: "No such ping" } };
+  const api = await foreman(fakes, [], [ping, { path: "/v1/health", body: { status: "ok", checks: [] } }]);
+  return { CONSOLE_FOREMAN_URL: api.url, CONSOLE_FOREMAN_TOKEN: "foreman-token" };
+}

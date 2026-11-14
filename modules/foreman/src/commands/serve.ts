@@ -1,5 +1,5 @@
 // foreman serve: the run API on PORT and a Temporal worker that runs the factory's workflow (ADR 0067). With
-// FOREMAN_NATS_URL it also starts runs for work.received@v1, runs a run again for work.retry-requested@v1, and passes gate.decided@v1 to the waiting runs. A factory
+// FOREMAN_NATS_URL it also starts runs for work.received@v1, runs a run again for work.retry-requested@v1, passes gate.decided@v1 to the waiting runs and keeps the IDs of doctor.ping@v1 (ADR 0120). A factory
 // with an inference adapter gets its gateway while the server runs (ADR 0070). It runs until SIGTERM or SIGINT.
 import { timingSafeEqual } from "node:crypto";
 import { dirname, join, resolve } from "node:path";
@@ -44,7 +44,12 @@ function authorized(header: string | undefined, token: string): boolean {
   return sent.length === wanted.length && timingSafeEqual(sent, wanted);
 }
 
-function api(work: Runs, token: string, health: () => Promise<Health>) {
+/** The doctor's pings the consumer received since the server started, by ID, with when (ADR 0120). */
+type Pings = Map<string, string>;
+/** The server keeps the newest pings only, so pings cannot fill its memory. */
+const KEPT_PINGS = 100;
+
+function api(work: Runs, token: string, pings: Pings, health: () => Promise<Health>) {
   const app = Fastify();
   app.setErrorHandler((error: Error & { statusCode?: number }, _request, reply) => {
     if (error instanceof UsageError) return problem(reply, 400, "Bad request", error.message);
@@ -82,21 +87,33 @@ function api(work: Runs, token: string, health: () => Promise<Health>) {
     const view = await work.retry(request.params.runId, request.body);
     return view ? reply.code(201).send(view) : unknown(reply, request.params.runId);
   });
+  app.get<{ Params: { id: string } }>("/v1/doctor/pings/:id", async (request, reply) => {
+    const { id } = request.params;
+    const receivedAt = pings.get(id);
+    return receivedAt
+      ? { id, receivedAt }
+      : problem(reply, 404, "No such ping", `the server has received no doctor.ping@v1 ${id}`);
+  });
   return app;
 }
 
 /**
- * Starts runs for work items from intake, runs a run again when intake asks (ADR 0105), and hands gate decisions to the
- * runs that wait for them, through the durable consumer "foreman" (ADR 0085). An event that can never succeed, a work
+ * Starts runs for work items from intake, runs a run again when intake asks (ADR 0105), hands gate decisions to the
+ * runs that wait for them and keeps when each doctor's ping came (ADR 0120), through the durable consumer "foreman"
+ * (ADR 0085). An event that can never succeed, a work
  * item that is not valid, a decision for a run that does not exist, or a retry of a run that cannot run again, is a
  * warning and is acknowledged; another failure comes again.
  */
-function listen(bus: Bus, work: Runs, warn: (text: string) => void): Promise<void> {
-  const subjects = [SUBJECTS.workReceived, SUBJECTS.workRetryRequested, SUBJECTS.gateDecided];
+function listen(bus: Bus, work: Runs, pings: Pings, now: () => string, warn: (text: string) => void): Promise<void> {
+  const subjects = [SUBJECTS.workReceived, SUBJECTS.workRetryRequested, SUBJECTS.gateDecided, SUBJECTS.doctorPing];
   return bus.consume("foreman", subjects, async (event, subject) => {
-    const { data } = event as { data?: unknown };
+    const { data, id } = event as { data?: unknown; id?: unknown };
     try {
-      if (subject === SUBJECTS.gateDecided) {
+      if (subject === SUBJECTS.doctorPing) {
+        pings.set(String(id), now());
+        // Stryker disable next-line all: a scenario would need 101 pings to see the oldest go
+        for (const old of [...pings.keys()].slice(0, -KEPT_PINGS)) pings.delete(old);
+      } else if (subject === SUBJECTS.gateDecided) {
         const { workItemId, gateId, decision } = data as GateDecided["data"];
         await work.decided(workItemId, { gateId, state: decision });
       } else if (subject === SUBJECTS.workRetryRequested) {
@@ -184,9 +201,10 @@ export async function serve(env: Env) {
     };
     const work = runs({ client, taskQueue, factory, now, stopping: stopping.signal });
     const running = worker.run();
-    if (bus) await listen(bus, work, warn);
+    const pings: Pings = new Map();
+    if (bus) await listen(bus, work, pings, now, warn);
 
-    const app = api(work, token, () =>
+    const app = api(work, token, pings, () =>
       healthOf([
         {
           name: "temporal",

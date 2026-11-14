@@ -1,14 +1,24 @@
 // console doctor: checks each server of the factory, its token and the factory definition, and prints one fix per
-// failure (ADR 0086); with --deep also each model route, the harness, a span's way to the trace store and a sandbox's egress (ADR 0120). It exits 1 when a check fails. The page /health shows the same.
+// failure (ADR 0086); with --deep also each model route, the harness, a span's way to the trace store, a sandbox's egress and an event's way to the foreman (ADR 0120). It exits 1 when a check fails. The page /health shows the same.
 import { readFileSync } from "node:fs";
 import { type Api, probe } from "../adapters/apis.ts";
-import { callRoute, initializeHarness, probeSandbox, traceRoundTrip } from "../adapters/deep.ts";
+import {
+  callRoute,
+  initializeHarness,
+  pingId,
+  probeSandbox,
+  publishPing,
+  traceRoundTrip,
+  within,
+} from "../adapters/deep.ts";
 import { readFactory } from "../adapters/factory-file.ts";
 import {
   DENIED_HOST,
+  eventItem,
   groupsItem,
   harnessItem,
   type Item,
+  type PingOutcome,
   report,
   routeItem,
   routesOf,
@@ -54,8 +64,24 @@ function groups(file: string): Item {
 }
 
 /**
- * The deep checks (ADR 0120): a model call per route, the harness's ACP initialize, one span to the trace store and a
- * sandbox that refuses a denied host.
+ * Publishes one doctor's ping on NATS and asks the foremen every 250 ms for 10 s whether one of them received it
+ * (ADR 0120).
+ */
+async function pingForemen(env: Env, url: string): Promise<PingOutcome> {
+  const id = pingId(env.OSF_SEED);
+  const sent = await publishPing(url, id);
+  if (sent !== "sent") return sent;
+  const foremen = servers(env).filter(({ kind }) => kind === "foreman");
+  const seen = async () =>
+    (await Promise.all(foremen.map((foreman) => probe(foreman, `/v1/doctor/pings/${id}`)))).some(
+      ({ status }) => status === 200,
+    );
+  return (await within(10_000, seen)) ? "seen" : "not seen";
+}
+
+/**
+ * The deep checks (ADR 0120): a model call per route, the harness's ACP initialize, one span to the trace store, a
+ * sandbox that refuses a denied host and one event that reaches the foreman.
  */
 async function deepItems(env: Env, routes: string[]): Promise<Item[]> {
   const items: Item[] = [];
@@ -73,6 +99,8 @@ async function deepItems(env: Env, routes: string[]): Promise<Item[]> {
   const sandbox = env.CONSOLE_SANDBOX_COMMAND;
   const template = env.CONSOLE_SANDBOX_TEMPLATE || "curlimages/curl:8.17.0";
   if (sandbox) items.push(sandboxItem(await probeSandbox(sandbox, template, DENIED_HOST)));
+  const nats = env.CONSOLE_NATS_URL;
+  if (nats) items.push(eventItem(await pingForemen(env, nats)));
   return items;
 }
 

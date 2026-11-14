@@ -215,3 +215,12 @@ model RunRetry {
 
   from?: Name;
 }
+
+/** foreman: a `doctor.ping@v1` event that its consumer received (ADR 0120). */
+model DoctorPingSeen {
+  /** The event's ID. */
+  id: Identifier;
+
+  /** When the foreman received it. */
+  receivedAt: utcDateTime;
+}

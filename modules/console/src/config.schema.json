@@ -131,6 +131,14 @@
       "default": "curlimages/curl:8.17.0",
       "description": "doctor --deep: the template of the sandbox probe; it needs curl."
     },
+    "CONSOLE_NATS_URL": {
+      "type": "string",
+      "description": "doctor --deep: the NATS server of the factory, like nats://nats:4222. Set, doctor --deep publishes one doctor.ping@v1 on osf.doctor.ping.v1 and waits 10 s for a foreman of CONSOLE_FOREMAN_URL to show it at GET /v1/doctor/pings/{id}."
+    },
+    "OSF_SEED": {
+      "type": "string",
+      "description": "doctor --deep: set, the ID of the doctor's ping comes from it instead of from chance, so a test knows it. Leave it unset in a factory."
+    },
     "CONSOLE_MODEL_URL": {
       "type": "string",
       "description": "doctor --deep: the OpenAI-compatible base URL of the model gateway (LiteLLM), ending in /v1; it gets one chat completion of one token per model route of the factory definition."

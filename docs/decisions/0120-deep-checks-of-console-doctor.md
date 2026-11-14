@@ -43,9 +43,20 @@ cost money (a model call) or start processes, so they must not run on every page
   or one with characters other than `[a-z0-9.-]` exits 2 before a sandbox starts (`SCN-SANDBOX-025`, `026`). The
   console never passes `--allow`. System tests use `fakes.sandbox({ probe })` of the testkit, which isolates nothing and reports the
   scripted outcome; the adapters' conformance tests need Docker and kind and run in CI.
-- **Not yet:** a test event that reaches the foreman stays an open slice of T-25. It needs a NATS client in the
-  console and a foreman route that shows a received test event. The console has neither today, and a check that
-  cannot see its result would only pretend.
+- **`events`** (added later in T-25), only when `CONSOLE_NATS_URL` is set: the console publishes one CloudEvent
+  `doctor.ping@v1` (a new, additive format in `contracts/events/doctor-ping`, with empty `data`) with a fresh random
+  ID `ping_<20 hex>` on `osf.doctor.ping.v1` through JetStream, so the publish waits for the stream's ack. Then it
+  asks each foreman of `CONSOLE_FOREMAN_URL`, with its token, for `GET /v1/doctor/pings/{id}` every 250 ms for 10
+  seconds and wants one 200. The foreman's durable consumer `foreman` reads the subject and keeps the ID and the time
+  of the newest 100 pings in memory; a consumer of an earlier release gets the subject from the update the foreman
+  already makes on start (ADR 0116). The ping is a contract because two modules share it; it is its own event and not a
+  field of `/v1/health`, so a probe of the health route never needs NATS. NATS that does not answer names
+  `CONSOLE_NATS_URL`; a publish without a stream's ack names the foreman's `FOREMAN_NATS_URL`, since the foreman adds
+  the stream `OSF`; a ping that no foreman shows in 10 s names the foreman's release and its `FOREMAN_NATS_URL`. The
+  console uses the same NATS clients as the foreman, `@nats-io/transport-node` and `@nats-io/jetstream` 3.4.0, so this
+  adds no new library to the repository. With `OSF_SEED` set the ID is the first 20 hex of its SHA-256, so a system
+  test with the testkit's seed knows it; a factory leaves `OSF_SEED` unset. System tests use `fakes.nats()` and a
+  fake foreman for the console, and `fakes.nats()` and `fakes.temporal()` for the foreman.
 
 ## Options considered
 
@@ -64,5 +75,5 @@ routes, not the factory's. We call only the factory's routes through the same Op
 ## Consequences
 
 A person can see in one command that each route and the harness work before the first run. The sandbox check
-starts real sandboxes, so it takes as long as one `create`. The remaining check needs a new foreman capability;
-revisit when the foreman shows a test event.
+starts real sandboxes, so it takes as long as one `create`. The event check adds one subject to the foreman's consumer and one
+route; a ping costs one message in the stream, which its max age drops.

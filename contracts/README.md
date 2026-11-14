@@ -45,7 +45,7 @@ Each format has one schema, generated from `typespec/`, and fixtures that CONTRA
 | gate record | `gate-record/gate-record.schema.json` | `GateRecord` | gatekeeper's signed approval record (ADR 0047). |
 | sandbox spec | `sandbox-spec/sandbox-spec.schema.json` | `SandboxSpec` | The input of a sandbox adapter's `create` (ADR 0054). Closed objects: an unknown field is an error. |
 | factory lock | `factory-lock/factory-lock.schema.json` | `FactoryLock` | `factory.lock` next to `factory.yaml`: the registry MCP servers and the adapters that `factory plan` pinned (ADR 0020, ADR 0125). factory-spec writes it, the foreman reads the adapter pins. |
-| events | `events/<event>/<event>.schema.json`, `events/asyncapi.yaml` | `WorkReceived`, `WorkRetryRequested`, `RunStarted`, `RunCompleted`, `RunBlocked` … `IssueLabeled` | CloudEvents 1.0, structured JSON. |
+| events | `events/<event>/<event>.schema.json`, `events/asyncapi.yaml` | `WorkReceived`, `WorkRetryRequested`, `RunStarted`, `RunCompleted`, `RunBlocked`, `DoctorPing` … `IssueLabeled` | CloudEvents 1.0, structured JSON. |
 
 ## HTTP APIs
 
@@ -55,7 +55,7 @@ first is gatekeeper's: `POST /v1/gates`, `GET /v1/gates/{gateId}` and `POST /v1/
 `GET /v1/work-items/{workItemId}` with the models `WorkSubmission`, `WorkItemView` and `WorkRequest`, and
 `GET /v1/inbox` with `WorkItemList`. The third is the
 foreman's (ADR 0067): `POST /v1/runs`, `GET /v1/runs` with `RunList`, `GET /v1/runs/{runId}`, `POST /v1/runs/{runId}/signals` and
-`POST /v1/runs/{runId}/retry` (ADR 0105) with the models `RunView` (its `adapters`, ADR 0110), `StageView` (its `waitingSince`, ADR 0106, and its `note`, ADR 0109), `CheckView` (ADR 0069), `RunSignal` (its `by`, ADR 0118), `RunAction`
+`POST /v1/runs/{runId}/retry` (ADR 0105), and `GET /v1/doctor/pings/{id}` with `DoctorPingSeen` (ADR 0120), with the models `RunView` (its `adapters`, ADR 0110), `StageView` (its `waitingSince`, ADR 0106, and its `note`, ADR 0109), `CheckView` (ADR 0069), `RunSignal` (its `by`, ADR 0118), `RunAction`
 and `RunRetry`. All three answer `GET /v1/health` with the models
 `Health` and `HealthCheck` (`HealthApi`, ADR 0086). Both lists take `limit` and `cursor` and answer the cursor of the next
 page in `next` (ADR 0115). `pnpm build` compiles the operations with the TypeSpec OpenAPI 3 emitter and copies their

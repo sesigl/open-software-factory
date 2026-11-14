@@ -165,3 +165,39 @@ Feature: Health
     Given a console without "CONSOLE_SANDBOX_COMMAND"
     When the user runs "console doctor --deep"
     Then it prints no line about the sandbox
+
+  @id=SCN-CONSOLE-130 @status=implemented
+  Scenario: "console doctor --deep" publishes a ping on NATS and finds it at the foreman
+    Given a NATS server with the stream "OSF" in "CONSOLE_NATS_URL"
+    And a foreman that has received the ping "ping_6b86b273ff34fce19d6b"
+    When the user runs "console doctor --deep"
+    Then it prints "ok    events"
+    And NATS has one "doctor.ping@v1" from "/osf/console" with the ID "ping_6b86b273ff34fce19d6b" on "osf.doctor.ping.v1"
+
+  @id=SCN-CONSOLE-131 @status=implemented
+  Scenario: "console doctor --deep" names the foreman's consumer when the ping does not reach it in 10 seconds
+    Given a NATS server with the stream "OSF" in "CONSOLE_NATS_URL"
+    And a foreman that has received no ping
+    When the user runs "console doctor --deep"
+    Then the command exits with code 1
+    And it prints "FAIL  events: the foreman did not receive the ping in 10 s: update the foreman to a release that shows /v1/doctor/pings and check its FOREMAN_NATS_URL"
+
+  @id=SCN-CONSOLE-132 @status=implemented
+  Scenario: "console doctor --deep" names the stream when no stream takes the ping
+    Given a NATS server without a stream in "CONSOLE_NATS_URL"
+    When the user runs "console doctor --deep"
+    Then the command exits with code 1
+    And it prints "FAIL  events: no stream takes osf.doctor.ping.v1: start the foreman with FOREMAN_NATS_URL set to the same server, which adds the stream OSF"
+
+  @id=SCN-CONSOLE-133 @status=implemented
+  Scenario: "console doctor --deep" names the variable when NATS does not answer
+    Given "CONSOLE_NATS_URL" names a port where nothing listens
+    When the user runs "console doctor --deep"
+    Then the command exits with code 1
+    And it prints "FAIL  events: no answer from NATS: check CONSOLE_NATS_URL and that NATS runs"
+
+  @id=SCN-CONSOLE-134 @status=implemented
+  Scenario: "console doctor --deep" without "CONSOLE_NATS_URL" skips the events
+    Given a console without "CONSOLE_NATS_URL"
+    When the user runs "console doctor --deep"
+    Then it prints no line about the events
