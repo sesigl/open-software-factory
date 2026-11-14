@@ -26,18 +26,28 @@ spec:
         - name: gatekeeper
           image: {{ include "osf.image" (dict "root" . "name" "gatekeeper" "tag" .Values.images.gatekeeper) }}
           imagePullPolicy: {{ .Values.images.pullPolicy }}
-          args: [gatekeeper, serve, --policy, /factory/policy/spec.rego, --groups, /factory/groups.json, --channel, {{ printf "slack:%s" .Values.gatekeeper.slackChannel | quote }}]
+          {{- $slack := include "osf.gatekeeperSlack" . }}
+          # Asks in Slack, on the run's pull request with the forge token, or both, as compose.yaml does.
+          args: [gatekeeper, serve, --policy, /factory/policy/spec.rego, --groups, /factory/groups.json{{ if $slack }}, --channel, {{ required "set gatekeeper.slackChannel" .Values.gatekeeper.slackChannel | printf "slack:%s" | quote }}{{ end }}]
           env:
             {{- include "osf.secretEnv" (dict "root" . "name" "POSTGRES_PASSWORD" "key" "postgres-password") | nindent 12 }}
             {{- include "osf.secretEnv" (dict "root" . "name" "GATEKEEPER_API_TOKEN" "key" "gatekeeper-api-token") | nindent 12 }}
+            {{- if $slack }}
             {{- include "osf.secretEnv" (dict "root" . "name" "GATEKEEPER_SLACK_TOKEN" "key" "gatekeeper-slack-token") | nindent 12 }}
             {{- include "osf.secretEnv" (dict "root" . "name" "GATEKEEPER_SLACK_SIGNING_SECRET" "key" "gatekeeper-slack-signing-secret") | nindent 12 }}
+            - name: GATEKEEPER_SLACK_ADAPTER
+              value: channel-slack
+            {{- end }}
+            - name: GATEKEEPER_FORGE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "osf.secret" . }}
+                  key: forge-token
+                  optional: true
             - name: GATEKEEPER_DATABASE_URL
               value: {{ include "osf.databaseUrl" (dict "root" . "database" "gatekeeper") | quote }}
             - name: GATEKEEPER_NATS_URL
               value: {{ include "osf.natsUrl" . | quote }}
-            - name: GATEKEEPER_SLACK_ADAPTER
-              value: channel-slack
             - name: GATEKEEPER_FORGE_ADAPTER
               value: {{ .Values.gatekeeper.forgeAdapter | quote }}
           ports:

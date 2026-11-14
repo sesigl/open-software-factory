@@ -2,8 +2,9 @@
 
 # Every secret of the factory. Set each value, or name a Secret with the same keys in existingSecret, for example one
 # that OpenBao fills through its operator or the External Secrets Operator. The keys: postgres-password,
-# foreman-api-token, intake-api-token, gatekeeper-api-token, gatekeeper-slack-token, gatekeeper-slack-signing-secret,
-# litellm-master-key and, optional, forge-token, github-token and claude-code-oauth-token.
+# foreman-api-token, intake-api-token, gatekeeper-api-token, litellm-master-key and, optional,
+# gatekeeper-slack-token and gatekeeper-slack-signing-secret, forge-token, github-token and claude-code-oauth-token.
+# gatekeeper asks in Slack, on the run's pull request with forgeToken, or both: set the Slack secrets, forgeToken or both.
 secrets:
   existingSecret: ""
   postgresPassword: ""
@@ -14,7 +15,7 @@ secrets:
   gatekeeperSlackSigningSecret: ""
   # The master key of LiteLLM, like sk-<random>. foreman makes each run's own key with it.
   litellmMasterKey: ""
-  # A token that may read pull requests and their checks, for stages with checks. Optional.
+  # The forge token of gatekeeper, which asks on the run's pull request, and of foreman, which reads its checks.
   forgeToken: ""
   # The agents' GitHub token, GH_TOKEN in their sandboxes, and the token of `claude setup-token`. Only each sandbox's
   # egress pod gets them; the agent holds a placeholder. Without them, a stage that needs them fails.
@@ -38,7 +39,8 @@ factory:
   files: {}
 
 gatekeeper:
-  # The Slack channel where gatekeeper asks for decisions, like C0GATES.
+  # The Slack channel where gatekeeper asks for decisions, like C0GATES, with the Slack secrets. With existingSecret,
+  # empty turns Slack off.
   slackChannel: C0GATES
   forgeAdapter: forge-github
   resources: {}

@@ -398,6 +398,7 @@ services:
       CONSOLE_GATEKEEPER_URL: http://gatekeeper:8080
       CONSOLE_GATEKEEPER_TOKEN: ${GATEKEEPER_API_TOKEN:?set GATEKEEPER_API_TOKEN in .env}
       CONSOLE_FACTORY: /factory/factory.yaml
+      CONSOLE_GROUPS: /factory/groups.json
       CONSOLE_FORGE_ADAPTER: forge-github
       CONSOLE_TEMPORAL_URL: http://${OSF_HOST:-127.0.0.1}:${TEMPORAL_UI_PORT:-8233}
       # Each run links its trace in Jaeger.

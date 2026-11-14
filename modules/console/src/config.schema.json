@@ -66,6 +66,10 @@
       "default": "factory.yaml",
       "description": "serve: the factory definition that /factory shows, read-only."
     },
+    "CONSOLE_GROUPS": {
+      "type": "string",
+      "description": "doctor and /health: the groups file of the factory's gatekeeper, like /factory/groups.json. Set, a group without a member but the example's slack:U0EXAMPLE fails the check groups."
+    },
     "CONSOLE_FACTORY_PATH": {
       "type": "string",
       "default": "factory.yaml",

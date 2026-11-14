@@ -1063,7 +1063,7 @@ as a vision scenario. Each item names the place in the code, so start there, and
     repository need.
   - [x] SCN-DIST-015 plans the changed factory.
 
-### [ ] T-47 · a first run without guessing (P1)
+### [x] T-47 · a first run without guessing (P1)
 
 - **Problem:** next to T-30: the root `README.md` has no path to a running factory. The reference `groups.json` names
   a Slack user that does not exist, so the first gate asks nobody. The chart requires the Slack secrets, while the
@@ -1071,10 +1071,10 @@ as a vision scenario. Each item names the place in the code, so start there, and
 - **Done when:** the root README leads to the quick start in three lines, `console doctor` fails on an approver group
   without a real member, and the chart installs with `secrets.forgeToken` and without Slack.
 - **Slices:**
-  - [ ] "Run a factory" in `README.md`, with a link to `deploy/README.md`.
-  - [ ] `console doctor` and gatekeeper's start name a group whose members are the example's (`SCN-CONSOLE`,
+  - [x] "Run a factory" in `README.md`, with a link to `deploy/README.md`.
+  - [x] `console doctor` and gatekeeper's start name a group whose members are the example's (`SCN-CONSOLE`,
     `SCN-GATE`).
-  - [ ] The chart takes Slack, a forge token or both, as `compose.yaml` does (`SCN-DIST`).
+  - [x] The chart takes Slack, a forge token or both, as `compose.yaml` does (`SCN-DIST`).
 
 ### [ ] T-48 · lists that stay fast (P2)
 

@@ -37,6 +37,8 @@ spec:
               value: {{ printf "http://%s:8080" (include "osf.name" (dict "root" . "component" "gatekeeper")) | quote }}
             - name: CONSOLE_FACTORY
               value: /factory/factory.yaml
+            - name: CONSOLE_GROUPS
+              value: /factory/groups.json
             - name: CONSOLE_TEMPORAL_NAMESPACE
               value: {{ .Values.temporalNamespace | quote }}
             - name: CONSOLE_FORGE_ADAPTER

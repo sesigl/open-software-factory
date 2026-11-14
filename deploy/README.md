@@ -18,12 +18,13 @@ You need Docker with Compose 2.24 or later.
 ```sh
 cd deploy/compose
 cp .env.example .env    # set the tokens, the database password, and Slack or a forge token for gatekeeper
+$EDITOR factory/groups.json    # put your Slack member ID, like slack:U024BE7LH, or github:<login> in place of slack:U0EXAMPLE
 docker compose up --detach --wait
 docker compose run --rm console console doctor    # one line per check, and one fix per failure
 docker compose run --rm factory plan
 ```
 
-`console doctor` checks each server's health and token and the factory definition, in that order
+`console doctor` checks each server's health and token, the factory definition and its groups, in that order
 ([ADR 0086](../docs/decisions/0086-health-routes.md)). Then open the console at http://127.0.0.1:8080. `up` pulls the signed module images from GHCR; an image that is not
 published yet, like one whose pin moved a moment ago, is built from npm, which takes a minute or two.
 
@@ -67,7 +68,10 @@ the foreman puts at the end of its prompt ([ADR 0111](../docs/decisions/0111-the
 without its own `name:` adds the matrix values in parentheses, like `test (ubuntu-latest, 24)`. A job of a reusable
 workflow is named `<calling job> / <called job>`, like `ci / verify`. The forge adapter `github` reads check runs and
 commit statuses ([ADR 0104](../docs/decisions/0104-forge-github-check-runs.md)), so its token needs `Checks: read`. To run your own, copy the
-folder, change the prompts, `policy/spec.rego` and `groups.json`, and set `FACTORY_DIR` to it. Each
+folder, change the prompts, `policy/spec.rego` and `groups.json`, and set `FACTORY_DIR` to it. The reference
+`groups.json` names `slack:U0EXAMPLE`, a member that stands for a person and is nobody: until a group has a real
+member, gatekeeper names it when it starts and `console doctor` fails its check `groups`
+([ADR 0114](../docs/decisions/0114-the-example-member-of-the-reference-groups.md)). Each
 `docker compose up` commits the folder into the volume `factory`, so a run's factory version is a commit. The factory
 attaches to `litellm` with `inference/litellm.yaml`, so its agents' models are the routes in
 `compose/litellm/config.yaml`. Add your models there, with their keys in `.env`. Its routes point at Anthropic's
@@ -210,8 +214,9 @@ secrets:
   foremanApiToken: change-me
   intakeApiToken: change-me
   gatekeeperApiToken: change-me
-  gatekeeperSlackToken: xoxb-change-me
+  gatekeeperSlackToken: xoxb-change-me     # Slack, a forge token or both, as in the Compose profile
   gatekeeperSlackSigningSecret: change-me
+  forgeToken: change-me               # gatekeeper asks on the run's pull request; foreman reads its checks
   litellmMasterKey: sk-change-me
   githubToken: change-me            # GH_TOKEN of the agents
   claudeCodeOauthToken: change-me   # a token of `claude setup-token`
@@ -249,12 +254,12 @@ Each stage of the reference factory runs in a sandbox of the
 
 | Value | Default | Meaning |
 | --- | --- | --- |
-| `secrets.existingSecret` | | A Secret with the keys `postgres-password`, `foreman-api-token`, `intake-api-token`, `gatekeeper-api-token`, `gatekeeper-slack-token`, `gatekeeper-slack-signing-secret`, `litellm-master-key` and, optional, `forge-token`, `github-token` and `claude-code-oauth-token`, for example filled from OpenBao by its operator or the External Secrets Operator. Set, the chart makes no Secret. |
+| `secrets.existingSecret` | | A Secret with the keys `postgres-password`, `foreman-api-token`, `intake-api-token`, `gatekeeper-api-token`, `litellm-master-key` and, optional, `gatekeeper-slack-token` and `gatekeeper-slack-signing-secret` (with `gatekeeper.slackChannel`), `forge-token`, `github-token` and `claude-code-oauth-token`, for example filled from OpenBao by its operator or the External Secrets Operator. Set, the chart makes no Secret. |
 | `secrets.postgresPassword` | | Required without `existingSecret`. The password of the database user; it goes into URLs, so use letters, digits, `-` and `_`. |
 | `secrets.foremanApiToken`, `secrets.intakeApiToken`, `secrets.gatekeeperApiToken` | | Required without `existingSecret`. The API tokens of foreman, intake and gatekeeper. |
-| `secrets.gatekeeperSlackToken`, `secrets.gatekeeperSlackSigningSecret` | | Required without `existingSecret`. The bot token and signing secret of gatekeeper's Slack app. |
+| `secrets.gatekeeperSlackToken`, `secrets.gatekeeperSlackSigningSecret` | | The bot token and signing secret of gatekeeper's Slack app. Set them, `secrets.forgeToken` or both; without either the chart names the three. Without them gatekeeper asks on pull requests only. |
 | `secrets.litellmMasterKey` | | Required without `existingSecret`. The master key of LiteLLM, like `sk-<random>`; foreman makes each run's key with it. |
-| `secrets.forgeToken` | | foreman's token for the checks of a pull request; on GitHub it needs `Checks: read`. |
+| `secrets.forgeToken` | | gatekeeper's and foreman's forge token: gatekeeper asks on the run's pull request, foreman reads its checks. On GitHub it needs `Pull requests: write`, `Commit statuses: write` and `Checks: read`. |
 | `secrets.githubToken`, `secrets.claudeCodeOauthToken` | | The agents' `GH_TOKEN` and the token of `claude setup-token`, which only each sandbox's egress pod gets. Without them, a stage that needs them fails. |
 | `sandboxes.namespace` | `<release namespace>-sandboxes` | The namespace of the agents' sandboxes, where foreman has its rights. |
 | `sandboxes.createNamespace` | `true` | `false` when the namespace exists, or the installer may not create namespaces. |
@@ -263,7 +268,7 @@ Each stage of the reference factory runs in a sandbox of the
 | `images.registry` | `ghcr.io/sesigl/open-software-factory` | Where the module images come from. |
 | `images.gatekeeper`, `images.intake`, `images.foreman`, `images.console`, `images.factorySpec` | the pins of `compose.yaml` | The tags of the module images. |
 | `factory.files` | the reference factory | Your factory definition as path: content, like `factory.yaml: "version: 1 ..."`. foreman commits it into Git with a fixed author and date. |
-| `gatekeeper.slackChannel` | `C0GATES` | The Slack channel where gatekeeper asks. |
+| `gatekeeper.slackChannel` | `C0GATES` | The Slack channel where gatekeeper asks, with the Slack secrets. With `existingSecret`, empty turns Slack off. |
 | `foreman.harnesses`, `foreman.forges` | claude-code; github and forgejo | foreman's `FOREMAN_HARNESSES` and `FOREMAN_FORGES`. |
 | `foreman.persistence.size` | `1Gi` | The volume of the runs' working folders. |
 | `console.temporalUrl`, `console.links` | | The Temporal UI and the dashboards the console links, like `Langfuse=https://langfuse.acme.dev`. |
@@ -354,3 +359,4 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-030 | implemented | The ship stage of this repository's factory starts only when the checks "verify" and "proof" succeeded |
 | SCN-DIST-031 | planned | The verify stage of the reference factory only waits and runs no agent |
 | SCN-DIST-032 | planned | The verify stage of this repository's factory only waits and runs no agent |
+| SCN-DIST-033 | implemented | The chart takes a forge token without Slack, and asks on pull requests only |

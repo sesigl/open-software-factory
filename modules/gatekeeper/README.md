@@ -213,7 +213,10 @@ TypeScript type `paths` of `@opensoftware/contracts` types a client. The `/v1` r
 
 The request message has the buttons Approve and Reject. The rules of [Decisions](#decisions) hold for presses and
 replies alike, and a press after the decision changes nothing. A press counts at the server's time when it arrives. The policy's answer is stored with the gate when it
-is requested; the groups file is read when the server starts. The server checks every pending gate when it starts
+is requested; the groups file is read when the server starts. A group whose only member is `slack:U0EXAMPLE`, the member that the
+reference `groups.json` of `deploy/` ships in place of a person, makes the server write a line to stderr that names
+the group, as nobody decides its gates; the server starts all the same
+([ADR 0114](../../docs/decisions/0114-the-example-member-of-the-reference-groups.md)). The server checks every pending gate when it starts
 and then every minute, so an escalation or an expiry needs no event.
 
 ### Pull requests in server mode
@@ -405,3 +408,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-GATE-090 | implemented | A call without an Authorization header gets the status 401 and a problem that says how to send the token |
 | SCN-GATE-091 | implemented | A server that reaches its database, OPA and NATS is healthy |
 | SCN-GATE-092 | implemented | A server without OPA is failing and says what to fix |
+| SCN-GATE-093 | implemented | The server names a group whose only member is the example's when it starts |
