@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/sesigl/open-software-factory/compare/console-v0.8.0...console-v0.8.1) (2026-11-14)
+
+
+### Bug Fixes
+
+* **console:** the published console starts, and its probe answers a health check on every host ([#323](https://github.com/sesigl/open-software-factory/issues/323)) ([3a6d0fa](https://github.com/sesigl/open-software-factory/commit/3a6d0fafb03fd4bf37a6486287baeee63ca794a5))
+
 ## [0.8.0](https://github.com/sesigl/open-software-factory/compare/console-v0.7.0...console-v0.8.0) (2026-11-14)
 
 
