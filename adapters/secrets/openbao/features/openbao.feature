@@ -54,14 +54,14 @@ Feature: The policies, the mount and the limits of secrets-openbao
     When the client runs "delete linear-token team/linear-token"
     Then delete exits with code 2 and prints the usage on standard error
 
-  @id=SCN-SOPENBAO-009 @status=planned
+  @id=SCN-SOPENBAO-009 @status=implemented
   Scenario: exists says false for a secret whose current version another client deleted or destroyed
     Given the test store and the read token
     And another client stored "deleted-token" and "destroyed-token", then deleted the current version of the first and destroyed that of the second
     When the client runs "exists deleted-token" and "exists destroyed-token" with the read token
     Then exists prints "exists" false for both
 
-  @id=SCN-SOPENBAO-010 @status=planned
+  @id=SCN-SOPENBAO-010 @status=implemented
   Scenario: exists with a token that may not read the metadata names what it may not do
     Given the test store and a token whose policy may only write values
     When the client runs "exists linear-token" with that token

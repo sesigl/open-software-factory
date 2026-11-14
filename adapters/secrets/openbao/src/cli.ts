@@ -3,6 +3,7 @@
 import { parseArgs } from "node:util";
 import { type Command, runProgram } from "@opensoftware/cli";
 import { remove } from "./commands/delete.ts";
+import { exists } from "./commands/exists.ts";
 import { list } from "./commands/list.ts";
 import { policy } from "./commands/policy.ts";
 import { probe } from "./commands/probe.ts";
@@ -15,6 +16,7 @@ Commands:
   list                       Print each secret as {"name", "version", "changed", "by"}, sorted by name.
   delete <name>              Remove the secret with every version; print {"name", "deleted"}.
   probe                      Check that OpenBao answers to the token; print {"ttl", "expires"} of the token.
+  exists <name>              Whether the secret has a value, from its metadata only; print {"name", "exists"}.
   policy write|read          Print the policy of the console's token (write) or the egress proxy's (read).
 
 A name holds A-Z, a-z, 0-9, _, . and - in folders split by /, like team/linear-token. No command prints a value.
@@ -31,6 +33,7 @@ const commands: Record<string, Command> = {
   list: () => list(),
   delete: () => remove(first),
   probe: () => probe(),
+  exists: () => exists(first),
   policy: () => policy(first),
 };
 

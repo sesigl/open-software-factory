@@ -135,7 +135,7 @@ Feature: Store, list and delete the values of secrets, and never print one
     And the test store holds no secret "linear-token"
     And put of "team/longest" prints the version 1
 
-  @id=SCN-SECRET-019 @status=planned @conformance
+  @id=SCN-SECRET-019 @status=implemented @conformance
   Scenario: exists says whether a secret has a value, with the read token, and prints no value
     Given the test store and the read token
     And another client stored "linear-token" with the value "lin_test_51c2" in the test store
