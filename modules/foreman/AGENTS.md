@@ -1,6 +1,6 @@
 # AGENTS.md for module `foreman`
 
-Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0004, ADR 0067, ADR 0068, ADR 0069, ADR 0070, ADR 0071, ADR 0107, ADR 0109, ADR 0111, ADR 0115.
+Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0004, ADR 0067, ADR 0068, ADR 0069, ADR 0070, ADR 0071, ADR 0107, ADR 0109, ADR 0111, ADR 0115, ADR 0126.
 
 ## Public surface
 

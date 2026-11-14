@@ -10,6 +10,7 @@ import { type HarnessTurn, sessionRecord, startTurn } from "../adapters/harness.
 import { type Gateway, hasKey } from "../adapters/inference.ts";
 import { type Bus, SUBJECTS } from "../adapters/nats.ts";
 import type { Exporter } from "../adapters/otlp.ts";
+import { cloneRepositories } from "../adapters/repositories.ts";
 import { createSandbox } from "../adapters/sandbox.ts";
 import { writeSkills } from "../adapters/skills.ts";
 import { type CommandLines, commandOf } from "../domain/adapters.ts";
@@ -290,6 +291,7 @@ export function activities(deps: ActivityDeps) {
       const cwd = join(deps.data, "runs", view.runId);
       mkdirSync(cwd, { recursive: true });
       writeSkills(cwd, plan.skills ?? []);
+      await cloneRepositories(cwd, plan.repositories ?? []);
       const attributes = {
         "osf.run.id": view.runId,
         "osf.work_item.id": view.workItem.id,

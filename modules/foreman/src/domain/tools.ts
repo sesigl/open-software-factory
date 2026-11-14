@@ -42,3 +42,19 @@ export function sessionServer(reference: string, pins: Record<string, LockPin>):
 /** The hosts of the servers that the agent reaches over HTTP, which its sandbox's egress must allow. */
 export const hostsOf = (servers: SessionMcpServer[]): string[] =>
   servers.flatMap((server) => ("url" in server ? [new URL(server.url).hostname] : []));
+
+/** A repository the agent declares (ADR 0126): its folder's name below `repositories/` and the URL to clone. */
+export interface DeclaredRepository {
+  name: string;
+  url: string;
+}
+
+/**
+ * The repository of a `repositories` entry of `factory.yaml`: a clone URL as it is, `<owner>/<name>` on GitHub. Its name
+ * is the last segment of the URL without `.git`.
+ */
+export function declaredRepository(reference: string): DeclaredRepository {
+  const url = /^[a-z][a-z0-9+.-]*:/i.test(reference) ? reference : `https://github.com/${reference}.git`;
+  const name = (url.replace(/\/+$/, "").split(/[/:]/).pop() as string).replace(/\.git$/, "");
+  return { name, url };
+}

@@ -15,7 +15,8 @@ sandboxes, [ADR 0069](../../docs/decisions/0069-foreman-checks.md) for checks, a
 [ADR 0107](../../docs/decisions/0107-a-stage-that-only-waits.md) for a stage that only waits, and
 [ADR 0111](../../docs/decisions/0111-the-result-of-a-stage-in-the-next-prompt.md) for the result of a stage in the next
 stage's prompt, and [ADR 0112](../../docs/decisions/0112-an-agents-mcp-servers-and-skills-in-its-session.md) for an
-agent's MCP servers and skills.
+agent's MCP servers and skills, and [ADR 0126](../../docs/decisions/0126-an-agents-repositories-in-its-folder.md)
+for an agent's repositories.
 
 ## Quick start
 
@@ -433,7 +434,10 @@ took it over, and a `reason` when it failed for a reason the foreman knows.
   characters, after the line `[… the first <n> characters are cut]` when it wrote more (ADR 0111). It allows the tool calls the adapter asks
   about; limit them with the adapter's `--allow`. Before the session, the foreman writes the files of each of the
   agent's `skills` into the run's folder below `.claude/skills/<name>` and `.agents/skills/<name>`, replacing a folder
-  of that name (ADR 0112). The session's MCP servers are the agent's `mcp`: `<package>@<version>` runs as
+  of that name (ADR 0112), and clones each of the agent's `repositories` with `git clone --depth 1` below
+`repositories/<name>`, `<name>` the last segment of its URL without `.git`, unless an earlier stage left that folder:
+a clone URL as it is, `<owner>/<name>` from `https://github.com`. The foreman gives Git no token; a private repository
+needs credentials that Git on the foreman's host has, and a clone that fails fails the run (ADR 0126). The session's MCP servers are the agent's `mcp`: `<package>@<version>` runs as
   `npx -y <package>@<version>`, and `registry:<name>@<range>` as `factory plan` pinned it in `factory.lock`, a package
   run with `npx` or a remote URL over HTTP; a registry server without a pin stops the run. A turn that ends with `end_turn` succeeds the stage; any other end
   fails or cancels it, ends the run, and leaves the later stages `pending`. The adapter gets
@@ -708,3 +712,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-156 | implemented | A factory in a Git remote runs at the commit of its default branch, and the server's folder needs no clean checkout |
 | SCN-FORE-157 | implemented | A ref that the Git remote does not have stops the server at the start |
 | SCN-FORE-158 | implemented | The fallback runs the exact version factory.lock pins for the adapter's range |
+| SCN-FORE-159 | implemented | A stage's agent finds the repositories it declares cloned in its folder |

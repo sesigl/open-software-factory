@@ -1055,7 +1055,7 @@ as a vision scenario. Each item names the place in the code, so start there, and
     the fallback runs the pin while its range holds (SCN-FORE-158).
   - [x] The adapter maps take a command line as a list of arguments too (SCN-FORE-134).
 
-### [ ] T-44 · what factory.yaml declares takes effect (P1)
+### [x] T-44 · what factory.yaml declares takes effect (P1)
 
 - **Problem:** a factory declares more than a run uses. The foreman opens each session with `mcpServers: []` and gives
   the agent only its prompt, so an agent's `mcp`, `skills` and `repositories` do nothing in a run. A `cron` automation
@@ -1071,8 +1071,8 @@ as a vision scenario. Each item names the place in the code, so start there, and
     reference prompts name.
   - [x] `factory lint` warns about a `cron` automation without `--gh-aw`, and about `benchmarks` and `scorers` that no
     job of the profile runs (until T-31).
-  - [ ] An agent's `repositories` take effect in a run, or `factory lint` warns that they do not. No slice covered
-    them yet.
+  - [x] An agent's `repositories` take effect in a run: the foreman clones each one, shallow, below `repositories/<name>`
+    of the session's folder before the turn, also in a sandbox (ADR 0126, `SCN-FORE-159`).
 
 ### [ ] T-45 · the requester hears about the run (P1)
 
