@@ -1,6 +1,7 @@
 // merge <repo> <number> --when-green [--method merge|squash|rebase]: GitHub's auto-merge (ADR 0136). Like
 // `gh pr merge --auto`, it merges at once a pull request that GitHub would merge now, and otherwise asks GitHub to
-// merge it once its merge rules hold, through the GraphQL mutation enablePullRequestAutoMerge.
+// merge it once its merge rules hold, through the GraphQL mutation enablePullRequestAutoMerge. A pull request whose
+// auto-merge is on already is queued: a program that repeats itself sends no second request.
 import { check, type Outcome } from "@opensoftware/cli";
 import { MERGE_METHODS } from "../domain/repository.ts";
 import { computed, merge } from "./pulls.ts";
@@ -10,14 +11,20 @@ import { connect, numberOf, print } from "./shared.ts";
 const MERGES_NOW = ["CLEAN", "HAS_HOOKS", "UNSTABLE", "DIRTY"];
 
 const STATE = `query($owner: String!, $name: String!, $number: Int!) {
-  repository(owner: $owner, name: $name) { autoMergeAllowed pullRequest(number: $number) { id mergeStateStatus } }
+  repository(owner: $owner, name: $name) {
+    autoMergeAllowed
+    pullRequest(number: $number) { id mergeStateStatus autoMergeRequest { enabledAt } }
+  }
 }`;
 const ENABLE = `mutation($id: ID!, $method: PullRequestMergeMethod!) {
   enablePullRequestAutoMerge(input: { pullRequestId: $id, mergeMethod: $method }) { clientMutationId }
 }`;
 
 interface State {
-  repository: { autoMergeAllowed: boolean; pullRequest: { id: string; mergeStateStatus: string } };
+  repository: {
+    autoMergeAllowed: boolean;
+    pullRequest: { id: string; mergeStateStatus: string; autoMergeRequest: { enabledAt: string } | null };
+  };
 }
 
 export async function mergeWhenGreen(
@@ -33,6 +40,7 @@ export async function mergeWhenGreen(
   const [owner, name] = (repo as string).split("/");
   const { repository } = await api.graphql<State>(STATE, { owner, name, number: issue });
   if (MERGES_NOW.includes(repository.pullRequest.mergeStateStatus)) return merge(repo, number, method);
+  if (repository.pullRequest.autoMergeRequest) return print({ queued: true });
   if (!repository.autoMergeAllowed)
     throw new Error(
       `the forge cannot merge ${repo}#${issue} when its checks pass: allow auto-merge in the repository's settings`,

@@ -19,11 +19,8 @@ scenario("SCN-FORGE-043", async ({ sut, fakes, given, when, then }) => {
     expect((await box.forge.pullRequests("web")).find((each) => each.number === pr.number)?.state).toBe("closed");
   });
 
-  await then(
-    'the repository still has the branch "console/add-skill" at the pull request\'s head commit',
-    async () => {
-      const kept = (await box.forge.branches("web")).find((each) => each.name === "console/add-skill");
-      expect(kept?.sha).toBe(pr.sha);
-    },
-  );
+  await then('the repository still has the branch "console/add-skill" at the pull request\'s head commit', async () => {
+    const kept = (await box.forge.branches("web")).find((each) => each.name === "console/add-skill");
+    expect(kept?.sha).toBe(pr.sha);
+  });
 });

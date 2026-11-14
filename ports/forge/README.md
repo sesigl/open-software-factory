@@ -76,7 +76,8 @@ Every adapter reads three variables:
 - `merge --when-green` uses the forge's own merge when green, GitHub's auto-merge or Forgejo's merge when checks
   succeed, and runs no loop: the forge merges later, as the person who ran it. A forge that cannot do it for the
   repository exits 1 with `the forge cannot merge <repo>#<number> when its checks pass: <the fix>`, and leaves the
-  pull request open.
+  pull request open. A second `--when-green` on a pull request that is queued already prints `{"queued": true}`
+  again and exits 0, so a client may repeat itself.
 - `webhook` keeps one webhook per URL: a second call for the same URL updates it and replaces its events.
 - `unhook` of a webhook the repository does not have prints `"removed": false` and exits 0.
 - `event` reads a delivery as a JSON file `{"headers": {...}, "body": "<the body as it arrived>"}`. With

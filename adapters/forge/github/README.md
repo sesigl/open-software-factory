@@ -59,7 +59,8 @@ npx @opensoftware/forge-github event delivery.json                # a pr.opened@
   GitHub's GraphQL API (`/graphql`, or `/api/graphql` beside GitHub Enterprise Server's `/api/v3`). A pull request
   that GitHub would merge now (`CLEAN`, `HAS_HOOKS`, `UNSTABLE`), or one with a conflict, gets the plain merge;
   any other enables auto-merge with the merge method (GraphQL `enablePullRequestAutoMerge`) and prints
-  `{"queued": true}`. GitHub merges it as the token's user once the required checks and reviews pass. Auto-merge
+  `{"queued": true}`. A pull request whose `autoMergeRequest` is set already prints `{"queued": true}` without a
+  second request. GitHub merges it as the token's user once the required checks and reviews pass. Auto-merge
   needs the repository's setting "Allow auto-merge", which a new repository has off and which GitHub offers for
   private repositories only on its paid plans; without it the command exits 1 with
   `the forge cannot merge <repo>#<number> when its checks pass: allow auto-merge in the repository's settings`.

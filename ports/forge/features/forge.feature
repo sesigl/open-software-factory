@@ -314,3 +314,10 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     When the client runs "close tester/web <number>"
     Then close prints the number and the state "closed"
     And the repository still has the branch "console/add-skill" at the pull request's head commit
+
+  @id=SCN-FORGE-044 @status=implemented @conformance
+  Scenario: merge --when-green on a pull request that is queued already prints "queued" again
+    Given "main" of "tester/web" requires the check "factory", the repository allows a merge when the checks pass, and an open pull request whose check "factory" is pending
+    And the client ran "merge tester/web <number> --when-green"
+    When the client runs "merge tester/web <number> --when-green" again
+    Then merge prints "queued" true and exits with code 0, and the pull request is still open

@@ -42,8 +42,9 @@ npx @opensoftware/forge-forgejo event delivery.json                # a pr.opened
 - **Merge when green** is Forgejo's merge when checks succeed (ADR 0136). `merge --when-green` first merges as
   `merge` does, which Forgejo refuses while a required check has not passed, even for an admin. It then schedules
   the merge with `merge_when_checks_succeed` and prints `{"queued": true}`; Forgejo merges in the background once
-  the required statuses pass. A pull request that is scheduled already gets Forgejo's answer
-  `pull request is already scheduled to auto merge when checks succeed`.
+  the required statuses pass. Forgejo answers "Please try again later" to both calls while it checks the pull
+  request, and both are tried again for up to 10 seconds. A pull request that is scheduled already, which Forgejo
+  answers with 409 `already scheduled to auto merge`, prints `{"queued": true}` again.
 - **Commit** uses Forgejo's API that changes several files in one commit (`POST /repos/{owner}/{repo}/contents`): a
   file the branch has is updated by its blob's SHA, any other is created.
 - **Close** sets the pull request's state to `closed`; with `--delete-branch` it then deletes the head branch.

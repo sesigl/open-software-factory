@@ -35,6 +35,8 @@ How the adapters do it, with the forges' own APIs and no Git checkout:
   Server `/api/graphql`); a pull request that GitHub would merge now (`CLEAN`, `HAS_HOOKS`, `UNSTABLE`) merges at
   once through the REST merge, and `DIRTY` gets the REST merge's conflict error. Any other state enables auto-merge
   with the mutation `enablePullRequestAutoMerge`, which waits only while a required check or review is missing.
+  A pull request whose `autoMergeRequest` is set already is queued without a second mutation, since GitHub does not
+  document its answer to one.
   Auto-merge needs the repository's setting "Allow auto-merge" (GraphQL `autoMergeAllowed`, off for a new
   repository), and GitHub offers it for private repositories only on the paid plans; without it the command names
   that setting. GitHub merges later as the token's user. The REST merge is not tried first: with `enforce_admins`
@@ -45,7 +47,8 @@ How the adapters do it, with the forges' own APIs and no Git checkout:
   `--when-green` tries a plain merge first, which Forgejo refuses while a required check is missing (it holds admins
   to the rules unless a merge asks for `force_merge`), and then schedules the merge with the merge option
   `merge_when_checks_succeed`; Forgejo merges in the background once the statuses pass, and needs no setting of the
-  repository. `rules` reads the branch protection named after the branch (its status check contexts, when status
+  repository; scheduling a pull request that is scheduled already answers 409, which counts as queued. `rules`
+  reads the branch protection named after the branch (its status check contexts, when status
   checks are on, and required approvals).
 - `close` sets the pull request's state to closed and, with `--delete-branch`, deletes the branch's ref.
 

@@ -104,7 +104,7 @@ interface Pull {
   /** False until a client read the pull request once: GitHub answers `mergeable: null` while it computes it. */
   computed: boolean;
   /** Auto-merge as a person enabled it: the fake merges with this method once the merge rules hold. */
-  autoMerge?: { method: string; user: string };
+  autoMerge?: { method: string; user: string; enabledAt: string };
   createdAt: string;
   updatedAt: string;
   closedAt: string | null;
@@ -908,8 +908,9 @@ export async function startGitHub(): Promise<RunningGitHub> {
    * GitHub's GraphQL API, as far as a forge client asks it (ADR 0136): a query of a pull request's
    * `mergeStateStatus`, with its `id` and its repository's `autoMergeAllowed` (the variables `name` and `number`), and
    * the mutation `enablePullRequestAutoMerge` (the variables `id` and `method`), which GitHub refuses where the
-   * repository does not allow auto-merge and for a pull request that can merge now. Any other query fails the
-   * scenario.
+   * repository does not allow auto-merge and for a pull request that can merge now. The query also answers the
+   * pull request's `autoMergeRequest`. What GitHub answers to enabling auto-merge a second time is not documented,
+   * so that fails the scenario, as any other query does.
    */
   const graphql = (request: { query?: string; variables?: Record<string, unknown> }, user: string) => {
     const query = request.query ?? "";
@@ -924,13 +925,23 @@ export async function startGitHub(): Promise<RunningGitHub> {
       const pr = pull(repo, Number(number));
       if (!repo.autoMergeAllowed) return refused("Pull request Auto merge is not allowed for this repository");
       if (mergeState(repo, pr) === "CLEAN") return refused("Pull request Pull request is in clean status");
-      pr.autoMerge = { method, user };
+      if (pr.autoMerge) {
+        problems.push(`fake GitHub: auto-merge of ${OWNER}/${repo.name}#${pr.number} is enabled already`);
+        return refused("fake GitHub does not know what GitHub answers to enabling auto-merge twice");
+      }
+      pr.autoMerge = { method, user, enabledAt: now() };
       return { data: { enablePullRequestAutoMerge: { clientMutationId: null } } };
     }
     if (query.includes("mergeStateStatus")) {
       const repo = repository(String(variables.name));
       const pr = pull(repo, Number(variables.number));
-      const pullRequest = { id: `PR_${repo.name}_${pr.number}`, mergeStateStatus: mergeState(repo, pr) };
+      const pullRequest = {
+        id: `PR_${repo.name}_${pr.number}`,
+        mergeStateStatus: mergeState(repo, pr),
+        autoMergeRequest: pr.autoMerge
+          ? { enabledAt: pr.autoMerge.enabledAt, mergeMethod: pr.autoMerge.method.toUpperCase() }
+          : null,
+      };
       return { data: { repository: { autoMergeAllowed: repo.autoMergeAllowed, pullRequest } } };
     }
     problems.push(`fake GitHub: the GraphQL query ${query.replace(/\s+/g, " ").trim()} is not supported`);
