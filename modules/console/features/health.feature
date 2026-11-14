@@ -59,3 +59,57 @@ Feature: Health
     When the user runs "console doctor"
     Then the command exits with code 1
     And it prints "FAIL  groups: ENOENT: no such file or directory, open '<file>': check CONSOLE_GROUPS"
+
+  @id=SCN-CONSOLE-064 @status=implemented
+  Scenario: "console doctor --deep" calls each model route once and asks the harness to initialize
+    Given a foreman whose "/v1/health" is ok and that accepts its token
+    And the factory definition with the agent "triage" on the route "routes/triage"
+    And a model gateway in "CONSOLE_MODEL_URL" that answers a call to "routes/triage"
+    And a harness in "CONSOLE_HARNESS_COMMAND" that speaks ACP
+    When the user runs "console doctor --deep"
+    Then the command exits with code 0
+    And it prints "ok    model routes/triage" and "ok    harness"
+    And the gateway received one call, for the model "routes/triage"
+
+  @id=SCN-CONSOLE-065 @status=implemented
+  Scenario: "console doctor --deep" names a failing model route and a harness that answers "initialize" with an error
+    Given the factory definition with the agent "triage" on the route "routes/triage"
+    And a model gateway in "CONSOLE_MODEL_URL" that answers 500 to every call
+    And "CONSOLE_HARNESS_COMMAND" is a command that answers ACP initialize with an error
+    When the user runs "console doctor --deep"
+    Then the command exits with code 1
+    And it prints "FAIL  model routes/triage: the gateway answered 500: check the route in the gateway's config and its provider key"
+    And it prints "FAIL  harness: it did not answer ACP initialize: check CONSOLE_HARNESS_COMMAND"
+
+  @id=SCN-CONSOLE-066 @status=implemented
+  Scenario: "console doctor" without "--deep" calls no model
+    Given the factory definition with the agent "triage" on the route "routes/triage"
+    And a model gateway in "CONSOLE_MODEL_URL"
+    When the user runs "console doctor"
+    Then it prints no line about a model route or the harness
+    And the gateway received no call
+
+  @id=SCN-CONSOLE-067 @status=implemented
+  Scenario: "console doctor --deep" names the variables of the gateway and the harness when they are not set
+    Given a console without "CONSOLE_MODEL_URL" and "CONSOLE_HARNESS_COMMAND"
+    When the user runs "console doctor --deep"
+    Then the command exits with code 1
+    And it prints "FAIL  model: set CONSOLE_MODEL_URL to the gateway's base URL"
+    And it prints "FAIL  harness: set CONSOLE_HARNESS_COMMAND to the command that starts the harness"
+
+  @id=SCN-CONSOLE-068 @status=implemented
+  Scenario: "console doctor --deep" names a gateway that does not answer and a harness that ends without a word
+    Given the factory definition with the agent "triage" on the route "routes/triage"
+    And "CONSOLE_MODEL_URL" names a port where nothing listens
+    And "CONSOLE_HARNESS_COMMAND" is a command that exits without a word
+    When the user runs "console doctor --deep"
+    Then it prints "FAIL  model routes/triage: no answer: check CONSOLE_MODEL_URL and that the gateway runs"
+    And it prints "FAIL  harness: it did not answer ACP initialize: check CONSOLE_HARNESS_COMMAND"
+
+  @id=SCN-CONSOLE-069 @status=implemented
+  Scenario: The page "/health" calls no model
+    Given the factory definition with the agent "triage" on the route "routes/triage"
+    And a model gateway in "CONSOLE_MODEL_URL"
+    When a person opens "/health"
+    Then its table has no row about a model route or the harness
+    And the gateway received no call

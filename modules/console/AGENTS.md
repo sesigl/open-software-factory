@@ -1,6 +1,6 @@
 # AGENTS.md for module `console`
 
-Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0072, ADR 0073, ADR 0115.
+Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0072, ADR 0073, ADR 0115, ADR 0120.
 
 ## Public surface
 
@@ -16,7 +16,9 @@ The only ways a system test or another program may use this module:
   gatekeeper's at `CONSOLE_GATEKEEPER_URL` (`contracts/openapi/openapi.json`), only with `GET`, and with `POST` for the actions (intake's
   `/v1/work-items`, the foreman's `/v1/runs/<runId>/retry` and `/v1/runs/<runId>/signals`, gatekeeper's
   `/v1/gates/<gateId>/decisions`); the forge port's
-  adapter in `CONSOLE_FORGE_ADAPTER`, only with its read-only command `prs` (ADR 0073)
+  adapter in `CONSOLE_FORGE_ADAPTER`, only with its read-only command `prs` (ADR 0073); with `console doctor --deep`
+  only, the model gateway at `CONSOLE_MODEL_URL` (one `POST /chat/completions` per route) and the harness started by
+  `CONSOLE_HARNESS_COMMAND` (ACP `initialize`, ADR 0120)
 - Input: the factory definition in `CONSOLE_FACTORY`
 - Server state: none
 - Environment variables: the list in `README.md#configuration` (generated from `src/config.schema.json`)
@@ -36,7 +38,7 @@ Fastify server. The ARCH check enforces the layers.
 
 ## Budget
 
-- System tests: 60 seconds in total on the CI runner (53 scenarios; each starts one server, and the foremen, intake
+- System tests: 60 seconds in total on the CI runner (68 scenarios; each starts one server, and the foremen, intake
   and gatekeeper are `fakes.http`; the inbox's forge is `fakes.github` behind the built forge-github adapter).
 
 ## Quality limits
