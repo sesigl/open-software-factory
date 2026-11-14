@@ -200,3 +200,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-054 | implemented | The run page of a run that ran again links the run before it |
 | SCN-CONSOLE-055 | implemented | The run page shows a stage that only waits with "waits" instead of an agent |
 | SCN-CONSOLE-056 | implemented | "console doctor" fails on a group whose only member is the example's |
+| SCN-CONSOLE-059 | implemented | "console doctor" fails on a groups file it cannot read |
