@@ -131,3 +131,22 @@ Feature: Sign-in
     Given a person "ada@acme.dev" signed in to a console whose sessions last 12 hours
     When the console runs 11 hours later and the person opens "/"
     Then the person sees the runs
+
+  @id=SCN-CONSOLE-151 @status=implemented
+  Scenario: Behind a sign-in proxy with an access file, a person who is not in it gets 403
+    Given a console behind a sign-in proxy with "CONSOLE_USER_HEADER" "X-Forwarded-Email" and an access file with "ada@acme.dev" as "admin"
+    When the proxy sends "leo@acme.dev" to "/"
+    Then the answer has the status 403 and says "leo@acme.dev is not on this factory's access list"
+
+  @id=SCN-CONSOLE-152 @status=implemented
+  Scenario: Behind a sign-in proxy with an access file, a person in it sees the runs
+    Given a console behind a sign-in proxy with "CONSOLE_USER_HEADER" "X-Forwarded-Email" and an access file with "ada@acme.dev" as "admin"
+    When the proxy sends "Ada@acme.dev" to "/"
+    Then the page answers 200 with the heading "Runs"
+
+  @id=SCN-CONSOLE-153 @status=implemented
+  Scenario: The sign-in page has the look of the design system, served from the console itself
+    Given a console that signs in with OpenID Connect and an access file with "ada@acme.dev" as "admin"
+    When a person opens "/signin"
+    Then the page's stylesheet is a file of the console that answers 200 with "text/css" and names the tokens
+    And the console serves the favicon of the design system

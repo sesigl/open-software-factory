@@ -47,6 +47,19 @@ themes; the repository's check CONTRAST proves it.
 `@opensoftware/ui/brand/icon.svg` (the icon in the current text colour), `wordmark.svg` (the icon beside "Open
 Software Factory") and `favicon.svg` (the icon in the signal colour on the dark ground).
 
+## Components
+
+A page of the console imports them; Astro compiles them, their styles and the faces into the page's build, so a
+package that uses them needs this one only while it builds (a `devDependency`):
+
+| Component | What it is |
+| --- | --- |
+| `@opensoftware/ui/components/Page.astro` | The document: the title, the theme (`data-theme`), a reload after `refresh` seconds, the favicon, and `styles/base.css` with the faces, the ground, links, the focus, `.osf-action` (the main action), `.osf-alert` (a problem), `.osf-heading` (a title with its action), `.osf-tabs` (filters), `.osf-table-panel` and `.osf-table` (a list), `.osf-waits` (a row that waits for a person), `.osf-state .osf-state-<state>` (a state as a shape and a word) and `.osf-empty` (an empty list) |
+| `@opensoftware/ui/components/Brand.astro` | The icon beside "Open Software Factory" |
+| `@opensoftware/ui/components/Shell.astro` | The layout of a page in the new look, from `ShellData` (a type of `@opensoftware/ui`) that the page's route computes: a skip link, the navigation "Main" with the factory's name, the pages, the classic pages and the tools, the region "Account" with the person, "Sign out" and the link to the other theme, and the main content `#content`. On a phone the navigation folds behind "Menu", a `details` element, without a script |
+
+The faces are IBM Plex Sans and Mono from the Fontsource packages, served from the page's own origin.
+
 ## Releases
 
 The package is private until its first publish (`skills/release-packages`): then release-please releases it as

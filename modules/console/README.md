@@ -46,11 +46,18 @@ Open <http://localhost:8080>. The page lists the foreman's runs, the running one
 | `/inbox` | The self-improvement inbox: the open pull requests of `CONSOLE_INBOX_REPOSITORY` whose branch starts with `CONSOLE_INBOX_PREFIX` (default `observer/`), newest first, each with its link, branch, author, state ("approved", "changes requested" or "needs review") and age. A forge adapter that fails is named above the list. 404 without `CONSOLE_INBOX_REPOSITORY`. |
 | `/improvement` | Cost and scores of the factory's runs, from the files below `CONSOLE_IMPROVE_DIR`: the total cost and the number of runs, each scorer with its scored runs, passes, pass rate and judge cost, and each stage of a run with its outcome and cost, linked to the run's page. 404 without `CONSOLE_IMPROVE_DIR`. |
 
+The runs page `/` has the new look of the design system ([ADR 0133](../../docs/decisions/0133-design-system.md)): a
+navigation column with the factory's name, only the pages that work in this console (the runs with a count of those
+that wait for a person, then the "Classic pages" in the old look and the dashboards), and the account with the
+signed-in person, "Sign out" and the link to the other theme. On a phone the navigation folds behind "Menu". The theme
+is dark unless the cookie `osf_theme` says light; `/theme?to=light&next=<path>` sets it and returns to the page. The
+other pages keep the old look until they move one at a time.
+
 Every page links the runs, the work items (with `CONSOLE_INTAKE_URL`), the factory, the health page and the dashboards in `CONSOLE_LINKS`. The runs pages reload themselves every
 `CONSOLE_REFRESH` seconds. Without `CONSOLE_USER_HEADER` the console is read-only: it has no forms, and any method but
 `GET` and `HEAD` answers 405. It shows what the foreman and intake show, so run it behind your sign-in proxy, such as
 oauth2-proxy. Every answer carries a Content-Security-Policy that allows only the console's own files and no script.
-The pages render on the server; the health page is the first that Astro renders ([ADR 0132](../../docs/decisions/0132-astro-in-the-console.md)),
+The pages render on the server; the health page was the first that Astro renders, the runs page the second ([ADR 0132](../../docs/decisions/0132-astro-in-the-console.md)),
 the others follow one at a time with the same URLs.
 
 Actions ([ADR 0089](../../docs/decisions/0089-console-actions.md)): set `CONSOLE_USER_HEADER` to the header in which
@@ -200,7 +207,7 @@ A server of a release before `/v1/health` fails its check with the advice to upd
 | `CONSOLE_OIDC_CLIENT_SECRET` | string |  | serve, with CONSOLE_SIGN_IN=oidc: the client's secret. |
 | `CONSOLE_OIDC_ISSUER` | string |  | serve, with CONSOLE_SIGN_IN=oidc: the provider's issuer, whose discovery document is <issuer>/.well-known/openid-configuration, like https://accounts.google.com. |
 | `CONSOLE_OTLP_URL` | string |  | doctor --deep: the OTLP/HTTP base URL of the collector, like http://jaeger:4318; it gets one span "console doctor" of the service "console" at /v1/traces. |
-| `CONSOLE_REFRESH` | string | `"10"` | serve: the seconds after which the browser reloads the runs pages. |
+| `CONSOLE_REFRESH` | string | `"10"` | serve: the seconds after which the browser reloads the runs pages; 0 turns the reload off. |
 | `CONSOLE_REPOSITORY_URL` | string |  | serve: the web URL of the factory's Git repository, like https://github.com/acme/factory. Set, the configuration pages link the file. |
 | `CONSOLE_SANDBOX_COMMAND` | string |  | doctor --deep: the command line, run with sh -c, of a sandbox adapter, like sandbox-docker. Set, doctor --deep runs its probe <template> example.com, which starts a sandbox with no allowed host, and wants "refused example.com". |
 | `CONSOLE_SANDBOX_TEMPLATE` | string | `"curlimages/curl:8.17.0"` | doctor --deep: the template of the sandbox probe; it needs curl. |
@@ -237,7 +244,7 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 
 | ID | Status | Scenario |
 | --- | --- | --- |
-| SCN-CONSOLE-001 | implemented | A new user opens the runs page of the quick start |
+| SCN-CONSOLE-001 | deprecated | A new user opens the runs page of the quick start |
 | SCN-CONSOLE-002 | implemented | The help lists every command |
 | SCN-CONSOLE-003 | implemented | An unknown command shows the usage |
 | SCN-CONSOLE-004 | implemented | Serve without a foreman exits 2 and names the variable |
@@ -340,8 +347,19 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-148 | implemented | A person signs in with GitHub |
 | SCN-CONSOLE-149 | implemented | The console with the sign-in does not start on an address that is neither loopback nor HTTPS |
 | SCN-CONSOLE-150 | implemented | The console does not start when it signs people in and a sign-in proxy names the person too |
+| SCN-CONSOLE-151 | implemented | Behind a sign-in proxy with an access file, a person who is not in it gets 403 |
+| SCN-CONSOLE-152 | implemented | Behind a sign-in proxy with an access file, a person in it sees the runs |
+| SCN-CONSOLE-153 | implemented | The sign-in page has the look of the design system, served from the console itself |
 | SCN-CONSOLE-154 | implemented | Without an access file nobody can sign in, and the page names the file |
 | SCN-CONSOLE-155 | implemented | The probe "/v1/ready" answers 503 when the console cannot read its factory |
 | SCN-CONSOLE-156 | implemented | With the sign-in a form without a session answers 401 |
+| SCN-CONSOLE-157 | implemented | A new user opens the runs page of the quick start in the look of the design system |
+| SCN-CONSOLE-158 | implemented | The navigation of a console without intake, an inbox or cost and scores links only the pages that work |
+| SCN-CONSOLE-159 | implemented | The navigation of a console with intake, an inbox and cost and scores links their pages too |
+| SCN-CONSOLE-160 | implemented | The link "Runs" counts the runs that wait for a person |
+| SCN-CONSOLE-161 | implemented | A person switches to the light theme and back, and stays on the page |
+| SCN-CONSOLE-162 | implemented | The shell has a skip link to the content and its landmarks |
+| SCN-CONSOLE-163 | implemented | A person signs in and lands on the runs in the shell (journey) |
+| SCN-CONSOLE-164 | implemented | On a phone the navigation folds away behind "Menu" (journey) |
 | SCN-CONSOLE-165 | implemented | A page without a session redirects to the sign-in and comes back to that page |
 | SCN-CONSOLE-166 | implemented | A session before its end stays valid |

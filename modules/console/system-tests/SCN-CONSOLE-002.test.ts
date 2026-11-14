@@ -11,6 +11,6 @@ scenario("SCN-CONSOLE-002", async ({ sut, when, then }) => {
   });
 
   await then('the output names the command "serve"', async () => {
-    expect(run.stdout).toMatch(/^ {2}serve {2}Serve the read-only web view/m);
+    expect(run.stdout).toMatch(/^ {2}serve {2}Serve the web UI of the factory/m);
   });
 });

@@ -1462,7 +1462,8 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   - [x] The approved mock-ups and their values in `docs/design/`, with a `README.md` of the direction.
   - [x] The ADR and the package: tokens, both themes, the brand files, the two checks (ADR 0133; CONTRAST and
     TOKENS). The package stays private until its first publish.
-  - [ ] The components that the sign-in page and the shell need (with T-56).
+  - [x] The components that the sign-in page and the shell need (with T-56): `Page`, `Brand`, `Shell` and the base
+    styles (heading, filters, table, states), compiled into the console's build.
   - [ ] The components that Secrets and Skills need (with T-57 and T-59).
 
 ### [ ] T-55 · the first island: code in the browser counts (P2)
@@ -1621,9 +1622,12 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   - [x] The hook, sign-in, session and sign-out in the console, with the sign-in page and the probe route
     (`SCN-CONSOLE`). Until `@opensoftware/factory-files` is published, the console reads `access.yaml` with an
     adapter of its own; the library takes it over with its first publish.
-  - [ ] The roles on every page and form (`SCN-CONSOLE`).
-  - [ ] The shell and the runs list in the new look, with the two journeys and the console's own suite with
-    `browser: chromium` (`SCN-CONSOLE`).
+  - [x] The roles on every page and form (`SCN-CONSOLE`): the own sign-in and the proxy mode with an access file
+    refuse a person who is not on it. The pages that need `factory-engineer` or `admin` come with T-57 and T-58 and
+    check the role there.
+  - [x] The shell and the runs list in the new look, with the two journeys and the console's own suite with
+    `browser: chromium` (`SCN-CONSOLE`). The shell names the factory; its version follows with
+    `@opensoftware/factory-files`, and the cards in place of the table on a phone with T-60.
   - [ ] `osf init`, `osf up`, the profile, the chart, `console doctor`, the tutorial; one scenario of the profile
     with sign-in on (`SCN-REPO`, `SCN-DIST`, `SCN-CONSOLE`). After the console's release.
 
@@ -1900,9 +1904,11 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   scenario that still names it becomes `deprecated` in the same change.
 - **Watch out:** a page that shows nothing useful for a setting that is not there stays out of the navigation, as
   today's 404 of the inbox without its repository. The reload of the runs every `CONSOLE_REFRESH` seconds stays until
-  the foreman has a stream of run changes; a live island is its own item then.
+  the foreman has a stream of run changes; a live island is its own item then. axe flags the reload (`meta-refresh`,
+  WCAG 2.2.1), so the console's journeys run with `CONSOLE_REFRESH=0` until then.
 - **Done when:** no page uses Pico CSS, and `modules/console/package.json` has no dependency on Preact or htm.
 - **Slices:**
+  - [ ] The runs list as cards on a phone, with the main action at the bottom (`docs/design/runs-phone.html`).
   - [ ] The run page with its forms.
   - [ ] The work form and the inbox.
   - [ ] The factory pages, the improvement page and the health page (on Astro since T-53, in Pico's look).

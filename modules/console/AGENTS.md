@@ -30,7 +30,8 @@ Layers, top to bottom, in `architecture.json` (ADR 0014): `entry` (`src/cli.ts`)
 (`src/web/`) → `pages` → `adapters` → `domain`. A page that has moved to Astro (ADR 0132) is a template in
 `src/web/pages/<path>.astro`: its route in `serve` loads the data, a function of `pages` computes every value it shows,
 and `adapters/web.ts` hands them to Astro as `locals.page` with the status. A template holds no logic (TEMPLATE); the
-health page is the first. Every answer has a Content-Security-Policy without script. Islands: none yet; each island
+health page is the first. Every answer has a Content-Security-Policy without script. The design system `@opensoftware/ui` is a `devDependency`: Astro compiles its components, styles and faces
+into `dist/web/`, and the console serves them at `/_astro/` and `/favicon.svg` from its own origin. Islands: none yet; each island
 a page uses is listed here with the reason why a page load is not enough (T-55). `domain` holds the run states, the order of a merged run list, a run's age, the URL
 templates and the inbox's states, without I/O; `adapters` call the APIs, run the forge adapter and read the factory
 file; `pages` are Preact components written
@@ -41,11 +42,31 @@ Fastify server. The ARCH check enforces the layers.
 
 - Unit tests: none.
 
+## Journeys
+
+A journey runs in Chromium (`@kind=journey`, ADR 0131) only for a main flow. Each has its reason here:
+
+- SCN-CONSOLE-163, sign in and land on the runs: the first thing every person does, across the provider and three
+  pages, and the only proof that the shell's styles show the navigation on a desktop.
+- SCN-CONSOLE-164, the shell on a phone: only a browser lays out the page, so only it shows that the navigation
+  folds away behind "Menu" and opens again.
+
+Both start the console with `CONSOLE_REFRESH=0`: axe's rule `meta-refresh` (WCAG 2.2.1) flags the runs page's reload,
+which stays until live updates replace it (`TODO.md`, T-60).
+
 ## Budget
 
-- System tests: 60 seconds in total on the CI runner (88 scenarios in about 47 seconds of test time and 17.5 seconds
-  on 4 workers on the development container, ADR 0132; each starts one server, and the foremen, intake and gatekeeper
-  are `fakes.http`; the inbox's forge is `fakes.github` behind the built forge-github adapter).
+- System tests: 75 seconds in total on the CI runner (117 scenarios in about 48 to 52 seconds of test time and 17
+  seconds on 4 workers on the development container; 65.7 seconds on the reference runner in CI). Raised from 60 seconds
+  on 14 November 2026, when the scenarios grew from 88 to 117 with the sign-in, the shell and two journeys, measured:
+  - each scenario starts its own console: about 200 ms to listen (Node, then 90 ms of imports for `serve`; `cli.ts`
+    loads only the command it runs, which saved about 20 ms per scenario), and the foremen, intake and gatekeeper are
+    `fakes.http`; the inbox's forge is `fakes.github` behind the built forge-github adapter;
+  - the first page costs about 110 ms more than the next for Astro's handler; loading it while the server starts made
+    the suite slower, since it competes with the start for the CPU;
+  - a sign-in scenario walks four pages and the provider (0.6 to 1 s); the three that restart the console about 1.3 to
+    1.9 s; each journey about 2 s, half of it Chromium's start;
+  - per scenario the suite got cheaper: 0.53 s in 2026-11 before, 0.43 s now.
 
 ## Quality limits
 

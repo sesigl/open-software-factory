@@ -9,7 +9,8 @@ The only ways a page, a system test or another program may use the library:
 - Library: `files` and `text` of `src/index.ts`, the absolute paths of the tokens and the brand files and their
   text, imported as `@opensoftware/ui`
 - Files: `@opensoftware/ui/tokens.css` and `@opensoftware/ui/brand/<file>.svg`
-- Components: `.astro` files that a page of the console compiles, once a page of wave 6 needs one (T-56 to T-59)
+- Components: `src/components/*.astro` and `src/styles/*.css`, which a page of the console compiles into its build:
+  `Page` and `Brand`, for the sign-in page, and `Shell` with the type `ShellData`, for the runs page (T-56)
 
 The library's system tests import it by its package name and read the files it names (ADR 0039).
 

@@ -1,0 +1,202 @@
+---
+import type { ShellData } from "../index.ts";
+import Brand from "./Brand.astro";
+import Page from "./Page.astro";
+
+const { shell } = Astro.props as { shell: ShellData };
+---
+<Page title={shell.title} theme={shell.theme} refresh={shell.refresh}>
+  <a class="skip" href="#content">Skip to the content</a>
+  <div class="shell">
+    <header class="side">
+      <div class="top">
+        <Brand />
+        {shell.factory && <p class="factory osf-mono">{shell.factory}</p>}
+      </div>
+      <details class="menu">
+        <summary class="toggle">Menu</summary>
+        <nav aria-label="Main">
+          <ul class="links">
+            {shell.pages.map((link) => (
+              <li>
+                <a href={link.href} aria-current={link.current}>
+                  <span>{link.name}</span>
+                  {link.count && <span class="count osf-mono">{link.count}</span>}
+                </a>
+              </li>
+            ))}
+          </ul>
+          <p class="group osf-mono">Classic pages</p>
+          <ul class="links classic">
+            {shell.classic.map((link) => <li><a href={link.href}>{link.name}</a></li>)}
+          </ul>
+          <ul class="links classic">
+            {shell.tools.map((link) => <li><a href={link.href}>{link.name}</a></li>)}
+          </ul>
+        </nav>
+        <section class="account" aria-label="Account">
+          {shell.person && <p class="who">{shell.person.label}</p>}
+          <p class="settings">
+            <a href={shell.otherTheme.href}>{shell.otherTheme.name}</a>
+          </p>
+          {shell.signOut && (
+            <form method="post" action="/signout"><button type="submit" class="quiet">Sign out</button></form>
+          )}
+        </section>
+      </details>
+    </header>
+    <main id="content" class="content">
+      <slot />
+    </main>
+  </div>
+</Page>
+<style>
+  .skip {
+    position: absolute;
+    left: var(--osf-space-2);
+    top: -100px;
+    padding: var(--osf-space-2) var(--osf-space-3);
+    background: var(--osf-bg-raised);
+  }
+  .skip:focus {
+    top: var(--osf-space-2);
+  }
+  .shell {
+    display: flex;
+    min-height: 100vh;
+  }
+  .side {
+    flex: 0 0 var(--osf-navigation-width);
+    display: flex;
+    flex-direction: column;
+    gap: var(--osf-space-6);
+    padding: var(--osf-space-6) var(--osf-space-3);
+    border-right: 1px solid var(--osf-line);
+  }
+  .top {
+    padding: 0 var(--osf-space-2);
+  }
+  .factory {
+    margin: var(--osf-space-3) 0 0;
+    font-size: var(--osf-size-label);
+    color: var(--osf-text-subtle);
+  }
+  .toggle {
+    display: none;
+  }
+  .menu::details-content {
+    content-visibility: visible;
+  }
+  .links {
+    list-style: none;
+    margin: 0 0 var(--osf-space-6);
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .links a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 36px;
+    padding: 0 var(--osf-space-2);
+    border-radius: var(--osf-radius-control);
+    color: var(--osf-text-muted);
+    text-decoration: none;
+  }
+  .links a:hover {
+    color: var(--osf-text);
+  }
+  .links a[aria-current="page"] {
+    background: var(--osf-bg-raised);
+    color: var(--osf-text);
+    font-weight: var(--osf-weight-strong);
+    box-shadow: inset 2px 0 0 var(--osf-signal);
+  }
+  .count {
+    font-size: var(--osf-size-label);
+    color: var(--osf-signal);
+  }
+  .classic a {
+    min-height: 32px;
+  }
+  .group {
+    margin: 0;
+    padding: 0 var(--osf-space-2) var(--osf-space-2);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--osf-text-subtle);
+  }
+  .account {
+    border-top: 1px solid var(--osf-line);
+    padding: var(--osf-space-4) var(--osf-space-2) 0;
+    font-size: var(--osf-size-secondary);
+    color: var(--osf-text-muted);
+  }
+  .account p {
+    margin: 0 0 var(--osf-space-2);
+  }
+  .who {
+    color: var(--osf-text);
+    font-weight: var(--osf-weight-strong);
+    overflow-wrap: anywhere;
+  }
+  .settings a {
+    color: var(--osf-text-muted);
+  }
+  .quiet {
+    min-height: var(--osf-control-height);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--osf-text-muted);
+    font-family: var(--osf-font-sans);
+    font-size: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+  .content {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: var(--osf-space-8) var(--osf-space-8);
+  }
+  @media (max-width: 720px) {
+    .shell {
+      flex-direction: column;
+    }
+    .side {
+      flex: 0 0 auto;
+      gap: var(--osf-space-3);
+      padding: var(--osf-space-3) var(--osf-space-4);
+      border-right: 0;
+      border-bottom: 1px solid var(--osf-line);
+    }
+    .top {
+      padding: 0;
+    }
+    .toggle {
+      display: flex;
+      align-items: center;
+      min-height: var(--osf-control-height);
+      padding: 0 var(--osf-space-3);
+      border: 1px solid var(--osf-line-strong);
+      border-radius: var(--osf-radius-control);
+      cursor: pointer;
+    }
+    .menu::details-content {
+      content-visibility: hidden;
+    }
+    .menu[open]::details-content {
+      content-visibility: visible;
+    }
+    .menu[open] nav {
+      margin-top: var(--osf-space-4);
+    }
+    .content {
+      padding: var(--osf-space-6) var(--osf-space-4);
+    }
+  }
+</style>

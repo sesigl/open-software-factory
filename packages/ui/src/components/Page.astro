@@ -1,0 +1,18 @@
+---
+import "../styles/base.css";
+
+const { title, theme, refresh } = Astro.props as { title: string; theme: string; refresh?: number };
+---
+<!doctype html>
+<html lang="en" data-theme={theme}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {refresh && <meta http-equiv="refresh" content={refresh} />}
+    <title>{title} · Open Software Factory</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

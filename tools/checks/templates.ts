@@ -124,7 +124,10 @@ function markup(value: unknown, problems: AstNode[]): void {
 function allowed(statement: AstNode): boolean {
   if (statement.type === "ImportDeclaration") {
     const source = String(node(statement.source)?.value ?? "");
-    return statement.importKind === "type" || (source.endsWith(".astro") && source.startsWith("."));
+    // A component of the unit or of the design system (ADR 0133), or a stylesheet of the design system.
+    const component = source.endsWith(".astro") && (source.startsWith(".") || source.startsWith("@opensoftware/ui/"));
+    const styles = source.endsWith(".css") && (source.startsWith(".") || source.startsWith("@opensoftware/ui/"));
+    return statement.importKind === "type" || component || styles;
   }
   if (statement.type === "VariableDeclaration") {
     const declarations = statement.declarations as AstNode[];
@@ -161,7 +164,8 @@ const layerOf = (all: { paths: string[] }[], path: string): number =>
 function imports(repo: Repo, file: string, unit: string, statement: AstNode): string | undefined {
   if (statement.type !== "ImportDeclaration") return undefined;
   const source = String(node(statement.source)?.value ?? "");
-  if (!source.startsWith(".")) return statement.importKind === "type" ? undefined : `imports ${source}`;
+  if (!source.startsWith("."))
+    return statement.importKind === "type" || source.startsWith("@opensoftware/ui/") ? undefined : `imports ${source}`;
   const target = posix.normalize(posix.join(posix.dirname(file), source));
   if (!target.startsWith(`${unit}/`)) return `imports ${source}, which is outside ${unit}`;
   const all = layers(repo, unit);
