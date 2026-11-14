@@ -37,7 +37,7 @@ published yet, like one whose pin moved a moment ago, is built from npm, which t
 | `temporal` | the Temporal server on PostgreSQL, configured by `temporal/config.yaml` | none |
 | `temporal-namespace` | one-shot: the namespace `default` | none |
 | `temporal-ui` | the history of every run | `TEMPORAL_UI_PORT`, 8233 |
-| `nats` | NATS with JetStream for the events between the modules | none |
+| `nats` | NATS with JetStream for the events between the modules; intake and foreman keep an event in the stream `OSF` for `OSF_STREAM_MAX_AGE`, default `7d` ([ADR 0116](../docs/decisions/0116-events-not-lost-without-a-trace.md)) | none |
 | `jaeger` | the trace store: the runs' traces from foreman, by OTLP, kept on the volume `jaeger` ([ADR 0100](../docs/decisions/0100-jaeger-trace-store.md)) | `JAEGER_PORT`, 16686 |
 | `litellm` | the LLM gateway, configured by `litellm/config.yaml`: LiteLLM's image with its bytecode compiled, so it starts sooner ([ADR 0098](../docs/decisions/0098-litellm-image-with-bytecode.md)), and without BerriAI's enterprise code, whose license allows no changed copies ([ADR 0102](../docs/decisions/0102-litellm-image-without-enterprise-code.md)) | `LITELLM_PORT`, 4000 |
 | `factory-repo` | one-shot: copies `FACTORY_DIR` into the volume `factory` and commits it | none |
@@ -275,6 +275,7 @@ Each stage of the reference factory runs in a sandbox of the
 | `postgresql.enabled` | `true` | PostgreSQL with pgvector in the cluster. `false` uses `externalDatabase`. |
 | `externalDatabase.host`, `.port`, `.user`, `.adminDatabase` | `5432`, `osf`, `postgres` | A managed PostgreSQL. Each pod creates its database when it is missing (gatekeeper, intake, temporal, temporal_visibility), so the user needs `CREATEDB`, or create them yourself. |
 | `nats.enabled`, `externalNats.url` | `true` | NATS with JetStream in the cluster, or the team's own. |
+| `natsStreamMaxAge` | `7d` | How long the stream `OSF` keeps an event, a dead letter too; intake and foreman set it ([ADR 0116](../docs/decisions/0116-events-not-lost-without-a-trace.md)). |
 | `temporal.enabled`, `externalTemporal.address` | `true` | Temporal on the PostgreSQL above, or the team's own. |
 | `temporalNamespace` | `default` | The Temporal namespace of the runs; foreman creates it when it is missing. |
 
