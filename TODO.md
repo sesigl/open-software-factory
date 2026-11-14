@@ -1462,8 +1462,8 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   - [x] The approved mock-ups and their values in `docs/design/`, with a `README.md` of the direction.
   - [x] The ADR and the package: tokens, both themes, the brand files, the two checks (ADR 0133; CONTRAST and
     TOKENS). The package stays private until its first publish.
-  - [ ] The components that the sign-in page and the shell need (with T-56). Done for the sign-in page: `Page`,
-    `Brand` and the base styles, compiled into the console's build. The shell's components follow.
+  - [x] The components that the sign-in page and the shell need (with T-56): `Page`, `Brand`, `Shell` and the base
+    styles (heading, filters, table, states), compiled into the console's build.
   - [ ] The components that Secrets and Skills need (with T-57 and T-59).
 
 ### [ ] T-55 · the first island: code in the browser counts (P2)
@@ -1626,7 +1626,9 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
     refuse a person who is not on it. The pages that need `factory-engineer` or `admin` come with T-57 and T-58 and
     check the role there.
   - [ ] The shell and the runs list in the new look, with the two journeys and the console's own suite with
-    `browser: chromium` (`SCN-CONSOLE`).
+    `browser: chromium` (`SCN-CONSOLE`). Done: the shell, the theme link and the runs list (SCN-CONSOLE-157 to
+    -162). The two journeys and the suite follow; the shell names the factory, its version follows with
+    `@opensoftware/factory-files`.
   - [ ] `osf init`, `osf up`, the profile, the chart, `console doctor`, the tutorial; one scenario of the profile
     with sign-in on (`SCN-REPO`, `SCN-DIST`, `SCN-CONSOLE`). After the console's release.
 

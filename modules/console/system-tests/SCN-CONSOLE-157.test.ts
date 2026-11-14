@@ -1,7 +1,7 @@
 import { scenario } from "@opensoftware/testkit";
 import { foreman, open, rows, runOf } from "./console.ts";
 
-scenario("SCN-CONSOLE-001", async ({ sut, fakes, given, when, then }) => {
+scenario("SCN-CONSOLE-157", async ({ sut, fakes, given, when, then }) => {
   let api: Awaited<ReturnType<typeof foreman>>;
   await given('a foreman whose API has the run "Export reports as CSV"', async () => {
     api = await foreman(fakes, [runOf("Export reports as CSV")]);
@@ -18,11 +18,16 @@ scenario("SCN-CONSOLE-001", async ({ sut, fakes, given, when, then }) => {
     expect(rows(page)).toEqual([["Export reports as CSV", "web", "running", "slack", "Varun", "—", "5 min"]]);
   });
 
-  await then('the page\'s stylesheet "/pico.css" answers 200', async () => {
-    expect(page.stylesheets).toEqual(["/pico.css"]);
-    const css = await sut.http.get("/pico.css");
-    expect(css.status).toBe(200);
-    expect(css.headers["content-type"]).toMatch(/^text\/css/);
-    expect(String(css.body)).toContain("Pico CSS");
-  });
+  await then(
+    "each stylesheet of the page is a file of the console that answers 200 as CSS, one of them with the design system's tokens",
+    async () => {
+      expect(page.stylesheets.length).toBeGreaterThan(0);
+      const answers = await Promise.all(page.stylesheets.map((path) => sut.http.get(path)));
+      expect(page.stylesheets.every((path) => path.startsWith("/_astro/"))).toBe(true);
+      expect(answers.map((answer) => [answer.status, answer.headers["content-type"]])).toEqual(
+        answers.map(() => [200, "text/css; charset=utf-8"]),
+      );
+      expect(answers.some((answer) => String(answer.body).includes("--osf-signal:"))).toBe(true);
+    },
+  );
 });

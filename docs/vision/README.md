@@ -71,7 +71,7 @@ not `deprecated` is `implemented`; otherwise it says `planned`. The check VISION
 | SCN-FACTORY-ORCH-008 | implemented | SCN-CONSOLE-008 (implemented), SCN-CONSOLE-009 (implemented), SCN-FORE-064 (implemented), SCN-FORE-065 (implemented), SCN-FORE-067 (implemented), SCN-FORE-144 (implemented), SCN-FORE-017 (implemented), SCN-FORE-018 (implemented), SCN-FORE-063 (implemented) |
 | SCN-FACTORY-AUTO-001 | implemented | SCN-INTAKE-021 (implemented) |
 | SCN-FACTORY-AUTO-002 | implemented | SCN-FSPEC-043 (implemented), SCN-FSPEC-033 (implemented), SCN-FSPEC-050 (implemented), SCN-FORGE-022 (implemented) |
-| SCN-FACTORY-VIS-001 | implemented | SCN-CONSOLE-001 (implemented), SCN-CONSOLE-005 (implemented), SCN-CONSOLE-006 (implemented), SCN-CONSOLE-012 (implemented), SCN-CONSOLE-057 (implemented) |
+| SCN-FACTORY-VIS-001 | implemented | SCN-CONSOLE-001 (deprecated), SCN-CONSOLE-157 (implemented), SCN-CONSOLE-005 (implemented), SCN-CONSOLE-006 (implemented), SCN-CONSOLE-012 (implemented), SCN-CONSOLE-057 (implemented), SCN-CONSOLE-160 (implemented) |
 | SCN-FACTORY-VIS-002 | implemented | SCN-CONSOLE-015 (implemented), SCN-CONSOLE-016 (implemented), SCN-CONSOLE-017 (implemented), SCN-CONSOLE-018 (implemented), SCN-CONSOLE-041 (implemented), SCN-CONSOLE-070 (implemented) |
 | SCN-FACTORY-METRIC-001 | implemented | SCN-LEDGER-020 (implemented), SCN-LEDGER-063 (implemented) |
 | SCN-FACTORY-METRIC-002 | implemented | SCN-LEDGER-021 (implemented), SCN-LEDGER-063 (implemented), SCN-LEDGER-040 (implemented) |

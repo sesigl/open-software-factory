@@ -22,8 +22,9 @@ import { proposals } from "../adapters/forge.ts";
 import { readImprovement } from "../adapters/improve-files.ts";
 import { builtAsset, render } from "../adapters/web.ts";
 import { cursorsOf, fill, isState, list, namedLinks, nextPageOf, orderRuns, queryOf, STATES } from "../domain/runs.ts";
-import { signInOf } from "../domain/signin.ts";
+import { safeNext, signInOf } from "../domain/signin.ts";
 import { submissionOf } from "../domain/submit.ts";
+import { themeCookie, themeOf } from "../domain/theme.ts";
 import { agentPage, factoryPage, type Source } from "../pages/factory.ts";
 import { frameData } from "../pages/frame.ts";
 import { healthData } from "../pages/health.ts";
@@ -31,7 +32,8 @@ import { type Frame, page, problem } from "../pages/html.ts";
 import { improvementPage } from "../pages/improvement.ts";
 import { inboxPage } from "../pages/inbox.ts";
 import { runPage } from "../pages/run.ts";
-import { runsPage } from "../pages/runs.ts";
+import { runsData, waitingOf } from "../pages/runs.ts";
+import { shellData } from "../pages/shell.ts";
 import { workPage } from "../pages/work.ts";
 import { examine } from "./doctor.ts";
 import { fromConsole, personOf } from "./person.ts";
@@ -85,6 +87,15 @@ export async function serve(env: Env) {
     token: env.CONSOLE_FORGE_TOKEN,
   };
 
+  /** The factory's name for the shell, or none when its file cannot be read. */
+  const factoryName = (): string | undefined => {
+    try {
+      return readFactory(factoryFile).factory;
+    } catch {
+      return undefined;
+    }
+  };
+
   /** The frame of every page: the dashboards and which optional pages the navigation links. */
   const frameOf = () => ({ links, inbox: Boolean(inbox), work: Boolean(intake), improvement: Boolean(improve) });
 
@@ -119,6 +130,14 @@ export async function serve(env: Env) {
       : reply.code(404).send();
   });
   app.get("/favicon.svg", (_request, reply) => reply.type("image/svg+xml").send(FAVICON));
+  // The theme link of the shell: a cookie with the theme, and back to the page (ADR 0133).
+  app.get<{ Querystring: { to?: string; next?: string } }>("/theme", (request, reply) =>
+    reply
+      .code(303)
+      .header("set-cookie", themeCookie(request.query.to === "light" ? "light" : "dark"))
+      .header("location", safeNext(request.query.next))
+      .send(),
+  );
   // The probe of the profile's and the chart's health checks: the console runs and reads its factory, without a session.
   app.get("/v1/ready", (_request, reply) => {
     try {
@@ -151,7 +170,25 @@ export async function serve(env: Env) {
     const notes = answers.flatMap((answer) => (answer && !answer.ok ? [answer.note] : []));
     const page = nextPageOf(answers.map((answer) => (answer?.ok && answer.body.next) || null));
     const next = page && `/${queryOf({ state, page })}`;
-    return send(reply, 200, { title: "Runs", refresh, notes }, runsPage(runs, state, now(), next));
+    const shell = shellData(
+      { ...frameOf(), person: personOf(request) },
+      {
+        title: "Runs",
+        path: request.url,
+        theme: themeOf(request.headers.cookie),
+        factory: factoryName(),
+        waiting: waitingOf(runs, state),
+        refresh,
+        session: Boolean(sign),
+      },
+    );
+    return render(
+      request,
+      reply,
+      200,
+      runsData(shell, runs, state, now(), { notes, work: Boolean(intake), next }),
+      "runs",
+    );
   });
 
   /** The run and the foreman that knows it, or the answer 404. */

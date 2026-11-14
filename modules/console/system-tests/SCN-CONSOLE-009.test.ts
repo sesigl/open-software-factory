@@ -22,8 +22,10 @@ scenario("SCN-CONSOLE-009", async ({ sut, fakes, given, when, then }) => {
           text: state,
         })),
       );
-      expect(page.getByRole("link", { current: "page" }).attribute("href")).toBe("/");
-      expect(page.getByRole("link", { current: "page" }).text).toBe("all");
+      expect(
+        page.getByRole("navigation", { name: "States" }).getByRole("link", { current: "page" }).attribute("href"),
+      ).toBe("/");
+      expect(page.getByRole("navigation", { name: "States" }).getByRole("link", { current: "page" }).text).toBe("all");
     },
   );
 });

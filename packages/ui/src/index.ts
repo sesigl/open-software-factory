@@ -19,3 +19,37 @@ export const files = {
 
 /** The text of one of the files, for a server that serves it. */
 export const text = (name: keyof typeof files): string => readFileSync(files[name], "utf8");
+
+/** A link of the shell's navigation: the current page has `current`, and a page may show a count beside its name. */
+export interface ShellLink {
+  name: string;
+  href: string;
+  current?: "page";
+  count?: string;
+}
+
+/**
+ * What the shell of a page shows (`components/Shell.astro`): computed by the page's route, so that the template only
+ * reads it (ADR 0132).
+ */
+export interface ShellData {
+  /** The page's title, before " · Open Software Factory". */
+  title: string;
+  theme: "dark" | "light";
+  /** Seconds after which the browser reloads the page. */
+  refresh?: number;
+  /** The factory's name, when the page knows it. */
+  factory?: string;
+  /** The pages in the new look, with the current one. */
+  pages: ShellLink[];
+  /** The pages that still have the old look. */
+  classic: ShellLink[];
+  /** The dashboards of other tools, like the traces. */
+  tools: ShellLink[];
+  /** The signed-in person: "<email> · <role>". */
+  person?: { label: string };
+  /** Whether the account offers "Sign out": only for a session of the console's own sign-in. */
+  signOut: boolean;
+  /** The link to the other theme. */
+  otherTheme: ShellLink;
+}

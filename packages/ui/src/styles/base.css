@@ -72,6 +72,163 @@ a:hover {
   background: var(--osf-bg-raised);
 }
 
+/* The title of a page with its main action beside it. */
+.osf-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--osf-space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--osf-space-6);
+}
+
+.osf-heading h1 {
+  margin: 0;
+}
+
+/* A row of links that filter a list: the current one has a line in the signal colour. */
+.osf-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--osf-space-1);
+  margin: 0 0 var(--osf-space-6);
+  padding: 0;
+  list-style: none;
+  border-bottom: 1px solid var(--osf-line);
+}
+
+.osf-tabs a {
+  display: block;
+  padding: 10px var(--osf-space-3);
+  color: var(--osf-text-muted);
+  text-decoration: none;
+}
+
+.osf-tabs a[aria-current="page"] {
+  color: var(--osf-text);
+  font-weight: var(--osf-weight-strong);
+  box-shadow: inset 0 -2px 0 var(--osf-signal);
+}
+
+/* A table of records on a panel: lines between rows, labels in mono capitals. */
+.osf-table-panel {
+  overflow-x: auto;
+  border: 1px solid var(--osf-line);
+  border-radius: var(--osf-radius-panel);
+  background: var(--osf-bg-surface);
+}
+
+.osf-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.osf-table th {
+  padding: 10px var(--osf-space-4);
+  border-bottom: 1px solid var(--osf-line);
+  font-family: var(--osf-font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-align: left;
+  text-transform: uppercase;
+  color: var(--osf-text-subtle);
+}
+
+.osf-table td {
+  padding: 14px var(--osf-space-4);
+  border-bottom: 1px solid var(--osf-line);
+  color: var(--osf-text-muted);
+}
+
+.osf-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.osf-table td:first-child {
+  color: var(--osf-text);
+}
+
+/* A row of work that waits for a person: the signal colour's line on a raised ground. */
+.osf-table tr.osf-waits {
+  background: var(--osf-bg-raised);
+}
+
+.osf-table tr.osf-waits td:first-child {
+  box-shadow: inset 2px 0 0 var(--osf-signal);
+}
+
+/* A state: a shape and a word, never colour alone. Only work that runs, waits or failed has a colour. */
+.osf-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--osf-space-2);
+  font-size: var(--osf-size-secondary);
+  font-weight: var(--osf-weight-strong);
+  white-space: nowrap;
+}
+
+.osf-state::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  box-sizing: border-box;
+}
+
+.osf-state-running {
+  color: var(--osf-state-running);
+}
+
+.osf-state-running::before {
+  border: 2px dashed currentColor;
+  border-radius: 50%;
+}
+
+.osf-state-blocked {
+  color: var(--osf-state-waiting);
+}
+
+.osf-state-blocked::before {
+  background: currentColor;
+}
+
+.osf-state-failed {
+  color: var(--osf-state-failed);
+}
+
+.osf-state-failed::before {
+  background:
+    linear-gradient(45deg, transparent 40%, currentColor 40% 60%, transparent 60%),
+    linear-gradient(-45deg, transparent 40%, currentColor 40% 60%, transparent 60%);
+}
+
+.osf-state-complete {
+  color: var(--osf-state-complete);
+}
+
+.osf-state-complete::before {
+  width: 6px;
+  margin: 0 2px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+
+.osf-state-cancelled {
+  color: var(--osf-state-cancelled);
+}
+
+.osf-state-cancelled::before {
+  height: 2px;
+  background: currentColor;
+}
+
+/* What a list says when it is empty. */
+.osf-empty {
+  color: var(--osf-text-muted);
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none;

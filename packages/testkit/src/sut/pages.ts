@@ -85,6 +85,8 @@ export interface Page extends Queries {
   stylesheets: string[];
   /** Whether the page has a script, inline or loaded. */
   hasScript: boolean;
+  /** The theme the server chose for the page: the `data-theme` of its root element (ADR 0133). */
+  theme: string | undefined;
   forms: PageForm[];
   /** Opens the link with this accessible name, with the page's headers and the scenario's cookies. */
   follow(link: string | RegExp): Promise<Page>;
@@ -257,6 +259,7 @@ export function makePages(base: () => string, onStop: (stop: () => Promise<unkno
       refresh: refresh ? Number.parseInt(refresh, 10) : undefined,
       stylesheets: all('link[rel~="stylesheet" i]').map((link) => link.getAttribute("href") ?? ""),
       hasScript: all("script").length > 0,
+      theme: document.documentElement.getAttribute("data-theme") ?? undefined,
       forms: all("form").map((form) => ({
         name: computeAccessibleName(form as unknown as Element),
         method: (form.getAttribute("method") ?? "get").toLowerCase(),

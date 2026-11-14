@@ -2,12 +2,19 @@
 Feature: Quick start
   "console serve" shows a factory's runs as web pages, from the foreman's API (ADR 0072).
 
-  @id=SCN-CONSOLE-001 @status=implemented @realizes=SCN-FACTORY-VIS-001
+  @id=SCN-CONSOLE-001 @status=deprecated @realizes=SCN-FACTORY-VIS-001
   Scenario: A new user opens the runs page of the quick start
     Given a foreman whose API has the run "Export reports as CSV"
     When the user starts "console serve" as the README says and opens "/"
     Then the page answers 200 and lists the run "Export reports as CSV" in the state "running"
     And the page's stylesheet "/pico.css" answers 200
+
+  @id=SCN-CONSOLE-157 @status=implemented @realizes=SCN-FACTORY-VIS-001 @replaces=SCN-CONSOLE-001
+  Scenario: A new user opens the runs page of the quick start in the look of the design system
+    Given a foreman whose API has the run "Export reports as CSV"
+    When the user starts "console serve" as the README says and opens "/"
+    Then the page answers 200 and lists the run "Export reports as CSV" in the state "running"
+    And each stylesheet of the page is a file of the console that answers 200 as CSS, one of them with the design system's tokens
 
   @id=SCN-CONSOLE-002 @status=implemented
   Scenario: The help lists every command

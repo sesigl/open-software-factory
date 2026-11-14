@@ -109,7 +109,9 @@ export async function servingInbox(
 }
 
 /** The links of the page's banner, its navigation. */
-export const navLinks = (page: Page) => links(page.getByRole("banner"));
+/** The links of the navigation: "Main" of the shell in the new look, else the header of a page in the old look. */
+export const navLinks = (page: Page) =>
+  links(page.queryByRole("navigation", { name: "Main" }) ?? page.getByRole("banner"));
 
 /** The answer of a server's /v1/health with these checks: 200 when every check is ok, else 503. */
 export const healthRoute = (checks: { name: string; ok: boolean; detail?: string }[]) => {

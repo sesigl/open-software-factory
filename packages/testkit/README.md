@@ -58,7 +58,8 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
 - `sut.pages.open(path, { headers })`: opens a page of the server `sut.http` started, as a person reads it but
   without a browser ([ADR 0131](../../docs/decisions/0131-ui-tests-pages-journeys-islands.md)). The page has its
   `status`, `path`, `location` (of a redirect that was not followed), `title`, `text`, `refresh` (the seconds of its
-  `<meta http-equiv="refresh">`), `stylesheets`, `hasScript` and `forms`, and Testing Library's queries
+  `<meta http-equiv="refresh">`), `stylesheets`, `hasScript`, `theme` (the `data-theme` of its root element, as the
+  server chose it) and `forms`, and Testing Library's queries
   `getByRole`, `queryByRole`, `getAllByRole`, `queryAllByRole`, `getByText`, `queryByText`, `getAllByText` and
   `getByLabelText`. Each element found has its accessible `name`, its `text`, `attribute(name)` and the same
   queries inside it. `follow(link)` opens a link by its name; `submit(button, { label: value }, { follow, headers })`
@@ -538,3 +539,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-161 | implemented | fakes.oidc signs in the person a test names with a signed ID token on the testkit's clock |
 | SCN-TK-162 | implemented | fakes.oidc refuses a sign-in when the test named nobody |
 | SCN-TK-163 | implemented | fakes.github signs in the person a test names with GitHub's OAuth flow and gives their primary email |
+| SCN-TK-164 | implemented | sut.pages reads the theme that the server chose for a page |

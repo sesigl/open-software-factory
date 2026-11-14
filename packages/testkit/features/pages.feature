@@ -60,3 +60,11 @@ Feature: A module's pages, read without a browser
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 1
     And the output contains "button-name"
+
+  @id=SCN-TK-164 @status=implemented
+  Scenario: sut.pages reads the theme that the server chose for a page
+    Given a module whose page "/" has the theme "light" on its root element and whose page "/plain" has none
+    And its system test opens both pages with sut.pages and expects the theme "light" and no theme
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
