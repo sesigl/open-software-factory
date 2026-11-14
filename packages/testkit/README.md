@@ -249,6 +249,11 @@ Every server, client and subscription stops when the scenario ends, before the f
   on `0.0.0.0:4318` and exports to `${env:OTEL_EXPORTER_OTLP_ENDPOINT}`, which the fake points at its own receiver.
   `send(request)` posts an OTLP/JSON request to the Collector; `exported({ count, timeoutMs })` waits for the
   requests the Collector exported (JSON encoding) and, on timeout, shows the Collector's log. Docker must run.
+- `fakes.traceStore({ keep })`: an in-process trace store on `127.0.0.1`: an OTLP/HTTP receiver of JSON traces at
+  `otlpUrl` + `/v1/traces`, and Jaeger's query API `GET /api/traces/{traceId}` at `queryUrl`, which answers the
+  received spans of that trace or 404. `spans()` lists every span it took with its service. With `keep: false` it
+  takes spans and keeps none, like a collector whose exporter is broken
+  ([ADR 0120](../../docs/decisions/0120-deep-checks-of-console-doctor.md)).
 - `fakes.slack()`: a fake Slack Web API (`auth.test`, `chat.getPermalink`, `chat.postMessage`,
   `conversations.history`, `conversations.replies`, `reactions.add`, `users.info`) at `url` with `token`.
   `users.info` knows the bot as `factory` and the default person `U0PERSON` as `Varun`; `chat.getPermalink` links a
@@ -483,3 +488,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-146 | implemented | The fake inference adapter prints the same key for the same run of a gateway and revokes it |
 | SCN-TK-147 | implemented | The fake inference adapter fails revoke with its message |
 | SCN-TK-148 | implemented | sut.events adds a JetStream stream with a max age and reads the message a module published to it |
+| SCN-TK-149 | implemented | fakes.traceStore answers Jaeger's query of a trace with the span it received by OTLP, and keeps none with "keep: false" |

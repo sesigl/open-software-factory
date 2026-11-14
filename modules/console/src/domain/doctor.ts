@@ -84,3 +84,11 @@ export const harnessItem = (ok: boolean): Item => ({
   ok,
   detail: "it did not answer ACP initialize: check CONSOLE_HARNESS_COMMAND",
 });
+
+/** The item of the span's way from the collector to the trace store (ADR 0120). */
+export function traceItem({ sent, found }: { sent: boolean; found: boolean }): Item {
+  const detail = sent
+    ? "the span did not reach the trace store in 5 s: check the collector's exporter and CONSOLE_TRACES_URL"
+    : "no collector took the span: check CONSOLE_OTLP_URL and that the collector runs";
+  return { name: "traces", ok: found, detail };
+}

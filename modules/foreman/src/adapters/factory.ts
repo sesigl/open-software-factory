@@ -1,8 +1,9 @@
 // Reads the factory (ADR 0067): factory.yaml, checked against the contract and for its stages' agents, the text of
 // each agent's prompt, the files of its skills and its MCP servers with their pins in factory.lock (ADR 0112), and the
-// factory version, the commit of the folder that holds the file, which must be clean (ADR 0110).
+// factory version, the commit of the folder that holds the file, which must be clean (ADR 0110), or the commit of a
+// Git remote that the foreman fetched (ADR 0124).
 import { execFile } from "node:child_process";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { promisify } from "node:util";
 import { UsageError } from "@opensoftware/cli";
@@ -16,8 +17,71 @@ export interface Factory {
   version: string;
 }
 
-/** The factory at `path`; a file that cannot run is a usage error that names the file, the path in it and why. */
-export async function readFactory(path: string): Promise<Factory> {
+/** Where the foreman reads the factory: a local file, or `git+<url>#<ref>` with factory.yaml at the root (ADR 0124). */
+export interface FactorySource {
+  /** The folder of the factory that `read` read last; the gateway's config is below it. */
+  folder(): string;
+  read(): Promise<Factory>;
+}
+
+const GIT = /^git\+(.+?)(?:#(.+))?$/;
+
+/** The source that `FOREMAN_FACTORY` names; a remote is fetched into `data`/factory. */
+export function factorySource(setting: string, data: string): FactorySource {
+  const remote = GIT.exec(setting);
+  if (!remote) {
+    const file = resolve(setting);
+    return { folder: () => dirname(file), read: () => readFactory(file) };
+  }
+  const [, url, ref = "HEAD"] = remote as unknown as [string, string, string?];
+  const store = join(data, "factory");
+  let folder = "";
+  // One fetch at a time, as runs start at once and share the repository.
+  let queue: Promise<unknown> = Promise.resolve();
+  const read = async () => {
+    const commit = await fetchCommit(url, ref, store);
+    folder = join(store, commit);
+    return readFactory(join(folder, "factory.yaml"), commit);
+  };
+  return {
+    folder: () => folder,
+    read: () => {
+      const next = queue.then(read);
+      queue = next.catch(() => undefined);
+      return next;
+    },
+  };
+}
+
+/** Fetches `ref` of `url` into a bare repository below `store` and writes its files to `store`/<commit>. */
+async function fetchCommit(url: string, ref: string, store: string): Promise<string> {
+  const bare = join(store, "repository.git");
+  const git = (...args: string[]) =>
+    promisify(execFile)("git", ["--git-dir", bare, ...args]).then(({ stdout }) => stdout.trim());
+  mkdirSync(store, { recursive: true });
+  // Again on a repository that exists, git init changes nothing.
+  await promisify(execFile)("git", ["init", "--quiet", "--bare", bare]);
+  const commit = await git("fetch", "--quiet", "--no-tags", "--end-of-options", url, ref)
+    .then(() => git("rev-parse", "--verify", "FETCH_HEAD^{commit}"))
+    .catch((failure: { stderr: string }) => {
+      throw new UsageError(`FOREMAN_FACTORY: cannot fetch ${ref} of ${url}: ${failure.stderr.trim()}`);
+    });
+  const folder = join(store, commit);
+  if (!existsSync(folder)) {
+    const partial = `${folder}.partial`;
+    // A folder that a stopped server left half written is written again.
+    mkdirSync(partial, { recursive: true });
+    await git("--work-tree", partial, "checkout", "--quiet", commit, "--", ".");
+    renameSync(partial, folder);
+  }
+  return commit;
+}
+
+/**
+ * The factory at `path`; a file that cannot run is a usage error that names the file, the path in it and why. With
+ * `commit`, the file is a fetched commit and that commit is its version; else its folder must be clean.
+ */
+export async function readFactory(path: string, commit?: string): Promise<Factory> {
   const file = resolve(path);
   const name = basename(file);
   const document: unknown = parse(readFileSync(file, "utf8"));
@@ -26,7 +90,7 @@ export async function readFactory(path: string): Promise<Factory> {
   if (problems.length)
     throw new UsageError(problems.map((problem) => `${name}: ${problem.path}: ${problem.message}`).join("\n"));
   const folder = dirname(file);
-  const version = await mustBeClean(folder, name, filesOf(document as FactoryDefinition, folder, file));
+  const version = commit ?? (await mustBeClean(folder, name, filesOf(document as FactoryDefinition, folder, file)));
   const read = (path: string) => readFileSync(resolve(folder, path), "utf8");
   const lock = join(folder, "factory.lock");
   const pins = existsSync(lock) ? JSON.parse(read(lock)).mcp : {};

@@ -17,6 +17,8 @@ export interface Frame {
   inbox?: boolean;
   /** Whether the navigation links the work items: only with intake's API. */
   work?: boolean;
+  /** Whether the navigation links the cost and scores: only with CONSOLE_IMPROVE_DIR. */
+  improvement?: boolean;
 }
 
 /** The whole document: head, the navigation with the dashboards, the notes, and the page's content. */
@@ -38,6 +40,7 @@ export function page(frame: Frame, content: VNode | VNode[]): string {
             ${frame.work ? html`<li><a href="/work">Work</a></li>` : null}
             <li><a href="/factory">Factory</a></li>
             ${frame.inbox ? html`<li><a href="/inbox">Inbox</a></li>` : null}
+            ${frame.improvement ? html`<li><a href="/improvement">Cost and scores</a></li>` : null}
             <li><a href="/health">Health</a></li>
           </ul>
           <ul>

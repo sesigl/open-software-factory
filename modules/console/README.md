@@ -44,6 +44,7 @@ Open <http://localhost:8080>. The page lists the foreman's runs, the running one
 | `/factory/agents/<name>` | One agent's configuration, and the link to the file on the branch where it changes. 404 for an agent the factory does not declare. |
 | `/health` | The checks of `console doctor` as a table: each check, its state and what to do. 200 when every check is ok, else 503. |
 | `/inbox` | The self-improvement inbox: the open pull requests of `CONSOLE_INBOX_REPOSITORY` whose branch starts with `CONSOLE_INBOX_PREFIX` (default `observer/`), newest first, each with its link, branch, author, state ("approved", "changes requested" or "needs review") and age. A forge adapter that fails is named above the list. 404 without `CONSOLE_INBOX_REPOSITORY`. |
+| `/improvement` | Cost and scores of the factory's runs, from the files below `CONSOLE_IMPROVE_DIR`: the total cost and the number of runs, each scorer with its scored runs, passes, pass rate and judge cost, and each stage of a run with its outcome and cost, linked to the run's page. 404 without `CONSOLE_IMPROVE_DIR`. |
 
 Every page links the runs, the work items (with `CONSOLE_INTAKE_URL`), the factory, the health page and the dashboards in `CONSOLE_LINKS`. The runs pages reload themselves every
 `CONSOLE_REFRESH` seconds. Without `CONSOLE_USER_HEADER` the console is read-only: it has no forms, and any method but
@@ -67,6 +68,14 @@ stage has the forms "Approve" and "Reject" (with a reason), which the console po
 waits for, so list the identity the proxy sends, like `ada@acme.dev`, in gatekeeper's groups. Each form leads back to
 the run's page, or answers with the API's status and its problem's detail. Only set the variable behind a
 proxy that sets the header and removes it from the browser's requests.
+
+Cost and scores ([ADR 0123](../../docs/decisions/0123-cost-and-scores-in-the-console.md)): the scheduled jobs of the
+improvement path write run records as [runlog](../runlog/README.md) writes them and scores as
+[scorekit](../scorekit/README.md) writes them, in the formats of the [contracts](../../contracts/README.md), to one
+folder. Set `CONSOLE_IMPROVE_DIR` to it. The console reads every `.json` and `.jsonl` file below it when `/improvement`
+is opened: each `invoke_agent` span of a run record is one stage with its `osf.cost.usd`, and each score counts for its
+scorer, a score of 1 as a pass, with its `osf.judge.cost.usd`. Other records, lines that are no JSON and other files are
+skipped.
 
 Several factories: list each foreman in `CONSOLE_FOREMAN_URL`, comma-separated, and their tokens in the same order in
 `CONSOLE_FOREMAN_TOKEN`, or one token for all.
@@ -101,6 +110,10 @@ run's history: `<url>/namespaces/<CONSOLE_TEMPORAL_NAMESPACE>/workflows/<runId>`
    `model <route>`, one chat completion of one token per model route of the factory definition's agents through the
    gateway in `CONSOLE_MODEL_URL`, and `harness`, the command in `CONSOLE_HARNESS_COMMAND` answers ACP `initialize`
    within 10 seconds. A model call costs money, so `/health` and `console doctor` without `--deep` never make one.
+   With `CONSOLE_TRACES_URL` also `traces`: one span `console doctor` of the service `console` goes by OTLP/HTTP to
+   the collector in `CONSOLE_OTLP_URL`, and Jaeger's query API `GET /api/traces/{traceId}` must find it within
+   5 seconds. A collector that refuses the span names `CONSOLE_OTLP_URL`; a span that does not arrive names the
+   collector's exporter and `CONSOLE_TRACES_URL`.
 
 The links to the Temporal UI and the trace store are for the browser, so the console does not check them; the
 foreman's `temporal` check covers Temporal.
@@ -140,9 +153,12 @@ A server of a release before `/v1/health` fails its check with the advice to upd
 | `CONSOLE_FORGE_URL` | string |  | serve: the forge's API, the adapter's FORGE_URL, like https://codeberg.org for forge-forgejo. Default: the adapter's own. |
 | `CONSOLE_FORGE_TOKEN` | string |  | serve: the adapter's FORGE_TOKEN; a token that may read pull requests is enough. |
 | `CONSOLE_USER_HEADER` | string |  | serve: the header in which the sign-in proxy sends the signed-in person, like X-Forwarded-Email. Set, the console takes actions in that person's name, such as submitting work on /work (ADR 0089); unset, it is read-only. Only set it behind a proxy that sets the header and removes it from the browser's requests. |
+| `CONSOLE_OTLP_URL` | string |  | doctor --deep: the OTLP/HTTP base URL of the collector, like http://jaeger:4318; it gets one span "console doctor" of the service "console" at /v1/traces. |
+| `CONSOLE_TRACES_URL` | string |  | doctor --deep: the base URL of the trace store's Jaeger query API, like http://jaeger:16686. Set, doctor --deep sends one span to CONSOLE_OTLP_URL and waits 5 s for GET /api/traces/{traceId} to find it. |
 | `CONSOLE_MODEL_URL` | string |  | doctor --deep: the OpenAI-compatible base URL of the model gateway (LiteLLM), ending in /v1; it gets one chat completion of one token per model route of the factory definition. |
 | `CONSOLE_MODEL_TOKEN` | string |  | doctor --deep: the gateway's key, sent as Authorization: Bearer <token>. |
 | `CONSOLE_HARNESS_COMMAND` | string |  | doctor --deep: the command line, run with sh -c, that starts the harness's ACP agent, like claude-code-acp; it must answer ACP initialize within 10 seconds. |
+| `CONSOLE_IMPROVE_DIR` | string |  | serve: the folder the improvement jobs write run records and scores to. Set, the page /improvement shows each scorer's pass rate and judge cost and each run's stages with their cost. |
 
 ## Releases
 
@@ -233,4 +249,10 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-069 | implemented | The page "/health" calls no model |
 | SCN-CONSOLE-070 | implemented | The run page links each stage to its span in the run's trace |
 | SCN-CONSOLE-080 | implemented | The run page lists the actions of a run with the person who sent each |
+| SCN-CONSOLE-090 | implemented | The improvement page shows each scorer's pass rate and each run's cost |
+| SCN-CONSOLE-091 | implemented | Without a folder the improvement page answers 404 |
+| SCN-CONSOLE-092 | implemented | The improvement page reads only the records of ".json" and ".jsonl" files and skips other lines |
+| SCN-CONSOLE-100 | implemented | "console doctor --deep" sends one span to the collector and finds it in the trace store |
+| SCN-CONSOLE-101 | implemented | "console doctor --deep" names the path from the collector to the trace store when the span does not arrive |
+| SCN-CONSOLE-102 | implemented | "console doctor --deep" names CONSOLE_OTLP_URL when no collector answers there |
 | SCN-CONSOLE-110 | implemented | The run page links no span of a run whose foreman names no trace |

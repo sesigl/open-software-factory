@@ -70,7 +70,7 @@ not `deprecated` is `implemented`; otherwise it says `planned`. The check VISION
 | SCN-FACTORY-METRIC-001 | implemented | SCN-LEDGER-020 (implemented), SCN-LEDGER-063 (implemented) |
 | SCN-FACTORY-METRIC-002 | implemented | SCN-LEDGER-021 (implemented), SCN-LEDGER-063 (implemented), SCN-LEDGER-040 (implemented) |
 | SCN-FACTORY-METRIC-003 | implemented | SCN-LEDGER-035 (implemented), SCN-LEDGER-024 (implemented), SCN-LEDGER-025 (implemented), SCN-LEDGER-058 (implemented), SCN-LEDGER-059 (implemented), SCN-LEDGER-039 (implemented) |
-| SCN-FACTORY-METRIC-004 | implemented | SCN-LEDGER-010 (implemented), SCN-LEDGER-011 (implemented), SCN-LEDGER-034 (implemented), SCN-LEDGER-036 (implemented), SCN-LEDGER-037 (implemented), SCN-LEDGER-057 (implemented), SCN-LEDGER-030 (implemented), SCN-LEDGER-031 (implemented), SCN-LEDGER-032 (implemented), SCN-LEDGER-051 (implemented), SCN-LEDGER-001 (implemented) |
+| SCN-FACTORY-METRIC-004 | implemented | SCN-CONSOLE-090 (implemented), SCN-LEDGER-010 (implemented), SCN-LEDGER-011 (implemented), SCN-LEDGER-034 (implemented), SCN-LEDGER-036 (implemented), SCN-LEDGER-037 (implemented), SCN-LEDGER-057 (implemented), SCN-LEDGER-030 (implemented), SCN-LEDGER-031 (implemented), SCN-LEDGER-032 (implemented), SCN-LEDGER-051 (implemented), SCN-LEDGER-001 (implemented) |
 | SCN-FACTORY-METRIC-005 | implemented | SCN-LEDGER-012 (implemented), SCN-LEDGER-013 (implemented), SCN-LEDGER-035 (implemented), SCN-LEDGER-062 (implemented) |
 | SCN-FACTORY-METRIC-006 | implemented | SCN-LEDGER-016 (implemented), SCN-LEDGER-060 (implemented), SCN-LEDGER-033 (implemented) |
 | SCN-FACTORY-METRIC-007 | implemented | SCN-LEDGER-019 (implemented) |

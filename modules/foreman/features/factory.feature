@@ -117,3 +117,18 @@ Feature: Factory definition
     Then the harness opened the session of "plan" with the MCP server "server-everything" that runs "npx -y @modelcontextprotocol/server-everything@2026.1.26"
     And the harness opened the session of "implement" with no MCP server
     And the agent of "plan" found the skill's "SKILL.md" in ".claude/skills/review" and ".agents/skills/review" of its folder
+
+  @id=SCN-FORE-156 @status=implemented
+  Scenario: A factory in a Git remote runs at the commit of its default branch, and the server's folder needs no clean checkout
+    Given the README's "factory.yaml" is committed in a Git repository that the server reaches at a "file://" URL
+    And the repository's "agents/plan.md" has a change that is not committed
+    And "foreman serve" runs with "FOREMAN_FACTORY" set to "git+<url>" without a ref and a scripted harness
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then "/v1/runs/<id>" shows the factory "hello" and the commit of the default branch as the factory version
+
+  @id=SCN-FORE-157 @status=implemented
+  Scenario: A ref that the Git remote does not have stops the server at the start
+    Given the README's "factory.yaml" is committed in a Git repository that the server reaches at a "file://" URL
+    When the user runs "foreman serve" with "FOREMAN_FACTORY" set to "git+<url>#no-such-branch"
+    Then the command exits with code 2
+    And the output contains "FOREMAN_FACTORY: cannot fetch no-such-branch of file://"

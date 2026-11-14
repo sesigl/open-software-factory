@@ -201,6 +201,8 @@ free and keeps the same URL:
 intake receives work only while the relay runs. To send a delivery that failed again, use "Redeliver" on the webhook's
 page "Recent Deliveries".
 
+For a URL that does not depend on a relay, see [Give intake a public URL](../docs/how-to/public-intake.md).
+
 ## Helm chart
 
 The chart `osf` installs LiteLLM, gatekeeper, intake, foreman and console with the reference factory on Kubernetes.

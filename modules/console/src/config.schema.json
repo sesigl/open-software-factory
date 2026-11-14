@@ -114,6 +114,14 @@
       "type": "string",
       "description": "serve: the header in which the sign-in proxy sends the signed-in person, like X-Forwarded-Email. Set, the console takes actions in that person's name, such as submitting work on /work (ADR 0089); unset, it is read-only. Only set it behind a proxy that sets the header and removes it from the browser's requests."
     },
+    "CONSOLE_OTLP_URL": {
+      "type": "string",
+      "description": "doctor --deep: the OTLP/HTTP base URL of the collector, like http://jaeger:4318; it gets one span \"console doctor\" of the service \"console\" at /v1/traces."
+    },
+    "CONSOLE_TRACES_URL": {
+      "type": "string",
+      "description": "doctor --deep: the base URL of the trace store's Jaeger query API, like http://jaeger:16686. Set, doctor --deep sends one span to CONSOLE_OTLP_URL and waits 5 s for GET /api/traces/{traceId} to find it."
+    },
     "CONSOLE_MODEL_URL": {
       "type": "string",
       "description": "doctor --deep: the OpenAI-compatible base URL of the model gateway (LiteLLM), ending in /v1; it gets one chat completion of one token per model route of the factory definition."
@@ -125,6 +133,10 @@
     "CONSOLE_HARNESS_COMMAND": {
       "type": "string",
       "description": "doctor --deep: the command line, run with sh -c, that starts the harness's ACP agent, like claude-code-acp; it must answer ACP initialize within 10 seconds."
+    },
+    "CONSOLE_IMPROVE_DIR": {
+      "type": "string",
+      "description": "serve: the folder the improvement jobs write run records and scores to. Set, the page /improvement shows each scorer's pass rate and judge cost and each run's stages with their cost."
     }
   }
 }

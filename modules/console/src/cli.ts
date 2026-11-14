@@ -12,7 +12,8 @@ Commands:
          each run's origin and evidence, the factory definition in CONSOLE_FACTORY, and its health on /health.
   doctor Check each server of the factory, its token and the factory definition, and print one fix per failure.
          Exits 1 when a check fails. --deep also makes one model call per route of the factory definition through
-         CONSOLE_MODEL_URL and asks the harness in CONSOLE_HARNESS_COMMAND to answer ACP initialize.
+         CONSOLE_MODEL_URL, asks the harness in CONSOLE_HARNESS_COMMAND to answer ACP initialize and, with
+         CONSOLE_TRACES_URL, sends one span to CONSOLE_OTLP_URL and finds it in the trace store.
 `;
 
 const { positionals, values } = parseArgs({
