@@ -1123,7 +1123,7 @@ as a vision scenario. Each item names the place in the code, so start there, and
 Everything that needs a paid model call or a paid service, so the plan never waits for it. A maintainer starts each
 run by hand, after the owner agreed on the model and the budget.
 
-### [ ] T-21 · dogfood with paid services
+### [x] T-21 · dogfood with paid services
 
 Slices that need a paid model call or a paid service. They come last, so the plan does not wait for them. Ask the
 owner before each slice: which model or service, and its budget.
@@ -1150,9 +1150,9 @@ owner before each slice: which model or service, and its budget.
   - [x] harness (from T-12, T-20): `e2e/paid/` and the script `test:paid`: one SMOKE-PAID run for opencode, weekly on
     OpenRouter with `deepseek/deepseek-v4.1-flash-1017`, and one for claude-code on a developer's subscription with
     `claude-haiku-5-5` (ADR 0052, ADR 0053, ADR 0076, ADR 0077).
-  - [ ] codex (from T-12): a SMOKE-PAID run of harness-codex, weekly on OpenRouter's Responses API with
+  - [x] codex (from T-12): a SMOKE-PAID run of harness-codex, weekly on OpenRouter's Responses API with
     `deepseek/deepseek-v4.1-flash-1017`; harness-codex adds a model Codex does not know to its model catalog, so Codex
-    offers it apply_patch (`SCN-HCODEX-012`, ADR 0077). Open: done when a run of `weekly-paid.yml` passes for codex.
+    offers it apply_patch (`SCN-HCODEX-012`, ADR 0077). Done: run 43599387991 of `weekly-paid.yml` passed for codex.
   - [x] reference factory and foreman (from T-27, T-17): the reference factory on a sample repository, with a paid
     model. A maintainer starts `paid-reference-run.yml` (ADR 0128) with `gh workflow run paid-reference-run.yml -f
     ref=<branch>`; the foreman runs the implement stage on opencode with `deepseek/deepseek-v4.1-flash-1017` through
