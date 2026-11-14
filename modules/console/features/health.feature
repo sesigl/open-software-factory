@@ -52,3 +52,10 @@ Feature: Health
     Then the command exits with code 1
     And it prints "FAIL  groups: \"maintainers\" has no member but the example's slack:U0EXAMPLE: put its people in <file>"
     And it prints no line about the group "leads"
+
+  @id=SCN-CONSOLE-059 @status=implemented
+  Scenario: "console doctor" fails on a groups file it cannot read
+    Given "CONSOLE_GROUPS" names a file that does not exist
+    When the user runs "console doctor"
+    Then the command exits with code 1
+    And it prints "FAIL  groups: ENOENT: no such file or directory, open '<file>': check CONSOLE_GROUPS"
