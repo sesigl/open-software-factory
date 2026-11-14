@@ -10,8 +10,10 @@ export interface ShellOf {
   path: string;
   theme: Theme;
   factory: string | undefined;
-  /** The count beside "Runs", like "1 waits", when the page knows it. */
-  waiting?: string;
+  /** The link of the page in the new look that is open: "/" or "/secrets". */
+  current: string;
+  /** The count beside the open page's link, like "1 waits" or "1 missing", when the page knows it. */
+  count?: string;
   refresh?: number;
   /** Whether the person signed in with the console's own sign-in, so that "Sign out" ends their session. */
   session: boolean;
@@ -25,13 +27,19 @@ export function shellData(frame: Omit<Frame, "title">, at: ShellOf): ShellData {
     ...(frame.improvement ? [{ name: "Cost and scores", href: "/improvement" }] : []),
     { name: "Health", href: "/health" },
   ];
-  const runs: ShellLink = { name: "Runs", href: "/", current: "page", ...(at.waiting ? { count: at.waiting } : {}) };
+  // Secrets only for a person who may open it (ADR 0134): an admin, in a console with a store.
+  const pages: ShellLink[] = [
+    { name: "Runs", href: "/" },
+    ...(frame.secrets ? [{ name: "Secrets", href: "/secrets" }] : []),
+  ].map((link) =>
+    link.href === at.current ? { ...link, current: "page", ...(at.count ? { count: at.count } : {}) } : link,
+  );
   return {
     title: at.title,
     theme: at.theme,
     ...(at.refresh ? { refresh: at.refresh } : {}),
     ...(at.factory ? { factory: at.factory } : {}),
-    pages: [runs],
+    pages,
     classic,
     tools: frame.links.map((link) => ({ name: link.name, href: link.url })),
     ...(frame.person ? { person: { label: `${frame.person.email} · ${frame.person.role}` } } : {}),

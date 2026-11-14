@@ -45,6 +45,8 @@ Open <http://localhost:8080>. The page lists the foreman's runs, the running one
 | `/factory/agents/<name>` | One agent's configuration, and the link to the file on the branch where it changes. 404 for an agent the factory does not declare. |
 | `/health` | The checks of `console doctor` as a table: each check, its state and what to do. 200 when every check is ok, else 503. |
 | `/inbox` | The self-improvement inbox: the open pull requests of `CONSOLE_INBOX_REPOSITORY` whose branch starts with `CONSOLE_INBOX_PREFIX` (default `observer/`), newest first, each with its link, branch, author, state ("approved", "changes requested" or "needs review") and age. A forge adapter that fails is named above the list. 404 without `CONSOLE_INBOX_REPOSITORY`. |
+| `/secrets` | Only for an admin ([Secrets](#secrets)): the secrets that the factory's agents declare and the names in the secret store, each "Missing", "Set", "Set outside the UI", "Not used" or "Unknown", and the form "Store a value". `?name=<name>` fills the form's name. A person without the role `admin` gets 403. 404 in a console without roles or without `OSF_OPENBAO_ADDR`. |
+| `/secrets/delete?name=<name>` | Only for an admin: asks before the secret of that name is deleted, with the button "Delete" and the link "Cancel". |
 | `/improvement` | Cost and scores of the factory's runs, from the files below `CONSOLE_IMPROVE_DIR`: the total cost and the number of runs, each scorer with its scored runs, passes, pass rate and judge cost, and each stage of a run with its outcome and cost, linked to the run's page. 404 without `CONSOLE_IMPROVE_DIR`. |
 
 The runs page `/` has the new look of the design system ([ADR 0133](../../docs/decisions/0133-design-system.md)): a
@@ -137,6 +139,41 @@ is sent there.
 Whoever may write to the factory's repository can make themselves `admin`: write access to that repository is admin
 access to the factory, and the repository should be private, since the access file holds emails.
 
+## Secrets
+
+An admin stores the values of the agents' secrets on `/secrets` ([ADR 0137](../../docs/decisions/0137-secrets-port-write-side-and-openbao.md)).
+The page needs a role, so it exists with the own sign-in or behind a sign-in proxy with an access file, and needs the
+factory's OpenBao in `OSF_OPENBAO_ADDR`; otherwise it and its forms answer 404 and name what is missing, and the
+navigation does not link it. Only an `admin` sees it in the navigation; anyone else gets 403.
+
+The page lists, the missing ones first:
+
+| State | When | The row says |
+| --- | --- | --- |
+| Missing | An agent declares `ref:openbao/<name>`, and the store has no such secret | The agents that need it, and the link "Store a value" |
+| Unknown | An agent declares `ref:openbao/<name>`, and the store did not answer | The agents that need it; the page names the store's error above the list |
+| Set | An agent declares it, and the store has it | The agents that use it, the version, and who stored it when (UTC, to the minute), and the link "Replace" |
+| Set outside the UI | An agent declares `ref:env/<NAME>` or `ref:file/<name>` | The sandbox adapter's variable `OSF_SECRET_<NAME>`, or the file `<name>` in its `OSF_SECRETS_DIR` |
+| Not used | The store has it, and no agent declares it | Who stored it when, and the link "Delete" |
+
+The form "Store a value" has the secret's name and a password field for the value, with no autocomplete; the field
+is empty on every page. It posts to `POST /secrets`, which runs the adapter in `CONSOLE_SECRETS_ADAPTER` as
+`put --by=<the person's email> -- <name>` and writes the value only to the adapter's standard input. "Delete" leads to
+a page that asks first; its form posts to `POST /secrets/delete`, which runs `delete -- <name>`. Each form answers 303
+to `/secrets`, or shows the page with the problem: 400 for a name the adapter refuses, 502 for a store that refuses, 413
+for a form over 64 KiB. Forms follow the rules of the console's other forms: with the own sign-in a form's `Origin`
+must be `CONSOLE_URL`, behind a proxy a form from another site answers 403 and one without the person 401.
+
+A value appears nowhere else: not in a page, a redirect, a header, an error or a line the console prints. The console
+logs no request. The adapter prints no value and names none in an error ([secrets port](../../ports/secrets/README.md)),
+and the console's token cannot read one: give it the policy that `secrets-openbao policy write` prints.
+
+When a new value takes effect: a sandbox's egress proxy reads the value at the first request that needs it and keeps
+it while the sandbox runs, so a value counts from the next sandbox that starts, like the next run's. It is sent only
+to the hosts that the agents which declare it may reach (their `sandbox.egress`). The egress proxy swaps a placeholder
+in an HTTP request, so a secret that is not sent in one, like an SSH key or a database password, does not work this
+way.
+
 ## Health
 
 `console doctor` and `/health` check, in this order ([ADR 0086](../../docs/decisions/0086-health-routes.md)):
@@ -153,7 +190,14 @@ access to the factory, and the repository should be private, since the access fi
    `oidc` the provider's discovery document at `<CONSOLE_OIDC_ISSUER>/.well-known/openid-configuration` answers; and
    `access`, the access file holds and has an admin who is not the example's `admin@example.com`, the person the
    reference `access.yaml` ships in place of one.
-5. Only with `console doctor --deep` ([ADR 0120](../../docs/decisions/0120-deep-checks-of-console-doctor.md)):
+5. When an agent of the factory declares a secret of OpenBao (`ref:openbao/<name>`, [ADR 0137](../../docs/decisions/0137-secrets-port-write-side-and-openbao.md)):
+   `secrets`, the adapter in `CONSOLE_SECRETS_ADAPTER` answers `probe` and `list` with the store at
+   `OSF_OPENBAO_ADDR` and the token `OSF_OPENBAO_TOKEN`, else it names the adapter's error and the three variables;
+   `secrets token`, the console's token lives 7 days or more, else it warns with the time the token ends, so there is
+   a week to give the console a new one (a token of OpenBao lives at most 32 days by default; one without an end, like
+   the root token, never warns); and `secret <name>` for each declared secret, which fails when the store has no
+   value for it and names the agents that need it.
+6. Only with `console doctor --deep` ([ADR 0120](../../docs/decisions/0120-deep-checks-of-console-doctor.md)):
    `model <route>`, one chat completion of one token per model route of the factory definition's agents through the
    gateway in `CONSOLE_MODEL_URL`, and `harness`, the command in `CONSOLE_HARNESS_COMMAND` answers ACP `initialize`
    within 10 seconds. A model call costs money, so `/health` and `console doctor` without `--deep` never make one.
@@ -176,7 +220,8 @@ The links to the Temporal UI and the trace store are for the browser, so the con
 foreman's `temporal` check covers Temporal.
 
 A server of a release before `/v1/health` fails its check with the advice to update it. When every check is ok,
-`console doctor` prints the count last, like `all 7 checks ok`.
+`console doctor` prints the count last, like `all 7 checks ok`. A warning prints `WARN  <check>: <what to do>`, counts
+as ok, adds itself to the count, like `all 5 checks ok, 1 warns`, and shows on `/health` as "warning" with status 200.
 
 ## Configuration
 
@@ -218,6 +263,7 @@ A server of a release before `/v1/health` fails its check with the advice to upd
 | `CONSOLE_REPOSITORY_URL` | string |  | serve: the web URL of the factory's Git repository, like https://github.com/acme/factory. Set, the configuration pages link the file. |
 | `CONSOLE_SANDBOX_COMMAND` | string |  | doctor --deep: the command line, run with sh -c, of a sandbox adapter, like sandbox-docker. Set, doctor --deep runs its probe <template> example.com, which starts a sandbox with no allowed host, and wants "refused example.com". |
 | `CONSOLE_SANDBOX_TEMPLATE` | string | `"curlimages/curl:8.17.0"` | doctor --deep: the template of the sandbox probe; it needs curl. |
+| `CONSOLE_SECRETS_ADAPTER` | string | `"npx -y @opensoftware/secrets-openbao"` | serve, doctor and /health: the command line of the secrets port's adapter that /secrets runs with list, put and delete, and console doctor with probe and list (ADR 0137). It gets the console's environment with OSF_OPENBAO_ADDR, OSF_OPENBAO_TOKEN and OSF_OPENBAO_MOUNT, and a value only on the standard input of put. |
 | `CONSOLE_SESSION_HOURS` | number | `12` | serve, with CONSOLE_SIGN_IN: how long a session lasts, in hours. |
 | `CONSOLE_SESSION_SECRET` | string |  | serve, with CONSOLE_SIGN_IN: the key of the encrypted session cookie, or several separated by commas: the first encrypts, every one decrypts, so a key changes without signing everyone out. |
 | `CONSOLE_SESSION_URL` | string |  | serve: the link to a stage's transcript, with {sessionId}, like https://langfuse.acme.dev/sessions/{sessionId}. |
@@ -230,6 +276,9 @@ A server of a release before `/v1/health` fails its check with the advice to upd
 | `CONSOLE_URL` | string |  | serve: the console's own address, the source of the provider's callback address and of the same-origin rule of forms with the sign-in. Default http://localhost:<PORT>. With the sign-in it must be https:// or loopback, else the console does not start. A request for another host is sent to this address. |
 | `CONSOLE_USER_HEADER` | string |  | serve: the header in which the sign-in proxy sends the signed-in person, like X-Forwarded-Email. Set, the console takes actions in that person's name, such as submitting work on /work (ADR 0089); unset, it is read-only. Only set it behind a proxy that sets the header and removes it from the browser's requests. |
 | `OSF_NOW` | string |  | The current time, like 2026-01-01T00:00:00Z, for the age of a run, the sign-in and the waits of `console doctor --deep`, which then pass at once. Default: the clock. |
+| `OSF_OPENBAO_ADDR` | string |  | serve, doctor and /health: the address of the factory's OpenBao, like http://openbao:8200, for the secrets adapter. Set, an admin stores and deletes secrets on /secrets. |
+| `OSF_OPENBAO_MOUNT` | string | `"secret"` | serve, doctor and /health: the factory's KV version 2 mount in OpenBao, the same as its sandboxes' egress proxy reads. |
+| `OSF_OPENBAO_TOKEN` | string |  | serve, doctor and /health: the console's OpenBao token, with the policy that secrets-openbao policy write prints: it writes, lists and deletes secrets and cannot read a value. console doctor warns 7 days before it ends. |
 | `OSF_SEED` | string |  | doctor --deep: set, the ID of the doctor's ping comes from it instead of from chance, so a test knows it. Leave it unset in a factory. |
 | `PORT` | string | `"8080"` | serve: the port the web pages are served on. |
 
@@ -376,3 +425,20 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-170 | implemented | "console doctor" finds the discovery of an issuer that is set with a slash at its end |
 | SCN-CONSOLE-171 | implemented | "console doctor" with the sign-in names the problem of an access file without an admin |
 | SCN-CONSOLE-172 | implemented | The probe "/v1/ready" answers a health check that asks another host than the console's address |
+| SCN-CONSOLE-173 | implemented | An admin stores a value for a missing secret, and the list says "Set" with the person |
+| SCN-CONSOLE-174 | implemented | A declared secret without a value says "Missing" and names the agents that need it |
+| SCN-CONSOLE-175 | implemented | A stored secret that no agent declares says "Not used" and offers "Delete" |
+| SCN-CONSOLE-176 | implemented | The secrets of the providers "env" and "file" are listed as set outside the UI |
+| SCN-CONSOLE-177 | implemented | A member gets 403 for "/secrets" and its form, and only an admin's navigation links "Secrets" |
+| SCN-CONSOLE-178 | implemented | In the open mode "/secrets" and its form answer 404 |
+| SCN-CONSOLE-179 | implemented | Behind a sign-in proxy without an access file "/secrets" answers 404, and the navigation does not link it |
+| SCN-CONSOLE-180 | implemented | Without a store "/secrets" answers 404 and names the variable |
+| SCN-CONSOLE-181 | implemented | A stored value is in no output of the console |
+| SCN-CONSOLE-182 | implemented | A name that the store's adapter refuses answers 400 and names the problem |
+| SCN-CONSOLE-183 | implemented | A form over 64 KiB answers 413 and stores nothing |
+| SCN-CONSOLE-184 | implemented | "Delete" asks first on a page of its own, then removes the secret |
+| SCN-CONSOLE-185 | implemented | A store that does not answer is named on "/secrets", and its secrets say "Unknown" |
+| SCN-CONSOLE-186 | implemented | "console doctor" names each secret of OpenBao that the factory declares without a value |
+| SCN-CONSOLE-187 | implemented | "console doctor" names a store that does not answer |
+| SCN-CONSOLE-188 | implemented | "console doctor" and "/health" warn when the console's token for the store ends within 7 days |
+| SCN-CONSOLE-189 | implemented | An admin signs in and stores a secret (journey) |

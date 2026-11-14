@@ -1,10 +1,13 @@
 // What `console doctor` and the page /health find (ADR 0086): one item per check, with what to do when it fails.
+import { agentsText, type Declared, type Stored } from "./secrets.ts";
 
 export interface Item {
   name: string;
   ok: boolean;
-  /** What failed and how to fix it, when `ok` is false. */
+  /** What failed and how to fix it, when `ok` is false, or what to do soon, when `warn` is set. */
   detail?: string;
+  /** A check that holds, but needs a person soon: `console doctor` prints WARN, and /health says "warning". */
+  warn?: boolean;
 }
 
 /**
@@ -46,10 +49,51 @@ export function serverItems(server: Server, health: { status: number; body?: unk
   return items;
 }
 
-/** The lines of `console doctor`: one per item, and the count when every check is ok. */
+/** The lines of `console doctor`: one per item, and the count when every check is ok, with the warnings. */
 export function report(items: Item[]): string[] {
-  const lines = items.map(({ name, ok, detail }) => (ok ? `ok    ${name}` : `FAIL  ${name}: ${detail}`));
-  return items.every(({ ok }) => ok) ? [...lines, `all ${items.length} checks ok`] : lines;
+  const line = ({ name, ok, detail, warn }: Item) =>
+    ok ? (warn ? `WARN  ${name}: ${detail}` : `ok    ${name}`) : `FAIL  ${name}: ${detail}`;
+  const warns = items.filter(({ warn }) => warn).length;
+  const count = `all ${items.length} checks ok${warns ? `, ${warns} warns` : ""}`;
+  return items.every(({ ok }) => ok) ? [...items.map(line), count] : items.map(line);
+}
+
+/** How long the console's token for the secret store may still live before `console doctor` warns: 7 days. */
+const TOKEN_WARNING_SECONDS = 7 * 86_400;
+
+/** What an adapter of the secrets port answered: its JSON lines, or its error. */
+type Answer<T> = { ok: true; body: T[] } | { ok: false; note: string };
+
+interface Probe {
+  ttl: number;
+  expires: string | null;
+}
+
+/**
+ * The checks of the secret store, when the factory declares a secret of OpenBao (ADR 0137): the store answers to the
+ * console's token, the token does not end within 7 days, and each declared secret has a value.
+ */
+export function secretItems(declared: Declared[], probe: Answer<Probe>, listed: Answer<Stored>): Item[] {
+  const failed = [probe, listed].find((answer) => !answer.ok) as { note: string } | undefined;
+  if (failed) {
+    const detail = `${failed.note}: check OSF_OPENBAO_ADDR, OSF_OPENBAO_TOKEN and CONSOLE_SECRETS_ADAPTER`;
+    return [{ name: "secrets", ok: false, detail }];
+  }
+  // probe prints one line.
+  const { ttl, expires } = (probe as { body: Probe[] }).body[0] as Probe;
+  // A token with the ttl 0 does not end, like OpenBao's root token.
+  const ends = ttl > 0 && ttl < TOKEN_WARNING_SECONDS;
+  const advice = `the token in OSF_OPENBAO_TOKEN ends at ${expires}, within 7 days: give the console a new token`;
+  const names = new Set((listed as { body: Stored[] }).body.map(({ name }) => name));
+  return [
+    { name: "secrets", ok: true },
+    { name: "secrets token", ok: true, ...(ends ? { warn: true, detail: advice } : {}) },
+    ...declared.map(({ name, agents }) => ({
+      name: `secret ${name}`,
+      ok: names.has(name),
+      detail: `no value in the store for ${agentsText(agents)}: store one on /secrets`,
+    })),
+  ];
 }
 
 /** The member that the reference groups.json ships in place of a person (ADR 0114). */

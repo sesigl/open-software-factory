@@ -7,7 +7,7 @@ import { cookieOf, seal, setCookie, unseal } from "../adapters/session.ts";
 import { render } from "../adapters/web.ts";
 import { type SignIn, safeNext } from "../domain/signin.ts";
 import { signInData } from "../pages/signin.ts";
-import { setPerson } from "./person.ts";
+import { setPerson, setProxied } from "./person.ts";
 
 const SESSION = "osf_session";
 const FLOW = "osf_signin";
@@ -120,7 +120,8 @@ export function useProxyAccess(app: FastifyInstance, header: string, accessPath:
     const email = String(request.headers[header] ?? "");
     if (!email) return;
     const list = access.current();
-    if (list.roleOf(email)) return;
+    const role = list.roleOf(email);
+    if (role) return setProxied(request, { email, role });
     const refusal = list.problems.length
       ? `Nobody may use this console: ${list.problems.join("; ")}`
       : `${email} is not on this factory's access list`;
