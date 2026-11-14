@@ -1,11 +1,22 @@
 // OpenBao's development server as a process on the host (ADR 0137): the real server, with its data in memory, from the
 // binary `bao` that `make install` pins. The first scenario of a test process starts it; each scenario gets a KV
 // version 2 mount of its own (ADR 0129). The root token stays here: a test gets tokens with the policies it names.
+// For containers, a second server listens on every interface (ADR 0139), so the one for the host stays on loopback.
 import { perProcess, type Running, servicePort, start } from "./binaries.ts";
+
+export interface OpenBaoOptions {
+  /** Also answer containers: listen on every interface instead of 127.0.0.1 and give `containerUrl`. Default false. */
+  containers?: boolean;
+}
 
 export interface OpenBao {
   /** OpenBao's address `http://127.0.0.1:<port>`, for the module's OSF_OPENBAO_ADDR. */
   url: string;
+  /**
+   * With `containers: true`, the same server as a container reaches it: `http://host.docker.internal:<port>`, for an
+   * egress proxy's OSF_OPENBAO_ADDR. On Linux a container needs `--add-host host.docker.internal:host-gateway`.
+   */
+  containerUrl?: string;
   /** The scenario's KV version 2 mount, for the module's OSF_OPENBAO_MOUNT. No other scenario sees it. */
   mount: string;
   /** A new token with this policy, in OpenBao's policy language. It lives for `ttl`, by default "1h". */
@@ -18,18 +29,19 @@ export interface OpenBao {
 
 const ROOT_TOKEN = "osf-testkit-root";
 
-const server = perProcess(startOnce);
+const servers = { host: perProcess(() => startOnce("127.0.0.1")), containers: perProcess(() => startOnce("0.0.0.0")) };
 let mounts = 0;
 let policies = 0;
 
 /** A new KV version 2 mount in the OpenBao of this process, started on the first call. */
-export async function startOpenBao(): Promise<OpenBao> {
-  const { url } = await server();
+export async function startOpenBao(options: OpenBaoOptions = {}): Promise<OpenBao> {
+  const { url, port } = await servers[options.containers ? "containers" : "host"]();
   const root = (method: string, path: string, body?: unknown) => asRoot(url, method, path, body);
   const mount = `scenario-${++mounts}`;
   await root("POST", `sys/mounts/${mount}`, { type: "kv", options: { version: "2" } });
   return {
     url,
+    ...(options.containers ? { containerUrl: `http://host.docker.internal:${port}` } : {}),
     mount,
     async token(policy, options = {}) {
       const name = `${mount}-${++policies}`;
@@ -49,16 +61,16 @@ export async function startOpenBao(): Promise<OpenBao> {
   };
 }
 
-async function startOnce(): Promise<Running<{ url: string }>> {
+async function startOnce(host: string): Promise<Running<{ url: string; port: number }>> {
   // The development server also listens for its cluster on the next port; another process may hold that one, and the
   // server then fails with "address already in use" and starts again on new ports.
   const port = await servicePort();
   const url = `http://127.0.0.1:${port}`;
   return start(
     "bao",
-    () => ["server", "-dev", `-dev-root-token-id=${ROOT_TOKEN}`, `-dev-listen-address=127.0.0.1:${port}`],
+    () => ["server", "-dev", `-dev-root-token-id=${ROOT_TOKEN}`, `-dev-listen-address=${host}:${port}`],
     `${url}/v1/sys/health`,
-    { url },
+    { url, port },
   );
 }
 

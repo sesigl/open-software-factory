@@ -106,7 +106,7 @@ Feature: Services and outside systems
     Then the command exits with code 0
     And "report.xml" has the passed test cases "SCN-DEMO-001" and "SCN-DEMO-002"
 
-  @id=SCN-TK-180 @status=planned
+  @id=SCN-TK-180 @status=implemented
   Scenario: fakes.openbao for containers answers a container at its container URL
     Given a module whose CLI runs curl in a container for the secret "demo" of the mount "DEMO_BAO_MOUNT" at "DEMO_BAO_ADDR" with the token "DEMO_BAO_TOKEN", and prints the body
     And its system test writes "demo" with the value "bao_test_1" to fakes.openbao for containers, passes its container URL and a token whose policy may read the mount, and expects "bao_test_1" in the output
