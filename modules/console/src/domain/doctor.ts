@@ -1,4 +1,3 @@
-// @ts-nocheck
 // What `console doctor` and the page /health find (ADR 0086): one item per check, with what to do when it fails.
 
 export interface Item {

@@ -1,4 +1,3 @@
-// @ts-nocheck
 // The runs page "/": every run of every foreman, with a filter per state (VIS-001, ORCH-008).
 import type { RunView } from "@opensoftware/contracts";
 import { age, STATES } from "../domain/runs.ts";

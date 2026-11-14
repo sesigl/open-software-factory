@@ -1,4 +1,3 @@
-// @ts-nocheck
 // The configuration pages "/factory" and "/factory/agents/<name>": the factory definition, read-only, with the link
 // to the file and the branch in Git where it changes (CODE-002).
 import { stringify } from "yaml";

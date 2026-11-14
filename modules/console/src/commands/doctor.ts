@@ -1,4 +1,3 @@
-// @ts-nocheck
 // console doctor: checks each server of the factory, its token and the factory definition, and prints one fix per
 // failure (ADR 0086); with --deep also each model route, the harness, a span's way to the trace store, a sandbox's egress and an event's way to the foreman (ADR 0120). It exits 1 when a check fails. The page /health shows the same.
 import { readFileSync } from "node:fs";

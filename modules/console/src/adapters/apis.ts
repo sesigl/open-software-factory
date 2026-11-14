@@ -1,4 +1,3 @@
-// @ts-nocheck
 // The HTTP APIs the console reads, each with its bearer token: the foremen's, intake's and gatekeeper's (ADR 0072).
 // An answer other than 2xx, or none, is a note that names the API, never an exception.
 

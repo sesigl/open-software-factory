@@ -1,56 +1,19 @@
-// @ts-nocheck
 // console serve: the read-only web view of the factory (ADR 0072). Each page asks the foremen, intake and gatekeeper
 // when it is opened, and keeps nothing. It runs until SIGTERM or SIGINT.
-function stryNS_9fa48() {
-  var g = typeof globalThis === 'object' && globalThis && globalThis.Math === Math && globalThis || new Function("return this")();
-  var ns = g.__stryker__ || (g.__stryker__ = {});
-  if (ns.activeMutant === undefined && g.process && g.process.env && g.process.env.__STRYKER_ACTIVE_MUTANT__) {
-    ns.activeMutant = g.process.env.__STRYKER_ACTIVE_MUTANT__;
-  }
-  function retrieveNS() {
-    return ns;
-  }
-  stryNS_9fa48 = retrieveNS;
-  return retrieveNS();
-}
-stryNS_9fa48();
-function stryCov_9fa48() {
-  var ns = stryNS_9fa48();
-  var cov = ns.mutantCoverage || (ns.mutantCoverage = {
-    static: {},
-    perTest: {}
-  });
-  function cover() {
-    var c = cov.static;
-    if (ns.currentTestId) {
-      c = cov.perTest[ns.currentTestId] = cov.perTest[ns.currentTestId] || {};
-    }
-    var a = arguments;
-    for (var i = 0; i < a.length; i++) {
-      c[a[i]] = (c[a[i]] || 0) + 1;
-    }
-  }
-  stryCov_9fa48 = cover;
-  cover.apply(null, arguments);
-}
-function stryMutAct_9fa48(id) {
-  var ns = stryNS_9fa48();
-  function isActive(id) {
-    if (ns.activeMutant === id) {
-      if (ns.hitCount !== void 0 && ++ns.hitCount > ns.hitLimit) {
-        throw new Error('Stryker: Hit count limit reached (' + ns.hitCount + ')');
-      }
-      return true;
-    }
-    return false;
-  }
-  stryMutAct_9fa48 = isActive;
-  return isActive(id);
-}
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { UsageError } from "@opensoftware/cli";
-import type { GateDecisionRequest, GateView, RunList, RunRetry, RunSignal, RunView, WorkItemList, WorkItemView, WorkRequest } from "@opensoftware/contracts";
+import type {
+  GateDecisionRequest,
+  GateView,
+  RunList,
+  RunRetry,
+  RunSignal,
+  RunView,
+  WorkItemList,
+  WorkItemView,
+  WorkRequest,
+} from "@opensoftware/contracts";
 import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 import { type Api, getJson, postJson } from "../adapters/apis.ts";
 import { readFactory } from "../adapters/factory-file.ts";
@@ -69,10 +32,13 @@ import { runPage } from "../pages/run.ts";
 import { runsPage } from "../pages/runs.ts";
 import { workPage } from "../pages/work.ts";
 import { examine } from "./doctor.ts";
+
 type Env = Record<string, string | undefined>;
 
 /** The Content-Security-Policy of every answer: the console's own origin only, no script and no frame (ADR 0132). */
-const POLICY = stryMutAct_9fa48("9") ? "" : (stryCov_9fa48("9"), "default-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
+const POLICY =
+  "default-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
+
 const PICO = readFileSync(createRequire(import.meta.url).resolve("@picocss/pico/css/pico.min.css"));
 
 /** Each foreman of CONSOLE_FOREMAN_URL with its token: the one at the same place, else the first. */
@@ -80,33 +46,24 @@ function foremen(env: Env): Api[] {
   const urls = list(env.CONSOLE_FOREMAN_URL);
   if (urls.length === 0) throw new UsageError("set CONSOLE_FOREMAN_URL: the base URL of the foreman's API");
   const tokens = list(env.CONSOLE_FOREMAN_TOKEN);
-  return urls.map((url, index) => ({
-    name: "foreman",
-    url,
-    token: tokens[index] ?? tokens[0]
-  }));
+  return urls.map((url, index) => ({ name: "foreman", url, token: tokens[index] ?? tokens[0] }));
 }
-const optionalApi = (name: string, url: string | undefined, token: string | undefined): Api | undefined => url ? {
-  name,
-  url,
-  token
-} : undefined;
+
+const optionalApi = (name: string, url: string | undefined, token: string | undefined): Api | undefined =>
+  url ? { name, url, token } : undefined;
+
 export async function serve(env: Env) {
   const sources = foremen(env);
   const intake = optionalApi("intake", env.CONSOLE_INTAKE_URL, env.CONSOLE_INTAKE_TOKEN);
   const gatekeeper = optionalApi("gatekeeper", env.CONSOLE_GATEKEEPER_URL, env.CONSOLE_GATEKEEPER_TOKEN);
-  const now = () => env.OSF_NOW ? Date.parse(env.OSF_NOW) : Date.now();
+  const now = () => (env.OSF_NOW ? Date.parse(env.OSF_NOW) : Date.now());
   const links = namedLinks(env.CONSOLE_LINKS);
   const refresh = Number(env.CONSOLE_REFRESH || 10);
   const factoryFile = env.CONSOLE_FACTORY || "factory.yaml";
   const path = env.CONSOLE_FACTORY_PATH || "factory.yaml";
   const branch = env.CONSOLE_BRANCH || "main";
   const repository = env.CONSOLE_REPOSITORY_URL?.replace(/\/$/, "");
-  const source: Source = {
-    path,
-    branch,
-    url: repository && `${repository}/blob/${branch}/${path}`
-  };
+  const source: Source = { path, branch, url: repository && `${repository}/blob/${branch}/${path}` };
   const inbox = env.CONSOLE_INBOX_REPOSITORY;
   const userHeader = env.CONSOLE_USER_HEADER?.toLowerCase() || undefined;
   const actions = Boolean(userHeader);
@@ -115,112 +72,79 @@ export async function serve(env: Env) {
   const forge = {
     command: env.CONSOLE_FORGE_ADAPTER || "npx -y @opensoftware/forge-github",
     url: env.CONSOLE_FORGE_URL || undefined,
-    token: env.CONSOLE_FORGE_TOKEN
+    token: env.CONSOLE_FORGE_TOKEN,
   };
 
   /** The frame of every page: the dashboards and which optional pages the navigation links. */
-  const frameOf = stryMutAct_9fa48("10") ? () => undefined : (stryCov_9fa48("10"), (() => {
-    const frameOf = () => stryMutAct_9fa48("11") ? {} : (stryCov_9fa48("11"), {
-      links,
-      inbox: Boolean(inbox),
-      work: Boolean(intake),
-      improvement: Boolean(improve)
-    });
-    return frameOf;
-  })());
-  const send = (reply: FastifyReply, status: number, frame: Omit<Frame, "links" | "inbox" | "work" | "improvement">, content: Parameters<typeof page>[1]) => reply.code(status).type("text/html; charset=utf-8").send(page(stryMutAct_9fa48("12") ? {} : (stryCov_9fa48("12"), {
-    ...frame,
-    ...frameOf()
-  }), content));
-  const app = Fastify({
-    logger: false
-  });
+  const frameOf = () => ({ links, inbox: Boolean(inbox), work: Boolean(intake), improvement: Boolean(improve) });
+
+  const send = (
+    reply: FastifyReply,
+    status: number,
+    frame: Omit<Frame, "links" | "inbox" | "work" | "improvement">,
+    content: Parameters<typeof page>[1],
+  ) =>
+    reply
+      .code(status)
+      .type("text/html; charset=utf-8")
+      .send(page({ ...frame, ...frameOf() }, content));
+
+  const app = Fastify({ logger: false });
   // Every answer, also one that Astro writes itself, allows only the console's own files and no script (ADR 0132).
-  app.addHook(stryMutAct_9fa48("14") ? "" : (stryCov_9fa48("14"), "onRequest"), async (_request, reply) => {
-    if (stryMutAct_9fa48("15")) {
-      {}
-    } else {
-      stryCov_9fa48("15");
-      reply.raw.setHeader(stryMutAct_9fa48("17") ? "" : (stryCov_9fa48("17"), "content-security-policy"), POLICY);
-    }
+  app.addHook("onRequest", async (_request, reply) => {
+    reply.raw.setHeader("content-security-policy", POLICY);
   });
   app.get("/pico.css", (_request, reply) => reply.type("text/css").send(PICO));
-  app.get<{
-    Querystring: {
-      state?: string;
-      page?: string;
-    };
-  }>("/", async (request, reply) => {
-    const {
-      state,
-      page: at
-    } = request.query;
-    if (state !== undefined && !isState(state)) return send(reply, 400, {
-      title: "Runs"
-    }, problem("No such state", `no state ${state}: ${STATES.slice(0, -1).join(", ")} or ${STATES.at(-1)}`));
+
+  app.get<{ Querystring: { state?: string; page?: string } }>("/", async (request, reply) => {
+    const { state, page: at } = request.query;
+    if (state !== undefined && !isState(state))
+      return send(
+        reply,
+        400,
+        { title: "Runs" },
+        problem("No such state", `no state ${state}: ${STATES.slice(0, -1).join(", ")} or ${STATES.at(-1)}`),
+      );
     const cursors = cursorsOf(at, sources.length);
-    if (!cursors) return send(reply, 400, {
-      title: "Runs"
-    }, problem("No such page", `no page ${at} of the runs`));
+    if (!cursors) return send(reply, 400, { title: "Runs" }, problem("No such page", `no page ${at} of the runs`));
     // Each foreman answers one page of its runs; one whose runs ended on an earlier page is not asked (ADR 0115).
-    const answers = await Promise.all(sources.map((api, index) => {
-      const cursor = cursors[index];
-      return cursor === null ? undefined : getJson<RunList>(api, `/v1/runs${queryOf({
-        state,
-        cursor
-      })}`);
-    }));
-    const runs = orderRuns(answers.flatMap(answer => answer?.ok ? answer.body.runs : []));
-    const notes = answers.flatMap(answer => answer && !answer.ok ? [answer.note] : []);
-    const page = nextPageOf(answers.map(answer => answer?.ok && answer.body.next || null));
-    const next = page && `/${queryOf({
-      state,
-      page
-    })}`;
-    return send(reply, 200, {
-      title: "Runs",
-      refresh,
-      notes
-    }, runsPage(runs, state, now(), next));
+    const answers = await Promise.all(
+      sources.map((api, index) => {
+        const cursor = cursors[index];
+        return cursor === null ? undefined : getJson<RunList>(api, `/v1/runs${queryOf({ state, cursor })}`);
+      }),
+    );
+    const runs = orderRuns(answers.flatMap((answer) => (answer?.ok ? answer.body.runs : [])));
+    const notes = answers.flatMap((answer) => (answer && !answer.ok ? [answer.note] : []));
+    const page = nextPageOf(answers.map((answer) => (answer?.ok && answer.body.next) || null));
+    const next = page && `/${queryOf({ state, page })}`;
+    return send(reply, 200, { title: "Runs", refresh, notes }, runsPage(runs, state, now(), next));
   });
 
   /** The run and the foreman that knows it, or the answer 404. */
   const findRun = async (runId: string, reply: FastifyReply) => {
-    const answers = await Promise.all(sources.map(api => getJson<RunView>(api, `/v1/runs/${encodeURIComponent(runId)}`)));
-    const index = answers.findIndex(answer => answer.ok);
+    const answers = await Promise.all(
+      sources.map((api) => getJson<RunView>(api, `/v1/runs/${encodeURIComponent(runId)}`)),
+    );
+    const index = answers.findIndex((answer) => answer.ok);
     const found = answers[index];
-    if (!found?.ok) return {
-      missing: send(reply, 404, {
-        title: runId
-      }, problem("Not found", `no run ${runId}`))
-    };
-    return {
-      run: found.body,
-      api: sources[index] as Api
-    };
+    if (!found?.ok) return { missing: send(reply, 404, { title: runId }, problem("Not found", `no run ${runId}`)) };
+    return { run: found.body, api: sources[index] as Api };
   };
-  app.get<{
-    Params: {
-      runId: string;
-    };
-  }>("/runs/:runId", async (request, reply) => {
-    const {
-      runId
-    } = request.params;
-    const {
-      run,
-      missing
-    } = await findRun(runId, reply);
+
+  app.get<{ Params: { runId: string } }>("/runs/:runId", async (request, reply) => {
+    const { runId } = request.params;
+    const { run, missing } = await findRun(runId, reply);
     if (!run) return missing;
     const workItem = intake ? await getJson<WorkItemView>(intake, `/v1/work-items/${run.workItem.id}`) : undefined;
     const own: WorkRequest = {
       requester: run.workItem.requester,
       origin: run.workItem.origin,
-      receivedAt: run.startedAt
+      receivedAt: run.startedAt,
     };
     const requests = workItem?.ok ? workItem.body.requests : [own];
     const gates = new Map<string, GateView>();
-    for (const gateId of run.stages.flatMap(stage => stage.gateId ?? [])) {
+    for (const gateId of run.stages.flatMap((stage) => stage.gateId ?? [])) {
       const gate = gatekeeper && (await getJson<GateView>(gatekeeper, `/v1/gates/${gateId}`));
       if (gate?.ok) gates.set(gateId, gate.body);
     }
@@ -228,278 +152,186 @@ export async function serve(env: Env) {
     const namespace = env.CONSOLE_TEMPORAL_NAMESPACE || "default";
     const runLinks = {
       // {traceId} needs a foreman that names the run's trace (ADR 0087); without it the page has no trace link.
-      trace: env.CONSOLE_TRACE_URL && (run.traceId || !env.CONSOLE_TRACE_URL.includes("{traceId}")) ? fill(env.CONSOLE_TRACE_URL, {
-        runId,
-        ...(run.traceId ? {
-          traceId: run.traceId
-        } : {})
-      }) : undefined,
+      trace:
+        env.CONSOLE_TRACE_URL && (run.traceId || !env.CONSOLE_TRACE_URL.includes("{traceId}"))
+          ? fill(env.CONSOLE_TRACE_URL, { runId, ...(run.traceId ? { traceId: run.traceId } : {}) })
+          : undefined,
       history: temporal && `${temporal}/namespaces/${namespace}/workflows/${runId}`,
-      transcript: (sessionId: string) => env.CONSOLE_SESSION_URL && fill(env.CONSOLE_SESSION_URL, {
-        sessionId
-      }),
+      transcript: (sessionId: string) => env.CONSOLE_SESSION_URL && fill(env.CONSOLE_SESSION_URL, { sessionId }),
       // A stage's span in the run's trace, which a foreman names (ADR 0121).
-      span: (spanId: string) => env.CONSOLE_SPAN_URL && run.traceId ? fill(env.CONSOLE_SPAN_URL, {
-        traceId: run.traceId,
-        spanId
-      }) : undefined
+      span: (spanId: string) =>
+        env.CONSOLE_SPAN_URL && run.traceId ? fill(env.CONSOLE_SPAN_URL, { traceId: run.traceId, spanId }) : undefined,
     };
-    return send(reply, 200, {
-      title: run.workItem.title,
-      refresh
-    }, runPage(run, requests, gates, runLinks, now(), actions, Boolean(gatekeeper)));
+    return send(
+      reply,
+      200,
+      { title: run.workItem.title, refresh },
+      runPage(run, requests, gates, runLinks, now(), actions, Boolean(gatekeeper)),
+    );
   });
+
   app.get("/factory", async (_request, reply) => {
     const factory = readFactory(factoryFile);
-    return send(reply, 200, {
-      title: "Factory"
-    }, factoryPage(factory, source));
+    return send(reply, 200, { title: "Factory" }, factoryPage(factory, source));
   });
-  app.get<{
-    Params: {
-      name: string;
-    };
-  }>("/factory/agents/:name", async (request, reply) => {
-    const {
-      name
-    } = request.params;
+
+  app.get<{ Params: { name: string } }>("/factory/agents/:name", async (request, reply) => {
+    const { name } = request.params;
     const agent = readFactory(factoryFile).agents?.[name];
-    if (!agent) return send(reply, 404, {
-      title: name
-    }, problem("Not found", `no agent ${name} in ${path}`));
-    return send(reply, 200, {
-      title: name
-    }, agentPage(name, agent, source));
+    if (!agent) return send(reply, 404, { title: name }, problem("Not found", `no agent ${name} in ${path}`));
+    return send(reply, 200, { title: name }, agentPage(name, agent, source));
   });
+
   app.get("/inbox", async (_request, reply) => {
-    if (!inbox) return send(reply, 404, {
-      title: "Inbox"
-    }, problem("No inbox", "no inbox: set CONSOLE_INBOX_REPOSITORY to the repository of observer's pull requests"));
+    if (!inbox)
+      return send(
+        reply,
+        404,
+        { title: "Inbox" },
+        problem("No inbox", "no inbox: set CONSOLE_INBOX_REPOSITORY to the repository of observer's pull requests"),
+      );
     const answer = await proposals(forge, inbox, prefix);
     const notes = answer.ok ? [] : [answer.note];
-    return send(reply, 200, {
-      title: "Inbox",
-      notes
-    }, inboxPage(inbox, answer.ok ? answer.body : [], now()));
+    return send(reply, 200, { title: "Inbox", notes }, inboxPage(inbox, answer.ok ? answer.body : [], now()));
   });
+
   app.get("/improvement", async (_request, reply) => {
-    if (!improve) return send(reply, 404, {
-      title: "Cost and scores"
-    }, problem("No cost and scores", "no cost and scores: set CONSOLE_IMPROVE_DIR to the folder of the improvement jobs"));
-    return send(reply, 200, {
-      title: "Cost and scores"
-    }, improvementPage(readImprovement(improve)));
+    if (!improve)
+      return send(
+        reply,
+        404,
+        { title: "Cost and scores" },
+        problem(
+          "No cost and scores",
+          "no cost and scores: set CONSOLE_IMPROVE_DIR to the folder of the improvement jobs",
+        ),
+      );
+    return send(reply, 200, { title: "Cost and scores" }, improvementPage(readImprovement(improve)));
   });
-  app.get<{
-    Querystring: {
-      cursor?: string;
-    };
-  }>("/work", async (request, reply) => {
-    if (!intake) return send(reply, 404, {
-      title: "Work"
-    }, problem("No work items", "no work items: set CONSOLE_INTAKE_URL to the base URL of intake's API"));
-    const answer = await getJson<WorkItemList>(intake, `/v1/inbox${queryOf({
-      cursor: request.query.cursor
-    })}`);
+
+  app.get<{ Querystring: { cursor?: string } }>("/work", async (request, reply) => {
+    if (!intake)
+      return send(
+        reply,
+        404,
+        { title: "Work" },
+        problem("No work items", "no work items: set CONSOLE_INTAKE_URL to the base URL of intake's API"),
+      );
+    const answer = await getJson<WorkItemList>(intake, `/v1/inbox${queryOf({ cursor: request.query.cursor })}`);
     const notes = answer.ok ? [] : [answer.note];
     const items = answer.ok ? answer.body.workItems : [];
     // intake's cursor of the next page is the console's (ADR 0115).
-    const next = answer.ok && answer.body.next ? `/work${queryOf({
-      cursor: answer.body.next
-    })}` : undefined;
-    return send(reply, 200, {
-      title: "Work",
-      refresh,
-      notes
-    }, workPage(items, now(), actions, next));
+    const next = answer.ok && answer.body.next ? `/work${queryOf({ cursor: answer.body.next })}` : undefined;
+    return send(reply, 200, { title: "Work", refresh, notes }, workPage(items, now(), actions, next));
   });
 
   // Actions (ADR 0089): only with CONSOLE_USER_HEADER, from the same origin, in the name of the signed-in person.
   // Forms always parse, so a read-only console answers a form with 405, not 415.
-  app.addContentTypeParser("application/x-www-form-urlencoded", {
-    parseAs: "string"
-  }, (_request, body, done) => done(null, Object.fromEntries(new URLSearchParams(body as string))));
+  app.addContentTypeParser("application/x-www-form-urlencoded", { parseAs: "string" }, (_request, body, done) =>
+    done(null, Object.fromEntries(new URLSearchParams(body as string))),
+  );
   /** The signed-in person of a form from the same site, or the answer that refuses it. */
   const signedIn = (request: FastifyRequest, reply: FastifyReply, title: string) => {
     const origin = request.headers.origin;
-    if (origin && new URL(origin).host !== request.headers.host) return {
-      refused: send(reply, 403, {
-        title
-      }, problem("Forbidden", "the form came from another site"))
-    };
+    if (origin && new URL(origin).host !== request.headers.host)
+      return { refused: send(reply, 403, { title }, problem("Forbidden", "the form came from another site")) };
     const person = String(request.headers[userHeader as string] ?? "");
-    if (!person) return {
-      refused: send(reply, 401, {
-        title
-      }, problem("Sign in", `sign in first: the console needs ${userHeader}`))
-    };
-    return {
-      person
-    };
+    if (!person)
+      return {
+        refused: send(reply, 401, { title }, problem("Sign in", `sign in first: the console needs ${userHeader}`)),
+      };
+    return { person };
   };
   if (userHeader && intake) {
-    app.post<{
-      Body: Record<string, string>;
-    }>("/work", async (request, reply) => {
-      const {
-        person,
-        refused
-      } = signedIn(request, reply, "Work");
+    app.post<{ Body: Record<string, string> }>("/work", async (request, reply) => {
+      const { person, refused } = signedIn(request, reply, "Work");
       if (refused) return refused;
       const submission = submissionOf(request.body ?? {}, person, new Date(now()).toISOString());
       const answer = await postJson(intake, "/v1/work-items", submission);
-      if (!answer.ok) return send(reply, 502, {
-        title: "Work"
-      }, problem("Not submitted", answer.note));
+      if (!answer.ok) return send(reply, 502, { title: "Work" }, problem("Not submitted", answer.note));
       return reply.code(303).header("location", "/work").send();
     });
   }
   if (userHeader) {
-    app.post<{
-      Params: {
-        runId: string;
-      };
-    }>("/runs/:runId/retry", async (request, reply) => {
-      const {
-        runId
-      } = request.params;
-      const {
-        person,
-        refused
-      } = signedIn(request, reply, runId);
+    app.post<{ Params: { runId: string } }>("/runs/:runId/retry", async (request, reply) => {
+      const { runId } = request.params;
+      const { person, refused } = signedIn(request, reply, runId);
       if (refused) return refused;
-      const {
-        api,
-        missing
-      } = await findRun(runId, reply);
+      const { api, missing } = await findRun(runId, reply);
       if (!api) return missing;
-      const retry: RunRetry = {
-        by: {
-          kind: "person",
-          id: person
-        }
-      };
+      const retry: RunRetry = { by: { kind: "person", id: person } };
       const answer = await postJson<RunView>(api, `/v1/runs/${encodeURIComponent(runId)}/retry`, retry);
       if (answer.ok) return reply.code(303).header("location", `/runs/${answer.body.runId}`).send();
       const detail = answer.detail ?? answer.note;
-      return send(reply, answer.status || 502, {
-        title: runId
-      }, problem("Not run again", detail));
+      return send(reply, answer.status || 502, { title: runId }, problem("Not run again", detail));
     });
   }
+
   if (userHeader) {
     // Steer, cancel, take over or hand back a run (ADR 0118): the foreman records the person with the signal.
-    app.post<{
-      Params: {
-        runId: string;
-      };
-      Body: Record<string, string>;
-    }>("/runs/:runId/signals", async (request, reply) => {
-      const {
-        runId
-      } = request.params;
-      const {
-        person,
-        refused
-      } = signedIn(request, reply, runId);
-      if (refused) return refused;
-      const {
-        api,
-        missing
-      } = await findRun(runId, reply);
-      if (!api) return missing;
-      const {
-        type,
-        message
-      } = request.body ?? {};
-      const signal = {
-        type,
-        ...(message ? {
-          message
-        } : {}),
-        by: {
-          kind: "person",
-          id: person
-        }
-      } as RunSignal;
-      const answer = await postJson<RunView>(api, `/v1/runs/${encodeURIComponent(runId)}/signals`, signal);
-      if (answer.ok) return reply.code(303).header("location", `/runs/${runId}`).send();
-      return send(reply, answer.status || 502, {
-        title: runId
-      }, problem("Not sent", answer.detail ?? answer.note));
-    });
+    app.post<{ Params: { runId: string }; Body: Record<string, string> }>(
+      "/runs/:runId/signals",
+      async (request, reply) => {
+        const { runId } = request.params;
+        const { person, refused } = signedIn(request, reply, runId);
+        if (refused) return refused;
+        const { api, missing } = await findRun(runId, reply);
+        if (!api) return missing;
+        const { type, message } = request.body ?? {};
+        const signal = { type, ...(message ? { message } : {}), by: { kind: "person", id: person } } as RunSignal;
+        const answer = await postJson<RunView>(api, `/v1/runs/${encodeURIComponent(runId)}/signals`, signal);
+        if (answer.ok) return reply.code(303).header("location", `/runs/${runId}`).send();
+        return send(reply, answer.status || 502, { title: runId }, problem("Not sent", answer.detail ?? answer.note));
+      },
+    );
   }
   if (userHeader && gatekeeper) {
     // Approve or reject a run's gate (ADR 0118): gatekeeper checks that the person may decide it, and records them.
-    app.post<{
-      Params: {
-        runId: string;
-        gateId: string;
-      };
-      Body: Record<string, string>;
-    }>("/runs/:runId/gates/:gateId", async (request, reply) => {
-      const {
-        runId,
-        gateId
-      } = request.params;
-      const {
-        person,
-        refused
-      } = signedIn(request, reply, runId);
-      if (refused) return refused;
-      const {
-        decision,
-        reason
-      } = request.body ?? {};
-      const body = {
-        decision,
-        by: {
-          kind: "person",
-          id: person
-        },
-        ...(reason ? {
-          reason
-        } : {})
-      } as GateDecisionRequest;
-      const path = `/v1/gates/${encodeURIComponent(gateId)}/decisions`;
-      const answer = await postJson<GateView>(gatekeeper, path, body);
-      if (answer.ok) return reply.code(303).header("location", `/runs/${runId}`).send();
-      return send(reply, answer.status || 502, {
-        title: runId
-      }, problem("Not decided", answer.detail ?? answer.note));
-    });
+    app.post<{ Params: { runId: string; gateId: string }; Body: Record<string, string> }>(
+      "/runs/:runId/gates/:gateId",
+      async (request, reply) => {
+        const { runId, gateId } = request.params;
+        const { person, refused } = signedIn(request, reply, runId);
+        if (refused) return refused;
+        const { decision, reason } = request.body ?? {};
+        const body = {
+          decision,
+          by: { kind: "person", id: person },
+          ...(reason ? { reason } : {}),
+        } as GateDecisionRequest;
+        const path = `/v1/gates/${encodeURIComponent(gateId)}/decisions`;
+        const answer = await postJson<GateView>(gatekeeper, path, body);
+        if (answer.ok) return reply.code(303).header("location", `/runs/${runId}`).send();
+        return send(
+          reply,
+          answer.status || 502,
+          { title: runId },
+          problem("Not decided", answer.detail ?? answer.note),
+        );
+      },
+    );
   }
-  app.get(stryMutAct_9fa48("18") ? "" : (stryCov_9fa48("18"), "/health"), async (request, reply) => {
+
+  app.get("/health", async (request, reply) => {
     const items = await examine(env);
-    const status = (stryMutAct_9fa48("19") ? items.some(({
-      ok
-    }) => ok) : (stryCov_9fa48("19"), items.every(stryMutAct_9fa48("20") ? () => undefined : (stryCov_9fa48("20"), ({
-      ok
-    }) => ok)))) ? 200 : 503;
-    await render(request, reply, status, healthData(frameData(stryMutAct_9fa48("21") ? {} : (stryCov_9fa48("21"), {
-      ...frameOf(),
-      title: stryMutAct_9fa48("22") ? "" : (stryCov_9fa48("22"), "Health")
-    })), items));
+    const status = items.every(({ ok }) => ok) ? 200 : 503;
+    await render(request, reply, status, healthData(frameData({ ...frameOf(), title: "Health" }), items));
   });
 
   // Read-only: any method but GET and HEAD answers 405.
   app.route({
     method: ["POST", "PUT", "PATCH", "DELETE"],
     url: "/*",
-    handler: (_request, reply) => reply.code(405).header("allow", "GET, HEAD").send()
+    handler: (_request, reply) => reply.code(405).header("allow", "GET, HEAD").send(),
   });
+
   const port = Number(env.PORT || 8080);
-  await app.listen({
-    port,
-    host: "0.0.0.0"
-  });
+  await app.listen({ port, host: "0.0.0.0" });
   process.stdout.write(`console serves the factory's pages on port ${port}\n`);
-  await new Promise<void>(resolve => {
+  await new Promise<void>((resolve) => {
     process.once("SIGTERM", resolve);
     process.once("SIGINT", resolve);
   });
   await app.close();
-  return {
-    lines: []
-  };
+  return { lines: [] };
 }

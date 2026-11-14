@@ -1,4 +1,3 @@
-// @ts-nocheck
 // The form "submit work" of the page /work (ADR 0089): its fields as a work submission for intake, with the person
 // from the sign-in proxy as the requester. Intake checks the fields.
 import type { WorkSubmission } from "@opensoftware/contracts";
