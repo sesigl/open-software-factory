@@ -2,7 +2,7 @@
 // interface as fakes.forge. It keeps repositories with their commits and files, branches, pull requests, commit
 // statuses, check runs, comments, reviews, branch protection, issues with labels and webhooks. Webhooks deliver signed events to URLs on the local
 // host. IDs, SHAs and times come from counters and the fixed clock. A call it does not know fails the scenario.
-import { createHmac } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import { FIXED_DATE } from "../support/process.ts";
@@ -172,6 +172,15 @@ class Answer extends Error {
 
 export async function startGitHub(): Promise<RunningGitHub> {
   const commits = new Commits();
+  // The trees of the Git Data API: a tree is the files of a commit, named by a hash of their paths and texts.
+  const trees = new Map<string, Files>();
+  const treeOf = (files: Files): string => {
+    const sha = createHash("sha1")
+      .update(JSON.stringify(Object.entries(files).sort()))
+      .digest("hex");
+    trees.set(sha, { ...files });
+    return sha;
+  };
   const repositories = new Map<string, Repository>();
   const problems: string[] = [];
   const deliveries: Promise<void>[] = [];
@@ -720,6 +729,75 @@ export async function startGitHub(): Promise<RunningGitHub> {
             enforce_admins: { enabled: rule.enforceAdmins },
           },
         ];
+      },
+    ],
+    [
+      "GET",
+      /^\/git\/ref\/heads\/(.+)$/,
+      (repo, [branch = ""]) => {
+        const name = decodeURIComponent(branch);
+        const sha = repo.branches.get(name);
+        if (!sha) throw new Answer(404, "Not Found");
+        return [200, { ref: `refs/heads/${name}`, object: { sha, type: "commit" } }];
+      },
+    ],
+    [
+      "GET",
+      /^\/git\/commits\/([0-9a-f]{40})$/,
+      (_repo, [sha = ""]) => {
+        const found = commits.get(sha);
+        if (!found) throw new Answer(404, "Not Found");
+        return [
+          200,
+          {
+            sha,
+            message: found.message,
+            tree: { sha: treeOf(found.files) },
+            parents: found.parents.map((p) => ({ sha: p })),
+          },
+        ];
+      },
+    ],
+    [
+      "POST",
+      /^\/git\/trees$/,
+      (_repo, _match, body) => {
+        const base = trees.get(String(body.base_tree ?? "")) ?? {};
+        const files = { ...base };
+        for (const entry of (body.tree as { path: string; content?: string; sha?: string | null }[] | undefined) ??
+          []) {
+          if (entry.sha === null) delete files[entry.path];
+          else if (typeof entry.content === "string") files[entry.path] = entry.content;
+          else throw new Answer(422, "Invalid tree info: give each entry its content");
+        }
+        return [201, { sha: treeOf(files) }];
+      },
+    ],
+    [
+      "POST",
+      /^\/git\/commits$/,
+      (_repo, _match, body) => {
+        const files = trees.get(String(body.tree ?? ""));
+        if (!files) throw new Answer(422, "Tree SHA does not exist");
+        const parents = (body.parents as string[] | undefined) ?? [];
+        if (parents.some((parent) => !commits.get(parent)))
+          throw new Answer(422, "Parent SHA does not exist or is not a commit object");
+        return [201, { sha: commits.add(parents, String(body.message ?? ""), files) }];
+      },
+    ],
+    [
+      "PATCH",
+      /^\/git\/refs\/heads\/(.+)$/,
+      (repo, [branch = ""], body) => {
+        const name = decodeURIComponent(branch);
+        const current = repo.branches.get(name);
+        if (!current) throw new Answer(422, "Reference does not exist");
+        const sha = String(body.sha ?? "");
+        if (!commits.get(sha)) throw new Answer(422, "Object does not exist");
+        if (body.force !== true && commits.mergeBase(current, sha)?.sha !== current)
+          throw new Answer(422, "Update is not a fast forward");
+        repo.branches.set(name, sha);
+        return [200, { ref: `refs/heads/${name}`, object: { sha, type: "commit" } }];
       },
     ],
     [

@@ -6,6 +6,7 @@ import { branch } from "./commands/branch.ts";
 import { check } from "./commands/check.ts";
 import { close } from "./commands/close.ts";
 import { comment, comments } from "./commands/comment.ts";
+import { commit } from "./commands/commit.ts";
 import { event } from "./commands/event.ts";
 import { merge } from "./commands/merge.ts";
 import { openPr } from "./commands/open-pr.ts";
@@ -31,6 +32,8 @@ Commands:
   comments <repo> <number>                               Print each comment of the pull request, oldest first.
   protect <repo> <branch> [--check <name>]... [--approvals <n>]
                                                          Set the branch's merge rules.
+  commit <repo> <branch> --message <text> <path>=<file>...
+                                                         Write one commit with these files to a branch; print {"sha"}.
   rules <repo> <branch>                                  Print the {"checks", "approvals"} the branch requires.
   close <repo> <number> [--delete-branch]                Close a pull request without merging; print {"number", "state"}.
   merge <repo> <number> [--method merge|squash|rebase]   Merge; print {"sha"} of the merge commit.
@@ -60,6 +63,7 @@ const { positionals, values } = parseArgs({
     head: { type: "string" },
     state: { type: "string" },
     limit: { type: "string" },
+    message: { type: "string" },
     "delete-branch": { type: "boolean" },
   },
 });
@@ -74,6 +78,7 @@ const commands: Record<string, Command> = {
   comment: () => comment(first, second, third),
   comments: () => comments(first, second),
   protect: () => protect(first, second, values.check ?? [], values.approvals),
+  commit: () => commit(first, second, values.message, positionals.slice(3)),
   rules: () => rules(first, second),
   close: () => close(first, second, values["delete-branch"]),
   merge: () => merge(first, second, values.method),
@@ -86,6 +91,6 @@ const commands: Record<string, Command> = {
 process.exitCode = await runProgram({
   name: "forge-forgejo",
   usage: USAGE,
-  command: name === undefined || fifth !== undefined ? undefined : commands[name],
+  command: name === undefined || (fifth !== undefined && name !== "commit") ? undefined : commands[name],
   help: values.help,
 });

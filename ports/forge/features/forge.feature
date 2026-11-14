@@ -255,14 +255,14 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     Then the first prints nothing
     And the second prints the pull request with the state "merged"
 
-  @id=SCN-FORGE-035 @status=planned @conformance
-  Scenario: commit writes several files to a branch as one commit
-    Given the branch "console/add-skill" of "tester/web" made from "main"
-    When the client runs "commit tester/web console/add-skill --message 'Add the skill review' factory.yaml=<file> skills/review/SKILL.md=<file>"
-    Then commit prints the SHA of one new commit whose parent is the branch's former head
-    And the branch holds both files with the contents of the local files
+  @id=SCN-FORGE-035 @status=implemented @conformance
+  Scenario: commit writes a changed file and a new file to a branch as one commit
+    Given the branch "console/add-skill" of "tester/web" made from "main", whose "app.js" holds "export const app = 1;"
+    When the client runs "commit tester/web console/add-skill --message 'Add the skill review' app.js=<file> skills/review/SKILL.md=<file>"
+    Then commit prints the SHA of the branch's new head, which is not its former head
+    And the branch holds both files with the contents of the local files, and "main" still holds the old "app.js"
 
-  @id=SCN-FORGE-036 @status=planned @conformance
+  @id=SCN-FORGE-036 @status=implemented @conformance
   Scenario: commit to a branch the repository does not have is named in the error
     When the client runs "commit tester/web console/missing --message 'x' factory.yaml=<file>"
     Then the command exits with code 1

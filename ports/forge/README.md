@@ -10,8 +10,8 @@ webhooks, and the pull request events that come back. Decisions: [ADR 0057](../.
 [ADR 0062](../../docs/decisions/0062-gatekeeper-ports.md) (`comments`, the author, labels, draft and paths of `pr`),
 [ADR 0065](../../docs/decisions/0065-intake-issues-and-alerts.md) (`issue.labeled@v1`),
 [ADR 0073](../../docs/decisions/0073-forge-prs-and-console-inbox.md) (`prs`),
-[ADR 0136](../../docs/decisions/0136-forge-port-changes-from-the-ui.md) (`rules`, `close`, `prs --limit`, and the commit
-and merge when green that follow).
+[ADR 0136](../../docs/decisions/0136-forge-port-changes-from-the-ui.md) (`commit`, `rules`, `close`, `prs --limit`, and the
+merge when green that follows).
 
 ## The interface
 
@@ -21,6 +21,7 @@ command line. A repository is `<owner>/<name>`; every command prints JSON lines.
 | Port operation | Command |
 | --- | --- |
 | branch | `<adapter> branch <repo> <branch> [--from <ref>]` prints `{"branch", "sha"}`; `--from` takes a branch or a commit, by default the default branch |
+| commit | `<adapter> commit <repo> <branch> --message <text> <path>=<file>...` writes one commit with these files, the text of the local files, on top of the branch's head, and prints `{"sha"}`; a branch the repository does not have exits 1 with `no branch <repo>:<branch>` |
 | open a pull request | `<adapter> open-pr <repo> <head> --title <text> [--body <text>] [--base <branch>]` prints `{"number", "url", "head", "base", "sha"}` |
 | merge state | `<adapter> pr <repo> <number>` prints `{"number", "url", "title", "state", "mergeable", "head", "base", "sha", "mergeCommit", "author", "labels", "draft", "paths", "checks"}` |
 | list pull requests | `<adapter> prs <repo> [--head <prefix>] [--state open\|closed\|all] [--limit <n>]` prints one `{"number", "url", "title", "state", "head", "base", "author", "created", "draft", "review"}` per pull request, the highest number first, at most n; a merged one also has `mergeCommit` |

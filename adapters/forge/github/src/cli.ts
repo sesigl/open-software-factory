@@ -3,6 +3,7 @@
 import { parseArgs } from "node:util";
 import { type Command, runProgram } from "@opensoftware/cli";
 import { branch, openPr } from "./commands/branches.ts";
+import { commit } from "./commands/commit.ts";
 import { event, hooks, unhook, webhook } from "./commands/hooks.ts";
 import { prs } from "./commands/list.ts";
 import { check, close, comment, comments, merge, pr, protect, rules } from "./commands/pulls.ts";
@@ -23,6 +24,8 @@ Commands:
   comments <repo> <number>                               Print each comment of the pull request, oldest first.
   protect <repo> <branch> [--check <name>]... [--approvals <n>]
                                                          Replace the branch's protection.
+  commit <repo> <branch> --message <text> <path>=<file>...
+                                                         Write one commit with these files to a branch; print {"sha"}.
   rules <repo> <branch>                                  Print the {"checks", "approvals"} the branch requires.
   close <repo> <number> [--delete-branch]                Close a pull request without merging; print {"number", "state"}.
   merge <repo> <number> [--method merge|squash|rebase]   Merge; print {"sha"} of the merge commit.
@@ -44,9 +47,20 @@ const { positionals: words, values: flags } = parseArgs({
     check: { type: "string", multiple: true },
     event: { type: "string", multiple: true },
     ...Object.fromEntries(
-      ["from", "title", "body", "base", "description", "url", "approvals", "method", "head", "state", "limit"].map(
-        (name) => [name, text],
-      ),
+      [
+        "from",
+        "title",
+        "body",
+        "base",
+        "description",
+        "url",
+        "approvals",
+        "method",
+        "head",
+        "state",
+        "limit",
+        "message",
+      ].map((name) => [name, text]),
     ),
   },
 });
@@ -63,6 +77,7 @@ const commands: Record<string, [arity: number, Command]> = {
   comment: [3, () => comment(a, b, c)],
   comments: [2, () => comments(a, b)],
   protect: [2, () => protect(a, b, (flags.check as string[] | undefined) ?? [], option("approvals"))],
+  commit: [Number.POSITIVE_INFINITY, () => commit(a, b, option("message"), rest.slice(2))],
   rules: [2, () => rules(a, b)],
   close: [2, () => close(a, b, flags["delete-branch"] as boolean | undefined)],
   merge: [2, () => merge(a, b, option("method"))],
