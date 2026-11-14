@@ -3,7 +3,15 @@
 // sandbox, its checks and its gate. Checked once against the contract and once for what only the foreman sees.
 import type { FactoryDefinition, SandboxSpec } from "@opensoftware/contracts";
 import type { AdapterVersion, Ranges } from "./adapters.ts";
-import { hostsOf, type LockPin, type SessionMcpServer, type Skill, sessionServer } from "./tools.ts";
+import {
+  type DeclaredRepository,
+  declaredRepository,
+  hostsOf,
+  type LockPin,
+  type SessionMcpServer,
+  type Skill,
+  sessionServer,
+} from "./tools.ts";
 
 /** The agent of a stage that runs one; a stage that only waits has none (ADR 0107). */
 export interface AgentPlan {
@@ -21,6 +29,8 @@ export interface AgentPlan {
   mcpServers?: SessionMcpServer[];
   /** The agent's skills, which the foreman writes into the session's folder (ADR 0112). */
   skills?: Skill[];
+  /** The repositories the agent declares, which the foreman clones into the session's folder (ADR 0126). */
+  repositories?: DeclaredRepository[];
 }
 
 export type StagePlan = {
@@ -195,6 +205,7 @@ export function definitionOf(factory: FactoryDefinition, files: FactoryFiles): D
         prompt: files.read(declared.prompt),
         mcpServers,
         skills,
+        ...(declared.repositories?.length ? { repositories: declared.repositories.map(declaredRepository) } : {}),
         ...(declared.sandbox ? { sandbox: sandboxOf(declared, hostsOf(mcpServers)) } : {}),
       };
     }),

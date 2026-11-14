@@ -136,7 +136,9 @@ const definition = resolveFactory("factory.yaml"); // a FactoryDefinition with d
 
 An automation `forgejo.<object>.<action>(...)` or `github.<object>.<action>(...)` needs the forge to send its events
 to intake. `factory apply` registers one webhook on every repository the agents operate on
-(`repositories: [<owner>/<name>]`) and records it in the state:
+(`repositories: [<owner>/<name>]`) and records it in the state. In a run, the foreman also clones them into the
+agent's folder below `repositories/<name>`
+([ADR 0126](../../docs/decisions/0126-an-agents-repositories-in-its-folder.md)).
 
 ```yaml
 agents:

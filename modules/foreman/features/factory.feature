@@ -126,6 +126,13 @@ Feature: Factory definition
     And the harness opened the session of "implement" with no MCP server
     And the agent of "plan" found the skill's "SKILL.md" in ".claude/skills/review" and ".agents/skills/review" of its folder
 
+  @id=SCN-FORE-159 @status=implemented @realizes=SCN-FACTORY-CODE-001
+  Scenario: A stage's agent finds the repositories it declares cloned in its folder
+    Given a Git repository with a commit that the server reaches at a "file://" URL
+    And "foreman serve" runs the README's "factory.yaml" whose agent "plan" declares that URL in "repositories", with a scripted harness whose "plan" turn prints the log of "repositories/<name>"
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then the agent of "plan" found the repository's last commit, and only it, in "repositories/<name>" of its folder
+
   @id=SCN-FORE-156 @status=implemented
   Scenario: A factory in a Git remote runs at the commit of its default branch, and the server's folder needs no clean checkout
     Given the README's "factory.yaml" is committed in a Git repository that the server reaches at a "file://" URL
