@@ -64,7 +64,7 @@ flowchart LR
   K -->|HTTP API, MCP, ACP via generated clients| A
   A -->|published events| K
   K -->|$INPUT / $OUTPUT folders| A
-  A -->|calls| F[fakes: scripted model gateway, scripted ACP harness, fake Slack, fake GitHub, Forgejo, Postgres, NATS, Temporal, S3, OTel Collector, fixed clock]
+  A -->|calls| F[fakes: scripted model gateway, scripted ACP harness, fake Slack, fake GitHub, Forgejo, Postgres, NATS, Temporal, OpenBao, S3, OTel Collector, fixed clock]
   T -. "✕ import from src/ (BOUNDARY-STATIC)" .-> S
   T -. "✕ read or write its data (BOUNDARY-RUNTIME)" .-> D
 ```
@@ -113,12 +113,12 @@ docs/vision/           factory-level requirements; source for module scenarios, 
   the scripted ACP agent from the testkit, or a real harness such as Claude Code against the scripted gateway
   (ADR 0052); models come from the scripted gateway, which fails on unscripted calls.
 - Outside systems in tests are fast stand-ins that the module cannot tell from the real system (ADR 0049): the
-  real system as a process on the host where a binary exists (NATS, Temporal), a small test-only stand-in in the
+  real system as a process on the host where a binary exists (NATS, Temporal, OpenBao), a small test-only stand-in in the
   testkit where the real system is slow (Slack, the model gateway), a container otherwise (PostgreSQL, Forgejo). The
   module reaches each through its documented configuration; switching a stand-in changes only the testkit.
 - A fake that starts a server starts it once for the test process, and each scenario gets a part of it that no
-  other scenario sees: a database of PostgreSQL, a namespace of Temporal, a forge without repositories (ADR 0064,
-  ADR 0129). A test passes that part on to the module, like `temporal.namespace`.
+  other scenario sees: a database of PostgreSQL, a namespace of Temporal, a mount of OpenBao, a forge without
+  repositories (ADR 0064, ADR 0129, ADR 0137). A test passes that part on to the module, like `temporal.namespace`.
 - A module that runs a port adapter as a program gets the built adapter of this repository with `sut.adapter`, so its
   tests prove the module and the adapter together against the same fakes (ADR 0060).
 - A sandbox adapter's tests run real sandboxes, since isolation is what they prove. The APIs and MCP servers a
