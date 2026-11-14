@@ -254,3 +254,49 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     When the client runs "prs tester/web" and "prs tester/web --state all"
     Then the first prints nothing
     And the second prints the pull request with the state "merged"
+
+  @id=SCN-FORGE-035 @status=planned @conformance
+  Scenario: commit writes several files to a branch as one commit
+    Given the branch "console/add-skill" of "tester/web" made from "main"
+    When the client runs "commit tester/web console/add-skill --message 'Add the skill review' factory.yaml=<file> skills/review/SKILL.md=<file>"
+    Then commit prints the SHA of one new commit whose parent is the branch's former head
+    And the branch holds both files with the contents of the local files
+
+  @id=SCN-FORGE-036 @status=planned @conformance
+  Scenario: commit to a branch the repository does not have is named in the error
+    When the client runs "commit tester/web console/missing --message 'x' factory.yaml=<file>"
+    Then the command exits with code 1
+    And it prints "no branch tester/web:console/missing"
+
+  @id=SCN-FORGE-037 @status=planned @conformance
+  Scenario: branch starts from a commit
+    Given the commit of "main" of "tester/web", and a later commit on "main"
+    When the client runs "branch tester/web console/at-commit --from <the first commit>"
+    Then branch prints the new branch with the first commit's SHA
+
+  @id=SCN-FORGE-038 @status=planned @conformance
+  Scenario: merge --when-green waits for the required check and merges once it passes
+    Given "main" of "tester/web" requires the check "factory", and an open pull request whose check "factory" is pending
+    When the client runs "merge tester/web <number> --when-green", then posts "factory" as "success" on its head
+    Then merge prints "queued" true and the pull request stays open
+    And after the check passes the pull request is merged
+
+  @id=SCN-FORGE-039 @status=planned @conformance
+  Scenario: rules prints the checks and approvals a branch requires
+    Given "main" of "tester/web" requires the checks "factory" and "verify" and one approval, and "dev" requires nothing
+    When the client runs "rules tester/web main" and "rules tester/web dev"
+    Then the first prints the checks "factory" and "verify" and the approvals 1
+    And the second prints no checks and the approvals 0
+
+  @id=SCN-FORGE-040 @status=planned @conformance
+  Scenario: close closes a pull request without merging and deletes its branch
+    Given an open pull request in "tester/web" from "console/add-skill"
+    When the client runs "close tester/web <number> --delete-branch"
+    Then close prints the number and the state "closed"
+    And the repository has no branch "console/add-skill"
+
+  @id=SCN-FORGE-041 @status=planned @conformance
+  Scenario: prs takes a limit and names the merge commit of a merged pull request
+    Given three pull requests in "tester/web", the newest of them merged
+    When the client runs "prs tester/web --state all --limit 2"
+    Then prs prints two lines, the newest first, and the merged one has its merge commit
