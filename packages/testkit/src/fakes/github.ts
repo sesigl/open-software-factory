@@ -916,12 +916,15 @@ export async function startGitHub(): Promise<RunningGitHub> {
     const variables = request.variables ?? {};
     const refused = (message: string) => ({ data: null, errors: [{ type: "UNPROCESSABLE", message }] });
     if (query.includes("enablePullRequestAutoMerge")) {
+      // GraphQL takes only the values of the enum PullRequestMergeMethod, in capitals; MERGE when none is given.
+      const method = { MERGE: "merge", SQUASH: "squash", REBASE: "rebase" }[String(variables.method ?? "MERGE")];
+      if (!method) return refused("Variable $method of type PullRequestMergeMethod was provided invalid value");
       const [, name = "", number = ""] = /^PR_(.+)_(\d+)$/.exec(String(variables.id)) ?? [];
       const repo = repository(name);
       const pr = pull(repo, Number(number));
       if (!repo.autoMergeAllowed) return refused("Pull request Auto merge is not allowed for this repository");
       if (mergeState(repo, pr) === "CLEAN") return refused("Pull request Pull request is in clean status");
-      pr.autoMerge = { method: String(variables.method ?? "MERGE").toLowerCase(), user };
+      pr.autoMerge = { method, user };
       return { data: { enablePullRequestAutoMerge: { clientMutationId: null } } };
     }
     if (query.includes("mergeStateStatus")) {
