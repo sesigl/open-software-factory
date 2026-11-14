@@ -24,7 +24,7 @@ import {
 import { parseGroups, parseRules } from "../domain/policy.ts";
 import { commitState, type PullLine, type PullRequest, pullRequestIn, pullRequestOf } from "../domain/pull-request.ts";
 import { buildRecord, signWith } from "../domain/record.ts";
-import { type GateRequest, gateId } from "../domain/request.ts";
+import { type ApiDecision, type GateRequest, gateId } from "../domain/request.ts";
 import { gateOf, type StoredGate } from "../domain/stored.ts";
 
 export interface GatesConfig {
@@ -57,6 +57,15 @@ export interface Decision {
   thread: string;
   choice: string;
   person: string;
+}
+
+/** Why a decision through the API does not count (ADR 0118): the HTTP status and the detail. */
+export class Refused extends Error {
+  readonly statusCode: 403 | 404 | 409;
+  constructor(statusCode: 403 | 404 | 409, message: string) {
+    super(message);
+    this.statusCode = statusCode;
+  }
 }
 
 export function gates(config: GatesConfig, store: Store) {
@@ -193,6 +202,23 @@ export function gates(config: GatesConfig, store: Store) {
       if (!stored) return;
       await store.press(stored.id, { ts: String(config.now()), author: decision.person, action: decision.choice });
       await decideGate(stored.id);
+    },
+
+    /**
+     * A member of a group the gate waits for decides through the API (ADR 0118): kept like a press, then the gate is
+     * decided with the same rules as a reply in its channel.
+     */
+    async decide(id: string, decision: ApiDecision): Promise<StoredGate> {
+      const stored = await store.get(id);
+      if (!stored) throw new Refused(404, `the server has no gate ${id}`);
+      if (stored.state !== "pending") throw new Refused(409, `the gate ${id} is ${stored.state}`);
+      const groups = parseGroups(config.groups, config.groupsFile, stored.rules);
+      // parseGroups fails for a group the policy names that the groups file does not have.
+      if (!stored.waitingFor.flatMap((group) => groups[group] as string[]).includes(decision.person))
+        throw new Refused(403, `${decision.person} is not in ${stored.waitingFor.join(", ")}`);
+      await store.press(id, { ts: String(config.now()), author: decision.person, action: decision.text });
+      await decideGate(id);
+      return (await store.get(id)) as StoredGate;
     },
 
     /**

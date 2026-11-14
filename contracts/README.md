@@ -49,12 +49,12 @@ Each format has one schema, generated from `typespec/`, and fixtures that CONTRA
 ## HTTP APIs
 
 `openapi/openapi.json` also holds the paths of the module APIs, from the operations in `typespec/` (ADR 0048). The
-first is gatekeeper's: `POST /v1/gates` and `GET /v1/gates/{gateId}` with the models `GateRequest`, `GateView` and
+first is gatekeeper's: `POST /v1/gates`, `GET /v1/gates/{gateId}` and `POST /v1/gates/{gateId}/decisions` (ADR 0118) with the models `GateRequest`, `GateView`, `GateDecisionRequest` and
 `ApiProblem` (RFC 9457). The second is intake's (ADR 0063): `POST /v1/work-items` and
 `GET /v1/work-items/{workItemId}` with the models `WorkSubmission`, `WorkItemView` and `WorkRequest`, and
 `GET /v1/inbox` with `WorkItemList`. The third is the
 foreman's (ADR 0067): `POST /v1/runs`, `GET /v1/runs` with `RunList`, `GET /v1/runs/{runId}`, `POST /v1/runs/{runId}/signals` and
-`POST /v1/runs/{runId}/retry` (ADR 0105) with the models `RunView` (its `adapters`, ADR 0110), `StageView` (its `waitingSince`, ADR 0106, and its `note`, ADR 0109), `CheckView` (ADR 0069), `RunSignal`
+`POST /v1/runs/{runId}/retry` (ADR 0105) with the models `RunView` (its `adapters`, ADR 0110), `StageView` (its `waitingSince`, ADR 0106, and its `note`, ADR 0109), `CheckView` (ADR 0069), `RunSignal` (its `by`, ADR 0118), `RunAction`
 and `RunRetry`. All three answer `GET /v1/health` with the models
 `Health` and `HealthCheck` (`HealthApi`, ADR 0086). Both lists take `limit` and `cursor` and answer the cursor of the next
 page in `next` (ADR 0115). `pnpm build` compiles the operations with the TypeSpec OpenAPI 3 emitter and copies their

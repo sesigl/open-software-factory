@@ -37,3 +37,20 @@ export function parseRequest(value: unknown, file: string): GateRequest {
 /** The same work item, stage and change are the same gate. */
 export const gateId = ({ workItem, stage, change }: GateRequest): string =>
   `g${sha256(canonical({ workItem, stage, change })).slice(0, 16)}`;
+
+/** A person's decision through the API (ADR 0118), as the reply in the channel it stands for. */
+export interface ApiDecision {
+  person: string;
+  /** "approve", or "reject" and the reason. */
+  text: string;
+}
+
+export function parseDecision(value: unknown): ApiDecision {
+  const { decision, by, reason } = (value ?? {}) as { decision?: unknown; by?: { id?: string }; reason?: string };
+  // An ID that is no member of the groups decides nothing: the server refuses it with 403.
+  const person = by?.id;
+  if (!person) throw new UsageError('the decision: the field "by" must name the person');
+  if (decision === "approved") return { person, text: "approve" };
+  if (decision !== "rejected") throw new UsageError('the decision: the field "decision" must be approved or rejected');
+  return { person, text: reason ? `reject ${reason}` : "reject" };
+}

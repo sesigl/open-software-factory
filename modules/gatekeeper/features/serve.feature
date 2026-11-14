@@ -206,3 +206,25 @@ Feature: Serve the gate API
     When the server starts for the channel "slack:C0GATES"
     Then its error output says 'gatekeeper: the group "maintainers" in groups.json has no member but the example's slack:U0EXAMPLE, so nobody decides its gates: put its people in groups.json'
     And its error output names no other group
+
+  @id=SCN-GATE-095 @status=implemented
+  Scenario: A member of the approver group rejects a gate through the API, and the record names the person
+    Given the server asked "maintainers" for approval of the README request
+    When a program posts to "/v1/gates/<gate>/decisions" the decision "rejected" by the person "slack:U0ADA" with the reason "needs a test"
+    Then the answer shows the state "rejected" and a record rejected by the person "slack:U0ADA" with the reason "needs a test"
+    And the thread has the reply "Rejected by <@U0ADA>: needs a test."
+
+  @id=SCN-GATE-096 @status=implemented
+  Scenario: A decision through the API by a person outside the approver groups is refused
+    Given the server asked "maintainers" for approval of the README request
+    When a program posts to "/v1/gates/<gate>/decisions" the decision "approved" by the person "slack:U0LEO"
+    Then the answer has the status 403 and a problem whose detail says "slack:U0LEO is not in maintainers"
+    And "/v1/gates/<gate>" still shows the state "pending"
+
+  @id=SCN-GATE-097 @status=implemented
+  Scenario: A decision through the API without a person, of an unknown gate or of a decided gate is refused
+    Given the server asked "maintainers" for approval of the README request, and "slack:U0ADA" rejected it through the API without a reason
+    When a program posts a decision without the person's ID, the decision "maybe", a decision of the gate "g0000000000000000" and the decision "approved" by "slack:U0ADA"
+    Then the answers have the statuses 400, 400, 404 and 409
+    And their problems say 'the decision: the field "by" must name the person', 'the decision: the field "decision" must be approved or rejected', "the server has no gate g0000000000000000" and "the gate <gate> is rejected"
+    And "/v1/gates/<gate>" shows a record rejected by "slack:U0ADA" without a reason

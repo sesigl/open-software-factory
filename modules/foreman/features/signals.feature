@@ -42,3 +42,9 @@ Feature: Signals
     When a person posts the signal "steer" with the message "use the existing date helper"
     And after the agent received it, the signal "steer" with the message "and add a test"
     Then the agent received "use the existing date helper" and then "and add a test", each once
+
+  @id=SCN-FORE-149 @status=implemented
+  Scenario: The run records each signal with the person who sent it
+    Given a run whose stage "implement" runs a turn that waits for "never"
+    When the person "github:ada" posts the signal "steer" with the message "use the existing date helper" and then the signal "cancel"
+    Then "/v1/runs/<id>" shows the state "cancelled" and the actions "steer" with the message and "cancel", each by "github:ada" at "2026-01-01T00:00:00.000Z"

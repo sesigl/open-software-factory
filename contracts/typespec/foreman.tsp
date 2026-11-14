@@ -146,6 +146,9 @@ model RunView {
 
   /** The stages of the workflow, in order. */
   stages: StageView[];
+
+  /** The signals that named their person, oldest first (ADR 0118). */
+  actions?: RunAction[];
 }
 
 /** foreman: the runs of the server, running runs first, then the runs that ended, the one that ended last first, as `GET /v1/runs` answers them (ADR 0071). */
@@ -173,6 +176,24 @@ model RunSignal {
   type: RunSignalType;
 
   /** The steering message. Required with "steer". */
+  @minLength(1)
+  message?: string;
+
+  /** The person who sends the signal; the run then records it in `actions` (ADR 0118). */
+  by?: Actor;
+}
+
+/** foreman: a signal a person sent a run, as the run records it (ADR 0118). */
+model RunAction {
+  type: RunSignalType;
+
+  /** The person who sent it. */
+  by: Actor;
+
+  /** When the foreman took it. */
+  at: utcDateTime;
+
+  /** The steering message of "steer". */
   @minLength(1)
   message?: string;
 }

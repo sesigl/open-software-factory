@@ -2,6 +2,8 @@
 // activity `next` for each step, waits, and hands each fact to `apply`; the logic is in the domain.
 // Stryker disable all: this file runs in Temporal's workflow sandbox, a V8 context of its own that Stryker's mutant
 // switch and coverage never reach; every mutant here would count as not run (ADR 0067).
+
+import type { RunAction } from "@opensoftware/contracts";
 import {
   ActivityCancellationType,
   CancellationScope,
@@ -26,6 +28,8 @@ export const gateSignal = defineSignal<[GateDecision]>("gate");
 /** A person takes over the stage at this index (ADR 0070). */
 export const takeOverSignal = defineSignal<[number]>("take-over");
 export const handBackSignal = defineSignal("hand-back");
+/** A person sent the run a signal; the run records it before the signal itself (ADR 0118). */
+export const actedSignal = defineSignal<[RunAction]>("acted");
 
 const local = proxyLocalActivities<Activities>({ startToCloseTimeout: "1 minute" });
 const remote = proxyActivities<Activities>({
@@ -35,6 +39,10 @@ const remote = proxyActivities<Activities>({
   cancellationType: ActivityCancellationType.WAIT_CANCELLATION_COMPLETED,
 });
 
+/** The view with the signals people sent, when there are any (ADR 0118). */
+const withActions = (view: RunView, actions: RunAction[]): RunView =>
+  actions.length > 0 ? { ...view, actions: [...actions] } : view;
+
 /** Hold a run's memo of its view (ADR 0115). */
 const MEMO_PATCH = "memo-view";
 
@@ -42,9 +50,9 @@ const MEMO_PATCH = "memo-view";
  * The view after the fact, which the run's memo also holds for the run list (ADR 0115). A run that started before
  * replays without the patch, so its history schedules the same commands; from the patch on it keeps its memo current.
  */
-async function apply(run: RunView, fact: Fact): Promise<RunView> {
+async function apply(run: RunView, fact: Fact, actions: RunAction[]): Promise<RunView> {
   const next = await local.apply(run, fact);
-  if (patched(MEMO_PATCH)) upsertMemo({ view: next });
+  if (patched(MEMO_PATCH)) upsertMemo({ view: withActions(next, actions) });
   return next;
 }
 
@@ -54,7 +62,10 @@ export async function factoryRun({ view, definition, before }: RunInput): Promis
   const decisions: GateDecision[] = [];
   let takeOver: number | undefined;
   let handedBack = false;
-  setHandler(viewQuery, () => run);
+  // The signals people sent, kept beside the view, which only the facts change (ADR 0118).
+  const actions: RunAction[] = [];
+  setHandler(viewQuery, () => withActions(run, actions));
+  setHandler(actedSignal, (action) => void actions.push(action));
   setHandler(controlQuery, () => ({ steering, ...(takeOver === undefined ? {} : { takeOver }) }));
   setHandler(steerSignal, (message) => void steering.push(message));
   setHandler(gateSignal, (decision) => void decisions.push(decision));
@@ -70,7 +81,7 @@ export async function factoryRun({ view, definition, before }: RunInput): Promis
   // 0111 has none, so a replay of an older run schedules the same activities.
   let previous: StageResult | undefined;
   const settle = async (fact: Fact) => {
-    run = await CancellationScope.nonCancellable(() => apply(run, fact));
+    run = await CancellationScope.nonCancellable(() => apply(run, fact, actions));
   };
   try {
     await remote.publishStarted(run);
@@ -86,9 +97,9 @@ export async function factoryRun({ view, definition, before }: RunInput): Promis
         const left = limitMs - (Date.now() - checksSince.at);
         if (step.delayMs) await sleep(Math.max(1, Math.min(step.delayMs, left)));
         const last = Date.now() - checksSince.at >= limitMs ? limitMs : undefined;
-        run = await apply(run, await remote.readChecks(run, definition, index, last));
+        run = await apply(run, await remote.readChecks(run, definition, index, last), actions);
       } else if (step.kind === "request-gate") {
-        run = await apply(run, await remote.requestGate(run, definition, index));
+        run = await apply(run, await remote.requestGate(run, definition, index), actions);
       } else if (step.kind === "await-gate") {
         const { gateId } = step;
         const decided = await condition(() => decisions.some((decision) => decision.gateId === gateId), step.limitMs);
@@ -99,13 +110,14 @@ export async function factoryRun({ view, definition, before }: RunInput): Promis
           decided && decision
             ? { kind: "gate", index, ...decision }
             : { kind: "gate", index, gateId, state: "expired", afterMs: step.limitMs },
+          actions,
         );
       } else if (step.kind === "await-hand-back") {
         await condition(() => handedBack);
         [handedBack, takeOver] = [false, undefined];
-        run = await apply(run, { kind: "handed-back", index });
+        run = await apply(run, { kind: "handed-back", index }, actions);
       } else {
-        run = await apply(run, { kind: "stage-started", index });
+        run = await apply(run, { kind: "stage-started", index }, actions);
         const ended = await remote.runStage(run, definition, index, steering.length, before, previous);
         if (ended.kind === "stage-ended" && ended.result) previous = ended.result;
         await settle(ended);
@@ -115,5 +127,5 @@ export async function factoryRun({ view, definition, before }: RunInput): Promis
     await settle(isCancellation(error) ? { kind: "cancelled" } : { kind: "error", message: String(error) });
   }
   await CancellationScope.nonCancellable(() => remote.publishCompleted(run));
-  return run;
+  return withActions(run, actions);
 }

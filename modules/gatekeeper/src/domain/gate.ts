@@ -161,6 +161,7 @@ export const isDecisionChoice = (choice: string): boolean => DECISION_CHOICES.in
 
 /** A press of a decision button, as the message a reply with its verb would be. */
 export function pressMessage(press: { choice: string; author: string; id: string; time: number }): Message {
-  const text = isDecisionChoice(press.choice) ? press.choice.toLowerCase() : "";
-  return { id: press.id, author: press.author, time: press.time, text, mine: false };
+  // "Approve" and "Reject" read as the replies, case aside; a decision through the API keeps its reply as the choice:
+  // "approve" or "reject <reason>" (ADR 0118).
+  return { id: press.id, author: press.author, time: press.time, text: press.choice, mine: false };
 }

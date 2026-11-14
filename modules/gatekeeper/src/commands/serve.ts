@@ -12,7 +12,7 @@ import { receive } from "../adapters/slack.ts";
 import { EXAMPLE_MEMBER, groupsWithoutPeople } from "../domain/policy.ts";
 import { pullRequestOf } from "../domain/pull-request.ts";
 import { signingKeyOf } from "../domain/record.ts";
-import { parseRequest } from "../domain/request.ts";
+import { parseDecision, parseRequest } from "../domain/request.ts";
 import { viewOf } from "../domain/stored.ts";
 import { type Decision, gates } from "./gates.ts";
 import { forgeFor, nowOf, slackOf } from "./load.ts";
@@ -121,6 +121,9 @@ export async function serve(options: ServeOptions) {
       if (!gate) return problem(reply, 404, "No such gate", `the server has no gate ${request.params.gateId}`);
       return viewOf(gate);
     });
+    api.post<{ Params: { gateId: string } }>("/v1/gates/:gateId/decisions", async (request) =>
+      viewOf(await service.decide(request.params.gateId, parseDecision(request.body))),
+    );
   });
 
   if (slack) await app.register(slackRoutes(slack, service));

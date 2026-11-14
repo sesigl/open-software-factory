@@ -202,6 +202,7 @@ curl -H "Authorization: Bearer $GATEKEEPER_API_TOKEN" -H "content-type: applicat
 | --- | --- |
 | `POST /v1/gates` | Ask for a decision on a request (the JSON of [Request](#request)). 201 with the new gate, 200 with the gate the same request made before, 400 with a problem that names the field. |
 | `GET /v1/gates/{gateId}` | The gate: `state` (`pending`, `approved`, `rejected` or `expired`), `waitingFor`, `requestedAt`, `expiresAt` and, once decided, the `record`. 404 for a gate the server does not know. |
+| `POST /v1/gates/{gateId}/decisions` | A person decides a pending gate: `{ "decision": "approved" or "rejected", "by": { "kind": "person", "id": "…" }, "reason": "…" }` decides like a reply `approve` or `reject <reason>` from `by.id` in the gate's channel, with the same record, event and reply ([ADR 0118](../../docs/decisions/0118-actions-record-the-person.md)). 200 with the gate, 400 without `by` or with another decision, 403 when `by.id` is in no group of `waitingFor`, 404 for an unknown gate, 409 when the gate is no longer pending. |
 | `GET /v1/health` | Whether the server reaches its database, can start OPA and, with `GATEKEEPER_NATS_URL`, reaches NATS: 200 with `status: ok`, else 503 with the failing check and what to fix ([ADR 0086](../../docs/decisions/0086-health-routes.md)). Needs no token. |
 | `POST /slack/events` | Slack's Events API: a message in the channel makes the server read the threads of its pending gates, so a reply decides like `status`. |
 | `POST /slack/actions` | Slack's interactivity: a press of Approve or Reject decides like a reply `approve` or `reject`. |
@@ -410,3 +411,6 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-GATE-092 | implemented | A server without OPA is failing and says what to fix |
 | SCN-GATE-093 | implemented | The server names a group whose only member is the example's when it starts |
 | SCN-GATE-094 | implemented | A request reaches a stream "OSF" that another module added with a max age, and the stream keeps its age |
+| SCN-GATE-095 | implemented | A member of the approver group rejects a gate through the API, and the record names the person |
+| SCN-GATE-096 | implemented | A decision through the API by a person outside the approver groups is refused |
+| SCN-GATE-097 | implemented | A decision through the API without a person, of an unknown gate or of a decided gate is refused |
