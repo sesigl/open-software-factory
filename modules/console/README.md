@@ -215,3 +215,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-061 | implemented | A person takes over, hands back and cancels a run from the run page |
 | SCN-CONSOLE-062 | implemented | A person approves and rejects a run's pending gate from the run page |
 | SCN-CONSOLE-063 | implemented | A decision gatekeeper refuses shows gatekeeper's problem |
+| SCN-CONSOLE-080 | implemented | The run page lists the actions of a run with the person who sent each |
