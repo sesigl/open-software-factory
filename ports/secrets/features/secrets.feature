@@ -125,3 +125,12 @@ Feature: Store, list and delete the values of secrets, and never print one
     Then put exits with code 1 and the error 'the token may not write "linear-token"'
     And list exits with code 1 and the error "the token may not list the secrets"
     And delete exits with code 1 and the error 'the token may not delete "linear-token"'
+
+  @id=SCN-SECRET-018 @status=implemented @conformance
+  Scenario: A person over 128 characters or with a line break is a usage error before any request
+    Given the test store and the write token
+    When the client pipes "lin_test_51c2" into "put linear-token" with a person of 129 characters, and with the person "ada", a line break and "grace"
+    And the client pipes "lin_test_51c2" into "put team/longest" with a person of 128 characters
+    Then both puts of "linear-token" exit with code 2 and the error "name the person in at most 128 characters, without a line break or another control character"
+    And the test store holds no secret "linear-token"
+    And put of "team/longest" prints the version 1

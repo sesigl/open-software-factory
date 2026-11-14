@@ -32,7 +32,9 @@ proxy ([`ports/secrets/README.md`](../../../ports/secrets/README.md)).
 
 - **Values.** `put` reads the value from standard input and drops one final line break, so `echo` works too. It
   writes the field `value` of the KV version 2 secret `<mount>/data/<name>`, the field the egress proxy reads, and
-  then the person of `--by` as `changed_by` in the secret's `custom_metadata`. No command prints a value, and no
+  then the person of `--by` as `changed_by` in the secret's `custom_metadata`. The person has at most 128
+  characters and no control character, checked before any request, so OpenBao's limit of 512 bytes never leaves a
+  version without its person. No command prints a value, and no
   error names one.
 - **Names.** `A-Z`, `a-z`, `0-9`, `_`, `.` and `-` in folders split by `/`, like `team/linear-token`, as
   `SecretReference` in `contracts/` allows; no folder is empty, `.` or `..`. `list` walks the folders and prints the

@@ -15,6 +15,20 @@ export function secretName(name: string | undefined): string {
   return name as string;
 }
 
+// OpenBao refuses a value of custom_metadata over 512 bytes or with a control character, after put stored the value. 128
+// characters of up to 4 bytes each stay below that and hold an email address or a login.
+const PERSON = /^[^\p{Cc}]{1,128}$/u;
+
+/** The person of a change, or a usage error before put calls the store. */
+export function personName(by: string | undefined, secret: string): string {
+  check(by, `name the person of the change, like put ${secret} --by ada`);
+  check(
+    PERSON.test(by),
+    "name the person in at most 128 characters, without a line break or another control character",
+  );
+  return by;
+}
+
 /** The error of a token without the right. */
 export const mayNot = (what: "write" | "delete", name: string): string => `the token may not ${what} "${name}"`;
 export const MAY_NOT_LIST = "the token may not list the secrets";

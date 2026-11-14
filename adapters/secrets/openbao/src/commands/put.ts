@@ -3,11 +3,11 @@
 import { text } from "node:stream/consumers";
 import { check, type Outcome } from "@opensoftware/cli";
 import { openBao } from "../adapters/openbao.ts";
-import { mayNot, noMount, secretName } from "../domain/names.ts";
+import { mayNot, noMount, personName, secretName } from "../domain/names.ts";
 
-export async function put(name: string | undefined, by: string | undefined): Promise<Outcome> {
+export async function put(name: string | undefined, person: string | undefined): Promise<Outcome> {
   const secret = secretName(name);
-  check(by, `name the person of the change, like put ${secret} --by ada`);
+  const by = personName(person, secret);
   const value = (await text(process.stdin)).replace(/\n$/, "");
   check(value, "put reads the value from standard input, and it was empty");
   const bao = openBao();

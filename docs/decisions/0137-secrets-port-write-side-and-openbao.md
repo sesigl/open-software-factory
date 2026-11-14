@@ -28,7 +28,10 @@ turn, OpenBao in the Compose profile and the chart, the page `/secrets` and `con
   scenario.
   - `put <name> --by <person>` reads the value from standard input, without its final line break, and stores it as a
     new version; it prints `{"name", "version"}`. The value is never an argument or a variable: those show in `ps`, in
-    a shell's history and in a process's environment. An empty value is a usage error.
+    a shell's history and in a process's environment. An empty value is a usage error, and so is a person over 128
+    characters or with a line break or another control character, checked before any request: OpenBao refuses such
+    a person in the metadata only after the value is stored (over 512 bytes, or unprintable), and 128 characters of up
+    to 4 bytes stay below its limit while they hold an email address or a login.
   - `list` prints one `{"name", "version", "changed", "by"}` per secret, sorted by name: the time and the person of
     the last change, and the current version. A name may hold `/`, so `list` walks the folders. `by` is `null` for a
     secret that another client stored.

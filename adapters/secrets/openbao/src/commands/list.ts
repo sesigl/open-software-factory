@@ -17,23 +17,26 @@ export async function list(): Promise<Outcome> {
   return { lines: secrets.map((secret) => JSON.stringify(secret)) };
 }
 
+/** OpenBao's answer as a list of one, or no answer (404) as an empty list. */
+const present = <T>(answer: T | undefined): T[] => (answer === undefined ? [] : [answer]);
+
 async function walk(bao: OpenBao, folder: string): Promise<unknown[]> {
   const listed = await bao.call<{ data: { keys: string[] } }>("LIST", `${bao.mount}/metadata/${folder}`, MAY_NOT_LIST);
   const found = await Promise.all(
-    (listed?.data.keys ?? []).map(async (key) =>
-      key.endsWith("/") ? walk(bao, folder + key) : [await secret(bao, folder + key)],
-    ),
+    present(listed)
+      .flatMap((answer) => answer.data.keys)
+      .map((key) => (key.endsWith("/") ? walk(bao, folder + key) : secret(bao, folder + key))),
   );
   return found.flat();
 }
 
+/** The secret's line; none for a secret deleted since the folder was listed, whose metadata is gone. */
 async function secret(bao: OpenBao, name: string) {
   const answer = await bao.call<{ data: Metadata }>("GET", `${bao.mount}/metadata/${name}`, MAY_NOT_LIST);
-  const { current_version: version, versions, custom_metadata } = (answer as { data: Metadata }).data;
-  return {
+  return present(answer).map(({ data: { current_version: version, versions, custom_metadata } }) => ({
     name,
     version,
     changed: (versions[version] as { created_time: string }).created_time,
     by: custom_metadata?.changed_by ?? null,
-  };
+  }));
 }

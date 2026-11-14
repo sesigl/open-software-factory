@@ -33,7 +33,7 @@ check enforces the layers.
 - System tests: 60 seconds in total on the CI runner, counted as the sum of the scenarios' times. Each Vitest worker
   starts one OpenBao in development mode, under a second, and its scenarios share it, each with a mount of its own
   (ADR 0137). A scenario runs the adapter's CLI one to five times, about 0.15 seconds each; SCN-SOPENBAO-004 pipes
-  33 MiB. Measured on a 4-core machine: 25 scenarios, 7 seconds of wall time and 18 seconds summed.
+  33 MiB. Measured on a 4-core machine: 26 scenarios, 7 seconds of wall time and 19 seconds summed.
 
 ## Quality limits
 

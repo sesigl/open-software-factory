@@ -58,8 +58,9 @@ history. Pipe it, as `printf %s "$VALUE" | <adapter> put linear-token --by ada`.
 
 - A name follows the pattern of `SecretReference` in
   [`contracts/typespec/factory-definition.tsp`](../../contracts/typespec/factory-definition.tsp): `A-Z`, `a-z`, `0-9`,
-  `_`, `.` and `-` in folders split by `/`, with no empty, `.` or `..` folder. Any other name, an empty value and a
-  `put` without `--by` exit 2 before any request.
+  `_`, `.` and `-` in folders split by `/`, with no empty, `.` or `..` folder. The person of `--by` has 1 to 128
+  characters and no line break or other control character. Any other name or person, an empty value and a `put`
+  without `--by` exit 2 before any request, so a version is never stored without its person.
 - A store that does not answer exits 1 with `the store at <address> does not answer`; a token it does not know exits
   1 with `the store refused the token`; a token without the right exits 1 with `the token may not write "<name>"`,
   `the token may not delete "<name>"` or `the token may not list the secrets`.
