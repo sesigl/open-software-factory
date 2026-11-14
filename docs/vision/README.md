@@ -33,13 +33,17 @@ not `deprecated` is `implemented`; otherwise it says `planned`. The check VISION
 | SCN-FACTORY-RUNTIME-005 | planned | none |
 | SCN-FACTORY-RUNTIME-006 | implemented | SCN-E2E-006 (implemented), SCN-FORE-033 (implemented), SCN-SANDBOX-007 (implemented), SCN-SANDBOX-008 (implemented), SCN-SANDBOX-023 (implemented), SCN-SANDBOX-016 (implemented), SCN-SANDBOX-017 (implemented), SCN-SANDBOX-018 (implemented), SCN-SANDBOX-019 (implemented) |
 | SCN-FACTORY-RUNTIME-007 | implemented | SCN-FSPEC-040 (implemented), SCN-FSPEC-016 (implemented), SCN-SANDBOX-009 (implemented), SCN-SANDBOX-011 (implemented) |
+| SCN-FACTORY-RUNTIME-010 | planned | none |
 | SCN-FACTORY-RUNTIME-008 | implemented | SCN-CTR-004 (implemented), SCN-RUN-011 (implemented), SCN-RUN-012 (implemented) |
 | SCN-FACTORY-RUNTIME-009 | planned | none |
+| SCN-FACTORY-RUNTIME-011 | planned | none |
 | SCN-FACTORY-CODE-001 | implemented | SCN-CTR-001 (implemented), SCN-CTR-002 (implemented), SCN-FSPEC-002 (implemented), SCN-FSPEC-003 (implemented), SCN-FSPEC-001 (implemented), SCN-FORE-142 (implemented), SCN-FORE-159 (implemented) |
+| SCN-FACTORY-CODE-007 | planned | none |
 | SCN-FACTORY-CODE-002 | implemented | SCN-CONSOLE-023 (deprecated), SCN-CONSOLE-036 (implemented), SCN-CONSOLE-024 (implemented) |
 | SCN-FACTORY-CODE-003 | planned | none |
 | SCN-FACTORY-CODE-004 | implemented | SCN-FSPEC-026 (implemented), SCN-FSPEC-029 (implemented), SCN-TASK-022 (implemented) |
 | SCN-FACTORY-CODE-005 | implemented | SCN-FSPEC-028 (implemented) |
+| SCN-FACTORY-CODE-008 | planned | none |
 | SCN-FACTORY-CODE-006 | implemented | SCN-SCORE-005 (implemented) |
 | SCN-FACTORY-OPEN-001 | implemented | SCN-FSPEC-025 (implemented), SCN-FORE-051 (implemented), SCN-INFER-002 (implemented) |
 | SCN-FACTORY-OPEN-002 | implemented | SCN-HCLAUDE-001 (implemented), SCN-HCODEX-001 (implemented), SCN-HOPENCODE-001 (implemented), SCN-FSPEC-010 (implemented), SCN-FSPEC-011 (implemented), SCN-HARNESS-001 (implemented) |
@@ -56,6 +60,7 @@ not `deprecated` is `implemented`; otherwise it says `planned`. The check VISION
 | SCN-FACTORY-ACCESS-001 | implemented | SCN-DIST-014 (implemented), SCN-INTAKE-002 (implemented), SCN-INTAKE-021 (implemented), SCN-INTAKE-017 (implemented), SCN-INTAKE-013 (implemented), SCN-INTAKE-024 (implemented), SCN-CHANNEL-001 (implemented), SCN-FORGE-030 (implemented) |
 | SCN-FACTORY-ACCESS-002 | implemented | SCN-INTAKE-034 (implemented), SCN-INTAKE-001 (implemented) |
 | SCN-FACTORY-ACCESS-003 | implemented | SCN-INTAKE-046 (implemented), SCN-INTAKE-060 (implemented), SCN-INTAKE-030 (implemented), SCN-INTAKE-039 (implemented), SCN-INTAKE-013 (implemented), SCN-CHANNEL-007 (implemented) |
+| SCN-FACTORY-ACCESS-004 | planned | none |
 | SCN-FACTORY-ORCH-001 | implemented | SCN-FORE-022 (implemented), SCN-FORE-001 (implemented), SCN-FORE-002 (implemented) |
 | SCN-FACTORY-ORCH-002 | implemented | SCN-HCLAUDE-002 (implemented), SCN-HCODEX-002 (implemented), SCN-HOPENCODE-002 (implemented), SCN-HARNESS-002 (implemented), SCN-HARNESS-010 (implemented) |
 | SCN-FACTORY-ORCH-003 | implemented | SCN-FORE-012 (implemented), SCN-FORE-013 (implemented), SCN-FORE-014 (implemented), SCN-GATE-001 (implemented), SCN-GATE-041 (implemented), SCN-GATE-013 (implemented) |
@@ -93,5 +98,6 @@ not `deprecated` is `implemented`; otherwise it says `planned`. The check VISION
 | SCN-FACTORY-BENCH-006 | implemented | SCN-TASK-030 (implemented), SCN-TASK-031 (implemented), SCN-INFER-003 (implemented) |
 | SCN-FACTORY-ROLE-001 | planned | none |
 | SCN-FACTORY-ROLE-002 | planned | none |
+| SCN-FACTORY-ROLE-003 | planned | none |
 | SCN-FACTORY-OUTCOME-001 | implemented | SCN-LEDGER-028 (implemented), SCN-LEDGER-065 (implemented) |
 | SCN-FACTORY-OUTCOME-002 | implemented | SCN-LEDGER-027 (implemented) |

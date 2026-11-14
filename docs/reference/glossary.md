@@ -68,3 +68,9 @@ Use these terms in scenarios, code, UI text and docs.
 | Product engineer | A person who delivers product value through the factory. |
 | Factory engineer | A person who improves the factory itself. |
 | Drift | A difference between the factory definition and the running factory. |
+| Access file | The file in the factory's Git repository that lists the people who may sign in to the factory UI and their roles (`member`, `factory-engineer`, `admin`). |
+| Change | An edit of the factory made in the factory UI: a pull request on the factory's repository that names the person and merges when its checks are green (ADR 0130). |
+| Island | A part of a server-rendered page that runs script in the browser, such as a live state; no feature depends on one. |
+| Page scenario | A UI scenario whose test reads the console's HTML over HTTP by role and name, without a browser; the default kind. |
+| Journey scenario | A UI scenario whose test runs one main flow of a person across pages in Chromium. |
+| Island scenario | A UI scenario whose test runs one island as a whole on its page of the workbench, in Chromium. |

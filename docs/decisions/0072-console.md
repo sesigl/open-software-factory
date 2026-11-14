@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; no build step, no client script and read-only only superseded by 0130
 date: 2026-10-26
 ---
 

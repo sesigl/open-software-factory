@@ -1,6 +1,8 @@
 # Software Factory blueprint, derived from Zach Lloyd (Warp), "Software Engineering Is Becoming Factory Engineering",
 # recorded talk, 25:51. Every scenario carries:
 #   @source=<mm:ss>   where the talk says or shows it (several tags when several moments support it)
+#   @source=owner-<yyyy-mm> not from the talk: the repository owner's request of that month, written down in
+#                     TODO.md (the factory UI of wave 6 is owner-2026-11)
 #   @evidence=spoken  said in the talk
 #   @evidence=screen  visible on a slide or in the product demo, not said
 #   @evidence=derived not stated; a requirement that the talk implies or needs, marked so it can be challenged
@@ -166,6 +168,13 @@ Feature: Cloud execution, sandboxes and governance
       When an agent tries to call an MCP server that its definition does not declare
       Then the call is refused and recorded
 
+    @scenario_id=SCN-FACTORY-RUNTIME-010 @status=planned @evidence=derived @source=owner-2026-11 @source=09:54
+    Scenario: A person stores the value of a secret in the factory UI
+      Given the agent "implement" declares the secret "LINEAR_TOKEN"
+      When a person with the role "factory-engineer" stores a value for "LINEAR_TOKEN" in the factory UI
+      Then no page, log, trace or agent shows the value again
+      And the next run of "implement" uses the value
+
   Rule: Every action is attributed and access is role-based
 
     @scenario_id=SCN-FACTORY-RUNTIME-008 @status=implemented @evidence=screen @source=12:36 @source=22:20
@@ -178,6 +187,13 @@ Feature: Cloud execution, sandboxes and governance
       Given a person without the role "factory-engineer"
       When the person tries to change the factory definition
       Then the change is refused
+
+    @scenario_id=SCN-FACTORY-RUNTIME-011 @status=planned @evidence=derived @source=owner-2026-11
+    Scenario: Only a person on the factory's access list signs in to the factory UI
+      Given the factory's access file in Git lists "ada@example.com" with the role "member"
+      When "ada@example.com" signs in to the factory UI
+      Then the person sees the runs of the factory
+      And a person who is not on the access list cannot sign in
 
 
 @context=factory-as-code @owner=factory-engineering
@@ -196,6 +212,12 @@ Feature: Factories as code
       And it declares the model and the runtime of each agent
       And it declares the automations that trigger work
       And it declares the scorers and benchmarks
+
+    @scenario_id=SCN-FACTORY-CODE-007 @status=planned @evidence=derived @source=owner-2026-11 @source=09:54
+    Scenario: A skill declares the secrets and hosts it needs
+      Given the skill "release-notes" declares the secret "LINEAR_TOKEN" and the host "api.linear.app"
+      When a factory definition gives the skill to an agent that does not declare "LINEAR_TOKEN"
+      Then the factory refuses the definition and names the skill, the agent and the missing secret
 
     @scenario_id=SCN-FACTORY-CODE-002 @status=implemented @evidence=screen @source=09:35
     Scenario: The factory UI shows configuration read-only
@@ -223,6 +245,14 @@ Feature: Factories as code
       Given factory version "v3" increased the failure rate
       When a factory engineer rolls back to "v2"
       Then new runs use "v2"
+
+    @scenario_id=SCN-FACTORY-CODE-008 @status=planned @evidence=derived @source=owner-2026-11 @source=06:01
+    Scenario: A factory engineer changes the factory in the factory UI
+      Given a person with the role "factory-engineer" is signed in to the factory UI
+      When the person changes the model of the triage agent in the factory UI
+      Then the change is a pull request on the factory's repository that names the person
+      And the pull request merges when its checks pass
+      And the merged commit is the factory version of the next run
 
     @scenario_id=SCN-FACTORY-CODE-006 @status=implemented @evidence=spoken @source=15:16
     Scenario: Scorers are defined in code
@@ -368,6 +398,13 @@ Feature: Access points
     Scenario: The factory's own chat UI is optional
       Given a team works only in Slack
       Then the team can submit, follow and finish work without opening the factory UI
+
+    @scenario_id=SCN-FACTORY-ACCESS-004 @status=planned @evidence=derived @source=owner-2026-11 @source=24:16
+    Scenario: The factory UI works on a phone
+      Given a person signed in to the factory UI on a phone
+      When the person opens the runs and one run
+      Then every page fits the screen without scrolling sideways
+      And every link and form of the page can be used by touch
 
 
 @context=factory-orchestration @owner=factory-engineering
@@ -697,6 +734,13 @@ Feature: Product engineering and factory engineering
       Given the metrics show high cost per pull request for the implementation agent
       When the factory engineer changes the model mix in the factory definition
       Then the change is measured with the same metrics, scorers and benchmarks
+
+    @scenario_id=SCN-FACTORY-ROLE-003 @status=planned @evidence=derived @source=owner-2026-11 @source=08:22
+    Scenario: A factory engineer gives an agent a skill in the factory UI
+      Given the factory's skill catalog has the skill "release-notes"
+      When a person with the role "factory-engineer" gives the skill to the agent "implement" in the factory UI
+      Then the change is a pull request on the factory's repository
+      And once it merges, the next run of "implement" has the skill
 
 
 @context=factory-outcomes @owner=engineering-leadership

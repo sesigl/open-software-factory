@@ -1215,7 +1215,7 @@ T-55 waits until a page needs its first island; the first release needs none (T-
 released packages (ADR 0095): it starts when the release it pins is published (`skills/release-packages`). Each new
 package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-module` and a first publish.
 
-### [ ] T-51 · the web concept: vision scenarios and decisions (P0)
+### [x] T-51 · the web concept: vision scenarios and decisions (P0)
 
 - **Problem:** this wave changes three things that the repository states as rules. P3 and SCN-FACTORY-CODE-002 say
   that the UI only shows the factory. ADR 0072 says that the console needs no script in the browser and no build step.
@@ -1227,8 +1227,10 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   wave realizes only the scenarios it names under "Realizes", and never one that is `implemented` today unless the
   item says so.
 - **Done when:** the vision scenarios, the ADR and the architecture page are merged, and the items below name them.
+  Done: SCN-FACTORY-RUNTIME-010, RUNTIME-011, CODE-007, CODE-008, ROLE-003 and ACCESS-004, ADR 0130 and
+  `docs/architecture/web.md`.
 - **Slices:**
-  - [ ] New vision scenarios in `docs/vision/software-factory.feature`, `@status=planned`, `@evidence=derived`, then
+  - [x] New vision scenarios in `docs/vision/software-factory.feature`, `@status=planned`, `@evidence=derived`, then
     `make docs`. Every `@source` of the file is a time of the talk, and its header says so: give the owner's request of
     November 2026 a form of its own, like `@source=owner-2026-11`, and add it to the header's legend. Write at least these, with the next free
     number of each area:
@@ -1243,12 +1245,12 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
     SCN-FACTORY-RUNTIME-009 (only authorized roles change a factory) exists and is `planned`; T-58 realizes it.
     SCN-FACTORY-ROLE-002 is about the model mix and its measurement; this wave does not realize it.
     SCN-FACTORY-CODE-002 stays: an agent's configuration page is still read-only and links to Git.
-  - [ ] One ADR for the concept under "How the parts connect" and "The console's three modes": the console as the
+  - [x] One ADR for the concept under "How the parts connect" and "The console's three modes": the console as the
     backend of the browser, no gateway, no database, pages on the server. It supersedes the parts of ADR 0072 and
     ADR 0089 that this wave changes; an accepted ADR is never edited. Options to compare: an API gateway (Envoy,
     Traefik, agentgateway), module APIs open to the browser with CORS and a token of the person, the console as the
     backend.
-  - [ ] A page `docs/architecture/web.md` with the diagram above, the request path of a page, of a form and of a
+  - [x] A page `docs/architecture/web.md` with the diagram above, the request path of a page, of a form and of a
     change, the three modes and the three kinds of UI test (T-52). Update the row "Web UI" in
     `docs/architecture/stack.md`, the console's row in `docs/architecture/components.md` and in
     `docs/explanation/module-tiers.md`, the wording of P3 in `docs/principles.md` ("the UI shows them and proposes a
@@ -1601,7 +1603,7 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
     say that write access to that repository is admin access to the factory, and that the repository should be
     private, since it holds emails.
   - When `CONSOLE_USER_HEADER` is set and the own sign-in is on, the console does not start and names both.
-- **Realizes:** the new RUNTIME scenario of the access list and the new ACCESS scenario of the phone (T-51).
+- **Realizes:** SCN-FACTORY-RUNTIME-011 (the access list) and SCN-FACTORY-ACCESS-004 (the phone), from T-51.
 - **First scenarios:** a person on the access list signs in and lands on the runs; a person who is not on it is
   refused and reads why; an email that the provider did not verify is refused; a page without a session redirects to
   the sign-in and comes back; `next` with another host is ignored; "Sign out" ends the session; a session past its
@@ -1699,7 +1701,7 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   - A name follows the pattern of `SecretReference` in `contracts/typespec/factory-definition.tsp`.
   - The tokens and the unseal key are credentials: `.env` and the operator's safe only. The docs describe a backup of
     the volume and the key.
-- **Realizes:** the new RUNTIME scenario of the stored secret (T-51).
+- **Realizes:** SCN-FACTORY-RUNTIME-010 (the stored secret), from T-51.
 - **First scenarios:** `put` then `list` names the secret without its value; `put` twice makes a second version; a
   name with a folder is listed; `delete` removes it; no command prints a value; the console's token cannot read a
   value; a sandbox's `git clone` works with a token from OpenBao; a stage whose secret has no value fails before its
@@ -1804,7 +1806,7 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
     of a form goes into YAML, a branch name or Markdown without escaping.
   - A run keeps the factory version it started with (ADR 0110). The page says that a change is live for the next run.
   - Not in this item: changing `access.yaml` from the UI.
-- **Realizes:** the new CODE scenario of the change from the UI (T-51), SCN-FACTORY-RUNTIME-009.
+- **Realizes:** SCN-FACTORY-CODE-008 (the change from the UI), from T-51, and SCN-FACTORY-RUNTIME-009.
 - **First scenarios:** `commit` writes the files to the branch in one commit; `branch --from <commit>` starts there;
   merge-when-green merges after the check passes and does not merge while it fails; `rules` names a required check;
   `close --delete-branch` closes and deletes; the edit of one agent keeps comments and leaves an agent that shared
@@ -1874,7 +1876,8 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   - Two skills with one name, one local and one from another repository: the rules refuse.
   - Not in this item: an editor for `SKILL.md` in the UI, and adding a skill of another repository from the UI. Both
     are changes in Git first.
-- **Realizes:** the new ROLE scenario of the skill and the new CODE scenario of what a skill needs (T-51).
+- **Realizes:** SCN-FACTORY-ROLE-003 (the skill from the UI) and SCN-FACTORY-CODE-007 (what a skill needs), from
+  T-51.
 - **First scenarios:** `lint` refuses a skill without a description; `lint` names the secret an agent lacks for its
   skill; `plan` pins a skill of another repository; the foreman refuses a skill without a pin; a run's agent finds a
   pinned skill in its session; the catalog lists each skill with its agents and its needs; a skill's page shows a

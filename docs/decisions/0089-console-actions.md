@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; no sign-in of the console's own superseded by 0130
 date: 2026-11-08
 ---
 
