@@ -133,6 +133,32 @@ docs/vision/           factory-level requirements; source for module scenarios, 
   keeps all its state inside its scenario and never changes the test process's environment or globals.
 - No unit tests by default (ADR 0007). A module's `AGENTS.md` may allow them for a pure algorithm.
 
+## UI tests
+
+Three kinds, each a system test (ADR 0131):
+
+| Kind | Runs | Proves |
+| --- | --- | --- |
+| Page scenario | The built module over HTTP with `sut.pages`; no browser, no script | What a page shows and what a form does. The default. |
+| Journey scenario (`@kind=journey`) | The built module with its fakes, in Chromium with `sut.browser` | One main flow of a person from start to end, across pages |
+| Island scenario | One island of `@opensoftware/ui` on its page of the workbench, in Chromium | Everything the island does, as a whole |
+
+- A behavior is a page scenario unless it needs a browser.
+- A journey only for a main flow. In wave 6: sign in and land on the runs; the shell on a phone; store a secret;
+  switch a skill on and see the change go live. A new journey needs its reason in the module's `AGENTS.md`. A
+  journey counts for no mutant: the mutation runner leaves it out, and page scenarios notice the server's code.
+- An island scenario for each island, at the level of the island. It gets its data as properties on its page of the
+  workbench; one that loads data takes the address as a property, which the workbench points at a static file. No
+  island is proven only by a journey.
+- No test of a component inside an island, and none of a single `.astro` component. No component test imports from
+  `src/` (BOUNDARY).
+- A UI test finds elements only by role, label or text, or reads the page reader's facts of the document (UI-QUERY).
+  It never waits for time to pass and uses only the named viewports `phone` and `desktop`.
+- No pixel comparison. A journey keeps its screenshots with `sut.browser.screenshot` as evidence for the pull request.
+
+Measured on the development container (ADR 0131): a page parses in about 5 ms and its queries take about 20 ms;
+Chromium starts in about 60 ms, a context in 30 to 60 ms, a page with a click in 80 to 100 ms, axe-core in 200 ms.
+
 ## Test speed
 
 System tests are the only tests, so their speed is the speed of every pull request. Speed comes from how the

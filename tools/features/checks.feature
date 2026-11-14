@@ -126,6 +126,22 @@ Feature: Repository checks
     And the output contains "BOUNDARY-ENV modules/demo/system-tests/SCN-DEMO-001.test.ts"
     And the output contains "DEMO_SECRET_MODE"
 
+  @id=SCN-REPO-140 @status=implemented
+  Scenario: UI-QUERY rejects a UI test that finds an element by a CSS selector
+    Given a repository with the implemented scenario "SCN-DEMO-001" and its system test
+    And the test clicks the element "button.primary" of a page that sut.browser opened
+    When the developer runs "osf check UI-QUERY"
+    Then the command exits with code 1
+    And the output contains "UI-QUERY modules/demo/system-tests/SCN-DEMO-001.test.ts:12 locator finds or waits by something other than role, label or text"
+
+  @id=SCN-REPO-141 @status=implemented
+  Scenario: UI-QUERY accepts a UI test that finds elements by role, label and text
+    Given a repository with the implemented scenario "SCN-DEMO-001" and its system test
+    And the test clicks the button "Save" of a page that sut.browser opened, fills the field "Name" and reads the text "Saved"
+    When the developer runs "osf check UI-QUERY"
+    Then the command exits with code 0
+    And the output contains "UI-QUERY ok"
+
   @id=SCN-REPO-011 @status=implemented
   Scenario: NOSKIP rejects a skipped test
     Given a repository with the implemented scenario "SCN-DEMO-001" and its system test

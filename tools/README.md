@@ -260,3 +260,5 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-137 | implemented | osf doctor runs console doctor in the profile and exits with its code |
 | SCN-REPO-138 | implemented | AFFECTED rejects a package whose system tests open pages in a browser in a suite without one |
 | SCN-REPO-139 | implemented | AFFECTED accepts a package whose system tests open pages in a browser in a suite with Chromium |
+| SCN-REPO-140 | implemented | UI-QUERY rejects a UI test that finds an element by a CSS selector |
+| SCN-REPO-141 | implemented | UI-QUERY accepts a UI test that finds elements by role, label and text |

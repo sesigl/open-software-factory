@@ -175,6 +175,17 @@ export function noskip(context: Context): Finding[] {
   );
 }
 
+export function uiQuery(context: Context): Finding[] {
+  return context.tests().flatMap((test) =>
+    test.queries.map(({ name, line }) => ({
+      check: "UI-QUERY",
+      file: test.file,
+      line,
+      message: `${name} finds or waits by something other than role, label or text: use getByRole, getByLabel or getByText and wait for what the page shows (ADR 0131)`,
+    })),
+  );
+}
+
 export function assert(context: Context): Finding[] {
   const findings: Finding[] = [];
   for (const test of context.tests().filter((file) => file.isTest)) {

@@ -1257,7 +1257,7 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
     change as a pull request"), and the glossary: island, page scenario, journey scenario, island scenario, access
     file, change.
 
-### [ ] T-52 · UI test tools in the testkit (P0)
+### [x] T-52 · UI test tools in the testkit (P0)
 
 - **Problem:** no test of a module opens a browser; only proof uses Playwright, to capture evidence. The console's
   tests read the HTML of a page with patterns for literal tags (`rows` in `modules/console/system-tests/console.ts`
@@ -1332,8 +1332,8 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   - [x] The mark of a journey (`@kind=journey`, which SPEC knows) and the runner that leaves journeys out of a
     mutant's run; the browser in the mutation shards of a unit that gets it through the testkit, with its check
     (`SCN-REPO`).
-  - [ ] The check on the queries of UI tests (`SCN-REPO`), and the rules in `docs/quality/testing-strategy.md` and
-    `docs/quality/checks.md`.
+  - [x] The check on the queries of UI tests (`SCN-REPO`, UI-QUERY), and the rules in
+    `docs/quality/testing-strategy.md` and `docs/quality/checks.md`.
 
 ### [ ] T-53 · Astro in the console (P0)
 

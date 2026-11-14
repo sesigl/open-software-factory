@@ -1,7 +1,7 @@
 // `osf check`: runs checks by ID and prints one line per finding: `ID file:line message`.
 import { affected } from "./affected.ts";
 import { arch } from "./arch.ts";
-import { boundaryEnv, boundaryStatic, assert as checkAssert, isolation, noskip } from "./boundary.ts";
+import { boundaryEnv, boundaryStatic, assert as checkAssert, isolation, noskip, uiQuery } from "./boundary.ts";
 import { contract } from "./contract.ts";
 import { deps } from "./deps.ts";
 import { adr, docsAffected, docsGen, docsLinks } from "./docs.ts";
@@ -19,6 +19,7 @@ import { todo, vision } from "./vision.ts";
 export const FAST: Record<string, Check> = {
   NOSKIP: noskip,
   ASSERT: checkAssert,
+  "UI-QUERY": uiQuery,
   "BOUNDARY-STATIC": boundaryStatic,
   "BOUNDARY-ENV": boundaryEnv,
   ISOLATION: isolation,
