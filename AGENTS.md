@@ -19,7 +19,7 @@ A family of independent open-source tools that together form a software factory.
 Phase 2 is done: every tool module of `TODO.md` T-00 to T-20 is built and released, and CI of this repository runs
 our own tools (ADR 0083). Wave 5 of `TODO.md` (T-22 to T-50) and T-21 are done: a v1 factory that people can trust
 with real work, which a paid run proved end to end. Next is phase 3, in which the factory implements this repository's
-issues, and wave 6 of `TODO.md` (T-51 to T-61): the factory's UI with sign-in, secrets and skills. Run `make install`
+issues, and wave 6 of `TODO.md` (T-51 to T-62): the factory's UI with sign-in, secrets and skills. Run `make install`
 once after cloning (Node 24, pnpm); the tooling is described in `tools/README.md`. Every pull request is reviewed
 by a person. `docs/explanation/bootstrapping.md` describes the phases and what changes in each.
 
@@ -46,6 +46,7 @@ A change is done only when `make verify` passes. `docs/quality/checks.md` lists 
 | PASS | Every `implemented` scenario's test ran and passed in this run, or was replayed for the same inputs. Skipped counts as failed. |
 | VISION | A vision scenario is `implemented` exactly when its realizing module scenarios are; TODO.md has no open item with every slice ticked. |
 | BOUNDARY | System tests reach the module only through its public surface. |
+| SURFACE | A published package has one job and lists every way in, every value a library exports included. |
 | ISOLATION | No module imports another module. |
 | AFFECTED | A system test declares every package it starts, imports or reads, so the test cache replays only unchanged results. |
 | RELEASE | Every published package has its publish workflow and release entries as `osf release-files` writes them. |

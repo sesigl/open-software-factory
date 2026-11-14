@@ -6,8 +6,10 @@ Adds rules for the testkit. The root `AGENTS.md` applies in full.
 
 The only ways a system test or another program may use the testkit:
 
-- Library: the exports of `src/index.ts` (`scenario` and its context), used by system tests
-- Library: `@opensoftware/testkit/readme` (`src/support/readme.ts`: `documentedEnv`, `readmeSection`), used by
+- Library: the exports of `src/index.ts` (`scenario` and its context, and `HARNESS_AGENT`, the file of the scripted
+  harness agent for a sandbox), used by system tests; `@opensoftware/testkit/harness-agent` exports `HARNESS_AGENT`
+  alone, for a process that must not load the rest
+- Library: `@opensoftware/testkit/readme` (`src/support/readme.ts`: `documentedEnv`, `readmeSection`, `isDocumented`), used by
   the checks that read a module's README without running a test (ADR 0042)
 - CLI: `testkit <command>` (`bin/testkit.ts`, see `README.md#commands`), run in a module folder
 

@@ -14,6 +14,7 @@ import { reach } from "./reach.ts";
 import { release } from "./release.ts";
 import { budget, flake } from "./results.ts";
 import { runs } from "./runs.ts";
+import { surface } from "./surface.ts";
 import { template } from "./templates.ts";
 import { todo, vision } from "./vision.ts";
 
@@ -27,6 +28,7 @@ export const FAST: Record<string, Check> = {
   ISOLATION: isolation,
   ARCH: arch,
   TEMPLATE: template,
+  SURFACE: surface,
   CONTRAST: contrast,
   TOKENS: tokens,
   DUP: dup,

@@ -37,8 +37,8 @@ make verify      # everything: lint, types, all system tests, all checks
 | `osf bundle <package>` | the package's `build` script, through `tools/bin/bundle.ts`, which loads only the bundler, so that a publish job that builds one package needs no other built package | Build a CLI package as one bundled file (ADR 0079): `src/cli.ts` becomes `dist/main.js` with a source map to the sources, `dist/cli.js` turns on Node's compile cache and imports it, and `dist/THIRD-PARTY-NOTICES.md` lists the name, version, license and license text of every package in the bundle. It fails on an import that the bundle cannot hold and on a bundled package without a license. |
 | `osf next-id <module>` | `make next-id MODULE=x` | Print the next free scenario ID of a module or prefix. |
 | `osf test-scenario <ID>` | `make test-scenario ID=…` | Run the one system test of a scenario. |
-| `osf init [--factory <dir>]` | none | Write `deploy/compose/.env` from `.env.example`: each empty `*_PASSWORD`, `*_API_TOKEN` and `*_MASTER_KEY` gets 32 random bytes in hex after the example's prefix, like `sk-`; every other value stays empty for the team. An existing `.env` is kept. `--factory <dir>` copies the reference factory `deploy/compose/factory/` to `<dir>` and points `FACTORY_DIR` at it. Prints the empty values and the groups file to fill next (ADR 0119). |
-| `osf up [ARG ...]` | none | Refuse a missing `.env`, an empty value that `compose.yaml` requires with `${NAME:?...}`, and gatekeeper without the three Slack values or `GATEKEEPER_FORGE_TOKEN`; then run `docker compose up --detach --wait [ARG ...]` in `deploy/compose/` and exit with its code. |
+| `osf init [--factory <dir>]` | none | Write `deploy/compose/.env` from `.env.example`: each empty `*_PASSWORD`, `*_API_TOKEN`, `*_MASTER_KEY` and `*_SESSION_SECRET` gets 32 random bytes in hex after the example's prefix, like `sk-`; every other value stays empty for the team. An existing `.env` is kept. `--factory <dir>` copies the reference factory `deploy/compose/factory/` to `<dir>` and points `FACTORY_DIR` at it. Prints the empty values and the groups file to fill next (ADR 0119). |
+| `osf up [ARG ...]` | none | Refuse a missing `.env`, an empty value that `compose.yaml` requires with `${NAME:?...}`, gatekeeper without the three Slack values or `GATEKEEPER_FORGE_TOKEN`, and with `CONSOLE_SIGN_IN` each setting its provider needs (`oidc`: the session key, issuer, client ID and secret; `github`: the session key, client ID and secret, ADR 0134); then run `docker compose up --detach --wait [ARG ...]` in `deploy/compose/` and exit with its code. |
 | `osf doctor` | none | Run `docker compose run --rm console console doctor` in `deploy/compose/` and exit with its code. |
 | `osf install-tools` | `make install` | Download the checksum-pinned lychee, oasdiff, opa, temporal, nats-server, helm, kubectl and kind, and the agent-sandbox manifest `agent-sandbox.yaml`, into `.tools/bin/`. When github.com fails to send a release file, it comes through the GitHub API, with `GITHUB_TOKEN` when it is set; CI sets it. |
 
@@ -273,3 +273,9 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-150 | implemented | TOKENS rejects a font named outside the tokens |
 | SCN-REPO-151 | implemented | TOKENS accepts a stylesheet that names only tokens |
 | SCN-REPO-152 | implemented | TEMPLATE accepts a template that imports a component and the tokens of the design system |
+| SCN-REPO-153 | implemented | SURFACE rejects a library that exports a value its surface does not name |
+| SCN-REPO-154 | implemented | SURFACE accepts a library whose surface names every value, its types unnamed |
+| SCN-REPO-155 | implemented | SURFACE rejects an entry point that exports everything of a file |
+| SCN-REPO-156 | implemented | osf init generates the console's session key |
+| SCN-REPO-157 | implemented | osf up names each setting that the console's sign-in misses |
+| SCN-REPO-158 | implemented | osf up names what the sign-in with GitHub misses, and a provider it does not know |

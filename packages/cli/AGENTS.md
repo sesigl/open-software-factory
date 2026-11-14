@@ -7,7 +7,7 @@ Adds rules for the cli library. The root `AGENTS.md` applies in full. Decisions:
 The only way a system test or another program may use the library:
 
 - Library: the exports of `src/index.ts` (`runProgram`, `UsageError`, `check`, `readInputs`, `writeText`,
-  `outputPath`, `packageVersion`), imported as `@opensoftware/cli`
+  `outputPath`, `packageVersion`, `healthOf`), imported as `@opensoftware/cli`
 
 The library's system tests import it by its package name and call it in their own process (ADR 0039). Files go
 through `sut.files`; `sut.files.path` gives their absolute path.

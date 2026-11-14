@@ -66,7 +66,8 @@ person removed by a merge loses access at the next request.
 | `factory-engineer` | The same, and change the factory from the UI (T-58, T-59) |
 | `admin` | The same, and store and delete secrets (T-57) |
 
-The library `@opensoftware/factory-files` reads a factory's files from a folder or from `git+<url>#<ref>` (the
+(Narrowed by ADR 0135: the library is `@opensoftware/factory-source` with the fetch only; the access file is read
+with `contracts`.) The library `@opensoftware/factory-files` reads a factory's files from a folder or from `git+<url>#<ref>` (the
 foreman's fetch of ADR 0124 moves there) and reads and checks the access file; `factory lint` reports its findings.
 The console reads it again at each request, a small file; when it cannot read it, it keeps the last one it read for 10
 minutes and then refuses everyone, and the sign-in page says why. Whoever may write to the factory's

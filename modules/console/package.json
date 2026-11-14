@@ -1,7 +1,7 @@
 {
   "name": "@opensoftware/console",
   "version": "0.7.0",
-  "description": "console: a read-only web view of a factory: its runs with their origin and evidence, and its configuration with links to Git.",
+  "description": "console: the web UI of a factory, where the people on its access list follow its runs and act on them.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",

@@ -1200,11 +1200,11 @@ by side.
 | `packages/testkit` | T-52 → T-56 (`fakes.oidc`, sign-in of `fakes.github`) → T-57 (`fakes.openbao`) → T-58 (`fakes.github`: commit, merge) → T-55 |
 | `modules/console` | T-52 (its tests on the page reader) → T-53 → T-56 → T-57 → T-58 → T-59 → T-60 → T-61 |
 | `packages/ui` (new) | T-54, its slices with T-56, T-57 and T-59; then T-55 with the first island |
-| `packages/factory-files` (new) | T-56 (read a factory, the access file) → T-58 (edits) → T-59 (skills) |
+| `packages/factory-source` (new) | T-56 (the fetch of a factory's folder; ADR 0135) |
 | `contracts` | T-56 (access file) → T-59 (lock) → T-61 |
-| `modules/factory-spec` | T-56 (`lint` of the access file) → T-58 (the check `factory`) → T-59 |
+| `modules/factory-spec` | T-56 (`lint` of the access file) → T-58 (`factory edit`, the check `factory`) → T-59 (the rules of skills) |
 | `modules/foreman` | T-56 (uses the library's fetch) → T-57 (a stage without its secret) → T-59 (pinned skills) → T-61 |
-| secrets port, `adapters/secrets/openbao` (new), `packages/sandbox-egress`, the two sandbox adapters | T-57 |
+| secrets port, `adapters/secrets/openbao` (new), `packages/sandbox-egress`, the two sandbox adapters | T-57 → T-62 |
 | forge port and its two adapters | T-58 |
 | `deploy/`, `tools/` setup commands | T-53 → T-56 → T-57 → T-58, each after the release of the packages it pins |
 | `e2e/` | T-57 → T-58 → T-59 |
@@ -1213,7 +1213,7 @@ by side.
 After T-51, these start together: the first two slices of T-52, the first slice of T-53 and the first slice of T-54.
 T-55 waits until a page needs its first island; the first release needs none (T-54). A slice of `deploy/` tests
 released packages (ADR 0095): it starts when the release it pins is published (`skills/release-packages`). Each new
-package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-module` and a first publish.
+package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-module` and a first publish.
 
 ### [x] T-51 · the web concept: vision scenarios and decisions (P0)
 
@@ -1501,13 +1501,13 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   (`CONSOLE_USER_HEADER`, ADR 0089), every person behind it may do everything, and the first screen is a table in
   Pico CSS's defaults.
 - **Build:**
-  - **The library `@opensoftware/factory-files`** (`packages/`, its own prefix): it reads a factory's files from a
-    folder or from `git+<url>#<ref>`, as the foreman does today (ADR 0124). The foreman's fetch moves here; a copy
-    fails DUP. For a private repository it takes a token from a documented variable and hands it to Git without
-    writing it to a file or a command line. T-58 and T-59 add to this library.
+  - **The library `@opensoftware/factory-source`** (`packages/`, its own prefix), with one job (ADR 0135): it gives a
+    factory's folder from a path or from `git+<url>#<ref>`, as the foreman does today (ADR 0124). The foreman's fetch
+    moves here; a copy fails DUP. For a private repository it takes a token from a documented variable and hands it to
+    Git without writing it to a file or a command line. Nothing else joins it: edits and skills go to `factory-spec`.
   - **The access file.** `access.yaml` beside `factory.yaml`: people by email, each with one role. Its schema is a new
-    format in `contracts/` (TypeSpec, JSON Schema, fixtures); the library reads and checks it, and `factory lint`
-    reports its findings. The console reads it at sign-in and again for each request, with a short cache, so a
+    format in `contracts/` (TypeSpec, JSON Schema, fixtures), which checks it (`validate("access", …)`); `factory lint`
+    reports its findings, and each reader keeps the small adapter it needs. The console reads it at sign-in and again for each request, with a short cache, so a
     removed person loses access after the next merge without a restart. When the file cannot be read, the console
     keeps the last one it read for a set time and then refuses everyone, and says why. The reference factory ships an
     `access.yaml` with an example person that `console doctor` refuses, like the example member of ADR 0114.
@@ -1614,20 +1614,18 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   and a profile without a provider works as today.
 - **Slices:**
   - [x] The ADR: the library, the session, the roles, the modes and the hook (ADR 0134).
-  - [ ] `@opensoftware/factory-files` with the fetch, used by the foreman (its own prefix; the foreman's `SCN-FORE`
+  - [ ] `@opensoftware/factory-source` with the fetch, used by the foreman (its own prefix; the foreman's `SCN-FORE`
     scenarios of ADR 0124 pass unchanged); its first publish.
-  - [ ] The access file in `contracts/`, the library and `factory lint` (`SCN-CTR`, the library's prefix,
-    `SCN-FSPEC`).
+  - [ ] The access file in `factory lint` (`SCN-FSPEC`); its format in `contracts/` is done (`SCN-CTR`).
   - [x] `fakes.oidc()` and GitHub's sign-in in `fakes.github` (`SCN-TK`).
   - [x] The hook, sign-in, session and sign-out in the console, with the sign-in page and the probe route
-    (`SCN-CONSOLE`). Until `@opensoftware/factory-files` is published, the console reads `access.yaml` with an
-    adapter of its own; the library takes it over with its first publish.
+    (`SCN-CONSOLE`). The console reads `access.yaml` with an adapter of its own (ADR 0135).
   - [x] The roles on every page and form (`SCN-CONSOLE`): the own sign-in and the proxy mode with an access file
     refuse a person who is not on it. The pages that need `factory-engineer` or `admin` come with T-57 and T-58 and
     check the role there.
   - [x] The shell and the runs list in the new look, with the two journeys and the console's own suite with
     `browser: chromium` (`SCN-CONSOLE`). The shell names the factory; its version follows with
-    `@opensoftware/factory-files`, and the cards in place of the table on a phone with T-60.
+    `@opensoftware/factory-source`, and the cards in place of the table on a phone with T-60.
   - [ ] `osf init`, `osf up`, the profile, the chart, `console doctor`, the tutorial; one scenario of the profile
     with sign-in on (`SCN-REPO`, `SCN-DIST`, `SCN-CONSOLE`). After the console's release.
 
@@ -1738,8 +1736,9 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
     - `close <repo> <number> [--delete-branch]`.
     - `prs` gets `--limit <n>` and the merge commit of a merged pull request.
     `@conformance` scenarios, in both adapters and in `fakes.github`.
-  - **Edits in `@opensoftware/factory-files`** (T-56): add and remove a skill, a secret reference and an egress host
-    of an agent, and declare a secrets provider, in a `factory.yaml` whose comments, order and anchors stay.
+  - **Edits as commands of `factory-spec`** (ADR 0135), which owns `factory.yaml`: `factory edit` adds and removes a
+    skill, a secret reference and an egress host of an agent, and declares a secrets provider, in a `factory.yaml`
+    whose comments, order and anchors stay. The console runs it as a separate process, as it runs a forge adapter.
   - **The flow in the console** (roles `admin` and `factory-engineer`): a form posts the change. The console reads
     the newest commit of the main branch, makes the edit, creates the branch `console/<what>-<that commit>-<hash of
     the edit>` from that commit, commits, opens the pull request with what changes and who asked for it, asks the
@@ -1820,7 +1819,7 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
 - **Slices:**
   - [ ] The ADR; the forge port's new operations in both adapters and `fakes.github` (`SCN-FORGE`, `SCN-FGITHUB`,
     `SCN-FFORGEJO`, `SCN-TK`).
-  - [ ] The edits in `@opensoftware/factory-files`, and `factory plan --check` (the library's prefix, `SCN-FSPEC`).
+  - [ ] `factory edit` and `factory plan --check` in `factory-spec` (`SCN-FSPEC`).
   - [ ] The flow and the page `/changes` in the console (`SCN-CONSOLE`).
   - [ ] The workflow with the check `factory` in the reference factory; the profile and the chart with a factory
     repository on a forge; `console doctor` (`SCN-DIST`, `SCN-CONSOLE`). After the releases above.
@@ -1842,7 +1841,7 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
     the format's own place for extensions (`metadata`): the secrets and the hosts the skill needs. Verify with the
     format's validator which values `metadata` takes; if only text, a list is one text with a fixed separator. A
     `SKILL.md` stays valid for every harness. Fix the key names in the ADR.
-  - **The rules in `@opensoftware/factory-files`**, reported by `factory lint` and shown by the console: the file
+  - **The rules in `factory lint`** (ADR 0135), shown by the console: the file
     exists, the front matter is valid, the name fits, the size stays inside the format's limits; an agent that uses a
     skill declares a secret for each secret the skill needs and allows each host in its sandbox's egress. A finding
     names the agent, the skill and what is missing.
@@ -1941,6 +1940,19 @@ live updates of the runs without a reload; a command palette; a second approver 
 policy of gatekeeper.
 
 ---
+
+### [ ] T-62 · `sandbox-egress` with one job (P2)
+
+- **Problem:** `@opensoftware/sandbox-egress` is "what every sandbox adapter shares" and exports 20 values: the spec
+  and its secrets, iron-proxy's configuration and start, its log, and the copy into a sandbox (ADR 0135).
+- **Build:** find the one job, or split it. Candidates: the spec and its secrets belong to the sandbox port's format in
+  `contracts/` (`sandbox-spec`); iron-proxy's configuration, start and log are the egress proxy, one library. Values
+  that only the library's own tests read are not its surface: the tests compute what they expect.
+- **Watch out:** both sandbox adapters and their `@conformance` scenarios pass unchanged; a release of each.
+- **Done when:** the library's surface names a handful of values with one job, and SURFACE passes.
+- **Slices:**
+  - [ ] The ADR with the split, and the libraries.
+  - [ ] Both sandbox adapters on them; their releases.
 
 ## Paid runs (last; started by a maintainer, manual)
 

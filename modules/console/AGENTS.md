@@ -7,11 +7,12 @@ Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR
 The only ways a system test or another program may use this module:
 
 - CLI: `console <command>` (see `README.md#commands`)
-- Web pages of `console serve` on `PORT`: `/`, `/runs/<runId>`, `/factory`, `/factory/agents/<name>`, `/inbox` and
-  `/pico.css`
-  (see `README.md#pages`). Read-only: any method but `GET` and `HEAD` answers 405, except the forms `POST /work`,
-  `POST /runs/<runId>/retry`, `POST /runs/<runId>/signals` and `POST /runs/<runId>/gates/<gateId>` with
-  `CONSOLE_USER_HEADER` (ADR 0089, ADR 0105, ADR 0118).
+- Web pages of `console serve` on `PORT` (see `README.md#pages`): `/`, `/runs/<runId>`, `/work`, `/factory`,
+  `/factory/agents/<name>`, `/inbox`, `/improvement` and `/health`; the sign-in `/signin`, `/signin/start`,
+  `/signin/callback` and `POST /signout` (ADR 0134); `/theme` (ADR 0133); the probe `/v1/ready`; and the files
+  `/pico.css`, `/_astro/<file>` and `/favicon.svg`. Any other method but `GET` and `HEAD` answers 405, except the forms
+  `POST /work`, `POST /runs/<runId>/retry`, `POST /runs/<runId>/signals` and `POST /runs/<runId>/gates/<gateId>` with
+  `CONSOLE_USER_HEADER` or `CONSOLE_SIGN_IN` (ADR 0089, ADR 0105, ADR 0118, ADR 0134).
 - Outside systems it calls: the foremen's HTTP API at `CONSOLE_FOREMAN_URL`, intake's at `CONSOLE_INTAKE_URL` and
   gatekeeper's at `CONSOLE_GATEKEEPER_URL` (`contracts/openapi/openapi.json`), only with `GET`, and with `POST` for the actions (intake's
   `/v1/work-items`, the foreman's `/v1/runs/<runId>/retry` and `/v1/runs/<runId>/signals`, gatekeeper's
@@ -20,7 +21,9 @@ The only ways a system test or another program may use this module:
   only, the model gateway at `CONSOLE_MODEL_URL` (one `POST /chat/completions` per route) and the harness started by
   `CONSOLE_HARNESS_COMMAND` (ACP `initialize`, ADR 0120), the trace store, and the sandbox adapter in
   `CONSOLE_SANDBOX_COMMAND`, only with its command `probe` (ADR 0120)
-- Input: the factory definition in `CONSOLE_FACTORY`
+- Input: the factory definition in `CONSOLE_FACTORY` and the access file in `CONSOLE_ACCESS`
+- With `CONSOLE_SIGN_IN`: the identity provider at `CONSOLE_OIDC_ISSUER`, or GitHub at `CONSOLE_GITHUB_URL` and
+  `CONSOLE_GITHUB_API_URL`
 - Server state: none
 - Environment variables: the list in `README.md#configuration` (generated from `src/config.schema.json`)
 
