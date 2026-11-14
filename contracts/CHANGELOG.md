@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.5.0](https://github.com/sesigl/open-software-factory/compare/contracts-v2.4.0...contracts-v2.5.0) (2026-11-14)
+
+
+### Features
+
+* sign-in groundwork (T-56) and the profile serves the Astro health page (T-53 done) ([#315](https://github.com/sesigl/open-software-factory/issues/315)) ([c5d9ab2](https://github.com/sesigl/open-software-factory/commit/c5d9ab286be4328bd313573790e8225e172f6953))
+* **tools:** one job and a listed surface for every package, and osf ready for the sign-in (ADR 0135, T-56) ([#318](https://github.com/sesigl/open-software-factory/issues/318)) ([00743d6](https://github.com/sesigl/open-software-factory/commit/00743d651d2a3a910b8d155959c0742847a7bab0))
+
 ## [2.4.0](https://github.com/sesigl/open-software-factory/compare/contracts-v2.3.0...contracts-v2.4.0) (2026-11-14)
 
 

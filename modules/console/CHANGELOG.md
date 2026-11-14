@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.8.0](https://github.com/sesigl/open-software-factory/compare/console-v0.7.0...console-v0.8.0) (2026-11-14)
+
+
+### Features
+
+* console doctor and factory lint check the sign-in, and the reference access.yaml (T-56) ([#319](https://github.com/sesigl/open-software-factory/issues/319)) ([6d77756](https://github.com/sesigl/open-software-factory/commit/6d77756b088c6f72e9c4d4e18387784043f00b67))
+* **console:** the console's own sign-in with OpenID Connect or GitHub (T-56) ([#316](https://github.com/sesigl/open-software-factory/issues/316)) ([ee922e5](https://github.com/sesigl/open-software-factory/commit/ee922e53b7ae49d1b5b303392fa6b85660f5ce9f))
+* **console:** the new look for sign-in and the runs, and roles behind a proxy (T-54, T-56) ([#317](https://github.com/sesigl/open-software-factory/issues/317)) ([95ed633](https://github.com/sesigl/open-software-factory/commit/95ed633d37ea86ac816975cf609a5b9873c703b4))
+* **tools:** one job and a listed surface for every package, and osf ready for the sign-in (ADR 0135, T-56) ([#318](https://github.com/sesigl/open-software-factory/issues/318)) ([00743d6](https://github.com/sesigl/open-software-factory/commit/00743d651d2a3a910b8d155959c0742847a7bab0))
+
 ## [0.7.0](https://github.com/sesigl/open-software-factory/compare/console-v0.6.0...console-v0.7.0) (2026-11-14)
 
 

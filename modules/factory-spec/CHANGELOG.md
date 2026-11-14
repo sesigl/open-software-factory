@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/sesigl/open-software-factory/compare/factory-spec-v0.8.0...factory-spec-v0.9.0) (2026-11-14)
+
+
+### Features
+
+* console doctor and factory lint check the sign-in, and the reference access.yaml (T-56) ([#319](https://github.com/sesigl/open-software-factory/issues/319)) ([6d77756](https://github.com/sesigl/open-software-factory/commit/6d77756b088c6f72e9c4d4e18387784043f00b67))
+
 ## [0.8.0](https://github.com/sesigl/open-software-factory/compare/factory-spec-v0.7.0...factory-spec-v0.8.0) (2026-11-14)
 
 
