@@ -1802,6 +1802,8 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
   - The pull request's author is the token's user; the person is in the body and in a trailer of the commit. No text
     of a form goes into YAML, a branch name or Markdown without escaping.
   - A run keeps the factory version it started with (ADR 0110). The page says that a change is live for the next run.
+  - The contract takes any text as an egress host (`egress: string[]`), and `factory edit` adds what it is given:
+    the console's form accepts only a host name, and names what it refused.
   - Not in this item: changing `access.yaml` from the UI.
 - **Realizes:** SCN-FACTORY-CODE-008 (the change from the UI), from T-51, and SCN-FACTORY-RUNTIME-009.
 - **First scenarios:** `commit` writes the files to the branch in one commit; `branch --from <commit>` starts there;
