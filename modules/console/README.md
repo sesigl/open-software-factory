@@ -370,3 +370,6 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-166 | implemented | A session before its end stays valid |
 | SCN-CONSOLE-167 | implemented | "console doctor" with the sign-in refuses an access file whose only admin is the example |
 | SCN-CONSOLE-168 | implemented | "console doctor" with the sign-in names a provider that does not answer |
+| SCN-CONSOLE-169 | implemented | "console doctor" with the sign-in of GitHub asks no OpenID Connect provider and accepts an admin beside the example |
+| SCN-CONSOLE-170 | implemented | "console doctor" finds the discovery of an issuer that is set with a slash at its end |
+| SCN-CONSOLE-171 | implemented | "console doctor" with the sign-in names the problem of an access file without an admin |

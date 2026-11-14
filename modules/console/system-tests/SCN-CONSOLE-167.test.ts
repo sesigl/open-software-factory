@@ -5,9 +5,9 @@ import { signInEnv } from "./signin.ts";
 scenario("SCN-CONSOLE-167", async ({ sut, fakes, given, when, then }) => {
   let env: Record<string, string> = {};
   await given(
-    'a console that signs in with OpenID Connect at a provider that answers, and an access file with "admin@example.com" as "admin"',
+    'a console that signs in with OpenID Connect at a provider that answers, and an access file with "admin@example.com" as "admin" and "ada@acme.dev" as "member"',
     async () => {
-      const setup = await signInEnv(sut, fakes, { "admin@example.com": "admin" });
+      const setup = await signInEnv(sut, fakes, { "admin@example.com": "admin", "ada@acme.dev": "member" });
       const foreman = await healthyServer(fakes, [], TOKEN_ROUTES.foreman);
       env = { ...setup.env, CONSOLE_FOREMAN_URL: foreman.url };
     },
