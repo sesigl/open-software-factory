@@ -61,8 +61,8 @@ export interface Sut {
    * folder; the module gets them as the environment variables `INPUT` and `OUTPUT`.
    */
   files: {
-    /** Writes the file; `executable` lets the owner run it, like a plugin or a fake program. */
-    put(path: string, content: string, options?: { executable?: boolean }): Promise<void>;
+    /** Writes the file, a text as UTF-8 or bytes as they are; `executable` lets the owner run it, like a plugin. */
+    put(path: string, content: string | Uint8Array, options?: { executable?: boolean }): Promise<void>;
     read(path: string): Promise<string>;
     list(dir?: string): Promise<string[]>;
     remove(path: string): Promise<void>;

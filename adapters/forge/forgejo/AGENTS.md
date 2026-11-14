@@ -6,8 +6,8 @@ Adds rules for this adapter. The root `AGENTS.md` applies in full. Decision: ADR
 
 The only ways a system test or another program may use this adapter:
 
-- CLI: `forge-forgejo branch | open-pr | pr | check | comment | protect | merge | webhook | event` (see
-  `README.md#commands`)
+- CLI: `forge-forgejo branch | commit | open-pr | pr | prs | check | comment | comments | protect | rules | close |
+  merge | webhook | hooks | unhook | event` (see `README.md#commands`)
 - Input: the arguments, and for `event` a delivery file `{"headers", "body"}`
 - Output: JSON lines on standard output
 - State: none of its own. The forge holds every branch, pull request, status, rule and webhook

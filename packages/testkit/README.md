@@ -43,7 +43,8 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
 - `sut.files`: `put`, `read`, `list`, `remove` and `clear` in the module's input and output folders. Every path
   starts with `$INPUT/` or `$OUTPUT/` and stays inside that folder; any other path fails the test. `path` gives
   the absolute path of a file there, for a library in `packages/` whose functions take paths (ADR 0039).
-  `put(path, content, { executable: true })` writes a file its owner can run, like a fake program or plugin.
+  `put(path, content, { executable: true })` writes a file its owner can run, like a fake program or plugin. `put`
+  writes a text as UTF-8 and a `Uint8Array`, such as a `Buffer`, byte for byte.
 - `sut.readme`: `quickStartArgs()` (the arguments of the README's `npx <package> ...` line) and
   `quickStartOutput()` (the first `$OUTPUT/<file>` it names).
 - `sut.git`: `$INPUT` is a Git repository with a fixed author and clock.
@@ -252,7 +253,17 @@ Every server, client and subscription stops when the scenario ends, before the f
   read), which it lists by state and page, three-way merges with conflicts, commit statuses and the combined status, check runs that a test adds with
   `checkRun(pr, { name, status, conclusion, title })` and that it lists by page (`noChecksToken` may not read them
   and gets 403, [ADR 0104](../../docs/decisions/0104-forge-github-check-runs.md)),
-  comments, reviews, which it lists per pull request, branch protection that holds for admins only with `enforce_admins`, and webhooks, which it lists, updates and deletes: a
+  comments, reviews, which it lists per pull request, branch protection that holds for admins only with `enforce_admins` and that it reads back (404
+  `Branch not protected` without one), closing a pull request, the Git Data API's refs, commits, blobs (`utf-8` or `base64`, named
+  by Git's SHA) and trees on a `base_tree` of entries with their text or a blob's `sha`; `fileBytes(repository,
+  path, ref)` gives a file's bytes, the rules of the rulesets that `addRuleset(repository, { branches, checks,
+  approvals })` added for a branch (`GET .../rules/branches/{branch}`, not enforced on merges), which moves a branch only forward unless the update is forced
+  ([ADR 0136](../../docs/decisions/0136-forge-port-changes-from-the-ui.md)), auto-merge through `POST /graphql`
+  (a pull request's `mergeStateStatus`, its `autoMergeRequest` and its repository's `autoMergeAllowed`, and
+  `enablePullRequestAutoMerge`, refused unless `allowAutoMerge(repository)` allowed it and for a pull request that
+  can merge now, and failing the scenario when auto-merge is on already, since GitHub does not document that
+  answer; a commit status that makes the merge rules hold merges it), `calls()` with each call it answered as
+  `<method> <path with its query>`, and webhooks, which it lists, updates and deletes: a
   signed `ping` when one is created, then
   `pull_request`, `pull_request_review`, `issue_comment` and `issues` (`opened`, `labeled`, and `unlabeled` after `unlabel(repository, number, label)`) deliveries with
   `X-Hub-Signature-256`, sent only to URLs on
@@ -540,3 +551,14 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-162 | implemented | fakes.oidc refuses a sign-in when the test named nobody |
 | SCN-TK-163 | implemented | fakes.github signs in the person a test names with GitHub's OAuth flow and gives their primary email |
 | SCN-TK-164 | implemented | sut.pages reads the theme that the server chose for a page |
+| SCN-TK-165 | implemented | fakes.github answers the protection of a protected branch, and 404 for a branch without |
+| SCN-TK-166 | implemented | fakes.github closes a pull request without merging and deletes its branch's ref |
+| SCN-TK-167 | implemented | fakes.github writes one commit of several files with the Git Data API |
+| SCN-TK-168 | implemented | fakes.github moves a branch back only when the update is forced |
+| SCN-TK-169 | implemented | fakes.github merges a pull request with auto-merge once its required check passes |
+| SCN-TK-170 | implemented | fakes.github refuses auto-merge where the repository does not allow it and for a pull request that can merge now |
+| SCN-TK-171 | implemented | fakes.github answers the auto-merge request of a pull request whose auto-merge a module enabled |
+| SCN-TK-172 | implemented | Enabling auto-merge twice in fakes.github fails the test with the pull request named |
+| SCN-TK-173 | implemented | fakes.github lists the calls a module made, with their query |
+| SCN-TK-174 | implemented | fakes.github keeps a blob's bytes and puts it into a tree by its SHA |
+| SCN-TK-175 | implemented | fakes.github answers the rules of the rulesets that apply to a branch |

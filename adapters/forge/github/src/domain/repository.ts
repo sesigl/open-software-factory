@@ -98,6 +98,41 @@ export function protection(checks: string[], approvals: number) {
   };
 }
 
+/** The parts of GitHub's branch protection that rules reads. */
+export interface Protection {
+  required_status_checks?: { contexts?: string[] } | null;
+  required_pull_request_reviews?: { required_approving_review_count?: number } | null;
+}
+
+/** A rule of a ruleset that applies to a branch, as GET /rules/branches/{branch} answers it; other types are ignored. */
+export interface BranchRule {
+  type: string;
+  parameters?: {
+    required_status_checks?: { context: string }[];
+    required_approving_review_count?: number;
+  };
+}
+
+/**
+ * The checks and approvals a branch requires: the checks of its protection and of its rulesets, each name once in
+ * that order, and the most approvals that one of them asks for.
+ */
+export function required(found: Protection, rules: BranchRule[]): { checks: string[]; approvals: number } {
+  const checks = [
+    ...(found.required_status_checks?.contexts ?? []),
+    ...rules
+      .filter((rule) => rule.type === "required_status_checks")
+      .flatMap((rule) => (rule.parameters?.required_status_checks ?? []).map((check) => check.context)),
+  ];
+  const approvals = [
+    found.required_pull_request_reviews?.required_approving_review_count ?? 0,
+    ...rules
+      .filter((rule) => rule.type === "pull_request")
+      .map((rule) => rule.parameters?.required_approving_review_count ?? 0),
+  ];
+  return { checks: [...new Set(checks)], approvals: Math.max(...approvals) };
+}
+
 /** The fields of GitHub's comment JSON that the port prints. */
 export interface CommentJson {
   id: number;

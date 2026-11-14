@@ -18,14 +18,16 @@ export interface GitHub {
   request<T>(method: string, path: string, body?: unknown): Promise<T>;
   /** The login of the token's user. */
   user(): Promise<string>;
+  /** Runs a query or mutation of GitHub's GraphQL API and gives its `data`; GitHub's errors are a GitHubError. */
+  graphql<T>(query: string, variables: Record<string, unknown>): Promise<T>;
 }
 
 export function github(repo: string, env: NodeJS.ProcessEnv = process.env): GitHub {
   const token = env.FORGE_TOKEN;
   check(token, "set FORGE_TOKEN to a GitHub token");
   const root = (env.FORGE_URL || "https://api.github.com").replace(/\/+$/, "");
-  const send = async <T>(method: string, path: string, body?: unknown, under = `/repos/${repo}`): Promise<T> => {
-    const response = await fetch(`${root}${under}${path}`, {
+  const send = async <T>(method: string, path: string, body?: unknown, under = `${root}/repos/${repo}`): Promise<T> => {
+    const response = await fetch(`${under}${path}`, {
       method,
       headers: {
         authorization: `Bearer ${token}`,
@@ -40,7 +42,19 @@ export function github(repo: string, env: NodeJS.ProcessEnv = process.env): GitH
     return JSON.parse(answer) as T;
   };
   return {
-    user: () => send<{ login: string }>("GET", "/user", undefined, "").then((me) => me.login),
+    user: () => send<{ login: string }>("GET", "/user", undefined, root).then((me) => me.login),
+    // GraphQL is at /graphql of api.github.com, and at /api/graphql of GitHub Enterprise Server, beside /api/v3.
+    graphql: async <T>(query: string, variables: Record<string, unknown>): Promise<T> => {
+      const graph = root.replace(/\/v3$/, "");
+      const answer = await send<{ data: T; errors?: { message: string }[] }>(
+        "POST",
+        "/graphql",
+        { query, variables },
+        graph,
+      );
+      if (answer.errors?.length) throw new GitHubError(422, answer.errors.map((error) => error.message).join("; "));
+      return answer.data;
+    },
     async request<T>(method: string, path: string, body?: unknown): Promise<T> {
       try {
         return await send<T>(method, path, body);

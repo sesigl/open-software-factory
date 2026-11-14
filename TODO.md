@@ -1819,8 +1819,11 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
   the factory in the UI, the pull request merges after its check without another person, the page shows "live", and
   the next run has that factory version.
 - **Slices:**
-  - [ ] The ADR; the forge port's new operations in both adapters and `fakes.github` (`SCN-FORGE`, `SCN-FGITHUB`,
+  - [x] The ADR; the forge port's new operations in both adapters and `fakes.github` (`SCN-FORGE`, `SCN-FGITHUB`,
     `SCN-FFORGEJO`, `SCN-TK`).
+  - [x] The forge port, hardened for the console: `rules` also reads GitHub's rulesets, `commit` writes a file's
+    bytes exactly, `merge --when-green` twice is one request, `prs --limit` stops paging, and `close` without
+    `--delete-branch` keeps the branch (`SCN-FORGE`, `SCN-FGITHUB`, `SCN-TK`).
   - [x] `factory edit` and `factory plan --check` in `factory-spec` (`SCN-FSPEC`).
   - [ ] The flow and the page `/changes` in the console (`SCN-CONSOLE`).
   - [ ] The workflow with the check `factory` in the reference factory; the profile and the chart with a factory

@@ -30,7 +30,8 @@ npx @opensoftware/forge-forgejo event delivery.json                # a pr.opened
   `the forge refused the token`; a repository it does not have exits 1 with `no repository <repo>`.
 - **Checks** are commit statuses with the check's name as their context. `pr` lists the latest status per name.
 - **Merge rules** are one branch protection rule named after the branch: the required status checks and the number
-  of approvals. `protect` replaces the rule's checks and approvals each time.
+  of approvals. `protect` replaces the rule's checks and approvals each time. `rules` reads that rule back; a branch
+  without one requires nothing.
 - **Merge state.** Forgejo checks whether a new pull request can merge in the background and reports it as not
   mergeable until it knows. `pr` waits up to 10 seconds for an open pull request to become mergeable, so a pull
   request that conflicts with its base takes 10 seconds to read.
@@ -38,6 +39,15 @@ npx @opensoftware/forge-forgejo event delivery.json                # a pr.opened
   its base; `merge` tries again for up to 10 seconds and then exits 1 with `the forge refused to merge #<number>: it
   conflicts with its base, or the forge is still checking it`. When the merge rules refuse it, `merge` exits 1 with
   `the forge refused to merge #<number>: <Forgejo's reason>`.
+- **Merge when green** is Forgejo's merge when checks succeed (ADR 0136). `merge --when-green` first merges as
+  `merge` does, which Forgejo refuses while a required check has not passed, even for an admin. It then schedules
+  the merge with `merge_when_checks_succeed` and prints `{"queued": true}`; Forgejo merges in the background once
+  the required statuses pass. Forgejo answers "Please try again later" to both calls while it checks the pull
+  request, and both are tried again for up to 10 seconds. A pull request that is scheduled already, which Forgejo
+  answers with 409 `already scheduled to auto merge`, prints `{"queued": true}` again.
+- **Commit** uses Forgejo's API that changes several files in one commit (`POST /repos/{owner}/{repo}/contents`): a
+  file the branch has is updated by its blob's SHA, any other is created.
+- **Close** sets the pull request's state to `closed`; with `--delete-branch` it then deletes the head branch.
 - **Webhooks** are of type `forgejo` with JSON content, the events of `--event` or else `pull_request`,
   `pull_request_review_approved`, `pull_request_review_rejected` and `pull_request_review_comment`, and the secret
   `FORGE_WEBHOOK_SECRET`. A second `webhook` for the same URL updates that webhook and replaces its events.
@@ -55,15 +65,18 @@ Forgejo answers `pull_request` with all of its pull request events.
 
 | Command | What it does |
 | --- | --- |
-| `forge-forgejo branch <repo> <branch> [--from <ref>]` | Create a branch from the default branch or the ref; print `{"branch", "sha"}`. |
+| `forge-forgejo branch <repo> <branch> [--from <ref>]` | Create a branch from the default branch or the ref, a branch or a commit; print `{"branch", "sha"}`. |
+| `forge-forgejo commit <repo> <branch> --message <text> <path>=<file>...` | Write one commit with these files, the contents of the local files, on top of the branch's head; print `{"sha"}`. |
 | `forge-forgejo open-pr <repo> <head> --title <text> [--body <text>] [--base <branch>]` | Open a pull request; print `{"number", "url", "head", "base", "sha"}`. |
 | `forge-forgejo pr <repo> <number>` | Print the pull request's state, `mergeable`, head and merge commit, author, labels, draft, first 100 changed paths, and checks. |
-| `forge-forgejo prs <repo> [--head <prefix>] [--state open\|closed\|all]` | Print each pull request whose branch starts with the prefix, the highest number first, as `{"number", "url", "title", "state", "head", "base", "author", "created", "draft", "review"}`; `review` is `approved`, `changes_requested` or `none` (ADR 0073). |
+| `forge-forgejo prs <repo> [--head <prefix>] [--state open\|closed\|all] [--limit <n>]` | Print each pull request whose branch starts with the prefix, the highest number first and at most n, reading only the pages of the newest it needs, as `{"number", "url", "title", "state", "head", "base", "author", "created", "draft", "review"}`, a merged one with its `mergeCommit`; `review` is `approved`, `changes_requested` or `none` (ADR 0073). |
 | `forge-forgejo check <repo> <sha> <name> <pending\|success\|failure\|error> [--description <text>] [--url <url>]` | Post a check on a commit. |
 | `forge-forgejo comment <repo> <number> <text>` | Comment on a pull request; print `{"id", "url"}`. |
 | `forge-forgejo comments <repo> <number>` | Print the comments of the conversation, oldest first, as `{"id", "url", "author", "time", "text", "mine"}`. |
 | `forge-forgejo protect <repo> <branch> [--check <name>]... [--approvals <n>]` | Set the branch's merge rules. |
-| `forge-forgejo merge <repo> <number> [--method merge\|squash\|rebase]` | Merge; print `{"sha"}` of the merge commit. |
+| `forge-forgejo rules <repo> <branch>` | Print the checks and approvals the branch requires as `{"checks", "approvals"}`. |
+| `forge-forgejo close <repo> <number> [--delete-branch]` | Close a pull request without merging, and delete its branch; print `{"number", "state"}`. |
+| `forge-forgejo merge <repo> <number> [--method merge\|squash\|rebase] [--when-green]` | Merge; print `{"sha"}` of the merge commit. With `--when-green`, ask the forge to merge once the required checks pass, and print `{"queued": true}`, unless it can merge now. |
 | `forge-forgejo webhook <repo> <url> [--event <name>]...` | Register one webhook for the port's events, by default pull requests; print `{"id", "url", "events", "active"}`. |
 | `forge-forgejo hooks <repo>` | Print each webhook of the repository as `{"id", "url", "events", "active"}`. |
 | `forge-forgejo unhook <repo> <id>` | Remove a webhook; print `{"id", "removed"}`, with `removed` false when it had none. |

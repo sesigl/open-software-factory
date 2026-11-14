@@ -1,7 +1,7 @@
 @port=forge @owner=maintainers
 Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
-  A forge adapter is a program with the commands branch, open-pr, pr, prs, check, comment, protect, merge, webhook,
-  hooks, unhook, comments and event. It reaches the forge at FORGE_URL with the token FORGE_TOKEN, and signs and checks webhooks with
+  A forge adapter is a program with the commands branch, commit, open-pr, pr, prs, check, comment, protect, rules,
+  close, merge, webhook, hooks, unhook, comments and event. It reaches the forge at FORGE_URL with the token FORGE_TOKEN, and signs and checks webhooks with
   FORGE_WEBHOOK_SECRET. A repository is "<owner>/<name>". event turns one webhook delivery into a pr.opened@v1,
   pr.reviewed@v1 or pr.closed@v1 CloudEvent from contracts (ADR 0057), and a label added to an issue into an
   issue.labeled@v1 (ADR 0065). The test forge has the user "tester" and the
@@ -10,7 +10,8 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
   "issue.labeled" or "push", and each adapter maps them to its forge's events (ADR 0060). pr names the author,
   labels and changed files, and comments lists a pull request's conversation, which gatekeeper reads (ADR 0062). prs
   lists the pull requests whose branch starts with a prefix, with their review state, which the console's inbox reads
-  (ADR 0073).
+  (ADR 0073). commit, rules, close and merge --when-green let the console change the factory with a pull request
+  that the forge merges once its required checks pass (ADR 0136).
 
   @id=SCN-FORGE-001 @status=implemented @conformance
   Scenario: A branch starts at the head commit of the default branch
@@ -254,3 +255,75 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     When the client runs "prs tester/web" and "prs tester/web --state all"
     Then the first prints nothing
     And the second prints the pull request with the state "merged"
+
+  @id=SCN-FORGE-035 @status=implemented @conformance
+  Scenario: commit writes a changed file and a new file to a branch as one commit
+    Given the branch "console/add-skill" of "tester/web" made from "main", whose "app.js" holds "export const app = 1;"
+    When the client runs "commit tester/web console/add-skill --message 'Add the skill review' app.js=<file> skills/review/SKILL.md=<file>"
+    Then commit prints the SHA of the branch's new head, which is not its former head
+    And the branch holds both files with the contents of the local files, and "main" still holds the old "app.js"
+
+  @id=SCN-FORGE-036 @status=implemented @conformance
+  Scenario: commit to a branch the repository does not have is named in the error
+    When the client runs "commit tester/web console/missing --message 'x' factory.yaml=<file>"
+    Then the command exits with code 1
+    And it prints "no branch tester/web:console/missing"
+
+  @id=SCN-FORGE-037 @status=implemented @conformance
+  Scenario: branch starts from a commit
+    Given the commit of "main" of "tester/web", and a later commit on "main"
+    When the client runs "branch tester/web console/at-commit --from <the first commit>"
+    Then branch prints the new branch with the first commit's SHA
+
+  @id=SCN-FORGE-038 @status=implemented @conformance
+  Scenario: merge --when-green waits for the required check and the forge merges once it passes
+    Given "main" of "tester/web" requires the check "factory", the repository allows a merge when the checks pass, and an open pull request whose check "factory" is pending
+    When the client runs "merge tester/web <number> --when-green", then posts "factory" as "success" on its head
+    Then merge prints "queued" true, and the pull request was still open before the check passed
+    And the forge then merges the pull request
+
+  @id=SCN-FORGE-039 @status=implemented @conformance
+  Scenario: rules prints the checks and approvals a branch requires
+    Given "main" of "tester/web" requires the checks "factory" and "verify" and one approval, and "dev" requires nothing
+    When the client runs "rules tester/web main" and "rules tester/web dev"
+    Then the first prints the checks "factory" and "verify" and the approvals 1
+    And the second prints no checks and the approvals 0
+
+  @id=SCN-FORGE-040 @status=implemented @conformance
+  Scenario: close closes a pull request without merging and deletes its branch
+    Given an open pull request in "tester/web" from "console/add-skill"
+    When the client runs "close tester/web <number> --delete-branch"
+    Then close prints the number and the state "closed"
+    And the repository has no branch "console/add-skill"
+
+  @id=SCN-FORGE-041 @status=implemented @conformance
+  Scenario: prs takes a limit and names the merge commit of a merged pull request
+    Given three pull requests in "tester/web", the newest of them merged
+    When the client runs "prs tester/web --state all --limit 2"
+    Then prs prints two lines, the newest first, and the merged one has its merge commit
+
+  @id=SCN-FORGE-042 @status=implemented @conformance
+  Scenario: merge --when-green merges at once when the required check already passed
+    Given "main" of "tester/web" requires the check "factory", and an open pull request whose check "factory" is "success"
+    When the client runs "merge tester/web <number> --when-green"
+    Then merge prints the merge commit, and the pull request is merged
+
+  @id=SCN-FORGE-043 @status=implemented @conformance
+  Scenario: close without --delete-branch keeps the pull request's branch
+    Given an open pull request in "tester/web" from "console/add-skill"
+    When the client runs "close tester/web <number>"
+    Then close prints the number and the state "closed"
+    And the repository still has the branch "console/add-skill" at the pull request's head commit
+
+  @id=SCN-FORGE-044 @status=implemented @conformance
+  Scenario: merge --when-green on a pull request that is queued already prints "queued" again
+    Given "main" of "tester/web" requires the check "factory", the repository allows a merge when the checks pass, and an open pull request whose check "factory" is pending
+    And the client ran "merge tester/web <number> --when-green"
+    When the client runs "merge tester/web <number> --when-green" again
+    Then merge prints "queued" true and exits with code 0, and the pull request is still open
+
+  @id=SCN-FORGE-045 @status=implemented @conformance
+  Scenario: commit writes a file's bytes exactly, also bytes that are not UTF-8
+    Given the branch "console/add-logo" of "tester/web" made from "main"
+    When the client runs "commit tester/web console/add-logo --message 'Add the logo' logo.bin=<file>" with a file whose bytes are not UTF-8
+    Then the branch's "logo.bin" holds exactly the bytes of the local file

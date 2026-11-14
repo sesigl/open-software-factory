@@ -1,5 +1,6 @@
-// prs <repo> [--head <prefix>] [--state open|closed|all]: the pull requests whose branch starts with a prefix, the
-// highest number first, each with its review state (ADR 0073).
+// prs <repo> [--head <prefix>] [--state open|closed|all] [--limit <n>]: the pull requests whose branch starts with a
+// prefix, the highest number first and at most n, each with its review state (ADR 0073) and, when merged, its merge
+// commit (ADR 0136).
 import { check, type Outcome } from "@opensoftware/cli";
 import type { Repository } from "../adapters/forgejo.ts";
 import { LIST_STATES, type Review, reviewOf } from "../domain/reviews.ts";
@@ -13,23 +14,33 @@ type Listed = Pull & { created_at: string };
 /** The most pages prs reads of one list: 1,000 pull requests, or 1,000 reviews of one. */
 const PAGES = 20;
 
-/** Forgejo pages its answers; this reads pages until one is not full. */
-async function pages<T>(api: Repository, path: string): Promise<T[]> {
+/**
+ * Forgejo pages its answers; this reads pages until one is not full, and keeps the items that `keep` takes. It stops
+ * once it kept `most`: Forgejo lists the newest pull requests first.
+ */
+async function pages<T>(
+  api: Repository,
+  path: string,
+  keep: (item: T) => boolean = () => true,
+  most = Number.POSITIVE_INFINITY,
+): Promise<T[]> {
   const all: T[] = [];
   const joiner = path.includes("?") ? "&" : "?";
   for (let page = 1; page <= PAGES; page++) {
     const batch = await api.call<T[]>("GET", `${path}${joiner}limit=${LIMIT}&page=${page}`);
-    all.push(...batch);
-    if (batch.length < LIMIT) break;
+    all.push(...batch.filter(keep));
+    if (batch.length < LIMIT || all.length >= most) break;
   }
   return all;
 }
 
-export async function prs(repo: string | undefined, head = "", state = "open"): Promise<Outcome> {
+export async function prs(repo: string | undefined, head = "", state = "open", limit?: string): Promise<Outcome> {
   const api = forge(repo);
   check(LIST_STATES.includes(state), `--state is one of ${LIST_STATES.join(", ")}`);
-  const listed = await pages<Listed>(api, `/pulls?state=${state}`);
-  const chosen = listed.filter((pull) => pull.head.ref.startsWith(head)).sort((a, b) => b.number - a.number);
+  const most = limit === undefined ? Number.POSITIVE_INFINITY : Number(limit);
+  check(limit === undefined || (Number.isInteger(most) && most >= 1), "--limit takes a number, like --limit 20");
+  const listed = await pages<Listed>(api, `/pulls?state=${state}`, (pull) => pull.head.ref.startsWith(head), most);
+  const chosen = listed.sort((a, b) => b.number - a.number).slice(0, most);
   const lines = await Promise.all(
     chosen.map(async (pull) => {
       const reviews = await pages<Review>(api, `/pulls/${pull.number}/reviews`);
@@ -44,6 +55,7 @@ export async function prs(repo: string | undefined, head = "", state = "open"): 
         created: pull.created_at,
         draft: pull.draft === true,
         review: reviewOf(reviews),
+        ...(pull.merged ? { mergeCommit: pull.merge_commit_sha } : {}),
       });
     }),
   );

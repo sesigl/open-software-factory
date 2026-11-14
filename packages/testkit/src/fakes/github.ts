@@ -1,8 +1,9 @@
 // An in-process fake of the part of GitHub's REST API that a forge client calls (ADR 0058), with the same Forge
 // interface as fakes.forge. It keeps repositories with their commits and files, branches, pull requests, commit
-// statuses, check runs, comments, reviews, branch protection, issues with labels and webhooks. Webhooks deliver signed events to URLs on the local
-// host. IDs, SHAs and times come from counters and the fixed clock. A call it does not know fails the scenario.
-import { createHmac } from "node:crypto";
+// statuses, check runs, comments, reviews, branch protection, auto-merge, issues with labels and webhooks. Webhooks
+// deliver signed events to URLs on the local host. IDs, SHAs and times come from counters and the fixed clock. A call
+// it does not know fails the scenario.
+import { createHash, createHmac } from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import { FIXED_DATE } from "../support/process.ts";
@@ -49,6 +50,20 @@ export interface FakeGitHub extends Forge {
   oauth: { clientId: string; clientSecret: string };
   /** The person whom the next sign-in signs in; `verified` is true unless set. */
   signIn(person: { login: string; email: string; name?: string; verified?: boolean }): void;
+  /**
+   * Allows auto-merge in the repository, as its setting "Allow auto-merge" does; a new repository does not allow it,
+   * as on GitHub (ADR 0136).
+   */
+  allowAutoMerge(repository: string): Promise<void>;
+  /** Each call the fake answered so far, oldest first, as `<method> <path with its query>`, like `GET /user`. */
+  calls(): string[];
+  /** The bytes of a file on a branch or at a commit, or undefined when it has no such file; `file` gives its text. */
+  fileBytes(repository: string, path: string, ref: string): Promise<Buffer | undefined>;
+  /**
+   * Adds an active ruleset of the repository that requires the checks and approvals on the branches it names, as
+   * `GET /repos/{owner}/{repo}/rules/branches/{branch}` answers it. The fake does not enforce rulesets on merges.
+   */
+  addRuleset(repository: string, ruleset: { branches: string[]; checks?: string[]; approvals?: number }): Promise<void>;
 }
 
 export interface RunningGitHub {
@@ -97,6 +112,8 @@ interface Pull {
   mergeCommit: string | null;
   /** False until a client read the pull request once: GitHub answers `mergeable: null` while it computes it. */
   computed: boolean;
+  /** Auto-merge as a person enabled it: the fake merges with this method once the merge rules hold. */
+  autoMerge?: { method: string; user: string; enabledAt: string };
   createdAt: string;
   updatedAt: string;
   closedAt: string | null;
@@ -159,6 +176,9 @@ interface Repository {
   reviews: { id: number; number: number; user: string; state: string; body: string }[];
   rules: Map<string, Rule>;
   hooks: Hook[];
+  /** The repository's setting "Allow auto-merge". */
+  autoMergeAllowed: boolean;
+  rulesets: { id: number; branches: string[]; checks: string[]; approvals: number }[];
 }
 
 /** An answer other than a success: GitHub's status and message. */
@@ -172,8 +192,24 @@ class Answer extends Error {
 
 export async function startGitHub(): Promise<RunningGitHub> {
   const commits = new Commits();
+  // The trees of the Git Data API: a tree is the files of a commit, named by a hash of their paths and texts.
+  const trees = new Map<string, Files>();
+  // The blobs of the Git Data API by their Git SHA. A file's content is its bytes, one character per byte (latin1);
+  // the text that a test or a tree entry gives is UTF-8.
+  const blobs = new Map<string, string>();
+  const bytesOf = (text: string): string => Buffer.from(text).toString("latin1");
+  const filesOf = (files: Record<string, string>): Files =>
+    Object.fromEntries(Object.entries(files).map(([path, text]) => [path, bytesOf(text)]));
+  const treeOf = (files: Files): string => {
+    const sha = createHash("sha1")
+      .update(JSON.stringify(Object.entries(files).sort()))
+      .digest("hex");
+    trees.set(sha, { ...files });
+    return sha;
+  };
   const repositories = new Map<string, Repository>();
   const problems: string[] = [];
+  const called: string[] = [];
   const deliveries: Promise<void>[] = [];
   let ids = 0;
   let seconds = 0;
@@ -342,8 +378,11 @@ export async function startGitHub(): Promise<RunningGitHub> {
     return pr;
   };
 
-  /** The merge rules of the base branch, when they hold for this person: admins pass unless they are enforced. */
-  const refusal = (repo: Repository, pr: Pull, user: string): string | undefined => {
+  /**
+   * Why the merge rules of the base branch refuse this person: admins pass unless the rules are enforced. Without a
+   * person, as for auto-merge, they hold for everyone.
+   */
+  const refusal = (repo: Repository, pr: Pull, user?: string): string | undefined => {
     const rule = repo.rules.get(pr.base);
     if (!rule || (user === OWNER && !rule.enforceAdmins)) return undefined;
     const head = tip(repo, pr.head);
@@ -385,6 +424,16 @@ export async function startGitHub(): Promise<RunningGitHub> {
       sender: userJson(user),
     });
     return sha;
+  };
+
+  /** GitHub's `mergeStateStatus` of an open pull request: a conflict, a merge the rules refuse, or one that can merge. */
+  const mergeState = (repo: Repository, pr: Pull): string =>
+    !mergeable(repo, pr) ? "DIRTY" : refusal(repo, pr) ? "BLOCKED" : "CLEAN";
+  /** Merges each open pull request with auto-merge whose merge rules now hold, as the person who enabled it. */
+  const autoMerge = (repo: Repository) => {
+    for (const pr of repo.pulls)
+      if (pr.autoMerge && pr.state === "open" && mergeState(repo, pr) === "CLEAN")
+        mergePull(repo, pr, pr.autoMerge.user, pr.autoMerge.method);
   };
 
   const review = (repo: Repository, pr: Pull, user: string, event: string, body: string) => {
@@ -451,7 +500,7 @@ export async function startGitHub(): Promise<RunningGitHub> {
   /** Commits the files on top of `from` onto `branch`, creating the branch when it is new. */
   const commitOn = (repo: Repository, branch: string, from: string, message: string, files: Files) => {
     const parent = tip(repo, from);
-    const sha = commits.add([parent], message, { ...commits.get(parent)?.files, ...files });
+    const sha = commits.add([parent], message, { ...commits.get(parent)?.files, ...filesOf(files) });
     repo.branches.set(branch, sha);
     return sha;
   };
@@ -587,6 +636,7 @@ export async function startGitHub(): Promise<RunningGitHub> {
           createdAt: now(),
         };
         repo.statuses.push(status);
+        autoMerge(repo);
         return [
           201,
           {
@@ -722,6 +772,175 @@ export async function startGitHub(): Promise<RunningGitHub> {
         ];
       },
     ],
+    [
+      "GET",
+      /^\/git\/ref\/heads\/(.+)$/,
+      (repo, [branch = ""]) => {
+        const name = decodeURIComponent(branch);
+        const sha = repo.branches.get(name);
+        if (!sha) throw new Answer(404, "Not Found");
+        return [200, { ref: `refs/heads/${name}`, object: { sha, type: "commit" } }];
+      },
+    ],
+    [
+      "GET",
+      /^\/git\/commits\/([0-9a-f]{40})$/,
+      (_repo, [sha = ""]) => {
+        const found = commits.get(sha);
+        if (!found) throw new Answer(404, "Not Found");
+        return [
+          200,
+          {
+            sha,
+            message: found.message,
+            tree: { sha: treeOf(found.files) },
+            parents: found.parents.map((p) => ({ sha: p })),
+          },
+        ];
+      },
+    ],
+    [
+      "POST",
+      /^\/git\/blobs$/,
+      (repo, _match, body) => {
+        if (body.encoding !== "base64" && body.encoding !== "utf-8")
+          throw new Answer(422, "Invalid request.\n\nencoding must be utf-8 or base64.");
+        const bytes = Buffer.from(String(body.content ?? ""), body.encoding === "base64" ? "base64" : "utf8");
+        // Git names a blob by the SHA-1 of its header and its bytes.
+        const header = Buffer.from(`blob ${bytes.length}\0`);
+        const sha = createHash("sha1")
+          .update(Buffer.concat([header, bytes]))
+          .digest("hex");
+        blobs.set(sha, bytes.toString("latin1"));
+        return [201, { sha, url: `${url}/repos/${OWNER}/${repo.name}/git/blobs/${sha}` }];
+      },
+    ],
+    [
+      "POST",
+      /^\/git\/trees$/,
+      (_repo, _match, body) => {
+        // A tree on `base_tree` keeps its files; each entry adds or replaces one file with its text or a blob's bytes.
+        const files = { ...trees.get(String(body.base_tree ?? "")) };
+        for (const entry of (body.tree as { path: string; content?: string; sha?: string }[] | undefined) ?? []) {
+          const bytes = typeof entry.content === "string" ? bytesOf(entry.content) : blobs.get(String(entry.sha));
+          if (bytes === undefined) throw new Answer(422, "fake GitHub takes a tree entry with its content or a blob");
+          files[entry.path] = bytes;
+        }
+        return [201, { sha: treeOf(files) }];
+      },
+    ],
+    [
+      "POST",
+      /^\/git\/commits$/,
+      (_repo, _match, body) => {
+        const files = trees.get(String(body.tree ?? ""));
+        if (!files) throw new Answer(422, "Tree SHA does not exist");
+        const parents = (body.parents as string[] | undefined) ?? [];
+        if (parents.some((parent) => !commits.get(parent)))
+          throw new Answer(422, "Parent SHA does not exist or is not a commit object");
+        return [201, { sha: commits.add(parents, String(body.message ?? ""), files) }];
+      },
+    ],
+    [
+      "PATCH",
+      /^\/git\/refs\/heads\/(.+)$/,
+      (repo, [branch = ""], body) => {
+        const name = decodeURIComponent(branch);
+        const current = repo.branches.get(name);
+        if (!current) throw new Answer(422, "Reference does not exist");
+        const sha = String(body.sha ?? "");
+        if (!commits.get(sha)) throw new Answer(422, "Object does not exist");
+        if (body.force !== true && commits.mergeBase(current, sha)?.sha !== current)
+          throw new Answer(422, "Update is not a fast forward");
+        repo.branches.set(name, sha);
+        return [200, { ref: `refs/heads/${name}`, object: { sha, type: "commit" } }];
+      },
+    ],
+    [
+      "GET",
+      /^\/branches\/(.+)\/protection$/,
+      (repo, [branch = ""]) => {
+        const name = decodeURIComponent(branch);
+        tip(repo, name);
+        const rule = repo.rules.get(name);
+        if (!rule) throw new Answer(404, "Branch not protected");
+        return [
+          200,
+          {
+            required_status_checks: { strict: false, contexts: rule.contexts },
+            ...(rule.approvals
+              ? { required_pull_request_reviews: { required_approving_review_count: rule.approvals } }
+              : {}),
+            enforce_admins: { enabled: rule.enforceAdmins },
+          },
+        ];
+      },
+    ],
+    [
+      "PATCH",
+      /^\/pulls\/(\d+)$/,
+      (repo, [number = ""], body) => {
+        const pr = pull(repo, Number(number));
+        if (body.state === "closed" && pr.state === "open" && !pr.merged) {
+          pr.state = "closed";
+          pr.closedAt = now();
+          pr.updatedAt = pr.closedAt;
+        }
+        return [200, pullJson(repo, pr, true)];
+      },
+    ],
+    [
+      "DELETE",
+      /^\/git\/refs\/heads\/(.+)$/,
+      (repo, [branch = ""]) => {
+        const name = decodeURIComponent(branch);
+        if (!repo.branches.delete(name)) throw new Answer(422, "Reference does not exist");
+        return [204, undefined];
+      },
+    ],
+    [
+      "GET",
+      /^\/rules\/branches\/(.+)$/,
+      (repo, [branch = ""]) => {
+        // GitHub answers the rules of every active ruleset that applies to the branch, which need not exist.
+        const name = decodeURIComponent(branch);
+        const source = { ruleset_source_type: "Repository", ruleset_source: `${OWNER}/${repo.name}` };
+        const rules = repo.rulesets
+          .filter((ruleset) => ruleset.branches.includes(name))
+          .flatMap((ruleset) => [
+            ...(ruleset.checks.length > 0
+              ? [
+                  {
+                    type: "required_status_checks",
+                    ...source,
+                    ruleset_id: ruleset.id,
+                    parameters: {
+                      strict_required_status_checks_policy: false,
+                      required_status_checks: ruleset.checks.map((context) => ({ context })),
+                    },
+                  },
+                ]
+              : []),
+            ...(ruleset.approvals > 0
+              ? [
+                  {
+                    type: "pull_request",
+                    ...source,
+                    ruleset_id: ruleset.id,
+                    parameters: {
+                      required_approving_review_count: ruleset.approvals,
+                      dismiss_stale_reviews_on_push: false,
+                      require_code_owner_review: false,
+                      require_last_push_approval: false,
+                      required_review_thread_resolution: false,
+                    },
+                  },
+                ]
+              : []),
+          ]);
+        return [200, rules];
+      },
+    ],
     ["GET", /^\/issues\/(\d+)$/, (repo, [number = ""]) => [200, issueJson(repo, issue(repo, Number(number)))]],
     ["GET", /^\/hooks$/, (repo) => [200, repo.hooks.map(hookJson)]],
     [
@@ -761,6 +980,50 @@ export async function startGitHub(): Promise<RunningGitHub> {
     ],
   ];
 
+  /**
+   * GitHub's GraphQL API, as far as a forge client asks it (ADR 0136): a query of a pull request's
+   * `mergeStateStatus`, with its `id` and its repository's `autoMergeAllowed` (the variables `name` and `number`), and
+   * the mutation `enablePullRequestAutoMerge` (the variables `id` and `method`), which GitHub refuses where the
+   * repository does not allow auto-merge and for a pull request that can merge now. The query also answers the
+   * pull request's `autoMergeRequest`. What GitHub answers to enabling auto-merge a second time is not documented,
+   * so that fails the scenario, as any other query does.
+   */
+  const graphql = (request: { query?: string; variables?: Record<string, unknown> }, user: string) => {
+    const query = request.query ?? "";
+    const variables = request.variables ?? {};
+    const refused = (message: string) => ({ data: null, errors: [{ type: "UNPROCESSABLE", message }] });
+    if (query.includes("enablePullRequestAutoMerge")) {
+      // GraphQL takes only the values of the enum PullRequestMergeMethod, in capitals; MERGE when none is given.
+      const method = { MERGE: "merge", SQUASH: "squash", REBASE: "rebase" }[String(variables.method ?? "MERGE")];
+      if (!method) return refused("Variable $method of type PullRequestMergeMethod was provided invalid value");
+      const [, name = "", number = ""] = /^PR_(.+)_(\d+)$/.exec(String(variables.id)) ?? [];
+      const repo = repository(name);
+      const pr = pull(repo, Number(number));
+      if (!repo.autoMergeAllowed) return refused("Pull request Auto merge is not allowed for this repository");
+      if (mergeState(repo, pr) === "CLEAN") return refused("Pull request Pull request is in clean status");
+      if (pr.autoMerge) {
+        problems.push(`fake GitHub: auto-merge of ${OWNER}/${repo.name}#${pr.number} is enabled already`);
+        return refused("fake GitHub does not know what GitHub answers to enabling auto-merge twice");
+      }
+      pr.autoMerge = { method, user, enabledAt: now() };
+      return { data: { enablePullRequestAutoMerge: { clientMutationId: null } } };
+    }
+    if (query.includes("mergeStateStatus")) {
+      const repo = repository(String(variables.name));
+      const pr = pull(repo, Number(variables.number));
+      const pullRequest = {
+        id: `PR_${repo.name}_${pr.number}`,
+        mergeStateStatus: mergeState(repo, pr),
+        autoMergeRequest: pr.autoMerge
+          ? { enabledAt: pr.autoMerge.enabledAt, mergeMethod: pr.autoMerge.method.toUpperCase() }
+          : null,
+      };
+      return { data: { repository: { autoMergeAllowed: repo.autoMergeAllowed, pullRequest } } };
+    }
+    problems.push(`fake GitHub: the GraphQL query ${query.replace(/\s+/g, " ").trim()} is not supported`);
+    return { data: null, errors: [{ type: "NOT_SUPPORTED", message: "fake GitHub does not support this query" }] };
+  };
+
   // GitHub's sign-in: the next person, the codes not yet traded and the tokens of signed-in people.
   let signingIn: SignInPerson | undefined;
   const codes = new Map<string, { person: SignInPerson; redirect: string }>();
@@ -774,6 +1037,7 @@ export async function startGitHub(): Promise<RunningGitHub> {
       response.end(JSON.stringify(value));
     };
     const method = request.method ?? "GET";
+    called.push(`${method} ${request.url ?? ""}`);
     const [path = "", search = ""] = (request.url ?? "").split("?");
     let text = "";
     for await (const chunk of request) text += chunk;
@@ -822,6 +1086,7 @@ export async function startGitHub(): Promise<RunningGitHub> {
     const version = request.headers["x-github-api-version"];
     if (version !== undefined && !API_VERSIONS.includes(String(version)))
       return send(400, { message: `API version ${version} is not supported.`, status: "400" });
+    if (method === "POST" && path === "/graphql") return send(200, graphql(JSON.parse(text || "{}"), user));
     if (method === "GET" && path === "/user") {
       // GitHub does not let an Actions token read its user.
       if (user === ACTIONS) return send(403, { message: "Resource not accessible by integration", status: "403" });
@@ -879,7 +1144,7 @@ export async function startGitHub(): Promise<RunningGitHub> {
     owner: OWNER,
     async createRepository(name, files = {}) {
       const initial = Object.keys(files).length > 0 ? files : { "README.md": `# ${name}\n` };
-      const sha = commits.add([], "Initial commit", initial);
+      const sha = commits.add([], "Initial commit", filesOf(initial));
       repositories.set(name, {
         name,
         numbered: 0,
@@ -892,7 +1157,17 @@ export async function startGitHub(): Promise<RunningGitHub> {
         reviews: [],
         rules: new Map(),
         hooks: [],
+        autoMergeAllowed: false,
+        rulesets: [],
       });
+    },
+    calls: () => [...called],
+    async addRuleset(name, ruleset) {
+      const { branches, checks = [], approvals = 0 } = ruleset;
+      repository(name).rulesets.push({ id: nextId(), branches, checks, approvals });
+    },
+    async allowAutoMerge(name) {
+      repository(name).autoMergeAllowed = true;
     },
     async openPullRequest(name, change) {
       const repo = repository(name);
@@ -1005,9 +1280,13 @@ export async function startGitHub(): Promise<RunningGitHub> {
       }));
     },
     async file(name, path, at) {
+      return (await github.fileBytes(name, path, at))?.toString("utf8");
+    },
+    async fileBytes(name, path, at) {
       const repo = repository(name);
       const sha = repo.branches.get(at) ?? commits.find(at)?.sha;
-      return sha ? commits.get(sha)?.files[path] : undefined;
+      const bytes = sha ? commits.get(sha)?.files[path] : undefined;
+      return bytes === undefined ? undefined : Buffer.from(bytes, "latin1");
     },
   };
 

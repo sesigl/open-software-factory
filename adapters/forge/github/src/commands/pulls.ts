@@ -2,16 +2,19 @@
 import { check as ensure, type Outcome } from "@opensoftware/cli";
 import { type GitHub, GitHubError } from "../adapters/github.ts";
 import {
+  type BranchRule,
   CHECK_STATES,
   type CheckRun,
   type CommentJson,
   checksOf,
   commentLine,
   MERGE_METHODS,
+  type Protection,
   protection,
+  required,
 } from "../domain/repository.ts";
 import type { PullJson } from "./branches.ts";
-import { connect, count, numberOf, print } from "./shared.ts";
+import { connect, count, headRef, numberOf, print } from "./shared.ts";
 
 /** GitHub computes whether a new pull request can merge in the background; pr asks again this long. */
 const COMPUTE_MS = 10_000;
@@ -51,7 +54,7 @@ async function about<T>(repo: string, number: number, call: () => Promise<T>): P
 }
 
 /** The pull request once GitHub knows whether it can merge, or as it is after 10 seconds. */
-async function computed(api: GitHub, repo: string, number: number): Promise<PullJson> {
+export async function computed(api: GitHub, repo: string, number: number): Promise<PullJson> {
   const deadline = Date.now() + COMPUTE_MS;
   for (;;) {
     const pull = await about(repo, number, () => api.request<PullJson>("GET", `/pulls/${number}`));
@@ -161,6 +164,41 @@ export async function protect(
     protection(checks, required),
   );
   return print({ branch, checks, approvals: required });
+}
+
+/**
+ * rules <repo> <branch>: the checks and approvals that the branch's protection and the rulesets that apply to it
+ * require; none without either.
+ */
+export async function rules(repo: string | undefined, branch: string | undefined): Promise<Outcome> {
+  const api = connect(repo);
+  ensure(branch, "name the branch, like rules tester/web main");
+  const path = `/branches/${encodeURIComponent(branch as string)}/protection`;
+  // GitHub answers 404 "Branch not protected" for a branch without protection, and 404 "Branch not found".
+  const unprotected = (error: unknown) =>
+    error instanceof GitHubError && error.status === 404 && /not protected/i.test(error.message);
+  const found = await api
+    .request<Protection>("GET", path)
+    .catch((error: unknown) => (unprotected(error) ? {} : Promise.reject(error)));
+  // The rules of every active ruleset that applies to the branch; 100 are more than a branch has.
+  const rules = await api.request<BranchRule[]>(
+    "GET",
+    `/rules/branches/${encodeURIComponent(branch as string)}?per_page=100`,
+  );
+  return print(required(found, rules));
+}
+
+/** close <repo> <number> [--delete-branch]: closes the pull request without merging, and deletes its branch. */
+export async function close(
+  repo: string | undefined,
+  number: string | undefined,
+  deleteBranch = false,
+): Promise<Outcome> {
+  const api = connect(repo);
+  const issue = numberOf(number);
+  const closed = await api.request<PullJson>("PATCH", `/pulls/${issue}`, { state: "closed" });
+  if (deleteBranch) await api.request("DELETE", headRef(closed.head.ref));
+  return print({ number: closed.number, state: closed.merged ? "merged" : closed.state });
 }
 
 /** merge <repo> <number> [--method merge|squash|rebase]: merges, or names GitHub's reason when it refuses. */

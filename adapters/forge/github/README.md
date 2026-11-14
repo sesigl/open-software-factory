@@ -26,7 +26,8 @@ npx @opensoftware/forge-github event delivery.json                # a pr.opened@
 ## How it behaves
 
 - **The token** is sent as a bearer token with the API version `2022-11-28`. It needs write access to contents, pull
-  requests and commit statuses, read access to checks (`Checks: read`), and administration of the repository for `protect` and `webhook`. A token GitHub
+  requests and commit statuses, read access to checks (`Checks: read`), and administration of the repository for `protect` and `webhook`; `rules` reads the branch protection, which needs `Administration: read`, and the branch's rules
+  of rulesets, which need `Metadata: read`. A token GitHub
   refuses exits 1 with `the forge refused the token`; a repository it does not show exits 1 with
   `no repository <repo>`.
 - **Usage errors** exit 2 before any call to GitHub: a repository that is not `<owner>/<name>`, a pull request
@@ -49,10 +50,27 @@ npx @opensoftware/forge-github event delivery.json                # a pr.opened@
   request is merged; GitHub's test merge of an open pull request is not printed.
 - **Merge rules** are the branch protection: the required status checks, the number of required approving
   reviews, and `enforce_admins`, so that the rules also hold for an admin's token. `protect` replaces the whole
-  protection each time.
+  protection each time. `rules` prints what the branch protection and the active rulesets that apply to
+  the branch require together: each check once, the protection's first, and the most approvals one of them asks
+  for. A branch without either requires nothing.
 - **Merge.** When GitHub refuses, `merge` exits 1 with `the forge refused to merge #<number>: <GitHub's reason>`,
   for example `Required status check "verify" is failing.`; a pull request that conflicts with its base gives
   `it conflicts with its base`.
+- **Merge when green** is GitHub's auto-merge (ADR 0136), as `gh pr merge --auto` uses it. `merge --when-green`
+  waits as `pr` does until GitHub knows whether the pull request can merge, then reads its `mergeStateStatus` with
+  GitHub's GraphQL API (`/graphql`, or `/api/graphql` beside GitHub Enterprise Server's `/api/v3`). A pull request
+  that GitHub would merge now (`CLEAN`, `HAS_HOOKS`, `UNSTABLE`), or one with a conflict, gets the plain merge;
+  any other enables auto-merge with the merge method (GraphQL `enablePullRequestAutoMerge`) and prints
+  `{"queued": true}`. A pull request whose `autoMergeRequest` is set already prints `{"queued": true}` without a
+  second request. GitHub merges it as the token's user once the required checks and reviews pass. Auto-merge
+  needs the repository's setting "Allow auto-merge", which a new repository has off and which GitHub offers for
+  private repositories only on its paid plans; without it the command exits 1 with
+  `the forge cannot merge <repo>#<number> when its checks pass: allow auto-merge in the repository's settings`.
+- **Commit** uses the Git Data API: a blob of each file's bytes in base64, so a file that is not UTF-8 stays as it
+  is, a tree of them on the tree of the branch's head, a commit with the
+  head as its parent, and the branch moved there without force, so a branch that moved in between is not
+  overwritten: GitHub answers `Update is not a fast forward`.
+- **Close** sets the pull request's state to `closed`; with `--delete-branch` it then deletes the head branch's ref.
 - **Webhooks** are repository webhooks with JSON content, the events of `--event` or else `pull_request`,
   `pull_request_review` and `issue_comment`, and the secret `FORGE_WEBHOOK_SECRET`. A second `webhook` for the same
   URL updates that webhook and replaces its events.
@@ -70,15 +88,18 @@ npx @opensoftware/forge-github event delivery.json                # a pr.opened@
 
 | Command | What it does |
 | --- | --- |
-| `forge-github branch <repo> <branch> [--from <ref>]` | Create a branch from the default branch or the ref; print `{"branch", "sha"}`. |
+| `forge-github branch <repo> <branch> [--from <ref>]` | Create a branch from the default branch or the ref, a branch or a commit; print `{"branch", "sha"}`. |
+| `forge-github commit <repo> <branch> --message <text> <path>=<file>...` | Write one commit with these files, the contents of the local files, on top of the branch's head; print `{"sha"}`. |
 | `forge-github open-pr <repo> <head> --title <text> [--body <text>] [--base <branch>]` | Open a pull request; print `{"number", "url", "head", "base", "sha"}`. |
 | `forge-github pr <repo> <number>` | Print the pull request's state, `mergeable`, head and merge commit, author, labels, draft, first 100 changed paths, and checks. |
-| `forge-github prs <repo> [--head <prefix>] [--state open\|closed\|all]` | Print each pull request whose branch starts with the prefix, the highest number first, as `{"number", "url", "title", "state", "head", "base", "author", "created", "draft", "review"}`; `review` is `approved`, `changes_requested` or `none` (ADR 0073). |
+| `forge-github prs <repo> [--head <prefix>] [--state open\|closed\|all] [--limit <n>]` | Print each pull request whose branch starts with the prefix, the highest number first and at most n, reading only the pages of the newest it needs, as `{"number", "url", "title", "state", "head", "base", "author", "created", "draft", "review"}`, a merged one with its `mergeCommit`; `review` is `approved`, `changes_requested` or `none` (ADR 0073). |
 | `forge-github check <repo> <sha> <name> <pending\|success\|failure\|error> [--description <text>] [--url <url>]` | Post a check on a commit. |
 | `forge-github comment <repo> <number> <text>` | Comment on a pull request; print `{"id", "url"}`. |
 | `forge-github comments <repo> <number>` | Print the first 100 comments of the conversation, oldest first, as `{"id", "url", "author", "time", "text", "mine"}`. |
 | `forge-github protect <repo> <branch> [--check <name>]... [--approvals <n>]` | Replace the branch's protection. |
-| `forge-github merge <repo> <number> [--method merge\|squash\|rebase]` | Merge; print `{"sha"}` of the merge commit. |
+| `forge-github rules <repo> <branch>` | Print the checks and approvals the branch requires as `{"checks", "approvals"}`. |
+| `forge-github close <repo> <number> [--delete-branch]` | Close a pull request without merging, and delete its branch; print `{"number", "state"}`. |
+| `forge-github merge <repo> <number> [--method merge\|squash\|rebase] [--when-green]` | Merge; print `{"sha"}` of the merge commit. With `--when-green`, ask the forge to merge once the required checks pass, and print `{"queued": true}`, unless it can merge now. |
 | `forge-github webhook <repo> <url> [--event <name>]...` | Register one webhook for the port's events, by default pull requests; print `{"id", "url", "events", "active"}`. |
 | `forge-github hooks <repo>` | Print each webhook of the repository as `{"id", "url", "events", "active"}`. |
 | `forge-github unhook <repo> <id>` | Remove a webhook; print `{"id", "removed"}`, with `removed` false when it had none. |

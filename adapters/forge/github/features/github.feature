@@ -57,3 +57,30 @@ Feature: GitHub's own rules for the forge port
     Given an open pull request in "tester/web" and a token that may not read check runs
     When the client runs "pr" for it with that token
     Then pr exits with code 1 and an error that names the repository and the permission "Checks: read"
+
+  @id=SCN-FGITHUB-010 @status=implemented
+  Scenario: merge --when-green on a repository that does not allow auto-merge names the setting
+    Given "main" of "tester/web" requires the check "factory", the repository does not allow auto-merge, and an open pull request whose check "factory" is pending
+    When the client runs "merge tester/web <number> --when-green"
+    Then merge exits with code 1 and prints "the forge cannot merge tester/web#1 when its checks pass: allow auto-merge in the repository's settings"
+    And the pull request is still open
+
+  @id=SCN-FGITHUB-011 @status=implemented
+  Scenario: prs --limit stops reading pages once it has as many pull requests as asked
+    Given 101 open pull requests in "tester/web", more than one page of GitHub's list
+    When the client runs "prs tester/web --limit 1"
+    Then prs prints the newest pull request only
+    And the client asked GitHub for one page of the list of pull requests
+
+  @id=SCN-FGITHUB-012 @status=implemented
+  Scenario: rules also lists the checks and approvals that a ruleset requires, each check once
+    Given the branch protection of "main" of "tester/web" requires the check "verify", and a ruleset requires the checks "factory" and "verify" and two approvals on "main"
+    When the client runs "rules tester/web main"
+    Then rules prints the checks "verify" and "factory" and the approvals 2
+
+  @id=SCN-FGITHUB-013 @status=implemented
+  Scenario: prs --limit reads the next page while the pages so far hold fewer pull requests of the prefix
+    Given 101 open pull requests in "tester/web", of which only the oldest is from a branch that starts with "observer/"
+    When the client runs "prs tester/web --head observer/ --limit 1"
+    Then prs prints that oldest pull request
+    And the client asked GitHub for two pages of the list of pull requests
