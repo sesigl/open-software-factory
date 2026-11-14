@@ -10,6 +10,7 @@ Use these terms in scenarios, code, UI text and docs.
 | --- | --- |
 | Factory | A closed loop of agents and people that turns work items into shipped, verified changes, declared in one factory definition. |
 | Factory definition | `factory.yaml` plus prompts, skills and policies in Git; the desired state of a factory. |
+| Skill | A folder with a `SKILL.md` in the Agent Skills format: front matter with its name, the folder's name, and a description of what it does and when to use it, then short instructions, with details in files beside it. An agent names its skills in `factory.yaml`; the skill's `metadata` names the secrets and hosts it needs, which `factory lint` asks the agent to declare (ADR 0140). |
 | Factory version | The commit hash of the factory definition a run used; the foreman refuses a factory folder with changes that are not committed (ADR 0110). |
 | Lock file | `factory.lock` next to `factory.yaml`: the exact version of each MCP server from a registry, pinned by `factory plan`. |
 | Compose profile | `deploy/compose/`: the factory with all its services on one machine, started with one `docker compose up` (ADR 0074). |
