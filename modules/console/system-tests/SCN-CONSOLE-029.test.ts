@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { foreman, links, open, RUN, runOf, serving, text } from "./console.ts";
+import { foreman, links, open, RUN, runOf, serving } from "./console.ts";
 
 scenario("SCN-CONSOLE-029", async ({ sut, fakes, given, when, then }) => {
   let api: Awaited<ReturnType<typeof foreman>>;
@@ -16,8 +16,9 @@ scenario("SCN-CONSOLE-029", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then('the page shows "slack asked by Varun" without a link to "javascript:alert(1)"', async () => {
-    expect(text(page.html)).toContain("Origin slack asked by Varun Evidence");
-    expect(links(page.html).map((link) => link.href)).not.toContain("javascript:alert(1)");
-    expect(page.html).not.toContain("javascript:");
+    expect(page.text).toContain("Origin slack asked by Varun Evidence");
+    expect(links(page).map((link) => link.href)).not.toContain("javascript:alert(1)");
+    expect(links(page).filter((link) => link.href.includes("javascript:"))).toEqual([]);
+    expect(page.text).not.toContain("javascript:");
   });
 });

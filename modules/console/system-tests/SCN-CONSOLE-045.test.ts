@@ -3,12 +3,11 @@ import { foreman, sendWorkForm, serving, submittingIntake } from "./console.ts";
 
 scenario("SCN-CONSOLE-045", async ({ sut, fakes, given, when, then }) => {
   let intake: Awaited<ReturnType<typeof submittingIntake>>;
-  let url = "";
   await given(
     'a console with "CONSOLE_USER_HEADER" set to "X-Forwarded-Email" and an intake that takes submissions',
     async () => {
       intake = await submittingIntake(fakes);
-      url = await serving(sut, [(await foreman(fakes, [])).url], {
+      await serving(sut, [(await foreman(fakes, [])).url], {
         CONSOLE_USER_HEADER: "X-Forwarded-Email",
         CONSOLE_INTAKE_URL: intake.url,
         CONSOLE_INTAKE_TOKEN: "intake-token",
@@ -21,7 +20,7 @@ scenario("SCN-CONSOLE-045", async ({ sut, fakes, given, when, then }) => {
     'the person "ada@acme.dev" sends the form "submit work" of "/work" with the title "Add a dark mode" and the type "idea"',
     async () => {
       answer = await sendWorkForm(
-        url,
+        sut,
         { title: "Add a dark mode", type: "idea" },
         { "x-forwarded-email": "ada@acme.dev" },
       );

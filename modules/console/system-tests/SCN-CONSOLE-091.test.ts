@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { navLinks, open, serving, text } from "./console.ts";
+import { navLinks, open, serving } from "./console.ts";
 
 scenario("SCN-CONSOLE-091", async ({ sut, given, when, then }) => {
   await given('"console serve" runs without "CONSOLE_IMPROVE_DIR"', async () => {
@@ -15,15 +15,13 @@ scenario("SCN-CONSOLE-091", async ({ sut, given, when, then }) => {
     'the page answers 404 and says "no cost and scores: set CONSOLE_IMPROVE_DIR to the folder of the improvement jobs"',
     async () => {
       expect(page.status).toBe(404);
-      expect(page.html).toContain("<title>Cost and scores · console</title>");
-      expect(text(page.html)).toContain("No cost and scores");
-      expect(text(page.html)).toContain(
-        "no cost and scores: set CONSOLE_IMPROVE_DIR to the folder of the improvement jobs",
-      );
+      expect(page.title).toBe("Cost and scores · console");
+      expect(page.text).toContain("No cost and scores");
+      expect(page.text).toContain("no cost and scores: set CONSOLE_IMPROVE_DIR to the folder of the improvement jobs");
     },
   );
 
   await then('the navigation does not link "/improvement"', async () => {
-    expect(navLinks(page.html).map((link) => link.href)).not.toContain("/improvement");
+    expect(navLinks(page).map((link) => link.href)).not.toContain("/improvement");
   });
 });

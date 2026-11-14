@@ -43,15 +43,7 @@ scenario("SCN-CONSOLE-020", async ({ sut, fakes, given, when, then }) => {
   await then(
     'the page shows the gate "g0123456789abcdef" of the stage "ship" as "pending", waiting for "leads"',
     async () => {
-      expect(rows(page.html)[1]).toEqual([
-        "ship",
-        "shipper",
-        "blocked",
-        "",
-        `${GATE} pending, waiting for leads`,
-        "",
-        "",
-      ]);
+      expect(rows(page)[1]).toEqual(["ship", "shipper", "blocked", "", `${GATE} pending, waiting for leads`, "", ""]);
       expect(gatekeeper.headers().map((request) => [request.path, request.headers.authorization])).toEqual([
         [`/v1/gates/${GATE}`, "Bearer gate-token-1"],
       ]);

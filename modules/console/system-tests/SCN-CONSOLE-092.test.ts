@@ -27,10 +27,10 @@ scenario("SCN-CONSOLE-092", async ({ sut, given, when, then }) => {
 
   await then('the table "Scores" shows only "redundant-tests"', async () => {
     expect(page.status).toBe(200);
-    expect(table(page.html, "Scores").map((row) => row[0])).toEqual(["redundant-tests"]);
+    expect(table(page, "Scores").map((row) => row[0])).toEqual(["redundant-tests"]);
   });
 
   await then('the table "Runs" shows "run_a"', async () => {
-    expect(table(page.html, "Runs")).toEqual([["run_a", "implement", "succeeded", "1.00 USD"]]);
+    expect(table(page, "Runs")).toEqual([["run_a", "implement", "succeeded", "1.00 USD"]]);
   });
 });

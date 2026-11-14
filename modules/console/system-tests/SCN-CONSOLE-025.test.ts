@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { factoryEnv, open, serving, text } from "./console.ts";
+import { factoryEnv, open, serving } from "./console.ts";
 
 scenario("SCN-CONSOLE-025", async ({ sut, given, when, then }) => {
   let env: Record<string, string> = {};
@@ -15,6 +15,6 @@ scenario("SCN-CONSOLE-025", async ({ sut, given, when, then }) => {
 
   await then('the page answers 404 and says "no agent deploy in factory.yaml"', async () => {
     expect(page.status).toBe(404);
-    expect(text(page.html)).toContain("Not found no agent deploy in factory.yaml");
+    expect(page.text).toContain("Not found no agent deploy in factory.yaml");
   });
 });

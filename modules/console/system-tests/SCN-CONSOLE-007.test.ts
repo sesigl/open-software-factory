@@ -26,7 +26,7 @@ scenario("SCN-CONSOLE-007", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then('the rows are "Export reports as CSV", "Add search" and "Fix login" in this order', async () => {
-    expect(rows(page.html).map((row) => [row[0], row[6]])).toEqual([
+    expect(rows(page).map((row) => [row[0], row[6]])).toEqual([
       ["Export reports as CSV", "30 min"],
       ["Add search", "2 h"],
       ["Fix login", "1 h"],

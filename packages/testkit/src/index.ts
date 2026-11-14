@@ -31,4 +31,5 @@ export type { CloudEvent, EventLog, Events, Stream } from "./sut/events.ts";
 export type { Helm } from "./sut/helm.ts";
 export type { Http, HttpResponse } from "./sut/http.ts";
 export type { Mcp, McpClient } from "./sut/mcp.ts";
+export type { Found, Page, PageForm, Pages, Queries, RoleOptions } from "./sut/pages.ts";
 export type { Sut } from "./sut/sut.ts";

@@ -20,7 +20,7 @@ scenario("SCN-CONSOLE-069", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then("its table has no row about a model route or the harness", async () => {
-    const names = rows(page.html).map(([name]) => name);
+    const names = rows(page).map(([name]) => name);
     expect(names).toContain("factory");
     expect(names.filter((name) => /model|harness/.test(name ?? ""))).toEqual([]);
   });

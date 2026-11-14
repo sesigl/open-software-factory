@@ -53,6 +53,9 @@
     "@agentclientprotocol/sdk": "1.9.0",
     "@modelcontextprotocol/sdk": "1.32.1",
     "@nats-io/transport-node": "3.4.0",
+    "@testing-library/dom": "10.4.2",
+    "dom-accessibility-api": "0.5.16",
+    "happy-dom": "21.0.4",
     "openapi-fetch": "0.17.0",
     "testcontainers": "12.2.0",
     "yaml": "2.9.1"

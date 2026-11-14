@@ -43,7 +43,7 @@ scenario("SCN-CONSOLE-043", async ({ sut, fakes, given, when, then }) => {
     'the table has the rows "Import reports from CSV", "task", "received", "slack", "Varun", "—" and "Export reports as CSV", "task", "running", "slack", "Varun", "run_5d41402abc4b2a76b971"',
     async () => {
       expect(page.status).toBe(200);
-      expect(rows(page.html).map((row) => row.slice(0, 6))).toEqual([
+      expect(rows(page).map((row) => row.slice(0, 6))).toEqual([
         ["Import reports from CSV", "task", "received", "slack", "Varun", "—"],
         ["Export reports as CSV", "task", "running", "slack", "Varun", RUN],
       ]);
@@ -51,10 +51,10 @@ scenario("SCN-CONSOLE-043", async ({ sut, fakes, given, when, then }) => {
   );
 
   await then('the run links "/runs/run_5d41402abc4b2a76b971"', async () => {
-    expect(links(page.html)).toContainEqual({ href: `/runs/${RUN}`, text: RUN });
+    expect(links(page)).toContainEqual({ href: `/runs/${RUN}`, text: RUN });
   });
 
   await then('the page\'s navigation links "/work"', async () => {
-    expect(navLinks(page.html)).toContainEqual({ href: "/work", text: "Work" });
+    expect(navLinks(page)).toContainEqual({ href: "/work", text: "Work" });
   });
 });

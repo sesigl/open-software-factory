@@ -1,7 +1,7 @@
 // Shared setup of the console scenarios: runs as the foreman's API shows them, fake foremen, the server, and readers
-// of the pages' HTML: their text, table rows and links.
+// of the pages through sut.pages: their table rows, links and buttons, found by role and name (ADR 0131).
 import type { RunView } from "@opensoftware/contracts";
-import type { Fakes, Sut } from "@opensoftware/testkit";
+import type { Fakes, Page, Queries, Sut } from "@opensoftware/testkit";
 
 export const RUN = "run_5d41402abc4b2a76b971";
 export const SLACK_THREAD = "https://acme.slack.com/archives/C0WORK/p1767225600000001";
@@ -39,44 +39,24 @@ export const foreman = (fakes: Fakes, runs: RunView[], more: Parameters<Fakes["h
 export const serving = (sut: Sut, foremen: string[], env: Record<string, string> = {}) =>
   sut.http.start(["serve"], { env: { CONSOLE_FOREMAN_URL: foremen.join(","), ...env } });
 
-/** The page at the path: its status and its HTML. */
-export async function open(sut: Sut, path: string): Promise<{ status: number; html: string }> {
-  const answer = await sut.http.get(path);
-  return { status: answer.status, html: String(answer.body) };
-}
+/** The page at the path, opened as a person opens it, with these headers (a sign-in proxy's, for example). */
+export const open = (sut: Sut, path: string, headers: Record<string, string> = {}): Promise<Page> =>
+  sut.pages.open(path, { headers });
 
-const ENTITIES: Record<string, string> = { "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'", "&amp;": "&" };
-const decode = (text: string) => text.replace(/&(lt|gt|quot|#39|amp);/g, (entity) => ENTITIES[entity] as string);
+/** The rows of the tables in a page or an element of it that have cells, each as the text of its cells. */
+export const rows = (scope: Queries): string[][] =>
+  scope
+    .queryAllByRole("row")
+    .map((row) => row.queryAllByRole("cell").map((cell) => cell.text))
+    .filter((cells) => cells.length > 0);
 
-/** The visible text of a piece of HTML, with its whitespace collapsed. */
-export const text = (html: string): string =>
-  decode(html.replace(/<[^>]*>/g, " "))
-    .replace(/\s+/g, " ")
-    .trim();
+/** The links of a page or of an element of it: their target and their text. */
+export const links = (scope: Queries | undefined): { href: string; text: string }[] =>
+  (scope?.queryAllByRole("link") ?? []).map((link) => ({ href: link.attribute("href") ?? "", text: link.text }));
 
-/** The rows of the page's table bodies, each as the text of its cells. */
-export const rows = (html: string): string[][] =>
-  [...html.matchAll(/<tbody>([\s\S]*?)<\/tbody>/g)].flatMap(([, body]) =>
-    [...(body as string).matchAll(/<tr>([\s\S]*?)<\/tr>/g)].map(([, row]) =>
-      [...(row as string).matchAll(/<td>([\s\S]*?)<\/td>/g)].map(([, cell]) => text(cell as string)),
-    ),
-  );
-
-/** The links of a piece of HTML: their target and their text. */
-export const links = (html: string): { href: string; text: string }[] =>
-  [...html.matchAll(/<a href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/g)].map(([, href, inner]) => ({
-    href: decode(href as string),
-    text: text(inner as string),
-  }));
-
-/** The HTML of the table row whose first cell holds this text. */
-export const rowWith = (html: string, first: string): string =>
-  [...html.matchAll(/<tr>([\s\S]*?)<\/tr>/g)]
-    .map(([row]) => row)
-    .find((row) => {
-      const cell = /<td>([\s\S]*?)<\/td>/.exec(row);
-      return cell !== null && text(cell[1] as string) === first;
-    }) ?? "";
+/** The table row whose first cell holds this text. */
+export const rowWith = (scope: Queries, first: string) =>
+  scope.queryAllByRole("row").find((row) => row.queryAllByRole("cell")[0]?.text === first);
 
 /** A factory definition with the agent "triage", as CONSOLE_FACTORY reads it. */
 export const FACTORY_YAML = `version: 1
@@ -128,8 +108,8 @@ export async function servingInbox(
   });
 }
 
-/** The links of the page's navigation. */
-export const navLinks = (html: string) => links(/<header[\s\S]*?<\/header>/.exec(html)?.[0] ?? "");
+/** The links of the page's banner, its navigation. */
+export const navLinks = (page: Page) => links(page.getByRole("banner"));
 
 /** The answer of a server's /v1/health with these checks: 200 when every check is ok, else 503. */
 export const healthRoute = (checks: { name: string; ok: boolean; detail?: string }[]) => {
@@ -163,58 +143,29 @@ export const submittingIntake = (fakes: Fakes) =>
   ]);
 
 /** Sends the form "submit work" to the console with these fields and headers, without following a redirect. */
-export async function sendWorkForm(url: string, fields: Record<string, string>, headers: Record<string, string> = {}) {
-  const response = await fetch(`${url}/work`, {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded", ...headers },
-    body: new URLSearchParams(fields).toString(),
-    redirect: "manual",
-  });
-  return { status: response.status, location: response.headers.get("location"), html: await response.text() };
-}
+export const sendWorkForm = (sut: Sut, fields: Record<string, string>, headers: Record<string, string> = {}) =>
+  sut.pages.send("/work", fields, { headers, follow: false });
 
 export const NEW_RUN = "run_0f3c7e91a2b44d6e8c05";
 export const ADA = { "x-forwarded-email": "ada@acme.dev" };
 
-/** The page at the path of the console at this URL, opened with these headers. */
-export async function openWith(url: string, path: string, headers: Record<string, string> = {}) {
-  const response = await fetch(`${url}${path}`, { headers });
-  return { status: response.status, html: await response.text() };
-}
-
-/** The form "run again" of a run page, if it has one. */
-export const retryForm = (html: string) => /<form[^>]*action="\/runs\/[^"]*\/retry"[\s\S]*?<\/form>/.exec(html)?.[0];
+/** The button "Run again" of a run page, if it has one. */
+export const retryButton = (page: Page) => page.queryByRole("button", { name: "Run again" });
 
 /** Sends the form "run again" of the run page at this path, without following a redirect. */
-export async function sendRetryForm(url: string, runPath: string, headers: Record<string, string> = {}) {
-  const response = await fetch(`${url}${runPath}/retry`, {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded", ...headers },
-    body: "",
-    redirect: "manual",
-  });
-  return { status: response.status, location: response.headers.get("location"), html: await response.text() };
-}
+export const sendRetryForm = (sut: Sut, runPath: string, headers: Record<string, string> = {}) =>
+  sut.pages.send(`${runPath}/retry`, {}, { headers, follow: false });
 
 /** Sends a form of a run page to its action with these fields and headers, without following a redirect. */
-export async function sendForm(
-  url: string,
+export const sendForm = (
+  sut: Sut,
   action: string,
   fields: Record<string, string>,
   headers: Record<string, string> = {},
-) {
-  const response = await fetch(`${url}${action}`, {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded", ...headers },
-    body: new URLSearchParams(fields).toString(),
-    redirect: "manual",
-  });
-  return { status: response.status, location: response.headers.get("location"), html: await response.text() };
-}
+) => sut.pages.send(action, fields, { headers, follow: false });
 
-/** The labels of the submit buttons of the page's forms. */
-export const buttons = (html: string): string[] =>
-  [...html.matchAll(/<button type="submit">([\s\S]*?)<\/button>/g)].map(([, label]) => text(label as string));
+/** The names of the page's buttons. */
+export const buttons = (page: Page): string[] => page.queryAllByRole("button").map((button) => button.name);
 
 export const GATE = "g0123456789abcdef";
 

@@ -33,7 +33,7 @@ scenario("SCN-CONSOLE-070", async ({ sut, fakes, given, when, then }) => {
   await then(
     'the page links the span "http://127.0.0.1:16686/trace/0af7651916cd43dd8448eb211c80319c?uiFind=b7ad6b7169203331" of the stage "plan"',
     async () => {
-      const spans = links(page.html).filter(({ href }) => href.startsWith("http://127.0.0.1:16686/"));
+      const spans = links(page).filter(({ href }) => href.startsWith("http://127.0.0.1:16686/"));
       expect(spans).toEqual([{ href: `http://127.0.0.1:16686/trace/${TRACE}?uiFind=${SPAN}`, text: "plan" }]);
     },
   );

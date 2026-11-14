@@ -1,9 +1,8 @@
 import { scenario } from "@opensoftware/testkit";
-import { ADA, buttons, foreman, GATE, gatedRun, openWith, pendingGate, RUN, sendForm, serving } from "./console.ts";
+import { ADA, buttons, foreman, GATE, gatedRun, open, pendingGate, RUN, sendForm, serving } from "./console.ts";
 
 scenario("SCN-CONSOLE-062", async ({ sut, fakes, given, when, then }) => {
   let gatekeeper: Awaited<ReturnType<typeof fakes.http>>;
-  let url = "";
   await given(
     'a console with "CONSOLE_USER_HEADER" set to "X-Forwarded-Email", a foreman with a run whose stage "ship" waits at the gate "g0123456789abcdef", and gatekeeper whose gate is "pending" for "leads"',
     async () => {
@@ -12,7 +11,7 @@ scenario("SCN-CONSOLE-062", async ({ sut, fakes, given, when, then }) => {
         { path: `/v1/gates/${GATE}`, body: pendingGate },
         { method: "POST", path: `/v1/gates/${GATE}/decisions`, body: { ...pendingGate, state: "approved" } },
       ]);
-      url = await serving(sut, [api.url], {
+      await serving(sut, [api.url], {
         CONSOLE_USER_HEADER: "X-Forwarded-Email",
         CONSOLE_GATEKEEPER_URL: gatekeeper.url,
         CONSOLE_GATEKEEPER_TOKEN: "gate-token",
@@ -20,23 +19,23 @@ scenario("SCN-CONSOLE-062", async ({ sut, fakes, given, when, then }) => {
     },
   );
 
-  let page: Awaited<ReturnType<typeof openWith>>;
+  let page: Awaited<ReturnType<typeof open>>;
   let answers: Awaited<ReturnType<typeof sendForm>>[] = [];
   await when(
     'the person "ada@acme.dev" sends the form "Approve" of the run\'s page, and the form "Reject" with the reason "needs a test"',
     async () => {
-      page = await openWith(url, `/runs/${RUN}`, ADA);
+      page = await open(sut, `/runs/${RUN}`, ADA);
       const action = `/runs/${RUN}/gates/${GATE}`;
       answers = [
-        await sendForm(url, action, { decision: "approved", reason: "" }, ADA),
-        await sendForm(url, action, { decision: "rejected", reason: "needs a test" }, ADA),
+        await sendForm(sut, action, { decision: "approved", reason: "" }, ADA),
+        await sendForm(sut, action, { decision: "rejected", reason: "needs a test" }, ADA),
       ];
     },
   );
 
   await then('the page has the forms "Approve" and "Reject"', async () => {
-    expect(buttons(page.html)).toEqual(["Steer", "Cancel", "Approve", "Reject"]);
-    expect(page.html).toContain(`action="/runs/${RUN}/gates/${GATE}"`);
+    expect(buttons(page)).toEqual(["Steer", "Cancel", "Approve", "Reject"]);
+    expect(page.forms.map((form) => form.action)).toContain(`/runs/${RUN}/gates/${GATE}`);
   });
 
   await then('each answer redirects to "/runs/run_5d41402abc4b2a76b971"', async () => {

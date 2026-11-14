@@ -22,7 +22,7 @@ scenario("SCN-CONSOLE-041", async ({ sut, fakes, given, when, then }) => {
   await then(
     'the page links the trace "http://127.0.0.1:6006/projects/UHJvamVjdDox/traces/0af7651916cd43dd8448eb211c80319c"',
     async () => {
-      expect(links(page.html)).toContainEqual({ href: TEMPLATE.replace("{traceId}", TRACE), text: "trace" });
+      expect(links(page)).toContainEqual({ href: TEMPLATE.replace("{traceId}", TRACE), text: "trace" });
     },
   );
 });

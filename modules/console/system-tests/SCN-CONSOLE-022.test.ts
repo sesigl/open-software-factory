@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { open, serving, text } from "./console.ts";
+import { open, serving } from "./console.ts";
 
 const UNKNOWN = "run_00000000000000000000";
 
@@ -17,6 +17,6 @@ scenario("SCN-CONSOLE-022", async ({ sut, fakes, given, when, then }) => {
 
   await then('the page answers 404 and says "no run run_00000000000000000000"', async () => {
     expect(page.status).toBe(404);
-    expect(text(page.html)).toContain(`Not found no run ${UNKNOWN}`);
+    expect(page.text).toContain(`Not found no run ${UNKNOWN}`);
   });
 });

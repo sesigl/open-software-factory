@@ -12,6 +12,7 @@ import { type Helm, makeHelm } from "./helm.ts";
 import { type Http, makeHttp } from "./http.ts";
 import { adapterCommand, makeLaunch } from "./launch.ts";
 import { type Mcp, makeMcp } from "./mcp.ts";
+import { makePages, type Pages } from "./pages.ts";
 
 export interface Sut {
   /**
@@ -27,6 +28,11 @@ export interface Sut {
   action: Action;
   /** The module as an HTTP server. It gets the same environment as `cli`, plus `PORT`. */
   http: Http;
+  /**
+   * The pages of the server sut.http started, read as a person reads them but without a browser: by role, accessible
+   * name, label and text. Links and forms keep the scenario's cookies, as a browser does (ADR 0131).
+   */
+  pages: Pages;
   /** The module as an MCP server on stdio. It gets the same environment as `cli`. */
   mcp: Mcp;
   /** The module as an ACP agent on stdio, such as a harness adapter. It gets the same environment as `cli`. */
@@ -123,13 +129,15 @@ export function makeSut(moduleRoot: string, dirs: Folders, hosts: () => string[]
     }
     return full;
   };
+  const http = makeHttp(launch, onStop);
   const sut: Sut = {
     async cli(args, options = {}) {
       const { command, argv, cwd, env } = launch(args, options.env);
       return run(command, argv, cwd, env);
     },
     action: makeAction(moduleRoot, dirs, launch),
-    http: makeHttp(launch, onStop),
+    http,
+    pages: makePages(() => http.url(), onStop),
     mcp: makeMcp(launch, onStop),
     acp: makeAcp(launch, onStop, inside),
     events: makeEvents(onStop),

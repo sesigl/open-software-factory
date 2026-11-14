@@ -20,16 +20,16 @@ scenario("SCN-CONSOLE-040", async ({ sut, fakes, given, when, then }) => {
   await then(
     'its table has the row "foreman token", "failing", "foreman refuses the token: set CONSOLE_FOREMAN_TOKEN to its FOREMAN_API_TOKEN"',
     async () => {
-      expect(rows(page.html)).toContainEqual([
+      expect(rows(page)).toContainEqual([
         "foreman token",
         "failing",
         "foreman refuses the token: set CONSOLE_FOREMAN_TOKEN to its FOREMAN_API_TOKEN",
       ]);
-      expect(rows(page.html)).toContainEqual(["foreman temporal", "ok", "—"]);
+      expect(rows(page)).toContainEqual(["foreman temporal", "ok", "—"]);
     },
   );
 
   await then('the page\'s navigation links "/health"', async () => {
-    expect(navLinks(page.html)).toContainEqual({ href: "/health", text: "Health" });
+    expect(navLinks(page)).toContainEqual({ href: "/health", text: "Health" });
   });
 });

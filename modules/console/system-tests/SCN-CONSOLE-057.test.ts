@@ -1,4 +1,4 @@
-import { scenario } from "@opensoftware/testkit";
+import { type Page, scenario } from "@opensoftware/testkit";
 import { foreman, links, open, rows, runOf, serving } from "./console.ts";
 
 scenario("SCN-CONSOLE-057", async ({ sut, fakes, given, when, then }) => {
@@ -27,27 +27,27 @@ scenario("SCN-CONSOLE-057", async ({ sut, fakes, given, when, then }) => {
 
   let page: Awaited<ReturnType<typeof open>>;
   let next: Awaited<ReturnType<typeof open>>;
-  const nextHref = (html: string) => links(html).find((link) => link.text === "Next page")?.href;
+  const nextHref = (shown: Page) => links(shown).find((link) => link.text === "Next page")?.href;
   await when('a person opens "/" and then its link "Next page"', async () => {
     await serving(sut, [paged.url, second.url]);
     page = await open(sut, "/");
-    next = await open(sut, nextHref(page.html) as string);
+    next = await open(sut, nextHref(page) as string);
   });
 
-  const titles = (html: string) => rows(html).map((row) => row[0]);
+  const titles = (shown: Page) => rows(shown).map((row) => row[0]);
   await then(
     'the first page lists "Import reports from CSV" and "Export reports as CSV" and links "Next page"',
     async () => {
       expect(page.status).toBe(200);
-      expect(titles(page.html).sort()).toEqual(["Export reports as CSV", "Import reports from CSV"]);
-      expect(nextHref(page.html)).toMatch(/^\/\?page=[\w-]+$/);
+      expect(titles(page).sort()).toEqual(["Export reports as CSV", "Import reports from CSV"]);
+      expect(nextHref(page)).toMatch(/^\/\?page=[\w-]+$/);
     },
   );
 
   await then('the next page lists only "Archive old reports" and links no "Next page"', async () => {
     expect(next.status).toBe(200);
-    expect(titles(next.html)).toEqual(["Archive old reports"]);
-    expect(nextHref(next.html)).toBeUndefined();
+    expect(titles(next)).toEqual(["Archive old reports"]);
+    expect(nextHref(next)).toBeUndefined();
   });
 
   await then("the second foreman was asked only for its first page", async () => {

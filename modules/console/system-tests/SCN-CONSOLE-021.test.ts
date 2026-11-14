@@ -34,11 +34,11 @@ scenario("SCN-CONSOLE-021", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then('the page shows the check "ci" as "failure"', async () => {
-    expect(rows(page.html)[0]?.[5]).toBe("ci: failure, lint: success");
+    expect(rows(page)[0]?.[5]).toBe("ci: failure, lint: success");
   });
 
   await then('the page shows the reason "the check ci failed"', async () => {
-    expect(rows(page.html)[0]).toEqual([
+    expect(rows(page)[0]).toEqual([
       "ship",
       "shipper",
       "failed",

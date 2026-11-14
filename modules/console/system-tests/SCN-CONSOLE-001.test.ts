@@ -15,11 +15,11 @@ scenario("SCN-CONSOLE-001", async ({ sut, fakes, given, when, then }) => {
 
   await then('the page answers 200 and lists the run "Export reports as CSV" in the state "running"', async () => {
     expect(page.status).toBe(200);
-    expect(rows(page.html)).toEqual([["Export reports as CSV", "web", "running", "slack", "Varun", "—", "5 min"]]);
+    expect(rows(page)).toEqual([["Export reports as CSV", "web", "running", "slack", "Varun", "—", "5 min"]]);
   });
 
   await then('the page\'s stylesheet "/pico.css" answers 200', async () => {
-    expect(page.html).toContain('<link rel="stylesheet" href="/pico.css"/>');
+    expect(page.stylesheets).toEqual(["/pico.css"]);
     const css = await sut.http.get("/pico.css");
     expect(css.status).toBe(200);
     expect(css.headers["content-type"]).toMatch(/^text\/css/);

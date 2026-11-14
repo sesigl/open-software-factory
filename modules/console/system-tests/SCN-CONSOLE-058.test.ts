@@ -31,15 +31,15 @@ scenario("SCN-CONSOLE-058", async ({ sut, fakes, given, when, then }) => {
   await then(
     'the table lists "Import reports from CSV" and the page links "Next page" to "/work?cursor=Y3Vyc29y"',
     async () => {
-      expect(rows(page.html).map((row) => row[0])).toEqual(["Import reports from CSV"]);
-      expect(links(page.html)).toContainEqual({ href: "/work?cursor=Y3Vyc29y", text: "Next page" });
+      expect(rows(page).map((row) => row[0])).toEqual(["Import reports from CSV"]);
+      expect(links(page)).toContainEqual({ href: "/work?cursor=Y3Vyc29y", text: "Next page" });
     },
   );
 
   await then('opening that link asks intake for "/v1/inbox?cursor=Y3Vyc29y"', async () => {
     const next = await open(sut, "/work?cursor=Y3Vyc29y");
     expect(next.status).toBe(200);
-    expect(links(next.html).map((link) => link.text)).not.toContain("Next page");
+    expect(links(next).map((link) => link.text)).not.toContain("Next page");
     expect(intake.headers().map((request) => request.path)).toEqual(["/v1/inbox", "/v1/inbox?cursor=Y3Vyc29y"]);
   });
 });

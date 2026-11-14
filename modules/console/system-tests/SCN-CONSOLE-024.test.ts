@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { factoryEnv, links, open, serving, text } from "./console.ts";
+import { factoryEnv, links, open, serving } from "./console.ts";
 
 scenario("SCN-CONSOLE-024", async ({ sut, given, when, then }) => {
   let env: Record<string, string> = {};
@@ -22,21 +22,23 @@ scenario("SCN-CONSOLE-024", async ({ sut, given, when, then }) => {
 
   await then('the page shows the agent\'s prompt "./prompts/triage.md"', async () => {
     expect(page.status).toBe(200);
-    expect(text(page.html)).toContain("harness claude-code model routes/triage prompt ./prompts/triage.md");
+    expect(page.text).toContain("harness claude-code model routes/triage prompt ./prompts/triage.md");
   });
 
   await then(
     'the page links "https://github.com/acme/factory/blob/main/factory.yaml" and says "Change it in Git, on the branch main"',
     async () => {
-      expect(links(page.html)).toContainEqual({
+      expect(links(page)).toContainEqual({
         href: "https://github.com/acme/factory/blob/main/factory.yaml",
         text: "factory.yaml",
       });
-      expect(text(page.html)).toContain("Read-only. Change it in Git, on the branch main: factory.yaml");
+      expect(page.text).toContain("Read-only. Change it in Git, on the branch main: factory.yaml");
     },
   );
 
   await then("the page has no form and no input", async () => {
-    expect(page.html).not.toMatch(/<(form|input|textarea|select|button)\b/);
+    expect(page.forms).toEqual([]);
+    for (const role of ["button", "textbox", "combobox", "listbox", "checkbox", "radio"])
+      expect(page.queryAllByRole(role)).toEqual([]);
   });
 });

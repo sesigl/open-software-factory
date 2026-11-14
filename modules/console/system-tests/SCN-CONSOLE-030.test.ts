@@ -24,7 +24,7 @@ scenario("SCN-CONSOLE-030", async ({ sut, fakes, given, when, then }) => {
     'the rows are "Review reads the scenario first" and "Triage asks before it investigates" in this order',
     async () => {
       expect(page.status).toBe(200);
-      expect(rows(page.html).map((row) => row.slice(0, 3))).toEqual([
+      expect(rows(page).map((row) => row.slice(0, 3))).toEqual([
         ["Review reads the scenario first", "observer/review-scope-5e6f7a8b", "github:tester"],
         ["Triage asks before it investigates", "observer/triage-inline-1a2b3c4d", "github:tester"],
       ]);
@@ -33,15 +33,15 @@ scenario("SCN-CONSOLE-030", async ({ sut, fakes, given, when, then }) => {
 
   await then("each row links its pull request", async () => {
     const [triage, , review] = box.opened;
-    expect(links(rowWith(page.html, "Review reads the scenario first"))).toEqual([
+    expect(links(rowWith(page, "Review reads the scenario first"))).toEqual([
       { href: review?.url, text: "Review reads the scenario first" },
     ]);
-    expect(links(rowWith(page.html, "Triage asks before it investigates"))).toEqual([
+    expect(links(rowWith(page, "Triage asks before it investigates"))).toEqual([
       { href: triage?.url, text: "Triage asks before it investigates" },
     ]);
   });
 
   await then('the page\'s navigation links "/inbox"', async () => {
-    expect(navLinks(page.html)).toContainEqual({ href: "/inbox", text: "Inbox" });
+    expect(navLinks(page)).toContainEqual({ href: "/inbox", text: "Inbox" });
   });
 });

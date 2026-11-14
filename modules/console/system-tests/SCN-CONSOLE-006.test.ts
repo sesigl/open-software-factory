@@ -28,11 +28,11 @@ scenario("SCN-CONSOLE-006", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then("the page lists 12 runs", async () => {
-    expect(rows(page.html)).toHaveLength(12);
+    expect(rows(page)).toHaveLength(12);
   });
 
   await then('7 rows name the factory "web" and 5 rows name the factory "mobile"', async () => {
-    const factories = rows(page.html).map((row) => row[1]);
+    const factories = rows(page).map((row) => row[1]);
     expect(factories.filter((factory) => factory === "web")).toHaveLength(7);
     expect(factories.filter((factory) => factory === "mobile")).toHaveLength(5);
   });

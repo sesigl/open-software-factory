@@ -16,13 +16,14 @@ scenario("SCN-CONSOLE-009", async ({ sut, fakes, given, when, then }) => {
   await then(
     'the page links "?state=running", "?state=blocked", "?state=complete", "?state=failed" and "?state=cancelled"',
     async () => {
-      expect(links(page.html).filter((link) => link.href.startsWith("?state="))).toEqual(
+      expect(links(page).filter((link) => link.href.startsWith("?state="))).toEqual(
         ["running", "blocked", "complete", "failed", "cancelled"].map((state) => ({
           href: `?state=${state}`,
           text: state,
         })),
       );
-      expect(page.html).toContain('<a href="/" aria-current="page">all</a>');
+      expect(page.getByRole("link", { current: "page" }).attribute("href")).toBe("/");
+      expect(page.getByRole("link", { current: "page" }).text).toBe("all");
     },
   );
 });

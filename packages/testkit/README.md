@@ -54,6 +54,18 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
   `application/problem+json`), `stop()` stops it so the test can start it again, for example with another
   environment, and `client<paths>()` gives an [openapi-fetch](https://openapi-ts.dev/openapi-fetch/) client
   typed by the module's generated OpenAPI `paths`. A server that exits first fails the test with its error output.
+  `url()` gives the base URL of the running server.
+- `sut.pages.open(path, { headers })`: opens a page of the server `sut.http` started, as a person reads it but
+  without a browser ([ADR 0131](../../docs/decisions/0131-ui-tests-pages-journeys-islands.md)). The page has its
+  `status`, `path`, `location` (of a redirect that was not followed), `title`, `text`, `refresh` (the seconds of its
+  `<meta http-equiv="refresh">`), `stylesheets`, `hasScript` and `forms`, and Testing Library's queries
+  `getByRole`, `queryByRole`, `getAllByRole`, `queryAllByRole`, `getByText`, `queryByText`, `getAllByText` and
+  `getByLabelText`. Each element found has its accessible `name`, its `text`, `attribute(name)` and the same
+  queries inside it. `follow(link)` opens a link by its name; `submit(button, { label: value }, { follow, headers })`
+  presses a button and sends its form with the fields named by their labels. Links and forms send the page's headers
+  again and keep the scenario's cookies; redirects are followed unless `follow` is false. `sut.pages.send(path,
+  fields, { headers, follow })` sends fields as a form does, for a request that no page offers, like a program's. A
+  test finds elements by role, name, label and text, never by a tag, a class or a test ID.
 - `sut.mcp.connect(args, { env })`: starts the module's `bin` as an MCP server on stdio and returns a connected
   MCP client (`listTools`, `callTool`, ...).
 - `sut.action(inputs, { event, eventName, repository, sha, env })`: runs the module's composite `action.yml` like a
@@ -496,3 +508,6 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-151 | implemented | The fake sandbox's probe reports the scripted outcome "reached" |
 | SCN-TK-152 | implemented | fakes.postgres gives a later scenario the same PostgreSQL server and a database of its own |
 | SCN-TK-153 | implemented | fakes.temporal gives a later scenario the same Temporal server and a namespace of its own |
+| SCN-TK-154 | implemented | sut.pages reads a page by role, name and text |
+| SCN-TK-155 | implemented | sut.pages sends a form, follows its redirect and keeps the cookies and the headers |
+| SCN-TK-156 | implemented | A query that finds no element fails the test and names the role and the name it looked for |

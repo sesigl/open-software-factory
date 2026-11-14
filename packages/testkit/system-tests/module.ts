@@ -639,3 +639,48 @@ export function inferenceModule(bin: string[], expectations: string[], options =
     ],
   });
 }
+
+/**
+ * Module demo whose server answers each path in `pages` with that HTML and every other request with `routes`, plain
+ * JavaScript statements that see `request`, `response`, `url` (a URL) and `form` (the sent fields, URLSearchParams).
+ * Its README documents `PORT`.
+ */
+export function pageModule(
+  pages: Record<string, string>,
+  routes: string[],
+  steps: string[],
+  test: string[],
+): Record<string, string> {
+  return demoModule({
+    bin: [
+      'import { createServer } from "node:http";',
+      `const pages = ${JSON.stringify(pages)};`,
+      "createServer(async (request, response) => {",
+      '  const url = new URL(request.url, "http://127.0.0.1");',
+      "  let sent = '';",
+      "  for await (const chunk of request) sent += chunk;",
+      "  const form = new URLSearchParams(sent);",
+      "  if (pages[url.pathname] !== undefined) {",
+      '    response.writeHead(200, { "content-type": "text/html; charset=utf-8" });',
+      "    return response.end(pages[url.pathname]);",
+      "  }",
+      ...routes.map((line) => `  ${line}`),
+      "  response.writeHead(404);",
+      "  response.end();",
+      '}).listen(Number(process.env.PORT), "127.0.0.1");',
+      "",
+    ].join("\n"),
+    readme: [
+      "# demo",
+      "",
+      "## Configuration",
+      "",
+      "| Variable | Meaning |",
+      "| --- | --- |",
+      "| `PORT` | Port. |",
+      "",
+    ].join("\n"),
+    steps,
+    test,
+  });
+}

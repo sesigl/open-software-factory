@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { foreman, open, rows, runOf, serving, text } from "./console.ts";
+import { foreman, open, rows, runOf, serving } from "./console.ts";
 
 scenario("SCN-CONSOLE-011", async ({ sut, fakes, given, when, then }) => {
   let web: Awaited<ReturnType<typeof foreman>>;
@@ -20,11 +20,11 @@ scenario("SCN-CONSOLE-011", async ({ sut, fakes, given, when, then }) => {
 
   await then('the page answers 200 and lists the run "Export reports as CSV"', async () => {
     expect(page.status).toBe(200);
-    expect(rows(page.html).map((row) => row[0])).toEqual(["Export reports as CSV"]);
+    expect(rows(page).map((row) => row[0])).toEqual(["Export reports as CSV"]);
   });
 
   await then('the page says "the foreman at <second URL> did not answer: 503"', async () => {
-    expect(page.html).toContain(`<p role="alert">the foreman at ${second.url} did not answer: 503</p>`);
-    expect(text(page.html)).not.toContain(`the foreman at ${web.url}`);
+    expect(page.getByRole("alert").text).toBe(`the foreman at ${second.url} did not answer: 503`);
+    expect(page.text).not.toContain(`the foreman at ${web.url}`);
   });
 });
