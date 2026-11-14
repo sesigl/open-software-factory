@@ -80,7 +80,9 @@ Forgejo, such as Codeberg, set `CONSOLE_FORGE_ADAPTER=npx -y @opensoftware/forge
 Links: `CONSOLE_TRACE_URL` and `CONSOLE_SESSION_URL` are URL templates of the trace store, such as Langfuse or
 Phoenix, with `{runId}` or `{traceId}`, and `{sessionId}`. `{traceId}` is the run's `traceId`, which a foreman with
 traces names ([ADR 0087](../../docs/decisions/0087-run-traces.md)); Phoenix finds a trace by it. The foreman sets the run's ID as `osf.run.id` on every run's traces
-([runlog](../runlog/README.md)), and a stage's harness session is its transcript. `CONSOLE_TEMPORAL_URL` links the
+([runlog](../runlog/README.md)), and a stage's harness session is its transcript. `CONSOLE_SPAN_URL`, with `{traceId}`
+and `{spanId}`, makes each started stage's name a link to its span in the run's trace, such as Jaeger's
+`/trace/{traceId}?uiFind={spanId}` ([ADR 0121](../../docs/decisions/0121-stage-run-record-in-the-trace.md)). `CONSOLE_TEMPORAL_URL` links the
 run's history: `<url>/namespaces/<CONSOLE_TEMPORAL_NAMESPACE>/workflows/<runId>`.
 
 ## Health
@@ -122,6 +124,7 @@ A server of a release before `/v1/health` fails its check with the advice to upd
 | `CONSOLE_GATEKEEPER_TOKEN` | string |  | serve: gatekeeper's GATEKEEPER_API_TOKEN. |
 | `CONSOLE_TRACE_URL` | string |  | serve: the link to a run's trace in the trace store, with {runId} or {traceId}, like https://langfuse.acme.dev/traces?run={runId} or Phoenix's http://127.0.0.1:6006/projects/UHJvamVjdDox/traces/{traceId}. A run without a traceId gets no link from a template with {traceId}. |
 | `CONSOLE_SESSION_URL` | string |  | serve: the link to a stage's transcript, with {sessionId}, like https://langfuse.acme.dev/sessions/{sessionId}. |
+| `CONSOLE_SPAN_URL` | string |  | serve: the link to a stage's span in the run's trace, with {traceId} and {spanId}, like http://127.0.0.1:16686/trace/{traceId}?uiFind={spanId} for Jaeger. |
 | `CONSOLE_TEMPORAL_URL` | string |  | serve: the base URL of the Temporal UI. Set, a run's page links its history. |
 | `CONSOLE_TEMPORAL_NAMESPACE` | string | `"default"` | serve: the Temporal namespace of the runs, the foreman's FOREMAN_TEMPORAL_NAMESPACE. |
 | `CONSOLE_LINKS` | string |  | serve: the dashboards every page links, as name=url, comma-separated, like Grafana=https://grafana.acme.dev. |
@@ -228,4 +231,5 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-067 | implemented | "console doctor --deep" names the variables of the gateway and the harness when they are not set |
 | SCN-CONSOLE-068 | implemented | "console doctor --deep" names a gateway that does not answer and a harness that ends without a word |
 | SCN-CONSOLE-069 | implemented | The page "/health" calls no model |
+| SCN-CONSOLE-070 | implemented | The run page links each stage to its span in the run's trace |
 | SCN-CONSOLE-080 | implemented | The run page lists the actions of a run with the person who sent each |

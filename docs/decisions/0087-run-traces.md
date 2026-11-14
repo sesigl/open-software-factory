@@ -53,5 +53,5 @@ The review of the whole stack marked this as a P0 gap for v1 (`TODO.md` T-24).
 - With the endpoint set, every run shows up in the trace store with its stages, and the console's trace link can find
   it by `osf.run.id`.
 - A stage span is sent once per attempt of its activity; a retried stage shows as two spans with the same span ID.
-- runlog's `attach` after each stage, so that the session's tokens and cost join the stage span, is the next slice of
-  T-24.
+- The session's tokens and cost join the stage span through the harness's `transcript`, not runlog's `attach`
+  (ADR 0121).

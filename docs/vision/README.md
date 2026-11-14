@@ -46,7 +46,7 @@ not `deprecated` is `implemented`; otherwise it says `planned`. The check VISION
 | SCN-FACTORY-OPEN-004 | implemented | SCN-INFER-001 (implemented) |
 | SCN-FACTORY-OPEN-005 | implemented | SCN-FORGE-003 (implemented) |
 | SCN-FACTORY-OPEN-006 | implemented | SCN-HCODEX-005 (implemented), SCN-DIST-001 (deprecated), SCN-DIST-016 (deprecated), SCN-DIST-026 (implemented), SCN-DIST-007 (deprecated), SCN-DIST-019 (implemented) |
-| SCN-FACTORY-DATA-001 | implemented | SCN-CTR-003 (implemented), SCN-FORE-076 (implemented), SCN-RUN-027 (implemented), SCN-RUN-003 (implemented), SCN-RUN-005 (implemented), SCN-RUN-066 (implemented), SCN-RUN-008 (implemented), SCN-RUN-010 (implemented), SCN-RUN-068 (implemented), SCN-RUN-044 (implemented), SCN-RUN-045 (implemented), SCN-RUN-049 (implemented), SCN-RUN-051 (implemented), SCN-RUN-015 (deprecated), SCN-RUN-063 (implemented), SCN-RUN-064 (implemented), SCN-RUN-065 (implemented), SCN-RUN-055 (implemented), SCN-RUN-022 (implemented), SCN-RUN-024 (implemented), SCN-RUN-069 (implemented), SCN-RUN-001 (implemented), SCN-RUN-031 (implemented) |
+| SCN-FACTORY-DATA-001 | implemented | SCN-CTR-003 (implemented), SCN-FORE-076 (implemented), SCN-FORE-155 (implemented), SCN-RUN-027 (implemented), SCN-RUN-003 (implemented), SCN-RUN-005 (implemented), SCN-RUN-066 (implemented), SCN-RUN-008 (implemented), SCN-RUN-010 (implemented), SCN-RUN-068 (implemented), SCN-RUN-044 (implemented), SCN-RUN-045 (implemented), SCN-RUN-049 (implemented), SCN-RUN-051 (implemented), SCN-RUN-015 (deprecated), SCN-RUN-063 (implemented), SCN-RUN-064 (implemented), SCN-RUN-065 (implemented), SCN-RUN-055 (implemented), SCN-RUN-022 (implemented), SCN-RUN-024 (implemented), SCN-RUN-069 (implemented), SCN-RUN-001 (implemented), SCN-RUN-031 (implemented) |
 | SCN-FACTORY-DATA-002 | planned | none |
 | SCN-FACTORY-DATA-003 | implemented | SCN-RUN-006 (implemented), SCN-RUN-026 (implemented), SCN-RUN-075 (implemented) |
 | SCN-FACTORY-DATA-004 | implemented | SCN-SANDBOX-010 (implemented) |
@@ -66,7 +66,7 @@ not `deprecated` is `implemented`; otherwise it says `planned`. The check VISION
 | SCN-FACTORY-AUTO-001 | implemented | SCN-INTAKE-021 (implemented) |
 | SCN-FACTORY-AUTO-002 | implemented | SCN-FSPEC-043 (implemented), SCN-FSPEC-033 (implemented), SCN-FSPEC-050 (implemented), SCN-FORGE-022 (implemented) |
 | SCN-FACTORY-VIS-001 | implemented | SCN-CONSOLE-001 (implemented), SCN-CONSOLE-005 (implemented), SCN-CONSOLE-006 (implemented), SCN-CONSOLE-012 (implemented), SCN-CONSOLE-057 (implemented) |
-| SCN-FACTORY-VIS-002 | implemented | SCN-CONSOLE-015 (implemented), SCN-CONSOLE-016 (implemented), SCN-CONSOLE-017 (implemented), SCN-CONSOLE-018 (implemented), SCN-CONSOLE-041 (implemented) |
+| SCN-FACTORY-VIS-002 | implemented | SCN-CONSOLE-015 (implemented), SCN-CONSOLE-016 (implemented), SCN-CONSOLE-017 (implemented), SCN-CONSOLE-018 (implemented), SCN-CONSOLE-041 (implemented), SCN-CONSOLE-070 (implemented) |
 | SCN-FACTORY-METRIC-001 | implemented | SCN-LEDGER-020 (implemented), SCN-LEDGER-063 (implemented) |
 | SCN-FACTORY-METRIC-002 | implemented | SCN-LEDGER-021 (implemented), SCN-LEDGER-063 (implemented), SCN-LEDGER-040 (implemented) |
 | SCN-FACTORY-METRIC-003 | implemented | SCN-LEDGER-035 (implemented), SCN-LEDGER-024 (implemented), SCN-LEDGER-025 (implemented), SCN-LEDGER-058 (implemented), SCN-LEDGER-059 (implemented), SCN-LEDGER-039 (implemented) |

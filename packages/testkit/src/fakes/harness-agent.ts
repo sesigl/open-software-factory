@@ -7,7 +7,7 @@
 // can show the prompts nobody scripted, and each session it opens with the model variables (ADR 0070) and the MCP
 // servers (ADR 0112) it got.
 import { spawnSync } from "node:child_process";
-import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
 import { Readable, Writable } from "node:stream";
 import {
@@ -42,6 +42,14 @@ const log = (entry: HarnessLogEntry): void => {
   if (remote) posted = posted.then(() => fetch(logFile, { method: "POST", body: line }).then(() => undefined));
   else appendFileSync(logFile, `${line}\n`);
 };
+
+/** The sessions that every process of this log opened so far. */
+const loggedSessions = (): number =>
+  existsSync(logFile)
+    ? readFileSync(logFile, "utf8")
+        .split("\n")
+        .filter((line) => line.startsWith('{"session"')).length
+    : 0;
 
 /** Asks the client to approve each tool call of the turn; true when it allowed every one. */
 async function approveTools(client: AgentContext, sessionId: string, turn: HarnessTurn): Promise<boolean> {
@@ -99,7 +107,8 @@ agent({ name: "testkit-scripted-harness" })
     };
   })
   .onRequest("session/new", async ({ params }) => {
-    const sessionId = `session-${sessions.size + 1}`;
+    // Unique across the agent's processes that share a log, as a real agent's session IDs are.
+    const sessionId = `session-${(remote ? sessions.size : loggedSessions()) + 1}`;
     sessions.set(sessionId, { cwd: params.cwd });
     // The model variables (ADR 0070) and the effort level (ADR 0078) the agent got.
     const env = Object.entries(process.env).filter(([name]) =>

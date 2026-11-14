@@ -3371,6 +3371,11 @@
             "type": "string",
             "description": "The harness session of the stage's agent, once it started."
           },
+          "spanId": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{16}$",
+            "description": "The span of the stage in the run's trace, once it started: the first 16 hex digits of the SHA-256 of\n`<runId>:<stage index>` (ADR 0087, ADR 0121)."
+          },
           "gateId": {
             "type": "string",
             "pattern": "^g[0-9a-f]{16}$",

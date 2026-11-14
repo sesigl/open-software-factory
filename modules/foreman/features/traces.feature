@@ -24,3 +24,11 @@ Feature: Traces
     When a program posts the README's "work.json" to "/v1/runs" with the API token
     And the run completes
     Then "/v1/runs/<id>" shows the "traceId" of the spans the receiver got
+
+  @id=SCN-FORE-155 @status=implemented @realizes=SCN-FACTORY-DATA-001
+  Scenario: Each stage's span carries its session's tokens and cost, and the run's view names the span
+    Given "foreman serve" runs the README's "factory.yaml" with "OTEL_EXPORTER_OTLP_ENDPOINT" set to an OTLP receiver, and a harness whose turns report 900 input tokens, 30 output tokens and 0.25 USD
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    And the run completes
+    Then the spans "stage plan" and "stage implement" carry "gen_ai.usage.input_tokens" 900, "gen_ai.usage.output_tokens" 30 and "osf.cost.usd" 0.25 from the run record of their session
+    And "/v1/runs/<id>" names the "spanId" of each stage's span

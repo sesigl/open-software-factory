@@ -43,6 +43,10 @@
       "type": "string",
       "description": "serve: the link to a stage's transcript, with {sessionId}, like https://langfuse.acme.dev/sessions/{sessionId}."
     },
+    "CONSOLE_SPAN_URL": {
+      "type": "string",
+      "description": "serve: the link to a stage's span in the run's trace, with {traceId} and {spanId}, like http://127.0.0.1:16686/trace/{traceId}?uiFind={spanId} for Jaeger."
+    },
     "CONSOLE_TEMPORAL_URL": {
       "type": "string",
       "description": "serve: the base URL of the Temporal UI. Set, a run's page links its history."

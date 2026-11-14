@@ -142,6 +142,9 @@ export async function serve(env: Env) {
           : undefined,
       history: temporal && `${temporal}/namespaces/${namespace}/workflows/${runId}`,
       transcript: (sessionId: string) => env.CONSOLE_SESSION_URL && fill(env.CONSOLE_SESSION_URL, { sessionId }),
+      // A stage's span in the run's trace, which a foreman names (ADR 0121).
+      span: (spanId: string) =>
+        env.CONSOLE_SPAN_URL && run.traceId ? fill(env.CONSOLE_SPAN_URL, { traceId: run.traceId, spanId }) : undefined,
     };
     return send(
       reply,

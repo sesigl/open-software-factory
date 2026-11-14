@@ -34,15 +34,31 @@ export interface SpanFacts {
   outcome: Outcome;
   /** The run's resource: osf.run.id, osf.work_item.id, osf.factory.version and, for a stage, osf.stage. */
   resource: Record<string, string>;
-  attributes: Record<string, string | undefined>;
+  attributes: Record<string, string | number | undefined>;
 }
 
 const nanos = (iso: string) => `${BigInt(Date.parse(iso)) * 1_000_000n}`;
 
-const attributesOf = (values: Record<string, string | undefined>) =>
+/** An OTLP/JSON value: a number is an integer, a token count; `osf.cost.usd` is a double. */
+const otlpValue = (key: string, value: string | number) => {
+  if (typeof value === "string") return { stringValue: value };
+  return key === "osf.cost.usd" ? { doubleValue: value } : { intValue: String(value) };
+};
+
+const attributesOf = (values: Record<string, string | number | undefined>) =>
   Object.entries(values).flatMap(([key, value]) =>
-    value === undefined ? [] : [{ key, value: { stringValue: value } }],
+    value === undefined ? [] : [{ key, value: otlpValue(key, value) }],
   );
+
+/** The tokens and the cost of a run record's span (contracts/run-record): what joins the stage's span (ADR 0121). */
+export function usageOf(span: Record<string, unknown>): Record<string, number> {
+  return Object.fromEntries(
+    Object.entries(span).filter(
+      (entry): entry is [string, number] =>
+        (entry[0].startsWith("gen_ai.usage.") || entry[0] === "osf.cost.usd") && typeof entry[1] === "number",
+    ),
+  );
+}
 
 /** One OTLP/JSON ExportTraceServiceRequest with the span. */
 export function otlpOf(span: SpanFacts): unknown {

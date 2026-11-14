@@ -40,7 +40,7 @@ published yet, like one whose pin moved a moment ago, is built from npm, which t
 | `temporal-namespace` | one-shot: the namespace `default` | none |
 | `temporal-ui` | the history of every run | `TEMPORAL_UI_PORT`, 8233 |
 | `nats` | NATS with JetStream for the events between the modules; intake and foreman keep an event in the stream `OSF` for `OSF_STREAM_MAX_AGE`, default `7d` ([ADR 0116](../docs/decisions/0116-events-not-lost-without-a-trace.md)) | none |
-| `jaeger` | the trace store: the runs' traces from foreman, by OTLP, kept on the volume `jaeger` ([ADR 0100](../docs/decisions/0100-jaeger-trace-store.md)) | `JAEGER_PORT`, 16686 |
+| `jaeger` | the trace store: the runs' traces from foreman, by OTLP, kept on the volume `jaeger` ([ADR 0100](../docs/decisions/0100-jaeger-trace-store.md)); the console links each run and each stage's span there ([ADR 0121](../docs/decisions/0121-stage-run-record-in-the-trace.md)) | `JAEGER_PORT`, 16686 |
 | `litellm` | the LLM gateway, configured by `litellm/config.yaml`: LiteLLM's image with its bytecode compiled, so it starts sooner ([ADR 0098](../docs/decisions/0098-litellm-image-with-bytecode.md)), and without BerriAI's enterprise code, whose license allows no changed copies ([ADR 0102](../docs/decisions/0102-litellm-image-without-enterprise-code.md)) | `LITELLM_PORT`, 4000 |
 | `factory-repo` | one-shot: copies `FACTORY_DIR` into the volume `factory` and commits it | none |
 | `gatekeeper` | approvals in Slack or on pull requests, with the policy and groups of the factory | `GATEKEEPER_PORT`, 8082 |

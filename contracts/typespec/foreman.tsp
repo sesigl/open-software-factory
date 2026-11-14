@@ -56,6 +56,13 @@ model StageView {
   /** The harness session of the stage's agent, once it started. */
   sessionId?: string;
 
+  /**
+   * The span of the stage in the run's trace, once it started: the first 16 hex digits of the SHA-256 of
+   * `<runId>:<stage index>` (ADR 0087, ADR 0121).
+   */
+  @pattern("^[0-9a-f]{16}$")
+  spanId?: string;
+
   /** The gate that decides whether the stage starts, once it was requested. */
   @pattern("^g[0-9a-f]{16}$")
   gateId?: string;

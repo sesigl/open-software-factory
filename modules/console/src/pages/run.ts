@@ -9,6 +9,8 @@ export interface RunLinks {
   history?: string;
   /** A stage's transcript, by its harness session. */
   transcript: (sessionId: string) => string | undefined;
+  /** A stage's span in the run's trace (ADR 0121). */
+  span: (spanId: string) => string | undefined;
 }
 
 const gateText = (stage: StageView, gates: Map<string, GateView>) => {
@@ -80,7 +82,7 @@ const runBefore = (run: RunView) =>
     : null;
 
 const stageRow = (stage: StageView, gates: Map<string, GateView>, links: RunLinks, gate: unknown) => html`<tr>
-  <td>${stage.stage}</td>
+  <td>${stage.spanId ? linkOr(links.span(stage.spanId), stage.stage) : stage.stage}</td>
   <td>${stage.wait ? "waits" : stage.agent}</td>
   <td>${stage.state}</td>
   <td>${stage.sessionId ? linkOr(links.transcript(stage.sessionId), stage.sessionId) : ""}</td>
