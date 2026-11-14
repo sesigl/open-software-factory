@@ -21,11 +21,12 @@ Commands:
   destroy <ID>                Remove the sandbox and all its data.
   list                        Print the IDs of the sandboxes.
   egress-log <ID>             Print one JSON line per request that left the sandbox.
-  probe <template> <host>     Start a sandbox with no allowed host, send one HTTPS request to the host, remove the
-                              sandbox, and print "refused <host>" or "reached <host>".
+  probe <template> <host>     Start a sandbox with no allowed host (--allow: only the host), send one HTTPS request
+                              to the host, remove the sandbox, and print "refused <host>" or "reached <host>".
 `;
 
-const { positionals, values } = parseArgs({ allowPositionals: true, options: { help: { type: "boolean" } } });
+const flag = { type: "boolean" } as const;
+const { positionals, values } = parseArgs({ allowPositionals: true, options: { help: flag, allow: flag } });
 const [name, first, second, ...rest] = positionals;
 const secretsDir = process.env.OSF_SECRETS_DIR ?? "/run/secrets";
 
@@ -41,7 +42,7 @@ const commands: Record<string, Command> = {
   destroy: () => destroy(first),
   list: () => list(),
   "egress-log": () => egressLog(first),
-  probe: () => probe(first, second, secretsDir),
+  probe: () => probe(first as string, second, values.allow, secretsDir),
 };
 
 process.exitCode = await runProgram({

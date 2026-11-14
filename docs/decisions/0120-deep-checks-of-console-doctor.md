@@ -37,7 +37,11 @@ cost money (a model call) or start processes, so they must not run on every page
   console runs `CONSOLE_SANDBOX_COMMAND probe CONSOLE_SANDBOX_TEMPLATE example.com` with `sh -c` and wants
   `refused example.com`. The outcome comes from the egress log, not from curl's exit code, so a host that is down or
   does not resolve cannot pass for a refusal. A probe is one command, so the console needs no sandbox ID and leaves no
-  sandbox behind. System tests use `fakes.sandbox({ probe })` of the testkit, which isolates nothing and reports the
+  sandbox behind. `probe --allow` puts the host into the sandbox's egress allowlist and must print `reached <host>`
+  (`SCN-SANDBOX-027`), so the conformance suite proves both outcomes without the real network: the host is
+  `api.example.invalid`, which is refused or, when allowed, not refused even though it does not answer. A missing host
+  or one with characters other than `[a-z0-9.-]` exits 2 before a sandbox starts (`SCN-SANDBOX-025`, `026`). The
+  console never passes `--allow`. System tests use `fakes.sandbox({ probe })` of the testkit, which isolates nothing and reports the
   scripted outcome; the adapters' conformance tests need Docker and kind and run in CI.
 - **Not yet:** a test event that reaches the foreman stays an open slice of T-25. It needs a NATS client in the
   console and a foreman route that shows a received test event. The console has neither today, and a check that

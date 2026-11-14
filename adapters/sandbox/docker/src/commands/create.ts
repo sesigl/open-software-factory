@@ -25,7 +25,11 @@ const READY_TIMEOUT_MS = 20_000;
 
 export async function create(file: string | undefined, secretsDir: string): Promise<Outcome> {
   check(file, "name the sandbox spec, like create spec.json");
-  const spec = readSpec(file as string);
+  return { lines: [await start(readSpec(file as string), secretsDir)] };
+}
+
+/** Starts a sandbox from the spec and gives its ID; a sandbox that does not start is removed. */
+export async function start(spec: SandboxSpec, secretsDir: string): Promise<string> {
   const secrets = resolveSecrets(spec, secretsDir);
   const container = await dockerText(["create", ...sandboxArgs(spec), spec.template, "infinity"]);
   const id = container.slice(0, 12);
@@ -38,7 +42,7 @@ export async function create(file: string | undefined, secretsDir: string): Prom
     await destroySandbox(id);
     throw new Error(`the sandbox ${id} did not start and was removed: ${(error as Error).message}`);
   }
-  return { lines: [id] };
+  return id;
 }
 
 /** The sandbox's container: no network until its egress proxy runs, the spec's limits and its environment. */

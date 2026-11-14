@@ -35,7 +35,11 @@ const SANDBOX_TIMEOUT_MS = 120_000;
 
 export async function create(context: Context, file: string | undefined): Promise<Outcome> {
   check(file, "name the sandbox spec, like create spec.json");
-  const spec = readSpec(file as string);
+  return { lines: [await start(context, readSpec(file as string))] };
+}
+
+/** Starts a sandbox from the spec and gives its ID; a sandbox that does not start is removed. */
+export async function start(context: Context, spec: SandboxSpec): Promise<string> {
   const secrets = resolveSecrets(spec, context.settings.secretsDir);
   const base = await basePod(context, spec.template);
   const id = randomBytes(6).toString("hex");
@@ -47,7 +51,7 @@ export async function create(context: Context, file: string | undefined): Promis
     await destroySandbox(context, id);
     throw new Error(`the sandbox ${id} did not start and was removed: ${(error as Error).message}`);
   }
-  return { lines: [id] };
+  return id;
 }
 
 /** The pod the sandbox starts from: the image's, or the pod of the SandboxTemplate the template names. */
