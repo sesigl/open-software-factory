@@ -34,7 +34,8 @@ Layers, top to bottom, in `architecture.json` (ADR 0014): `entry` (`src/cli.ts`)
 `src/web/pages/<path>.astro`: its route in `serve` loads the data, a function of `pages` computes every value it shows,
 and `adapters/web.ts` hands them to Astro as `locals.page` with the status. A template holds no logic (TEMPLATE); the
 health page is the first. Every answer has a Content-Security-Policy without script. The design system `@opensoftware/ui` is a `devDependency`: Astro compiles its components, styles and faces
-into `dist/web/`, and the console serves them at `/_astro/` and `/favicon.svg` from its own origin. Islands: none yet; each island
+into `dist/web/` and copies its brand files beside them (`publicDir`), and the console serves them at `/_astro/` and
+`/favicon.svg` from its own origin. So no built file may resolve `@opensoftware/ui`: the published console does not have it. Islands: none yet; each island
 a page uses is listed here with the reason why a page load is not enough (T-55). `domain` holds the run states, the order of a merged run list, a run's age, the URL
 templates and the inbox's states, without I/O; `adapters` call the APIs, run the forge adapter and read the factory
 file; `pages` are Preact components written
