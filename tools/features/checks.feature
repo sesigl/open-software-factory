@@ -168,6 +168,13 @@ Feature: Repository checks
     Then the command exits with code 0
     And the output contains "TEMPLATE ok"
 
+  @id=SCN-REPO-152 @status=implemented
+  Scenario: TEMPLATE accepts a template that imports a component and the tokens of the design system
+    Given the module "demo" whose template "src/web/pages/runs.astro" imports "@opensoftware/ui/components/Shell.astro" and "@opensoftware/ui/tokens.css"
+    When the developer runs "osf check TEMPLATE"
+    Then the command exits with code 0
+    And the output contains "TEMPLATE ok"
+
   @id=SCN-REPO-143 @status=implemented
   Scenario: TEMPLATE rejects a template that computes in its frontmatter
     Given the module "demo" whose template "src/web/pages/runs.astro" counts the runs in its frontmatter

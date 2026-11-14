@@ -16,11 +16,15 @@
       "default": "./dist/index.js"
     },
     "./tokens.css": "./assets/tokens.css",
-    "./brand/*": "./assets/brand/*"
+    "./brand/*": "./assets/brand/*",
+    "./components/*": "./src/components/*",
+    "./styles/*": "./src/styles/*"
   },
   "files": [
     "dist",
-    "assets"
+    "assets",
+    "src/components",
+    "src/styles"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -31,5 +35,9 @@
   },
   "devDependencies": {
     "@opensoftware/testkit": "workspace:*"
+  },
+  "dependencies": {
+    "@fontsource/ibm-plex-mono": "5.3.0",
+    "@fontsource/ibm-plex-sans": "5.3.0"
   }
 }

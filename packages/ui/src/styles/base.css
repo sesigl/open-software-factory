@@ -1,0 +1,79 @@
+/*
+ * The base of every page of the factory UI (ADR 0133): the faces, served from the page's own origin by the Fontsource
+ * packages, the ground, the text, links and the focus, all on the tokens. A page names no colour and no font itself.
+ */
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/600.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "../../assets/tokens.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--osf-bg-ground);
+  color: var(--osf-text);
+  font: var(--osf-size-text) / 1.5 var(--osf-font-sans);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: var(--osf-size-title);
+  font-weight: var(--osf-weight-strong);
+  margin: 0 0 var(--osf-space-4);
+}
+
+a {
+  color: var(--osf-text);
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--osf-signal);
+}
+
+:focus-visible {
+  outline: 2px solid var(--osf-signal);
+  outline-offset: 2px;
+}
+
+.osf-mono {
+  font-family: var(--osf-font-mono);
+}
+
+/* The main action of a page: the one control in the signal colour, 44 pixels high. */
+.osf-action {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--osf-control-height);
+  padding: 0 var(--osf-space-4);
+  border-radius: var(--osf-radius-control);
+  background: var(--osf-signal);
+  color: var(--osf-on-signal);
+  font-weight: var(--osf-weight-strong);
+  text-decoration: none;
+}
+
+.osf-action:hover {
+  color: var(--osf-on-signal);
+}
+
+/* A message that names a problem: a line in the signal colour, never colour alone. */
+.osf-alert {
+  border-left: 3px solid var(--osf-state-failed);
+  padding: var(--osf-space-2) var(--osf-space-3);
+  background: var(--osf-bg-raised);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none;
+  }
+}

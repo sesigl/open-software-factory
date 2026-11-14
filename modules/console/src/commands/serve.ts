@@ -20,7 +20,7 @@ import { type Api, getJson, postJson } from "../adapters/apis.ts";
 import { readFactory } from "../adapters/factory-file.ts";
 import { proposals } from "../adapters/forge.ts";
 import { readImprovement } from "../adapters/improve-files.ts";
-import { render } from "../adapters/web.ts";
+import { builtAsset, render } from "../adapters/web.ts";
 import { cursorsOf, fill, isState, list, namedLinks, nextPageOf, orderRuns, queryOf, STATES } from "../domain/runs.ts";
 import { signInOf } from "../domain/signin.ts";
 import { submissionOf } from "../domain/submit.ts";
@@ -41,6 +41,9 @@ type Env = Record<string, string | undefined>;
 /** The Content-Security-Policy of every answer: the console's own origin only, no script and no frame (ADR 0132). */
 const POLICY =
   "default-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
+
+/** The favicon of the design system. */
+const FAVICON = readFileSync(createRequire(import.meta.url).resolve("@opensoftware/ui/brand/favicon.svg"));
 
 const PICO = readFileSync(createRequire(import.meta.url).resolve("@picocss/pico/css/pico.min.css"));
 
@@ -107,6 +110,15 @@ export async function serve(env: Env) {
   if (userHeader && existsSync(accessPath))
     (await import("./signin.ts")).useProxyAccess(app, userHeader, accessPath, now);
   app.get("/pico.css", (_request, reply) => reply.type("text/css").send(PICO));
+  // The styles and the faces of the design system that Astro built, and the favicon (ADR 0133): from the console's
+  // own origin, as the Content-Security-Policy allows.
+  app.get<{ Params: { file: string } }>("/_astro/:file", (request, reply) => {
+    const asset = builtAsset(request.params.file);
+    return asset
+      ? reply.type(asset.type).header("cache-control", "public, max-age=31536000, immutable").send(asset.body)
+      : reply.code(404).send();
+  });
+  app.get("/favicon.svg", (_request, reply) => reply.type("image/svg+xml").send(FAVICON));
   // The probe of the profile's and the chart's health checks: the console runs and reads its factory, without a session.
   app.get("/v1/ready", (_request, reply) => {
     try {

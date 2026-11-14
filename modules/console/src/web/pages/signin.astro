@@ -1,25 +1,54 @@
 ---
+import Brand from "@opensoftware/ui/components/Brand.astro";
+import Page from "@opensoftware/ui/components/Page.astro";
 import type { SignInData } from "../../pages/signin.ts";
 
 const { button, start, refusal, where } = Astro.locals.page as SignInData;
 Astro.response.status = Astro.locals.status;
 Astro.response.statusText = Astro.locals.statusText;
 ---
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Sign in · console</title>
-    <link rel="stylesheet" href="/pico.css" />
-  </head>
-  <body>
-    <main class="container">
+<Page title="Sign in" theme="dark">
+  <main class="signin">
+    <section class="intro">
+      <Brand />
+      <p>The factory's work, its runs and its settings, for the people on its access list.</p>
+    </section>
+    <section class="act">
       <h1>Sign in</h1>
-      <p>Open Software Factory: sign in with the account that this factory's access list names.</p>
-      {refusal && <p role="alert">{refusal}</p>}
-      {where && <p>{where}</p>}
-      <p><a href={start}>{button}</a></p>
-    </main>
-  </body>
-</html>
+      <p>Sign in with the account that this factory's access list names.</p>
+      {refusal && <p role="alert" class="osf-alert">{refusal}</p>}
+      {where && <p class="where">{where}</p>}
+      <p><a class="osf-action" href={start}>{button}</a></p>
+    </section>
+  </main>
+</Page>
+<style>
+  .signin {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 100vh;
+  }
+  .intro {
+    padding: var(--osf-space-8);
+    border-right: 1px solid var(--osf-line);
+    color: var(--osf-text-muted);
+  }
+  .act {
+    padding: var(--osf-space-8);
+    max-width: 480px;
+    align-self: center;
+  }
+  .where {
+    color: var(--osf-text-muted);
+    font-size: var(--osf-size-secondary);
+  }
+  @media (max-width: 720px) {
+    .signin {
+      grid-template-columns: 1fr;
+    }
+    .intro {
+      border-right: 0;
+      border-bottom: 1px solid var(--osf-line);
+    }
+  }
+</style>

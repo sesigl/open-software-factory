@@ -143,3 +143,10 @@ Feature: Sign-in
     Given a console behind a sign-in proxy with "CONSOLE_USER_HEADER" "X-Forwarded-Email" and an access file with "ada@acme.dev" as "admin"
     When the proxy sends "Ada@acme.dev" to "/"
     Then the page answers 200 with the heading "Runs"
+
+  @id=SCN-CONSOLE-153 @status=implemented
+  Scenario: The sign-in page has the look of the design system, served from the console itself
+    Given a console that signs in with OpenID Connect and an access file with "ada@acme.dev" as "admin"
+    When a person opens "/signin"
+    Then the page's stylesheet is a file of the console that answers 200 with "text/css" and names the tokens
+    And the console serves the favicon of the design system

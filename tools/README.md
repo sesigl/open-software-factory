@@ -272,3 +272,4 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-149 | implemented | TOKENS rejects a colour value in a stylesheet of the console |
 | SCN-REPO-150 | implemented | TOKENS rejects a font named outside the tokens |
 | SCN-REPO-151 | implemented | TOKENS accepts a stylesheet that names only tokens |
+| SCN-REPO-152 | implemented | TEMPLATE accepts a template that imports a component and the tokens of the design system |

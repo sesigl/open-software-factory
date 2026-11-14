@@ -1462,7 +1462,8 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   - [x] The approved mock-ups and their values in `docs/design/`, with a `README.md` of the direction.
   - [x] The ADR and the package: tokens, both themes, the brand files, the two checks (ADR 0133; CONTRAST and
     TOKENS). The package stays private until its first publish.
-  - [ ] The components that the sign-in page and the shell need (with T-56).
+  - [ ] The components that the sign-in page and the shell need (with T-56). Done for the sign-in page: `Page`,
+    `Brand` and the base styles, compiled into the console's build. The shell's components follow.
   - [ ] The components that Secrets and Skills need (with T-57 and T-59).
 
 ### [ ] T-55 · the first island: code in the browser counts (P2)

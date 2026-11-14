@@ -342,6 +342,7 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-150 | implemented | The console does not start when it signs people in and a sign-in proxy names the person too |
 | SCN-CONSOLE-151 | implemented | Behind a sign-in proxy with an access file, a person who is not in it gets 403 |
 | SCN-CONSOLE-152 | implemented | Behind a sign-in proxy with an access file, a person in it sees the runs |
+| SCN-CONSOLE-153 | implemented | The sign-in page has the look of the design system, served from the console itself |
 | SCN-CONSOLE-154 | implemented | Without an access file nobody can sign in, and the page names the file |
 | SCN-CONSOLE-155 | implemented | The probe "/v1/ready" answers 503 when the console cannot read its factory |
 | SCN-CONSOLE-156 | implemented | With the sign-in a form without a session answers 401 |

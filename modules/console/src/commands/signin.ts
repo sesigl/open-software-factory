@@ -13,7 +13,7 @@ const SESSION = "osf_session";
 const FLOW = "osf_signin";
 const FLOW_SECONDS = 600;
 /** The paths a person reaches without a session. */
-const OPEN = new Set(["/signin", "/signin/start", "/signin/callback", "/pico.css", "/v1/ready"]);
+const OPEN = new Set(["/signin", "/signin/start", "/signin/callback", "/pico.css", "/favicon.svg", "/v1/ready"]);
 
 /** Registers the hook and the routes of the sign-in on the console's server. */
 export function useSignIn(app: FastifyInstance, sign: SignIn, accessPath: string, now: () => number): void {
@@ -36,7 +36,8 @@ export function useSignIn(app: FastifyInstance, sign: SignIn, accessPath: string
     if (request.headers.host !== address.host)
       return reply.code(307).header("location", `${sign.url}${request.url}`).send();
     const path = request.url.split("?")[0] ?? "/";
-    if (OPEN.has(path)) return;
+    // The pages' styles and faces are open, like the sign-in page that needs them.
+    if (OPEN.has(path) || path.startsWith("/_astro/")) return;
     const claims = await unseal(cookieOf(request.headers.cookie, SESSION), sign.keys, now());
     const email = typeof claims?.email === "string" ? claims.email : "";
     if (!email) {

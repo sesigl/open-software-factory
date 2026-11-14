@@ -47,6 +47,18 @@ themes; the repository's check CONTRAST proves it.
 `@opensoftware/ui/brand/icon.svg` (the icon in the current text colour), `wordmark.svg` (the icon beside "Open
 Software Factory") and `favicon.svg` (the icon in the signal colour on the dark ground).
 
+## Components
+
+A page of the console imports them; Astro compiles them, their styles and the faces into the page's build, so a
+package that uses them needs this one only while it builds (a `devDependency`):
+
+| Component | What it is |
+| --- | --- |
+| `@opensoftware/ui/components/Page.astro` | The document: the title, the theme (`data-theme`), the favicon, and `styles/base.css` with the faces, the ground, links, the focus, `.osf-action` (the main action) and `.osf-alert` (a problem) |
+| `@opensoftware/ui/components/Brand.astro` | The icon beside "Open Software Factory" |
+
+The faces are IBM Plex Sans and Mono from the Fontsource packages, served from the page's own origin.
+
 ## Releases
 
 The package is private until its first publish (`skills/release-packages`): then release-please releases it as
