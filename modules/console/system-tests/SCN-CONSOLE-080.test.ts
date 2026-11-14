@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { foreman, open, RUN, runOf, serving, text } from "./console.ts";
+import { foreman, open, RUN, runOf, serving } from "./console.ts";
 
 scenario("SCN-CONSOLE-080", async ({ sut, fakes, given, when, then }) => {
   await given(
@@ -33,8 +33,10 @@ scenario("SCN-CONSOLE-080", async ({ sut, fakes, given, when, then }) => {
   await then(
     'the section "Actions" lists "steer: use the existing date helper by ada@acme.dev at 2026-01-01T00:01:00.000Z" and "cancel by Leo at 2026-01-01T00:02:00.000Z"',
     async () => {
-      const section = /<h2>Actions<\/h2>([\s\S]*?)<\/ul>/.exec(page.html)?.[1] ?? "";
-      expect([...section.matchAll(/<li>([\s\S]*?)<\/li>/g)].map((item) => text(item[1] ?? ""))).toEqual([
+      expect(page.getByRole("heading", { name: "Actions" }).text).toBe("Actions");
+      const lists = page.getByRole("main").getAllByRole("list");
+      const actions = lists.find((list) => list.getAllByRole("listitem")[0]?.text.startsWith("steer"));
+      expect(actions?.getAllByRole("listitem").map((item) => item.text)).toEqual([
         "steer: use the existing date helper by ada@acme.dev at 2026-01-01T00:01:00.000Z",
         "cancel by Leo at 2026-01-01T00:02:00.000Z",
       ]);

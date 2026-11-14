@@ -1,6 +1,6 @@
 import type { WorkItemView } from "@opensoftware/contracts";
 import { scenario } from "@opensoftware/testkit";
-import { foreman, links, open, RUN, runOf, SLACK_THREAD, serving, text } from "./console.ts";
+import { foreman, links, open, RUN, runOf, SLACK_THREAD, serving } from "./console.ts";
 
 const ISSUE = "https://github.com/acme/web/issues/12";
 
@@ -37,12 +37,12 @@ scenario("SCN-CONSOLE-017", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then('the page lists the requests from "slack" and "github"', async () => {
-    expect(text(page.html)).toContain("Origin slack asked by Varun github asked by Varun Evidence");
+    expect(page.text).toContain("Origin slack asked by Varun github asked by Varun Evidence");
     expect(intake.headers()[0]?.headers.authorization).toBe("Bearer intake-token-1");
   });
 
   await then('the page links the origin "https://github.com/acme/web/issues/12" asked by "Varun"', async () => {
-    expect(links(page.html)).toEqual(
+    expect(links(page)).toEqual(
       expect.arrayContaining([
         { href: SLACK_THREAD, text: "slack" },
         { href: ISSUE, text: "github" },

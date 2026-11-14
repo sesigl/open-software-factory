@@ -20,6 +20,6 @@ scenario("SCN-CONSOLE-033", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then('the rows are only "Triage asks before it investigates"', async () => {
-    expect(rows(page.html).map((cells) => cells[0])).toEqual(["Triage asks before it investigates"]);
+    expect(rows(page).map((cells) => cells[0])).toEqual(["Triage asks before it investigates"]);
   });
 });

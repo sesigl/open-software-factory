@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { navLinks, open, serving, text } from "./console.ts";
+import { links, navLinks, open, serving } from "./console.ts";
 import { lines, runRecord, score, table } from "./improvement.ts";
 
 scenario("SCN-CONSOLE-090", async ({ sut, given, when, then }) => {
@@ -35,8 +35,8 @@ scenario("SCN-CONSOLE-090", async ({ sut, given, when, then }) => {
     'the table "Scores" shows "redundant-tests" with 2 scored, 1 passed, "50%" and "0.02 USD", and "slow-tests" with 1 scored, 0 passed, "0%" and "0.00 USD"',
     async () => {
       expect(page.status).toBe(200);
-      expect(page.html).toContain("<title>Cost and scores · console</title>");
-      expect(table(page.html, "Scores")).toEqual([
+      expect(page.title).toBe("Cost and scores · console");
+      expect(table(page, "Scores")).toEqual([
         ["redundant-tests", "2", "1", "50%", "0.02 USD"],
         ["slow-tests", "1", "0", "0%", "0.00 USD"],
       ]);
@@ -46,17 +46,17 @@ scenario("SCN-CONSOLE-090", async ({ sut, given, when, then }) => {
   await then(
     'the table "Runs" shows "run_a" with "implement", "succeeded" and "0.25 USD", "run_b" with "review", "failed" and "0.50 USD", and "run_b" with "triage", "succeeded" and "0.00 USD"',
     async () => {
-      expect(table(page.html, "Runs")).toEqual([
+      expect(table(page, "Runs")).toEqual([
         ["run_a", "implement", "succeeded", "0.25 USD"],
         ["run_b", "review", "failed", "0.50 USD"],
         ["run_b", "triage", "succeeded", "0.00 USD"],
       ]);
-      expect(page.html).toContain('href="/runs/run_a"');
+      expect(links(page).map((link) => link.href)).toContain("/runs/run_a");
     },
   );
 
   await then('the page says "0.75 USD over 2 runs" and its navigation links "/improvement"', async () => {
-    expect(text(page.html)).toContain("Cost and scores 0.75 USD over 2 runs.");
-    expect(navLinks(page.html)).toContainEqual({ href: "/improvement", text: "Cost and scores" });
+    expect(page.text).toContain("Cost and scores 0.75 USD over 2 runs.");
+    expect(navLinks(page)).toContainEqual({ href: "/improvement", text: "Cost and scores" });
   });
 });

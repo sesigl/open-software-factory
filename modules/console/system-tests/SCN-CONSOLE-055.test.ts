@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { foreman, open, RUN, rows, runOf, serving } from "./console.ts";
+import { foreman, links, open, RUN, rows, runOf, serving } from "./console.ts";
 
 scenario("SCN-CONSOLE-055", async ({ sut, fakes, given, when, then }) => {
   let api: Awaited<ReturnType<typeof foreman>>;
@@ -19,10 +19,11 @@ scenario("SCN-CONSOLE-055", async ({ sut, fakes, given, when, then }) => {
 
   await then('the page shows the stage "verify" with "waits" in the column of the agent, as "succeeded"', async () => {
     expect(page.status).toBe(200);
-    expect(rows(page.html)[0]).toEqual(["verify", "waits", "succeeded", "", "", "", ""]);
+    expect(rows(page)[0]).toEqual(["verify", "waits", "succeeded", "", "", "", ""]);
   });
 
   await then('the page does not contain "undefined"', async () => {
-    expect(page.html).not.toContain("undefined");
+    expect(page.text).not.toContain("undefined");
+    expect(links(page).filter((link) => link.href.includes("undefined"))).toEqual([]);
   });
 });

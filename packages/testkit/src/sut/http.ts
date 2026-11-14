@@ -18,6 +18,8 @@ export interface Http {
   start(args?: string[], options?: { env?: Record<string, string> }): Promise<string>;
   /** Stops the server, if it runs, so the test can start it again, for example with another environment. */
   stop(): Promise<void>;
+  /** The base URL of the running server, like "http://127.0.0.1:41234". */
+  url(): string;
   request(
     method: string,
     path: string,
@@ -53,6 +55,7 @@ export function makeHttp(launch: Launch, onStop: (stop: () => Promise<unknown>) 
       server = undefined;
       await running?.stop();
     },
+    url: base,
     output() {
       const printed = servers.map((each) => each.output());
       return {

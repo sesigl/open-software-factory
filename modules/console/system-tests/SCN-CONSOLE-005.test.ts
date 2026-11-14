@@ -19,20 +19,20 @@ scenario("SCN-CONSOLE-005", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then('the run\'s row shows "Export reports as CSV", "slack", "Varun" and the age "5 min"', async () => {
-    expect(rows(page.html)).toEqual([
+    expect(rows(page)).toEqual([
       ["Export reports as CSV", "web", "running", "slack", "Varun", "https://github.com/acme/web/pull/7", "5 min"],
     ]);
   });
 
   await then('the row links the pull request "https://github.com/acme/web/pull/7"', async () => {
-    expect(links(rowWith(page.html, "Export reports as CSV"))).toContainEqual({
+    expect(links(rowWith(page, "Export reports as CSV"))).toContainEqual({
       href: "https://github.com/acme/web/pull/7",
       text: "https://github.com/acme/web/pull/7",
     });
   });
 
   await then('the row links the run\'s page "/runs/run_5d41402abc4b2a76b971"', async () => {
-    expect(links(rowWith(page.html, "Export reports as CSV"))).toContainEqual({
+    expect(links(rowWith(page, "Export reports as CSV"))).toContainEqual({
       href: `/runs/${RUN}`,
       text: "Export reports as CSV",
     });

@@ -20,6 +20,6 @@ scenario("SCN-CONSOLE-042", async ({ sut, fakes, given, when, then }) => {
 
   await then('the page has no link with the text "trace"', async () => {
     expect(page.status).toBe(200);
-    expect(links(page.html).filter(({ text }) => text === "trace")).toEqual([]);
+    expect(links(page).filter(({ text }) => text === "trace")).toEqual([]);
   });
 });

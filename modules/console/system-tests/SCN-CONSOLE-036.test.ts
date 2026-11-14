@@ -20,13 +20,13 @@ scenario("SCN-CONSOLE-036", async ({ sut, given, when, then }) => {
     'the page shows the agent "triage" with the harness "claude-code", the model "routes/triage" and the effort "high"',
     async () => {
       expect(page.status).toBe(200);
-      expect(rows(page.html)).toEqual([["triage", "claude-code", "routes/triage", "high"]]);
-      expect(page.html).toContain("<h1>acme</h1>");
-      expect(page.html).toContain("<pre>harness:\n  claude-code: ^2\n</pre>");
+      expect(rows(page)).toEqual([["triage", "claude-code", "routes/triage", "high"]]);
+      expect(page.getByRole("heading", { level: 1 }).text).toBe("acme");
+      expect(page.getByText("harness: claude-code: ^2").text).toBe("harness: claude-code: ^2");
     },
   );
 
   await then('the page links the agent\'s page "/factory/agents/triage"', async () => {
-    expect(links(page.html)).toContainEqual({ href: "/factory/agents/triage", text: "triage" });
+    expect(links(page)).toContainEqual({ href: "/factory/agents/triage", text: "triage" });
   });
 });

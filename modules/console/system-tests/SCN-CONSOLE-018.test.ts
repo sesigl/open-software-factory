@@ -24,14 +24,14 @@ scenario("SCN-CONSOLE-018", async ({ sut, fakes, given, when, then }) => {
   );
 
   await then('the page links the trace "https://langfuse.acme.dev/traces?run=run_5d41402abc4b2a76b971"', async () => {
-    expect(links(page.html)).toContainEqual({ href: `https://langfuse.acme.dev/traces?run=${RUN}`, text: "trace" });
+    expect(links(page)).toContainEqual({ href: `https://langfuse.acme.dev/traces?run=${RUN}`, text: "trace" });
   });
 
   await then(
     'the page links the transcript "https://langfuse.acme.dev/sessions/sess-plan" of the stage "plan"',
     async () => {
-      expect(rows(page.html)[0]?.[3]).toBe("sess-plan");
-      expect(links(page.html)).toContainEqual({
+      expect(rows(page)[0]?.[3]).toBe("sess-plan");
+      expect(links(page)).toContainEqual({
         href: "https://langfuse.acme.dev/sessions/sess-plan",
         text: "sess-plan",
       });

@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { foreman, links, open, RUN, runOf, SLACK_THREAD, serving, text } from "./console.ts";
+import { foreman, links, open, RUN, runOf, SLACK_THREAD, serving } from "./console.ts";
 
 scenario("SCN-CONSOLE-016", async ({ sut, fakes, given, when, then }) => {
   let api: Awaited<ReturnType<typeof foreman>>;
@@ -21,16 +21,16 @@ scenario("SCN-CONSOLE-016", async ({ sut, fakes, given, when, then }) => {
   await then(
     'the page links the origin "https://acme.slack.com/archives/C0WORK/p1767225600000001" as "slack"',
     async () => {
-      expect(links(page.html)).toContainEqual({ href: SLACK_THREAD, text: "slack" });
+      expect(links(page)).toContainEqual({ href: SLACK_THREAD, text: "slack" });
     },
   );
 
   await then('the page names the requester "Ben"', async () => {
-    expect(text(page.html)).toContain("Origin slack asked by Ben");
+    expect(page.text).toContain("Origin slack asked by Ben");
   });
 
   await then('the page links the pull request "https://github.com/acme/web/pull/7"', async () => {
-    expect(links(page.html)).toContainEqual({
+    expect(links(page)).toContainEqual({
       href: "https://github.com/acme/web/pull/7",
       text: "https://github.com/acme/web/pull/7",
     });

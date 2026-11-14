@@ -1322,8 +1322,8 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   module, the console's 86 tests read pages through the page reader with their scenarios unchanged, the check on the
   queries exists, and the testing strategy names the three kinds.
 - **Slices:**
-  - [ ] The ADR: the three kinds, the adopted libraries, the measured times.
-  - [ ] The page reader (`SCN-TK`), and the console's tests on it: the shared readers in `system-tests/console.ts`
+  - [x] The ADR: the three kinds, the adopted libraries, the measured times (ADR 0131).
+  - [x] The page reader (`SCN-TK`), and the console's tests on it: the shared readers in `system-tests/console.ts`
     and the 14 test files that match literal tags themselves. This is the only slice of the item that touches the
     console; it comes before T-53's page slice.
   - [ ] `sut.browser` with its guards, the accessibility helper and the screenshots as evidence (`SCN-TK`); the

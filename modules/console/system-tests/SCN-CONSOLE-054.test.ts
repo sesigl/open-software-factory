@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { foreman, links, NEW_RUN, open, RUN, runOf, serving, text } from "./console.ts";
+import { foreman, links, NEW_RUN, open, RUN, runOf, serving } from "./console.ts";
 
 scenario("SCN-CONSOLE-054", async ({ sut, fakes, given, when, then }) => {
   await given(
@@ -17,7 +17,7 @@ scenario("SCN-CONSOLE-054", async ({ sut, fakes, given, when, then }) => {
 
   await then('the page names the attempt 2 and links the run before "/runs/run_5d41402abc4b2a76b971"', async () => {
     expect(page.status).toBe(200);
-    expect(text(page.html)).toContain("Attempt 2");
-    expect(links(page.html)).toContainEqual({ href: `/runs/${RUN}`, text: RUN });
+    expect(page.text).toContain("Attempt 2");
+    expect(links(page)).toContainEqual({ href: `/runs/${RUN}`, text: RUN });
   });
 });

@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { foreman, navLinks, open, serving, text } from "./console.ts";
+import { foreman, navLinks, open, serving } from "./console.ts";
 
 scenario("SCN-CONSOLE-035", async ({ sut, fakes, given, when, then }) => {
   let api: Awaited<ReturnType<typeof foreman>>;
@@ -17,13 +17,13 @@ scenario("SCN-CONSOLE-035", async ({ sut, fakes, given, when, then }) => {
     'the page answers 404 and says "no inbox: set CONSOLE_INBOX_REPOSITORY to the repository of observer\'s pull requests"',
     async () => {
       expect(page.status).toBe(404);
-      expect(text(page.html)).toContain(
+      expect(page.text).toContain(
         "no inbox: set CONSOLE_INBOX_REPOSITORY to the repository of observer's pull requests",
       );
     },
   );
 
   await then('the page\'s navigation does not link "/inbox"', async () => {
-    expect(navLinks(page.html).map((link) => link.href)).toEqual(["/", "/factory", "/health"]);
+    expect(navLinks(page).map((link) => link.href)).toEqual(["/", "/factory", "/health"]);
   });
 });

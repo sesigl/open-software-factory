@@ -19,7 +19,7 @@ scenario("SCN-CONSOLE-019", async ({ sut, fakes, given, when, then }) => {
   await then(
     'the page links the history "https://temporal.acme.dev/namespaces/default/workflows/run_5d41402abc4b2a76b971"',
     async () => {
-      expect(links(page.html)).toContainEqual({
+      expect(links(page)).toContainEqual({
         href: `https://temporal.acme.dev/namespaces/default/workflows/${RUN}`,
         text: "Temporal",
       });

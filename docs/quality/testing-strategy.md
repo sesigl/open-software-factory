@@ -71,6 +71,11 @@ flowchart LR
 
 Because the module runs as its artifact in its own process, a test cannot pass by reaching inside it.
 
+A web page is read the same way (ADR 0131): `sut.pages` opens the pages of the server `sut.http` started, without a
+browser, and the test finds what a person sees by role, accessible name, label and text, never by a tag, a class or
+a test ID. It follows links and sends forms with the scenario's cookies, as a browser does. This is a page scenario,
+the default kind of UI test; a journey or an island in Chromium comes only where a page needs script or layout.
+
 A library in `packages/` (ADR 0039) has no artifact to start: its system tests import its built package by name,
 `@opensoftware/<name>`, and call its exports in the test's process. That import is the only one BOUNDARY-STATIC
 adds for them; an import from its `src/` still fails. For ASSERT, what its exports return counts as coming from

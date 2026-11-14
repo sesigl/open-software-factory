@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { foreman, links, open, RUN, runOf, serving, text } from "./console.ts";
+import { foreman, links, open, RUN, runOf, serving } from "./console.ts";
 
 scenario("SCN-CONSOLE-110", async ({ sut, fakes, given, when, then }) => {
   let api: Awaited<ReturnType<typeof foreman>>;
@@ -25,7 +25,7 @@ scenario("SCN-CONSOLE-110", async ({ sut, fakes, given, when, then }) => {
 
   await then('the page has no link to "http://127.0.0.1:16686/" and names the stage "plan"', async () => {
     expect(page.status).toBe(200);
-    expect(links(page.html).filter(({ href }) => href.startsWith("http://127.0.0.1:16686/"))).toEqual([]);
-    expect(text(page.html)).toContain("plan planner running");
+    expect(links(page).filter(({ href }) => href.startsWith("http://127.0.0.1:16686/"))).toEqual([]);
+    expect(page.text).toContain("plan planner running");
   });
 });

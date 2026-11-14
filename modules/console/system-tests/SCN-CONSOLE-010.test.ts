@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { foreman, open, serving, text } from "./console.ts";
+import { foreman, open, serving } from "./console.ts";
 
 scenario("SCN-CONSOLE-010", async ({ sut, fakes, given, when, then }) => {
   let api: Awaited<ReturnType<typeof foreman>>;
@@ -17,7 +17,7 @@ scenario("SCN-CONSOLE-010", async ({ sut, fakes, given, when, then }) => {
     'the page answers 400 and says "no state merged: running, blocked, complete, failed or cancelled"',
     async () => {
       expect(page.status).toBe(400);
-      expect(text(page.html)).toContain("no state merged: running, blocked, complete, failed or cancelled");
+      expect(page.text).toContain("no state merged: running, blocked, complete, failed or cancelled");
     },
   );
 

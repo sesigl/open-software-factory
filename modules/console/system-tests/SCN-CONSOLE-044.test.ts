@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { foreman, open, serving, text } from "./console.ts";
+import { foreman, open, serving } from "./console.ts";
 
 scenario("SCN-CONSOLE-044", async ({ sut, fakes, given, when, then }) => {
   let foremanUrl = "";
@@ -17,7 +17,7 @@ scenario("SCN-CONSOLE-044", async ({ sut, fakes, given, when, then }) => {
     'the page answers 404 and says "no work items: set CONSOLE_INTAKE_URL to the base URL of intake\'s API"',
     async () => {
       expect(page.status).toBe(404);
-      expect(text(page.html)).toContain("no work items: set CONSOLE_INTAKE_URL to the base URL of intake's API");
+      expect(page.text).toContain("no work items: set CONSOLE_INTAKE_URL to the base URL of intake's API");
     },
   );
 });

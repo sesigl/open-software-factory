@@ -1,4 +1,5 @@
 // Shared records of the improvement scenarios: run records as runlog writes them and scores as scorekit writes them.
+import type { Page } from "@opensoftware/testkit";
 import { rows } from "./console.ts";
 
 /** A run record as runlog writes it: one invoke_agent span of a stage with its outcome and cost. */
@@ -42,9 +43,12 @@ export const score = (name: string, run: string, value: number, cost?: number) =
   metadata: { "osf.run.id": run, ...(cost === undefined ? {} : { "osf.judge.cost.usd": cost }) },
 });
 
-/** The rows of the table below the heading. */
-export const table = (html: string, heading: string) =>
-  rows(new RegExp(`<h2>${heading}</h2>[\\s\\S]*?</table>`).exec(html)?.[0] ?? "");
+/** The rows of the table below the heading: the page has one table below each heading of the second level. */
+export const table = (page: Page, heading: string) => {
+  const index = page.getAllByRole("heading", { level: 2 }).findIndex((found) => found.text === heading);
+  const shown = page.getAllByRole("table")[index];
+  return shown ? rows(shown) : [];
+};
 
 /** JSON Lines of these records. */
 export const lines = (records: object[]) => `${records.map((record) => JSON.stringify(record)).join("\n")}\n`;

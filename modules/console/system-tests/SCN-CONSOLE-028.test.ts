@@ -15,6 +15,6 @@ scenario("SCN-CONSOLE-028", async ({ sut, given, when, then }) => {
 
   await then('the page answers 200 and says "the foreman at http://127.0.0.1:1 did not answer"', async () => {
     expect(page.status).toBe(200);
-    expect(page.html).toContain('<p role="alert">the foreman at http://127.0.0.1:1 did not answer</p>');
+    expect(page.getByRole("alert").text).toBe("the foreman at http://127.0.0.1:1 did not answer");
   });
 });

@@ -15,8 +15,9 @@ scenario("SCN-CONSOLE-008", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then('the page lists only the run "Fix login" in the state "failed"', async () => {
-    expect(rows(page.html).map((row) => [row[0], row[2]])).toEqual([["Fix login", "failed"]]);
-    expect(page.html).toContain('<a href="?state=failed" aria-current="page">failed</a>');
+    expect(rows(page).map((row) => [row[0], row[2]])).toEqual([["Fix login", "failed"]]);
+    expect(page.getByRole("link", { current: "page" }).attribute("href")).toBe("?state=failed");
+    expect(page.getByRole("link", { current: "page" }).text).toBe("failed");
   });
 
   await then('the console asked the foreman for "/v1/runs?state=failed"', async () => {

@@ -20,7 +20,7 @@ scenario("SCN-CONSOLE-031", async ({ sut, fakes, given, when, then }) => {
     page = await open(sut, "/inbox");
   });
 
-  const row = (title: string) => rows(page.html).find((cells) => cells[0] === title);
+  const row = (title: string) => rows(page).find((cells) => cells[0] === title);
 
   await then('the row of "Triage asks before it investigates" shows "approved" and the age "2 d"', async () => {
     expect(row("Triage asks before it investigates")?.slice(3)).toEqual(["approved", "2 d"]);
