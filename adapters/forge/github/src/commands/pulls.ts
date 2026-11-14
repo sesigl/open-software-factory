@@ -2,13 +2,16 @@
 import { check as ensure, type Outcome } from "@opensoftware/cli";
 import { type GitHub, GitHubError } from "../adapters/github.ts";
 import {
+  type BranchRule,
   CHECK_STATES,
   type CheckRun,
   type CommentJson,
   checksOf,
   commentLine,
   MERGE_METHODS,
+  type Protection,
   protection,
+  required,
 } from "../domain/repository.ts";
 import type { PullJson } from "./branches.ts";
 import { connect, count, headRef, numberOf, print } from "./shared.ts";
@@ -163,13 +166,10 @@ export async function protect(
   return print({ branch, checks, approvals: required });
 }
 
-/** The parts of GitHub's branch protection that rules prints. */
-interface Protection {
-  required_status_checks?: { contexts?: string[] } | null;
-  required_pull_request_reviews?: { required_approving_review_count?: number } | null;
-}
-
-/** rules <repo> <branch>: the checks and approvals the branch's protection requires; none without protection. */
+/**
+ * rules <repo> <branch>: the checks and approvals that the branch's protection and the rulesets that apply to it
+ * require; none without either.
+ */
 export async function rules(repo: string | undefined, branch: string | undefined): Promise<Outcome> {
   const api = connect(repo);
   ensure(branch, "name the branch, like rules tester/web main");
@@ -177,13 +177,15 @@ export async function rules(repo: string | undefined, branch: string | undefined
   // GitHub answers 404 "Branch not protected" for a branch without protection, and 404 "Branch not found".
   const unprotected = (error: unknown) =>
     error instanceof GitHubError && error.status === 404 && /not protected/i.test(error.message);
-  const found: Protection = await api
+  const found = await api
     .request<Protection>("GET", path)
     .catch((error: unknown) => (unprotected(error) ? {} : Promise.reject(error)));
-  return print({
-    checks: found.required_status_checks?.contexts ?? [],
-    approvals: found.required_pull_request_reviews?.required_approving_review_count ?? 0,
-  });
+  // The rules of every active ruleset that applies to the branch; 100 are more than a branch has.
+  const rules = await api.request<BranchRule[]>(
+    "GET",
+    `/rules/branches/${encodeURIComponent(branch as string)}?per_page=100`,
+  );
+  return print(required(found, rules));
 }
 
 /** close <repo> <number> [--delete-branch]: closes the pull request without merging, and deletes its branch. */

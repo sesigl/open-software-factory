@@ -256,7 +256,8 @@ Every server, client and subscription stops when the scenario ends, before the f
   comments, reviews, which it lists per pull request, branch protection that holds for admins only with `enforce_admins` and that it reads back (404
   `Branch not protected` without one), closing a pull request, the Git Data API's refs, commits, blobs (`utf-8` or `base64`, named
   by Git's SHA) and trees on a `base_tree` of entries with their text or a blob's `sha`; `fileBytes(repository,
-  path, ref)` gives a file's bytes, which moves a branch only forward unless the update is forced
+  path, ref)` gives a file's bytes, the rules of the rulesets that `addRuleset(repository, { branches, checks,
+  approvals })` added for a branch (`GET .../rules/branches/{branch}`, not enforced on merges), which moves a branch only forward unless the update is forced
   ([ADR 0136](../../docs/decisions/0136-forge-port-changes-from-the-ui.md)), auto-merge through `POST /graphql`
   (a pull request's `mergeStateStatus`, its `autoMergeRequest` and its repository's `autoMergeAllowed`, and
   `enablePullRequestAutoMerge`, refused unless `allowAutoMerge(repository)` allowed it and for a pull request that
@@ -560,3 +561,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-172 | implemented | Enabling auto-merge twice in fakes.github fails the test with the pull request named |
 | SCN-TK-173 | implemented | fakes.github lists the calls a module made, with their query |
 | SCN-TK-174 | implemented | fakes.github keeps a blob's bytes and puts it into a tree by its SHA |
+| SCN-TK-175 | implemented | fakes.github answers the rules of the rulesets that apply to a branch |

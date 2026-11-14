@@ -59,6 +59,11 @@ export interface FakeGitHub extends Forge {
   calls(): string[];
   /** The bytes of a file on a branch or at a commit, or undefined when it has no such file; `file` gives its text. */
   fileBytes(repository: string, path: string, ref: string): Promise<Buffer | undefined>;
+  /**
+   * Adds an active ruleset of the repository that requires the checks and approvals on the branches it names, as
+   * `GET /repos/{owner}/{repo}/rules/branches/{branch}` answers it. The fake does not enforce rulesets on merges.
+   */
+  addRuleset(repository: string, ruleset: { branches: string[]; checks?: string[]; approvals?: number }): Promise<void>;
 }
 
 export interface RunningGitHub {
@@ -173,6 +178,7 @@ interface Repository {
   hooks: Hook[];
   /** The repository's setting "Allow auto-merge". */
   autoMergeAllowed: boolean;
+  rulesets: { id: number; branches: string[]; checks: string[]; approvals: number }[];
 }
 
 /** An answer other than a success: GitHub's status and message. */
@@ -892,6 +898,49 @@ export async function startGitHub(): Promise<RunningGitHub> {
         return [204, undefined];
       },
     ],
+    [
+      "GET",
+      /^\/rules\/branches\/(.+)$/,
+      (repo, [branch = ""]) => {
+        // GitHub answers the rules of every active ruleset that applies to the branch, which need not exist.
+        const name = decodeURIComponent(branch);
+        const source = { ruleset_source_type: "Repository", ruleset_source: `${OWNER}/${repo.name}` };
+        const rules = repo.rulesets
+          .filter((ruleset) => ruleset.branches.includes(name))
+          .flatMap((ruleset) => [
+            ...(ruleset.checks.length > 0
+              ? [
+                  {
+                    type: "required_status_checks",
+                    ...source,
+                    ruleset_id: ruleset.id,
+                    parameters: {
+                      strict_required_status_checks_policy: false,
+                      required_status_checks: ruleset.checks.map((context) => ({ context })),
+                    },
+                  },
+                ]
+              : []),
+            ...(ruleset.approvals > 0
+              ? [
+                  {
+                    type: "pull_request",
+                    ...source,
+                    ruleset_id: ruleset.id,
+                    parameters: {
+                      required_approving_review_count: ruleset.approvals,
+                      dismiss_stale_reviews_on_push: false,
+                      require_code_owner_review: false,
+                      require_last_push_approval: false,
+                      required_review_thread_resolution: false,
+                    },
+                  },
+                ]
+              : []),
+          ]);
+        return [200, rules];
+      },
+    ],
     ["GET", /^\/issues\/(\d+)$/, (repo, [number = ""]) => [200, issueJson(repo, issue(repo, Number(number)))]],
     ["GET", /^\/hooks$/, (repo) => [200, repo.hooks.map(hookJson)]],
     [
@@ -1109,9 +1158,14 @@ export async function startGitHub(): Promise<RunningGitHub> {
         rules: new Map(),
         hooks: [],
         autoMergeAllowed: false,
+        rulesets: [],
       });
     },
     calls: () => [...called],
+    async addRuleset(name, ruleset) {
+      const { branches, checks = [], approvals = 0 } = ruleset;
+      repository(name).rulesets.push({ id: nextId(), branches, checks, approvals });
+    },
     async allowAutoMerge(name) {
       repository(name).autoMergeAllowed = true;
     },

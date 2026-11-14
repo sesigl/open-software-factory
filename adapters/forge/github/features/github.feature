@@ -71,3 +71,9 @@ Feature: GitHub's own rules for the forge port
     When the client runs "prs tester/web --limit 1"
     Then prs prints the newest pull request only
     And the client asked GitHub for one page of the list of pull requests
+
+  @id=SCN-FGITHUB-012 @status=implemented
+  Scenario: rules also lists the checks and approvals that a ruleset requires, each check once
+    Given the branch protection of "main" of "tester/web" requires the check "verify", and a ruleset requires the checks "factory" and "verify" and two approvals on "main"
+    When the client runs "rules tester/web main"
+    Then rules prints the checks "verify" and "factory" and the approvals 2

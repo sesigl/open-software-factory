@@ -221,3 +221,11 @@ Feature: A fake of GitHub's REST API
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-175 @status=implemented
+  Scenario: fakes.github answers the rules of the rulesets that apply to a branch
+    Given a module whose CLI prints the type, the checks and the approvals of each rule for "main" and the number of rules for "dev" at "DEMO_GITHUB_URL"
+    And its system test adds a ruleset that requires the check "factory" and one approval on "main" in fakes.github and expects "required_status_checks factory", "pull_request 1" and "0"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

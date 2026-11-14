@@ -26,7 +26,8 @@ npx @opensoftware/forge-github event delivery.json                # a pr.opened@
 ## How it behaves
 
 - **The token** is sent as a bearer token with the API version `2022-11-28`. It needs write access to contents, pull
-  requests and commit statuses, read access to checks (`Checks: read`), and administration of the repository for `protect` and `webhook`; `rules` reads the branch protection, which needs `Administration: read`. A token GitHub
+  requests and commit statuses, read access to checks (`Checks: read`), and administration of the repository for `protect` and `webhook`; `rules` reads the branch protection, which needs `Administration: read`, and the branch's rules
+  of rulesets, which need `Metadata: read`. A token GitHub
   refuses exits 1 with `the forge refused the token`; a repository it does not show exits 1 with
   `no repository <repo>`.
 - **Usage errors** exit 2 before any call to GitHub: a repository that is not `<owner>/<name>`, a pull request
@@ -49,8 +50,9 @@ npx @opensoftware/forge-github event delivery.json                # a pr.opened@
   request is merged; GitHub's test merge of an open pull request is not printed.
 - **Merge rules** are the branch protection: the required status checks, the number of required approving
   reviews, and `enforce_admins`, so that the rules also hold for an admin's token. `protect` replaces the whole
-  protection each time. `rules` reads the branch protection back; a branch without one requires nothing. It does
-  not read rulesets yet.
+  protection each time. `rules` prints what the branch protection and the active rulesets that apply to
+  the branch require together: each check once, the protection's first, and the most approvals one of them asks
+  for. A branch without either requires nothing.
 - **Merge.** When GitHub refuses, `merge` exits 1 with `the forge refused to merge #<number>: <GitHub's reason>`,
   for example `Required status check "verify" is failing.`; a pull request that conflicts with its base gives
   `it conflicts with its base`.

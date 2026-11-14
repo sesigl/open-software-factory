@@ -40,9 +40,11 @@ How the adapters do it, with the forges' own APIs and no Git checkout:
   Auto-merge needs the repository's setting "Allow auto-merge" (GraphQL `autoMergeAllowed`, off for a new
   repository), and GitHub offers it for private repositories only on the paid plans; without it the command names
   that setting. GitHub merges later as the token's user. The REST merge is not tried first: with `enforce_admins`
-  off, an admin's token would merge past a pending check. `rules` reads the branch's protection: the required status
-  checks and the required approving reviews. It does not read rulesets yet; a check that only a ruleset requires is
-  not listed.
+  off, an admin's token would merge past a pending check. `rules` reads the branch's protection (the required status
+  checks and the required approving reviews; `Administration: read`) and the rules of the active rulesets that
+  apply to the branch (`GET /repos/{owner}/{repo}/rules/branches/{branch}`, `Metadata: read`): the contexts of
+  `required_status_checks` rules and the `required_approving_review_count` of `pull_request` rules. It prints each
+  check once, the protection's first, and the most approvals that one of them asks for.
 - **Forgejo:** `commit` uses the API that changes several files in one commit (`POST /repos/{owner}/{repo}/contents`);
   `--when-green` tries a plain merge first, which Forgejo refuses while a required check is missing (it holds admins
   to the rules unless a merge asks for `force_merge`), and then schedules the merge with the merge option
@@ -83,5 +85,6 @@ How the adapters do it, with the forges' own APIs and no Git checkout:
 - `fakes.github` gets the Git Data API, the branch protection it reads back, closing and the part of the GraphQL API
   that auto-merge needs, so the GitHub adapter's conformance scenarios run without GitHub (`SCN-TK`). The console's
   scenarios of a change use `fakes.forge`, since they fetch the repository with Git (T-58).
-- A repository that requires the check only through a ruleset shows no required check in `rules` until `rules` reads
-  rulesets too (`GET /repos/{owner}/{repo}/rules/branches/{branch}`).
+- A check that only a ruleset requires shows in `rules` too, so the console asks for a merge when green on a
+  repository whose main branch has rulesets instead of branch protection. A ruleset in "evaluate" mode is not
+  active, and GitHub does not return its rules.
