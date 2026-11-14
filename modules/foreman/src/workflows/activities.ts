@@ -6,12 +6,12 @@ import { join } from "node:path";
 import { Context } from "@temporalio/activity";
 import { pullRequestChecks, pullRequestsOf } from "../adapters/forge.ts";
 import type { Gatekeeper } from "../adapters/gatekeeper.ts";
-import { type HarnessTurn, sessionRecord, startTurn } from "../adapters/harness.ts";
+import { type HarnessTurn, runRecordIn, sessionRecord, startTurn, transcriptCommand } from "../adapters/harness.ts";
 import { type Gateway, hasKey } from "../adapters/inference.ts";
 import { type Bus, SUBJECTS } from "../adapters/nats.ts";
 import type { Exporter } from "../adapters/otlp.ts";
 import { cloneRepositories } from "../adapters/repositories.ts";
-import { createSandbox } from "../adapters/sandbox.ts";
+import { createSandbox, type StageSandbox } from "../adapters/sandbox.ts";
 import { writeSkills } from "../adapters/skills.ts";
 import { type CommandLines, commandOf } from "../domain/adapters.ts";
 import type { Definition } from "../domain/definition.ts";
@@ -120,12 +120,20 @@ export function activities(deps: ActivityDeps) {
 
   /**
    * The tokens and the cost of the stage's session, from the harness's transcript, for the stage's span (ADR 0121);
-   * none without a receiver, without a session, or in a sandbox, whose harness keeps its session record inside.
+   * none without a receiver or without a session. In a sandbox, the transcript runs there and its folder is copied out.
    */
-  const usage = async (harness: string[], harnessEnv: Record<string, string | undefined>, sessionId?: string) => {
+  const usage = async (
+    harness: string[],
+    harnessEnv: Record<string, string | undefined>,
+    sessionId?: string,
+    sandbox?: StageSandbox,
+  ) => {
     if (!deps.traces || !sessionId) return {};
     const output = join(deps.data, "transcripts", sessionId);
-    return sessionRecord(harness, sessionId, harnessEnv, output).then(usageOf, (failure: Error) => {
+    const record = sandbox
+      ? sandbox.transcript(transcriptCommand(harness), sessionId, output).then(() => runRecordIn(output))
+      : sessionRecord(harness, sessionId, harnessEnv, output);
+    return record.then(usageOf, (failure: Error) => {
       deps.warn(`the stage's run record: ${failure.message}`);
       return {};
     });
@@ -373,13 +381,16 @@ export function activities(deps: ActivityDeps) {
           ...(said ? { result: { stage: plan.stage, text: resultOf(said) } } : {}),
         };
       } finally {
+        const end = deps.now();
+        // The session's run record joins the stage's span (ADR 0121); in a sandbox, before it is destroyed.
+        const record = await usage(harness, harnessEnv, sessionId, sandbox);
         await sandbox?.destroy();
         await trace({
           runId: view.runId,
           index,
           name: `stage ${plan.stage}`,
           start: started,
-          end: deps.now(),
+          end,
           outcome,
           resource: { ...resourceOf(view), "osf.stage": plan.stage },
           attributes: {
@@ -389,8 +400,7 @@ export function activities(deps: ActivityDeps) {
             "gen_ai.request.model": plan.model,
             "osf.effort": plan.effort,
             "gen_ai.conversation.id": sessionId,
-            // The session's run record joins the stage's span (ADR 0121).
-            ...(await usage(harness, harnessEnv, sandbox ? undefined : sessionId)),
+            ...record,
           },
         });
       }

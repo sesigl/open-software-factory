@@ -114,9 +114,13 @@ export async function sessionRecord(
   env: Record<string, string | undefined>,
   output: string,
 ): Promise<Record<string, unknown>> {
-  await adapterRun("harness", command.slice(0, command.indexOf("run")), { ...env, OUTPUT: output })(
-    "transcript",
-    sessionId,
-  );
-  return (JSON.parse(readFileSync(join(output, "run-record.json"), "utf8")) as { span: Record<string, unknown> }).span;
+  await adapterRun("harness", transcriptCommand(command), { ...env, OUTPUT: output })("transcript", sessionId);
+  return runRecordIn(output);
 }
+
+/** The adapter's command line up to its `run`, which takes `transcript <session ID>` (ADR 0121). */
+export const transcriptCommand = (command: string[]): string[] => command.slice(0, command.indexOf("run"));
+
+/** The span of the run record that `transcript` wrote to `output`. */
+export const runRecordIn = (output: string): Record<string, unknown> =>
+  (JSON.parse(readFileSync(join(output, "run-record.json"), "utf8")) as { span: Record<string, unknown> }).span;

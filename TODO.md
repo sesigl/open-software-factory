@@ -834,7 +834,7 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
   - [x] The tutorial `docs/tutorials/first-run.md`, linked from "Run a factory" in `README.md` and from the quick
     start of `deploy/README.md`.
 
-### [ ] T-31 · the improvement path in the profile (P2)
+### [x] T-31 · the improvement path in the profile (P2)
 
 - **Done when:** scheduled jobs run runlog, scorekit, ledger and observer on the factory's own runs, and the console
   shows cost and scores.
@@ -848,8 +848,9 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
     `IMPROVE_SCORERS`, as judging is a paid call (ADR 0123, `SCN-DIST-034`).
   - [x] A chart CronJob with the same commands, `improve.enabled`, and the chart version 0.4.0 (`SCN-DIST-035`).
   - [x] DIST scenarios in `deploy/features/` for both, which run in CI with Docker and kind.
-  - [ ] The run records of stages in a sandbox reach the foreman's `transcripts/`, so the jobs see the reference
-    factory's stages: today a sandbox keeps its session record (ADR 0121, ADR 0123).
+  - [x] The run records of stages in a sandbox reach the foreman's `transcripts/`, so the jobs see the reference
+    factory's stages: the foreman runs the harness's `transcript` in the sandbox and copies it out (SCN-FORE-163,
+    ADR 0121, ADR 0123).
 
 ### [x] T-32 · factory version from Git and public intake (P2)
 

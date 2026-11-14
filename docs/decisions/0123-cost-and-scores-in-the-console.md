@@ -37,9 +37,9 @@ The jobs, added later in T-31:
 - The image is `observer:<version>` from the `module` stage of `deploy/images/Dockerfile`, with the released packages
   observer, scorekit and ledger, pinned as `osf profile-pins` writes them; `publish-images` builds it like every
   module image. No new stage and no new base image.
-- Open: a stage in a sandbox keeps its session record in the sandbox, so the reference factory's stages have no run
-  record in `transcripts/` yet; until the foreman gets those out, the job sees only stages that run without a
-  sandbox.
+- A stage in a sandbox keeps its session record in the sandbox; the foreman runs the harness's `transcript` there and
+  copies its folder out to `transcripts/<session>` before it destroys the sandbox (ADR 0121, amended), so the job sees
+  the reference factory's stages too.
 
 ## Options considered
 

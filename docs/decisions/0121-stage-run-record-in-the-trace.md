@@ -24,8 +24,12 @@ session, which is what the foreman drives.
   `OSF_DATA` and `OUTPUT` set to `OSF_DATA/transcripts/<session ID>`. It reads `run-record.json` and puts every
   `gen_ai.usage.*` value (as an integer) and `osf.cost.usd` (as a double) on the stage's span. A transcript that
   fails is a warning, never a failed stage; the span is sent without them.
-- **Not in a sandbox yet.** A harness in a sandbox keeps its session record inside the sandbox, which is gone when
-  the span is sent. Its stage span has no tokens or cost until the sandbox port can copy the record out.
+- **In a sandbox, inside it (amended).** A harness in a sandbox keeps its session record inside the sandbox. Before
+  the foreman destroys the sandbox, it runs the adapter's command line up to its `run` with `transcript <session ID>`
+  through the sandbox port's `exec`, as `env OUTPUT=.osf-transcripts/<session ID> …` in the sandbox's working folder
+  (beside the run's folder, so the run's files stay as the agent left them), and copies that folder out with the
+  port's `copy` to `OSF_DATA/transcripts/<session ID>`. No port change: `exec` and `copy` in both directions exist.
+  The sandbox needs `env`, which every POSIX image has (SCN-FORE-163).
 - **The view names the span.** A stage's view gets `spanId` when it starts (contracts `StageView`, additive). A stage
   copied from the run before keeps its session but not its span, which is in the other trace.
 - **The console links each stage.** `CONSOLE_SPAN_URL` with `{traceId}` and `{spanId}` makes the stage's name a link
@@ -52,4 +56,6 @@ session, which is what the foreman drives.
 
 - A stage span in the trace store shows the stage's tokens and cost; the console's run page links each stage to it.
 - A configured harness command line must contain the word `run` before the adapter's own arguments, as the port asks.
-- Revisit when the sandbox port copies a session record out, or when runlog reads an adapter's ACP session record.
+- A sandboxed stage's run record reaches `transcripts/` too, so the improvement job (ADR 0123) sees the reference
+  factory's stages. Like an unsandboxed stage, it does so only with an OTLP receiver set.
+- Revisit when runlog reads an adapter's ACP session record.

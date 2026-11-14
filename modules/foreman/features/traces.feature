@@ -32,3 +32,10 @@ Feature: Traces
     And the run completes
     Then the spans "stage plan" and "stage implement" carry "gen_ai.usage.input_tokens" 900, "gen_ai.usage.output_tokens" 30 and "osf.cost.usd" 0.25 from the run record of their session
     And "/v1/runs/<id>" names the "spanId" of each stage's span
+
+  @id=SCN-FORE-163 @status=implemented @realizes=SCN-FACTORY-DATA-001
+  Scenario: A sandboxed stage's span carries the tokens and cost of the session in its sandbox
+    Given "foreman serve" runs the README's "sandboxed/factory.yaml" with a fake sandbox adapter as "docker", "OTEL_EXPORTER_OTLP_ENDPOINT" set to an OTLP receiver, and a harness whose turns report 900 input tokens, 30 output tokens and 0.25 USD
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    And the run completes
+    Then the spans "stage plan" and "stage implement" carry "gen_ai.usage.input_tokens" 900, "gen_ai.usage.output_tokens" 30 and "osf.cost.usd" 0.25 from the run record that the harness wrote in the sandbox
