@@ -387,3 +387,4 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-033 | implemented | The chart takes a forge token without Slack, and asks on pull requests only |
 | SCN-DIST-034 | implemented | The service improve writes the reports of ledger and observer and judges no run without scorers |
 | SCN-DIST-035 | implemented | The chart runs the improvement jobs as a CronJob on foreman's run records, without scorers by default |
+| SCN-DIST-036 | implemented | The console of the Compose profile renders its health page from the templates its package ships |
