@@ -38,7 +38,7 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
 
 ## Budget
 
-- System tests: 480 seconds in total on the CI runner (140 scenarios; each starts the Temporal dev server and NATS as
+- System tests: 540 seconds in total on the CI runner (161 scenarios; each starts the Temporal dev server and NATS as
   pinned binaries on the host, ADR 0067, and the built `harness-acp` adapter with the testkit's scripted agent, which
   `turbo.json` builds before the tests; sandboxed stages use the testkit's fake sandbox adapter, ADR 0068; checks use
   `fakes.github` and the built `forge-github` adapter, ADR 0069; the gateway uses the testkit's fake inference adapter,
@@ -90,6 +90,12 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
   first page of 50 with a `next` in 13 to 15 ms, and the console's `/` with one foreman in 17 to 23 ms (51 ms for the
   first request after its start). It was a temporary test with the testkit's `fakes.temporal` and the built console,
   not a scenario: 1000 runs take about a minute to start and end, which the budget has no room for.
+
+- T-44, T-45 and T-43 add SCN-FORE-158 to -161 (about 2, 3.5, 7 and 3 s; SCN-FORE-160 must see several reads of the
+  checks to show that run.blocked@v1 comes once). The 161 scenarios took 347.1 s of raw time on a runner whose benchmark
+  took 0.698 times the reference, 497.3 s by BUDGET's measure; the 140 took 437 s on a runner at 1.0. A start of
+  `foreman serve` is still the floor of about 2.5 s per scenario (see above), so the budget is 540 s, about 8% above the
+  measure, until fewer starts per scenario make the suite faster.
 
 ## Quality limits
 
