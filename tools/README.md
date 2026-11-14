@@ -273,3 +273,6 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-150 | implemented | TOKENS rejects a font named outside the tokens |
 | SCN-REPO-151 | implemented | TOKENS accepts a stylesheet that names only tokens |
 | SCN-REPO-152 | implemented | TEMPLATE accepts a template that imports a component and the tokens of the design system |
+| SCN-REPO-153 | implemented | SURFACE rejects a library that exports a value its surface does not name |
+| SCN-REPO-154 | implemented | SURFACE accepts a library whose surface names every value, its types unnamed |
+| SCN-REPO-155 | implemented | SURFACE rejects an entry point that exports everything of a file |

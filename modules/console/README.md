@@ -4,9 +4,10 @@ covers: [modules/console/src/**]
 
 # console
 
-A read-only web view of a factory. It shows every run of every foreman with its state, origin, requester, pull
+The web UI of a factory, where the people on its access list follow its runs and act on them. It shows every run of every foreman with its state, origin, requester, pull
 request and age; one run's requests, stages, gates, checks, transcripts and trace; the factory definition with
-a link to the file in Git, where it changes; and the self-improvement inbox of observer's open proposals. It keeps no
+a link to the file in Git, where it changes; and the self-improvement inbox of observer's open proposals. A person
+submits work and acts on runs and gates through its forms, signed in by its own sign-in or by a proxy in front. It keeps no
 state: each page asks the foreman's, intake's and gatekeeper's APIs, or the forge port's adapter, when it is opened.
 Temporal, the trace store and the dashboards keep their own UIs; the console links to them. Decisions:
 [ADR 0072](../../docs/decisions/0072-console.md), [ADR 0073](../../docs/decisions/0073-forge-prs-and-console-inbox.md)

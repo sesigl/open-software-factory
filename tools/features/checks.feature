@@ -994,3 +994,24 @@ Feature: Repository checks
     Then the command exits with code 1
     And the output contains "TODO TODO.md:3 T-01 is open, but every slice is ticked: tick the item, or add the slice that is left"
     And the output names neither "T-02" nor "T-03"
+
+  @id=SCN-REPO-153 @status=implemented
+  Scenario: SURFACE rejects a library that exports a value its surface does not name
+    Given the library "demo" whose "src/index.ts" exports "openPool" and "closePool", and whose AGENTS.md names only "openPool"
+    When the developer runs "osf check SURFACE"
+    Then the command exits with code 1
+    And the output contains "SURFACE packages/demo/src/index.ts:2 closePool is exported but not named in the \"Public surface\" of packages/demo/AGENTS.md: name it there, or stop exporting it"
+
+  @id=SCN-REPO-154 @status=implemented
+  Scenario: SURFACE accepts a library whose surface names every value, its types unnamed
+    Given the library "demo" whose "src/index.ts" exports the values "openPool", "closePool" and "POOL_SIZE" and three types, and whose AGENTS.md names the three values
+    When the developer runs "osf check SURFACE"
+    Then the command exits with code 0
+    And the output contains "SURFACE ok"
+
+  @id=SCN-REPO-155 @status=implemented
+  Scenario: SURFACE rejects an entry point that exports everything of a file
+    Given the library "demo" whose "src/index.ts" has "export * from './pool.ts'"
+    When the developer runs "osf check SURFACE"
+    Then the command exits with code 1
+    And the output contains "SURFACE packages/demo/src/index.ts:1 export * hides what the library adds: export each value by name"

@@ -38,6 +38,7 @@ without a check is a wish. When a requirement or a design question is not covere
 | Specify first, from the outside | Every behavior is a Gherkin scenario; exactly one system test per scenario proves it from outside the module. | SPEC, TRACE, STEPS, PASS, BOUNDARY ([checks](quality/checks.md)) |
 | Useful alone | Each module has a five-minute quick start without a server or a sibling module; it is scenario `-001`. | The quick-start scenario runs on every change. |
 | Formats over code | Modules share only versioned schemas and events. | ISOLATION, CONTRACT |
+| One job, a narrow surface | Every published package says what it does in one sentence and lists every way in, every exported value of a library included ([ADR 0135](decisions/0135-one-job-and-a-listed-surface.md)). | SURFACE |
 | Ports with conformance | Every outside system sits behind a port; each port has `@conformance` scenarios. | An adapter is listed only when it passes them. |
 | Adopt before build | Every new module, dependency or service records the prior art that was checked. | ADR check rejects an empty Prior art section. |
 | Open standards at every boundary | MCP, ACP, OpenAPI, CloudEvents, OTLP. | Interfaces are generated from TypeSpec, OpenAPI and AsyncAPI; review rejects custom wire formats. |

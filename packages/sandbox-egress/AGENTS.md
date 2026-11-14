@@ -6,7 +6,14 @@ Adds rules for the sandbox-egress library. The root `AGENTS.md` applies in full.
 
 The only way a system test or another program may use the library:
 
-- Library: the exports of `src/index.ts` (see `README.md#api`), imported as `@opensoftware/sandbox-egress`
+- Library: the exports of `src/index.ts` (see `README.md#api`), imported as `@opensoftware/sandbox-egress`:
+  - the spec and its secrets: `readSpec`, `resolveSecrets`, `sandboxEnv`, `memoryBytes`, `envVariable`, `proxyEnv`,
+    `placeholder`, `basicPlaceholder`, `GIT_USER`
+  - iron-proxy: `proxyConfig`, `startScript`, `EGRESS_IMAGE`, `EGRESS_PORT`, `PROXY_DIR`, `CA_FILE`, `READY`,
+    `WORKSPACE`
+  - its log and the copy into a sandbox: `egressEntries`, `copyEnds`
+
+  Twenty values for one job is wide: `TODO.md` has the item that narrows it (ADR 0135).
 
 The library's system tests import it by its package name and call it in their own process (ADR 0039). Files go
 through `sut.files`; `sut.files.path` gives their absolute path.
