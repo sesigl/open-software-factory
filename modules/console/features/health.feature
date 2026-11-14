@@ -208,3 +208,41 @@ Feature: Health
     When a person opens "/health"
     Then the page answers 200 with the title "Health · console"
     And the page's navigation links "/", "/work", "/factory", "/inbox", "/improvement", "/health" and "https://grafana.acme.dev"
+
+  @id=SCN-CONSOLE-167 @status=implemented
+  Scenario: "console doctor" with the sign-in refuses an access file whose only admin is the example
+    Given a console that signs in with OpenID Connect at a provider that answers, and an access file with "admin@example.com" as "admin" and "ada@acme.dev" as "member"
+    When the user runs "console doctor"
+    Then the command exits with code 1
+    And it prints "ok    sign-in"
+    And it prints "FAIL  access: <access file> has no admin but the example's admin@example.com: put your admins in <access file>"
+
+  @id=SCN-CONSOLE-168 @status=implemented
+  Scenario: "console doctor" with the sign-in names a provider that does not answer
+    Given a console that signs in with OpenID Connect at "http://127.0.0.1:1", where nothing listens, and an access file with "ada@acme.dev" as "admin"
+    When the user runs "console doctor"
+    Then the command exits with code 1
+    And it prints "FAIL  sign-in: the provider at http://127.0.0.1:1 did not answer its discovery: check CONSOLE_OIDC_ISSUER"
+    And it prints "ok    access"
+
+  @id=SCN-CONSOLE-169 @status=implemented
+  Scenario: "console doctor" with the sign-in of GitHub asks no OpenID Connect provider and accepts an admin beside the example
+    Given a console that signs in with GitHub, with "CONSOLE_OIDC_ISSUER" still set, and an access file with "admin@example.com" and "ada@acme.dev" as "admin"
+    When the user runs "console doctor"
+    Then the command exits with code 0
+    And it prints "ok    access"
+    And it prints no line about the sign-in
+
+  @id=SCN-CONSOLE-170 @status=implemented
+  Scenario: "console doctor" finds the discovery of an issuer that is set with a slash at its end
+    Given a console that signs in with OpenID Connect at a provider that answers, with a slash at the end of "CONSOLE_OIDC_ISSUER"
+    When the user runs "console doctor"
+    Then the command exits with code 0
+    And it prints "ok    sign-in"
+
+  @id=SCN-CONSOLE-171 @status=implemented
+  Scenario: "console doctor" with the sign-in names the problem of an access file without an admin
+    Given a console that signs in with OpenID Connect at a provider that answers, and an access file with "ada@acme.dev" as "member"
+    When the user runs "console doctor"
+    Then the command exits with code 1
+    And it prints "FAIL  access: <access file>: no person has the role admin: check CONSOLE_ACCESS"

@@ -6,7 +6,7 @@ import { outputFolder } from "./adapters/files.ts";
 const HELP = `factory: one factory.yaml rendered for every harness, with lint, plan, apply and drift.
 
 Commands:
-  factory lint [--gh-aw]                          Check factory.yaml; print each problem and each warning with its file, line and column. --gh-aw: the factory is rendered with gh-aw, so a cron automation runs.
+  factory lint [--gh-aw]                          Check factory.yaml and the access.yaml beside it; print each problem and each warning with its file, line and column. --gh-aw: the factory is rendered with gh-aw, so a cron automation runs.
   factory render [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]   Write AGENTS.md, the MCP servers and the skill links of one agent to $OUTPUT. --harness all writes every declared harness; --k8s adds its kagent resources and SandboxTemplate; --gh-aw adds a gh-aw workflow per GitHub automation.
   factory plan [--adapters]                       Pin registry MCP servers in factory.lock; show what apply changes and what drifted, rendered files and webhooks. --adapters also pins each adapter under providers to the newest npm version in its range.
   factory apply [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]    Render like render, register the webhooks of forgejo and github automations (github ones not with --gh-aw), and record what was applied in OSF_DATA.
@@ -38,7 +38,10 @@ async function main(): Promise<number> {
 
   const commands: Record<string, () => Promise<number>> = {
     async lint() {
-      const { problems, warnings } = (await import("./commands/load.ts")).lintFile(file, options.ghAw);
+      const { lintAccess, lintFile } = await import("./commands/load.ts");
+      const linted = lintFile(file, options.ghAw);
+      const problems = [...linted.problems, ...lintAccess(file)];
+      const { warnings } = linted;
       const warned = warnings.length === 1 ? ", 1 warning" : warnings.length > 1 ? `, ${warnings.length} warnings` : "";
       const summary = problems.length > 0 ? `${problems.length} problems` : "no problems";
       print([...problems, ...warnings, `${file}: ${summary}${warned}`]);

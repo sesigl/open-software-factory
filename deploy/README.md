@@ -73,7 +73,9 @@ commit statuses ([ADR 0104](../docs/decisions/0104-forge-github-check-runs.md)),
 folder, change the prompts, `policy/spec.rego` and `groups.json`, and set `FACTORY_DIR` to it. The reference
 `groups.json` names `slack:U0EXAMPLE`, a member that stands for a person and is nobody: until a group has a real
 member, gatekeeper names it when it starts and `console doctor` fails its check `groups`
-([ADR 0114](../docs/decisions/0114-the-example-member-of-the-reference-groups.md)). Each
+([ADR 0114](../docs/decisions/0114-the-example-member-of-the-reference-groups.md)). Its `access.yaml`, which the
+console's own sign-in reads (ADR 0134), names `admin@example.com` the same way: with `CONSOLE_SIGN_IN` set,
+`console doctor` fails its check `access` until an admin of yours is listed. Each
 `docker compose up` commits the folder into the volume `factory`, so a run's factory version is a commit. The factory
 attaches to `litellm` with `inference/litellm.yaml`, so its agents' models are the routes in
 `compose/litellm/config.yaml`. Add your models there, with their keys in `.env`. Its routes point at Anthropic's

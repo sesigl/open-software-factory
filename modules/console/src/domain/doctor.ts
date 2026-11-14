@@ -64,6 +64,17 @@ export function groupsItem(groups: unknown, file: string): Item {
   return { name: "groups", ok: empty.length === 0, detail };
 }
 
+/** The admin that the reference access.yaml ships in place of a person (ADR 0134). */
+export const EXAMPLE_ADMIN = "admin@example.com";
+
+/** The check of the access file with the sign-in: it holds, and it has an admin who is not the example. */
+export function accessItem(problems: string[], admins: string[], file: string): Item {
+  if (problems.length) return { name: "access", ok: false, detail: `${problems.join("; ")}: check CONSOLE_ACCESS` };
+  const ok = admins.some((admin) => admin !== EXAMPLE_ADMIN);
+  const detail = `${file} has no admin but the example's ${EXAMPLE_ADMIN}: put your admins in ${file}`;
+  return { name: "access", ok, detail };
+}
+
 /** The model routes of the factory definition's agents, each once, in the order of the agents. */
 export const routesOf = (agents: Record<string, Record<string, unknown>> | undefined): string[] => [
   ...new Set(Object.values(agents ?? {}).map(({ model }) => String(model))),

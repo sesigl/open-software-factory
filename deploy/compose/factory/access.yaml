@@ -1,0 +1,7 @@
+# Who may sign in to the console when CONSOLE_SIGN_IN is set (ADR 0134): each person by email with one role,
+# member, factory-engineer or admin. admin@example.com stands for a person and is nobody: console doctor fails
+# until an admin of yours is listed. Whoever can write to this file's repository can make themselves admin.
+version: 1
+people:
+  - email: admin@example.com
+    role: admin
