@@ -988,7 +988,7 @@ as a vision scenario. Each item names the place in the code, so start there, and
     key (`SCN-INFER`, `SCN-INFLITE`). ADR 0108: the same key, SCN-INFER-014 and -015, SCN-INFLITE-018 to -020.
   - [x] The foreman revokes the run's key when the run ended (`SCN-FORE`). SCN-FORE-121 to -125.
 
-### [ ] T-42 · the run's pull request, stated and not guessed (P1)
+### [x] T-42 · the run's pull request, stated and not guessed (P1)
 
 - **Problem:** the run's pull request is the last pull request link in what the stage's agent wrote
   (`lastPullRequestIn`). An agent that names another pull request after its own gives the run the wrong one, and the
