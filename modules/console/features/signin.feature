@@ -117,3 +117,17 @@ Feature: Sign-in
     When a program sends the form "submit work" without a session
     Then the answer has the status 401 and says "sign in first"
     And intake received no submission
+
+  @id=SCN-CONSOLE-165 @status=implemented
+  Scenario: A page without a session redirects to the sign-in and comes back to that page
+    Given a console that signs in with OpenID Connect and an access file with "ada@acme.dev" as "admin"
+    And the provider signs in "ada@acme.dev"
+    When the person opens "/factory" and presses "Sign in"
+    Then the console first sent the person to "/signin?next=%2Ffactory"
+    And the person lands on "/factory" with the heading "acme"
+
+  @id=SCN-CONSOLE-166 @status=implemented
+  Scenario: A session before its end stays valid
+    Given a person "ada@acme.dev" signed in to a console whose sessions last 12 hours
+    When the console runs 11 hours later and the person opens "/"
+    Then the person sees the runs

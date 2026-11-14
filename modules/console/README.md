@@ -343,3 +343,5 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-154 | implemented | Without an access file nobody can sign in, and the page names the file |
 | SCN-CONSOLE-155 | implemented | The probe "/v1/ready" answers 503 when the console cannot read its factory |
 | SCN-CONSOLE-156 | implemented | With the sign-in a form without a session answers 401 |
+| SCN-CONSOLE-165 | implemented | A page without a session redirects to the sign-in and comes back to that page |
+| SCN-CONSOLE-166 | implemented | A session before its end stays valid |
