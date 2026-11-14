@@ -1,0 +1,6 @@
+# The paid reference run's change to the e2e project (ADR 0128): LiteLLM gets the OpenRouter key and the run's model
+# config. Only this service gets the key; foreman and the agent get a LiteLLM key of the run, with its budget.
+services:
+  litellm:
+    environment:
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:?set OPENROUTER_API_KEY}

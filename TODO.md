@@ -694,48 +694,6 @@ read them for ideas, do not copy their company-specific rules.
   not `inference-litellm start`. `SMOKE-PAID` and the package's `test:paid` need paid model calls: they are the
   harness slice of T-21.
 
-### [ ] T-21 · dogfood with paid services
-
-Slices that need a paid model call or a paid service. They come last, so the plan does not wait for them. Ask the
-owner before each slice: which model or service, and its budget.
-
-- **Slices:**
-  - [x] scorekit (from T-07): `weekly-paid.yml` scores this repository's `runs/` weekly with every scorer of the pack on
-    OpenRouter, `scorekit score --model` (`SCN-SCORE-046`), and the README links the report (ADR 0077).
-  - [x] taskcapture (from T-09): the weekly job `models` of `taskcapture-suite.yml` runs opencode with a real model
-    on OpenRouter on the small `prompt-injection` task, next to the oracle and reports it in the job summary (ADR 0077).
-  - [ ] taskcapture route (from T-09): route with the report's pick, once the OpenRouter key allows more than one
-    model (ADR 0077).
-  - [ ] observer (from T-10): the job `observe` of `weekly-paid.yml` runs `observer analyze` on the scores of the
-    scorekit slice above, `observer propose` for the first problem without an observer pull request, and
-    `observer check` for the merged ones (ADR 0046, ADR 0077). Open: done when one observer pull request to this
-    repository is merged and `observer check` measures its effect; that needs a problem with two failed runs and then
-    20 scored runs on each side of the merge.
-  - [x] effort (before the foreman slice): every agent of `factory.yaml` declares its `effort` (`low` to `max`, required;
-    contracts 2.0.0); the foreman hands it to each stage as `OSF_EFFORT`, and claude-code, codex and opencode map it to
-    their own setting; the console's factory page shows it (ADR 0078, `SCN-CTR-012`, `SCN-FSPEC-058`, `SCN-FORE-069`,
-    `-070`, `SCN-TK-121`, `SCN-HCLAUDE-006`, `SCN-HCODEX-009`, `SCN-HOPENCODE-007`, `SCN-CONSOLE-036`).
-  - [x] effort in the profile: once factory-spec, foreman and console are released on contracts 2.0.0, move the image
-    pins of `deploy/compose/compose.yaml` and the Helm chart to them, and give the agents of the reference factory
-    `deploy/compose/factory/factory.yaml` their levels: `high` for triage and ship (a small model), `medium` for spec,
-    implement and review (a smart one). The released images before them reject `effort` as an unknown field.
-  - [ ] foreman (from T-17): run `foreman serve` with a real harness and model next to the public intake below; done
-    when an issue labeled `factory` in this repository is implemented by the foreman (phase 3). Every model call goes
-    through LiteLLM, also on the owner's Claude subscription: LiteLLM forwards the subscription's token, and the
-    foreman hands Claude Code the run's key in `ANTHROPIC_CUSTOM_HEADERS` (`x-litellm-api-key`) in place of
-    `ANTHROPIC_API_KEY`. Models: Opus for spec and implement, Sonnet for review, Haiku for triage and ship.
-  - [x] intake (from T-16): the Compose profile on a developer's machine takes the `issues` webhook of
-    `sesigl/open-software-factory` through a smee.io relay; `INTAKE_WEBHOOK_SECRET` turns on the profile's
-    `/forge/events` (`SCN-DIST-014`), and `deploy/README.md` describes the relay and the webhook (ADR 0065). Issue #150,
-    labeled `factory`, became a work item. intake receives work only while the developer's machine runs the relay.
-  - [x] harness (from T-12, T-20): `e2e/paid/` and the script `test:paid`: one SMOKE-PAID run for opencode, weekly on
-    OpenRouter with `deepseek/deepseek-v4.1-flash-1017`, and one for claude-code on a developer's subscription with
-    `claude-haiku-5-5` (ADR 0052, ADR 0053, ADR 0076, ADR 0077).
-  - [ ] codex (from T-12): a SMOKE-PAID run of harness-codex with a model Codex knows, once the owner picks one
-    (ADR 0077).
-
----
-
 ## Wave 5 · v1: a simple factory that people can trust
 
 The parts exist and are tested. This wave makes the assembled factory keep its own promises and makes it easy to set up.
@@ -828,14 +786,15 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
   - [x] `deploy/README.md` says to run proof in the target repository's CI, as the profile pins the foreman with this
     change.
 
-### [ ] T-27 · a reference factory that works on any repository (P1)
+### [x] T-27 · a reference factory that works on any repository (P1)
 
 - **Done when:** the work item or the factory names the repository, and the reference factory implements an issue of
   any GitHub repository with one token.
 - **Slices:**
   - [x] The reference prompts clone the repository of the issue in the origin link, follow the repository's own
     instructions and checks, and stop when a work item names no repository.
-  - [ ] A first run of the reference factory on a sample repository, with a paid model (ask the owner first).
+  - [x] Its paid slice, a first run on a sample repository with a paid model, moved to T-21 in
+    [Paid runs](#paid-runs-last-started-by-a-maintainer-manual).
 
 ### [x] T-28 · console actions and the work inbox (P1)
 
@@ -1153,6 +1112,58 @@ as a vision scenario. Each item names the place in the code, so start there, and
     and TODO (ADR 0117, SCN-REPO-128 to -131). The 68 vision scenarios with realizing scenarios that are all
     implemented say `implemented`; the 14 without one stay `planned`.
   - [x] Tick or correct T-22, T-26 and T-29, and name Jaeger in T-24 and T-29.
+
+---
+
+## Paid runs (last; started by a maintainer, manual)
+
+Everything that needs a paid model call or a paid service, so the plan never waits for it. A maintainer starts each
+run by hand, after the owner agreed on the model and the budget.
+
+### [ ] T-21 · dogfood with paid services
+
+Slices that need a paid model call or a paid service. They come last, so the plan does not wait for them. Ask the
+owner before each slice: which model or service, and its budget.
+
+- **Slices:**
+  - [x] scorekit (from T-07): `weekly-paid.yml` scores this repository's `runs/` weekly with every scorer of the pack on
+    OpenRouter, `scorekit score --model` (`SCN-SCORE-046`), and the README links the report (ADR 0077).
+  - [x] taskcapture (from T-09): the weekly job `models` of `taskcapture-suite.yml` runs opencode with a real model
+    on OpenRouter on the small `prompt-injection` task, next to the oracle and reports it in the job summary (ADR 0077).
+  - [ ] taskcapture route (from T-09): route with the report's pick, once the OpenRouter key allows more than one
+    model (ADR 0077).
+  - [ ] observer (from T-10): the job `observe` of `weekly-paid.yml` runs `observer analyze` on the scores of the
+    scorekit slice above, `observer propose` for the first problem without an observer pull request, and
+    `observer check` for the merged ones (ADR 0046, ADR 0077). Open: done when one observer pull request to this
+    repository is merged and `observer check` measures its effect; that needs a problem with two failed runs and then
+    20 scored runs on each side of the merge.
+  - [x] effort (before the foreman slice): every agent of `factory.yaml` declares its `effort` (`low` to `max`, required;
+    contracts 2.0.0); the foreman hands it to each stage as `OSF_EFFORT`, and claude-code, codex and opencode map it to
+    their own setting; the console's factory page shows it (ADR 0078, `SCN-CTR-012`, `SCN-FSPEC-058`, `SCN-FORE-069`,
+    `-070`, `SCN-TK-121`, `SCN-HCLAUDE-006`, `SCN-HCODEX-009`, `SCN-HOPENCODE-007`, `SCN-CONSOLE-036`).
+  - [x] effort in the profile: once factory-spec, foreman and console are released on contracts 2.0.0, move the image
+    pins of `deploy/compose/compose.yaml` and the Helm chart to them, and give the agents of the reference factory
+    `deploy/compose/factory/factory.yaml` their levels: `high` for triage and ship (a small model), `medium` for spec,
+    implement and review (a smart one). The released images before them reject `effort` as an unknown field.
+  - [ ] foreman (from T-17): run `foreman serve` with a real harness and model next to the public intake below; done
+    when an issue labeled `factory` in this repository is implemented by the foreman (phase 3). Every model call goes
+    through LiteLLM, also on the owner's Claude subscription: LiteLLM forwards the subscription's token, and the
+    foreman hands Claude Code the run's key in `ANTHROPIC_CUSTOM_HEADERS` (`x-litellm-api-key`) in place of
+    `ANTHROPIC_API_KEY`. Models: Opus for spec and implement, Sonnet for review, Haiku for triage and ship.
+  - [x] intake (from T-16): the Compose profile on a developer's machine takes the `issues` webhook of
+    `sesigl/open-software-factory` through a smee.io relay; `INTAKE_WEBHOOK_SECRET` turns on the profile's
+    `/forge/events` (`SCN-DIST-014`), and `deploy/README.md` describes the relay and the webhook (ADR 0065). Issue #150,
+    labeled `factory`, became a work item. intake receives work only while the developer's machine runs the relay.
+  - [x] harness (from T-12, T-20): `e2e/paid/` and the script `test:paid`: one SMOKE-PAID run for opencode, weekly on
+    OpenRouter with `deepseek/deepseek-v4.1-flash-1017`, and one for claude-code on a developer's subscription with
+    `claude-haiku-5-5` (ADR 0052, ADR 0053, ADR 0076, ADR 0077).
+  - [ ] codex (from T-12): a SMOKE-PAID run of harness-codex with a model Codex knows, once the owner picks one
+    (ADR 0077).
+  - [ ] reference factory (from T-27): a first run of the reference factory on a sample repository, with a paid
+    model. The workflow `paid-reference-run.yml` exists (ADR 0128): a maintainer or an admin starts it with
+    `gh workflow run paid-reference-run.yml -f ref=<branch>`; the implement stage on opencode implements an issue of a
+    tiny sample repository in a Forgejo of the job, with `deepseek/deepseek-v4.1-flash-1017` and a budget of 0.50 USD.
+    Done when a maintainer's run of it opens the pull request.
 
 ---
 

@@ -1,0 +1,6 @@
+# Attach to the Compose profile's litellm, and the chart's: its model routes are in deploy/compose/litellm/config.yaml.
+# Each run gets a key of its own, so the spend log names the run (ADR 0080).
+osf:
+  proxy:
+    url: http://litellm:4000
+    master_key: os.environ/OSF_SECRET_LITELLM_MASTER_KEY
