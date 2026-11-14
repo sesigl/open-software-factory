@@ -16,3 +16,9 @@ export const putCached = (sut: Sut, change: Record<string, string> = {}): Promis
   putAll(sut, { ...cachedRepository(), ...change });
 
 export const runAffected = (sut: Sut) => sut.cli(["check", "AFFECTED"]);
+
+/**
+ * A line of demo's system test that opens a page in Chromium. The text is put together, because AFFECTED and the
+ * mutation shards find a package that opens pages by this text in its system tests, and tools' tests open none.
+ */
+export const opensPage = `await sut.browser.${"open"}("/");`;

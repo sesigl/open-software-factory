@@ -518,6 +518,23 @@ Feature: Repository checks
     Then the command exits with code 1
     And the output contains "AFFECTED modules/demo/package.json:1 the suites demo and rest of .github/test-suites.yml both run the system tests of @opensoftware/demo"
 
+  @id=SCN-REPO-138 @status=implemented
+  Scenario: AFFECTED rejects a package whose system tests open pages in a browser in a suite without one
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And "modules/demo/system-tests/SCN-DEMO-001.test.ts" opens a page with "sut.browser"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED .github/test-suites.yml:1 the system tests of @opensoftware/demo open pages with sut.browser: the suite demo needs "browser: chromium""
+
+  @id=SCN-REPO-139 @status=implemented
+  Scenario: AFFECTED accepts a package whose system tests open pages in a browser in a suite with Chromium
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And "modules/demo/system-tests/SCN-DEMO-001.test.ts" opens a page with "sut.browser"
+    And the suite "demo" of ".github/test-suites.yml" has "browser: chromium"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 0
+    And the output contains "AFFECTED ok"
+
   @id=SCN-REPO-099 @status=implemented
   Scenario: AFFECTED rejects a suite whose filter names no package with system tests
     Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081

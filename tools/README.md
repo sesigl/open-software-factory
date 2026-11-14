@@ -258,3 +258,5 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-135 | implemented | osf up refuses a missing .env, an empty required value and gatekeeper without a channel |
 | SCN-REPO-136 | implemented | osf up starts the Compose profile and waits until it is healthy |
 | SCN-REPO-137 | implemented | osf doctor runs console doctor in the profile and exits with its code |
+| SCN-REPO-138 | implemented | AFFECTED rejects a package whose system tests open pages in a browser in a suite without one |
+| SCN-REPO-139 | implemented | AFFECTED accepts a package whose system tests open pages in a browser in a suite with Chromium |
