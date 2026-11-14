@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/sesigl/open-software-factory/compare/ledger-v0.7.0...ledger-v0.8.0) (2026-11-14)
+
+
+### Features
+
+* **testkit:** fakes.postgres and fakes.temporal start one server per test process (ADR 0129) ([#302](https://github.com/sesigl/open-software-factory/issues/302)) ([a8174b9](https://github.com/sesigl/open-software-factory/commit/a8174b9e6e3ff0b03b39b252cbb4bc9691d3a235))
+
 ## [0.7.0](https://github.com/sesigl/open-software-factory/compare/ledger-v0.6.1...ledger-v0.7.0) (2026-11-11)
 
 
