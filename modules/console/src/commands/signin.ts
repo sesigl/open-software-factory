@@ -104,3 +104,21 @@ export function useSignIn(app: FastifyInstance, sign: SignIn, accessPath: string
       .send(),
   );
 }
+
+/**
+ * Behind a sign-in proxy with an access file (ADR 0130, ADR 0134): the person of the proxy's header must be on the list,
+ * else every page answers 403 and names them. Without the header the pages stay as without the file.
+ */
+export function useProxyAccess(app: FastifyInstance, header: string, accessPath: string, now: () => number): void {
+  const access = accessFile(accessPath, now);
+  app.addHook("onRequest", async (request, reply) => {
+    const email = String(request.headers[header] ?? "");
+    if (!email) return;
+    const list = access.current();
+    if (list.roleOf(email)) return;
+    const refusal = list.problems.length
+      ? `Nobody may use this console: ${list.problems.join("; ")}`
+      : `${email} is not on this factory's access list`;
+    return reply.code(403).type("text/plain; charset=utf-8").send(refusal);
+  });
+}

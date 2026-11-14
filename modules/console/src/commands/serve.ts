@@ -1,6 +1,6 @@
 // console serve: the read-only web view of the factory (ADR 0072). Each page asks the foremen, intake and gatekeeper
 // when it is opened, and keeps nothing. It runs until SIGTERM or SIGINT.
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { UsageError } from "@opensoftware/cli";
@@ -103,6 +103,9 @@ export async function serve(env: Env) {
   });
   // The sign-in's libraries load only with the sign-in: a console without it starts faster.
   if (sign) (await import("./signin.ts")).useSignIn(app, sign, accessPath, now);
+  // Behind a sign-in proxy, an access file's roles apply; without one, every person of the proxy acts as a member.
+  if (userHeader && existsSync(accessPath))
+    (await import("./signin.ts")).useProxyAccess(app, userHeader, accessPath, now);
   app.get("/pico.css", (_request, reply) => reply.type("text/css").send(PICO));
   // The probe of the profile's and the chart's health checks: the console runs and reads its factory, without a session.
   app.get("/v1/ready", (_request, reply) => {

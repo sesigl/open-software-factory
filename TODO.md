@@ -1621,7 +1621,9 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   - [x] The hook, sign-in, session and sign-out in the console, with the sign-in page and the probe route
     (`SCN-CONSOLE`). Until `@opensoftware/factory-files` is published, the console reads `access.yaml` with an
     adapter of its own; the library takes it over with its first publish.
-  - [ ] The roles on every page and form (`SCN-CONSOLE`).
+  - [x] The roles on every page and form (`SCN-CONSOLE`): the own sign-in and the proxy mode with an access file
+    refuse a person who is not on it. The pages that need `factory-engineer` or `admin` come with T-57 and T-58 and
+    check the role there.
   - [ ] The shell and the runs list in the new look, with the two journeys and the console's own suite with
     `browser: chromium` (`SCN-CONSOLE`).
   - [ ] `osf init`, `osf up`, the profile, the chart, `console doctor`, the tutorial; one scenario of the profile

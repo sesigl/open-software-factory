@@ -340,6 +340,8 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-148 | implemented | A person signs in with GitHub |
 | SCN-CONSOLE-149 | implemented | The console with the sign-in does not start on an address that is neither loopback nor HTTPS |
 | SCN-CONSOLE-150 | implemented | The console does not start when it signs people in and a sign-in proxy names the person too |
+| SCN-CONSOLE-151 | implemented | Behind a sign-in proxy with an access file, a person who is not in it gets 403 |
+| SCN-CONSOLE-152 | implemented | Behind a sign-in proxy with an access file, a person in it sees the runs |
 | SCN-CONSOLE-154 | implemented | Without an access file nobody can sign in, and the page names the file |
 | SCN-CONSOLE-155 | implemented | The probe "/v1/ready" answers 503 when the console cannot read its factory |
 | SCN-CONSOLE-156 | implemented | With the sign-in a form without a session answers 401 |
