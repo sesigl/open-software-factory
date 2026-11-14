@@ -19,10 +19,21 @@ scenario("SCN-FORE-144", async ({ sut, fakes, given, when, then }) => {
           })
           .toBeGreaterThan(at);
       }
-      // Temporal's visibility shows a run a moment after it started.
+      // Temporal's visibility shows a run a moment after it started, and that it ended a moment after it closed. It lists
+      // running runs first, so a run it still lists as running led the first page and, once it ended, the next one too
+      // (run 43598754387): both runs completed only once the first page's next page lists the other run.
       await expect
-        .poll(async () => (await server.list()).data?.runs.length, { timeout: WAIT_MS, interval: 100 })
-        .toBe(2);
+        .poll(
+          async () => {
+            const first = await server.page({ limit: 1 });
+            const cursor = first.data?.next;
+            if (!cursor) return [];
+            const next = await server.page({ limit: 1, cursor });
+            return [...(first.data?.runs ?? []), ...(next.data?.runs ?? [])].map((run) => run.runId);
+          },
+          { timeout: WAIT_MS, interval: 100 },
+        )
+        .toSatisfy((ids: string[]) => ids.length === 2 && ids[0] !== ids[1]);
     },
   );
 
