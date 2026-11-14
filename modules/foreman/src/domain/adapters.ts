@@ -1,6 +1,6 @@
 // The command line of each adapter of a port that is a program, and the versions a run asks for (ADR 0110): a map of
 // FOREMAN_HARNESSES, FOREMAN_SANDBOXES, FOREMAN_FORGES or FOREMAN_INFERENCES names it as a JSON list of arguments or
-// as a string split at each space; else npx runs the adapter's package at the range under the factory's `providers`.
+// as a string split at each space; else npx runs the adapter's package at factory.lock's pin or the range (ADR 0125).
 import type { RunView } from "@opensoftware/contracts";
 
 export type AdapterVersion = NonNullable<RunView["adapters"]>[number];

@@ -76,4 +76,5 @@ arguments next to a string, the form adopted here.
 - A person who edits a prompt in place must commit it before a run starts; the error names the files.
 - A deploy that copies a factory without committing it now stops; the Compose profile and the chart already commit.
 - An adapter's version moves inside the factory's range only; the view shows the range each run asked for.
-- Revisit when `factory.lock` pins adapters: the fallback then takes the pin, and the view the exact version.
+- Revisit when `factory.lock` pins adapters: the fallback then takes the pin, and the view the exact version. Done by
+  ADR 0125.

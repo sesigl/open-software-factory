@@ -96,10 +96,11 @@ A run names the versions it runs ([ADR 0110](../../docs/decisions/0110-versions-
   `factory.yaml: commit the changed files <path>, <path>; a run's factory version is its commit`. The server exits
   with code 2; `POST /v1/runs` and a retry answer 400. Other untracked files and ignored files do not count.
 - An adapter that `FOREMAN_HARNESSES`, `FOREMAN_SANDBOXES`, `FOREMAN_FORGES` or `FOREMAN_INFERENCES` does not name
-  runs `npx -y @opensoftware/<port>-<name>@<range>`, at the range under `providers.<port>.<name>` (`run` follows for
-  a harness). A map entry is a JSON list of the program and its arguments, for a path that holds a space, or a
+  runs `npx -y @opensoftware/<port>-<name>@<version>` (`run` follows for a harness): the exact version that
+  `factory plan --adapters` pinned in `adapters.<port>.<name>` of `factory.lock` next to `factory.yaml`, while that
+  pin's range is the range under `providers.<port>.<name>`, else that range (ADR 0125). A map entry is a JSON list of the program and its arguments, for a path that holds a space, or a
   string that the foreman splits at each space.
-- The run's `adapters` lists each adapter under `providers` with its range as `version`, and either the command line
+- The run's `adapters` lists each adapter under `providers` with its pinned version or its range as `version`, and either the command line
   the foreman builds as `command` or the map that names it as `configured`.
 
 ## Sandboxes
@@ -706,3 +707,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-155 | implemented | Each stage's span carries its session's tokens and cost, and the run's view names the span |
 | SCN-FORE-156 | implemented | A factory in a Git remote runs at the commit of its default branch, and the server's folder needs no clean checkout |
 | SCN-FORE-157 | implemented | A ref that the Git remote does not have stops the server at the start |
+| SCN-FORE-158 | implemented | The fallback runs the exact version factory.lock pins for the adapter's range |

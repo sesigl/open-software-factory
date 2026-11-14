@@ -221,7 +221,7 @@ export type components = {
             /** @description The port under `providers`: harness, sandbox, forge or inference. */
             port: "harness" | "sandbox" | "forge" | "inference";
             name: string;
-            /** @description The range under `providers.<port>.<name>` that the fallback runs. */
+            /** @description The exact version that factory.lock pins for the range under `providers.<port>.<name>`, else that range (ADR 0125). */
             version?: string;
             /** @description The command line the foreman builds when no map names the adapter: npx at the version. */
             command?: string[];
@@ -371,6 +371,52 @@ export type components = {
             /** @description Benchmark suites by name. */
             benchmarks?: {
                 [key: string]: components["schemas"]["Benchmark"];
+            };
+        };
+        /**
+         * @description factory.lock next to factory.yaml (ADR 0020, ADR 0125): the exact versions that `factory plan` pinned. factory-spec
+         *     writes it; the foreman reads the pins of its adapters.
+         */
+        FactoryLock: {
+            /**
+             * @description The version of the lock's format.
+             * @constant
+             */
+            version: 1;
+            /** @description The registry MCP servers, by their reference in factory.yaml, for example `registry:io.github.acme/tracker@1.4`. */
+            mcp: {
+                [key: string]: components["schemas"]["FactoryLockMcpPin"];
+            };
+            /**
+             * @description The adapters under `providers` that `factory plan --adapters` pinned, per port and adapter name (ADR 0125). A pin
+             *     counts only while its `range` is the range factory.yaml declares.
+             */
+            adapters?: {
+                [key: string]: {
+                    [key: string]: components["schemas"]["FactoryLockAdapterPin"];
+                };
+            };
+        };
+        /** @description One adapter's npm package `@opensoftware/<port>-<name>` at the newest version inside its range. */
+        FactoryLockAdapterPin: {
+            /** @description The range under `providers` that the pin was resolved from, for example "^2". */
+            range: string;
+            /** @description The exact version, for example "2.3.1". */
+            version: string;
+        };
+        /** @description One registry MCP server at its exact version, with the npm package or the remote it starts. */
+        FactoryLockMcpPin: {
+            name: string;
+            version: string;
+            package?: {
+                /** @constant */
+                registryType: "npm";
+                identifier: string;
+                version: string;
+            };
+            remote?: {
+                type: string;
+                url: string;
             };
         };
         /**

@@ -73,3 +73,16 @@ export function readmeFiles(readme: string): Record<string, string> {
     files[match[1] as string] = match[2] as string;
   return files;
 }
+
+/** The npm registry's packument path of a package: a scoped name keeps its "@" and encodes its "/". */
+export const packumentPath = (name: string): string => `/${name.replace("/", "%2f")}`;
+
+/** The npm registry's packument of a package with the versions. */
+export const packument = (name: string, versions: string[]): unknown => ({
+  name,
+  versions: Object.fromEntries(versions.map((version) => [version, { name, version }])),
+});
+
+/** factory.lock with no registry server and the adapter pins, per port and name. */
+export const adapterLock = (adapters: Record<string, Record<string, { range: string; version: string }>>): string =>
+  `${JSON.stringify({ version: 1, mcp: {}, adapters }, null, 2)}\n`;

@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "mcp": {
+    "registry:io.github.acme/docs@2": {
+      "name": "io.github.acme/docs",
+      "version": "2.1.0",
+      "remote": { "type": "streamable-http", "url": "https://mcp.acme.example/docs" }
+    }
+  }
+}

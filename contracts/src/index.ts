@@ -46,6 +46,7 @@ export type RunSignal = Schemas["RunSignal"];
 export type RunRetry = Schemas["RunRetry"];
 export type RunAction = Schemas["RunAction"];
 export type SandboxSpec = Schemas["SandboxSpec"];
+export type FactoryLock = Schemas["FactoryLock"];
 export type Health = Schemas["Health"];
 export type HealthCheck = Schemas["HealthCheck"];
 

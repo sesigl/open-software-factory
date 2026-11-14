@@ -2,26 +2,56 @@
 import { join, normalize } from "node:path";
 import { maxSatisfying } from "semver";
 import { hashOf, readText, sha256, writeLock } from "../adapters/files.ts";
+import { packageVersions } from "../adapters/npm.ts";
 import { versionsOf } from "../adapters/registry.ts";
 import { readState, writeState } from "../adapters/state.ts";
 import { diff, summary } from "../domain/diff.ts";
 import { fail } from "../domain/errors.ts";
-import { type Lock, type LockEntry, parseReference } from "../domain/mcp.ts";
+import { type AdapterPin, type Lock, type LockEntry, parseReference } from "../domain/mcp.ts";
 import { resolveDefinition } from "../domain/resolve.ts";
 import type { Factory } from "./load.ts";
 import { type RenderOptions, render } from "./render.ts";
 import { applyWebhooks, webhookDrift } from "./webhooks.ts";
 
-/** factory.lock with an entry for every registry server: kept from the lock, or pinned from the registry once. */
-export async function pin(factory: Factory): Promise<Factory> {
+/**
+ * factory.lock with an entry for every registry server: kept from the lock, or pinned from the registry once. With
+ * `adapters`, every adapter of the ports the foreman runs as programs too (ADR 0125); without, the lock's adapter pins
+ * stay as they are.
+ */
+export async function pin(factory: Factory, adapters = false): Promise<Factory> {
   const references = [...new Set(Object.values(factory.definition.agents).flatMap((agent) => agent.mcp ?? []))].filter(
     (reference) => parseReference(reference).registry,
   );
   const lock: Lock = { version: 1, mcp: {} };
   for (const reference of references)
     lock.mcp[reference] = factory.lock.mcp[reference] ?? (await fromRegistry(reference));
-  if (references.length > 0) writeLock(factory.dir, lock);
+  const pins = adapters ? await pinAdapters(factory) : factory.lock.adapters;
+  if (pins) lock.adapters = pins;
+  if (references.length > 0 || pins) writeLock(factory.dir, lock);
   return { ...factory, lock };
+}
+
+/** The ports whose adapters the foreman starts with npx when its maps do not name them (ADR 0110). */
+const PROGRAM_PORTS = ["harness", "sandbox", "forge", "inference"] as const;
+
+/** Each adapter's pin: kept while its range is unchanged, else the newest npm version inside the range. */
+async function pinAdapters(factory: Factory): Promise<Record<string, Record<string, AdapterPin>>> {
+  const pins: Record<string, Record<string, AdapterPin>> = {};
+  for (const port of PROGRAM_PORTS)
+    for (const [name, range] of Object.entries(factory.definition.providers?.[port] ?? {})) {
+      const kept = factory.lock.adapters?.[port]?.[name];
+      pins[port] ??= {};
+      pins[port][name] =
+        kept?.range === range ? kept : { range, version: await fromNpm(`@opensoftware/${port}-${name}`, range) };
+    }
+  return pins;
+}
+
+async function fromNpm(name: string, range: string): Promise<string> {
+  return (
+    maxSatisfying(await packageVersions(name), range) ??
+    fail(`the npm registry has no version of "${name}" that matches "${range}"`)
+  );
 }
 
 async function fromRegistry(reference: string): Promise<LockEntry> {
@@ -51,8 +81,8 @@ function model(factory: Factory): Record<string, unknown> {
   return { ...resolveDefinition(factory.definition, factory.lock), prompts };
 }
 
-export async function plan(loaded: Factory, output: string): Promise<string[]> {
-  const factory = await pin(loaded);
+export async function plan(loaded: Factory, output: string, adapters = false): Promise<string[]> {
+  const factory = await pin(loaded, adapters);
   const state = readState();
   const changes = diff(state?.model ?? {}, model(factory));
   const drift = Object.entries(state?.files ?? {})

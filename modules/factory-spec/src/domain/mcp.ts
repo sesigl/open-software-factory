@@ -9,10 +9,20 @@ export interface LockEntry {
   remote?: { type: string; url: string };
 }
 
-/** factory.lock: the exact version of every registry server, keyed by its reference in factory.yaml. */
+/** An adapter's package at the exact version `factory plan --adapters` resolved from its range (ADR 0125). */
+export interface AdapterPin {
+  range: string;
+  version: string;
+}
+
+/**
+ * factory.lock (contract factory-lock): the exact version of every registry server, keyed by its reference in
+ * factory.yaml, and of the adapters under `providers`, per port and name.
+ */
 export interface Lock {
   version: 1;
   mcp: Record<string, LockEntry>;
+  adapters?: Record<string, Record<string, AdapterPin>>;
 }
 
 /** How a harness reaches one MCP server: a local command over stdio, or a remote URL. */

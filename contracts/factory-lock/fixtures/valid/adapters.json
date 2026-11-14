@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "mcp": {
+    "registry:io.github.acme/tracker@1.4": {
+      "name": "io.github.acme/tracker",
+      "version": "1.4.2",
+      "package": { "registryType": "npm", "identifier": "@acme/tracker-mcp", "version": "1.4.2" }
+    }
+  },
+  "adapters": {
+    "harness": { "claude-code": { "range": "^2", "version": "2.3.1" } },
+    "forge": { "github": { "range": "^0", "version": "0.3.1" } }
+  }
+}
