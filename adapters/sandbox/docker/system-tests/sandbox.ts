@@ -1,6 +1,6 @@
 // What the system tests of this adapter share: the test template, specs, and sandboxes that are destroyed when
 // the scenario ends. Each helper only calls the adapter's CLI through sut.
-import type { ScenarioContext } from "@opensoftware/testkit";
+import type { OpenBao, ScenarioContext } from "@opensoftware/testkit";
 
 type Sut = ScenarioContext["sut"];
 
@@ -51,6 +51,17 @@ export function sandboxes(sut: Sut, env: Record<string, string> = {}): Sandboxes
       for (const id of created) await sut.cli(["destroy", id], { env });
     },
   };
+}
+
+/**
+ * The adapter's variables for OpenBao for containers: its address as the egress proxy reaches it, the scenario's mount
+ * and a new token that may only read the mount, as the egress proxy's read token (ADR 0137, ADR 0139).
+ */
+export async function readToken(bao: OpenBao): Promise<Record<string, string>> {
+  const token = await bao.token(
+    `path "${bao.mount}/data/*" { capabilities = ["read"] }\npath "${bao.mount}/metadata/*" { capabilities = ["read"] }`,
+  );
+  return { OSF_OPENBAO_ADDR: bao.containerUrl ?? "", OSF_OPENBAO_TOKEN: token, OSF_OPENBAO_MOUNT: bao.mount };
 }
 
 /** An MCP `tools/call` of the tool, sent with curl to the URL; prints the answer. */
