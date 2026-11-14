@@ -19,6 +19,8 @@ export interface Frame {
   work?: boolean;
   /** Whether the navigation links the cost and scores: only with CONSOLE_IMPROVE_DIR. */
   improvement?: boolean;
+  /** The signed-in person of the own sign-in, with their role and the form "Sign out" (ADR 0134). */
+  person?: { email: string; role: string };
 }
 
 /** The whole document: head, the navigation with the dashboards, the notes, and the page's content. */
@@ -45,6 +47,14 @@ export function page(frame: Frame, content: VNode | VNode[]): string {
           </ul>
           <ul>
             ${frame.links.map((link) => html`<li><a href=${link.url}>${link.name}</a></li>`)}
+            ${
+              frame.person
+                ? html`<li>${frame.person.email} · ${frame.person.role}</li>
+                  <li>
+                    <form method="post" action="/signout"><button type="submit">Sign out</button></form>
+                  </li>`
+                : null
+            }
           </ul>
         </nav>
       </header>

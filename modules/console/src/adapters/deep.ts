@@ -4,8 +4,6 @@
 import { spawn } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import { createInterface } from "node:readline";
-import { jetstream } from "@nats-io/jetstream";
-import { connect } from "@nats-io/transport-node";
 
 /** The status of one chat completion of one token with this model, or 0 when the gateway does not answer. */
 export async function callRoute(url: string, token: string | undefined, model: string): Promise<number> {
@@ -92,6 +90,11 @@ export const pingId = (seed: string | undefined): string =>
  * "no stream" when none takes the subject, "no answer" when NATS does not answer.
  */
 export async function publishPing(url: string, id: string): Promise<"sent" | "no stream" | "no answer"> {
+  // NATS loads only for the ping of `console doctor --deep`: `serve` starts faster without it.
+  const [{ connect }, { jetstream }] = await Promise.all([
+    import("@nats-io/transport-node"),
+    import("@nats-io/jetstream"),
+  ]);
   const connection = await connect({ servers: url, timeout: 5_000 }).catch(() => undefined);
   if (!connection) return "no answer";
   const ping = { specversion: "1.0", id, source: "/osf/console", type: "doctor.ping@v1", time: new Date(), data: {} };

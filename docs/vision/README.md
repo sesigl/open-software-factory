@@ -36,7 +36,7 @@ not `deprecated` is `implemented`; otherwise it says `planned`. The check VISION
 | SCN-FACTORY-RUNTIME-010 | planned | none |
 | SCN-FACTORY-RUNTIME-008 | implemented | SCN-CTR-004 (implemented), SCN-RUN-011 (implemented), SCN-RUN-012 (implemented) |
 | SCN-FACTORY-RUNTIME-009 | planned | none |
-| SCN-FACTORY-RUNTIME-011 | planned | none |
+| SCN-FACTORY-RUNTIME-011 | implemented | SCN-CONSOLE-137 (implemented), SCN-CONSOLE-138 (implemented), SCN-CONSOLE-144 (implemented) |
 | SCN-FACTORY-CODE-001 | implemented | SCN-CTR-001 (implemented), SCN-CTR-002 (implemented), SCN-FSPEC-002 (implemented), SCN-FSPEC-003 (implemented), SCN-FSPEC-001 (implemented), SCN-FORE-142 (implemented), SCN-FORE-159 (implemented) |
 | SCN-FACTORY-CODE-007 | planned | none |
 | SCN-FACTORY-CODE-002 | implemented | SCN-CONSOLE-023 (deprecated), SCN-CONSOLE-036 (implemented), SCN-CONSOLE-024 (implemented) |

@@ -2,7 +2,7 @@
 // the folder. A line that is no JSON is skipped, as a file that a job is still writing ends in half a line.
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { type Improvement, improvementOf } from "../domain/improvement.ts";
+import type { Improvement } from "../domain/improvement.ts";
 
 function parsed(text: string): unknown[] {
   try {
@@ -12,7 +12,9 @@ function parsed(text: string): unknown[] {
   }
 }
 
-export function readImprovement(folder: string): Improvement {
+export async function readImprovement(folder: string): Promise<Improvement> {
+  // The contracts' reader of run records loads with the first page of cost and scores: `serve` starts faster.
+  const { improvementOf } = await import("../domain/improvement.ts");
   const files = (readdirSync(folder, { recursive: true }) as string[]).filter((name) => /\.jsonl?$/.test(name));
   const records = files.flatMap((name) => {
     const text = readFileSync(join(folder, name), "utf8");

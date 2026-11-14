@@ -25,6 +25,8 @@ const { frame } = Astro.props as { frame: FrameData };
         </ul>
         <ul>
           {frame.links.map((link) => <li><a href={link.url}>{link.name}</a></li>)}
+          {frame.person && <li>{frame.person.email} · {frame.person.role}</li>}
+          {frame.person && <li><form method="post" action="/signout"><button type="submit">Sign out</button></form></li>}
         </ul>
       </nav>
     </header>

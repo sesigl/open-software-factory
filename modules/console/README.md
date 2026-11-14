@@ -96,6 +96,37 @@ and `{spanId}`, makes each started stage's name a link to its span in the run's 
 `/trace/{traceId}?uiFind={spanId}` ([ADR 0121](../../docs/decisions/0121-stage-run-record-in-the-trace.md)). `CONSOLE_TEMPORAL_URL` links the
 run's history: `<url>/namespaces/<CONSOLE_TEMPORAL_NAMESPACE>/workflows/<runId>`.
 
+## Sign-in
+
+The console signs people in itself when `CONSOLE_SIGN_IN` names the provider ([ADR 0134](../../docs/decisions/0134-console-sign-in-roles-and-modes.md)):
+`oidc` for OpenID Connect (Google, a company's provider) or `github`. Every page then needs a session: a page without
+one sends the person to `/signin` and back to the page after the sign-in, a form without one answers 401, and a form
+whose `Origin` is not `CONSOLE_URL` answers 403. Who may sign in is the access file (`CONSOLE_ACCESS`, by default
+`access.yaml` beside `CONSOLE_FACTORY`), read again at each request: a person removed from it loses access at the next
+page. Only an email the provider marks as verified counts; a person not on the list reads why. Without a valid access
+file with an admin, nobody signs in. "Sign out" in the navigation ends the session.
+
+```yaml
+# access.yaml
+version: 1
+people:
+  - email: ada@acme.dev
+    role: admin
+  - email: varun@acme.dev
+    role: member
+```
+
+The session is an encrypted cookie (`HttpOnly`, `SameSite=Lax`, `Secure` over HTTPS) that lasts
+`CONSOLE_SESSION_HOURS`; `CONSOLE_SESSION_SECRET` may name two keys, so a key changes without signing anyone out.
+The provider's callback is `<CONSOLE_URL>/signin/callback`. With the sign-in on, the console does not start without
+its provider's settings and the session key, on an address that is neither `https://` nor loopback, or with
+`CONSOLE_USER_HEADER` too. Open the console on `localhost` (the default `CONSOLE_URL`): a request for another host,
+like `127.0.0.1`, is sent there first, so the session cookie stays off the tools of the profile on `127.0.0.1`.
+`/v1/ready` answers without a session whether the console reads its factory, for health checks.
+
+Whoever may write to the factory's repository can make themselves `admin`: write access to that repository is admin
+access to the factory, and the repository should be private, since the access file holds emails.
+
 ## Health
 
 `console doctor` and `/health` check, in this order ([ADR 0086](../../docs/decisions/0086-health-routes.md)):
@@ -139,42 +170,54 @@ A server of a release before `/v1/health` fails its check with the advice to upd
 
 | Variable | Type | Default | Meaning |
 | --- | --- | --- | --- |
-| `PORT` | string | `"8080"` | serve: the port the web pages are served on. |
-| `OSF_NOW` | string |  | The current time, like 2026-01-01T00:00:00Z, for the age of a run. Default: the clock. |
-| `CONSOLE_FOREMAN_URL` | string |  | serve: the base URL of a foreman's API, or several, comma-separated, one per factory. Required. |
-| `CONSOLE_FOREMAN_TOKEN` | string |  | serve: the foreman's FOREMAN_API_TOKEN, sent as Authorization: Bearer <token>; several, comma-separated, in the order of CONSOLE_FOREMAN_URL, or one for all. |
-| `CONSOLE_INTAKE_URL` | string |  | serve: the base URL of intake's API. Set, a run's page lists every request of its work item. |
-| `CONSOLE_INTAKE_TOKEN` | string |  | serve: intake's INTAKE_API_TOKEN. |
-| `CONSOLE_GATEKEEPER_URL` | string |  | serve: the base URL of gatekeeper's API. Set, a run's page shows each gate's state and who it waits for. |
-| `CONSOLE_GATEKEEPER_TOKEN` | string |  | serve: gatekeeper's GATEKEEPER_API_TOKEN. |
-| `CONSOLE_TRACE_URL` | string |  | serve: the link to a run's trace in the trace store, with {runId} or {traceId}, like https://langfuse.acme.dev/traces?run={runId} or Phoenix's http://127.0.0.1:6006/projects/UHJvamVjdDox/traces/{traceId}. A run without a traceId gets no link from a template with {traceId}. |
-| `CONSOLE_SESSION_URL` | string |  | serve: the link to a stage's transcript, with {sessionId}, like https://langfuse.acme.dev/sessions/{sessionId}. |
-| `CONSOLE_SPAN_URL` | string |  | serve: the link to a stage's span in the run's trace, with {traceId} and {spanId}, like http://127.0.0.1:16686/trace/{traceId}?uiFind={spanId} for Jaeger. |
-| `CONSOLE_TEMPORAL_URL` | string |  | serve: the base URL of the Temporal UI. Set, a run's page links its history. |
-| `CONSOLE_TEMPORAL_NAMESPACE` | string | `"default"` | serve: the Temporal namespace of the runs, the foreman's FOREMAN_TEMPORAL_NAMESPACE. |
-| `CONSOLE_LINKS` | string |  | serve: the dashboards every page links, as name=url, comma-separated, like Grafana=https://grafana.acme.dev. |
-| `CONSOLE_REFRESH` | string | `"10"` | serve: the seconds after which the browser reloads the runs pages. |
-| `CONSOLE_FACTORY` | string | `"factory.yaml"` | serve: the factory definition that /factory shows, read-only. |
-| `CONSOLE_GROUPS` | string |  | doctor and /health: the groups file of the factory's gatekeeper, like /factory/groups.json. Set, a group without a member but the example's slack:U0EXAMPLE fails the check groups. |
-| `CONSOLE_FACTORY_PATH` | string | `"factory.yaml"` | serve: the path of the factory definition in its Git repository. |
-| `CONSOLE_REPOSITORY_URL` | string |  | serve: the web URL of the factory's Git repository, like https://github.com/acme/factory. Set, the configuration pages link the file. |
+| `CONSOLE_ACCESS` | string |  | serve, with CONSOLE_SIGN_IN: the access file, read again at each request. Default access.yaml beside CONSOLE_FACTORY. Without a valid file with an admin nobody signs in. |
 | `CONSOLE_BRANCH` | string | `"main"` | serve: the branch where the factory definition changes. |
-| `CONSOLE_INBOX_REPOSITORY` | string |  | serve: the repository of observer's pull requests, as <owner>/<name>, like acme/factory. Set, /inbox lists its open proposals. |
-| `CONSOLE_INBOX_PREFIX` | string | `"observer/"` | serve: the start of the branch names that /inbox lists. |
+| `CONSOLE_FACTORY` | string | `"factory.yaml"` | serve: the factory definition that /factory shows, read-only. |
+| `CONSOLE_FACTORY_PATH` | string | `"factory.yaml"` | serve: the path of the factory definition in its Git repository. |
+| `CONSOLE_FOREMAN_TOKEN` | string |  | serve: the foreman's FOREMAN_API_TOKEN, sent as Authorization: Bearer <token>; several, comma-separated, in the order of CONSOLE_FOREMAN_URL, or one for all. |
+| `CONSOLE_FOREMAN_URL` | string |  | serve: the base URL of a foreman's API, or several, comma-separated, one per factory. Required. |
 | `CONSOLE_FORGE_ADAPTER` | string | `"npx -y @opensoftware/forge-github"` | serve: the command line of the forge port's adapter that /inbox runs with prs (ADR 0073). |
-| `CONSOLE_FORGE_URL` | string |  | serve: the forge's API, the adapter's FORGE_URL, like https://codeberg.org for forge-forgejo. Default: the adapter's own. |
 | `CONSOLE_FORGE_TOKEN` | string |  | serve: the adapter's FORGE_TOKEN; a token that may read pull requests is enough. |
-| `CONSOLE_USER_HEADER` | string |  | serve: the header in which the sign-in proxy sends the signed-in person, like X-Forwarded-Email. Set, the console takes actions in that person's name, such as submitting work on /work (ADR 0089); unset, it is read-only. Only set it behind a proxy that sets the header and removes it from the browser's requests. |
-| `CONSOLE_OTLP_URL` | string |  | doctor --deep: the OTLP/HTTP base URL of the collector, like http://jaeger:4318; it gets one span "console doctor" of the service "console" at /v1/traces. |
-| `CONSOLE_TRACES_URL` | string |  | doctor --deep: the base URL of the trace store's Jaeger query API, like http://jaeger:16686. Set, doctor --deep sends one span to CONSOLE_OTLP_URL and waits 5 s for GET /api/traces/{traceId} to find it. |
-| `CONSOLE_SANDBOX_COMMAND` | string |  | doctor --deep: the command line, run with sh -c, of a sandbox adapter, like sandbox-docker. Set, doctor --deep runs its probe <template> example.com, which starts a sandbox with no allowed host, and wants "refused example.com". |
-| `CONSOLE_SANDBOX_TEMPLATE` | string | `"curlimages/curl:8.17.0"` | doctor --deep: the template of the sandbox probe; it needs curl. |
-| `CONSOLE_NATS_URL` | string |  | doctor --deep: the NATS server of the factory, like nats://nats:4222. Set, doctor --deep publishes one doctor.ping@v1 on osf.doctor.ping.v1 and waits 10 s for a foreman of CONSOLE_FOREMAN_URL to show it at GET /v1/doctor/pings/{id}. |
-| `OSF_SEED` | string |  | doctor --deep: set, the ID of the doctor's ping comes from it instead of from chance, so a test knows it. Leave it unset in a factory. |
-| `CONSOLE_MODEL_URL` | string |  | doctor --deep: the OpenAI-compatible base URL of the model gateway (LiteLLM), ending in /v1; it gets one chat completion of one token per model route of the factory definition. |
-| `CONSOLE_MODEL_TOKEN` | string |  | doctor --deep: the gateway's key, sent as Authorization: Bearer <token>. |
+| `CONSOLE_FORGE_URL` | string |  | serve: the forge's API, the adapter's FORGE_URL, like https://codeberg.org for forge-forgejo. Default: the adapter's own. |
+| `CONSOLE_GATEKEEPER_TOKEN` | string |  | serve: gatekeeper's GATEKEEPER_API_TOKEN. |
+| `CONSOLE_GATEKEEPER_URL` | string |  | serve: the base URL of gatekeeper's API. Set, a run's page shows each gate's state and who it waits for. |
+| `CONSOLE_GITHUB_API_URL` | string | `"https://api.github.com"` | serve, with CONSOLE_SIGN_IN=github: GitHub's API, from which the console reads the person's verified primary email. |
+| `CONSOLE_GITHUB_CLIENT_ID` | string |  | serve, with CONSOLE_SIGN_IN=github: the client ID of the GitHub OAuth app. Its callback address is <CONSOLE_URL>/signin/callback. |
+| `CONSOLE_GITHUB_CLIENT_SECRET` | string |  | serve, with CONSOLE_SIGN_IN=github: the OAuth app's client secret. |
+| `CONSOLE_GITHUB_URL` | string | `"https://github.com"` | serve, with CONSOLE_SIGN_IN=github: GitHub's address for the sign-in, for GitHub Enterprise Server. |
+| `CONSOLE_GROUPS` | string |  | doctor and /health: the groups file of the factory's gatekeeper, like /factory/groups.json. Set, a group without a member but the example's slack:U0EXAMPLE fails the check groups. |
 | `CONSOLE_HARNESS_COMMAND` | string |  | doctor --deep: the command line, run with sh -c, that starts the harness's ACP agent, like claude-code-acp; it must answer ACP initialize within 10 seconds. |
 | `CONSOLE_IMPROVE_DIR` | string |  | serve: the folder the improvement jobs write run records and scores to. Set, the page /improvement shows each scorer's pass rate and judge cost and each run's stages with their cost. |
+| `CONSOLE_INBOX_PREFIX` | string | `"observer/"` | serve: the start of the branch names that /inbox lists. |
+| `CONSOLE_INBOX_REPOSITORY` | string |  | serve: the repository of observer's pull requests, as <owner>/<name>, like acme/factory. Set, /inbox lists its open proposals. |
+| `CONSOLE_INTAKE_TOKEN` | string |  | serve: intake's INTAKE_API_TOKEN. |
+| `CONSOLE_INTAKE_URL` | string |  | serve: the base URL of intake's API. Set, a run's page lists every request of its work item. |
+| `CONSOLE_LINKS` | string |  | serve: the dashboards every page links, as name=url, comma-separated, like Grafana=https://grafana.acme.dev. |
+| `CONSOLE_MODEL_TOKEN` | string |  | doctor --deep: the gateway's key, sent as Authorization: Bearer <token>. |
+| `CONSOLE_MODEL_URL` | string |  | doctor --deep: the OpenAI-compatible base URL of the model gateway (LiteLLM), ending in /v1; it gets one chat completion of one token per model route of the factory definition. |
+| `CONSOLE_NATS_URL` | string |  | doctor --deep: the NATS server of the factory, like nats://nats:4222. Set, doctor --deep publishes one doctor.ping@v1 on osf.doctor.ping.v1 and waits 10 s for a foreman of CONSOLE_FOREMAN_URL to show it at GET /v1/doctor/pings/{id}. |
+| `CONSOLE_OIDC_CLIENT_ID` | string |  | serve, with CONSOLE_SIGN_IN=oidc: the console's client at the provider. Its callback address is <CONSOLE_URL>/signin/callback. |
+| `CONSOLE_OIDC_CLIENT_SECRET` | string |  | serve, with CONSOLE_SIGN_IN=oidc: the client's secret. |
+| `CONSOLE_OIDC_ISSUER` | string |  | serve, with CONSOLE_SIGN_IN=oidc: the provider's issuer, whose discovery document is <issuer>/.well-known/openid-configuration, like https://accounts.google.com. |
+| `CONSOLE_OTLP_URL` | string |  | doctor --deep: the OTLP/HTTP base URL of the collector, like http://jaeger:4318; it gets one span "console doctor" of the service "console" at /v1/traces. |
+| `CONSOLE_REFRESH` | string | `"10"` | serve: the seconds after which the browser reloads the runs pages. |
+| `CONSOLE_REPOSITORY_URL` | string |  | serve: the web URL of the factory's Git repository, like https://github.com/acme/factory. Set, the configuration pages link the file. |
+| `CONSOLE_SANDBOX_COMMAND` | string |  | doctor --deep: the command line, run with sh -c, of a sandbox adapter, like sandbox-docker. Set, doctor --deep runs its probe <template> example.com, which starts a sandbox with no allowed host, and wants "refused example.com". |
+| `CONSOLE_SANDBOX_TEMPLATE` | string | `"curlimages/curl:8.17.0"` | doctor --deep: the template of the sandbox probe; it needs curl. |
+| `CONSOLE_SESSION_HOURS` | number | `12` | serve, with CONSOLE_SIGN_IN: how long a session lasts, in hours. |
+| `CONSOLE_SESSION_SECRET` | string |  | serve, with CONSOLE_SIGN_IN: the key of the encrypted session cookie, or several separated by commas: the first encrypts, every one decrypts, so a key changes without signing everyone out. |
+| `CONSOLE_SESSION_URL` | string |  | serve: the link to a stage's transcript, with {sessionId}, like https://langfuse.acme.dev/sessions/{sessionId}. |
+| `CONSOLE_SIGN_IN` | string |  | serve: switches on the console's own sign-in with this provider: oidc (OpenID Connect, like Google or a company's provider) or github (ADR 0134). Every page then needs a session, and who may sign in is the access file. Unset, the console is open and read-only, or behind the sign-in proxy of CONSOLE_USER_HEADER; both set, it does not start. |
+| `CONSOLE_SPAN_URL` | string |  | serve: the link to a stage's span in the run's trace, with {traceId} and {spanId}, like http://127.0.0.1:16686/trace/{traceId}?uiFind={spanId} for Jaeger. |
+| `CONSOLE_TEMPORAL_NAMESPACE` | string | `"default"` | serve: the Temporal namespace of the runs, the foreman's FOREMAN_TEMPORAL_NAMESPACE. |
+| `CONSOLE_TEMPORAL_URL` | string |  | serve: the base URL of the Temporal UI. Set, a run's page links its history. |
+| `CONSOLE_TRACES_URL` | string |  | doctor --deep: the base URL of the trace store's Jaeger query API, like http://jaeger:16686. Set, doctor --deep sends one span to CONSOLE_OTLP_URL and waits 5 s for GET /api/traces/{traceId} to find it. |
+| `CONSOLE_TRACE_URL` | string |  | serve: the link to a run's trace in the trace store, with {runId} or {traceId}, like https://langfuse.acme.dev/traces?run={runId} or Phoenix's http://127.0.0.1:6006/projects/UHJvamVjdDox/traces/{traceId}. A run without a traceId gets no link from a template with {traceId}. |
+| `CONSOLE_URL` | string |  | serve: the console's own address, the source of the provider's callback address and of the same-origin rule of forms with the sign-in. Default http://localhost:<PORT>. With the sign-in it must be https:// or loopback, else the console does not start. A request for another host is sent to this address. |
+| `CONSOLE_USER_HEADER` | string |  | serve: the header in which the sign-in proxy sends the signed-in person, like X-Forwarded-Email. Set, the console takes actions in that person's name, such as submitting work on /work (ADR 0089); unset, it is read-only. Only set it behind a proxy that sets the header and removes it from the browser's requests. |
+| `OSF_NOW` | string |  | The current time, like 2026-01-01T00:00:00Z, for the age of a run. Default: the clock. |
+| `OSF_SEED` | string |  | doctor --deep: set, the ID of the doctor's ping comes from it instead of from chance, so a test knows it. Leave it unset in a factory. |
+| `PORT` | string | `"8080"` | serve: the port the web pages are served on. |
 
 ## Releases
 
@@ -283,3 +326,17 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-134 | implemented | "console doctor --deep" without "CONSOLE_NATS_URL" skips the events |
 | SCN-CONSOLE-135 | implemented | Every page allows only the console's own files and no script |
 | SCN-CONSOLE-136 | implemented | The page "/health" of a healthy factory answers 200 and has the navigation of every page |
+| SCN-CONSOLE-137 | implemented | A person on the access list signs in and lands on the runs |
+| SCN-CONSOLE-138 | implemented | A person who is not on the access list is refused and reads why |
+| SCN-CONSOLE-139 | implemented | An email that the provider did not verify is refused |
+| SCN-CONSOLE-140 | implemented | After the sign-in the person comes back only to a page of the console |
+| SCN-CONSOLE-141 | implemented | Sign out ends the session |
+| SCN-CONSOLE-142 | implemented | A session past its end asks to sign in again |
+| SCN-CONSOLE-143 | implemented | A session of the previous key stays valid after a second key is added |
+| SCN-CONSOLE-144 | implemented | A person removed from the access file loses access at the next page |
+| SCN-CONSOLE-145 | implemented | With the sign-in a form must come from the console's own address |
+| SCN-CONSOLE-146 | implemented | The probe "/v1/ready" answers without a session |
+| SCN-CONSOLE-147 | implemented | The console with the sign-in does not start without a setting of its provider |
+| SCN-CONSOLE-148 | implemented | A person signs in with GitHub |
+| SCN-CONSOLE-149 | implemented | The console with the sign-in does not start on an address that is neither loopback nor HTTPS |
+| SCN-CONSOLE-150 | implemented | The console does not start when it signs people in and a sign-in proxy names the person too |

@@ -2,125 +2,141 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
-    "PORT": {
+    "CONSOLE_ACCESS": {
       "type": "string",
-      "default": "8080",
-      "description": "serve: the port the web pages are served on."
-    },
-    "OSF_NOW": {
-      "type": "string",
-      "description": "The current time, like 2026-01-01T00:00:00Z, for the age of a run. Default: the clock."
-    },
-    "CONSOLE_FOREMAN_URL": {
-      "type": "string",
-      "description": "serve: the base URL of a foreman's API, or several, comma-separated, one per factory. Required."
-    },
-    "CONSOLE_FOREMAN_TOKEN": {
-      "type": "string",
-      "description": "serve: the foreman's FOREMAN_API_TOKEN, sent as Authorization: Bearer <token>; several, comma-separated, in the order of CONSOLE_FOREMAN_URL, or one for all."
-    },
-    "CONSOLE_INTAKE_URL": {
-      "type": "string",
-      "description": "serve: the base URL of intake's API. Set, a run's page lists every request of its work item."
-    },
-    "CONSOLE_INTAKE_TOKEN": {
-      "type": "string",
-      "description": "serve: intake's INTAKE_API_TOKEN."
-    },
-    "CONSOLE_GATEKEEPER_URL": {
-      "type": "string",
-      "description": "serve: the base URL of gatekeeper's API. Set, a run's page shows each gate's state and who it waits for."
-    },
-    "CONSOLE_GATEKEEPER_TOKEN": {
-      "type": "string",
-      "description": "serve: gatekeeper's GATEKEEPER_API_TOKEN."
-    },
-    "CONSOLE_TRACE_URL": {
-      "type": "string",
-      "description": "serve: the link to a run's trace in the trace store, with {runId} or {traceId}, like https://langfuse.acme.dev/traces?run={runId} or Phoenix's http://127.0.0.1:6006/projects/UHJvamVjdDox/traces/{traceId}. A run without a traceId gets no link from a template with {traceId}."
-    },
-    "CONSOLE_SESSION_URL": {
-      "type": "string",
-      "description": "serve: the link to a stage's transcript, with {sessionId}, like https://langfuse.acme.dev/sessions/{sessionId}."
-    },
-    "CONSOLE_SPAN_URL": {
-      "type": "string",
-      "description": "serve: the link to a stage's span in the run's trace, with {traceId} and {spanId}, like http://127.0.0.1:16686/trace/{traceId}?uiFind={spanId} for Jaeger."
-    },
-    "CONSOLE_TEMPORAL_URL": {
-      "type": "string",
-      "description": "serve: the base URL of the Temporal UI. Set, a run's page links its history."
-    },
-    "CONSOLE_TEMPORAL_NAMESPACE": {
-      "type": "string",
-      "default": "default",
-      "description": "serve: the Temporal namespace of the runs, the foreman's FOREMAN_TEMPORAL_NAMESPACE."
-    },
-    "CONSOLE_LINKS": {
-      "type": "string",
-      "description": "serve: the dashboards every page links, as name=url, comma-separated, like Grafana=https://grafana.acme.dev."
-    },
-    "CONSOLE_REFRESH": {
-      "type": "string",
-      "default": "10",
-      "description": "serve: the seconds after which the browser reloads the runs pages."
-    },
-    "CONSOLE_FACTORY": {
-      "type": "string",
-      "default": "factory.yaml",
-      "description": "serve: the factory definition that /factory shows, read-only."
-    },
-    "CONSOLE_GROUPS": {
-      "type": "string",
-      "description": "doctor and /health: the groups file of the factory's gatekeeper, like /factory/groups.json. Set, a group without a member but the example's slack:U0EXAMPLE fails the check groups."
-    },
-    "CONSOLE_FACTORY_PATH": {
-      "type": "string",
-      "default": "factory.yaml",
-      "description": "serve: the path of the factory definition in its Git repository."
-    },
-    "CONSOLE_REPOSITORY_URL": {
-      "type": "string",
-      "description": "serve: the web URL of the factory's Git repository, like https://github.com/acme/factory. Set, the configuration pages link the file."
+      "description": "serve, with CONSOLE_SIGN_IN: the access file, read again at each request. Default access.yaml beside CONSOLE_FACTORY. Without a valid file with an admin nobody signs in."
     },
     "CONSOLE_BRANCH": {
       "type": "string",
       "default": "main",
       "description": "serve: the branch where the factory definition changes."
     },
-    "CONSOLE_INBOX_REPOSITORY": {
+    "CONSOLE_FACTORY": {
       "type": "string",
-      "description": "serve: the repository of observer's pull requests, as <owner>/<name>, like acme/factory. Set, /inbox lists its open proposals."
+      "default": "factory.yaml",
+      "description": "serve: the factory definition that /factory shows, read-only."
     },
-    "CONSOLE_INBOX_PREFIX": {
+    "CONSOLE_FACTORY_PATH": {
       "type": "string",
-      "default": "observer/",
-      "description": "serve: the start of the branch names that /inbox lists."
+      "default": "factory.yaml",
+      "description": "serve: the path of the factory definition in its Git repository."
+    },
+    "CONSOLE_FOREMAN_TOKEN": {
+      "type": "string",
+      "description": "serve: the foreman's FOREMAN_API_TOKEN, sent as Authorization: Bearer <token>; several, comma-separated, in the order of CONSOLE_FOREMAN_URL, or one for all."
+    },
+    "CONSOLE_FOREMAN_URL": {
+      "type": "string",
+      "description": "serve: the base URL of a foreman's API, or several, comma-separated, one per factory. Required."
     },
     "CONSOLE_FORGE_ADAPTER": {
       "type": "string",
       "default": "npx -y @opensoftware/forge-github",
       "description": "serve: the command line of the forge port's adapter that /inbox runs with prs (ADR 0073)."
     },
-    "CONSOLE_FORGE_URL": {
-      "type": "string",
-      "description": "serve: the forge's API, the adapter's FORGE_URL, like https://codeberg.org for forge-forgejo. Default: the adapter's own."
-    },
     "CONSOLE_FORGE_TOKEN": {
       "type": "string",
       "description": "serve: the adapter's FORGE_TOKEN; a token that may read pull requests is enough."
     },
-    "CONSOLE_USER_HEADER": {
+    "CONSOLE_FORGE_URL": {
       "type": "string",
-      "description": "serve: the header in which the sign-in proxy sends the signed-in person, like X-Forwarded-Email. Set, the console takes actions in that person's name, such as submitting work on /work (ADR 0089); unset, it is read-only. Only set it behind a proxy that sets the header and removes it from the browser's requests."
+      "description": "serve: the forge's API, the adapter's FORGE_URL, like https://codeberg.org for forge-forgejo. Default: the adapter's own."
+    },
+    "CONSOLE_GATEKEEPER_TOKEN": {
+      "type": "string",
+      "description": "serve: gatekeeper's GATEKEEPER_API_TOKEN."
+    },
+    "CONSOLE_GATEKEEPER_URL": {
+      "type": "string",
+      "description": "serve: the base URL of gatekeeper's API. Set, a run's page shows each gate's state and who it waits for."
+    },
+    "CONSOLE_GITHUB_API_URL": {
+      "type": "string",
+      "default": "https://api.github.com",
+      "description": "serve, with CONSOLE_SIGN_IN=github: GitHub's API, from which the console reads the person's verified primary email."
+    },
+    "CONSOLE_GITHUB_CLIENT_ID": {
+      "type": "string",
+      "description": "serve, with CONSOLE_SIGN_IN=github: the client ID of the GitHub OAuth app. Its callback address is <CONSOLE_URL>/signin/callback."
+    },
+    "CONSOLE_GITHUB_CLIENT_SECRET": {
+      "type": "string",
+      "description": "serve, with CONSOLE_SIGN_IN=github: the OAuth app's client secret."
+    },
+    "CONSOLE_GITHUB_URL": {
+      "type": "string",
+      "default": "https://github.com",
+      "description": "serve, with CONSOLE_SIGN_IN=github: GitHub's address for the sign-in, for GitHub Enterprise Server."
+    },
+    "CONSOLE_GROUPS": {
+      "type": "string",
+      "description": "doctor and /health: the groups file of the factory's gatekeeper, like /factory/groups.json. Set, a group without a member but the example's slack:U0EXAMPLE fails the check groups."
+    },
+    "CONSOLE_HARNESS_COMMAND": {
+      "type": "string",
+      "description": "doctor --deep: the command line, run with sh -c, that starts the harness's ACP agent, like claude-code-acp; it must answer ACP initialize within 10 seconds."
+    },
+    "CONSOLE_IMPROVE_DIR": {
+      "type": "string",
+      "description": "serve: the folder the improvement jobs write run records and scores to. Set, the page /improvement shows each scorer's pass rate and judge cost and each run's stages with their cost."
+    },
+    "CONSOLE_INBOX_PREFIX": {
+      "type": "string",
+      "default": "observer/",
+      "description": "serve: the start of the branch names that /inbox lists."
+    },
+    "CONSOLE_INBOX_REPOSITORY": {
+      "type": "string",
+      "description": "serve: the repository of observer's pull requests, as <owner>/<name>, like acme/factory. Set, /inbox lists its open proposals."
+    },
+    "CONSOLE_INTAKE_TOKEN": {
+      "type": "string",
+      "description": "serve: intake's INTAKE_API_TOKEN."
+    },
+    "CONSOLE_INTAKE_URL": {
+      "type": "string",
+      "description": "serve: the base URL of intake's API. Set, a run's page lists every request of its work item."
+    },
+    "CONSOLE_LINKS": {
+      "type": "string",
+      "description": "serve: the dashboards every page links, as name=url, comma-separated, like Grafana=https://grafana.acme.dev."
+    },
+    "CONSOLE_MODEL_TOKEN": {
+      "type": "string",
+      "description": "doctor --deep: the gateway's key, sent as Authorization: Bearer <token>."
+    },
+    "CONSOLE_MODEL_URL": {
+      "type": "string",
+      "description": "doctor --deep: the OpenAI-compatible base URL of the model gateway (LiteLLM), ending in /v1; it gets one chat completion of one token per model route of the factory definition."
+    },
+    "CONSOLE_NATS_URL": {
+      "type": "string",
+      "description": "doctor --deep: the NATS server of the factory, like nats://nats:4222. Set, doctor --deep publishes one doctor.ping@v1 on osf.doctor.ping.v1 and waits 10 s for a foreman of CONSOLE_FOREMAN_URL to show it at GET /v1/doctor/pings/{id}."
+    },
+    "CONSOLE_OIDC_CLIENT_ID": {
+      "type": "string",
+      "description": "serve, with CONSOLE_SIGN_IN=oidc: the console's client at the provider. Its callback address is <CONSOLE_URL>/signin/callback."
+    },
+    "CONSOLE_OIDC_CLIENT_SECRET": {
+      "type": "string",
+      "description": "serve, with CONSOLE_SIGN_IN=oidc: the client's secret."
+    },
+    "CONSOLE_OIDC_ISSUER": {
+      "type": "string",
+      "description": "serve, with CONSOLE_SIGN_IN=oidc: the provider's issuer, whose discovery document is <issuer>/.well-known/openid-configuration, like https://accounts.google.com."
     },
     "CONSOLE_OTLP_URL": {
       "type": "string",
       "description": "doctor --deep: the OTLP/HTTP base URL of the collector, like http://jaeger:4318; it gets one span \"console doctor\" of the service \"console\" at /v1/traces."
     },
-    "CONSOLE_TRACES_URL": {
+    "CONSOLE_REFRESH": {
       "type": "string",
-      "description": "doctor --deep: the base URL of the trace store's Jaeger query API, like http://jaeger:16686. Set, doctor --deep sends one span to CONSOLE_OTLP_URL and waits 5 s for GET /api/traces/{traceId} to find it."
+      "default": "10",
+      "description": "serve: the seconds after which the browser reloads the runs pages."
+    },
+    "CONSOLE_REPOSITORY_URL": {
+      "type": "string",
+      "description": "serve: the web URL of the factory's Git repository, like https://github.com/acme/factory. Set, the configuration pages link the file."
     },
     "CONSOLE_SANDBOX_COMMAND": {
       "type": "string",
@@ -131,29 +147,65 @@
       "default": "curlimages/curl:8.17.0",
       "description": "doctor --deep: the template of the sandbox probe; it needs curl."
     },
-    "CONSOLE_NATS_URL": {
+    "CONSOLE_SESSION_HOURS": {
+      "type": "number",
+      "default": 12,
+      "description": "serve, with CONSOLE_SIGN_IN: how long a session lasts, in hours."
+    },
+    "CONSOLE_SESSION_SECRET": {
       "type": "string",
-      "description": "doctor --deep: the NATS server of the factory, like nats://nats:4222. Set, doctor --deep publishes one doctor.ping@v1 on osf.doctor.ping.v1 and waits 10 s for a foreman of CONSOLE_FOREMAN_URL to show it at GET /v1/doctor/pings/{id}."
+      "description": "serve, with CONSOLE_SIGN_IN: the key of the encrypted session cookie, or several separated by commas: the first encrypts, every one decrypts, so a key changes without signing everyone out."
+    },
+    "CONSOLE_SESSION_URL": {
+      "type": "string",
+      "description": "serve: the link to a stage's transcript, with {sessionId}, like https://langfuse.acme.dev/sessions/{sessionId}."
+    },
+    "CONSOLE_SIGN_IN": {
+      "type": "string",
+      "enum": ["oidc", "github"],
+      "description": "serve: switches on the console's own sign-in with this provider: oidc (OpenID Connect, like Google or a company's provider) or github (ADR 0134). Every page then needs a session, and who may sign in is the access file. Unset, the console is open and read-only, or behind the sign-in proxy of CONSOLE_USER_HEADER; both set, it does not start."
+    },
+    "CONSOLE_SPAN_URL": {
+      "type": "string",
+      "description": "serve: the link to a stage's span in the run's trace, with {traceId} and {spanId}, like http://127.0.0.1:16686/trace/{traceId}?uiFind={spanId} for Jaeger."
+    },
+    "CONSOLE_TEMPORAL_NAMESPACE": {
+      "type": "string",
+      "default": "default",
+      "description": "serve: the Temporal namespace of the runs, the foreman's FOREMAN_TEMPORAL_NAMESPACE."
+    },
+    "CONSOLE_TEMPORAL_URL": {
+      "type": "string",
+      "description": "serve: the base URL of the Temporal UI. Set, a run's page links its history."
+    },
+    "CONSOLE_TRACES_URL": {
+      "type": "string",
+      "description": "doctor --deep: the base URL of the trace store's Jaeger query API, like http://jaeger:16686. Set, doctor --deep sends one span to CONSOLE_OTLP_URL and waits 5 s for GET /api/traces/{traceId} to find it."
+    },
+    "CONSOLE_TRACE_URL": {
+      "type": "string",
+      "description": "serve: the link to a run's trace in the trace store, with {runId} or {traceId}, like https://langfuse.acme.dev/traces?run={runId} or Phoenix's http://127.0.0.1:6006/projects/UHJvamVjdDox/traces/{traceId}. A run without a traceId gets no link from a template with {traceId}."
+    },
+    "CONSOLE_URL": {
+      "type": "string",
+      "description": "serve: the console's own address, the source of the provider's callback address and of the same-origin rule of forms with the sign-in. Default http://localhost:<PORT>. With the sign-in it must be https:// or loopback, else the console does not start. A request for another host is sent to this address."
+    },
+    "CONSOLE_USER_HEADER": {
+      "type": "string",
+      "description": "serve: the header in which the sign-in proxy sends the signed-in person, like X-Forwarded-Email. Set, the console takes actions in that person's name, such as submitting work on /work (ADR 0089); unset, it is read-only. Only set it behind a proxy that sets the header and removes it from the browser's requests."
+    },
+    "OSF_NOW": {
+      "type": "string",
+      "description": "The current time, like 2026-01-01T00:00:00Z, for the age of a run. Default: the clock."
     },
     "OSF_SEED": {
       "type": "string",
       "description": "doctor --deep: set, the ID of the doctor's ping comes from it instead of from chance, so a test knows it. Leave it unset in a factory."
     },
-    "CONSOLE_MODEL_URL": {
+    "PORT": {
       "type": "string",
-      "description": "doctor --deep: the OpenAI-compatible base URL of the model gateway (LiteLLM), ending in /v1; it gets one chat completion of one token per model route of the factory definition."
-    },
-    "CONSOLE_MODEL_TOKEN": {
-      "type": "string",
-      "description": "doctor --deep: the gateway's key, sent as Authorization: Bearer <token>."
-    },
-    "CONSOLE_HARNESS_COMMAND": {
-      "type": "string",
-      "description": "doctor --deep: the command line, run with sh -c, that starts the harness's ACP agent, like claude-code-acp; it must answer ACP initialize within 10 seconds."
-    },
-    "CONSOLE_IMPROVE_DIR": {
-      "type": "string",
-      "description": "serve: the folder the improvement jobs write run records and scores to. Set, the page /improvement shows each scorer's pass rate and judge cost and each run's stages with their cost."
+      "default": "8080",
+      "description": "serve: the port the web pages are served on."
     }
   }
 }

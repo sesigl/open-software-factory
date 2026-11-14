@@ -1,0 +1,25 @@
+---
+import type { SignInData } from "../../pages/signin.ts";
+
+const { button, start, refusal, where } = Astro.locals.page as SignInData;
+Astro.response.status = Astro.locals.status;
+Astro.response.statusText = Astro.locals.statusText;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign in · console</title>
+    <link rel="stylesheet" href="/pico.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Sign in</h1>
+      <p>Open Software Factory: sign in with the account that this factory's access list names.</p>
+      {refusal && <p role="alert">{refusal}</p>}
+      {where && <p>{where}</p>}
+      <p><a href={start}>{button}</a></p>
+    </main>
+  </body>
+</html>
