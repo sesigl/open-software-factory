@@ -28,6 +28,6 @@
   "packages/channel-kit": "0.3.0",
   "packages/postgres": "0.2.0",
   "modules/intake": "0.6.0",
-  "modules/foreman": "0.10.0",
+  "modules/foreman": "0.11.0",
   "modules/console": "0.6.0"
 }

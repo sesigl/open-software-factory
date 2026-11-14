@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/sesigl/open-software-factory/compare/foreman-v0.10.0...foreman-v0.11.0) (2026-11-14)
+
+
+### Features
+
+* **foreman:** a sandboxed stage's run record reaches transcripts/ and its span (T-31, ADR 0121) ([#298](https://github.com/sesigl/open-software-factory/issues/298)) ([8b1a8c5](https://github.com/sesigl/open-software-factory/commit/8b1a8c5d8a43964ca9ade49628c4ad45ba434927))
+
 ## [0.10.0](https://github.com/sesigl/open-software-factory/compare/foreman-v0.9.0...foreman-v0.10.0) (2026-11-14)
 
 
