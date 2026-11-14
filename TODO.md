@@ -1819,7 +1819,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
 - **Slices:**
   - [ ] The ADR; the forge port's new operations in both adapters and `fakes.github` (`SCN-FORGE`, `SCN-FGITHUB`,
     `SCN-FFORGEJO`, `SCN-TK`).
-  - [ ] `factory edit` and `factory plan --check` in `factory-spec` (`SCN-FSPEC`).
+  - [x] `factory edit` and `factory plan --check` in `factory-spec` (`SCN-FSPEC`).
   - [ ] The flow and the page `/changes` in the console (`SCN-CONSOLE`).
   - [ ] The workflow with the check `factory` in the reference factory; the profile and the chart with a factory
     repository on a forge; `console doctor` (`SCN-DIST`, `SCN-CONSOLE`). After the releases above.
