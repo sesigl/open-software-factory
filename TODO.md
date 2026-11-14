@@ -1128,13 +1128,13 @@ Do not reopen these in an item. Change one only with the owner, and then here fi
 
 | Question | Decision |
 | --- | --- |
-| A change to the factory from the UI | Git stays the source of truth (P3). The UI opens a pull request on the factory's repository, and the forge merges it when its checks are green. The UI shows the state of each change and links the pull request when it fails. The signed-in person is the approver and needs the role `admin` or `factory-engineer`; the pull request names the person. |
-| UI stack | Astro, with pages rendered on the server. An island (SolidJS) only where the browser must react without loading a page. Tailwind CSS. No single-page app; keep the frontend simple. |
+| A change to the factory from the UI | Git stays the source of truth (P3). The UI opens a pull request on the factory's repository, and it merges when its checks are green, without another person. The UI shows the state of each change and links the pull request when it fails. The signed-in person is the approver and needs the role `admin` or `factory-engineer`; the pull request names the person. |
+| UI stack | Astro, with pages rendered on the server. An island (SolidJS) only where the browser must react without loading a page. Backend code first; no single-page app; keep the frontend simple. Tailwind CSS is the owner's candidate for styles; T-53's ADR compares it with plain CSS on the tokens. |
 | Sign-in | The console's own sign-in with OpenID Connect (Google, a company's provider) and GitHub. No password, no mail server. |
 | Who may sign in | A file with people and roles in the factory's Git repository. |
-| Where secret values live | OpenBao, in the Compose profile and in the chart. |
-| First installation | A laptop or a private network: `localhost`, no TLS and no public URL in this wave. |
-| Look | "Precise industrial": dense, calm, almost one colour with one signal colour, a monospace face for IDs, states and versions. Dark by default, with a light theme. |
+| Where secret values live | OpenBao, in the Compose profile and for the chart. |
+| First installation | A laptop or a private network. No public URL in this wave. |
+| Look | "Precise industrial": dense, calm, almost one colour with one signal colour, a monospace face for IDs, states and versions. Dark by default, with a light theme. The mock-ups are approved (T-54). |
 | Design system | Mock-ups first, approved by the owner. Then tokens and components as code in a shared package. |
 | Tests | Pages over HTTP, as today. A browser only for the main user flows and for islands. An island is tested as a whole, never the components inside it. No pixel comparison. |
 | First release | Sign-in, the shell, the runs list, Secrets and Skills. The other pages keep their URLs and their old look and move one at a time. |
@@ -1147,7 +1147,7 @@ browser ─────────────▶ console            the only s
                          ├─ HTTP with a service token and the person ─▶ foreman, intake, gatekeeper (as today)
                          ├─ secrets adapter, a program ─▶ OpenBao       writes values, lists names, cannot read a value
                          ├─ forge adapter, a program ───▶ the forge     commit, pull request, merge when green
-                         └─ git fetch ──────────────────▶ the factory's repository: factory.yaml, access.yaml, skills
+                         └─ a folder, or git fetch ─────▶ the factory's files: factory.yaml, access.yaml, skills
 identity provider ◀──── redirects of the sign-in ────▶ console
 sandbox's egress proxy ─ reads ─▶ OpenBao  as today: it swaps the placeholder for the value on the way out
 ```
@@ -1158,20 +1158,57 @@ sandbox's egress proxy ─ reads ─▶ OpenBao  as today: it swaps the placehol
   (SCN-FACTORY-ACCESS-002). A gateway product is one more service to run and configure for one browser client;
   revisit it when a second browser client or a public API for many callers exists.
 - **The console keeps no database.** The session is an encrypted cookie. Who may sign in is a file in Git. A secret's
-  value is in OpenBao. The state of a change is its pull request on the forge. Each of these has one owner outside the
-  console, so the console scales by starting it twice and loses nothing when it restarts.
+  value is in OpenBao. The state of a change is its pull request on the forge. Each has one owner outside the
+  console, so the console can run twice and loses nothing when it restarts. Its only folder is a cache of the
+  factory's repository, which it can delete at any time.
 - **A page renders on the server and works without script.** A form is an HTML form that answers with a redirect. An
   island adds comfort, like a live state or a menu on a phone; no feature depends on one.
 - **Each feature belongs to the part that owns its subject.** The secret store's operations belong to the secrets port
-  and its adapter. The rules of a skill and of the access file belong to `contracts/` and factory-spec's `lint`. A
-  commit and a merge belong to the forge port. The console only shows and asks.
+  and its adapter. Reading a factory's files and their rules (skills, the access file, an edit of `factory.yaml`)
+  belongs to one library that factory-spec, the foreman and the console share. A commit and a merge belong to the
+  forge port. The console only shows and asks.
+- **One factory.** `CONSOLE_FOREMAN_URL` may name several foremen, and the runs of all of them stay listed. Sign-in,
+  roles, Secrets, Skills and changes belong to the one factory of `CONSOLE_FACTORY`: its access file, its repository
+  and its mount in OpenBao (`OSF_OPENBAO_MOUNT`). A console for several factories is a later item; the mount per
+  factory keeps that possible.
+
+### The console's three modes
+
+Today's behavior stays the default, so the README's quick start, the 86 existing scenarios and a fresh profile keep
+working without an identity provider.
+
+| Mode | Set by | What a person gets |
+| --- | --- | --- |
+| Open, read-only | Nothing (today's default) | Today's pages, read-only, as ADR 0072 says. Every page of this wave that needs a role (Secrets, Changes, the switches of Skills) answers 404, like the inbox without its repository. |
+| Behind a proxy | `CONSOLE_USER_HEADER` (ADR 0089) | The person comes from the proxy's header. The roles of the access file apply. |
+| Own sign-in | The provider's settings (T-56) | The sign-in page, the session and the roles. Every page needs a session. |
+
+The profile and the chart turn on the own sign-in only when the provider's settings are in `.env` or the values, as
+they do for Slack. A check of `console doctor` exists only for what is turned on, so a fresh profile still passes.
 
 ### Order
 
-T-51 first; it holds no code. Then T-52, T-53 and the first slice of T-54 side by side (console, testkit, the mock-ups).
-Then T-55. T-56 and T-57 start with slices outside the console (the secrets port and adapter, the forge port, the
-library), which run side by side with T-55. T-58 needs T-57. T-59 and T-60 come last. Only one agent changes the
-console at a time (root `AGENTS.md`), so the console slices of T-52, T-55, T-56, T-57 and T-58 run one after the other.
+One agent changes a unit at a time (root `AGENTS.md`), so each unit has one order. Items in different units run side
+by side.
+
+| Unit | Order of the slices |
+| --- | --- |
+| docs, `docs/vision/` | T-51 first, before anything else |
+| `packages/testkit` | T-52 → T-55 → T-56 (`fakes.oidc`, sign-in of `fakes.github`) → T-57 (`fakes.openbao`) → T-58 (`fakes.github`: commit, merge) |
+| `modules/console` | T-53 → T-56 → T-57 → T-58 → T-59 → T-60 → T-61 |
+| `packages/ui` (new) | T-54, its slices with T-56, T-57 and T-59 |
+| `packages/factory-files` (new) | T-56 (read a factory, the access file) → T-58 (edits) → T-59 (skills) |
+| `contracts` | T-56 (access file) → T-59 (lock) → T-61 |
+| `modules/factory-spec` | T-56 (`lint` of the access file) → T-58 (the check `factory`) → T-59 |
+| `modules/foreman` | T-56 (uses the library's fetch) → T-59 (pinned skills) → T-61 |
+| secrets port, `adapters/secrets/openbao` (new), `packages/sandbox-egress` | T-57 |
+| forge port and its two adapters | T-58 |
+| `deploy/`, `tools/` setup commands | T-53 → T-56 → T-57 → T-58, each after the release of the packages it pins |
+| `tools/checks` | T-52 → T-53 → T-54 → T-55 |
+
+T-52, T-53's first two slices and T-54's first two slices can start together after T-51. A slice of `deploy/` tests
+released packages (ADR 0095): it starts when the release it pins is published (`skills/release-packages`). Each new
+package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-module` and a first publish.
 
 ### [ ] T-51 · the web concept: vision scenarios and decisions (P0)
 
@@ -1179,86 +1216,45 @@ console at a time (root `AGENTS.md`), so the console slices of T-52, T-55, T-56,
   that the UI only shows the factory. ADR 0072 says that the console needs no script in the browser and no build step.
   ADR 0089 says that the console has no sign-in of its own. Without one written concept, each item decides them again.
 - **Build:** documents only, no code.
+- **Watch out:** a vision scenario's tags are `@scenario_id=SCN-FACTORY-<AREA>-<NNN>`, `@status`, `@evidence` and
+  `@source`. Its status follows its realizing scenarios (VISION, ADR 0117): a new `planned` module scenario with
+  `@realizes=` sets an `implemented` vision scenario back to `planned` until it is implemented. So an item of this
+  wave realizes only the scenarios it names under "Realizes", and never one that is `implemented` today unless the
+  item says so.
 - **Done when:** the vision scenarios, the ADR and the architecture page are merged, and the items below name them.
 - **Slices:**
-  - [ ] New vision scenarios in `docs/vision/software-factory.feature`, `@status=planned`, `@evidence=derived`, then
-    `make docs`. Write at least these, with the next free number of each area:
+  - [ ] New vision scenarios in `docs/vision/software-factory.feature`, `@status=planned`, `@evidence=derived`, with
+    the owner's request of November 2026 as their source, then `make docs`. Write at least these, with the next free
+    number of each area:
     - RUNTIME: only a person on the factory's access list signs in to the factory UI.
     - RUNTIME: a person stores the value of a secret in the factory UI; no page, log or agent shows it again; an agent
       that declares the secret uses it in its next run.
     - CODE: a factory engineer changes the factory in the UI; the change is a pull request that merges when its
       checks pass, names the person, and is the factory version of the next run.
     - CODE: a skill declares the secrets and hosts it needs; the factory refuses a definition whose agent lacks one.
+    - ROLE: a factory engineer gives an agent a skill in the factory UI.
     - ACCESS: the factory UI works on a phone.
-    SCN-FACTORY-RUNTIME-009 (roles) and SCN-FACTORY-ROLE-002 (a factory engineer tunes skills) exist and are
-    `planned`; this wave realizes them. SCN-FACTORY-CODE-002 stays: an agent's configuration page is still read-only
-    and links to Git.
-  - [ ] One ADR for the concept under "How the parts connect": the console as the backend of the browser, no gateway,
-    no database, pages on the server. It supersedes the parts of ADR 0072 and ADR 0089 that this wave changes; an
-    accepted ADR is never edited. Options to compare: an API gateway (Envoy, Traefik, agentgateway), module APIs open
-    to the browser with CORS and a token of the person, the console as the backend.
+    SCN-FACTORY-RUNTIME-009 (only authorized roles change a factory) exists and is `planned`; T-58 realizes it.
+    SCN-FACTORY-ROLE-002 is about the model mix and its measurement; this wave does not realize it.
+    SCN-FACTORY-CODE-002 stays: an agent's configuration page is still read-only and links to Git.
+  - [ ] One ADR for the concept under "How the parts connect" and "The console's three modes": the console as the
+    backend of the browser, no gateway, no database, pages on the server. It supersedes the parts of ADR 0072 and
+    ADR 0089 that this wave changes; an accepted ADR is never edited. Options to compare: an API gateway (Envoy,
+    Traefik, agentgateway), module APIs open to the browser with CORS and a token of the person, the console as the
+    backend.
   - [ ] A page `docs/architecture/web.md` with the diagram above, the request path of a page, of a form and of a
-    change, and the three kinds of UI test (T-53). Update the row "Web UI" in `docs/architecture/stack.md`, the console's
-    row in `docs/architecture/components.md` and in `docs/explanation/module-tiers.md`, the wording of P3 in
-    `docs/principles.md` ("the UI shows them and proposes a change as a pull request"), and the glossary: island,
-    page scenario, journey scenario, island scenario, access file, change.
+    change, the three modes and the three kinds of UI test (T-52). Update the row "Web UI" in
+    `docs/architecture/stack.md`, the console's row in `docs/architecture/components.md` and in
+    `docs/explanation/module-tiers.md`, the wording of P3 in `docs/principles.md` ("the UI shows them and proposes a
+    change as a pull request"), and the glossary: island, page scenario, journey scenario, island scenario, access
+    file, change.
 
-### [ ] T-52 · Astro in the console (P0)
-
-- **Problem:** the console's pages are Preact components written with htm, which Fastify routes render, styled by
-  Pico CSS, without a build step (ADR 0072). The repository's tooling knows only `.ts` files: `tools/checks/quality.ts`
-  skips other files, and ARCH and BOUNDARY read TypeScript with dependency-cruiser.
-- **Build:** Astro in `modules/console`, with its Node adapter in middleware mode inside the Fastify server of
-  `console serve`. Fastify keeps the CLI, `/v1/health`-style routes and every old page; Astro answers the routes of the
-  new pages. The SolidJS integration for islands, and Tailwind CSS through its Vite plugin. The module's `build`
-  script runs the Astro build, and the `bin` runs only built files (BOUNDARY-RUNTIME).
-- **Adopt (check first, record in the ADR):** Astro, `@astrojs/node`, `@astrojs/solid-js`, Tailwind CSS. The owner
-  chose Astro; the ADR still records what was compared: Preact with hand-made islands (today's stack), SvelteKit,
-  React Router, Hono with JSX, htmx with Alpine.
-- **Rules for the code:**
-  - Logic lives in `.ts` files. A page's `.astro` file imports components and one function that returns the page's
-    data as plain values; it shows them. No call of an API and no business rule in a template.
-  - A form is an HTML form (an Astro action or a `POST` route) that answers 303 to a page, or a page that names the
-    problem. It works with script turned off. The same-origin rule of ADR 0089 stays.
-  - `modules/console/AGENTS.md` lists every island with the reason why a page load is not enough.
-  - The console serves every font, style and script itself: no CDN, no request to another origin. It sends a
-    Content-Security-Policy that allows only its own origin.
-  - The layers of `architecture.json` get the pages and the islands; `domain` and `adapters` stay as they are.
-- **Watch out:**
-  - Astro, its adapter and Tailwind change between major versions. Read the docs inside the installed packages before
-    you write configuration; do not trust what you remember.
-  - `tsc` does not check `.astro` files: `astro check` joins the typecheck. Biome reads `.astro` files only in part;
-    record what it covers.
-  - Every check that reads source files needs a rule for `.astro` and `.tsx`: ARCH (dependency-cruiser does not read
-    the imports of an `.astro` file), DUP, REACH and MUTATION. For each: teach the check the file type, or keep the
-    file type free of logic and enforce that with a check. A rule that exists only as text is not done (root
-    `AGENTS.md`, Hard rules).
-  - REACH maps V8 coverage to source lines through source maps: the Astro build must write them for the server code.
-  - Stryker mutates `.ts` and `.tsx`, builds once and switches mutants at run time (ADR 0061). Check that the switch
-    survives the Vite bundle, and measure the build time.
-  - The npm package must hold the built client files, since the profile's image installs the module from npm
-    (`deploy/images/Dockerfile`); PROFILE pins the new version.
-  - In middleware mode, Astro does not serve its own static files: Fastify does.
-  - Each scenario starts one server. Measure the start of `console serve` before and after; the suite's budget is
-    60 seconds for all scenarios (`modules/console/AGENTS.md`).
-  - The existing scenarios of the console pass unchanged after every slice.
-- **Done when:** one existing page is rendered by Astro with the new stack, its scenarios pass with their text
-  unchanged, `make verify` passes, and the released image serves the page.
-- **Slices:**
-  - [ ] The ADR for the stack and for how each check treats `.astro` and `.tsx` files, with the measured build and
-    start times.
-  - [ ] The build: Astro behind Fastify in `console serve`, `astro check` in the typecheck, the layers, the checks'
-    rules for the new file types (`SCN-REPO` scenarios for each changed check).
-  - [ ] The first page on Astro: the smallest existing one (the health page is a candidate), with Tailwind and no
-    design system yet. Its scenarios keep their text.
-  - [ ] The package and the image hold the built files; the profile and the chart pin the release.
-
-### [ ] T-53 · UI tests: pages over HTTP, journeys and islands in a browser (P0)
+### [ ] T-52 · UI test tools in the testkit (P0)
 
 - **Problem:** no test of a module opens a browser; only proof uses Playwright, to capture evidence. The console's
-  tests read the HTML of a page as text, table rows and links (`modules/console/system-tests/console.ts`), so a test
-  breaks when the markup changes although the page still works. And no test can prove a sign-in redirect, an island or
-  the layout on a phone.
+  tests read the HTML of a page with patterns for literal tags (`rows` in `modules/console/system-tests/console.ts`
+  matches `<tbody>`, `<tr>` and `<td>` without attributes), so a test breaks when the markup changes although the page
+  still works. And no test can prove a sign-in redirect, an island or the layout on a phone.
 - **Build:** three kinds of UI test in `@opensoftware/testkit`. Each is a system test: one scenario, one test, the
   built artifact from outside, and every check counts it (TRACE, STEPS, PASS, BUDGET, MUTATION).
 
@@ -1268,54 +1264,116 @@ console at a time (root `AGENTS.md`), so the console slices of T-52, T-55, T-56,
   | Journey scenario | The built console with its fakes, in Chromium | One main flow of a person from start to end, across pages | Seconds |
   | Island scenario | One island of `@opensoftware/ui` on its page of the workbench (T-54), in Chromium | Everything the island does, as a whole | Under a second |
 
-- **In the testkit:**
+- **In the testkit (this item):**
   - A page reader for HTTP: it fetches a page, parses the HTML and finds elements by role, accessible name, label and
     text; it follows a link and sends a form with its fields, and follows the redirect. Adopt a DOM parser and the
-    queries of Testing Library's DOM package if they work without a browser; the test never names a CSS class.
+    queries of Testing Library's DOM package if they work without a browser; a test never names a CSS class or a tag.
   - `sut.browser`: Playwright with Chromium. One browser per test process and a new context per scenario, like the
     database per scenario of ADR 0129. The same queries as the page reader: role, name, label, text.
   - Determinism: the clock of the testkit, reduced motion, one fixed locale and time zone, named viewport sizes (phone,
     desktop). The context refuses every request that does not go to loopback and fails the scenario (NOREAL for the
     browser). An error in the browser's console or a failed request fails the scenario.
   - Accessibility: a helper that runs axe-core on the page a journey ends on; a violation fails the scenario.
-  - REACH and MUTATION for code that runs in the browser: Chromium's V8 coverage through Playwright, mapped through
-    source maps; Stryker's active mutant set in the page before its first script, and the mutants a scenario ran read
-    back from the page. Verify in the installed Stryker how the instrumented code holds both.
   - Evidence instead of pixel tests: each journey writes its screenshots, and the pull request shows them through
     proof, so the reviewer sees the UI. This repository uses its own tool.
-  - One Playwright version in the repository (proof pins `playwright-core`); `make install` installs its Chromium, and
-    `.github/test-suites.yml` already has the field `browser`.
-- **Rules (the owner's decision, write them into `docs/quality/testing-strategy.md`):**
+  - A static file server for a built folder, for the workbench of T-54.
+  - One Playwright version in the repository (proof pins `playwright-core`); `make install` installs its Chromium.
+- **Rules (the owner's decision; write them into `docs/quality/testing-strategy.md`):**
   - A behavior is a page scenario unless it needs a browser.
-  - A journey scenario only for a main flow. In this wave: sign in and land on the runs; store a secret; enable a
-    skill and see the change go live; the shell on a phone. Keep the number of journeys small; a new one needs the
-    reason in the module's `AGENTS.md`.
-  - An island scenario for each island, at the level of the island. Only when the island needs nothing heavy: no
+  - A journey scenario only for a main flow. In this wave: sign in and land on the runs; the shell on a phone; store
+    a secret; switch a skill on and see the change go live. A new journey needs its reason in the module's
+    `AGENTS.md`.
+  - An island scenario for each island, at the level of the island, and only when the island needs nothing heavy: no
     server, no fake. An island that needs the console is proven inside a journey.
   - No test of a component inside an island, and none of a single `.astro` component. No component test that imports
     from `src/` (BOUNDARY).
   - A check, not prose: a UI test finds elements only by role, label or text (no CSS selector, no XPath, no test ID),
-    never waits for time to pass, and uses only the named viewport sizes. Add it to `tools/checks/` with `SCN-REPO`
-    scenarios.
+    never waits for time to pass, and uses only the named viewport sizes.
 - **What the new kinds replace:** no kind goes away. The smoke scenarios of `e2e/` prove the whole factory, not the
-  UI. Unit tests stay excluded. When a page moves to Astro, its existing tests move from text comparison to the page
-  reader; the scenario's text does not change and the test proves no less.
+  UI. Unit tests stay excluded. The console's own readers move from tag patterns to the page reader in this item,
+  before any page changes its markup; a scenario's text does not change and its test proves no less.
 - **Watch out:**
-  - A mutant reruns every scenario that reached its line. A journey costs seconds for each mutant, so server code must
-    be reached by page scenarios first, and a journey stays short.
   - Scenario files share Vitest workers (ADR 0051): the browser belongs to the worker, the context to the scenario.
   - Never share a module process across scenarios (testing strategy, "Test speed").
-  - Measure before the rules are final: the start of Chromium, a context, one journey, one island scenario. Write the
-    numbers into the ADR and the testing strategy. The console's budget rises only with a measured reason.
-- **Done when:** one page scenario, one journey scenario and one island scenario pass in `make verify` on CI with
-  REACH and MUTATION counting them, the check on the queries exists, and the testing strategy names the three kinds.
+  - Measure before the rules are final: the start of Chromium, a context, one journey on the demo module. Write the
+    numbers into the ADR and the testing strategy.
+  - The testkit's suite in `.github/test-suites.yml` needs `browser: chromium`. The job of a mutation shard installs
+    a browser only when the unit's own `package.json` names `playwright-core`
+    (`.github/actions/mutation-shard/action.yml`): a unit that gets the browser through the testkit must be found too,
+    and a check keeps that true.
+- **Done when:** the testkit's own scenarios prove the page reader and `sut.browser` with its guards on its demo
+  module, the console's 86 tests read pages through the page reader with their scenarios unchanged, the check on the
+  queries exists, and the testing strategy names the three kinds.
 - **Slices:**
   - [ ] The ADR: the three kinds, the adopted libraries, the measured times.
-  - [ ] The page reader, and the console's shared readers on it (`SCN-TK` scenarios).
-  - [ ] `sut.browser` with its guards, the accessibility helper and the screenshots as evidence (`SCN-TK`).
-  - [ ] Coverage and mutants from the browser, counted by REACH and MUTATION (`SCN-TK`, `SCN-REPO`).
-  - [ ] The check on the queries of UI tests, and the rules in `docs/quality/testing-strategy.md` and
+  - [ ] The page reader (`SCN-TK`), and the console's shared readers in `system-tests/console.ts` on it. This is the
+    only slice of the item that touches the console; it comes before T-53's page slice.
+  - [ ] `sut.browser` with its guards, the accessibility helper, the screenshots as evidence and the static file
+    server (`SCN-TK`); the browser in the suites and in the mutation shards, with its check (`SCN-REPO`).
+  - [ ] The check on the queries of UI tests (`SCN-REPO`), and the rules in `docs/quality/testing-strategy.md` and
     `docs/quality/checks.md`.
+
+### [ ] T-53 · Astro in the console (P0)
+
+- **Problem:** the console's pages are Preact components written with htm, which Fastify routes render, styled by
+  Pico CSS, without a build step (ADR 0072). The repository's tooling knows only `.ts` files:
+  `tools/checks/quality.ts` counts added lines only for files that end in `.ts`, `tools/checks/reach.ts` matches no
+  `.tsx`, and ARCH, ISOLATION and BOUNDARY read TypeScript with dependency-cruiser. A `.tsx` or `.astro` file would
+  pass every check today without being looked at.
+- **Build:** Astro in `modules/console`, with its Node adapter in middleware mode inside the Fastify server of
+  `console serve`. Fastify keeps the CLI, every old page, and for a new page the route itself: the route checks the
+  session and the role, loads the page's data with the code of `commands`, `adapters` and `domain` as today, and
+  hands it to Astro, which only renders the template. The SolidJS integration for islands. The module's `build`
+  script runs the Astro build, and the `bin` runs only built files (BOUNDARY-RUNTIME).
+- **Adopt (check first, record in the ADR):** Astro, `@astrojs/node`, `@astrojs/solid-js`, and Tailwind CSS or plain
+  CSS on the tokens. The owner chose Astro; the ADR still records what was compared: Preact with hand-made islands
+  (today's stack), SvelteKit, React Router, Hono with JSX, htmx with Alpine.
+- **Rules for the code:**
+  - A template holds no logic. A route in `.ts` computes plain values and passes them to the template (verify that
+    the adapter's handler takes the page's data, Astro's `locals`). So REACH and MUTATION keep counting the logic as
+    they do today, and a template never calls an API.
+  - Astro's source folder is not `src/pages`: that folder is today's layer `pages` of `.ts` files, and Astro would
+    treat each as a route. Use a folder of its own, like `src/web/`.
+  - A form is an HTML form that answers 303 to a page, or a page that names the problem. It works with script turned
+    off. The same-origin rule of ADR 0089 stays.
+  - Every island lives in `@opensoftware/ui` (T-54). `modules/console/AGENTS.md` lists each island a page uses with
+    the reason why a page load is not enough.
+  - The console serves every font, style and script itself: no CDN, no request to another origin. It sends a
+    Content-Security-Policy that allows only its own origin. Check how the installed Astro loads an island's script
+    under such a policy before the first island.
+  - No client-side router. A transition between pages uses the browser's own view transitions in CSS, or none.
+  - The layers of `architecture.json` get the templates; `domain` and `adapters` stay as they are.
+- **Watch out:**
+  - Astro, its adapter and Tailwind change between major versions. Read the docs inside the installed packages before
+    you write configuration; do not trust what you remember.
+  - `tsc` does not check `.astro` files: `astro check` joins the typecheck. Biome reads `.astro` files only in part;
+    record what it covers. Astro writes a folder `.astro/`: add it to `.gitignore` and keep it out of turbo's inputs.
+  - Every check that reads source files gets a rule for `.astro` and `.tsx`: ARCH, ISOLATION, DUP, REACH and
+    MUTATION. For a template: a check that it holds no logic (only its data, components and markup) and imports only
+    components. For `.tsx`: T-55. A rule that exists only as text is not done (root `AGENTS.md`, Hard rules).
+  - turbo caches the build and the tests by their inputs and outputs (`turbo.json`, AFFECTED): name the new files and
+    the build's output folders.
+  - REACH maps V8 coverage to source lines through source maps: if the server code goes through Vite, the build must
+    write them. Prefer that `tsc` still builds the `.ts` files as today and Vite builds only templates and islands.
+  - Stryker builds the mutated module once and switches mutants at run time (ADR 0061): measure the build time with
+    Astro in it.
+  - The npm package must hold the built client files, since the profile's image installs the module from npm
+    (`deploy/images/Dockerfile`); PROFILE pins the new version.
+  - In middleware mode, Astro does not serve its own static files: Fastify does.
+  - Each scenario starts one server. `modules/console/AGENTS.md` says 68 scenarios in 60 seconds; there are 86 tests
+    now. Measure the suite and the start of `console serve` before the first change and after it, and correct the
+    number.
+  - The existing scenarios of the console pass with their text unchanged after every slice.
+- **Done when:** one existing page is rendered by Astro with the new stack, its scenarios pass with their text
+  unchanged, `make verify` passes, and the released image serves the page.
+- **Slices:**
+  - [ ] The ADR for the stack and for how each check treats `.astro` and `.tsx` files, with the measured build,
+    start and suite times.
+  - [ ] The build: Astro behind Fastify in `console serve`, `astro check` in the typecheck, the layers, turbo's
+    inputs, and the checks' rules for templates (`SCN-REPO` scenarios for each changed check).
+  - [ ] The first page on Astro: the health page, the smallest one, after T-52's page reader. Its scenarios keep
+    their text.
+  - [ ] The package and the image hold the built files; the profile and the chart pin the release (`SCN-DIST`).
 
 ### [ ] T-54 · the design system: `@opensoftware/ui` (P0)
 
@@ -1324,9 +1382,10 @@ console at a time (root `AGENTS.md`), so the console slices of T-52, T-55, T-56,
 - **Problem:** the console looks like Pico CSS's defaults. The product has a name and no icon, no colours and no type
   of its own, and no shared components, so each new page would invent its own.
 - **Approved by the owner (14 November 2026):** the mock-ups of the direction "precise industrial": the brand sheet,
-  the sign-in page, the shell with the runs list, Secrets, a skill's page, and the runs on a phone. They are a canvas
-  outside the repository, so the first slice asks the owner for its export and commits it to `docs/design/` with the
-  values below. From then on every agent works from a file in the repository. The approved values:
+  the sign-in page with a refused person, the shell with the runs list, Secrets, a skill's page with a change that is
+  checking, and the runs on a phone. They are a canvas outside the repository, so the first slice asks the owner for
+  its export and commits it to `docs/design/` with the values below. From then on every agent works from a file in
+  the repository. The approved values:
 
   | What | Value |
   | --- | --- |
@@ -1343,259 +1402,369 @@ console at a time (root `AGENTS.md`), so the console slices of T-52, T-55, T-56,
   | Sign-in page | Two halves: the icon, the name, one sentence and the factory's stages as a line of stations on a fine grid; and the provider buttons with a plain refusal message. |
 
   These are the start of the tokens, not their final list: the contrast check below decides when a value must change.
+  The mock-ups do not show every state. The workbench adds the ones they miss, in the same language: an empty list,
+  an error of a server that does not answer, a form with a wrong value, the light theme.
 - **Build:**
-  - Tokens as CSS custom properties in Tailwind's theme, for dark and light: colour by meaning (surface, text, border,
-    signal, and the states running, waiting, failed and done), the type scale, spacing on a 4-pixel grid, radius and
-    motion. A page never names a raw colour.
+  - Tokens as CSS custom properties, for dark and light: colour by meaning (surface, text, border, signal, and the
+    states running, waiting, failed and done), the type scale, spacing on a 4-pixel grid, radius and motion. A page
+    never names a raw colour.
   - Components as `.astro` files, built when a page of this wave needs them and not before: button, link, field with
     label, hint and error, input, select, switch, table, state badge, panel, page header, empty state, banner, dialog
-    (the HTML `dialog` element), the shell with its navigation, an ID in monospace with a copy button, a time.
+    (the HTML `dialog` element), the shell with its navigation, an ID in monospace, a time.
   - Islands in SolidJS, only the ones a page of this wave needs (candidates: the theme switch, the navigation on a
-    phone, copy to clipboard, a live state).
-  - The brand: wordmark and icon as SVG, readable at 16 pixels in one colour, with the favicon files.
-  - The workbench: a static Astro site inside the package with one page per component and per state of an island. It
-    is the reference of the design system and the place where island scenarios run (T-53). It is never part of the
-    console.
+    phone, copy to clipboard). Every island of the product lives here.
+  - The brand: wordmark and icon as SVG, with the favicon files.
+  - The workbench: a static site built by Astro inside the package, with one page per component and per state of an
+    island. It is the reference of the design system and the place where island scenarios run, served by the
+    testkit's static file server (T-52). It is never part of the console.
 - **Adopt (check first):** native HTML before a library (`dialog`, `details`, the popover API). For islands that need
-  more: Kobalte, Ark UI or corvu (headless, SolidJS). Icons: Lucide. Fonts: open-licensed files that the package
-  ships, such as Fontsource packages. Compare shadcn-style kits for SolidJS and say why a small own set is enough or
-  not. Storybook was checked as the workbench: record why plain Astro pages are enough or not.
+  more: Kobalte, Ark UI or corvu (headless, SolidJS). Icons: Lucide. Fonts: the open-licensed files, shipped by the
+  package, such as Fontsource packages. Compare shadcn-style kits for SolidJS and say why a small own set is enough or
+  not. Compare Storybook as the workbench and record why plain Astro pages are enough or not.
 - **Checks to add (`tools/checks/`, `SCN-REPO`):**
   - Every pair of text and background tokens meets WCAG 2.2 AA contrast, in both themes.
   - No colour value and no font name outside the tokens file, in `packages/ui` and `modules/console`.
 - **Watch out:**
   - Accessibility is part of each component: a visible focus, the keyboard, a state never shown by colour alone (icon
     and word too), reduced motion, touch targets on a phone.
-  - The theme is set before the first paint, without a flash, and inside the Content-Security-Policy of T-52.
+  - The theme is set before the first paint, without a flash, and inside the Content-Security-Policy of T-53.
   - An Astro library ships its `.astro` sources; the console compiles them. Say in the ADR how BOUNDARY, REACH and
-    MUTATION treat this library, and let Tailwind in the console scan the package's files.
-  - It is a published package: `osf release-files` writes its release files (RELEASE), and its `AGENTS.md` sets the
-    limits of DUP and MUTATION.
+    MUTATION treat this library.
+  - It is a published package: `osf release-files` writes its release files (RELEASE), its first publish follows
+    `skills/release-packages`, and its `AGENTS.md` sets the limits of DUP and MUTATION and its budget.
   - Do not build a zoo: a component without a page that uses it is removed.
-- **Done when:** the pages of T-55 to T-58 use only its components and tokens, both checks pass, and each island has
+- **Done when:** the pages of T-56 to T-59 use only its components and tokens, both checks pass, and each island has
   its island scenario.
 - **Slices:**
   - [ ] The approved mock-up (the owner's export of the canvas) and its values in `docs/design/`, with a short
     `README.md` of the direction.
   - [ ] The ADR and the package: tokens, both themes, the brand files, the two checks.
-  - [ ] The components and the workbench that the sign-in page and the shell need (with T-55).
-  - [ ] The components that Secrets and Skills need (with T-56 and T-58).
+  - [ ] The components and the workbench that the sign-in page and the shell need (with T-56).
+  - [ ] The components that Secrets and Skills need (with T-57 and T-59).
 
-### [ ] T-55 · sign-in, roles and the shell (P0)
+### [ ] T-55 · code that runs in the browser counts (P0)
+
+- **Problem:** REACH and MUTATION see only the module's Node processes. The code of an island runs in the browser, so
+  no check would know whether a test reaches it or notices a change to it.
+- **Build:**
+  - REACH for browser code: Chromium's V8 coverage through Playwright, mapped to source lines through source maps,
+    for `.tsx` files of `packages/ui`.
+  - MUTATION for browser code: Stryker's active mutant set in the page before its first script, and the mutants a
+    scenario ran read back from the page. Verify in the installed Stryker how the instrumented code holds both.
+  - The rule for journeys: a journey counts only for mutants of browser code. A mutant of server code that only a
+    journey reached counts as not covered. This is stricter than today, never weaker (ADR 0061), and it keeps a
+    journey out of the rerun of every server mutant: each such rerun would start Chromium again.
+  - The first island with its island scenario, and the first journey in the console, as the proof.
+- **Watch out:**
+  - A mutant reruns every scenario file that ran it, each in a new test run (ADR 0061). Keep an island small, and
+    keep what it decides in its props, which the server computes.
+  - `modules/console` and `packages/ui` each need a suite in `.github/test-suites.yml` with `browser: chromium`; the
+    console is in the suite `rest` today.
+  - Measure one island scenario, one journey and one mutation shard with a browser, and write the numbers into the
+    ADR. The console's budget rises only with a measured reason.
+- **Done when:** one island scenario and one journey scenario pass in `make verify` on CI, a line of an island that
+  no test reaches fails REACH, and a missed mutant in an island fails MUTATION.
+- **Slices:**
+  - [ ] The ADR; coverage from the browser in REACH (`SCN-TK`, `SCN-REPO`).
+  - [ ] Mutants in the browser and the rule for journeys in MUTATION (`SCN-TK`, `SCN-REPO`).
+  - [ ] The first island scenario in `packages/ui` and the first journey in the console, with their suites
+    (`SCN-UI`, `SCN-CONSOLE`). Needs T-53 and T-54's second slice.
+
+### [ ] T-56 · sign-in, roles and the shell (P0)
 
 - **Problem:** the product has no sign-in. The console trusts a header of a proxy that the team must run in front
   (`CONSOLE_USER_HEADER`, ADR 0089), every person behind it may do everything, and the first screen is a table in
-  Pico CSS's defaults. SCN-FACTORY-RUNTIME-009 (roles) is still `planned`.
+  Pico CSS's defaults.
 - **Build:**
-  - **The access file.** `access.yaml` beside `factory.yaml` in the factory's repository: people by email, each with
-    one role. Its schema is a new format in `contracts/` (TypeSpec, JSON Schema, fixtures), and `factory lint` checks
-    it. The console reads it at sign-in and again for each request, with a short cache, so a removed person loses
-    access after the next merge without a restart.
+  - **The library `@opensoftware/factory-files`** (`packages/`, its own prefix): it reads a factory's files from a
+    folder or from `git+<url>#<ref>`, as the foreman does today (ADR 0124). The foreman's fetch moves here; a copy
+    fails DUP. For a private repository it takes a token from a documented variable and hands it to Git without
+    writing it to a file or a command line. T-58 and T-59 add to this library.
+  - **The access file.** `access.yaml` beside `factory.yaml`: people by email, each with one role. Its schema is a new
+    format in `contracts/` (TypeSpec, JSON Schema, fixtures); the library reads and checks it, and `factory lint`
+    reports its findings. The console reads it at sign-in and again for each request, with a short cache, so a
+    removed person loses access after the next merge without a restart. When the file cannot be read, the console
+    keeps the last one it read for a set time and then refuses everyone, and says why. The reference factory ships an
+    `access.yaml` with an example person that `console doctor` refuses, like the example member of ADR 0114.
 
     | Role | May |
     | --- | --- |
     | `member` | See every page but Secrets; submit work; act on runs and gates, as a signed-in person does today |
-    | `factory-engineer` | The same, and change the factory from the UI (T-57, T-58) |
-    | `admin` | The same, and store and delete secrets (T-56) |
+    | `factory-engineer` | The same, and change the factory from the UI (T-58, T-59) |
+    | `admin` | The same, and store and delete secrets (T-57) |
 
-  - **The factory's files.** The console reads `factory.yaml`, `access.yaml` and the skills from a folder as today, or
-    from `git+<url>#<ref>` as the foreman does (ADR 0124). Move the foreman's fetch into a library in `packages/`; a
-    copy fails DUP.
+  - **One hook for the person.** A Fastify hook in front of every page, old and new, finds the person (the session or
+    the proxy's header), reads the role, and answers. Not Astro's middleware: the old pages do not pass through it.
+    Without a session: `/signin`, the provider's callback, the static files and a new probe route. The probe route
+    says that the console runs and can read its factory, without a session; the profile's and the chart's health
+    checks use it in place of `/factory`, which would redirect.
   - **Sign-in.** OpenID Connect with the authorization code flow, PKCE, state and nonce; the provider's settings from
     its discovery document; the ID token checked for signature, issuer, audience and time. Only an email that the
     provider marks as verified counts, compared in lower case with the access file. GitHub has no OpenID Connect for
-    sign-in: it is a second provider type that reads the person's verified primary email from GitHub's API.
+    sign-in: it is a second provider type that reads the person's verified primary email from GitHub's API. The
+    state, the nonce and the verifier of one sign-in live in a short-lived cookie that the callback deletes.
   - **The session.** An encrypted, signed cookie with the email, the name and the end of the session: `HttpOnly`,
-    `SameSite=Lax`, `Secure` when the console is served over HTTPS. No role in it; the role comes from the access file
-    on each request. The key is `CONSOLE_SESSION_SECRET`. A page without a session redirects to `/signin` and comes
-    back to the page the person asked for (local paths only); a form without a session answers 401, and without the
-    role 403.
+    `SameSite=Lax`, `Secure` over HTTPS. It lasts 12 hours (a setting). No role in it; the role comes from the access
+    file on each request, so removing a person ends their access even while a copied cookie is still valid. The key
+    is `CONSOLE_SESSION_SECRET`; the console accepts two keys, so a key can change without signing everyone out. A
+    page without a session redirects to `/signin` and comes back to the page the person asked for (local paths only);
+    a form without a session answers 401, and without the role 403.
+  - **Only over loopback or HTTPS.** On any other host the sign-in page refuses and says why: the cookie and, later,
+    a secret's value would cross the network in clear text. A team on a private network puts its own TLS proxy in
+    front; a setting tells the console that it is behind one.
   - **The person in every action** stays `by: { kind: "person", id: <email> }` (ADR 0118), so the members of
     gatekeeper's groups file match the same emails.
-  - **The sign-in page.** The first screen of the product: the icon, the name, one button per provider. A refused
-    person reads why in plain words ("ada@acme.dev is not on this factory's access list") and where the list lives.
-  - **The shell.** The layout of every new page: the navigation (Runs, Secrets, Skills; only what works and what the
-    role may open), the factory's name and version, the account menu with the name, the role and "Sign out", the theme
-    switch. On a phone the navigation folds away. A skip link, landmarks, and Astro's view transitions between pages.
-    The pages that still have the old look stay reachable from the navigation.
-  - **The runs list** `/` in the new look. Its scenarios keep their text.
-  - **The profile.** `.env` gets the provider's issuer, client ID and client secret and the session key; a missing one
-    is named. `deploy/README.md` shows the setup for Google and for GitHub with the callback on `http://localhost`.
-    `console doctor` checks that the provider's discovery answers and that the access file has an admin.
+  - **The sign-in page.** The first screen of the product, as approved in T-54: the icon, the name, one button per
+    provider. A refused person reads why in plain words ("ada@acme.dev is not on this factory's access list") and
+    where the list lives.
+  - **The shell.** The layout of every new page: the navigation (only what works, what the mode offers and what the
+    role may open), the factory's name and version, the account with the name, the role and "Sign out", the theme
+    switch. On a phone the navigation folds away. A skip link and landmarks. The pages that still have the old look
+    stay reachable from the navigation.
+  - **The runs list** `/` in the new look. SCN-CONSOLE-001 names the stylesheet `/pico.css` of this page: write its
+    successor with `@replaces`, mark the old one `deprecated` and delete its test, in the same change. The other
+    scenarios of the runs list keep their text.
+  - **Setup.** `osf init` generates `CONSOLE_SESSION_SECRET` (today it generates only names that end in `_PASSWORD`,
+    `_API_TOKEN` or `_MASTER_KEY`) and asks for nothing else; `osf up` names a provider setting that is half filled.
+    `deploy/README.md` and `docs/tutorials/first-run.md` get a part "turn on sign-in" for Google and for GitHub, with
+    the callback on `http://localhost`. `console doctor` checks, with sign-in on, that the provider's discovery
+    answers and that the access file has an admin who is not the example.
   - **In the testkit:** `fakes.oidc()`, an identity provider that signs in the person a test names (discovery,
-    authorize, token, keys), and the sign-in endpoints in `fakes.github`.
+    authorize, token, keys), reachable from a container for the scenarios of `deploy/`, and the sign-in endpoints in
+    `fakes.github`.
 - **Adopt (check first):** `openid-client` with `jose` (a certified client, no database); Arctic; Better Auth and
   Auth.js (both want a database or an adapter); `oauth2-mock-server` for the fake. As services in front: oauth2-proxy,
   Pomerium, Authelia, Dex, Keycloak; they stay possible through `CONSOLE_USER_HEADER`. Prefer the smallest that needs
-  no database.
+  no database, and check that it takes the time from a clock the tests set (`OSF_NOW`).
 - **Watch out:**
-  - Google and most providers accept `http://localhost` as a callback, but no other host without HTTPS. A console on
-    another host of a private network needs TLS, which is not in this wave: say so in the docs.
+  - The existing scenarios of the open mode and of the proxy mode stay as they are (for example SCN-CONSOLE-026,
+    -046 and -047): the own sign-in is a third mode, not a change of the two.
+  - A browser sends a cookie of `localhost` to every port of `localhost`. The profile opens the console on
+    `localhost` and links Jaeger, LiteLLM and the Temporal UI on `127.0.0.1` (`OSF_HOST`), so they never get the
+    session cookie. Keep it that way and say it in the docs.
+  - Google and most providers accept `http://localhost` as a callback, but no other host without HTTPS.
   - Some providers send no "verified" flag for the email. Do not guess: a provider without it needs an explicit
     setting that names the risk.
   - No first-person-becomes-admin rule. Without an access file, or without an admin in it, sign-in is refused and the
     page says which file is missing.
-  - Never log a token, a code, a cookie or the client secret. The time of a token comes from `OSF_NOW` in tests.
-  - `next` after sign-in takes only a path of the console (no open redirect). The state is used once.
-  - `CONSOLE_USER_HEADER` keeps working for a team with a proxy, and the roles apply to it too. Decide in the ADR what
-    happens when both are set.
-  - The email is personal data: it is in the access file and in pull requests of the factory's repository. The docs
-    say that this repository should be private.
-- **Realizes:** SCN-FACTORY-RUNTIME-009, the new RUNTIME scenario of the access list and the new ACCESS scenario of
-  the phone (T-51), SCN-FACTORY-VIS-001.
+  - Never log a token, a code, a cookie or the client secret.
+  - `next` after sign-in takes only a path of the console (no open redirect).
+  - Whoever may write to the factory's repository can make themselves `admin`: `access.yaml` lives there. The docs
+    say that write access to that repository is admin access to the factory, and that the repository should be
+    private, since it holds emails.
+  - When `CONSOLE_USER_HEADER` and a provider are both set, the console does not start and names both.
+- **Realizes:** the new RUNTIME scenario of the access list and the new ACCESS scenario of the phone (T-51).
 - **First scenarios:** a person on the access list signs in and lands on the runs; a person who is not on it is
   refused and reads why; an email that the provider did not verify is refused; a page without a session redirects to
-  the sign-in and comes back; "Sign out" ends the session; a session past its end asks to sign in again; a person
-  removed from the access file loses access without a restart; a member does not see Secrets and gets 403 for its
-  form; the navigation shows only what works; on a phone the navigation folds away (journey); sign in and land on the
-  runs (journey).
-- **Done when:** the Compose profile on a laptop shows the sign-in page at its URL, a person of `access.yaml` signs
-  in with Google or GitHub and sees the runs in the new shell, and nobody else gets past the sign-in.
+  the sign-in and comes back; `next` with another host is ignored; "Sign out" ends the session; a session past its
+  end asks to sign in again; a cookie of the second key is accepted; a person removed from the access file loses
+  access without a restart; an access file that cannot be read refuses everyone after the set time; a member does not
+  see Secrets and gets 403 for its form; a host that is neither loopback nor HTTPS refuses the sign-in; the open mode
+  shows no page that needs a role; the navigation shows only what works; the probe route answers without a session;
+  on a phone the navigation folds away (journey); sign in and land on the runs (journey).
+- **Done when:** the Compose profile on a laptop, with a provider in `.env`, shows the sign-in page, a person of
+  `access.yaml` signs in with Google or GitHub and sees the runs in the new shell, nobody else gets past the sign-in,
+  and a profile without a provider works as today.
 - **Slices:**
-  - [ ] The ADR: the library, the session, the roles, and the two ways to name the person.
-  - [ ] The access file in `contracts/` and in `factory lint` (`SCN-CTR`, `SCN-FSPEC`).
-  - [ ] The library that reads a factory from a Git remote, used by the foreman and the console.
+  - [ ] The ADR: the library, the session, the roles, the modes and the hook.
+  - [ ] `@opensoftware/factory-files` with the fetch, used by the foreman, and the access file in `contracts/`, the
+    library and `factory lint` (its own prefix, `SCN-CTR`, `SCN-FSPEC`, `SCN-FORE` unchanged).
   - [ ] `fakes.oidc()` and GitHub's sign-in in `fakes.github` (`SCN-TK`).
-  - [ ] Sign-in, session and sign-out in the console, with the sign-in page (`SCN-CONSOLE`).
+  - [ ] The hook, sign-in, session and sign-out in the console, with the sign-in page and the probe route
+    (`SCN-CONSOLE`).
   - [ ] The roles on every page and form (`SCN-CONSOLE`).
   - [ ] The shell and the runs list in the new look, with the two journeys (`SCN-CONSOLE`).
-  - [ ] The profile, the chart, `console doctor` and the docs (`SCN-DIST`, `SCN-CONSOLE`).
+  - [ ] `osf init`, `osf up`, the profile, the chart, `console doctor`, the tutorial; one scenario of the profile
+    with sign-in on (`SCN-REPO`, `SCN-DIST`, `SCN-CONSOLE`). After the console's release.
 
-### [ ] T-56 · secrets from the UI (P1)
+### [ ] T-57 · secrets from the UI (P1)
 
 - **Problem:** an agent's secret gets its value from a variable or a file of the foreman's host
   (`ports/secrets/README.md`). To set or change one, a person edits `.env` and restarts the foreman. Nothing shows
-  which declared secret has no value, so a run fails at its first turn. OpenBao is a provider, but only the chart
-  knows it, and nothing writes to it.
+  which declared secret has no value, so a run fails at its first turn. Both sandbox adapters resolve
+  `ref:openbao/<name>`, but only against a fake: no profile runs OpenBao, the chart has no setting for it (ADR 0075
+  leaves OpenBao to its own chart), and nothing writes to it.
 - **What does not change:** an agent never holds a value. The sandbox holds a placeholder, and its egress proxy puts
   the value in on the way to the allowed hosts (ADR 0054). Which agent may use which secret stays in `factory.yaml`.
-  The UI stores values; it does not grant them.
+  The UI stores values; it does not grant them. The reference factory keeps `ref:env/GH_TOKEN` and
+  `ref:env/CLAUDE_CODE_OAUTH_TOKEN` from `.env` in this wave: a first run needs them before anyone signs in.
 - **Build:**
   - **The secrets port gets a write side**, as commands of an adapter program, like the forge port: `put <name>` (the
     value on standard input only, never an argument or a variable), `list` (one line per secret with its name, the
-    time and the person of the last change, and its version), `delete <name>`, `probe`. There is no command that
-    prints a value. The `@conformance` scenarios go to `ports/secrets/features/` with the reserved prefix
-    `SCN-SECRET`.
+    time and the person of the last change, and its version; a name may hold `/`, so it walks the folders), `delete
+    <name>`, `probe` (the store answers, and how long the token still lives). There is no command that prints a
+    value. The `@conformance` scenarios go to `ports/secrets/features/` with the reserved prefix `SCN-SECRET`.
   - **The adapter** `adapters/secrets/openbao/` (`skills/new-module`, its own prefix): KV version 2, the value in the
     field `value` that the egress proxy already reads, the person in the secret's metadata.
+  - **Git's form of a secret from OpenBao.** Today the egress proxy gives a secret from OpenBao no Basic form
+    (`packages/sandbox-egress/src/domain/proxy-config.ts`, ADR 0096), so `git clone` and `git push` over HTTPS fail
+    with a token stored in the UI. Close that gap in `packages/sandbox-egress` and the sandbox port's conformance
+    scenarios, and say in the ADR when a changed value takes effect (at the start of the sandbox, or per request).
+  - **A run that cannot work says so first.** A stage whose agent declares an OpenBao secret without a value fails
+    before its first turn and names the secret.
   - **Two tokens with two policies.** The console's token may write and delete values and read names and metadata; it
-    may not read a value. The egress proxy's token may only read. So a fault in the console cannot show a secret.
+    may not read a value. The egress proxy's token may only read. So a fault in the console cannot show a secret. One
+    mount per factory; the read token of a factory's sandboxes reads that whole mount.
   - **In the testkit:** `fakes.openbao()`, the real OpenBao binary in development mode, pinned by `make install`, one
-    server per test process and a mount per scenario (ADR 0049, ADR 0129).
-  - **The profile.** An `openbao` service in `deploy/compose/compose.yaml` with its data on a volume, a job that
-    creates the mount, the two policies and the two tokens, and the foreman's `OSF_OPENBAO_ADDR` and
-    `OSF_OPENBAO_TOKEN`. The reference factory declares the provider `openbao` and its agents' secrets as
-    `ref:openbao/<name>`; `ref:env/<NAME>` keeps working. The chart takes its own OpenBao or the team's. OpenBao's
-    audit log is on.
-  - **The page `/secrets`** (role `admin`). One list of the secrets that the factory's agents declare and of the names
-    in the store, each with a state: "set" (who and when), "missing" (declared without a value; names the agents and
-    skills that need it) or "not used" (stored, declared by no agent). A form sets or replaces a value in a field that
-    never shows it again; "Delete" asks first. Secrets of the providers `env` and `file` are listed as set outside the
-    UI.
-  - **`console doctor`** fails with the name of each declared `openbao` secret without a value.
+    server per test process and a mount per scenario (ADR 0049, ADR 0129). It is the first real OpenBao in the tests
+    of the sandbox adapters too.
+  - **The Compose profile.** An `openbao` service with its data on a volume and its audit log on. Decide in the ADR,
+    and prove with a scenario that restarts the profile: who initializes it and where the unseal key and the root
+    token go; how it unseals after a restart without a person (OpenBao's own automatic unseal for one node if the
+    pinned version has one); and how the two tokens reach the services. `osf init` generates the two token IDs into
+    `.env`, and a job creates the tokens with these IDs and their policies on every start. A token must not end
+    silently: OpenBao gives a token a maximum lifetime (verify the default of the pinned version), so choose a
+    lifetime or a renewal that needs no loop in the console, and let `console doctor` and the health page warn before
+    a token ends.
+  - **The chart.** It installs no OpenBao (ADR 0075). Its values take the address, the mount and a Secret with the two
+    tokens of the team's own OpenBao, and the docs give the two policies.
+  - **The page `/secrets`** (role `admin`), as approved in T-54. One list of the secrets that the factory's agents
+    declare and of the names in the store, each with a state: "set" (who and when), "missing" (declared without a
+    value; names the agents and skills that need it) or "not used" (stored, declared by no agent). A form sets or
+    replaces a value in a field that never shows it again; "Delete" asks first. Secrets of the providers `env` and
+    `file` are listed as set outside the UI. The page says when a new value takes effect and that it is sent only to
+    the hosts the agent may reach.
+  - **`console doctor`**, when the factory declares an OpenBao secret: fails with the name of each one without a
+    value, and when the store does not answer.
 - **Adopt (check first):** OpenBao (chosen, already in `docs/architecture/stack.md`); a client library for it against
-  plain HTTP calls; how the chart's OpenBao is installed today. For unsealing on one machine: OpenBao's own automatic
-  unseal for a single node if the pinned version has one; otherwise say which key the operator keeps and where.
+  plain HTTP calls; iron-proxy's source for OpenBao as the egress proxy uses it today.
 - **Watch out:**
   - A value appears nowhere: no page, no redirect URL, no log line, no error text, no trace, no run record, no test
     report. One scenario stores a value and searches every output of the console and the adapter for it.
-  - The server does not log request bodies. The field has no autocomplete. The body has a size limit.
+  - The server does not log request bodies. The field has no autocomplete. The body has a size limit. The form exists
+    only over loopback or HTTPS (T-56).
   - The egress proxy swaps a placeholder in an HTTP request. A secret that is not sent in an HTTP request (an SSH key,
     a database password) does not work this way; the page and the docs say so.
   - These are the agents' secrets. The modules' own tokens and the provider keys of the inference gateway stay in
     `.env` in this wave.
-  - Check in `packages/sandbox-egress` when a changed value takes effect (at the start of a sandbox or per request)
-    and say it on the page.
+  - `lint` refuses a secret whose provider the factory does not declare (`modules/factory-spec/src/domain/lint.ts`):
+    a factory that uses `ref:openbao/` declares `providers.secrets.openbao`.
   - A name follows the pattern of `SecretReference` in `contracts/typespec/factory-definition.tsp`.
-  - The console's OpenBao token and the unseal key are credentials: `.env` and the operator's safe only. The docs
-    describe a backup of the volume and the key.
-- **Realizes:** SCN-FACTORY-RUNTIME-006, the new RUNTIME scenario of the stored secret (T-51), P11.
-- **First scenarios:** `put` then `list` names the secret without its value; `put` twice makes a second version;
-  `delete` removes it; no command prints a value; the console's token cannot read a value; an admin stores a value and
-  the list says "set" with the person; the value is in no output; a declared secret without a value says "missing"
-  with its agents; a stored secret that no agent declares says "not used"; a member gets 403; a sandboxed agent's
-  request carries the stored value at the allowed host; store a secret (journey).
-- **Done when:** on the Compose profile, an admin stores the value of a secret that an agent of the reference factory
-  declares, and the next run's request to the allowed host carries it, with no restart and no edit of `.env`.
+  - The tokens and the unseal key are credentials: `.env` and the operator's safe only. The docs describe a backup of
+    the volume and the key.
+- **Realizes:** the new RUNTIME scenario of the stored secret (T-51).
+- **First scenarios:** `put` then `list` names the secret without its value; `put` twice makes a second version; a
+  name with a folder is listed; `delete` removes it; no command prints a value; the console's token cannot read a
+  value; a sandbox's `git clone` works with a token from OpenBao; a stage whose secret has no value fails before its
+  first turn and names it; the profile restarts and a stored secret still reaches a sandbox; an admin stores a value
+  and the list says "set" with the person; the value is in no output; a declared secret without a value says
+  "missing" with its agents; a stored secret that no agent declares says "not used"; a member gets 403; store a
+  secret (journey).
+- **Done when:** on the Compose profile, an admin stores the value of a secret that an agent declares as
+  `ref:openbao/<name>`, and the next run's request to the allowed host carries it, with no restart and no edit of
+  `.env`.
 - **Slices:**
   - [ ] The ADR; the port's write side and the adapter `secrets-openbao`, with `fakes.openbao()` (`SCN-SECRET`, the
-    adapter's prefix, `SCN-TK`).
-  - [ ] OpenBao in the Compose profile and the chart, the policies, the reference factory on `ref:openbao/`
-    (`SCN-DIST`).
-  - [ ] The page `/secrets` with its journey (`SCN-CONSOLE`).
-  - [ ] The check of `console doctor`, and one smoke scenario in `e2e/` from a stored value to a sandbox's request
-    (`SCN-CONSOLE`, `SCN-E2E`).
+    adapter's prefix, `SCN-TK`); the adapter's first publish.
+  - [ ] Git's form of a secret from OpenBao, and the stage that fails first without a value (`SCN-SEGRESS`,
+    `SCN-SANDBOX`, `SCN-FORE`).
+  - [ ] OpenBao in the Compose profile with `osf init`, the job and the restart scenario; the chart's values
+    (`SCN-DIST`, `SCN-REPO`). After the releases above.
+  - [ ] The page `/secrets` with its journey, and the checks of `console doctor` (`SCN-CONSOLE`).
+  - [ ] One smoke scenario in `e2e/` from a stored value to a sandbox's request (`SCN-E2E`).
 
-### [ ] T-57 · a change to the factory from the UI is a pull request (P1)
+### [ ] T-58 · a change to the factory from the UI is a pull request (P1)
 
-- **Problem:** `factory.yaml` changes only by hand in Git. The forge port cannot commit a file and cannot ask the
-  forge to merge when the checks pass (`ports/forge/README.md`). In the Compose profile the factory is a local commit
-  in a volume (the service `factory-repo`), so there is no pull request to open.
+- **Problem:** `factory.yaml` changes only by hand in Git. The forge port cannot commit a file, cannot ask the forge
+  to merge when the checks pass, cannot close a pull request and cannot read a branch's merge rules
+  (`ports/forge/README.md`). In the Compose profile the factory is a local commit in a volume (the service
+  `factory-repo`), and gatekeeper, the console's groups and the `factory` tools read that volume.
 - **Build:**
-  - **The forge port:** `commit <repo> <branch> --message <text> <path>=<file>...` writes one commit with these files
-    to a branch that exists; `merge` gets an option that asks the forge to merge when the checks pass, and merges at
-    once when they already did; a line of `prs` gets the state of the checks of its head and the time of the merge.
+  - **The forge port:**
+    - `commit <repo> <branch> --message <text> <path>=<file>...` writes one commit with these files to a branch that
+      exists.
+    - `branch --from` takes a commit, not only a branch name.
+    - `merge` gets an option that asks the forge to merge when the checks pass; it merges at once when they already
+      did, and exits with a named error when the forge cannot do this for the repository.
+    - `rules <repo> <branch>` prints the checks and approvals the branch requires. `protect` only writes, replaces
+      all rules and needs admin rights, so the console never runs it.
+    - `close <repo> <number> [--delete-branch]`.
+    - `prs` gets `--limit <n>` and the merge commit of a merged pull request.
     `@conformance` scenarios, in both adapters and in `fakes.github`.
-  - **A library in `packages/`** for edits of `factory.yaml` that keep comments, order and anchors: add and remove a
-    skill, a secret reference and an egress host of an agent. The console may not import factory-spec (ISOLATION).
-    factory-spec offers the same edits as a command, for people and for observer.
-  - **The flow in the console** (roles `admin` and `factory-engineer`): a form posts the change; the console reads
-    the newest commit of the main branch, makes the edit, creates the branch `console/<what>-<short hash>`, commits,
-    opens the pull request with what changes and who asked for it, asks the forge to merge when green, and answers 303
-    to `/changes`.
-  - **The page `/changes`:** the pull requests whose branch starts with `console/`, newest first, like the inbox
-    lists `observer/` (ADR 0073). The states: "checking", "live" with the factory version, "failed" with the name of
-    the failed check and the link to the pull request, "conflict", "closed". A change that is not live yet also shows
-    where it applies, for example beside the skill. While a change is checking, the page reloads itself.
-  - **The factory's repository needs a check.** A workflow in the reference factory's folder runs `factory lint` and
-    `factory plan` as the check `factory`, and the main branch requires it (the port's `protect`). `console doctor`
-    fails when the main branch requires no check, and the console then refuses to open a change.
-  - **The profile:** the foreman and the console read the factory from the forge's repository (`git+<url>#main`,
-    ADR 0124). A factory from a local folder (`FACTORY_DIR`) keeps working: the pages then show the factory, offer no
-    change and say why.
+  - **Edits in `@opensoftware/factory-files`** (T-56): add and remove a skill, a secret reference and an egress host
+    of an agent, and declare a secrets provider, in a `factory.yaml` whose comments, order and anchors stay.
+  - **The flow in the console** (roles `admin` and `factory-engineer`): a form posts the change. The console reads
+    the newest commit of the main branch, makes the edit, creates the branch `console/<what>-<that commit>-<hash of
+    the edit>` from that commit, commits, opens the pull request with what changes and who asked for it, asks the
+    forge to merge when green, and answers 303 to `/changes`. The branch starts at the commit that was read, so a
+    change that arrived in between shows as a conflict and overwrites nothing.
+  - **The page `/changes`:** the newest pull requests whose branch starts with `console/`, like the inbox lists
+    `observer/` (ADR 0073). The states: "checking", "live" with the factory version, "failed" with the name of the
+    failed check and the link to the pull request, "conflict", "discarded". The page asks `pr` only for the changes
+    that are still open. A failed or conflicting change has two buttons: "Try again" closes the pull request, deletes
+    its branch and makes the change again on the newest commit; "Discard" closes it and deletes its branch. So no
+    failed change stays armed to merge later without the person. A change that is not live yet also shows where it
+    applies, for example beside the skill. While a change is checking, the page reloads itself.
+  - **The check comes first.** The console asks for a merge only for a change whose check `factory` it can rely on:
+    - The main branch requires the check (`rules`): the forge merges when it is green.
+    - The forge cannot merge when green for this repository: the change waits as "checking", and when the check is
+      green the page shows "ready" with one button "Merge", which the console refuses while the check is not green.
+    - The repository has no check `factory` at all: the console opens no change and says what is missing.
+    A workflow in the reference factory's folder runs `factory lint` and `factory plan --check` (fails when the lock
+    is not current) and posts the check `factory`.
+  - **The profile.** A factory from a local folder (`FACTORY_DIR`) stays the default: the pages then show the
+    factory, offer no change and say why. With a repository on a forge (`FACTORY_REPOSITORY`, opt-in), the service
+    `factory-repo` clones it into the same volume at each start, so gatekeeper's policy and groups, the console's
+    groups and the `factory` tools read it as today, and a change to them takes effect at a restart, as today. The
+    foreman and the console read `factory.yaml`, the access file and the skills from the repository at each run and
+    request (`git+<url>#main`, ADR 0124) with the token of T-56's library. The chart gets the same choice.
 - **Adopt (check first):** the forge's own merge-when-green (GitHub's auto-merge, Forgejo's merge when checks
-  succeed) before any loop of our own; the `yaml` package's document API for edits that keep comments (already a
-  dependency); factory-spec's GitHub Action for the check, if it has one.
+  succeed) before any loop of our own; a merge step in the factory repository's own workflow as the alternative for a
+  forge without it; the `yaml` package's document API for edits that keep comments (already a dependency);
+  factory-spec's GitHub Action for the check, if it has one.
 - **Watch out:**
   - The console keeps no state and runs no loop. The forge merges; the page asks the forge when it is opened.
-  - GitHub's auto-merge waits only when the branch has a required check that is not green yet; it also needs the
-    repository's setting that allows auto-merge. Without a required check the pull request would merge unchecked: this
-    is why the console refuses.
+  - Verify for GitHub: auto-merge is set through its GraphQL API, waits only when a required check is not green yet,
+    needs the repository's setting that allows it, and is not offered for private repositories of every plan; the
+    same holds for required checks. The owner's first installation may be such a repository: the button "Merge" is
+    its path, and the docs say so.
+  - `fakes.github` is an in-process fake of the REST API without Git (ADR 0058). The console's scenarios of a change
+    fetch the repository with Git, so they use `fakes.forge` (Forgejo, started once per test process). Measure what
+    they add to the console's budget. `fakes.github` still gets `commit`, the merge option and `rules` for the
+    conformance scenarios of the GitHub adapter.
+  - On Forgejo something must post the check: a runner of Forgejo Actions, or the `factory` tools in a job of the
+    profile. Decide in the ADR; the scenarios post it with the port's `check`.
+  - The main branch of the factory's repository requires the check `factory` and no approval: a required approval
+    would stop every change of the console, since the token's user cannot approve its own pull request. observer's
+    proposals keep their review by a person as a rule of the process: observer never asks for merge-when-green, and
+    the console merges only branches that start with `console/`.
   - The reference factory shares one list between agents through YAML anchors (`secrets: &secrets`). An edit for one
     agent must not change another: give the agent its own list first.
-  - Two changes at the same time: the second may conflict. One change per pull request; "Try again" makes a new pull
-    request from the newest commit.
-  - The console's forge token now writes: contents and pull requests of the factory's repository, nothing else. Say
-    which permissions a GitHub fine-grained token or app needs; the inbox's read-only token is another one.
+  - The console's forge token writes: contents and pull requests of the factory's repository, nothing else, and it
+    reads the branch's rules. Say which permissions a GitHub fine-grained token or app needs; the inbox's read-only
+    token is another one.
   - The pull request's author is the token's user; the person is in the body and in a trailer of the commit. No text
     of a form goes into YAML, a branch name or Markdown without escaping.
   - A run keeps the factory version it started with (ADR 0110). The page says that a change is live for the next run.
-  - observer's proposals keep their review by a person. Merge-when-green is only for a change that a signed-in person
-    made in the console. P15's wording changes in T-51.
   - Not in this item: changing `access.yaml` from the UI.
 - **Realizes:** the new CODE scenario of the change from the UI (T-51), SCN-FACTORY-RUNTIME-009.
-- **First scenarios:** `commit` writes the files to the branch in one commit; merge-when-green merges after the check
-  passes and does not merge while it fails; the edit of one agent keeps comments and leaves an agent that shared the
-  list unchanged; a factory engineer's change opens a pull request that names the person; a member gets 403; a change
-  whose check passes shows "live" with the new factory version; a change whose check fails shows "failed" with the
-  check and the link; a repository without a required check refuses a change and says why; a factory from a local
-  folder offers no change.
+- **First scenarios:** `commit` writes the files to the branch in one commit; `branch --from <commit>` starts there;
+  merge-when-green merges after the check passes and does not merge while it fails; `rules` names a required check;
+  `close --delete-branch` closes and deletes; the edit of one agent keeps comments and leaves an agent that shared
+  the list unchanged; a factory engineer's change opens a pull request that names the person; a member gets 403; a
+  change whose check passes shows "live" with the new factory version; a change whose check fails shows "failed" with
+  the check and the link; a change made on an older commit shows "conflict" and changes nothing; "Try again" closes
+  the old pull request and opens a new one; "Discard" closes it and deletes its branch; on a forge that cannot merge
+  when green, a green change shows "Merge" and a red one refuses it; a repository without the check refuses a change
+  and says why; a factory from a local folder offers no change.
 - **Done when:** on the Compose profile with a factory repository on GitHub or Forgejo, a factory engineer changes
-  the factory in the UI, the pull request merges after its check without another click, the page shows "live", and
+  the factory in the UI, the pull request merges after its check without another person, the page shows "live", and
   the next run has that factory version.
 - **Slices:**
-  - [ ] The ADR; `commit`, merge-when-green and the new fields of `prs` in the forge port, both adapters and
-    `fakes.github` (`SCN-FORGE`, `SCN-FGITHUB`, `SCN-FFORGEJO`, `SCN-TK`).
-  - [ ] The library for edits of `factory.yaml`, and factory-spec's command on it (its own prefix, `SCN-FSPEC`).
-  - [ ] The check `factory` and the required check in the reference factory; the profile reads the factory from the
-    forge (`SCN-DIST`).
-  - [ ] The flow and the page `/changes` in the console, and `console doctor` (`SCN-CONSOLE`).
+  - [ ] The ADR; the forge port's new operations in both adapters and `fakes.github` (`SCN-FORGE`, `SCN-FGITHUB`,
+    `SCN-FFORGEJO`, `SCN-TK`).
+  - [ ] The edits in `@opensoftware/factory-files`, and `factory plan --check` (the library's prefix, `SCN-FSPEC`).
+  - [ ] The flow and the page `/changes` in the console (`SCN-CONSOLE`).
+  - [ ] The workflow with the check `factory` in the reference factory; the profile and the chart with a factory
+    repository on a forge; `console doctor` (`SCN-DIST`, `SCN-CONSOLE`). After the releases above.
+  - [ ] One smoke scenario in `e2e/`: a change from the console becomes the factory version of the next run
+    (`SCN-E2E`).
 
-### [ ] T-58 · skills: a format, sources and the catalog (P1)
+### [ ] T-59 · skills: a format, sources and the catalog (P1)
 
-- **Problem:** a skill is a path in `factory.yaml` (`skills: [./skills/x]`). `factory lint` does not read it.
-  Nothing says which secret or host a skill needs, so a skill fails inside a run. Sharing a skill between factories
-  means copying its folder. The UI shows no skill.
+- **Problem:** a skill is a path in `factory.yaml` (`skills: [./skills/x]`). `factory lint` checks only that the path
+  exists. Nothing says which secret or host a skill needs, so a skill fails inside a run. Sharing a skill between
+  factories means copying its folder. The UI shows no skill.
 - **Where a skill is switched on:** for an agent of a factory, as `factory.yaml` already says. There is one foreman
   per factory, and it gives each stage's agent the skills that agent declares (ADR 0112). "For all agents" is one
   change with one edit per agent.
@@ -1603,22 +1772,25 @@ console at a time (root `AGENTS.md`), so the console slices of T-52, T-55, T-56,
   - **The format.** A skill is a folder with a `SKILL.md` in the Agent Skills format (agentskills.io): front matter
     with `name`, equal to the folder's name, and `description`, which says what the skill does and when to use it; a
     short body; details in files beside it that the agent reads when it needs them. What the factory adds goes into
-    the format's own place for extensions (`metadata`): the secrets and the hosts the skill needs. A `SKILL.md` stays
-    valid for every harness. Fix the key names in the ADR.
-  - **`factory lint` reads skills:** the file exists, the front matter is valid, the name fits, the size stays inside
-    the format's limits; an agent that uses a skill declares a secret for each secret the skill needs and allows each
-    host in its sandbox's egress. A finding names the agent, the skill and what is missing.
+    the format's own place for extensions (`metadata`): the secrets and the hosts the skill needs. Verify with the
+    format's validator which values `metadata` takes; if only text, a list is one text with a fixed separator. A
+    `SKILL.md` stays valid for every harness. Fix the key names in the ADR.
+  - **The rules in `@opensoftware/factory-files`**, reported by `factory lint` and shown by the console: the file
+    exists, the front matter is valid, the name fits, the size stays inside the format's limits; an agent that uses a
+    skill declares a secret for each secret the skill needs and allows each host in its sandbox's egress. A finding
+    names the agent, the skill and what is missing.
   - **Skills of other repositories.** An agent's `skills` entry may name a folder of another Git repository at a ref
     (fix the form in the ADR, in line with `git+<url>#<ref>`). `factory plan` writes its commit and a hash of its
-    files to `factory.lock` (an added field: a minor version of the contract). The foreman fetches it at that commit
-    and refuses a reference without a pin, as it does for an MCP server of the registry (ADR 0112). `factory render`
-    links it for a person's checkout.
+    files to `factory.lock` (an added optional field; check with CONTRACT that it is no breaking change). The foreman
+    fetches it at that commit and refuses a reference without a pin, as it does for an MCP server of the registry
+    (ADR 0112). `factory render` links it for a person's checkout.
   - **The page `/skills`:** every skill the factory can use, from the folders of its repository and the pins of its
     lock: name, description, source with its commit, the agents that use it, and what it needs, with the state of
-    each secret from T-56. `/skills/<name>` shows the `SKILL.md` as rendered Markdown and its files, and one switch
-    per agent. A switch is a change of T-57. When the agent lacks a secret reference or a host that the skill needs,
-    the change adds them, and the page lists them before the person confirms.
-  - **This repository's own skills** pass the new rules of `factory lint`.
+    each secret from T-57. `/skills/<name>`, as approved in T-54, shows the `SKILL.md` as rendered Markdown and its
+    files, and one switch per agent. Both pages exist in every mode; the switches need a role and a factory on a
+    forge. A switch is a change of T-58. When the agent lacks a secret reference, its provider or a host that the
+    skill needs, the change adds them, and the page lists them before the person confirms.
+  - **This repository's own skills** pass the new rules.
 - **Adopt (check first):** the Agent Skills specification and its reference validator (`skills-ref`); how Claude
   Code, Codex and OpenCode read skills today (ADR 0112); the `skills` command line of Vercel and the plugin
   marketplaces as prior art for sources and pins; a Markdown renderer with a sanitizer.
@@ -1629,34 +1801,38 @@ console at a time (root `AGENTS.md`), so the console slices of T-52, T-55, T-56,
   - A host added to an agent's egress widens what the sandbox can reach. The pull request's text lists each added
     host and secret in plain words.
   - The page renders Markdown from a repository: sanitize it, no raw HTML, no script, no remote image.
-  - The foreman reads skill files as UTF-8 text (ADR 0112). A skill with a binary file fails `lint` until that
+  - The foreman reads skill files as UTF-8 text (ADR 0112). A skill with a binary file fails the rules until that
     changes.
-  - Two skills with one name, one local and one from another repository: `lint` refuses.
+  - Two skills with one name, one local and one from another repository: the rules refuse.
   - Not in this item: an editor for `SKILL.md` in the UI, and adding a skill of another repository from the UI. Both
     are changes in Git first.
-- **Realizes:** SCN-FACTORY-ROLE-002, SCN-FACTORY-CODE-001, the new CODE scenario of what a skill needs (T-51).
+- **Realizes:** the new ROLE scenario of the skill and the new CODE scenario of what a skill needs (T-51).
 - **First scenarios:** `lint` refuses a skill without a description; `lint` names the secret an agent lacks for its
   skill; `plan` pins a skill of another repository; the foreman refuses a skill without a pin; a run's agent finds a
   pinned skill in its session; the catalog lists each skill with its agents and its needs; a skill's page shows a
   missing secret; a factory engineer switches a skill on for an agent and the change lists the added secret and host;
-  the page's Markdown shows no script; enable a skill and see the change go live (journey).
+  the page's Markdown shows no script; switch a skill on and see the change go live (journey).
 - **Done when:** on the Compose profile, a factory engineer switches a skill on for one agent in the UI, an admin
   stores the secret it needs, and the agent's next run has the skill in its session and its request carries the
   secret.
 - **Slices:**
-  - [ ] The ADR; the format and its rules in `factory lint`; this repository's skills pass (`SCN-FSPEC`).
+  - [ ] The ADR; the format and its rules in the library and `factory lint`; this repository's skills pass (the
+    library's prefix, `SCN-FSPEC`).
   - [ ] Skills of other repositories: the entry's form, `factory.lock`, `plan`, `render` and the foreman
     (`SCN-CTR`, `SCN-FSPEC`, `SCN-FORE`).
   - [ ] The pages `/skills` and `/skills/<name>`, read-only (`SCN-CONSOLE`).
-  - [ ] The switch per agent as a change of T-57, with its journey (`SCN-CONSOLE`).
+  - [ ] The switch per agent as a change of T-58, with its journey (`SCN-CONSOLE`).
+  - [ ] One smoke scenario in `e2e/`: a skill switched on in the console and its stored secret reach a run
+    (`SCN-E2E`). After the releases above.
 
-### [ ] T-59 · the remaining pages in the new look (P2)
+### [ ] T-60 · the remaining pages in the new look (P2)
 
-- **Problem:** after T-55 the run page, the work form, the inbox, the factory pages, the improvement page and the
-  health page still have the old look, and the console carries two stacks.
-- **Build:** move one page per slice to Astro and the design system. A scenario keeps its text; its test moves to the
-  page reader (T-53) and proves no less. When the last page moved, remove Preact, htm and Pico CSS and the route
-  `/pico.css`; the route is part of the public surface, so its scenario becomes `deprecated` in the same change.
+- **Problem:** after T-56 the run page, the work form, the inbox, the factory pages and the improvement page still
+  have the old look, and the console carries two stacks.
+- **Build:** move one page per slice to Astro and the design system. A scenario keeps its text and its test proves
+  no less; a scenario whose text names what the move takes away is replaced with `@replaces`. When the last page
+  moved, remove Preact, htm and Pico CSS and the route `/pico.css`; the route is part of the public surface, so a
+  scenario that still names it becomes `deprecated` in the same change.
 - **Watch out:** a page that shows nothing useful for a setting that is not there stays out of the navigation, as
   today's 404 of the inbox without its repository. The reload of the runs every `CONSOLE_REFRESH` seconds stays until
   the foreman has a stream of run changes; a live island is its own item then.
@@ -1665,25 +1841,33 @@ console at a time (root `AGENTS.md`), so the console slices of T-52, T-55, T-56,
   - [ ] The run page with its forms.
   - [ ] The work form and the inbox.
   - [ ] The factory pages and the improvement page.
-  - [ ] The health page, if T-52 did not move it; then remove the old stack.
+  - [ ] Remove the old stack and the route `/pico.css`.
 
-### [ ] T-60 · the person, proven to every module (P2)
+### [ ] T-61 · the person, proven to every module (P2)
 
 - **Problem:** foreman, intake and gatekeeper trust the caller to name the person: anyone with a module's API token
   can act as any person (ADR 0118, "Revisit when"). With a sign-in of its own, the console can prove who acted.
 - **Build:** the console signs a short-lived token for the signed-in person, and each module checks it for an action
-  that names a person. The formats are in `contracts/`. Needed before a console is reachable from the internet.
+  that names a person. The formats are in `contracts/`. A team's own tool keeps the abilities
+  SCN-FACTORY-ACCESS-002 gives it: decide in the ADR how it names itself or proves a person, for example with a key
+  of its own that the modules know. Needed before a console is reachable from the internet.
+- **Adopt (check first):** signed JSON Web Tokens with `jose`, the keys published by the console; what the sign-in
+  proxies of T-56's list hand to an upstream.
+- **First scenarios:** an action with the console's token of the person is recorded with that person; a call with a
+  module's API token and a made-up person is refused; a token past its end is refused; a team's own tool acts as
+  itself.
 - **Done when:** a call with a module's API token and a made-up person is refused by foreman, intake and gatekeeper.
 - **Slices:**
-  - [ ] The ADR and the contract.
+  - [ ] The ADR and the contract (`SCN-CTR`).
   - [ ] The console signs; foreman, intake and gatekeeper check (one slice per module).
 
 ### Not in this wave
 
-Each needs its own item, a vision scenario first: a console on a public URL (TLS, rate limits); passkeys; changing
-`access.yaml` and adding a skill of another repository from the UI; the modules' own tokens and the inference
-gateway's provider keys in OpenBao; live updates of the runs without a reload; a command palette; a second approver
-for risky changes of the factory, as a policy of gatekeeper.
+Each needs its own item, a vision scenario first: a console on a public URL (TLS in the profile, rate limits);
+passkeys; changing `access.yaml` and adding a skill of another repository from the UI; the reference factory's own
+tokens, the modules' tokens and the inference gateway's provider keys in OpenBao; a console for several factories;
+live updates of the runs without a reload; a command palette; a second approver for risky changes of the factory, as a
+policy of gatekeeper.
 
 ---
 
