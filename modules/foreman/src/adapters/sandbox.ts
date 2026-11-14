@@ -1,8 +1,8 @@
 // A stage's sandbox through the sandbox port (ADR 0054, ADR 0068). The adapter is a program; the foreman creates a
 // sandbox from the spec, copies the run's folder in, runs the harness with exec, copies the folder out and destroys it.
-import { cpSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, posix } from "node:path";
+import { dirname, join, posix } from "node:path";
 import type { SandboxSpec } from "@opensoftware/contracts";
 import { adapterRun, lastLine } from "./program.ts";
 
@@ -13,6 +13,11 @@ export interface StageSandbox {
   exec(command: string[]): string[];
   /** Puts the files of the sandbox's folder in the run's folder. */
   copyOut(): Promise<void>;
+  /**
+   * Runs `command transcript <session ID>`, a harness adapter's, in the sandbox and copies the folder it wrote to
+   * `output`, so the session's run record leaves the sandbox before it is destroyed (ADR 0121).
+   */
+  transcript(command: string[], sessionId: string, output: string): Promise<void>;
   destroy(): Promise<void>;
 }
 
@@ -53,6 +58,14 @@ export async function createSandbox(
       } finally {
         rmSync(out, { recursive: true, force: true });
       }
+    },
+    async transcript(command, sessionId, output) {
+      // A folder of the working folder, beside the run's folder: the run's files stay as the agent left them.
+      const inside = `.osf-transcripts/${sessionId}`;
+      await run("exec", id, "--", "env", `OUTPUT=${inside}`, ...command, "transcript", sessionId);
+      rmSync(output, { recursive: true, force: true });
+      mkdirSync(dirname(output), { recursive: true });
+      await run("copy", `${id}:${inside}`, output);
     },
     destroy: async () => void (await run("destroy", id)),
   };

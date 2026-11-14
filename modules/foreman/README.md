@@ -514,8 +514,9 @@ spans join the run's trace. A receiver that refuses a span is a warning; the sta
 
 When a stage's turn ends, the foreman runs the harness adapter's `transcript <session ID>` (its command line up to
 `run`, with `OUTPUT` set to `OSF_DATA/transcripts/<session ID>`) and puts the run record's `gen_ai.usage.*` tokens and
-`osf.cost.usd` on the stage's span ([ADR 0121](../../docs/decisions/0121-stage-run-record-in-the-trace.md)). A stage in
-a sandbox has none yet: its session record stays in the sandbox. A transcript that fails is a warning. The run's view
+`osf.cost.usd` on the stage's span ([ADR 0121](../../docs/decisions/0121-stage-run-record-in-the-trace.md)). In a
+sandbox, the foreman runs `transcript` there through the sandbox adapter's `exec` before it destroys the sandbox and
+copies the folder it wrote out to the same `OSF_DATA/transcripts/<session ID>`. A transcript that fails is a warning. The run's view
 names each started stage's span as `spanId`, so the console links each stage to its span.
 
 ## Releases
@@ -724,3 +725,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-160 | implemented | A stage that waits for its checks publishes "run.blocked@v1" once, and the run that fails at a check publishes its reason |
 | SCN-FORE-161 | implemented | A stage whose checks succeeded at the first read publishes no "run.blocked@v1" |
 | SCN-FORE-162 | implemented | The foreman shows a doctor's ping that its consumer received |
+| SCN-FORE-163 | implemented | A sandboxed stage's span carries the tokens and cost of the session in its sandbox |
