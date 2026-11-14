@@ -5,7 +5,7 @@
 import { mkdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
-import { type BrowserContext, type Page as BrowserPage, type Browser as Chromium, chromium } from "playwright-core";
+import type { BrowserContext, Page as BrowserPage, Browser as Chromium } from "playwright-core";
 import { FIXED_DATE } from "../support/process.ts";
 
 /** The viewport sizes a UI test may use. */
@@ -34,9 +34,12 @@ export interface Browser {
 
 const LOOPBACK = new Set(["127.0.0.1", "localhost", "[::1]"]);
 let launched: Promise<Chromium> | undefined;
-/** The browser of this test process, started at its first use. Playwright stops it when the process ends. */
+/**
+ * The browser of this test process, started at its first use; Playwright loads only then, since most test processes
+ * open no browser. Playwright stops it when the process ends.
+ */
 const shared = (): Promise<Chromium> => {
-  launched ??= chromium.launch();
+  launched ??= import("playwright-core").then(({ chromium }) => chromium.launch());
   return launched;
 };
 
