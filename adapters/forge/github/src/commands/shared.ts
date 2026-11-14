@@ -20,6 +20,11 @@ export function count(text: string | undefined, min: number, hint: string): numb
 /** A pull request's number. */
 export const numberOf = (text: string | undefined) => count(text, 1, "name the pull request by its number, like 7");
 
+/** The path of a branch's ref in the Git Data API, `/git/refs/heads/<branch>`, with each part of its name encoded. */
+export function headRef(branch: string): string {
+  return `/git/refs/heads/${branch.split("/").map(encodeURIComponent).join("/")}`;
+}
+
 export function print(value: Record<string, unknown>): Outcome {
   return { lines: [JSON.stringify(value)] };
 }

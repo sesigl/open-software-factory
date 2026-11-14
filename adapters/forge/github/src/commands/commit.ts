@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import { check, type Outcome } from "@opensoftware/cli";
 import { GitHubError } from "../adapters/github.ts";
-import { connect, print } from "./shared.ts";
+import { connect, headRef, print } from "./shared.ts";
 
 /** The files of the command line: each `<path in the repository>=<local file>`, with the local file's text. */
 function filesOf(pairs: string[]): { path: string; content: string }[] {
@@ -25,7 +25,7 @@ export async function commit(
   check(branch, "name the branch, like commit tester/web fix --message 'Fix' factory.yaml=./factory.yaml");
   check(message, "give the commit a --message");
   const files = filesOf(pairs);
-  const ref = `/git/refs/heads/${(branch as string).split("/").map(encodeURIComponent).join("/")}`;
+  const ref = headRef(branch as string);
   const head = await api
     .request<{ object: { sha: string } }>("GET", ref.replace("/git/refs/", "/git/ref/"))
     .catch((error: unknown) => {

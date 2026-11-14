@@ -11,7 +11,7 @@ import {
   protection,
 } from "../domain/repository.ts";
 import type { PullJson } from "./branches.ts";
-import { connect, count, numberOf, print } from "./shared.ts";
+import { connect, count, headRef, numberOf, print } from "./shared.ts";
 
 /** GitHub computes whether a new pull request can merge in the background; pr asks again this long. */
 const COMPUTE_MS = 10_000;
@@ -193,7 +193,7 @@ export async function close(
   const api = connect(repo);
   const issue = numberOf(number);
   const closed = await api.request<PullJson>("PATCH", `/pulls/${issue}`, { state: "closed" });
-  if (deleteBranch) await api.request("DELETE", `/git/refs/heads/${encodeURIComponent(closed.head.ref)}`);
+  if (deleteBranch) await api.request("DELETE", headRef(closed.head.ref));
   return print({ number: closed.number, state: closed.merged ? "merged" : closed.state });
 }
 
