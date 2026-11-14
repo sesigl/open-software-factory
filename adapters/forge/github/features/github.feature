@@ -77,3 +77,10 @@ Feature: GitHub's own rules for the forge port
     Given the branch protection of "main" of "tester/web" requires the check "verify", and a ruleset requires the checks "factory" and "verify" and two approvals on "main"
     When the client runs "rules tester/web main"
     Then rules prints the checks "verify" and "factory" and the approvals 2
+
+  @id=SCN-FGITHUB-013 @status=implemented
+  Scenario: prs --limit reads the next page while the pages so far hold fewer pull requests of the prefix
+    Given 101 open pull requests in "tester/web", of which only the oldest is from a branch that starts with "observer/"
+    When the client runs "prs tester/web --head observer/ --limit 1"
+    Then prs prints that oldest pull request
+    And the client asked GitHub for two pages of the list of pull requests
