@@ -953,7 +953,7 @@ as a vision scenario. Each item names the place in the code, so start there, and
   - [x] A gate without a decision after the foreman's own limit ends as `expired`, also when the policy names none
     (`SCN-FORE-115`, `SCN-FORE-116`).
 
-### [ ] T-40 · a verify stage that runs no second implement session (P1)
+### [x] T-40 · a verify stage that runs no second implement session (P1)
 
 - **Problem:** the stage `verify` of the reference factory has `agent: implement`, because every stage runs an agent.
   After the checks passed, the implement agent runs again with the implement prompt: a second full session, which may
@@ -964,9 +964,9 @@ as a vision scenario. Each item names the place in the code, so start there, and
   - [x] An ADR: a stage without an agent, or an agent `verify` with a prompt of its own that changes no file
     ([ADR 0107](docs/decisions/0107-a-stage-that-only-waits.md): `wait: true`; `SCN-FSPEC-059` to `-062`,
     `SCN-FORE-117` to `-119`).
-  - [ ] The reference factory and the dogfood factory use it, and `ship` has the same `checks` (`SCN-DIST`, `SCN-FORE`).
-    `ship` has the checks `[verify]` and `evidence: required` in both (`SCN-DIST-029`, `-030`). `verify` switches to
-    `wait: true` after the release of contracts, factory-spec and foreman (`SCN-DIST-031`, `-032`, planned).
+  - [x] The reference factory and the dogfood factory use it, and `ship` has the same `checks` (`SCN-DIST`, `SCN-FORE`).
+    `ship` has the checks `[verify]` and `evidence: required` in both (`SCN-DIST-029`, `-030`). `verify` has
+    `wait: true` since the release of contracts 2.4.0, factory-spec 0.8.0 and foreman 0.10.0 (`SCN-DIST-031`, `-032`).
 
 ### [x] T-41 · one key and one budget per run (P1)
 

@@ -30,7 +30,8 @@ does not read the checks again (`TODO.md` T-40).
   `pr` reads the head commit, ADR 0069). This works with the released images and lands now.
 - The two factories switch `verify` to `wait: true` once a release of `contracts`, `factory-spec` and `foreman` carries
   this decision: the Compose profile and the chart run the released images (ADR 0095), whose `factory lint` refuses
-  an unknown field. Until then their scenario stays `planned`.
+  an unknown field. Until then their scenario stays `planned`. Done with the release of contracts 2.4.0,
+  factory-spec 0.8.0 and foreman 0.10.0 (`SCN-DIST-031`, `-032`).
 
 ## Options considered
 

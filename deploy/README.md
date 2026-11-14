@@ -139,9 +139,8 @@ The stage verify has `evidence: required`: it fails until a proof evidence bundl
 ([ADR 0088](../docs/decisions/0088-evidence-check.md)). Run proof in the target repository's CI after its tests,
 with [proof's GitHub Action](../modules/proof/README.md#github-action) on the JUnit or Playwright reports.
 
-The stage verify still runs the agent `implement` once more after its checks. Once the released foreman and
-factory-spec carry [ADR 0107](../docs/decisions/0107-a-stage-that-only-waits.md), it becomes `wait: true`: a stage that
-only waits for its checks and its evidence, with no model call.
+The stage verify has `wait: true` ([ADR 0107](../docs/decisions/0107-a-stage-that-only-waits.md)): it runs no agent
+and only waits for its checks and its evidence, with no model call and no new commit.
 
 ### A paid run of the reference factory
 
@@ -370,6 +369,6 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-028 | implemented | The reference factory asks for approval of the spec after the stage "spec" and before "implement" |
 | SCN-DIST-029 | implemented | The ship stage of the reference factory starts only when the checks "verify" and "proof" succeeded |
 | SCN-DIST-030 | implemented | The ship stage of this repository's factory starts only when the checks "verify" and "proof" succeeded |
-| SCN-DIST-031 | planned | The verify stage of the reference factory only waits and runs no agent |
-| SCN-DIST-032 | planned | The verify stage of this repository's factory only waits and runs no agent |
+| SCN-DIST-031 | implemented | The verify stage of the reference factory only waits and runs no agent |
+| SCN-DIST-032 | implemented | The verify stage of this repository's factory only waits and runs no agent |
 | SCN-DIST-033 | implemented | The chart takes a forge token without Slack, and asks on pull requests only |
