@@ -104,9 +104,12 @@ docs/vision/           factory-level requirements; source for module scenarios, 
   the scripted ACP agent from the testkit, or a real harness such as Claude Code against the scripted gateway
   (ADR 0052); models come from the scripted gateway, which fails on unscripted calls.
 - Outside systems in tests are fast stand-ins that the module cannot tell from the real system (ADR 0049): the
-  real system in memory or in process where one exists (PostgreSQL is PGlite), a small test-only stand-in in the
-  testkit where none exists and the real system is slow (Slack, the model gateway), a container otherwise. The
+  real system as a process on the host where a binary exists (NATS, Temporal), a small test-only stand-in in the
+  testkit where the real system is slow (Slack, the model gateway), a container otherwise (PostgreSQL, Forgejo). The
   module reaches each through its documented configuration; switching a stand-in changes only the testkit.
+- A fake that starts a server starts it once for the test process, and each scenario gets a part of it that no
+  other scenario sees: a database of PostgreSQL, a namespace of Temporal, a forge without repositories (ADR 0064,
+  ADR 0129). A test passes that part on to the module, like `temporal.namespace`.
 - A module that runs a port adapter as a program gets the built adapter of this repository with `sut.adapter`, so its
   tests prove the module and the adapter together against the same fakes (ADR 0060).
 - A sandbox adapter's tests run real sandboxes, since isolation is what they prove. The APIs and MCP servers a
@@ -144,6 +147,7 @@ Where the time went, and what each step changed:
 | ADR 0061 | Every mutant reran the whole suite: 25 minutes for one forge adapter change of 65 mutants | Each mutant reruns only the scenarios whose module processes ran it |
 | ADR 0084 | The nightly mutation run took one runner per unit, up to the 5-hour limit, and failed every night | Shards of about 600 lines, shortest scenarios first, no coverage during mutation; unchanged shards replay their reports |
 | ADR 0094 | A pull request started 17 test jobs, and the jobs of unchanged suites spent 1 to 2 minutes each to replay | One job plans the suites and replays the unchanged ones; only suites with work start a runner |
+| ADR 0129 | Each scenario started its own PGlite, about 1 s, and its own Temporal dev server | One PostgreSQL container and one Temporal dev server per test process; a database or a namespace per scenario |
 
 In October 2026 a full pull request run took about 4 minutes for `verify`. The longest suites were
 inference-litellm (each scenario starts LiteLLM and PostgreSQL), sandbox-kubernetes (kind) and the catch-all

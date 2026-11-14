@@ -4,7 +4,7 @@
 # cluster: kind, kind (kind with agent-sandbox), kind-images (the chart's images in kind), browser, timeout (minutes).
 - suite: testkit
   filter: "@opensoftware/testkit"
-  images: s3 forge
+  images: postgres s3 forge
   pull: curlimages/curl:8.17.0 nats:2.11.9-alpine node:24.11.1-bookworm-slim
   # sut.helm installs a chart on kind (ADR 0075).
   cluster: kind
@@ -28,8 +28,10 @@
   images: forge
 - suite: gatekeeper
   filter: "@opensoftware/gatekeeper"
+  images: postgres
 - suite: intake
   filter: "@opensoftware/intake"
+  images: postgres
 # Each scenario starts the Temporal dev server and runs the scripted harness behind harness-acp (ADR 0067).
 - suite: foreman
   filter: "@opensoftware/foreman"
@@ -77,3 +79,5 @@
 # Every other package, so a new module runs without a change here.
 - suite: rest
   filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper !@opensoftware/intake !@opensoftware/foreman !@opensoftware/sandbox-docker !@opensoftware/sandbox-kubernetes !@opensoftware/inference-litellm !@opensoftware/forge-forgejo !@opensoftware/deploy !@opensoftware/e2e"
+  # packages/postgres uses fakes.postgres (ADR 0129).
+  images: postgres

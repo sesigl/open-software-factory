@@ -53,8 +53,8 @@ is tested with this same testkit through its CLI or API.
 - Forbidden: imports from `src/`, database drivers, reading the module's data folder, environment variables that
   are not documented in the module's README, `sleep`, real time, real network, real models.
 - Outside systems are fakes from the testkit: a scripted model gateway, a scripted ACP harness, fake Slack,
-  a real Forgejo container as forge, PGlite in the test's process for Postgres (ADR 0049), containers for NATS
-  and S3.
+  a real Forgejo container as forge, a PostgreSQL container with a database for each scenario (ADR 0129), NATS and
+  Temporal as processes on the host, a container for S3.
 - Keep all state inside the scenario. Scenario files share a Vitest worker (ADR 0051), so a test never changes
   `process.env`, the working directory or a global of the test process.
 - Keep the scenario cheap: each mutant of a line it reaches reruns it (ADR 0061). Set state up through `$INPUT`

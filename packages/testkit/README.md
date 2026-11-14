@@ -194,16 +194,17 @@ Every server, client and subscription stops when the scenario ends, before the f
   reads `started()`, `keys()` (one per run), `revoked()` and `list()`.
   `started()` lists each gateway's ID and the text of its config, `keys()` each key with its `gateway`, `run` and
   `budget`, and `list()` the gateways that exist.
-- `fakes.postgres()`: PostgreSQL 18 for this scenario, as PGlite in the test's process behind a small
-  wire-protocol server, with no Docker ([ADR 0049](../../docs/decisions/0049-in-memory-stand-ins.md)). The module
-  connects to `postgres://test:test@127.0.0.1:<port>/test` with its own driver; a wrong password is refused with
-  SQLSTATE 28P01. Connections run one at a time: a transaction holds the database until it ends, so code must not
-  wait inside a transaction for a second connection of its own. `stop()` stops the database while the test runs:
-  open connections end, also one in the middle of a transaction, and new ones are refused, as when a server goes
-  away.
-- `fakes.nats()`, `fakes.temporal()`: NATS with JetStream and the Temporal CLI's dev server for this scenario, each
+- `fakes.postgres()`: a new, empty database for this scenario in PostgreSQL 17, a container that the test process
+  starts once ([ADR 0129](../../docs/decisions/0129-one-postgres-and-one-temporal-per-test-process.md)). Docker must
+  run. The module connects to `postgres://test:test@127.0.0.1:<port>/<database>` with its own driver; a wrong
+  password is refused with SQLSTATE 28P01. `stop()` stops the database while the test runs: open connections end,
+  also one in the middle of a transaction, and new ones are refused, as when a server goes away. The server keeps
+  running for the next scenario.
+- `fakes.nats()`, `fakes.temporal()`: NATS with JetStream and the Temporal CLI's dev server, each
   the real server as a process on the host with its data in a temporary folder, with no Docker
-  ([ADR 0067](../../docs/decisions/0067-foreman.md)). `make install` pins `nats-server` 2.11.9 and `temporal` 1.4.1 in
+  ([ADR 0067](../../docs/decisions/0067-foreman.md)). NATS starts for this scenario. The Temporal server starts once
+  for the test process, and each scenario gets a new `namespace` in it, which the test passes on to the module
+  ([ADR 0129](../../docs/decisions/0129-one-postgres-and-one-temporal-per-test-process.md)). `make install` pins `nats-server` 2.11.9 and `temporal` 1.4.1 in
   `.tools/bin`; on other platforms put the same versions on PATH. Each starts in about a second. Their ports come
   from 10000 to 19999 and a module's port from 20000 to 32767, so a service of a parallel scenario cannot take the port
   of a module that does not listen yet. A server that another process beats to a port, or that is not ready after
@@ -493,3 +494,5 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-149 | implemented | fakes.traceStore answers Jaeger's query of a trace with the span it received by OTLP, and keeps none with "keep: false" |
 | SCN-TK-150 | implemented | The fake sandbox's probe reports the denied host refused and removes its sandbox |
 | SCN-TK-151 | implemented | The fake sandbox's probe reports the scripted outcome "reached" |
+| SCN-TK-152 | implemented | fakes.postgres gives a later scenario the same PostgreSQL server and a database of its own |
+| SCN-TK-153 | implemented | fakes.temporal gives a later scenario the same Temporal server and a namespace of its own |

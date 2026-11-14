@@ -1,16 +1,12 @@
-// PostgreSQL in the test's process (ADR 0049): PGlite, the PostgreSQL server compiled to WebAssembly, behind a small
-// wire-protocol server, so that the module's own driver reaches it over TCP like a real server. No container, no
-// Docker. PGlite runs one session; this server lends it to one connection at a time, from the connection's first
-// message until PostgreSQL is idle again (ReadyForQuery "I"), so a transaction or an extended-protocol exchange
-// never mixes with another connection's messages. It asks for the password like a server with password
-// authentication and refuses a wrong one with SQLSTATE 28P01. A new database starts from a copy of an empty data
-// directory of the same PGlite version (@electric-sql/pglite-prepopulatedfs, ADR 0093): 0.6 s instead of 2.4 s.
-import { createServer, type Socket } from "node:net";
-import { PGlite } from "@electric-sql/pglite";
-import { dataDir } from "@electric-sql/pglite-prepopulatedfs";
+// PostgreSQL in a container (ADR 0129): the test process starts one server, and each scenario gets a new, empty
+// database in it. The scenario reaches its database through a relay on a port of its own, so that a test can stop
+// "its" PostgreSQL while the server keeps running for the next scenario.
+import { connect, createServer, type Socket } from "node:net";
+import { GenericContainer, type StartedTestContainer, Wait } from "testcontainers";
+import { IMAGES, runLabels } from "./services.ts";
 
 export interface Postgres {
-  /** `postgres://test:test@127.0.0.1:<port>/test` */
+  /** `postgres://test:test@127.0.0.1:<port>/<database>` */
   url: string;
   /** Stops the database while the test runs, as a server that goes away: open connections end, new ones are refused. */
   stop(): Promise<void>;
@@ -18,193 +14,70 @@ export interface Postgres {
 
 const USER = "test";
 const PASSWORD = "test";
-const SSL_REQUEST = 80877103;
-const CANCEL_REQUEST = 80877102;
 
+/**
+ * Started by the first scenario of this process that asks for PostgreSQL; Ryuk stops it when the process ends, or
+ * the mutation runner when the run of a mutant ends (runLabels).
+ */
+let running: Promise<StartedTestContainer> | undefined;
+let databases = 0;
+
+/** A new database in the PostgreSQL of this process, started on the first call. */
 export async function startPostgres(): Promise<{ postgres: Postgres; close(): Promise<string[]> }> {
-  const db = await PGlite.create({ loadDataDir: await dataDir() });
-  const session = new Session(db);
-  const sockets = new Set<Socket>();
-  const server = createServer((socket) => {
-    sockets.add(socket);
-    socket.on("close", () => sockets.delete(socket));
-    new Connection(socket, session).start();
+  running ??= startServer().catch((error: unknown) => {
+    running = undefined;
+    throw error;
   });
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
-  const address = server.address();
-  if (!address || typeof address === "string") throw new Error("fakes.postgres: the server has no TCP address");
-  // Once only: a test may stop the database, and the teardown closes it again.
-  let closing: Promise<void> | undefined;
-  const close = () =>
-    (closing ??= (async () => {
-      session.stop();
-      for (const socket of sockets) socket.destroy();
-      await new Promise<void>((resolve) => server.close(() => resolve()));
-      await session.idle();
-      await db.close();
-    })());
+  const container = await running;
+  const database = `scenario_${++databases}`;
+  const created = await container.exec(["createdb", "--username", USER, database]);
+  if (created.exitCode !== 0) throw new Error(`fakes.postgres could not create ${database}: ${created.output}`);
+  const relay = await startRelay(container.getHost(), container.getMappedPort(5432));
   return {
-    postgres: { url: `postgres://${USER}:${PASSWORD}@127.0.0.1:${address.port}/test`, stop: close },
+    postgres: { url: `postgres://${USER}:${PASSWORD}@127.0.0.1:${relay.port}/${database}`, stop: relay.close },
     async close() {
-      await close();
+      await relay.close();
       return [];
     },
   };
 }
 
-/** The one PGlite session, lent to one connection at a time. */
-class Session {
-  private holder: Connection | undefined;
-  private waiting: (() => void)[] = [];
-  private running = Promise.resolve();
-  private stopped = false;
-  private readonly db: PGlite;
-
-  constructor(db: PGlite) {
-    this.db = db;
-  }
-
-  /** Sends one message for `owner`, waiting for the session first; keeps the session while it is not idle. */
-  async send(owner: Connection, message: Uint8Array): Promise<Uint8Array> {
-    while (this.holder && this.holder !== owner) await new Promise<void>((resolve) => this.waiting.push(resolve));
-    this.holder = owner;
-    const reply = this.db.execProtocolRaw(message);
-    this.running = reply.then(
-      () => undefined,
-      () => undefined,
-    );
-    const answer = await reply;
-    if (readyStatus(answer) === "I") this.release(owner);
-    return answer;
-  }
-
-  /** Ends what a closed connection left open, then lends the session to the next one. */
-  async drop(owner: Connection): Promise<void> {
-    if (this.holder !== owner) return;
-    await this.running;
-    // The connections of a stopped database close after the database: nothing is left to end.
-    if (!this.stopped && this.db.isInTransaction()) await this.db.exec("ROLLBACK");
-    this.release(owner);
-  }
-
-  idle(): Promise<void> {
-    return this.running;
-  }
-
-  /** The database stops: connections that close from now on leave nothing to end. */
-  stop(): void {
-    this.stopped = true;
-  }
-
-  private release(owner: Connection): void {
-    if (this.holder !== owner) return;
-    this.holder = undefined;
-    for (const wake of this.waiting.splice(0)) wake();
-  }
+function startServer(): Promise<StartedTestContainer> {
+  return (
+    new GenericContainer(IMAGES.postgres)
+      .withLabels(runLabels())
+      // "password" asks for the password as text, which a test can send without a PostgreSQL client.
+      .withEnvironment({ POSTGRES_USER: USER, POSTGRES_PASSWORD: PASSWORD, POSTGRES_HOST_AUTH_METHOD: "password" })
+      // The data lives in memory: nothing of a test run is kept.
+      .withTmpFs({ "/var/lib/postgresql/data": "rw" })
+      .withExposedPorts(5432)
+      // The image starts PostgreSQL once to create the user, and then again for clients.
+      .withWaitStrategy(Wait.forLogMessage("database system is ready to accept connections", 2))
+      .start()
+  );
 }
 
-/** One client connection: startup, password, then messages passed to the session. */
-class Connection {
-  private buffer = Buffer.alloc(0);
-  private state: "startup" | "password" | "ready" = "startup";
-  private startup: Buffer | undefined;
-  private user = "";
-  private queue = Promise.resolve();
-  private readonly socket: Socket;
-  private readonly session: Session;
-
-  constructor(socket: Socket, session: Session) {
-    this.socket = socket;
-    this.session = session;
-  }
-
-  start(): void {
-    this.socket.setNoDelay(true);
-    this.socket.on("data", (data) => {
-      this.buffer = Buffer.concat([this.buffer, data]);
-      this.queue = this.queue
-        .then(() => this.drain())
-        .catch(() => {
-          this.socket.destroy();
-        });
-    });
-    this.socket.on("error", () => undefined);
-    this.socket.on("close", () => {
-      this.queue = this.queue.then(() => this.session.drop(this));
-    });
-  }
-
-  private async drain(): Promise<void> {
-    for (;;) {
-      const message = this.next();
-      if (!message) return;
-      await this.handle(message);
+/** Passes each connection on 127.0.0.1:<port> to the server, until `close` ends them all and frees the port. */
+async function startRelay(host: string, port: number): Promise<{ port: number; close(): Promise<void> }> {
+  const sockets = new Set<Socket>();
+  const server = createServer((client) => {
+    const upstream = connect(port, host);
+    for (const socket of [client, upstream]) {
+      sockets.add(socket);
+      socket.on("error", () => undefined);
+      socket.on("close", () => sockets.delete(socket));
     }
-  }
-
-  /** The next whole message: without a type byte during startup, with one afterwards. */
-  private next(): Buffer | undefined {
-    const typed = this.state !== "startup";
-    const header = typed ? 5 : 4;
-    if (this.buffer.length < header) return undefined;
-    const length = this.buffer.readInt32BE(typed ? 1 : 0) + (typed ? 1 : 0);
-    if (this.buffer.length < length) return undefined;
-    const message = this.buffer.subarray(0, length);
-    this.buffer = this.buffer.subarray(length);
-    return message;
-  }
-
-  private async handle(message: Buffer): Promise<void> {
-    if (this.state === "startup") {
-      const code = message.readInt32BE(4);
-      if (code === SSL_REQUEST) return void this.socket.write("N");
-      if (code === CANCEL_REQUEST) return void this.socket.end();
-      this.startup = Buffer.from(message);
-      this.user = parameters(message.subarray(8)).get("user") ?? "";
-      this.state = "password";
-      return void this.socket.write(Buffer.from([0x52, 0, 0, 0, 8, 0, 0, 0, 3]));
-    }
-    if (this.state === "password") {
-      const password = message.subarray(5, message.length - 1).toString("utf8");
-      if (message[0] !== 0x70 || this.user !== USER || password !== PASSWORD) {
-        this.socket.end(failure(`password authentication failed for user "${this.user}"`));
-        return;
-      }
-      this.state = "ready";
-      this.socket.write(await this.session.send(this, this.startup as Buffer));
-      return;
-    }
-    if (message[0] === 0x58) return void this.socket.end();
-    const answer = await this.session.send(this, message);
-    if (this.socket.writable) this.socket.write(answer);
-  }
-}
-
-/** The transaction status of the last ReadyForQuery in a reply: "I" idle, "T" in a transaction, "E" failed. */
-function readyStatus(reply: Uint8Array): string | undefined {
-  let status: string | undefined;
-  for (let at = 0; at + 5 <= reply.length; ) {
-    const length = new DataView(reply.buffer, reply.byteOffset + at + 1, 4).getInt32(0);
-    if (reply[at] === 0x5a) status = String.fromCharCode(reply[at + 5] ?? 0);
-    at += length + 1;
-  }
-  return status;
-}
-
-/** The name and value pairs of a startup message. */
-function parameters(body: Buffer): Map<string, string> {
-  const parts = body.toString("utf8").split("\0");
-  const out = new Map<string, string>();
-  for (let index = 0; index + 1 < parts.length; index += 2)
-    if (parts[index]) out.set(parts[index] as string, parts[index + 1] as string);
-  return out;
-}
-
-/** A fatal ErrorResponse for a refused password. */
-function failure(text: string): Buffer {
-  const fields = Buffer.from(`SFATAL\0VFATAL\0C28P01\0M${text}\0\0`, "utf8");
-  const header = Buffer.alloc(5);
-  header[0] = 0x45;
-  header.writeInt32BE(fields.length + 4, 1);
-  return Buffer.concat([header, fields]);
+    client.pipe(upstream).pipe(client);
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  if (!address || typeof address === "string") throw new Error("fakes.postgres: the relay has no TCP address");
+  // Once only: a test may stop the database, and the teardown closes it again.
+  let closing: Promise<void> | undefined;
+  const close = () =>
+    (closing ??= new Promise<void>((resolve) => {
+      for (const socket of sockets) socket.destroy();
+      server.close(() => resolve());
+    }));
+  return { port: address.port, close };
 }
