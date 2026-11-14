@@ -123,7 +123,7 @@ docs/vision/           factory-level requirements; source for module scenarios, 
   tests prove the module and the adapter together against the same fakes (ADR 0060).
 - A sandbox adapter's tests run real sandboxes, since isolation is what they prove. The APIs and MCP servers a
   sandbox calls are `fakes.http(routes, { containers: true })`, which the sandbox reaches at `host.docker.internal`
-  through its egress proxy (ADR 0054). The kubernetes adapter's tests run on kind with agent-sandbox in CI; the egress
+  through its egress proxy (ADR 0054), and its OpenBao is `fakes.openbao({ containers: true })` there too (ADR 0139). The kubernetes adapter's tests run on kind with agent-sandbox in CI; the egress
   pod reaches the runner as `host.docker.internal` through `OSF_SANDBOX_HOST_ALIASES` (ADR 0055).
 - A scenario of an adapter without a command line, which the foreman runs with `npx` at the factory's range, puts a
   script named `npx` first on `PATH` that logs its arguments and runs the fake adapter, so no package is downloaded

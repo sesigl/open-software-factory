@@ -38,9 +38,11 @@ The spec is the format `sandbox-spec` in [contracts](../../contracts/README.md):
 - Every request that leaves the sandbox passes its egress proxy. The proxy refuses hosts outside `egress` and the
   MCP servers' hosts, and a request around the proxy does not leave the sandbox.
 - The sandbox holds a placeholder for each secret, never the real value. The proxy puts the real value in on the way
-  out, for the hosts of `egress`, also in git's Basic credentials `x-access-token:<placeholder>`, so git and `gh` can
-  clone and push with the placeholder as their token (ADR 0096). Secret references follow the
-  [secrets port](../secrets/README.md).
+  out, for the hosts of `egress`, in any header and also inside git's Basic credentials `<user>:<placeholder>`, so git
+  and `gh` clone and push with the placeholder as their token, whatever the secret's provider
+  ([ADR 0139](../../docs/decisions/0139-git-basic-form-value-timing-and-the-check-before-a-stage.md)). Secret references follow the [secrets port](../secrets/README.md).
+- A secret from OpenBao reaches a sandbox at its first request to an allowed host and keeps that value until the
+  sandbox ends: a new value reaches the sandboxes that start after it is stored (SCN-SANDBOX-029).
 - A call to an MCP server that the spec does not declare, or to a tool it does not list, is refused and logged.
 - `destroy` removes the sandbox's files.
 
@@ -50,7 +52,8 @@ The shared behavior is the `@conformance` scenarios in [`features/`](features/sa
 `SCN-SANDBOX`), with the secret providers in [`features/secrets.feature`](features/secrets.feature). Every adapter in `adapters/sandbox/<name>/` has one system test per scenario; what only one adapter
 does is in its own `features/` folder. A community adapter shows conformance with
 `testkit conformance <its copy of this features folder> --junit report.xml`. The scenarios' APIs and MCP servers are
-`fakes.http(routes, { containers: true })` at `host.docker.internal`. What every adapter shares, the spec, the
+`fakes.http(routes, { containers: true })` at `host.docker.internal`; OpenBao is `fakes.openbao({ containers: true })`,
+the real server, except in the scenarios whose steps name the request OpenBao received. What every adapter shares, the spec, the
 secrets, iron-proxy's configuration and the egress log, is the library
 [`@opensoftware/sandbox-egress`](../../packages/sandbox-egress/README.md) (ADR 0055).
 

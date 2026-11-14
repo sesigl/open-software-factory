@@ -74,8 +74,8 @@ reports `0.54.0`, and its source at the tag `v0.54.0`):
   - A secret without a value fails the stage before its first turn, with the reason
     `the secret "ref:openbao/<name>" has no value; store it and run again`.
   - An adapter that fails (the store does not answer, refuses the token) fails the stage with the reason
-    `the secrets adapter "<provider>" failed: <its error>`: a run that cannot be checked does not start a stage that
-    may not work.
+    `the secrets adapter's exists failed: <its error>`, as the foreman words every adapter's failure: a stage whose
+    secrets cannot be checked does not start.
   - Either is a fact of the run, not an error of the activity, so Temporal does not try the stage again; a person
     runs the run again after storing the value (ADR 0105). The run's view shows the reason in the stage's `reason`,
     which the contract already has. A stage without a sandbox gets no secrets (ADR 0068) and is not checked.

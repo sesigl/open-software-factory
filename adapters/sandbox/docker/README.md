@@ -48,9 +48,10 @@ npx @opensoftware/sandbox-docker destroy "$id"
 - **The egress allowlist.** The proxy refuses with HTTP 403 every host that is neither in `egress` nor the host of a
   declared MCP server. It maps `host.docker.internal` to the Docker host, as Docker Desktop does.
 - **Secrets.** Each secret's variable holds `osf-secret-placeholder-<NAME>` in the sandbox. The proxy swaps it in any
-  request header for the real value, for the hosts of `egress` only. It also swaps git's Basic form, base64 of `x-access-token:<placeholder>`, in the header
-  `Authorization`, so git and `gh` clone and push with the placeholder as their token; a secret from OpenBao has no
-  Basic form (ADR 0096). `ref:file/<name>` is the file `<name>` in
+  request header for the real value, for the hosts of `egress` only, also inside git's Basic credentials in the header
+  `Authorization`, so git and `gh` clone and push with the placeholder as their token, for a secret of any provider
+  ([ADR 0139](../../../docs/decisions/0139-git-basic-form-value-timing-and-the-check-before-a-stage.md)). A secret from OpenBao is read at the sandbox's first request to an allowed host and kept
+  until the sandbox ends. `ref:file/<name>` is the file `<name>` in
   `OSF_SECRETS_DIR`; the Docker CLI copies it into the proxy, and the adapter never reads it. `ref:env/<NAME>` is the
   adapter's variable `OSF_SECRET_<NAME>`, which the Docker CLI hands to the proxy only. `ref:openbao/<path>` is read
   by the proxy from OpenBao with `OSF_OPENBAO_ADDR` and `OSF_OPENBAO_TOKEN` (ADR 0055). Other providers, a missing

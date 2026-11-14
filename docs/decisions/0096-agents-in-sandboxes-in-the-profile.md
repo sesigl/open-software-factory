@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; the Basic files of git's credentials removed by 0139
 date: 2026-11-09
 ---
 
