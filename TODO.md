@@ -1158,13 +1158,11 @@ owner before each slice: which model or service, and its budget.
   - [ ] codex (from T-12): a SMOKE-PAID run of harness-codex, weekly on OpenRouter's Responses API with
     `deepseek/deepseek-v4.1-flash-1017`; harness-codex adds a model Codex does not know to its model catalog, so Codex
     offers it apply_patch (`SCN-HCODEX-012`, ADR 0077). Open: done when a run of `weekly-paid.yml` passes for codex.
-  - [ ] reference factory and foreman (from T-27, T-17): a first run of the reference factory on a sample
-    repository, with a paid model. The workflow `paid-reference-run.yml` exists (ADR 0128): a maintainer or an admin starts it with
-    `gh workflow run paid-reference-run.yml -f ref=<branch>`; the implement stage on opencode implements an issue of a
-    tiny sample repository in a Forgejo of the job, with `deepseek/deepseek-v4.1-flash-1017` and a budget of 0.50 USD.
-    It is also the foreman slice (from T-17): the foreman with a real harness and model, opencode and
-    `deepseek/deepseek-v4.1-flash-1017`. Done when a maintainer's run of it opens the pull request on the sample
-    repository.
+  - [x] reference factory and foreman (from T-27, T-17): the reference factory on a sample repository, with a paid
+    model. A maintainer starts `paid-reference-run.yml` (ADR 0128) with `gh workflow run paid-reference-run.yml -f
+    ref=<branch>`; the foreman runs the implement stage on opencode with `deepseek/deepseek-v4.1-flash-1017` through
+    LiteLLM (budget 0.50 USD) on an issue of a tiny sample repository in a Forgejo of the job. Done: run 43596073836
+    opened the sample's pull request with `add(a, b)` and its test.
 
 ---
 
