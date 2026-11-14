@@ -13,7 +13,9 @@ teams. Decisions: [ADR 0074](../docs/decisions/0074-compose-profile.md),
 
 ## Quick start
 
-You need Docker with Compose 2.24 or later.
+You need Docker with Compose 2.24 or later. [Your first factory run](../docs/tutorials/first-run.md) does the same
+with `osf init`, `osf up` and `osf doctor`, which generate the factory's own secrets and check `.env` before
+Compose starts.
 
 ```sh
 cd deploy/compose

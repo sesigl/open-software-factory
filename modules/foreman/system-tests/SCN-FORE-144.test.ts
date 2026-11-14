@@ -6,10 +6,18 @@ scenario("SCN-FORE-144", async ({ sut, fakes, given, when, then }) => {
   await given(
     'the server completed the runs of the README\'s "work.json" and of the work item "Import reports from CSV"',
     async () => {
-      server = await serving(sut, fakes, { turns: [...endingTurns, ...endingTurns] });
-      for (const work of [readmeWork(fakes), otherWork(fakes)]) {
+      server = await serving(sut, fakes, { turns: [...endingTurns, ...endingTurns], nats: true });
+      const events = await sut.events.watch(server.nats as NonNullable<typeof server.nats>, "osf.run.>");
+      // Temporal lists the runs that ended by the time they closed. A run closes after it published
+      // run.completed@v1, which follows the view's "complete", so the next run starts only after that event.
+      for (const [at, work] of [readmeWork(fakes), otherWork(fakes)].entries()) {
         const runId = (await server.start(work)).data?.runId as string;
         await server.until(runId, "complete");
+        await expect
+          .poll(async () => (await events.received("run.completed@v1", { timeoutMs: WAIT_MS })).length, {
+            timeout: WAIT_MS,
+          })
+          .toBeGreaterThan(at);
       }
       // Temporal's visibility shows a run a moment after it started.
       await expect

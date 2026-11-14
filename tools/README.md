@@ -37,7 +37,13 @@ make verify      # everything: lint, types, all system tests, all checks
 | `osf bundle <package>` | the package's `build` script, through `tools/bin/bundle.ts`, which loads only the bundler, so that a publish job that builds one package needs no other built package | Build a CLI package as one bundled file (ADR 0079): `src/cli.ts` becomes `dist/main.js` with a source map to the sources, `dist/cli.js` turns on Node's compile cache and imports it, and `dist/THIRD-PARTY-NOTICES.md` lists the name, version, license and license text of every package in the bundle. It fails on an import that the bundle cannot hold and on a bundled package without a license. |
 | `osf next-id <module>` | `make next-id MODULE=x` | Print the next free scenario ID of a module or prefix. |
 | `osf test-scenario <ID>` | `make test-scenario ID=…` | Run the one system test of a scenario. |
+| `osf init [--factory <dir>]` | none | Write `deploy/compose/.env` from `.env.example`: each empty `*_PASSWORD`, `*_API_TOKEN` and `*_MASTER_KEY` gets 32 random bytes in hex after the example's prefix, like `sk-`; every other value stays empty for the team. An existing `.env` is kept. `--factory <dir>` copies the reference factory `deploy/compose/factory/` to `<dir>` and points `FACTORY_DIR` at it. Prints the empty values and the groups file to fill next (ADR 0119). |
+| `osf up [ARG ...]` | none | Refuse a missing `.env`, an empty value that `compose.yaml` requires with `${NAME:?...}`, and gatekeeper without the three Slack values or `GATEKEEPER_FORGE_TOKEN`; then run `docker compose up --detach --wait [ARG ...]` in `deploy/compose/` and exit with its code. |
+| `osf doctor` | none | Run `docker compose run --rm console console doctor` in `deploy/compose/` and exit with its code. |
 | `osf install-tools` | `make install` | Download the checksum-pinned lychee, oasdiff, opa, temporal, nats-server, helm, kubectl and kind, and the agent-sandbox manifest `agent-sandbox.yaml`, into `.tools/bin/`. When github.com fails to send a release file, it comes through the GitHub API, with `GITHUB_TOKEN` when it is set; CI sets it. |
+
+`osf init`, `osf up` and `osf doctor` load only Node's own modules: on a fresh clone they need Node 24 and Docker,
+not `make install`. [The first run](../docs/tutorials/first-run.md) walks through them.
 
 `make run-record` builds `modules/runlog` and runs `runlog export --latest --per-run` with `OUTPUT=runs` on the
 Claude Code project folder of this checkout, below `CLAUDE_CONFIG_DIR` when it is set and `~/.claude` when not, and
@@ -108,6 +114,7 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | --- | --- |
 | `OSF_BASE` | Git ref to compare with for DOCS-AFFECTED, REACH, CONTRACT (only without a `contracts-v*` tag in HEAD's history) and the dependency rule of ADR. `make` uses the merge base with `origin/main`. Without it, these comparisons print `skipped` and `osf check --all` (so `make verify`) fails. |
 | `OSF_PR_BODY` | File with the pull request description. DOCS-AFFECTED accepts `docs-reviewed: <path>` lines in it. CI passes the description of the pull request, and for a push to `main` the description of the merged pull request. |
+| `OSF_DOCKER` | The docker command of `osf up` and `osf doctor`. Default `docker`. |
 | `OSF_JUNIT_DIR` | Folder with JUnit XML results for FLAKE and BUDGET. Default `reports/junit`. spec-trace reads the `junit` folder of `spec-trace.json`. |
 
 ## Scenarios
@@ -245,3 +252,9 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-129 | implemented | VISION rejects an implemented vision scenario with a planned realizing scenario or none |
 | SCN-REPO-130 | implemented | VISION accepts status lines that follow the realizing scenarios and ignores deprecated ones |
 | SCN-REPO-131 | implemented | TODO rejects an open item whose slices are all ticked |
+| SCN-REPO-132 | implemented | osf init writes .env with the factory's own secrets generated and the other values empty |
+| SCN-REPO-133 | implemented | osf init keeps an existing .env |
+| SCN-REPO-134 | implemented | osf init --factory copies the reference factory and points FACTORY_DIR at it |
+| SCN-REPO-135 | implemented | osf up refuses a missing .env, an empty required value and gatekeeper without a channel |
+| SCN-REPO-136 | implemented | osf up starts the Compose profile and waits until it is healthy |
+| SCN-REPO-137 | implemented | osf doctor runs console doctor in the profile and exits with its code |

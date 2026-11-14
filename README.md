@@ -13,8 +13,9 @@ open-source project already exists, the factory adopts it and builds only the ad
 
 ## Run a factory
 
-Install Docker with Compose, then follow the [quick start](deploy/README.md#quick-start): copy `.env.example`, put
-your people in `groups.json` and run `docker compose up` in `deploy/compose/`. `console doctor` names what is missing.
+Install Docker with Compose and Node 24, then follow [your first factory run](docs/tutorials/first-run.md):
+`node tools/bin/osf.ts init` writes `deploy/compose/.env`, `osf up` starts the factory and `osf doctor` names what is
+missing. The [quick start](deploy/README.md#quick-start) shows the same with plain `docker compose` commands.
 On Kubernetes, the [Helm chart](deploy/README.md#helm-chart) installs the same factory.
 
 ## Start here

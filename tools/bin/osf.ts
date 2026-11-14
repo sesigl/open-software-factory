@@ -27,6 +27,9 @@ const USAGE = `Usage: osf <command>
                           the shards of a mutation run as JSON: changed lines since OSF_BASE, or every line
   mutation-merge <plan> <folder>
                           join the shard reports of each unit of a plan into its mutant results for the next push
+  init [--factory <dir>]  write deploy/compose/.env with the factory's own secrets; copy the reference factory (ADR 0119)
+  up [ARG ...]            check deploy/compose/.env, then docker compose up --detach --wait in deploy/compose
+  doctor                  docker compose run --rm console console doctor in deploy/compose
   install-tools           download the pinned lychee, oasdiff, opa, temporal and nats-server binaries into .tools/bin
 `;
 
@@ -73,6 +76,12 @@ async function main(argv: string[]): Promise<number> {
       return (await import("../scaffold/mutation-plan.ts")).mutationPlan(root, args);
     case "mutation-merge":
       return (await import("../scaffold/mutation-merge.ts")).mutationMerge(root, args);
+    case "init":
+      return (await import("../scaffold/setup.ts")).init(root, args);
+    case "up":
+      return (await import("../scaffold/setup.ts")).up(root, args);
+    case "doctor":
+      return (await import("../scaffold/setup.ts")).doctor(root);
     case "install-tools":
       return (await import("../scaffold/install-tools.ts")).installTools(root);
     case undefined:
