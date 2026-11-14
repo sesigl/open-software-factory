@@ -1542,7 +1542,8 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
     puts its own TLS proxy in front and sets the address to its `https://` URL.
   - **The person in every action** stays `by: { kind: "person", id: <email> }` (ADR 0118), so the members of
     gatekeeper's groups file match the same emails.
-  - **The sign-in page.** The first screen of the product, as in `docs/design/sign-in.html`: the icon, the name, one button per
+  - **The sign-in page.** The first screen of the product, as in `docs/design/sign-in.html`: the icon, the name, one
+    button per
     provider. A refused person reads why in plain words ("ada@acme.dev is not on this factory's access list") and
     where the list lives.
   - **The shell.** The layout of every new page, as in `docs/design/runs.html` and, on a phone,
