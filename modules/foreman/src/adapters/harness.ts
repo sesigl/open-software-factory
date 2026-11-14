@@ -4,9 +4,12 @@
 // sandbox adapter's exec (ADR 0068). The foreman keeps what the agent wrote, to find the run's pull request in it
 // (ADR 0069).
 import { spawn } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { Readable, Writable } from "node:stream";
 import { client, ndJsonStream, PROTOCOL_VERSION } from "@agentclientprotocol/sdk";
 import type { SessionMcpServer } from "../domain/tools.ts";
+import { adapterRun } from "./program.ts";
 
 export interface HarnessTurn {
   sessionId: string;
@@ -99,4 +102,21 @@ export async function startTurn(options: TurnOptions): Promise<HarnessTurn> {
     await close();
     throw error;
   }
+}
+
+/**
+ * The span of the session's run record, from the harness port's `transcript <session ID>` (ADR 0121): the adapter's
+ * command line up to its `run`, with `OUTPUT` set to `output`, where it writes `run-record.json`.
+ */
+export async function sessionRecord(
+  command: string[],
+  sessionId: string,
+  env: Record<string, string | undefined>,
+  output: string,
+): Promise<Record<string, unknown>> {
+  await adapterRun("harness", command.slice(0, command.indexOf("run")), { ...env, OUTPUT: output })(
+    "transcript",
+    sessionId,
+  );
+  return (JSON.parse(readFileSync(join(output, "run-record.json"), "utf8")) as { span: Record<string, unknown> }).span;
 }

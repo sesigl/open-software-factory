@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { Context } from "@temporalio/activity";
 import { pullRequestChecks, pullRequestsOf } from "../adapters/forge.ts";
 import type { Gatekeeper } from "../adapters/gatekeeper.ts";
-import { type HarnessTurn, startTurn } from "../adapters/harness.ts";
+import { type HarnessTurn, sessionRecord, startTurn } from "../adapters/harness.ts";
 import { type Gateway, hasKey } from "../adapters/inference.ts";
 import { type Bus, SUBJECTS } from "../adapters/nats.ts";
 import type { Exporter } from "../adapters/otlp.ts";
@@ -39,7 +39,7 @@ import {
   stagePullRequest,
   type Waits,
 } from "../domain/run.ts";
-import { type Outcome, otlpOf, outcomeOf, type SpanFacts, traceparentOf } from "../domain/trace.ts";
+import { type Outcome, otlpOf, outcomeOf, type SpanFacts, traceparentOf, usageOf } from "../domain/trace.ts";
 
 export interface ActivityDeps {
   now(): string;
@@ -114,6 +114,19 @@ export function activities(deps: ActivityDeps) {
   const trace = async (span: SpanFacts): Promise<void> => {
     if (!deps.traces) return;
     await deps.traces.send(otlpOf(span)).catch((failure: Error) => deps.warn(`the run's trace: ${failure.message}`));
+  };
+
+  /**
+   * The tokens and the cost of the stage's session, from the harness's transcript, for the stage's span (ADR 0121);
+   * none without a receiver, without a session, or in a sandbox, whose harness keeps its session record inside.
+   */
+  const usage = async (harness: string[], harnessEnv: Record<string, string | undefined>, sessionId?: string) => {
+    if (!deps.traces || !sessionId) return {};
+    const output = join(deps.data, "transcripts", sessionId);
+    return sessionRecord(harness, sessionId, harnessEnv, output).then(usageOf, (failure: Error) => {
+      deps.warn(`the stage's run record: ${failure.message}`);
+      return {};
+    });
   };
   /**
    * Each run's key of the gateway, asked once per run while this worker lives; never in Temporal's history. The port
@@ -296,6 +309,12 @@ export function activities(deps: ActivityDeps) {
         // The harness's spans join the run's trace below the stage's span (ADR 0087).
         TRACEPARENT: traceparentOf(view.runId, index),
       };
+      const harnessEnv = {
+        ...deps.env,
+        OSF_DATA: join(deps.data, "harness", plan.harness),
+        OTEL_RESOURCE_ATTRIBUTES: resource,
+        ...agentEnv,
+      };
       let outcome: Outcome = "failed";
       let sessionId: string | undefined;
       const sandbox = plan.sandbox
@@ -322,19 +341,7 @@ export function activities(deps: ActivityDeps) {
         const turn = await startTurn(
           sandbox
             ? { command: sandbox.exec(harness), cwd, folder: await sandbox.copyIn(), env: deps.env, prompt, mcpServers }
-            : {
-                command: harness,
-                cwd,
-                folder: cwd,
-                env: {
-                  ...deps.env,
-                  OSF_DATA: join(deps.data, "harness", plan.harness),
-                  OTEL_RESOURCE_ATTRIBUTES: resource,
-                  ...agentEnv,
-                },
-                prompt,
-                mcpServers,
-              },
+            : { command: harness, cwd, folder: cwd, env: harnessEnv, prompt, mcpServers },
         );
         sessionId = turn.sessionId;
         const { stopReason, takenOver } = await untilDone(turn, view.runId, index, steered);
@@ -369,6 +376,8 @@ export function activities(deps: ActivityDeps) {
             "gen_ai.request.model": plan.model,
             "osf.effort": plan.effort,
             "gen_ai.conversation.id": sessionId,
+            // The session's run record joins the stage's span (ADR 0121).
+            ...(await usage(harness, harnessEnv, sandbox ? undefined : sessionId)),
           },
         });
       }

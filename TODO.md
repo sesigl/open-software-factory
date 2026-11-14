@@ -780,7 +780,7 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
     rights only in the sandboxes' own namespace, and agent-sandbox as a documented prerequisite (ADR 0097,
     `SCN-DIST-022`, `SCN-TK-137`).
 
-### [ ] T-24 · a record of every factory run (P0)
+### [x] T-24 · a record of every factory run (P0)
 
 - **Problem:** the improvement path sees a factory run only when someone exports its session by hand (P6).
 - **Done when:** the foreman gives each stage a `TRACEPARENT` and exports the stage's session with runlog to the trace
@@ -788,8 +788,9 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
 - **Slices:**
   - [x] With `OTEL_EXPORTER_OTLP_ENDPOINT`, one trace per run: a span per stage and one for the run, and the stage's
     `TRACEPARENT` for its harness (ADR 0087, `SCN-FORE-076`, `-077`, `SCN-TK-133`).
-  - [ ] After each stage, the session's run record (tokens, cost) joins the stage span through `runlog attach` or the
-    harness's `transcript`.
+  - [x] After each stage, the session's run record (tokens, cost) joins the stage span through the harness's
+    `transcript`, the run's view names each stage's span, and the console links each stage to it with `CONSOLE_SPAN_URL`
+    (ADR 0121, `SCN-FORE-155`, `SCN-CONSOLE-070`).
   - [x] The profile sets the endpoint to its trace store, Jaeger (ADR 0100; Phoenix before it), and the console links
     each run to its trace.
 

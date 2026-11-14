@@ -155,7 +155,8 @@ Every server, client and subscription stops when the scenario ends, before the f
   The agent also takes a steering message as the request `_session/steering` (`{ sessionId, prompt }`), as
   codex-acp does: it wakes the waiting turn whose text it contains and answers `{ outcome: "injected" }`, or
   `{ outcome: "failed" }` when no turn waits for it. `steeringRequests()` lists the texts of those requests
-  ([ADR 0053](../../docs/decisions/0053-harness-codex-opencode.md)). `sessions()` lists each session the agent opened,
+  ([ADR 0053](../../docs/decisions/0053-harness-codex-opencode.md)). Session IDs are `session-1`, `session-2`, … across
+  every process of the agent, so two stages never share one. `sessions()` lists each session the agent opened,
   with its `cwd` and the variables `OPENAI_*`, `ANTHROPIC_*` and `OSF_EFFORT` the agent got in `env`, so a test sees
   which model gateway, key, model and effort level a module handed the harness
   ([ADR 0070](../../docs/decisions/0070-foreman-gateway-and-take-over.md), [ADR 0078](../../docs/decisions/0078-agent-effort.md)),

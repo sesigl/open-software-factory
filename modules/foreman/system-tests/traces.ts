@@ -3,7 +3,7 @@ import type { Fakes } from "@opensoftware/testkit";
 
 interface Attribute {
   key: string;
-  value: { stringValue?: string; doubleValue?: number };
+  value: { stringValue?: string; doubleValue?: number; intValue?: string };
 }
 
 export interface ReceivedSpan {
@@ -20,7 +20,12 @@ export interface ReceivedSpan {
 }
 
 const valuesOf = (attributes: Attribute[]) =>
-  Object.fromEntries(attributes.map(({ key, value }) => [key, value.stringValue ?? value.doubleValue]));
+  Object.fromEntries(
+    attributes.map(({ key, value }) => [
+      key,
+      value.stringValue ?? value.doubleValue ?? (value.intValue && Number(value.intValue)),
+    ]),
+  );
 
 /** An OTLP/HTTP receiver that takes every POST /v1/traces. */
 export async function receiver(fakes: Fakes) {

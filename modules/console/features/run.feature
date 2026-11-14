@@ -83,6 +83,18 @@ Feature: The run page
     When a person opens the run's page with "CONSOLE_TRACE_URL" set to "http://127.0.0.1:6006/projects/UHJvamVjdDox/traces/{traceId}"
     Then the page has no link with the text "trace"
 
+  @id=SCN-CONSOLE-070 @status=implemented @realizes=SCN-FACTORY-VIS-002
+  Scenario: The run page links each stage to its span in the run's trace
+    Given a foreman with a run whose trace ID is "0af7651916cd43dd8448eb211c80319c" and whose stage "plan" has the span "b7ad6b7169203331"
+    When a person opens the run's page with "CONSOLE_SPAN_URL" set to "http://127.0.0.1:16686/trace/{traceId}?uiFind={spanId}"
+    Then the page links the span "http://127.0.0.1:16686/trace/0af7651916cd43dd8448eb211c80319c?uiFind=b7ad6b7169203331" of the stage "plan"
+
+  @id=SCN-CONSOLE-110 @status=implemented
+  Scenario: The run page links no span of a run whose foreman names no trace
+    Given a foreman with a run without a trace ID whose stage "plan" has the span "b7ad6b7169203331"
+    When a person opens the run's page with "CONSOLE_SPAN_URL" set to "http://127.0.0.1:16686/trace/{traceId}?uiFind={spanId}"
+    Then the page has no link to "http://127.0.0.1:16686/" and names the stage "plan"
+
   @id=SCN-CONSOLE-050 @status=implemented
   Scenario: The run page of a failed or cancelled run has the form "run again" for a signed-in person
     Given a console with "CONSOLE_USER_HEADER" set to "X-Forwarded-Email" and a foreman with a run whose stage "implement" failed and a cancelled run

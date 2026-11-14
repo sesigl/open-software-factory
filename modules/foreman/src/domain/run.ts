@@ -13,7 +13,7 @@ import type {
   WorkItem,
 } from "@opensoftware/contracts";
 import type { Definition } from "./definition.ts";
-import { traceIdOf } from "./trace.ts";
+import { stageSpanIdOf, traceIdOf } from "./trace.ts";
 
 type Actor = RunAction["by"];
 
@@ -216,7 +216,8 @@ export function retried(
       startedAt,
       traceId: traceIdOf(runId),
       stages: definition.stages.map(({ stage, agent }, index) =>
-        index < from ? { ...(before.stages[index] as StageView) } : pendingStage({ stage, agent }),
+        // A stage of the run before keeps its session, but its span is in the trace of the run before.
+        index < from ? { ...(before.stages[index] as StageView), spanId: undefined } : pendingStage({ stage, agent }),
       ),
     },
     before: { index: from, line: `Run before: ${before.runId}${endOf(stage)}` },
@@ -272,7 +273,9 @@ function applied(view: RunView, fact: Fact, at: string): RunView {
     case "checks":
       return checks(next, fact, end);
     case "stage-started": {
-      Object.assign(next.stages[fact.index] as StageView, { state: "running", startedAt: at });
+      // The stage's span in the run's trace, which the console links (ADR 0121).
+      const spanId = stageSpanIdOf(next.runId, fact.index);
+      Object.assign(next.stages[fact.index] as StageView, { state: "running", startedAt: at, spanId });
       return next;
     }
     case "stage-ended": {

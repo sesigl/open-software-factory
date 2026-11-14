@@ -499,6 +499,12 @@ view names it as `traceId`, so the console links the trace.
 Each stage's harness gets `TRACEPARENT` with the trace and the stage's span, also in a sandbox, so the harness's own
 spans join the run's trace. A receiver that refuses a span is a warning; the stage goes on.
 
+When a stage's turn ends, the foreman runs the harness adapter's `transcript <session ID>` (its command line up to
+`run`, with `OUTPUT` set to `OSF_DATA/transcripts/<session ID>`) and puts the run record's `gen_ai.usage.*` tokens and
+`osf.cost.usd` on the stage's span ([ADR 0121](../../docs/decisions/0121-stage-run-record-in-the-trace.md)). A stage in
+a sandbox has none yet: its session record stays in the sandbox. A transcript that fails is a warning. The run's view
+names each started stage's span as `spanId`, so the console links each stage to its span.
+
 ## Releases
 
 release-please opens a release pull request from the Conventional Commits under `modules/foreman/`. Merging it creates
@@ -697,3 +703,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-147 | implemented | A work item that failed 5 times waits as a dead letter, fails "/v1/health" while it waits, and "foreman resend" starts its run |
 | SCN-FORE-148 | implemented | The foreman adds the stream "OSF" with the max age of "OSF_STREAM_MAX_AGE" |
 | SCN-FORE-149 | implemented | The run records each signal with the person who sent it |
+| SCN-FORE-155 | implemented | Each stage's span carries its session's tokens and cost, and the run's view names the span |

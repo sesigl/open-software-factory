@@ -1161,6 +1161,11 @@ export type components = {
             state: components["schemas"]["StageState"];
             /** @description The harness session of the stage's agent, once it started. */
             sessionId?: string;
+            /**
+             * @description The span of the stage in the run's trace, once it started: the first 16 hex digits of the SHA-256 of
+             *     `<runId>:<stage index>` (ADR 0087, ADR 0121).
+             */
+            spanId?: string;
             /** @description The gate that decides whether the stage starts, once it was requested. */
             gateId?: string;
             /** @description The checks the stage waits for, once the foreman read them (ADR 0069). */

@@ -407,6 +407,8 @@ services:
       CONSOLE_TEMPORAL_URL: http://${OSF_HOST:-127.0.0.1}:${TEMPORAL_UI_PORT:-8233}
       # Each run links its trace in Jaeger.
       CONSOLE_TRACE_URL: http://${OSF_HOST:-127.0.0.1}:${JAEGER_PORT:-16686}/trace/{traceId}
+      # Each stage links its span in that trace (ADR 0121).
+      CONSOLE_SPAN_URL: http://${OSF_HOST:-127.0.0.1}:${JAEGER_PORT:-16686}/trace/{traceId}?uiFind={spanId}
       CONSOLE_LINKS: Jaeger=http://${OSF_HOST:-127.0.0.1}:${JAEGER_PORT:-16686},LiteLLM=http://${OSF_HOST:-127.0.0.1}:${LITELLM_PORT:-4000}/ui
     volumes:
       - factory:/factory:ro
