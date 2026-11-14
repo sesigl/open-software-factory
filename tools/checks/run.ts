@@ -14,6 +14,7 @@ import { reach } from "./reach.ts";
 import { release } from "./release.ts";
 import { budget, flake } from "./results.ts";
 import { runs } from "./runs.ts";
+import { depsRuntime } from "./shipped.ts";
 import { surface } from "./surface.ts";
 import { template } from "./templates.ts";
 import { todo, vision } from "./vision.ts";
@@ -38,6 +39,7 @@ export const FAST: Record<string, Check> = {
   AFFECTED: affected,
   RELEASE: release,
   DEPS: deps,
+  "DEPS-RUNTIME": depsRuntime,
   PROFILE: profile,
   VISION: vision,
   TODO: todo,

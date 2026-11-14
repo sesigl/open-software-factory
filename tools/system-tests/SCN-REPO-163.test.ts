@@ -3,7 +3,7 @@ import { putShipped, runShipped, undeclared } from "./shipped.ts";
 
 scenario("SCN-REPO-163", async ({ sut, given, when, then }) => {
   await given(
-    'the published module "demo" whose bin "dist/cli.js" is built from "src/cli.ts", which imports "./serve.ts"',
+    'the published module "demo" whose bin "dist/cli.js" is built from "src/cli.ts", which imports "./serve.js"',
     async () => {
       await putShipped(sut, []);
     },

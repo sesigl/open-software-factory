@@ -1,5 +1,6 @@
 // The module demo of the DEPS-RUNTIME scenarios (ADR 0138): a published package whose bin dist/cli.js is built from
-// src/cli.ts, which imports ./serve.ts. Each scenario gives src/serve.ts and the package's dependency lists.
+// src/cli.ts, which imports ./serve.js, also through ./doctor.js. Each scenario gives src/serve.ts and the package's
+// dependency lists.
 import { putAll } from "./repo.ts";
 
 type Sut = Parameters<typeof putAll>[0] & {
@@ -13,7 +14,15 @@ export function shippedModule(manifest: Record<string, unknown> = {}, files: Rec
   return {
     "pnpm-workspace.yaml": "packages:\n  - modules/*\n  - tools\n",
     "modules/demo/package.json": `${JSON.stringify({ ...demo, ...manifest }, null, 2)}\n`,
-    "modules/demo/src/cli.ts": 'import { serve } from "./serve.ts";\n\nawait serve();\n',
+    "modules/demo/src/cli.ts": [
+      'import { doctor } from "./doctor.js";',
+      'import { serve } from "./serve.js";',
+      "",
+      'await (process.argv[2] === "doctor" ? doctor() : serve());',
+      "",
+    ].join("\n"),
+    // A second way to serve.ts: the check reads each file once.
+    "modules/demo/src/doctor.ts": 'import { serve } from "./serve.js";\n\nexport const doctor = serve;\n',
     ...own,
   };
 }

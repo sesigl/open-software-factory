@@ -6,19 +6,27 @@ scenario("SCN-REPO-164", async ({ sut, given, when, then }) => {
   const manifest: Record<string, unknown> = {};
   let serve: string[] = [];
   await given(
-    'the published module "demo" whose bin "dist/cli.js" is built from "src/cli.ts", which imports "./serve.ts"',
+    'the published module "demo" whose bin "dist/cli.js" is built from "src/cli.ts", which imports "./serve.js"',
     async () => {
       await putShipped(sut, serve, manifest);
     },
   );
 
-  await given('"ui" is only in the devDependencies of "demo", and "yaml" in its dependencies', async () => {
-    Object.assign(manifest, { dependencies: { yaml: "2.9.1" }, devDependencies: { ui: "workspace:*" } });
-    await putShipped(sut, serve, manifest);
-  });
+  await given(
+    '"ui" is only in the devDependencies of "demo", "yaml" in its dependencies, "preact" in its peerDependencies and "fsevents" in its optionalDependencies',
+    async () => {
+      Object.assign(manifest, {
+        dependencies: { yaml: "2.9.1" },
+        devDependencies: { ui: "workspace:*" },
+        peerDependencies: { preact: "11.0.1" },
+        optionalDependencies: { fsevents: "2.3.3" },
+      });
+      await putShipped(sut, serve, manifest);
+    },
+  );
 
   await given(
-    '"src/serve.ts" has "import type" and "export type" of "ui", imports "node:fs", "fs/promises", "yaml" and "@opensoftware/demo/package.json", and resolves "./page.html"',
+    '"src/serve.ts" has "import type" and "export type" of "ui", imports "node:fs", "fs/promises", "yaml", "preact", "fsevents" and "@opensoftware/demo/package.json", and resolves "./page.html"',
     async () => {
       serve = [
         'import type { Shell } from "ui";',
@@ -27,9 +35,11 @@ scenario("SCN-REPO-164", async ({ sut, given, when, then }) => {
         'import { readFile } from "fs/promises";',
         'import { createRequire } from "node:module";',
         'import { parse } from "yaml";',
+        'import { h } from "preact";',
+        'import "fsevents";',
         'import own from "@opensoftware/demo/package.json" with { type: "json" };',
         'export const page = readFileSync(createRequire(import.meta.url).resolve("./page.html"));',
-        "export const used = [readFile, parse, own] as unknown as Shell;",
+        "export const used = [readFile, parse, h, own] as unknown as Shell;",
       ];
       await putShipped(sut, serve, manifest);
     },
