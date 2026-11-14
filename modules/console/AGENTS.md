@@ -56,9 +56,17 @@ which stays until live updates replace it (`TODO.md`, T-60).
 
 ## Budget
 
-- System tests: 60 seconds in total on the CI runner (88 scenarios in about 47 seconds of test time and 17.5 seconds
-  on 4 workers on the development container, ADR 0132; each starts one server, and the foremen, intake and gatekeeper
-  are `fakes.http`; the inbox's forge is `fakes.github` behind the built forge-github adapter).
+- System tests: 75 seconds in total on the CI runner (117 scenarios in about 48 to 52 seconds of test time and 17
+  seconds on 4 workers on the development container; 65.7 seconds on the reference runner in CI). Raised from 60 seconds
+  on 14 November 2026, when the scenarios grew from 88 to 117 with the sign-in, the shell and two journeys, measured:
+  - each scenario starts its own console: about 200 ms to listen (Node, then 90 ms of imports for `serve`; `cli.ts`
+    loads only the command it runs, which saved about 20 ms per scenario), and the foremen, intake and gatekeeper are
+    `fakes.http`; the inbox's forge is `fakes.github` behind the built forge-github adapter;
+  - the first page costs about 110 ms more than the next for Astro's handler; loading it while the server starts made
+    the suite slower, since it competes with the start for the CPU;
+  - a sign-in scenario walks four pages and the provider (0.6 to 1 s); the three that restart the console about 1.3 to
+    1.9 s; each journey about 2 s, half of it Chromium's start;
+  - per scenario the suite got cheaper: 0.53 s in 2026-11 before, 0.43 s now.
 
 ## Quality limits
 

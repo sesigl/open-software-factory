@@ -30,4 +30,8 @@ scenario("SCN-CONSOLE-157", async ({ sut, fakes, given, when, then }) => {
       expect(answers.some((answer) => String(answer.body).includes("--osf-signal:"))).toBe(true);
     },
   );
+
+  await then("a file of the console's build that does not exist answers 404", async () => {
+    expect((await sut.http.get("/_astro/missing.css")).status).toBe(404);
+  });
 });

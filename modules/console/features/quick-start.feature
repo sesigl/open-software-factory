@@ -15,6 +15,7 @@ Feature: Quick start
     When the user starts "console serve" as the README says and opens "/"
     Then the page answers 200 and lists the run "Export reports as CSV" in the state "running"
     And each stylesheet of the page is a file of the console that answers 200 as CSS, one of them with the design system's tokens
+    And a file of the console's build that does not exist answers 404
 
   @id=SCN-CONSOLE-002 @status=implemented
   Scenario: The help lists every command

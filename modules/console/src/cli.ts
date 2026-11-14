@@ -2,14 +2,12 @@
 // console <command>: the entry layer only parses arguments and calls the commands.
 import { parseArgs } from "node:util";
 import { type Command, runProgram } from "@opensoftware/cli";
-import { doctor } from "./commands/doctor.ts";
-import { serve } from "./commands/serve.ts";
 
 const HELP = `Usage: console <command>
 
 Commands:
-  serve  Serve the read-only web view of the factory on PORT: the runs of the foremen in CONSOLE_FOREMAN_URL,
-         each run's origin and evidence, the factory definition in CONSOLE_FACTORY, and its health on /health.
+  serve  Serve the web UI of the factory on PORT: the runs of the foremen in CONSOLE_FOREMAN_URL, each run's
+         origin and evidence, the factory definition in CONSOLE_FACTORY, and its health on /health.
   doctor Check each server of the factory, its token and the factory definition, and print one fix per failure.
          Exits 1 when a check fails. --deep also makes one model call per route of the factory definition through
          CONSOLE_MODEL_URL, asks the harness in CONSOLE_HARNESS_COMMAND to answer ACP initialize and, with
@@ -22,9 +20,10 @@ const { positionals, values } = parseArgs({
   allowPositionals: true,
   options: { help: { type: "boolean" }, deep: { type: "boolean" } },
 });
+// Each command loads only when it runs: a console that serves pages does not load the doctor's checks.
 const COMMANDS: Record<string, Command> = {
-  serve: () => serve(process.env),
-  doctor: () => doctor(process.env, values.deep),
+  serve: async () => (await import("./commands/serve.ts")).serve(process.env),
+  doctor: async () => (await import("./commands/doctor.ts")).doctor(process.env, values.deep),
 };
 const command = positionals[0] ? COMMANDS[positionals[0]] : undefined;
 process.exitCode = await runProgram({ name: "console", usage: HELP, command, help: values.help });
