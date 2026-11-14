@@ -64,6 +64,37 @@ export const gatedFactory = (fakes: Fakes): string =>
 /** The README's factory whose agents run in sandboxes. */
 export const sandboxedFactory = (fakes: Fakes): string => readmeFiles(fakes)["sandboxed/factory.yaml"] as string;
 
+/**
+ * The README's "sandboxed/factory.yaml" whose agent "plan" also declares "ref:env/SLACK_TOKEN", which the sandbox
+ * adapter resolves itself, and "ref:openbao/forge-token", from a store (ADR 0139).
+ */
+export const openbaoFactory = (fakes: Fakes): string =>
+  sandboxedFactory(fakes)
+    .replace('    docker: "^0"\n', '    docker: "^0"\n  secrets:\n    openbao: "^0"\n')
+    // The first agent is "plan".
+    .replace(
+      "secrets: [ref:file/anthropic-api-key]",
+      "secrets: [ref:file/anthropic-api-key, ref:env/SLACK_TOKEN, ref:openbao/forge-token]",
+    );
+
+/**
+ * The foreman's variables for the built secrets adapter "openbao" and the scenario's OpenBao, with a token that may only
+ * read the mount, as the egress proxy's; OpenBao holds "forge-token" when `holds` says so.
+ */
+export async function withOpenBao(sut: Sut, fakes: Fakes, holds: boolean): Promise<Record<string, string>> {
+  const bao = await fakes.openbao();
+  if (holds) await bao.write("forge-token", { value: "bao_forge_7c41" });
+  const token = await bao.token(
+    `path "${bao.mount}/data/*" { capabilities = ["read"] }\npath "${bao.mount}/metadata/*" { capabilities = ["read"] }`,
+  );
+  return {
+    FOREMAN_SECRETS: JSON.stringify({ openbao: sut.adapter("secrets/openbao") }),
+    OSF_OPENBAO_ADDR: bao.url,
+    OSF_OPENBAO_TOKEN: token,
+    OSF_OPENBAO_MOUNT: bao.mount,
+  };
+}
+
 /** The README's factory with the LiteLLM gateway. */
 export const gatewayFactory = (fakes: Fakes): string => readmeFiles(fakes)["gateway/factory.yaml"] as string;
 

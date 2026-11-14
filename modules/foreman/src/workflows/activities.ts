@@ -12,9 +12,10 @@ import { type Bus, SUBJECTS } from "../adapters/nats.ts";
 import type { Exporter } from "../adapters/otlp.ts";
 import { cloneRepositories } from "../adapters/repositories.ts";
 import { createSandbox, type StageSandbox } from "../adapters/sandbox.ts";
+import { missingSecret } from "../adapters/secrets.ts";
 import { writeSkills } from "../adapters/skills.ts";
 import { type CommandLines, commandOf } from "../domain/adapters.ts";
-import type { Definition } from "../domain/definition.ts";
+import { type Definition, storeSecrets } from "../domain/definition.ts";
 import {
   apply,
   branchOf,
@@ -58,6 +59,8 @@ export interface ActivityDeps {
   sandbox: string;
   /** The adapter's command line per forge adapter name; others run `npx -y @opensoftware/forge-<name>@<range>`. */
   forges: CommandLines;
+  /** The secrets adapter's command line per provider; others run `npx -y @opensoftware/secrets-<name>@<range>`. */
+  secrets: CommandLines;
   /** FORGE_URL and FORGE_TOKEN of the forge adapter. */
   forgeEnv: Record<string, string | undefined>;
   /** How long a stage waits before it reads pending checks again, for its checks, and for its gate (ADR 0106). */
@@ -307,6 +310,10 @@ export function activities(deps: ActivityDeps) {
       if (!plan) throw new Error(`no stage ${index}`);
       // A stage that only waits ends here: its checks and its gate came before it (ADR 0107).
       if (plan.agent === undefined) return { kind: "stage-ended", index, stopReason: "end_turn" };
+      // A secret without a value fails the stage before it clones, creates a sandbox or starts a turn (ADR 0139).
+      const secretsAdapter = (provider: string) => commandOf(deps.secrets, "secrets", provider, definition.ranges);
+      const missing = await missingSecret(storeSecrets(plan.sandbox?.secrets), secretsAdapter, deps.env);
+      if (missing) return { kind: "stage-failed", index, reason: missing };
       const cwd = join(deps.data, "runs", view.runId);
       mkdirSync(cwd, { recursive: true });
       writeSkills(cwd, plan.skills ?? []);

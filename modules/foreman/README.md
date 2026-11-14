@@ -150,16 +150,27 @@ Put your Anthropic API key in the file `secrets/anthropic-api-key` and serve the
 `export OSF_SECRETS_DIR=$PWD/secrets` for the [docker sandbox adapter](../../adapters/sandbox/docker/README.md). Each
 stage then goes like this:
 
-1. The foreman creates a sandbox with the adapter that the factory names under `providers.sandbox` (`docker` when it
+1. For each of the agent's secrets from a store, like `ref:openbao/forge-token`, the foreman asks the provider's
+   secrets adapter whether it has a value: `exists <name>`, which reads the secret's metadata only
+   ([secrets port](../../ports/secrets/README.md), [ADR 0139](../../docs/decisions/0139-git-basic-form-value-timing-and-the-check-before-a-stage.md)).
+   A secret without a value fails the stage before it starts anything, with the reason
+   `the secret "ref:openbao/forge-token" has no value; store it and run again`; an adapter that fails, such as one
+   whose store does not answer, fails it with the adapter's error. The run is not tried again: store the value and run
+   it again. `FOREMAN_SECRETS` maps a provider to its secrets adapter's command line; a provider it does not name runs
+   `npx -y @opensoftware/secrets-<name>@<range>` at the range under `providers.secrets`. The adapter gets the
+   foreman's variables, among them `OSF_OPENBAO_ADDR`, `OSF_OPENBAO_TOKEN` (the read token) and `OSF_OPENBAO_MOUNT`,
+   which the sandbox adapter gets too. Secrets of `file` and `env` are the sandbox adapter's own: its `create` refuses
+   a missing one.
+2. The foreman creates a sandbox with the adapter that the factory names under `providers.sandbox` (`docker` when it
    names none) from the agent's `sandbox`. The spec holds each secret as a reference under a variable,
    `ref:file/anthropic-api-key` as `ANTHROPIC_API_KEY`, and `OTEL_RESOURCE_ATTRIBUTES` with the run. The sandbox gets
    a placeholder; its egress proxy puts the key in on the way to `api.anthropic.com`
    ([sandbox port](../../ports/sandbox/README.md)). The foreman never reads a secret.
-2. It copies the run's folder into the sandbox, below the sandbox's working folder, as `<run ID>`.
-3. It runs the harness adapter's command line from `FOREMAN_HARNESSES` in the sandbox with the adapter's `exec`, and
+3. It copies the run's folder into the sandbox, below the sandbox's working folder, as `<run ID>`.
+4. It runs the harness adapter's command line from `FOREMAN_HARNESSES` in the sandbox with the adapter's `exec`, and
    speaks ACP to it. The template must hold that program; `node:24` holds `npx`.
-4. When the turn ended, it copies the folder back into the run's folder, so the next stage finds the files.
-5. It destroys the sandbox, also when the stage failed or was cancelled.
+5. When the turn ended, it copies the folder back into the run's folder, so the next stage finds the files.
+6. It destroys the sandbox, also when the stage failed or was cancelled.
 
 `FOREMAN_SANDBOXES` maps an adapter's name to its command line; an adapter it does not name runs
 `npx -y @opensoftware/sandbox-<name>@<range>` at the factory's range ([Versions](#versions)). A factory names at most one sandbox adapter. A factory that names none runs
@@ -546,6 +557,10 @@ the minor version. The one-time setup is the same as for contracts
 | `FOREMAN_SANDBOX` | string | `"docker"` | serve: the sandbox adapter of a factory that names none under providers.sandbox, like docker in the Compose profile and kubernetes in the Helm chart. |
 | `FOREMAN_FORGES` | string | `"{}"` | serve: a JSON object from forge adapter name to the command line of the adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. An adapter it does not name runs npx -y @opensoftware/forge-<name>@<range>, at the range under providers.forge (ADR 0110). The factory names its adapter under providers.forge. |
 | `FOREMAN_INFERENCES` | string | `"{}"` | serve: a JSON object from inference adapter name to the command line of the adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. An adapter it does not name runs npx -y @opensoftware/inference-<name>@<range>, at the range under providers.inference (ADR 0110). The factory names its adapter under providers.inference. |
+| `FOREMAN_SECRETS` | string | `"{}"` | serve: a JSON object from secrets provider name to the command line of its secrets adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. An adapter it does not name runs npx -y @opensoftware/secrets-<name>@<range>, at the range under providers.secrets. Before a sandboxed stage, the foreman runs its exists for each of the agent's secrets of that provider; file and env are the sandbox adapter's own (ADR 0139). |
+| `OSF_OPENBAO_ADDR` | string |  | serve: OpenBao's address, handed on to the sandbox adapter and the secrets adapter for ref:openbao/ secrets; the foreman reads none of the OSF_OPENBAO_ variables itself. |
+| `OSF_OPENBAO_TOKEN` | string |  | serve: the token that may only read the mount, the egress proxy's (ADR 0137), handed on to the sandbox adapter and to the secrets adapter, whose exists asks with it whether a secret has a value. |
+| `OSF_OPENBAO_MOUNT` | string |  | serve: the KV version 2 mount of the factory's secrets, handed on to the sandbox adapter and the secrets adapter. Unset, both use secret. |
 | `PATH` | string |  | serve: the folders where the foreman finds git, npx for an adapter without a command line, and the programs of the adapter maps. |
 | `FOREMAN_FORGE_URL` | string |  | serve: the forge adapter's FORGE_URL, for a factory whose stages have checks. Default: the adapter's own default. |
 | `FOREMAN_FORGE_TOKEN` | string |  | serve: the forge adapter's FORGE_TOKEN: a token that may read the pull requests and their checks. Never written to a file. |
@@ -726,6 +741,6 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-161 | implemented | A stage whose checks succeeded at the first read publishes no "run.blocked@v1" |
 | SCN-FORE-162 | implemented | The foreman shows a doctor's ping that its consumer received |
 | SCN-FORE-163 | implemented | A sandboxed stage's span carries the tokens and cost of the session in its sandbox |
-| SCN-FORE-164 | planned | A stage whose agent declares a secret from OpenBao without a value fails before its first turn and names the secret |
-| SCN-FORE-165 | planned | A stage whose agent's secret from OpenBao has a value runs in its sandbox |
-| SCN-FORE-166 | planned | A stage whose secrets store does not answer fails before its first turn with the reason |
+| SCN-FORE-164 | implemented | A stage whose agent declares a secret from OpenBao without a value fails before its first turn and names the secret |
+| SCN-FORE-165 | implemented | A stage whose agent's secret from OpenBao has a value runs in its sandbox |
+| SCN-FORE-166 | implemented | A stage whose secrets store does not answer fails before its first turn with the reason |

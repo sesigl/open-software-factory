@@ -155,7 +155,7 @@ export interface FactoryFiles {
 }
 
 /** Each adapter's exact version that factory.lock pins for its range, else its range (ADR 0125). */
-function versionsOf(ranges: Ranges, pins: FactoryFiles["adapters"]): Ranges {
+function versionsOf(ranges: Required<Ranges>, pins: FactoryFiles["adapters"]): Required<Ranges> {
   const pinned = (port: keyof Ranges) =>
     Object.fromEntries(
       Object.entries(ranges[port]).map(([name, range]) => {
@@ -168,17 +168,18 @@ function versionsOf(ranges: Ranges, pins: FactoryFiles["adapters"]): Ranges {
     sandbox: pinned("sandbox"),
     forge: pinned("forge"),
     inference: pinned("inference"),
+    secrets: pinned("secrets"),
   };
 }
 
 /** The definition of a checked factory, with the text of each prompt and skill from `files`. */
 export function definitionOf(factory: FactoryDefinition, files: FactoryFiles): Definition {
-  const { harness = {}, sandbox = {}, forge = {}, inference = {} } = factory.providers ?? {};
+  const { harness = {}, sandbox = {}, forge = {}, inference = {}, secrets = {} } = factory.providers ?? {};
   const forgeAdapter = Object.keys(forge)[0];
   return {
     factory: factory.factory,
     sandboxAdapter: Object.keys(sandbox)[0],
-    ranges: versionsOf({ harness, sandbox, forge, inference }, files.adapters),
+    ranges: versionsOf({ harness, sandbox, forge, inference, secrets }, files.adapters),
     ...(forgeAdapter ? { forgeAdapter } : {}),
     // The foreman's checks give an inference config only with its one adapter.
     ...(factory.inference ? { inference: { adapter: Object.keys(inference)[0] as string, ...factory.inference } } : {}),
@@ -225,6 +226,26 @@ export const secretVariable = (reference: string): string =>
     .slice(reference.indexOf("/") + 1)
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "_");
+
+/** A secret reference of a sandbox whose value is in a store, with its provider and its name there (ADR 0139). */
+export interface StoreSecret {
+  reference: string;
+  provider: string;
+  name: string;
+}
+
+/** The providers that a sandbox adapter resolves itself (ADR 0055); every other provider is a store. */
+const OWN_PROVIDERS = new Set(["file", "env"]);
+
+/** The sandbox's secret references whose values are in a store, in the order the agent declares them. */
+export function storeSecrets(secrets: Record<string, string> = {}): StoreSecret[] {
+  return Object.values(secrets).flatMap((reference) => {
+    // `ref:<provider>/<name>`: the definition's schema already checked each reference against SecretReference.
+    const slash = reference.indexOf("/");
+    const provider = reference.slice("ref:".length, slash);
+    return OWN_PROVIDERS.has(provider) ? [] : [{ reference, provider, name: reference.slice(slash + 1) }];
+  });
+}
 
 /** The agent's secret references by their variables, as the sandbox spec holds them (ADR 0068). */
 function secretsOf(references: string[]): Record<string, string> {

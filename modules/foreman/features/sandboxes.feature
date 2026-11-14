@@ -102,24 +102,24 @@ Feature: Sandboxes
     Then the sandbox adapter got for "plan" the egress hosts "registry.npmjs.org", "api.anthropic.com" and "mcp.acme.example", and for "implement" only the first two
     And the harness opened the session of "plan" with the MCP server "tickets" at "https://mcp.acme.example/mcp" over HTTP
 
-  @id=SCN-FORE-164 @status=planned
+  @id=SCN-FORE-164 @status=implemented
   Scenario: A stage whose agent declares a secret from OpenBao without a value fails before its first turn and names the secret
-    Given "foreman serve" runs the README's "sandboxed/factory.yaml" whose agent "plan" declares the secret "ref:openbao/forge-token", with a fake sandbox adapter as "docker", the built secrets adapter "openbao" and an OpenBao that holds no "forge-token"
+    Given "foreman serve" runs the README's "sandboxed/factory.yaml" whose agent "plan" declares the secrets "ref:env/SLACK_TOKEN" and "ref:openbao/forge-token", with a fake sandbox adapter as "docker", the built secrets adapter "openbao" and an OpenBao that holds no "forge-token"
     When a program posts the README's "work.json" to "/v1/runs" with the API token
     Then "/v1/runs/<id>" shows the state "failed" with the stage "plan" "failed" for the reason 'the secret "ref:openbao/forge-token" has no value; store it and run again'
     And the sandbox adapter created no sandbox
     And the harness never received the prompt "Write a plan"
 
-  @id=SCN-FORE-165 @status=planned @realizes=SCN-FACTORY-RUNTIME-006
+  @id=SCN-FORE-165 @status=implemented @realizes=SCN-FACTORY-RUNTIME-006
   Scenario: A stage whose agent's secret from OpenBao has a value runs in its sandbox
-    Given "foreman serve" runs the README's "sandboxed/factory.yaml" whose agent "plan" declares the secret "ref:openbao/forge-token", with a fake sandbox adapter as "docker", the built secrets adapter "openbao" and an OpenBao that holds "forge-token"
+    Given "foreman serve" runs the README's "sandboxed/factory.yaml" whose agent "plan" declares the secrets "ref:env/SLACK_TOKEN" and "ref:openbao/forge-token", with a fake sandbox adapter as "docker", the built secrets adapter "openbao" and an OpenBao that holds "forge-token"
     When a program posts the README's "work.json" to "/v1/runs" with the API token
     Then "/v1/runs/<id>" shows the state "complete"
-    And the spec of the "plan" stage's sandbox holds the secret "FORGE_TOKEN" from "ref:openbao/forge-token"
+    And the spec of the "plan" stage's sandbox holds "SLACK_TOKEN" from "ref:env/SLACK_TOKEN" and "FORGE_TOKEN" from "ref:openbao/forge-token"
 
-  @id=SCN-FORE-166 @status=planned
+  @id=SCN-FORE-166 @status=implemented
   Scenario: A stage whose secrets store does not answer fails before its first turn with the reason
-    Given "foreman serve" runs the README's "sandboxed/factory.yaml" whose agent "plan" declares the secret "ref:openbao/forge-token", with a fake sandbox adapter as "docker", the built secrets adapter "openbao" and OpenBao at "http://127.0.0.1:9", where nothing answers
+    Given "foreman serve" runs the README's "sandboxed/factory.yaml" whose agent "plan" declares the secrets "ref:env/SLACK_TOKEN" and "ref:openbao/forge-token", with a fake sandbox adapter as "docker", the built secrets adapter "openbao" and OpenBao at "http://127.0.0.1:9", where nothing answers
     When a program posts the README's "work.json" to "/v1/runs" with the API token
-    Then "/v1/runs/<id>" shows the state "failed" with the stage "plan" "failed" for the reason 'the secrets adapter "openbao" failed: the store at http://127.0.0.1:9 does not answer'
+    Then "/v1/runs/<id>" shows the state "failed" with the stage "plan" "failed" for the reason "the secrets adapter's exists failed: secrets-openbao: the store at http://127.0.0.1:9 does not answer"
     And the sandbox adapter created no sandbox

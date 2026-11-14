@@ -104,6 +104,8 @@ export type Fact =
       /** What the agent wrote, bounded, for the next stage's prompt (ADR 0111). */
       result?: StageResult;
     }
+  /** The stage failed before its first turn, for this reason: a secret without a value (ADR 0139). */
+  | { kind: "stage-failed"; index: number; reason: string }
   | { kind: "handed-back"; index: number }
   | { kind: "cancelled" }
   | { kind: "error"; message: string };
@@ -290,6 +292,9 @@ function applied(view: RunView, fact: Fact, at: string): RunView {
       }
       return stageEnded(next, fact.index, stageStateOf(fact.stopReason), at);
     }
+    case "stage-failed":
+      (next.stages[fact.index] as StageView).reason = fact.reason;
+      return stageEnded(next, fact.index, "failed", at);
     case "handed-back":
       return stageEnded({ ...next, state: "running" }, fact.index, "succeeded", at);
     case "cancelled":

@@ -29,6 +29,7 @@
   "devDependencies": {
     "@opensoftware/forge-github": "workspace:*",
     "@opensoftware/harness-acp": "workspace:*",
+    "@opensoftware/secrets-openbao": "workspace:*",
     "@opensoftware/testkit": "workspace:*"
   },
   "dependencies": {
