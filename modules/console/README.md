@@ -147,7 +147,11 @@ access to the factory, and the repository should be private, since the access fi
    `slack:U0EXAMPLE`, the member the reference `groups.json` ships in place of a person
    ([ADR 0114](../../docs/decisions/0114-the-example-member-of-the-reference-groups.md)). The check reads every group,
    not only the policy's approvers, and cannot tell whether a Slack ID belongs to a real person.
-4. Only with `console doctor --deep` ([ADR 0120](../../docs/decisions/0120-deep-checks-of-console-doctor.md)):
+4. With `CONSOLE_SIGN_IN` ([ADR 0134](../../docs/decisions/0134-console-sign-in-roles-and-modes.md)): `sign-in`, for
+   `oidc` the provider's discovery document at `<CONSOLE_OIDC_ISSUER>/.well-known/openid-configuration` answers; and
+   `access`, the access file holds and has an admin who is not the example's `admin@example.com`, the person the
+   reference `access.yaml` ships in place of one.
+5. Only with `console doctor --deep` ([ADR 0120](../../docs/decisions/0120-deep-checks-of-console-doctor.md)):
    `model <route>`, one chat completion of one token per model route of the factory definition's agents through the
    gateway in `CONSOLE_MODEL_URL`, and `harness`, the command in `CONSOLE_HARNESS_COMMAND` answers ACP `initialize`
    within 10 seconds. A model call costs money, so `/health` and `console doctor` without `--deep` never make one.
@@ -364,3 +368,5 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-164 | implemented | On a phone the navigation folds away behind "Menu" (journey) |
 | SCN-CONSOLE-165 | implemented | A page without a session redirects to the sign-in and comes back to that page |
 | SCN-CONSOLE-166 | implemented | A session before its end stays valid |
+| SCN-CONSOLE-167 | implemented | "console doctor" with the sign-in refuses an access file whose only admin is the example |
+| SCN-CONSOLE-168 | implemented | "console doctor" with the sign-in names a provider that does not answer |

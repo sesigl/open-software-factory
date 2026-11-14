@@ -1,6 +1,8 @@
 // console doctor: checks each server of the factory, its token and the factory definition, and prints one fix per
 // failure (ADR 0086); with --deep also each model route, the harness, a span's way to the trace store, a sandbox's egress and an event's way to the foreman (ADR 0120). It exits 1 when a check fails. The page /health shows the same.
 import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { accessFile } from "../adapters/access.ts";
 import { type Api, probe } from "../adapters/apis.ts";
 import {
   callRoute,
@@ -13,6 +15,7 @@ import {
 } from "../adapters/deep.ts";
 import { readFactory } from "../adapters/factory-file.ts";
 import {
+  accessItem,
   DENIED_HOST,
   eventItem,
   groupsItem,
@@ -104,6 +107,27 @@ async function deepItems(env: Env, routes: string[]): Promise<Item[]> {
   return items;
 }
 
+/**
+ * With the own sign-in (ADR 0134): the provider's discovery answers, and the access file holds with an admin who is
+ * not the example.
+ */
+async function signInItems(env: Env, factory: string): Promise<Item[]> {
+  const file = env.CONSOLE_ACCESS || join(dirname(factory), "access.yaml");
+  const access = accessFile(file, Date.now).current();
+  const items = [accessItem(access.problems, access.admins, file)];
+  const issuer = env.CONSOLE_OIDC_ISSUER;
+  if (env.CONSOLE_SIGN_IN === "oidc" && issuer) {
+    const discovery = `${issuer.replace(/\/$/, "")}/.well-known/openid-configuration`;
+    const ok = await fetch(discovery, { signal: AbortSignal.timeout(5_000) }).then(
+      (answer) => answer.ok,
+      () => false,
+    );
+    const detail = `the provider at ${issuer} did not answer its discovery: check CONSOLE_OIDC_ISSUER`;
+    items.unshift({ name: "sign-in", ok, detail });
+  }
+  return items;
+}
+
 export async function examine(env: Env, deep = false): Promise<Item[]> {
   const items = (
     await Promise.all(
@@ -131,6 +155,7 @@ export async function examine(env: Env, deep = false): Promise<Item[]> {
     items.push({ name: "factory", ok: false, detail: `${(failure as Error).message}: check CONSOLE_FACTORY` });
   }
   if (env.CONSOLE_GROUPS) items.push(groups(env.CONSOLE_GROUPS));
+  if (env.CONSOLE_SIGN_IN) items.push(...(await signInItems(env, factory)));
   if (deep) items.push(...(await deepItems(env, routes)));
   return items;
 }

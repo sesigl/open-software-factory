@@ -12,6 +12,8 @@ export interface AccessList {
   roleOf(email: string): Role | undefined;
   /** Why nobody signs in, like "access.yaml: no person has the role admin"; empty when the list holds. */
   problems: string[];
+  /** The emails of the admins, in lower case. */
+  admins: string[];
 }
 
 const KEEP_MS = 10 * 60 * 1000;
@@ -43,6 +45,7 @@ export function accessFile(file: string, now: () => number): { current(): Access
       return {
         roleOf: (email) => people?.get(email.toLowerCase()),
         problems: people ? [] : found.problems,
+        admins: [...(people ?? [])].flatMap(([email, role]) => (role === "admin" ? [email] : [])),
       };
     },
   };
