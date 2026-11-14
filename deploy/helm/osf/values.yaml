@@ -30,7 +30,7 @@ images:
   gatekeeper: "0.10.0"
   intake: "0.7.0"
   foreman: "0.12.0"
-  console: "0.6.0"
+  console: "0.7.0"
   factorySpec: "0.8.0"
   # The image of the improvement jobs: observer, scorekit and ledger.
   observer: "0.2.0-r1"

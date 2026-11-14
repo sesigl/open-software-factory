@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.36.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.35.0...testkit-v0.36.0) (2026-11-14)
+
+
+### Features
+
+* sut.browser and UI checks (T-52 done), Astro renders the health page (T-53) ([#312](https://github.com/sesigl/open-software-factory/issues/312)) ([488ec0a](https://github.com/sesigl/open-software-factory/commit/488ec0ab2d325258191be2bbb216fb3de00352c2))
+* **testkit:** sut.pages reads pages by role and name, and the console's tests use it (T-52) ([#310](https://github.com/sesigl/open-software-factory/issues/310)) ([8a6319a](https://github.com/sesigl/open-software-factory/commit/8a6319a1c48c5676547caf20d1db1d9853bf3a6d))
+
 ## [0.35.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.34.0...testkit-v0.35.0) (2026-11-14)
 
 

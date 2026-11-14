@@ -378,13 +378,13 @@ services:
 
   console:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/console:0.6.0
+    image: ghcr.io/sesigl/open-software-factory/console:0.7.0
     build:
       context: ../images
       target: module
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/console@0.6.0 @opensoftware/forge-github@0.7.0 @opensoftware/forge-forgejo@0.7.0"
+        PACKAGES: "@opensoftware/console@0.7.0 @opensoftware/forge-github@0.7.0 @opensoftware/forge-forgejo@0.7.0"
     command: [console, serve]
     depends_on:
       foreman:
