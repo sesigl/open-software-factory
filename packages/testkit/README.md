@@ -235,7 +235,7 @@ Every server, client and subscription stops when the scenario ends, before the f
   signed `ping` when one is created, then
   `pull_request`, `pull_request_review`, `issue_comment` and `issues` (`opened`, `labeled`, and `unlabeled` after `unlabel(repository, number, label)`) deliveries with
   `X-Hub-Signature-256`, sent only to URLs on
-  `127.0.0.1` or `localhost`. IDs, SHAs and times come from counters and the fixed clock. A call it does not know
+  `127.0.0.1` or `localhost`, all at the same time; `delivered()` resolves once each delivery so far got its answer. IDs, SHAs and times come from counters and the fixed clock. A call it does not know
   answers 404 and fails the scenario. For a chat client, `GET /user` answers the token's user, a pull request's
   comments can be listed, `say(pr, text, as)` comments as a person (`reviewer` by default) and delivers the
   `issue_comment` event, and `conversation(pr)` gives each comment with its author

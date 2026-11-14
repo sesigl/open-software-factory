@@ -25,6 +25,11 @@ export interface FakeGitHub extends Forge {
   say(pr: PullRequest, text: string, as?: string): Promise<GitHubComment>;
   /** Removes the label from the issue and delivers the `issues` event with the action `unlabeled` to the webhooks. */
   unlabel(repository: string, number: number, label: string): Promise<void>;
+  /**
+   * Resolves once every webhook delivery sent so far got its answer. Deliveries go out at the same time, as on GitHub,
+   * so a later one can be answered before an earlier one.
+   */
+  delivered(): Promise<void>;
   /** The comments of the pull request's conversation with their authors, oldest first. */
   conversation(pr: PullRequest): Promise<GitHubComment[]>;
   /** A token like a GitHub Actions token: its user is "github-actions[bot]", and GET /user answers 403 (ADR 0062). */
@@ -860,6 +865,9 @@ export async function startGitHub(): Promise<RunningGitHub> {
       entry.labels = entry.labels.filter((other) => other !== label);
       entry.updatedAt = now();
       deliver(repo, "issues", { action: "unlabeled", issue: issueJson(repo, entry), label: { name: label } });
+    },
+    async delivered() {
+      await Promise.all(deliveries);
     },
     async mergePullRequest(pr) {
       const found = ref(pr);

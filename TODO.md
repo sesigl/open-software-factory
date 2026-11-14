@@ -1123,7 +1123,7 @@ as a vision scenario. Each item names the place in the code, so start there, and
 Everything that needs a paid model call or a paid service, so the plan never waits for it. A maintainer starts each
 run by hand, after the owner agreed on the model and the budget.
 
-### [ ] T-21 · dogfood with paid services
+### [x] T-21 · dogfood with paid services
 
 Slices that need a paid model call or a paid service. They come last, so the plan does not wait for them. Ask the
 owner before each slice: which model or service, and its budget.
@@ -1135,11 +1135,6 @@ owner before each slice: which model or service, and its budget.
     on OpenRouter on the small `prompt-injection` task, next to the oracle and reports it in the job summary (ADR 0077).
   - [x] taskcapture route (from T-09): the owner's one model is enough; the weekly models job routes with the
     report's pick (ADR 0077).
-  - [ ] observer (from T-10): the job `observe` of `weekly-paid.yml` runs `observer analyze` on the scores of the
-    scorekit slice above, `observer propose` for the first problem without an observer pull request, and
-    `observer check` for the merged ones (ADR 0046, ADR 0077). Open: done when one observer pull request to this
-    repository is merged and `observer check` measures its effect; that needs a problem with two failed runs and then
-    20 scored runs on each side of the merge.
   - [x] effort (before the foreman slice): every agent of `factory.yaml` declares its `effort` (`low` to `max`, required;
     contracts 2.0.0); the foreman hands it to each stage as `OSF_EFFORT`, and claude-code, codex and opencode map it to
     their own setting; the console's factory page shows it (ADR 0078, `SCN-CTR-012`, `SCN-FSPEC-058`, `SCN-FORE-069`,
@@ -1155,16 +1150,14 @@ owner before each slice: which model or service, and its budget.
   - [x] harness (from T-12, T-20): `e2e/paid/` and the script `test:paid`: one SMOKE-PAID run for opencode, weekly on
     OpenRouter with `deepseek/deepseek-v4.1-flash-1017`, and one for claude-code on a developer's subscription with
     `claude-haiku-5-5` (ADR 0052, ADR 0053, ADR 0076, ADR 0077).
-  - [ ] codex (from T-12): a SMOKE-PAID run of harness-codex, weekly on OpenRouter's Responses API with
+  - [x] codex (from T-12): a SMOKE-PAID run of harness-codex, weekly on OpenRouter's Responses API with
     `deepseek/deepseek-v4.1-flash-1017`; harness-codex adds a model Codex does not know to its model catalog, so Codex
-    offers it apply_patch (`SCN-HCODEX-012`, ADR 0077). Open: done when a run of `weekly-paid.yml` passes for codex.
-  - [ ] reference factory and foreman (from T-27, T-17): a first run of the reference factory on a sample
-    repository, with a paid model. The workflow `paid-reference-run.yml` exists (ADR 0128): a maintainer or an admin starts it with
-    `gh workflow run paid-reference-run.yml -f ref=<branch>`; the implement stage on opencode implements an issue of a
-    tiny sample repository in a Forgejo of the job, with `deepseek/deepseek-v4.1-flash-1017` and a budget of 0.50 USD.
-    It is also the foreman slice (from T-17): the foreman with a real harness and model, opencode and
-    `deepseek/deepseek-v4.1-flash-1017`. Done when a maintainer's run of it opens the pull request on the sample
-    repository.
+    offers it apply_patch (`SCN-HCODEX-012`, ADR 0077). Done: run 43599387991 of `weekly-paid.yml` passed for codex.
+  - [x] reference factory and foreman (from T-27, T-17): the reference factory on a sample repository, with a paid
+    model. A maintainer starts `paid-reference-run.yml` (ADR 0128) with `gh workflow run paid-reference-run.yml -f
+    ref=<branch>`; the foreman runs the implement stage on opencode with `deepseek/deepseek-v4.1-flash-1017` through
+    LiteLLM (budget 0.50 USD) on an issue of a tiny sample repository in a Forgejo of the job. Done: run 43596073836
+    opened the sample's pull request with `add(a, b)` and its test.
 
 ---
 
@@ -1175,3 +1168,8 @@ When T-17 is done, follow `docs/explanation/bootstrapping.md`: the factory imple
 implements an issue labeled `factory` of this repository and opens its pull request, and a person reviews and merges
 it; that run is not part of T-21. Add each new requirement as a vision scenario first, then as module scenarios and
 a new item here.
+
+Vision for later, not this plan (the owner's choice): once the factory's basic features are exposed in its UI, the
+factory learns from its own work. The job `observe` of `weekly-paid.yml` already runs `observer analyze`, `observer
+propose` and `observer check` on the weekly scores (ADR 0046, ADR 0077); phase 4 starts with the first merged observer
+pull request whose effect `observer check` measures, on 20 scored runs before and after its merge.
