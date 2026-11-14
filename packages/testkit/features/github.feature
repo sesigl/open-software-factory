@@ -189,3 +189,19 @@ Feature: A fake of GitHub's REST API
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-171 @status=implemented
+  Scenario: fakes.github answers the auto-merge request of a pull request whose auto-merge a module enabled
+    Given a module whose CLI requires the check "verify" on "main", enables auto-merge of pull request 1 with the method "SQUASH" with GitHub's GraphQL API and prints the merge method of its auto-merge request at "DEMO_GITHUB_URL"
+    And its system test allows auto-merge in the repository of fakes.github, opens the pull request and expects "SQUASH"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-172 @status=implemented
+  Scenario: Enabling auto-merge twice in fakes.github fails the test with the pull request named
+    Given a module whose CLI requires the check "verify" on "main" and enables auto-merge of pull request 1 twice with GitHub's GraphQL API at "DEMO_GITHUB_URL"
+    And its system test allows auto-merge in the repository of fakes.github, opens the pull request and only runs it
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 1
+    And the output contains "fake GitHub: auto-merge of tester/demo#1 is enabled already"

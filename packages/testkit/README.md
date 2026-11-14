@@ -256,9 +256,10 @@ Every server, client and subscription stops when the scenario ends, before the f
   `Branch not protected` without one), closing a pull request, the Git Data API's refs, commits and trees on a
   `base_tree`, which moves a branch only forward unless the update is forced
   ([ADR 0136](../../docs/decisions/0136-forge-port-changes-from-the-ui.md)), auto-merge through `POST /graphql`
-  (a pull request's `mergeStateStatus` and its repository's `autoMergeAllowed`, and `enablePullRequestAutoMerge`,
-  refused unless `allowAutoMerge(repository)` allowed it and for a pull request that can merge now; a commit status
-  that makes the merge rules hold merges it), and webhooks, which it lists, updates and deletes: a
+  (a pull request's `mergeStateStatus`, its `autoMergeRequest` and its repository's `autoMergeAllowed`, and
+  `enablePullRequestAutoMerge`, refused unless `allowAutoMerge(repository)` allowed it and for a pull request that
+  can merge now, and failing the scenario when auto-merge is on already, since GitHub does not document that
+  answer; a commit status that makes the merge rules hold merges it), and webhooks, which it lists, updates and deletes: a
   signed `ping` when one is created, then
   `pull_request`, `pull_request_review`, `issue_comment` and `issues` (`opened`, `labeled`, and `unlabeled` after `unlabel(repository, number, label)`) deliveries with
   `X-Hub-Signature-256`, sent only to URLs on
@@ -552,3 +553,5 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-168 | implemented | fakes.github moves a branch back only when the update is forced |
 | SCN-TK-169 | implemented | fakes.github merges a pull request with auto-merge once its required check passes |
 | SCN-TK-170 | implemented | fakes.github refuses auto-merge where the repository does not allow it and for a pull request that can merge now |
+| SCN-TK-171 | implemented | fakes.github answers the auto-merge request of a pull request whose auto-merge a module enabled |
+| SCN-TK-172 | implemented | Enabling auto-merge twice in fakes.github fails the test with the pull request named |

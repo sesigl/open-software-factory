@@ -560,6 +560,33 @@ export const GITHUB_API = [
   "  }).then(async (response) => ({ status: response.status, json: await response.json() }));",
 ];
 
+/** The CLI's lines that require "verify" on "main" and give `graphql(query, variables)` and `enable(method)`. */
+export const AUTO_MERGE: string[] = [
+  ...GITHUB_API,
+  "const graphql = (query, variables) =>",
+  "  fetch(`${process.env.DEMO_GITHUB_URL}/graphql`, {",
+  '    method: "POST",',
+  "    headers: { authorization: `Bearer ${process.env.DEMO_GITHUB_TOKEN}` },",
+  "    body: JSON.stringify({ query, variables }),",
+  "  }).then((response) => response.json());",
+  'await api("PUT", "/branches/main/protection", {',
+  '  required_status_checks: { strict: false, contexts: ["verify"] },',
+  "  enforce_admins: true,",
+  "  required_pull_request_reviews: null,",
+  "  restrictions: null,",
+  "});",
+  "const state = () =>",
+  "  graphql(",
+  '    "query($owner: String!, $name: String!, $number: Int!) { repository(owner: $owner, name: $name) { autoMergeAllowed pullRequest(number: $number) { id mergeStateStatus autoMergeRequest { enabledAt mergeMethod } } } }",',
+  '    { owner: "tester", name: "demo", number: 1 },',
+  "  ).then((answer) => answer.data.repository.pullRequest);",
+  "const enable = async (method) =>",
+  "  graphql(",
+  '    "mutation($id: ID!, $method: PullRequestMergeMethod!) { enablePullRequestAutoMerge(input: { pullRequestId: $id, mergeMethod: $method }) { clientMutationId } }",',
+  "    { id: (await state()).id, method },",
+  "  );",
+];
+
 /**
  * Module demo whose CLI runs `bin` (JavaScript lines) with `sandbox(...args)`, which runs the sandbox adapter in
  * `DEMO_SANDBOX_COMMAND` and returns its result; its test starts `fakes.sandbox(<options>)` and runs `expectations`
