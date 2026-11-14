@@ -16,7 +16,7 @@ work on. Each choice has an ADR in [`../decisions/`](../decisions/).
 | Operational database | PostgreSQL; SQLite in CLI mode | Temporal, Langfuse, pgvector run on it | — | 0003 |
 | Analytics | DuckDB locally, PostgreSQL views in server mode, ClickHouse at scale | nearly the same SQL from laptop to large org | ClickHouse everywhere | 0003 |
 | Object storage | S3 API; SeaweedFS self-hosted; local folder in CLI mode | MinIO community edition archived April 2026; SeaweedFS is Apache-2.0 | Garage (AGPL) | 0003 |
-| Events | CloudEvents on NATS JetStream via a Postgres outbox; one stream, a durable consumer per reader | small binary; no lost events, also while a reader is down | webhooks only | 0003, 0085 |
+| Events | CloudEvents on NATS JetStream via a Postgres outbox; one stream, a durable consumer per reader | small binary; no lost events, also while a reader is down; a max age and dead letters | webhooks only | 0003, 0085, 0116 |
 | Workflow engine | Temporal | long human waits, signals, timers, history UI, polyglot workers | DBOS | 0004 |
 | Repo and build | monorepo; pnpm workspaces + Turborepo; `make` on top; release-please | native tools, cached affected builds, independent releases, nothing to migrate | Nx | 0005, 0010 |
 | Contracts | TypeSpec → JSON Schema and OpenAPI 3.1; hand-written AsyncAPI 3.1 for events | one source; generated TypeScript types, the only client | hand-written JSON Schema | 0006, 0012 |

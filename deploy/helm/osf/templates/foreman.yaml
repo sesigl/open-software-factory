@@ -118,6 +118,8 @@ spec:
               value: {{ .Values.temporalNamespace | quote }}
             - name: FOREMAN_NATS_URL
               value: {{ include "osf.natsUrl" . | quote }}
+            - name: OSF_STREAM_MAX_AGE
+              value: {{ .Values.natsStreamMaxAge | quote }}
             - name: FOREMAN_GATEKEEPER_URL
               value: {{ printf "http://%s:8080" (include "osf.name" (dict "root" . "component" "gatekeeper")) | quote }}
             - name: FOREMAN_HARNESSES

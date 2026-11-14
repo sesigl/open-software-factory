@@ -1,7 +1,7 @@
 // The inbox of the server: submit and read work items, relay the outbox to NATS (ADR 0063), and move a work item on
 // with its run's events (ADR 0071).
 import { type GateRequested, isValid, type WorkItemList, type WorkItemView } from "@opensoftware/contracts";
-import { publishToNats } from "../adapters/nats.ts";
+import { type NatsAt, publishToNats } from "../adapters/nats.ts";
 import type { Store } from "../adapters/store.ts";
 import { gateText, type Reply, replies, runTexts } from "../domain/sources.ts";
 import {
@@ -17,10 +17,13 @@ import {
 import { workItemOf } from "../domain/work-item.ts";
 
 export interface InboxConfig {
-  nats: string | undefined;
+  nats: NatsAt | undefined;
   /** The console's base URL, for the link to a run in a reply. */
   console: string | undefined;
   now: () => number;
+  /** How long a published event stays in the outbox (INTAKE_OUTBOX_KEEP). */
+  keepMs: number;
+  say: (text: string) => void;
   warn: (text: string) => void;
 }
 
@@ -32,16 +35,25 @@ const keyOf = (event: unknown) => {
 
 export function inbox(store: Store, config: InboxConfig) {
   let relaying: Promise<void> = Promise.resolve();
-  /** Publishes the waiting events in order, one relay at a time. They stay in the outbox while NATS is away. */
+  /**
+   * Publishes the waiting events in order, one relay at a time. They stay in the outbox while NATS is away. Then it
+   * removes the events published longer than `keepMs` ago (ADR 0116).
+   */
   const relay = (): Promise<void> => {
     const { nats } = config;
     if (!nats) return relaying;
     relaying = relaying.then(async () => {
       try {
         const waiting = await store.unpublished();
-        if (!waiting.length) return;
-        await publishToNats(nats, waiting);
-        await store.published(waiting.map(({ seq }) => seq));
+        if (waiting.length) {
+          await publishToNats(nats, waiting);
+          await store.published(
+            waiting.map(({ seq }) => seq),
+            config.now(),
+          );
+        }
+        const removed = await store.removePublished(config.now() - config.keepMs);
+        if (removed) config.say(`intake removed ${removed} published events from the outbox`);
       } catch (error) {
         config.warn(`the events wait in the outbox: ${(error as Error).message}`);
       }

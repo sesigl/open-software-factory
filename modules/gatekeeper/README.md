@@ -409,3 +409,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-GATE-091 | implemented | A server that reaches its database, OPA and NATS is healthy |
 | SCN-GATE-092 | implemented | A server without OPA is failing and says what to fix |
 | SCN-GATE-093 | implemented | The server names a group whose only member is the example's when it starts |
+| SCN-GATE-094 | implemented | A request reaches a stream "OSF" that another module added with a max age, and the stream keeps its age |

@@ -6,12 +6,12 @@ import { healthOf, UsageError } from "@opensoftware/cli";
 import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
 import { type Channel, channelAdapter } from "../adapters/channel.ts";
 import { type Forge, forgeAdapter } from "../adapters/forge.ts";
-import { subscribeToNats } from "../adapters/nats.ts";
+import { type NatsAt, subscribeToNats } from "../adapters/nats.ts";
 import { openStore } from "../adapters/store.ts";
 import { nowOf } from "../domain/time.ts";
 import { inboxPageOf, RUN_SUBJECTS } from "../domain/view.ts";
 import { workItemId } from "../domain/work-item.ts";
-import { type Env, required } from "./env.ts";
+import { durationOf, type Env, required } from "./env.ts";
 import { forgeHook, problem, sentryHook, slackHook } from "./hooks.ts";
 import { type Inbox, inbox } from "./inbox.ts";
 
@@ -86,6 +86,12 @@ function forgeOf(env: Env): Forge | undefined {
   });
 }
 
+/** The NATS server of INTAKE_NATS_URL, with the stream's age of OSF_STREAM_MAX_AGE (ADR 0116). */
+export function natsOf(env: Env): NatsAt | undefined {
+  const maxAgeMs = durationOf(env, "OSF_STREAM_MAX_AGE");
+  return env.INTAKE_NATS_URL ? { url: env.INTAKE_NATS_URL, maxAgeMs } : undefined;
+}
+
 export async function serve(env: Env) {
   const apiToken = required(env, "INTAKE_API_TOKEN", "the token that callers of the API send");
   const channel = slackChannel(env);
@@ -93,8 +99,10 @@ export async function serve(env: Env) {
   const now = () => nowOf(env.OSF_NOW);
   const store = await openStore(env.INTAKE_DATABASE_URL || undefined, env.OSF_DATA || ".intake");
   const warn = (text: string) => process.stderr.write(`intake: ${text}\n`);
-  const nats = env.INTAKE_NATS_URL || undefined;
-  const work = inbox(store, { nats, console: env.INTAKE_CONSOLE_URL || undefined, now, warn });
+  const nats = natsOf(env);
+  const say = (text: string) => process.stdout.write(`${text}\n`);
+  const keepMs = durationOf(env, "INTAKE_OUTBOX_KEEP") ?? 7 * 86_400_000;
+  const work = inbox(store, { nats, console: env.INTAKE_CONSOLE_URL || undefined, now, keepMs, say, warn });
   await work.relay();
   // The Slack threads and the issues of a work item hear when its run waits at a gate and when it ended (ADR 0113).
   // A reply that fails is a warning, so the event does not come again to the places that heard of it.
@@ -117,7 +125,15 @@ export async function serve(env: Env) {
         ? [
             {
               name: "nats",
-              check: () => subscription.ping(),
+              // The check also fails while dead letters wait (ADR 0116).
+              check: async () => {
+                await subscription.ping();
+                const waiting = await subscription.deadLetters();
+                if (waiting)
+                  throw new Error(
+                    `${waiting} run events failed 5 times and wait on osf.dead.intake.>; fix the cause the warnings name, then run "intake resend"`,
+                  );
+              },
               fix: "check INTAKE_NATS_URL, and that NATS runs with JetStream",
             },
           ]

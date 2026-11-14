@@ -49,3 +49,19 @@ Feature: Durability
     And gatekeeper publishes "gate.decided@v1" for a work item that has no run
     Then after 4 seconds the server warned once about "osf.work.received.v1", that the body is not a work item
     And it warned once about "osf.gate.decided.v1"
+
+  @id=SCN-FORE-147 @status=implemented
+  Scenario: A work item that failed 5 times waits as a dead letter, fails "/v1/health" while it waits, and "foreman resend" starts its run
+    Given "foreman serve" runs the README's "factory.yaml" with "FOREMAN_NATS_URL" set to a NATS server
+    And the file "factory.yaml" is gone
+    When intake publishes "work.received@v1" with the README's "work.json"
+    Then within 15 seconds "/v1/health" answers 503 with the check "nats" failing for 1 dead letter
+    When the file "factory.yaml" is back and the user runs "foreman resend" with "FOREMAN_NATS_URL" set to the NATS server
+    Then it prints "resent osf.work.received.v1" and "foreman resent 1 dead letters"
+    And within 20 seconds the server publishes "run.started@v1" for the work item, and "/v1/health" answers 200
+
+  @id=SCN-FORE-148 @status=implemented
+  Scenario: The foreman adds the stream "OSF" with the max age of "OSF_STREAM_MAX_AGE"
+    Given a NATS server without the stream "OSF"
+    When "foreman serve" starts with "FOREMAN_NATS_URL" set to the NATS server and "OSF_STREAM_MAX_AGE" set to "7d"
+    Then the stream "OSF" keeps an event at most 7 days

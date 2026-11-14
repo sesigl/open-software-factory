@@ -22,13 +22,58 @@ export interface EventLog {
   received(type: string, options?: { count?: number; timeoutMs?: number }): Promise<CloudEvent[]>;
 }
 
+/** A JetStream stream as the server has it. */
+export interface Stream {
+  subjects: string[];
+  /** The age after which the stream drops a message, in milliseconds; 0 without a limit. */
+  maxAgeMs: number;
+  /** The number of messages it keeps. */
+  messages: number;
+}
+
 export interface Events {
   /** Records every message on these NATS subjects (default: all) from now on. Start it before the module acts. */
   watch(nats: Nats, subjects?: string): Promise<EventLog>;
+  /**
+   * The JetStream stream `name` on the server, or undefined when there is none. With `add`, it first adds the stream
+   * with these subjects and max age, as another module would.
+   */
+  stream(nats: Nats, name: string, add?: { subjects: string[]; maxAgeMs?: number }): Promise<Stream | undefined>;
 }
+
+const NANOS_PER_MS = 1_000_000;
 
 export function makeEvents(onStop: (stop: () => Promise<unknown>) => void): Events {
   return {
+    // The JetStream API on plain NATS requests, so the testkit needs no JetStream client.
+    async stream(nats, name, add) {
+      const connection = await connect({ servers: nats.url });
+      const ask = async (verb: string, body?: unknown) =>
+        (await connection.request(`$JS.API.STREAM.${verb}.${name}`, body ? JSON.stringify(body) : "")).json<{
+          error?: { code: number; description: string };
+          config?: { subjects: string[]; max_age: number };
+          state?: { messages: number };
+        }>();
+      try {
+        if (add) {
+          const created = await ask("CREATE", {
+            name,
+            subjects: add.subjects,
+            max_age: (add.maxAgeMs ?? 0) * NANOS_PER_MS,
+          });
+          if (created.error) throw new Error(`sut.events: the stream ${name}: ${created.error.description}`);
+        }
+        const info = await ask("INFO");
+        if (info.error?.code === 404 || !info.config || !info.state) return undefined;
+        return {
+          subjects: info.config.subjects,
+          maxAgeMs: info.config.max_age / NANOS_PER_MS,
+          messages: info.state.messages,
+        };
+      } finally {
+        await connection.close();
+      }
+    },
     async watch(nats, subjects = ">") {
       const connection = await connect({ servers: nats.url });
       onStop(() => connection.drain());

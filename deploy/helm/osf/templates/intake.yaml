@@ -32,6 +32,8 @@ spec:
               value: {{ include "osf.databaseUrl" (dict "root" . "database" "intake") | quote }}
             - name: INTAKE_NATS_URL
               value: {{ include "osf.natsUrl" . | quote }}
+            - name: OSF_STREAM_MAX_AGE
+              value: {{ .Values.natsStreamMaxAge | quote }}
             - name: INTAKE_SLACK_ADAPTER
               value: channel-slack
             - name: INTAKE_FORGE_ADAPTER

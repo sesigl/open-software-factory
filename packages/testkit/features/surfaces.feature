@@ -101,6 +101,14 @@ Feature: A module's servers and events
     And the output contains "expected 1 event(s) of type pr.opened"
     And the output contains "osf.events: run.completed"
 
+  @id=SCN-TK-148 @status=implemented
+  Scenario: sut.events adds a JetStream stream with a max age and reads the message a module published to it
+    Given a module whose CLI publishes a "pr.opened" CloudEvent on "osf.events" at "DEMO_NATS_URL"
+    And its system test adds the stream "OSF" on "osf.>" with a max age of 7 days with sut.events.stream, runs the CLI and expects the stream with that age and 1 message
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-114 @status=implemented
   Scenario: sut.compose starts a Compose file of the module and reaches the port a service publishes
     Given a module whose "compose.yaml" has the service "events", a NATS server that publishes its port 8222

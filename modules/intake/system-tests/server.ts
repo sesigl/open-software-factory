@@ -1,5 +1,6 @@
 // Shared setup of the intake scenarios: the README's work, the server with its token, fake Slack, fake GitHub with a
 // webhook to the server, and the MCP client.
+
 import type { paths, WorkItemView, WorkSubmission } from "@opensoftware/contracts";
 import type { FakeGitHub, Fakes, Sut } from "@opensoftware/testkit";
 
@@ -255,6 +256,7 @@ export async function following(sut: Sut, fakes: Fakes, env: Record<string, stri
   const events = await sut.events.watch(nats, "osf.>");
   return {
     ...server,
+    nats,
     publish: (event: ReturnType<typeof runEvent>) => events.publish(SUBJECTS[event.type] as string, event as never),
     async until(status: WorkItemView["status"]) {
       await expect

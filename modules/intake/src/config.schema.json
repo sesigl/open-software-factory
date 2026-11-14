@@ -28,6 +28,15 @@
       "type": "string",
       "description": "serve: the NATS server for work.received@v1 on osf.work.received.v1 and work.retry-requested@v1 on osf.work.retry-requested.v1, and for the foreman's run.started@v1 and run.completed@v1, which move a work item's status (ADR 0071), and the gatekeeper's gate.requested@v1, which its requesters hear of (ADR 0113). Unset: no events."
     },
+    "OSF_STREAM_MAX_AGE": {
+      "type": "string",
+      "description": "serve, resend: the age after which the stream OSF drops an event, like 7d, 12h, 30m or 90s (ADR 0116). The server adds the stream with it, or sets it on a stream that another module added. Unset: a new stream keeps its events without a limit of age, and an existing one keeps its own. The profile and the chart set 7d."
+    },
+    "INTAKE_OUTBOX_KEEP": {
+      "type": "string",
+      "default": "7d",
+      "description": "serve: how long an event that the server published stays in its outbox, like 7d, 12h, 30m or 90s; the relay removes older ones (ADR 0116)."
+    },
     "INTAKE_SLACK_ADAPTER": {
       "type": "string",
       "default": "npx -y @opensoftware/channel-slack",

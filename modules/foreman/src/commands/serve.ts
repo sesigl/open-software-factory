@@ -22,6 +22,17 @@ import { Conflict, type Runs, runs } from "./runs.ts";
 
 export type Env = Record<string, string | undefined>;
 
+const SECONDS_OF = { d: 86_400, h: 3_600, m: 60, s: 1 } as const;
+
+/** OSF_STREAM_MAX_AGE, like "7d", "12h", "30m" or "90s", in milliseconds; undefined when it is unset (ADR 0116). */
+export function streamMaxAge(env: Env): number | undefined {
+  const text = env.OSF_STREAM_MAX_AGE;
+  if (!text) return undefined;
+  const match = text.match(/^([1-9][0-9]*)([dhms])$/);
+  if (!match) throw new UsageError(`OSF_STREAM_MAX_AGE is "${text}": set a duration like 7d, 12h, 30m or 90s`);
+  return Number(match[1]) * SECONDS_OF[match[2] as keyof typeof SECONDS_OF] * 1000;
+}
+
 const BUNDLE = fileURLToPath(new URL("../workflows.bundle.js", import.meta.url));
 
 const problem = (reply: FastifyReply, status: number, title: string, detail: string) =>
@@ -115,7 +126,7 @@ export async function serve(env: Env) {
   const namespace = env.FOREMAN_TEMPORAL_NAMESPACE;
   const taskQueue = env.FOREMAN_TASK_QUEUE || "foreman";
   const pollMs = Number(env.FOREMAN_POLL_MS || 1000);
-  const bus = env.FOREMAN_NATS_URL ? await openBus(env.FOREMAN_NATS_URL, warn) : undefined;
+  const bus = env.FOREMAN_NATS_URL ? await openBus(env.FOREMAN_NATS_URL, warn, streamMaxAge(env)) : undefined;
   const traces = exporterOf(env);
 
   // The gateway starts in the background, so the server does not wait for it (ADR 0099).
@@ -188,7 +199,15 @@ export async function serve(env: Env) {
           ? [
               {
                 name: "nats",
-                check: () => bus.ping(),
+                // The check also fails while dead letters wait (ADR 0116).
+                check: async () => {
+                  await bus.ping();
+                  const dead = await bus.deadLetters("foreman");
+                  if (dead > 0)
+                    throw new Error(
+                      `${dead} events failed 5 times and wait on osf.dead.foreman.>; fix the cause the warnings name, then run "foreman resend"`,
+                    );
+                },
                 fix: "check FOREMAN_NATS_URL and that NATS runs",
               },
             ]

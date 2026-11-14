@@ -43,6 +43,7 @@ A change is done only when `make verify` passes. `docs/quality/checks.md` lists 
 | TRACE | Every `implemented` scenario has exactly one system test. No test without a scenario. |
 | STEPS | The test's `given`, `when` and `then` labels match the scenario's steps. |
 | PASS | Every `implemented` scenario's test ran and passed in this run, or was replayed for the same inputs. Skipped counts as failed. |
+| VISION | A vision scenario is `implemented` exactly when its realizing module scenarios are; TODO.md has no open item with every slice ticked. |
 | BOUNDARY | System tests reach the module only through its public surface. |
 | ISOLATION | No module imports another module. |
 | AFFECTED | A system test declares every package it starts, imports or reads, so the test cache replays only unchanged results. |

@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS intake.outbox (
   event jsonb NOT NULL,
   published boolean NOT NULL DEFAULT false
 );
+ALTER TABLE intake.outbox ADD COLUMN IF NOT EXISTS published_at bigint;
 CREATE INDEX IF NOT EXISTS work_items_latest ON intake.work_items (received_at DESC, id);`;
 
 /** Any number: only one server creates the tables at a time. */
@@ -79,7 +80,10 @@ export interface Store {
   tell(event: string): Promise<void>;
   /** The events not yet published, oldest first. */
   unpublished(): Promise<Outgoing[]>;
-  published(seqs: number[]): Promise<void>;
+  /** Marks the events published at the time `at`. */
+  published(seqs: number[], at: number): Promise<void>;
+  /** Removes the events published before the time `before` , and those published before ADR 0116; how many. */
+  removePublished(before: number): Promise<number>;
   /** Resolves when the database answers a query. */
   ping(): Promise<void>;
   close(): Promise<void>;
@@ -183,8 +187,18 @@ export async function openStore(url: string | undefined, folder: string): Promis
       );
       return rows.map((row) => ({ ...row, seq: Number(row.seq) }));
     },
-    async published(seqs) {
-      await db.query("UPDATE intake.outbox SET published = true WHERE seq = ANY($1::bigint[])", [seqs]);
+    async published(seqs, at) {
+      await db.query("UPDATE intake.outbox SET published = true, published_at = $2 WHERE seq = ANY($1::bigint[])", [
+        seqs,
+        at,
+      ]);
+    },
+    async removePublished(before) {
+      const { rows } = await db.query(
+        "DELETE FROM intake.outbox WHERE published AND (published_at IS NULL OR published_at < $1) RETURNING seq",
+        [before],
+      );
+      return rows.length;
     },
     async ping() {
       await db.query("SELECT 1");

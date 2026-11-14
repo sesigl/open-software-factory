@@ -12,8 +12,12 @@ export async function publishAll(url: string, events: { subject: string; event: 
   const { jetstream, jetstreamManager } = await import("@nats-io/jetstream");
   const connection = await connect({ servers: url, timeout: 2000 });
   try {
-    // Adding the stream again with the same configuration changes nothing.
-    await (await jetstreamManager(connection)).streams.add({ name: "OSF", subjects: ["osf.>"] });
+    // Adding the stream again with the same configuration changes nothing. A stream that intake or the foreman added
+    // with a max age (OSF_STREAM_MAX_AGE) keeps it (ADR 0116).
+    const manager = await jetstreamManager(connection);
+    await manager.streams
+      .add({ name: "OSF", subjects: ["osf.>"] })
+      .catch((failure: Error) => manager.streams.info("OSF").catch(() => Promise.reject(failure)));
     const stream = jetstream(connection);
     for (const { subject, event } of events) await stream.publish(subject, JSON.stringify(event));
   } finally {

@@ -79,6 +79,8 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
   as `@opensoftware/harness-proxy` ([ADR 0052](../../docs/decisions/0052-harness-claude-code.md)). `start` gets the
   streams `{ input, output }` to serve on; `exited()` gives 0 when its promise resolved and 1 when it rejected.
 - `sut.events.watch(nats, subjects)`: records the CloudEvents published on a NATS server from now on.
+- `sut.events.stream(nats, name, add?)`: the JetStream stream `name` (its `subjects`, `maxAgeMs` and `messages`), or
+  undefined; with `add` (`subjects`, `maxAgeMs`) it first adds the stream, as another module would.
   `received(type, { count, timeoutMs })` waits for them and, on timeout, names what arrived instead;
   `publish(subject, event)` sends an event to the module.
 - `sut.compose("<file>")`: a Compose file of the unit, like `compose/compose.yaml` of `deploy/`
@@ -479,3 +481,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-145 | implemented | fakes.github removes a label from an issue |
 | SCN-TK-146 | implemented | The fake inference adapter prints the same key for the same run of a gateway and revokes it |
 | SCN-TK-147 | implemented | The fake inference adapter fails revoke with its message |
+| SCN-TK-148 | implemented | sut.events adds a JetStream stream with a max age and reads the message a module published to it |
