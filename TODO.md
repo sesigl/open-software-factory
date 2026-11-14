@@ -1323,10 +1323,26 @@ console at a time (root `AGENTS.md`), so the console slices of T-52, T-55, T-56,
   a `bin`, ADR 0039; add the prefix to `docs/reference/scenario-prefixes.md`)
 - **Problem:** the console looks like Pico CSS's defaults. The product has a name and no icon, no colours and no type
   of its own, and no shared components, so each new page would invent its own.
-- **Before any code:** the owner approves the mock-ups of the direction "precise industrial": the icon and the
-  wordmark, the colours, the type, and the sign-in page, the shell with the runs list, Secrets and Skills on a desktop
-  and on a phone. The first slice commits the approved mock-up and its values to `docs/design/`, so every later agent
-  works from a file in the repository and not from a description.
+- **Approved by the owner (14 November 2026):** the mock-ups of the direction "precise industrial": the brand sheet,
+  the sign-in page, the shell with the runs list, Secrets, a skill's page, and the runs on a phone. They are a canvas
+  outside the repository, so the first slice asks the owner for its export and commits it to `docs/design/` with the
+  values below. From then on every agent works from a file in the repository. The approved values:
+
+  | What | Value |
+  | --- | --- |
+  | Icon | A sawtooth factory roof with an open door, one shape in one colour, readable at 16 pixels. In a 32-pixel view box: `M4 27V15l8-6v6l8-6v6l8-6v18H4zM14 27v-5h4v5h-4z`, filled with the even-odd rule. |
+  | Wordmark | "Open Software Factory" in the UI face, weight 600, beside the icon. |
+  | Faces | IBM Plex Sans for text, IBM Plex Mono for what a person copies or compares: IDs, versions, names of secrets and skills, counts. Both are open-licensed (OFL). |
+  | Dark theme (default) | Ground `#0C0D0F`, surface `#141619`, raised `#1B1E22`, line `#272B31`, strong line `#3A4048`, text `#E6E8EB`, muted text `#A0A7B1`, subtle text `#808894`. |
+  | Light theme | Ground `#FAFAF9`, surface `#FFFFFF`, line `#E2E4E8`, text `#111316`, muted text `#555C66`, signal `#C4400A`. |
+  | Signal colour | `#FF6B1A`. It means two things only: the main action of a page, and work that waits for a person. |
+  | State colours | Running `#6CB0FF`, waits for a person: the signal colour, failed `#FF8F8A`. Complete and cancelled have no colour (muted and subtle text). Each state is a shape and a word, never colour alone. |
+  | Shape | A 4-pixel grid, a radius of 4 pixels for controls and 6 for panels, lines instead of shadows, controls 44 pixels high. |
+  | Type sizes | Page title 24, section title 16, text 14, secondary 13, labels 11 to 12 in mono with capitals and wide spacing. Sentence case everywhere. |
+  | Layout | A navigation column of about 232 pixels on the left with the icon, the factory's name and version, the pages with a count of what needs attention, and the account at the bottom. On a phone: a top bar with a menu button, a list of cards in place of the table, the main action fixed at the bottom. |
+  | Sign-in page | Two halves: the icon, the name, one sentence and the factory's stages as a line of stations on a fine grid; and the provider buttons with a plain refusal message. |
+
+  These are the start of the tokens, not their final list: the contrast check below decides when a value must change.
 - **Build:**
   - Tokens as CSS custom properties in Tailwind's theme, for dark and light: colour by meaning (surface, text, border,
     signal, and the states running, waiting, failed and done), the type scale, spacing on a 4-pixel grid, radius and
@@ -1359,7 +1375,8 @@ console at a time (root `AGENTS.md`), so the console slices of T-52, T-55, T-56,
 - **Done when:** the pages of T-55 to T-58 use only its components and tokens, both checks pass, and each island has
   its island scenario.
 - **Slices:**
-  - [ ] The approved mock-up and its values in `docs/design/`, with a short `README.md` of the direction.
+  - [ ] The approved mock-up (the owner's export of the canvas) and its values in `docs/design/`, with a short
+    `README.md` of the direction.
   - [ ] The ADR and the package: tokens, both themes, the brand files, the two checks.
   - [ ] The components and the workbench that the sign-in page and the shell need (with T-55).
   - [ ] The components that Secrets and Skills need (with T-56 and T-58).
