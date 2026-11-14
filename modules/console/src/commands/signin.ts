@@ -12,8 +12,10 @@ import { setPerson } from "./person.ts";
 const SESSION = "osf_session";
 const FLOW = "osf_signin";
 const FLOW_SECONDS = 600;
+/** The probe of a container's health check (ADR 0134): it needs no session and answers for every host. */
+const PROBE = "/v1/ready";
 /** The paths a person reaches without a session. */
-const OPEN = new Set(["/signin", "/signin/start", "/signin/callback", "/pico.css", "/favicon.svg", "/v1/ready"]);
+const OPEN = new Set(["/signin", "/signin/start", "/signin/callback", "/pico.css", "/favicon.svg"]);
 
 /** Registers the hook and the routes of the sign-in on the console's server. */
 export function useSignIn(app: FastifyInstance, sign: SignIn, accessPath: string, now: () => number): void {
@@ -32,10 +34,12 @@ export function useSignIn(app: FastifyInstance, sign: SignIn, accessPath: string
   };
 
   app.addHook("onRequest", async (request, reply) => {
+    const path = request.url.split("?")[0] ?? "/";
+    // A health check asks the probe at the container's own address, so the probe answers for every host.
+    if (path === PROBE) return;
     // A request for another host is sent to the console's own address first, so the cookies stay on one host.
     if (request.headers.host !== address.host)
       return reply.code(307).header("location", `${sign.url}${request.url}`).send();
-    const path = request.url.split("?")[0] ?? "/";
     // The pages' styles and faces are open, like the sign-in page that needs them.
     if (OPEN.has(path) || path.startsWith("/_astro/")) return;
     const claims = await unseal(cookieOf(request.headers.cookie, SESSION), sign.keys, now());

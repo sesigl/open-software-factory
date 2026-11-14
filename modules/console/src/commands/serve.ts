@@ -44,8 +44,8 @@ type Env = Record<string, string | undefined>;
 const POLICY =
   "default-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
 
-/** The favicon of the design system. */
-const FAVICON = readFileSync(createRequire(import.meta.url).resolve("@opensoftware/ui/brand/favicon.svg"));
+/** The favicon of the design system, which Astro's build copied into the console's own files. */
+const FAVICON = readFileSync(new URL("../web/client/favicon.svg", import.meta.url));
 
 const PICO = readFileSync(createRequire(import.meta.url).resolve("@picocss/pico/css/pico.min.css"));
 

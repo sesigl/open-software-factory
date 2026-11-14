@@ -130,7 +130,9 @@ The provider's callback is `<CONSOLE_URL>/signin/callback`. With the sign-in on,
 its provider's settings and the session key, on an address that is neither `https://` nor loopback, or with
 `CONSOLE_USER_HEADER` too. Open the console on `localhost` (the default `CONSOLE_URL`): a request for another host,
 like `127.0.0.1`, is sent there first, so the session cookie stays off the tools of the profile on `127.0.0.1`.
-`/v1/ready` answers without a session whether the console reads its factory, for health checks.
+`/v1/ready` answers without a session whether the console reads its factory, for health checks. It answers for
+every host name: a container's health check asks `127.0.0.1`, while a page asked at another host than `CONSOLE_URL`
+is sent there.
 
 Whoever may write to the factory's repository can make themselves `admin`: write access to that repository is admin
 access to the factory, and the repository should be private, since the access file holds emails.
@@ -373,3 +375,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-169 | implemented | "console doctor" with the sign-in of GitHub asks no OpenID Connect provider and accepts an admin beside the example |
 | SCN-CONSOLE-170 | implemented | "console doctor" finds the discovery of an issuer that is set with a slash at its end |
 | SCN-CONSOLE-171 | implemented | "console doctor" with the sign-in names the problem of an access file without an admin |
+| SCN-CONSOLE-172 | implemented | The probe "/v1/ready" answers a health check that asks another host than the console's address |

@@ -150,3 +150,10 @@ Feature: Sign-in
     When a person opens "/signin"
     Then the page's stylesheet is a file of the console that answers 200 with "text/css" and names the tokens
     And the console serves the favicon of the design system
+
+  @id=SCN-CONSOLE-172 @status=implemented
+  Scenario: The probe "/v1/ready" answers a health check that asks another host than the console's address
+    Given a console that signs in with OpenID Connect at the address "http://localhost:<port>"
+    When a health check asks for "/v1/ready" at "http://127.0.0.1:<port>"
+    Then the answer has the status 200 and the status "ok"
+    And the page "/" at "http://127.0.0.1:<port>" is still sent to "http://localhost:<port>/"
