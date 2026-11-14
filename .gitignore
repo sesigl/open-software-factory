@@ -10,3 +10,5 @@ dist/
 .foreman/
 .intake/
 .astro/
+# The Git worktrees of Claude Code's subagents: nested checkouts, not part of this one.
+.claude/worktrees/
