@@ -56,6 +56,7 @@ publish only the TypeScript package; clients for other languages are not built (
 | Types | `tsc --strict`; Zod or TypeBox at boundaries |
 | Tests | Vitest |
 | Web pages in tests | happy-dom with Testing Library's queries by role and name, without a browser (`sut.pages`, ADR 0131) |
+| Browser in tests | Playwright's Chromium with axe-core, only for journey and island scenarios (`sut.browser`, ADR 0131) |
 | Integration | NATS and the Temporal dev server as pinned binaries; Testcontainers (PostgreSQL, SeaweedFS, Forgejo) |
 | Import boundaries | dependency-cruiser |
 | Coverage of the running module | V8 precise coverage recorded by the testkit, read with v8-to-istanbul (ADR 0019) |
