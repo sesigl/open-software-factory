@@ -121,8 +121,9 @@ the run's ID without `INTAKE_CONSOLE_URL`.
 | --- | --- |
 | `run.started@v1` | none |
 | `gate.requested@v1` of the gatekeeper | `The run waits for a decision at the stage <stage>: <summary> <run>`; without a run the link is left out |
+| `run.blocked@v1` of the foreman | `The run waits for the checks of <pull request> at the stage <stage>: <run>`; without a pull request, `of <pull request>` is left out ([ADR 0127](../../docs/decisions/0127-a-run-blocked-at-its-checks.md)) |
 | `run.completed@v1` with the outcome `succeeded` | `Pull request: <link>`, one per pull request of the run |
-| `run.completed@v1` with the outcome `failed` or `cancelled` | `The run ended with the outcome <outcome> at the stage <stage>: <run>`; without a stage in the event, `at the stage <stage>` is left out |
+| `run.completed@v1` with the outcome `failed` or `cancelled` | `The run ended with the outcome <outcome> at the stage <stage> (<reason>): <run>`; without a stage or a reason in the event, `at the stage <stage>` or `(<reason>)` is left out |
 
 Each event is told once: the server keeps the source and ID of each event it told of, and the same event again adds
 nothing. A reply or comment that fails is a warning on stderr and is not sent again.
@@ -215,9 +216,10 @@ nothing. For a work item in any other status nothing is published.
 
 With `INTAKE_NATS_URL` the server also listens for the foreman's
 [`run.started@v1`](../../contracts/events/run-started/run-started.schema.json) on `osf.run.started.v1` and
-[`run.completed@v1`](../../contracts/events/run-completed/run-completed.schema.json) on `osf.run.completed.v1`, and the
+[`run.completed@v1`](../../contracts/events/run-completed/run-completed.schema.json) on `osf.run.completed.v1`, its
+[`run.blocked@v1`](../../contracts/events/run-blocked/run-blocked.schema.json) on `osf.run.blocked.v1`, and the
 gatekeeper's [`gate.requested@v1`](../../contracts/events/gate-requested/gate-requested.schema.json) on
-`osf.gate.requested.v1`, which only the [run replies](#run-replies) read. The work item of a run follows it (ADR 0071):
+`osf.gate.requested.v1`; the last two only the [run replies](#run-replies) read. The work item of a run follows it (ADR 0071):
 
 | Event | The work item's `status` |
 | --- | --- |
@@ -253,7 +255,7 @@ letter too, after that time; the profile and the chart set `7d`.
 | `OSF_NOW` | string |  | The current time, like 2026-01-01T00:00:00Z, for the time a work item and a request were received. Default: the clock. |
 | `INTAKE_API_TOKEN` | string |  | serve: the token that callers of /v1 send as Authorization: Bearer <token>. Required. mcp: the token it sends to the server. Required. |
 | `INTAKE_DATABASE_URL` | string |  | serve: the PostgreSQL database of the work items, schema intake. Default: an embedded PostgreSQL in OSF_DATA. |
-| `INTAKE_NATS_URL` | string |  | serve: the NATS server for work.received@v1 on osf.work.received.v1 and work.retry-requested@v1 on osf.work.retry-requested.v1, and for the foreman's run.started@v1 and run.completed@v1, which move a work item's status (ADR 0071), and the gatekeeper's gate.requested@v1, which its requesters hear of (ADR 0113). Unset: no events. |
+| `INTAKE_NATS_URL` | string |  | serve: the NATS server for work.received@v1 on osf.work.received.v1 and work.retry-requested@v1 on osf.work.retry-requested.v1, and for the foreman's run.started@v1 and run.completed@v1, which move a work item's status (ADR 0071), the gatekeeper's gate.requested@v1 and the foreman's run.blocked@v1, which its requesters hear of (ADR 0113, 0127). Unset: no events. |
 | `OSF_STREAM_MAX_AGE` | string |  | serve, resend: the age after which the stream OSF drops an event, like 7d, 12h, 30m or 90s (ADR 0116). The server adds the stream with it, or sets it on a stream that another module added. Unset: a new stream keeps its events without a limit of age, and an existing one keeps its own. The profile and the chart set 7d. |
 | `INTAKE_OUTBOX_KEEP` | string | `"7d"` | serve: how long an event that the server published stays in its outbox, like 7d, 12h, 30m or 90s; the relay removes older ones (ADR 0116). |
 | `INTAKE_SLACK_ADAPTER` | string | `"npx -y @opensoftware/channel-slack"` | serve: the command line of the channel port's slack adapter, which reads Slack's deliveries and replies (ADR 0063). |
@@ -355,3 +357,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-INTAKE-063 | implemented | A run event that failed 5 times waits as a dead letter, fails "/v1/health" while it waits, and "intake resend" sends it again |
 | SCN-INTAKE-064 | implemented | A stream "OSF" without a limit gets the max age of "OSF_STREAM_MAX_AGE" when the server starts |
 | SCN-INTAKE-065 | implemented | The server removes the events it published from its outbox once they are older than "INTAKE_OUTBOX_KEEP" |
+| SCN-INTAKE-066 | implemented | The Slack thread of a work item hears once that its run waits for the checks of its pull request, and why the run failed |

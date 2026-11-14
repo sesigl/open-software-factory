@@ -92,3 +92,16 @@ export function traceItem({ sent, found }: { sent: boolean; found: boolean }): I
     : "no collector took the span: check CONSOLE_OTLP_URL and that the collector runs";
   return { name: "traces", ok: found, detail };
 }
+
+/** The host the sandbox probe sends its request to; the probe's sandbox allows no host, so its proxy must refuse it. */
+export const DENIED_HOST = "example.com";
+
+/** The item of the sandbox from what the adapter's probe printed and its first error line (ADR 0120). */
+export function sandboxItem({ stdout, stderr }: { stdout: string; stderr: string }): Item {
+  if (stdout.trim() === `refused ${DENIED_HOST}`) return { name: "sandbox", ok: true };
+  const detail =
+    stdout.trim() === `reached ${DENIED_HOST}`
+      ? `a sandbox reached ${DENIED_HOST}, which its egress does not allow: check the egress proxy of the sandbox adapter`
+      : `${stderr.split("\n")[0] || "the probe printed no outcome"}: check CONSOLE_SANDBOX_COMMAND and CONSOLE_SANDBOX_TEMPLATE`;
+  return { name: "sandbox", ok: false, detail };
+}

@@ -104,7 +104,7 @@ export async function serve(env: Env) {
   const keepMs = durationOf(env, "INTAKE_OUTBOX_KEEP") ?? 7 * 86_400_000;
   const work = inbox(store, { nats, console: env.INTAKE_CONSOLE_URL || undefined, now, keepMs, say, warn });
   await work.relay();
-  // The Slack threads and the issues of a work item hear when its run waits at a gate and when it ended (ADR 0113).
+  // The Slack threads and the issues of a work item hear when its run waits at a gate or for its checks and when it ended (ADR 0113, 0127).
   // A reply that fails is a warning, so the event does not come again to the places that heard of it.
   const issues = env.INTAKE_FORGE_TOKEN ? forge : undefined;
   const follow = async (event: unknown) => {

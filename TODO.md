@@ -812,10 +812,10 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
     `initialize` (ADR 0120, `SCN-CONSOLE-064` to `-069`).
   - [x] A test span reaches the trace store: `console doctor --deep` sends one span by OTLP and finds it with Jaeger's
     query API (ADR 0120, `SCN-CONSOLE-100` to `-102`, `fakes.traceStore`, `SCN-TK-149`).
-  - [ ] Deep checks that need adapter capabilities that do not exist yet (ADR 0120): a sandbox starts and refuses a
-    denied host (a sandbox adapter command that runs a probe, a `ports/sandbox` operation with its `@conformance`
-    scenario, and the Docker and Kubernetes adapters), a test event reaches the foreman (a NATS client in the console
-    and a foreman route that shows it).
+  - [x] A sandbox starts and refuses a denied host: the port operation `probe <template> <host>` in both adapters,
+    and `console doctor --deep` with `CONSOLE_SANDBOX_COMMAND` (ADR 0120, `SCN-SANDBOX-024`, `SCN-CONSOLE-120` to
+    `-123`, `SCN-TK-150`, `-151`).
+  - [ ] A test event reaches the foreman (ADR 0120): a NATS client in the console and a foreman route that shows it.
 
 ### [x] T-26 · evidence in the loop (P1)
 
@@ -1074,7 +1074,7 @@ as a vision scenario. Each item names the place in the code, so start there, and
   - [x] An agent's `repositories` take effect in a run: the foreman clones each one, shallow, below `repositories/<name>`
     of the session's folder before the turn, also in a sandbox (ADR 0126, `SCN-FORE-159`).
 
-### [ ] T-45 · the requester hears about the run (P1)
+### [x] T-45 · the requester hears about the run (P1)
 
 - **Problem:** intake answers a Slack mention with the work item's ID and, when the run finished, with its pull
   request. A person hears nothing when the run starts, waits at a gate or fails, and an issue gets no comment at all.
@@ -1083,8 +1083,10 @@ as a vision scenario. Each item names the place in the code, so start there, and
 - **Slices:**
   - [x] `run.completed@v1` with the outcome `failed` or `cancelled` adds a reply with the failed stage (SCN-INTAKE-057).
   - [x] A comment on the issue of a work item through the forge port (SCN-INTAKE-059, SCN-FORGE-034).
-  - [ ] An event when a run blocks at a gate or at checks, if the contract gets it (`contracts/events/`). A gate is
-    done with `gate.requested@v1` (SCN-INTAKE-058, ADR 0113); a run blocked at its checks has no event yet.
+  - [x] An event when a run blocks at a gate or at checks: a gate through `gate.requested@v1` (SCN-INTAKE-058, ADR
+    0113), checks through the foreman's `run.blocked@v1` (SCN-FORE-160, SCN-INTAKE-066, ADR 0127).
+  - [x] The reason of a failure: `run.completed@v1` has the failed stage's `reason`, and the reply names it
+    (SCN-FORE-160, SCN-INTAKE-066, ADR 0127).
 
 ### [x] T-46 · the dogfood factory in sandboxes (P1)
 

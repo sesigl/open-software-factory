@@ -1,6 +1,6 @@
 // What a delivery from the forge, Sentry or a Slack mention asks of the inbox, without I/O (ADR 0065).
 import { createHmac, timingSafeEqual } from "node:crypto";
-import type { GateRequested, IssueLabeled, WorkItem, WorkItemView } from "@opensoftware/contracts";
+import type { GateRequested, IssueLabeled, RunBlocked, WorkItem, WorkItemView } from "@opensoftware/contracts";
 import type { RunFact } from "./view.ts";
 
 type Submission = Omit<WorkItem, "id"> & { id?: string };
@@ -61,7 +61,17 @@ export function runTexts(fact: RunFact, console: string | undefined): string[] {
   if (fact.status === "complete") return fact.pullRequests.map((url) => `Pull request: ${url}`);
   if (fact.status === "running") return [];
   const stage = fact.stage ? ` at the stage ${fact.stage}` : "";
-  return [`The run ended with the outcome ${fact.status}${stage}:${runLink(console, fact.runId) || ` ${fact.runId}`}`];
+  const reason = fact.reason ? ` (${fact.reason})` : "";
+  return [
+    `The run ended with the outcome ${fact.status}${stage}${reason}:${runLink(console, fact.runId) || ` ${fact.runId}`}`,
+  ];
+}
+
+/** What the requesters hear of a run.blocked@v1: the checks of which pull request the stage waits for (ADR 0127). */
+export function blockedText(blocked: RunBlocked["data"], console: string | undefined): string {
+  const of = blocked.pullRequest ? ` of ${blocked.pullRequest}` : "";
+  const link = runLink(console, blocked.runId) || ` ${blocked.runId}`;
+  return `The run waits for the checks${of} at the stage ${blocked.stage}:${link}`;
 }
 
 /** What the requesters hear of a gate.requested@v1: the stage that waits, what is asked, and the run's link. */

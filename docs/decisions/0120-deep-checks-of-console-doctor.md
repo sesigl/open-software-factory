@@ -30,10 +30,21 @@ cost money (a model call) or start processes, so they must not run on every page
   `CONSOLE_OTLP_URL`; a span that does not arrive names the collector's exporter and `CONSOLE_TRACES_URL`. The
   query API is Jaeger's HTTP API that the profile's Jaeger v2 already serves, so this needs no new service. System
   tests use `fakes.traceStore()` of the testkit, an in-process OTLP receiver with that query route.
-- **Not yet:** a sandbox that starts and refuses a denied host, and a test event that reaches the foreman, stay an
-  open slice of T-25. The first needs a sandbox adapter command that runs a probe and reports the refusal, a port
-  operation with its `@conformance` scenario in `ports/sandbox` and both adapters; the second needs a NATS client in
-  the console and a foreman route that shows a received test event. The console has neither today, and a check that
+- **`sandbox`** (added later in T-25), only when `CONSOLE_SANDBOX_COMMAND` is set: the sandbox port gets the
+  operation `probe <template> <host>` (`SCN-SANDBOX-024`, `@conformance`). The adapter starts a sandbox from the
+  template with no allowed host, sends one HTTPS request to the host with `curl`, removes the sandbox and prints
+  `refused <host>` when its egress proxy's log holds a refused request to the host, else `reached <host>`. The
+  console runs `CONSOLE_SANDBOX_COMMAND probe CONSOLE_SANDBOX_TEMPLATE example.com` with `sh -c` and wants
+  `refused example.com`. The outcome comes from the egress log, not from curl's exit code, so a host that is down or
+  does not resolve cannot pass for a refusal. A probe is one command, so the console needs no sandbox ID and leaves no
+  sandbox behind. `probe --allow` puts the host into the sandbox's egress allowlist and must print `reached <host>`
+  (`SCN-SANDBOX-027`), so the conformance suite proves both outcomes without the real network: the host is
+  `api.example.invalid`, which is refused or, when allowed, not refused even though it does not answer. A missing host
+  or one with characters other than `[a-z0-9.-]` exits 2 before a sandbox starts (`SCN-SANDBOX-025`, `026`). The
+  console never passes `--allow`. System tests use `fakes.sandbox({ probe })` of the testkit, which isolates nothing and reports the
+  scripted outcome; the adapters' conformance tests need Docker and kind and run in CI.
+- **Not yet:** a test event that reaches the foreman stays an open slice of T-25. It needs a NATS client in the
+  console and a foreman route that shows a received test event. The console has neither today, and a check that
   cannot see its result would only pretend.
 
 ## Options considered
@@ -52,5 +63,6 @@ routes, not the factory's. We call only the factory's routes through the same Op
 
 ## Consequences
 
-A person can see in one command that each route and the harness work before the first run. The remaining two
-checks need new adapter capabilities; revisit when the sandbox port gets a probe and the foreman shows a test event.
+A person can see in one command that each route and the harness work before the first run. The sandbox check
+starts real sandboxes, so it takes as long as one `create`. The remaining check needs a new foreman capability;
+revisit when the foreman shows a test event.

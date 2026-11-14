@@ -229,6 +229,7 @@ const SUBJECTS: Record<string, string> = {
   "run.started@v1": "osf.run.started.v1",
   "run.completed@v1": "osf.run.completed.v1",
   "gate.requested@v1": "osf.gate.requested.v1",
+  "run.blocked@v1": "osf.run.blocked.v1",
 };
 
 export const CONSOLE_URL = "https://console.example";
@@ -243,6 +244,28 @@ export function gateEvent(workItemId: string, stage: string, summary: string) {
     time: "2026-01-01T00:02:00Z",
     subject: "gate_7f3a",
     data: { gateId: "gate_7f3a", workItemId, stage, policy: "policies/deploy.rego", approvers: ["leads"], summary },
+  } as unknown as ReturnType<typeof runEvent>;
+}
+
+/** The foreman's "run.blocked@v1" for the work item: its stage waits for the checks of the pull request. */
+export function blockedEvent(workItemId: string, stage: string, pullRequest: string) {
+  return {
+    specversion: "1.0",
+    id: `${RUN}.blocked.${stage}`,
+    source: "/osf/foreman",
+    type: "run.blocked@v1",
+    time: "2026-01-01T00:02:00Z",
+    subject: RUN,
+    data: {
+      runId: RUN,
+      workItemId,
+      stage,
+      waitsFor: "checks",
+      pullRequest,
+      checks: ["verify"],
+      requester: { kind: "person", id: "slack:U024BE7LH", displayName: "Varun" },
+      source: "slack",
+    },
   } as unknown as ReturnType<typeof runEvent>;
 }
 

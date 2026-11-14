@@ -45,7 +45,7 @@ Each format has one schema, generated from `typespec/`, and fixtures that CONTRA
 | gate record | `gate-record/gate-record.schema.json` | `GateRecord` | gatekeeper's signed approval record (ADR 0047). |
 | sandbox spec | `sandbox-spec/sandbox-spec.schema.json` | `SandboxSpec` | The input of a sandbox adapter's `create` (ADR 0054). Closed objects: an unknown field is an error. |
 | factory lock | `factory-lock/factory-lock.schema.json` | `FactoryLock` | `factory.lock` next to `factory.yaml`: the registry MCP servers and the adapters that `factory plan` pinned (ADR 0020, ADR 0125). factory-spec writes it, the foreman reads the adapter pins. |
-| events | `events/<event>/<event>.schema.json`, `events/asyncapi.yaml` | `WorkReceived`, `WorkRetryRequested`, `RunStarted` … `IssueLabeled` | CloudEvents 1.0, structured JSON. |
+| events | `events/<event>/<event>.schema.json`, `events/asyncapi.yaml` | `WorkReceived`, `WorkRetryRequested`, `RunStarted`, `RunCompleted`, `RunBlocked` … `IssueLabeled` | CloudEvents 1.0, structured JSON. |
 
 ## HTTP APIs
 

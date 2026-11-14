@@ -1086,6 +1086,13 @@
         ],
         "additionalProperties": false
       },
+      "BlockedOn": {
+        "type": "string",
+        "enum": [
+          "checks"
+        ],
+        "description": "What a blocked stage waits for: the checks of the run's pull request. A gate has its own `gate.requested@v1`."
+      },
       "BundlePath": {
         "type": "string",
         "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$))[^\\\\]+$",
@@ -2511,6 +2518,104 @@
         ],
         "description": "foreman: a signal a person sent a run, as the run records it (ADR 0118)."
       },
+      "RunBlocked": {
+        "type": "object",
+        "properties": {
+          "specversion": {
+            "type": "string",
+            "const": "1.0"
+          },
+          "id": {
+            "$ref": "#/components/schemas/Identifier",
+            "description": "Unique per source. A consumer that sees the same source and id twice handles the event once."
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The producing module, for example \"/osf/intake\"."
+          },
+          "type": {
+            "type": "string",
+            "const": "run.blocked@v1"
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The ID of the thing the event is about: work item, gate, run, score or pull request."
+          },
+          "datacontenttype": {
+            "type": "string",
+            "const": "application/json"
+          },
+          "dataschema": {
+            "type": "string",
+            "format": "uri"
+          },
+          "traceparent": {
+            "type": "string",
+            "description": "W3C trace context (CloudEvents distributed tracing extension)."
+          },
+          "data": {
+            "$ref": "#/components/schemas/RunBlockedData"
+          }
+        },
+        "required": [
+          "specversion",
+          "id",
+          "source",
+          "type",
+          "time",
+          "data"
+        ],
+        "description": "foreman: a stage of a run waits for the checks of its pull request (ADR 0127). The ID is `<run ID>.blocked.<stage>`."
+      },
+      "RunBlockedData": {
+        "type": "object",
+        "properties": {
+          "runId": {
+            "$ref": "#/components/schemas/Identifier"
+          },
+          "workItemId": {
+            "$ref": "#/components/schemas/Identifier"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/Name",
+            "description": "The stage that waits."
+          },
+          "waitsFor": {
+            "$ref": "#/components/schemas/BlockedOn"
+          },
+          "pullRequest": {
+            "type": "string",
+            "format": "uri",
+            "description": "The pull request whose checks the stage waits for."
+          },
+          "checks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The names of the checks the stage waits for."
+          },
+          "requester": {
+            "$ref": "#/components/schemas/Actor"
+          },
+          "source": {
+            "$ref": "#/components/schemas/Name"
+          }
+        },
+        "required": [
+          "runId",
+          "workItemId",
+          "stage",
+          "waitsFor",
+          "requester",
+          "source"
+        ]
+      },
       "RunCompleted": {
         "type": "object",
         "properties": {
@@ -2618,6 +2723,10 @@
           "retryOf": {
             "$ref": "#/components/schemas/Identifier",
             "description": "The run before, when this run runs a work item again (ADR 0105)."
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why the stage the run ended at failed, when the foreman knows it (ADR 0127)."
           }
         },
         "required": [

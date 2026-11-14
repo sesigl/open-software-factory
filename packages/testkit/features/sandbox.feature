@@ -1,6 +1,6 @@
 @module=testkit @owner=maintainers
 Feature: Fake sandbox adapter
-  fakes.sandbox is a program with the commands create, exec, copy, destroy and list of the sandbox port. A sandbox is a
+  fakes.sandbox is a program with the commands create, exec, copy, destroy, list and probe of the sandbox port. A sandbox is a
   folder on the host, and exec runs the command there. It shows what a module asks of the port without Docker; it
   isolates nothing (ADR 0068).
 
@@ -32,6 +32,22 @@ Feature: Fake sandbox adapter
   Scenario: The fake sandbox refuses a template outside its list
     Given a module whose CLI creates a sandbox with the adapter in "DEMO_SANDBOX_COMMAND" from a spec with the template "node:24"
     And its system test starts fakes.sandbox with the templates "alpine:3" and expects the exit code 1 and "no template node:24"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-150 @status=implemented
+  Scenario: The fake sandbox's probe reports the denied host refused and removes its sandbox
+    Given a module whose CLI runs "probe alpine:3 example.com" with the adapter in "DEMO_SANDBOX_COMMAND" and prints its output and the list
+    And its system test expects "refused example.com", an empty list and the probe of "alpine:3" and "example.com" in the fake
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-151 @status=implemented
+  Scenario: The fake sandbox's probe reports the scripted outcome "reached"
+    Given a module whose CLI runs "probe alpine:3 example.com" with the adapter in "DEMO_SANDBOX_COMMAND"
+    And its system test starts fakes.sandbox with the probe "reached" and expects "reached example.com"
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"

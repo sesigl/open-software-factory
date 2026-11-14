@@ -37,6 +37,12 @@ channels:
     messages:
       RunCompleted:
         $ref: '#/components/messages/RunCompleted'
+  run-blocked:
+    address: osf.run.blocked.v1
+    description: A stage of a run waits for the checks of its pull request.
+    messages:
+      RunBlocked:
+        $ref: '#/components/messages/RunBlocked'
   gate-requested:
     address: osf.gate.requested.v1
     description: A stage waits for a decision.
@@ -108,6 +114,13 @@ operations:
       $ref: '#/channels/run-completed'
     messages:
       - $ref: '#/channels/run-completed/messages/RunCompleted'
+  publishRunBlocked:
+    action: send
+    summary: Published by foreman.
+    channel:
+      $ref: '#/channels/run-blocked'
+    messages:
+      - $ref: '#/channels/run-blocked/messages/RunBlocked'
   publishGateRequested:
     action: send
     summary: Published by gatekeeper.
@@ -191,6 +204,14 @@ components:
         schemaFormat: application/schema+json;version=draft-2020-12
         schema:
           $ref: './run-completed/run-completed.schema.json'
+    RunBlocked:
+      name: run.blocked@v1
+      title: run.blocked@v1
+      contentType: application/cloudevents+json
+      payload:
+        schemaFormat: application/schema+json;version=draft-2020-12
+        schema:
+          $ref: './run-blocked/run-blocked.schema.json'
     GateRequested:
       name: gate.requested@v1
       title: gate.requested@v1

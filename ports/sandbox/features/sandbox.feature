@@ -1,6 +1,6 @@
 @port=sandbox @owner=maintainers
 Feature: Running commands in an isolated sandbox
-  A sandbox adapter is a program with the commands create, exec, copy, snapshot, destroy, list and egress-log. A
+  A sandbox adapter is a program with the commands create, exec, copy, snapshot, destroy, list, egress-log and probe. A
   sandbox starts from a sandbox spec: a template, resources, the hosts it may reach, its secrets as references and
   the MCP servers it may call. Every request that leaves the sandbox passes its egress proxy, which refuses other
   hosts and puts in the real secrets (ADR 0054). The test template is an image with a shell and curl.
@@ -118,3 +118,29 @@ Feature: Running commands in an isolated sandbox
     When the client destroys the sandbox
     Then the sandbox list does not hold the sandbox
     And exec in the sandbox fails with "no sandbox"
+
+  @id=SCN-SANDBOX-024 @status=implemented @conformance @realizes=SCN-FACTORY-RUNTIME-003
+  Scenario: probe starts a sandbox with no allowed host, finds a denied host refused and removes the sandbox
+    Given the test template
+    When the client runs "probe" with the test template and the host "api.example.invalid"
+    Then probe prints "refused api.example.invalid" and exits with code 0
+    And the sandbox that probe names on standard error is not in the sandbox list
+
+  @id=SCN-SANDBOX-025 @status=implemented @conformance
+  Scenario: probe without a host exits with the usage code before it starts a sandbox
+    Given the test template
+    When the client runs "probe" with the test template and no host
+    Then probe exits with code 2 and names the usage "probe alpine:3 example.com"
+
+  @id=SCN-SANDBOX-026 @status=implemented @conformance
+  Scenario: probe refuses a host with characters outside letters, digits, dots and hyphens
+    Given the test template
+    When the client runs "probe" with the test template and the host "api.example.invalid/x"
+    Then probe exits with code 2 and names the usage "probe alpine:3 example.com"
+
+  @id=SCN-SANDBOX-027 @status=implemented @conformance @realizes=SCN-FACTORY-RUNTIME-003
+  Scenario: probe with --allow puts the host into the egress allowlist, so the host is not refused
+    Given the test template
+    When the client runs "probe --allow" with the test template and the host "api.example.invalid"
+    Then probe prints "reached api.example.invalid" and exits with code 0
+    And the sandbox that probe names on standard error is not in the sandbox list

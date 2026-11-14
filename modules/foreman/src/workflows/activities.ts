@@ -32,6 +32,7 @@ import {
   type RunView,
   repositoryOf,
   resultOf,
+  runBlocked,
   runCompleted,
   runStarted,
   type StagePullRequest,
@@ -270,7 +271,17 @@ export function activities(deps: ActivityDeps) {
         return { kind: "checks", index, checks: [], reason: "no earlier stage linked a pull request" };
       const { repo, number } = pullRequestOf(view.pullRequest);
       const printed = await pullRequestChecks(...forge(definition), repo, number);
-      return { kind: "checks", index, checks: checksOf(names, printed), afterMs, missing: missingOf(names, printed) };
+      const fact: Fact = {
+        kind: "checks",
+        index,
+        checks: checksOf(names, printed),
+        afterMs,
+        missing: missingOf(names, printed),
+      };
+      // The requester hears once that the stage waits for its checks (ADR 0127).
+      const blocked = runBlocked(view, apply(view, fact, deps.now()), index, names);
+      if (blocked) await deps.bus?.publish(SUBJECTS.runBlocked, blocked);
+      return fact;
     },
     /**
      * Runs the stage's agent, in a sandbox when it declares one; steering messages from the `steered`-th on are for it.

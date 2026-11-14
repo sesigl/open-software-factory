@@ -122,6 +122,15 @@
       "type": "string",
       "description": "doctor --deep: the base URL of the trace store's Jaeger query API, like http://jaeger:16686. Set, doctor --deep sends one span to CONSOLE_OTLP_URL and waits 5 s for GET /api/traces/{traceId} to find it."
     },
+    "CONSOLE_SANDBOX_COMMAND": {
+      "type": "string",
+      "description": "doctor --deep: the command line, run with sh -c, of a sandbox adapter, like sandbox-docker. Set, doctor --deep runs its probe <template> example.com, which starts a sandbox with no allowed host, and wants \"refused example.com\"."
+    },
+    "CONSOLE_SANDBOX_TEMPLATE": {
+      "type": "string",
+      "default": "curlimages/curl:8.17.0",
+      "description": "doctor --deep: the template of the sandbox probe; it needs curl."
+    },
     "CONSOLE_MODEL_URL": {
       "type": "string",
       "description": "doctor --deep: the OpenAI-compatible base URL of the model gateway (LiteLLM), ending in /v1; it gets one chat completion of one token per model route of the factory definition."

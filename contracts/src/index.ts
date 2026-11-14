@@ -22,6 +22,7 @@ export type WorkReceived = Schemas["WorkReceived"];
 export type WorkRetryRequested = Schemas["WorkRetryRequested"];
 export type RunStarted = Schemas["RunStarted"];
 export type RunCompleted = Schemas["RunCompleted"];
+export type RunBlocked = Schemas["RunBlocked"];
 export type GateRequested = Schemas["GateRequested"];
 export type GateDecided = Schemas["GateDecided"];
 export type ScoreRecorded = Schemas["ScoreRecorded"];

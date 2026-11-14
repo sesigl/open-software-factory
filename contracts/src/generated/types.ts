@@ -288,6 +288,11 @@ export type components = {
             /** @description Five-field cron expression in UTC. Without it the suite runs on request. */
             schedule?: string;
         };
+        /**
+         * @description What a blocked stage waits for: the checks of the run's pull request. A gate has its own `gate.requested@v1`.
+         * @enum {string}
+         */
+        BlockedOn: "checks";
         /** @description A path inside the bundle: relative, forward slashes, no "..". */
         BundlePath: string;
         /** @description The name of a check on the forge: a commit status context. */
@@ -829,6 +834,44 @@ export type components = {
             /** @description The steering message of "steer". */
             message?: string;
         };
+        /** @description foreman: a stage of a run waits for the checks of its pull request (ADR 0127). The ID is `<run ID>.blocked.<stage>`. */
+        RunBlocked: {
+            /** @constant */
+            specversion: "1.0";
+            /** @description Unique per source. A consumer that sees the same source and id twice handles the event once. */
+            id: components["schemas"]["Identifier"];
+            /** @description The producing module, for example "/osf/intake". */
+            source: string;
+            /** @constant */
+            type: "run.blocked@v1";
+            /** Format: date-time */
+            time: string;
+            /** @description The ID of the thing the event is about: work item, gate, run, score or pull request. */
+            subject?: string;
+            /** @constant */
+            datacontenttype?: "application/json";
+            /** Format: uri */
+            dataschema?: string;
+            /** @description W3C trace context (CloudEvents distributed tracing extension). */
+            traceparent?: string;
+            data: components["schemas"]["RunBlockedData"];
+        };
+        RunBlockedData: {
+            runId: components["schemas"]["Identifier"];
+            workItemId: components["schemas"]["Identifier"];
+            /** @description The stage that waits. */
+            stage: components["schemas"]["Name"];
+            waitsFor: components["schemas"]["BlockedOn"];
+            /**
+             * Format: uri
+             * @description The pull request whose checks the stage waits for.
+             */
+            pullRequest?: string;
+            /** @description The names of the checks the stage waits for. */
+            checks?: string[];
+            requester: components["schemas"]["Actor"];
+            source: components["schemas"]["Name"];
+        };
         /** @description foreman: a run ended. */
         RunCompleted: {
             /** @constant */
@@ -870,6 +913,8 @@ export type components = {
             evidenceBundle?: string;
             /** @description The run before, when this run runs a work item again (ADR 0105). */
             retryOf?: components["schemas"]["Identifier"];
+            /** @description Why the stage the run ended at failed, when the foreman knows it (ADR 0127). */
+            reason?: string;
         };
         /** @description foreman: the runs of the server, running runs first, then the runs that ended, the one that ended last first, as `GET /v1/runs` answers them (ADR 0071). */
         RunList: {

@@ -93,6 +93,7 @@ npx @opensoftware/sandbox-kubernetes destroy "$id"
 | `sandbox-kubernetes destroy <ID>` | Remove the sandbox, its files and its egress pod. It ends when the sandbox's claim is gone; Kubernetes stops the pods in the background, in some seconds. |
 | `sandbox-kubernetes list` | Print the IDs of the sandboxes in the namespace. |
 | `sandbox-kubernetes egress-log <ID>` | Print one JSON line per request that left the sandbox. |
+| `sandbox-kubernetes probe <template> <host>` | Start a sandbox from the template with no allowed host, send one HTTPS request to the host with `curl`, remove the sandbox, and print `refused <host>` when its egress proxy refused the request, else `reached <host>`. The deep check `sandbox` of `console doctor --deep` runs it (ADR 0120). |
 
 An ID that is not 12 hex digits, or a command that misses its argument, exits 2. An unknown sandbox ID exits 1
 with `no sandbox <ID>`. When kubectl fails, the command exits 1 with `kubectl <command> failed:` and kubectl's error. A snapshot keeps only `/workspace`. Its claim is

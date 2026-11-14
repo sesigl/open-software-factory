@@ -172,14 +172,16 @@ Every server, client and subscription stops when the scenario ends, before the f
   at `agent`, with the ACP SDK where the file finds it, and the agent takes its script and sends its log over HTTP at
   `host.docker.internal`, which the sandbox's egress must allow
   ([ADR 0096](../../docs/decisions/0096-agents-in-sandboxes-in-the-profile.md)).
-- `fakes.sandbox({ templates })`: a sandbox adapter with the commands `create`, `exec`, `copy`, `destroy` and `list`
-  of the [sandbox port](../../ports/sandbox/README.md), whose sandboxes are folders on the host, for a module that
+- `fakes.sandbox({ templates, probe })`: a sandbox adapter with the commands `create`, `exec`, `copy`, `destroy`,
+  `list` and `probe` of the [sandbox port](../../ports/sandbox/README.md), whose sandboxes are folders on the host, for a module that
   drives the port without Docker ([ADR 0068](../../docs/decisions/0068-foreman-sandboxes.md)). Run it with its
   `command` and `args`, then the port's command. Its IDs are `000000000001` and on. `exec` runs the command in the
   sandbox's folder with the spec's `env` and `osf-secret-placeholder-<NAME>` for each secret; `copy` maps `<ID>:<path>`
   to that folder. With `templates`, `create` refuses another template with `no template <name>` and exit code 1.
+  `probe <template> <host>` creates a sandbox with no allowed host, removes it and prints `refused <host>`, or
+  `reached <host>` with `probe: "reached"`, as it cannot refuse anything itself.
   `created()` lists each sandbox's ID and spec, `execs()` each command with the files in the folder when it started,
-  and `list()` the sandboxes that exist. It isolates nothing.
+  `probes()` each probe's sandbox, template and host, and `list()` the sandboxes that exist. It isolates nothing.
 - `fakes.inference({ url, fails, startFails, revokeFails })`: an inference adapter with the commands `start`, `key`,
   `revoke`, `spend-log`, `stop` and `list` of the [inference port](../../ports/inference/README.md), for a module that drives the port without LiteLLM
   and Docker ([ADR 0070](../../docs/decisions/0070-foreman-gateway-and-take-over.md)). Run it with its `command` and
@@ -489,3 +491,5 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-147 | implemented | The fake inference adapter fails revoke with its message |
 | SCN-TK-148 | implemented | sut.events adds a JetStream stream with a max age and reads the message a module published to it |
 | SCN-TK-149 | implemented | fakes.traceStore answers Jaeger's query of a trace with the span it received by OTLP, and keeps none with "keep: false" |
+| SCN-TK-150 | implemented | The fake sandbox's probe reports the denied host refused and removes its sandbox |
+| SCN-TK-151 | implemented | The fake sandbox's probe reports the scripted outcome "reached" |

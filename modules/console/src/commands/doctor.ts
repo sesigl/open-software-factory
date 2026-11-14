@@ -1,10 +1,11 @@
 // console doctor: checks each server of the factory, its token and the factory definition, and prints one fix per
-// failure (ADR 0086); with --deep also each model route, the harness and a span's way to the trace store (ADR 0120). It exits 1 when a check fails. The page /health shows the same.
+// failure (ADR 0086); with --deep also each model route, the harness, a span's way to the trace store and a sandbox's egress (ADR 0120). It exits 1 when a check fails. The page /health shows the same.
 import { readFileSync } from "node:fs";
 import { type Api, probe } from "../adapters/apis.ts";
-import { callRoute, initializeHarness, traceRoundTrip } from "../adapters/deep.ts";
+import { callRoute, initializeHarness, probeSandbox, traceRoundTrip } from "../adapters/deep.ts";
 import { readFactory } from "../adapters/factory-file.ts";
 import {
+  DENIED_HOST,
   groupsItem,
   harnessItem,
   type Item,
@@ -12,6 +13,7 @@ import {
   routeItem,
   routesOf,
   type Server,
+  sandboxItem,
   serverItems,
   traceItem,
 } from "../domain/doctor.ts";
@@ -51,7 +53,10 @@ function groups(file: string): Item {
   }
 }
 
-/** The deep checks (ADR 0120): a model call per route, the harness's ACP initialize, and one span to the trace store. */
+/**
+ * The deep checks (ADR 0120): a model call per route, the harness's ACP initialize, one span to the trace store and a
+ * sandbox that refuses a denied host.
+ */
 async function deepItems(env: Env, routes: string[]): Promise<Item[]> {
   const items: Item[] = [];
   const url = env.CONSOLE_MODEL_URL;
@@ -65,6 +70,9 @@ async function deepItems(env: Env, routes: string[]): Promise<Item[]> {
   );
   const traces = env.CONSOLE_TRACES_URL;
   if (traces) items.push(traceItem(await traceRoundTrip(env.CONSOLE_OTLP_URL ?? "", traces)));
+  const sandbox = env.CONSOLE_SANDBOX_COMMAND;
+  const template = env.CONSOLE_SANDBOX_TEMPLATE || "curlimages/curl:8.17.0";
+  if (sandbox) items.push(sandboxItem(await probeSandbox(sandbox, template, DENIED_HOST)));
   return items;
 }
 

@@ -14,11 +14,11 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join, posix, relative } from "node:path";
-import type { SandboxLogEntry, SandboxSpec } from "./sandbox.ts";
+import type { SandboxLogEntry, SandboxOptions, SandboxSpec } from "./sandbox.ts";
 
 const [state, command, ...args] = process.argv.slice(2) as [string, string, ...string[]];
 const root = join(state, "sandboxes");
-const options = JSON.parse(readFileSync(join(state, "options.json"), "utf8")) as { templates?: string[] };
+const options = JSON.parse(readFileSync(join(state, "options.json"), "utf8")) as SandboxOptions;
 const log = (entry: SandboxLogEntry): void => appendFileSync(join(state, "log.jsonl"), `${JSON.stringify(entry)}\n`);
 
 function fail(message: string, code = 1): never {
@@ -41,19 +41,35 @@ function inSandbox(end: string): string | undefined {
   return join(sandbox(match[1]), "workspace", posix.relative("/workspace", path));
 }
 
+/** Starts a sandbox from the spec in the file and gives its ID. */
+function start(file: string): string {
+  const spec = JSON.parse(readFileSync(file, "utf8")) as SandboxSpec;
+  if (options.templates && !options.templates.includes(spec.template)) fail(`no template ${spec.template}`);
+  // IDs count up and are never used again, also after a destroy.
+  const counter = join(state, "created");
+  const created = existsSync(counter) ? Number(readFileSync(counter, "utf8")) + 1 : 1;
+  writeFileSync(counter, String(created));
+  const id = created.toString(16).padStart(12, "0");
+  mkdirSync(join(root, id, "workspace"), { recursive: true });
+  cpSync(file, join(root, id, "spec.json"));
+  log({ create: id, spec });
+  return id;
+}
+
 const commands: Record<string, () => void> = {
   create() {
-    const spec = JSON.parse(readFileSync(args[0] as string, "utf8")) as SandboxSpec;
-    if (options.templates && !options.templates.includes(spec.template)) fail(`no template ${spec.template}`);
-    // IDs count up and are never used again, also after a destroy.
-    const counter = join(state, "created");
-    const created = existsSync(counter) ? Number(readFileSync(counter, "utf8")) + 1 : 1;
-    writeFileSync(counter, String(created));
-    const id = created.toString(16).padStart(12, "0");
-    mkdirSync(join(root, id, "workspace"), { recursive: true });
-    cpSync(args[0] as string, join(root, id, "spec.json"));
-    log({ create: id, spec });
-    process.stdout.write(`${id}\n`);
+    process.stdout.write(`${start(args[0] as string)}\n`);
+  },
+  // probe <template> <host>: a sandbox with no allowed host, whose request to the host gets the scripted outcome.
+  probe() {
+    const [template, host] = args as [string, string];
+    const file = join(state, "probe.json");
+    writeFileSync(file, JSON.stringify({ template, egress: [] }));
+    const id = start(file);
+    const outcome = options.probe ?? "refused";
+    log({ probe: id, template, host, outcome });
+    rmSync(join(root, id), { recursive: true });
+    process.stdout.write(`${outcome} ${host}\n`);
   },
   exec() {
     const [id, , program, ...rest] = args;

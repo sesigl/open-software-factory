@@ -1,5 +1,5 @@
-// A fake sandbox adapter (ADR 0068): a program with the commands create, exec, copy, destroy and list of the sandbox
-// port, whose sandboxes are folders on the host. The module runs it like any sandbox adapter; the test reads the specs
+// A fake sandbox adapter (ADR 0068): a program with the commands create, exec, copy, destroy, list and probe of the
+// sandbox port, whose sandboxes are folders on the host. The module runs it like any sandbox adapter; the test reads the specs
 // it got, the commands it ran and the sandboxes that still exist.
 import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { extname, join } from "node:path";
@@ -20,12 +20,22 @@ export interface SandboxSpec {
 export interface SandboxOptions {
   /** The templates `create` accepts; another template exits 1 with "no template <name>". Default: every template. */
   templates?: string[];
+  /** What `probe <template> <host>` reports for the denied host, as it isolates nothing. Default: "refused". */
+  probe?: "refused" | "reached";
 }
 
 /** One line of the fake's log: a sandbox it created, or a command it ran. */
 export type SandboxLogEntry =
   | { create: string; spec: SandboxSpec }
-  | { exec: string; command: string[]; files: string[] };
+  | { exec: string; command: string[]; files: string[] }
+  | { probe: string; template: string; host: string; outcome: string };
+
+export interface SandboxProbe {
+  /** The ID of the sandbox the probe started and removed. */
+  id: string;
+  template: string;
+  host: string;
+}
 
 export interface SandboxExec {
   /** The sandbox's ID. */
@@ -43,6 +53,8 @@ export interface Sandbox {
   created(): { id: string; spec: SandboxSpec }[];
   /** Every command it ran in a sandbox, in order. */
   execs(): SandboxExec[];
+  /** Every probe it ran, in order. */
+  probes(): SandboxProbe[];
   /** The IDs of the sandboxes that exist now. */
   list(): string[];
 }
@@ -69,6 +81,10 @@ export function startSandbox(options: SandboxOptions = {}): { sandbox: Sandbox; 
       execs: () =>
         entries().flatMap((entry) =>
           "exec" in entry ? [{ id: entry.exec, command: entry.command, files: entry.files }] : [],
+        ),
+      probes: () =>
+        entries().flatMap((entry) =>
+          "probe" in entry ? [{ id: entry.probe, template: entry.template, host: entry.host }] : [],
         ),
       list: () => (existsSync(join(state, "sandboxes")) ? readdirSync(join(state, "sandboxes")).sort() : []),
     },
