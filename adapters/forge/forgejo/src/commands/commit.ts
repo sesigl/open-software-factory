@@ -2,7 +2,7 @@
 // through Forgejo's API that changes several files at once (ADR 0136).
 import { readFileSync } from "node:fs";
 import { check, type Outcome } from "@opensoftware/cli";
-import { found } from "../adapters/forgejo.ts";
+import { ForgeError, found } from "../adapters/forgejo.ts";
 import { forge, line } from "./forge.ts";
 
 export async function commit(
@@ -24,7 +24,11 @@ export async function commit(
       const path = pair.slice(0, pair.indexOf("="));
       const base64 = readFileSync(pair.slice(path.length + 1)).toString("base64");
       const at = `/contents/${path.split("/").map(encodeURIComponent).join("/")}?ref=${name}`;
-      const existing = await api.call<{ sha: string }>("GET", at).catch(() => undefined);
+      // Only a 404 means the branch has no such file; any other answer of the forge fails the command with its reason.
+      const absent = (error: unknown) => error instanceof ForgeError && error.status === 404;
+      const existing = await api
+        .call<{ sha: string }>("GET", at)
+        .catch((error: unknown) => (absent(error) ? undefined : Promise.reject(error)));
       return existing
         ? { operation: "update", path, content: base64, sha: existing.sha }
         : { operation: "create", path, content: base64 };
