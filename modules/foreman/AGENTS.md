@@ -83,7 +83,8 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
 - T-48's pages (ADR 0115) add 3 scenarios: one completes two runs and reads them in pages of one (3 s), two are
   refusals that start no run (1.3 s each). A cursor the foreman did not write is refused before Temporal: Temporal's
   client retried an unreadable page token for 21 s. The full suite of 145 took 584 s summed in one run on a
-  development machine while a second copy of the suite and intake's ran at the same time, so it shows no budget.
+  development machine while a second copy of the suite and intake's ran at the same time, and 400 s alone, so the
+  budget stays.
 - The run list in pages, measured once on a development machine (ADR 0115): 1000 runs in the Temporal dev server,
   started through `POST /v1/runs` with a harness that fails, so each ended as "failed". `GET /v1/runs` answered the
   first page of 50 with a `next` in 13 to 15 ms, and the console's `/` with one foreman in 17 to 23 ms (51 ms for the
