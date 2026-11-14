@@ -8,7 +8,7 @@ const HELP = `factory: one factory.yaml rendered for every harness, with lint, p
 Commands:
   factory lint [--gh-aw]                          Check factory.yaml; print each problem and each warning with its file, line and column. --gh-aw: the factory is rendered with gh-aw, so a cron automation runs.
   factory render [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]   Write AGENTS.md, the MCP servers and the skill links of one agent to $OUTPUT. --harness all writes every declared harness; --k8s adds its kagent resources and SandboxTemplate; --gh-aw adds a gh-aw workflow per GitHub automation.
-  factory plan                                    Pin registry MCP servers in factory.lock; show what apply changes and what drifted, rendered files and webhooks.
+  factory plan [--adapters]                       Pin registry MCP servers in factory.lock; show what apply changes and what drifted, rendered files and webhooks. --adapters also pins each adapter under providers to the newest npm version in its range.
   factory apply [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]    Render like render, register the webhooks of forgejo and github automations (github ones not with --gh-aw), and record what was applied in OSF_DATA.
   factory diff <old> [<new>]                      Show the changes between two versions of factory.yaml, as files or Git revisions.
   factory resolve                                 Print the resolved definition as JSON: defaults filled in, registry servers pinned.
@@ -26,6 +26,7 @@ async function main(): Promise<number> {
       agent: { type: "string" },
       harness: { type: "string" },
       k8s: { type: "boolean" },
+      adapters: { type: "boolean" },
       "gh-aw": { type: "boolean" },
       help: { type: "boolean" },
     },
@@ -50,7 +51,7 @@ async function main(): Promise<number> {
     },
     async plan() {
       const [{ load }, { plan }] = await Promise.all([import("./commands/load.ts"), import("./commands/plan.ts")]);
-      print(await plan(load(file), outputFolder()));
+      print(await plan(load(file), outputFolder(), values.adapters));
       return 0;
     },
     async apply() {

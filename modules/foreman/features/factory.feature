@@ -68,6 +68,14 @@ Feature: Factory definition
     Then the answer's "adapters" holds the harness "acp" at "^0" from "FOREMAN_HARNESSES"
     And it holds the forge "github" at "^0" with the command line "npx -y @opensoftware/forge-github@^0"
 
+  @id=SCN-FORE-158 @status=implemented
+  Scenario: The fallback runs the exact version factory.lock pins for the adapter's range
+    Given "foreman serve" runs the README's "factory.yaml" with "github" at "^0" under "providers.forge" and no "FOREMAN_FORGES"
+    And the committed "factory.lock" pins the forge "github" at "^0" to "0.3.1" and the harness "acp" at "^1" to "1.0.0"
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then the answer's "adapters" holds the forge "github" at "0.3.1" with the command line "npx -y @opensoftware/forge-github@0.3.1"
+    And it holds the harness "acp" at its range "^0", since the lock pins another range
+
   @id=SCN-FORE-134 @status=implemented
   Scenario: An adapter's command line is a JSON list of arguments, and a path may hold a space
     Given "foreman serve" runs the README's "factory.yaml" with "FOREMAN_HARNESSES" naming "acp" as a JSON list whose program is a script in a folder "with space"

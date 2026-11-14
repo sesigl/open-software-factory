@@ -93,8 +93,8 @@ export async function readFactory(path: string, commit?: string): Promise<Factor
   const version = commit ?? (await mustBeClean(folder, name, filesOf(document as FactoryDefinition, folder, file)));
   const read = (path: string) => readFileSync(resolve(folder, path), "utf8");
   const lock = join(folder, "factory.lock");
-  const pins = existsSync(lock) ? JSON.parse(read(lock)).mcp : {};
-  const files = { read, folder: (path: string) => filesBelow(resolve(folder, path)), pins };
+  const { mcp: pins = {}, adapters = {} } = existsSync(lock) ? JSON.parse(read(lock)) : {};
+  const files = { read, folder: (path: string) => filesBelow(resolve(folder, path)), pins, adapters };
   return { definition: definitionOf(document as FactoryDefinition, files), version };
 }
 

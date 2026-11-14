@@ -17,6 +17,11 @@
       "default": "https://registry.modelcontextprotocol.io",
       "description": "Base URL of the MCP Registry that plan reads to pin registry servers in factory.lock."
     },
+    "FACTORY_NPM_REGISTRY": {
+      "type": "string",
+      "default": "https://registry.npmjs.org",
+      "description": "Base URL of the npm registry that plan --adapters reads to pin the adapters under providers in factory.lock."
+    },
     "FACTORY_FORGE_URL": {
       "type": "string",
       "description": "Base URL of the Forgejo forge that holds the webhooks of forgejo automations, for example https://code.example.org."

@@ -39,7 +39,7 @@ export interface Definition {
   /** The inference adapter under `providers.inference`, its config as `factory.yaml` names it, and a run's budget. */
   inference?: { adapter: string; config: string; budget?: number };
   stages: StagePlan[];
-  /** The ranges under `providers` of the ports that are programs (ADR 0110). */
+  /** The versions of the ports that are programs: factory.lock's pin, else the range under `providers` (ADR 0110, 0125). */
   ranges: Ranges;
   /** The adapters and their versions that the run's view names; the server fills it from its maps (ADR 0110). */
   adapters?: AdapterVersion[];
@@ -140,6 +140,25 @@ export interface FactoryFiles {
   folder(path: string): Record<string, string>;
   /** The pins of factory.lock by their reference; none without the file. */
   pins: Record<string, LockPin>;
+  /** The adapter pins of factory.lock per port and name, each with the range it came from (ADR 0125). */
+  adapters: Record<string, Record<string, { range: string; version: string }>>;
+}
+
+/** Each adapter's exact version that factory.lock pins for its range, else its range (ADR 0125). */
+function versionsOf(ranges: Ranges, pins: FactoryFiles["adapters"]): Ranges {
+  const pinned = (port: keyof Ranges) =>
+    Object.fromEntries(
+      Object.entries(ranges[port]).map(([name, range]) => {
+        const pin = pins[port]?.[name];
+        return [name, pin?.range === range ? pin.version : range];
+      }),
+    );
+  return {
+    harness: pinned("harness"),
+    sandbox: pinned("sandbox"),
+    forge: pinned("forge"),
+    inference: pinned("inference"),
+  };
 }
 
 /** The definition of a checked factory, with the text of each prompt and skill from `files`. */
@@ -149,7 +168,7 @@ export function definitionOf(factory: FactoryDefinition, files: FactoryFiles): D
   return {
     factory: factory.factory,
     sandboxAdapter: Object.keys(sandbox)[0],
-    ranges: { harness, sandbox, forge, inference },
+    ranges: versionsOf({ harness, sandbox, forge, inference }, files.adapters),
     ...(forgeAdapter ? { forgeAdapter } : {}),
     // The foreman's checks give an inference config only with its one adapter.
     ...(factory.inference ? { inference: { adapter: Object.keys(inference)[0] as string, ...factory.inference } } : {}),

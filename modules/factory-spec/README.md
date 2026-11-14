@@ -102,6 +102,12 @@ warning names its field as a JSON Pointer:
   `render`, `apply` and later plans read only the lock; a registry server without an entry fails with
   `run "factory plan"`.
 
+`factory plan --adapters` also pins each adapter under `providers.harness`, `sandbox`, `forge` and `inference`: the
+newest version of the npm package `@opensoftware/<port>-<name>` inside its range, from `FACTORY_NPM_REGISTRY`, in
+`adapters.<port>.<name>` of the lock with the range it came from (ADR 0125). A pin stays while its range is unchanged;
+after a range changes, the next `plan --adapters` pins it again. A plan without `--adapters` keeps the pins as they
+are. The foreman runs an adapter that its maps do not name at the pinned version (contract `factory-lock`).
+
 ## Plan, apply and drift
 
 `factory apply` renders like `render` and records the applied definition, the prompt hashes and the hash of every
@@ -207,7 +213,7 @@ the minor version. The one-time setup is the same as for contracts
 | --- | --- |
 | `factory lint [--gh-aw]` | Check factory.yaml; print each problem and each warning with its file, line and column. --gh-aw: the factory is rendered with gh-aw, so a cron automation runs. |
 | `factory render [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]` | Write AGENTS.md, the MCP servers and the skill links of one agent to $OUTPUT. --harness all writes every declared harness; --k8s adds its kagent resources and SandboxTemplate; --gh-aw adds a gh-aw workflow per GitHub automation. |
-| `factory plan` | Pin registry MCP servers in factory.lock; show what apply changes and what drifted, rendered files and webhooks. |
+| `factory plan [--adapters]` | Pin registry MCP servers in factory.lock; show what apply changes and what drifted, rendered files and webhooks. --adapters also pins each adapter under providers to the newest npm version in its range. |
 | `factory apply [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]` | Render like render, register the webhooks of forgejo and github automations (github ones not with --gh-aw), and record what was applied in OSF_DATA. |
 | `factory diff <old> [<new>]` | Show the changes between two versions of factory.yaml, as files or Git revisions. |
 | `factory resolve` | Print the resolved definition as JSON: defaults filled in, registry servers pinned. |
@@ -221,6 +227,7 @@ the minor version. The one-time setup is the same as for contracts
 | `OUTPUT` | string | `"."` | Folder that render and apply write the harness files to. |
 | `OSF_DATA` | string | `".factory"` | State folder: apply records the applied version here and plan compares with it. |
 | `FACTORY_MCP_REGISTRY` | string | `"https://registry.modelcontextprotocol.io"` | Base URL of the MCP Registry that plan reads to pin registry servers in factory.lock. |
+| `FACTORY_NPM_REGISTRY` | string | `"https://registry.npmjs.org"` | Base URL of the npm registry that plan --adapters reads to pin the adapters under providers in factory.lock. |
 | `FACTORY_FORGE_URL` | string |  | Base URL of the Forgejo forge that holds the webhooks of forgejo automations, for example https://code.example.org. |
 | `FACTORY_FORGE_TOKEN` | string |  | Forgejo API token that may manage the webhooks of the agents' repositories. |
 | `FACTORY_FORGEJO_ADAPTER` | string | `"npx -y @opensoftware/forge-forgejo"` | Command line of the forge port's forgejo adapter, which manages the webhooks of forgejo automations. |
@@ -302,3 +309,7 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FSPEC-063 | implemented | Lint warns about a cron automation that only a gh-aw workflow runs |
 | SCN-FSPEC-064 | implemented | Lint with --gh-aw does not warn about a cron automation |
 | SCN-FSPEC-065 | implemented | Lint warns about scorers and benchmarks, which no job of the profile runs yet |
+| SCN-FSPEC-066 | implemented | Plan with --adapters pins each adapter under providers to the newest npm version in its range |
+| SCN-FSPEC-067 | implemented | Plan keeps an adapter's pin while its range is unchanged, and pins it again after the range changed |
+| SCN-FSPEC-068 | implemented | Plan without --adapters keeps the adapter pins of factory.lock and calls no registry |
+| SCN-FSPEC-069 | implemented | Plan with --adapters reports a range that no npm version matches |

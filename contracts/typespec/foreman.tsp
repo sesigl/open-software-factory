@@ -97,7 +97,7 @@ model AdapterVersion {
   @minLength(1)
   name: string;
 
-  /** The range under `providers.<port>.<name>` that the fallback runs. */
+  /** The exact version that factory.lock pins for the range under `providers.<port>.<name>`, else that range (ADR 0125). */
   @minLength(1)
   version?: string;
 

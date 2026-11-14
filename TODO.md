@@ -1034,7 +1034,7 @@ as a vision scenario. Each item names the place in the code, so start there, and
     when it finds none (SCN-FORE-129). Only for a work item whose origin is a forge's issue or pull request; any
     other origin keeps the last link (ADR 0109).
 
-### [ ] T-43 · versions a run can trust (P1)
+### [x] T-43 · versions a run can trust (P1)
 
 - **Problem:** the factory version is the commit of `HEAD` also when `factory.yaml` or a prompt has changes that are
   not committed (`modules/foreman/src/adapters/factory.ts`), so a run can name a version that it did not run. An
@@ -1047,11 +1047,12 @@ as a vision scenario. Each item names the place in the code, so start there, and
   - [x] `foreman serve` and a run's start fail with the changed files named when the factory's folder is not clean
     (SCN-FORE-131, SCN-FORE-132, ADR 0110); a prompt or inference config that Git does not track counts too, and the
     paths come sorted (SCN-FORE-135, SCN-FORE-138).
-  - [ ] The fallback command line takes the version that `factory plan` pinned in `factory.lock`, or the range of
-    `providers` (`SCN-FORE`, `SCN-FSPEC`). Done: the range of `providers`, and the run's `adapters` name it with the
+  - [x] The fallback command line takes the version that `factory plan` pinned in `factory.lock`, or the range of
+    `providers` (`SCN-FORE`, `SCN-FSPEC`). The range of `providers`, and the run's `adapters` name it with the
     command line (SCN-FORE-133), for every port, and npx runs each package at its range (SCN-FORE-136,
-    SCN-FORE-137), or without one for an adapter the factory does not name (SCN-FORE-139). Open, not built yet:
-    `factory plan` pins adapters in `factory.lock`, a contract the foreman reads.
+    SCN-FORE-137), or without one for an adapter the factory does not name (SCN-FORE-139). `factory plan --adapters`
+    pins each adapter in `factory.lock`, the contract `factory-lock` (SCN-FSPEC-066 to SCN-FSPEC-069, ADR 0125), and
+    the fallback runs the pin while its range holds (SCN-FORE-158).
   - [x] The adapter maps take a command line as a list of arguments too (SCN-FORE-134).
 
 ### [ ] T-44 · what factory.yaml declares takes effect (P1)

@@ -53,3 +53,38 @@ Feature: Pin MCP servers from the registry
     When the factory engineer runs "factory plan"
     Then the command exits with code 1
     And the output contains "the MCP Registry has no version of \"io.github.acme/tracker\" that matches \"3\""
+
+  @id=SCN-FSPEC-066 @status=implemented
+  Scenario: Plan with --adapters pins each adapter under providers to the newest npm version in its range
+    Given a factory.yaml with "claude-code" at "^2" under "providers.harness" and "github" at "^0" under "providers.forge"
+    And the npm registry lists the versions "1.9.0", "2.0.0", "2.3.1" and "3.0.0" of "@opensoftware/harness-claude-code"
+    And it lists the versions "0.2.0" and "0.3.1" of "@opensoftware/forge-github"
+    When the factory engineer runs "factory plan --adapters"
+    Then the command exits with code 0
+    And "factory.lock" pins the harness "claude-code" at "^2" to "2.3.1" and the forge "github" at "^0" to "0.3.1"
+
+  @id=SCN-FSPEC-067 @status=implemented
+  Scenario: Plan keeps an adapter's pin while its range is unchanged, and pins it again after the range changed
+    Given a factory.yaml with "claude-code" at "^2" under "providers.harness" and "github" at "^1" under "providers.forge"
+    And factory.lock pins the harness "claude-code" at "^2" to "2.0.0" and the forge "github" at "^0" to "0.3.1"
+    And the npm registry lists only the versions "0.3.1" and "1.2.0" of "@opensoftware/forge-github"
+    When the factory engineer runs "factory plan --adapters"
+    Then the command exits with code 0
+    And "factory.lock" pins the harness "claude-code" at "^2" to "2.0.0" and the forge "github" at "^1" to "1.2.0"
+
+  @id=SCN-FSPEC-068 @status=implemented
+  Scenario: Plan without --adapters keeps the adapter pins of factory.lock and calls no registry
+    Given a factory.yaml with "claude-code" at "^2" under "providers.harness"
+    And factory.lock pins the harness "claude-code" at "^2" to "2.0.0"
+    And the npm registry answers no request
+    When the factory engineer runs "factory plan"
+    Then the command exits with code 0
+    And "factory.lock" still pins the harness "claude-code" at "^2" to "2.0.0"
+
+  @id=SCN-FSPEC-069 @status=implemented
+  Scenario: Plan with --adapters reports a range that no npm version matches
+    Given a factory.yaml with "claude-code" at "^4" under "providers.harness"
+    And the npm registry lists the versions "2.3.1" and "3.0.0" of "@opensoftware/harness-claude-code"
+    When the factory engineer runs "factory plan --adapters"
+    Then the command exits with code 1
+    And the output contains "the npm registry has no version of \"@opensoftware/harness-claude-code\" that matches \"^4\""
