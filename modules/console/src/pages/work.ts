@@ -2,7 +2,7 @@
 // sees the work that waits, also work without a run yet.
 import type { WorkItemView } from "@opensoftware/contracts";
 import { age } from "../domain/runs.ts";
-import { html, linkOr } from "./html.ts";
+import { html, linkOr, nextLink } from "./html.ts";
 
 /** The form "submit work", shown when the console takes actions (ADR 0089). */
 const submitForm = html`<form method="post" action="/work">
@@ -23,7 +23,7 @@ const submitForm = html`<form method="post" action="/work">
   <button type="submit">Submit</button>
 </form>`;
 
-export function workPage(items: WorkItemView[], now: number, actions = false) {
+export function workPage(items: WorkItemView[], now: number, actions = false, next?: string) {
   return html`<h1>Work</h1>
     ${actions ? submitForm : null}
     <p>The latest work items, the one received last first.</p>
@@ -52,5 +52,6 @@ export function workPage(items: WorkItemView[], now: number, actions = false) {
           </tr>`,
         )}
       </tbody>
-    </table>`;
+    </table>
+    ${nextLink(next)}`;
 }

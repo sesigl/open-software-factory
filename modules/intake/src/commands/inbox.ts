@@ -1,10 +1,19 @@
 // The inbox of the server: submit and read work items, relay the outbox to NATS (ADR 0063), and move a work item on
 // with its run's events (ADR 0071).
-import { type GateRequested, isValid, type WorkItemView } from "@opensoftware/contracts";
+import { type GateRequested, isValid, type WorkItemList, type WorkItemView } from "@opensoftware/contracts";
 import { publishToNats } from "../adapters/nats.ts";
 import type { Store } from "../adapters/store.ts";
 import { gateText, type Reply, replies, runTexts } from "../domain/sources.ts";
-import { RETRY_SUBJECT, receivedEvent, retryEvent, runFactOf, type Status, SUBJECT, viewOf } from "../domain/view.ts";
+import {
+  cursorOf,
+  type InboxPage,
+  RETRY_SUBJECT,
+  receivedEvent,
+  retryEvent,
+  runFactOf,
+  SUBJECT,
+  viewOf,
+} from "../domain/view.ts";
 import { workItemOf } from "../domain/work-item.ts";
 
 export interface InboxConfig {
@@ -48,9 +57,11 @@ export function inbox(store: Store, config: InboxConfig) {
   return {
     relay,
     view,
-    /** The 50 latest work items, the one received last first, in the status if one is given. */
-    async latest(status?: Status): Promise<WorkItemView[]> {
-      return (await Promise.all((await store.latest(status)).map(view))) as WorkItemView[];
+    /** A page of the latest work items, the one received last first, and the cursor of the next (ADR 0115). */
+    async latest(page: InboxPage): Promise<WorkItemList> {
+      const { ids, next } = await store.latest(page);
+      const workItems = (await Promise.all(ids.map(view))) as WorkItemView[];
+      return { workItems, ...(next ? { next: cursorOf(next) } : {}) };
     },
     /**
      * Moves the work item of a run event to the run's status, and gives the replies its Slack threads and issues get

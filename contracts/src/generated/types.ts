@@ -58,7 +58,10 @@ export type paths = {
             path?: never;
             cookie?: never;
         };
-        /** @description The 50 latest work items, the one received last first; with `status`, only the work items in that status. */
+        /**
+         * @description A page of the latest work items, the one received last first; with `status`, only the work items in that status.
+         *     `limit` work items at most, 50 by default; `cursor` is the `next` of the page before (ADR 0115).
+         */
         get: operations["IntakeApi_listWorkItems"];
         put?: never;
         post?: never;
@@ -75,7 +78,11 @@ export type paths = {
             path?: never;
             cookie?: never;
         };
-        /** @description The runs of the server, running runs first, then the runs that ended, the one that ended last first; with `state`, only the runs in that state (ADR 0071). */
+        /**
+         * @description A page of the runs of the server, running runs first, then the runs that ended, the one that ended last first; with
+         *     `state`, only the runs in that state (ADR 0071). `limit` runs at most, 50 by default; `cursor` is the `next` of the
+         *     page before (ADR 0115). With `state`, a page may hold fewer runs than `limit` and still have a `next`.
+         */
         get: operations["ForemanApi_listRuns"];
         put?: never;
         /** @description Start a run of the factory's workflow for a work item. The same work item again answers its newest run. */
@@ -777,6 +784,8 @@ export type components = {
         /** @description foreman: the runs of the server, running runs first, then the runs that ended, the one that ended last first, as `GET /v1/runs` answers them (ADR 0071). */
         RunList: {
             runs: components["schemas"]["RunView"][];
+            /** @description The cursor of the next page, while more runs follow (ADR 0115). */
+            next?: string;
         };
         /**
          * @description How a run ended.
@@ -1155,6 +1164,8 @@ export type components = {
         /** @description intake: the latest work items, as `GET /v1/inbox` answers them, the one received last first. */
         WorkItemList: {
             workItems: components["schemas"]["WorkItemView"][];
+            /** @description The cursor of the next page, while more work items follow (ADR 0115). */
+            next?: string;
         };
         /**
          * @description Where a work item stands: received, then as its run in the foreman goes (ADR 0071).
@@ -1379,6 +1390,8 @@ export interface operations {
         parameters: {
             query?: {
                 status?: components["schemas"]["WorkItemStatus"];
+                limit?: number;
+                cursor?: string;
             };
             header?: never;
             path?: never;
@@ -1419,6 +1432,8 @@ export interface operations {
         parameters: {
             query?: {
                 state?: components["schemas"]["RunState"];
+                limit?: number;
+                cursor?: string;
             };
             header?: never;
             path?: never;

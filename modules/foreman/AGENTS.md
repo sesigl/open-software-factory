@@ -1,6 +1,6 @@
 # AGENTS.md for module `foreman`
 
-Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0004, ADR 0067, ADR 0068, ADR 0069, ADR 0070, ADR 0071, ADR 0107, ADR 0109, ADR 0111.
+Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0004, ADR 0067, ADR 0068, ADR 0069, ADR 0070, ADR 0071, ADR 0107, ADR 0109, ADR 0111, ADR 0115.
 
 ## Public surface
 
@@ -80,6 +80,13 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
   development machine the same code took 398 s and 434 s, so one run cannot show a change under 5%.
   The 11 new scenarios cost 27 s and main already took up to 406 s, so the budget is 480 s, about 10% above the
   437 s. Getting well below 400 s needs fewer starts of `foreman serve` per scenario, not a faster start.
+- T-48's pages (ADR 0115) add 3 scenarios: one completes two runs and reads them in pages of one, two are refusals
+  that start no run.
+- The run list in pages, measured once on a development machine (ADR 0115): 1000 runs in the Temporal dev server,
+  started through `POST /v1/runs` with a harness that fails, so each ended as "failed". `GET /v1/runs` answered the
+  first page of 50 with a `next` in 13 to 15 ms, and the console's `/` with one foreman in 17 to 23 ms (51 ms for the
+  first request after its start). It was a temporary test with the testkit's `fakes.temporal` and the built console,
+  not a scenario: 1000 runs take about a minute to start and end, which the budget has no room for.
 
 ## Quality limits
 

@@ -43,3 +43,10 @@ Feature: Work
     When the person "ada@acme.dev" sends the form "submit work" of "/work" with the origin "https://evil.example"
     Then the answer has the status 403 and says "the form came from another site"
     And intake received no submission
+
+  @id=SCN-CONSOLE-058 @status=implemented
+  Scenario: The work page links the next page of intake's inbox
+    Given an intake whose inbox's first page holds "Import reports from CSV" and names the next cursor "Y3Vyc29y"
+    When a person opens "/work"
+    Then the table lists "Import reports from CSV" and the page links "Next page" to "/work?cursor=Y3Vyc29y"
+    And opening that link asks intake for "/v1/inbox?cursor=Y3Vyc29y"

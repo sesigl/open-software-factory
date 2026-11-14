@@ -151,6 +151,10 @@ model RunView {
 /** foreman: the runs of the server, running runs first, then the runs that ended, the one that ended last first, as `GET /v1/runs` answers them (ADR 0071). */
 model RunList {
   runs: RunView[];
+
+  /** The cursor of the next page, while more runs follow (ADR 0115). */
+  @minLength(1)
+  next?: string;
 }
 
 /** foreman: what a person tells a run. */

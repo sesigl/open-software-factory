@@ -22,3 +22,23 @@ Feature: The inbox
     Given the server runs
     When a program reads "/v1/inbox?status=merged" with the API token
     Then the answer has the status 400 and a problem that names "status"
+
+  @id=SCN-INTAKE-060 @status=implemented @realizes=SCN-FACTORY-ACCESS-003
+  Scenario: A person reads the inbox page by page
+    Given the server received the README's "work.json" at "2026-01-01T00:00:00Z"
+    And it received the submissions "Import reports from CSV" and "Archive old reports" at "2026-01-01T00:05:00Z"
+    When a program reads "/v1/inbox?limit=1" and then the page of each "next" cursor with the API token
+    Then the three pages list one work item each, the two received last first, in the order of their IDs, then "Export reports as CSV"
+    And only the last page names no "next" cursor
+
+  @id=SCN-INTAKE-061 @status=implemented
+  Scenario: The inbox refuses a page size out of range
+    Given the server runs
+    When a program reads "/v1/inbox?limit=501" with the API token
+    Then the answer has the status 400 and a problem that names "limit"
+
+  @id=SCN-INTAKE-062 @status=implemented
+  Scenario: The inbox refuses a cursor that is no page of it
+    Given the server runs
+    When a program reads "/v1/inbox?cursor=bm90LWEtcGFnZQ" with the API token
+    Then the answer has the status 400 and a problem that names "cursor"

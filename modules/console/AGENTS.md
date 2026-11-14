@@ -1,6 +1,6 @@
 # AGENTS.md for module `console`
 
-Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0072, ADR 0073.
+Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0072, ADR 0073, ADR 0115.
 
 ## Public surface
 

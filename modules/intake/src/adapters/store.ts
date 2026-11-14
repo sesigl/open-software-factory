@@ -1,6 +1,6 @@
 // The work items, the requests that asked for them, and the event outbox, in the schema "intake" (ADR 0063).
 import type { WorkItem, WorkReceived, WorkRetryRequested } from "@opensoftware/contracts";
-import type { Request, RunFact, Status, Stored } from "../domain/view.ts";
+import type { After, InboxPage, Request, RunFact, Status, Stored } from "../domain/view.ts";
 import { originKey } from "../domain/work-item.ts";
 import { openDatabase, type Sql } from "./database.ts";
 
@@ -31,7 +31,8 @@ CREATE TABLE IF NOT EXISTS intake.outbox (
   subject text NOT NULL,
   event jsonb NOT NULL,
   published boolean NOT NULL DEFAULT false
-);`;
+);
+CREATE INDEX IF NOT EXISTS work_items_latest ON intake.work_items (received_at DESC, id);`;
 
 /** Any number: only one server creates the tables at a time. */
 const TABLES_LOCK = 4_716_063;
@@ -53,8 +54,11 @@ export interface Store {
     event?: { subject: string; event: WorkReceived },
   ): Promise<{ created: boolean; added: boolean }>;
   get(id: string): Promise<Stored | undefined>;
-  /** The IDs of the latest work items, the one received last first, in the status if one is given. */
-  latest(status?: Status): Promise<string[]>;
+  /**
+   * A page of the latest work items' IDs, the one received last first, in the status if one is given, and where the
+   * next page starts while more follow (ADR 0115).
+   */
+  latest(page: InboxPage): Promise<{ ids: string[]; next?: After }>;
   /**
    * Moves the work item to the run's status. An event of the run the work item follows, or of a first run, moves it;
    * "running" only while it is still "received". An event of the run after it, whose `retryOf` is the work item's run,
@@ -132,12 +136,20 @@ export async function openStore(url: string | undefined, folder: string): Promis
         requests: requests.rows.map((request) => ({ ...request, at: Number(request.at) })),
       };
     },
-    async latest(status) {
-      const { rows } = await db.query<{ id: string }>(
-        "SELECT id FROM intake.work_items WHERE $1::text IS NULL OR status = $1 ORDER BY received_at DESC, id LIMIT 50",
-        [status ?? null],
+    async latest({ status, limit, after }) {
+      // One more row than the page tells whether a next page follows.
+      const { rows } = await db.query<{ id: string; received_at: string }>(
+        `SELECT id, received_at FROM intake.work_items WHERE ($1::text IS NULL OR status = $1)
+           AND ($3::bigint IS NULL OR received_at < $3 OR received_at = $3 AND id > $4)
+           ORDER BY received_at DESC, id LIMIT $2`,
+        [status ?? null, limit + 1, after?.at ?? null, after?.id ?? null],
       );
-      return rows.map(({ id }) => id);
+      const page = rows.slice(0, limit);
+      const last = page.at(-1);
+      return {
+        ids: page.map(({ id }) => id),
+        ...(rows.length > limit && last ? { next: { at: Number(last.received_at), id: last.id } } : {}),
+      };
     },
     async followRun({ workItemId, runId, status, retryOf }) {
       await db.query(

@@ -74,3 +74,13 @@ Feature: The runs page
     Given "CONSOLE_FOREMAN_URL" is "http://127.0.0.1:1", where nothing listens
     When a person opens "/"
     Then the page answers 200 and says "the foreman at http://127.0.0.1:1 did not answer"
+
+  @id=SCN-CONSOLE-057 @status=implemented @realizes=SCN-FACTORY-VIS-001
+  Scenario: The runs page links the next page while a foreman has more runs
+    Given a foreman whose first page holds the run "Import reports from CSV" and whose next page holds "Archive old reports"
+    And a second foreman with the run "Export reports as CSV" and no next page
+    When a person opens "/" and then its link "Next page"
+    Then the first page lists "Import reports from CSV" and "Export reports as CSV" and links "Next page"
+    And the next page lists only "Archive old reports" and links no "Next page"
+    And the second foreman was asked only for its first page
+    And the page "/?page=bm90LWEtcGFnZQ", which no foreman named, answers 400

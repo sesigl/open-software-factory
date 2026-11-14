@@ -1076,7 +1076,7 @@ as a vision scenario. Each item names the place in the code, so start there, and
     `SCN-GATE`).
   - [x] The chart takes Slack, a forge token or both, as `compose.yaml` does (`SCN-DIST`).
 
-### [ ] T-48 · lists that stay fast (P2)
+### [x] T-48 · lists that stay fast (P2)
 
 - **Problem:** `GET /v1/runs` asks Temporal once for each run and has no page (`list` in
   `modules/foreman/src/commands/runs.ts`); the console calls it every 10 seconds. intake's inbox is cut at 50 work
@@ -1084,9 +1084,11 @@ as a vision scenario. Each item names the place in the code, so start there, and
 - **Done when:** both lists take a page size and a cursor, and the console's runs page loads 1000 runs' first page in
   under a second in a measured run.
 - **Slices:**
-  - [ ] `limit` and `cursor` on `GET /v1/runs` and `GET /v1/inbox` (`contracts/typespec/`, `SCN-FORE`, `SCN-INTAKE`).
-  - [ ] The run list reads what it shows from Temporal's visibility, without a query per run.
-  - [ ] The console's pages link the next page (`SCN-CONSOLE`).
+  - [x] `limit` and `cursor` on `GET /v1/runs` and `GET /v1/inbox` (`contracts/typespec/`, SCN-FORE-144 to -146,
+    SCN-INTAKE-060 to -062, ADR 0115).
+  - [x] The run list reads what it shows from Temporal's visibility, without a query per run: each run keeps its view
+    in its memo (ADR 0115).
+  - [x] The console's pages link the next page (SCN-CONSOLE-057, -058).
 
 ### [ ] T-49 · events that are not lost without a trace (P2)
 

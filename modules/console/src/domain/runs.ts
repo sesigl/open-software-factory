@@ -52,3 +52,36 @@ export const namedLinks = (text: string | undefined): NamedLink[] =>
     const at = entry.indexOf("=");
     return { name: entry.slice(0, at), url: entry.slice(at + 1) };
   });
+
+/**
+ * Where a runs page starts at each foreman (ADR 0115): undefined at its first page, its cursor, or null once its runs
+ * ended on an earlier page.
+ */
+export type Cursor = string | null | undefined;
+
+/** The cursors of the runs page "?page=" of this many foremen, or undefined when it is no page of theirs. */
+export function cursorsOf(page: string | undefined, foremen: number): Cursor[] | undefined {
+  if (page === undefined) return Array.from({ length: foremen }, () => undefined);
+  try {
+    const cursors: unknown = JSON.parse(Buffer.from(page, "base64url").toString());
+    const fits =
+      Array.isArray(cursors) &&
+      cursors.length === foremen &&
+      cursors.every((cursor) => cursor === null || typeof cursor === "string");
+    return fits ? cursors : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** The "?page=" of the next runs page, or undefined when no foreman has more runs. */
+export const nextPageOf = (cursors: (string | null)[]): string | undefined =>
+  cursors.some((cursor) => cursor !== null) ? Buffer.from(JSON.stringify(cursors)).toString("base64url") : undefined;
+
+/** The query of a link or an API call: these parameters, those without a value left out. */
+export function queryOf(parameters: Record<string, string | null | undefined>): string {
+  const query = new URLSearchParams(
+    Object.entries(parameters).flatMap(([name, value]) => (value ? [[name, value]] : [])),
+  ).toString();
+  return query ? `?${query}` : "";
+}

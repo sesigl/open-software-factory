@@ -1,6 +1,6 @@
 # AGENTS.md for module `intake`
 
-Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0063, ADR 0065, ADR 0071, ADR 0113.
+Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0063, ADR 0065, ADR 0071, ADR 0113, ADR 0115.
 
 ## Public surface
 

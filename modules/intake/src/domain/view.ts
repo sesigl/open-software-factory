@@ -19,10 +19,35 @@ export type Status = WorkItemView["status"];
 
 export const STATUSES: Status[] = ["received", "running", "complete", "failed", "cancelled"];
 
-/** The status of GET /v1/inbox?status=, if any; or the problem with it. */
-export function inboxStatusOf(status: string | undefined): { status?: Status } | string {
-  if (status === undefined) return {};
-  return STATUSES.includes(status as Status) ? { status: status as Status } : `status: one of ${STATUSES.join(", ")}`;
+/** Where a page of the inbox starts: after the work item received at `at` with the ID `id` (ADR 0115). */
+export interface After {
+  at: number;
+  id: string;
+}
+
+/** A page of GET /v1/inbox: the status, if any, the page size and where it starts. */
+export interface InboxPage {
+  status?: Status;
+  limit: number;
+  after?: After;
+}
+
+/** The cursor of the page after this work item: its time and ID in base64url. */
+export const cursorOf = ({ at, id }: After): string => Buffer.from(`${at}.${id}`).toString("base64url");
+
+const CURSOR = /^(\d+)\.(wi_[0-9a-f]{20})$/;
+
+/** The page of GET /v1/inbox?status=&limit=&cursor=; or the problem with it. */
+export function inboxPageOf(query: { status?: string; limit?: string; cursor?: string }): InboxPage | string {
+  const { status, limit = "50", cursor } = query;
+  if (status !== undefined && !STATUSES.includes(status as Status)) return `status: one of ${STATUSES.join(", ")}`;
+  const size = Number(limit);
+  if (!Number.isInteger(size) || size < 1 || size > 500) return `limit: "${limit}" is not a whole number from 1 to 500`;
+  const page: InboxPage = { ...(status ? { status: status as Status } : {}), limit: size };
+  if (cursor === undefined) return page;
+  const [, at, id] = CURSOR.exec(Buffer.from(cursor, "base64url").toString()) ?? [];
+  if (!at || !id) return `cursor: "${cursor}" is not the next of a page of the inbox`;
+  return { ...page, after: { at: Number(at), id } };
 }
 
 export interface Stored {

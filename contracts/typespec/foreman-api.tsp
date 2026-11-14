@@ -25,10 +25,18 @@ namespace ForemanApi {
     | GatekeeperApi.Failure<400>
     | GatekeeperApi.Failure<401>;
 
-  /** The runs of the server, running runs first, then the runs that ended, the one that ended last first; with `state`, only the runs in that state (ADR 0071). */
+  /**
+   * A page of the runs of the server, running runs first, then the runs that ended, the one that ended last first; with
+   * `state`, only the runs in that state (ADR 0071). `limit` runs at most, 50 by default; `cursor` is the `next` of the
+   * page before (ADR 0115). With `state`, a page may hold fewer runs than `limit` and still have a `next`.
+   */
   @route("/v1/runs")
   @get
-  op listRuns(@query state?: RunState): RunList | GatekeeperApi.Failure<400> | GatekeeperApi.Failure<401>;
+  op listRuns(
+    @query state?: RunState,
+    @query @minValue(1) @maxValue(500) limit?: int32,
+    @query @minLength(1) cursor?: string,
+  ): RunList | GatekeeperApi.Failure<400> | GatekeeperApi.Failure<401>;
 
   /** A run: its state and the state of each stage. */
   @route("/v1/runs/{runId}")

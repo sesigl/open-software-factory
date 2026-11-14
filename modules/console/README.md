@@ -36,10 +36,10 @@ Open <http://localhost:8080>. The page lists the foreman's runs, the running one
 
 | Page | What it shows |
 | --- | --- |
-| `/` | The runs of every foreman: title, factory, state, source, requester, pull request and age. Runs that have not ended come first, the one that started last first, then the ended runs, the one that ended last first. A foreman that does not answer is named above the list. |
+| `/` | The runs of every foreman: title, factory, state, source, requester, pull request and age. Runs that have not ended come first, the one that started last first, then the ended runs, the one that ended last first. A foreman that does not answer is named above the list. The page shows the first page of each foreman's runs and links "Next page" (`?page=`) while one has more ([ADR 0115](../../docs/decisions/0115-lists-in-pages.md)). |
 | `/?state=<state>` | Only the runs in the state `running`, `blocked`, `complete`, `failed` or `cancelled`, as the foremen filter them. Another state answers 400. |
 | `/runs/<runId>` | One run: its state, factory and factory version, age, pull request, trace and Temporal history; its origin, or with `CONSOLE_INTAKE_URL` every request of its work item; and its stages as its evidence, each with its agent ("waits" for a stage that only waits, ADR 0107), state, transcript, gate, checks and the reason it failed. A run that a person ran again names its attempt and links the run before it. 404 when no foreman knows the run. |
-| `/work` | With `CONSOLE_INTAKE_URL`: intake's latest work items, the one received last first, each with its origin, type, status, source, requester, run and age, also work that waits without a run. 404 without `CONSOLE_INTAKE_URL`. |
+| `/work` | With `CONSOLE_INTAKE_URL`: intake's latest work items, the one received last first, each with its origin, type, status, source, requester, run and age, also work that waits without a run, one page of intake's inbox at a time with a link "Next page" (`?cursor=`) while more follow. 404 without `CONSOLE_INTAKE_URL`. |
 | `/factory` | The factory definition in `CONSOLE_FACTORY`: its name, description, providers and agents with their harness and model. |
 | `/factory/agents/<name>` | One agent's configuration, and the link to the file on the branch where it changes. 404 for an agent the factory does not declare. |
 | `/health` | The checks of `console doctor` as a table: each check, its state and what to do. 200 when every check is ok, else 503. |
@@ -200,4 +200,6 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-054 | implemented | The run page of a run that ran again links the run before it |
 | SCN-CONSOLE-055 | implemented | The run page shows a stage that only waits with "waits" instead of an agent |
 | SCN-CONSOLE-056 | implemented | "console doctor" fails on a group whose only member is the example's |
+| SCN-CONSOLE-057 | implemented | The runs page links the next page while a foreman has more runs |
+| SCN-CONSOLE-058 | implemented | The work page links the next page of intake's inbox |
 | SCN-CONSOLE-059 | implemented | "console doctor" fails on a groups file it cannot read |
