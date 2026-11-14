@@ -33,7 +33,7 @@ covers: [modules/**, adapters/**]
 | observer | Self-improvement pull requests |
 | taskcapture | Private benchmarks and routing rules |
 | intake | Chat, tracker and monitoring entry points, Factory MCP server |
-| console | Read-only web view of runs, evidence and the self-improvement inbox |
+| console | The factory's web UI: runs, evidence and the self-improvement inbox; a change it proposes is a pull request |
 | Adapters: harness `claude-code`, `codex`, `opencode`; sandbox `kubernetes`; channel `slack`, `teams`, `github`, `linear` | Native control for the most used products beyond the generic ACP adapter |
 | Install profiles: Compose, Helm chart, dashboards | Ready-made installs |
 
