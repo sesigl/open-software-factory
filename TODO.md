@@ -1169,8 +1169,7 @@ implements an issue labeled `factory` of this repository and opens its pull requ
 it; that run is not part of T-21. Add each new requirement as a vision scenario first, then as module scenarios and
 a new item here.
 
-A follow-up of T-21 that phase 4 proves, not this plan (the owner's choice):
-
-- observer: the job `observe` of `weekly-paid.yml` runs `observer analyze`, `observer propose` and
-  `observer check` on the weekly scores (ADR 0046, ADR 0077); the first merged observer pull request whose effect
-  `observer check` measures starts phase 4.
+Vision for later, not this plan (the owner's choice): once the factory's basic features are exposed in its UI, the
+factory learns from its own work. The job `observe` of `weekly-paid.yml` already runs `observer analyze`, `observer
+propose` and `observer check` on the weekly scores (ADR 0046, ADR 0077); phase 4 starts with the first merged observer
+pull request whose effect `observer check` measures, on 20 scored runs before and after its merge.
