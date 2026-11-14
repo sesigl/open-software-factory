@@ -8,6 +8,8 @@
   pull: curlimages/curl:8.17.0 nats:2.11.9-alpine node:24.11.1-bookworm-slim
   # sut.helm installs a chart on kind (ADR 0075).
   cluster: kind
+  # sut.browser opens pages in Chromium (ADR 0131).
+  browser: chromium
 - suite: factory-spec
   filter: "@opensoftware/factory-spec"
   images: forge

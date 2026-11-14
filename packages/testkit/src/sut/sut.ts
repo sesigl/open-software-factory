@@ -6,6 +6,7 @@ import { listFiles, quickStart } from "../support/module.ts";
 import { type CliResult, mustRun, run } from "../support/process.ts";
 import { type Acp, makeAcp } from "./acp.ts";
 import { type Action, makeAction } from "./action.ts";
+import { type Browser, makeBrowser } from "./browser.ts";
 import { type Compose, makeCompose } from "./compose.ts";
 import { type Events, makeEvents } from "./events.ts";
 import { type Helm, makeHelm } from "./helm.ts";
@@ -33,6 +34,12 @@ export interface Sut {
    * name, label and text. Links and forms keep the scenario's cookies, as a browser does (ADR 0131).
    */
   pages: Pages;
+  /**
+   * The pages of the server sut.http started in Chromium, for a journey or an island scenario (ADR 0131): one browser
+   * per test process and a context per scenario. A request that leaves loopback, an error in the browser's console
+   * and a failed request fail the scenario.
+   */
+  browser: Browser;
   /** The module as an MCP server on stdio. It gets the same environment as `cli`. */
   mcp: Mcp;
   /** The module as an ACP agent on stdio, such as a harness adapter. It gets the same environment as `cli`. */
@@ -130,6 +137,7 @@ export function makeSut(moduleRoot: string, dirs: Folders, hosts: () => string[]
     return full;
   };
   const http = makeHttp(launch, onStop);
+  const chromium = makeBrowser(() => http.url(), moduleRoot, scenario, onStop);
   const sut: Sut = {
     async cli(args, options = {}) {
       const { command, argv, cwd, env } = launch(args, options.env);
@@ -138,6 +146,7 @@ export function makeSut(moduleRoot: string, dirs: Folders, hosts: () => string[]
     action: makeAction(moduleRoot, dirs, launch),
     http,
     pages: makePages(() => http.url(), onStop),
+    browser: chromium.browser,
     mcp: makeMcp(launch, onStop),
     acp: makeAcp(launch, onStop, inside),
     events: makeEvents(onStop),
@@ -186,10 +195,11 @@ export function makeSut(moduleRoot: string, dirs: Folders, hosts: () => string[]
     async close() {
       // Last started, first stopped: a server stops before the subscription that watches it.
       for (const stop of stops.splice(0).reverse()) await stop().catch(() => undefined);
-      if (!existsSync(dirs.noreal)) return [];
+      const seen = chromium.problems();
+      if (!existsSync(dirs.noreal)) return [...new Set(seen)];
       const refused = readFileSync(dirs.noreal, "utf8").split("\n").filter(Boolean);
       rmSync(dirs.noreal);
-      return [...new Set(refused)];
+      return [...new Set([...refused, ...seen])];
     },
   };
 }

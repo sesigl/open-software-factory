@@ -66,6 +66,14 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
   again and keep the scenario's cookies; redirects are followed unless `follow` is false. `sut.pages.send(path,
   fields, { headers, follow })` sends fields as a form does, for a request that no page offers, like a program's. A
   test finds elements by role, name, label and text, never by a tag, a class or a test ID.
+- `sut.browser.open(path, { viewport, headers })`: opens a page of the server `sut.http` started in Chromium and
+  returns Playwright's `Page`, for a journey or an island scenario (ADR 0131). One browser per test process, a new
+  context per scenario: the testkit's clock (2026-01-01T00:00:00Z), the locale `en-US`, the time zone `UTC`, reduced
+  motion and the viewport `phone` (390 × 844) or `desktop` (1280 × 800, the default). A request that leaves loopback
+  is refused, and it, an error in the browser's console or the page's script and a failed request fail the scenario.
+  `expectAccessible(page)` runs axe-core and fails on a violation; `screenshot(page, name)` keeps
+  `reports/screenshots/<scenario ID>/<name>.png` as the journey's evidence. Find elements with `getByRole`,
+  `getByLabel` and `getByText` only. Install the browser once with `make browser`.
 - `sut.mcp.connect(args, { env })`: starts the module's `bin` as an MCP server on stdio and returns a connected
   MCP client (`listTools`, `callTool`, ...).
 - `sut.action(inputs, { event, eventName, repository, sha, env })`: runs the module's composite `action.yml` like a
@@ -511,3 +519,7 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-154 | implemented | sut.pages reads a page by role, name and text |
 | SCN-TK-155 | implemented | sut.pages sends a form, follows its redirect and keeps the cookies and the headers |
 | SCN-TK-156 | implemented | A query that finds no element fails the test and names the role and the name it looked for |
+| SCN-TK-157 | implemented | sut.browser opens a page in Chromium with the testkit's clock, one locale, one time zone and a named viewport |
+| SCN-TK-158 | implemented | A request of the browser that leaves loopback fails the scenario and names the address |
+| SCN-TK-159 | implemented | An error in the browser's console fails the scenario |
+| SCN-TK-160 | implemented | A page with an accessibility violation fails the accessibility check |

@@ -756,6 +756,9 @@ importers:
       '@testing-library/dom':
         specifier: 10.4.2
         version: 10.4.2
+      axe-core:
+        specifier: 4.14.0
+        version: 4.14.0
       dom-accessibility-api:
         specifier: 0.5.16
         version: 0.5.16
@@ -765,6 +768,9 @@ importers:
       openapi-fetch:
         specifier: 0.17.0
         version: 0.17.0
+      playwright-core:
+        specifier: 1.56.1
+        version: 1.56.1
       testcontainers:
         specifier: 12.2.0
         version: 12.2.0
@@ -2712,6 +2718,10 @@ packages:
 
   aws4fetch@1.0.20:
     resolution: {integrity: sha512-/djoAN709iY65ETD6LKCtyyEI04XIBP5xVvfmNxsEP0uJB5tyaGBztSryRr4HqMStr9R06PisQE7m9zDTXKu6g==}
+
+  axe-core@4.14.0:
+    resolution: {integrity: sha512-9WTZxEjsZ7b13TH8JPmbV2z8CHbl80/2hm3XPEG4JgNdQLK81IBRXmSxHfMAOkSqQeRxT/0dwNDz2GOm3zzpcQ==}
+    engines: {node: '>=4'}
 
   axios@1.20.0:
     resolution: {integrity: sha512-r8aOh8j9cGKpgQAqpzrUHnSIc6a59Y3Xf/cv8sy1DrHCkZHzQGEuoq1tARk6qSyDdtQGSDgpb9kFlruzPvrgwg==}
@@ -7672,6 +7682,8 @@ snapshots:
       fastq: 1.20.3
 
   aws4fetch@1.0.20: {}
+
+  axe-core@4.14.0: {}
 
   axios@1.20.0:
     dependencies:

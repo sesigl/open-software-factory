@@ -1326,9 +1326,11 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   - [x] The page reader (`SCN-TK`), and the console's tests on it: the shared readers in `system-tests/console.ts`
     and the 14 test files that match literal tags themselves. This is the only slice of the item that touches the
     console; it comes before T-53's page slice.
-  - [ ] `sut.browser` with its guards, the accessibility helper and the screenshots as evidence (`SCN-TK`); the
-    mark of a journey and the runner that leaves journeys out of a mutant's run; the browser in the suites and in the
-    mutation shards, with its check (`SCN-REPO`).
+  - [x] `sut.browser` with its guards, the accessibility helper and the screenshots as evidence (`SCN-TK`), and the
+    browser in the testkit's suite. proof shows the screenshots on the pull request once the first journey exists
+    (T-56): no unit has one yet.
+  - [ ] The mark of a journey and the runner that leaves journeys out of a mutant's run; the browser in the
+    mutation shards of a unit that gets it through the testkit, with its check (`SCN-REPO`).
   - [ ] The check on the queries of UI tests (`SCN-REPO`), and the rules in `docs/quality/testing-strategy.md` and
     `docs/quality/checks.md`.
 
