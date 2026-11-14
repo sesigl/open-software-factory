@@ -55,49 +55,24 @@ const configOf = (env: NodeJS.ProcessEnv, catalog: string | undefined): string =
   ].join("\n");
 
 interface Catalog {
-  models: { slug: string; base_instructions: string; tool_mode?: string }[];
+  models: { slug: string; tool_mode?: string }[];
 }
 
 /**
  * Codex offers its edit tool apply_patch only to the models of its catalog. For a model it does not know, the catalog
- * file `models.json` in `home`: Codex's bundled catalog and that model, with the metadata Codex gives an unknown model
- * (its model_info_from_slug) and apply_patch, with the instructions of a model that calls tools directly, not in
- * code mode. Undefined when there is no model or Codex knows it.
+ * file `models.json` in `home`: Codex's bundled catalog and then the model, as a copy of the bundled model that calls
+ * its tools directly, not in code mode. Codex takes the first entry of a slug, so a model it knows keeps its own.
+ * Undefined when there is no model.
  */
 function catalogOf(model: string | undefined, home: string): string | undefined {
   if (!model) return undefined;
-  const bundled = execFileSync(process.execPath, [BRIDGE, "cli", "debug", "models", "--bundled"], {
-    env: { PATH: process.env.PATH ?? "", HOME: home, CODEX_HOME: home },
-    encoding: "utf8",
-  });
-  const catalog = JSON.parse(bundled) as Catalog;
+  // An empty environment: Codex lists its bundled catalog without a home folder and writes nothing.
+  // Stryker disable next-line ObjectLiteral: the listing is the same with any environment; only the user's ~/.codex differs, which no test may touch
+  const bundled = execFileSync(process.execPath, [BRIDGE, "cli", "debug", "models", "--bundled"], { env: {} });
+  const catalog = JSON.parse(String(bundled)) as Catalog;
   const direct = catalog.models.find((known) => known.tool_mode === undefined);
-  if (!direct || catalog.models.some((known) => known.slug === model)) return undefined;
-  const unknown = {
-    slug: model,
-    display_name: model,
-    description: null,
-    supported_reasoning_levels: [],
-    shell_type: "unified_exec",
-    visibility: "none",
-    supported_in_api: true,
-    priority: 99,
-    availability_nux: null,
-    upgrade: null,
-    support_verbosity: false,
-    default_verbosity: null,
-    apply_patch_tool_type: "freeform",
-    web_search_tool_type: "text",
-    truncation_policy: { mode: "bytes", limit: 10_000 },
-    supports_image_detail_original: false,
-    context_window: 272_000,
-    max_context_window: 272_000,
-    effective_context_window_percent: 95,
-    experimental_supported_tools: [],
-    base_instructions: direct.base_instructions,
-  };
   const file = join(home, "models.json");
-  writeFileSync(file, JSON.stringify({ ...catalog, models: [...catalog.models, unknown] }));
+  writeFileSync(file, JSON.stringify({ models: [...catalog.models, { ...direct, slug: model, display_name: model }] }));
   return file;
 }
 

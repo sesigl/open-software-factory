@@ -47,8 +47,9 @@ It writes `$OUTPUT/run-record.json` and `$OUTPUT/transcript.jsonl`.
   tool.
 - **The model gateway.** Codex calls the Responses API at `OPENAI_BASE_URL` with `OPENAI_API_KEY` as its bearer
   token and the model `OPENAI_MODEL`. Codex offers its edit tool `apply_patch` only to the models of its catalog, so
-  for a model that Codex's bundled catalog lacks, such as one of OpenRouter, the adapter writes `models.json` next to
-  `config.toml`: the bundled catalog and that model, with the metadata Codex gives an unknown model and `apply_patch`.
+  the adapter writes `models.json` next to `config.toml`: the bundled catalog and then the model, as a copy of the
+  bundled model that calls its tools directly. Codex takes the first entry of a model, so a model it knows, such as
+  `gpt-5.5`, keeps its own; one it lacks, such as one of OpenRouter, gets `apply_patch`.
 - **The run record** has `osf.harness.name` `codex`, `osf.harness.version` the bridge's version and the tokens of all
   turns in `gen_ai.usage.*`. Codex reports no cost.
 - **Titles.** After the first turn of a session Codex asks the model once more, for the session's title.

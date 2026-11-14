@@ -43,8 +43,8 @@ The owner chose:
 4. **codex runs weekly on the same key and model, on OpenRouter's Responses API.** At first Codex warned that it has
    no metadata for the model, offered no edit tool, and the model tried a shell command, which the allowlist refused:
    Codex offers apply_patch only to the models of its catalog. The owner then picked the same model for codex.
-   harness-codex adds a model Codex does not know to Codex's model catalog (`model_catalog_json`), with Codex's own
-   metadata for an unknown model and apply_patch (`SCN-HCODEX-012`).
+   harness-codex adds a model Codex does not know to Codex's model catalog (`model_catalog_json`), as a copy of the
+   bundled model that calls its tools directly, with apply_patch (`SCN-HCODEX-012`).
 5. **scorekit scores `runs/` once a week** with the same key and model: the job `score` of `weekly-paid.yml` runs every
    scorer of the pack with `scorekit score --model`, which replaces the scorer's gateway alias `judge` with the
    OpenRouter model. The scores of earlier weeks stay in the Actions cache, so a week pays only for new runs. The
