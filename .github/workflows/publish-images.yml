@@ -94,6 +94,12 @@ jobs:
               echo "waiting for $pin and its dependencies on npm: $(grep -m1 'notarget\|ETARGET\|E404' "$RUNNER_TEMP/npm-check.log")"
               sleep 20
             done
+            # npm answers a new version's metadata minutes before its tarball (run 43581450016): the build downloads it.
+            tarball=$(npm view --registry https://registry.npmjs.org "$pin" dist.tarball)
+            until curl -fsI -o /dev/null "$tarball"; do
+              echo "waiting for the tarball of $pin on npm"
+              sleep 20
+            done
           done
 
       - name: Build and push the images for amd64 and arm64, with SBOM and provenance
