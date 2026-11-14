@@ -743,7 +743,7 @@ The v1 promise covers the delivery loop and its record: intake, foreman, gatekee
 proof, with one adapter per port (claude-code, docker, github, litellm). The other modules stay released CLIs outside
 the v1 promise. P0 items come first: without them, people cannot trust the factory with real work.
 
-### [ ] T-22 · durable events (P0)
+### [x] T-22 · durable events (P0)
 
 - **Problem:** intake, foreman and gatekeeper send events on core NATS subjects. A consumer that is down loses work
   items and gate decisions.
@@ -790,7 +790,8 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
     `TRACEPARENT` for its harness (ADR 0087, `SCN-FORE-076`, `-077`, `SCN-TK-133`).
   - [ ] After each stage, the session's run record (tokens, cost) joins the stage span through `runlog attach` or the
     harness's `transcript`.
-  - [x] The profile sets the endpoint to its trace store, Phoenix, and the console links each run to its trace.
+  - [x] The profile sets the endpoint to its trace store, Jaeger (ADR 0100; Phoenix before it), and the console links
+    each run to its trace.
 
 ### [ ] T-25 · doctor and a health page (P0)
 
@@ -809,7 +810,7 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
   - [ ] Deep checks: one model call per route through LiteLLM, the harness answers ACP `initialize`, a sandbox starts
     and refuses a denied host, a test event reaches the foreman, a test span reaches the trace store.
 
-### [ ] T-26 · evidence in the loop (P1)
+### [x] T-26 · evidence in the loop (P1)
 
 - **Done when:** a stage with `evidence: required` fails without a proof evidence bundle for its pull request.
 - **Slices:**
@@ -838,17 +839,18 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
   - [ ] Steer, cancel, take over and hand back a run, and decide a gate, from the console; each API records the
     person who acted first.
 
-### [ ] T-29 · one trace store (P1)
+### [x] T-29 · one trace store (P1)
 
 - **Done when:** the profile runs one trace store, and runlog, scorekit and the console use the same one. An adopted
   service without a consumer leaves the profile.
-- **Decision:** Phoenix. It is one container on the profile's PostgreSQL and takes OTLP; Langfuse needs ClickHouse,
-  Redis and S3 more. scorekit and observer keep Langfuse as an option outside the profile.
+- **Decision:** Jaeger (ADR 0100), which replaced Phoenix (Elastic License 2.0, a slow start). It is one container
+  that takes OTLP and keeps its traces on a volume; Langfuse needs ClickHouse, Redis and S3 more. scorekit and
+  observer keep Langfuse as an option outside the profile.
 - **Slices:**
   - [x] The run's view names its `traceId`, and `CONSOLE_TRACE_URL` takes `{traceId}` (`SCN-FORE-081`,
     `SCN-CONSOLE-041`, `-042`).
   - [x] The profile: the foreman sends to Phoenix, the console links Phoenix's trace by `{traceId}`, and SeaweedFS
-    leaves the profile (no consumer, ADR 0088).
+    leaves the profile (no consumer, ADR 0088). Jaeger then replaced Phoenix in the same places (ADR 0100).
 
 ### [ ] T-30 · simple setup (P1)
 
@@ -1101,7 +1103,7 @@ as a vision scenario. Each item names the place in the code, so start there, and
   - [x] A subject for events that reached `max_deliver`, and a check of `/v1/health` on intake and the foreman.
   - [x] intake removes published rows of the outbox after a time.
 
-### [ ] T-50 · current status lines, again (P2)
+### [x] T-50 · current status lines, again (P2)
 
 - **Problem:** all 82 scenarios of `docs/vision/software-factory.feature` are `@status=planned`, and 14 of them have
   no module scenario with `@realizes=` for them. T-22, T-26 and T-29 are open with every slice ticked. T-24 and T-29
@@ -1109,9 +1111,12 @@ as a vision scenario. Each item names the place in the code, so start there, and
 - **Done when:** a check fails when a vision scenario's status differs from the module scenarios that realize it, and
   this file's open items have an open slice.
 - **Slices:**
-  - [ ] A report of the vision scenarios with the module scenarios that realize each, from spec-trace, in `make docs`.
-  - [ ] A check on that report, and on an item of this file that is open without an open slice (`SCN-REPO`).
-  - [ ] Tick or correct T-22, T-26 and T-29, and name Jaeger in T-24 and T-29.
+  - [x] A report of the vision scenarios with the module scenarios that realize each, from spec-trace's parser
+    `@opensoftware/spec-files`, in `make docs`: `docs/vision/README.md` (ADR 0117, SCN-REPO-127).
+  - [x] A check on that report, and on an item of this file that is open without an open slice (`SCN-REPO`): VISION
+    and TODO (ADR 0117, SCN-REPO-128 to -131). The 68 vision scenarios with realizing scenarios that are all
+    implemented say `implemented`; the 14 without one stay `planned`.
+  - [x] Tick or correct T-22, T-26 and T-29, and name Jaeger in T-24 and T-29.
 
 ---
 

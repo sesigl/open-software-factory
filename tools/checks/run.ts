@@ -13,6 +13,7 @@ import { reach } from "./reach.ts";
 import { release } from "./release.ts";
 import { budget, flake } from "./results.ts";
 import { runs } from "./runs.ts";
+import { todo, vision } from "./vision.ts";
 
 /** The fast set: static checks that need no test run and no base. SPEC, TRACE, STEPS and PASS are spec-trace's. */
 export const FAST: Record<string, Check> = {
@@ -30,6 +31,8 @@ export const FAST: Record<string, Check> = {
   RELEASE: release,
   DEPS: deps,
   PROFILE: profile,
+  VISION: vision,
+  TODO: todo,
 };
 
 /** Checks that read test results or compare with OSF_BASE; `make verify` runs them after the tests. */

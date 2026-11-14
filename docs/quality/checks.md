@@ -10,7 +10,7 @@ check ID and the file and line to fix.
 
 Scope: SPEC, TRACE, STEPS and PASS apply to `modules/*/features/`, `ports/*/features/`, `adapters/*/*/features/`, `packages/*/features/`,
 `tools/features/`, `deploy/features/` and `e2e/features/`. The factory-level requirements in `docs/vision/` are
-source material and are not checked; module scenarios link to them with `@realizes=SCN-FACTORY-...`.
+source material; module scenarios link to them with `@realizes=SCN-FACTORY-...`, and VISION keeps their status lines.
 
 SPEC, TRACE, STEPS and PASS run with the module `spec-trace` ([ADR 0030](../decisions/0030-spec-trace.md),
 [ADR 0031](../decisions/0031-spec-trace-action-and-dogfood.md)) and the root `spec-trace.json`: `make check` runs
@@ -47,6 +47,8 @@ artifact `spec-trace` holds the JSON report. Both actions run the release from n
 | TRACE | Every `implemented` scenario has exactly one system test; every system test names an existing scenario; `planned` scenarios may have a test that is expected to fail; `deprecated` scenarios have none. `@conformance` scenarios have exactly one test per adapter of the port. | Read `scenario("SCN-...")` calls from the TypeScript AST. Only string literals count. |
 | STEPS | The labels of `given`, `when` and `then` calls match the scenario's steps, in order, word for word. Outline parameters `<name>` match any value. | Compare AST string literals with the parsed steps. |
 | PASS | Every `implemented` scenario's test ran in this CI run and passed, or turbo replayed its passed result for the same inputs (ADR 0081). Skipped, todo and missing results fail; FLAKE fails retried-to-pass results. | Join the JUnit XML results (each test case carries its scenario ID) with the scenario list. |
+| VISION | A scenario of `docs/vision/software-factory.feature` says `@status=implemented` when at least one module scenario realizes it (`@realizes=`) and every realizing scenario that is not `deprecated` is `implemented`; otherwise it says `planned` ([ADR 0117](../decisions/0117-vision-status-from-realizing-scenarios.md)). `make docs` writes the vision scenarios with their realizing scenarios to `docs/vision/README.md`, and DOCS-GEN keeps it current. | Read the tag lines of the vision file (it holds several features, which Gherkin does not parse) and the `@realizes=` tags of every parsed scenario. |
+| TODO | An open item of `TODO.md` (`### [ ] T-..`) whose slices are all ticked fails: tick the item, or add the slice that is left. An item without slices passes; it is not cut into slices yet (ADR 0117). | Read each item's block up to the next heading or `---`. |
 
 ## Boundaries
 

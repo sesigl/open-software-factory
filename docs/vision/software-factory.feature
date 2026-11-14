@@ -14,21 +14,21 @@ Feature: The factory loop
 
   Rule: Work enters the loop from people and from production signals
 
-    @scenario_id=SCN-FACTORY-LOOP-001 @status=planned @evidence=spoken @source=04:13
+    @scenario_id=SCN-FACTORY-LOOP-001 @status=implemented @evidence=spoken @source=04:13
     Scenario: A person submits a new product idea
       Given a factory for the product surface "web app"
       When a product engineer submits the idea "Export reports as CSV" from a connected surface
       Then the factory creates exactly one work item for the idea
       And the work item enters the "triage" stage
 
-    @scenario_id=SCN-FACTORY-LOOP-002 @status=planned @evidence=screen @source=03:40
+    @scenario_id=SCN-FACTORY-LOOP-002 @status=implemented @evidence=screen @source=03:40
     Scenario: A bug report enters the same loop as an idea
       Given a factory for the product surface "web app"
       When a user reports the bug "Export button does nothing on Safari"
       Then the factory creates a work item of type "bug"
       And the work item follows the same loop as a product idea
 
-    @scenario_id=SCN-FACTORY-LOOP-003 @status=planned @evidence=screen @source=03:40 @source=04:42 @source=17:30
+    @scenario_id=SCN-FACTORY-LOOP-003 @status=implemented @evidence=screen @source=03:40 @source=04:42 @source=17:30
     Scenario: Monitoring feeds new work back to the start of the loop
       Given the factory watches production error reports
       When a new fatal error is reported for a shipped change
@@ -65,14 +65,14 @@ Feature: The factory loop
       Then each finding is routed either back to rework or to a human for resolution
       And a human can be asked to review the code
 
-    @scenario_id=SCN-FACTORY-LOOP-008 @status=planned @evidence=spoken @source=04:36 @source=12:01
+    @scenario_id=SCN-FACTORY-LOOP-008 @status=implemented @evidence=spoken @source=04:36 @source=12:01
     Scenario: Verification uses computer use and produces evidence
       Given a pull request that changes user-visible behavior
       When the verification step runs
       Then an agent operates the running product through computer use
       And screenshots or a video of the verified behavior are attached to the run
 
-    @scenario_id=SCN-FACTORY-LOOP-009 @status=planned @evidence=spoken @source=04:36
+    @scenario_id=SCN-FACTORY-LOOP-009 @status=implemented @evidence=spoken @source=04:36
     Scenario: The change ships through the existing CI/CD pipeline
       Given a reviewed and verified pull request
       When the change is merged
@@ -88,7 +88,7 @@ Feature: The factory loop
 
   Rule: The loop is a template, not one fixed process
 
-    @scenario_id=SCN-FACTORY-LOOP-011 @status=planned @evidence=spoken @source=04:42
+    @scenario_id=SCN-FACTORY-LOOP-011 @status=implemented @evidence=spoken @source=04:42
     Scenario: Two teams run different variants of the loop
       Given team "Payments" requires a human spec review
       And team "Docs" skips the spec stage
@@ -101,7 +101,7 @@ Feature: The factory loop
       When a marketing request is submitted
       Then the request follows the loop that the marketing factory defines
 
-    @scenario_id=SCN-FACTORY-LOOP-013 @status=planned @evidence=spoken @source=09:16
+    @scenario_id=SCN-FACTORY-LOOP-013 @status=implemented @evidence=spoken @source=09:16
     Scenario: There is one factory per product surface
       Given the product surfaces "server", "web" and "mobile"
       When the company sets up its factories
@@ -116,13 +116,13 @@ Feature: Cloud execution, sandboxes and governance
 
   Rule: The factory runs in the cloud
 
-    @scenario_id=SCN-FACTORY-RUNTIME-001 @status=planned @evidence=spoken @source=03:49
+    @scenario_id=SCN-FACTORY-RUNTIME-001 @status=implemented @evidence=spoken @source=03:49
     Scenario: Automations run while every engineer's laptop is off
       Given no engineer is online
       When a scheduled automation becomes due
       Then the factory runs it in the cloud
 
-    @scenario_id=SCN-FACTORY-RUNTIME-002 @status=planned @evidence=spoken @source=11:03
+    @scenario_id=SCN-FACTORY-RUNTIME-002 @status=implemented @evidence=spoken @source=11:03
     Scenario: All factory context is in one central place
       Given work that started in Slack and continued in Linear
       When a person opens the run in the factory
@@ -130,14 +130,14 @@ Feature: Cloud execution, sandboxes and governance
 
   Rule: Agents run in sandboxes, never as the logged-in user
 
-    @scenario_id=SCN-FACTORY-RUNTIME-003 @status=planned @evidence=spoken @source=03:18 @source=03:26
+    @scenario_id=SCN-FACTORY-RUNTIME-003 @status=implemented @evidence=spoken @source=03:18 @source=03:26
     Scenario: A compromised agent cannot act as a human user
       Given an agent run that is compromised through a malicious input
       When the agent tries to use credentials
       Then it has only the scoped credentials of its sandbox
       And it cannot use the credentials of any logged-in person
 
-    @scenario_id=SCN-FACTORY-RUNTIME-004 @status=planned @evidence=screen @source=22:45
+    @scenario_id=SCN-FACTORY-RUNTIME-004 @status=implemented @evidence=screen @source=22:45
     Scenario: Each run gets an isolated sandbox with declared resources
       Given an agent definition that declares a container image and CPU, memory and disk limits
       When a run of that agent starts
@@ -152,7 +152,7 @@ Feature: Cloud execution, sandboxes and governance
 
   Rule: Secrets, tools and MCP servers are governed centrally
 
-    @scenario_id=SCN-FACTORY-RUNTIME-006 @status=planned @evidence=spoken @source=09:54
+    @scenario_id=SCN-FACTORY-RUNTIME-006 @status=implemented @evidence=spoken @source=09:54
     Scenario: An agent receives only the secrets its definition declares
       Given the foreman agent declares the secret "LINEAR_TOKEN"
       And it does not declare the secret "STRIPE_KEY"
@@ -160,7 +160,7 @@ Feature: Cloud execution, sandboxes and governance
       Then the run can read "LINEAR_TOKEN"
       And the run cannot read "STRIPE_KEY"
 
-    @scenario_id=SCN-FACTORY-RUNTIME-007 @status=planned @evidence=spoken @source=03:18 @source=09:54
+    @scenario_id=SCN-FACTORY-RUNTIME-007 @status=implemented @evidence=spoken @source=03:18 @source=09:54
     Scenario: MCP servers are configured once, centrally
       Given the factory declares the MCP servers each agent may use
       When an agent tries to call an MCP server that its definition does not declare
@@ -168,7 +168,7 @@ Feature: Cloud execution, sandboxes and governance
 
   Rule: Every action is attributed and access is role-based
 
-    @scenario_id=SCN-FACTORY-RUNTIME-008 @status=planned @evidence=screen @source=12:36 @source=22:20
+    @scenario_id=SCN-FACTORY-RUNTIME-008 @status=implemented @evidence=screen @source=12:36 @source=22:20
     Scenario: Every run is attributed to a person or a trigger and a source
       Given a run started from a Slack message by "Varun"
       Then the run records "Varun" as requester and "Slack" as source
@@ -187,7 +187,7 @@ Feature: Factories as code
 
   Rule: The factory definition is declarative and complete
 
-    @scenario_id=SCN-FACTORY-CODE-001 @status=planned @evidence=spoken @source=05:51 @source=09:54 @source=21:56
+    @scenario_id=SCN-FACTORY-CODE-001 @status=implemented @evidence=spoken @source=05:51 @source=09:54 @source=21:56
     Scenario: The definition declares every part of the factory
       Given a factory definition file
       Then it declares the agents and their prompts
@@ -197,7 +197,7 @@ Feature: Factories as code
       And it declares the automations that trigger work
       And it declares the scorers and benchmarks
 
-    @scenario_id=SCN-FACTORY-CODE-002 @status=planned @evidence=screen @source=09:35
+    @scenario_id=SCN-FACTORY-CODE-002 @status=implemented @evidence=screen @source=09:35
     Scenario: The factory UI shows configuration read-only
       Given the factory definition is managed in a Git repository
       When a person opens an agent configuration in the factory UI
@@ -212,19 +212,19 @@ Feature: Factories as code
       Then the change exists as a commit in the factory repository
       And runs record which factory version they ran on
 
-    @scenario_id=SCN-FACTORY-CODE-004 @status=planned @evidence=spoken @source=06:07 @source=22:05
+    @scenario_id=SCN-FACTORY-CODE-004 @status=implemented @evidence=spoken @source=06:07 @source=22:05
     Scenario: A new factory version is tested before it replaces the current one
       Given factory version "v2" changes the implementation prompt
       When the benchmark suite runs on "v1" and "v2"
       Then the results of both versions can be compared before "v2" is released
 
-    @scenario_id=SCN-FACTORY-CODE-005 @status=planned @evidence=spoken @source=22:05
+    @scenario_id=SCN-FACTORY-CODE-005 @status=implemented @evidence=spoken @source=22:05
     Scenario: A bad factory version is rolled back
       Given factory version "v3" increased the failure rate
       When a factory engineer rolls back to "v2"
       Then new runs use "v2"
 
-    @scenario_id=SCN-FACTORY-CODE-006 @status=planned @evidence=spoken @source=15:16
+    @scenario_id=SCN-FACTORY-CODE-006 @status=implemented @evidence=spoken @source=15:16
     Scenario: Scorers are defined in code
       When a factory engineer adds the scorer "Redundant tests"
       Then its judge prompt, sampling rate and pass criterion exist in the factory repository
@@ -237,14 +237,14 @@ Feature: Open and pluggable infrastructure
 
   Rule: Models and harnesses are interchangeable
 
-    @scenario_id=SCN-FACTORY-OPEN-001 @status=planned @evidence=spoken @source=05:23 @source=09:58
+    @scenario_id=SCN-FACTORY-OPEN-001 @status=implemented @evidence=spoken @source=05:23 @source=09:58
     Scenario: The model of one agent changes without changing other agents
       Given the triage agent uses model "A" and the implementation agent uses model "B"
       When a factory engineer sets the triage agent to model "C"
       Then the triage agent uses model "C"
       And the implementation agent still uses model "B"
 
-    @scenario_id=SCN-FACTORY-OPEN-002 @status=planned @evidence=screen @source=23:54
+    @scenario_id=SCN-FACTORY-OPEN-002 @status=implemented @evidence=screen @source=23:54
     Scenario Outline: An agent runs on the harness its definition declares
       Given an agent definition with the harness "<harness>"
       When a run of that agent starts
@@ -258,13 +258,13 @@ Feature: Open and pluggable infrastructure
 
   Rule: Inference is pluggable
 
-    @scenario_id=SCN-FACTORY-OPEN-003 @status=planned @evidence=spoken @source=06:51 @source=23:07
+    @scenario_id=SCN-FACTORY-OPEN-003 @status=implemented @evidence=spoken @source=06:51 @source=23:07
     Scenario: The company brings its own inference gateway
       Given the company routes model calls through its own gateway on "Bedrock"
       When an agent calls a model
       Then the call goes through the company gateway
 
-    @scenario_id=SCN-FACTORY-OPEN-004 @status=planned @evidence=spoken @source=23:11
+    @scenario_id=SCN-FACTORY-OPEN-004 @status=implemented @evidence=spoken @source=23:11
     Scenario: An open-weight or fine-tuned model is used
       Given the company has a fine-tuned model
       When a factory engineer assigns it to the triage agent
@@ -272,13 +272,13 @@ Feature: Open and pluggable infrastructure
 
   Rule: The factory adapts to existing tools and infrastructure
 
-    @scenario_id=SCN-FACTORY-OPEN-005 @status=planned @evidence=spoken @source=05:39
+    @scenario_id=SCN-FACTORY-OPEN-005 @status=implemented @evidence=spoken @source=05:39
     Scenario: The factory uses the company's existing tracker, chat and code forge
       Given the company uses Jira, Microsoft Teams and GitLab
       When the factory is set up
       Then work is tracked in Jira, discussed in Teams and reviewed in GitLab
 
-    @scenario_id=SCN-FACTORY-OPEN-006 @status=planned @evidence=spoken @source=06:46
+    @scenario_id=SCN-FACTORY-OPEN-006 @status=implemented @evidence=spoken @source=06:46
     Scenario: The factory runs on the company's own compute
       Given the company requires that code never leaves its cloud account
       When the factory is installed in that account
@@ -292,7 +292,7 @@ Feature: Data, context and sovereignty
 
   Rule: Every run is recorded completely
 
-    @scenario_id=SCN-FACTORY-DATA-001 @status=planned @evidence=spoken @source=13:06 @source=22:28
+    @scenario_id=SCN-FACTORY-DATA-001 @status=implemented @evidence=spoken @source=13:06 @source=22:28
     Scenario: A run stores its transcript, trace and artifacts
       When an agent run ends
       Then its full transcript and tool trace are stored
@@ -304,7 +304,7 @@ Feature: Data, context and sovereignty
       When a person opens the run
       Then the person can open the original Slack thread
 
-    @scenario_id=SCN-FACTORY-DATA-003 @status=planned @evidence=spoken @source=11:49
+    @scenario_id=SCN-FACTORY-DATA-003 @status=implemented @evidence=spoken @source=11:49
     Scenario: A run links to the issue and pull requests it created
       Given a run that created a Linear issue and a pull request
       Then the run shows links to both
@@ -312,7 +312,7 @@ Feature: Data, context and sovereignty
 
   Rule: Context flows in from internal knowledge and agent memory
 
-    @scenario_id=SCN-FACTORY-DATA-004 @status=planned @evidence=spoken @source=22:25
+    @scenario_id=SCN-FACTORY-DATA-004 @status=implemented @evidence=spoken @source=22:25
     Scenario: Agents read internal knowledge through declared MCP servers and APIs
       Given the factory declares the internal knowledge source "engineering wiki"
       When an agent needs a design rule
@@ -326,7 +326,7 @@ Feature: Data, context and sovereignty
 
   Rule: The company owns its factory data
 
-    @scenario_id=SCN-FACTORY-DATA-006 @status=planned @evidence=spoken @source=06:25
+    @scenario_id=SCN-FACTORY-DATA-006 @status=implemented @evidence=spoken @source=06:25
     Scenario: Run data stays in company-controlled storage
       When runs are stored
       Then transcripts, traces and artifacts are stored in storage the company controls
@@ -340,7 +340,7 @@ Feature: Access points
 
   Rule: Every surface reaches the same factory workflow
 
-    @scenario_id=SCN-FACTORY-ACCESS-001 @status=planned @evidence=spoken @source=10:31 @source=24:16
+    @scenario_id=SCN-FACTORY-ACCESS-001 @status=implemented @evidence=spoken @source=10:31 @source=24:16
     Scenario Outline: Work is submitted from <surface>
       When a person submits work from "<surface>"
       Then the work reaches the foreman agent of the right factory
@@ -358,13 +358,13 @@ Feature: Access points
         | the factory web UI                       |
         | a mobile device                          |
 
-    @scenario_id=SCN-FACTORY-ACCESS-002 @status=planned @evidence=spoken @source=24:22
+    @scenario_id=SCN-FACTORY-ACCESS-002 @status=implemented @evidence=spoken @source=24:22
     Scenario: A team builds its own UI on the factory API
       Given a team builds an internal tool on the factory API
       When the tool submits work and reads run status
       Then the tool has the same abilities as the factory's own UI
 
-    @scenario_id=SCN-FACTORY-ACCESS-003 @status=planned @evidence=spoken @source=10:38
+    @scenario_id=SCN-FACTORY-ACCESS-003 @status=implemented @evidence=spoken @source=10:38
     Scenario: The factory's own chat UI is optional
       Given a team works only in Slack
       Then the team can submit, follow and finish work without opening the factory UI
@@ -377,13 +377,13 @@ Feature: Orchestration
 
   Rule: A foreman agent receives all work and delegates it
 
-    @scenario_id=SCN-FACTORY-ORCH-001 @status=planned @evidence=spoken @source=09:42 @source=10:10
+    @scenario_id=SCN-FACTORY-ORCH-001 @status=implemented @evidence=spoken @source=09:42 @source=10:10
     Scenario: The foreman delegates work to stage agents
       Given work arrives at the factory
       When the foreman agent handles it
       Then the foreman dispatches the triage, spec, implementation and code review agents as the workflow requires
 
-    @scenario_id=SCN-FACTORY-ORCH-002 @status=planned @evidence=screen @source=16:27
+    @scenario_id=SCN-FACTORY-ORCH-002 @status=implemented @evidence=screen @source=16:27
     Scenario: An agent starts sub-agents only with declared permission
       Given the triage agent does not declare permission to start sub-agents
       When the triage agent tries to start a research sub-agent
@@ -392,14 +392,14 @@ Feature: Orchestration
 
   Rule: Human gates and deterministic gates guard the stages; agents route intelligently
 
-    @scenario_id=SCN-FACTORY-ORCH-003 @status=planned @evidence=spoken @source=23:41
+    @scenario_id=SCN-FACTORY-ORCH-003 @status=implemented @evidence=spoken @source=23:41
     Scenario: Work waits at a human gate until a human approves
       Given the workflow requires human approval of the specification
       When the spec agent finishes
       Then the work stops at the gate
       And implementation starts only after a human approves
 
-    @scenario_id=SCN-FACTORY-ORCH-004 @status=planned @evidence=spoken @source=23:41
+    @scenario_id=SCN-FACTORY-ORCH-004 @status=implemented @evidence=spoken @source=23:41
     Scenario: A deterministic gate blocks shipping when checks fail
       Given a pull request whose required CI checks fail
       Then the factory does not ship the change
@@ -412,13 +412,13 @@ Feature: Orchestration
 
   Rule: Humans can steer and take over
 
-    @scenario_id=SCN-FACTORY-ORCH-006 @status=planned @evidence=screen @source=21:56
+    @scenario_id=SCN-FACTORY-ORCH-006 @status=implemented @evidence=screen @source=21:56
     Scenario: A human steers a running agent
       Given an implementation run in progress
       When a human sends the instruction "use the existing date helper"
       Then the running agent receives the instruction and continues
 
-    @scenario_id=SCN-FACTORY-ORCH-007 @status=planned @evidence=screen @source=21:56
+    @scenario_id=SCN-FACTORY-ORCH-007 @status=implemented @evidence=screen @source=21:56
     Scenario: A human takes over a run
       Given an implementation run in progress
       When a human takes over the run
@@ -426,7 +426,7 @@ Feature: Orchestration
 
   Rule: Run states are explicit
 
-    @scenario_id=SCN-FACTORY-ORCH-008 @status=planned @evidence=screen @source=12:36
+    @scenario_id=SCN-FACTORY-ORCH-008 @status=implemented @evidence=screen @source=12:36
     Scenario: Every run has one visible state
       Then every run is in exactly one of the states "running", "complete", "failed", "blocked" or "cancelled"
       And a person can filter runs by state
@@ -439,7 +439,7 @@ Feature: Automations
 
   Rule: Automated triggers feed the factory workflow
 
-    @scenario_id=SCN-FACTORY-AUTO-001 @status=planned @evidence=spoken @source=17:22 @source=17:43
+    @scenario_id=SCN-FACTORY-AUTO-001 @status=implemented @evidence=spoken @source=17:22 @source=17:43
     Scenario Outline: The trigger "<trigger>" starts the automation "<automation>"
       Given the automation "<automation>" is enabled with the trigger "<trigger>"
       When "<trigger>" happens
@@ -457,7 +457,7 @@ Feature: Automations
         | slack-dms                       | Slack direct message received         |
         | sentry-fatal-investigate        | Sentry fatal error webhook            |
 
-    @scenario_id=SCN-FACTORY-AUTO-002 @status=planned @evidence=screen @source=17:52
+    @scenario_id=SCN-FACTORY-AUTO-002 @status=implemented @evidence=screen @source=17:52
     Scenario: Automations are defined in code and can be switched on and off
       Given the automations are declared in the factory repository
       When a person opens the automation list
@@ -472,13 +472,13 @@ Feature: Team visibility
 
   Rule: All agent work is visible in real time
 
-    @scenario_id=SCN-FACTORY-VIS-001 @status=planned @evidence=spoken @source=12:36
+    @scenario_id=SCN-FACTORY-VIS-001 @status=implemented @evidence=spoken @source=12:36
     Scenario: A person sees all runs across all factories in real time
       Given 12 runs are in progress across two factories
       When a person opens the runs view
       Then the person sees all 12 runs with their title, source, requester, linked PRs and age
 
-    @scenario_id=SCN-FACTORY-VIS-002 @status=planned @evidence=spoken @source=12:56
+    @scenario_id=SCN-FACTORY-VIS-002 @status=implemented @evidence=spoken @source=12:56
     Scenario: A person opens a teammate's run
       Given "Ben" started a run "Add diagnostics to cloud agent runs"
       When another engineer opens that run
@@ -492,13 +492,13 @@ Feature: Flow and cost metrics
 
   Rule: Flow is measured per pull request
 
-    @scenario_id=SCN-FACTORY-METRIC-001 @status=planned @evidence=spoken @source=13:38
+    @scenario_id=SCN-FACTORY-METRIC-001 @status=implemented @evidence=spoken @source=13:38
     Scenario: The dashboard shows human interactions per pull request
       Given 326 pull requests in the last 7 days
       When a factory engineer opens the productivity dashboard
       Then the dashboard shows the average number of human interactions per pull request and its trend
 
-    @scenario_id=SCN-FACTORY-METRIC-002 @status=planned @evidence=spoken @source=13:47
+    @scenario_id=SCN-FACTORY-METRIC-002 @status=implemented @evidence=spoken @source=13:47
     Scenario: The dashboard shows median cycle time by segment
       When a factory engineer opens the productivity dashboard
       Then it shows the median time from kickoff to pull request
@@ -506,20 +506,20 @@ Feature: Flow and cost metrics
       And from pull request to first human review
       And from first human review to merge
 
-    @scenario_id=SCN-FACTORY-METRIC-003 @status=planned @evidence=screen @source=13:38
+    @scenario_id=SCN-FACTORY-METRIC-003 @status=implemented @evidence=screen @source=13:38
     Scenario: The dashboard shows throughput and runs by agent type
       Then the dashboard shows pull requests opened and merged per day
       And total runs and top-level runs split by agent type
 
   Rule: Cost is measured per pull request and attributable
 
-    @scenario_id=SCN-FACTORY-METRIC-004 @status=planned @evidence=spoken @source=13:52
+    @scenario_id=SCN-FACTORY-METRIC-004 @status=implemented @evidence=spoken @source=13:52
     Scenario: The dashboard shows cost per pull request with its breakdown
       Given total spend of 5351.38 USD for 326 pull requests
       Then the dashboard shows a cost per pull request of 16.42 USD
       And splits it into compute, platform and inference
 
-    @scenario_id=SCN-FACTORY-METRIC-005 @status=planned @evidence=spoken @source=13:52
+    @scenario_id=SCN-FACTORY-METRIC-005 @status=implemented @evidence=spoken @source=13:52
     Scenario Outline: Spend is sliced by <dimension>
       When a factory engineer groups spend by "<dimension>"
       Then each group shows its spend and its share of the total
@@ -531,18 +531,18 @@ Feature: Flow and cost metrics
         | agent     |
         | model     |
 
-    @scenario_id=SCN-FACTORY-METRIC-006 @status=planned @evidence=screen @source=13:52
+    @scenario_id=SCN-FACTORY-METRIC-006 @status=implemented @evidence=screen @source=13:52
     Scenario: The most expensive pull requests are listed
       Then the dashboard lists the 20 pull requests with the highest attributed cost
 
-    @scenario_id=SCN-FACTORY-METRIC-007 @status=planned @evidence=spoken @source=14:00
+    @scenario_id=SCN-FACTORY-METRIC-007 @status=implemented @evidence=spoken @source=14:00
     Scenario: Cost per pull request has a reduction target
       Given a cost per pull request target of 15 USD
       Then the dashboard shows the gap between the current cost per pull request and the target
 
   Rule: Speed never hides a quality loss
 
-    @scenario_id=SCN-FACTORY-METRIC-008 @status=planned @evidence=spoken @source=25:26
+    @scenario_id=SCN-FACTORY-METRIC-008 @status=implemented @evidence=spoken @source=25:26
     Scenario: Revert rate is shown next to throughput and cost
       When throughput rises or cost per pull request falls
       Then the dashboard also shows the revert rate for the same period
@@ -555,25 +555,25 @@ Feature: Scoring (online evaluation)
 
   Rule: Scorers evaluate stored runs
 
-    @scenario_id=SCN-FACTORY-SCORE-001 @status=planned @evidence=spoken @source=14:23 @source=14:31
+    @scenario_id=SCN-FACTORY-SCORE-001 @status=implemented @evidence=spoken @source=14:23 @source=14:31
     Scenario: A scorer evaluates completed runs with an LLM judge
       Given the scorer "Redundant tests" judges whether a run added unnecessary tests
       When an implementation run completes and is sampled
       Then the judge records pass or fail with a reason for that run
 
-    @scenario_id=SCN-FACTORY-SCORE-002 @status=planned @evidence=spoken @source=15:05
+    @scenario_id=SCN-FACTORY-SCORE-002 @status=implemented @evidence=spoken @source=15:05
     Scenario: A scorer samples runs to control its cost
       Given the scorer "Redundant tests" has a sampling rate of 20 percent
       When 100 implementation runs complete
       Then about 20 runs are scored
       And the scorer's own cost is recorded
 
-    @scenario_id=SCN-FACTORY-SCORE-003 @status=planned @evidence=spoken @source=15:16 @source=15:22
+    @scenario_id=SCN-FACTORY-SCORE-003 @status=implemented @evidence=spoken @source=15:16 @source=15:22
     Scenario: A scorer shows its pass rate trend
       When a factory engineer opens a scorer
       Then it shows the pass rate over time, its all-time cost and each scored run with result, reason, run time and cost
 
-    @scenario_id=SCN-FACTORY-SCORE-004 @status=planned @evidence=screen @source=14:37
+    @scenario_id=SCN-FACTORY-SCORE-004 @status=implemented @evidence=screen @source=14:37
     Scenario Outline: The company defines its own scoring dimensions
       Given the scorer "<scorer>" exists
       Then its pass rate is shown on the scorer dashboard
@@ -595,30 +595,30 @@ Feature: Self-improvement
 
   Rule: Repeated failures become proposals to change the factory
 
-    @scenario_id=SCN-FACTORY-IMPROVE-001 @status=planned @evidence=spoken @source=15:28 @source=16:01
+    @scenario_id=SCN-FACTORY-IMPROVE-001 @status=implemented @evidence=spoken @source=15:28 @source=16:01
     Scenario: An observer agent groups repeated failures
       Given the triage scorer failed 54 times with the same reason
       When the self-improvement loop runs
       Then it records one problem with 54 occurrences and links to the failed runs
 
-    @scenario_id=SCN-FACTORY-IMPROVE-002 @status=planned @evidence=spoken @source=16:07 @source=16:52
+    @scenario_id=SCN-FACTORY-IMPROVE-002 @status=implemented @evidence=spoken @source=16:07 @source=16:52
     Scenario: The observer proposes a change to the factory definition as a pull request
       Given a recorded problem that the factory definition causes
       When the observer agent proposes a fix
       Then a pull request to the factory repository exists
       And its description states the problem, the solution and the evidence with run links
 
-    @scenario_id=SCN-FACTORY-IMPROVE-003 @status=planned @evidence=screen @source=16:52
+    @scenario_id=SCN-FACTORY-IMPROVE-003 @status=implemented @evidence=screen @source=16:52
     Scenario: A human approves a factory change before it merges
       Given a self-improvement pull request
       Then it cannot merge without at least one approving human review
 
-    @scenario_id=SCN-FACTORY-IMPROVE-004 @status=planned @evidence=screen @source=15:35
+    @scenario_id=SCN-FACTORY-IMPROVE-004 @status=implemented @evidence=screen @source=15:35
     Scenario: Proposals wait in a self-improvement inbox
       When a factory engineer opens the self-improvement inbox
       Then the engineer sees open proposals, their age and their state "needs review" or "approved"
 
-    @scenario_id=SCN-FACTORY-IMPROVE-005 @status=planned @evidence=derived @source=15:47
+    @scenario_id=SCN-FACTORY-IMPROVE-005 @status=implemented @evidence=derived @source=15:47
     Scenario: A merged improvement is checked against the same scorer
       Given a merged factory change that targets the problem "triage investigates inline"
       When the scorer runs on later runs
@@ -632,13 +632,13 @@ Feature: Benchmarks and model routing
 
   Rule: Real tasks become benchmark suites
 
-    @scenario_id=SCN-FACTORY-BENCH-001 @status=planned @evidence=spoken @source=18:34
+    @scenario_id=SCN-FACTORY-BENCH-001 @status=implemented @evidence=spoken @source=18:34
     Scenario: A factory engineer adds a real task to a benchmark
       Given a completed run of a hard front-end task
       When a factory engineer chooses "Add to benchmark" on the run
       Then the task is added to the benchmark suite "front-end tasks"
 
-    @scenario_id=SCN-FACTORY-BENCH-002 @status=planned @evidence=spoken @source=19:06
+    @scenario_id=SCN-FACTORY-BENCH-002 @status=implemented @evidence=spoken @source=19:06
     Scenario: A benchmark task is replayed without real side effects
       Given a benchmark task that originally posted to Slack and opened a pull request
       When the task is replayed
@@ -647,14 +647,14 @@ Feature: Benchmarks and model routing
 
   Rule: Configurations are compared on correctness and cost
 
-    @scenario_id=SCN-FACTORY-BENCH-003 @status=planned @evidence=spoken @source=19:16 @source=19:37
+    @scenario_id=SCN-FACTORY-BENCH-003 @status=implemented @evidence=spoken @source=19:16 @source=19:37
     Scenario: A benchmark runs a matrix of models and harness configurations
       Given the benchmark suite "WarpBench 0.1" with 29 tasks
       When a factory engineer runs it for 4 models and 2 harness configurations
       Then every task runs once for each of the 8 combinations
       And each combination gets a correctness score and an average cost per trial
 
-    @scenario_id=SCN-FACTORY-BENCH-004 @status=planned @evidence=spoken @source=20:07 @source=20:31
+    @scenario_id=SCN-FACTORY-BENCH-004 @status=implemented @evidence=spoken @source=20:07 @source=20:31
     Scenario: The result shows the trade-off between correctness and cost
       Given model "gpt-5.6-sol (high)" reached 94.8 percent correctness at 6.23 USD per trial
       And model "glm 5.3 flash" reached about 93 percent correctness at 1.99 USD per trial
@@ -662,7 +662,7 @@ Feature: Benchmarks and model routing
       Then the chart plots correctness against average cost
       And it names the most efficient option and the lowest-cost option
 
-    @scenario_id=SCN-FACTORY-BENCH-005 @status=planned @evidence=screen @source=20:07
+    @scenario_id=SCN-FACTORY-BENCH-005 @status=implemented @evidence=screen @source=20:07
     Scenario: Incomplete scoring is flagged
       Given a model with 28 of 29 tasks scored
       Then the result warns that its plotted score uses incomplete scorer results
@@ -670,7 +670,7 @@ Feature: Benchmarks and model routing
 
   Rule: Benchmark results drive model routing
 
-    @scenario_id=SCN-FACTORY-BENCH-006 @status=planned @evidence=spoken @source=21:11 @source=21:37
+    @scenario_id=SCN-FACTORY-BENCH-006 @status=implemented @evidence=spoken @source=21:11 @source=21:37
     Scenario: A routing rule uses the benchmark result for similar tasks
       Given the team accepts "glm 5.3 flash" for front-end tasks because it costs a third at slightly lower correctness
       When a new front-end task arrives
@@ -706,13 +706,13 @@ Feature: Business outcomes
 
   Rule: The factory is judged by outcomes, not by usage
 
-    @scenario_id=SCN-FACTORY-OUTCOME-001 @status=planned @evidence=screen @source=02:43
+    @scenario_id=SCN-FACTORY-OUTCOME-001 @status=implemented @evidence=screen @source=02:43
     Scenario: Leadership reviews outcome metrics, not token usage
       When leadership reviews the factory
       Then the review uses throughput, cycle time, cost per pull request and revert rate
       And token volume alone is not a success measure
 
-    @scenario_id=SCN-FACTORY-OUTCOME-002 @status=planned @evidence=spoken @source=25:19
+    @scenario_id=SCN-FACTORY-OUTCOME-002 @status=implemented @evidence=spoken @source=25:19
     Scenario: Cost falls while throughput rises and quality holds
       Given cost per pull request was 55 USD six weeks ago
       When the factory engineers have tuned the factory for six weeks
