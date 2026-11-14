@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Open Software Factory mock-up: Sign in</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+body{margin:0}
+a{color:#A0A7B1}a:hover{color:#E6E8EB}
+</style>
+</head>
+<body style="background: #0C0D0F">
+<div style="min-height: 800px; box-sizing: border-box; background: #0C0D0F; color: #E6E8EB; font-family: 'IBM Plex Sans', system-ui, sans-serif; display: flex; flex-wrap: wrap">
+
+<div style="flex: 1 1 420px; min-width: 0; box-sizing: border-box; padding: 48px 56px; border-right: 1px solid #272B31; display: flex; flex-direction: column; justify-content: space-between; gap: 48px; background-image: linear-gradient(#141619 1px, transparent 1px), linear-gradient(90deg, #141619 1px, transparent 1px); background-size: 32px 32px">
+<div style="display: flex; align-items: center; gap: 12px">
+<svg width="28" height="28" viewBox="0 0 32 32" role="img" aria-label="Open Software Factory" style="color: #FF6B1A"><path fill="currentColor" fill-rule="evenodd" d="M4 27V15l8-6v6l8-6v6l8-6v18H4zM14 27v-5h4v5h-4z"></path></svg>
+<div style="font-size: 16px; font-weight: 600">Open Software Factory</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 20px; max-width: 30rem">
+<div style="font-size: 40px; font-weight: 600; line-height: 1.1; letter-spacing: -0.02em">Work goes in. Proven changes come out.</div>
+<div style="display: flex; align-items: center; gap: 0; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #A0A7B1; flex-wrap: wrap; row-gap: 8px">
+<div style="border: 1px solid #3A4048; padding: 4px 8px; background: #0C0D0F">triage</div>
+<div style="width: 16px; height: 1px; background: #3A4048"></div>
+<div style="border: 1px solid #3A4048; padding: 4px 8px; background: #0C0D0F">spec</div>
+<div style="width: 16px; height: 1px; background: #3A4048"></div>
+<div style="border: 1px solid #FF6B1A; color: #FF6B1A; padding: 4px 8px; background: #0C0D0F">you approve</div>
+<div style="width: 16px; height: 1px; background: #3A4048"></div>
+<div style="border: 1px solid #3A4048; padding: 4px 8px; background: #0C0D0F">implement</div>
+<div style="width: 16px; height: 1px; background: #3A4048"></div>
+<div style="border: 1px solid #3A4048; padding: 4px 8px; background: #0C0D0F">review</div>
+<div style="width: 16px; height: 1px; background: #3A4048"></div>
+<div style="border: 1px solid #3A4048; padding: 4px 8px; background: #0C0D0F">verify</div>
+<div style="width: 16px; height: 1px; background: #3A4048"></div>
+<div style="border: 1px solid #3A4048; padding: 4px 8px; background: #0C0D0F">ship</div>
+</div>
+</div>
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #808894">factory reference · version 0a1b2c3</div>
+</div>
+
+<div style="flex: 1 1 420px; min-width: 0; box-sizing: border-box; padding: 48px 56px; display: flex; flex-direction: column; justify-content: center; align-items: center">
+<div style="width: 100%; max-width: 22rem; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.01em">Sign in</h1>
+<div style="font-size: 14px; line-height: 1.5; color: #A0A7B1">Use the account whose email is on this factory's access list.</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<a href="#" style="display: flex; align-items: center; justify-content: center; gap: 10px; height: 44px; border-radius: 4px; background: #FF6B1A; color: #0C0D0F; font-size: 14px; font-weight: 500; text-decoration: none">Continue with GitHub</a>
+<a href="#" style="display: flex; align-items: center; justify-content: center; gap: 10px; height: 44px; border-radius: 4px; border: 1px solid #3A4048; color: #E6E8EB; font-size: 14px; font-weight: 500; text-decoration: none">Continue with Google</a>
+</div>
+<div role="alert" style="display: flex; gap: 10px; border: 1px solid #FF8F8A; border-radius: 4px; padding: 12px; font-size: 13px; line-height: 1.5">
+<svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true" style="color: #FF8F8A; flex: none; margin-top: 3px"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="2"></path></svg>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div><span style="font-family: 'IBM Plex Mono', monospace">grace@acme.dev</span> is not on this factory's access list.</div>
+<div style="color: #A0A7B1">An admin adds people in <span style="font-family: 'IBM Plex Mono', monospace">access.yaml</span> of the factory's repository.</div>
+</div>
+</div>
+<div style="font-size: 12px; line-height: 1.5; color: #808894">No password is stored here. Your provider confirms your email, and the factory checks it against the list.</div>
+</div>
+</div>
+
+</div>
+</body>
+</html>

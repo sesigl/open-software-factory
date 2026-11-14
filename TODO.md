@@ -1404,29 +1404,16 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   a `bin`, ADR 0039; add the prefix to `docs/reference/scenario-prefixes.md`)
 - **Problem:** the console looks like Pico CSS's defaults. The product has a name and no icon, no colours and no type
   of its own, and no shared components, so each new page would invent its own.
-- **Approved by the owner (14 November 2026):** the mock-ups of the direction "precise industrial": the brand sheet,
-  the sign-in page with a refused person, the shell with the runs list, Secrets, a skill's page with a change that is
-  checking, and the runs on a phone. They are a canvas outside the repository, so the first slice asks the owner for
-  its export and commits it to `docs/design/` with the values below. From then on every agent works from a file in
-  the repository. The approved values:
-
-  | What | Value |
-  | --- | --- |
-  | Icon | A sawtooth factory roof with an open door, one shape in one colour, readable at 16 pixels. In a 32-pixel view box: `M4 27V15l8-6v6l8-6v6l8-6v18H4zM14 27v-5h4v5h-4z`, filled with the even-odd rule. |
-  | Wordmark | "Open Software Factory" in the UI face, weight 600, beside the icon. |
-  | Faces | IBM Plex Sans for text, IBM Plex Mono for what a person copies or compares: IDs, versions, names of secrets and skills, counts. Both are open-licensed (OFL). |
-  | Dark theme (default) | Ground `#0C0D0F`, surface `#141619`, raised `#1B1E22`, line `#272B31`, strong line `#3A4048`, text `#E6E8EB`, muted text `#A0A7B1`, subtle text `#808894`. |
-  | Light theme | Ground `#FAFAF9`, surface `#FFFFFF`, line `#E2E4E8`, text `#111316`, muted text `#555C66`, signal `#C4400A`. |
-  | Signal colour | `#FF6B1A`. It means two things only: the main action of a page, and work that waits for a person. |
-  | State colours | Running `#6CB0FF`, waits for a person: the signal colour, failed `#FF8F8A`. Complete and cancelled have no colour (muted and subtle text). Each state is a shape and a word, never colour alone. |
-  | Shape | A 4-pixel grid, a radius of 4 pixels for controls and 6 for panels, lines instead of shadows, controls 44 pixels high. |
-  | Type sizes | Page title 24, section title 16, text 14, secondary 13, labels 11 to 12 in mono with capitals and wide spacing. Sentence case everywhere. |
-  | Layout | A navigation column of about 232 pixels on the left with the icon, the factory's name and version, the pages with a count of what needs attention, and the account at the bottom. On a phone: a top bar with a menu button, a list of cards in place of the table, the main action fixed at the bottom. |
-  | Sign-in page | Two halves: the icon, the name, one sentence and the factory's stages as a line of stations on a fine grid; and the provider buttons with a plain refusal message. |
-
-  These are the start of the tokens, not their final list: the contrast check below decides when a value must change.
-  The mock-ups do not show every state. The page that needs one adds it in the same language, and `docs/design/`
-  records it: an empty list, an error of a server that does not answer, a form with a wrong value, the light theme.
+- **Approved by the owner (14 November 2026):** the mock-ups of the direction "precise industrial". They are in the
+  repository: `docs/design/` holds one static HTML page per screen (the brand sheet, the sign-in page with a refused
+  person, the shell with the runs list, Secrets, a skill's page with a change that is checking, the runs on a phone)
+  and `docs/design/README.md` holds the approved values (the icon's path, the faces, the colours of both themes, the
+  shape, the type sizes, the layout), the rules behind the look, and where this plan differs from the pictures. Read
+  that folder before you build a token, a component or a page, and build a page so that it looks like its mock-up.
+  The values are the start of the tokens, not their final list: the contrast check below decides when a value must
+  change, and the README changes with it. The mock-ups do not show every state. The page that needs one adds it in
+  the same language, and `docs/design/` records it: an empty list, an error of a server that does not answer, a form
+  with a wrong value, the light theme.
 - **Build:**
   - Tokens as CSS custom properties, for dark and light: colour by meaning (surface, text, border, signal, and the
     states running, waiting, failed and done), the type scale, spacing on a 4-pixel grid, radius and motion. A page
@@ -1466,8 +1453,7 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   - Do not build a zoo: a component without a page that uses it is removed.
 - **Done when:** the pages of T-56 to T-59 use only its components and tokens, and both checks pass.
 - **Slices:**
-  - [ ] The approved mock-up (the owner's export of the canvas) and its values in `docs/design/`, with a short
-    `README.md` of the direction.
+  - [x] The approved mock-ups and their values in `docs/design/`, with a `README.md` of the direction.
   - [ ] The ADR and the package: tokens, both themes, the brand files, the two checks.
   - [ ] The components that the sign-in page and the shell need (with T-56).
   - [ ] The components that Secrets and Skills need (with T-57 and T-59).
@@ -1556,10 +1542,11 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
     puts its own TLS proxy in front and sets the address to its `https://` URL.
   - **The person in every action** stays `by: { kind: "person", id: <email> }` (ADR 0118), so the members of
     gatekeeper's groups file match the same emails.
-  - **The sign-in page.** The first screen of the product, as approved in T-54: the icon, the name, one button per
+  - **The sign-in page.** The first screen of the product, as in `docs/design/sign-in.html`: the icon, the name, one button per
     provider. A refused person reads why in plain words ("ada@acme.dev is not on this factory's access list") and
     where the list lives.
-  - **The shell.** The layout of every new page: the navigation (only what works, what the mode offers and what the
+  - **The shell.** The layout of every new page, as in `docs/design/runs.html` and, on a phone,
+    `docs/design/runs-phone.html`: the navigation (only what works, what the mode offers and what the
     role may open), the factory's name and version, the account with the name, the role and "Sign out", the theme
     link. It has no script (T-54). A count in the navigation comes only from data the page loads anyway or from a
     short cache, and a store or forge that does not answer leaves the count out and never fails the page; in this
@@ -1675,7 +1662,7 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
     a token ends.
   - **The chart.** It installs no OpenBao (ADR 0075). Its values take the address, the mount and a Secret with the two
     tokens of the team's own OpenBao, and the docs give the two policies.
-  - **The page `/secrets`** (role `admin`), as approved in T-54. One list of the secrets that the factory's agents
+  - **The page `/secrets`** (role `admin`), as in `docs/design/secrets.html`. One list of the secrets that the factory's agents
     declare and of the names in the store, each with a state: "set" (who and when), "missing" (declared without a
     value; names the agents that need it, and from T-59 on the skills) or "not used" (stored, declared by no agent). A form sets or
     replaces a value in a field that never shows it again; "Delete" asks first, on a page of its own. Secrets of the providers `env` and
@@ -1854,7 +1841,7 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
     its token and its cache, for the foreman, `render` and the console's catalog alike.
   - **The page `/skills`:** every skill the factory can use, from the folders of its repository and the pins of its
     lock: name, description, source with its commit, the agents that use it, and what it needs, with the state of
-    each secret from T-57. `/skills/<name>`, as approved in T-54, shows the `SKILL.md` as rendered Markdown and its
+    each secret from T-57. `/skills/<name>`, as in `docs/design/skill.html`, shows the `SKILL.md` as rendered Markdown and its
     files, and one switch per agent. Both pages exist in every mode; the switches need a role and a factory on a
     forge. A switch is a change of T-58. When the agent lacks a secret reference, its provider or a host that the
     skill needs, the change adds them, and the page lists them before the person confirms.
