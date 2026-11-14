@@ -16,10 +16,9 @@ scenario("SCN-REPO-160", async ({ sut, given, when, then }) => {
   );
 
   let run: Awaited<ReturnType<typeof sut.cli>>;
-  const namesOnlyTheGuide = (): void => {
-    const findings = run.stdout.split("\n").filter((line) => /^DOCS-LINKS \S+:\d+ /.test(line));
-    expect(findings, run.stdout + run.stderr).toEqual([expect.stringMatching(/^DOCS-LINKS docs\/guide\.md:3 /)]);
-  };
+  /** The findings of the run: one line per file and line. */
+  const findings = (): string[] => run.stdout.split("\n").filter((line) => /^DOCS-LINKS \S+:\d+ /.test(line));
+  const onlyTheGuide = [expect.stringMatching(/^DOCS-LINKS docs\/guide\.md:3 /)];
 
   await when('the developer runs "osf check DOCS-LINKS"', async () => {
     run = await sut.cli(["check", "DOCS-LINKS"]);
@@ -30,7 +29,7 @@ scenario("SCN-REPO-160", async ({ sut, given, when, then }) => {
   });
 
   await then('the output names "docs/guide.md" and nothing in the worktree or the clone', async () => {
-    namesOnlyTheGuide();
+    expect(findings(), run.stdout + run.stderr).toEqual(onlyTheGuide);
   });
 
   await when('the developer runs "osf check DOCS-LINKS" in the folder after removing its ".git"', async () => {
@@ -43,6 +42,6 @@ scenario("SCN-REPO-160", async ({ sut, given, when, then }) => {
   });
 
   await then('the output names "docs/guide.md" and nothing in the worktree or the clone', async () => {
-    namesOnlyTheGuide();
+    expect(findings(), run.stdout + run.stderr).toEqual(onlyTheGuide);
   });
 });
