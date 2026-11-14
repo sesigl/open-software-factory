@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "people": [
+    { "email": "ada@acme.dev", "name": "Ada", "role": "admin" },
+    { "email": "leo@acme.dev", "role": "factory-engineer" },
+    { "email": "varun@acme.dev", "role": "member" }
+  ]
+}

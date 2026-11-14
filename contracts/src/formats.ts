@@ -20,6 +20,7 @@ export const FORMATS: readonly Format[] = [
   format("gate-record", "GateRecord"),
   format("sandbox-spec", "SandboxSpec"),
   format("factory-lock", "FactoryLock"),
+  format("access", "Access"),
   format("events/work-received", "WorkReceived"),
   format("events/work-retry-requested", "WorkRetryRequested"),
   format("events/run-started", "RunStarted"),

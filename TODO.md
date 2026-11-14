@@ -1335,7 +1335,7 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   - [x] The check on the queries of UI tests (`SCN-REPO`, UI-QUERY), and the rules in
     `docs/quality/testing-strategy.md` and `docs/quality/checks.md`.
 
-### [ ] T-53 · Astro in the console (P0)
+### [x] T-53 · Astro in the console (P0)
 
 - **Problem:** the console's pages are Preact components written with htm, which Fastify routes render, styled by
   Pico CSS, without a build step (ADR 0072). The repository's tooling knows only `.ts` files:
@@ -1401,7 +1401,8 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
     inputs, and the checks' rules for templates (`SCN-REPO` scenarios for each changed check: TEMPLATE, DUP).
   - [x] The first page on Astro: the health page, the smallest one, after T-52's page reader. It keeps the look of
     Pico CSS; T-60 gives it the new look. Its scenarios keep their text.
-  - [ ] The package and the image hold the built files; the profile and the chart pin the release (`SCN-DIST`).
+  - [x] The package and the image hold the built files; the profile and the chart pin the release (`SCN-DIST`):
+    console 0.7.0, SCN-DIST-036.
 
 ### [ ] T-54 · the design system: `@opensoftware/ui` (P0)
 
@@ -1611,12 +1612,12 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   `access.yaml` signs in with Google or GitHub and sees the runs in the new shell, nobody else gets past the sign-in,
   and a profile without a provider works as today.
 - **Slices:**
-  - [ ] The ADR: the library, the session, the roles, the modes and the hook.
+  - [x] The ADR: the library, the session, the roles, the modes and the hook (ADR 0134).
   - [ ] `@opensoftware/factory-files` with the fetch, used by the foreman (its own prefix; the foreman's `SCN-FORE`
     scenarios of ADR 0124 pass unchanged); its first publish.
   - [ ] The access file in `contracts/`, the library and `factory lint` (`SCN-CTR`, the library's prefix,
     `SCN-FSPEC`).
-  - [ ] `fakes.oidc()` and GitHub's sign-in in `fakes.github` (`SCN-TK`).
+  - [x] `fakes.oidc()` and GitHub's sign-in in `fakes.github` (`SCN-TK`).
   - [ ] The hook, sign-in, session and sign-out in the console, with the sign-in page and the probe route
     (`SCN-CONSOLE`).
   - [ ] The roles on every page and form (`SCN-CONSOLE`).

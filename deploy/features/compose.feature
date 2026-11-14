@@ -65,6 +65,13 @@ Feature: The Compose profile installs a complete factory with one command
     When the operator runs "docker compose up --detach --wait console"
     Then the console's page "/factory" lists the agents "triage", "spec", "implement", "review" and "ship"
 
+  @id=SCN-DIST-036 @status=implemented
+  Scenario: The console of the Compose profile renders its health page from the templates its package ships
+    Given the Compose profile with every value of ".env.example" set in ".env"
+    When the operator runs "docker compose up --detach --wait console"
+    Then the console's page "/health" has the heading "Health" and the columns "Check", "State" and "What to do"
+    And the page allows only the console's own files and no script
+
   @id=SCN-DIST-005 @status=deprecated
   Scenario: The plan of the reference factory adds the factory and finds no problems
     Given the Compose profile with every value of ".env.example" set in ".env"

@@ -77,3 +77,17 @@ Feature: Shared formats
     When the developer runs "osf-contracts breaking"
     Then the command exits with code 1
     And the output contains "made automations[]|2.timezone required"
+
+  @id=SCN-CTR-013 @status=implemented
+  Scenario: An access file with an admin and a member validates
+    Given an access file "access.yaml" with "ada@acme.dev" as "admin" and "varun@acme.dev" as "member"
+    When the developer runs "osf-contracts validate access access.yaml"
+    Then the command exits with code 0
+    And the output contains "access.yaml: valid access"
+
+  @id=SCN-CTR-014 @status=implemented
+  Scenario: An access file with an unknown role is rejected with the roles it allows
+    Given an access file "access.yaml" with "ada@acme.dev" as "owner"
+    When the developer runs "osf-contracts validate access access.yaml"
+    Then the command exits with code 1
+    And the output contains "access.yaml /people/0/role: must be one of \"member\", \"factory-engineer\", \"admin\""

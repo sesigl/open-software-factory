@@ -860,6 +860,63 @@
   ],
   "components": {
     "schemas": {
+      "Access": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "const": 1,
+            "description": "The version of the access file's format."
+          },
+          "people": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccessPerson"
+            },
+            "minItems": 1,
+            "description": "The people who may sign in. An email appears once."
+          }
+        },
+        "required": [
+          "version",
+          "people"
+        ],
+        "description": "access.yaml next to factory.yaml (ADR 0134): who may sign in to the factory UI, each person with one role. The\nconsole reads it at each request, so a merge that removes a person ends their access.",
+        "additionalProperties": false
+      },
+      "AccessPerson": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The name the UI shows, when the provider gives none."
+          },
+          "role": {
+            "$ref": "#/components/schemas/AccessRole",
+            "description": "`member` sees every page but Secrets and acts on work, runs and gates; `factory-engineer` also changes the factory\nfrom the UI; `admin` also stores and deletes secrets."
+          }
+        },
+        "required": [
+          "email",
+          "role"
+        ],
+        "description": "One person: the email the provider verifies, compared in lower case, and their role.",
+        "additionalProperties": false
+      },
+      "AccessRole": {
+        "type": "string",
+        "enum": [
+          "member",
+          "factory-engineer",
+          "admin"
+        ],
+        "description": "The roles of the factory UI (ADR 0134), from the least to the most it may do."
+      },
       "Actor": {
         "type": "object",
         "properties": {

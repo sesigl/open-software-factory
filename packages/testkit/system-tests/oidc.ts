@@ -1,0 +1,68 @@
+// The demo module of the fakes.oidc scenarios: a CLI that signs in with the authorization code flow and PKCE.
+import { demoModule } from "./module.ts";
+
+const SIGN_IN = [
+  'import { createHash, createPublicKey, verify } from "node:crypto";',
+  "const issuer = process.env.DEMO_ISSUER;",
+  "const config = await (await fetch(`${issuer}/.well-known/openid-configuration`)).json();",
+  'const verifier = "v".repeat(43);',
+  'const redirect = "http://127.0.0.1:9/callback";',
+  "const authorize = new URL(config.authorization_endpoint);",
+  "for (const [key, value] of Object.entries({ client_id: process.env.DEMO_CLIENT_ID, redirect_uri: redirect,",
+  '  response_type: "code", scope: "openid email profile", state: "state-1", nonce: "nonce-1",',
+  '  code_challenge: createHash("sha256").update(verifier).digest("base64url"), code_challenge_method: "S256" }))',
+  "  authorize.searchParams.set(key, value);",
+  'const back = new URL((await fetch(authorize, { redirect: "manual" })).headers.get("location"));',
+  'const state = back.searchParams.get("state");',
+  'if (back.searchParams.get("error")) {',
+  '  process.stdout.write(JSON.stringify({ state, error: back.searchParams.get("error") }));',
+  "  process.exit(0);",
+  "}",
+  'const basic = Buffer.from(`${process.env.DEMO_CLIENT_ID}:${process.env.DEMO_CLIENT_SECRET}`).toString("base64");',
+  "const token = await (await fetch(config.token_endpoint, {",
+  '  method: "POST",',
+  '  headers: { authorization: `Basic ${basic}`, "content-type": "application/x-www-form-urlencoded" },',
+  '  body: new URLSearchParams({ grant_type: "authorization_code", code: back.searchParams.get("code"),',
+  "    redirect_uri: redirect, code_verifier: verifier }),",
+  "})).json();",
+  'const [head, body, signature] = token.id_token.split(".");',
+  "const { keys } = await (await fetch(config.jwks_uri)).json();",
+  'const key = createPublicKey({ key: keys[0], format: "jwk" });',
+  'const valid = verify("RSA-SHA256", Buffer.from(`${head}.${body}`), key, Buffer.from(signature, "base64url"));',
+  'const claims = JSON.parse(Buffer.from(body, "base64url").toString());',
+  "process.stdout.write(JSON.stringify({ state, valid, issuer: claims.iss === issuer, email: claims.email,",
+  "  verified: claims.email_verified, name: claims.name, nonce: claims.nonce, aud: claims.aud,",
+  "  iat: new Date(claims.iat * 1000).toISOString() }));",
+  "",
+].join("\n");
+
+/** The module whose test scripts fakes.oidc with `signIn` (TypeScript lines) and expects `printed`. */
+export const oidcModule = (signIn: string[], printed: unknown) =>
+  demoModule({
+    bin: SIGN_IN,
+    readme: [
+      "# demo",
+      "",
+      "## Configuration",
+      "",
+      "| Variable | Meaning |",
+      "| --- | --- |",
+      "| `DEMO_ISSUER` | The provider. |",
+      "| `DEMO_CLIENT_ID` | The client. |",
+      "| `DEMO_CLIENT_SECRET` | Its secret. |",
+      "",
+    ].join("\n"),
+    steps: ["When the user signs in", "Then the provider answers the sign-in"],
+    test: [
+      "const oidc = await fakes.oidc();",
+      ...signIn,
+      "let run: Awaited<ReturnType<typeof sut.cli>>;",
+      "await when('the user signs in', async () => {",
+      "  run = await sut.cli([], { env: { DEMO_ISSUER: oidc.url, DEMO_CLIENT_ID: oidc.clientId, DEMO_CLIENT_SECRET: oidc.clientSecret } });",
+      "});",
+      "await then('the provider answers the sign-in', async () => {",
+      "  expect(run.exitCode, run.stderr).toBe(0);",
+      `  expect(JSON.parse(run.stdout)).toEqual(${JSON.stringify(printed)});`,
+      "});",
+    ],
+  });

@@ -41,6 +41,14 @@ export interface FakeGitHub extends Forge {
   checkRun(pr: PullRequest, run: { name: string; status?: string; conclusion?: string; title?: string }): Promise<void>;
   /** A token of the user `tester` that may not read check runs: GET .../check-runs answers 403 (ADR 0104). */
   noChecksToken: string;
+  /**
+   * The OAuth app of GitHub's sign-in (ADR 0134): `GET /login/oauth/authorize` redirects at once with a code for the
+   * person of `signIn`, or with `error=access_denied` without one; `POST /login/oauth/access_token` trades the code
+   * for a token, with which `GET /user` gives the person's login and name and `GET /user/emails` their primary email.
+   */
+  oauth: { clientId: string; clientSecret: string };
+  /** The person whom the next sign-in signs in; `verified` is true unless set. */
+  signIn(person: { login: string; email: string; name?: string; verified?: boolean }): void;
 }
 
 export interface RunningGitHub {
@@ -49,6 +57,14 @@ export interface RunningGitHub {
 }
 
 const OWNER = "tester";
+// The OAuth app of the sign-in: values of the test only, like the tokens below.
+const OAUTH = { clientId: "Iv1.testkit0console", clientSecret: "testkit-github-oauth-secret" };
+interface SignInPerson {
+  login: string;
+  email: string;
+  name?: string;
+  verified?: boolean;
+}
 const REVIEWER = "reviewer";
 const ACTIONS = "github-actions[bot]";
 const ACTIONS_TOKEN = "ghs_testkit_actions";
@@ -745,6 +761,12 @@ export async function startGitHub(): Promise<RunningGitHub> {
     ],
   ];
 
+  // GitHub's sign-in: the next person, the codes not yet traded and the tokens of signed-in people.
+  let signingIn: SignInPerson | undefined;
+  const codes = new Map<string, { person: SignInPerson; redirect: string }>();
+  const people = new Map<string, SignInPerson>();
+  let signIns = 0;
+
   const handle = async (request: IncomingMessage, response: ServerResponse) => {
     const send = (status: number, value: unknown) => {
       response.statusCode = status;
@@ -755,7 +777,46 @@ export async function startGitHub(): Promise<RunningGitHub> {
     const [path = "", search = ""] = (request.url ?? "").split("?");
     let text = "";
     for await (const chunk of request) text += chunk;
+    if (method === "GET" && path === "/login/oauth/authorize") {
+      const query = new URLSearchParams(search);
+      const redirect = query.get("redirect_uri") ?? "";
+      const back = new URL(redirect);
+      const state = query.get("state");
+      if (state) back.searchParams.set("state", state);
+      if (query.get("client_id") === OAUTH.clientId && signingIn) {
+        const code = `github-code-${++signIns}`;
+        codes.set(code, { person: signingIn, redirect });
+        signingIn = undefined;
+        back.searchParams.set("code", code);
+      } else back.searchParams.set("error", "access_denied");
+      response.writeHead(302, { location: back.href });
+      return response.end();
+    }
+    if (method === "POST" && path === "/login/oauth/access_token") {
+      const fields = text.trimStart().startsWith("{")
+        ? new URLSearchParams(JSON.parse(text) as Record<string, string>)
+        : new URLSearchParams(text);
+      const code = fields.get("code") ?? "";
+      const grant = codes.get(code);
+      codes.delete(code);
+      const known = fields.get("client_id") === OAUTH.clientId && fields.get("client_secret") === OAUTH.clientSecret;
+      if (!known || !grant || (fields.get("redirect_uri") ?? grant.redirect) !== grant.redirect) {
+        problems.push(`fake GitHub refused a sign-in: ${known ? "an unknown or used code" : "an unknown client"}`);
+        return send(200, { error: known ? "bad_verification_code" : "incorrect_client_credentials" });
+      }
+      const accessToken = `gho_testkit_${signIns}`;
+      people.set(accessToken, grant.person);
+      return send(200, { access_token: accessToken, token_type: "bearer", scope: "read:user,user:email" });
+    }
     const token = /^(?:Bearer|token) (.+)$/i.exec(request.headers.authorization ?? "")?.[1] ?? "";
+    const person = people.get(token);
+    if (person && method === "GET" && path === "/user")
+      return send(200, { login: person.login, name: person.name ?? null, type: "User" });
+    if (person && method === "GET" && path === "/user/emails")
+      return send(200, [
+        { email: person.email, primary: true, verified: person.verified ?? true, visibility: "private" },
+        { email: `${person.login}@users.noreply.github.com`, primary: false, verified: true, visibility: null },
+      ]);
     const user = TOKENS[token];
     if (!user) return send(401, { message: "Bad credentials", status: "401" });
     const version = request.headers["x-github-api-version"];
@@ -811,6 +872,10 @@ export async function startGitHub(): Promise<RunningGitHub> {
     token: OWNER_TOKEN,
     actionsToken: ACTIONS_TOKEN,
     noChecksToken: NO_CHECKS_TOKEN,
+    oauth: OAUTH,
+    signIn(person) {
+      signingIn = person;
+    },
     owner: OWNER,
     async createRepository(name, files = {}) {
       const initial = Object.keys(files).length > 0 ? files : { "README.md": `# ${name}\n` };
