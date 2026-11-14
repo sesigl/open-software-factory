@@ -307,3 +307,10 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     Given "main" of "tester/web" requires the check "factory", and an open pull request whose check "factory" is "success"
     When the client runs "merge tester/web <number> --when-green"
     Then merge prints the merge commit, and the pull request is merged
+
+  @id=SCN-FORGE-043 @status=implemented @conformance
+  Scenario: close without --delete-branch keeps the pull request's branch
+    Given an open pull request in "tester/web" from "console/add-skill"
+    When the client runs "close tester/web <number>"
+    Then close prints the number and the state "closed"
+    And the repository still has the branch "console/add-skill" at the pull request's head commit
