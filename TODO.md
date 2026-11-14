@@ -1135,11 +1135,6 @@ owner before each slice: which model or service, and its budget.
     on OpenRouter on the small `prompt-injection` task, next to the oracle and reports it in the job summary (ADR 0077).
   - [x] taskcapture route (from T-09): the owner's one model is enough; the weekly models job routes with the
     report's pick (ADR 0077).
-  - [ ] observer (from T-10): the job `observe` of `weekly-paid.yml` runs `observer analyze` on the scores of the
-    scorekit slice above, `observer propose` for the first problem without an observer pull request, and
-    `observer check` for the merged ones (ADR 0046, ADR 0077). Open: done when one observer pull request to this
-    repository is merged and `observer check` measures its effect; that needs a problem with two failed runs and then
-    20 scored runs on each side of the merge.
   - [x] effort (before the foreman slice): every agent of `factory.yaml` declares its `effort` (`low` to `max`, required;
     contracts 2.0.0); the foreman hands it to each stage as `OSF_EFFORT`, and claude-code, codex and opencode map it to
     their own setting; the console's factory page shows it (ADR 0078, `SCN-CTR-012`, `SCN-FSPEC-058`, `SCN-FORE-069`,
@@ -1173,3 +1168,9 @@ When T-17 is done, follow `docs/explanation/bootstrapping.md`: the factory imple
 implements an issue labeled `factory` of this repository and opens its pull request, and a person reviews and merges
 it; that run is not part of T-21. Add each new requirement as a vision scenario first, then as module scenarios and
 a new item here.
+
+A follow-up of T-21 that phase 4 proves, not this plan (the owner's choice):
+
+- observer: the job `observe` of `weekly-paid.yml` runs `observer analyze`, `observer propose` and
+  `observer check` on the weekly scores (ADR 0046, ADR 0077); the first merged observer pull request whose effect
+  `observer check` measures starts phase 4.
