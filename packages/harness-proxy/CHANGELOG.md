@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/sesigl/open-software-factory/compare/harness-proxy-v0.3.1...harness-proxy-v0.4.0) (2026-11-14)
+
+
+### Features
+
+* **foreman:** the run's pull request comes from the forge, not from the agent's last link (T-42, ADR 0109) ([#279](https://github.com/sesigl/open-software-factory/issues/279)) ([ee34e5d](https://github.com/sesigl/open-software-factory/commit/ee34e5dacd05b8d5ee479e34349ee242e6e7eebf))
+
 ## [0.3.1](https://github.com/sesigl/open-software-factory/compare/harness-proxy-v0.3.0...harness-proxy-v0.3.1) (2026-11-11)
 
 

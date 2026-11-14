@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/sesigl/open-software-factory/compare/inference-litellm-v0.4.0...inference-litellm-v0.5.0) (2026-11-14)
+
+
+### Features
+
+* **inference:** one key and one budget per run, revoked when the run ended (T-41, ADR 0108) ([#278](https://github.com/sesigl/open-software-factory/issues/278)) ([ff13c49](https://github.com/sesigl/open-software-factory/commit/ff13c49f78cb8d168bdf656bd006e13ece47b951))
+
 ## [0.4.0](https://github.com/sesigl/open-software-factory/compare/inference-litellm-v0.3.3...inference-litellm-v0.4.0) (2026-11-11)
 
 

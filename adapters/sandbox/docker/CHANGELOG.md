@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/sesigl/open-software-factory/compare/sandbox-docker-v0.4.0...sandbox-docker-v0.5.0) (2026-11-14)
+
+
+### Features
+
+* a run blocked at its checks tells its requester (T-45, ADR 0127); a sandbox probe in console doctor --deep (T-25, ADR 0120) ([#294](https://github.com/sesigl/open-software-factory/issues/294)) ([082cf02](https://github.com/sesigl/open-software-factory/commit/082cf023854adbdb39632cdfd65e5a0ede9b52c4))
+
 ## [0.4.0](https://github.com/sesigl/open-software-factory/compare/sandbox-docker-v0.3.0...sandbox-docker-v0.4.0) (2026-11-11)
 
 

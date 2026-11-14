@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.8.0](https://github.com/sesigl/open-software-factory/compare/factory-spec-v0.7.0...factory-spec-v0.8.0) (2026-11-14)
+
+
+### Features
+
+* a stage that only waits, and ship waits for verify and proof (T-40 slice 1, ADR 0107) ([#277](https://github.com/sesigl/open-software-factory/issues/277)) ([d90a96c](https://github.com/sesigl/open-software-factory/commit/d90a96c3088e73247ee21cb4de71c0f471997e24))
+* **factory-spec, contracts, foreman:** factory plan --adapters pins each adapter in factory.lock, and the foreman runs the pin (T-43, ADR 0125) ([#292](https://github.com/sesigl/open-software-factory/issues/292)) ([1236626](https://github.com/sesigl/open-software-factory/commit/1236626228191fc80600729324ff09e67a277f93))
+* **foreman, factory-spec:** a clean factory and adapters at the factory's range (T-43, ADR 0110); a stage's result in the next prompt and lint warnings (T-44, ADR 0111) ([#280](https://github.com/sesigl/open-software-factory/issues/280)) ([e6abdc8](https://github.com/sesigl/open-software-factory/commit/e6abdc8fb4ad195043f078a85b50e3e62a5dab1a))
+* **foreman:** an agent's repositories are cloned into its folder before its turn (T-44, ADR 0126) ([#293](https://github.com/sesigl/open-software-factory/issues/293)) ([55b9e18](https://github.com/sesigl/open-software-factory/commit/55b9e18a01d3cd100b49aeeb96c4c46acd3859bf))
+
 ## [0.7.0](https://github.com/sesigl/open-software-factory/compare/factory-spec-v0.6.1...factory-spec-v0.7.0) (2026-11-11)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.0](https://github.com/sesigl/open-software-factory/compare/forge-github-v0.6.0...forge-github-v0.7.0) (2026-11-14)
+
+
+### Features
+
+* **forge-github:** pr lists the check runs of GitHub Actions next to the commit statuses ([#270](https://github.com/sesigl/open-software-factory/issues/270)) ([23a5f96](https://github.com/sesigl/open-software-factory/commit/23a5f96194eeffba7417d0f60464007613fd9afc))
+* **intake, forge:** the requester hears when a run waits at a gate and when it failed (T-45, ADR 0113) ([#282](https://github.com/sesigl/open-software-factory/issues/282)) ([8f49d6b](https://github.com/sesigl/open-software-factory/commit/8f49d6b03cd3de61ed542dda22749756846222f5))
+
 ## [0.6.0](https://github.com/sesigl/open-software-factory/compare/forge-github-v0.5.1...forge-github-v0.6.0) (2026-11-11)
 
 
