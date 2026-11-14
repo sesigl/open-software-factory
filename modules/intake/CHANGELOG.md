@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.6.0](https://github.com/sesigl/open-software-factory/compare/intake-v0.5.0...intake-v0.6.0) (2026-11-14)
+
+
+### Features
+
+* a run blocked at its checks tells its requester (T-45, ADR 0127); a sandbox probe in console doctor --deep (T-25, ADR 0120) ([#294](https://github.com/sesigl/open-software-factory/issues/294)) ([082cf02](https://github.com/sesigl/open-software-factory/commit/082cf023854adbdb39632cdfd65e5a0ede9b52c4))
+* events not lost without a trace (T-49, ADR 0116); vision status lines checked (T-50, ADR 0117) ([#286](https://github.com/sesigl/open-software-factory/issues/286)) ([a737849](https://github.com/sesigl/open-software-factory/commit/a737849cb05f9f07fed193f0884edb28ed7a7a12))
+* **foreman, intake, console:** lists that stay fast (T-48, ADR 0115) ([#285](https://github.com/sesigl/open-software-factory/issues/285)) ([5e6f432](https://github.com/sesigl/open-software-factory/commit/5e6f432304710cdcab351089fc4a3e1ba312c8d6))
+* **foreman, intake:** a second run's events, and the label put on again runs a failed work item again ([#274](https://github.com/sesigl/open-software-factory/issues/274)) ([f6c9151](https://github.com/sesigl/open-software-factory/commit/f6c91516d5916b2b01b0cc5b7360c8af2cc29c5f))
+* **intake, forge:** the requester hears when a run waits at a gate and when it failed (T-45, ADR 0113) ([#282](https://github.com/sesigl/open-software-factory/issues/282)) ([8f49d6b](https://github.com/sesigl/open-software-factory/commit/8f49d6b03cd3de61ed542dda22749756846222f5))
+
 ## [0.5.0](https://github.com/sesigl/open-software-factory/compare/intake-v0.4.1...intake-v0.5.0) (2026-11-11)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/sandbox-docker",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "sandbox-docker: runs isolated, resource-limited sandboxes on Docker behind an iron-proxy egress proxy that refuses other hosts, puts in the real secrets and allows only the declared MCP tools.",
   "license": "Apache-2.0",
   "repository": {

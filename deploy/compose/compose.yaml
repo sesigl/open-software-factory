@@ -165,13 +165,13 @@ services:
 
   # Copies FACTORY_DIR into the volume factory and commits it there: foreman reads a run's factory version from Git.
   factory-repo:
-    image: ghcr.io/sesigl/open-software-factory/factory-spec:0.7.0
+    image: ghcr.io/sesigl/open-software-factory/factory-spec:0.8.0
     build: &factory-spec
       context: ../images
       target: module
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/factory-spec@0.7.0"
+        PACKAGES: "@opensoftware/factory-spec@0.8.0"
     volumes:
       - ${FACTORY_DIR:-./factory}:/source:ro
       - factory:/factory
@@ -189,13 +189,13 @@ services:
 
   gatekeeper:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/gatekeeper:0.8.0
+    image: ghcr.io/sesigl/open-software-factory/gatekeeper:0.9.0
     build:
       context: ../images
       target: gatekeeper
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/gatekeeper@0.8.0 @opensoftware/channel-slack@0.3.0 @opensoftware/forge-github@0.6.0"
+        PACKAGES: "@opensoftware/gatekeeper@0.9.0 @opensoftware/channel-slack@0.3.0 @opensoftware/forge-github@0.7.0"
     # Asks in the Slack channel GATEKEEPER_SLACK_CHANNEL, on the run's pull request with GATEKEEPER_FORGE_TOKEN, or both.
     entrypoint: [sh, -c]
     command:
@@ -227,13 +227,13 @@ services:
 
   intake:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/intake:0.5.0
+    image: ghcr.io/sesigl/open-software-factory/intake:0.6.0
     build:
       context: ../images
       target: module
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/intake@0.5.0 @opensoftware/channel-slack@0.3.0 @opensoftware/forge-github@0.6.0 @opensoftware/forge-forgejo@0.6.0"
+        PACKAGES: "@opensoftware/intake@0.6.0 @opensoftware/channel-slack@0.3.0 @opensoftware/forge-github@0.7.0 @opensoftware/forge-forgejo@0.7.0"
     command: [intake, serve]
     depends_on:
       postgres:
@@ -299,16 +299,16 @@ services:
 
   foreman:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/foreman:0.9.0
+    image: ghcr.io/sesigl/open-software-factory/foreman:0.10.0
     build:
       context: ../images
       target: foreman
       secrets: [ca]
       args:
         PACKAGES: >-
-          @opensoftware/foreman@0.9.0 @opensoftware/harness-claude-code@0.6.0 @opensoftware/forge-github@0.6.0
-          @opensoftware/forge-forgejo@0.6.0 @opensoftware/inference-litellm@0.4.0 @opensoftware/sandbox-docker@0.4.0
-          @opensoftware/sandbox-kubernetes@0.3.0
+          @opensoftware/foreman@0.10.0 @opensoftware/harness-claude-code@0.6.0 @opensoftware/forge-github@0.7.0
+          @opensoftware/forge-forgejo@0.7.0 @opensoftware/inference-litellm@0.5.0 @opensoftware/sandbox-docker@0.5.0
+          @opensoftware/sandbox-kubernetes@0.4.0
     command: [foreman, serve]
     depends_on:
       docker-proxy:
@@ -378,13 +378,13 @@ services:
 
   console:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/console:0.5.0
+    image: ghcr.io/sesigl/open-software-factory/console:0.6.0
     build:
       context: ../images
       target: module
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/console@0.5.0 @opensoftware/forge-github@0.6.0 @opensoftware/forge-forgejo@0.6.0"
+        PACKAGES: "@opensoftware/console@0.6.0 @opensoftware/forge-github@0.7.0 @opensoftware/forge-forgejo@0.7.0"
     command: [console, serve]
     depends_on:
       foreman:
@@ -420,7 +420,7 @@ services:
 
   # factory-spec on the factory in the volume, for the commands of factory: docker compose run --rm factory plan
   factory:
-    image: ghcr.io/sesigl/open-software-factory/factory-spec:0.7.0
+    image: ghcr.io/sesigl/open-software-factory/factory-spec:0.8.0
     build: *factory-spec
     profiles: [tools]
     depends_on:

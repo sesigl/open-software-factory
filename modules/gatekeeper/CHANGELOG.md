@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.9.0](https://github.com/sesigl/open-software-factory/compare/gatekeeper-v0.8.0...gatekeeper-v0.9.0) (2026-11-14)
+
+
+### Features
+
+* a first run without guessing (T-47, ADR 0114) ([#284](https://github.com/sesigl/open-software-factory/issues/284)) ([7c5ccfa](https://github.com/sesigl/open-software-factory/commit/7c5ccfaad9bfdffe38bad6fa2cbc9e314ef44092))
+* **console, foreman, gatekeeper:** act on runs and gates from the console, as the person (T-28, ADR 0118) ([#288](https://github.com/sesigl/open-software-factory/issues/288)) ([74929e5](https://github.com/sesigl/open-software-factory/commit/74929e51133f8c5c7219eaae2313a4311926fb3f))
+* events not lost without a trace (T-49, ADR 0116); vision status lines checked (T-50, ADR 0117) ([#286](https://github.com/sesigl/open-software-factory/issues/286)) ([a737849](https://github.com/sesigl/open-software-factory/commit/a737849cb05f9f07fed193f0884edb28ed7a7a12))
+* **forge-github:** pr lists the check runs of GitHub Actions next to the commit statuses ([#270](https://github.com/sesigl/open-software-factory/issues/270)) ([23a5f96](https://github.com/sesigl/open-software-factory/commit/23a5f96194eeffba7417d0f60464007613fd9afc))
+
 ## [0.8.0](https://github.com/sesigl/open-software-factory/compare/gatekeeper-v0.7.0...gatekeeper-v0.8.0) (2026-11-11)
 
 

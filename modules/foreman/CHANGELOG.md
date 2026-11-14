@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.10.0](https://github.com/sesigl/open-software-factory/compare/foreman-v0.9.0...foreman-v0.10.0) (2026-11-14)
+
+
+### Features
+
+* a run blocked at its checks tells its requester (T-45, ADR 0127); a sandbox probe in console doctor --deep (T-25, ADR 0120) ([#294](https://github.com/sesigl/open-software-factory/issues/294)) ([082cf02](https://github.com/sesigl/open-software-factory/commit/082cf023854adbdb39632cdfd65e5a0ede9b52c4))
+* a stage that only waits, and ship waits for verify and proof (T-40 slice 1, ADR 0107) ([#277](https://github.com/sesigl/open-software-factory/issues/277)) ([d90a96c](https://github.com/sesigl/open-software-factory/commit/d90a96c3088e73247ee21cb4de71c0f471997e24))
+* **console, foreman, gatekeeper:** act on runs and gates from the console, as the person (T-28, ADR 0118) ([#288](https://github.com/sesigl/open-software-factory/issues/288)) ([74929e5](https://github.com/sesigl/open-software-factory/commit/74929e51133f8c5c7219eaae2313a4311926fb3f))
+* **console, foreman, testkit:** cost and scores page (T-31), trace-store deep check (T-25), factory from a Git remote (T-32) ([#291](https://github.com/sesigl/open-software-factory/issues/291)) ([466e0d2](https://github.com/sesigl/open-software-factory/commit/466e0d29f69e18104a76d9bfbda1f6867edb50f0))
+* **contracts, foreman, console:** console doctor --deep sends a test event and finds it at the foreman (T-25, ADR 0120) ([#295](https://github.com/sesigl/open-software-factory/issues/295)) ([fa6214d](https://github.com/sesigl/open-software-factory/commit/fa6214d963203ba5ecbf727de8cfd572c75acaec))
+* events not lost without a trace (T-49, ADR 0116); vision status lines checked (T-50, ADR 0117) ([#286](https://github.com/sesigl/open-software-factory/issues/286)) ([a737849](https://github.com/sesigl/open-software-factory/commit/a737849cb05f9f07fed193f0884edb28ed7a7a12))
+* **factory-spec, contracts, foreman:** factory plan --adapters pins each adapter in factory.lock, and the foreman runs the pin (T-43, ADR 0125) ([#292](https://github.com/sesigl/open-software-factory/issues/292)) ([1236626](https://github.com/sesigl/open-software-factory/commit/1236626228191fc80600729324ff09e67a277f93))
+* **foreman, console:** each stage's span carries its tokens and cost, and the console links it (T-24, ADR 0121) ([#290](https://github.com/sesigl/open-software-factory/issues/290)) ([a786f2d](https://github.com/sesigl/open-software-factory/commit/a786f2da73adbf24ff40c9e98d618b63cd4421bd))
+* **foreman, factory-spec:** a clean factory and adapters at the factory's range (T-43, ADR 0110); a stage's result in the next prompt and lint warnings (T-44, ADR 0111) ([#280](https://github.com/sesigl/open-software-factory/issues/280)) ([e6abdc8](https://github.com/sesigl/open-software-factory/commit/e6abdc8fb4ad195043f078a85b50e3e62a5dab1a))
+* **foreman, intake, console:** lists that stay fast (T-48, ADR 0115) ([#285](https://github.com/sesigl/open-software-factory/issues/285)) ([5e6f432](https://github.com/sesigl/open-software-factory/commit/5e6f432304710cdcab351089fc4a3e1ba312c8d6))
+* **foreman, intake:** a second run's events, and the label put on again runs a failed work item again ([#274](https://github.com/sesigl/open-software-factory/issues/274)) ([f6c9151](https://github.com/sesigl/open-software-factory/commit/f6c91516d5916b2b01b0cc5b7360c8af2cc29c5f))
+* **foreman:** a stage's agent gets its MCP servers and skills, also in a sandbox (T-44, ADR 0112) ([#281](https://github.com/sesigl/open-software-factory/issues/281)) ([a459ff6](https://github.com/sesigl/open-software-factory/commit/a459ff627ac329baea852dc9fe7a89f0dda2dcbe))
+* **foreman:** an agent's repositories are cloned into its folder before its turn (T-44, ADR 0126) ([#293](https://github.com/sesigl/open-software-factory/issues/293)) ([55b9e18](https://github.com/sesigl/open-software-factory/commit/55b9e18a01d3cd100b49aeeb96c4c46acd3859bf))
+* **foreman:** run a run that failed or was cancelled again as a new run ([#273](https://github.com/sesigl/open-software-factory/issues/273)) ([973b7dd](https://github.com/sesigl/open-software-factory/commit/973b7dd9a619238752afa5f48c94532316882a48))
+* **foreman:** the run's pull request comes from the forge, not from the agent's last link (T-42, ADR 0109) ([#279](https://github.com/sesigl/open-software-factory/issues/279)) ([ee34e5d](https://github.com/sesigl/open-software-factory/commit/ee34e5dacd05b8d5ee479e34349ee242e6e7eebf))
+* **foreman:** waits for checks and gates end at a limit (T-39, ADR 0106) ([#276](https://github.com/sesigl/open-software-factory/issues/276)) ([b43994d](https://github.com/sesigl/open-software-factory/commit/b43994d03221e847d060b9c3737eeb00e898b0cd))
+* **inference:** one key and one budget per run, revoked when the run ended (T-41, ADR 0108) ([#278](https://github.com/sesigl/open-software-factory/issues/278)) ([ff13c49](https://github.com/sesigl/open-software-factory/commit/ff13c49f78cb8d168bdf656bd006e13ece47b951))
+* **tools:** osf init, up and doctor, and the first-run tutorial (T-30, ADR 0119) ([#287](https://github.com/sesigl/open-software-factory/issues/287)) ([f6a67f1](https://github.com/sesigl/open-software-factory/commit/f6a67f1d476b5c4021aa6c22c90badf68ea8a318))
+
 ## [0.9.0](https://github.com/sesigl/open-software-factory/compare/foreman-v0.8.0...foreman-v0.9.0) (2026-11-11)
 
 
