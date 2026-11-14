@@ -268,7 +268,7 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     Then the command exits with code 1
     And it prints "no branch tester/web:console/missing"
 
-  @id=SCN-FORGE-037 @status=planned @conformance
+  @id=SCN-FORGE-037 @status=implemented @conformance
   Scenario: branch starts from a commit
     Given the commit of "main" of "tester/web", and a later commit on "main"
     When the client runs "branch tester/web console/at-commit --from <the first commit>"
@@ -281,21 +281,21 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     Then merge prints "queued" true and the pull request stays open
     And after the check passes the pull request is merged
 
-  @id=SCN-FORGE-039 @status=planned @conformance
+  @id=SCN-FORGE-039 @status=implemented @conformance
   Scenario: rules prints the checks and approvals a branch requires
     Given "main" of "tester/web" requires the checks "factory" and "verify" and one approval, and "dev" requires nothing
     When the client runs "rules tester/web main" and "rules tester/web dev"
     Then the first prints the checks "factory" and "verify" and the approvals 1
     And the second prints no checks and the approvals 0
 
-  @id=SCN-FORGE-040 @status=planned @conformance
+  @id=SCN-FORGE-040 @status=implemented @conformance
   Scenario: close closes a pull request without merging and deletes its branch
     Given an open pull request in "tester/web" from "console/add-skill"
     When the client runs "close tester/web <number> --delete-branch"
     Then close prints the number and the state "closed"
     And the repository has no branch "console/add-skill"
 
-  @id=SCN-FORGE-041 @status=planned @conformance
+  @id=SCN-FORGE-041 @status=implemented @conformance
   Scenario: prs takes a limit and names the merge commit of a merged pull request
     Given three pull requests in "tester/web", the newest of them merged
     When the client runs "prs tester/web --state all --limit 2"

@@ -722,6 +722,48 @@ export async function startGitHub(): Promise<RunningGitHub> {
         ];
       },
     ],
+    [
+      "GET",
+      /^\/branches\/(.+)\/protection$/,
+      (repo, [branch = ""]) => {
+        const name = decodeURIComponent(branch);
+        tip(repo, name);
+        const rule = repo.rules.get(name);
+        if (!rule) throw new Answer(404, "Branch not protected");
+        return [
+          200,
+          {
+            required_status_checks: { strict: false, contexts: rule.contexts },
+            ...(rule.approvals
+              ? { required_pull_request_reviews: { required_approving_review_count: rule.approvals } }
+              : {}),
+            enforce_admins: { enabled: rule.enforceAdmins },
+          },
+        ];
+      },
+    ],
+    [
+      "PATCH",
+      /^\/pulls\/(\d+)$/,
+      (repo, [number = ""], body) => {
+        const pr = pull(repo, Number(number));
+        if (body.state === "closed" && pr.state === "open" && !pr.merged) {
+          pr.state = "closed";
+          pr.closedAt = now();
+          pr.updatedAt = pr.closedAt;
+        }
+        return [200, pullJson(repo, pr, true)];
+      },
+    ],
+    [
+      "DELETE",
+      /^\/git\/refs\/heads\/(.+)$/,
+      (repo, [branch = ""]) => {
+        const name = decodeURIComponent(branch);
+        if (!repo.branches.delete(name)) throw new Answer(422, "Reference does not exist");
+        return [204, undefined];
+      },
+    ],
     ["GET", /^\/issues\/(\d+)$/, (repo, [number = ""]) => [200, issueJson(repo, issue(repo, Number(number)))]],
     ["GET", /^\/hooks$/, (repo) => [200, repo.hooks.map(hookJson)]],
     [

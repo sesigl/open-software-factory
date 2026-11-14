@@ -2,7 +2,7 @@
 import { check, type Outcome } from "@opensoftware/cli";
 import type { GitHub } from "../adapters/github.ts";
 import { LIST_STATES, reviewState } from "../domain/repository.ts";
-import { connect } from "./shared.ts";
+import { connect, count } from "./shared.ts";
 
 /** The most pull requests GitHub gives on one page. */
 const PAGE = 100;
@@ -16,6 +16,7 @@ interface ListedPull {
   title: string;
   state: "open" | "closed";
   merged_at: string | null;
+  merge_commit_sha: string | null;
   created_at: string;
   head: { ref: string };
   base: { ref: string };
@@ -34,13 +35,19 @@ async function everyPull(api: GitHub, state: string): Promise<ListedPull[]> {
   return pulls;
 }
 
-/** prs <repo> [--head <prefix>] [--state open|closed|all]: one line per pull request, the highest number first. */
-export async function prs(repo: string | undefined, head = "", state = "open"): Promise<Outcome> {
+/**
+ * prs <repo> [--head <prefix>] [--state open|closed|all] [--limit <n>]: one line per pull request, the highest number
+ * first, at most `limit`.
+ */
+export async function prs(repo: string | undefined, head = "", state = "open", limit?: string): Promise<Outcome> {
   const api = connect(repo);
   check((LIST_STATES as readonly string[]).includes(state), `--state is one of ${LIST_STATES.join(", ")}`);
+  const most =
+    limit === undefined ? Number.POSITIVE_INFINITY : count(limit, 1, "--limit takes a number, like --limit 20");
   const pulls = (await everyPull(api, state))
     .filter((pull) => pull.head.ref.startsWith(head))
-    .sort((a, b) => b.number - a.number);
+    .sort((a, b) => b.number - a.number)
+    .slice(0, most);
   const lines: string[] = [];
   for (const pull of pulls) {
     const reviews = await api.request<{ user: { login: string }; state: string }[]>(
@@ -59,6 +66,7 @@ export async function prs(repo: string | undefined, head = "", state = "open"): 
         created: pull.created_at,
         draft: pull.draft === true,
         review: reviewState(reviews),
+        ...(pull.merged_at ? { mergeCommit: pull.merge_commit_sha } : {}),
       }),
     );
   }

@@ -163,6 +163,40 @@ export async function protect(
   return print({ branch, checks, approvals: required });
 }
 
+/** The parts of GitHub's branch protection that rules prints. */
+interface Protection {
+  required_status_checks?: { contexts?: string[] } | null;
+  required_pull_request_reviews?: { required_approving_review_count?: number } | null;
+}
+
+/** rules <repo> <branch>: the checks and approvals the branch's protection requires; none without protection. */
+export async function rules(repo: string | undefined, branch: string | undefined): Promise<Outcome> {
+  const api = connect(repo);
+  ensure(branch, "name the branch, like rules tester/web main");
+  const path = `/branches/${encodeURIComponent(branch as string)}/protection`;
+  const found: Protection = await api.request<Protection>("GET", path).catch((error: unknown) => {
+    if (error instanceof GitHubError && error.status === 404 && /not protected/i.test(error.message)) return {};
+    throw error;
+  });
+  return print({
+    checks: found.required_status_checks?.contexts ?? [],
+    approvals: found.required_pull_request_reviews?.required_approving_review_count ?? 0,
+  });
+}
+
+/** close <repo> <number> [--delete-branch]: closes the pull request without merging, and deletes its branch. */
+export async function close(
+  repo: string | undefined,
+  number: string | undefined,
+  deleteBranch = false,
+): Promise<Outcome> {
+  const api = connect(repo);
+  const issue = numberOf(number);
+  const closed = await api.request<PullJson>("PATCH", `/pulls/${issue}`, { state: "closed" });
+  if (deleteBranch) await api.request("DELETE", `/git/refs/heads/${encodeURIComponent(closed.head.ref)}`);
+  return print({ number: closed.number, state: closed.merged ? "merged" : closed.state });
+}
+
 /** merge <repo> <number> [--method merge|squash|rebase]: merges, or names GitHub's reason when it refuses. */
 export async function merge(repo: string | undefined, number: string | undefined, method = "merge"): Promise<Outcome> {
   const api = connect(repo);

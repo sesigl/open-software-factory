@@ -9,7 +9,9 @@ webhooks, and the pull request events that come back. Decisions: [ADR 0057](../.
 [ADR 0060](../../docs/decisions/0060-factory-spec-forge-port.md) (event names, `hooks`, `unhook`),
 [ADR 0062](../../docs/decisions/0062-gatekeeper-ports.md) (`comments`, the author, labels, draft and paths of `pr`),
 [ADR 0065](../../docs/decisions/0065-intake-issues-and-alerts.md) (`issue.labeled@v1`),
-[ADR 0073](../../docs/decisions/0073-forge-prs-and-console-inbox.md) (`prs`).
+[ADR 0073](../../docs/decisions/0073-forge-prs-and-console-inbox.md) (`prs`),
+[ADR 0136](../../docs/decisions/0136-forge-port-changes-from-the-ui.md) (`rules`, `close`, `prs --limit`, and the commit
+and merge when green that follow).
 
 ## The interface
 
@@ -18,14 +20,16 @@ command line. A repository is `<owner>/<name>`; every command prints JSON lines.
 
 | Port operation | Command |
 | --- | --- |
-| branch | `<adapter> branch <repo> <branch> [--from <ref>]` prints `{"branch", "sha"}`; the default `--from` is the default branch |
+| branch | `<adapter> branch <repo> <branch> [--from <ref>]` prints `{"branch", "sha"}`; `--from` takes a branch or a commit, by default the default branch |
 | open a pull request | `<adapter> open-pr <repo> <head> --title <text> [--body <text>] [--base <branch>]` prints `{"number", "url", "head", "base", "sha"}` |
 | merge state | `<adapter> pr <repo> <number>` prints `{"number", "url", "title", "state", "mergeable", "head", "base", "sha", "mergeCommit", "author", "labels", "draft", "paths", "checks"}` |
-| list pull requests | `<adapter> prs <repo> [--head <prefix>] [--state open\|closed\|all]` prints one `{"number", "url", "title", "state", "head", "base", "author", "created", "draft", "review"}` per pull request, the highest number first |
+| list pull requests | `<adapter> prs <repo> [--head <prefix>] [--state open\|closed\|all] [--limit <n>]` prints one `{"number", "url", "title", "state", "head", "base", "author", "created", "draft", "review"}` per pull request, the highest number first, at most n; a merged one also has `mergeCommit` |
 | checks | `<adapter> check <repo> <sha> <name> <pending\|success\|failure\|error> [--description <text>] [--url <url>]` |
 | comment | `<adapter> comment <repo> <number> <text>` comments on the pull request or the issue with the number, and prints `{"id", "url"}` |
 | comments | `<adapter> comments <repo> <number>` prints one `{"id", "url", "author", "time", "text", "mine"}` per comment of the conversation, oldest first |
 | merge rules | `<adapter> protect <repo> <branch> [--check <name>]... [--approvals <n>]` |
+| read merge rules | `<adapter> rules <repo> <branch>` prints `{"checks", "approvals"}`, the checks and approvals the branch requires; a branch without rules prints `{"checks": [], "approvals": 0}` |
+| close | `<adapter> close <repo> <number> [--delete-branch]` closes the pull request without merging, prints `{"number", "state"}`, and with `--delete-branch` deletes its head branch |
 | merge | `<adapter> merge <repo> <number> [--method merge\|squash\|rebase]` prints `{"sha"}` |
 | webhooks | `<adapter> webhook <repo> <url> [--event <name>]...` registers one webhook for the events, by default pull requests and their reviews; prints `{"id", "url", "events", "active"}` |
 | list webhooks | `<adapter> hooks <repo>` prints one such line per webhook |
