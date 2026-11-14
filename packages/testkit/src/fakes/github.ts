@@ -1,7 +1,8 @@
 // An in-process fake of the part of GitHub's REST API that a forge client calls (ADR 0058), with the same Forge
 // interface as fakes.forge. It keeps repositories with their commits and files, branches, pull requests, commit
-// statuses, check runs, comments, reviews, branch protection, issues with labels and webhooks. Webhooks deliver signed events to URLs on the local
-// host. IDs, SHAs and times come from counters and the fixed clock. A call it does not know fails the scenario.
+// statuses, check runs, comments, reviews, branch protection, auto-merge, issues with labels and webhooks. Webhooks
+// deliver signed events to URLs on the local host. IDs, SHAs and times come from counters and the fixed clock. A call
+// it does not know fails the scenario.
 import { createHash, createHmac } from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -49,6 +50,11 @@ export interface FakeGitHub extends Forge {
   oauth: { clientId: string; clientSecret: string };
   /** The person whom the next sign-in signs in; `verified` is true unless set. */
   signIn(person: { login: string; email: string; name?: string; verified?: boolean }): void;
+  /**
+   * Allows auto-merge in the repository, as its setting "Allow auto-merge" does; a new repository does not allow it,
+   * as on GitHub (ADR 0136).
+   */
+  allowAutoMerge(repository: string): Promise<void>;
 }
 
 export interface RunningGitHub {
@@ -97,6 +103,8 @@ interface Pull {
   mergeCommit: string | null;
   /** False until a client read the pull request once: GitHub answers `mergeable: null` while it computes it. */
   computed: boolean;
+  /** Auto-merge as a person enabled it: the fake merges with this method once the merge rules hold. */
+  autoMerge?: { method: string; user: string };
   createdAt: string;
   updatedAt: string;
   closedAt: string | null;
@@ -159,6 +167,8 @@ interface Repository {
   reviews: { id: number; number: number; user: string; state: string; body: string }[];
   rules: Map<string, Rule>;
   hooks: Hook[];
+  /** The repository's setting "Allow auto-merge". */
+  autoMergeAllowed: boolean;
 }
 
 /** An answer other than a success: GitHub's status and message. */
@@ -351,8 +361,11 @@ export async function startGitHub(): Promise<RunningGitHub> {
     return pr;
   };
 
-  /** The merge rules of the base branch, when they hold for this person: admins pass unless they are enforced. */
-  const refusal = (repo: Repository, pr: Pull, user: string): string | undefined => {
+  /**
+   * Why the merge rules of the base branch refuse this person: admins pass unless the rules are enforced. Without a
+   * person, as for auto-merge, they hold for everyone.
+   */
+  const refusal = (repo: Repository, pr: Pull, user?: string): string | undefined => {
     const rule = repo.rules.get(pr.base);
     if (!rule || (user === OWNER && !rule.enforceAdmins)) return undefined;
     const head = tip(repo, pr.head);
@@ -394,6 +407,16 @@ export async function startGitHub(): Promise<RunningGitHub> {
       sender: userJson(user),
     });
     return sha;
+  };
+
+  /** GitHub's `mergeStateStatus` of an open pull request: a conflict, a merge the rules refuse, or one that can merge. */
+  const mergeState = (repo: Repository, pr: Pull): string =>
+    !mergeable(repo, pr) ? "DIRTY" : refusal(repo, pr) ? "BLOCKED" : "CLEAN";
+  /** Merges each open pull request with auto-merge whose merge rules now hold, as the person who enabled it. */
+  const autoMerge = (repo: Repository) => {
+    for (const pr of repo.pulls)
+      if (pr.autoMerge && pr.state === "open" && mergeState(repo, pr) === "CLEAN")
+        mergePull(repo, pr, pr.autoMerge.user, pr.autoMerge.method);
   };
 
   const review = (repo: Repository, pr: Pull, user: string, event: string, body: string) => {
@@ -596,6 +619,7 @@ export async function startGitHub(): Promise<RunningGitHub> {
           createdAt: now(),
         };
         repo.statuses.push(status);
+        autoMerge(repo);
         return [
           201,
           {
@@ -881,6 +905,36 @@ export async function startGitHub(): Promise<RunningGitHub> {
     ],
   ];
 
+  /**
+   * GitHub's GraphQL API, as far as a forge client asks it (ADR 0136): a query of a pull request's
+   * `mergeStateStatus`, with its `id` and its repository's `autoMergeAllowed` (the variables `name` and `number`), and
+   * the mutation `enablePullRequestAutoMerge` (the variables `id` and `method`), which GitHub refuses where the
+   * repository does not allow auto-merge and for a pull request that can merge now. Any other query fails the
+   * scenario.
+   */
+  const graphql = (request: { query?: string; variables?: Record<string, unknown> }, user: string) => {
+    const query = request.query ?? "";
+    const variables = request.variables ?? {};
+    const refused = (message: string) => ({ data: null, errors: [{ type: "UNPROCESSABLE", message }] });
+    if (query.includes("enablePullRequestAutoMerge")) {
+      const [, name = "", number = ""] = /^PR_(.+)_(\d+)$/.exec(String(variables.id)) ?? [];
+      const repo = repository(name);
+      const pr = pull(repo, Number(number));
+      if (!repo.autoMergeAllowed) return refused("Pull request Auto merge is not allowed for this repository");
+      if (mergeState(repo, pr) === "CLEAN") return refused("Pull request Pull request is in clean status");
+      pr.autoMerge = { method: String(variables.method ?? "MERGE").toLowerCase(), user };
+      return { data: { enablePullRequestAutoMerge: { clientMutationId: null } } };
+    }
+    if (query.includes("mergeStateStatus")) {
+      const repo = repository(String(variables.name));
+      const pr = pull(repo, Number(variables.number));
+      const pullRequest = { id: `PR_${repo.name}_${pr.number}`, mergeStateStatus: mergeState(repo, pr) };
+      return { data: { repository: { autoMergeAllowed: repo.autoMergeAllowed, pullRequest } } };
+    }
+    problems.push(`fake GitHub: the GraphQL query ${query.replace(/\s+/g, " ").trim()} is not supported`);
+    return { data: null, errors: [{ type: "NOT_SUPPORTED", message: "fake GitHub does not support this query" }] };
+  };
+
   // GitHub's sign-in: the next person, the codes not yet traded and the tokens of signed-in people.
   let signingIn: SignInPerson | undefined;
   const codes = new Map<string, { person: SignInPerson; redirect: string }>();
@@ -942,6 +996,7 @@ export async function startGitHub(): Promise<RunningGitHub> {
     const version = request.headers["x-github-api-version"];
     if (version !== undefined && !API_VERSIONS.includes(String(version)))
       return send(400, { message: `API version ${version} is not supported.`, status: "400" });
+    if (method === "POST" && path === "/graphql") return send(200, graphql(JSON.parse(text || "{}"), user));
     if (method === "GET" && path === "/user") {
       // GitHub does not let an Actions token read its user.
       if (user === ACTIONS) return send(403, { message: "Resource not accessible by integration", status: "403" });
@@ -1012,7 +1067,11 @@ export async function startGitHub(): Promise<RunningGitHub> {
         reviews: [],
         rules: new Map(),
         hooks: [],
+        autoMergeAllowed: false,
       });
+    },
+    async allowAutoMerge(name) {
+      repository(name).autoMergeAllowed = true;
     },
     async openPullRequest(name, change) {
       const repo = repository(name);

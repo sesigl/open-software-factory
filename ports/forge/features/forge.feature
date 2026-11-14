@@ -1,7 +1,7 @@
 @port=forge @owner=maintainers
 Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
-  A forge adapter is a program with the commands branch, open-pr, pr, prs, check, comment, protect, merge, webhook,
-  hooks, unhook, comments and event. It reaches the forge at FORGE_URL with the token FORGE_TOKEN, and signs and checks webhooks with
+  A forge adapter is a program with the commands branch, commit, open-pr, pr, prs, check, comment, protect, rules,
+  close, merge, webhook, hooks, unhook, comments and event. It reaches the forge at FORGE_URL with the token FORGE_TOKEN, and signs and checks webhooks with
   FORGE_WEBHOOK_SECRET. A repository is "<owner>/<name>". event turns one webhook delivery into a pr.opened@v1,
   pr.reviewed@v1 or pr.closed@v1 CloudEvent from contracts (ADR 0057), and a label added to an issue into an
   issue.labeled@v1 (ADR 0065). The test forge has the user "tester" and the
@@ -10,7 +10,8 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
   "issue.labeled" or "push", and each adapter maps them to its forge's events (ADR 0060). pr names the author,
   labels and changed files, and comments lists a pull request's conversation, which gatekeeper reads (ADR 0062). prs
   lists the pull requests whose branch starts with a prefix, with their review state, which the console's inbox reads
-  (ADR 0073).
+  (ADR 0073). commit, rules, close and merge --when-green let the console change the factory with a pull request
+  that the forge merges once its required checks pass (ADR 0136).
 
   @id=SCN-FORGE-001 @status=implemented @conformance
   Scenario: A branch starts at the head commit of the default branch
@@ -274,12 +275,12 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     When the client runs "branch tester/web console/at-commit --from <the first commit>"
     Then branch prints the new branch with the first commit's SHA
 
-  @id=SCN-FORGE-038 @status=planned @conformance
-  Scenario: merge --when-green waits for the required check and merges once it passes
-    Given "main" of "tester/web" requires the check "factory", and an open pull request whose check "factory" is pending
+  @id=SCN-FORGE-038 @status=implemented @conformance
+  Scenario: merge --when-green waits for the required check and the forge merges once it passes
+    Given "main" of "tester/web" requires the check "factory", the repository allows a merge when the checks pass, and an open pull request whose check "factory" is pending
     When the client runs "merge tester/web <number> --when-green", then posts "factory" as "success" on its head
-    Then merge prints "queued" true and the pull request stays open
-    And after the check passes the pull request is merged
+    Then merge prints "queued" true, and the pull request was still open before the check passed
+    And the forge then merges the pull request
 
   @id=SCN-FORGE-039 @status=implemented @conformance
   Scenario: rules prints the checks and approvals a branch requires
@@ -300,3 +301,9 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     Given three pull requests in "tester/web", the newest of them merged
     When the client runs "prs tester/web --state all --limit 2"
     Then prs prints two lines, the newest first, and the merged one has its merge commit
+
+  @id=SCN-FORGE-042 @status=implemented @conformance
+  Scenario: merge --when-green merges at once when the required check already passed
+    Given "main" of "tester/web" requires the check "factory", and an open pull request whose check "factory" is "success"
+    When the client runs "merge tester/web <number> --when-green"
+    Then merge prints the merge commit, and the pull request is merged

@@ -7,6 +7,7 @@ import { commit } from "./commands/commit.ts";
 import { event, hooks, unhook, webhook } from "./commands/hooks.ts";
 import { prs } from "./commands/list.ts";
 import { check, close, comment, comments, merge, pr, protect, rules } from "./commands/pulls.ts";
+import { mergeWhenGreen } from "./commands/when-green.ts";
 
 const USAGE = `Usage: forge-github <command>
 
@@ -28,7 +29,9 @@ Commands:
                                                          Write one commit with these files to a branch; print {"sha"}.
   rules <repo> <branch>                                  Print the {"checks", "approvals"} the branch requires.
   close <repo> <number> [--delete-branch]                Close a pull request without merging; print {"number", "state"}.
-  merge <repo> <number> [--method merge|squash|rebase]   Merge; print {"sha"} of the merge commit.
+  merge <repo> <number> [--method merge|squash|rebase] [--when-green]
+                                                         Merge; print {"sha"} of the merge commit. With --when-green,
+                                                         enable auto-merge unless it can merge now; print {"queued": true}.
   webhook <repo> <url> [--event <name>]...               Register one webhook for the events, by default pull requests;
                                                          print {"id", "url", "events", "active"}.
   hooks <repo>                                           Print each webhook of the repository.
@@ -44,6 +47,7 @@ const { positionals: words, values: flags } = parseArgs({
   options: {
     help: { type: "boolean" },
     "delete-branch": { type: "boolean" },
+    "when-green": { type: "boolean" },
     check: { type: "string", multiple: true },
     event: { type: "string", multiple: true },
     ...Object.fromEntries(
@@ -80,7 +84,7 @@ const commands: Record<string, [arity: number, Command]> = {
   commit: [Number.POSITIVE_INFINITY, () => commit(a, b, option("message"), rest.slice(2))],
   rules: [2, () => rules(a, b)],
   close: [2, () => close(a, b, flags["delete-branch"] as boolean | undefined)],
-  merge: [2, () => merge(a, b, option("method"))],
+  merge: [2, () => (flags["when-green"] ? mergeWhenGreen : merge)(a, b, option("method"))],
   webhook: [2, () => webhook(a, b, (flags.event as string[] | undefined) ?? [])],
   hooks: [1, () => hooks(a)],
   unhook: [2, () => unhook(a, b)],

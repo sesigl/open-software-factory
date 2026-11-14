@@ -10,8 +10,8 @@ webhooks, and the pull request events that come back. Decisions: [ADR 0057](../.
 [ADR 0062](../../docs/decisions/0062-gatekeeper-ports.md) (`comments`, the author, labels, draft and paths of `pr`),
 [ADR 0065](../../docs/decisions/0065-intake-issues-and-alerts.md) (`issue.labeled@v1`),
 [ADR 0073](../../docs/decisions/0073-forge-prs-and-console-inbox.md) (`prs`),
-[ADR 0136](../../docs/decisions/0136-forge-port-changes-from-the-ui.md) (`commit`, `rules`, `close`, `prs --limit`, and the
-merge when green that follows).
+[ADR 0136](../../docs/decisions/0136-forge-port-changes-from-the-ui.md) (`commit`, `rules`, `close`, `prs --limit`,
+`merge --when-green`).
 
 ## The interface
 
@@ -32,6 +32,7 @@ command line. A repository is `<owner>/<name>`; every command prints JSON lines.
 | read merge rules | `<adapter> rules <repo> <branch>` prints `{"checks", "approvals"}`, the checks and approvals the branch requires; a branch without rules prints `{"checks": [], "approvals": 0}` |
 | close | `<adapter> close <repo> <number> [--delete-branch]` closes the pull request without merging, prints `{"number", "state"}`, and with `--delete-branch` deletes its head branch |
 | merge | `<adapter> merge <repo> <number> [--method merge\|squash\|rebase]` prints `{"sha"}` |
+| merge when green | `<adapter> merge <repo> <number> --when-green [--method merge\|squash\|rebase]` merges at once when the merge rules already hold and prints `{"sha"}`; otherwise it asks the forge to merge once the required checks pass and prints `{"queued": true}` |
 | webhooks | `<adapter> webhook <repo> <url> [--event <name>]...` registers one webhook for the events, by default pull requests and their reviews; prints `{"id", "url", "events", "active"}` |
 | list webhooks | `<adapter> hooks <repo>` prints one such line per webhook |
 | remove a webhook | `<adapter> unhook <repo> <id>` prints `{"id", "removed"}` |
@@ -72,6 +73,10 @@ Every adapter reads three variables:
     ([ADR 0104](../../docs/decisions/0104-forge-github-check-runs.md)).
 - `merge` exits 1 with an error that names the pull request when the merge rules refuse it or it conflicts with its
   base, and leaves it open. `protect` replaces the branch's rules each time.
+- `merge --when-green` uses the forge's own merge when green, GitHub's auto-merge or Forgejo's merge when checks
+  succeed, and runs no loop: the forge merges later, as the person who ran it. A forge that cannot do it for the
+  repository exits 1 with `the forge cannot merge <repo>#<number> when its checks pass: <the fix>`, and leaves the
+  pull request open.
 - `webhook` keeps one webhook per URL: a second call for the same URL updates it and replaces its events.
 - `unhook` of a webhook the repository does not have prints `"removed": false` and exits 0.
 - `event` reads a delivery as a JSON file `{"headers": {...}, "body": "<the body as it arrived>"}`. With

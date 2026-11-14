@@ -36,7 +36,10 @@ Commands:
                                                          Write one commit with these files to a branch; print {"sha"}.
   rules <repo> <branch>                                  Print the {"checks", "approvals"} the branch requires.
   close <repo> <number> [--delete-branch]                Close a pull request without merging; print {"number", "state"}.
-  merge <repo> <number> [--method merge|squash|rebase]   Merge; print {"sha"} of the merge commit.
+  merge <repo> <number> [--method merge|squash|rebase] [--when-green]
+                                                         Merge; print {"sha"} of the merge commit. With --when-green,
+                                                         merge once the checks pass unless it can merge now;
+                                                         print {"queued": true}.
   webhook <repo> <url> [--event <name>]...               Register one webhook for the events, by default pull requests;
                                                          print {"id", "url", "events", "active"}.
   hooks <repo>                                           Print each webhook of the repository.
@@ -65,6 +68,7 @@ const { positionals, values } = parseArgs({
     limit: { type: "string" },
     message: { type: "string" },
     "delete-branch": { type: "boolean" },
+    "when-green": { type: "boolean" },
   },
 });
 const [name, first, second, third, fourth, fifth] = positionals;
@@ -81,7 +85,7 @@ const commands: Record<string, Command> = {
   commit: () => commit(first, second, values.message, positionals.slice(3)),
   rules: () => rules(first, second),
   close: () => close(first, second, values["delete-branch"]),
-  merge: () => merge(first, second, values.method),
+  merge: () => merge(first, second, values.method, values["when-green"]),
   webhook: () => webhook(first, second, values.event ?? []),
   hooks: () => hooks(first),
   unhook: () => unhook(first, second),

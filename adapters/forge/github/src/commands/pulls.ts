@@ -51,7 +51,7 @@ async function about<T>(repo: string, number: number, call: () => Promise<T>): P
 }
 
 /** The pull request once GitHub knows whether it can merge, or as it is after 10 seconds. */
-async function computed(api: GitHub, repo: string, number: number): Promise<PullJson> {
+export async function computed(api: GitHub, repo: string, number: number): Promise<PullJson> {
   const deadline = Date.now() + COMPUTE_MS;
   for (;;) {
     const pull = await about(repo, number, () => api.request<PullJson>("GET", `/pulls/${number}`));

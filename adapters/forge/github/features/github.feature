@@ -57,3 +57,10 @@ Feature: GitHub's own rules for the forge port
     Given an open pull request in "tester/web" and a token that may not read check runs
     When the client runs "pr" for it with that token
     Then pr exits with code 1 and an error that names the repository and the permission "Checks: read"
+
+  @id=SCN-FGITHUB-010 @status=implemented
+  Scenario: merge --when-green on a repository that does not allow auto-merge names the setting
+    Given "main" of "tester/web" requires the check "factory", the repository does not allow auto-merge, and an open pull request whose check "factory" is pending
+    When the client runs "merge tester/web <number> --when-green"
+    Then merge exits with code 1 and prints "the forge cannot merge tester/web#1 when its checks pass: allow auto-merge in the repository's settings"
+    And the pull request is still open
