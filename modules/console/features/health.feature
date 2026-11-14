@@ -113,3 +113,25 @@ Feature: Health
     When a person opens "/health"
     Then its table has no row about a model route or the harness
     And the gateway received no call
+
+  @id=SCN-CONSOLE-100 @status=implemented
+  Scenario: "console doctor --deep" sends one span to the collector and finds it in the trace store
+    Given a trace store that takes OTLP at "CONSOLE_OTLP_URL" and answers Jaeger's query API at "CONSOLE_TRACES_URL"
+    When the user runs "console doctor --deep"
+    Then it prints "ok    traces"
+    And the trace store received one span "console doctor" of the service "console"
+    And the console asked the trace store for that span's trace
+
+  @id=SCN-CONSOLE-101 @status=implemented
+  Scenario: "console doctor --deep" names the path from the collector to the trace store when the span does not arrive
+    Given a collector at "CONSOLE_OTLP_URL" that takes the span but whose trace store at "CONSOLE_TRACES_URL" keeps none
+    When the user runs "console doctor --deep"
+    Then the command exits with code 1
+    And it prints "FAIL  traces: the span did not reach the trace store in 5 s: check the collector's exporter and CONSOLE_TRACES_URL"
+
+  @id=SCN-CONSOLE-102 @status=implemented
+  Scenario: "console doctor --deep" names CONSOLE_OTLP_URL when no collector answers there
+    Given "CONSOLE_OTLP_URL" names a port where nothing listens and "CONSOLE_TRACES_URL" names a trace store
+    When the user runs "console doctor --deep"
+    Then the command exits with code 1
+    And it prints "FAIL  traces: no collector took the span: check CONSOLE_OTLP_URL and that the collector runs"

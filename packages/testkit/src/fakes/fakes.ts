@@ -16,6 +16,7 @@ import { type Sandbox, type SandboxOptions, startSandbox } from "./sandbox.ts";
 import { type FakeSentry, startSentry } from "./sentry.ts";
 import { type Nats, type S3, startS3, type Temporal } from "./services.ts";
 import { type FakeSlack, type SlackOptions, startSlack } from "./slack.ts";
+import { startTraceStore, type TraceStore, type TraceStoreOptions } from "./trace-store.ts";
 
 export interface Fakes {
   /** A fixture file from the module's `system-tests/fixtures/` folder. */
@@ -66,6 +67,11 @@ export interface Fakes {
   sentry(): Promise<FakeSentry>;
   /** The OpenTelemetry Collector in a container, running `config`; it exports to OTEL_EXPORTER_OTLP_ENDPOINT. */
   collector(config: string): Promise<Collector>;
+  /**
+   * An in-process trace store: an OTLP/HTTP receiver of JSON traces and Jaeger's query API `GET /api/traces/{id}`
+   * over the spans it received (ADR 0120). With `keep: false` it takes spans and keeps none.
+   */
+  traceStore(options?: TraceStoreOptions): Promise<TraceStore>;
 }
 
 export interface FakesHandle {
@@ -156,6 +162,9 @@ export function makeFakes(moduleRoot: string): FakesHandle {
       },
       async collector(config) {
         return (await inProcess(startCollector(config, track))).collector;
+      },
+      async traceStore(options) {
+        return (await inProcess(startTraceStore(options))).store;
       },
     },
     hosts: () => [...hosts],

@@ -18,11 +18,13 @@ import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 import { type Api, getJson, postJson } from "../adapters/apis.ts";
 import { readFactory } from "../adapters/factory-file.ts";
 import { proposals } from "../adapters/forge.ts";
+import { readImprovement } from "../adapters/improve-files.ts";
 import { cursorsOf, fill, isState, list, namedLinks, nextPageOf, orderRuns, queryOf, STATES } from "../domain/runs.ts";
 import { submissionOf } from "../domain/submit.ts";
 import { agentPage, factoryPage, type Source } from "../pages/factory.ts";
 import { healthPage } from "../pages/health.ts";
 import { type Frame, page, problem } from "../pages/html.ts";
+import { improvementPage } from "../pages/improvement.ts";
 import { inboxPage } from "../pages/inbox.ts";
 import { runPage } from "../pages/run.ts";
 import { runsPage } from "../pages/runs.ts";
@@ -60,6 +62,7 @@ export async function serve(env: Env) {
   const userHeader = env.CONSOLE_USER_HEADER?.toLowerCase() || undefined;
   const actions = Boolean(userHeader);
   const prefix = env.CONSOLE_INBOX_PREFIX || "observer/";
+  const improve = env.CONSOLE_IMPROVE_DIR || undefined;
   const forge = {
     command: env.CONSOLE_FORGE_ADAPTER || "npx -y @opensoftware/forge-github",
     url: env.CONSOLE_FORGE_URL || undefined,
@@ -69,13 +72,15 @@ export async function serve(env: Env) {
   const send = (
     reply: FastifyReply,
     status: number,
-    frame: Omit<Frame, "links" | "inbox" | "work">,
+    frame: Omit<Frame, "links" | "inbox" | "work" | "improvement">,
     content: Parameters<typeof page>[1],
   ) =>
     reply
       .code(status)
       .type("text/html; charset=utf-8")
-      .send(page({ ...frame, links, inbox: Boolean(inbox), work: Boolean(intake) }, content));
+      .send(
+        page({ ...frame, links, inbox: Boolean(inbox), work: Boolean(intake), improvement: Boolean(improve) }, content),
+      );
 
   const app = Fastify({ logger: false });
   app.get("/pico.css", (_request, reply) => reply.type("text/css").send(PICO));
@@ -177,6 +182,20 @@ export async function serve(env: Env) {
     const answer = await proposals(forge, inbox, prefix);
     const notes = answer.ok ? [] : [answer.note];
     return send(reply, 200, { title: "Inbox", notes }, inboxPage(inbox, answer.ok ? answer.body : [], now()));
+  });
+
+  app.get("/improvement", async (_request, reply) => {
+    if (!improve)
+      return send(
+        reply,
+        404,
+        { title: "Cost and scores" },
+        problem(
+          "No cost and scores",
+          "no cost and scores: set CONSOLE_IMPROVE_DIR to the folder of the improvement jobs",
+        ),
+      );
+    return send(reply, 200, { title: "Cost and scores" }, improvementPage(readImprovement(improve)));
   });
 
   app.get<{ Querystring: { cursor?: string } }>("/work", async (request, reply) => {

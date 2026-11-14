@@ -810,9 +810,12 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
     `deploy/README.md` runs `docker compose run --rm console console doctor` (`SCN-DIST-016`).
   - [x] Deep checks with `console doctor --deep`: one model call per route through LiteLLM and the harness answers ACP
     `initialize` (ADR 0120, `SCN-CONSOLE-064` to `-069`).
+  - [x] A test span reaches the trace store: `console doctor --deep` sends one span by OTLP and finds it with Jaeger's
+    query API (ADR 0120, `SCN-CONSOLE-100` to `-102`, `fakes.traceStore`, `SCN-TK-149`).
   - [ ] Deep checks that need adapter capabilities that do not exist yet (ADR 0120): a sandbox starts and refuses a
-    denied host (a sandbox adapter command that runs a probe), a test event reaches the foreman (a NATS client and a
-    foreman route that shows it), a test span reaches the trace store (a read API of the trace store).
+    denied host (a sandbox adapter command that runs a probe, a `ports/sandbox` operation with its `@conformance`
+    scenario, and the Docker and Kubernetes adapters), a test event reaches the foreman (a NATS client in the console
+    and a foreman route that shows it).
 
 ### [x] T-26 · evidence in the loop (P1)
 
@@ -874,11 +877,26 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
 
 - **Done when:** scheduled jobs run runlog, scorekit, ledger and observer on the factory's own runs, and the console
   shows cost and scores.
+- **Slices:**
+  - [x] The console page `/improvement` shows each scorer's scored runs, passes, pass rate and judge cost, and each
+    run's stages with their outcome and cost, from the run records and scores in `CONSOLE_IMPROVE_DIR`
+    (SCN-CONSOLE-090 to SCN-CONSOLE-092, ADR 0123).
+  - [ ] A Compose service `improve` (profile `improve`) that runs `runlog`, `scorekit score` and `report`, `ledger
+    report` and `observer analyze` on a schedule into the volume the console reads (ADR 0123). Open: it needs an
+    image with the four CLIs, which the PROFILE check pins to a package's version and the release must publish, and
+    the factory's own run records, which come from T-24 (the foreman exports each stage with runlog).
+  - [ ] Chart CronJobs with the same commands and a chart version after 0.3.0. Open for the same reasons.
+  - [ ] DIST scenarios in `deploy/features/` for both, which need Docker and kind.
 
-### [ ] T-32 · factory version from Git and public intake (P2)
+### [x] T-32 · factory version from Git and public intake (P2)
 
 - **Done when:** the foreman reads `factory.yaml` from a Git remote at a commit, and the docs describe one way to give
   intake a public URL without a relay.
+- [x] `FOREMAN_FACTORY=git+<url>#<ref>`: the foreman fetches the ref into its data folder and runs at that commit as
+  the factory version, without the clean-folder check; a ref it cannot fetch stops the server (SCN-FORE-156, 157,
+  ADR 0124).
+- [x] `docs/how-to/public-intake.md`: intake's webhook paths behind Cloudflare Tunnel (or Tailscale Funnel or a
+  reverse proxy with TLS), what to secure, linked from `deploy/README.md`.
 
 ### [x] T-33 · current status lines (P2)
 

@@ -523,7 +523,7 @@ the minor version. The one-time setup is the same as for contracts
 | `OSF_DATA` | string | `".foreman"` | serve: the folder of the runs' working folders, runs/<run ID>, and of the harness adapters' session records. |
 | `OSF_NOW` | string |  | The current time, like 2026-01-01T00:00:00Z, for the times of runs and stages. Default: the clock. |
 | `FOREMAN_API_TOKEN` | string |  | serve: the token that callers of /v1 send as Authorization: Bearer <token>. Required. |
-| `FOREMAN_FACTORY` | string | `"factory.yaml"` | serve: the factory definition. Its folder must be in a Git repository and clean, with every tracked file and every file the foreman reads committed: a run's factory version is its commit (ADR 0110). |
+| `FOREMAN_FACTORY` | string | `"factory.yaml"` | serve: the factory definition. A path: its folder must be in a Git repository and clean, with every tracked file and every file the foreman reads committed: a run's factory version is its commit (ADR 0110). Or git+<url>#<ref>: the foreman fetches the ref, default the remote's HEAD, into OSF_DATA/factory, reads factory.yaml at the root of that commit, and the commit is the factory version (ADR 0124). |
 | `FOREMAN_TEMPORAL_ADDRESS` | string | `"localhost:7233"` | serve: the gRPC address of the Temporal server. |
 | `FOREMAN_TEMPORAL_NAMESPACE` | string | `"default"` | serve: the Temporal namespace of the runs. |
 | `FOREMAN_TASK_QUEUE` | string | `"foreman"` | serve: the Temporal task queue of the runs' workflows and activities. |
@@ -704,3 +704,5 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-148 | implemented | The foreman adds the stream "OSF" with the max age of "OSF_STREAM_MAX_AGE" |
 | SCN-FORE-149 | implemented | The run records each signal with the person who sent it |
 | SCN-FORE-155 | implemented | Each stage's span carries its session's tokens and cost, and the run's view names the span |
+| SCN-FORE-156 | implemented | A factory in a Git remote runs at the commit of its default branch, and the server's folder needs no clean checkout |
+| SCN-FORE-157 | implemented | A ref that the Git remote does not have stops the server at the start |

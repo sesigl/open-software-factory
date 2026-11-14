@@ -23,11 +23,18 @@ cost money (a model call) or start processes, so they must not run on every page
 - **`harness`:** the command line in `CONSOLE_HARNESS_COMMAND` runs with `sh -c`, gets the ACP request `initialize`
   on stdin and must answer it within 10 seconds; then the console ends it. The console speaks the one JSON-RPC line
   itself and does not depend on the ACP SDK.
-- **Not yet:** a sandbox that starts and refuses a denied host, a test event that reaches the foreman and a test
-  span that reaches the trace store stay an open slice of T-25. The first needs a sandbox adapter command that runs a
-  probe and reports the refusal; the second needs a NATS client and a foreman route that shows a received test event;
-  the third needs a read API of the trace store. The console has none of these today, and a check that cannot see
-  its result would only pretend.
+- **`traces`** (added later in T-25), only when `CONSOLE_TRACES_URL` is set: one span `console doctor` of the
+  service `console`, with a fresh random trace ID, goes by OTLP/HTTP JSON to `CONSOLE_OTLP_URL/v1/traces` (the
+  collector, or Jaeger's own OTLP receiver in the profile); then the console asks Jaeger's query API
+  `GET CONSOLE_TRACES_URL/api/traces/{traceId}` every 250 ms for 5 seconds. A refused or unanswered send names
+  `CONSOLE_OTLP_URL`; a span that does not arrive names the collector's exporter and `CONSOLE_TRACES_URL`. The
+  query API is Jaeger's HTTP API that the profile's Jaeger v2 already serves, so this needs no new service. System
+  tests use `fakes.traceStore()` of the testkit, an in-process OTLP receiver with that query route.
+- **Not yet:** a sandbox that starts and refuses a denied host, and a test event that reaches the foreman, stay an
+  open slice of T-25. The first needs a sandbox adapter command that runs a probe and reports the refusal, a port
+  operation with its `@conformance` scenario in `ports/sandbox` and both adapters; the second needs a NATS client in
+  the console and a foreman route that shows a received test event. The console has neither today, and a check that
+  cannot see its result would only pretend.
 
 ## Options considered
 
@@ -45,5 +52,5 @@ routes, not the factory's. We call only the factory's routes through the same Op
 
 ## Consequences
 
-A person can see in one command that each route and the harness work before the first run. The remaining three
-checks need new adapter capabilities; revisit when the sandbox port or the trace store gets a read path.
+A person can see in one command that each route and the harness work before the first run. The remaining two
+checks need new adapter capabilities; revisit when the sandbox port gets a probe and the foreman shows a test event.

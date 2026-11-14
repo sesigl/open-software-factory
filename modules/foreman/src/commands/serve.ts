@@ -9,7 +9,7 @@ import type { GateDecided, WorkItem, WorkRetryRequested } from "@opensoftware/co
 import { Client, Connection, WorkflowNotFoundError } from "@temporalio/client";
 import { NativeConnection, Worker } from "@temporalio/worker";
 import Fastify, { type FastifyReply } from "fastify";
-import { readFactory } from "../adapters/factory.ts";
+import { factorySource } from "../adapters/factory.ts";
 import { gatekeeper } from "../adapters/gatekeeper.ts";
 import { type Attached, attachGateway, startGateway } from "../adapters/inference.ts";
 import { type Bus, openBus, SUBJECTS } from "../adapters/nats.ts";
@@ -114,8 +114,9 @@ function listen(bus: Bus, work: Runs, warn: (text: string) => void): Promise<voi
 export async function serve(env: Env) {
   const token = env.FOREMAN_API_TOKEN;
   if (!token) throw new UsageError("set FOREMAN_API_TOKEN: the token that callers of the API send");
-  const factoryPath = resolve(env.FOREMAN_FACTORY || "factory.yaml");
-  const { definition } = await readFactory(factoryPath);
+  const data = resolve(env.OSF_DATA || ".foreman");
+  const source = factorySource(env.FOREMAN_FACTORY || "factory.yaml", data);
+  const { definition } = await source.read();
   const maps = Object.fromEntries(
     PORTS.map((port) => [port, JSON.parse(env[MAP_OF[port]] || "{}") as CommandLines]),
   ) as Record<Port, CommandLines>;
@@ -131,9 +132,8 @@ export async function serve(env: Env) {
 
   // The gateway starts in the background, so the server does not wait for it (ADR 0099).
   const retryMs = Number(env.FOREMAN_INFERENCE_RETRY_MS || 1000);
-  const data = resolve(env.OSF_DATA || ".foreman");
   const gatewayFolder = join(data, "inference");
-  const gateway = gatewayOf(definition, maps.inference, dirname(factoryPath), gatewayFolder, env, retryMs, warn);
+  const gateway = gatewayOf(definition, maps.inference, source.folder(), gatewayFolder, env, retryMs, warn);
   // A gateway stops with the server, also when the server cannot start.
   try {
     const stopping = new AbortController();
@@ -179,7 +179,7 @@ export async function serve(env: Env) {
     const client = new Client({ connection: temporal, namespace });
     // Each run names its adapters and the versions it asks for (ADR 0110).
     const factory = async () => {
-      const read = await readFactory(factoryPath);
+      const read = await source.read();
       return { ...read, definition: { ...read.definition, adapters: adaptersOf(read.definition.ranges, maps) } };
     };
     const work = runs({ client, taskQueue, factory, now, stopping: stopping.signal });

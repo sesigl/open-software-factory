@@ -194,6 +194,14 @@ Feature: Services and outside systems
     And the output contains "expected 1 export(s) from the Collector, got 0"
     And the output contains "Collector log:"
 
+  @id=SCN-TK-149 @status=implemented
+  Scenario: fakes.traceStore answers Jaeger's query of a trace with the span it received by OTLP, and keeps none with "keep: false"
+    Given a module whose CLI sends the span "ping" of the service "demo" by OTLP/HTTP to "DEMO_OTLP_URL" and prints Jaeger's answer at "DEMO_TRACES_URL"
+    And its system test expects the span "ping" from fakes.traceStore and the status 404 from fakes.traceStore with "keep: false"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-050 @status=implemented
   Scenario: fakes.forge shows the pull request a module opens and the files of its branch
     Given a module whose CLI commits "notes.md" with "hello" on the new branch "fix" and opens a pull request "Fix the notes" into "main" at "DEMO_FORGE_URL"

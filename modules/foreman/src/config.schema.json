@@ -23,7 +23,7 @@
     "FOREMAN_FACTORY": {
       "type": "string",
       "default": "factory.yaml",
-      "description": "serve: the factory definition. Its folder must be in a Git repository and clean, with every tracked file and every file the foreman reads committed: a run's factory version is its commit (ADR 0110)."
+      "description": "serve: the factory definition. A path: its folder must be in a Git repository and clean, with every tracked file and every file the foreman reads committed: a run's factory version is its commit (ADR 0110). Or git+<url>#<ref>: the foreman fetches the ref, default the remote's HEAD, into OSF_DATA/factory, reads factory.yaml at the root of that commit, and the commit is the factory version (ADR 0124)."
     },
     "FOREMAN_TEMPORAL_ADDRESS": {
       "type": "string",

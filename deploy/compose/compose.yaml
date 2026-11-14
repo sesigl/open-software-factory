@@ -409,6 +409,9 @@ services:
       CONSOLE_TRACE_URL: http://${OSF_HOST:-127.0.0.1}:${JAEGER_PORT:-16686}/trace/{traceId}
       # Each stage links its span in that trace (ADR 0121).
       CONSOLE_SPAN_URL: http://${OSF_HOST:-127.0.0.1}:${JAEGER_PORT:-16686}/trace/{traceId}?uiFind={spanId}
+      # console doctor --deep sends one span to Jaeger's OTLP receiver and finds it with Jaeger's query API (ADR 0120).
+      CONSOLE_OTLP_URL: http://jaeger:4318
+      CONSOLE_TRACES_URL: http://jaeger:16686
       CONSOLE_LINKS: Jaeger=http://${OSF_HOST:-127.0.0.1}:${JAEGER_PORT:-16686},LiteLLM=http://${OSF_HOST:-127.0.0.1}:${LITELLM_PORT:-4000}/ui
     volumes:
       - factory:/factory:ro
