@@ -7,14 +7,17 @@ scenario("SCN-REPO-161", async ({ sut, given, when, then }) => {
   });
 
   await given(
-    'the scenario "SCN-DEMO-007" in the worktree ".claude/worktrees/other" (a ".git" file) and the clone "vendor/clone" (a ".git" folder)',
+    'the scenario "SCN-DEMO-007" in the worktree ".claude/worktrees/other" (a ".git" file), the clone "vendor/clone" (a ".git" folder) and "node_modules/demo"',
     async () => {
-      await putAll(
-        sut,
-        nestedCheckouts({ "modules/demo/features/b.feature": feature(scenarioText("SCN-DEMO-007", "planned")) }),
-      );
+      const planned = feature(scenarioText("SCN-DEMO-007", "planned"));
+      await putAll(sut, nestedCheckouts({ "modules/demo/features/b.feature": planned }));
+      await sut.files.put("$INPUT/node_modules/demo/features/b.feature", planned);
     },
   );
+
+  await given('the doc "docs/notes.md" that names "SCN-DEMO-008"', async () => {
+    await sut.files.put("$INPUT/docs/notes.md", "# Notes\n\nSCN-DEMO-008 comes next.\n");
+  });
 
   let run: Awaited<ReturnType<typeof sut.cli>>;
   await when('the developer runs "osf next-id DEMO"', async () => {

@@ -1040,9 +1040,10 @@ Feature: Repository checks
     And the output names "docs/guide.md" and nothing in the worktree or the clone
 
   @id=SCN-REPO-161 @status=implemented
-  Scenario: osf next-id leaves out the scenarios of a nested Git checkout
+  Scenario: osf next-id counts only the feature files of this repository
     Given a repository with the implemented scenario "SCN-DEMO-001" and its system test
-    And the scenario "SCN-DEMO-007" in the worktree ".claude/worktrees/other" (a ".git" file) and the clone "vendor/clone" (a ".git" folder)
+    And the scenario "SCN-DEMO-007" in the worktree ".claude/worktrees/other" (a ".git" file), the clone "vendor/clone" (a ".git" folder) and "node_modules/demo"
+    And the doc "docs/notes.md" that names "SCN-DEMO-008"
     When the developer runs "osf next-id DEMO"
     Then the command exits with code 0
     And the output is "SCN-DEMO-002"

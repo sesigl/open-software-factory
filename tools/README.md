@@ -285,4 +285,4 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-158 | implemented | osf up names what the sign-in with GitHub misses, and a provider it does not know |
 | SCN-REPO-159 | implemented | make docs and DOCS-GEN leave out a nested Git checkout |
 | SCN-REPO-160 | implemented | The checks leave out a nested Git checkout, in a Git repository and outside one |
-| SCN-REPO-161 | implemented | osf next-id leaves out the scenarios of a nested Git checkout |
+| SCN-REPO-161 | implemented | osf next-id counts only the feature files of this repository |
