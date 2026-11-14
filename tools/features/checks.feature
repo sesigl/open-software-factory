@@ -126,6 +126,41 @@ Feature: Repository checks
     And the output contains "BOUNDARY-ENV modules/demo/system-tests/SCN-DEMO-001.test.ts"
     And the output contains "DEMO_SECRET_MODE"
 
+  @id=SCN-REPO-147 @status=implemented
+  Scenario: CONTRAST accepts tokens whose texts meet WCAG 2.2 AA on every background in both themes
+    Given the tokens file "packages/ui/assets/tokens.css" with a ground, a text and a subtle text for each theme
+    When the developer runs "osf check CONTRAST"
+    Then the command exits with code 0
+    And the output contains "CONTRAST ok"
+
+  @id=SCN-REPO-148 @status=implemented
+  Scenario: CONTRAST rejects a text token below WCAG 2.2 AA in the light theme
+    Given the tokens file "packages/ui/assets/tokens.css" whose light subtle text is "#8a9099" on the ground "#fafaf9"
+    When the developer runs "osf check CONTRAST"
+    Then the command exits with code 1
+    And the output contains "CONTRAST packages/ui/assets/tokens.css:10 --osf-text-subtle on --osf-bg-ground in the light theme has 3.08:1, WCAG 2.2 AA needs 4.5:1"
+
+  @id=SCN-REPO-149 @status=implemented
+  Scenario: TOKENS rejects a colour value in a stylesheet of the console
+    Given the console's stylesheet "src/web/styles.css" sets "color: #ff6b1a" on line 2
+    When the developer runs "osf check TOKENS"
+    Then the command exits with code 1
+    And the output contains "TOKENS modules/console/src/web/styles.css:2 the colour #ff6b1a is no token: name a token of packages/ui/assets/tokens.css"
+
+  @id=SCN-REPO-150 @status=implemented
+  Scenario: TOKENS rejects a font named outside the tokens
+    Given the console's stylesheet "src/web/styles.css" sets "font-family: Inter, sans-serif" on line 2
+    When the developer runs "osf check TOKENS"
+    Then the command exits with code 1
+    And the output contains "TOKENS modules/console/src/web/styles.css:2 a font is named outside the tokens: use var(--osf-font-sans) or var(--osf-font-mono)"
+
+  @id=SCN-REPO-151 @status=implemented
+  Scenario: TOKENS accepts a stylesheet that names only tokens
+    Given the console's stylesheet "src/web/styles.css" sets its colours and its font with tokens
+    When the developer runs "osf check TOKENS"
+    Then the command exits with code 0
+    And the output contains "TOKENS ok"
+
   @id=SCN-REPO-142 @status=implemented
   Scenario: TEMPLATE accepts a template that only shows the data of its route
     Given the module "demo" whose template "src/web/pages/runs.astro" imports a component and a type, reads the page's data and its status, maps the runs and switches on a value

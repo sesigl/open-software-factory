@@ -1459,7 +1459,8 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
 - **Done when:** the pages of T-56 to T-59 use only its components and tokens, and both checks pass.
 - **Slices:**
   - [x] The approved mock-ups and their values in `docs/design/`, with a `README.md` of the direction.
-  - [ ] The ADR and the package: tokens, both themes, the brand files, the two checks.
+  - [x] The ADR and the package: tokens, both themes, the brand files, the two checks (ADR 0133; CONTRAST and
+    TOKENS). The package stays private until its first publish.
   - [ ] The components that the sign-in page and the shell need (with T-56).
   - [ ] The components that Secrets and Skills need (with T-57 and T-59).
 

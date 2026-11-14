@@ -1,7 +1,7 @@
 // Real services in containers (ADR 0016); Temporal and NATS run on the host instead (binaries.ts, ADR 0067).
 // Each helper starts one container for the scenario; the test gets only
 // what a module needs to reach it, never a client for the module's data.
-import { GenericContainer, type StartedTestContainer, Wait } from "testcontainers";
+import type { StartedTestContainer } from "testcontainers";
 
 export interface Nats {
   /** `nats://<host>:<port>`, with JetStream. */
@@ -46,6 +46,8 @@ export function runLabels(): Record<string, string> {
 }
 
 export async function startS3(track: Track): Promise<S3> {
+  // testcontainers loads with the first container a scenario starts: most test processes start none (0.25 s).
+  const { GenericContainer, Wait } = await import("testcontainers");
   const container = track(
     await new GenericContainer(IMAGES.s3)
       .withLabels(runLabels())

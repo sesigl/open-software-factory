@@ -4,6 +4,7 @@ import { arch } from "./arch.ts";
 import { boundaryEnv, boundaryStatic, assert as checkAssert, isolation, noskip, uiQuery } from "./boundary.ts";
 import { contract } from "./contract.ts";
 import { deps } from "./deps.ts";
+import { contrast, tokens } from "./design.ts";
 import { adr, docsAffected, docsGen, docsLinks } from "./docs.ts";
 import { type Check, Context } from "./lib/context.ts";
 import { type Finding, Repo } from "./lib/repo.ts";
@@ -26,6 +27,8 @@ export const FAST: Record<string, Check> = {
   ISOLATION: isolation,
   ARCH: arch,
   TEMPLATE: template,
+  CONTRAST: contrast,
+  TOKENS: tokens,
   DUP: dup,
   "DOCS-GEN": docsGen,
   "DOCS-LINKS": docsLinks,

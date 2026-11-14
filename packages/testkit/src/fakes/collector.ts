@@ -1,7 +1,6 @@
 // The real OpenTelemetry Collector in a container (ADR 0025), running a config a module wrote. The test sends OTLP to
 // the config's OTLP/HTTP receiver and reads what the Collector exported to OTEL_EXPORTER_OTLP_ENDPOINT, which the
 // fake points at its own receiver on the host.
-import { GenericContainer, TestContainers, Wait } from "testcontainers";
 import { reachable } from "../support/port.ts";
 import { startHttp } from "./http.ts";
 import { address, IMAGES, runLabels, type Track } from "./services.ts";
@@ -25,6 +24,8 @@ export interface RunningCollector {
 const HOST = "host.testcontainers.internal";
 
 export async function startCollector(config: string, track: Track): Promise<RunningCollector> {
+  // testcontainers loads with the first container a scenario starts: most test processes start none (0.25 s).
+  const { GenericContainer, TestContainers, Wait } = await import("testcontainers");
   const sink = await startHttp([{ method: "POST", path: "/v1/traces", body: {} }]);
   const port = Number(new URL(sink.http.url).port);
   await TestContainers.exposeHostPorts(port);

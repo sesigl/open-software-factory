@@ -1,0 +1,80 @@
+/*
+ * The tokens of the open software factory's UI: "precise industrial" (docs/design/README.md, ADR 0133). Dark is the
+ * default; `data-theme="light"` on the root element gives the light theme. A page names these tokens, never a raw
+ * colour or a font. Text tokens (--osf-text*, --osf-signal, --osf-state-*) meet WCAG 2.2 AA contrast on every
+ * background token (--osf-bg-*), and --osf-on-<name> on --osf-<name>; the check CONTRAST proves both themes.
+ */
+:root {
+  color-scheme: dark;
+
+  --osf-bg-ground: #0c0d0f;
+  --osf-bg-surface: #141619;
+  --osf-bg-raised: #1b1e22;
+  --osf-line: #272b31;
+  --osf-line-strong: #3a4048;
+
+  --osf-text: #e6e8eb;
+  --osf-text-muted: #a0a7b1;
+  --osf-text-subtle: #808894;
+
+  /* The signal means two things only: the main action of a page, and work that waits for a person. */
+  --osf-signal: #ff6b1a;
+  --osf-on-signal: #0c0d0f;
+
+  /* A state is a shape and a word, never colour alone. Complete and cancelled have no colour. */
+  --osf-state-running: #6cb0ff;
+  --osf-state-waiting: #ff6b1a;
+  --osf-state-failed: #ff8f8a;
+  --osf-state-complete: #a0a7b1;
+  --osf-state-cancelled: #808894;
+
+  --osf-font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --osf-font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --osf-size-title: 24px;
+  --osf-size-section: 16px;
+  --osf-size-text: 14px;
+  --osf-size-secondary: 13px;
+  --osf-size-label: 11px;
+  --osf-weight-strong: 600;
+
+  --osf-space-1: 4px;
+  --osf-space-2: 8px;
+  --osf-space-3: 12px;
+  --osf-space-4: 16px;
+  --osf-space-6: 24px;
+  --osf-space-8: 32px;
+  --osf-radius-control: 4px;
+  --osf-radius-panel: 6px;
+  --osf-control-height: 44px;
+  --osf-navigation-width: 232px;
+  --osf-motion: 120ms ease-out;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --osf-bg-ground: #fafaf9;
+  --osf-bg-surface: #ffffff;
+  --osf-bg-raised: #f2f3f5;
+  --osf-line: #e2e4e8;
+  --osf-line-strong: #c9cdd3;
+
+  --osf-text: #111316;
+  --osf-text-muted: #555c66;
+  --osf-text-subtle: #636a74;
+
+  --osf-signal: #c4400a;
+  --osf-on-signal: #ffffff;
+
+  --osf-state-running: #1b64c0;
+  --osf-state-waiting: #c4400a;
+  --osf-state-failed: #c2261f;
+  --osf-state-complete: #555c66;
+  --osf-state-cancelled: #636a74;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --osf-motion: 0ms linear;
+  }
+}

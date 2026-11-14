@@ -2,7 +2,7 @@
 // webhooks reach a fake for containers at host.docker.internal (ADR 0057). A test process starts one Forgejo and
 // gives each scenario that asks for it the forge without the repositories of the scenarios before (ADR 0064).
 import { randomUUID } from "node:crypto";
-import { GenericContainer, type StartedTestContainer, Wait } from "testcontainers";
+import type { StartedTestContainer } from "testcontainers";
 import { address, IMAGES, runLabels } from "./services.ts";
 
 export interface PullRequest {
@@ -126,6 +126,8 @@ export async function startForge(seen: (container: StartedTestContainer) => void
 }
 
 async function startForgejo(): Promise<Forgejo> {
+  // testcontainers loads with the first container a scenario starts: most test processes start none (0.25 s).
+  const { GenericContainer, Wait } = await import("testcontainers");
   // A fresh password per forge: it lives only as long as the container.
   const password = randomUUID();
   const container = await new GenericContainer(IMAGES.forge)

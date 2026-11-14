@@ -33,7 +33,7 @@ console serves its fonts itself (T-53).
 | Wordmark | "Open Software Factory" in the UI face, weight 600, beside the icon. |
 | Faces | IBM Plex Sans for text. IBM Plex Mono for what a person copies or compares: IDs, versions, names of secrets and skills, counts. Both are open-licensed (OFL). |
 | Dark theme, the default | Ground `#0C0D0F`, surface `#141619`, raised `#1B1E22`, line `#272B31`, strong line `#3A4048`, text `#E6E8EB`, muted text `#A0A7B1`, subtle text `#808894`. |
-| Light theme | Ground `#FAFAF9`, surface `#FFFFFF`, line `#E2E4E8`, text `#111316`, muted text `#555C66`, signal `#C4400A`. |
+| Light theme | Ground `#FAFAF9`, surface `#FFFFFF`, line `#E2E4E8`, text `#111316`, muted text `#555C66`, signal `#C4400A`. Added for the tokens (ADR 0133), so that every text passes CONTRAST: raised `#F2F3F5`, strong line `#C9CDD3`, subtle text `#636A74`, running `#1B64C0`, failed `#C2261F`. |
 | Signal colour | `#FF6B1A`. It means two things only: the main action of a page, and work that waits for a person. |
 | State colours | Running `#6CB0FF`; waits for a person: the signal colour; failed `#FF8F8A`. Complete and cancelled have no colour (muted and subtle text). Each state is a shape and a word, never colour alone. |
 | Shape | A 4-pixel grid, a radius of 4 pixels for controls and 6 for panels, lines instead of shadows, controls 44 pixels high. |
