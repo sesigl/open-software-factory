@@ -19,9 +19,11 @@ COPY packs/ packs/
 # The scripted agent of the testkit, which a sandbox started from this image runs (ADR 0096).
 COPY harness-agent.ts ./
 # Behind a proxy that inspects TLS, npm needs the proxy's CA: images.ts passes OSF_BUILD_CA as the secret ca.
+# The packs have no lockfile, so npm takes the newest version of each dependency; --before skips the versions of the
+# last two hours, whose tarball npm may not serve yet (fast-json-stringify 7.3.6 in run 43589286627).
 RUN --mount=type=secret,id=ca,required=false \
   if [ -s /run/secrets/ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/ca; fi \
-  && npm install --omit=dev --no-fund --no-audit \
+  && npm install --omit=dev --no-fund --no-audit --before="$(date -u -d '-2 hours' +%Y-%m-%dT%H:%M:%SZ)" \
   && npm cache clean --force
 ENV PATH=/opt/osf/node_modules/.bin:$PATH
 USER node
