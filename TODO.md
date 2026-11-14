@@ -1616,7 +1616,7 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
     scenarios of ADR 0124 pass unchanged); its first publish.
   - [ ] The access file in `contracts/`, the library and `factory lint` (`SCN-CTR`, the library's prefix,
     `SCN-FSPEC`).
-  - [ ] `fakes.oidc()` and GitHub's sign-in in `fakes.github` (`SCN-TK`).
+  - [x] `fakes.oidc()` and GitHub's sign-in in `fakes.github` (`SCN-TK`).
   - [ ] The hook, sign-in, session and sign-out in the console, with the sign-in page and the probe route
     (`SCN-CONSOLE`).
   - [ ] The roles on every page and form (`SCN-CONSOLE`).

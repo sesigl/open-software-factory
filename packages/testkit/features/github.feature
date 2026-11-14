@@ -132,3 +132,11 @@ Feature: A fake of GitHub's REST API
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-163 @status=implemented
+  Scenario: fakes.github signs in the person a test names with GitHub's OAuth flow and gives their primary email
+    Given a module whose CLI signs in at GitHub in "DEMO_GITHUB_URL" with its OAuth app, and prints the state, the login, the name and the primary email with its verification
+    And its system test signs in "ada" with the email "ada@acme.dev" named "Ada" at fakes.github and expects them, the email as verified
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
