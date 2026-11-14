@@ -119,6 +119,11 @@ run's history: `<url>/namespaces/<CONSOLE_TEMPORAL_NAMESPACE>/workflows/<runId>`
    host, sends one HTTPS request to `example.com` and removes the sandbox; it must print `refused example.com`. A
    sandbox that reaches the host names the adapter's egress proxy; one that does not start names the adapter's reason,
    `CONSOLE_SANDBOX_COMMAND` and `CONSOLE_SANDBOX_TEMPLATE`.
+   With `CONSOLE_NATS_URL` also `events`: the console publishes one `doctor.ping@v1` with a fresh random ID on
+   `osf.doctor.ping.v1` through JetStream, and asks each foreman of `CONSOLE_FOREMAN_URL` every 250 ms for
+   `GET /v1/doctor/pings/{id}` until one answers 200, for 10 seconds. A NATS server that does not answer names
+   `CONSOLE_NATS_URL`; one without a stream for the subject names the foreman's `FOREMAN_NATS_URL`, as the foreman
+   adds the stream `OSF`; a ping that no foreman shows names the foreman's release and its `FOREMAN_NATS_URL`.
 
 The links to the Temporal UI and the trace store are for the browser, so the console does not check them; the
 foreman's `temporal` check covers Temporal.
@@ -162,6 +167,8 @@ A server of a release before `/v1/health` fails its check with the advice to upd
 | `CONSOLE_TRACES_URL` | string |  | doctor --deep: the base URL of the trace store's Jaeger query API, like http://jaeger:16686. Set, doctor --deep sends one span to CONSOLE_OTLP_URL and waits 5 s for GET /api/traces/{traceId} to find it. |
 | `CONSOLE_SANDBOX_COMMAND` | string |  | doctor --deep: the command line, run with sh -c, of a sandbox adapter, like sandbox-docker. Set, doctor --deep runs its probe <template> example.com, which starts a sandbox with no allowed host, and wants "refused example.com". |
 | `CONSOLE_SANDBOX_TEMPLATE` | string | `"curlimages/curl:8.17.0"` | doctor --deep: the template of the sandbox probe; it needs curl. |
+| `CONSOLE_NATS_URL` | string |  | doctor --deep: the NATS server of the factory, like nats://nats:4222. Set, doctor --deep publishes one doctor.ping@v1 on osf.doctor.ping.v1 and waits 10 s for a foreman of CONSOLE_FOREMAN_URL to show it at GET /v1/doctor/pings/{id}. |
+| `OSF_SEED` | string |  | doctor --deep: set, the ID of the doctor's ping comes from it instead of from chance, so a test knows it. Leave it unset in a factory. |
 | `CONSOLE_MODEL_URL` | string |  | doctor --deep: the OpenAI-compatible base URL of the model gateway (LiteLLM), ending in /v1; it gets one chat completion of one token per model route of the factory definition. |
 | `CONSOLE_MODEL_TOKEN` | string |  | doctor --deep: the gateway's key, sent as Authorization: Bearer <token>. |
 | `CONSOLE_HARNESS_COMMAND` | string |  | doctor --deep: the command line, run with sh -c, that starts the harness's ACP agent, like claude-code-acp; it must answer ACP initialize within 10 seconds. |
@@ -267,3 +274,8 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-121 | implemented | "console doctor --deep" names the egress proxy when a sandbox reaches the denied host |
 | SCN-CONSOLE-122 | implemented | "console doctor --deep" names the adapter's reason and the variables when no sandbox starts |
 | SCN-CONSOLE-123 | implemented | "console doctor --deep" without "CONSOLE_SANDBOX_COMMAND" skips the sandbox |
+| SCN-CONSOLE-130 | implemented | "console doctor --deep" publishes a ping on NATS and finds it at the foreman |
+| SCN-CONSOLE-131 | implemented | "console doctor --deep" names the foreman's consumer when the ping does not reach it in 10 seconds |
+| SCN-CONSOLE-132 | implemented | "console doctor --deep" names the stream when no stream takes the ping |
+| SCN-CONSOLE-133 | implemented | "console doctor --deep" names the variable when NATS does not answer |
+| SCN-CONSOLE-134 | implemented | "console doctor --deep" without "CONSOLE_NATS_URL" skips the events |

@@ -43,6 +43,12 @@ channels:
     messages:
       RunBlocked:
         $ref: '#/components/messages/RunBlocked'
+  doctor-ping:
+    address: osf.doctor.ping.v1
+    description: console doctor --deep checks that an event reaches the foreman.
+    messages:
+      DoctorPing:
+        $ref: '#/components/messages/DoctorPing'
   gate-requested:
     address: osf.gate.requested.v1
     description: A stage waits for a decision.
@@ -121,6 +127,13 @@ operations:
       $ref: '#/channels/run-blocked'
     messages:
       - $ref: '#/channels/run-blocked/messages/RunBlocked'
+  publishDoctorPing:
+    action: send
+    summary: Published by console.
+    channel:
+      $ref: '#/channels/doctor-ping'
+    messages:
+      - $ref: '#/channels/doctor-ping/messages/DoctorPing'
   publishGateRequested:
     action: send
     summary: Published by gatekeeper.
@@ -212,6 +225,14 @@ components:
         schemaFormat: application/schema+json;version=draft-2020-12
         schema:
           $ref: './run-blocked/run-blocked.schema.json'
+    DoctorPing:
+      name: doctor.ping@v1
+      title: doctor.ping@v1
+      contentType: application/cloudevents+json
+      payload:
+        schemaFormat: application/schema+json;version=draft-2020-12
+        schema:
+          $ref: './doctor-ping/doctor-ping.schema.json'
     GateRequested:
       name: gate.requested@v1
       title: gate.requested@v1

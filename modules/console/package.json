@@ -31,6 +31,8 @@
     "@opensoftware/testkit": "workspace:*"
   },
   "dependencies": {
+    "@nats-io/jetstream": "3.4.0",
+    "@nats-io/transport-node": "3.4.0",
     "@opensoftware/cli": "workspace:*",
     "@opensoftware/contracts": "workspace:*",
     "@picocss/pico": "2.1.1",

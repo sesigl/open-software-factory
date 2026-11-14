@@ -68,4 +68,12 @@ namespace ForemanApi {
     | GatekeeperApi.Failure<401>
     | GatekeeperApi.Failure<404>
     | GatekeeperApi.Failure<409>;
+
+  /**
+   * The `doctor.ping@v1` event with this ID, when the foreman's consumer received it since the server started (ADR
+   * 0120). `console doctor --deep` asks for it after it published the event.
+   */
+  @route("/v1/doctor/pings/{id}")
+  @get
+  op getDoctorPing(@path id: string): DoctorPingSeen | GatekeeperApi.Failure<401> | GatekeeperApi.Failure<404>;
 }

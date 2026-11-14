@@ -51,6 +51,12 @@ model RunCompleted is CloudEvent<"run.completed@v1", RunCompletedData>;
 /** foreman: a stage of a run waits for the checks of its pull request (ADR 0127). The ID is `<run ID>.blocked.<stage>`. */
 model RunBlocked is CloudEvent<"run.blocked@v1", RunBlockedData>;
 
+/**
+ * console: `console doctor --deep` checks that an event reaches the foreman (ADR 0120). The ID is fresh and random;
+ * the foreman shows it on `GET /v1/doctor/pings/{id}` and acts on nothing else.
+ */
+model DoctorPing is CloudEvent<"doctor.ping@v1", DoctorPingData>;
+
 /** gatekeeper: a decision is needed before a stage starts. */
 model GateRequested is CloudEvent<"gate.requested@v1", GateRequestedData>;
 
@@ -140,6 +146,9 @@ model RunBlockedData {
   requester: Actor;
   source: Name;
 }
+
+/** A ping carries nothing but its ID. */
+model DoctorPingData {}
 
 model WorkRetryRequestedData {
   workItemId: Identifier;

@@ -794,7 +794,7 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
   - [x] The profile sets the endpoint to its trace store, Jaeger (ADR 0100; Phoenix before it), and the console links
     each run to its trace.
 
-### [ ] T-25 · doctor and a health page (P0)
+### [x] T-25 · doctor and a health page (P0)
 
 - **Problem:** the health signals exist, but they are spread over several tools, and a health check accepts any status
   below 500.
@@ -815,7 +815,9 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
   - [x] A sandbox starts and refuses a denied host: the port operation `probe <template> <host>` in both adapters,
     and `console doctor --deep` with `CONSOLE_SANDBOX_COMMAND` (ADR 0120, `SCN-SANDBOX-024`, `SCN-CONSOLE-120` to
     `-123`, `SCN-TK-150`, `-151`).
-  - [ ] A test event reaches the foreman (ADR 0120): a NATS client in the console and a foreman route that shows it.
+  - [x] A test event reaches the foreman (ADR 0120): `console doctor --deep` with `CONSOLE_NATS_URL` publishes
+    `doctor.ping@v1` and finds it at the foreman's `GET /v1/doctor/pings/{id}` (`SCN-CONSOLE-130` to `-134`,
+    `SCN-FORE-162`).
 
 ### [x] T-26 · evidence in the loop (P1)
 

@@ -14,7 +14,8 @@ Commands:
          Exits 1 when a check fails. --deep also makes one model call per route of the factory definition through
          CONSOLE_MODEL_URL, asks the harness in CONSOLE_HARNESS_COMMAND to answer ACP initialize and, with
          CONSOLE_TRACES_URL, sends one span to CONSOLE_OTLP_URL and finds it in the trace store and, with
-         CONSOLE_SANDBOX_COMMAND, wants a sandbox to refuse a denied host.
+         CONSOLE_SANDBOX_COMMAND, wants a sandbox to refuse a denied host and, with CONSOLE_NATS_URL, publishes
+         one doctor.ping@v1 and wants a foreman to show it within 10 seconds.
 `;
 
 const { positionals, values } = parseArgs({

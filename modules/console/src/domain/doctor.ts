@@ -105,3 +105,18 @@ export function sandboxItem({ stdout, stderr }: { stdout: string; stderr: string
       : `${stderr.split("\n")[0] || "the probe printed no outcome"}: check CONSOLE_SANDBOX_COMMAND and CONSOLE_SANDBOX_TEMPLATE`;
   return { name: "sandbox", ok: false, detail };
 }
+
+/** What became of the doctor's ping (ADR 0120): published and seen by a foreman, or where it stopped. */
+export type PingOutcome = "seen" | "not seen" | "no stream" | "no answer";
+
+const PING_FIXES: Record<Exclude<PingOutcome, "seen">, string> = {
+  "not seen":
+    "the foreman did not receive the ping in 10 s: update the foreman to a release that shows /v1/doctor/pings and check its FOREMAN_NATS_URL",
+  "no stream":
+    "no stream takes osf.doctor.ping.v1: start the foreman with FOREMAN_NATS_URL set to the same server, which adds the stream OSF",
+  "no answer": "no answer from NATS: check CONSOLE_NATS_URL and that NATS runs",
+};
+
+/** The item of the event path from NATS to the foreman (ADR 0120). */
+export const eventItem = (outcome: PingOutcome): Item =>
+  outcome === "seen" ? { name: "events", ok: true } : { name: "events", ok: false, detail: PING_FIXES[outcome] };

@@ -404,6 +404,7 @@ the other gets 409. The new run's `run.started@v1` and `run.completed@v1` have `
 | `GET /v1/runs` | The runs of the server, running runs first, then the runs that ended, the one that ended last first: `{ "runs": [...] }`, each as `GET /v1/runs/{runId}` shows it. `?state=` with `running`, `blocked`, `complete`, `failed` or `cancelled` lists only the runs in that state; another state is 400. One page at a time ([ADR 0115](../../docs/decisions/0115-lists-in-pages.md)): `?limit=` runs at most, 1 to 500, 50 by default; the answer's `next` is the `?cursor=` of the next page while more runs follow. With `?state=` a page may hold fewer runs than `limit`. Another `limit` or a cursor that is no page of the list is 400. Each run keeps its view in its Temporal memo, so a page is one call to Temporal's visibility. |
 | `GET /v1/runs/{runId}` | The run: `state`, `factory`, `factoryVersion`, `pullRequest`, `folder`, `startedAt`, `endedAt` and its `stages`; for a run that runs a run before it again, `attempt`, `retryOf` and `retriedBy`; once a signal named its person, `actions`. 404 for a run the server does not know. |
 | `GET /v1/health` | Whether the server reaches Temporal and, with `FOREMAN_NATS_URL`, NATS without a dead letter (ADR 0116): 200 with `status: ok`, else 503 with the failing check and what to fix ([ADR 0086](../../docs/decisions/0086-health-routes.md)). Needs no token. |
+| `GET /v1/doctor/pings/{id}` | The [`doctor.ping@v1`](../../contracts/events/doctor-ping/doctor-ping.schema.json) with this ID that the consumer received since the server started: `{ "id", "receivedAt" }`; 404 for another ID. `console doctor --deep` publishes one and asks for it ([ADR 0120](../../docs/decisions/0120-deep-checks-of-console-doctor.md)). The server keeps the newest 100. |
 | `POST /v1/runs/{runId}/signals` | `{ "type": "steer", "message": "…" }` sends the message to the running stage's agent; `{ "type": "cancel" }` cancels the run; `{ "type": "take-over" }` and `{ "type": "hand-back" }` hand the running stage to a person and back ([Take over](#take-over)). With `"by": { "kind": "person", "id": "…" }` the run records the signal, its person and its time in its view's `actions`, oldest first ([ADR 0118](../../docs/decisions/0118-actions-record-the-person.md)). 202 with the run, 409 when the run ended or the signal does not fit its state. |
 | `POST /v1/runs/{runId}/retry` | `{ "by": { "kind": "person", "id": "…" }, "from": "<stage>" }` runs a run that failed or was cancelled again ([Run again](#run-again)); `from` is optional. 201 with the new run, 400 without `by`, with a `from` the run does not have or a `from` after the first stage that did not succeed, 404 for an unknown run, 409 for a run in another state, a run that already ran again, or a `from` other than the first stage when the factory's stages changed. |
 
@@ -474,7 +475,10 @@ on `osf.work.received.v1`, and hands each [`gate.decided@v1`](../../contracts/ev
 on `osf.gate.decided.v1` to the newest run of its work item. For each
 [`work.retry-requested@v1`](../../contracts/events/work-retry-requested/work-retry-requested.schema.json) on
 `osf.work.retry-requested.v1` it runs the run in `runId` again, by the `requester`, as `POST /v1/runs/<run ID>/retry`
-does ([Run again](#run-again)). A run publishes
+does ([Run again](#run-again)). It keeps the ID and time of each
+[`doctor.ping@v1`](../../contracts/events/doctor-ping/doctor-ping.schema.json) on `osf.doctor.ping.v1` for
+`GET /v1/doctor/pings/{id}`, so `console doctor --deep` sees that an event reaches it (ADR 0120); a consumer of an earlier
+release gets the subject when the server starts. A run publishes
 [`run.started@v1`](../../contracts/events/run-started/run-started.schema.json) on `osf.run.started.v1` when it starts and
 [`run.completed@v1`](../../contracts/events/run-completed/run-completed.schema.json) on `osf.run.completed.v1` when it
 ends, with the outcome `succeeded`, `failed` or `cancelled` and, when the stage it ended at failed with one, its
@@ -551,7 +555,7 @@ the minor version. The one-time setup is the same as for contracts
 | `FOREMAN_POLL_MS` | string | `"1000"` | serve: how often a running stage looks for steering messages and a cancel, in milliseconds. |
 | `FOREMAN_GATEKEEPER_URL` | string |  | serve: the URL of gatekeeper serve, which a stage with a gate asks for a decision. Required for a factory with gates. |
 | `FOREMAN_GATEKEEPER_TOKEN` | string |  | serve: gatekeeper's API token, GATEKEEPER_API_TOKEN. |
-| `FOREMAN_NATS_URL` | string |  | serve: the NATS server for work.received@v1, work.retry-requested@v1 and gate.decided@v1 in, and run.started@v1, run.blocked@v1 and run.completed@v1 out. Unset: no events. |
+| `FOREMAN_NATS_URL` | string |  | serve: the NATS server for work.received@v1, work.retry-requested@v1, gate.decided@v1 and doctor.ping@v1 in, and run.started@v1, run.blocked@v1 and run.completed@v1 out. Unset: no events. |
 | `OSF_STREAM_MAX_AGE` | string |  | serve, resend: the age after which the stream OSF drops an event, like 7d, 12h, 30m or 90s (ADR 0116). The server adds the stream with it, or sets it on a stream that another module added. Unset: a new stream keeps its events without a limit of age, and an existing one keeps its own. The profile and the chart set 7d. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | string |  | serve: the base URL of an OTLP/HTTP receiver, like http://phoenix:6006. Set, each run is one trace with a span per stage and one for the run, sent to <url>/v1/traces, and each stage's harness gets the trace in TRACEPARENT (ADR 0087). |
 | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | string |  | serve: the full URL of the OTLP/HTTP traces endpoint; takes precedence over OTEL_EXPORTER_OTLP_ENDPOINT. |
@@ -719,3 +723,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-159 | implemented | A stage's agent finds the repositories it declares cloned in its folder |
 | SCN-FORE-160 | implemented | A stage that waits for its checks publishes "run.blocked@v1" once, and the run that fails at a check publishes its reason |
 | SCN-FORE-161 | implemented | A stage whose checks succeeded at the first read publishes no "run.blocked@v1" |
+| SCN-FORE-162 | implemented | The foreman shows a doctor's ping that its consumer received |
