@@ -233,3 +233,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-069 | implemented | The page "/health" calls no model |
 | SCN-CONSOLE-070 | implemented | The run page links each stage to its span in the run's trace |
 | SCN-CONSOLE-080 | implemented | The run page lists the actions of a run with the person who sent each |
+| SCN-CONSOLE-110 | implemented | The run page links no span of a run whose foreman names no trace |
