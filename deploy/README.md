@@ -468,4 +468,4 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-035 | implemented | The chart runs the improvement jobs as a CronJob on foreman's run records, without scorers by default |
 | SCN-DIST-036 | implemented | The console of the Compose profile renders its health page from the templates its package ships |
 | SCN-DIST-037 | implemented | With the sign-in on, the console of the Compose profile lets in only the people of the factory's access.yaml |
-| SCN-DIST-038 | planned | The chart switches the console's sign-in on with the client secret and the session key from a Secret the operator names |
+| SCN-DIST-038 | implemented | The chart switches the console's sign-in on with the client secret and the session key from a Secret the operator names |

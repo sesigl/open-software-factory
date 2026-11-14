@@ -1,12 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { cluster, values } from "./chart.ts";
-
-/** The manifests that one template of the chart rendered, from the output of "helm template". */
-const rendered = (output: string, template: string) =>
-  output
-    .split(/^---$/m)
-    .filter((document) => document.includes(`# Source: osf/templates/${template}\n`))
-    .join("---");
+import { cluster, rendered, values } from "./chart.ts";
 
 scenario("SCN-DIST-033", async ({ sut, given, when, then }) => {
   let helm: Awaited<ReturnType<typeof cluster>>;

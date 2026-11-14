@@ -48,6 +48,8 @@ through `kubectl port-forward` (`url`), `helm test` and the state of the workloa
   template of 0.4 s. With them the suite took 730.2 s of raw time on a runner whose benchmark took 1.075 times the
   reference, 679.3 s at BUDGET's measure. The kind installs (69 to 91 s each here) and the Compose starts (64 to 85
   s) are the cost; the budget keeps about 3% above that measure, as SCN-DIST-034 gets faster once the image exists.
+- T-56 adds no start of the whole profile: SCN-DIST-037 proves the sign-in with only the console, `--no-deps`, about
+  5 s with its image present, and SCN-DIST-038 renders the chart like SCN-DIST-033.
 
 ## Scenario prefix
 

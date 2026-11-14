@@ -49,6 +49,13 @@ export function install(helm: Helm): Promise<CliResult> {
   return helm.run(["install", "osf", helm.chart, "--values", "values.yaml", "--wait", "--timeout", "10m"]);
 }
 
+/** The manifests that one template of the chart rendered, from the output of "helm template". */
+export const rendered = (output: string, template: string) =>
+  output
+    .split(/^---$/m)
+    .filter((document) => document.includes(`# Source: osf/templates/${template}\n`))
+    .join("---");
+
 /** The ready state of each workload of the release, by its component. */
 export async function workloads(helm: Helm): Promise<Record<string, boolean>> {
   const result = await helm.kubectl([

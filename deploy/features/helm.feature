@@ -87,3 +87,13 @@ Feature: The Helm chart installs a complete factory on Kubernetes with one comma
     Then the command exits with code 0
     And the CronJob "osf-improve" runs "ledger report" and "observer analyze" in the image "observer", with the claim "osf-foreman" read-only and "IMPROVE_SCORERS" empty
     And the deployment "console" reads "CONSOLE_IMPROVE_DIR" from the claim "osf-improve", read-only
+
+  @id=SCN-DIST-038 @status=implemented
+  Scenario: The chart switches the console's sign-in on with the client secret and the session key from a Secret the operator names
+    Given a kind cluster with the images of the Compose profile
+    And a values file that sets every value under "secrets", and under "console.signIn" the provider "oidc", its issuer, its client ID, the address "https://factory.acme.dev" and the Secret "osf-sign-in"
+    When the operator runs "helm template osf deploy/helm/osf --values values.yaml"
+    Then the command exits with code 0
+    And the deployment "console" sets "CONSOLE_SIGN_IN", "CONSOLE_URL", "CONSOLE_OIDC_ISSUER" and "CONSOLE_OIDC_CLIENT_ID" to the values, and "CONSOLE_SESSION_SECRET" and "CONSOLE_OIDC_CLIENT_SECRET" from the keys "session-secret" and "client-secret" of the Secret "osf-sign-in"
+    And the console's readiness probe asks "/v1/ready" for the host "factory.acme.dev"
+    And no manifest of the chart is a Secret with a key of the sign-in
