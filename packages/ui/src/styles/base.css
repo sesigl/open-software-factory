@@ -229,6 +229,181 @@ a:hover {
   color: var(--osf-text-muted);
 }
 
+/* Text for a screen reader only, like the name of the record a link of a row acts on. */
+.osf-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.osf-strong {
+  font-weight: var(--osf-weight-strong);
+}
+
+.osf-secondary {
+  font-size: var(--osf-size-secondary);
+  color: var(--osf-text-muted);
+}
+
+/* The title of a page with what the page is for, in a measure that reads well. */
+.osf-intro {
+  margin-bottom: var(--osf-space-6);
+}
+
+.osf-intro p {
+  max-width: 44rem;
+  margin: 0 0 var(--osf-space-2);
+  color: var(--osf-text-muted);
+}
+
+/* A list beside its form; on a narrow screen the form goes below the list. */
+.osf-split {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--osf-space-6);
+  align-items: flex-start;
+}
+
+.osf-split-main {
+  flex: 999 1 420px;
+  min-width: 0;
+}
+
+.osf-split-side {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+/* Records as rows of a panel: the name and its detail, then the state and the row's link. */
+.osf-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--osf-line);
+  border-radius: var(--osf-radius-panel);
+  background: var(--osf-bg-surface);
+}
+
+.osf-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--osf-space-4);
+  padding: 14px var(--osf-space-4);
+  border-bottom: 1px solid var(--osf-line);
+}
+
+.osf-list li:last-child {
+  border-bottom: 0;
+}
+
+/* A record that waits for a person because something is missing: the failed state's line on a raised ground. */
+.osf-list li.osf-missing {
+  background: var(--osf-bg-raised);
+  box-shadow: inset 2px 0 0 var(--osf-state-failed);
+}
+
+.osf-list-text {
+  flex: 1 1 16rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--osf-space-1);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.osf-list-end {
+  display: flex;
+  align-items: center;
+  gap: var(--osf-space-4);
+}
+
+/* A form on a panel: a title, the fields, the buttons and a note below a line. */
+.osf-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--osf-space-4);
+  padding: 20px;
+  border: 1px solid var(--osf-line-strong);
+  border-radius: var(--osf-radius-panel);
+  background: var(--osf-bg-surface);
+}
+
+.osf-panel h2 {
+  margin: 0;
+  font-size: var(--osf-size-section);
+  font-weight: var(--osf-weight-strong);
+}
+
+.osf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.osf-field label {
+  font-size: var(--osf-size-secondary);
+  font-weight: var(--osf-weight-strong);
+}
+
+.osf-input {
+  width: 100%;
+  min-height: var(--osf-control-height);
+  padding: 0 var(--osf-space-3);
+  border: 1px solid var(--osf-line-strong);
+  border-radius: var(--osf-radius-control);
+  background: var(--osf-bg-ground);
+  color: var(--osf-text);
+  font-size: var(--osf-size-text);
+}
+
+.osf-input:focus-visible {
+  border-color: var(--osf-signal);
+}
+
+.osf-hint,
+.osf-footnote {
+  margin: 0;
+  font-size: 12px;
+  color: var(--osf-text-muted);
+}
+
+.osf-footnote {
+  padding-top: var(--osf-space-3);
+  border-top: 1px solid var(--osf-line);
+}
+
+.osf-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--osf-space-2);
+}
+
+/* The main action as a button of a form. */
+button.osf-action {
+  border: 0;
+  font-family: var(--osf-font-sans);
+  font-size: var(--osf-size-text);
+  cursor: pointer;
+}
+
+/* An action beside the main one, like "Cancel": a line, no colour. */
+.osf-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--osf-control-height);
+  padding: 0 var(--osf-space-4);
+  border: 1px solid var(--osf-line-strong);
+  border-radius: var(--osf-radius-control);
+  color: var(--osf-text);
+  font-weight: var(--osf-weight-strong);
+  text-decoration: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none;
