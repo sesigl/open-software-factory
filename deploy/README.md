@@ -139,9 +139,8 @@ The stage verify has `evidence: required`: it fails until a proof evidence bundl
 ([ADR 0088](../docs/decisions/0088-evidence-check.md)). Run proof in the target repository's CI after its tests,
 with [proof's GitHub Action](../modules/proof/README.md#github-action) on the JUnit or Playwright reports.
 
-The stage verify still runs the agent `implement` once more after its checks. Once the released foreman and
-factory-spec carry [ADR 0107](../docs/decisions/0107-a-stage-that-only-waits.md), it becomes `wait: true`: a stage that
-only waits for its checks and its evidence, with no model call.
+The stage verify has `wait: true` ([ADR 0107](../docs/decisions/0107-a-stage-that-only-waits.md)): it runs no agent
+and only waits for its checks and its evidence, with no model call and no new commit.
 
 ### A paid run of the reference factory
 
@@ -150,6 +149,15 @@ the reference factory, from the branch you name, on one issue of a tiny sample r
 OpenRouter. Only a maintainer or an admin of this repository starts it:
 `gh workflow run paid-reference-run.yml -f ref=<branch>`. It costs about 0.01 to 0.05 USD and stops at 0.50 USD
 ([ADR 0128](../docs/decisions/0128-paid-reference-run.md)).
+
+### The improvement path
+
+`docker compose --profile improve up --detach` adds the service `improve` ([ADR 0123](../docs/decisions/0123-cost-and-scores-in-the-console.md)).
+Every `IMPROVE_INTERVAL` seconds it copies the run record of each stage that foreman exported into the volume
+`improve`, and writes the reports of `scorekit report`, `ledger report` and `observer analyze` into its folder
+`reports`. The console's `/improvement` reads that volume and shows each run's cost per stage. Judging runs is a paid
+model call through `litellm`, so `scorekit score` runs only for the scorers you name in `IMPROVE_SCORERS`. A stage in a
+sandbox keeps its run record in the sandbox for now, so the reference factory's stages do not show there yet.
 
 ## Configuration
 
@@ -183,6 +191,8 @@ and names it, like `set FOREMAN_API_TOKEN in .env`.
 | `TEMPORAL_UI_PORT` | `8233` | The port of the Temporal UI. |
 | `JAEGER_PORT` | `16686` | The port of Jaeger's UI. |
 | `LITELLM_PORT` | `4000` | The port of LiteLLM. |
+| `IMPROVE_INTERVAL` | `3600` | With the profile `improve`: the seconds between the runs of the improvement jobs. `0` runs them once. |
+| `IMPROVE_SCORERS` | | With the profile `improve`: the scorers of scorekit that judge each run, like `redundant-tests scope-creep`. Each judgment is a paid model call. Empty: no run is judged. |
 | `OSF_BUILD_CA` | `../images/no-ca.pem` | Behind a proxy that inspects TLS: the proxy's CA for npm in the image builds, as a path inside `deploy/`, like `../images/local-ca.pem`. |
 
 ### Receive GitHub issues on your machine
@@ -278,12 +288,14 @@ Each stage of the reference factory runs in a sandbox of the
 | `sandboxes.clusterDomain` | `cluster.local` | The cluster's DNS domain, for the name `litellm` in the sandboxes' namespace. |
 | `litellm.image`, `litellm.resources` | the pin of `compose.yaml` | The LLM gateway's image and its resources. |
 | `images.registry` | `ghcr.io/sesigl/open-software-factory` | Where the module images come from. |
-| `images.gatekeeper`, `images.intake`, `images.foreman`, `images.console`, `images.factorySpec` | the pins of `compose.yaml` | The tags of the module images. |
+| `images.gatekeeper`, `images.intake`, `images.foreman`, `images.console`, `images.factorySpec`, `images.observer` | the pins of `compose.yaml` | The tags of the module images; `observer` is the image of the improvement jobs, with scorekit and ledger. |
 | `factory.files` | the reference factory | Your factory definition as path: content, like `factory.yaml: "version: 1 ..."`. foreman commits it into Git with a fixed author and date. |
 | `gatekeeper.slackChannel` | `C0GATES` | The Slack channel where gatekeeper asks, with the Slack secrets. With `existingSecret`, empty turns Slack off. |
 | `foreman.harnesses`, `foreman.forges` | claude-code; github and forgejo | foreman's `FOREMAN_HARNESSES` and `FOREMAN_FORGES`. |
 | `foreman.persistence.size` | `1Gi` | The volume of the runs' working folders. |
 | `console.temporalUrl`, `console.links` | | The Temporal UI and the dashboards the console links, like `Langfuse=https://langfuse.acme.dev`. |
+| `improve.enabled` | `false` | The CronJob `improve` with the commands of the Compose service `improve`, and the claim `osf-improve` that the console's `/improvement` reads. Its pod and the console then run on foreman's node, as the claims are ReadWriteOnce. |
+| `improve.schedule`, `improve.scorers`, `improve.persistence.size`, `improve.resources` | `17 * * * *`, empty, `1Gi` | When the job runs, the scorers that judge each run (each judgment is a paid model call; empty: none), its claim's size and its resources. |
 | `postgresql.enabled` | `true` | PostgreSQL with pgvector in the cluster. `false` uses `externalDatabase`. |
 | `externalDatabase.host`, `.port`, `.user`, `.adminDatabase` | `5432`, `osf`, `postgres` | A managed PostgreSQL. Each pod creates its database when it is missing (gatekeeper, intake, temporal, temporal_visibility), so the user needs `CREATEDB`, or create them yourself. |
 | `nats.enabled`, `externalNats.url` | `true` | NATS with JetStream in the cluster, or the team's own. |
@@ -370,6 +382,8 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-028 | implemented | The reference factory asks for approval of the spec after the stage "spec" and before "implement" |
 | SCN-DIST-029 | implemented | The ship stage of the reference factory starts only when the checks "verify" and "proof" succeeded |
 | SCN-DIST-030 | implemented | The ship stage of this repository's factory starts only when the checks "verify" and "proof" succeeded |
-| SCN-DIST-031 | planned | The verify stage of the reference factory only waits and runs no agent |
-| SCN-DIST-032 | planned | The verify stage of this repository's factory only waits and runs no agent |
+| SCN-DIST-031 | implemented | The verify stage of the reference factory only waits and runs no agent |
+| SCN-DIST-032 | implemented | The verify stage of this repository's factory only waits and runs no agent |
 | SCN-DIST-033 | implemented | The chart takes a forge token without Slack, and asks on pull requests only |
+| SCN-DIST-034 | implemented | The service improve writes the reports of ledger and observer and judges no run without scorers |
+| SCN-DIST-035 | implemented | The chart runs the improvement jobs as a CronJob on foreman's run records, without scorers by default |

@@ -20,11 +20,26 @@ Both are formats of `contracts/` (run-record and score). The console reads every
 rate and judge cost, and each stage of a run with its outcome and cost. It reads no report of ledger or scorekit,
 because those reports are no contract, and it keeps no state.
 
-The jobs themselves are open slices of T-31: in the Compose profile a service `improve` behind the profile `improve`
-that loops `runlog`, `scorekit score`, `ledger report` and `observer analyze` with a sleep, and in the chart one
-CronJob per command with the same command lines. They need an image with the four CLIs, built from the `module`
-stage of `deploy/images/Dockerfile` like every module image, and the factory's run records, which T-24 exports per
-stage.
+The jobs, added later in T-31:
+
+- In the Compose profile a service `improve` behind the profile `improve` loops with a sleep of `IMPROVE_INTERVAL`
+  seconds (3600; 0 runs once). In the chart, with `improve.enabled`, one CronJob runs the same commands once per
+  `improve.schedule`. One job, not one per command: each command reads what the one before wrote.
+- The commands: copy each `transcripts/<session>/run-record.json` that the foreman wrote (ADR 0121) to
+  `runs/<session>.json`; `scorekit score` for each scorer of `IMPROVE_SCORERS` (`improve.scorers`) into
+  `scores/scores.jsonl`; `scorekit report`, `ledger report` and `observer analyze` into `reports/`. runlog runs no
+  command of its own: the harness adapter's `transcript` already wrote each run record with runlog's format.
+- Judging is a paid model call through litellm, so `IMPROVE_SCORERS` is empty by default and the job then judges no
+  run. The other commands call no model.
+- The console reads the same folder (`CONSOLE_IMPROVE_DIR`): the volume `improve` in Compose, the claim `osf-improve`
+  in the chart. It skips the reports, which hold no run record or score. Both claims of the chart are ReadWriteOnce,
+  so the job's pod and the console run on the foreman's node (pod affinity).
+- The image is `observer:<version>` from the `module` stage of `deploy/images/Dockerfile`, with the released packages
+  observer, scorekit and ledger, pinned as `osf profile-pins` writes them; `publish-images` builds it like every
+  module image. No new stage and no new base image.
+- Open: a stage in a sandbox keeps its session record in the sandbox, so the reference factory's stages have no run
+  record in `transcripts/` yet; until the foreman gets those out, the job sees only stages that run without a
+  sandbox.
 
 ## Options considered
 

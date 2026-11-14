@@ -78,3 +78,12 @@ Feature: The Helm chart installs a complete factory on Kubernetes with one comma
     Then the command exits with code 0
     And the deployment "gatekeeper" runs "gatekeeper serve" without "--channel", with "GATEKEEPER_FORGE_TOKEN" from the key "forge-token" and without a Slack variable
     And the release's Secret has no key "gatekeeper-slack-token" or "gatekeeper-slack-signing-secret"
+
+  @id=SCN-DIST-035 @status=implemented
+  Scenario: The chart runs the improvement jobs as a CronJob on foreman's run records, without scorers by default
+    Given a kind cluster with the images of the Compose profile
+    And a values file that sets every value under "secrets" and "improve.enabled" to true
+    When the operator runs "helm template osf deploy/helm/osf --values values.yaml"
+    Then the command exits with code 0
+    And the CronJob "osf-improve" runs "ledger report" and "observer analyze" in the image "observer", with the claim "osf-foreman" read-only and "IMPROVE_SCORERS" empty
+    And the deployment "console" reads "CONSOLE_IMPROVE_DIR" from the claim "osf-improve", read-only

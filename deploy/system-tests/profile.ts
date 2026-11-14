@@ -1,5 +1,5 @@
 // The Compose profile as the operator sets it up: every value of compose/.env.example set in $INPUT/.env.
-import type { Compose, Sut } from "@opensoftware/testkit";
+import type { Compose, Fakes, Sut } from "@opensoftware/testkit";
 
 /** The values of `.env.example`, made up for the tests. */
 const VALUES: Record<string, string> = {
@@ -42,4 +42,17 @@ export function words(command: string): string[] {
 export function stageOf(stdout: string, name: string): Record<string, unknown> | undefined {
   const factory = JSON.parse(stdout.slice(stdout.search(/^\{$/m))) as { workflow: { stage: string }[] };
   return factory.workflow.find((stage) => stage.stage === name);
+}
+
+/**
+ * The reference factory as an operator sets it up after the quick start, for FACTORY_DIR: a copy whose group
+ * "maintainers" names a person in place of the example's member slack:U0EXAMPLE (ADR 0114). Returns its path.
+ */
+export async function operatorFactory(sut: Sut, fakes: Fakes): Promise<string> {
+  const files = fakes.fromRepository("deploy/compose/factory");
+  for (const [path, text] of Object.entries(files)) {
+    const content = path === "groups.json" ? text.replaceAll("slack:U0EXAMPLE", "slack:U0OPERATOR") : text;
+    await sut.files.put(`$INPUT/factory/${path}`, content);
+  }
+  return sut.files.path("$INPUT/factory");
 }

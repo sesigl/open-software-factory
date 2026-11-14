@@ -31,16 +31,17 @@ export async function cluster(sut: Sut): Promise<Helm> {
   return helm;
 }
 
-/** Writes `values.yaml` with every secret but those in `except`, and the secrets of `more`. */
+/** Writes `values.yaml` with every secret but those in `except`, the secrets of `more`, and the YAML of `rest`. */
 export async function values(
   sut: Sut,
   except: string[] | string = [],
   more: Record<string, string> = {},
+  rest = "",
 ): Promise<void> {
   const lines = Object.entries({ ...SECRETS, ...more })
     .filter(([name]) => ![except].flat().includes(name))
     .map(([name, value]) => `  ${name}: ${value}`);
-  await sut.files.put("$INPUT/values.yaml", ["secrets:", ...lines, ""].join("\n"));
+  await sut.files.put("$INPUT/values.yaml", ["secrets:", ...lines, rest].join("\n"));
 }
 
 /** "helm install osf deploy/helm/osf --values values.yaml --wait --timeout 10m", with the chart's own path. */

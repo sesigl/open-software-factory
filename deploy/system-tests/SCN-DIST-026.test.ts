@@ -1,10 +1,11 @@
 import { scenario } from "@opensoftware/testkit";
-import { profile, words } from "./profile.ts";
+import { operatorFactory, profile, words } from "./profile.ts";
 
-scenario("SCN-DIST-026", async ({ sut, given, when, then }) => {
+scenario("SCN-DIST-026", async ({ sut, fakes, given, when, then }) => {
   let compose: Awaited<ReturnType<typeof profile>>;
   await given('the Compose profile with every value of ".env.example" set in ".env"', async () => {
-    compose = await profile(sut);
+    // FACTORY_DIR is a value of ".env.example": the operator's copy names a real approver (ADR 0114).
+    compose = await profile(sut, undefined, { FACTORY_DIR: await operatorFactory(sut, fakes) });
   });
 
   let up: Awaited<ReturnType<typeof compose.run>>;

@@ -1,0 +1,90 @@
+{{- /*
+The improvement path (ADR 0123), with improve.enabled: a CronJob with the commands of the Compose service improve. It
+copies the run record of each stage that foreman exported into the PersistentVolumeClaim improve, which console's
+/improvement reads, and writes the reports of scorekit, ledger and observer under its reports/, which console skips as
+they hold no record. Both claims are ReadWriteOnce, so the job's pod and console run on foreman's node. Judging runs is
+a paid model call: scorekit scores only with improve.scorers set.
+*/ -}}
+{{- if .Values.improve.enabled }}
+{{- $ctx := dict "root" . "component" "improve" }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "osf.name" $ctx }}
+  labels:
+    {{- include "osf.labels" $ctx | nindent 4 }}
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- with .Values.improve.persistence.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.improve.persistence.size }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "osf.name" $ctx }}
+  labels:
+    {{- include "osf.labels" $ctx | nindent 4 }}
+spec:
+  schedule: {{ .Values.improve.schedule | quote }}
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            {{- include "osf.labels" $ctx | nindent 12 }}
+        spec:
+          restartPolicy: Never
+          {{- include "osf.podSecurity" . | nindent 10 }}
+          {{- include "osf.onForemansNode" . | nindent 10 }}
+          containers:
+            - name: improve
+              image: {{ include "osf.image" (dict "root" . "name" "observer" "tag" .Values.images.observer) }}
+              imagePullPolicy: {{ .Values.images.pullPolicy }}
+              env:
+                - name: IMPROVE_SCORERS
+                  value: {{ .Values.improve.scorers | quote }}
+                - name: SCOREKIT_INFERENCE_URL
+                  value: {{ printf "http://%s:4000/v1" (include "osf.name" (dict "root" . "component" "litellm")) | quote }}
+                {{- include "osf.secretEnv" (dict "root" . "name" "SCOREKIT_INFERENCE_KEY" "key" "litellm-master-key") | nindent 16 }}
+              command: [sh, -c]
+              args:
+                - |
+                  set -u
+                  records=/home/node/data reports=/home/node/data/reports
+                  mkdir -p "$records/runs" "$records/scores" "$reports"
+                  for record in /home/node/rendered/transcripts/*/run-record.json; do
+                    [ -f "$record" ] || continue
+                    cp "$record" "$records/runs/$(basename "$(dirname "$record")").json"
+                  done
+                  for scorer in $IMPROVE_SCORERS; do
+                    scorekit score --scorer "$scorer" --out "$records/scores/scores.jsonl" "$records/runs"
+                  done
+                  [ ! -f "$records/scores/scores.jsonl" ] ||
+                    scorekit report --out "$reports/scores.json" "$records/scores/scores.jsonl"
+                  ledger report --db "$reports/ledger.duckdb" --out "$reports/ledger.json" "$records/runs"
+                  observer analyze --runs "$records/runs" --out "$reports/problems.json" "$records/scores"
+              {{- with .Values.improve.resources }}
+              resources:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+              volumeMounts:
+                - name: foreman
+                  mountPath: /home/node/rendered
+                  readOnly: true
+                - name: improve
+                  mountPath: /home/node/data
+          volumes:
+            - name: foreman
+              persistentVolumeClaim:
+                claimName: {{ include "osf.name" (dict "root" . "component" "foreman") }}
+                readOnly: true
+            - name: improve
+              persistentVolumeClaim:
+                claimName: {{ include "osf.name" $ctx }}
+{{- end }}

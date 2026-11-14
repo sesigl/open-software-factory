@@ -842,12 +842,14 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
   - [x] The console page `/improvement` shows each scorer's scored runs, passes, pass rate and judge cost, and each
     run's stages with their outcome and cost, from the run records and scores in `CONSOLE_IMPROVE_DIR`
     (SCN-CONSOLE-090 to SCN-CONSOLE-092, ADR 0123).
-  - [ ] A Compose service `improve` (profile `improve`) that runs `runlog`, `scorekit score` and `report`, `ledger
-    report` and `observer analyze` on a schedule into the volume the console reads (ADR 0123). Open: it needs an
-    image with the four CLIs, which the PROFILE check pins to a package's version and the release must publish, and
-    the factory's own run records, which come from T-24 (the foreman exports each stage with runlog).
-  - [ ] Chart CronJobs with the same commands and a chart version after 0.3.0. Open for the same reasons.
-  - [ ] DIST scenarios in `deploy/features/` for both, which need Docker and kind.
+  - [x] A Compose service `improve` (profile `improve`) that copies the foreman's run records and runs `scorekit score`
+    and `report`, `ledger report` and `observer analyze` on a schedule into the volume the console reads, in the image
+    `observer` with the released observer, scorekit and ledger; `scorekit score` only for the scorers of
+    `IMPROVE_SCORERS`, as judging is a paid call (ADR 0123, `SCN-DIST-034`).
+  - [x] A chart CronJob with the same commands, `improve.enabled`, and the chart version 0.4.0 (`SCN-DIST-035`).
+  - [x] DIST scenarios in `deploy/features/` for both, which run in CI with Docker and kind.
+  - [ ] The run records of stages in a sandbox reach the foreman's `transcripts/`, so the jobs see the reference
+    factory's stages: today a sandbox keeps its session record (ADR 0121, ADR 0123).
 
 ### [x] T-32 · factory version from Git and public intake (P2)
 
@@ -953,7 +955,7 @@ as a vision scenario. Each item names the place in the code, so start there, and
   - [x] A gate without a decision after the foreman's own limit ends as `expired`, also when the policy names none
     (`SCN-FORE-115`, `SCN-FORE-116`).
 
-### [ ] T-40 · a verify stage that runs no second implement session (P1)
+### [x] T-40 · a verify stage that runs no second implement session (P1)
 
 - **Problem:** the stage `verify` of the reference factory has `agent: implement`, because every stage runs an agent.
   After the checks passed, the implement agent runs again with the implement prompt: a second full session, which may
@@ -964,9 +966,9 @@ as a vision scenario. Each item names the place in the code, so start there, and
   - [x] An ADR: a stage without an agent, or an agent `verify` with a prompt of its own that changes no file
     ([ADR 0107](docs/decisions/0107-a-stage-that-only-waits.md): `wait: true`; `SCN-FSPEC-059` to `-062`,
     `SCN-FORE-117` to `-119`).
-  - [ ] The reference factory and the dogfood factory use it, and `ship` has the same `checks` (`SCN-DIST`, `SCN-FORE`).
-    `ship` has the checks `[verify]` and `evidence: required` in both (`SCN-DIST-029`, `-030`). `verify` switches to
-    `wait: true` after the release of contracts, factory-spec and foreman (`SCN-DIST-031`, `-032`, planned).
+  - [x] The reference factory and the dogfood factory use it, and `ship` has the same `checks` (`SCN-DIST`, `SCN-FORE`).
+    `ship` has the checks `[verify]` and `evidence: required` in both (`SCN-DIST-029`, `-030`). `verify` has
+    `wait: true` since the release of contracts 2.4.0, factory-spec 0.8.0 and foreman 0.10.0 (`SCN-DIST-031`, `-032`).
 
 ### [x] T-41 · one key and one budget per run (P1)
 

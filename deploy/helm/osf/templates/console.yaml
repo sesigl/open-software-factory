@@ -20,6 +20,9 @@ spec:
         checksum/factory: {{ include "osf.factoryFiles" . | sha256sum }}
     spec:
       {{- include "osf.podSecurity" . | nindent 6 }}
+      {{- if .Values.improve.enabled }}
+      {{- include "osf.onForemansNode" . | nindent 6 }}
+      {{- end }}
       containers:
         - name: console
           image: {{ include "osf.image" (dict "root" . "name" "console" "tag" .Values.images.console) }}
@@ -47,6 +50,10 @@ spec:
             - name: CONSOLE_TEMPORAL_URL
               value: {{ . | quote }}
             {{- end }}
+            {{- if .Values.improve.enabled }}
+            - name: CONSOLE_IMPROVE_DIR
+              value: /home/node/data
+            {{- end }}
             {{- with .Values.console.links }}
             - name: CONSOLE_LINKS
               value: {{ . | quote }}
@@ -63,5 +70,16 @@ spec:
             - name: factory-source
               mountPath: /factory
               readOnly: true
+            {{- if .Values.improve.enabled }}
+            - name: improve
+              mountPath: /home/node/data
+              readOnly: true
+            {{- end }}
       volumes:
         {{- include "osf.factoryVolume" . | nindent 8 }}
+        {{- if .Values.improve.enabled }}
+        - name: improve
+          persistentVolumeClaim:
+            claimName: {{ include "osf.name" (dict "root" . "component" "improve") }}
+            readOnly: true
+        {{- end }}

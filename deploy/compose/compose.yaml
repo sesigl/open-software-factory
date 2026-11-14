@@ -412,11 +412,60 @@ services:
       # console doctor --deep sends one span to Jaeger's OTLP receiver and finds it with Jaeger's query API (ADR 0120).
       CONSOLE_OTLP_URL: http://jaeger:4318
       CONSOLE_TRACES_URL: http://jaeger:16686
+      # The run records and scores of the service improve; empty without the profile improve.
+      CONSOLE_IMPROVE_DIR: /home/node/data
       CONSOLE_LINKS: Jaeger=http://${OSF_HOST:-127.0.0.1}:${JAEGER_PORT:-16686},LiteLLM=http://${OSF_HOST:-127.0.0.1}:${LITELLM_PORT:-4000}/ui
     volumes:
       - factory:/factory:ro
+      - improve:/home/node/data:ro
     ports:
       - ${OSF_HOST:-127.0.0.1}:${CONSOLE_PORT:-8080}:8080
+
+  # The improvement path (ADR 0123), behind the profile improve: docker compose --profile improve up --detach.
+  # Every IMPROVE_INTERVAL seconds (3600; 0 runs once) it copies the run record of each stage that the foreman exported into the
+  # volume improve, which the console's /improvement reads, and writes the reports of scorekit, ledger and observer into
+  # its folder reports, which the console skips, as they hold no record. Judging runs is a paid model call: scorekit
+  # scores only with IMPROVE_SCORERS set, like "redundant-tests scope-creep", through litellm.
+  improve:
+    image: ghcr.io/sesigl/open-software-factory/observer:0.2.0
+    build:
+      context: ../images
+      target: module
+      secrets: [ca]
+      args:
+        PACKAGES: "@opensoftware/observer@0.2.0 @opensoftware/scorekit@0.6.0 @opensoftware/ledger@0.7.0"
+    profiles: [improve]
+    restart: unless-stopped
+    init: true
+    environment:
+      IMPROVE_INTERVAL: ${IMPROVE_INTERVAL:-3600}
+      IMPROVE_SCORERS: ${IMPROVE_SCORERS:-}
+      SCOREKIT_INFERENCE_URL: http://litellm:4000/v1
+      SCOREKIT_INFERENCE_KEY: ${LITELLM_MASTER_KEY:?set LITELLM_MASTER_KEY in .env}
+    volumes:
+      - foreman:/home/node/rendered:ro
+      - improve:/home/node/data
+    entrypoint: [sh, -c]
+    command:
+      - |
+        set -u
+        records=/home/node/data reports=/home/node/data/reports
+        mkdir -p "$$records/runs" "$$records/scores" "$$reports"
+        while :; do
+          for record in /home/node/rendered/transcripts/*/run-record.json; do
+            [ -f "$$record" ] || continue
+            cp "$$record" "$$records/runs/$$(basename "$$(dirname "$$record")").json"
+          done
+          for scorer in $$IMPROVE_SCORERS; do
+            scorekit score --scorer "$$scorer" --out "$$records/scores/scores.jsonl" "$$records/runs"
+          done
+          [ ! -f "$$records/scores/scores.jsonl" ] ||
+            scorekit report --out "$$reports/scores.json" "$$records/scores/scores.jsonl"
+          ledger report --db "$$reports/ledger.duckdb" --out "$$reports/ledger.json" "$$records/runs"
+          observer analyze --runs "$$records/runs" --out "$$reports/problems.json" "$$records/scores"
+          [ "$$IMPROVE_INTERVAL" != 0 ] || break
+          sleep "$$IMPROVE_INTERVAL"
+        done
 
   # factory-spec on the factory in the volume, for the commands of factory: docker compose run --rm factory plan
   factory:
@@ -448,4 +497,5 @@ volumes:
   factory:
   factory-state:
   factory-rendered:
+  improve:
   foreman:

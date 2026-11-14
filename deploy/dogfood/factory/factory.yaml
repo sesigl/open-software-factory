@@ -87,9 +87,9 @@ workflow:
       policy: ./policy/spec.rego
       approvers: [maintainers]
   - stage: review
-  # Starts when the check "verify" of the run's pull request succeeded, and must produce evidence.
+  # Runs no agent (ADR 0107): waits until the check "verify" of the run's pull request succeeded, with evidence.
   - stage: verify
-    agent: implement
+    wait: true
     checks: [verify]
     evidence: required
   # Merges only when "verify" and proof's check succeeded on the pull request's head commit, read again after verify.
