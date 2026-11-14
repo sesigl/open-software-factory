@@ -1,11 +1,11 @@
 import { scenario } from "@opensoftware/testkit";
-import { healthyServer, navLinks, open, serving, TOKEN_ROUTES } from "./console.ts";
+import { factoryEnv, healthyServer, navLinks, open, serving, TOKEN_ROUTES } from "./console.ts";
 
 scenario("SCN-CONSOLE-136", async ({ sut, fakes, given, when, then }) => {
   let env: Record<string, string> = {};
   let foreman = "";
   await given(
-    'a console with an intake, the inbox of "tester/web", a folder of cost and scores and the dashboard "Grafana" at "https://grafana.acme.dev"',
+    'a healthy console with an intake, the inbox of "tester/web", a folder of cost and scores and the dashboard "Grafana" at "https://grafana.acme.dev"',
     async () => {
       foreman = (await healthyServer(fakes, [], TOKEN_ROUTES.foreman)).url;
       const intake = await healthyServer(fakes, [], TOKEN_ROUTES.intake);
@@ -14,6 +14,7 @@ scenario("SCN-CONSOLE-136", async ({ sut, fakes, given, when, then }) => {
         CONSOLE_INBOX_REPOSITORY: "tester/web",
         CONSOLE_IMPROVE_DIR: sut.files.path("$INPUT/improve"),
         CONSOLE_LINKS: "Grafana=https://grafana.acme.dev",
+        ...(await factoryEnv(sut)),
       };
     },
   );
@@ -22,6 +23,10 @@ scenario("SCN-CONSOLE-136", async ({ sut, fakes, given, when, then }) => {
   await when('a person opens "/health"', async () => {
     await serving(sut, [foreman], env);
     page = await open(sut, "/health");
+  });
+
+  await then('the page answers 200 with the title "Health · console"', async () => {
+    expect([page.status, page.title]).toEqual([200, "Health · console"]);
   });
 
   await then(

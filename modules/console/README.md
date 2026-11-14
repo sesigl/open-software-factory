@@ -282,4 +282,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-133 | implemented | "console doctor --deep" names the variable when NATS does not answer |
 | SCN-CONSOLE-134 | implemented | "console doctor --deep" without "CONSOLE_NATS_URL" skips the events |
 | SCN-CONSOLE-135 | implemented | Every page allows only the console's own files and no script |
-| SCN-CONSOLE-136 | implemented | The page "/health" has the navigation of every page |
+| SCN-CONSOLE-136 | implemented | The page "/health" of a healthy factory answers 200 and has the navigation of every page |

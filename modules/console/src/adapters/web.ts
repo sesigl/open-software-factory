@@ -28,5 +28,5 @@ export async function render(
 ): Promise<void> {
   const astro = await handler();
   reply.hijack();
-  await astro(request.raw, reply.raw, undefined, { page, status, statusText: STATUS_CODES[status] ?? "" });
+  await astro(request.raw, reply.raw, undefined, { page, status, statusText: STATUS_CODES[status] as string });
 }
