@@ -22,6 +22,14 @@ Feature: Quality limits
     And the output contains "duplicate modules/payroll/src/sum.ts"
     And the output contains "move the shared code into a package in packages/ or into contracts/"
 
+  @id=SCN-REPO-146 @status=implemented
+  Scenario: DUP rejects a clone between the templates of two modules
+    Given the modules "billing" and "payroll" with the limit "Duplication: at most 3%"
+    And "modules/billing/src/web/pages/runs.astro" and "modules/payroll/src/web/pages/runs.astro" hold the same template
+    When the developer runs "osf check DUP"
+    Then the command exits with code 1
+    And the output contains "duplicate modules/payroll/src/web/pages/runs.astro"
+
   @id=SCN-REPO-046 @status=deprecated
   Scenario: DUP rejects a baseline entry whose clone is gone
     Given the modules "billing" and "payroll" with the limit "Duplication: at most 3%" and no clone between them

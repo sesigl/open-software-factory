@@ -61,3 +61,24 @@ Feature: SPEC
     When the developer runs "spec-trace check --only SPEC"
     Then the command exits with code 1
     And the output contains "SPEC features/checkout.feature:3 Gherkin does not parse"
+
+  @id=SCN-TRACE-067 @status=implemented
+  Scenario: SPEC rejects an unknown kind of scenario
+    Given a repository with the scenario "SCN-SHOP-001" tagged "@kind=smoke"
+    When the developer runs "spec-trace check --only SPEC"
+    Then the command exits with code 1
+    And the output contains "SPEC features/checkout.feature:4 @kind=smoke is not one of journey"
+
+  @id=SCN-TRACE-068 @status=implemented
+  Scenario: SPEC accepts a journey scenario
+    Given a repository with the scenario "SCN-SHOP-001" tagged "@kind=journey"
+    When the developer runs "spec-trace check --only SPEC"
+    Then the command exits with code 0
+    And the output contains "SPEC ok"
+
+  @id=SCN-TRACE-069 @status=implemented
+  Scenario: SPEC rejects a scenario with two kinds
+    Given a repository with the scenario "SCN-SHOP-001" tagged "@kind=journey @kind=journey"
+    When the developer runs "spec-trace check --only SPEC"
+    Then the command exits with code 1
+    And the output contains "SPEC features/checkout.feature:4 needs at most one @kind tag, has 2"

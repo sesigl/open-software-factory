@@ -180,7 +180,7 @@ function cache(repo: Repo): Finding[] {
 function suites(repo: Repo, units: Unit[]): Finding[] {
   if (!repo.exists(SUITES)) return [finding(SUITES, 1, "the list of the test suites of verify.yml is missing")];
   const text = repo.read(SUITES);
-  const list = (parse(text) ?? []) as { suite?: string; filter?: string }[];
+  const list = (parse(text) ?? []) as { suite?: string; filter?: string; browser?: string }[];
   const tested = new Set(units.filter((unit) => unit.tested).map((unit) => unit.name));
   const findings: Finding[] = [];
   const jobs = list.map(({ suite, filter }) => {
@@ -195,6 +195,7 @@ function suites(repo: Repo, units: Unit[]): Finding[] {
     const not = new Set(parts.filter((part) => part.startsWith("!")).map((part) => part.slice(1)));
     return { suite: suite ?? "?", runs: (name: string) => (only.length > 0 ? only.includes(name) : !not.has(name)) };
   });
+  const browsers = new Set(list.filter((each) => each.browser === "chromium").map((each) => each.suite));
   for (const unit of units.filter((candidate) => candidate.tested)) {
     const running = jobs.filter((job) => job.runs(unit.name)).map((job) => job.suite);
     const manifest = `${unit.dir}/package.json`;
@@ -204,9 +205,20 @@ function suites(repo: Repo, units: Unit[]): Finding[] {
       const names = `${running.slice(0, -1).join(", ")} and ${running.at(-1)}`;
       findings.push(finding(manifest, 1, `the suites ${names} of ${SUITES} both run the system tests of ${unit.name}`));
     }
+    // A suite with a browser installs Chromium (ADR 0131); a mutation shard finds the unit by the same text.
+    const suite = running[0];
+    if (suite && !browsers.has(suite) && opensPages(repo, unit)) {
+      const line = lineOf(text, `suite: ${suite}`);
+      const message = `the system tests of ${unit.name} open pages with sut.browser: the suite ${suite} needs "browser: chromium"`;
+      findings.push(finding(SUITES, line, message));
+    }
   }
   return findings;
 }
+
+/** Whether a system test of the unit opens pages in Chromium: it calls `sut.browser.open(`. */
+const opensPages = (repo: Repo, unit: Unit): boolean =>
+  repo.match(`${unit.dir}/system-tests/**/*.ts`).some((file) => repo.read(file).includes("sut.browser.open("));
 
 interface Step {
   uses?: string;

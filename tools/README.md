@@ -258,3 +258,12 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-135 | implemented | osf up refuses a missing .env, an empty required value and gatekeeper without a channel |
 | SCN-REPO-136 | implemented | osf up starts the Compose profile and waits until it is healthy |
 | SCN-REPO-137 | implemented | osf doctor runs console doctor in the profile and exits with its code |
+| SCN-REPO-138 | implemented | AFFECTED rejects a package whose system tests open pages in a browser in a suite without one |
+| SCN-REPO-139 | implemented | AFFECTED accepts a package whose system tests open pages in a browser in a suite with Chromium |
+| SCN-REPO-140 | implemented | UI-QUERY rejects a UI test that finds an element by a CSS selector |
+| SCN-REPO-141 | implemented | UI-QUERY accepts a UI test that finds elements by role, label and text |
+| SCN-REPO-142 | implemented | TEMPLATE accepts a template that only shows the data of its route |
+| SCN-REPO-143 | implemented | TEMPLATE rejects a template that computes in its frontmatter |
+| SCN-REPO-144 | implemented | TEMPLATE rejects a template whose markup computes |
+| SCN-REPO-145 | implemented | TEMPLATE rejects a template that imports a layer above its own |
+| SCN-REPO-146 | implemented | DUP rejects a clone between the templates of two modules |

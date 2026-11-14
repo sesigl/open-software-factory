@@ -54,9 +54,11 @@
     "@modelcontextprotocol/sdk": "1.32.1",
     "@nats-io/transport-node": "3.4.0",
     "@testing-library/dom": "10.4.2",
+    "axe-core": "4.14.0",
     "dom-accessibility-api": "0.5.16",
     "happy-dom": "21.0.4",
     "openapi-fetch": "0.17.0",
+    "playwright-core": "1.56.1",
     "testcontainers": "12.2.0",
     "yaml": "2.9.1"
   }

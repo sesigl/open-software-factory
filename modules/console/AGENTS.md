@@ -1,6 +1,6 @@
 # AGENTS.md for module `console`
 
-Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0072, ADR 0073, ADR 0115, ADR 0120.
+Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0072, ADR 0073, ADR 0115, ADR 0120, ADR 0130, ADR 0132.
 
 ## Public surface
 
@@ -26,8 +26,12 @@ The only ways a system test or another program may use this module:
 
 ## Architecture
 
-Layers, top to bottom, in `architecture.json` (ADR 0014): `entry` (`src/cli.ts`) → `commands` → `pages` →
-`adapters` → `domain`. `domain` holds the run states, the order of a merged run list, a run's age, the URL
+Layers, top to bottom, in `architecture.json` (ADR 0014): `entry` (`src/cli.ts`) → `commands` → `templates`
+(`src/web/`) → `pages` → `adapters` → `domain`. A page that has moved to Astro (ADR 0132) is a template in
+`src/web/pages/<path>.astro`: its route in `serve` loads the data, a function of `pages` computes every value it shows,
+and `adapters/web.ts` hands them to Astro as `locals.page` with the status. A template holds no logic (TEMPLATE); the
+health page is the first. Every answer has a Content-Security-Policy without script. Islands: none yet; each island
+a page uses is listed here with the reason why a page load is not enough (T-55). `domain` holds the run states, the order of a merged run list, a run's age, the URL
 templates and the inbox's states, without I/O; `adapters` call the APIs, run the forge adapter and read the factory
 file; `pages` are Preact components written
 with htm that render HTML and import only `domain` and the types of `adapters`; `commands` join them: `serve` runs the
@@ -39,8 +43,9 @@ Fastify server. The ARCH check enforces the layers.
 
 ## Budget
 
-- System tests: 60 seconds in total on the CI runner (68 scenarios; each starts one server, and the foremen, intake
-  and gatekeeper are `fakes.http`; the inbox's forge is `fakes.github` behind the built forge-github adapter).
+- System tests: 60 seconds in total on the CI runner (88 scenarios in about 47 seconds of test time and 17.5 seconds
+  on 4 workers on the development container, ADR 0132; each starts one server, and the foremen, intake and gatekeeper
+  are `fakes.http`; the inbox's forge is `fakes.github` behind the built forge-github adapter).
 
 ## Quality limits
 

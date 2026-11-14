@@ -43,22 +43,27 @@ runs:
     # The pinned binaries of make install, such as opa for gatekeeper, for the commands that skip make.
     - shell: bash
       run: echo "$GITHUB_WORKSPACE/.tools/bin" >> "$GITHUB_PATH"
-    # Capture scenarios open pages in Chromium: install it when the unit depends on playwright-core.
-    - name: Find out if the unit captures pages
+    # Capture scenarios open pages in Chromium: install it when the unit depends on playwright-core, or when its system
+    # tests open pages with sut.browser, whose playwright-core is the testkit's (ADR 0131). AFFECTED finds such a unit by
+    # the same text.
+    - name: Find out if the unit opens pages in a browser
       id: captures
       shell: bash
       env:
         PACKAGE: ${{ inputs.package }}
       run: |
-        if grep -l "\"name\": \"$PACKAGE\"" modules/*/package.json packages/*/package.json adapters/*/*/package.json \
-          | xargs grep -q '"playwright-core"'; then
-          echo "browser=true" >> "$GITHUB_OUTPUT"
+        manifest=$(grep -l "\"name\": \"$PACKAGE\"" modules/*/package.json packages/*/package.json adapters/*/*/package.json)
+        unit=$(dirname "$manifest")
+        if grep -q '"playwright-core"' "$manifest"; then
+          echo "browser=$PACKAGE" >> "$GITHUB_OUTPUT"
+        elif grep -rqsF "sut.browser.open(" "$unit/system-tests"; then
+          echo "browser=@opensoftware/testkit" >> "$GITHUB_OUTPUT"
         fi
-    - name: Install the browser of a unit that captures pages
-      if: steps.captures.outputs.browser == 'true'
+    - name: Install the browser of a unit that opens pages
+      if: steps.captures.outputs.browser != ''
       uses: ./.github/actions/capture-browser
       with:
-        package: ${{ inputs.package }}
+        package: ${{ steps.captures.outputs.browser }}
     # The kubernetes sandbox adapter's tests need a cluster with agent-sandbox (ADR 0055).
     - name: Start kind with agent-sandbox
       if: inputs.package == '@opensoftware/sandbox-kubernetes'

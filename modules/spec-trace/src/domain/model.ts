@@ -6,6 +6,8 @@ export type { Keyword, Scenario, Step } from "@opensoftware/spec-files";
 export type Rule = "SPEC" | "TRACE" | "STEPS" | "PASS";
 export const RULES: Rule[] = ["SPEC", "TRACE", "STEPS", "PASS"];
 export const STATUSES = ["planned", "implemented", "deprecated"];
+/** The kinds a scenario may name with `@kind=`; a journey runs a main flow in a browser and counts for no mutant. */
+export const KINDS = ["journey"];
 
 export interface TestStep {
   keyword: Keyword;

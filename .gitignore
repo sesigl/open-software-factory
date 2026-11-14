@@ -9,3 +9,4 @@ dist/
 # The default data folders of `foreman serve` and `intake serve` (OSF_DATA).
 .foreman/
 .intake/
+.astro/

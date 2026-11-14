@@ -172,7 +172,7 @@ class ScenarioRunner {
     try {
       const results = join(temp, "results.json");
       const mutants = join(temp, "mutants");
-      const run = await vitest(this.entry, ["--reporter=json", `--outputFile=${results}`], {
+      const run = await vitest(this.entry, ["--reporter=json", `--outputFile=${results}`, ...journeyExcludes()], {
         OSF_TESTKIT_MUTANTS: mutants,
       });
       const report = JSON.parse(readFileSync(results, "utf8")) as Report;
@@ -227,6 +227,31 @@ class ScenarioRunner {
     if (run.exitCode === 0) return { status: "survived", nrOfTests: files.length };
     return { status: "killed", killedBy: files, failureMessage: run.output.slice(-2000), nrOfTests: files.length };
   }
+}
+
+/**
+ * `--exclude` of the system test of each journey scenario (`@kind=journey`) of the unit's features (ADR 0131). The first
+ * run leaves them out, so no mutant counts a journey as its test: each journey would start the module and Chromium
+ * again for every mutant it reached, and page scenarios notice the server's code.
+ */
+export function journeyExcludes(root = process.cwd()): string[] {
+  const features = join(root, "features");
+  if (!existsSync(features)) return [];
+  const ids: string[] = [];
+  for (const entry of readdirSync(features, { recursive: true, encoding: "utf8" })) {
+    if (!entry.endsWith(".feature")) continue;
+    let tags = "";
+    for (const line of readFileSync(join(features, entry), "utf8").split("\n")) {
+      const text = line.trim();
+      if (text.startsWith("@")) tags += ` ${text}`;
+      else if (text !== "" && !text.startsWith("#")) {
+        const id = /@id=(\S+)/.exec(tags)?.[1];
+        if (id && /(?:^|\s)@kind=journey(?:\s|$)/.test(tags)) ids.push(id);
+        tags = "";
+      }
+    }
+  }
+  return ids.map((id) => `--exclude=system-tests/${id}.test.ts`);
 }
 
 /** The mutants the processes of one scenario ran, as Stryker's coverage counts: one per mutant. */

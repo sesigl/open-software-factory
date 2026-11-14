@@ -61,7 +61,7 @@ finding.
 
 | Rule | What it checks |
 | --- | --- |
-| SPEC | Every scenario has exactly one `@id` and one `@status` (`planned`, `implemented`, `deprecated`). The ID matches the pattern and its prefix is registered for the folder of the feature file, when prefixes are configured. IDs are unique. A feature file that does not parse is a finding with its line. |
+| SPEC | Every scenario has exactly one `@id` and one `@status` (`planned`, `implemented`, `deprecated`). The ID matches the pattern and its prefix is registered for the folder of the feature file, when prefixes are configured. IDs are unique. A scenario names at most one `@kind`, and only `journey`: a main flow in a browser, which a mutation runner leaves out. A feature file that does not parse is a finding with its line. |
 | TRACE | Every `implemented` scenario has exactly one test, every test names an existing scenario with a string literal, and a `deprecated` scenario has no test. A `planned` scenario may have a test. With `testFolder`, the test lives next to the feature files; with `conformance`, each adapter of a port has one test per scenario. |
 | STEPS | The labels of the `given`, `when` and `then` calls of a test match the steps of its scenario, in order, word for word. Background steps come first, `And` and `But` take the keyword before them, and an outline parameter `<name>` matches any value. |
 | PASS | The test of every `implemented` scenario ran and passed in the JUnit XML reports of the `junit` folder. Failed, skipped and missing results fail. Every example of an outline counts. |
@@ -248,3 +248,6 @@ with a trusted publisher for `publish-spec-trace.yml`. No credential is stored i
 | SCN-TRACE-064 | implemented | The action passes the proof bundles of the input "evidence" to the report |
 | SCN-TRACE-065 | implemented | The summary without changes and findings has the totals, the change line and no table |
 | SCN-TRACE-066 | implemented | The summary has one table row for each change and for each finding |
+| SCN-TRACE-067 | implemented | SPEC rejects an unknown kind of scenario |
+| SCN-TRACE-068 | implemented | SPEC accepts a journey scenario |
+| SCN-TRACE-069 | implemented | SPEC rejects a scenario with two kinds |

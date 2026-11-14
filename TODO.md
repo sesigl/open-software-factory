@@ -1257,7 +1257,7 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
     change as a pull request"), and the glossary: island, page scenario, journey scenario, island scenario, access
     file, change.
 
-### [ ] T-52 · UI test tools in the testkit (P0)
+### [x] T-52 · UI test tools in the testkit (P0)
 
 - **Problem:** no test of a module opens a browser; only proof uses Playwright, to capture evidence. The console's
   tests read the HTML of a page with patterns for literal tags (`rows` in `modules/console/system-tests/console.ts`
@@ -1326,11 +1326,14 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
   - [x] The page reader (`SCN-TK`), and the console's tests on it: the shared readers in `system-tests/console.ts`
     and the 14 test files that match literal tags themselves. This is the only slice of the item that touches the
     console; it comes before T-53's page slice.
-  - [ ] `sut.browser` with its guards, the accessibility helper and the screenshots as evidence (`SCN-TK`); the
-    mark of a journey and the runner that leaves journeys out of a mutant's run; the browser in the suites and in the
-    mutation shards, with its check (`SCN-REPO`).
-  - [ ] The check on the queries of UI tests (`SCN-REPO`), and the rules in `docs/quality/testing-strategy.md` and
-    `docs/quality/checks.md`.
+  - [x] `sut.browser` with its guards, the accessibility helper and the screenshots as evidence (`SCN-TK`), and the
+    browser in the testkit's suite. proof shows the screenshots on the pull request once the first journey exists
+    (T-56): no unit has one yet.
+  - [x] The mark of a journey (`@kind=journey`, which SPEC knows) and the runner that leaves journeys out of a
+    mutant's run; the browser in the mutation shards of a unit that gets it through the testkit, with its check
+    (`SCN-REPO`).
+  - [x] The check on the queries of UI tests (`SCN-REPO`, UI-QUERY), and the rules in
+    `docs/quality/testing-strategy.md` and `docs/quality/checks.md`.
 
 ### [ ] T-53 · Astro in the console (P0)
 
@@ -1392,11 +1395,11 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
 - **Done when:** one existing page is rendered by Astro with the new stack, its scenarios pass with their text
   unchanged, `make verify` passes, and the released image serves the page.
 - **Slices:**
-  - [ ] The ADR for the stack and for how each check treats `.astro` and `.tsx` files, with the measured build,
-    start and suite times.
-  - [ ] The build: Astro behind Fastify in `console serve`, `astro check` in the typecheck, the layers, turbo's
-    inputs, and the checks' rules for templates (`SCN-REPO` scenarios for each changed check).
-  - [ ] The first page on Astro: the health page, the smallest one, after T-52's page reader. It keeps the look of
+  - [x] The ADR for the stack and for how each check treats `.astro` and `.tsx` files, with the measured build,
+    start and suite times (ADR 0132).
+  - [x] The build: Astro behind Fastify in `console serve`, `astro check` in the typecheck, the layers, turbo's
+    inputs, and the checks' rules for templates (`SCN-REPO` scenarios for each changed check: TEMPLATE, DUP).
+  - [x] The first page on Astro: the health page, the smallest one, after T-52's page reader. It keeps the look of
     Pico CSS; T-60 gives it the new look. Its scenarios keep their text.
   - [ ] The package and the image hold the built files; the profile and the chart pin the release (`SCN-DIST`).
 

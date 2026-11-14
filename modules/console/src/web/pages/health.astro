@@ -1,0 +1,29 @@
+---
+import type { HealthData } from "../../pages/health.ts";
+import Frame from "../components/Frame.astro";
+
+const { frame, items } = Astro.locals.page as HealthData;
+Astro.response.status = Astro.locals.status;
+Astro.response.statusText = Astro.locals.statusText;
+---
+<Frame frame={frame}>
+  <h1>Health</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Check</th>
+        <th>State</th>
+        <th>What to do</th>
+      </tr>
+    </thead>
+    <tbody>
+      {items.map((item) => (
+        <tr>
+          <td>{item.name}</td>
+          <td>{item.state}</td>
+          <td>{item.todo}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</Frame>

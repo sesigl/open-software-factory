@@ -1,7 +1,7 @@
 // `osf check`: runs checks by ID and prints one line per finding: `ID file:line message`.
 import { affected } from "./affected.ts";
 import { arch } from "./arch.ts";
-import { boundaryEnv, boundaryStatic, assert as checkAssert, isolation, noskip } from "./boundary.ts";
+import { boundaryEnv, boundaryStatic, assert as checkAssert, isolation, noskip, uiQuery } from "./boundary.ts";
 import { contract } from "./contract.ts";
 import { deps } from "./deps.ts";
 import { adr, docsAffected, docsGen, docsLinks } from "./docs.ts";
@@ -13,16 +13,19 @@ import { reach } from "./reach.ts";
 import { release } from "./release.ts";
 import { budget, flake } from "./results.ts";
 import { runs } from "./runs.ts";
+import { template } from "./templates.ts";
 import { todo, vision } from "./vision.ts";
 
 /** The fast set: static checks that need no test run and no base. SPEC, TRACE, STEPS and PASS are spec-trace's. */
 export const FAST: Record<string, Check> = {
   NOSKIP: noskip,
   ASSERT: checkAssert,
+  "UI-QUERY": uiQuery,
   "BOUNDARY-STATIC": boundaryStatic,
   "BOUNDARY-ENV": boundaryEnv,
   ISOLATION: isolation,
   ARCH: arch,
+  TEMPLATE: template,
   DUP: dup,
   "DOCS-GEN": docsGen,
   "DOCS-LINKS": docsLinks,

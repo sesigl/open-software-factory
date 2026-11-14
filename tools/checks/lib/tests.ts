@@ -37,6 +37,8 @@ export interface TestFile {
   imports: Located[];
   skips: Located[];
   env: Located[];
+  /** Calls that find an element by something other than role, label or text, or wait for time (ADR 0131). */
+  queries: Located[];
 }
 
 // biome-ignore lint/suspicious/noThenProperty: `then` is the Gherkin keyword; this map is never awaited.
@@ -45,6 +47,22 @@ const SKIP_PROPERTIES = new Set(["skip", "only", "todo", "fails", "skipIf", "run
 const RUNNERS = new Set(["test", "it", "describe", "suite", "scenario", "bench", "given", "when", "then"]);
 const SKIP_FUNCTIONS = new Set(["xit", "xtest", "xdescribe", "fit", "fdescribe"]);
 const SOURCES = new Set(["sut", "fakes"]);
+/** What a UI test may not call: a CSS selector, an XPath, a test ID, a script in the page, a wait for time or a size. */
+const QUERIES = new Set([
+  "locator",
+  "getByTestId",
+  "querySelector",
+  "querySelectorAll",
+  "$",
+  "$$",
+  "$eval",
+  "$$eval",
+  "evaluate",
+  "evaluateHandle",
+  "waitForSelector",
+  "waitForTimeout",
+  "setViewportSize",
+]);
 
 let cache: TestFile[] | undefined;
 
@@ -70,7 +88,7 @@ function ownPackage(repo: Repo, file: string): string | undefined {
 export function scanTypeScript(file: string, text: string, own?: string): TestFile {
   const project = new Project({ useInMemoryFileSystem: true, compilerOptions: { allowJs: true } });
   const source = project.createSourceFile(`/${file}`, text);
-  const result: TestFile = { file, isTest: true, scenarios: [], imports: [], skips: [], env: [] };
+  const result: TestFile = { file, isTest: true, scenarios: [], imports: [], skips: [], env: [], queries: [] };
 
   const sources = new Set(SOURCES);
   for (const declaration of [...source.getImportDeclarations(), ...source.getExportDeclarations()]) {
@@ -99,6 +117,9 @@ export function scanTypeScript(file: string, text: string, own?: string): TestFi
       }
       if (callee.getText() === "vi.stubEnv" && literal) {
         result.env.push({ name: first.getLiteralText(), line: node.getStartLineNumber() });
+      }
+      if (Node.isPropertyAccessExpression(callee) && QUERIES.has(callee.getName())) {
+        result.queries.push({ name: callee.getName(), line: node.getStartLineNumber() });
       }
       if (Node.isIdentifier(callee) && callee.getText() === "scenario") {
         result.scenarios.push(readScenario(node, sources));

@@ -15,6 +15,7 @@
     "docs": "node bin/osf.ts docs ."
   },
   "dependencies": {
+    "@astrojs/compiler-rs": "0.5.3",
     "@opensoftware/contracts": "workspace:*",
     "@opensoftware/spec-files": "workspace:*",
     "@opensoftware/testkit": "workspace:*",

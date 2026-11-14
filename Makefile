@@ -19,7 +19,7 @@ OSF_BASE ?= $(shell git merge-base HEAD origin/main 2>/dev/null)
 export OSF_BASE
 AFFECTED := $(if $(OSF_BASE),--filter=...[$(OSF_BASE)])
 
-.PHONY: help install check check-fast verify verify-static verify-tests verify-checks test-scenario smoke smoke-paid mutation next-id new-module docs docs-affected \
+.PHONY: help install browser check check-fast verify verify-static verify-tests verify-checks test-scenario smoke smoke-paid mutation next-id new-module docs docs-affected \
         agents-sync run-record
 
 help: ## list the targets
@@ -72,6 +72,9 @@ verify-checks: ## part of verify: every check, on the test results in reports/
 
 test-scenario: ## run the one system test of a scenario: make test-scenario ID=SCN-REPO-002
 	@$(OSF) test-scenario $(ID)
+
+browser: ## install Chromium for sut.browser and proof capture, at the testkit's playwright-core (ADR 0131)
+	pnpm --filter @opensoftware/testkit exec playwright-core install chromium
 
 smoke: ## the deterministic end-to-end scenarios in e2e/
 	@$(TURBO) test:system --filter=./e2e

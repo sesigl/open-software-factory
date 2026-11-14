@@ -2,13 +2,34 @@
 // with happy-dom, and a test finds its elements with Testing Library's queries: by role, accessible name, label and
 // text, never by a tag, a class or a test ID.
 import { createRequire } from "node:module";
-import * as dom from "@testing-library/dom";
-import { Window } from "happy-dom";
+import type * as Dom from "@testing-library/dom";
+import type { Window as HappyWindow } from "happy-dom";
 
-// dom-accessibility-api's types are not reachable through its package exports.
-const { computeAccessibleName } = createRequire(import.meta.url)("dom-accessibility-api") as {
+// The libraries load at the first page a scenario opens: every test process imports the testkit, and most open no
+// page (about 0.3 s per process).
+interface Libraries {
+  dom: typeof Dom;
+  Window: typeof HappyWindow;
   computeAccessibleName(element: unknown): string;
+}
+let libraries: Libraries | undefined;
+let loading: Promise<Libraries> | undefined;
+async function load(): Promise<Libraries> {
+  loading ??= Promise.all([import("@testing-library/dom"), import("happy-dom")]).then(([dom, happy]) => {
+    // dom-accessibility-api's types are not reachable through its package exports.
+    const { computeAccessibleName } = createRequire(import.meta.url)("dom-accessibility-api") as {
+      computeAccessibleName(element: unknown): string;
+    };
+    libraries = { dom, Window: happy.Window, computeAccessibleName };
+    return libraries;
+  });
+  return loading;
+}
+const loaded = (): Libraries => {
+  if (!libraries) throw new Error("sut.pages: the page libraries are not loaded");
+  return libraries;
 };
+const computeAccessibleName = (element: unknown): string => loaded().computeAccessibleName(element);
 
 /** What a role query can ask besides the role, as Testing Library's `ByRoleOptions`. */
 export interface RoleOptions {
@@ -116,7 +137,7 @@ interface Node {
   localName?: string;
   childNodes: ArrayLike<Node>;
 }
-const queries = (container: Element) => dom.within(container as never) as unknown as ElementQueries;
+const queries = (container: Element) => loaded().dom.within(container as never) as unknown as ElementQueries;
 interface ElementQueries {
   getByRole(role: string, options?: RoleOptions): Element;
   queryByRole(role: string, options?: RoleOptions): Element | null;
@@ -166,7 +187,7 @@ const REDIRECTS = 10;
 
 export function makePages(base: () => string, onStop: (stop: () => Promise<unknown>) => void): Pages {
   const cookies = new Map<string, string>();
-  const windows: Window[] = [];
+  const windows: HappyWindow[] = [];
   onStop(async () => {
     for (const window of windows.splice(0)) await window.happyDOM.close();
   });
@@ -187,6 +208,7 @@ export function makePages(base: () => string, onStop: (stop: () => Promise<unkno
     form: URLSearchParams | undefined,
     follow: boolean,
   ): Promise<Page> {
+    await load();
     let next = url;
     let body = form;
     for (let hop = 0; hop <= REDIRECTS; hop++) {
@@ -217,7 +239,7 @@ export function makePages(base: () => string, onStop: (stop: () => Promise<unkno
   }
 
   function page(url: URL, response: Response, html: string, headers: Record<string, string>): Page {
-    const window = new Window({ url: url.href, settings: SETTINGS });
+    const window = new (loaded().Window)({ url: url.href, settings: SETTINGS });
     windows.push(window);
     window.document.write(html);
     const document = window.document;

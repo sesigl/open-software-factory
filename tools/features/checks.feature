@@ -126,6 +126,50 @@ Feature: Repository checks
     And the output contains "BOUNDARY-ENV modules/demo/system-tests/SCN-DEMO-001.test.ts"
     And the output contains "DEMO_SECRET_MODE"
 
+  @id=SCN-REPO-142 @status=implemented
+  Scenario: TEMPLATE accepts a template that only shows the data of its route
+    Given the module "demo" whose template "src/web/pages/runs.astro" imports a component and a type, reads the page's data and its status, maps the runs and switches on a value
+    When the developer runs "osf check TEMPLATE"
+    Then the command exits with code 0
+    And the output contains "TEMPLATE ok"
+
+  @id=SCN-REPO-143 @status=implemented
+  Scenario: TEMPLATE rejects a template that computes in its frontmatter
+    Given the module "demo" whose template "src/web/pages/runs.astro" counts the runs in its frontmatter
+    When the developer runs "osf check TEMPLATE"
+    Then the command exits with code 1
+    And the output contains "TEMPLATE modules/demo/src/web/pages/runs.astro:6 the frontmatter holds only imports, the page's data and its status: compute in the route"
+
+  @id=SCN-REPO-144 @status=implemented
+  Scenario: TEMPLATE rejects a template whose markup computes
+    Given the module "demo" whose template "src/web/pages/runs.astro" filters the runs in its markup
+    When the developer runs "osf check TEMPLATE"
+    Then the command exits with code 1
+    And the output contains "TEMPLATE modules/demo/src/web/pages/runs.astro:7 the markup computes: an expression reads a property, maps a list or switches on a value"
+
+  @id=SCN-REPO-145 @status=implemented
+  Scenario: TEMPLATE rejects a template that imports a layer above its own
+    Given the module "demo" whose template "src/web/pages/runs.astro" imports a type of "src/commands/serve.ts"
+    When the developer runs "osf check TEMPLATE"
+    Then the command exits with code 1
+    And the output contains "TEMPLATE modules/demo/src/web/pages/runs.astro:2 imports ../../commands/serve.ts of the layer commands, above its layer templates"
+
+  @id=SCN-REPO-140 @status=implemented
+  Scenario: UI-QUERY rejects a UI test that finds an element by a CSS selector
+    Given a repository with the implemented scenario "SCN-DEMO-001" and its system test
+    And the test clicks the element "button.primary" of a page that sut.browser opened
+    When the developer runs "osf check UI-QUERY"
+    Then the command exits with code 1
+    And the output contains "UI-QUERY modules/demo/system-tests/SCN-DEMO-001.test.ts:12 locator finds or waits by something other than role, label or text"
+
+  @id=SCN-REPO-141 @status=implemented
+  Scenario: UI-QUERY accepts a UI test that finds elements by role, label and text
+    Given a repository with the implemented scenario "SCN-DEMO-001" and its system test
+    And the test clicks the button "Save" of a page that sut.browser opened, fills the field "Name" and reads the text "Saved"
+    When the developer runs "osf check UI-QUERY"
+    Then the command exits with code 0
+    And the output contains "UI-QUERY ok"
+
   @id=SCN-REPO-011 @status=implemented
   Scenario: NOSKIP rejects a skipped test
     Given a repository with the implemented scenario "SCN-DEMO-001" and its system test
@@ -517,6 +561,23 @@ Feature: Repository checks
     When the developer runs "osf check AFFECTED"
     Then the command exits with code 1
     And the output contains "AFFECTED modules/demo/package.json:1 the suites demo and rest of .github/test-suites.yml both run the system tests of @opensoftware/demo"
+
+  @id=SCN-REPO-138 @status=implemented
+  Scenario: AFFECTED rejects a package whose system tests open pages in a browser in a suite without one
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And "modules/demo/system-tests/SCN-DEMO-001.test.ts" opens a page with "sut.browser"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED .github/test-suites.yml:1 the system tests of @opensoftware/demo open pages with sut.browser: the suite demo needs "browser: chromium""
+
+  @id=SCN-REPO-139 @status=implemented
+  Scenario: AFFECTED accepts a package whose system tests open pages in a browser in a suite with Chromium
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And "modules/demo/system-tests/SCN-DEMO-001.test.ts" opens a page with "sut.browser"
+    And the suite "demo" of ".github/test-suites.yml" has "browser: chromium"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 0
+    And the output contains "AFFECTED ok"
 
   @id=SCN-REPO-099 @status=implemented
   Scenario: AFFECTED rejects a suite whose filter names no package with system tests

@@ -19,10 +19,12 @@ import { type Api, getJson, postJson } from "../adapters/apis.ts";
 import { readFactory } from "../adapters/factory-file.ts";
 import { proposals } from "../adapters/forge.ts";
 import { readImprovement } from "../adapters/improve-files.ts";
+import { render } from "../adapters/web.ts";
 import { cursorsOf, fill, isState, list, namedLinks, nextPageOf, orderRuns, queryOf, STATES } from "../domain/runs.ts";
 import { submissionOf } from "../domain/submit.ts";
 import { agentPage, factoryPage, type Source } from "../pages/factory.ts";
-import { healthPage } from "../pages/health.ts";
+import { frameData } from "../pages/frame.ts";
+import { healthData } from "../pages/health.ts";
 import { type Frame, page, problem } from "../pages/html.ts";
 import { improvementPage } from "../pages/improvement.ts";
 import { inboxPage } from "../pages/inbox.ts";
@@ -32,6 +34,10 @@ import { workPage } from "../pages/work.ts";
 import { examine } from "./doctor.ts";
 
 type Env = Record<string, string | undefined>;
+
+/** The Content-Security-Policy of every answer: the console's own origin only, no script and no frame (ADR 0132). */
+const POLICY =
+  "default-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
 
 const PICO = readFileSync(createRequire(import.meta.url).resolve("@picocss/pico/css/pico.min.css"));
 
@@ -69,6 +75,9 @@ export async function serve(env: Env) {
     token: env.CONSOLE_FORGE_TOKEN,
   };
 
+  /** The frame of every page: the dashboards and which optional pages the navigation links. */
+  const frameOf = () => ({ links, inbox: Boolean(inbox), work: Boolean(intake), improvement: Boolean(improve) });
+
   const send = (
     reply: FastifyReply,
     status: number,
@@ -78,11 +87,13 @@ export async function serve(env: Env) {
     reply
       .code(status)
       .type("text/html; charset=utf-8")
-      .send(
-        page({ ...frame, links, inbox: Boolean(inbox), work: Boolean(intake), improvement: Boolean(improve) }, content),
-      );
+      .send(page({ ...frame, ...frameOf() }, content));
 
   const app = Fastify({ logger: false });
+  // Every answer, also one that Astro writes itself, allows only the console's own files and no script (ADR 0132).
+  app.addHook("onRequest", async (_request, reply) => {
+    reply.raw.setHeader("content-security-policy", POLICY);
+  });
   app.get("/pico.css", (_request, reply) => reply.type("text/css").send(PICO));
 
   app.get<{ Querystring: { state?: string; page?: string } }>("/", async (request, reply) => {
@@ -301,9 +312,10 @@ export async function serve(env: Env) {
     );
   }
 
-  app.get("/health", async (_request, reply) => {
+  app.get("/health", async (request, reply) => {
     const items = await examine(env);
-    return send(reply, items.every(({ ok }) => ok) ? 200 : 503, { title: "Health" }, healthPage(items));
+    const status = items.every(({ ok }) => ok) ? 200 : 503;
+    await render(request, reply, status, healthData(frameData({ ...frameOf(), title: "Health" }), items));
   });
 
   // Read-only: any method but GET and HEAD answers 405.

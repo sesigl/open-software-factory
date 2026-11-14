@@ -110,6 +110,7 @@ make check-fast            lint, typecheck and the static checks; no system test
 make check                 the same, and the system tests of the changed units (minutes)
 make verify                all checks; required before you report done
 make test-scenario ID=…    run the one system test of a scenario
+make browser               install Chromium for sut.browser (journey and island scenarios) and proof capture
 make smoke                 the deterministic end-to-end scenarios in e2e/ (minutes)
 make smoke-paid            one real-model run per harness; only when asked
 make mutation              Stryker on the lines changed since OSF_BASE, then MUTATION (minutes)

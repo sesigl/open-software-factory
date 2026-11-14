@@ -26,6 +26,7 @@ export { type ScenarioContext, type StepFn, scenario } from "./scenario.ts";
 export type { CliResult } from "./support/process.ts";
 export type { Acp, AcpClient, AcpPermissionRequest, AcpSession, AcpStreams, AcpTurn } from "./sut/acp.ts";
 export type { Action, ActionOptions, ActionResult } from "./sut/action.ts";
+export type { Browser, BrowserPage, Viewport } from "./sut/browser.ts";
 export type { Compose, ComposeService } from "./sut/compose.ts";
 export type { CloudEvent, EventLog, Events, Stream } from "./sut/events.ts";
 export type { Helm } from "./sut/helm.ts";

@@ -1,8 +1,10 @@
 // SPEC, TRACE, STEPS and PASS: each rule turns the inputs into findings, without I/O.
+import { tagValues } from "@opensoftware/spec-files";
 import {
   byId,
   type Finding,
   type Inputs,
+  KINDS,
   type Rule,
   type Scenario,
   STATUSES,
@@ -30,6 +32,10 @@ function spec({ config, scenarios, errors }: Inputs): Finding[] {
     for (const status of scenario.statuses.filter((status) => !STATUSES.includes(status))) {
       at(`@status=${status} is not one of ${STATUSES.join(", ")}`);
     }
+    const kinds = tagValues(scenario.tags, "kind");
+    if (kinds.length > 1) at(`needs at most one @kind tag, has ${kinds.length}`);
+    for (const kind of kinds.filter((kind) => !KINDS.includes(kind)))
+      at(`@kind=${kind} is not one of ${KINDS.join(", ")}`);
     for (const id of scenario.ids) {
       const match = config.id.exec(id);
       if (!match) {
