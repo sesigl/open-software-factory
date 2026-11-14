@@ -418,3 +418,24 @@ export async function putAll(
 ): Promise<void> {
   for (const [path, content] of Object.entries(files)) await sut.files.put(`$INPUT/${path}`, content);
 }
+
+export const WORKTREE = ".claude/worktrees/other";
+export const CLONE = "vendor/clone";
+
+/**
+ * A nested clone (a `.git` folder) and a nested worktree (a `.git` file that names the clone's Git folder), each
+ * with these files. Git takes both for checkouts of their own: their `.git` is a valid Git folder.
+ */
+export function nestedCheckouts(files: Record<string, string>): Record<string, string> {
+  const nested: Record<string, string> = {
+    [`${CLONE}/.git/HEAD`]: "ref: refs/heads/main\n",
+    [`${CLONE}/.git/objects/info/packs`]: "",
+    [`${CLONE}/.git/refs/heads/.keep`]: "",
+    [`${WORKTREE}/.git`]: "gitdir: ../../../vendor/clone/.git\n",
+  };
+  for (const [path, content] of Object.entries(files)) {
+    nested[`${WORKTREE}/${path}`] = content;
+    nested[`${CLONE}/${path}`] = content;
+  }
+  return nested;
+}

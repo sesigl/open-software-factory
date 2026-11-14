@@ -45,6 +45,10 @@ make verify      # everything: lint, types, all system tests, all checks
 `osf init`, `osf up` and `osf doctor` load only Node's own modules: on a fresh clone they need Node 24 and Docker,
 not `make install`. [The first run](../docs/tutorials/first-run.md) walks through them.
 
+The checks list the repository's files with Git; `osf docs`, `osf next-id` and the checks outside a Git repository
+walk the folders themselves. Either way a nested Git checkout is left out: a folder below the root with a `.git`
+file or folder, such as a worktree in `.claude/worktrees/`. `osf docs` reads no README and runs no CLI in it.
+
 `make run-record` builds `modules/runlog` and runs `runlog export --latest --per-run` with `OUTPUT=runs` on the
 Claude Code project folder of this checkout, below `CLAUDE_CONFIG_DIR` when it is set and `~/.claude` when not, and
 `~/.codex/sessions` (ADR 0027). `RUN_SESSIONS=<folder>` overrides
@@ -279,3 +283,6 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-156 | implemented | osf init generates the console's session key |
 | SCN-REPO-157 | implemented | osf up names each setting that the console's sign-in misses |
 | SCN-REPO-158 | implemented | osf up names what the sign-in with GitHub misses, and a provider it does not know |
+| SCN-REPO-159 | implemented | make docs and DOCS-GEN leave out a nested Git checkout |
+| SCN-REPO-160 | implemented | The checks leave out a nested Git checkout, in a Git repository and outside one |
+| SCN-REPO-161 | implemented | osf next-id counts only the feature files of this repository |

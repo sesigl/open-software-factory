@@ -73,7 +73,9 @@ Follow this loop for every behavior change. Each step has a skill.
 
 A new module starts with `skills/new-module`. A new dependency or service starts with `skills/write-adr`.
 
-- Work on a branch in the main checkout, not in a git worktree: turbo then keeps one cache for all branches.
+- One agent works on a branch in the main checkout. Agents that work in parallel each use a git worktree of their
+  own (Claude Code puts a subagent's in `.claude/worktrees/`). A worktree keeps its own turbo cache (ADR 0081), so
+  its first build is cold. The checks and `make docs` leave a nested checkout alone.
 - Store learnings in the repository, never in an agent's own auto memory: in a skill, an `AGENTS.md` or a doc, where
   every later session and agent reads them. Before you add one, show the learning and its place to the maintainer
   and wait for approval.
