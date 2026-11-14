@@ -1,5 +1,5 @@
 ---
-status: accepted; the empty data folder of fakes.postgres from 0093
+status: accepted; fakes.postgres is a PostgreSQL container again since 0129
 date: 2026-10-23
 ---
 

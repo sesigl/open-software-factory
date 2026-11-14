@@ -11,6 +11,7 @@ export interface Nats {
 export interface Temporal {
   /** gRPC address `<host>:<port>` of the frontend service. */
   address: string;
+  /** The namespace of the scenario: pass it to the module, so that it sees no run of another scenario. */
   namespace: string;
   /** Base URL of the HTTP API, for example `${httpUrl}/api/v1/namespaces`. */
   httpUrl: string;
@@ -25,6 +26,8 @@ export interface S3 {
 }
 
 export const IMAGES = {
+  // The major version of the profile's PostgreSQL (deploy/compose/compose.yaml).
+  postgres: "postgres:17-alpine",
   s3: "chrislusf/seaweedfs:3.97",
   forge: "code.forgejo.org/forgejo/forgejo:11",
   collector: "otel/opentelemetry-collector-contrib:0.148.0",

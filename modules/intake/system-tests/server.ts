@@ -59,9 +59,18 @@ export async function serving(sut: Sut, env: Record<string, string> = {}) {
   };
 }
 
+/**
+ * "intake serve" with a PostgreSQL database of the scenario, as the profile runs it, and these variables. The
+ * helpers below use it; a scenario that calls `serving` itself runs the embedded database of the README's quick start.
+ */
+async function servingOnPostgres(sut: Sut, fakes: Fakes, env: Record<string, string> = {}) {
+  const url = env.INTAKE_DATABASE_URL ?? (await fakes.postgres()).url;
+  return serving(sut, { ...env, INTAKE_DATABASE_URL: url });
+}
+
 /** The server received the README's work; returns its ID. */
 export async function received(sut: Sut, fakes: Fakes, env: Record<string, string> = {}) {
-  const server = await serving(sut, env);
+  const server = await servingOnPostgres(sut, fakes, env);
   const { data, response } = await server.submit(readmeWork(fakes));
   if (response.status !== 201 || !data) throw new Error(`POST /v1/work-items answered ${response.status}`);
   return { ...server, id: data.workItem.id };
@@ -70,7 +79,7 @@ export async function received(sut: Sut, fakes: Fakes, env: Record<string, strin
 /** The server with fake Slack behind the built channel-slack adapter, and these variables. */
 export async function slackServing(sut: Sut, fakes: Fakes, env: Record<string, string> = {}) {
   const slack = await fakes.slack();
-  const server = await serving(sut, {
+  const server = await servingOnPostgres(sut, fakes, {
     INTAKE_SLACK_ADAPTER: sut.adapter("channel/slack"),
     INTAKE_SLACK_URL: slack.url,
     INTAKE_SLACK_TOKEN: slack.token,
@@ -149,7 +158,7 @@ export async function githubTo(fakes: Fakes, url: string, secret = WEBHOOK_SECRE
 
 /** The server with the forge adapter, and fake GitHub's webhook to its /forge/events. */
 export async function forgeServing(sut: Sut, fakes: Fakes) {
-  const server = await serving(sut, forgeEnv(sut));
+  const server = await servingOnPostgres(sut, fakes, forgeEnv(sut));
   return { ...server, ...(await githubTo(fakes, `${server.url}/forge/events`)) };
 }
 
@@ -329,7 +338,7 @@ export const RETRY_SUBJECT = "osf.work.retry-requested.v1";
  */
 export async function labeledFollowing(sut: Sut, fakes: Fakes, runEvents: ReturnType<typeof runEvent>[]) {
   const nats = await fakes.nats();
-  const server = await serving(sut, { ...forgeEnv(sut), INTAKE_NATS_URL: nats.url });
+  const server = await servingOnPostgres(sut, fakes, { ...forgeEnv(sut), INTAKE_NATS_URL: nats.url });
   const forge = await githubTo(fakes, `${server.url}/forge/events`);
   const events = await sut.events.watch(nats, "osf.>");
   const retries = await sut.events.watch(nats, RETRY_SUBJECT);
@@ -370,7 +379,7 @@ export async function labeledFollowing(sut: Sut, fakes: Fakes, runEvents: Return
 export async function issueFollowing(sut: Sut, fakes: Fakes) {
   const nats = await fakes.nats();
   const started = await fakes.github();
-  const server = await serving(sut, {
+  const server = await servingOnPostgres(sut, fakes, {
     ...forgeEnv(sut),
     INTAKE_NATS_URL: nats.url,
     INTAKE_FORGE_URL: started.url,

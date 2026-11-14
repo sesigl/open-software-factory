@@ -38,7 +38,7 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
 
 ## Budget
 
-- System tests: 540 seconds in total on the CI runner (161 scenarios; each starts the Temporal dev server and NATS as
+- System tests: 540 seconds in total on the CI runner (161 scenarios; each uses a namespace of its own in the Temporal dev server of its test process, ADR 0129, and those with events start NATS, as
   pinned binaries on the host, ADR 0067, and the built `harness-acp` adapter with the testkit's scripted agent, which
   `turbo.json` builds before the tests; sandboxed stages use the testkit's fake sandbox adapter, ADR 0068; checks use
   `fakes.github` and the built `forge-github` adapter, ADR 0069; the gateway uses the testkit's fake inference adapter,

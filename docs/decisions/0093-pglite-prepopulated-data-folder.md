@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; fakes.postgres no longer uses PGlite since 0129
 date: 2026-11-08
 ---
 

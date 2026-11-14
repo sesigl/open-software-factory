@@ -165,6 +165,7 @@ export async function servingCommit(sut: Sut, fakes: Fakes, commit: string, setu
   const env = {
     FOREMAN_API_TOKEN: API_TOKEN,
     FOREMAN_TEMPORAL_ADDRESS: temporal.address,
+    FOREMAN_TEMPORAL_NAMESPACE: temporal.namespace,
     FOREMAN_HARNESSES: JSON.stringify({ acp: setup.harnessIn ? acp : acp.join(" ") }),
     FOREMAN_POLL_MS: "100",
     ...(gatekeeper ? { FOREMAN_GATEKEEPER_URL: gatekeeper.url, FOREMAN_GATEKEEPER_TOKEN: "gatekeeper-token" } : {}),

@@ -26,6 +26,14 @@ Feature: Services and outside systems
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-152 @status=implemented
+  Scenario: fakes.postgres gives a later scenario the same PostgreSQL server and a database of its own
+    Given a module whose two scenarios in one test file each create the table "notes" in fakes.postgres and expect the answer "CREATE TABLE"
+    And its second scenario expects one container with the label "org.opensoftware.run=r8"
+    When the developer runs "testkit run --junit report.xml" with OSF_TESTKIT_RUN "r8" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test cases "SCN-DEMO-001" and "SCN-DEMO-002"
+
   @id=SCN-TK-129 @status=implemented
   Scenario: The containers of the fakes carry the label of the run that OSF_TESTKIT_RUN names
     Given a module whose system test starts fakes.s3 and expects that the label "org.opensoftware.run=r7" finds its container
@@ -56,6 +64,15 @@ Feature: Services and outside systems
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-153 @status=implemented
+  Scenario: fakes.temporal gives a later scenario the same Temporal server and a namespace of its own
+    Given a module whose CLI reads the namespace "DEMO_TEMPORAL_NAMESPACE" from the Temporal HTTP API at "DEMO_TEMPORAL_HTTP" and prints its name
+    And its two scenarios in one test file each pass the HTTP URL and the namespace of fakes.temporal and expect that namespace as the output
+    And its second scenario expects the address of the first and another namespace
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test cases "SCN-DEMO-001" and "SCN-DEMO-002"
 
   @id=SCN-TK-142 @status=implemented
   Scenario: fakes.temporal and fakes.nats listen below the range of module ports

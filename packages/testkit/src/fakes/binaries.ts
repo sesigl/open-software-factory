@@ -12,6 +12,8 @@ import type { Nats, Temporal } from "./services.ts";
 interface Running<T> {
   service: T;
   close(): Promise<string[]>;
+  /** Stops the server without waiting, for the end of the test process. */
+  kill(): void;
 }
 
 // A server is ready in under a second, also with a dozen starting at once. One that is not ready after this time
@@ -35,8 +37,35 @@ async function onFreePorts<T>(attempt: () => Promise<Running<T>>): Promise<Runni
   }
 }
 
-export function startTemporal(): Promise<Running<Temporal>> {
-  return onFreePorts(startTemporalOnce);
+/**
+ * Started by the first scenario of this process that asks for Temporal (ADR 0129), and stopped when the process ends.
+ */
+let temporal: Promise<Running<Temporal>> | undefined;
+let namespaces = 0;
+
+/** A new namespace in the Temporal dev server of this process, started on the first call. */
+export async function startTemporal(): Promise<Temporal> {
+  temporal ??= onFreePorts(startTemporalOnce).then(
+    (server) => {
+      // Vitest ends a test process with SIGTERM, which runs no "exit" handler by itself.
+      process.once("exit", server.kill);
+      process.once("SIGTERM", () => process.exit());
+      return server;
+    },
+    (error: unknown) => {
+      temporal = undefined;
+      throw error;
+    },
+  );
+  const { service } = await temporal;
+  const namespace = `scenario-${++namespaces}`;
+  const created = await fetch(`${service.httpUrl}/api/v1/namespaces`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ namespace, workflowExecutionRetentionPeriod: "86400s" }),
+  });
+  if (!created.ok) throw new Error(`fakes.temporal could not create ${namespace}: ${await created.text()}`);
+  return { ...service, namespace };
 }
 
 async function startTemporalOnce(): Promise<Running<Temporal>> {
@@ -88,6 +117,10 @@ async function start<T>(
   let output = "";
   child.stdout?.on("data", (chunk) => (output += chunk));
   child.stderr?.on("data", (chunk) => (output += chunk));
+  const kill = () => {
+    child.kill("SIGKILL");
+    rmSync(home, { recursive: true, force: true });
+  };
   const close = async () => {
     await stop(child);
     rmSync(home, { recursive: true, force: true });
@@ -99,7 +132,7 @@ async function start<T>(
     await close();
     throw error;
   }
-  return { service, close };
+  return { service, close, kill };
 }
 
 async function ready(child: ChildProcess, url: string, output: () => string): Promise<void> {

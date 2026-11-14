@@ -39,11 +39,17 @@ export interface Fakes {
   sandbox(options?: SandboxOptions): Promise<Sandbox>;
   /** An inference adapter that serves no gateway; it records the configs and keys a module asked for (ADR 0070). */
   inference(options?: InferenceOptions): Promise<Inference>;
-  /** PostgreSQL in a container. */
+  /**
+   * PostgreSQL in a container. The test process starts one server; each scenario gets a new, empty database in it
+   * (ADR 0129).
+   */
   postgres(): Promise<Postgres>;
   /** NATS with JetStream, as a process on the host (ADR 0067). */
   nats(): Promise<Nats>;
-  /** The Temporal dev server of the Temporal CLI, as a process on the host with an in-memory database (ADR 0067). */
+  /**
+   * The Temporal dev server of the Temporal CLI, as a process on the host with an in-memory database (ADR 0067). The
+   * test process starts one server; each scenario gets a new namespace in it (ADR 0129).
+   */
   temporal(): Promise<Temporal>;
   /** An S3 API (SeaweedFS) in a container. */
   s3(): Promise<S3>;
@@ -146,9 +152,7 @@ export function makeFakes(moduleRoot: string): FakesHandle {
       async nats() {
         return (await inProcess(startNats())).service;
       },
-      async temporal() {
-        return (await inProcess(startTemporal())).service;
-      },
+      temporal: () => startTemporal(),
       s3: () => startS3(track),
       forge: () => startForge((container) => hosts.add(container.getHost())),
       async github() {
