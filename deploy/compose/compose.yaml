@@ -189,13 +189,13 @@ services:
 
   gatekeeper:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/gatekeeper:0.9.0
+    image: ghcr.io/sesigl/open-software-factory/gatekeeper:0.10.0
     build:
       context: ../images
       target: gatekeeper
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/gatekeeper@0.9.0 @opensoftware/channel-slack@0.3.0 @opensoftware/forge-github@0.7.0"
+        PACKAGES: "@opensoftware/gatekeeper@0.10.0 @opensoftware/channel-slack@0.3.0 @opensoftware/forge-github@0.7.0"
     # Asks in the Slack channel GATEKEEPER_SLACK_CHANNEL, on the run's pull request with GATEKEEPER_FORGE_TOKEN, or both.
     entrypoint: [sh, -c]
     command:
@@ -227,13 +227,13 @@ services:
 
   intake:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/intake:0.6.0
+    image: ghcr.io/sesigl/open-software-factory/intake:0.7.0
     build:
       context: ../images
       target: module
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/intake@0.6.0 @opensoftware/channel-slack@0.3.0 @opensoftware/forge-github@0.7.0 @opensoftware/forge-forgejo@0.7.0"
+        PACKAGES: "@opensoftware/intake@0.7.0 @opensoftware/channel-slack@0.3.0 @opensoftware/forge-github@0.7.0 @opensoftware/forge-forgejo@0.7.0"
     command: [intake, serve]
     depends_on:
       postgres:
@@ -299,15 +299,15 @@ services:
 
   foreman:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/foreman:0.11.0
+    image: ghcr.io/sesigl/open-software-factory/foreman:0.12.0
     build:
       context: ../images
       target: foreman
       secrets: [ca]
       args:
         PACKAGES: >-
-          @opensoftware/foreman@0.11.0 @opensoftware/harness-claude-code@0.6.0 @opensoftware/forge-github@0.7.0
-          @opensoftware/forge-forgejo@0.7.0 @opensoftware/inference-litellm@0.5.0 @opensoftware/sandbox-docker@0.5.0
+          @opensoftware/foreman@0.12.0 @opensoftware/harness-claude-code@0.6.0 @opensoftware/forge-github@0.7.0
+          @opensoftware/forge-forgejo@0.7.0 @opensoftware/inference-litellm@0.5.0 @opensoftware/sandbox-docker@0.6.0
           @opensoftware/sandbox-kubernetes@0.4.0
     command: [foreman, serve]
     depends_on:
@@ -427,13 +427,13 @@ services:
   # its folder reports, which the console skips, as they hold no record. Judging runs is a paid model call: scorekit
   # scores only with IMPROVE_SCORERS set, like "redundant-tests scope-creep", through litellm.
   improve:
-    image: ghcr.io/sesigl/open-software-factory/observer:0.2.0
+    image: ghcr.io/sesigl/open-software-factory/observer:0.2.0-r1
     build:
       context: ../images
       target: module
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/observer@0.2.0 @opensoftware/scorekit@0.6.0 @opensoftware/ledger@0.7.0"
+        PACKAGES: "@opensoftware/observer@0.2.0 @opensoftware/scorekit@0.6.0 @opensoftware/ledger@0.8.0"
     profiles: [improve]
     restart: unless-stopped
     init: true
