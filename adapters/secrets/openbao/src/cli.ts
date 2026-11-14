@@ -37,6 +37,6 @@ const commands: Record<string, Command> = {
 process.exitCode = await runProgram({
   name: "secrets-openbao",
   usage: USAGE,
-  command: name === undefined || positionals.length > 2 ? undefined : commands[name],
+  command: positionals.length > 2 ? undefined : commands[name ?? ""],
   help: values.help,
 });

@@ -48,3 +48,8 @@ Feature: The policies, the mount and the limits of secrets-openbao
     Given the test store and the write token
     When the client runs "probe" with the store's address and a final "/"
     Then probe exits with code 0
+
+  @id=SCN-SOPENBAO-008 @status=implemented
+  Scenario: A command with an argument too many shows the usage
+    When the client runs "delete linear-token team/linear-token"
+    Then delete exits with code 2 and prints the usage on standard error

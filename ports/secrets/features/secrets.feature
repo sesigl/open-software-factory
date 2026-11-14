@@ -61,10 +61,10 @@ Feature: Store, list and delete the values of secrets, and never print one
     Then list prints the name "linear-token", the version 1 and the person null
 
   @id=SCN-SECRET-008 @status=implemented @conformance
-  Scenario: put stores the value without its final line break
+  Scenario: put stores the value without its final line break, and keeps the line breaks inside it
     Given the test store and the write token
-    When the client pipes "lin_test_51c2" and a line break into "put linear-token --by ada"
-    Then the test store holds the value "lin_test_51c2" for "linear-token"
+    When the client pipes "line one", a line break, "line two" and a line break into "put linear-token --by ada"
+    Then the test store holds the value "line one", a line break and "line two" for "linear-token"
 
   @id=SCN-SECRET-009 @status=implemented @conformance
   Scenario: No command prints a value, also when it fails

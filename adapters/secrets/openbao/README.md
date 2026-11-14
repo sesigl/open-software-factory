@@ -92,3 +92,4 @@ builds the package and publishes it to npm as `@opensoftware/secrets-openbao`. T
 | SCN-SOPENBAO-005 | implemented | A command without OpenBao's address or token is a usage error |
 | SCN-SOPENBAO-006 | implemented | policy without write or read is a usage error |
 | SCN-SOPENBAO-007 | implemented | An address with a final slash reaches OpenBao |
+| SCN-SOPENBAO-008 | implemented | A command with an argument too many shows the usage |

@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { type Store, store, VALUE } from "./store.ts";
+import { type Store, store } from "./store.ts";
 
 scenario("SCN-SECRET-008", async ({ sut, fakes, given, when, then }) => {
   let box: Store;
@@ -10,12 +10,15 @@ scenario("SCN-SECRET-008", async ({ sut, fakes, given, when, then }) => {
   });
 
   let run: Awaited<ReturnType<Store["run"]>>;
-  await when('the client pipes "lin_test_51c2" and a line break into "put linear-token --by ada"', async () => {
-    run = await box.run(token, ["put", "linear-token", "--by", "ada"], { stdin: `${VALUE}\n` });
-  });
+  await when(
+    'the client pipes "line one", a line break, "line two" and a line break into "put linear-token --by ada"',
+    async () => {
+      run = await box.run(token, ["put", "linear-token", "--by", "ada"], { stdin: "line one\nline two\n" });
+    },
+  );
 
-  await then('the test store holds the value "lin_test_51c2" for "linear-token"', async () => {
+  await then('the test store holds the value "line one", a line break and "line two" for "linear-token"', async () => {
     expect(run.exitCode, run.stderr).toBe(0);
-    expect(await box.bao.read("linear-token")).toEqual({ version: 1, data: { value: VALUE } });
+    expect(await box.bao.read("linear-token")).toEqual({ version: 1, data: { value: "line one\nline two" } });
   });
 });

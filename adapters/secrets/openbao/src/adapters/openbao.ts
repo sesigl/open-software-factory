@@ -12,6 +12,8 @@ export interface OpenBao {
   call<T>(method: string, path: string, refused: string, body?: unknown): Promise<T | undefined>;
 }
 
+export const REFUSED_TOKEN = "the store refused the token";
+
 /** The mount of OSF_OPENBAO_MOUNT, by default "secret", as for the egress proxy. */
 export const mountOf = (env: NodeJS.ProcessEnv = process.env): string => env.OSF_OPENBAO_MOUNT || "secret";
 
@@ -24,7 +26,7 @@ export function openBao(env: NodeJS.ProcessEnv = process.env): OpenBao {
     fetch(`${address.replace(/\/$/, "")}/v1/${path}`, {
       method,
       headers: { "x-vault-token": token },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: JSON.stringify(body),
     }).catch(() => {
       throw new Error(`the store at ${address} does not answer`);
     });
@@ -36,7 +38,7 @@ export function openBao(env: NodeJS.ProcessEnv = process.env): OpenBao {
       if (response.ok || response.status === 404) return text && response.ok ? (JSON.parse(text) as T) : undefined;
       // Every token OpenBao knows may look itself up, so a refused lookup means a token it does not know.
       if (response.status === 403)
-        throw new Error((await send("GET", "auth/token/lookup-self")).ok ? refused : "the store refused the token");
+        throw new Error((await send("GET", "auth/token/lookup-self")).ok ? refused : REFUSED_TOKEN);
       throw new Error(`OpenBao answered ${method} ${path} with ${response.status}: ${text.trim()}`);
     },
   };

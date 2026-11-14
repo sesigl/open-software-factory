@@ -58,13 +58,15 @@ turn, OpenBao in the Compose profile and the chart, the page `/secrets` and `con
       it a read of `<mount>/data/*`, so a fault in the console cannot show a secret.
     - `read`, the egress proxy's token: `read` on `<mount>/data/*` and `<mount>/metadata/*`. It reads every value of
       the mount and, for the foreman's check before a stage, whether a secret exists; it cannot write or list.
-    - Both may read `auth/token/lookup-self`, which `probe` asks for the token's lifetime, also when a token is created
-      without OpenBao's `default` policy.
+    - Both tokens also hold OpenBao's policy `default`, which every token gets unless it is made without it: it lets a
+      token read `auth/token/lookup-self`, which `probe` asks for the token's lifetime.
+  - Any other answer of OpenBao, such as 413 for a request over its `max_request_size` of 32 MiB, exits 1 with
+    OpenBao's status and message, which never holds the value.
   - `probe` reads `auth/token/lookup-self` (its `ttl` in seconds and `expire_time`), then the mount through
     `sys/internal/ui/mounts/<mount>`, the call OpenBao's own CLI makes to learn a KV mount's version. A mount the token
     may not use, or one that is not KV version 2, exits 1 and names the mount.
   - A refusal (HTTP 403) is either a token OpenBao does not know or a token without the right; the adapter tells them
-    apart with `lookup-self`, which every valid token may call.
+    apart with `lookup-self`, which every token with the policy `default` may call.
 - **`fakes.openbao()` in the testkit** runs the real OpenBao binary in development mode (`bao server -dev`, data in
   memory), pinned by `make install` like `temporal` and `nats-server` (ADR 0067). As for Temporal and PostgreSQL
   (ADR 0129), the first scenario of a test process starts the server and each scenario gets a KV version 2 mount of its
@@ -89,7 +91,7 @@ Decided in a later slice of T-57, not here:
 | --- | --- | --- |
 | Commands of an adapter program (chosen) | The console runs it like a forge adapter; ISOLATION holds; another store is another program | A process per call |
 | A library the console imports | No process | Modules may not import adapters (ISOLATION) |
-| `bao` CLI from the console | OpenBao's own tool | The console would know OpenBao's paths and policies; `bao kv put` takes the value as an argument or from a file |
+| `bao` CLI from the console | OpenBao's own tool | The console would know OpenBao's paths, policies and errors and ship a second binary; no port for another store |
 | Value as an argument or a variable of `put` | Simple to call | Visible in `ps`, `/proc/<pid>/environ` and shell history |
 | One token for the console and the proxy | One secret to manage | A fault in the console could read every value |
 | KV version 1 | Simpler paths | No versions, no metadata apart from the value: the person could only live next to the value |

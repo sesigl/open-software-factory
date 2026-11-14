@@ -8,7 +8,8 @@ export async function remove(name: string | undefined): Promise<Outcome> {
   const bao = openBao();
   const path = `${bao.mount}/metadata/${secret}`;
   const refused = mayNot("delete", secret);
-  const found = await bao.call("GET", path, refused);
-  if (found) await bao.call("DELETE", path, refused);
-  return { lines: [JSON.stringify({ name: secret, deleted: Boolean(found) })] };
+  const line = (deleted: boolean) => ({ lines: [JSON.stringify({ name: secret, deleted })] });
+  if (!(await bao.call("GET", path, refused))) return line(false);
+  await bao.call("DELETE", path, refused);
+  return line(true);
 }
