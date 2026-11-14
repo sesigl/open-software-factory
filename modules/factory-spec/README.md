@@ -6,8 +6,9 @@ covers: [modules/factory-spec/src/**]
 
 One `factory.yaml` rendered for every harness. Claude Code, Codex and OpenCode read the same prompt, skills and MCP
 servers, and `factory plan` shows what a change does before `factory apply` writes it. It also registers the forge
-webhooks of automations and writes kagent and gh-aw files. Decisions:
-[ADR 0020](../../docs/decisions/0020-factory-spec.md), [ADR 0022](../../docs/decisions/0022-factory-spec-automations-and-targets.md), [ADR 0060](../../docs/decisions/0060-factory-spec-forge-port.md), [ADR 0078](../../docs/decisions/0078-agent-effort.md) and [ADR 0107](../../docs/decisions/0107-a-stage-that-only-waits.md). The format is the `factory-definition` contract
+webhooks of automations, writes kagent and gh-aw files, and `factory edit` changes `factory.yaml` for a program such as
+the console. Decisions:
+[ADR 0020](../../docs/decisions/0020-factory-spec.md), [ADR 0022](../../docs/decisions/0022-factory-spec-automations-and-targets.md), [ADR 0060](../../docs/decisions/0060-factory-spec-forge-port.md), [ADR 0078](../../docs/decisions/0078-agent-effort.md), [ADR 0107](../../docs/decisions/0107-a-stage-that-only-waits.md) and [ADR 0135](../../docs/decisions/0135-one-job-and-a-listed-surface.md). The format is the `factory-definition` contract
 ([`contracts/`](../../contracts/README.md)).
 
 ## Quick start
@@ -108,6 +109,15 @@ newest version of the npm package `@opensoftware/<port>-<name>` inside its range
 after a range changes, the next `plan --adapters` pins it again. A plan without `--adapters` keeps the pins as they
 are. The foreman runs an adapter that its maps do not name at the pinned version (contract `factory-lock`).
 
+`factory plan --check` only checks that the lock is current, for a check of a pull request: it names each registry
+server that the lock does not pin and, when the lock pins adapters, each adapter whose range it does not pin, and
+exits with 1. It calls no registry and writes nothing. A pin that `factory.yaml` no longer uses does no harm and is
+not reported.
+
+```text
+factory.lock has no pin of the forge "github" for "^1": run "factory plan --adapters"
+```
+
 ## Plan, apply and drift
 
 `factory apply` renders like `render` and records the applied definition, the prompt hashes and the hash of every
@@ -131,6 +141,41 @@ import { resolveFactory } from "@opensoftware/factory-spec";
 
 const definition = resolveFactory("factory.yaml"); // a FactoryDefinition with defaults and pinned MCP versions
 ```
+
+## Edits: factory edit
+
+`factory edit` makes one change to `factory.yaml` for a program, such as the console, that commits the result as a
+pull request (T-58). It prints the edited file and leaves `factory.yaml` as it is:
+
+```sh
+factory edit add-secret spec ref:env/LINEAR_TOKEN > edited.yaml
+```
+
+| Edit | What it changes |
+| --- | --- |
+| `add-skill <agent> <path>`, `remove-skill <agent> <path>` | `agents.<agent>.skills` |
+| `add-secret <agent> <reference>`, `remove-secret <agent> <reference>` | `agents.<agent>.secrets` |
+| `add-egress <agent> <host>`, `remove-egress <agent> <host>` | `agents.<agent>.sandbox.egress` |
+| `add-secrets-provider <name> <range>` | `providers.secrets.<name>` |
+
+- **The output, not the file.** The caller decides where the text goes: the console commits it with the forge
+  adapter's `commit` and leaves its copy of the factory's repository as it is, and two edits at the same time do not
+  write one file. Do not redirect the output into `factory.yaml` itself: the shell empties the file before the edit
+  reads it. Write another file and move it.
+- **Comments, order and anchors stay.** The output writes no line folded and a flow list as `[a, b]`, as the
+  reference factory does, so a list written as `[ a ]` becomes `[a]`.
+- **A shared list stays shared.** An agent whose list is an alias (`secrets: *secrets`) gets its own copy before the
+  edit. When the edited agent holds the anchor, the anchor moves to the next agent that used it, so the other agents
+  still share one list.
+- **The same edit twice changes nothing.** Adding a value the list has, or removing one it does not have, prints
+  `factory.yaml` byte for byte and exits with 0. A value matches by its exact text. A secrets provider declared at
+  the same range changes nothing; one declared at another range is refused.
+- **A refused edit prints nothing.** It names the reason in one line on stderr and exits with 1: a usage error, an
+  agent the factory does not declare, a `factory.yaml` that does not pass `factory lint`, or an edit whose result
+  would not pass it, such as a secret whose provider is not declared, a skill folder that does not exist or an egress
+  host for an agent without a sandbox.
+- **A value is one string.** It is quoted, or written as a block, wherever YAML needs it, so no argument becomes
+  YAML. A value that starts with `-` follows `--`, as in `factory edit add-skill triage -- -skills/x`.
 
 ## Forge webhooks
 
@@ -215,10 +260,11 @@ the minor version. The one-time setup is the same as for contracts
 | --- | --- |
 | `factory lint [--gh-aw]` | Check factory.yaml and the access.yaml beside it; print each problem and each warning with its file, line and column. --gh-aw: the factory is rendered with gh-aw, so a cron automation runs. |
 | `factory render [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]` | Write AGENTS.md, the MCP servers and the skill links of one agent to $OUTPUT. --harness all writes every declared harness; --k8s adds its kagent resources and SandboxTemplate; --gh-aw adds a gh-aw workflow per GitHub automation. |
-| `factory plan [--adapters]` | Pin registry MCP servers in factory.lock; show what apply changes and what drifted, rendered files and webhooks. --adapters also pins each adapter under providers to the newest npm version in its range. |
+| `factory plan [--adapters] [--check]` | Pin registry MCP servers in factory.lock; show what apply changes and what drifted, rendered files and webhooks. --adapters also pins each adapter under providers to the newest npm version in its range. --check only names what factory.lock does not pin, exits with 1 then, and writes nothing. |
 | `factory apply [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]` | Render like render, register the webhooks of forgejo and github automations (github ones not with --gh-aw), and record what was applied in OSF_DATA. |
 | `factory diff <old> [<new>]` | Show the changes between two versions of factory.yaml, as files or Git revisions. |
 | `factory resolve` | Print the resolved definition as JSON: defaults filled in, registry servers pinned. |
+| `factory edit <edit> <agent> <value>` | Print factory.yaml with one edit, comments and anchors kept; the file stays as it is. <edit> is add-skill, remove-skill, add-secret, remove-secret, add-egress or remove-egress; "factory edit add-secrets-provider <name> <range>" declares a secrets provider. |
 
 ## Configuration
 
@@ -318,3 +364,24 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FSPEC-070 | implemented | Lint reports an access file with a role it does not know |
 | SCN-FSPEC-071 | implemented | Lint reports an access file without an admin, and accepts one with an admin |
 | SCN-FSPEC-072 | implemented | Lint reports an access file that is not YAML |
+| SCN-FSPEC-073 | implemented | The edit of one agent keeps comments and leaves an agent that shared the list unchanged |
+| SCN-FSPEC-074 | implemented | The edit of the agent that holds the anchor passes the anchor on to the agents that shared the list |
+| SCN-FSPEC-075 | implemented | Edit adds a skill to an agent that has none and leaves factory.yaml as it is |
+| SCN-FSPEC-076 | implemented | Edit removes a skill from an agent |
+| SCN-FSPEC-077 | implemented | Edit removes a secret reference and keeps the list on one line |
+| SCN-FSPEC-078 | implemented | Edit removes an egress host from an agent that shares its sandbox |
+| SCN-FSPEC-079 | implemented | Edit adds a secrets provider |
+| SCN-FSPEC-080 | implemented | Adding the secrets provider at the range it is declared with prints factory.yaml unchanged |
+| SCN-FSPEC-081 | implemented | Edit refuses a secrets provider that is declared at another range |
+| SCN-FSPEC-082 | implemented | Adding a skill the agent has already prints factory.yaml unchanged |
+| SCN-FSPEC-083 | implemented | Removing an egress host the agent does not have prints factory.yaml unchanged |
+| SCN-FSPEC-084 | implemented | Edit refuses a secret reference whose provider is not declared and changes nothing |
+| SCN-FSPEC-085 | implemented | Edit refuses an egress host for an agent without a sandbox |
+| SCN-FSPEC-086 | implemented | Edit refuses an agent the factory does not declare |
+| SCN-FSPEC-087 | implemented | Edit refuses a factory.yaml that does not pass lint |
+| SCN-FSPEC-088 | implemented | Edit writes a value with YAML syntax in it as one string |
+| SCN-FSPEC-089 | implemented | Edit names its usage for an edit it does not know |
+| SCN-FSPEC-090 | implemented | Edit names its usage when an argument is missing |
+| SCN-FSPEC-091 | implemented | Plan with --check accepts a factory.lock that pins every registry server and no adapter |
+| SCN-FSPEC-092 | implemented | Plan with --check names a registry server that factory.lock does not pin and writes no lock |
+| SCN-FSPEC-093 | implemented | Plan with --check names an adapter whose range changed since factory.lock pinned it |
