@@ -223,6 +223,36 @@ export type paths = {
 export type webhooks = Record<string, never>;
 export type components = {
     schemas: {
+        /**
+         * @description access.yaml next to factory.yaml (ADR 0134): who may sign in to the factory UI, each person with one role. The
+         *     console reads it at each request, so a merge that removes a person ends their access.
+         */
+        Access: {
+            /**
+             * @description The version of the access file's format.
+             * @constant
+             */
+            version: 1;
+            /** @description The people who may sign in. An email appears once. */
+            people: components["schemas"]["AccessPerson"][];
+        };
+        /** @description One person: the email the provider verifies, compared in lower case, and their role. */
+        AccessPerson: {
+            /** Format: email */
+            email: string;
+            /** @description The name the UI shows, when the provider gives none. */
+            name?: string;
+            /**
+             * @description `member` sees every page but Secrets and acts on work, runs and gates; `factory-engineer` also changes the factory
+             *     from the UI; `admin` also stores and deletes secrets.
+             */
+            role: components["schemas"]["AccessRole"];
+        };
+        /**
+         * @description The roles of the factory UI (ADR 0134), from the least to the most it may do.
+         * @enum {string}
+         */
+        AccessRole: "member" | "factory-engineer" | "admin";
         /** @description A person or trigger. RUNTIME-008: every run is attributed to one. */
         Actor: {
             kind: components["schemas"]["ActorKind"];

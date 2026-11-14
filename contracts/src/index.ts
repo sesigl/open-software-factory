@@ -50,6 +50,9 @@ export type RunRetry = Schemas["RunRetry"];
 export type RunAction = Schemas["RunAction"];
 export type SandboxSpec = Schemas["SandboxSpec"];
 export type FactoryLock = Schemas["FactoryLock"];
+export type Access = Schemas["Access"];
+export type AccessPerson = Schemas["AccessPerson"];
+export type AccessRole = Schemas["AccessRole"];
 export type Health = Schemas["Health"];
 export type HealthCheck = Schemas["HealthCheck"];
 

@@ -1,0 +1,4 @@
+{
+  "version": 1,
+  "people": [{ "email": "ada@acme.dev", "role": "owner" }]
+}
