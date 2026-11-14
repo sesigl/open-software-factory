@@ -29,28 +29,23 @@ export type FolderFiles = (folder: string) => Record<string, Uint8Array>;
 type Needs = Record<keyof typeof NEEDS, string[]>;
 type Agent = FactoryDefinition["agents"][string];
 
+/** The needs of a skill whose SKILL.md cannot be read: its problems say so already. */
+const NONE: Needs = { secrets: [], hosts: [] };
+
 const NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const FORMS = {
   secrets: [/^[A-Z0-9_]+$/, 'variable of upper-case letters, digits and "_"'],
   hosts: [/^[a-z0-9-]+(\.[a-z0-9-]+)*$/, "host name"],
 } as const;
 
-/** The findings of every skill the agents use; `exists` says whether a path relative to factory.yaml exists. */
-export function skillRules(
-  definition: FactoryDefinition,
-  exists: (path: string) => boolean,
-  files: FolderFiles,
-): SkillFindings {
+/** The findings of every skill the agents use. */
+export function skillRules(definition: FactoryDefinition, files: FolderFiles): SkillFindings {
   const result: SkillFindings = { findings: [], problems: [], warnings: [] };
   // Each skill by its name, the last segment of its folder, which names it in a session and in render's links.
   const skills = new Map<string, { folder: string; path: string; needs: Needs }>();
   for (const [name, agent] of Object.entries(definition.agents))
     for (const [index, path] of (agent.skills ?? []).entries()) {
       const at = ["agents", name, "skills", String(index)];
-      if (!exists(path)) {
-        result.findings.push([at, `the file "${path}" does not exist`]);
-        continue;
-      }
       const folder = path
         .split("/")
         .filter((part) => part && part !== ".")
@@ -68,17 +63,17 @@ export function skillRules(
 
 /** What the agent lacks of the skill's needs; an agent without a sandbox reaches every host. */
 function lacks(name: string, agent: Agent, skill: string, needs: Needs): string[] {
-  const variables = (agent.secrets ?? []).map(variable);
-  const egress = agent.sandbox?.egress ?? [];
+  const variables = new Set(agent.secrets?.map(variable));
+  const egress = new Set(agent.sandbox?.egress);
   return [
     ...needs.secrets
-      .filter((secret) => !variables.includes(secret))
+      .filter((secret) => !variables.has(secret))
       .map(
         (secret) =>
           `agent "${name}" lacks the secret ${secret} that its skill "${skill}" needs: add a reference such as "ref:<provider>/${secret.toLowerCase().replaceAll("_", "-")}" to agents.${name}.secrets`,
       ),
     ...(agent.sandbox ? needs.hosts : [])
-      .filter((host) => !egress.includes(host))
+      .filter((host) => !egress.has(host))
       .map(
         (host) =>
           `agent "${name}" lacks the host "${host}" that its skill "${skill}" needs: add it to agents.${name}.sandbox.egress`,
@@ -114,7 +109,7 @@ function checked(
   const text = texts["SKILL.md"];
   if (text !== undefined) return frontMatter(folder, text, result);
   if (!files["SKILL.md"]) result.findings.push([at, `the skill "${path}" has no SKILL.md`]);
-  return { secrets: [], hosts: [] };
+  return NONE;
 }
 
 /** The rules of the format for SKILL.md and its front matter; returns the needs it names. */
@@ -130,7 +125,7 @@ function frontMatter(folder: string, text: string, result: SkillFindings): Needs
     const message =
       'SKILL.md has no front matter: it starts with a line "---", the fields name and description and a line "---"';
     result.problems.push({ file, line: 1, column: 1, message });
-    return { secrets: [], hosts: [] };
+    return NONE;
   }
   const counter = new LineCounter();
   const document = parseDocument(lines.slice(1, end).join("\n"), { lineCounter: counter, prettyErrors: false });
@@ -142,21 +137,23 @@ function frontMatter(folder: string, text: string, result: SkillFindings): Needs
     const { line, col } = counter.linePos(error.pos[0]);
     at({ line, column: col }, error.message.split("\n")[0] as string);
   }
-  if (document.errors.length > 0) return { secrets: [], hosts: [] };
+  if (document.errors.length > 0) return NONE;
   const fields = (isMap(document.contents) ? document.toJS() : {}) as Record<string, unknown>;
   const skill = folder.split("/").pop() as string;
   const { name, description, compatibility } = fields;
-  if (name === undefined) problem([], `the skill has no name: write "name: ${skill}", the name of its folder`);
+  // A missing field has no place of its own: its finding names the front matter's first line.
+  const first = { line: 1, column: 1 };
+  if (name === undefined) at(first, `the skill has no name: write "name: ${skill}", the name of its folder`);
   else if (!NAME.test(String(name)))
     problem(["name"], `name "${name}" is not lowercase letters and digits with single hyphens between them`);
   else if (name !== skill) problem(["name"], `name "${name}" is not "${skill}", the name of its folder`);
-  if (!description) problem(["description"], "the skill has no description: say what it does and when to use it");
+  if (!description) at(first, "the skill has no description: say what it does and when to use it");
   for (const [field, value, max] of [
     ["name", name, 64],
     ["description", description, 1024],
     ["compatibility", compatibility, 500],
   ] as const) {
-    const length = [...String(value ?? "")].length;
+    const length = typeof value === "string" ? [...value].length : 0;
     if (length > max) problem([field], `${field} has ${length} characters, more than the ${max} the format allows`);
   }
   return needsOf(document, fields.metadata as Record<string, unknown>, problem);
@@ -170,7 +167,7 @@ function needsOf(
 ): Needs {
   const needs: Needs = { secrets: [], hosts: [] };
   if (metadata === undefined) return needs;
-  if (!isMap(document.get("metadata", true))) {
+  if (!isMap(document.get("metadata"))) {
     problem(["metadata"], "metadata is no mapping of keys to text");
     return needs;
   }
@@ -183,7 +180,7 @@ function needsOf(
       continue;
     }
     const [form, what] = FORMS[kind];
-    for (const each of names.split(" ").filter(Boolean))
+    for (const each of names.split(" "))
       if (form.test(each)) needs[kind].push(each);
       else problem(["metadata", key], `metadata "${key}" names "${each}", which is no ${what}`);
   }

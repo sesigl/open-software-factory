@@ -124,7 +124,8 @@ Read the Linear issues that the commits name, then ...
 `factory lint` checks every skill an agent uses. Each of these is a problem, which also stops `render`, `plan`,
 `apply` and `edit`:
 
-- The folder has no `SKILL.md`, or `SKILL.md` has no front matter, or its front matter does not parse.
+- The path is no folder with a `SKILL.md`, or `SKILL.md` has no front matter between its first line `---` and the
+  next, or its front matter does not parse.
 - `name` is missing, is not lowercase letters and digits with single hyphens between them, is longer than 64
   characters or is not the folder's name.
 - `description` is missing or longer than 1024 characters; `compatibility` is longer than 500.
@@ -454,3 +455,6 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FSPEC-109 | implemented | Lint refuses a skill with a file that is not UTF-8 text |
 | SCN-FSPEC-110 | implemented | Lint refuses two skills with one name and accepts one skill for two agents |
 | SCN-FSPEC-111 | implemented | Edit refuses a skill whose secret the agent lacks and names it |
+| SCN-FSPEC-112 | implemented | Lint names a skill path that is no folder |
+| SCN-FSPEC-113 | implemented | Lint names a SKILL.md whose front matter is not closed or does not start on its first line |
+| SCN-FSPEC-114 | implemented | Lint names a SKILL.md that is not UTF-8 text once |

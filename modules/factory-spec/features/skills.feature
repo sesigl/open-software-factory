@@ -145,3 +145,28 @@ Feature: Lint the skills of a factory
     Then the command exits with code 1
     And the error is the one line "the edit would make factory.yaml fail \"factory lint\": factory.yaml:16:9 agent \"triage\" lacks the secret LINEAR_TOKEN that its skill \"release-notes\" needs: add a reference such as \"ref:<provider>/linear-token\" to agents.triage.secrets"
     And the output is empty
+
+  @id=SCN-FSPEC-112 @status=implemented
+  Scenario: Lint names a skill path that is no folder
+    Given a factory.yaml whose agent "triage" has the skills "./skills/missing" and "./skills/notes.md" on line 14
+    And the factory folder has no "skills/missing" and has the file "skills/notes.md"
+    When the factory engineer runs "factory lint"
+    Then the command exits with code 1
+    And the output is "factory.yaml:14:14 the skill \"./skills/missing\" has no SKILL.md", "factory.yaml:14:32 the skill \"./skills/notes.md\" has no SKILL.md" and then "factory.yaml: 2 problems"
+
+  @id=SCN-FSPEC-113 @status=implemented
+  Scenario: Lint names a SKILL.md whose front matter is not closed or does not start on its first line
+    Given a factory.yaml whose agent "triage" has the skills "./skills/open" and "./skills/late"
+    And the SKILL.md of "open" starts with a line "---" and has no second one
+    And the SKILL.md of "late" starts with "# Late" and has its front matter below it
+    When the factory engineer runs "factory lint"
+    Then the command exits with code 1
+    And the output names "skills/open/SKILL.md:1:1" and "skills/late/SKILL.md:1:1", each with "SKILL.md has no front matter: it starts with a line \"---\", the fields name and description and a line \"---\"", and then "factory.yaml: 2 problems"
+
+  @id=SCN-FSPEC-114 @status=implemented
+  Scenario: Lint names a SKILL.md that is not UTF-8 text once
+    Given a factory.yaml whose agent "triage" has the skill "./skills/release-notes"
+    And its SKILL.md is valid but written in Latin-1, with the description "Notes for the café team."
+    When the factory engineer runs "factory lint"
+    Then the command exits with code 1
+    And the output is "skills/release-notes/SKILL.md:1:1 the file is not UTF-8 text: the foreman copies a skill's files as text, so keep binary files out of the skill" and then "factory.yaml: 1 problems"

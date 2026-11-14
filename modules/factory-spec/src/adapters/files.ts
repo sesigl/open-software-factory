@@ -1,13 +1,13 @@
 // The factory folder (factory.yaml, prompts, skills, factory.lock) and the output folder ($OUTPUT).
 import { createHash } from "node:crypto";
 import {
+  type Dirent,
   existsSync,
   lstatSync,
   mkdirSync,
   readdirSync,
   readFileSync,
   rmSync,
-  statSync,
   symlinkSync,
   writeFileSync,
 } from "node:fs";
@@ -24,13 +24,19 @@ export function exists(path: string): boolean {
 
 /** The bytes of every file below a folder, by its path relative to it; none for a path that is no folder. */
 export function filesBelow(folder: string): Record<string, Uint8Array> {
-  if (!existsSync(folder) || !statSync(folder).isDirectory()) return {};
-  const entries = readdirSync(folder, { recursive: true, withFileTypes: true }).filter((entry) => entry.isFile());
+  let entries: Dirent[];
+  try {
+    entries = readdirSync(folder, { recursive: true, withFileTypes: true });
+  } catch {
+    return {};
+  }
   return Object.fromEntries(
-    entries.map((entry) => {
-      const path = join(entry.parentPath, entry.name);
-      return [relative(folder, path), readFileSync(path)];
-    }),
+    entries
+      .filter((entry) => entry.isFile())
+      .map((entry) => {
+        const path = join(entry.parentPath, entry.name);
+        return [relative(folder, path), readFileSync(path)];
+      }),
   );
 }
 

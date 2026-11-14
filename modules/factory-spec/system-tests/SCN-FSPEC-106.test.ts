@@ -4,12 +4,15 @@ import { putSkill, putSkilled, skillMd } from "./skills.ts";
 const AT = "a".repeat(64);
 const OVER = "b".repeat(65);
 
-/** A SKILL.md whose description and compatibility have the lengths; a character outside the BMP counts as one. */
+/**
+ * A SKILL.md whose description and compatibility have the lengths, with the name last, on line 4, so each finding
+ * shows its own line; a character outside the BMP counts as one.
+ */
 const sized = (name: string, description: number, compatibility: number): string =>
   skillMd([
-    `name: ${name}`,
     `description: ${"d".repeat(description - 1)}🙂`,
     `compatibility: ${"c".repeat(compatibility)}`,
+    `name: ${name}`,
   ]);
 
 scenario("SCN-FSPEC-106", async ({ sut, given, when, then }) => {
@@ -40,9 +43,9 @@ scenario("SCN-FSPEC-106", async ({ sut, given, when, then }) => {
       const file = `skills/${OVER}/SKILL.md`;
       expect(run.stdout).toBe(
         [
-          `${file}:2:1 name has 65 characters, more than the 64 the format allows`,
-          `${file}:3:1 description has 1025 characters, more than the 1024 the format allows`,
-          `${file}:4:1 compatibility has 501 characters, more than the 500 the format allows`,
+          `${file}:4:1 name has 65 characters, more than the 64 the format allows`,
+          `${file}:2:1 description has 1025 characters, more than the 1024 the format allows`,
+          `${file}:3:1 compatibility has 501 characters, more than the 500 the format allows`,
           "factory.yaml: 3 problems",
           "",
         ].join("\n"),

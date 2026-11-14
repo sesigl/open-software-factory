@@ -22,7 +22,7 @@ export interface Linted {
  * Lints the text of factory.yaml; `exists` says whether a path relative to the file exists, `files` gives the files of
  * a skill folder, and `ghAw` says whether the factory is rendered with gh-aw workflows.
  */
-export function lint(text: string, exists: (path: string) => boolean, files: FolderFiles, ghAw = false): Linted {
+export function lint(text: string, exists: (path: string) => boolean, files: FolderFiles, ghAw: boolean): Linted {
   const lines = new LineCounter();
   const document = parseDocument(text, { lineCounter: lines, prettyErrors: false });
   if (document.errors.length > 0) {
@@ -43,7 +43,7 @@ export function lint(text: string, exists: (path: string) => boolean, files: Fol
   const placed = (findings: Finding[]): Problem[] =>
     findings.map(([path, message]) => at(path, message)).sort((a, b) => a.line - b.line || a.column - b.column);
   // The problems of the skills' own files follow those of factory.yaml, skill by skill.
-  const skills = skillRules(definition, exists, files);
+  const skills = skillRules(definition, files);
   const problems = [...placed([...rules(definition, exists), ...skills.findings]), ...skills.problems];
   // A warning names its field as a JSON Pointer, like a problem of the schema.
   const warnings = [
