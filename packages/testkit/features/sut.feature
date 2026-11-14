@@ -136,3 +136,11 @@ Feature: The sut handle
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 1
     And the output contains "no adapter adapters/demo/missing above"
+
+  @id=SCN-TK-176 @status=implemented
+  Scenario: sut.cli writes the text of stdin to the module's standard input and closes it
+    Given a module whose CLI prints what it reads from standard input in capitals
+    And its system test runs it with the stdin "hello" and expects the output "HELLO"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

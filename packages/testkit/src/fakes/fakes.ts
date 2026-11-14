@@ -12,6 +12,7 @@ import { type FakeHttp, type HttpOptions, type HttpRoute, startHttp } from "./ht
 import { type Inference, type InferenceOptions, startInference } from "./inference.ts";
 import { type ModelGateway, type ModelGatewayOptions, type ScriptedReply, startModelGateway } from "./model-gateway.ts";
 import { type FakeOidc, type OidcOptions, startOidc } from "./oidc.ts";
+import { type OpenBao, startOpenBao } from "./openbao.ts";
 import { type Postgres, startPostgres } from "./postgres.ts";
 import { type Sandbox, type SandboxOptions, startSandbox } from "./sandbox.ts";
 import { type FakeSentry, startSentry } from "./sentry.ts";
@@ -52,6 +53,11 @@ export interface Fakes {
    * test process starts one server; each scenario gets a new namespace in it (ADR 0129).
    */
   temporal(): Promise<Temporal>;
+  /**
+   * OpenBao's development server, as a process on the host with its data in memory (ADR 0137). The test process starts
+   * one server; each scenario gets a KV version 2 mount of its own in it, and tokens with the policies it names.
+   */
+  openbao(): Promise<OpenBao>;
   /** An S3 API (SeaweedFS) in a container. */
   s3(): Promise<S3>;
   /**
@@ -160,6 +166,7 @@ export function makeFakes(moduleRoot: string): FakesHandle {
         return (await inProcess(startNats())).service;
       },
       temporal: () => startTemporal(),
+      openbao: () => startOpenBao(),
       s3: () => startS3(track),
       forge: () => startForge((container) => hosts.add(container.getHost())),
       async github() {

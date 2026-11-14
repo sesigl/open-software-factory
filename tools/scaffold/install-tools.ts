@@ -1,9 +1,9 @@
 // `make install` step: the pinned lychee (DOCS-LINKS), oasdiff (CONTRACT), opa (gatekeeper's policies, ADR 0047),
-// temporal and nats-server (the servers of `fakes.temporal()` and `fakes.nats()`, ADR 0067), and helm, kubectl and
-// kind (the Helm chart's scenarios, ADR 0075) binaries, and the agent-sandbox manifest (the kind cluster of the
-// kubernetes sandbox adapter, ADR 0055), checked against their SHA-256, in .tools/bin. CI caches .tools/bin, so a job
-// downloads nothing while the pins stay the same. Builds are pinned for Linux x86_64 (CI) and macOS arm64; elsewhere
-// put the same versions on PATH.
+// temporal and nats-server (the servers of `fakes.temporal()` and `fakes.nats()`, ADR 0067), bao (OpenBao, the server of
+// `fakes.openbao()`, ADR 0137), and helm, kubectl and kind (the Helm chart's scenarios, ADR 0075) binaries, and the
+// agent-sandbox manifest (the kind cluster of the kubernetes sandbox adapter, ADR 0055), checked against their SHA-256,
+// in .tools/bin. CI caches .tools/bin, so a job downloads nothing while the pins stay the same. Builds are pinned for
+// Linux x86_64 (CI) and macOS arm64; elsewhere put the same versions on PATH.
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
@@ -106,6 +106,21 @@ const PINNED: Pinned[] = [
         url: "https://github.com/nats-io/nats-server/releases/download/v2.11.9/nats-server-v2.11.9-darwin-arm64.tar.gz",
         sha256: "600b5cdca8cfe634881b53c782b5f6384500a3ffcb10cc83d02a6239f788d48c",
         member: "nats-server-v2.11.9-darwin-arm64/nats-server",
+      },
+    },
+  },
+  {
+    // OpenBao's binary is `bao`; the SHA-256 are those of the release's checksums.txt.
+    name: "bao",
+    version: "2.7.2",
+    builds: {
+      "linux-x64": {
+        url: "https://github.com/openbao/openbao/releases/download/v2.7.2/openbao_2.7.2_linux_amd64.tar.gz",
+        sha256: "582b1f3c2fdc5afd443b2d57a225ef654de75adea609fdb66731fd582a9cbc96",
+      },
+      "darwin-arm64": {
+        url: "https://github.com/openbao/openbao/releases/download/v2.7.2/openbao_2.7.2_darwin_arm64.tar.gz",
+        sha256: "2b4fc131910f4b075b2e1c9a9de67c461489491a8f03fbdc73387294d67d9547",
       },
     },
   },

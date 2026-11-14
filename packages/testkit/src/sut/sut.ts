@@ -18,9 +18,10 @@ import { makePages, type Pages } from "./pages.ts";
 export interface Sut {
   /**
    * Runs the module's built artifact with these arguments, with $INPUT as the current directory. The module gets
-   * a fixed clock and seed as `OSF_NOW` (2026-01-01T00:00:00Z) and `OSF_SEED` (1).
+   * a fixed clock and seed as `OSF_NOW` (2026-01-01T00:00:00Z) and `OSF_SEED` (1). `stdin` is written to its
+   * standard input, which is then closed.
    */
-  cli(args: string[], options?: { env?: Record<string, string> }): Promise<CliResult>;
+  cli(args: string[], options?: { env?: Record<string, string>; stdin?: string }): Promise<CliResult>;
   /**
    * Runs the module's composite GitHub Action (`action.yml`) like a runner: each `run` step in bash with $INPUT as
    * the workspace, the `GITHUB_*` variables, the event in `GITHUB_EVENT_PATH` and `RUNNER_TEMP`. The input
@@ -141,7 +142,7 @@ export function makeSut(moduleRoot: string, dirs: Folders, hosts: () => string[]
   const sut: Sut = {
     async cli(args, options = {}) {
       const { command, argv, cwd, env } = launch(args, options.env);
-      return run(command, argv, cwd, env);
+      return run(command, argv, cwd, env, options.stdin);
     },
     action: makeAction(moduleRoot, dirs, launch),
     http,

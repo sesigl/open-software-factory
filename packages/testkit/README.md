@@ -35,7 +35,8 @@ Each test case in `report.xml` is named after its scenario and has the property 
 See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The context of `scenario` holds:
 
 - `given`, `when`, `then`: step functions; each label repeats the scenario's step text.
-- `sut.cli(args, { env })`: runs the module's `bin` in its own process, with `$INPUT` as the current directory.
+- `sut.cli(args, { env, stdin })`: runs the module's `bin` in its own process, with `$INPUT` as the current directory.
+  `stdin` is written to the program's standard input, which is then closed.
   The module gets `INPUT` and `OUTPUT` (the two folders), `OSF_DATA` (its private data folder, which persists
   for the scenario and which the test has no path into), `OSF_NOW=2026-01-01T00:00:00Z` and `OSF_SEED=1`.
   `env` may only name variables the module's README documents under Configuration. `bin` must be the built
@@ -231,6 +232,13 @@ Every server, client and subscription stops when the scenario ends, before the f
   from 10000 to 19999 and a module's port from 20000 to 32767, so a service of a parallel scenario cannot take the port
   of a module that does not listen yet. A server that another process beats to a port, or that is not ready after
   10 s, starts again on new ports, at most three times; the error names what it wrote.
+- `fakes.openbao()`: OpenBao 2.7.2's development server, the real server as a process on the host with its data in
+  memory ([ADR 0137](../../docs/decisions/0137-secrets-port-write-side-and-openbao.md)). The test process starts it once,
+  like Temporal, and each scenario gets a KV version 2 `mount` of its own at `url`, which the test passes on to the
+  module. `token(policy, { ttl })` makes a token with the policy, in OpenBao's policy language, that lives `ttl`
+  (default `1h`). `read(name)` gives the current `version` and the `data` of a secret in the mount, or undefined, and
+  `write(name, data)` stores a new version, as another client of OpenBao does. The root token stays in the fake.
+  `make install` pins `bao` 2.7.2 in `.tools/bin`.
 - `fakes.s3()`: a real service in a container for this scenario
   ([ADR 0016](../../docs/decisions/0016-testkit-service-fakes.md)). Each fake gives only what a module needs
   to reach it: a URL, an address or an endpoint with keys. Docker must run.
@@ -562,3 +570,7 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-173 | implemented | fakes.github lists the calls a module made, with their query |
 | SCN-TK-174 | implemented | fakes.github keeps a blob's bytes and puts it into a tree by its SHA |
 | SCN-TK-175 | implemented | fakes.github answers the rules of the rulesets that apply to a branch |
+| SCN-TK-176 | implemented | sut.cli writes the text of stdin to the module's standard input and closes it |
+| SCN-TK-177 | implemented | fakes.openbao gives the module OpenBao with a KV version 2 mount of the scenario and a token with a policy |
+| SCN-TK-178 | implemented | A token of fakes.openbao has only its policy and lives as long as the test says |
+| SCN-TK-179 | implemented | fakes.openbao gives a later scenario the same server and a mount of its own |
