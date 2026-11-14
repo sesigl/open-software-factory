@@ -97,4 +97,5 @@ The library reads no variable itself. Its caller passes the environment to `reso
 | SCN-SEGRESS-019 | implemented | A copy into a sandbox names a path below its working folder |
 | SCN-SEGRESS-020 | implemented | A copy out of a sandbox keeps an absolute path |
 | SCN-SEGRESS-021 | implemented | A copy that names a sandbox on both sides is refused |
-| SCN-SEGRESS-022 | implemented | A secret is swapped only for the hosts of the egress allowlist, also in git's Basic credentials |
+| SCN-SEGRESS-022 | deprecated | A secret is swapped only for the hosts of the egress allowlist, also in git's Basic credentials |
+| SCN-SEGRESS-023 | planned | Each secret is swapped by one rule in every header for the hosts of the egress allowlist, whatever its provider |

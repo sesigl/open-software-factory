@@ -95,3 +95,5 @@ builds the package and publishes it to npm as `@opensoftware/secrets-openbao`. T
 | SCN-SOPENBAO-006 | implemented | policy without write or read is a usage error |
 | SCN-SOPENBAO-007 | implemented | An address with a final slash reaches OpenBao |
 | SCN-SOPENBAO-008 | implemented | A command with an argument too many shows the usage |
+| SCN-SOPENBAO-009 | planned | exists says false for a secret whose current version another client deleted or destroyed |
+| SCN-SOPENBAO-010 | planned | exists with a token that may not read the metadata names what it may not do |

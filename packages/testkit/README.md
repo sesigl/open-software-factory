@@ -574,3 +574,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-177 | implemented | fakes.openbao gives the module OpenBao with a KV version 2 mount of the scenario and a token with a policy |
 | SCN-TK-178 | implemented | A token of fakes.openbao has only its policy and lives as long as the test says |
 | SCN-TK-179 | implemented | fakes.openbao gives a later scenario the same server and a mount of its own |
+| SCN-TK-180 | planned | fakes.openbao for containers answers a container at its container URL |

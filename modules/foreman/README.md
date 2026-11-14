@@ -726,3 +726,6 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-161 | implemented | A stage whose checks succeeded at the first read publishes no "run.blocked@v1" |
 | SCN-FORE-162 | implemented | The foreman shows a doctor's ping that its consumer received |
 | SCN-FORE-163 | implemented | A sandboxed stage's span carries the tokens and cost of the session in its sandbox |
+| SCN-FORE-164 | planned | A stage whose agent declares a secret from OpenBao without a value fails before its first turn and names the secret |
+| SCN-FORE-165 | planned | A stage whose agent's secret from OpenBao has a value runs in its sandbox |
+| SCN-FORE-166 | planned | A stage whose secrets store does not answer fails before its first turn with the reason |
