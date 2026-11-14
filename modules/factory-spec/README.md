@@ -213,7 +213,7 @@ the minor version. The one-time setup is the same as for contracts
 
 | Command | What it does |
 | --- | --- |
-| `factory lint [--gh-aw]` | Check factory.yaml; print each problem and each warning with its file, line and column. --gh-aw: the factory is rendered with gh-aw, so a cron automation runs. |
+| `factory lint [--gh-aw]` | Check factory.yaml and the access.yaml beside it; print each problem and each warning with its file, line and column. --gh-aw: the factory is rendered with gh-aw, so a cron automation runs. |
 | `factory render [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]` | Write AGENTS.md, the MCP servers and the skill links of one agent to $OUTPUT. --harness all writes every declared harness; --k8s adds its kagent resources and SandboxTemplate; --gh-aw adds a gh-aw workflow per GitHub automation. |
 | `factory plan [--adapters]` | Pin registry MCP servers in factory.lock; show what apply changes and what drifted, rendered files and webhooks. --adapters also pins each adapter under providers to the newest npm version in its range. |
 | `factory apply [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]` | Render like render, register the webhooks of forgejo and github automations (github ones not with --gh-aw), and record what was applied in OSF_DATA. |
@@ -315,3 +315,6 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FSPEC-067 | implemented | Plan keeps an adapter's pin while its range is unchanged, and pins it again after the range changed |
 | SCN-FSPEC-068 | implemented | Plan without --adapters keeps the adapter pins of factory.lock and calls no registry |
 | SCN-FSPEC-069 | implemented | Plan with --adapters reports a range that no npm version matches |
+| SCN-FSPEC-070 | implemented | Lint reports an access file with a role it does not know |
+| SCN-FSPEC-071 | implemented | Lint reports an access file without an admin, and accepts one with an admin |
+| SCN-FSPEC-072 | implemented | Lint reports an access file that is not YAML |

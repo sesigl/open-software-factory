@@ -2,6 +2,7 @@
 import { dirname, join, resolve } from "node:path";
 import type { FactoryDefinition } from "@opensoftware/contracts";
 import { exists, readLock, readText } from "../adapters/files.ts";
+import { accessProblems } from "../domain/access.ts";
 import { FactoryError } from "../domain/errors.ts";
 import { lint, type Problem } from "../domain/lint.ts";
 import type { Lock } from "../domain/mcp.ts";
@@ -24,6 +25,12 @@ export function lintFile(
   const lines = (found: Problem[]) =>
     found.map((problem) => `${file}:${problem.line}:${problem.column} ${problem.message}`);
   return { dir, definition, problems: lines(problems), warnings: lines(warnings) };
+}
+
+/** The problems of the access file beside factory.yaml, when there is one: the console's sign-in reads it (ADR 0134). */
+export function lintAccess(file: string): string[] {
+  const access = join(dirname(file), "access.yaml");
+  return exists(access) ? accessProblems(readText(access), access) : [];
 }
 
 export function load(file: string): Factory {

@@ -1616,7 +1616,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
   - [x] The ADR: the library, the session, the roles, the modes and the hook (ADR 0134).
   - [ ] `@opensoftware/factory-source` with the fetch, used by the foreman (its own prefix; the foreman's `SCN-FORE`
     scenarios of ADR 0124 pass unchanged); its first publish.
-  - [ ] The access file in `factory lint` (`SCN-FSPEC`); its format in `contracts/` is done (`SCN-CTR`).
+  - [x] The access file in `factory lint` (`SCN-FSPEC`); its format in `contracts/` (`SCN-CTR`).
   - [x] `fakes.oidc()` and GitHub's sign-in in `fakes.github` (`SCN-TK`).
   - [x] The hook, sign-in, session and sign-out in the console, with the sign-in page and the probe route
     (`SCN-CONSOLE`). The console reads `access.yaml` with an adapter of its own (ADR 0135).

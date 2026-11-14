@@ -119,3 +119,24 @@ Feature: Lint a factory definition
     When the factory engineer runs "factory lint"
     Then the command exits with code 0
     And the output is "factory.yaml:13:3 warning /scorers/pr-quality: no job of the profile runs a scorer yet, so it has no effect" and then "factory.yaml:16:3 warning /benchmarks/smoke: no job of the profile runs a benchmark yet, so it has no effect" and then "factory.yaml: no problems, 2 warnings"
+
+  @id=SCN-FSPEC-070 @status=implemented
+  Scenario: Lint reports an access file with a role it does not know
+    Given a valid factory.yaml and beside it an access.yaml with "ada@acme.dev" as "owner"
+    When the factory engineer runs "factory lint"
+    Then the command exits with code 1
+    And the output is "access.yaml /people/0/role: must be one of \"member\", \"factory-engineer\", \"admin\"" and then "factory.yaml: 1 problems"
+
+  @id=SCN-FSPEC-071 @status=implemented
+  Scenario: Lint reports an access file without an admin, and accepts one with an admin
+    Given a valid factory.yaml and beside it an access.yaml with "varun@acme.dev" as "member" only
+    When the factory engineer runs "factory lint", then adds "ada@acme.dev" as "admin" and runs it again
+    Then the first run exits with code 1 and prints "access.yaml: no person has the role admin, so nobody can change who signs in"
+    And the second run exits with code 0 and prints "factory.yaml: no problems"
+
+  @id=SCN-FSPEC-072 @status=implemented
+  Scenario: Lint reports an access file that is not YAML
+    Given a valid factory.yaml and beside it an access.yaml with the text "people: [ada"
+    When the factory engineer runs "factory lint"
+    Then the command exits with code 1
+    And the output starts with "access.yaml: " and names the YAML problem, and then "factory.yaml: 1 problems"
