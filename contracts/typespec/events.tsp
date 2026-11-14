@@ -48,6 +48,9 @@ model RunStarted is CloudEvent<"run.started@v1", RunStartedData>;
 /** foreman: a run ended. */
 model RunCompleted is CloudEvent<"run.completed@v1", RunCompletedData>;
 
+/** foreman: a stage of a run waits for the checks of its pull request (ADR 0127). The ID is `<run ID>.blocked.<stage>`. */
+model RunBlocked is CloudEvent<"run.blocked@v1", RunBlockedData>;
+
 /** gatekeeper: a decision is needed before a stage starts. */
 model GateRequested is CloudEvent<"gate.requested@v1", GateRequestedData>;
 
@@ -109,6 +112,33 @@ model RunCompletedData {
 
   /** The run before, when this run runs a work item again (ADR 0105). */
   retryOf?: Identifier;
+
+  /** Why the stage the run ended at failed, when the foreman knows it (ADR 0127). */
+  reason?: string;
+}
+
+/** What a blocked stage waits for: the checks of the run's pull request. A gate has its own `gate.requested@v1`. */
+enum BlockedOn {
+  checks,
+}
+
+model RunBlockedData {
+  runId: Identifier;
+  workItemId: Identifier;
+
+  /** The stage that waits. */
+  stage: Name;
+
+  waitsFor: BlockedOn;
+
+  /** The pull request whose checks the stage waits for. */
+  pullRequest?: url;
+
+  /** The names of the checks the stage waits for. */
+  checks?: string[];
+
+  requester: Actor;
+  source: Name;
 }
 
 model WorkRetryRequestedData {

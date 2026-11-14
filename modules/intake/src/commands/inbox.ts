@@ -1,9 +1,15 @@
 // The inbox of the server: submit and read work items, relay the outbox to NATS (ADR 0063), and move a work item on
 // with its run's events (ADR 0071).
-import { type GateRequested, isValid, type WorkItemList, type WorkItemView } from "@opensoftware/contracts";
+import {
+  type GateRequested,
+  isValid,
+  type RunBlocked,
+  type WorkItemList,
+  type WorkItemView,
+} from "@opensoftware/contracts";
 import { type NatsAt, publishToNats } from "../adapters/nats.ts";
 import type { Store } from "../adapters/store.ts";
-import { gateText, type Reply, replies, runTexts } from "../domain/sources.ts";
+import { blockedText, gateText, type Reply, replies, runTexts } from "../domain/sources.ts";
 import {
   cursorOf,
   type InboxPage,
@@ -77,13 +83,17 @@ export function inbox(store: Store, config: InboxConfig) {
     },
     /**
      * Moves the work item of a run event to the run's status, and gives the replies its Slack threads and issues get
-     * of a run event or of a gate.requested@v1 (ADR 0113), once per event. A message that is neither is an error.
+     * of a run event, of a gate.requested@v1 (ADR 0113) or of a run.blocked@v1 (ADR 0127), once per event. A message that is neither is an error.
      */
     async followRun(event: unknown): Promise<Reply[]> {
       if (await store.told(keyOf(event))) return [];
       if (isValid<GateRequested>("gate-requested", event)) {
         const waiting = await view(event.data.workItemId);
         return waiting ? replies(waiting, [gateText(event.data, waiting.runId, config.console)]) : [];
+      }
+      if (isValid<RunBlocked>("run-blocked", event)) {
+        const blocked = await view(event.data.workItemId);
+        return blocked ? replies(blocked, [blockedText(event.data, config.console)]) : [];
       }
       const fact = runFactOf(event);
       if (typeof fact === "string") throw new Error(fact);

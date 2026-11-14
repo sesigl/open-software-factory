@@ -98,9 +98,14 @@ export const retryEvent = (workItem: WorkItem, runId: string, at: number): WorkR
 
 /**
  * The foreman's run events that move a work item on (ADR 0071), and the gatekeeper's request for a decision, which
- * its requesters hear about (ADR 0113).
+ * its requesters hear about (ADR 0113), and the foreman's run that waits for its checks (ADR 0127).
  */
-export const RUN_SUBJECTS = ["osf.run.started.v1", "osf.run.completed.v1", "osf.gate.requested.v1"];
+export const RUN_SUBJECTS = [
+  "osf.run.started.v1",
+  "osf.run.completed.v1",
+  "osf.gate.requested.v1",
+  "osf.run.blocked.v1",
+];
 
 /** What a run event says about its work item: its run, the status it moves to, and the run's pull requests. */
 export interface RunFact {
@@ -110,6 +115,8 @@ export interface RunFact {
   pullRequests: string[];
   /** The stage the run ended at, when the foreman names it. */
   stage?: string;
+  /** Why that stage failed, when the foreman names it (ADR 0127). */
+  reason?: string;
   /** The run before, whose work item this run takes over (ADR 0105). */
   retryOf?: string;
 }
@@ -122,6 +129,7 @@ type RunEvent = {
     pullRequests?: string[];
     stage?: string;
     retryOf?: string;
+    reason?: string;
   };
 };
 
@@ -130,7 +138,8 @@ export function runFactOf(event: unknown): RunFact | string {
   const type = (event as { type?: unknown } | undefined)?.type;
   const format = type === "run.started@v1" ? "run-started" : type === "run.completed@v1" ? "run-completed" : undefined;
   if (!format || !isValid(format, event)) return `not a run.started@v1 or run.completed@v1: ${JSON.stringify(event)}`;
-  const { runId, workItemId, outcome, pullRequests = [], stage, retryOf } = (event as RunEvent).data;
+  const { runId, workItemId, outcome, pullRequests = [], stage, retryOf, reason } = (event as RunEvent).data;
   const status = !outcome ? "running" : outcome === "succeeded" ? "complete" : outcome;
-  return { workItemId, runId, status, pullRequests, ...(stage ? { stage } : {}), ...(retryOf ? { retryOf } : {}) };
+  const named = { ...(stage ? { stage } : {}), ...(retryOf ? { retryOf } : {}), ...(reason ? { reason } : {}) };
+  return { workItemId, runId, status, pullRequests, ...named };
 }

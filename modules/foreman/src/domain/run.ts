@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import type {
   CheckView,
   RunAction,
+  RunBlocked,
   RunCompleted,
   RunRetry,
   RunStarted,
@@ -538,7 +539,7 @@ export function runCompleted(view: RunView): RunCompleted {
     data: {
       runId: view.runId,
       workItemId: view.workItem.id,
-      ...(last ? { stage: last.stage } : {}),
+      ...(last ? { stage: last.stage, ...(last.reason ? { reason: last.reason } : {}) } : {}),
       factoryVersion: view.factoryVersion,
       outcome: view.state === "complete" ? "succeeded" : view.state === "cancelled" ? "cancelled" : "failed",
       startedAt: view.startedAt,
@@ -547,6 +548,34 @@ export function runCompleted(view: RunView): RunCompleted {
       source: view.workItem.origin.source,
       ...(view.pullRequest ? { pullRequests: [view.pullRequest] } : {}),
       ...(view.retryOf ? { retryOf: view.retryOf } : {}),
+    },
+  };
+}
+
+/**
+ * The `run.blocked@v1` of the stage at the index, when the fact makes it wait for its checks and it did not wait
+ * before; undefined otherwise, so a stage tells of one wait once (ADR 0127).
+ */
+export function runBlocked(view: RunView, after: RunView, index: number, names: string[]): RunBlocked | undefined {
+  const stage = after.stages[index] as StageView;
+  if (stage.state !== "blocked" || view.stages[index]?.state === "blocked") return undefined;
+  return {
+    specversion: "1.0",
+    id: `${view.runId}.blocked.${stage.stage}`,
+    source: SOURCE,
+    type: "run.blocked@v1",
+    time: stage.waitingSince as string,
+    subject: view.runId,
+    datacontenttype: "application/json",
+    data: {
+      runId: view.runId,
+      workItemId: view.workItem.id,
+      stage: stage.stage,
+      waitsFor: "checks",
+      ...(view.pullRequest ? { pullRequest: view.pullRequest } : {}),
+      checks: names,
+      requester: view.workItem.requester,
+      source: view.workItem.origin.source,
     },
   };
 }

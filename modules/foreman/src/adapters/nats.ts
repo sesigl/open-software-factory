@@ -1,4 +1,4 @@
-// NATS (ADR 0067, 0085): the foreman publishes run.started@v1 and run.completed@v1 to the JetStream stream "OSF" and
+// NATS (ADR 0067, 0085): the foreman publishes run.started@v1, run.blocked@v1 and run.completed@v1 to the JetStream stream "OSF" and
 // reads work.received@v1, work.retry-requested@v1 and gate.decided@v1 through its durable consumer, so it gets the events of a time it was down.
 // An event that failed MAX_DELIVER times waits as a dead letter on "osf.dead.<consumer>.>" until it is resent (ADR 0116).
 import { AckPolicy, DeliverPolicy, type JetStreamManager, jetstream, jetstreamManager } from "@nats-io/jetstream";
@@ -10,6 +10,7 @@ export const SUBJECTS = {
   gateDecided: "osf.gate.decided.v1",
   runStarted: "osf.run.started.v1",
   runCompleted: "osf.run.completed.v1",
+  runBlocked: "osf.run.blocked.v1",
 } as const;
 
 const STREAM = "OSF";

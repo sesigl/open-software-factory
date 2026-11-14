@@ -143,6 +143,10 @@
           "minLength": 1,
           "maxLength": 128,
           "description": "The run before, when this run runs a work item again (ADR 0105)."
+        },
+        "reason": {
+          "type": "string",
+          "description": "Why the stage the run ended at failed, when the foreman knows it (ADR 0127)."
         }
       },
       "required": [

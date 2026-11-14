@@ -24,6 +24,7 @@ export const FORMATS: readonly Format[] = [
   format("events/work-retry-requested", "WorkRetryRequested"),
   format("events/run-started", "RunStarted"),
   format("events/run-completed", "RunCompleted"),
+  format("events/run-blocked", "RunBlocked"),
   format("events/gate-requested", "GateRequested"),
   format("events/gate-decided", "GateDecided"),
   format("events/score-recorded", "ScoreRecorded"),

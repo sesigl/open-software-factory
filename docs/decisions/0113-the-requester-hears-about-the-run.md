@@ -47,6 +47,6 @@ state change in the thread or issue that asked, with a link to the run's page; t
 ## Consequences
 
 - A run blocked at its checks, not at a gate, tells nothing yet: no event says so. Revisit when the foreman publishes
-  a stage's waiting state.
-- The reason of a failure is the stage the run ended at; a richer reason needs a field in `run.completed@v1`.
+  a stage's waiting state. Done in ADR 0127 with `run.blocked@v1`.
+- The reason of a failure is the stage the run ended at; a richer reason needs a field in `run.completed@v1`. ADR 0127 adds `reason`.
 - `intake.told` grows by one row per run event; prune it with the work items when they get a retention.

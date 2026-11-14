@@ -72,6 +72,12 @@ Feature: A work item follows its run
     When the gatekeeper publishes "gate.requested@v1" for the work item at the stage "deploy" with the summary "Deploy to production?" twice, then the foreman publishes "run.completed@v1" with the outcome "failed"
     Then the thread has the replies "Received as work item <id>.", "The run waits for a decision at the stage deploy: Deploy to production? https://console.example/runs/run_5d41402abc4b2a76b971" and "The run ended with the outcome failed: https://console.example/runs/run_5d41402abc4b2a76b971"
 
+  @id=SCN-INTAKE-066 @status=implemented
+  Scenario: The Slack thread of a work item hears once that its run waits for the checks of its pull request, and why the run failed
+    Given the server, with "INTAKE_NATS_URL" set to a NATS server, "INTAKE_CONSOLE_URL" set to "https://console.example" and the Slack channel adapter, made a work item of the mention "<@bot> Export reports as CSV" in the Slack channel "C0WORK"
+    When the foreman publishes "run.blocked@v1" for the work item at the stage "ship" for the checks of "https://github.com/acme/web/pull/7" twice, then "run.completed@v1" with the outcome "failed" at the stage "ship" and the reason "the check verify ended with failure"
+    Then the thread has the replies "Received as work item <id>.", "The run waits for the checks of https://github.com/acme/web/pull/7 at the stage ship: https://console.example/runs/run_5d41402abc4b2a76b971" and "The run ended with the outcome failed at the stage ship (the check verify ended with failure): https://console.example/runs/run_5d41402abc4b2a76b971"
+
   @id=SCN-INTAKE-063 @status=implemented
   Scenario: A run event that failed 5 times waits as a dead letter, fails "/v1/health" while it waits, and "intake resend" sends it again
     Given the server, with "INTAKE_NATS_URL" set to a NATS server, received the README's "work.json"

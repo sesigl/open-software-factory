@@ -127,3 +127,18 @@ Feature: Checks before a stage
     When the user runs "foreman serve"
     Then the command exits with code 2
     And the output contains "factory.yaml: /workflow/2/wait: a stage that only waits names checks, the evidence \"required\" or a gate"
+
+  @id=SCN-FORE-160 @status=implemented
+  Scenario: A stage that waits for its checks publishes "run.blocked@v1" once, and the run that fails at a check publishes its reason
+    Given "foreman serve" runs the README's "checks/factory.yaml" with the fake GitHub and NATS, whose pull request "tester/web#1" has the check "verify" in the state "pending"
+    And the scripted "implement" turn replies with the link of that pull request
+    When a program posts the README's "work.json" to "/v1/runs" with the API token, and the fake GitHub sets the check "verify" to "failure" 2500 ms after the stage "ship" blocked
+    Then the server published one "run.blocked@v1" on "osf.run.blocked.v1" with the stage "ship", "waitsFor" "checks", the pull request's link and the check "verify"
+    And the "run.completed@v1" names the outcome "failed", the stage "ship" and the reason "the check verify ended with failure"
+
+  @id=SCN-FORE-161 @status=implemented
+  Scenario: A stage whose checks succeeded at the first read publishes no "run.blocked@v1"
+    Given "foreman serve" runs the README's "checks/factory.yaml" with the fake GitHub and NATS, whose pull request "tester/web#1" has the check "verify" in the state "success"
+    And the scripted "implement" turn replies with the link of that pull request
+    When a program posts the README's "work.json" to "/v1/runs" with the API token and the run completes
+    Then the server published no "run.blocked@v1", and its "run.completed@v1" names no reason

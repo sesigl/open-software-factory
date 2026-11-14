@@ -229,7 +229,10 @@ Serve it as in the quick start, with the forge adapter's token: `export FOREMAN_
    every later stage's prompt has the line `Pull request: <link>`, and `run.completed@v1` lists it in `pullRequests`.
 2. Before the stage `ship` starts, and before its gate if it has one, the foreman runs the
    [forge adapter](../../ports/forge/README.md)'s `pr <owner>/<name> <n>` and reads the named checks. The stage lists
-   them under `checks`, each with `name` and `state`.
+   them under `checks`, each with `name` and `state`. When the stage begins to wait for them, a foreman with
+   `FOREMAN_NATS_URL` publishes [`run.blocked@v1`](../../contracts/events/run-blocked/run-blocked.schema.json) on
+   `osf.run.blocked.v1` once, with the stage, `waitsFor` `checks`, the pull request and the names of the checks; its ID
+   is the run's ID with `.blocked.<stage>` ([ADR 0127](../../docs/decisions/0127-a-run-blocked-at-its-checks.md)).
 3. Every check `success`: the stage starts. A check `failure` or `error`: the stage is `failed` without running its
    agent, with the `reason` `the check verify ended with failure`, and the run is `failed`. A check `pending`, or one
    the pull request does not have yet: the run and the stage are `blocked`, and the foreman reads the checks again
@@ -474,7 +477,8 @@ on `osf.gate.decided.v1` to the newest run of its work item. For each
 does ([Run again](#run-again)). A run publishes
 [`run.started@v1`](../../contracts/events/run-started/run-started.schema.json) on `osf.run.started.v1` when it starts and
 [`run.completed@v1`](../../contracts/events/run-completed/run-completed.schema.json) on `osf.run.completed.v1` when it
-ends, with the outcome `succeeded`, `failed` or `cancelled`. Their IDs are the run's ID with `.started` and
+ends, with the outcome `succeeded`, `failed` or `cancelled` and, when the stage it ended at failed with one, its
+`reason` (ADR 0127). Their IDs are the run's ID with `.started` and
 `.completed`; a run that runs a run before it again names that run in `retryOf`. The events are kept in the JetStream stream `OSF` on `osf.>`, which the
 foreman adds when it is missing, and the foreman reads them through its durable consumer `foreman` ([ADR
 0085](../../docs/decisions/0085-durable-events.md)). A work item or a gate decision published while the foreman is down
@@ -547,7 +551,7 @@ the minor version. The one-time setup is the same as for contracts
 | `FOREMAN_POLL_MS` | string | `"1000"` | serve: how often a running stage looks for steering messages and a cancel, in milliseconds. |
 | `FOREMAN_GATEKEEPER_URL` | string |  | serve: the URL of gatekeeper serve, which a stage with a gate asks for a decision. Required for a factory with gates. |
 | `FOREMAN_GATEKEEPER_TOKEN` | string |  | serve: gatekeeper's API token, GATEKEEPER_API_TOKEN. |
-| `FOREMAN_NATS_URL` | string |  | serve: the NATS server for work.received@v1, work.retry-requested@v1 and gate.decided@v1 in, and run.started@v1 and run.completed@v1 out. Unset: no events. |
+| `FOREMAN_NATS_URL` | string |  | serve: the NATS server for work.received@v1, work.retry-requested@v1 and gate.decided@v1 in, and run.started@v1, run.blocked@v1 and run.completed@v1 out. Unset: no events. |
 | `OSF_STREAM_MAX_AGE` | string |  | serve, resend: the age after which the stream OSF drops an event, like 7d, 12h, 30m or 90s (ADR 0116). The server adds the stream with it, or sets it on a stream that another module added. Unset: a new stream keeps its events without a limit of age, and an existing one keeps its own. The profile and the chart set 7d. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | string |  | serve: the base URL of an OTLP/HTTP receiver, like http://phoenix:6006. Set, each run is one trace with a span per stage and one for the run, sent to <url>/v1/traces, and each stage's harness gets the trace in TRACEPARENT (ADR 0087). |
 | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | string |  | serve: the full URL of the OTLP/HTTP traces endpoint; takes precedence over OTEL_EXPORTER_OTLP_ENDPOINT. |
@@ -713,3 +717,5 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-157 | implemented | A ref that the Git remote does not have stops the server at the start |
 | SCN-FORE-158 | implemented | The fallback runs the exact version factory.lock pins for the adapter's range |
 | SCN-FORE-159 | implemented | A stage's agent finds the repositories it declares cloned in its folder |
+| SCN-FORE-160 | implemented | A stage that waits for its checks publishes "run.blocked@v1" once, and the run that fails at a check publishes its reason |
+| SCN-FORE-161 | implemented | A stage whose checks succeeded at the first read publishes no "run.blocked@v1" |
