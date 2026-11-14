@@ -109,6 +109,18 @@
     "CONSOLE_USER_HEADER": {
       "type": "string",
       "description": "serve: the header in which the sign-in proxy sends the signed-in person, like X-Forwarded-Email. Set, the console takes actions in that person's name, such as submitting work on /work (ADR 0089); unset, it is read-only. Only set it behind a proxy that sets the header and removes it from the browser's requests."
+    },
+    "CONSOLE_MODEL_URL": {
+      "type": "string",
+      "description": "doctor --deep: the OpenAI-compatible base URL of the model gateway (LiteLLM), ending in /v1; it gets one chat completion of one token per model route of the factory definition."
+    },
+    "CONSOLE_MODEL_TOKEN": {
+      "type": "string",
+      "description": "doctor --deep: the gateway's key, sent as Authorization: Bearer <token>."
+    },
+    "CONSOLE_HARNESS_COMMAND": {
+      "type": "string",
+      "description": "doctor --deep: the command line, run with sh -c, that starts the harness's ACP agent, like claude-code-acp; it must answer ACP initialize within 10 seconds."
     }
   }
 }

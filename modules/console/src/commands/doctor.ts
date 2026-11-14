@@ -1,9 +1,19 @@
 // console doctor: checks each server of the factory, its token and the factory definition, and prints one fix per
-// failure (ADR 0086). It exits 1 when a check fails. The page /health shows the same.
+// failure (ADR 0086); with --deep also each model route and the harness (ADR 0120). It exits 1 when a check fails. The page /health shows the same.
 import { readFileSync } from "node:fs";
 import { type Api, probe } from "../adapters/apis.ts";
+import { callRoute, initializeHarness } from "../adapters/deep.ts";
 import { readFactory } from "../adapters/factory-file.ts";
-import { groupsItem, type Item, report, type Server, serverItems } from "../domain/doctor.ts";
+import {
+  groupsItem,
+  harnessItem,
+  type Item,
+  report,
+  routeItem,
+  routesOf,
+  type Server,
+  serverItems,
+} from "../domain/doctor.ts";
 import { list } from "../domain/runs.ts";
 
 type Env = Record<string, string | undefined>;
@@ -40,7 +50,22 @@ function groups(file: string): Item {
   }
 }
 
-export async function examine(env: Env): Promise<Item[]> {
+/** The deep checks (ADR 0120): one model call per route of the factory definition, and the harness's ACP initialize. */
+async function deepItems(env: Env, routes: string[]): Promise<Item[]> {
+  const items: Item[] = [];
+  const url = env.CONSOLE_MODEL_URL;
+  if (!url) items.push({ name: "model", ok: false, detail: "set CONSOLE_MODEL_URL to the gateway's base URL" });
+  else for (const route of routes) items.push(routeItem(route, await callRoute(url, env.CONSOLE_MODEL_TOKEN, route)));
+  const command = env.CONSOLE_HARNESS_COMMAND;
+  items.push(
+    command
+      ? harnessItem(await initializeHarness(command))
+      : { name: "harness", ok: false, detail: "set CONSOLE_HARNESS_COMMAND to the command that starts the harness" },
+  );
+  return items;
+}
+
+export async function examine(env: Env, deep = false): Promise<Item[]> {
   const items = (
     await Promise.all(
       servers(env).map(async (server) => {
@@ -59,17 +84,19 @@ export async function examine(env: Env): Promise<Item[]> {
       detail: "set CONSOLE_FOREMAN_URL to the base URL of the foreman's API",
     });
   const factory = env.CONSOLE_FACTORY || "factory.yaml";
+  let routes: string[] = [];
   try {
-    readFactory(factory);
+    routes = routesOf(readFactory(factory).agents);
     items.push({ name: "factory", ok: true });
   } catch (failure) {
     items.push({ name: "factory", ok: false, detail: `${(failure as Error).message}: check CONSOLE_FACTORY` });
   }
   if (env.CONSOLE_GROUPS) items.push(groups(env.CONSOLE_GROUPS));
+  if (deep) items.push(...(await deepItems(env, routes)));
   return items;
 }
 
-export async function doctor(env: Env) {
-  const items = await examine(env);
+export async function doctor(env: Env, deep = false) {
+  const items = await examine(env, deep);
   return { lines: report(items), exitCode: items.every(({ ok }) => ok) ? 0 : 1 };
 }

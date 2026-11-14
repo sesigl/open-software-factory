@@ -11,10 +11,17 @@ Commands:
   serve  Serve the read-only web view of the factory on PORT: the runs of the foremen in CONSOLE_FOREMAN_URL,
          each run's origin and evidence, the factory definition in CONSOLE_FACTORY, and its health on /health.
   doctor Check each server of the factory, its token and the factory definition, and print one fix per failure.
-         Exits 1 when a check fails.
+         Exits 1 when a check fails. --deep also makes one model call per route of the factory definition through
+         CONSOLE_MODEL_URL and asks the harness in CONSOLE_HARNESS_COMMAND to answer ACP initialize.
 `;
 
-const { positionals, values } = parseArgs({ allowPositionals: true, options: { help: { type: "boolean" } } });
-const COMMANDS: Record<string, Command> = { serve: () => serve(process.env), doctor: () => doctor(process.env) };
+const { positionals, values } = parseArgs({
+  allowPositionals: true,
+  options: { help: { type: "boolean" }, deep: { type: "boolean" } },
+});
+const COMMANDS: Record<string, Command> = {
+  serve: () => serve(process.env),
+  doctor: () => doctor(process.env, values.deep),
+};
 const command = positionals[0] ? COMMANDS[positionals[0]] : undefined;
 process.exitCode = await runProgram({ name: "console", usage: HELP, command, help: values.help });

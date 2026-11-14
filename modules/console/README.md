@@ -30,7 +30,7 @@ Open <http://localhost:8080>. The page lists the foreman's runs, the running one
 | Command | What it does |
 | --- | --- |
 | `console serve` | Serve the pages below on `PORT`. Exits 2 without `CONSOLE_FOREMAN_URL`. |
-| `console doctor` | Check the factory as [Health](#health) describes, print one line per check (`ok    <check>` or `FAIL  <check>: <what to do>`) and the count, and exit 1 when a check fails. |
+| `console doctor [--deep]` | Check the factory as [Health](#health) describes, print one line per check (`ok    <check>` or `FAIL  <check>: <what to do>`) and the count, and exit 1 when a check fails. |
 
 ## Pages
 
@@ -95,6 +95,10 @@ run's history: `<url>/namespaces/<CONSOLE_TEMPORAL_NAMESPACE>/workflows/<runId>`
    `slack:U0EXAMPLE`, the member the reference `groups.json` ships in place of a person
    ([ADR 0114](../../docs/decisions/0114-the-example-member-of-the-reference-groups.md)). The check reads every group,
    not only the policy's approvers, and cannot tell whether a Slack ID belongs to a real person.
+4. Only with `console doctor --deep` ([ADR 0120](../../docs/decisions/0120-deep-checks-of-console-doctor.md)):
+   `model <route>`, one chat completion of one token per model route of the factory definition's agents through the
+   gateway in `CONSOLE_MODEL_URL`, and `harness`, the command in `CONSOLE_HARNESS_COMMAND` answers ACP `initialize`
+   within 10 seconds. A model call costs money, so `/health` and `console doctor` without `--deep` never make one.
 
 The links to the Temporal UI and the trace store are for the browser, so the console does not check them; the
 foreman's `temporal` check covers Temporal.
@@ -133,6 +137,9 @@ A server of a release before `/v1/health` fails its check with the advice to upd
 | `CONSOLE_FORGE_URL` | string |  | serve: the forge's API, the adapter's FORGE_URL, like https://codeberg.org for forge-forgejo. Default: the adapter's own. |
 | `CONSOLE_FORGE_TOKEN` | string |  | serve: the adapter's FORGE_TOKEN; a token that may read pull requests is enough. |
 | `CONSOLE_USER_HEADER` | string |  | serve: the header in which the sign-in proxy sends the signed-in person, like X-Forwarded-Email. Set, the console takes actions in that person's name, such as submitting work on /work (ADR 0089); unset, it is read-only. Only set it behind a proxy that sets the header and removes it from the browser's requests. |
+| `CONSOLE_MODEL_URL` | string |  | doctor --deep: the OpenAI-compatible base URL of the model gateway (LiteLLM), ending in /v1; it gets one chat completion of one token per model route of the factory definition. |
+| `CONSOLE_MODEL_TOKEN` | string |  | doctor --deep: the gateway's key, sent as Authorization: Bearer <token>. |
+| `CONSOLE_HARNESS_COMMAND` | string |  | doctor --deep: the command line, run with sh -c, that starts the harness's ACP agent, like claude-code-acp; it must answer ACP initialize within 10 seconds. |
 
 ## Releases
 
@@ -215,4 +222,10 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-061 | implemented | A person takes over, hands back and cancels a run from the run page |
 | SCN-CONSOLE-062 | implemented | A person approves and rejects a run's pending gate from the run page |
 | SCN-CONSOLE-063 | implemented | A decision gatekeeper refuses shows gatekeeper's problem |
+| SCN-CONSOLE-064 | implemented | "console doctor --deep" calls each model route once and asks the harness to initialize |
+| SCN-CONSOLE-065 | implemented | "console doctor --deep" names a failing model route and a harness that answers "initialize" with an error |
+| SCN-CONSOLE-066 | implemented | "console doctor" without "--deep" calls no model |
+| SCN-CONSOLE-067 | implemented | "console doctor --deep" names the variables of the gateway and the harness when they are not set |
+| SCN-CONSOLE-068 | implemented | "console doctor --deep" names a gateway that does not answer and a harness that ends without a word |
+| SCN-CONSOLE-069 | implemented | The page "/health" calls no model |
 | SCN-CONSOLE-080 | implemented | The run page lists the actions of a run with the person who sent each |

@@ -63,3 +63,24 @@ export function groupsItem(groups: unknown, file: string): Item {
   const detail = `${empty.join(", ")} has no member but the example's ${EXAMPLE_MEMBER}: put its people in ${file}`;
   return { name: "groups", ok: empty.length === 0, detail };
 }
+
+/** The model routes of the factory definition's agents, each once, in the order of the agents. */
+export const routesOf = (agents: Record<string, Record<string, unknown>> | undefined): string[] => [
+  ...new Set(Object.values(agents ?? {}).map(({ model }) => String(model))),
+];
+
+/** The item of one model route from the status of its call; 0 means the gateway did not answer. */
+export function routeItem(route: string, status: number): Item {
+  const detail =
+    status === 0
+      ? "no answer: check CONSOLE_MODEL_URL and that the gateway runs"
+      : `the gateway answered ${status}: check the route in the gateway's config and its provider key`;
+  return { name: `model ${route}`, ok: status === 200, detail };
+}
+
+/** The item of the harness from whether it answered ACP `initialize`. */
+export const harnessItem = (ok: boolean): Item => ({
+  name: "harness",
+  ok,
+  detail: "it did not answer ACP initialize: check CONSOLE_HARNESS_COMMAND",
+});

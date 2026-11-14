@@ -807,8 +807,11 @@ the v1 promise. P0 items come first: without them, people cannot trust the facto
     with one fix per failure (`SCN-CONSOLE-037` to `-040`).
   - [x] The Compose profile and the Helm chart probe `/v1/health` and want a 2xx answer, and the quick start of
     `deploy/README.md` runs `docker compose run --rm console console doctor` (`SCN-DIST-016`).
-  - [ ] Deep checks: one model call per route through LiteLLM, the harness answers ACP `initialize`, a sandbox starts
-    and refuses a denied host, a test event reaches the foreman, a test span reaches the trace store.
+  - [x] Deep checks with `console doctor --deep`: one model call per route through LiteLLM and the harness answers ACP
+    `initialize` (ADR 0120, `SCN-CONSOLE-064` to `-069`).
+  - [ ] Deep checks that need adapter capabilities that do not exist yet (ADR 0120): a sandbox starts and refuses a
+    denied host (a sandbox adapter command that runs a probe), a test event reaches the foreman (a NATS client and a
+    foreman route that shows it), a test span reaches the trace store (a read API of the trace store).
 
 ### [x] T-26 · evidence in the loop (P1)
 
