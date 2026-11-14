@@ -18,6 +18,12 @@ SPEC, TRACE, STEPS and PASS run with the module `spec-trace` ([ADR 0030](../deci
 `tools/checks/` (TODO item T-00), run with `osf check <ID>`; see [`tools/README.md`](../../tools/README.md).
 BOUNDARY-RUNTIME and NOREAL are guards in the testkit; the testkit also records the coverage REACH reads.
 
+The checks read the files that `git ls-files -co --exclude-standard` lists: committed or not, but not ignored.
+Outside a Git repository they read every file except in `.git/` and `node_modules/`. A nested Git checkout, a folder
+below the root with a `.git` file (a worktree, such as a subagent's in `.claude/worktrees/`) or a `.git` folder (a
+clone), is not part of the repository: Git leaves it out, and so do the checks, `make docs` (DOCS-GEN) and
+`make next-id` (SCN-REPO-159 to -161).
+
 CI runs `make verify` in `.github/workflows/verify.yml` for every pull request and every push to `main`. It runs
 MUTATION in `.github/workflows/mutation.yml` for every pull request, one runner per shard of about 100 added lines of each changed unit, as a separate check. It runs
 the three parts of `make verify` as jobs: `verify-static` (lint, typecheck, build) and one `verify-tests` job per

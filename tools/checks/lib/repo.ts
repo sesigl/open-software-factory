@@ -25,7 +25,7 @@ export class Repo {
     const listed =
       git.status === 0
         ? git.stdout.split("\0").filter(Boolean)
-        : walk(this.root).map((file) => relative(this.root, file));
+        : treeFiles(this.root).map((file) => relative(this.root, file));
     this.#files = [...new Set(listed.map((file) => file.split("\\").join("/")))]
       .filter((file) => existsSync(join(this.root, file)))
       .sort();
@@ -48,13 +48,18 @@ export class Repo {
   }
 }
 
-function walk(dir: string): string[] {
+/**
+ * Every file below `dir`, in sorted order, without the folders named in `skip` and without a nested Git checkout:
+ * a folder below `dir` that holds a `.git` entry, a folder in a clone and a file in a worktree. Git, too, leaves a
+ * nested checkout out of this repository's files.
+ */
+export function treeFiles(dir: string, skip: ReadonlySet<string> = new Set([".git", "node_modules"])): string[] {
   const out: string[] = [];
-  for (const entry of readdirSync(dir)) {
-    if (entry === ".git" || entry === "node_modules") continue;
+  for (const entry of readdirSync(dir).sort()) {
+    if (skip.has(entry)) continue;
     const full = join(dir, entry);
-    if (statSync(full).isDirectory()) out.push(...walk(full));
-    else out.push(full);
+    if (!statSync(full).isDirectory()) out.push(full);
+    else if (!existsSync(join(full, ".git"))) out.push(...treeFiles(full, skip));
   }
   return out;
 }
