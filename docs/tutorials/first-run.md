@@ -60,9 +60,28 @@ node tools/bin/osf.ts doctor
 
 `osf doctor` runs `console doctor` in the profile: one line per check, `ok` or `FAIL` with what to do, and the count
 last. Fix each `FAIL`, run `osf up` again when you changed `.env`, and repeat until it prints `all ... checks ok`.
-Then open the console at http://127.0.0.1:8080.
+Then open the console at http://localhost:8080. It is open and read-only to anyone who reaches that address.
 
-## 5. Give it work
+## 5. Turn on the sign-in
+
+So that only your team gets in, the console signs people in with Google or GitHub:
+
+1. Register the console with the callback `http://localhost:8080/signin/callback`: at Google as an OAuth client of
+   the type "Web application", or at GitHub as an OAuth App (Settings → Developer settings → OAuth Apps).
+2. In `deploy/compose/.env`, set `CONSOLE_SIGN_IN=oidc` with `CONSOLE_OIDC_ISSUER=https://accounts.google.com`,
+   `CONSOLE_OIDC_CLIENT_ID` and `CONSOLE_OIDC_CLIENT_SECRET`, or `CONSOLE_SIGN_IN=github` with
+   `CONSOLE_GITHUB_CLIENT_ID` and `CONSOLE_GITHUB_CLIENT_SECRET`. `osf init` already generated
+   `CONSOLE_SESSION_SECRET`.
+3. In `team/factory/access.yaml`, put your email in place of `admin@example.com`, with the role `admin`. Add your
+   team with the role `member`.
+4. Run `osf up`: it names each setting the provider still needs. Then `osf doctor`: its check `access` fails until
+   an admin of yours is listed.
+
+Open http://localhost:8080 and sign in. Use `localhost`, not `127.0.0.1`: the other tools of the profile run on
+`127.0.0.1`, so they never get the console's cookie. See [Turn on the sign-in](../../deploy/README.md#turn-on-the-sign-in)
+for the details.
+
+## 6. Give it work
 
 Send intake an issue of your repository: see
 [Receive GitHub issues on your machine](../../deploy/README.md#receive-github-issues-on-your-machine) in the deploy guide for the webhook. The console shows

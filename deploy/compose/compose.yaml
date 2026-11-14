@@ -393,8 +393,18 @@ services:
         condition: service_healthy
       gatekeeper:
         condition: service_healthy
+    healthcheck:
+      # /v1/ready answers without a session whether the console reads its factory. The probe names the console's own
+      # host, as a browser does: with the sign-in on, the console sends a request for another host to CONSOLE_URL.
+      test:
+        - CMD
+        - node
+        - -e
+        - 'require("node:http").get({ host: "127.0.0.1", port: 8080, path: "/v1/ready", headers: { host: new URL(process.env.CONSOLE_URL).host } }, (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on("error", () => process.exit(1))'
+      interval: 2s
+      timeout: 5s
+      retries: 60
     environment:
-      OSF_HEALTH_PATH: /factory
       CONSOLE_FOREMAN_URL: http://foreman:8080
       CONSOLE_FOREMAN_TOKEN: ${FOREMAN_API_TOKEN:?set FOREMAN_API_TOKEN in .env}
       CONSOLE_INTAKE_URL: http://intake:8080
@@ -415,6 +425,17 @@ services:
       # The run records and scores of the service improve; empty without the profile improve.
       CONSOLE_IMPROVE_DIR: /home/node/data
       CONSOLE_LINKS: Jaeger=http://${OSF_HOST:-127.0.0.1}:${JAEGER_PORT:-16686},LiteLLM=http://${OSF_HOST:-127.0.0.1}:${LITELLM_PORT:-4000}/ui
+      # The console's own sign-in (ADR 0134), off unless CONSOLE_SIGN_IN names the provider: oidc or github. With it
+      # on, the console does not start without that provider's settings and CONSOLE_SESSION_SECRET, and only the
+      # people of the factory's access.yaml sign in. The console runs on localhost, the tools above on OSF_HOST.
+      CONSOLE_SIGN_IN: ${CONSOLE_SIGN_IN:-}
+      CONSOLE_URL: ${CONSOLE_URL:-http://localhost:${CONSOLE_PORT:-8080}}
+      CONSOLE_SESSION_SECRET: ${CONSOLE_SESSION_SECRET:-}
+      CONSOLE_OIDC_ISSUER: ${CONSOLE_OIDC_ISSUER:-}
+      CONSOLE_OIDC_CLIENT_ID: ${CONSOLE_OIDC_CLIENT_ID:-}
+      CONSOLE_OIDC_CLIENT_SECRET: ${CONSOLE_OIDC_CLIENT_SECRET:-}
+      CONSOLE_GITHUB_CLIENT_ID: ${CONSOLE_GITHUB_CLIENT_ID:-}
+      CONSOLE_GITHUB_CLIENT_SECRET: ${CONSOLE_GITHUB_CLIENT_SECRET:-}
     volumes:
       - factory:/factory:ro
       - improve:/home/node/data:ro
