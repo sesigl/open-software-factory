@@ -84,3 +84,9 @@ Feature: The runs page
     And the next page lists only "Archive old reports" and links no "Next page"
     And the second foreman was asked only for its first page
     And the page "/?page=bm90LWEtcGFnZQ", which no foreman named, answers 400
+
+  @id=SCN-CONSOLE-135 @status=implemented
+  Scenario: Every page allows only the console's own files and no script
+    Given a foreman with the run "Export reports as CSV"
+    When a person opens "/", "/health" and "/pico.css"
+    Then each answer has the Content-Security-Policy "default-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"

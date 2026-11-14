@@ -126,6 +126,34 @@ Feature: Repository checks
     And the output contains "BOUNDARY-ENV modules/demo/system-tests/SCN-DEMO-001.test.ts"
     And the output contains "DEMO_SECRET_MODE"
 
+  @id=SCN-REPO-142 @status=implemented
+  Scenario: TEMPLATE accepts a template that only shows the data of its route
+    Given the module "demo" whose template "src/web/pages/runs.astro" imports a component and a type, reads the page's data and its status, maps the runs and switches on a value
+    When the developer runs "osf check TEMPLATE"
+    Then the command exits with code 0
+    And the output contains "TEMPLATE ok"
+
+  @id=SCN-REPO-143 @status=implemented
+  Scenario: TEMPLATE rejects a template that computes in its frontmatter
+    Given the module "demo" whose template "src/web/pages/runs.astro" counts the runs in its frontmatter
+    When the developer runs "osf check TEMPLATE"
+    Then the command exits with code 1
+    And the output contains "TEMPLATE modules/demo/src/web/pages/runs.astro:6 the frontmatter holds only imports, the page's data and its status: compute in the route"
+
+  @id=SCN-REPO-144 @status=implemented
+  Scenario: TEMPLATE rejects a template whose markup computes
+    Given the module "demo" whose template "src/web/pages/runs.astro" filters the runs in its markup
+    When the developer runs "osf check TEMPLATE"
+    Then the command exits with code 1
+    And the output contains "TEMPLATE modules/demo/src/web/pages/runs.astro:7 the markup computes: an expression reads a property, maps a list or switches on a value"
+
+  @id=SCN-REPO-145 @status=implemented
+  Scenario: TEMPLATE rejects a template that imports a layer above its own
+    Given the module "demo" whose template "src/web/pages/runs.astro" imports a type of "src/commands/serve.ts"
+    When the developer runs "osf check TEMPLATE"
+    Then the command exits with code 1
+    And the output contains "TEMPLATE modules/demo/src/web/pages/runs.astro:2 imports ../../commands/serve.ts of the layer commands, above its layer templates"
+
   @id=SCN-REPO-140 @status=implemented
   Scenario: UI-QUERY rejects a UI test that finds an element by a CSS selector
     Given a repository with the implemented scenario "SCN-DEMO-001" and its system test

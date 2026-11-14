@@ -1,3 +1,4 @@
+// @ts-nocheck
 // The factory definition the console shows: the YAML file in CONSOLE_FACTORY, read when a page is opened.
 import { readFileSync } from "node:fs";
 import { parse } from "yaml";

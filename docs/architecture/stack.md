@@ -92,7 +92,7 @@ publish only the TypeScript package; clients for other languages are not built (
 | Agent memory | pgvector first | no extra service |
 | Gate policies | OPA (Rego) through its CLI | Cedar answers only allow or deny; the factory definition names Rego (ADR 0047) |
 | A server's store on a laptop | PGlite, PostgreSQL in process, in the data folder (intake, ADR 0063) | SQLite would be a second SQL dialect beside PostgreSQL |
-| Web UI | The console as the backend of the browser: pages on the server, today Preact with htm and Pico CSS (ADR 0072), moving to Astro with SolidJS islands in wave 6 (ADR 0130, [web.md](web.md)) | An API gateway or module APIs open to the browser put the tokens and the session in the browser or in one more service; a single-page app needs a browser in every test |
+| Web UI | The console as the backend of the browser: pages on the server, today Preact with htm and Pico CSS (ADR 0072), moving to Astro with SolidJS islands in wave 6: Astro in the Node adapter's middleware mode behind Fastify, templates without logic (ADR 0130, ADR 0132, [web.md](web.md)) | An API gateway or module APIs open to the browser put the tokens and the session in the browser or in one more service; a single-page app needs a browser in every test |
 
 ## Revisit when
 

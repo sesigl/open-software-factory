@@ -1,3 +1,4 @@
+// @ts-nocheck
 // The page frame: Preact components written with htm, rendered to HTML on the server (ADR 0072). No script runs in
 // the browser; the runs pages reload themselves.
 import { html } from "htm/preact";

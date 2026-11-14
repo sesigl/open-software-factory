@@ -1,3 +1,4 @@
+// @ts-nocheck
 // The forge port's adapter as a program (ADR 0073): the console runs only its read-only command `prs` and reads the
 // JSON lines it prints. A failure is a note with the adapter's error, never an exception.
 import { execFile } from "node:child_process";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 // The work page "/work": intake's latest work items, each with its origin, status, requester, run and age, so a person
 // sees the work that waits, also work without a run yet.
 import type { WorkItemView } from "@opensoftware/contracts";

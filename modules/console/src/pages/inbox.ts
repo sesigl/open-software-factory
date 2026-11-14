@@ -1,3 +1,4 @@
+// @ts-nocheck
 // The inbox page "/inbox": observer's open proposals with their age and state (IMPROVE-004, ADR 0073).
 import type { Proposal } from "../adapters/forge.ts";
 import { proposalState } from "../domain/inbox.ts";

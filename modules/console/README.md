@@ -49,7 +49,9 @@ Open <http://localhost:8080>. The page lists the foreman's runs, the running one
 Every page links the runs, the work items (with `CONSOLE_INTAKE_URL`), the factory, the health page and the dashboards in `CONSOLE_LINKS`. The runs pages reload themselves every
 `CONSOLE_REFRESH` seconds. Without `CONSOLE_USER_HEADER` the console is read-only: it has no forms, and any method but
 `GET` and `HEAD` answers 405. It shows what the foreman and intake show, so run it behind your sign-in proxy, such as
-oauth2-proxy.
+oauth2-proxy. Every answer carries a Content-Security-Policy that allows only the console's own files and no script.
+The pages render on the server; the health page is the first that Astro renders ([ADR 0132](../../docs/decisions/0132-astro-in-the-console.md)),
+the others follow one at a time with the same URLs.
 
 Actions ([ADR 0089](../../docs/decisions/0089-console-actions.md)): set `CONSOLE_USER_HEADER` to the header in which
 your sign-in proxy sends the signed-in person, like `X-Forwarded-Email`. Then `/work` has the form "submit work"
@@ -279,3 +281,5 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-132 | implemented | "console doctor --deep" names the stream when no stream takes the ping |
 | SCN-CONSOLE-133 | implemented | "console doctor --deep" names the variable when NATS does not answer |
 | SCN-CONSOLE-134 | implemented | "console doctor --deep" without "CONSOLE_NATS_URL" skips the events |
+| SCN-CONSOLE-135 | implemented | Every page allows only the console's own files and no script |
+| SCN-CONSOLE-136 | implemented | The page "/health" has the navigation of every page |

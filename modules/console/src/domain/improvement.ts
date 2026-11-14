@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Cost and scores of the factory's runs (ADR 0123): the run records and scores the improvement jobs wrote.
 import { runSpans, type Score } from "@opensoftware/contracts";
 

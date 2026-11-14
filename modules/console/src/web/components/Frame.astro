@@ -1,0 +1,35 @@
+---
+import type { FrameData } from "../../pages/frame.ts";
+
+const { frame } = Astro.props as { frame: FrameData };
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{frame.title} · console</title>
+    <link rel="stylesheet" href="/pico.css" />
+  </head>
+  <body>
+    <header class="container">
+      <nav>
+        <ul>
+          <li><strong>console</strong></li>
+          <li><a href="/">Runs</a></li>
+          {frame.work && <li><a href="/work">Work</a></li>}
+          <li><a href="/factory">Factory</a></li>
+          {frame.inbox && <li><a href="/inbox">Inbox</a></li>}
+          {frame.improvement && <li><a href="/improvement">Cost and scores</a></li>}
+          <li><a href="/health">Health</a></li>
+        </ul>
+        <ul>
+          {frame.links.map((link) => <li><a href={link.url}>{link.name}</a></li>)}
+        </ul>
+      </nav>
+    </header>
+    <main class="container">
+      <slot />
+    </main>
+  </body>
+</html>

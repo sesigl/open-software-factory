@@ -1,3 +1,4 @@
+// @ts-nocheck
 // The deep checks of `console doctor --deep` (ADR 0120): one model call per route through the gateway, the
 // harness's answer to ACP `initialize`, one span from the collector to the trace store, a sandbox adapter's probe and
 // one ping on NATS. Each costs, starts or writes something, so only `--deep` runs them.

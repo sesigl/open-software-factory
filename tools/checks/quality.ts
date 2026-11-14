@@ -13,7 +13,8 @@ import { type Finding, isLibrary, lineOf, type Repo } from "./lib/repo.ts";
 const UNIT_MANIFESTS = ["modules/*/package.json", "packages/*/package.json", "adapters/*/*/package.json"];
 /** Units whose system tests run the built artifact through the testkit, so Stryker can mutate them. */
 const MUTATED = /^(modules\/[^/]+|adapters\/[^/]+\/[^/]+)$/;
-const SOURCE = /^(src|bin)\/.+\.(ts|tsx|js|mjs)$/;
+// An Astro template counts for DUP; MUTATION mutates only `.ts` files, and TEMPLATE keeps logic out of templates.
+const SOURCE = /^(src|bin)\/.+\.(ts|tsx|js|mjs|astro)$/;
 const TOOLS_SOURCE = /^tools\/(bin|checks|scaffold)\/.+\.ts$/;
 const SKIPPED = /(^|\/)__unit__\/|\.d\.ts$/;
 
@@ -101,8 +102,11 @@ function clones(repo: Repo, files: string[]): Clone[] {
         secondFile: { name: string; start: number; end: number };
       }[];
     };
+    // jscpd names a part of a file in another language, like the markup of an Astro template, `<file>:<format>`.
     const side = (file: { name: string; start: number; end: number }) => ({
-      file: relative(repo.root, file.name).split("\\").join("/"),
+      file: relative(repo.root, file.name.replace(/:[a-z]+$/, ""))
+        .split("\\")
+        .join("/"),
       start: file.start,
       end: file.end,
     });

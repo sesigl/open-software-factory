@@ -1395,11 +1395,11 @@ package (`ui`, `factory-files`, `secrets-openbao`) needs its ADR, `skills/new-mo
 - **Done when:** one existing page is rendered by Astro with the new stack, its scenarios pass with their text
   unchanged, `make verify` passes, and the released image serves the page.
 - **Slices:**
-  - [ ] The ADR for the stack and for how each check treats `.astro` and `.tsx` files, with the measured build,
-    start and suite times.
-  - [ ] The build: Astro behind Fastify in `console serve`, `astro check` in the typecheck, the layers, turbo's
-    inputs, and the checks' rules for templates (`SCN-REPO` scenarios for each changed check).
-  - [ ] The first page on Astro: the health page, the smallest one, after T-52's page reader. It keeps the look of
+  - [x] The ADR for the stack and for how each check treats `.astro` and `.tsx` files, with the measured build,
+    start and suite times (ADR 0132).
+  - [x] The build: Astro behind Fastify in `console serve`, `astro check` in the typecheck, the layers, turbo's
+    inputs, and the checks' rules for templates (`SCN-REPO` scenarios for each changed check: TEMPLATE, DUP).
+  - [x] The first page on Astro: the health page, the smallest one, after T-52's page reader. It keeps the look of
     Pico CSS; T-60 gives it the new look. Its scenarios keep their text.
   - [ ] The package and the image hold the built files; the profile and the chart pin the release (`SCN-DIST`).
 

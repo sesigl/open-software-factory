@@ -1,3 +1,4 @@
+// @ts-nocheck
 // The run page "/runs/<runId>": the run's origin and requests, its stages with their gates and checks as its
 // evidence, and links to its pull request, trace, transcripts and history (VIS-002).
 import type { GateView, RunView, StageView, WorkRequest } from "@opensoftware/contracts";

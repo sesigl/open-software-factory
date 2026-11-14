@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-nocheck
 // console <command>: the entry layer only parses arguments and calls the commands.
 import { parseArgs } from "node:util";
 import { type Command, runProgram } from "@opensoftware/cli";

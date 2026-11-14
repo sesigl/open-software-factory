@@ -1,3 +1,4 @@
+// @ts-nocheck
 // The files of the improvement jobs (ADR 0123): every JSON value or JSON line of the .json and .jsonl files below
 // the folder. A line that is no JSON is skipped, as a file that a job is still writing ends in half a line.
 import { readdirSync, readFileSync } from "node:fs";

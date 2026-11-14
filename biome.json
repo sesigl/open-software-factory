@@ -10,5 +10,15 @@
       "style": { "noNonNullAssertion": "error" }
     }
   },
-  "javascript": { "formatter": { "quoteStyle": "double", "trailingCommas": "all" } }
+  "javascript": { "formatter": { "quoteStyle": "double", "trailingCommas": "all" } },
+  "overrides": [
+    {
+      "includes": ["**/*.astro"],
+      "linter": {
+        "rules": {
+          "correctness": { "noUnusedVariables": "off", "noUnusedImports": "off" }
+        }
+      }
+    }
+  ]
 }

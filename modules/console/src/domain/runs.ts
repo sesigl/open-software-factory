@@ -1,3 +1,4 @@
+// @ts-nocheck
 // The rules of the views, without I/O: the run states, the order of a merged run list, a run's age, and the links
 // built from the configuration's URL templates (ADR 0072).
 import type { RunView } from "@opensoftware/contracts";

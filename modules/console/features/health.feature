@@ -201,3 +201,9 @@ Feature: Health
     Given a console without "CONSOLE_NATS_URL"
     When the user runs "console doctor --deep"
     Then it prints no line about the events
+
+  @id=SCN-CONSOLE-136 @status=implemented
+  Scenario: The page "/health" has the navigation of every page
+    Given a console with an intake, the inbox of "tester/web", a folder of cost and scores and the dashboard "Grafana" at "https://grafana.acme.dev"
+    When a person opens "/health"
+    Then the page's navigation links "/", "/work", "/factory", "/inbox", "/improvement", "/health" and "https://grafana.acme.dev"

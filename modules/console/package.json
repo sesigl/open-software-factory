@@ -19,23 +19,27 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && astro build",
     "lint": "biome check .",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json && astro-check --root . --tsconfig tsconfig.astro.json",
     "test:system": "testkit timed vitest run",
     "docs": "node ../../tools/bin/osf.ts docs .",
     "mutation": "node ../../tools/bin/osf.ts mutation ."
   },
   "devDependencies": {
+    "@astrojs/check": "0.9.12",
     "@opensoftware/forge-github": "workspace:*",
-    "@opensoftware/testkit": "workspace:*"
+    "@opensoftware/testkit": "workspace:*",
+    "typescript": "5.9.3"
   },
   "dependencies": {
+    "@astrojs/node": "11.1.9",
     "@nats-io/jetstream": "3.4.0",
     "@nats-io/transport-node": "3.4.0",
     "@opensoftware/cli": "workspace:*",
     "@opensoftware/contracts": "workspace:*",
     "@picocss/pico": "2.1.1",
+    "astro": "7.4.4",
     "fastify": "5.12.7",
     "htm": "3.1.1",
     "preact": "11.0.1",

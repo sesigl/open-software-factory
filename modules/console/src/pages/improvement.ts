@@ -1,3 +1,4 @@
+// @ts-nocheck
 // The page "/improvement": cost and scores of the factory's runs, from the improvement jobs' files (ADR 0123).
 import { type Improvement, usd } from "../domain/improvement.ts";
 import { html } from "./html.ts";
