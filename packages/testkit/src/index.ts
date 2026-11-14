@@ -26,7 +26,7 @@ export type { CliResult } from "./support/process.ts";
 export type { Acp, AcpClient, AcpPermissionRequest, AcpSession, AcpStreams, AcpTurn } from "./sut/acp.ts";
 export type { Action, ActionOptions, ActionResult } from "./sut/action.ts";
 export type { Compose, ComposeService } from "./sut/compose.ts";
-export type { CloudEvent, EventLog, Events } from "./sut/events.ts";
+export type { CloudEvent, EventLog, Events, Stream } from "./sut/events.ts";
 export type { Helm } from "./sut/helm.ts";
 export type { Http, HttpResponse } from "./sut/http.ts";
 export type { Mcp, McpClient } from "./sut/mcp.ts";
