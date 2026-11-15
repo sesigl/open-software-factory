@@ -32,6 +32,6 @@ scenario("SCN-CONSOLE-179", async ({ sut, fakes, given, when, then }) => {
   );
 
   await then('the navigation of "/" does not link "Secrets"', async () => {
-    expect(navLinks(runs).map((link) => link.text)).toEqual(["Runs", "Factory", "Health"]);
+    expect(navLinks(runs).map((link) => link.text)).toEqual(["Runs", "Skills", "Factory", "Health"]);
   });
 });
