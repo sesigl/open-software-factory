@@ -154,10 +154,19 @@ const pendingStage = ({ stage, agent }: { stage: string; agent?: string }): Stag
   state: "pending",
 });
 
+/**
+ * The problem with an actor's kind that is not the contract's ActorKind, "person" or "trigger": such a kind would pass
+ * as no person and skip the person's proof (ADR 0151).
+ */
+const unknownKind = (kind: string): string | undefined =>
+  kind === "person" || kind === "trigger" ? undefined : `/by/kind: "${kind}" is not "person" or "trigger"`;
+
 /** The retry in a request's body, or the problem with it as "<JSON Pointer>: <what is wrong>". */
 export function retryOf(body: unknown): RunRetry | string {
   const { by, from } = (typeof body === "object" && body !== null ? body : {}) as Record<string, unknown>;
   const { kind, id } = (typeof by === "object" && by !== null ? by : {}) as Record<string, unknown>;
+  const unknown = typeof kind === "string" ? unknownKind(kind) : undefined;
+  if (unknown) return unknown;
   if ((kind !== "person" && kind !== "trigger") || typeof id !== "string" || id === "")
     return '/by: a retry needs the actor who asks, as { "kind": "person", "id": "<source>:<ID>" }';
   // A `from` that names no stage of the run is refused when the run is known (`retried`).
@@ -486,6 +495,8 @@ export function signalOf(body: unknown): Signal | string {
   const person = by as Actor | undefined;
   if (by !== undefined && !(typeof person?.id === "string" && person.id && typeof person.kind === "string"))
     return "/by: must name the person with kind and id";
+  const unknown = person ? unknownKind(person.kind) : undefined;
+  if (unknown) return unknown;
   const sender = person ? { by: person } : {};
   if (type === "cancel" || type === "take-over" || type === "hand-back") return { type, ...sender };
   if (type !== "steer") return `/type: must be "steer", "cancel", "take-over" or "hand-back"`;

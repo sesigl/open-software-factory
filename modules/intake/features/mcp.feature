@@ -3,7 +3,7 @@ Feature: The Factory MCP server
   "intake mcp" lets a local coding agent submit work and read its state over MCP on stdio, as a client of the API
   (ADR 0063).
 
-  @id=SCN-INTAKE-017 @status=implemented @realizes=SCN-FACTORY-ACCESS-001
+  @id=SCN-INTAKE-017 @status=deprecated @realizes=SCN-FACTORY-ACCESS-001
   Scenario: A local agent submits work through the Factory MCP server
     Given the server runs and "intake mcp" is connected to it as "github:varun"
     When the agent calls the tool "submit_work" with the title "Export reports as CSV"

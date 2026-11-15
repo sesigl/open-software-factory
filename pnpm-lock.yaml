@@ -451,6 +451,9 @@ importers:
       '@opensoftware/factory-source':
         specifier: workspace:*
         version: link:../../packages/factory-source
+      '@opensoftware/person-proof':
+        specifier: workspace:*
+        version: link:../../packages/person-proof
       '@temporalio/activity':
         specifier: 1.24.0
         version: 1.24.0
@@ -543,6 +546,9 @@ importers:
       '@opensoftware/contracts':
         specifier: workspace:*
         version: link:../../contracts
+      '@opensoftware/person-proof':
+        specifier: workspace:*
+        version: link:../../packages/person-proof
       '@opensoftware/postgres':
         specifier: workspace:*
         version: link:../../packages/postgres

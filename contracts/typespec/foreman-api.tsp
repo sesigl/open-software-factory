@@ -43,31 +43,42 @@ namespace ForemanApi {
   @get
   op getRun(@path runId: string): RunView | GatekeeperApi.Failure<401> | GatekeeperApi.Failure<404>;
 
-  /** Steer the running stage's agent, or cancel the run. */
+  /**
+   * Steer the running stage's agent, or cancel the run. With `FOREMAN_PERSON_KEYS`, a `by` of kind `person` needs the
+   * person's proof in `OSF-Person`: 401 without it or for one that does not verify, 403 for one of another request,
+   * 503 when its issuer's key set cannot be read (ADR 0151).
+   */
   @route("/v1/runs/{runId}/signals")
   @post
-  op signalRun(@path runId: string, @body signal: RunSignal):
+  op signalRun(@path runId: string, @header("OSF-Person") personProof?: string, @body signal: RunSignal):
     | {
         @statusCode statusCode: 202;
         @body run: RunView;
       }
     | GatekeeperApi.Failure<400>
     | GatekeeperApi.Failure<401>
+    | GatekeeperApi.Failure<403>
     | GatekeeperApi.Failure<404>
-    | GatekeeperApi.Failure<409>;
+    | GatekeeperApi.Failure<409>
+    | GatekeeperApi.Failure<503>;
 
-  /** Run a run that failed or was cancelled again, as a new run that names it (ADR 0105). */
+  /**
+   * Run a run that failed or was cancelled again, as a new run that names it (ADR 0105). With `FOREMAN_PERSON_KEYS`, a
+   * `by` of kind `person` needs the person's proof in `OSF-Person`, as for a signal (ADR 0151).
+   */
   @route("/v1/runs/{runId}/retry")
   @post
-  op retryRun(@path runId: string, @body retry: RunRetry):
+  op retryRun(@path runId: string, @header("OSF-Person") personProof?: string, @body retry: RunRetry):
     | {
         @statusCode statusCode: 201;
         @body run: RunView;
       }
     | GatekeeperApi.Failure<400>
     | GatekeeperApi.Failure<401>
+    | GatekeeperApi.Failure<403>
     | GatekeeperApi.Failure<404>
-    | GatekeeperApi.Failure<409>;
+    | GatekeeperApi.Failure<409>
+    | GatekeeperApi.Failure<503>;
 
   /**
    * The `doctor.ping@v1` event with this ID, when the foreman's consumer received it since the server started (ADR

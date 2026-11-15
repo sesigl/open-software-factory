@@ -64,7 +64,8 @@ Each format has one schema, generated from `typespec/`, and fixtures that CONTRA
 first is gatekeeper's: `POST /v1/gates`, `GET /v1/gates/{gateId}` and `POST /v1/gates/{gateId}/decisions` (ADR 0118) with the models `GateRequest`, `GateView`, `GateDecisionRequest` and
 `ApiProblem` (RFC 9457). The second is intake's (ADR 0063): `POST /v1/work-items` and
 `GET /v1/work-items/{workItemId}` with the models `WorkSubmission`, `WorkItemView` and `WorkRequest`, and
-`GET /v1/inbox` with `WorkItemList`. The third is the
+`GET /v1/inbox` with `WorkItemList`; `POST /v1/work-items` takes the optional header `OSF-Person`, the person proof of
+a requester that is a person, and may answer 403 and 503 (ADR 0151). The third is the
 foreman's (ADR 0067): `POST /v1/runs`, `GET /v1/runs` with `RunList`, `GET /v1/runs/{runId}`, `POST /v1/runs/{runId}/signals` and
 `POST /v1/runs/{runId}/retry` (ADR 0105), and `GET /v1/doctor/pings/{id}` with `DoctorPingSeen` (ADR 0120), with the models `RunView` (its `adapters`, ADR 0110), `StageView` (its `waitingSince`, ADR 0106, and its `note`, ADR 0109), `CheckView` (ADR 0069), `RunSignal` (its `by`, ADR 0118), `RunAction`
 and `RunRetry`. All three answer `GET /v1/health` with the models

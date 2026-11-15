@@ -1,6 +1,6 @@
 # AGENTS.md for module `foreman`
 
-Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0004, ADR 0067, ADR 0068, ADR 0069, ADR 0070, ADR 0071, ADR 0107, ADR 0109, ADR 0111, ADR 0115, ADR 0126, ADR 0139, ADR 0142, ADR 0146.
+Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0004, ADR 0067, ADR 0068, ADR 0069, ADR 0070, ADR 0071, ADR 0107, ADR 0109, ADR 0111, ADR 0115, ADR 0126, ADR 0139, ADR 0142, ADR 0146, ADR 0151.
 
 ## Public surface
 
@@ -12,7 +12,8 @@ The only ways a system test or another program may use this module:
 - Outside systems it drives: the sandbox adapter in `FOREMAN_SANDBOXES`, the forge adapter in `FOREMAN_FORGES`, the
   inference adapter in `FOREMAN_INFERENCES` and the secrets adapters in `FOREMAN_SECRETS` as command lines, the harness adapters in
   `FOREMAN_HARNESSES` over ACP, gatekeeper at
-  `FOREMAN_GATEKEEPER_URL`, Temporal at `FOREMAN_TEMPORAL_ADDRESS`
+  `FOREMAN_GATEKEEPER_URL`, Temporal at `FOREMAN_TEMPORAL_ADDRESS`, the key sets of the issuers of person proofs in
+  `FOREMAN_PERSON_KEYS` (ADR 0151)
 - Server state: the workflows in Temporal and the runs' folders in `OSF_DATA`; private to the module, except the folder
   of a run that a person took over, which the run shows as `folder` (ADR 0070)
 - Events: `work.received@v1`, `work.retry-requested@v1` and `gate.decided@v1` in, `run.started@v1` and `run.completed@v1` out
@@ -27,6 +28,8 @@ its view, finds the run's pull request and reads its checks, and builds the even
 factory and its commit, run a sandbox adapter's commands and a forge adapter's `pr` and `prs`, run a harness adapter over ACP,
 run an inference adapter's `start`, `key` and `stop` and a secrets adapter's `exists`, call gatekeeper and NATS. `workflows` holds the Temporal workflow `run.ts`
 and the activities; `commands` join them: `serve` runs Fastify, the Temporal worker and the NATS subscriptions. The ARCH check enforces the layers.
+`serve` checks a person proof of `@opensoftware/person-proof` in Fastify, before a signal or a retry reaches
+Temporal, on the body's bytes that its JSON parser keeps (ADR 0151): a workflow never sees a proof.
 
 `src/workflows/run.ts` runs in Temporal's sandbox inside a worker thread and must stay deterministic: it imports only
 types and `@temporalio/workflow`, and asks the local activities `next` and `apply` for every decision, so the logic
@@ -38,7 +41,7 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
 
 ## Budget
 
-- System tests: 540 seconds in total on the CI runner (161 scenarios; each uses a namespace of its own in the Temporal dev server of its test process, ADR 0129, and those with events start NATS, as
+- System tests: 540 seconds in total on the CI runner (171 scenarios; each uses a namespace of its own in the Temporal dev server of its test process, ADR 0129, and those with events start NATS, as
   pinned binaries on the host, ADR 0067, and the built `harness-acp` adapter with the testkit's scripted agent, which
   `turbo.json` builds before the tests; sandboxed stages use the testkit's fake sandbox adapter, ADR 0068; checks use
   `fakes.github` and the built `forge-github` adapter, ADR 0069; the gateway uses the testkit's fake inference adapter,
@@ -96,6 +99,13 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
   took 0.698 times the reference, 497.3 s by BUDGET's measure; the 140 took 437 s on a runner at 1.0. A start of
   `foreman serve` is still the floor of about 2.5 s per scenario (see above), so the budget is 540 s, about 8% above the
   measure, until fewer starts per scenario make the suite faster.
+- T-61's person proof (ADR 0151) adds SCN-FORE-171 to -176, one start of `foreman serve` each: 2.5, 2.9, 2.6, 3.1,
+  2.5 and 1.9 s, 15.5 s together. The refusals of SCN-FORE-173 need no run: a refused proof answers before the run is
+  looked up. On a development machine without a runner benchmark the 170 scenarios took 525 s summed (265 s of wall
+  time), under the 540 s but close to it: the next scenarios should share starts or make the start faster first.
+  SCN-FORE-177 (an actor's kind other than "person" or "trigger", refused before the run is looked up) adds 1.5 s
+  and starts no run. The 171 scenarios took 430 s summed (217 s of wall time) in a later run on the same machine, which
+  was less busy then: one run on a development machine cannot show the suite's time within 20%.
 
 ## Quality limits
 

@@ -535,12 +535,20 @@
     "/v1/runs/{runId}/retry": {
       "post": {
         "operationId": "ForemanApi_retryRun",
-        "description": "Run a run that failed or was cancelled again, as a new run that names it (ADR 0105).",
+        "description": "Run a run that failed or was cancelled again, as a new run that names it (ADR 0105). With `FOREMAN_PERSON_KEYS`, a\n`by` of kind `person` needs the person's proof in `OSF-Person`, as for a signal (ADR 0151).",
         "parameters": [
           {
             "name": "runId",
             "in": "path",
             "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "OSF-Person",
+            "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -577,6 +585,16 @@
               }
             }
           },
+          "403": {
+            "description": "Access is forbidden.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "The server cannot find the requested resource.",
             "content": {
@@ -589,6 +607,16 @@
           },
           "409": {
             "description": "The request conflicts with the current state of the server.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -613,12 +641,20 @@
     "/v1/runs/{runId}/signals": {
       "post": {
         "operationId": "ForemanApi_signalRun",
-        "description": "Steer the running stage's agent, or cancel the run.",
+        "description": "Steer the running stage's agent, or cancel the run. With `FOREMAN_PERSON_KEYS`, a `by` of kind `person` needs the\nperson's proof in `OSF-Person`: 401 without it or for one that does not verify, 403 for one of another request,\n503 when its issuer's key set cannot be read (ADR 0151).",
         "parameters": [
           {
             "name": "runId",
             "in": "path",
             "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "OSF-Person",
+            "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -655,6 +691,16 @@
               }
             }
           },
+          "403": {
+            "description": "Access is forbidden.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "The server cannot find the requested resource.",
             "content": {
@@ -667,6 +713,16 @@
           },
           "409": {
             "description": "The request conflicts with the current state of the server.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -691,8 +747,18 @@
     "/v1/work-items": {
       "post": {
         "operationId": "IntakeApi_submitWork",
-        "description": "Put work into the inbox. A submission with the dedupe key of a work item answers that work item.",
-        "parameters": [],
+        "description": "Put work into the inbox. A submission with the dedupe key of a work item answers that work item. With\n`INTAKE_PERSON_KEYS`, a requester of the kind `person` needs its proof in `OSF-Person` (ADR 0151): 401 without one\nor for one that does not verify, 403 for one of another request or person, 503 when its issuer's key set cannot be\nfetched.",
+        "parameters": [
+          {
+            "name": "OSF-Person",
+            "in": "header",
+            "required": false,
+            "description": "The person proof of the requester: a JSON Web Token with the claims of `PersonProof` (ADR 0151).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "The request has succeeded.",
@@ -726,6 +792,26 @@
           },
           "401": {
             "description": "Access is unauthorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access is forbidden.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable.",
             "content": {
               "application/problem+json": {
                 "schema": {

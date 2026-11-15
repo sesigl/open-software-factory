@@ -81,7 +81,8 @@ export async function mcp(env: Env) {
       type: input.type,
       title: input.title,
       description: input.description,
-      requester: { kind: "person", id: requester },
+      // Nothing proves the person the developer typed: the agent acts as itself, for that person (ADR 0151).
+      requester: { kind: "trigger", id: `mcp:${requester}` },
       origin: { source: "mcp" },
       dedupeKey: input.dedupeKey ?? `mcp:${requester}:${input.title}`,
     });

@@ -39,6 +39,7 @@
     "@opensoftware/cli": "workspace:*",
     "@opensoftware/contracts": "workspace:*",
     "@opensoftware/factory-source": "workspace:*",
+    "@opensoftware/person-proof": "workspace:*",
     "@temporalio/activity": "1.24.0",
     "@temporalio/client": "1.24.0",
     "@temporalio/worker": "1.24.0",
