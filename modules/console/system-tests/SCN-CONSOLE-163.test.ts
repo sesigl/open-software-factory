@@ -23,6 +23,8 @@ scenario("SCN-CONSOLE-163", async ({ sut, fakes, given, when, then }) => {
     page = await sut.browser.open("/");
     await page.getByRole("link", { name: "Sign in" }).click();
     await page.getByRole("heading", { level: 1, name: "Runs" }).waitFor();
+    // The shell's styles open the navigation on a wide screen: before they load, it is closed and hides the person.
+    await page.waitForLoadState();
   });
 
   await then(
