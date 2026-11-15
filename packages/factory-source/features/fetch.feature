@@ -103,7 +103,7 @@ Feature: A factory's folder from a path or a Git remote
     Then the fetch fails with a FetchError "the folder skills/review of <url> at <commit> has the hash <hash>, not the hash h1:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= of its pin"
 
   @id=SCN-FSOURCE-015 @status=implemented
-  Scenario: A reference without a folder, a folder outside the repository and a folder that the commit lacks are each a FetchError
+  Scenario: A reference without "git+" or a folder, a folder outside the repository and a folder that the commit lacks are each a FetchError
     Given the folder "skills/review" is committed on the branch "main" of a Git repository at a "file://" URL
-    When a program fetches "git+<url>#main", "git+<url>#main:../review", "git+<url>#main:/etc" and "git+<url>#main:skills/missing"
-    Then the fetches fail with the FetchErrors "is no git+<url>#<ref>:<path>", "names a folder outside its repository" twice and "the commit <commit> of <url> has no folder skills/missing"
+    When a program fetches "<url>#main:skills/review", "git+<url>#main", "git+<url>#main:../review", "git+<url>#main:/etc" and "git+<url>#main:skills/missing"
+    Then the fetches fail with the FetchErrors "is no git+<url>#<ref>:<path>" twice, "names a folder outside its repository" twice and "the commit <commit> of <url> has no folder skills/missing"

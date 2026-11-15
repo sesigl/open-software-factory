@@ -538,7 +538,7 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FSPEC-118 | implemented | What "factory skills" prints is a valid skill catalog of the contracts, also for a skill that lint refuses |
 | SCN-FSPEC-119 | implemented | A command that factory does not have prints the help and exits with code 2 |
 | SCN-FSPEC-120 | implemented | Plan pins a skill of another repository with its commit and the hash of its files |
-| SCN-FSPEC-121 | implemented | Plan keeps a pin while its entry is unchanged and shows the old and the new commit when its ref changes |
+| SCN-FSPEC-121 | implemented | Plan keeps a pin while its entry is unchanged, also when its branch moves, and shows the old and the new commit when its ref changes |
 | SCN-FSPEC-122 | implemented | Plan refuses a fetched skill that the rules of lint refuse, names the file by its entry, and writes no factory.lock |
 | SCN-FSPEC-123 | implemented | Lint refuses a local skill and a skill of another repository with one name |
 | SCN-FSPEC-124 | implemented | Lint names an entry of another repository without a folder or outside it, and warns about one without a pin |

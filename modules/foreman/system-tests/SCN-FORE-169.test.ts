@@ -1,13 +1,14 @@
 import { scenario } from "@opensoftware/testkit";
 import { API_TOKEN, committed } from "./foreman.ts";
-import { factoryWithSkill } from "./skills.ts";
+import { factoryWithSkill, HASH, putPin } from "./skills.ts";
 
 const FAR = "git+https://forge.example/acme/skills.git#v1:skills/review";
 
 scenario("SCN-FORE-169", async ({ sut, fakes, given, when, then }) => {
   await given(
-    'the README\'s "factory.yaml" whose agent "plan" has the skill "git+https://forge.example/acme/skills.git#v1:skills/review" is committed without a "factory.lock"',
+    'the README\'s "factory.yaml" whose agent "plan" has the skill "git+https://forge.example/acme/skills.git#v1:skills/review" is committed with a "factory.lock" that pins "review" for the entry of "#v0"',
     async () => {
+      await putPin(sut, FAR.replace("#v1:", "#v0:"), "3f786850e387550fdab836ed7e6dc881de23001b", HASH);
       await committed(sut, fakes, factoryWithSkill(fakes, FAR));
     },
   );

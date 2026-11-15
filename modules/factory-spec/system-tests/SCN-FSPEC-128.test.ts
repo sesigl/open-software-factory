@@ -4,7 +4,7 @@ import { agent, factoryYaml, prompt } from "./factory.ts";
 import { committedReview, entryAt, REVIEW } from "./remote.ts";
 import type { Catalog } from "./skills.ts";
 
-const CHANGELOG = "git+https://forge.example/acme/skills.git#v1:skills/changelog";
+const CHANGELOG = "git+https://forge.example/acme/skills.git#v1:./skills//changelog/";
 
 scenario("SCN-FSPEC-128", async ({ sut, given, when, then }) => {
   let commit = "";
@@ -27,7 +27,7 @@ scenario("SCN-FSPEC-128", async ({ sut, given, when, then }) => {
   );
 
   await given(
-    'whose agent "spec" has the skill "git+https://forge.example/acme/skills.git#v1:skills/changelog", which factory.lock does not pin',
+    'whose agent "spec" has the skill "git+https://forge.example/acme/skills.git#v1:./skills//changelog/", which factory.lock does not pin',
     async () => {
       const spec = agent("spec", [`skills: ["${CHANGELOG}"]`]);
       await sut.files.put("$INPUT/factory.yaml", factoryYaml({ agents: [...triage(), ...spec] }));
@@ -63,7 +63,7 @@ scenario("SCN-FSPEC-128", async ({ sut, given, when, then }) => {
   );
 
   await then(
-    'the skill "changelog" has the source folder "skills/changelog" and the repository "https://forge.example/acme/skills.git" without a commit, no files, no body and the problem "factory.lock has no pin of the skill \\"changelog\\" for \\"git+https://forge.example/acme/skills.git#v1:skills/changelog\\": run \\"factory plan\\""',
+    'the skill "changelog" has the source folder "skills/changelog" and the repository "https://forge.example/acme/skills.git" without a commit, no files, no body and the problem "factory.lock has no pin of the skill \\"changelog\\" for \\"git+https://forge.example/acme/skills.git#v1:./skills//changelog/\\": run \\"factory plan\\""',
     async () => {
       expect(skill("changelog")).toEqual(
         expect.objectContaining({

@@ -164,8 +164,8 @@ Feature: Factory definition
     Then the agent of "plan" found the "SKILL.md" of the first commit in ".claude/skills/review" and ".agents/skills/review" of its folder
 
   @id=SCN-FORE-169 @status=implemented
-  Scenario: A skill of another repository that factory.lock does not pin stops the server at the start
-    Given the README's "factory.yaml" whose agent "plan" has the skill "git+https://forge.example/acme/skills.git#v1:skills/review" is committed without a "factory.lock"
+  Scenario: A skill of another repository that factory.lock does not pin for its entry stops the server at the start
+    Given the README's "factory.yaml" whose agent "plan" has the skill "git+https://forge.example/acme/skills.git#v1:skills/review" is committed with a "factory.lock" that pins "review" for the entry of "#v0"
     When the user runs "foreman serve"
     Then the command exits with code 2
     And the output contains "factory.yaml: factory.lock has no pin of the skill \"review\" for \"git+https://forge.example/acme/skills.git#v1:skills/review\": run \"factory plan\""

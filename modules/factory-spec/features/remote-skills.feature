@@ -11,19 +11,20 @@ Feature: Skills of other Git repositories
   Scenario: Plan pins a skill of another repository with its commit and the hash of its files
     Given the skill "review" is committed in "shared/review" on the branch "main" of a Git repository at a "file://" URL
     And a factory.yaml whose agent "triage" has the skill "git+<url>#main:shared/review"
-    When the factory engineer runs "factory plan"
+    When the factory engineer runs "factory plan", then "factory plan --check" and "factory lint"
     Then the command exits with code 0
     And the output starts with "+ factory.lock.skills.review: " and the pin
     And factory.lock pins the skill "review" for its entry at the commit of "main", with the hash "h1:" of its files, a valid factory-lock of the contracts
+    And "factory plan --check" prints "factory.lock is current." and "factory lint" prints "factory.yaml: no problems"
 
   @id=SCN-FSPEC-121 @status=implemented
-  Scenario: Plan keeps a pin while its entry is unchanged and shows the old and the new commit when its ref changes
-    Given the skill "review" is committed in "shared/review" of a Git repository at a "file://" URL and tagged "v1"
-    And a factory.yaml whose agent "triage" has the skill "git+<url>#v1:shared/review", which "factory plan" pinned
-    And a newer commit of "shared/review/SKILL.md" is tagged "v2"
+  Scenario: Plan keeps a pin while its entry is unchanged, also when its branch moves, and shows the old and the new commit when its ref changes
+    Given the skill "review" is committed in "shared/review" on the branch "main" of a Git repository at a "file://" URL
+    And a factory.yaml whose agent "triage" has the skill "git+<url>#main:shared/review", which "factory plan" pinned
+    And a newer commit of "shared/review/SKILL.md" on "main" is tagged "v2"
     When the factory engineer runs "factory plan" again, and then once more with the entry "git+<url>#v2:shared/review"
-    Then the first run names no change of factory.lock, and factory.lock still pins the commit of "v1"
-    And the second run's output contains "~ factory.lock.skills.review.commit: \"<commit of v1>\" -> \"<commit of v2>\""
+    Then the first run names no change of factory.lock, and factory.lock still pins the first commit
+    And the second run's output contains "~ factory.lock.skills.review.commit: \"<first commit>\" -> \"<commit of v2>\""
     And factory.lock pins the commit of "v2"
 
   @id=SCN-FSPEC-122 @status=implemented
@@ -45,11 +46,11 @@ Feature: Skills of other Git repositories
 
   @id=SCN-FSPEC-124 @status=implemented
   Scenario: Lint names an entry of another repository without a folder or outside it, and warns about one without a pin
-    Given a factory.yaml whose agent "triage" has the skills "git+https://forge.example/acme/skills.git#main", "git+https://forge.example/acme/skills.git#main:../review" and "git+https://forge.example/acme/skills.git#v1:skills/review" on line 14
+    Given a factory.yaml whose agent "triage" has the skills "git+https://forge.example/acme/skills.git#main", "git+https://forge.example/acme/skills.git#main:../review", "git+https://forge.example/acme/skills.git#main:/review" and "git+https://forge.example/acme/skills.git#v1:skills/review" on line 14
     When the factory engineer runs "factory lint"
     Then the command exits with code 1
-    And the output names the first entry as "is no git+<url>#<ref>:<path>: name a ref and the skill's folder", the second as "names a folder outside its repository"
-    And it warns "factory.lock has no pin of the skill \"review\" for \"git+https://forge.example/acme/skills.git#v1:skills/review\": run \"factory plan\"" at the third
+    And the output names the first entry as "is no git+<url>#<ref>:<path>: name a ref and the skill's folder", the second and the third as "names a folder outside its repository"
+    And it warns "factory.lock has no pin of the skill \"review\" for \"git+https://forge.example/acme/skills.git#v1:skills/review\": run \"factory plan\"" at the fourth
 
   @id=SCN-FSPEC-125 @status=implemented
   Scenario: "factory plan --check" names a skill of another repository that factory.lock does not pin, and writes nothing
@@ -79,9 +80,9 @@ Feature: Skills of other Git repositories
   Scenario: "factory skills" prints a pinned skill with its repository and commit, and one without a pin with its problem
     Given the skill "review" is committed in "shared/review" on the branch "main" of a Git repository at a "file://" URL
     And a factory.yaml whose agent "triage" has the skill "git+<url>#main:shared/review", which "factory plan" pinned
-    And whose agent "spec" has the skill "git+https://forge.example/acme/skills.git#v1:skills/changelog", which factory.lock does not pin
+    And whose agent "spec" has the skill "git+https://forge.example/acme/skills.git#v1:./skills//changelog/", which factory.lock does not pin
     When the factory engineer runs "factory skills"
     Then the command exits with code 0
     And the skill "review" has the source folder "shared/review", the repository "file://<path>" and the pinned commit, its description, its files and its body
-    And the skill "changelog" has the source folder "skills/changelog" and the repository "https://forge.example/acme/skills.git" without a commit, no files, no body and the problem "factory.lock has no pin of the skill \"changelog\" for \"git+https://forge.example/acme/skills.git#v1:skills/changelog\": run \"factory plan\""
+    And the skill "changelog" has the source folder "skills/changelog" and the repository "https://forge.example/acme/skills.git" without a commit, no files, no body and the problem "factory.lock has no pin of the skill \"changelog\" for \"git+https://forge.example/acme/skills.git#v1:./skills//changelog/\": run \"factory plan\""
     And the output is a valid skill catalog of the contracts

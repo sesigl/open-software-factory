@@ -16,8 +16,12 @@ scenario("SCN-FSPEC-120", async ({ sut, given, when, then }) => {
   });
 
   let run: Awaited<ReturnType<typeof sut.cli>>;
-  await when('the factory engineer runs "factory plan"', async () => {
+  let check: Awaited<ReturnType<typeof sut.cli>>;
+  let lint: Awaited<ReturnType<typeof sut.cli>>;
+  await when('the factory engineer runs "factory plan", then "factory plan --check" and "factory lint"', async () => {
     run = await sut.cli(["plan"]);
+    check = await sut.cli(["plan", "--check"]);
+    lint = await sut.cli(["lint"]);
   });
 
   await then("the command exits with code 0", async () => {
@@ -38,6 +42,14 @@ scenario("SCN-FSPEC-120", async ({ sut, given, when, then }) => {
         review: { source: entryAt(sut, "main"), commit, hash: expect.stringMatching(/^h1:[A-Za-z0-9+/]{43}=$/) },
       });
       expect(validate("factory-lock", lock)).toEqual([]);
+    },
+  );
+
+  await then(
+    '"factory plan --check" prints "factory.lock is current." and "factory lint" prints "factory.yaml: no problems"',
+    async () => {
+      expect([check.exitCode, check.stdout]).toEqual([0, "factory.lock is current.\n"]);
+      expect([lint.exitCode, lint.stdout]).toEqual([0, "factory.yaml: no problems\n"]);
     },
   );
 });

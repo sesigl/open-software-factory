@@ -36,15 +36,16 @@ export interface RemoteSkill {
   name: string;
 }
 
-const REMOTE = /^git\+(.+?)#([^:]+):(.+)$/;
+// Only for an entry that starts with "git+".
+const REMOTE = /git\+(.+?)#([^:]+):(.+)/;
 
 /**
  * The parts of an entry `git+<url>#<ref>:<path>` that can be fetched; undefined for a path of the factory's
  * repository, and for an entry of another form or a folder outside its repository, which lint refuses.
  */
 export function remoteOf(entry: string): RemoteSkill | undefined {
-  const parts = REMOTE.exec(entry);
-  if (!parts || formProblem(entry)) return undefined;
+  if (!entry.startsWith("git+") || formProblem(entry)) return undefined;
+  const parts = REMOTE.exec(entry) as RegExpExecArray;
   const [, url, , written] = parts as unknown as [string, string, string, string];
   const path = written.split("/").filter((part) => part && part !== ".");
   return { url, path: path.join("/"), name: path.at(-1) as string };

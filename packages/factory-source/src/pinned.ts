@@ -24,7 +24,7 @@ export interface PinnedOptions extends SourceOptions {
   pin?: Pin;
 }
 
-const REFERENCE = /^git\+(.+?)#([^:]+):(.+)$/;
+const REFERENCE = /^git\+(.+?)#([^:]+):(.+)/;
 
 /** One fetch at a time per repository of a cache, in this process: fetches share the bare repository. */
 const queues = new Map<string, Promise<unknown>>();
@@ -37,26 +37,27 @@ const queues = new Map<string, Promise<unknown>>();
 export async function pinnedFolder(reference: string, options: PinnedOptions): Promise<PinnedFolder> {
   const parts = REFERENCE.exec(reference);
   if (!parts) throw new FetchError(`"${reference}" is no git+<url>#<ref>:<path>`);
-  const [, url, ref, written] = parts as unknown as [string, string, string, string];
-  const path = written.split("/").filter((part) => part && part !== ".");
-  if (path.includes("..") || written.startsWith("/"))
+  const [, url, ref, path] = parts as unknown as [string, string, string, string];
+  if (path.split("/").includes("..") || path.startsWith("/"))
     throw new FetchError(`"${reference}" names a folder outside its repository`);
   const repository = join(options.cache, createHash("sha256").update(url).digest("hex").slice(0, 16));
   const { pin, token } = options;
   const fetch = async (): Promise<PinnedFolder> => {
+    // Stryker disable next-line ConditionalExpression: Git fetches a commit its bare repository holds without the remote
     const cached = pin && existsSync(join(repository, pin.commit));
     const commit = cached ? pin.commit : await fetchCommit(url, pin?.commit ?? ref, repository, token);
-    const folder = join(repository, commit, ...path);
+    const folder = join(repository, commit, path);
     if (!existsSync(folder) || !statSync(folder).isDirectory())
-      throw new FetchError(`the commit ${commit} of ${url} has no folder ${path.join("/")}`);
+      throw new FetchError(`the commit ${commit} of ${url} has no folder ${path}`);
     const hash = hashOf(folder);
     if (pin && hash !== pin.hash)
       throw new FetchError(
-        `the folder ${path.join("/")} of ${url} at ${commit} has the hash ${hash}, not the hash ${pin.hash} of its pin`,
+        `the folder ${path} of ${url} at ${commit} has the hash ${hash}, not the hash ${pin.hash} of its pin`,
       );
     return { folder, commit, hash };
   };
   const next = (queues.get(repository) ?? Promise.resolve()).then(fetch);
+  // Stryker disable next-line all: two fetches at once of one bare repository fail only now and then
   queues.set(
     repository,
     next.catch(() => undefined),

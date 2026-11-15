@@ -754,5 +754,5 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-166 | implemented | A stage whose secrets store does not answer fails before its first turn with the reason |
 | SCN-FORE-167 | implemented | The foreman fetches a factory in a Git remote with the token of FOREMAN_FACTORY_TOKEN as Git's Basic credentials |
 | SCN-FORE-168 | implemented | A stage's agent finds a skill of another repository at the commit factory.lock pins, not at the newer commit of its branch |
-| SCN-FORE-169 | implemented | A skill of another repository that factory.lock does not pin stops the server at the start |
+| SCN-FORE-169 | implemented | A skill of another repository that factory.lock does not pin for its entry stops the server at the start |
 | SCN-FORE-170 | implemented | A pinned skill whose files do not have the hash of its pin stops the server at the start |

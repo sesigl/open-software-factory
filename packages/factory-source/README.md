@@ -98,4 +98,4 @@ This library reads no environment variables: its caller passes the cache folder 
 | SCN-FSOURCE-012 | implemented | A folder of a Git remote at a ref gives its commit, its folder in the cache and the hash of its files |
 | SCN-FSOURCE-013 | implemented | A folder with a pin gives the pinned commit after its ref moved, and from the cache once the remote is gone |
 | SCN-FSOURCE-014 | implemented | A pin whose hash is not the hash of the fetched files is a FetchError that names both hashes |
-| SCN-FSOURCE-015 | implemented | A reference without a folder, a folder outside the repository and a folder that the commit lacks are each a FetchError |
+| SCN-FSOURCE-015 | implemented | A reference without "git+" or a folder, a folder outside the repository and a folder that the commit lacks are each a FetchError |
