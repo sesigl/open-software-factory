@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/sesigl/open-software-factory/compare/sandbox-docker-v0.6.0...sandbox-docker-v0.7.0) (2026-11-15)
+
+
+### Features
+
+* **secrets:** a secret from OpenBao works for Git, and a stage fails first when its secret has no value (T-57, ADR 0139) ([#329](https://github.com/sesigl/open-software-factory/issues/329)) ([4256e99](https://github.com/sesigl/open-software-factory/commit/4256e99e09eb40f212eb0f8dc958c2d8b02cf916))
+
 ## [0.6.0](https://github.com/sesigl/open-software-factory/compare/sandbox-docker-v0.5.0...sandbox-docker-v0.6.0) (2026-11-14)
 
 

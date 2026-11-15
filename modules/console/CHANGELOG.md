@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/sesigl/open-software-factory/compare/console-v0.8.1...console-v0.9.0) (2026-11-15)
+
+
+### Features
+
+* **console:** the page /secrets, where an admin stores a secret's value (T-57) ([#330](https://github.com/sesigl/open-software-factory/issues/330)) ([48af84a](https://github.com/sesigl/open-software-factory/commit/48af84ac43b1d7b097cf958732ef9cdbb8da7184))
+
 ## [0.8.1](https://github.com/sesigl/open-software-factory/compare/console-v0.8.0...console-v0.8.1) (2026-11-14)
 
 
