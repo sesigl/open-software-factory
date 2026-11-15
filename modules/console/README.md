@@ -473,6 +473,7 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-187 | implemented | "console doctor" names a store that does not answer |
 | SCN-CONSOLE-188 | implemented | "console doctor" and "/health" warn when the console's token for the store ends within 7 days |
 | SCN-CONSOLE-189 | implemented | An admin signs in and stores a secret (journey) |
+| SCN-CONSOLE-190 | implemented | An adapter whose output is no JSON is named on "/secrets", and its secrets say "Unknown" |
 | SCN-CONSOLE-191 | implemented | "/skills" lists each skill with its description, source, agents and needs, and the state of each secret |
 | SCN-CONSOLE-192 | implemented | In the open mode and without a store, both pages answer, and a secret of OpenBao has no state |
 | SCN-CONSOLE-193 | implemented | A store that does not answer is named on "/skills", and the secret's state is "Unknown" |
