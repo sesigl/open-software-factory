@@ -45,7 +45,7 @@ Astro.response.statusText = Astro.locals.statusText;
         )}
       </div>
       {form && (
-        <div class="osf-split-side forms">
+        <div class="osf-split-side osf-stack">
           <form class="osf-panel" method="post" action="/changes" aria-labelledby="propose">
             <h2 id="propose">Propose a change</h2>
             <div class="osf-field">
@@ -89,10 +89,3 @@ Astro.response.statusText = Astro.locals.statusText;
     </div>
   )}
 </Shell>
-<style>
-  .forms {
-    display: flex;
-    flex-direction: column;
-    gap: var(--osf-space-4);
-  }
-</style>

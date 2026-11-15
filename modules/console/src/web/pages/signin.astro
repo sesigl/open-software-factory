@@ -17,7 +17,7 @@ Astro.response.statusText = Astro.locals.statusText;
       <h1>Sign in</h1>
       <p>Sign in with the account that this factory's access list names.</p>
       {refusal && <p role="alert" class="osf-alert">{refusal}</p>}
-      {where && <p class="where">{where}</p>}
+      {where && <p class="osf-secondary">{where}</p>}
       <p><a class="osf-action" href={start}>{button}</a></p>
     </section>
   </main>
@@ -37,10 +37,6 @@ Astro.response.statusText = Astro.locals.statusText;
     padding: var(--osf-space-8);
     max-width: 480px;
     align-self: center;
-  }
-  .where {
-    color: var(--osf-text-muted);
-    font-size: var(--osf-size-secondary);
   }
   @media (max-width: 720px) {
     .signin {

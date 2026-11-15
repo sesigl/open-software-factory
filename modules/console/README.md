@@ -56,7 +56,8 @@ Open <http://localhost:8080>. The page lists the foreman's runs, the running one
 The runs page `/` has the new look of the design system ([ADR 0133](../../docs/decisions/0133-design-system.md)): a
 navigation column with the factory's name, only the pages that work in this console (the runs with a count of those
 that wait for a person, then the "Classic pages" in the old look and the dashboards), and the account with the
-signed-in person, "Sign out" and the link to the other theme. On a phone the navigation folds behind "Menu". The theme
+signed-in person, "Sign out" and the link to the other theme. On a phone the navigation folds behind "Menu", each
+run is a card, and "Submit work" stays at the bottom of the screen. The theme
 is dark unless the cookie `osf_theme` says light; `/theme?to=light&next=<path>` sets it and returns to the page. The
 secrets, skills and changes pages have the new look too, and its navigation links Secrets for an admin and a factory engineer, Skills for
 everyone and Changes with `CONSOLE_FACTORY_REPOSITORY`.
@@ -636,3 +637,5 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-242 | implemented | "console doctor" names the settings when the factory repository does not answer |
 | SCN-CONSOLE-243 | implemented | "console doctor" fails when the main branch of the factory repository does not require the check "factory" |
 | SCN-CONSOLE-244 | implemented | "console doctor" fails when the main branch of the factory repository requires an approval |
+| SCN-CONSOLE-245 | implemented | The buttons of a failed change read well in Chromium and pass the accessibility checks |
+| SCN-CONSOLE-246 | implemented | On a phone the runs are cards and "Submit work" stays at the bottom of the screen (journey) |

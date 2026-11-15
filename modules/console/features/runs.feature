@@ -90,3 +90,13 @@ Feature: The runs page
     Given a foreman with the run "Export reports as CSV"
     When a person opens "/", "/health" and "/pico.css"
     Then each answer has the Content-Security-Policy "default-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+
+  @id=SCN-CONSOLE-246 @status=implemented @kind=journey
+  Scenario: On a phone the runs are cards and "Submit work" stays at the bottom of the screen (journey)
+    Given a console with intake and a foreman with 12 runs, of which "Approve the CSV export" waits for a person
+    When a person opens "/" on a phone
+    Then each run is a card across the screen with its state and age above its title, and no card or filter reaches past the screen's edge
+    And each card is still a row of the runs' table, with its cells
+    And "Submit work" stays at the bottom of the screen after scrolling to the last run, and covers no run
+    And the page passes the accessibility checks, and its screenshot is kept as "runs-phone"
+    And a tap on the card of "Approve the CSV export" beside its title opens its run

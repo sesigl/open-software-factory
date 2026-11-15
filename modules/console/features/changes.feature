@@ -189,3 +189,10 @@ Feature: Changes
     When "grace@acme.dev" sends the form "Propose change" with "add-skill" and "./skills/release-notes", "remove-skill" and "skills/release-notes", "add-secret" and "ref:openbao/linear-token", "remove-secret" and "ref:env/SLACK_TOKEN", "remove-egress" and "api.github.com", "add-secrets-provider" with the name "vault" at the range "1", and " add-egress " with the agent " triage " and the value " api.linear.app "
     Then each form answers 502 and says "Not proposed: cannot fetch main of http://127.0.0.1:9/tester/factory.git": the console asked the repository, which does not answer
     And the console ran no "factory edit"
+
+  @id=SCN-CONSOLE-245 @status=implemented @kind=journey
+  Scenario: The buttons of a failed change read well in Chromium and pass the accessibility checks
+    Given a change of the console whose check "factory" failed, and a console without the reload
+    When the factory engineer opens "/changes" in Chromium
+    Then the change has the buttons "Try again" and "Discard"
+    And the page passes the accessibility checks, and its screenshot is kept as "changes-failed"

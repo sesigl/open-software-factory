@@ -9,7 +9,7 @@ Astro.response.statusText = Astro.locals.statusText;
 <Shell shell={shell}>
   <div class="osf-heading">
     <h1>Runs</h1>
-    {work && <a class="osf-action" href="/work">Submit work</a>}
+    {work && <div class="osf-dock"><a class="osf-action" href="/work">Submit work</a></div>}
   </div>
   <nav aria-label="States">
     <ul class="osf-tabs">
@@ -19,7 +19,7 @@ Astro.response.statusText = Astro.locals.statusText;
   {notes.map((note) => <p role="alert" class="osf-alert">{note}</p>)}
   {empty && <p class="osf-empty">No runs yet. A run starts when the factory takes a piece of work.</p>}
   <div class="osf-table-panel">
-    <table class="osf-table">
+    <table class="osf-table osf-cards">
       <thead>
         <tr>
           <th scope="col">Run</th>
@@ -34,13 +34,13 @@ Astro.response.statusText = Astro.locals.statusText;
       <tbody>
         {rows.map((run) => (
           <tr class={run.rowClass}>
-            <td><a href={run.href}>{run.title}</a></td>
+            <td class="osf-card-title"><a href={run.href}>{run.title}</a></td>
             <td class="osf-mono">{run.factory}</td>
-            <td><span class={run.stateClass}>{run.state}</span></td>
+            <td class="osf-card-state"><span class={run.stateClass}>{run.state}</span></td>
             <td>{run.source}</td>
             <td>{run.requester}</td>
             <td>{run.pullRequest.href ? <a class="osf-mono" href={run.pullRequest.href}>{run.pullRequest.text}</a> : run.pullRequest.text}</td>
-            <td class="osf-mono">{run.age}</td>
+            <td class="osf-mono osf-card-corner">{run.age}</td>
           </tr>
         ))}
       </tbody>

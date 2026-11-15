@@ -1404,7 +1404,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
   - [x] The package and the image hold the built files; the profile and the chart pin the release (`SCN-DIST`):
     console 0.7.0, SCN-DIST-036.
 
-### [ ] T-54 · the design system: `@opensoftware/ui` (P0)
+### [x] T-54 · the design system: `@opensoftware/ui` (P0)
 
 - **Tier / language / path / prefix:** optional · TS, Astro, SolidJS · `packages/ui/` · `SCN-UI` (a library without
   a `bin`, ADR 0039; add the prefix to `docs/reference/scenario-prefixes.md`)
@@ -1464,7 +1464,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
     TOKENS). The package stays private until its first publish.
   - [x] The components that the sign-in page and the shell need (with T-56): `Page`, `Brand`, `Shell` and the base
     styles (heading, filters, table, states), compiled into the console's build.
-  - [ ] The components that Secrets and Skills need (with T-57 and T-59).
+  - [x] The components that Secrets and Skills need (with T-57 and T-59).
 
 ### [ ] T-55 · the first island: code in the browser counts (P2)
 
@@ -1914,7 +1914,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
   WCAG 2.2.1), so the console's journeys run with `CONSOLE_REFRESH=0` until then.
 - **Done when:** no page uses Pico CSS, and `modules/console/package.json` has no dependency on Preact or htm.
 - **Slices:**
-  - [ ] The runs list as cards on a phone, with the main action at the bottom (`docs/design/runs-phone.html`).
+  - [x] The runs list as cards on a phone, with the main action at the bottom (`docs/design/runs-phone.html`).
   - [ ] The run page with its forms.
   - [ ] The work form and the inbox.
   - [ ] The factory pages, the improvement page and the health page (on Astro since T-53, in Pico's look).
