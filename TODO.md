@@ -1889,8 +1889,8 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
   stores the secret it needs, and the agent's next run has the skill in its session and its request carries the
   secret.
 - **Slices:**
-  - [ ] The ADR; the format and its rules in the library and `factory lint`; this repository's skills pass (the
-    library's prefix, `SCN-FSPEC`).
+  - [x] The ADR; the format and its rules in `factory lint`, which owns them (ADR 0135, ADR 0140); this repository's
+    skills pass (`SCN-FSPEC`).
   - [ ] Skills of other repositories: the entry's form, `factory.lock`, `plan`, `render` and the foreman
     (`SCN-CTR`, `SCN-FSPEC`, `SCN-FORE`).
   - [ ] The pages `/skills` and `/skills/<name>`, read-only (`SCN-CONSOLE`).
