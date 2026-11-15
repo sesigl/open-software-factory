@@ -25,7 +25,7 @@ The only ways a system test or another program may use this module:
   `CONSOLE_SECRETS_ADAPTER` with `list`, `put` and `delete` for `/secrets`, with `list` for `/skills` and
   `/skills/<name>`, and with `probe` and `list` for `console doctor` and `/health`, with `OSF_OPENBAO_ADDR`, `OSF_OPENBAO_TOKEN` and `OSF_OPENBAO_MOUNT` (ADR 0137); a value goes
   only to the standard input of `put`; factory-spec's `factory` in `CONSOLE_FACTORY_COMMAND`, only with
-  `skills --file <CONSOLE_FACTORY>` (ADR 0141)
+  `skills --file <CONSOLE_FACTORY>`, which prints the `skill-catalog` contract (ADR 0141, ADR 0143)
 - Input: the factory definition in `CONSOLE_FACTORY` and the access file in `CONSOLE_ACCESS`
 - With `CONSOLE_SIGN_IN`: the identity provider at `CONSOLE_OIDC_ISSUER`, or GitHub at `CONSOLE_GITHUB_URL` and
   `CONSOLE_GITHUB_API_URL`

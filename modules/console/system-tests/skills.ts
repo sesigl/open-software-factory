@@ -1,21 +1,11 @@
 // Shared setup of the skills scenarios (ADR 0141): the console runs factory-spec's "factory skills" in
 // CONSOLE_FACTORY_COMMAND. ISOLATION keeps its tests from starting another module, so a small program in $INPUT stands
-// in for it: it prints the JSON that factory-spec's scenarios SCN-FSPEC-115 to 117 prove, and records its arguments.
+// in for it: it prints the JSON that factory-spec's scenarios SCN-FSPEC-115 to 118 prove, and records its arguments.
+// That JSON must fit the format skill-catalog of the contracts (ADR 0143), so the two modules cannot drift apart.
+import { type CatalogSkill, type SkillCatalog, validate } from "@opensoftware/contracts";
 import type { Fakes, Page, Sut } from "@opensoftware/testkit";
 import { foreman, serving } from "./console.ts";
 import { type AgentOf, factoryOf, type Store, servingSecrets } from "./secrets.ts";
-
-/** A skill as "factory skills" prints it (modules/factory-spec/README.md#the-skills-as-json). */
-export interface SkillJson {
-  name: string;
-  description: string | null;
-  source: { folder: string };
-  needs: { secrets: string[]; hosts: string[] };
-  agents: { name: string; secrets: Record<string, string>; lacks: { secrets: string[]; hosts: string[] } }[];
-  files: string[];
-  body: string | null;
-  problems: string[];
-}
 
 /**
  * The skill of this name in the folder skills/<name>, used by these agents with what each gives and lacks; `fields`
@@ -24,8 +14,8 @@ export interface SkillJson {
 export function skillOf(
   name: string,
   agents: Record<string, { secrets?: Record<string, string>; lacks?: { secrets?: string[]; hosts?: string[] } }>,
-  fields: Partial<SkillJson> = {},
-): SkillJson {
+  fields: Partial<CatalogSkill> = {},
+): CatalogSkill {
   return {
     name,
     description: `The skill ${name}. Use it in the scenarios of the console.`,
@@ -47,15 +37,20 @@ export function skillOf(
 const word = (text: string): string => `'${text.replaceAll("'", `'\\''`)}'`;
 
 /**
- * Writes the factory program: it records its arguments in $OUTPUT/factory.log and prints these skills, or fails with
- * this error and exit code 1. Returns its command line for CONSOLE_FACTORY_COMMAND.
+ * Writes the factory program: it records its arguments in $OUTPUT/factory.log and prints these skills, which must fit
+ * the format skill-catalog, or fails with this error and exit code 1. Returns its command line for
+ * CONSOLE_FACTORY_COMMAND.
  */
-export async function factoryProgram(sut: Sut, answer: SkillJson[] | { error: string }): Promise<string> {
+export async function factoryProgram(sut: Sut, answer: CatalogSkill[] | { error: string }): Promise<string> {
   const log = word(sut.files.path("$OUTPUT/factory.log"));
   const print = Array.isArray(answer)
     ? [`cat ${word(sut.files.path("$INPUT/skills.json"))}`]
     : [`echo ${word(answer.error)} >&2`, "exit 1"];
-  if (Array.isArray(answer)) await sut.files.put("$INPUT/skills.json", JSON.stringify({ skills: answer }, null, 2));
+  if (Array.isArray(answer)) {
+    const catalog: SkillCatalog = { skills: answer };
+    expect(validate("skill-catalog", catalog), "the stand-in's JSON fits the format skill-catalog").toEqual([]);
+    await sut.files.put("$INPUT/skills.json", JSON.stringify(catalog, null, 2));
+  }
   await sut.files.put("$INPUT/bin/factory", ["#!/bin/sh", `echo "$@" > ${log}`, ...print, ""].join("\n"), {
     executable: true,
   });
@@ -67,7 +62,7 @@ export async function servingSkills(
   sut: Sut,
   fakes: Fakes,
   agents: Record<string, AgentOf>,
-  skills: SkillJson[],
+  skills: CatalogSkill[],
   env: Record<string, string> = {},
 ): Promise<Store> {
   const command = await factoryProgram(sut, skills);
@@ -79,7 +74,7 @@ export async function servingOpen(
   sut: Sut,
   fakes: Fakes,
   agents: Record<string, AgentOf>,
-  answer: SkillJson[] | { error: string },
+  answer: CatalogSkill[] | { error: string },
 ): Promise<void> {
   const command = await factoryProgram(sut, answer);
   const api = await foreman(fakes, []);

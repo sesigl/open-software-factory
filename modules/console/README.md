@@ -184,7 +184,9 @@ shows one ([ADR 0141](../../docs/decisions/0141-skills-pages-and-markdown-from-a
 read-only and exist in every mode: open, behind a sign-in proxy and with the own sign-in. The console does not read a
 `SKILL.md` itself: it runs factory-spec's `factory skills --file <CONSOLE_FACTORY>` with the command line in
 `CONSOLE_FACTORY_COMMAND` and shows what it prints, so the pages know what `factory lint` knows
-([factory-spec](../factory-spec/README.md#the-skills-as-json)). When the program fails, `/skills` names its error above
+([factory-spec](../factory-spec/README.md#the-skills-as-json)). What it prints is the format `skill-catalog` of the
+contracts ([ADR 0143](../../docs/decisions/0143-skill-catalog-contract.md)), and the stand-in program of the console's
+tests prints only JSON that fits it. When the program fails, `/skills` names its error above
 an empty list and `/skills/<name>` answers 502.
 
 Each secret a skill needs shows a state:

@@ -1,6 +1,7 @@
+import type { CatalogSkill } from "@opensoftware/contracts";
 import { type Page, scenario } from "@opensoftware/testkit";
 import { ADMIN, type AgentOf, type Store, VALUE } from "./secrets.ts";
-import { needsOf, type SkillJson, servingSkills, skillOf, skillRows } from "./skills.ts";
+import { needsOf, servingSkills, skillOf, skillRows } from "./skills.ts";
 
 scenario("SCN-CONSOLE-191", async ({ sut, fakes, given, when, then }) => {
   let agents: Record<string, AgentOf> = {};
@@ -18,7 +19,7 @@ scenario("SCN-CONSOLE-191", async ({ sut, fakes, given, when, then }) => {
   await given(
     'the skills "release-notes" of "triage", "changelog" of "review" and "sentry-triage" of "triage" and "review", which need "LINEAR_TOKEN" and the host "api.linear.app", "GH_TOKEN" and "SENTRY_TOKEN"',
     async () => {
-      const skills: SkillJson[] = [
+      const skills: CatalogSkill[] = [
         skillOf(
           "changelog",
           { review: { secrets: { GH_TOKEN: "ref:env/GH_TOKEN" } } },

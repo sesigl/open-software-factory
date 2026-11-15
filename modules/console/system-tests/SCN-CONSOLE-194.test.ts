@@ -1,7 +1,8 @@
+import type { CatalogSkill } from "@opensoftware/contracts";
 import { type Page, scenario } from "@opensoftware/testkit";
 import { links } from "./console.ts";
 import { ADMIN } from "./secrets.ts";
-import { type SkillJson, servingSkills, skillMd, skillOf } from "./skills.ts";
+import { servingSkills, skillMd, skillOf } from "./skills.ts";
 
 const BODY = [
   "",
@@ -17,7 +18,7 @@ const BODY = [
 ].join("\n");
 
 scenario("SCN-CONSOLE-194", async ({ sut, fakes, given, when, then }) => {
-  let fields: Partial<SkillJson> = {};
+  let fields: Partial<CatalogSkill> = {};
   await given(
     'the skill "release-notes" with the files "SKILL.md", "scripts/issue.sh" and "teams.md", whose SKILL.md has the heading "Steps", a numbered list and the code "scripts/issue.sh"',
     async () => {

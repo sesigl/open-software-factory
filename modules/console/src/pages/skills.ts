@@ -1,10 +1,11 @@
 // The data of the page "/skills" (src/web/pages/skills.astro) and of a skill's page "/skills/<name>"
 // (src/web/pages/skills/skill.astro), in the shell of the new look (ADR 0133, ADR 0141). The skill's Markdown comes
 // here as safe HTML; every other value is text that the template escapes.
+import type { CatalogSkill } from "@opensoftware/contracts";
 import type { ShellData } from "@opensoftware/ui";
 import { htmlOf } from "../domain/markdown.ts";
 import { agentsText, type State } from "../domain/secrets.ts";
-import type { Need, NeedState, Skill } from "../domain/skills.ts";
+import type { Need, NeedState } from "../domain/skills.ts";
 import { LOOKS } from "./secrets.ts";
 
 export interface NeedRow {
@@ -95,15 +96,15 @@ const needRows = (needs: Need[], secrets: boolean, label: string) => ({
   needs: needs.map((need) => needRow(need, secrets)),
 });
 
-const sourceOf = (skill: Skill): string => `${skill.source.folder} in the factory's repository`;
+const sourceOf = (skill: CatalogSkill): string => `${skill.source.folder} in the factory's repository`;
 
-const usedBy = (skill: Skill): string => `Used by ${agentsText(skill.agents.map((agent) => agent.name))}`;
+const usedBy = (skill: CatalogSkill): string => `Used by ${agentsText(skill.agents.map((agent) => agent.name))}`;
 
 /** The page "/skills": every skill, with what it needs; `needs` gives the needs of a skill. */
 export function skillsData(
   shell: ShellData,
-  skills: Skill[],
-  needs: (skill: Skill) => Need[],
+  skills: CatalogSkill[],
+  needs: (skill: CatalogSkill) => Need[],
   notes: string[],
   secrets: boolean,
 ): SkillsData {
@@ -123,7 +124,13 @@ export function skillsData(
 }
 
 /** A skill's page: its Markdown, its files, its agents and what it needs. */
-export function skillData(shell: ShellData, skill: Skill, needs: Need[], notes: string[], secrets: boolean): SkillData {
+export function skillData(
+  shell: ShellData,
+  skill: CatalogSkill,
+  needs: Need[],
+  notes: string[],
+  secrets: boolean,
+): SkillData {
   return {
     shell,
     notes,

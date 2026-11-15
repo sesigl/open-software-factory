@@ -1,21 +1,8 @@
-// The skills of the pages "/skills" and "/skills/<name>" (ADR 0141): what `factory skills` prints, and the state of
-// each secret and host a skill needs, from the references its agents give and the states the secrets page knows.
-// Without I/O.
+// The skills of the pages "/skills" and "/skills/<name>" (ADR 0141): what `factory skills` prints, in the format
+// skill-catalog of the contracts (ADR 0143), and the state of each secret and host a skill needs, from the references
+// its agents give and the states the secrets page knows. Without I/O.
+import type { CatalogSkill } from "@opensoftware/contracts";
 import { declaredOf, type Secret, type State, type Stored, secretsOf } from "./secrets.ts";
-
-/** A skill as `factory skills` prints it (modules/factory-spec/README.md#the-skills-as-json). */
-export interface Skill {
-  name: string;
-  description: string | null;
-  /** Where the skill comes from: a folder of the factory's repository, relative to its folder. */
-  source: { folder: string };
-  needs: { secrets: string[]; hosts: string[] };
-  /** Each agent that uses it: the reference that gives each needed secret, and what it lacks. */
-  agents: { name: string; secrets: Record<string, string>; lacks: { secrets: string[]; hosts: string[] } }[];
-  files: string[];
-  body: string | null;
-  problems: string[];
-}
 
 /** The state of a need: one of the secrets page's, or a need an agent of the skill lacks. */
 export type NeedState = State | "not declared" | "not allowed";
@@ -54,7 +41,7 @@ export function statesOf(
  * What a skill needs. `states` holds the state of each reference; `store` says whether the console has a store, so
  * that a secret of OpenBao has a state at all.
  */
-export function needsOf(skill: Skill, states: Map<string, Secret>, store: boolean): Need[] {
+export function needsOf(skill: CatalogSkill, states: Map<string, Secret>, store: boolean): Need[] {
   const lacking = (kind: "secrets" | "hosts", name: string) =>
     skill.agents.filter((agent) => agent.lacks[kind].includes(name)).map((agent) => agent.name);
   const secrets = skill.needs.secrets.map((name): Need => {
