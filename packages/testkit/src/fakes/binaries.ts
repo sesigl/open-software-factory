@@ -9,7 +9,7 @@ import { freePort, SERVICE_PORTS } from "../support/server.ts";
 import { tempFolder } from "../support/temp.ts";
 import type { Nats, Temporal } from "./services.ts";
 
-interface Running<T> {
+export interface Running<T> {
   service: T;
   close(): Promise<string[]>;
   /** Stops the server without waiting, for the end of the test process. */
@@ -19,7 +19,7 @@ interface Running<T> {
 // A server is ready in under a second, also with a dozen starting at once. One that is not ready after this time
 // hangs, as Temporal did once under Stryker's parallel runners, and starts again on new ports.
 const START_TIMEOUT_MS = 10_000;
-const servicePort = () => freePort(SERVICE_PORTS);
+export const servicePort = () => freePort(SERVICE_PORTS);
 const START_ATTEMPTS = 3;
 
 /**
@@ -38,26 +38,34 @@ async function onFreePorts<T>(attempt: () => Promise<Running<T>>): Promise<Runni
 }
 
 /**
- * Started by the first scenario of this process that asks for Temporal (ADR 0129), and stopped when the process ends.
+ * The server of this process: the first scenario that asks for it starts it, and it stops when the process ends
+ * (ADR 0129). A start that fails is tried again by the next scenario.
  */
-let temporal: Promise<Running<Temporal>> | undefined;
+export function perProcess<T>(startOnce: () => Promise<Running<T>>): () => Promise<T> {
+  let server: Promise<Running<T>> | undefined;
+  return async () => {
+    server ??= onFreePorts(startOnce).then(
+      (running) => {
+        // Vitest ends a test process with SIGTERM, which runs no "exit" handler by itself.
+        process.once("exit", running.kill);
+        process.once("SIGTERM", () => process.exit());
+        return running;
+      },
+      (error: unknown) => {
+        server = undefined;
+        throw error;
+      },
+    );
+    return (await server).service;
+  };
+}
+
+const temporal = perProcess(startTemporalOnce);
 let namespaces = 0;
 
 /** A new namespace in the Temporal dev server of this process, started on the first call. */
 export async function startTemporal(): Promise<Temporal> {
-  temporal ??= onFreePorts(startTemporalOnce).then(
-    (server) => {
-      // Vitest ends a test process with SIGTERM, which runs no "exit" handler by itself.
-      process.once("exit", server.kill);
-      process.once("SIGTERM", () => process.exit());
-      return server;
-    },
-    (error: unknown) => {
-      temporal = undefined;
-      throw error;
-    },
-  );
-  const { service } = await temporal;
+  const service = await temporal();
   const namespace = `scenario-${++namespaces}`;
   const created = await fetch(`${service.httpUrl}/api/v1/namespaces`, {
     method: "POST",
@@ -102,7 +110,7 @@ export function program(name: string): string {
   return roots.map((root) => join(root, ".tools", "bin", name)).find(existsSync) ?? name;
 }
 
-async function start<T>(
+export async function start<T>(
   name: string,
   args: (home: string) => string[],
   readyUrl: string,

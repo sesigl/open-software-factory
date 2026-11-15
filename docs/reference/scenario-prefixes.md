@@ -47,6 +47,7 @@ adds a row.
 | INFER | inference port | `ports/inference/features/` |
 | INFLITE | inference adapter litellm | `adapters/inference/litellm/features/` |
 | SECRET | secrets port | `ports/secrets/features/` |
+| SOPENBAO | secrets adapter openbao | `adapters/secrets/openbao/features/` |
 | DIST | distribution | `deploy/features/` |
 | E2E | end-to-end smoke | `e2e/features/` |
 | REPO | repository tooling and checks | `tools/features/` |

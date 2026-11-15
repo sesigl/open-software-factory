@@ -81,6 +81,31 @@ Feature: Services and outside systems
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-177 @status=implemented
+  Scenario: fakes.openbao gives the module OpenBao with a KV version 2 mount of the scenario and a token with a policy
+    Given a module whose CLI writes "demo" with the value "bao_test_1" to the mount "DEMO_BAO_MOUNT" of OpenBao at "DEMO_BAO_ADDR" with the token "DEMO_BAO_TOKEN", and prints the status and the token's "ttl"
+    And its system test passes a token of fakes.openbao whose policy may write the mount, expects the status 200 and reads "demo" back with the value "bao_test_1" and the version 1
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-178 @status=implemented
+  Scenario: A token of fakes.openbao has only its policy and lives as long as the test says
+    Given a module whose CLI writes "demo" with the value "bao_test_1" to the mount "DEMO_BAO_MOUNT" of OpenBao at "DEMO_BAO_ADDR" with the token "DEMO_BAO_TOKEN", and prints the status and the token's "ttl"
+    And its system test passes a token of fakes.openbao whose policy may only read the mount and that lives "10m", and expects the status 403 and a "ttl" of at most 600 seconds and more than 590
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-179 @status=implemented
+  Scenario: fakes.openbao gives a later scenario the same server and a mount of its own
+    Given a module whose two scenarios in one test file each start fakes.openbao
+    And its first scenario writes "demo" into its mount
+    And its second scenario expects the address of the first, another mount, and no "demo" in its mount
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test cases "SCN-DEMO-001" and "SCN-DEMO-002"
+
   @id=SCN-TK-011 @status=implemented
   Scenario: fakes.s3 gives the module an S3 API that stores objects
     Given a module whose CLI creates the bucket "demo", puts "notes.txt" with "hello" at "DEMO_S3_ENDPOINT" and prints the object it reads back

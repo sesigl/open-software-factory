@@ -11,7 +11,7 @@ and the root `spec-trace.json` ([ADR 0031](../docs/decisions/0031-spec-trace-act
 ## Quick start
 
 ```sh
-make install     # pnpm dependencies and the pinned lychee, oasdiff, opa, temporal, nats-server, helm, kubectl and kind binaries
+make install     # pnpm dependencies and the pinned lychee, oasdiff, opa, temporal, nats-server, bao, helm, kubectl and kind binaries
 make check-fast  # lint, typecheck and the static checks, in seconds: no system test, no container
 make check       # the same, and the system tests of the changed units
 make verify      # everything: lint, types, all system tests, all checks
@@ -40,7 +40,7 @@ make verify      # everything: lint, types, all system tests, all checks
 | `osf init [--factory <dir>]` | none | Write `deploy/compose/.env` from `.env.example`: each empty `*_PASSWORD`, `*_API_TOKEN`, `*_MASTER_KEY` and `*_SESSION_SECRET` gets 32 random bytes in hex after the example's prefix, like `sk-`; every other value stays empty for the team. An existing `.env` is kept. `--factory <dir>` copies the reference factory `deploy/compose/factory/` to `<dir>` and points `FACTORY_DIR` at it. Prints the empty values and the groups file to fill next (ADR 0119). |
 | `osf up [ARG ...]` | none | Refuse a missing `.env`, an empty value that `compose.yaml` requires with `${NAME:?...}`, gatekeeper without the three Slack values or `GATEKEEPER_FORGE_TOKEN`, and with `CONSOLE_SIGN_IN` each setting its provider needs (`oidc`: the session key, issuer, client ID and secret; `github`: the session key, client ID and secret, ADR 0134); then run `docker compose up --detach --wait [ARG ...]` in `deploy/compose/` and exit with its code. |
 | `osf doctor` | none | Run `docker compose run --rm console console doctor` in `deploy/compose/` and exit with its code. |
-| `osf install-tools` | `make install` | Download the checksum-pinned lychee, oasdiff, opa, temporal, nats-server, helm, kubectl and kind, and the agent-sandbox manifest `agent-sandbox.yaml`, into `.tools/bin/`. When github.com fails to send a release file, it comes through the GitHub API, with `GITHUB_TOKEN` when it is set; CI sets it. |
+| `osf install-tools` | `make install` | Download the checksum-pinned lychee, oasdiff, opa, temporal, nats-server, bao, helm, kubectl and kind, and the agent-sandbox manifest `agent-sandbox.yaml`, into `.tools/bin/`. When github.com fails to send a release file, it comes through the GitHub API, with `GITHUB_TOKEN` when it is set; CI sets it. |
 
 `osf init`, `osf up` and `osf doctor` load only Node's own modules: on a fresh clone they need Node 24 and Docker,
 not `make install`. [The first run](../docs/tutorials/first-run.md) walks through them.

@@ -224,6 +224,13 @@
       "component": "channel-github",
       "initial-version": "0.1.0",
       "bump-minor-pre-major": true
+    },
+    "adapters/secrets/openbao": {
+      "release-type": "node",
+      "package-name": "@opensoftware/secrets-openbao",
+      "component": "secrets-openbao",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
     }
   }
 }

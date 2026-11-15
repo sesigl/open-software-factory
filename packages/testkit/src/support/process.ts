@@ -47,9 +47,17 @@ export function initGit(workspace: string): void {
   if (result.status !== 0) throw new Error(`git init failed in the working folder: ${result.stderr}`);
 }
 
-export function run(command: string, args: string[], cwd: string, env: Record<string, string>): Promise<CliResult> {
+/** Runs the command; `stdin` is written to its standard input, which is then closed. */
+export function run(
+  command: string,
+  args: string[],
+  cwd: string,
+  env: Record<string, string>,
+  stdin?: string,
+): Promise<CliResult> {
   return new Promise((resolvePromise, reject) => {
     const child = spawn(command, args, { cwd, env });
+    if (stdin !== undefined) child.stdin.end(stdin);
     let stdout = "";
     let stderr = "";
     child.stdout.on("data", (chunk) => (stdout += chunk));
