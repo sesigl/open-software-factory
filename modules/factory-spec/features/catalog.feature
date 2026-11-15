@@ -9,13 +9,13 @@ Feature: Print the skills of a factory
 
   @id=SCN-FSPEC-115 @status=implemented
   Scenario: The skills are printed with their needs, their agents and the Markdown below the front matter
-    Given the skill "release-notes" whose SKILL.md has the metadata "opensoftware/secrets: LINEAR_TOKEN" and "opensoftware/hosts: api.linear.app" and the file "teams.md" beside it
+    Given the skill "release-notes" whose SKILL.md has the metadata "opensoftware/secrets: LINEAR_TOKEN" and "opensoftware/hosts: api.linear.app" and the files "scripts/issue.sh" and "teams.md" beside it
     And a factory.yaml whose agent "triage" has the skill, the secret "ref:openbao/linear-token" and the egress host "api.linear.app"
     And whose agent "review" has the skills "./skills/release-notes" and "./skills/changelog" and only the egress host "github.com"
     When the console runs "factory skills"
     Then the command exits with code 0
     And it prints the skills "changelog" and "release-notes" in this order
-    And "release-notes" has its description, the folder "skills/release-notes", the needs "LINEAR_TOKEN" and "api.linear.app", the files "SKILL.md" and "teams.md", the Markdown "# Release notes" and no problem
+    And "release-notes" has its description, the folder "skills/release-notes", the needs "LINEAR_TOKEN" and "api.linear.app", the files "SKILL.md", "scripts/issue.sh" and "teams.md", the Markdown "# Release notes" and no problem
     And its agent "review" lacks the secret "LINEAR_TOKEN" and the host "api.linear.app", and its agent "triage" gives "LINEAR_TOKEN" with "ref:openbao/linear-token" and lacks nothing
 
   @id=SCN-FSPEC-116 @status=implemented
@@ -30,8 +30,8 @@ Feature: Print the skills of a factory
 
   @id=SCN-FSPEC-117 @status=implemented
   Scenario: A factory.yaml that does not fit the contract fails "factory skills" with its problems
-    Given a factory.yaml whose agent "triage" has no model
+    Given a factory.yaml whose agent "triage" has no model and no effort
     When the console runs "factory skills"
     Then the command exits with code 1
-    And the error is "factory.yaml:7:3 /agents/triage/model: missing required field"
+    And the error is "factory.yaml:7:3 /agents/triage/model: missing required field" and "factory.yaml:7:3 /agents/triage/effort: missing required field"
     And the output is empty

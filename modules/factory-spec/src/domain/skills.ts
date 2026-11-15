@@ -50,6 +50,8 @@ interface Read {
   description: string | undefined;
   /** The Markdown of SKILL.md below its front matter, or all of it without one; none without a readable SKILL.md. */
   body: string | undefined;
+  /** The finding of a folder without a SKILL.md. */
+  absent: string | undefined;
   files: string[];
   problems: FileFinding[];
   warnings: FileFinding[];
@@ -111,9 +113,8 @@ export interface CatalogSkill {
 
 /** Every skill the agents use, sorted by name, with its agents sorted by name. */
 export function skillCatalog(definition: FactoryDefinition, files: FolderFiles): CatalogSkill[] {
-  const { skills, findings } = readSkills(definition, files);
-  return skills
-    .map((skill) => ({
+  return readSkills(definition, files)
+    .skills.map((skill) => ({
       name: skill.name,
       description: skill.description ?? null,
       source: { folder: skill.folder },
@@ -132,7 +133,7 @@ export function skillCatalog(definition: FactoryDefinition, files: FolderFiles):
       files: skill.files,
       body: skill.body ?? null,
       problems: [
-        ...findings.filter(([at]) => skill.uses.some((use) => use.at === at)).map(([, message]) => message),
+        ...(skill.absent ? [skill.absent] : []),
         ...skill.problems.map(({ file, line, column, message }) => `${file}:${line}:${column} ${message}`),
       ],
     }))
@@ -178,7 +179,7 @@ function read(
   findings: Finding[],
 ): Read {
   const skill: Read = {
-    ...{ name, folder, path, needs: NONE, description: undefined, body: undefined },
+    ...{ name, folder, path, needs: NONE, description: undefined, body: undefined, absent: undefined },
     ...{ files: Object.keys(files).sort(), problems: [], warnings: [], uses: [] },
   };
   const texts: Record<string, string> = {};
@@ -193,7 +194,10 @@ function read(
   }
   const text = texts["SKILL.md"];
   if (text !== undefined) frontMatter(skill, text);
-  else if (!files["SKILL.md"]) findings.push([at, `the skill "${path}" has no SKILL.md`]);
+  else if (!files["SKILL.md"]) {
+    skill.absent = `the skill "${path}" has no SKILL.md`;
+    findings.push([at, skill.absent]);
+  }
   return skill;
 }
 
@@ -248,7 +252,7 @@ function frontMatter(result: Read, text: string): void {
     const length = typeof value === "string" ? [...value].length : 0;
     if (length > max) problem([field], `${field} has ${length} characters, more than the ${max} the format allows`);
   }
-  if (typeof description === "string") result.description = description;
+  if (description) result.description = String(description);
   result.needs = needsOf(document, fields.metadata as Record<string, unknown>, problem);
 }
 

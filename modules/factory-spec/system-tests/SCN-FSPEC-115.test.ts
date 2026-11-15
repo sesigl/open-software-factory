@@ -4,10 +4,11 @@ import { type Catalog, named, putSkill, RELEASE_NOTES, SECRETS } from "./skills.
 
 scenario("SCN-FSPEC-115", async ({ sut, given, when, then }) => {
   await given(
-    'the skill "release-notes" whose SKILL.md has the metadata "opensoftware/secrets: LINEAR_TOKEN" and "opensoftware/hosts: api.linear.app" and the file "teams.md" beside it',
+    'the skill "release-notes" whose SKILL.md has the metadata "opensoftware/secrets: LINEAR_TOKEN" and "opensoftware/hosts: api.linear.app" and the files "scripts/issue.sh" and "teams.md" beside it',
     async () => {
       await putSkill(sut, "skills/release-notes", RELEASE_NOTES);
       await putSkill(sut, "skills/release-notes", "| Team | Label |\n", "teams.md");
+      await putSkill(sut, "skills/release-notes", "#!/bin/sh\n", "scripts/issue.sh");
       await putSkill(sut, "skills/changelog", named("changelog"));
     },
   );
@@ -54,7 +55,7 @@ scenario("SCN-FSPEC-115", async ({ sut, given, when, then }) => {
 
   const notes = () => catalog.skills[1] as Catalog["skills"][number];
   await then(
-    '"release-notes" has its description, the folder "skills/release-notes", the needs "LINEAR_TOKEN" and "api.linear.app", the files "SKILL.md" and "teams.md", the Markdown "# Release notes" and no problem',
+    '"release-notes" has its description, the folder "skills/release-notes", the needs "LINEAR_TOKEN" and "api.linear.app", the files "SKILL.md", "scripts/issue.sh" and "teams.md", the Markdown "# Release notes" and no problem',
     async () => {
       const { agents, ...rest } = notes();
       expect(rest).toEqual({
@@ -62,7 +63,7 @@ scenario("SCN-FSPEC-115", async ({ sut, given, when, then }) => {
         description: "Write the release notes of a change from its Linear issues. Use when a change ships.",
         source: { folder: "skills/release-notes" },
         needs: { secrets: ["LINEAR_TOKEN"], hosts: ["api.linear.app"] },
-        files: ["SKILL.md", "teams.md"],
+        files: ["SKILL.md", "scripts/issue.sh", "teams.md"],
         body: "\n# Release notes\n",
         problems: [],
       });
