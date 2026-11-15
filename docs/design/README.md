@@ -66,6 +66,10 @@ The plan was reviewed after the mock-ups were drawn. Where they differ, `TODO.md
 - **A skill's page** shows no switch and no change yet: the first slice of T-59 is read-only. Its secrets and hosts
   carry the states of the secrets page and "Not declared" or "Not allowed" for what an agent lacks, and its files
   are a list beside the panel `SKILL.md`.
+- **The runs on a phone** (T-60) keep the shell's bar with "Menu" in place of the page's title in the bar. A card is a
+  row of the runs' table laid out by `osf-cards`, so a screen reader still reads a table: the state and the age on
+  top, the title, then the factory, the source, the requester and the pull request without dots between them. The
+  title's link covers the card. The filters scroll in one line, and "Submit work" (`osf-dock`) stays at the bottom.
 - **States the mock-ups do not show:** an empty list, a server that does not answer, a form with a wrong value, the
   light theme of a whole page. The page that needs one adds it in the same language and adds a mock-up or a
   screenshot here.

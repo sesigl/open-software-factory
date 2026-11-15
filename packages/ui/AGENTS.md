@@ -14,7 +14,8 @@ The only ways a page, a system test or another program may use the library:
   secrets pages (T-57), the skills pages (T-59) and the changes page (T-58), whose list, form and fields are classes of `src/styles/base.css`;
   the skills pages add the way back (`osf-crumbs`), an exact line (`osf-meta`), a panel with a label (`osf-section`),
   the needs of a record (`osf-needs`) and Markdown rendered on the server (`osf-prose`); the changes page adds panels
-  one below the other (`osf-stack`), and `osf-button` serves a link and a button of a form alike
+  one below the other (`osf-stack`), and `osf-button` serves a link and a button of a form alike; the runs page
+  adds a table's rows as cards on a phone (`osf-cards`) and the main action at the bottom (`osf-dock`) (T-60)
 
 The library's system tests import it by its package name and read the files it names (ADR 0039).
 

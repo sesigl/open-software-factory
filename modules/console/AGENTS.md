@@ -85,12 +85,24 @@ A journey runs in Chromium (`@kind=journey`, ADR 0131) only for a main flow. Eac
   "Discard", "Merge" are one class, `osf-button`, as a button of a form), so it is the only proof that they keep the
   design system's colours in a browser and pass axe's colour contrast.
 
+- SCN-CONSOLE-246, the runs on a phone: only a browser lays out the cards and keeps "Submit work" at the bottom of
+  the screen while the page scrolls, and only it shows that the cards are still the rows of a table and that a tap
+  on a card opens its run.
+
 They start the console with `CONSOLE_REFRESH=0`: axe's rule `meta-refresh` (WCAG 2.2.1) flags the runs page's reload,
 which stays until live updates replace it (`TODO.md`, T-60).
 
 ## Budget
 
-- System tests: 300 seconds in total on the CI runner (190 scenarios). Raised from 280 seconds on 15 November 2026
+- System tests: 312 seconds in total on the CI runner (192 scenarios). Raised from 300 seconds on 15 November 2026
+  with two journeys (T-54, T-60), measured on the development container in one run of the whole suite: the 2 new
+  scenarios took 11.4 seconds next to 281.3 for the other 190, so 4.1 % more, about 11 seconds on top of the 278
+  estimated for CI below, 289 for the suite; the budget is that and 8 %. Set it to the next CI measure.
+  - Where their time goes: SCN-CONSOLE-245 takes 8.5 seconds: one change on Forgejo, its failed check, Chromium and
+    axe; SCN-CONSOLE-246 takes 3.0 seconds: Chromium on a phone, axe and one more page.
+  - Made cheap first: SCN-CONSOLE-245 opens its page in Chromium with the sign-in proxy's header, so it walks no
+    sign-in, and presses no button; the runs journey needs no forge and opens one console.
+- Before that: 300 seconds for 190 scenarios. Raised from 280 seconds on 15 November 2026
   with the checks of the factory repository in `console doctor` (T-58, ADR 0150): three of its four scenarios read a
   repository and its rules on Forgejo, about 4 seconds each here, 13 seconds for the four. At CI's ratio to this
   machine that is about 16 seconds on top of the 261.6 measured for 186 scenarios, 278 for the suite; the budget is

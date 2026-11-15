@@ -158,6 +158,119 @@ a:hover {
   box-shadow: inset 2px 0 0 var(--osf-signal);
 }
 
+/*
+ * On a phone the filters scroll in one line, and a table of `osf-cards` shows each row as a card: the cell `osf-card-state` and the cell `osf-card-corner`
+ * on top, the cell `osf-card-title` below them across the card, then the other cells in a line. The table stays a
+ * table for a screen reader; the title's link covers the card, and the card's other links stay above it.
+ */
+@media (max-width: 720px) {
+  .osf-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  .osf-tabs a {
+    white-space: nowrap;
+  }
+
+  .osf-cards thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .osf-cards,
+  .osf-cards tbody {
+    display: block;
+  }
+
+  .osf-cards tr {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--osf-space-2) var(--osf-space-3);
+    padding: 14px var(--osf-space-4);
+    border-bottom: 1px solid var(--osf-line);
+  }
+
+  .osf-cards tr:last-child {
+    border-bottom: 0;
+  }
+
+  .osf-table.osf-cards td {
+    order: 1;
+    padding: 0;
+    border-bottom: 0;
+    font-size: var(--osf-size-secondary);
+  }
+
+  .osf-cards td.osf-card-state {
+    order: -3;
+    flex: 1 1 auto;
+  }
+
+  .osf-cards td.osf-card-corner {
+    order: -2;
+    font-size: 12px;
+  }
+
+  .osf-table.osf-cards td.osf-card-title {
+    order: -1;
+    flex: 1 1 100%;
+    font-size: 15px;
+    font-weight: var(--osf-weight-strong);
+    line-height: 1.35;
+  }
+
+  .osf-card-title a {
+    text-decoration: none;
+  }
+
+  .osf-card-title a::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+
+  .osf-cards td:not(.osf-card-title) a {
+    position: relative;
+    z-index: 1;
+  }
+
+  .osf-cards tr.osf-waits {
+    box-shadow: inset 2px 0 0 var(--osf-signal);
+  }
+
+  .osf-table.osf-cards tr.osf-waits td:first-child {
+    box-shadow: none;
+  }
+
+  /* The main action of the page, fixed at the bottom of the screen; the page leaves room for it below. */
+  .osf-dock {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 2;
+    padding: var(--osf-space-3) var(--osf-space-4);
+    border-top: 1px solid var(--osf-line);
+    background: var(--osf-bg-ground);
+  }
+
+  .osf-dock .osf-action {
+    display: flex;
+    justify-content: center;
+  }
+
+  body:has(.osf-dock) {
+    padding-bottom: calc(var(--osf-control-height) + 2 * var(--osf-space-3) + 1px);
+  }
+}
+
 /* A state: a shape and a word, never colour alone. Only work that runs, waits or failed has a colour. */
 .osf-state {
   display: inline-flex;
