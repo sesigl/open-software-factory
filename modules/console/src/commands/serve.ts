@@ -35,7 +35,6 @@ import { runPage } from "../pages/run.ts";
 import { runsData, waitingOf } from "../pages/runs.ts";
 import { shellData } from "../pages/shell.ts";
 import { workPage } from "../pages/work.ts";
-import { examine } from "./doctor.ts";
 import { actorOf, fromConsole, personOf } from "./person.ts";
 import { useSecrets } from "./secrets.ts";
 import { useSkills } from "./skills.ts";
@@ -422,6 +421,9 @@ export async function serve(env: Env) {
   }
 
   app.get("/health", async (request, reply) => {
+    // The checks load with the first health page, with the contracts they validate against: a console starts
+    // without them.
+    const { examine } = await import("./doctor.ts");
     const items = await examine(env);
     const status = items.every(({ ok }) => ok) ? 200 : 503;
     await render(

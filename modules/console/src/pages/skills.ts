@@ -1,9 +1,8 @@
 // The data of the page "/skills" (src/web/pages/skills.astro) and of a skill's page "/skills/<name>"
 // (src/web/pages/skills/skill.astro), in the shell of the new look (ADR 0133, ADR 0141). The skill's Markdown comes
-// here as safe HTML; every other value is text that the template escapes.
+// here as safe HTML, which the command made; every other value is text that the template escapes.
 import type { CatalogSkill } from "@opensoftware/contracts";
 import type { ShellData } from "@opensoftware/ui";
-import { htmlOf } from "../domain/markdown.ts";
 import { agentsText, type State } from "../domain/secrets.ts";
 import type { Need, NeedState } from "../domain/skills.ts";
 import { LOOKS } from "./secrets.ts";
@@ -130,6 +129,7 @@ export function skillData(
   needs: Need[],
   notes: string[],
   secrets: boolean,
+  html: string,
 ): SkillData {
   return {
     shell,
@@ -145,6 +145,6 @@ export function skillData(
     ...needRows(needs, secrets, "This skill needs"),
     files: skill.files,
     shown: skill.body !== null,
-    html: htmlOf(skill.body ?? ""),
+    html,
   };
 }

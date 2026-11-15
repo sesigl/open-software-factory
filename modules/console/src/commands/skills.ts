@@ -57,7 +57,10 @@ export function useSkills(app: FastifyInstance, setup: SkillsSetup): void {
     const skill = skills.find((each) => each.name === name);
     if (failed) return setup.problem(reply, 502, name, failed);
     if (!skill) return setup.problem(reply, 404, name, `no skill ${name}: no agent of the factory uses it`);
-    const data = skillData(setup.shell(request, name), skill, needs(skill), notes, setup.secrets(request));
+    // The Markdown library loads with the first skill page: a console starts without it.
+    const { htmlOf } = await import("../domain/markdown.ts");
+    const html = htmlOf(skill.body ?? "");
+    const data = skillData(setup.shell(request, name), skill, needs(skill), notes, setup.secrets(request), html);
     return render(request, reply, 200, data, "skills/skill");
   });
 }

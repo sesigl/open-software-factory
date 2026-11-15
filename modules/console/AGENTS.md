@@ -69,15 +69,21 @@ which stays until live updates replace it (`TODO.md`, T-60).
 
 ## Budget
 
-- System tests: 95 seconds in total on the CI runner (140 scenarios; 83.8 seconds on the reference runner in CI).
-  Raised from 75 seconds on 15 November 2026, when the scenarios grew from 123 to 140 with the secrets page, measured:
-  - a scenario of the secrets takes about twice the time of another one: the console runs the built adapter
+- System tests: 120 seconds in total on the CI runner (154 scenarios). Raised from 95 seconds on 15 November 2026
+  with the skills pages, measured in CI on a runner whose benchmark took exactly the reference time: 110.1 seconds, of
+  which the 121 scenarios before the secrets page took 75.7 (0.63 each), the 18 of the secrets 20.2 (1.12 each) and
+  the 15 of the skills 14.2 (0.95 each).
+  - The 95 seconds came from one run on a fast runner (62.7 seconds at 0.748 times the reference, so 83.8 at BUDGET's
+    measure, for 141 scenarios). BUDGET's measure follows a CPU benchmark of one process; this suite starts a console
+    and often an adapter per scenario on four workers, and a slower runner slows that more than the benchmark says.
+    So a budget of this suite follows the highest measure, with about 9% above it, like `deploy/`.
+  - Made faster first: a console now starts without the Markdown library and without the health checks and the
+    contracts they validate against; each loads with its first page. The imports of `serve` went from about 92 ms to
+    about 70 ms on the development container, about 20 ms per scenario.
+  - A scenario of the secrets takes about twice the time of another one: the console runs the built adapter
     `secrets-openbao` as a program against the testkit's real OpenBao. Each page of `/secrets` is one start of the
-    adapter and a stored value two; a start takes about 0.15 s on the busy development container, 0.06 s of it Node's
-    own, with Node's compile cache already on (the testkit sets it);
-  - OpenBao starts once per worker (0.45 s), not per scenario, and `console doctor` already runs `probe` and `list`
-    at the same time, so neither is left to save;
-  - at the time of an older scenario each, the 17 new ones would still bring the suite to about 76 seconds.
+    adapter and a stored value two; Node's compile cache is already on (the testkit sets it). OpenBao starts once per
+    worker, not per scenario, and `console doctor` already runs `probe` and `list` at the same time.
 - Before that: 75 seconds for 117 scenarios (48 to 52 seconds of test time and 17 seconds on 4 workers on the
   development container; 65.7 seconds on the reference runner in CI). Raised from 60 seconds on 14 November 2026, when
   the scenarios grew from 88 to 117 with the sign-in, the shell and two journeys, measured:
