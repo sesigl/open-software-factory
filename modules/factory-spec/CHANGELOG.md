@@ -2,6 +2,8 @@
 
 ## [0.12.0](https://github.com/sesigl/open-software-factory/compare/factory-spec-v0.11.0...factory-spec-v0.12.0) (2026-11-15)
 
+This version was never published: its release got no tag. Version 0.12.1 holds these changes.
+
 
 ### Features
 

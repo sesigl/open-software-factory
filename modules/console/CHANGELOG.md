@@ -2,6 +2,8 @@
 
 ## [0.10.0](https://github.com/sesigl/open-software-factory/compare/console-v0.9.0...console-v0.10.0) (2026-11-15)
 
+This version was never published: its release got no tag. Version 0.10.1 holds these changes.
+
 
 ### Features
 
