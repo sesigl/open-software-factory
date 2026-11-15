@@ -293,3 +293,5 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-163 | implemented | DEPS-RUNTIME rejects a package in no dependency list that the shipped code loads at run time |
 | SCN-REPO-164 | implemented | DEPS-RUNTIME accepts type imports, built-ins, dependencies and files that no entry point loads |
 | SCN-REPO-165 | implemented | DEPS-RUNTIME accepts the imports that osf bundle compiles in and rejects a lookup by name |
+| SCN-REPO-166 | implemented | osf init generates OpenBao's unseal key, its root token and the IDs of the console's and the egress proxy's tokens |
+| SCN-REPO-167 | implemented | osf init adds to an existing .env the generated values it lacks and changes no value it has |

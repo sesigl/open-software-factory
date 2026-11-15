@@ -274,7 +274,9 @@ work this way. `GH_TOKEN` and `CLAUDE_CODE_OAUTH_TOKEN` of the reference factory
 - **Set up by itself.** On its first start OpenBao initializes itself and gives its root token the ID
   `OSF_OPENBAO_ROOT_TOKEN`; at every start it unseals itself with `OSF_OPENBAO_UNSEAL_KEY`. Then `openbao-setup`
   writes the policies of `secrets-openbao`, enables the mount, and makes the console's and the egress proxy's tokens
-  new with their IDs of `.env`. `docker compose logs openbao-setup` shows how long they live.
+  new with their IDs of `.env`. `docker compose logs openbao-setup` shows how long they live. The console and foreman
+  start after it; `docker compose up --detach --wait openbao-setup` alone returns while the job still runs, so
+  follow it with `docker compose wait openbao-setup`.
 - **The tokens live 768 hours (32 days)** from each `docker compose up`, OpenBao's maximum. `console doctor` and the
   page `/health` warn 7 days before the console's token ends; run `docker compose up --detach --wait` to make both new.
 - **The audit log** is `/openbao/file/audit.log` on the volume, one JSON line per request and answer, each value as an
@@ -536,3 +538,5 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-036 | implemented | The console of the Compose profile renders its health page from the templates its package ships |
 | SCN-DIST-037 | implemented | With the sign-in on, the console of the Compose profile lets in only the people of the factory's access.yaml |
 | SCN-DIST-038 | implemented | The chart switches the console's sign-in on with the client secret and the session key from a Secret the operator names |
+| SCN-DIST-039 | implemented | The profile's OpenBao keeps a stored secret over a restart, unseals itself, and a sandbox still sends the value |
+| SCN-DIST-040 | implemented | The chart gives the console and the foreman the team's own OpenBao with the two tokens from a Secret the operator names |

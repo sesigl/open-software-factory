@@ -1,15 +1,14 @@
 // The factory of a smoke scenario on the Compose profile (ADR 0076): the e2e factory with the scenario's factory.yaml
 // in $INPUT/factory, the fake Slack and the scripted agent for containers, and the profile's .env with every value set.
-import { randomBytes } from "node:crypto";
 import type { Compose, FakeSlack, Fakes, Forge, Harness, HarnessTurn, Sut } from "@opensoftware/testkit";
 
-/** The values of .env that osf init generates for the profile's OpenBao. */
-const OPENBAO = [
-  "OSF_OPENBAO_UNSEAL_KEY",
-  "OSF_OPENBAO_ROOT_TOKEN",
-  "OSF_OPENBAO_CONSOLE_TOKEN",
-  "OSF_OPENBAO_EGRESS_TOKEN",
-];
+/** The values of .env that osf init generates for the profile's OpenBao (ADR 0145), made up for the tests. */
+const OPENBAO: Record<string, string> = {
+  OSF_OPENBAO_UNSEAL_KEY: "0e".repeat(32),
+  OSF_OPENBAO_ROOT_TOKEN: "a1".repeat(32),
+  OSF_OPENBAO_CONSOLE_TOKEN: "c2".repeat(32),
+  OSF_OPENBAO_EGRESS_TOKEN: "e3".repeat(32),
+};
 
 export const FOREMAN_TOKEN = "foreman-token-1";
 export const INTAKE_TOKEN = "intake-token-1";
@@ -138,8 +137,7 @@ export async function smoke(
     GATEKEEPER_SLACK_TOKEN: slack.token,
     GATEKEEPER_SLACK_SIGNING_SECRET: slack.signingSecret,
     GATEKEEPER_SLACK_CHANNEL: GATES,
-    // OpenBao's key and tokens, new for each scenario as osf init makes them (ADR 0145).
-    ...Object.fromEntries(OPENBAO.map((name) => [name, randomBytes(32).toString("hex")])),
+    ...OPENBAO,
     FACTORY_DIR: sut.files.path("$INPUT/factory"),
     E2E_SLACK_URL: slack.containerUrl as string,
     E2E_HARNESSES: JSON.stringify({ acp: ["harness-acp", "run", "--", harness.command, ...harness.args].join(" ") }),
