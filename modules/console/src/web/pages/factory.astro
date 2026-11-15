@@ -1,0 +1,42 @@
+---
+import Shell from "@opensoftware/ui/components/Shell.astro";
+import type { FactoryData } from "../../pages/factory.ts";
+
+const { shell, name, description, where, agents, providers } = Astro.locals.page as FactoryData;
+Astro.response.status = Astro.locals.status;
+Astro.response.statusText = Astro.locals.statusText;
+---
+<Shell shell={shell}>
+  <div class="osf-intro">
+    <h1>{name}</h1>
+    <p>{description}</p>
+    <p>Read-only. Change it in Git, on the branch {where.branch}: {where.file.href ? <a class="osf-mono" href={where.file.href}>{where.file.text}</a> : where.file.text}</p>
+  </div>
+  <section class="osf-section" aria-labelledby="agents">
+    <h2 id="agents">Agents</h2>
+    <table class="osf-table osf-cards">
+      <thead>
+        <tr>
+          <th scope="col">Agent</th>
+          <th scope="col">Harness</th>
+          <th scope="col">Model</th>
+          <th scope="col">Effort</th>
+        </tr>
+      </thead>
+      <tbody>
+        {agents.map((agent) => (
+          <tr>
+            <td class="osf-card-title osf-mono"><a href={agent.href}>{agent.name}</a></td>
+            <td class="osf-mono">{agent.harness}</td>
+            <td class="osf-mono">{agent.model}</td>
+            <td data-label="Effort">{agent.effort}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+  <section class="osf-section" aria-labelledby="providers">
+    <h2 id="providers">Providers</h2>
+    <pre class="osf-code">{providers}</pre>
+  </section>
+</Shell>

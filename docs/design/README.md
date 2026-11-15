@@ -62,7 +62,9 @@ The plan was reviewed after the mock-ups were drawn. Where they differ, `TODO.md
 - **Counts in the navigation.** The first release shows a count only for Runs; the mock-ups also show one for
   Secrets and Changes (T-56).
 - **The navigation** lists only what works in the console's mode and for the person's role. "Changes" comes with
-  T-58, and the group "Classic pages" shrinks as T-60 moves each page.
+  T-58. The group "Classic pages" of `runs.html` shrank as T-60 moved each page and is gone since its last
+  page moved: the navigation is one list of pages, Factory, Cost and scores and Health at its end, with the dashboards
+  of `CONSOLE_LINKS` in a list below it.
 - **A skill's page** shows no switch and no change yet: the first slice of T-59 is read-only. Its secrets and hosts
   carry the states of the secrets page and "Not declared" or "Not allowed" for what an agent lacks, and its files
   are a list beside the panel `SKILL.md`.
@@ -86,6 +88,16 @@ The plan was reviewed after the mock-ups were drawn. Where they differ, `TODO.md
   pages. A page without its setting, a submission that intake refuses, and every form's "sign in first" and "another
   site" show a problem in the same shell, with the way back to the form's page. The journey SCN-CONSOLE-257 keeps the
   phone's screenshots.
+- **The factory pages, the cost and scores and the health page** (T-60) have no mock-up. The factory's page has its
+  name and description as the title, the line "Read-only. Change it in Git" with the file's link, then the panels
+  Agents, a table whose rows are cards on a phone, and Providers, its YAML in an exact block (`osf-code`). An agent's
+  page has the way back to the factory and its fields as facts (`osf-facts`); a list or a map of the agent is YAML in
+  a fact across the panel (`osf-fact-wide`). The cost and scores are the panels Scores and Runs, tables whose rows are
+  cards; a card's count names its column (`data-label`), and a stage's outcome is a state. The health page is one
+  table of checks: a check that fails has the failed state, a warning the colour of work that waits for a person, and
+  "ok" the shape of a finished run without colour. Every problem of these pages, and of the secrets, skills and changes
+  pages, is a problem in the same shell with the way back to a page the console has. The journey SCN-CONSOLE-266 keeps
+  the phone's screenshots.
 - **States the mock-ups do not show:** an empty list, a server that does not answer, a form with a wrong value, the
   light theme of a whole page. The page that needs one adds it in the same language and adds a mock-up or a
   screenshot here.

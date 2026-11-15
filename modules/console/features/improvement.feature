@@ -26,3 +26,10 @@ Feature: Cost and scores of the factory's runs
     When a person opens "/improvement"
     Then the page answers 404 and says "no cost and scores: set CONSOLE_IMPROVE_DIR to the folder of the improvement jobs"
     And the navigation does not link "/improvement"
+
+  @id=SCN-CONSOLE-265 @status=implemented
+  Scenario: The improvement page shows in the shell, with "Cost and scores" as the current page
+    Given "CONSOLE_IMPROVE_DIR" names a folder with the stage "implement" of "run_a" at 0.25 USD
+    When a person opens "/improvement"
+    Then the page has the title "Cost and scores · Open Software Factory" and marks "Cost and scores" as the current page
+    And the run "run_a" links its page "/runs/run_a"

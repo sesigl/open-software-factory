@@ -1,0 +1,62 @@
+---
+import Shell from "@opensoftware/ui/components/Shell.astro";
+import type { ImprovementData } from "../../pages/improvement.ts";
+
+const { shell, total, scorers, stages } = Astro.locals.page as ImprovementData;
+Astro.response.status = Astro.locals.status;
+Astro.response.statusText = Astro.locals.statusText;
+---
+<Shell shell={shell}>
+  <div class="osf-intro">
+    <h1>Cost and scores</h1>
+    <p>{total}</p>
+  </div>
+  <section class="osf-section" aria-labelledby="scores">
+    <h2 id="scores">Scores</h2>
+    <table class="osf-table osf-cards">
+      <thead>
+        <tr>
+          <th scope="col">Scorer</th>
+          <th scope="col">Scored</th>
+          <th scope="col">Passed</th>
+          <th scope="col">Pass rate</th>
+          <th scope="col">Judge cost</th>
+        </tr>
+      </thead>
+      <tbody>
+        {scorers.map((scorer) => (
+          <tr>
+            <td class="osf-card-name osf-mono">{scorer.name}</td>
+            <td class="osf-mono" data-label="Scored">{scorer.scored}</td>
+            <td class="osf-mono" data-label="Passed">{scorer.passed}</td>
+            <td class="osf-mono" data-label="Pass rate">{scorer.rate}</td>
+            <td class="osf-mono" data-label="Judge cost">{scorer.usd}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+  <section class="osf-section" aria-labelledby="runs">
+    <h2 id="runs">Runs</h2>
+    <table class="osf-table osf-cards">
+      <thead>
+        <tr>
+          <th scope="col">Run</th>
+          <th scope="col">Stage</th>
+          <th scope="col">Outcome</th>
+          <th scope="col">Cost</th>
+        </tr>
+      </thead>
+      <tbody>
+        {stages.map((stage) => (
+          <tr>
+            <td class="osf-card-title osf-mono"><a href={stage.href}>{stage.run}</a></td>
+            <td class="osf-mono">{stage.stage}</td>
+            <td class="osf-card-state"><span class={stage.outcomeClass}>{stage.outcome}</span></td>
+            <td class="osf-mono osf-card-corner">{stage.usd}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+</Shell>

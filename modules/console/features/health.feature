@@ -202,12 +202,19 @@ Feature: Health
     When the user runs "console doctor --deep"
     Then it prints no line about the events
 
-  @id=SCN-CONSOLE-136 @status=implemented
+  @id=SCN-CONSOLE-136 @status=deprecated
   Scenario: The page "/health" of a healthy factory answers 200 and has the navigation of every page
     Given a healthy console with an intake, the inbox of "tester/web", a folder of cost and scores and the dashboard "Grafana" at "https://grafana.acme.dev"
     When a person opens "/health"
     Then the page answers 200 with the title "Health · console"
     And the page's navigation links "/", "/work", "/factory", "/inbox", "/improvement", "/health" and "https://grafana.acme.dev"
+
+  @id=SCN-CONSOLE-262 @status=implemented @replaces=SCN-CONSOLE-136
+  Scenario: The page "/health" of a healthy factory answers 200 in the shell, with the navigation of every page
+    Given a healthy console with an intake, the inbox of "tester/web", a folder of cost and scores and the dashboard "Grafana" at "https://grafana.acme.dev"
+    When a person opens "/health"
+    Then the page answers 200 with the title "Health · Open Software Factory" and the heading "Health"
+    And the page's navigation links "/", "/work", "/inbox", "/skills", "/factory", "/improvement", "/health" and "https://grafana.acme.dev", with "Health" as the current page
 
   @id=SCN-CONSOLE-167 @status=implemented
   Scenario: "console doctor" with the sign-in refuses an access file whose only admin is the example

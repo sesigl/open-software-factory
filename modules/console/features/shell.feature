@@ -2,7 +2,7 @@
 Feature: The shell of the pages in the new look
   The runs page "/" and every page in the look of the design system have the same shell (ADR 0133): the navigation
   with only the pages that work in this console, the factory's name, the account and a link to the other theme. On a
-  phone the navigation folds away. The pages in the old look stay reachable as "Classic pages".
+  phone the navigation folds away. Since T-60 every page has the new look, so the navigation has no "Classic pages".
 
   @id=SCN-CONSOLE-158 @status=deprecated
   Scenario: The navigation of a console without intake, an inbox or cost and scores links only the pages that work
@@ -18,7 +18,7 @@ Feature: The shell of the pages in the new look
     And the shell names the factory "acme"
     And the page offers "Submit work" as its main action
 
-  @id=SCN-CONSOLE-203 @status=implemented @replaces=SCN-CONSOLE-158
+  @id=SCN-CONSOLE-203 @status=deprecated @replaces=SCN-CONSOLE-158
   Scenario: The navigation of a console without intake, an inbox or cost and scores links only the pages that work, Skills among them
     Given a console without "CONSOLE_INTAKE_URL", "CONSOLE_INBOX_REPOSITORY" and "CONSOLE_IMPROVE_DIR"
     When a person opens "/"
@@ -32,13 +32,42 @@ Feature: The shell of the pages in the new look
     And the shell names the factory "acme"
     And the page offers "Submit work" as its main action
 
-  @id=SCN-CONSOLE-251 @status=implemented @replaces=SCN-CONSOLE-204
+  @id=SCN-CONSOLE-251 @status=deprecated @replaces=SCN-CONSOLE-204
   Scenario: The navigation of a console with intake, an inbox and cost and scores links Work and Inbox among the pages in the new look
     Given a console with "CONSOLE_INTAKE_URL", "CONSOLE_INBOX_REPOSITORY" and "CONSOLE_IMPROVE_DIR" and the factory "acme"
     When a person opens "/"
     Then the navigation links "Runs", "Work", "Inbox", "Skills" and the classic pages "Factory", "Cost and scores" and "Health"
     And the shell names the factory "acme"
     And the page offers "Submit work" as its main action
+
+  @id=SCN-CONSOLE-258 @status=implemented @replaces=SCN-CONSOLE-203
+  Scenario: The navigation of a console without intake, an inbox or cost and scores links only the pages that work, in one list
+    Given a console without "CONSOLE_INTAKE_URL", "CONSOLE_INBOX_REPOSITORY" and "CONSOLE_IMPROVE_DIR"
+    When a person opens "/"
+    Then the navigation links "Runs" as the current page, "Skills", "Factory" and "Health" in one list
+    And the navigation has no group "Classic pages"
+
+  @id=SCN-CONSOLE-259 @status=implemented @replaces=SCN-CONSOLE-251
+  Scenario: The navigation of a console with intake, an inbox and cost and scores links their pages in one list, the dashboards below it
+    Given a console with "CONSOLE_INTAKE_URL", "CONSOLE_INBOX_REPOSITORY", "CONSOLE_IMPROVE_DIR", the factory "acme" and the dashboard "Grafana" at "https://grafana.acme.dev"
+    When a person opens "/"
+    Then the navigation links "Runs", "Work", "Inbox", "Skills", "Factory", "Cost and scores" and "Health" in one list, and "Grafana" in a list below it
+    And the shell names the factory "acme"
+    And the page offers "Submit work" as its main action
+
+  @id=SCN-CONSOLE-260 @status=implemented
+  Scenario: Each problem of a page shows in the shell, with a way back that this console has
+    Given a console without "CONSOLE_IMPROVE_DIR", a sign-in, a secret store and a factory repository
+    When a person opens "/?state=merged", "/improvement", "/factory/agents/deploy", "/secrets" and "/skills/release-notes/switch?agent=triage", and a program sends the form "Propose change"
+    Then the pages answer 400, 404, 404, 404, 404 and 404 in the shell, each with its title as the heading
+    And "/factory/agents/deploy" leads back to "Factory" at "/factory", the switch to "Skills" at "/skills", and the others to "Runs" at "/"
+
+  @id=SCN-CONSOLE-261 @status=implemented
+  Scenario: A problem of the secrets or the changes leads back to their page for a person who may open it
+    Given a console behind a sign-in proxy with a secret store, a factory repository that does not answer, "grace@acme.dev" as "factory-engineer" and "varun@acme.dev" as "member"
+    When "grace@acme.dev" opens "/secrets/delete?name=linear-token" and "varun@acme.dev" sends the form "Propose change"
+    Then both answer 403 with the title "Forbidden"
+    And the page of "grace@acme.dev" leads back to "Secrets" at "/secrets", and the page of "varun@acme.dev" to "Changes" at "/changes"
 
   @id=SCN-CONSOLE-160 @status=implemented @realizes=SCN-FACTORY-VIS-001
   Scenario: The link "Runs" counts the runs that wait for a person

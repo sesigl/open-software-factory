@@ -14,7 +14,7 @@ scenario("SCN-CONSOLE-195", async ({ sut, fakes, given, when, then }) => {
   await then(
     'the page "changelog" answers 404 and says "no skill changelog: no agent of the factory uses it"',
     async () => {
-      expect([page.status, page.title]).toEqual([404, "changelog · console"]);
+      expect([page.status, page.title]).toEqual([404, "changelog · Open Software Factory"]);
       expect(page.text).toContain("no skill changelog: no agent of the factory uses it");
     },
   );
