@@ -189,7 +189,12 @@ export async function started(smokeProfile: Smoke, services: string[]): Promise<
   const first = await smokeProfile.compose.run(up);
   if (first.exitCode !== 0 && !(first.stdout + first.stderr).includes("address already in use"))
     expect(first.exitCode, `docker compose ${up.join(" ")}:\n${first.stdout}${first.stderr}`).toBe(0);
-  if (first.exitCode !== 0) await smokeProfile.run(up);
+  // The failed "up" leaves the jobs that run once, like openbao-setup, running; a second "up" beside them writes their
+  // files anew and they fail. So stop everything first: "up" then runs each job from its start, in order.
+  if (first.exitCode !== 0) {
+    await smokeProfile.run(["stop"]);
+    await smokeProfile.run(up);
+  }
   const intake = await smokeProfile.url("intake").catch(() => undefined);
   const gatekeeper = await smokeProfile.url("gatekeeper").catch(() => undefined);
   smokeProfile.slack.deliverTo(
