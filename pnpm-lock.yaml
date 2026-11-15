@@ -417,6 +417,9 @@ importers:
       '@opensoftware/contracts':
         specifier: workspace:*
         version: link:../../contracts
+      '@opensoftware/factory-source':
+        specifier: workspace:*
+        version: link:../../packages/factory-source
       semver:
         specifier: 7.7.3
         version: 7.7.3

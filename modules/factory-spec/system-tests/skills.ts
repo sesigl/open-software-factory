@@ -27,7 +27,7 @@ export const putSkill = (sut: Sut, folder: string, text: string | Uint8Array, fi
 export const SECRETS = ["harness:", '  claude-code: "^2"', "secrets:", '  env: "^0"', '  openbao: "^0"'];
 
 /**
- * The agent "triage" with the skills on one line (line 13 with SECRETS), then the extra lines; returns the text of
+ * The agent "triage" with the skills on one line (line 14 with SECRETS), then the extra lines; returns the text of
  * factory.yaml.
  */
 export const putSkilled = (sut: Sut, skills: string[], extra: string[] = []): Promise<string> =>

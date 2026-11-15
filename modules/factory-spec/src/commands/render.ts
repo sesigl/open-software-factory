@@ -6,7 +6,9 @@ import { fail } from "../domain/errors.ts";
 import { kagentResources } from "../domain/kubernetes.ts";
 import { servers } from "../domain/mcp.ts";
 import { harness } from "../domain/render.ts";
+import { remoteOf, unpinned } from "../domain/skills.ts";
 import type { Factory } from "./load.ts";
+import { pinnedFolders } from "./pins.ts";
 
 export interface RenderOptions {
   agent?: string;
@@ -18,8 +20,15 @@ export interface RenderOptions {
   ghAw?: boolean;
 }
 
-/** Renders the files and links and returns the hash of every written file by its path below `output`. */
-export function render(factory: Factory, output: string, options: RenderOptions): Record<string, string> {
+/**
+ * Renders the files and links and returns the hash of every written file by its path below `output`. A skill of
+ * another repository is linked from the cache, fetched at its pin (ADR 0146).
+ */
+export async function render(
+  factory: Factory,
+  output: string,
+  options: RenderOptions,
+): Promise<Record<string, string>> {
   const names = Object.keys(factory.definition.agents);
   const name =
     options.agent ??
@@ -50,8 +59,13 @@ export function render(factory: Factory, output: string, options: RenderOptions)
     };
     files[`k8s/${name}.yaml`] = kagentResources(input);
   }
+  const fetched = await pinnedFolders(definition, factory.lock);
   const written = writeFiles(output, files);
-  const skills = (agent.skills ?? []).map((skill) => join(factory.dir, normalize(skill)));
+  const skills = (agent.skills ?? []).map((skill) => {
+    const remote = remoteOf(skill);
+    if (!remote) return join(factory.dir, normalize(skill));
+    return fetched[skill] ?? fail(unpinned(remote.name, skill));
+  });
   for (const each of harnesses) linkSkills(join(output, harness(each).skills), skills);
   return written;
 }

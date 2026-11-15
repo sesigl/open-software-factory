@@ -8,7 +8,7 @@ const HELP = `factory: one factory.yaml rendered for every harness, with lint, p
 Commands:
   factory lint [--gh-aw]                          Check factory.yaml, the skills its agents use and the access.yaml beside it; print each problem and each warning with its file, line and column. --gh-aw: the factory is rendered with gh-aw, so a cron automation runs.
   factory render [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]   Write AGENTS.md, the MCP servers and the skill links of one agent to $OUTPUT. --harness all writes every declared harness; --k8s adds its kagent resources and SandboxTemplate; --gh-aw adds a gh-aw workflow per GitHub automation.
-  factory plan [--adapters] [--check]             Pin registry MCP servers in factory.lock; show what apply changes and what drifted, rendered files and webhooks. --adapters also pins each adapter under providers to the newest npm version in its range. --check only names what factory.lock does not pin, exits with 1 then, and writes nothing.
+  factory plan [--adapters] [--check]             Pin registry MCP servers and skills of other repositories in factory.lock; show what apply changes and what drifted, rendered files and webhooks. --adapters also pins each adapter under providers to the newest npm version in its range. --check only names what factory.lock does not pin, exits with 1 then, and writes nothing.
   factory apply [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]    Render like render, register the webhooks of forgejo and github automations (github ones not with --gh-aw), and record what was applied in OSF_DATA.
   factory diff <old> [<new>]                      Show the changes between two versions of factory.yaml, as files or Git revisions.
   factory resolve                                 Print the resolved definition as JSON: defaults filled in, registry servers pinned.
@@ -52,7 +52,7 @@ async function main(): Promise<number> {
     },
     async render() {
       const [{ load }, { render }] = await Promise.all([import("./commands/load.ts"), import("./commands/render.ts")]);
-      print(Object.keys(render(load(file), outputFolder(), options)).map((path) => `wrote ${path}`));
+      print(Object.keys(await render(load(file), outputFolder(), options)).map((path) => `wrote ${path}`));
       return 0;
     },
     async plan() {
@@ -82,7 +82,7 @@ async function main(): Promise<number> {
       return 0;
     },
     async skills() {
-      print([JSON.stringify((await import("./commands/skills.ts")).skills(file), null, 2)]);
+      print([JSON.stringify(await (await import("./commands/skills.ts")).skills(file), null, 2)]);
       return 0;
     },
     async resolve() {

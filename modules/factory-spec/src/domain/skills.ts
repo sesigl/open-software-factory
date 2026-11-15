@@ -23,8 +23,47 @@ export interface SkillFindings {
   warnings: FileFinding[];
 }
 
-/** The files below a folder relative to the factory's folder, by their path below it; none for a missing folder. */
-export type FolderFiles = (folder: string) => Record<string, Uint8Array>;
+/**
+ * The files of a skill entry by their path below its folder: a folder relative to the factory's folder, none for a
+ * missing one; or a folder of another repository as fetched at its pin, undefined while it is not fetched.
+ */
+export type FolderFiles = (entry: string) => Record<string, Uint8Array> | undefined;
+
+/** A skill of another Git repository (ADR 0146): its URL, its folder there and its name. */
+export interface RemoteSkill {
+  url: string;
+  path: string;
+  name: string;
+}
+
+const REMOTE = /^git\+(.+?)#([^:]+):(.+)$/;
+
+/**
+ * The parts of an entry `git+<url>#<ref>:<path>` that can be fetched; undefined for a path of the factory's
+ * repository, and for an entry of another form or a folder outside its repository, which lint refuses.
+ */
+export function remoteOf(entry: string): RemoteSkill | undefined {
+  const parts = REMOTE.exec(entry);
+  if (!parts || formProblem(entry)) return undefined;
+  const [, url, , written] = parts as unknown as [string, string, string, string];
+  const path = written.split("/").filter((part) => part && part !== ".");
+  return { url, path: path.join("/"), name: path.at(-1) as string };
+}
+
+/** Why an entry that names another repository cannot be fetched; undefined for one that can, and for a path. */
+function formProblem(entry: string): string | undefined {
+  if (!entry.startsWith("git+")) return undefined;
+  const parts = REMOTE.exec(entry);
+  if (!parts) return `the skill "${entry}" is no git+<url>#<ref>:<path>: name a ref and the skill's folder`;
+  const path = parts[3] as string;
+  if (path.startsWith("/") || path.split("/").includes(".."))
+    return `the skill "${entry}" names a folder outside its repository`;
+  return undefined;
+}
+
+/** What a program says of a skill of another repository that factory.lock does not pin for its entry. */
+export const unpinned = (name: string, entry: string): string =>
+  `factory.lock has no pin of the skill "${name}" for "${entry}": run "factory plan"`;
 
 type Needs = Record<keyof typeof NEEDS, string[]>;
 type Agent = FactoryDefinition["agents"][string];
@@ -41,8 +80,12 @@ const FORMS = {
 /** A skill an agent uses, read once for lint and for the catalog. */
 interface Read {
   name: string;
-  /** The folder relative to the factory's folder, like "skills/release-notes". */
+  /** The folder relative to the factory's folder, like "skills/release-notes"; the entry for another repository. */
   folder: string;
+  /** A skill of another repository; undefined for a folder of the factory's repository. */
+  remote: RemoteSkill | undefined;
+  /** Whether its files were read: not for another repository's skill that is not fetched. */
+  read: boolean;
   /** The entry of the first agent that uses it, as factory.yaml writes it. */
   path: string;
   needs: Needs;
@@ -66,12 +109,22 @@ function readSkills(definition: FactoryDefinition, files: FolderFiles): { skills
   for (const [name, agent] of Object.entries(definition.agents))
     for (const [index, path] of (agent.skills ?? []).entries()) {
       const at = ["agents", name, "skills", String(index)];
-      const folder = path
-        .split("/")
-        .filter((part) => part && part !== ".")
-        .join("/");
-      const skill = folder.split("/").pop() as string;
-      const known = skills.get(skill) ?? read(skill, path, folder, files(path), at, findings);
+      const problem = formProblem(path);
+      if (problem) {
+        findings.push([at, problem]);
+        continue;
+      }
+      const remote = remoteOf(path);
+      // An entry of another repository is a folder of its own, also when its folder has the name of a local one.
+      const folder =
+        remote === undefined
+          ? path
+              .split("/")
+              .filter((part) => part && part !== ".")
+              .join("/")
+          : path;
+      const skill = remote?.name ?? (folder.split("/").pop() as string);
+      const known = skills.get(skill) ?? read(skill, path, folder, remote, files(path), at, findings);
       skills.set(skill, known);
       if (known.folder === folder) known.uses.push({ agent: name, at });
       else {
@@ -96,13 +149,20 @@ export function skillRules(definition: FactoryDefinition, files: FolderFiles): S
   return result;
 }
 
-/** Every skill the agents use, sorted by name, with its agents sorted by name. */
-export function skillCatalog(definition: FactoryDefinition, files: FolderFiles): CatalogSkill[] {
+/**
+ * Every skill the agents use, sorted by name, with its agents sorted by name; a skill of another repository with the
+ * commit that `commits` gives for its entry.
+ */
+export function skillCatalog(
+  definition: FactoryDefinition,
+  files: FolderFiles,
+  commits: Record<string, string>,
+): CatalogSkill[] {
   return readSkills(definition, files)
     .skills.map((skill) => ({
       name: skill.name,
       description: skill.description ?? null,
-      source: { folder: skill.folder },
+      source: sourceOf(skill, commits[skill.path]),
       needs: skill.needs,
       agents: skill.uses
         .map(({ agent }) => {
@@ -118,11 +178,19 @@ export function skillCatalog(definition: FactoryDefinition, files: FolderFiles):
       files: skill.files,
       body: skill.body ?? null,
       problems: [
+        ...(skill.read ? [] : [unpinned(skill.name, skill.path)]),
         ...(skill.absent ? [skill.absent] : []),
         ...skill.problems.map(({ file, line, column, message }) => `${file}:${line}:${column} ${message}`),
       ],
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Where a skill comes from: its folder, and for another repository its URL and the commit of its pin. */
+function sourceOf(skill: Read, commit: string | undefined): CatalogSkill["source"] {
+  if (!skill.remote) return { folder: skill.folder };
+  const source = { folder: skill.remote.path, repository: skill.remote.url };
+  return commit ? { ...source, commit } : source;
 }
 
 /** The messages of what an agent lacks of its skill's needs. */
@@ -154,19 +222,25 @@ const variable = (reference: string): string =>
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "_");
 
-/** Reads the files of one skill folder with the format's rules; a folder without SKILL.md is a finding at `at`. */
+/**
+ * Reads the files of one skill folder with the format's rules; a folder without SKILL.md is a finding at `at`. A skill
+ * of another repository whose files are not fetched is read for its name only.
+ */
 function read(
   name: string,
   path: string,
   folder: string,
-  files: Record<string, Uint8Array>,
+  remote: RemoteSkill | undefined,
+  fetched: Record<string, Uint8Array> | undefined,
   at: string[],
   findings: Finding[],
 ): Read {
+  const files = fetched ?? {};
   const skill: Read = {
-    ...{ name, folder, path, needs: NONE, description: undefined, body: undefined, absent: undefined },
-    ...{ files: Object.keys(files).sort(), problems: [], warnings: [], uses: [] },
+    ...{ name, folder, path, remote, read: fetched !== undefined, needs: NONE, description: undefined },
+    ...{ body: undefined, absent: undefined, files: Object.keys(files).sort(), problems: [], warnings: [], uses: [] },
   };
+  if (!fetched) return skill;
   const texts: Record<string, string> = {};
   for (const [file, bytes] of Object.entries(files)) {
     try {
@@ -220,7 +294,7 @@ function frontMatter(result: Read, text: string): void {
   }
   if (document.errors.length > 0) return;
   const fields = (isMap(document.contents) ? document.toJS() : {}) as Record<string, unknown>;
-  const skill = folder.split("/").pop() as string;
+  const skill = result.name;
   const { name, description, compatibility } = fields;
   // A missing field has no place of its own: its finding names the front matter's first line.
   const first = { line: 1, column: 1 };

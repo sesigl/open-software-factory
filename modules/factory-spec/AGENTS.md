@@ -1,7 +1,7 @@
 # AGENTS.md for module `factory-spec`
 
 Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0020, ADR 0022, ADR 0060, ADR 0135,
-ADR 0140.
+ADR 0140, ADR 0146.
 
 ## Public surface
 
@@ -15,8 +15,10 @@ The only ways a system test or another program may use this module:
   `factory.yaml` on stdout, and `factory skills` prints the `skill-catalog` contract on stdout (ADR 0143)
 - Outside systems: the MCP Registry at `FACTORY_MCP_REGISTRY`, only in `factory plan`; the forge port's adapters
   (`FACTORY_FORGEJO_ADAPTER`, `FACTORY_GITHUB_ADAPTER`) as separate processes, in `factory plan` and `factory apply`
-  when the factory has forgejo or github automations. The system tests pass the built adapters of this repository
-  with `sut.adapter`, so `turbo.json` builds them first.
+  when the factory has forgejo or github automations; the Git repositories of skills of other repositories, fetched
+  with `@opensoftware/factory-source` in `factory plan`, `factory apply`, `factory render` and `factory skills`
+  (ADR 0146). The system tests pass the built adapters of this repository with `sut.adapter`, so `turbo.json` builds
+  them first, and serve a skill's repository as `$INPUT` at a `file://` URL.
 - Environment variables: the list in `README.md#configuration` (generated from `src/config.schema.json`)
 
 ## Architecture

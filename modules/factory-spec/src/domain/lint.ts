@@ -2,7 +2,7 @@
 import { type FactoryDefinition, validate } from "@opensoftware/contracts";
 import { LineCounter, parseDocument } from "yaml";
 import { locate, type Place, segments } from "./locate.ts";
-import { type Finding, type FolderFiles, skillRules } from "./skills.ts";
+import { type Finding, type FolderFiles, remoteOf, skillRules, unpinned } from "./skills.ts";
 
 export interface Problem extends Place {
   message: string;
@@ -22,9 +22,16 @@ export interface Linted {
 
 /**
  * Lints the text of factory.yaml; `exists` says whether a path relative to the file exists, `files` gives the files of
- * a skill folder, and `ghAw` says whether the factory is rendered with gh-aw workflows.
+ * a skill folder, `ghAw` says whether the factory is rendered with gh-aw workflows, and `pins` gives the entry that
+ * factory.lock pins for each skill of another repository, by its name (ADR 0146).
  */
-export function lint(text: string, exists: (path: string) => boolean, files: FolderFiles, ghAw: boolean): Linted {
+export function lint(
+  text: string,
+  exists: (path: string) => boolean,
+  files: FolderFiles,
+  ghAw: boolean,
+  pins: Record<string, string>,
+): Linted {
   const lines = new LineCounter();
   const document = parseDocument(text, { lineCounter: lines, prettyErrors: false });
   if (document.errors.length > 0) {
@@ -50,7 +57,10 @@ export function lint(text: string, exists: (path: string) => boolean, files: Fol
   // A warning names its field as a JSON Pointer, like a problem of the schema.
   const warnings = [
     ...placed(
-      warningFindings(definition, ghAw).map(([path, message]) => [path, `warning /${path.join("/")}: ${message}`]),
+      warningFindings(definition, ghAw, pins).map(([path, message]) => [
+        path,
+        `warning /${path.join("/")}: ${message}`,
+      ]),
     ),
     ...skills.warnings,
   ];
@@ -59,9 +69,18 @@ export function lint(text: string, exists: (path: string) => boolean, files: Fol
     : { definition, fits: definition, problems, warnings };
 }
 
-/** The fields that a run does not use: a cron automation without gh-aw, and every scorer and benchmark (T-31). */
-function warningFindings(definition: FactoryDefinition, ghAw: boolean): Finding[] {
+/**
+ * The fields that a run does not use: a cron automation without gh-aw, and every scorer and benchmark (T-31); and a
+ * skill of another repository that factory.lock does not pin yet, which "factory plan" pins (ADR 0146).
+ */
+function warningFindings(definition: FactoryDefinition, ghAw: boolean, pins: Record<string, string>): Finding[] {
   const findings: Finding[] = [];
+  for (const [name, agent] of Object.entries(definition.agents))
+    (agent.skills ?? []).forEach((entry, index) => {
+      const remote = remoteOf(entry);
+      if (remote && pins[remote.name] !== entry)
+        findings.push([["agents", name, "skills", String(index)], unpinned(remote.name, entry)]);
+    });
   if (!ghAw)
     (definition.automations ?? []).forEach((automation, index) => {
       if (automation.cron === undefined) return;
