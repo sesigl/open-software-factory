@@ -1,7 +1,7 @@
 // runAdapter: the command line every harness adapter shares, `run` and `transcript` (ADR 0052). The adapter names
 // its harness, its usage and the agent it starts; everything else is the same for each adapter.
 import { parseArgs } from "node:util";
-import { type Command, check, type Io, outputPath, runProgram } from "@opensoftware/cli";
+import { type Command, check, commandOf, type Io, outputPath, runProgram } from "@opensoftware/cli";
 import { allowlistOf } from "./domain/allowlist.ts";
 import { type ProxyOptions, serveProxy } from "./proxy.ts";
 import { exportTranscript } from "./transcript.ts";
@@ -65,7 +65,7 @@ export function runAdapter(
 
   const commands: Record<string, Command> = { run, transcript };
   return runProgram(
-    { name: `harness-${options.harness}`, usage: options.usage, command: commands[name as string], help: values.help },
+    { name: `harness-${options.harness}`, usage: options.usage, command: commandOf(commands, name), help: values.help },
     context.io,
   );
 }

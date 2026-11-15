@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // inference-litellm <command>: the entry layer only parses arguments and calls the commands (ADR 0056).
 import { parseArgs } from "node:util";
-import { type Command, runProgram } from "@opensoftware/cli";
+import { type Command, commandOf, runProgram } from "@opensoftware/cli";
 import { key } from "./commands/key.ts";
 import { list } from "./commands/list.ts";
 import { revoke } from "./commands/revoke.ts";
@@ -38,6 +38,6 @@ const commands: Record<string, Command> = {
 process.exitCode = await runProgram({
   name: "inference-litellm",
   usage: USAGE,
-  command: commands[String(name)],
+  command: commandOf(commands, name),
   help: values.help,
 });

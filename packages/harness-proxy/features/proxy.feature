@@ -119,6 +119,11 @@ Feature: The ACP proxy of a harness adapter
     When runAdapter runs "--help" for an adapter with the usage "Usage: demo"
     Then it gives 0 and prints "Usage: demo"
 
+  @id=SCN-HPROXY-020 @status=implemented
+  Scenario: runAdapter prints the adapter's usage for a command it does not have
+    When runAdapter runs "deploy", "constructor" and "toString" for an adapter with the usage "Usage: demo"
+    Then each gives 2 and writes "Usage: demo" to standard error, and nothing to standard output
+
   @id=SCN-HPROXY-018 @status=implemented
   Scenario: A prompt sent while a turn runs reaches the agent as the steering request the adapter names
     Given a harness scripted to keep its turn for "add a date" running until it receives "use the existing date helper"

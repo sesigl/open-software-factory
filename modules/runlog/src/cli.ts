@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // runlog <command>: the entry layer only parses arguments and calls the commands.
 import { parseArgs } from "node:util";
-import { type Command, packageVersion, runProgram } from "@opensoftware/cli";
+import { type Command, commandOf, packageVersion, runProgram } from "@opensoftware/cli";
 import { attachSession } from "./commands/attach.ts";
 import { collectorConfig } from "./commands/collector.ts";
 import { type ExportOptions, exportLatest, exportSession } from "./commands/export.ts";
@@ -62,5 +62,5 @@ const commands: Record<string, Command> = {
   },
   collector: async () => print(collectorConfig(file as string, options.output)),
 };
-const chosen = command && file ? commands[command] : undefined;
+const chosen = file ? commandOf(commands, command) : undefined;
 process.exitCode = await runProgram({ name: "runlog", usage: HELP, command: chosen, help: values.help });

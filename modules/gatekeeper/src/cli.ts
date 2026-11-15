@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // gatekeeper <command>: the entry layer only parses arguments and calls the commands.
 import { parseArgs } from "node:util";
-import { type Command, outputPath, check as require, runProgram } from "@opensoftware/cli";
+import { type Command, commandOf, outputPath, check as require, runProgram } from "@opensoftware/cli";
 import { keys } from "./commands/keys.ts";
 import type { Options } from "./commands/load.ts";
 import { request } from "./commands/request.ts";
@@ -80,5 +80,5 @@ const commands: Record<string, Command> = {
     return verify(files[0] as string, key);
   },
 };
-const chosen = command ? commands[command] : undefined;
+const chosen = commandOf(commands, command);
 process.exitCode = await runProgram({ name: "gatekeeper", usage: HELP, command: chosen, help: values.help });

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // observer <command>: the entry layer only parses arguments and calls the commands.
 import { parseArgs } from "node:util";
-import { type Command, outputPath, check as require, runProgram, UsageError } from "@opensoftware/cli";
+import { type Command, commandOf, outputPath, check as require, runProgram, UsageError } from "@opensoftware/cli";
 import { readProblems } from "./adapters/files.ts";
 import { analyze } from "./commands/analyze.ts";
 import { check } from "./commands/check.ts";
@@ -94,5 +94,5 @@ const commands: Record<string, Command> = {
     };
   },
 };
-const chosen = command ? commands[command] : undefined;
+const chosen = commandOf(commands, command);
 process.exitCode = await runProgram({ name: "observer", usage: HELP, command: chosen, help: values.help });

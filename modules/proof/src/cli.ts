@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // proof <command>: the entry layer only parses arguments and calls the commands.
 import { parseArgs } from "node:util";
-import { type Command, outputPath, packageVersion, runProgram } from "@opensoftware/cli";
+import { type Command, commandOf, outputPath, packageVersion, runProgram } from "@opensoftware/cli";
 import { attach } from "./commands/attach.ts";
 import { bundle } from "./commands/bundle.ts";
 import { capture } from "./commands/capture.ts";
@@ -93,5 +93,5 @@ const commands: Record<string, Command> = {
 };
 const ready =
   command === "bundle" || command === "capture" || ((command === "verify" || command === "attach") && folder);
-const chosen = ready ? commands[command as string] : undefined;
+const chosen = ready ? commandOf(commands, command) : undefined;
 process.exitCode = await runProgram({ name: "proof", usage: HELP, command: chosen, help: values.help });

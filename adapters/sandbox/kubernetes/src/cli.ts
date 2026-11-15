@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // sandbox-kubernetes <command>: the entry layer only parses arguments and calls the commands (ADR 0055).
 import { parseArgs } from "node:util";
-import { type Command, runProgram } from "@opensoftware/cli";
+import { type Command, commandOf, runProgram } from "@opensoftware/cli";
 import { kubectl } from "./adapters/kubectl.ts";
 import { copy } from "./commands/copy.ts";
 import { create } from "./commands/create.ts";
@@ -54,6 +54,6 @@ const commands: Record<string, Command> = {
 process.exitCode = await runProgram({
   name: "sandbox-kubernetes",
   usage: USAGE,
-  command: commands[name as string],
+  command: commandOf(commands, name),
   help: values.help,
 });

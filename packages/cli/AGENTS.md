@@ -6,8 +6,8 @@ Adds rules for the cli library. The root `AGENTS.md` applies in full. Decisions:
 
 The only way a system test or another program may use the library:
 
-- Library: the exports of `src/index.ts` (`runProgram`, `UsageError`, `check`, `readInputs`, `writeText`,
-  `outputPath`, `packageVersion`, `healthOf`), imported as `@opensoftware/cli`
+- Library: the exports of `src/index.ts` (`runProgram`, `commandOf`, `UsageError`, `check`, `readInputs`,
+  `writeText`, `outputPath`, `packageVersion`, `healthOf`), imported as `@opensoftware/cli`
 
 The library's system tests import it by its package name and call it in their own process (ADR 0039). Files go
 through `sut.files`; `sut.files.path` gives their absolute path.
@@ -19,7 +19,7 @@ Layers, top to bottom, in `architecture.json` (ADR 0014). A file imports only it
 | Layer | Paths | Holds |
 | --- | --- | --- |
 | api | `src/index.ts` | the public exports |
-| program | `src/program.ts` | `runProgram`: help, the command, its output and the exit code |
+| program | `src/program.ts` | `runProgram`: help, the command, its output and the exit code; `commandOf`: the command of a name |
 | files | `src/files.ts` | the input files, the output folder, the package version |
 | errors | `src/errors.ts` | `UsageError` and `check` |
 

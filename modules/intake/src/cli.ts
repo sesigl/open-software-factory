@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // intake <command>: the entry layer only parses arguments and calls the commands.
 import { parseArgs } from "node:util";
-import { type Command, runProgram } from "@opensoftware/cli";
+import { type Command, commandOf, runProgram } from "@opensoftware/cli";
 import { mcp } from "./commands/mcp.ts";
 import { resend } from "./commands/resend.ts";
 import { serve } from "./commands/serve.ts";
@@ -22,5 +22,5 @@ const commands: Record<string, Command> = {
   mcp: () => mcp(process.env),
   resend: () => resend(process.env),
 };
-const chosen = positionals[0] ? commands[positionals[0]] : undefined;
+const chosen = commandOf(commands, positionals[0]);
 process.exitCode = await runProgram({ name: "intake", usage: HELP, command: chosen, help: values.help });

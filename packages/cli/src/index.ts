@@ -2,4 +2,4 @@
 export { check, UsageError } from "./errors.ts";
 export { type Input, outputPath, packageVersion, readInputs, writeText } from "./files.ts";
 export { type Health, healthOf, type Probe } from "./health.ts";
-export { type Command, type Io, type Outcome, type Program, runProgram } from "./program.ts";
+export { type Command, commandOf, type Io, type Outcome, type Program, runProgram } from "./program.ts";

@@ -2,7 +2,7 @@
 // foreman <command>: the entry layer only parses arguments and calls the commands.
 import { enableCompileCache } from "node:module";
 import { parseArgs } from "node:util";
-import { type Command, runProgram } from "@opensoftware/cli";
+import { type Command, commandOf, runProgram } from "@opensoftware/cli";
 
 // Node keeps the compiled code of the foreman and its libraries (Temporal, Fastify, NATS) in its compile cache, in
 // NODE_COMPILE_CACHE or the temporary folder: a later start loads it instead of compiling it again, about 0.3 s less.
@@ -24,6 +24,6 @@ const commands: Record<string, Command> = { serve: serving, resend: resending };
 process.exitCode = await runProgram({
   name: "foreman",
   usage: HELP,
-  command: positionals[0] ? commands[positionals[0]] : undefined,
+  command: commandOf(commands, positionals[0]),
   help: values.help,
 });

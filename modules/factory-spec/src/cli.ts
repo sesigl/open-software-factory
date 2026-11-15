@@ -91,7 +91,8 @@ async function main(): Promise<number> {
     },
   };
 
-  const run = commands[command];
+  // Only a name the table itself holds: "toString" names no command, though every object answers to it.
+  const run = Object.hasOwn(commands, command) ? commands[command] : undefined;
   if (!run || values.help) {
     process.stdout.write(HELP);
     return values.help ? 0 : 2;

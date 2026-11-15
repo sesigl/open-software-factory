@@ -111,3 +111,4 @@ the GitHub environment `npm`, a token only for the first version, then a trusted
 | SCN-HPROXY-017 | implemented | runAdapter prints the adapter's usage for "--help" |
 | SCN-HPROXY-018 | implemented | A prompt sent while a turn runs reaches the agent as the steering request the adapter names |
 | SCN-HPROXY-019 | implemented | serveProxy ends at once when its client hangs up |
+| SCN-HPROXY-020 | implemented | runAdapter prints the adapter's usage for a command it does not have |
