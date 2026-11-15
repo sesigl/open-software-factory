@@ -86,7 +86,19 @@ which stays until live updates replace it (`TODO.md`, T-60).
 
 ## Budget
 
-- System tests: 250 seconds in total on the CI runner (178 scenarios). Raised from 120 seconds on 15 November 2026
+- System tests: 280 seconds in total on the CI runner (185 scenarios). Raised from 250 seconds on 15 November 2026
+  with the switches of a skill (T-59, ADR 0149), measured on the development container in one run of the whole suite:
+  the 7 new scenarios took 22.7 seconds next to 200.9 for the other 178, so 11.3 % more, about 26 seconds on top of
+  the 232 estimated for CI below, 258 for the suite; the budget is that and 8 %. Set it to the next CI measure.
+  - Where their time goes: the journey SCN-CONSOLE-235 takes 13.1 seconds: the sign-in, Chromium, one change on
+    Forgejo, axe, and the wait until Forgejo merges the pull request in the background after the check passes, which
+    the journey must see to show "Live". SCN-CONSOLE-234 opens one change of four edits on Forgejo, 4.9 seconds: four
+    runs of `factory edit` in place of one. The other five take 0.6 to 1.2 seconds each.
+  - Made cheap first: only the scenario of the main flow and the journey open a change on Forgejo; switching off, a
+    skill of another repository, a member and a local folder are proven against a factory repository that does not
+    answer, as SCN-CONSOLE-227 to 229 do, and the pending change beside its agent is proven in SCN-CONSOLE-234 after
+    its change, with no change of its own.
+- Before that: 250 seconds for 178 scenarios. Raised from 120 seconds on 15 November 2026
   with the changes of the factory (T-58, ADR 0144): 21 of their 24 scenarios open or read changes on Forgejo
   (`fakes.forge`), which the console fetches with Git, as the TODO asks, since `fakes.github` holds no Git repository.
   - Measured in CI on a runner whose benchmark took the reference time (slowdown 1): 210.3 seconds for the first 174
