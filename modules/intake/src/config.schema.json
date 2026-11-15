@@ -20,6 +20,10 @@
       "type": "string",
       "description": "serve: the token that callers of /v1 send as Authorization: Bearer <token>. Required. mcp: the token it sends to the server. Required."
     },
+    "INTAKE_PERSON_KEYS": {
+      "type": "string",
+      "description": "serve: the issuers of person proofs, name=url pairs of their key sets separated by commas, like console=http://console:8080/.well-known/jwks.json (ADR 0151). Set, a submission whose requester is a person needs that person's proof in the header OSF-Person, and the server records the person the proof names. Unset: a caller with the API token names any person, and the server says so at its start."
+    },
     "INTAKE_DATABASE_URL": {
       "type": "string",
       "description": "serve: the PostgreSQL database of the work items, schema intake. Default: an embedded PostgreSQL in OSF_DATA."
@@ -94,7 +98,7 @@
     },
     "INTAKE_REQUESTER": {
       "type": "string",
-      "description": "mcp: the person the agent works for, <source>:<id> like github:varun, the requester of its work. Required."
+      "description": "mcp: the person the agent works for, <source>:<id> like github:varun. The requester of its work is the trigger mcp:<requester>, since nothing proves the person (ADR 0151). Required."
     },
     "INTAKE_FOREMAN_URL": {
       "type": "string",

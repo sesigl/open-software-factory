@@ -1,6 +1,6 @@
 # AGENTS.md for module `intake`
 
-Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0063, ADR 0065, ADR 0071, ADR 0113, ADR 0115.
+Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0063, ADR 0065, ADR 0071, ADR 0113, ADR 0115, ADR 0151.
 
 ## Public surface
 
@@ -14,7 +14,10 @@ The only ways a system test or another program may use this module:
   forge port's adapter in `INTAKE_FORGE_ADAPTER`, and Sentry's alerts
 - Output: replies in the Slack thread of a mention, and comments on the issue of a work item through the forge
   adapter's `comment`
-- Outside systems it calls: the foreman's HTTP API at `INTAKE_FOREMAN_URL`, from `intake mcp` for `run_evidence`
+- Request header: `OSF-Person` on `POST /v1/work-items`, the proof of a requester that is a person, checked with
+  `INTAKE_PERSON_KEYS` through `@opensoftware/person-proof` (ADR 0151; see `README.md#the-person-proven`)
+- Outside systems it calls: the foreman's HTTP API at `INTAKE_FOREMAN_URL`, from `intake mcp` for `run_evidence`; with
+  `INTAKE_PERSON_KEYS`, the key set of each issuer it names, from `intake serve`
 - Server state: the schema `intake` in the PostgreSQL database at `INTAKE_DATABASE_URL`, or the embedded PostgreSQL
   in `OSF_DATA`; private to the module
 - Events: `work.received@v1` and `work.retry-requested@v1` out, `run.started@v1`, `run.completed@v1` and `gate.requested@v1` in (`contracts/events/`), on NATS at
@@ -28,7 +31,8 @@ Layers, top to bottom, in `architecture.json` (ADR 0014): `entry` (`src/cli.ts`)
 what an issue's label, a Sentry alert or a mention's link asks for, and what a run event says of its work item, without I/O; `adapters` keep the work items and
 the outbox in PostgreSQL or the embedded PGlite, publish to and listen on NATS, run the channel and forge adapters as programs, and
 call intake's and the foreman's APIs for the MCP server; `commands` join them: `serve` runs the Fastify server with its webhooks and `mcp` the
-MCP server. The ARCH check enforces the layers.
+MCP server, and `person` checks a submission's proof of the person with `@opensoftware/person-proof`; the work item
+routes keep the body's bytes beside the parsed body for its digest. The ARCH check enforces the layers.
 
 ## Allowed exceptions
 

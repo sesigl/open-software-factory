@@ -55,7 +55,7 @@ with the same work item.
 
 | Route | What it does |
 | --- | --- |
-| `POST /v1/work-items` | Submit work: a work item without its `id`. 201 with the new work item, 200 with the work item that has the same dedupe key, 400 with a problem that names the field. |
+| `POST /v1/work-items` | Submit work: a work item without its `id`. 201 with the new work item, 200 with the work item that has the same dedupe key, 400 with a problem that names the field. With `INTAKE_PERSON_KEYS`, a requester that is a person needs the header `OSF-Person` ([The person, proven](#the-person-proven)): 401, 403 or 503 without a proof that holds. |
 | `GET /v1/work-items?dedupeKey=<key>` | The work item with this dedupe key, such as an issue's link or `sentry:<issue ID>`. 404 when there is none, 400 without the key. |
 | `GET /v1/inbox` | The latest work items, the one received last first, each as `GET /v1/work-items/{workItemId}` shows it: `{ "workItems": [...] }`. `?status=` keeps the work items in that status; another status is 400. One page at a time ([ADR 0115](../../docs/decisions/0115-lists-in-pages.md)): `?limit=` work items at most, 1 to 500, 50 by default; the answer's `next` is the `?cursor=` of the next page while more follow. Another `limit` or a cursor that is no page of the inbox is 400. |
 | `GET /v1/work-items/{workItemId}` | The work item, its `status` ([Events](#events)), its `runId` once the foreman started its run, `receivedAt`, and `requests`: the requester, origin and time of each submission, oldest first. 404 for a work item the server does not know. |
@@ -76,6 +76,39 @@ gives the same ID on every server. A request from an origin that the work item a
 
 With `INTAKE_DATABASE_URL`, the work items live in the schema `intake` of that PostgreSQL database; the server creates
 its tables when it starts.
+
+## The person, proven
+
+Without `INTAKE_PERSON_KEYS`, a caller with the API token names any person as the requester, and the server says so
+once at its start: `INTAKE_PERSON_KEYS is not set: a caller with the API token names any person (ADR 0151)`. With it,
+the server checks the person a submission names ([ADR
+0151](../../docs/decisions/0151-the-person-proven-to-every-module.md)). The setting names the issuers of person proofs:
+`name=url` pairs of their key sets, separated by commas, like `console=http://console:8080/.well-known/jwks.json`. A
+setting that is no such list stops `intake serve` with code 2 and the reason, like `INTAKE_PERSON_KEYS: a key set is
+<name>=<url>, like console=http://console:8080/.well-known/jwks.json: "console" is not`.
+
+A submission to `POST /v1/work-items` whose `requester` is of the kind `person` then needs the header `OSF-Person`:
+the console's proof of that person for this request, a JSON Web Token with the claims of
+[`person-proof`](../../contracts/person-proof/person-proof.schema.json) and the `aud` `intake`. The server records the
+person the proof names, with `sub` as the `id` and `name` as the `displayName`, not the name in the body. Otherwise it
+changes nothing and answers a problem whose `detail` is the reason:
+
+| Status | When |
+| --- | --- |
+| 401 | No `OSF-Person` (`send OSF-Person: the console's proof of the person (ADR 0151)`), or a proof that does not verify, is of an issuer the setting does not name, is for another module than `intake`, or ended, like `the person proof ended at 2026-01-01T00:00:30Z`. |
+| 403 | A proof for another method, path or body, or of another person than the `requester`: the reason names the claim. |
+| 503 | The issuer's key set cannot be fetched: the reason names the issuer and its URL. The person did nothing wrong. |
+
+Each refusal is a line on the error output with the person the call claims and the reason, never the proof, like
+`intake: refused POST /v1/work-items for "ada@acme.dev": the person proof ended at 2026-01-01T00:00:30Z`. The check
+allows 10 seconds of clock skew and reads its clock from `OSF_NOW` when that is set. A key set is fetched when a proof
+first needs it and kept for 10 minutes.
+
+A requester of the kind `trigger` needs no proof: a team's own tool acts as itself, like
+`{ "kind": "trigger", "id": "tool:acme-portal" }`. A tool that signs in people of its own publishes a key set in the
+format [`person-keys`](../../contracts/person-keys/person-keys.schema.json), signs their proofs with its own `iss`, and
+the team adds `acme-portal=<its key set>` to `INTAKE_PERSON_KEYS`. The webhooks of Slack, the forge and Sentry are
+signed by their senders and need no proof.
 
 ## Slack
 
@@ -189,7 +222,7 @@ looks like this:
 
 | Tool | Input | Answer |
 | --- | --- | --- |
-| `submit_work` | `title`, optional `description`, `type` (`idea`, `bug`, `task`, `automation`) and `dedupeKey` | The work item's view, as for `GET /v1/work-items/{id}`. The requester is the person in `INTAKE_REQUESTER`, the origin's source `mcp`, the default dedupe key `mcp:<requester>:<title>`. |
+| `submit_work` | `title`, optional `description`, `type` (`idea`, `bug`, `task`, `automation`) and `dedupeKey` | The work item's view, as for `GET /v1/work-items/{id}`. The requester is the trigger `mcp:<requester>`, with the person in `INTAKE_REQUESTER`: nothing proves that person, so the agent acts as itself and needs no proof ([ADR 0151](../../docs/decisions/0151-the-person-proven-to-every-module.md)). The origin's source is `mcp`, the default dedupe key `mcp:<requester>:<title>`. |
 | `work_status` | `id` | The work item's view. |
 | `run_evidence` | `id` | What the foreman recorded of the work item's run, its view from [`GET /v1/runs/{runId}`](../foreman/README.md#api): the run's state, factory version, pull request, and each stage with its agent, state, harness session, gate, checks and reason. |
 
@@ -254,6 +287,7 @@ letter too, after that time; the profile and the chart set `7d`.
 | `OSF_DATA` | string | `".intake"` | serve: the folder of the embedded PostgreSQL (PGlite) when INTAKE_DATABASE_URL is not set. |
 | `OSF_NOW` | string |  | The current time, like 2026-01-01T00:00:00Z, for the time a work item and a request were received. Default: the clock. |
 | `INTAKE_API_TOKEN` | string |  | serve: the token that callers of /v1 send as Authorization: Bearer <token>. Required. mcp: the token it sends to the server. Required. |
+| `INTAKE_PERSON_KEYS` | string |  | serve: the issuers of person proofs, name=url pairs of their key sets separated by commas, like console=http://console:8080/.well-known/jwks.json (ADR 0151). Set, a submission whose requester is a person needs that person's proof in the header OSF-Person, and the server records the person the proof names. Unset: a caller with the API token names any person, and the server says so at its start. |
 | `INTAKE_DATABASE_URL` | string |  | serve: the PostgreSQL database of the work items, schema intake. Default: an embedded PostgreSQL in OSF_DATA. |
 | `INTAKE_NATS_URL` | string |  | serve: the NATS server for work.received@v1 on osf.work.received.v1 and work.retry-requested@v1 on osf.work.retry-requested.v1, and for the foreman's run.started@v1 and run.completed@v1, which move a work item's status (ADR 0071), the gatekeeper's gate.requested@v1 and the foreman's run.blocked@v1, which its requesters hear of (ADR 0113, 0127). Unset: no events. |
 | `OSF_STREAM_MAX_AGE` | string |  | serve, resend: the age after which the stream OSF drops an event, like 7d, 12h, 30m or 90s (ADR 0116). The server adds the stream with it, or sets it on a stream that another module added. Unset: a new stream keeps its events without a limit of age, and an existing one keeps its own. The profile and the chart set 7d. |
@@ -271,7 +305,7 @@ letter too, after that time; the profile and the chart set `7d`.
 | `INTAKE_SENTRY_CHANGE_URL` | string |  | serve: the link to the change of a Sentry alert, with {release} for the event's release, like https://github.com/acme/web/commit/{release}. Unset: no link to the change. |
 | `INTAKE_CONSOLE_URL` | string |  | serve: the console's base URL without a trailing slash, like https://console.example, for the link <url>/runs/<run ID> in the replies about a run. Unset: the replies name the run's ID. |
 | `INTAKE_URL` | string |  | mcp: the base URL of intake serve, like http://localhost:8080. Required. |
-| `INTAKE_REQUESTER` | string |  | mcp: the person the agent works for, <source>:<id> like github:varun, the requester of its work. Required. |
+| `INTAKE_REQUESTER` | string |  | mcp: the person the agent works for, <source>:<id> like github:varun. The requester of its work is the trigger mcp:<requester>, since nothing proves the person (ADR 0151). Required. |
 | `INTAKE_FOREMAN_URL` | string |  | mcp: the base URL of foreman serve, like http://localhost:8081, for the tool run_evidence (ADR 0071). Unset: run_evidence is an error that names it. |
 | `INTAKE_FOREMAN_TOKEN` | string |  | mcp: the token of foreman serve's API, its FOREMAN_API_TOKEN, sent with INTAKE_FOREMAN_URL. |
 
@@ -308,7 +342,7 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-INTAKE-014 | implemented | A second mention in the same thread is the same work item and gets no second reply |
 | SCN-INTAKE-015 | implemented | A Slack delivery with a wrong signature gets the status 401 and makes no work item |
 | SCN-INTAKE-016 | implemented | Slack's URL verification gets its challenge back |
-| SCN-INTAKE-017 | implemented | A local agent submits work through the Factory MCP server |
+| SCN-INTAKE-017 | deprecated | A local agent submits work through the Factory MCP server |
 | SCN-INTAKE-018 | implemented | A local agent reads the state of a work item through the Factory MCP server |
 | SCN-INTAKE-019 | implemented | A tool call that the server refuses is a tool error with the server's reason |
 | SCN-INTAKE-020 | implemented | The MCP server without the server's URL exits with code 2 and names the variable |
@@ -358,3 +392,13 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-INTAKE-064 | implemented | A stream "OSF" without a limit gets the max age of "OSF_STREAM_MAX_AGE" when the server starts |
 | SCN-INTAKE-065 | implemented | The server removes the events it published from its outbox once they are older than "INTAKE_OUTBOX_KEEP" |
 | SCN-INTAKE-066 | implemented | The Slack thread of a work item hears once that its run waits for the checks of its pull request, and why the run failed |
+| SCN-INTAKE-067 | implemented | A work item submitted with the console's proof of the person is recorded with that person and the proof's name |
+| SCN-INTAKE-068 | implemented | A call with the API token that names a made-up person without a proof is refused and makes no work item |
+| SCN-INTAKE-069 | implemented | A proof past its end is refused with its end, and the log names the person but not the proof |
+| SCN-INTAKE-070 | implemented | A proof for another module, another path, another body or another person is refused with the claim that differs |
+| SCN-INTAKE-071 | implemented | A team's tool whose key set is in the setting proves the person it signed in, a tool outside the setting is refused |
+| SCN-INTAKE-072 | implemented | A team's tool that names itself as a trigger submits work without a proof |
+| SCN-INTAKE-073 | implemented | A local agent submits work through the Factory MCP server as the trigger of its requester |
+| SCN-INTAKE-074 | implemented | A setting of the issuers that is no list of name=url pairs stops the server with code 2 and names the variable |
+| SCN-INTAKE-075 | implemented | A server without the setting takes any person from a caller with the API token and says so once at its start |
+| SCN-INTAKE-076 | implemented | A key set that cannot be fetched answers 503 and names its issuer |

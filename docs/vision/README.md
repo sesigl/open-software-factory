@@ -57,8 +57,8 @@ not `deprecated` is `implemented`; otherwise it says `planned`. The check VISION
 | SCN-FACTORY-DATA-004 | implemented | SCN-SANDBOX-010 (implemented) |
 | SCN-FACTORY-DATA-005 | planned | none |
 | SCN-FACTORY-DATA-006 | implemented | SCN-RUN-047 (implemented), SCN-RUN-014 (implemented), SCN-RUN-016 (implemented) |
-| SCN-FACTORY-ACCESS-001 | implemented | SCN-DIST-014 (implemented), SCN-INTAKE-002 (implemented), SCN-INTAKE-021 (implemented), SCN-INTAKE-017 (implemented), SCN-INTAKE-013 (implemented), SCN-INTAKE-024 (implemented), SCN-CHANNEL-001 (implemented), SCN-FORGE-030 (implemented) |
-| SCN-FACTORY-ACCESS-002 | implemented | SCN-INTAKE-034 (implemented), SCN-INTAKE-001 (implemented) |
+| SCN-FACTORY-ACCESS-001 | implemented | SCN-DIST-014 (implemented), SCN-INTAKE-002 (implemented), SCN-INTAKE-021 (implemented), SCN-INTAKE-017 (deprecated), SCN-INTAKE-073 (implemented), SCN-INTAKE-013 (implemented), SCN-INTAKE-024 (implemented), SCN-CHANNEL-001 (implemented), SCN-FORGE-030 (implemented) |
+| SCN-FACTORY-ACCESS-002 | implemented | SCN-INTAKE-034 (implemented), SCN-INTAKE-071 (implemented), SCN-INTAKE-072 (implemented), SCN-INTAKE-001 (implemented) |
 | SCN-FACTORY-ACCESS-003 | implemented | SCN-INTAKE-046 (implemented), SCN-INTAKE-060 (implemented), SCN-INTAKE-030 (implemented), SCN-INTAKE-039 (implemented), SCN-INTAKE-013 (implemented), SCN-CHANNEL-007 (implemented) |
 | SCN-FACTORY-ACCESS-004 | planned | none |
 | SCN-FACTORY-ORCH-001 | implemented | SCN-FORE-022 (implemented), SCN-FORE-001 (implemented), SCN-FORE-002 (implemented) |

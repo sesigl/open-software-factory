@@ -14,8 +14,12 @@ import { workItemId } from "../domain/work-item.ts";
 import { durationOf, type Env, required } from "./env.ts";
 import { forgeHook, problem, sentryHook, slackHook } from "./hooks.ts";
 import { type Inbox, inbox } from "./inbox.ts";
+import { type PersonCheckOf, personCheckOf } from "./person.ts";
 
 const RELAY_EVERY_MS = 60_000;
+
+/** The problem's title of each refusal of a person proof. */
+const TITLES = { 401: "Unauthorized", 403: "Forbidden", 503: "Service Unavailable" } as const;
 
 /** Compares in constant time, so the answer's timing does not tell how much of a token was right. */
 function bearerMatches(header: string | undefined, token: string): boolean {
@@ -24,14 +28,36 @@ function bearerMatches(header: string | undefined, token: string): boolean {
   return sent.length === wanted.length && timingSafeEqual(sent, wanted);
 }
 
-async function workItemRoutes(app: FastifyInstance, work: Inbox, apiToken: string): Promise<void> {
+/** Who checks the work item API: its token and, with INTAKE_PERSON_KEYS, the proof of the person (ADR 0151). */
+interface Guard {
+  apiToken: string;
+  prove: PersonCheckOf;
+  warn: (text: string) => void;
+}
+
+async function workItemRoutes(app: FastifyInstance, work: Inbox, { apiToken, prove, warn }: Guard): Promise<void> {
   await app.register(async (api) => {
+    // A person proof binds the body's bytes as they arrived, so the parser keeps them beside the parsed body.
+    const bodies = new WeakMap<object, Buffer>();
+    const json = api.getDefaultJsonParser("error", "error");
+    api.removeContentTypeParser("application/json");
+    api.addContentTypeParser("application/json", { parseAs: "buffer" }, (request, body, done) => {
+      bodies.set(request, body as Buffer);
+      json(request, body as unknown as string, done);
+    });
     api.addHook("onRequest", async (request, reply) => {
       if (!bearerMatches(request.headers.authorization, apiToken))
         return problem(reply, 401, "Unauthorized", "send Authorization: Bearer <INTAKE_API_TOKEN>");
     });
     api.post("/v1/work-items", async (request, reply) => {
-      const { created, view } = await work.submit(request.body);
+      const { headers, url: path } = request;
+      const body = bodies.get(request) ?? Buffer.alloc(0);
+      const proven = await prove({ headers, path, body, submission: request.body });
+      if (!proven.ok) {
+        warn(`refused POST ${path} for "${proven.sub}": ${proven.reason}`);
+        return problem(reply, proven.status, TITLES[proven.status], proven.reason);
+      }
+      const { created, view } = await work.submit(proven.submission);
       return reply.code(created ? 201 : 200).send(view);
     });
     api.get<{ Querystring: { dedupeKey?: string } }>("/v1/work-items", async (request, reply) => {
@@ -97,8 +123,9 @@ export async function serve(env: Env) {
   const channel = slackChannel(env);
   const forge = forgeOf(env);
   const now = () => nowOf(env.OSF_NOW);
-  const store = await openStore(env.INTAKE_DATABASE_URL || undefined, env.OSF_DATA || ".intake");
   const warn = (text: string) => process.stderr.write(`intake: ${text}\n`);
+  const prove = personCheckOf(env, now, warn);
+  const store = await openStore(env.INTAKE_DATABASE_URL || undefined, env.OSF_DATA || ".intake");
   const nats = natsOf(env);
   const say = (text: string) => process.stdout.write(`${text}\n`);
   const keepMs = durationOf(env, "INTAKE_OUTBOX_KEEP") ?? 7 * 86_400_000;
@@ -141,7 +168,7 @@ export async function serve(env: Env) {
     ]);
     return reply.code(health.status === "ok" ? 200 : 503).send(health);
   });
-  await workItemRoutes(app, work, apiToken);
+  await workItemRoutes(app, work, { apiToken, prove, warn });
   if (channel) await slackHook(app, work, channel);
   if (forge) await forgeHook(app, work, forge, env.INTAKE_FORGE_LABEL || "factory");
   if (env.INTAKE_SENTRY_SECRET)

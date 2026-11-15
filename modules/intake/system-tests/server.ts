@@ -59,6 +59,33 @@ export async function serving(sut: Sut, env: Record<string, string> = {}) {
   };
 }
 
+/** The README's work with this requester, as the text a caller sends. */
+export const workAs = (fakes: Fakes, requester: Record<string, string>): string =>
+  JSON.stringify({ ...readmeWork(fakes), requester });
+
+/** POSTs the text to "/v1/work-items" with the API token and, when given, the proof in "OSF-Person". */
+export async function postWork(url: string, body: string, proof?: string) {
+  const headers = { ...AUTH, "content-type": "application/json", ...(proof ? { "OSF-Person": proof } : {}) };
+  const response = await fetch(`${url}/v1/work-items`, { method: "POST", headers, body });
+  return { status: response.status, body: (await response.json()) as Record<string, unknown> };
+}
+
+/**
+ * "intake serve" with "INTAKE_PERSON_KEYS" set to the key set of fakes.personIssuer "console" and these other pairs,
+ * and these variables; `post` sends a text with a proof, `prove` signs one for intake's "/v1/work-items".
+ */
+export async function proving(sut: Sut, fakes: Fakes, env: Record<string, string> = {}, more: string[] = []) {
+  const issuer = await fakes.personIssuer();
+  const server = await serving(sut, { INTAKE_PERSON_KEYS: [issuer.setting, ...more].join(","), ...env });
+  return {
+    ...server,
+    issuer,
+    post: (body: string, proof?: string) => postWork(server.url, body, proof),
+    prove: (sub: string, body: string, claims: Record<string, unknown> = {}) =>
+      issuer.prove({ sub, aud: "intake", path: "/v1/work-items", body, ...claims }),
+  };
+}
+
 /**
  * "intake serve" with a PostgreSQL database of the scenario, as the profile runs it, and these variables. The
  * helpers below use it; a scenario that calls `serving` itself runs the embedded database of the README's quick start.

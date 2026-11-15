@@ -543,6 +543,9 @@ importers:
       '@opensoftware/contracts':
         specifier: workspace:*
         version: link:../../contracts
+      '@opensoftware/person-proof':
+        specifier: workspace:*
+        version: link:../../packages/person-proof
       '@opensoftware/postgres':
         specifier: workspace:*
         version: link:../../packages/postgres
