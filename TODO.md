@@ -1920,7 +1920,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
   - [x] The factory pages, the improvement page and the health page (on Astro since T-53, in Pico's look).
   - [x] Remove the old stack and the route `/pico.css`.
 
-### [ ] T-61 · the person, proven to every module (P2)
+### [x] T-61 · the person, proven to every module (P2)
 
 - **Problem:** foreman, intake and gatekeeper trust the caller to name the person: anyone with a module's API token
   can act as any person (ADR 0118, "Revisit when"). With a sign-in of its own, the console can prove who acted.
@@ -1937,9 +1937,10 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
 - **Slices:**
   - [x] The ADR and the contract (`SCN-CTR`, ADR 0151).
   - [x] The console signs; foreman, intake and gatekeeper check (one slice per module).
-  - [ ] The Compose profile, the chart and `osf init` make the console's signing key and pass the settings, so a
+  - [x] The Compose profile, the chart and `osf init` make the console's signing key and pass the settings, so a
         factory of the profile checks the proof (ADR 0151, "Keys" and "Migration"); an `e2e` scenario for a made-up
-        person. Needs the release that holds `@opensoftware/person-proof`.
+        person. The deploy suite proves it with released images after the release that holds
+        `@opensoftware/person-proof`.
 
 ### Not in this wave
 
