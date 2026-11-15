@@ -1893,7 +1893,9 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
     skills pass (`SCN-FSPEC`).
   - [ ] Skills of other repositories: the entry's form, `factory.lock`, `plan`, `render` and the foreman
     (`SCN-CTR`, `SCN-FSPEC`, `SCN-FORE`).
-  - [ ] The pages `/skills` and `/skills/<name>`, read-only (`SCN-CONSOLE`).
+  - [x] The pages `/skills` and `/skills/<name>`, read-only, for the skills in the factory's own folders
+    (`SCN-CONSOLE`); `factory skills` prints them in the contract `skill-catalog` (`SCN-FSPEC`, `SCN-CTR`, ADR 0141,
+    ADR 0143). Skills of other repositories join the catalog with the next slice.
   - [ ] The switch per agent as a change of T-58, with its journey (`SCN-CONSOLE`).
   - [ ] One smoke scenario in `e2e/`: a skill switched on in the console and its stored secret reach a run
     (`SCN-E2E`). After the releases above.
