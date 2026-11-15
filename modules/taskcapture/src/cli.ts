@@ -2,7 +2,7 @@
 // taskcapture <command>: the entry layer only parses arguments and calls the commands.
 import { join } from "node:path";
 import { parseArgs } from "node:util";
-import { type Command, check, outputPath, runProgram, UsageError } from "@opensoftware/cli";
+import { type Command, check, commandOf, outputPath, runProgram, UsageError } from "@opensoftware/cli";
 import { capture, readRun } from "./commands/capture.ts";
 import { report } from "./commands/report.ts";
 import { route } from "./commands/route.ts";
@@ -127,5 +127,5 @@ const commands: Record<string, Command> = {
     };
   },
 };
-const chosen = command ? commands[command] : undefined;
+const chosen = commandOf(commands, command);
 process.exitCode = await runProgram({ name: "taskcapture", usage: HELP, command: chosen, help: values.help });

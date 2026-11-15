@@ -38,6 +38,7 @@ process.exitCode = await runProgram({
 | Export | What it does |
 | --- | --- |
 | `runProgram({ name, usage, command, help }, io?)` | Runs the command and returns the exit code. The command gives `{ lines, errors, exitCode }`: lines go to standard output, each error to standard error as `<name>: <error>`. The exit code is `exitCode`, else 1 with errors, else 0. A thrown `UsageError` exits 2, any other error 1, each printed as `<name>: <message>`. `help` prints the usage to standard output and exits 0; no command prints it to standard error and exits 2. |
+| `commandOf(commands, name)` | The command of this name in a program's table of commands (`{ serve, doctor }`), or `undefined`: for no name, and for a name the table itself does not hold, like `"toString"`, which every object answers to. |
 | `UsageError`, `check(condition, message)` | A wrong option, argument or input. `check` throws a `UsageError` unless the condition holds. |
 | `readInputs(paths, pattern)` | `{ file, text }` of each file named and of each file below each folder named whose path matches `pattern`, sorted by path. A missing path is a `UsageError`. |
 | `writeText(path, text)` | Writes the file and creates its folder. |
@@ -88,3 +89,4 @@ the GitHub environment `npm`, a token only for the first version, then a trusted
 | SCN-CLI-017 | implemented | A server whose probes all answer is ok |
 | SCN-CLI-018 | implemented | A probe that fails makes the server failing and says what failed and how to fix it |
 | SCN-CLI-019 | implemented | A probe that does not answer within 2 seconds fails |
+| SCN-CLI-020 | implemented | commandOf gives the command of a name, and none for a name the commands do not hold |

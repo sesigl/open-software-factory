@@ -502,3 +502,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FSPEC-116 | implemented | A skill that lint refuses is printed with its problems |
 | SCN-FSPEC-117 | implemented | A factory.yaml that does not fit the contract fails "factory skills" with its problems |
 | SCN-FSPEC-118 | implemented | What "factory skills" prints is a valid skill catalog of the contracts, also for a skill that lint refuses |
+| SCN-FSPEC-119 | implemented | A command that factory does not have prints the help and exits with code 2 |

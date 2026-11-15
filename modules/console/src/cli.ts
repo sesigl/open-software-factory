@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // console <command>: the entry layer only parses arguments and calls the commands.
 import { parseArgs } from "node:util";
-import { type Command, runProgram } from "@opensoftware/cli";
+import { type Command, commandOf, runProgram } from "@opensoftware/cli";
 
 const HELP = `Usage: console <command>
 
@@ -25,5 +25,5 @@ const COMMANDS: Record<string, Command> = {
   serve: async () => (await import("./commands/serve.ts")).serve(process.env),
   doctor: async () => (await import("./commands/doctor.ts")).doctor(process.env, values.deep),
 };
-const command = positionals[0] ? COMMANDS[positionals[0]] : undefined;
+const command = commandOf(COMMANDS, positionals[0]);
 process.exitCode = await runProgram({ name: "console", usage: HELP, command, help: values.help });

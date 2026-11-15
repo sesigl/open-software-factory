@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // sandbox-docker <command>: the entry layer only parses arguments and calls the commands (ADR 0054).
 import { parseArgs } from "node:util";
-import { type Command, runProgram } from "@opensoftware/cli";
+import { type Command, commandOf, runProgram } from "@opensoftware/cli";
 import { copy } from "./commands/copy.ts";
 import { create } from "./commands/create.ts";
 import { destroy } from "./commands/destroy.ts";
@@ -48,6 +48,6 @@ const commands: Record<string, Command> = {
 process.exitCode = await runProgram({
   name: "sandbox-docker",
   usage: USAGE,
-  command: name === undefined ? undefined : commands[name],
+  command: commandOf(commands, name),
   help: values.help,
 });

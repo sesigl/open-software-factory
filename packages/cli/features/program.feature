@@ -70,3 +70,11 @@ Feature: A program with commands
     Then the exit code is 2
     And standard error is "Usage: demo <command>", each on its own line
     And standard output is empty
+
+  @id=SCN-CLI-020 @status=implemented
+  Scenario: commandOf gives the command of a name, and none for a name the commands do not hold
+    Given the commands "serve" and "doctor" of the program "demo"
+    When the module asks commandOf for "serve", "deploy", "toString", "constructor" and no name
+    Then it gives the command "serve" for "serve"
+    And it gives no command for "deploy", "toString", "constructor" and no name
+    And the program "demo" run with the command of "toString" prints the usage to standard error and exits with code 2

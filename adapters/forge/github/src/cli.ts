@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // forge-github <command>: the entry layer only reads the command line and calls a command (ADR 0058).
 import { parseArgs } from "node:util";
-import { type Command, runProgram } from "@opensoftware/cli";
+import { type Command, commandOf, runProgram } from "@opensoftware/cli";
 import { branch, openPr } from "./commands/branches.ts";
 import { commit } from "./commands/commit.ts";
 import { event, hooks, unhook, webhook } from "./commands/hooks.ts";
@@ -90,7 +90,7 @@ const commands: Record<string, [arity: number, Command]> = {
   unhook: [2, () => unhook(a, b)],
   event: [1, () => event(a)],
 };
-const chosen = name === undefined ? undefined : commands[name];
+const chosen = commandOf(commands, name);
 
 process.exitCode = await runProgram({
   name: "forge-github",

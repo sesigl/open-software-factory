@@ -13,6 +13,14 @@ export interface Outcome {
 
 export type Command = () => Outcome | Promise<Outcome>;
 
+/**
+ * The command of this name in a program's table of commands, or undefined: only a name the table itself holds, never
+ * one that every object answers to, like "toString" or "constructor".
+ */
+export function commandOf<T>(commands: Record<string, T>, name: string | undefined): T | undefined {
+  return name !== undefined && Object.hasOwn(commands, name) ? commands[name] : undefined;
+}
+
 export interface Program {
   /** The program's name. Every error line starts with it. */
   name: string;

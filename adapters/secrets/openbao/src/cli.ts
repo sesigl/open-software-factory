@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // secrets-openbao <command>: the entry layer only parses arguments and calls the commands (ADR 0137).
 import { parseArgs } from "node:util";
-import { type Command, runProgram } from "@opensoftware/cli";
+import { type Command, commandOf, runProgram } from "@opensoftware/cli";
 import { remove } from "./commands/delete.ts";
 import { exists } from "./commands/exists.ts";
 import { list } from "./commands/list.ts";
@@ -40,6 +40,6 @@ const commands: Record<string, Command> = {
 process.exitCode = await runProgram({
   name: "secrets-openbao",
   usage: USAGE,
-  command: positionals.length > 2 ? undefined : commands[name ?? ""],
+  command: positionals.length > 2 ? undefined : commandOf(commands, name),
   help: values.help,
 });

@@ -15,3 +15,9 @@ Feature: Quick start
     When the user runs "factory --help"
     Then the command exits with code 0
     And the output lists the commands "lint", "render", "plan", "apply", "diff" and "resolve"
+
+  @id=SCN-FSPEC-119 @status=implemented
+  Scenario: A command that factory does not have prints the help and exits with code 2
+    When the user runs "factory deploy", "factory toString" and "factory constructor"
+    Then each command exits with code 2
+    And each output starts with "factory: one factory.yaml rendered for every harness" and lists the command "lint"

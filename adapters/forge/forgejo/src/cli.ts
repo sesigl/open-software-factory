@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // forge-forgejo <command>: the entry layer only parses arguments and calls the commands (ADR 0057).
 import { parseArgs } from "node:util";
-import { type Command, runProgram } from "@opensoftware/cli";
+import { type Command, commandOf, runProgram } from "@opensoftware/cli";
 import { branch } from "./commands/branch.ts";
 import { check } from "./commands/check.ts";
 import { close } from "./commands/close.ts";
@@ -95,6 +95,6 @@ const commands: Record<string, Command> = {
 process.exitCode = await runProgram({
   name: "forge-forgejo",
   usage: USAGE,
-  command: name === undefined || (fifth !== undefined && name !== "commit") ? undefined : commands[name],
+  command: fifth !== undefined && name !== "commit" ? undefined : commandOf(commands, name),
   help: values.help,
 });
