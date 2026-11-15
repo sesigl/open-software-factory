@@ -156,7 +156,7 @@ factory-repo.sh. Nothing without it.
 - name: factory-repo
   image: {{ $.image }}
   imagePullPolicy: {{ $.root.Values.images.pullPolicy }}
-  command: [sh, -c, {{ $.root.Files.Get "files/factory-repo/factory-repo.sh" | quote }}, factory-repo, {{ $.folder }}]
+  command: [sh, -c, {{ $.root.Files.Get "files/factory-repo.sh" | quote }}, factory-repo, {{ $.folder }}]
   env:
     - name: FACTORY_REPOSITORY
       value: {{ . | quote }}
