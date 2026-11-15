@@ -1,6 +1,7 @@
 // The command line of each adapter of a port that is a program, and the versions a run asks for (ADR 0110): a map of
-// FOREMAN_HARNESSES, FOREMAN_SANDBOXES, FOREMAN_FORGES or FOREMAN_INFERENCES names it as a JSON list of arguments or
-// as a string split at each space; else npx runs the adapter's package at factory.lock's pin or the range (ADR 0125).
+// FOREMAN_HARNESSES, FOREMAN_SANDBOXES, FOREMAN_FORGES, FOREMAN_INFERENCES or FOREMAN_SECRETS names it as a JSON list
+// of arguments or as a string split at each space; else npx runs the adapter's package at factory.lock's pin or the
+// range (ADR 0125). The run's view names the adapters of the first four ports; a secrets adapter only answers checks.
 import type { RunView } from "@opensoftware/contracts";
 
 export type AdapterVersion = NonNullable<RunView["adapters"]>[number];
@@ -18,11 +19,17 @@ export const MAP_OF: Record<Port, string> = {
   inference: "FOREMAN_INFERENCES",
 };
 
-/** The ranges under the factory's `providers`, per port and adapter name; a port without adapters has none. */
-export type Ranges = Record<Port, Record<string, string>>;
+/** The ports whose adapters are programs: the view's four and the secrets port (ADR 0139). */
+export type ProgramPort = Port | "secrets";
+
+/**
+ * The ranges under the factory's `providers`, per port and adapter name; a port without adapters has none. A run that
+ * started before ADR 0139 has no ranges of the secrets port.
+ */
+export type Ranges = Record<Port, Record<string, string>> & { secrets?: Record<string, string> };
 
 /** npx with the adapter's package at the range, if the factory declares one; a harness adapter's command is `run`. */
-export function fallbackOf(port: Port, name: string, range?: string): string[] {
+export function fallbackOf(port: ProgramPort, name: string, range?: string): string[] {
   const command = port === "harness" ? ["run"] : [];
   return ["npx", "-y", `@opensoftware/${port}-${name}${range ? `@${range}` : ""}`, ...command];
 }
@@ -31,10 +38,10 @@ export function fallbackOf(port: Port, name: string, range?: string): string[] {
  * The command line of an adapter: its map's entry, or the fallback at the factory's range; a run that started before
  * ADR 0110 has no ranges.
  */
-export function commandOf(lines: CommandLines, port: Port, name: string, ranges: Ranges | undefined): string[] {
+export function commandOf(lines: CommandLines, port: ProgramPort, name: string, ranges: Ranges | undefined): string[] {
   const line = lines[name];
-  // Stryker disable next-line OptionalChaining: only a run that started before ADR 0110 has no ranges, and no scenario can start one
-  if (line === undefined) return fallbackOf(port, name, ranges?.[port][name]);
+  // Stryker disable next-line OptionalChaining: only a run that started before ADR 0110 has no ranges, and before ADR 0139 none of the secrets port, and no scenario can start one
+  if (line === undefined) return fallbackOf(port, name, ranges?.[port]?.[name]);
   return typeof line === "string" ? line.split(" ") : line;
 }
 

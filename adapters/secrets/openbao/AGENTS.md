@@ -6,7 +6,7 @@ Adds rules for this adapter. The root `AGENTS.md` applies in full. Decision: ADR
 
 The only ways a system test or another program may use this adapter:
 
-- CLI: `secrets-openbao put | list | delete | probe | policy` (see `README.md#commands`)
+- CLI: `secrets-openbao put | list | delete | probe | exists | policy` (see `README.md#commands`)
 - Input: the arguments, and for `put` the value on standard input
 - Output: JSON lines on standard output; for `policy`, the text of an OpenBao policy
 - State: none of its own. OpenBao holds every secret, version and person

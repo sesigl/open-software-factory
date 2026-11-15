@@ -169,6 +169,7 @@ export async function serve(env: Env) {
           sandboxes: maps.sandbox,
           sandbox: env.FOREMAN_SANDBOX || "docker",
           forges: maps.forge,
+          secrets: JSON.parse(env.FOREMAN_SECRETS || "{}") as CommandLines,
           forgeEnv: {
             ...(env.FOREMAN_FORGE_URL ? { FORGE_URL: env.FOREMAN_FORGE_URL } : {}),
             ...(env.FOREMAN_FORGE_TOKEN ? { FORGE_TOKEN: env.FOREMAN_FORGE_TOKEN } : {}),

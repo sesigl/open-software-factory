@@ -467,6 +467,9 @@ importers:
       '@opensoftware/harness-acp':
         specifier: workspace:*
         version: link:../../adapters/harness/acp
+      '@opensoftware/secrets-openbao':
+        specifier: workspace:*
+        version: link:../../adapters/secrets/openbao
       '@opensoftware/testkit':
         specifier: workspace:*
         version: link:../../packages/testkit

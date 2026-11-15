@@ -1711,7 +1711,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
 - **Slices:**
   - [ ] The ADR; the port's write side and the adapter `secrets-openbao`, with `fakes.openbao()` (`SCN-SECRET`, the
     adapter's prefix, `SCN-TK`); the adapter's first publish.
-  - [ ] Git's form of a secret from OpenBao, and the stage that fails first without a value (`SCN-SEGRESS`,
+  - [x] Git's form of a secret from OpenBao, and the stage that fails first without a value (`SCN-SEGRESS`,
     `SCN-SANDBOX`, `SCN-FORE`).
   - [ ] OpenBao in the Compose profile with `osf init`, the job and the restart scenario; the chart's values
     (`SCN-DIST`, `SCN-REPO`). After the releases above.

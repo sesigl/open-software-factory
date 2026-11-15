@@ -1,6 +1,6 @@
 @port=secrets @owner=maintainers
 Feature: Store, list and delete the values of secrets, and never print one
-  A secrets adapter is a program with the commands put, list, delete and probe (ADR 0137). put reads the value from
+  A secrets adapter is a program with the commands put, list, delete, probe and exists (ADR 0137, ADR 0139). put reads the value from
   standard input, never from an argument or a variable, and no command prints a value. A name follows the pattern of
   SecretReference in contracts/, in folders split by "/". The test store is a real store of the adapter's kind with an
   empty folder for each scenario: OpenBao in development mode for the openbao adapter. The write token is the
@@ -134,3 +134,11 @@ Feature: Store, list and delete the values of secrets, and never print one
     Then both puts of "linear-token" exit with code 2 and the error "name the person in at most 128 characters, without a line break or another control character"
     And the test store holds no secret "linear-token"
     And put of "team/longest" prints the version 1
+
+  @id=SCN-SECRET-019 @status=implemented @conformance
+  Scenario: exists says whether a secret has a value, with the read token, and prints no value
+    Given the test store and the read token
+    And another client stored "linear-token" with the value "lin_test_51c2" in the test store
+    When the client runs "exists linear-token" and "exists team/other-token" with the read token
+    Then exists prints the name "linear-token" with "exists" true, and the name "team/other-token" with "exists" false
+    And neither output contains "lin_test_51c2"

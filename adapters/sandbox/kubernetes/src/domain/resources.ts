@@ -6,7 +6,6 @@ import {
   EGRESS_IMAGE,
   EGRESS_PORT,
   PROXY_DIR,
-  type ScriptSecret,
   sandboxEnv,
   startScript,
   WORKSPACE,
@@ -33,13 +32,13 @@ const sandboxLabels = (id: string) => ({ [ID_LABEL]: id, [ROLE_LABEL]: "sandbox"
 /** The pod of a template that is an image: one container "sandbox". */
 export const imagePod = (image: string): PodTemplate => ({ spec: { containers: [{ name: "sandbox", image }] } });
 
-/** The egress pod's ConfigMap: iron-proxy's configuration and its start script, which knows the spec's secrets. */
-export function egressConfig(id: string, config: unknown, secrets: ScriptSecret[]): unknown {
+/** The egress pod's ConfigMap: iron-proxy's configuration and its start script. */
+export function egressConfig(id: string, config: unknown): unknown {
   return {
     apiVersion: "v1",
     kind: "ConfigMap",
     metadata: { name: egressName(id), labels: egressLabels(id) },
-    data: { "proxy.yaml": `${JSON.stringify(config, null, 2)}\n`, "start.sh": startScript(secrets) },
+    data: { "proxy.yaml": `${JSON.stringify(config, null, 2)}\n`, "start.sh": startScript() },
   };
 }
 

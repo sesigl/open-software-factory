@@ -6,8 +6,9 @@ covers: [ports/secrets/**]
 
 How a sandbox uses a secret it never holds, and how a person stores its value without anyone reading it back.
 Decisions: [ADR 0054](../../docs/decisions/0054-sandbox-port.md),
-[ADR 0055](../../docs/decisions/0055-sandbox-kubernetes.md) and
-[ADR 0137](../../docs/decisions/0137-secrets-port-write-side-and-openbao.md).
+[ADR 0055](../../docs/decisions/0055-sandbox-kubernetes.md),
+[ADR 0137](../../docs/decisions/0137-secrets-port-write-side-and-openbao.md) and
+[ADR 0139](../../docs/decisions/0139-git-basic-form-value-timing-and-the-check-before-a-stage.md).
 
 ## References
 
@@ -15,6 +16,30 @@ The factory definition and the sandbox spec name a secret only by reference: `re
 holds a placeholder in the secret's variable. Its egress proxy resolves the reference and swaps the placeholder for
 the real value on the way out, for the hosts the sandbox may reach. No real value enters a sandbox, a log or a run
 record.
+
+The proxy swaps a placeholder in any header, also inside git's Basic credentials (`Authorization: Basic` of
+`<user>:<placeholder>`), so `git clone`, `git fetch` and `git push` over HTTPS work with a token of every provider and
+any user name a forge expects. A secret that is not sent in an HTTP request, such as an SSH key or a database
+password, does not work this way.
+
+## When a new value takes effect
+
+A sandbox's egress proxy reads a secret from OpenBao at the sandbox's first request to an allowed host, and keeps
+that value until the sandbox ends. Each stage runs in a sandbox of its own, so:
+
+> A new value takes effect in the stages that start after you save it. A stage that is already running may keep the
+> old value until it ends.
+
+Deleting a value does not stop a running stage either. The scenario SCN-SANDBOX-029 proves this on each sandbox
+adapter. A secret from a file or a variable is read when the sandbox starts.
+
+## A stage that cannot get its secret
+
+Before a sandboxed stage starts anything, the foreman asks the secrets adapter `exists <name>` for each of the agent's
+secrets from a store (every provider but `file` and `env`). A secret without a value fails the stage before its first
+turn, with the reason `the secret "ref:openbao/<name>" has no value; store it and run again`; a store that does not
+answer fails it with the adapter's error. The check reads metadata only, never a value, so the egress proxy's read
+token may ask. A missing file or variable is refused by the sandbox adapter's `create`, also before the first turn.
 
 ## Providers
 
@@ -45,6 +70,7 @@ command line. Every command prints JSON lines. No command prints a value, and no
 | list | `<adapter> list` prints one `{"name", "version", "changed", "by"}` per secret, sorted by name |
 | delete | `<adapter> delete <name>` removes the secret with every version and prints `{"name", "deleted"}` |
 | probe | `<adapter> probe` checks that the store answers to the token and prints `{"ttl", "expires"}` |
+| has a value | `<adapter> exists <name>` prints `{"name", "exists"}` from the secret's metadata, without reading the value |
 
 `version` counts from 1 and grows with each `put`. `changed` is the time of the current version in ISO 8601, `by` the
 person that `put` named, or `null` for a secret that another client stored. A name may hold `/`, so `list` walks the
@@ -63,10 +89,10 @@ history. Pipe it, as `printf %s "$VALUE" | <adapter> put linear-token --by ada`.
   without `--by` exit 2 before any request, so a version is never stored without its person.
 - A store that does not answer exits 1 with `the store at <address> does not answer`; a token it does not know exits
   1 with `the store refused the token`; a token without the right exits 1 with `the token may not write "<name>"`,
-  `the token may not delete "<name>"` or `the token may not list the secrets`.
+  `the token may not delete "<name>"`, `the token may not read "<name>"` or `the token may not list the secrets`.
 - **Two tokens.** The write token, the console's, may write, list and delete secrets and read their metadata; the
-  store refuses it a value. The read token, the egress proxy's, may only read. So a fault in the console cannot show
-  a secret. Each adapter says how its store gives a token these rights.
+  store refuses it a value. The read token, the egress proxy's, may only read, and may ask `exists`. So a fault in the
+  console cannot show a secret. Each adapter says how its store gives a token these rights.
 
 ### Conformance
 

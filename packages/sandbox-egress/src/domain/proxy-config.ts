@@ -1,7 +1,7 @@
 // The iron-proxy configuration of one sandbox (ADR 0054, ADR 0055): the hosts it may reach, the secrets to swap
 // and where each comes from, and the MCP tools it may call. JSON is YAML, so iron-proxy reads it as written.
 import type { SandboxSpec } from "@opensoftware/contracts";
-import { basicFile, basicPlaceholder, PROXY_DIR, placeholder } from "./names.ts";
+import { PROXY_DIR, placeholder } from "./names.ts";
 import type { Secret } from "./secrets.ts";
 
 export interface ProxyOptions {
@@ -14,23 +14,14 @@ export function proxyConfig(spec: SandboxSpec, secrets: Secret[], options: Proxy
   const mcp = spec.mcp ?? [];
   const hosts = [...new Set([...egress, ...mcp.map((server) => new URL(server.url).hostname)])];
   const rules = egress.map((host) => ({ host }));
-  const swaps = secrets.flatMap((secret) => {
-    const plain = {
-      source: source(secret, options.openbaoMount ?? "secret"),
-      proxy_value: placeholder(secret.variable),
-      match_headers: [],
-      rules,
-    };
-    if (secret.provider === "openbao") return [plain];
-    // git sends a token as Basic credentials, base64 of user and token, where the plain placeholder is not visible.
-    const basic = {
-      source: { type: "file", path: basicFile(secret) },
-      proxy_value: basicPlaceholder(secret.variable),
-      match_headers: ["Authorization"],
-      rules,
-    };
-    return [plain, basic];
-  });
+  // One rule per secret, in every header. iron-proxy also finds the placeholder inside git's Basic credentials: it
+  // decodes `Authorization: Basic`, swaps, and encodes it again, for every source and user name (ADR 0139).
+  const swaps = secrets.map((secret) => ({
+    source: source(secret, options.openbaoMount ?? "secret"),
+    proxy_value: placeholder(secret.variable),
+    match_headers: [],
+    rules,
+  }));
   return {
     dns: { listen: "127.0.0.1:5353", proxy_ip: "127.0.0.1" },
     proxy: { http_listen: ":8081", https_listen: ":8443", tunnel_listen: ":8080" },

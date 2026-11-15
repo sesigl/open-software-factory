@@ -238,7 +238,11 @@ Every server, client and subscription stops when the scenario ends, before the f
   module. `token(policy, { ttl })` makes a token with the policy, in OpenBao's policy language, that lives `ttl`
   (default `1h`). `read(name)` gives the current `version` and the `data` of a secret in the mount, or undefined, and
   `write(name, data)` stores a new version, as another client of OpenBao does. The root token stays in the fake.
-  `make install` pins `bao` 2.7.2 in `.tools/bin`.
+  `make install` pins `bao` 2.7.2 in `.tools/bin`. `fakes.openbao({ containers: true })` also answers containers: a
+  second server of the test process listens on every interface, and `containerUrl` is the same server at
+  `host.docker.internal`, which a sandbox's egress proxy reads
+  ([ADR 0139](../../docs/decisions/0139-git-basic-form-value-timing-and-the-check-before-a-stage.md)). The server for
+  the host stays on loopback.
 - `fakes.s3()`: a real service in a container for this scenario
   ([ADR 0016](../../docs/decisions/0016-testkit-service-fakes.md)). Each fake gives only what a module needs
   to reach it: a URL, an address or an endpoint with keys. Docker must run.
@@ -574,3 +578,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-177 | implemented | fakes.openbao gives the module OpenBao with a KV version 2 mount of the scenario and a token with a policy |
 | SCN-TK-178 | implemented | A token of fakes.openbao has only its policy and lives as long as the test says |
 | SCN-TK-179 | implemented | fakes.openbao gives a later scenario the same server and a mount of its own |
+| SCN-TK-180 | implemented | fakes.openbao for containers answers a container at its container URL |

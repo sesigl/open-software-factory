@@ -6,8 +6,9 @@ covers: [adapters/secrets/openbao/src/**]
 
 Stores, lists and deletes the values of the factory's secrets in [OpenBao](https://openbao.org) without ever printing
 one, behind the factory's secrets port. It calls OpenBao's HTTP API, keeps the values in a KV version 2 mount where a
-sandbox's egress proxy reads them, and keeps no state of its own. Decision:
-[ADR 0137](../../../docs/decisions/0137-secrets-port-write-side-and-openbao.md). The port's scenarios are in
+sandbox's egress proxy reads them, and keeps no state of its own. Decisions:
+[ADR 0137](../../../docs/decisions/0137-secrets-port-write-side-and-openbao.md) and
+[ADR 0139](../../../docs/decisions/0139-git-basic-form-value-timing-and-the-check-before-a-stage.md). The port's scenarios are in
 [`ports/secrets/features/`](../../../ports/secrets/features/secrets.feature), this adapter's own scenarios in
 [`features/`](features/openbao.feature).
 
@@ -22,6 +23,7 @@ export OSF_OPENBAO_TOKEN=$(bao token create -policy=osf-console -field=token)
 printf %s "$LINEAR_TOKEN" | npx @opensoftware/secrets-openbao put linear-token --by ada   # {"name":"linear-token","version":1}
 npx @opensoftware/secrets-openbao list          # {"name":"linear-token","version":1,"changed":"2026-11-14T20:01:02.5Z","by":"ada"}
 npx @opensoftware/secrets-openbao probe         # {"ttl":2764799,"expires":"2026-12-16T20:01:02.5Z"}
+npx @opensoftware/secrets-openbao exists linear-token   # {"name":"linear-token","exists":true}
 npx @opensoftware/secrets-openbao delete linear-token   # {"name":"linear-token","deleted":true}
 ```
 
@@ -45,11 +47,14 @@ proxy ([`ports/secrets/README.md`](../../../ports/secrets/README.md)).
   may write values, read and change metadata, list and delete, and OpenBao refuses it a read of a value. `policy
   read` prints the policy of the egress proxy's token: it reads values and metadata, and nothing else. Both tokens
   also need OpenBao's `default` policy, which every token gets unless it is made without it.
+- **exists** reads only the secret's metadata, so the egress proxy's read token may ask: `true` when its current
+  version is neither deleted nor destroyed. The foreman asks it before a stage whose agent declares
+  `ref:openbao/<name>` (ADR 0139).
 - **probe** reads the token's `ttl` (seconds) and `expire_time`, and asks OpenBao for the mount as OpenBao's own CLI
   does. A mount that does not exist, is no KV version 2 mount or that the token may not use exits 1 and names it.
 - **Errors.** A store that does not answer exits 1 with `the store at <address> does not answer`; a token OpenBao
   does not know with `the store refused the token`; a token without the right with `the token may not write
-  "<name>"`, `the token may not delete "<name>"` or `the token may not list the secrets`. Any other answer of OpenBao,
+  "<name>"`, `the token may not delete "<name>"`, `the token may not read "<name>"` or `the token may not list the secrets`. Any other answer of OpenBao,
   such as 413 for a request over its `max_request_size` of 32 MiB, exits 1 with OpenBao's status and message.
 - **Not yet:** a token's renewal. A token of OpenBao 2.7.2 lives at most 768 hours by default; `probe` says how long.
 
@@ -61,6 +66,7 @@ proxy ([`ports/secrets/README.md`](../../../ports/secrets/README.md)).
 | `secrets-openbao list` | Print each secret as `{"name", "version", "changed", "by"}`, sorted by name; `by` is `null` for a secret another client stored. |
 | `secrets-openbao delete <name>` | Remove the secret with every version; print `{"name", "deleted"}`, with `deleted` false when there was none. |
 | `secrets-openbao probe` | Check that OpenBao answers to the token and that the mount is KV version 2; print `{"ttl", "expires"}` of the token. |
+| `secrets-openbao exists <name>` | Whether the secret has a value, from its metadata only; print `{"name", "exists"}`. |
 | `secrets-openbao policy write\|read` | Print the policy of the console's token (`write`) or of the egress proxy's (`read`) for the mount. |
 
 ## Releases
@@ -95,3 +101,5 @@ builds the package and publishes it to npm as `@opensoftware/secrets-openbao`. T
 | SCN-SOPENBAO-006 | implemented | policy without write or read is a usage error |
 | SCN-SOPENBAO-007 | implemented | An address with a final slash reaches OpenBao |
 | SCN-SOPENBAO-008 | implemented | A command with an argument too many shows the usage |
+| SCN-SOPENBAO-009 | implemented | exists says false for a secret whose current version another client deleted or destroyed |
+| SCN-SOPENBAO-010 | implemented | exists with a token that may not read the metadata names what it may not do |

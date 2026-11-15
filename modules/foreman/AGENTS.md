@@ -1,6 +1,6 @@
 # AGENTS.md for module `foreman`
 
-Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0004, ADR 0067, ADR 0068, ADR 0069, ADR 0070, ADR 0071, ADR 0107, ADR 0109, ADR 0111, ADR 0115, ADR 0126.
+Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0004, ADR 0067, ADR 0068, ADR 0069, ADR 0070, ADR 0071, ADR 0107, ADR 0109, ADR 0111, ADR 0115, ADR 0126, ADR 0139.
 
 ## Public surface
 
@@ -9,8 +9,8 @@ The only ways a system test or another program may use this module:
 - CLI: `foreman <command>` (see `README.md#commands`)
 - HTTP API of `foreman serve` on `PORT`: `/v1/runs` (OpenAPI in `contracts/openapi/openapi.json`, see `README.md#api`)
 - Input: the factory in `FOREMAN_FACTORY` and its prompts, at a commit of its Git repository
-- Outside systems it drives: the sandbox adapter in `FOREMAN_SANDBOXES`, the forge adapter in `FOREMAN_FORGES` and the
-  inference adapter in `FOREMAN_INFERENCES` as command lines, the harness adapters in
+- Outside systems it drives: the sandbox adapter in `FOREMAN_SANDBOXES`, the forge adapter in `FOREMAN_FORGES`, the
+  inference adapter in `FOREMAN_INFERENCES` and the secrets adapters in `FOREMAN_SECRETS` as command lines, the harness adapters in
   `FOREMAN_HARNESSES` over ACP, gatekeeper at
   `FOREMAN_GATEKEEPER_URL`, Temporal at `FOREMAN_TEMPORAL_ADDRESS`
 - Server state: the workflows in Temporal and the runs' folders in `OSF_DATA`; private to the module, except the folder
@@ -25,7 +25,7 @@ Layers, top to bottom, in `architecture.json` (ADR 0014): `entry` (`src/cli.ts`)
 `adapters` → `domain`. `domain` checks a definition, derives IDs, takes the next step of a run and applies each fact to
 its view, finds the run's pull request and reads its checks, and builds the events, without I/O. `adapters` read the
 factory and its commit, run a sandbox adapter's commands and a forge adapter's `pr` and `prs`, run a harness adapter over ACP,
-run an inference adapter's `start`, `key` and `stop`, call gatekeeper and NATS. `workflows` holds the Temporal workflow `run.ts`
+run an inference adapter's `start`, `key` and `stop` and a secrets adapter's `exists`, call gatekeeper and NATS. `workflows` holds the Temporal workflow `run.ts`
 and the activities; `commands` join them: `serve` runs Fastify, the Temporal worker and the NATS subscriptions. The ARCH check enforces the layers.
 
 `src/workflows/run.ts` runs in Temporal's sandbox inside a worker thread and must stay deterministic: it imports only
