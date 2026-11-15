@@ -59,6 +59,9 @@ export type SkillCatalog = Schemas["SkillCatalog"];
 export type CatalogSkill = Schemas["CatalogSkill"];
 export type CatalogSkillAgent = Schemas["CatalogSkillAgent"];
 export type SkillNeeds = Schemas["SkillNeeds"];
+export type PersonProof = Schemas["PersonProof"];
+export type PersonKeys = Schemas["PersonKeys"];
+export type PersonKey = Schemas["PersonKey"];
 export type Health = Schemas["Health"];
 export type HealthCheck = Schemas["HealthCheck"];
 

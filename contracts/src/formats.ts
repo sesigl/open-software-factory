@@ -22,6 +22,8 @@ export const FORMATS: readonly Format[] = [
   format("factory-lock", "FactoryLock"),
   format("access", "Access"),
   format("skill-catalog", "SkillCatalog"),
+  format("person-proof", "PersonProof"),
+  format("person-keys", "PersonKeys"),
   format("events/work-received", "WorkReceived"),
   format("events/work-retry-requested", "WorkRetryRequested"),
   format("events/run-started", "RunStarted"),

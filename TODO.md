@@ -1935,7 +1935,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
   itself.
 - **Done when:** a call with a module's API token and a made-up person is refused by foreman, intake and gatekeeper.
 - **Slices:**
-  - [ ] The ADR and the contract (`SCN-CTR`).
+  - [x] The ADR and the contract (`SCN-CTR`, ADR 0151).
   - [ ] The console signs; foreman, intake and gatekeeper check (one slice per module).
 
 ### Not in this wave

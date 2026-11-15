@@ -135,3 +135,48 @@ Feature: Shared formats
     When the developer runs "osf-contracts validate skill-catalog skills.json"
     Then the command exits with code 0
     And the output contains "skills.json: valid skill-catalog"
+
+  @id=SCN-CTR-025 @status=implemented
+  Scenario: A person proof for one call of the foreman validates
+    Given a person proof "proof.json" of "ada@acme.dev" with the role "member" for "POST /v1/runs/run_0123456789abcdef0123/signals" of the audience "foreman"
+    When the developer runs "osf-contracts validate person-proof proof.json"
+    Then the command exits with code 0
+    And the output contains "proof.json: valid person-proof"
+
+  @id=SCN-CTR-026 @status=implemented
+  Scenario: A person proof without claims is rejected with the path of each required claim
+    Given a person proof "proof.json" that is an empty object
+    When the developer runs "osf-contracts validate person-proof proof.json"
+    Then the command exits with code 1
+    And the output names "/iss", "/sub", "/role", "/aud", "/iat", "/exp", "/method", "/path" and "/bodyDigest" each as "missing required field"
+
+  @id=SCN-CTR-027 @status=implemented
+  Scenario: A person proof with an unknown role, a method in lower case and a short body digest is rejected with their paths
+    Given a person proof "proof.json" of "ada@acme.dev" with the role "owner", the method "post" and the body digest "abc"
+    When the developer runs "osf-contracts validate person-proof proof.json"
+    Then the command exits with code 1
+    And the output contains "proof.json /role: must be one of \"member\", \"factory-engineer\", \"admin\""
+    And the output contains "proof.json /method: must match pattern"
+    And the output contains "proof.json /bodyDigest: must match pattern"
+
+  @id=SCN-CTR-028 @status=implemented
+  Scenario: A key set with one Ed25519 public key validates
+    Given a key set "keys.json" with one Ed25519 public key and its thumbprint as "kid"
+    When the developer runs "osf-contracts validate person-keys keys.json"
+    Then the command exits with code 0
+    And the output contains "keys.json: valid person-keys"
+
+  @id=SCN-CTR-029 @status=implemented
+  Scenario: A key set whose key holds its private part is rejected with its path
+    Given a key set "keys.json" whose Ed25519 key also has the private part "d"
+    When the developer runs "osf-contracts validate person-keys keys.json"
+    Then the command exits with code 1
+    And the output contains "keys.json /keys/0/d: unknown field"
+
+  @id=SCN-CTR-030 @status=implemented
+  Scenario: The person proof and its key set are no breaking change
+    Given the release tag "contracts-v2.6.0" of the contracts without the formats "person-proof" and "person-keys"
+    And the change that adds both formats and sets the version "2.7.0"
+    When the developer runs "osf-contracts breaking"
+    Then the command exits with code 0
+    And the output contains "no breaking change since contracts-v2.6.0"

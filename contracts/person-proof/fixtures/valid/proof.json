@@ -1,0 +1,12 @@
+{
+  "iss": "console",
+  "sub": "ada@acme.dev",
+  "name": "Ada",
+  "role": "member",
+  "aud": "foreman",
+  "iat": 1794736800,
+  "exp": 1794736830,
+  "method": "POST",
+  "path": "/v1/runs/run_0123456789abcdef0123/signals",
+  "bodyDigest": "fixture-body-digest-made-up-000000000000000"
+}

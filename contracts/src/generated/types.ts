@@ -335,6 +335,8 @@ export type components = {
             /** @description Job to run. Required with `cron`; without it an event starts the workflow. */
             run?: components["schemas"]["Name"];
         } & (unknown | unknown);
+        /** @description 43 characters of base64url without padding: 32 bytes, like a SHA-256 or an Ed25519 public key. */
+        Base64url32: string;
         Benchmark: {
             /** @description Path to the Harbor task suite. */
             suite: string;
@@ -827,6 +829,55 @@ export type components = {
             url?: string;
             /** @description ID in the source system. */
             externalId?: string;
+        };
+        /** @description One Ed25519 public key. Closed: a key with its private part `d` or any other member is invalid. */
+        PersonKey: {
+            /** @constant */
+            kty: "OKP";
+            /** @constant */
+            crv: "Ed25519";
+            /** @constant */
+            alg: "Ed25519";
+            /** @constant */
+            use: "sig";
+            /** @description The key's JWK thumbprint (RFC 7638) with SHA-256; a proof names it in its `kid`. */
+            kid: components["schemas"]["Base64url32"];
+            /** @description The public key. */
+            x: components["schemas"]["Base64url32"];
+        };
+        /**
+         * @description The public keys of an issuer of person proofs (ADR 0151): a JSON Web Key Set (RFC 7517), as the console publishes it
+         *     at `/.well-known/jwks.json`. The first key of the issuer's setting signs; every key here verifies.
+         */
+        PersonKeys: {
+            keys: components["schemas"]["PersonKey"][];
+        };
+        /**
+         * @description The claims of a person proof (ADR 0151): the JSON Web Token that the console signs for one call of a module API in
+         *     the name of a person, sent in the header `OSF-Person`, signed with `alg` "Ed25519" and `typ` "osf-person+jwt". It is
+         *     bound to one module, one request and 30 seconds. Open: a module ignores a claim it does not know.
+         */
+        PersonProof: {
+            /** @description The issuer: "console" for the console, or the name a team gives its own tool in the modules' setting. */
+            iss: components["schemas"]["Name"];
+            /** @description The person, as the module records the actor's `id`: an email in lower case, or the sign-in proxy's value. */
+            sub: string;
+            /** @description The name to show, recorded as the actor's `displayName`. */
+            name?: string;
+            /** @description The person's role from the access file at the time of the call. */
+            role: components["schemas"]["AccessRole"];
+            /** @description The module the call goes to: "foreman", "intake" or "gatekeeper". */
+            aud: components["schemas"]["Name"];
+            /** @description When it was signed, in seconds since 1970-01-01T00:00:00Z. */
+            iat: number;
+            /** @description When it ends, in seconds since 1970-01-01T00:00:00Z; at most 60 seconds after `iat`. */
+            exp: number;
+            /** @description The request's method in upper case. */
+            method: string;
+            /** @description The request's path as sent in the request line, without the query. */
+            path: string;
+            /** @description The SHA-256 of the request's body bytes as sent, in base64url without padding. */
+            bodyDigest: components["schemas"]["Base64url32"];
         };
         /** @description forge adapters: a pull request was merged or closed without a merge. */
         PrClosed: {
