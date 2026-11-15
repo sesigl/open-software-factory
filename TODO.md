@@ -1626,7 +1626,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
   - [x] The shell and the runs list in the new look, with the two journeys and the console's own suite with
     `browser: chromium` (`SCN-CONSOLE`). The shell names the factory; its version follows with
     `@opensoftware/factory-source`, and the cards in place of the table on a phone with T-60.
-  - [ ] `osf init`, `osf up`, the profile, the chart, `console doctor`, the tutorial; one scenario of the profile
+  - [x] `osf init`, `osf up`, the profile, the chart, `console doctor`, the tutorial; one scenario of the profile
     with sign-in on (`SCN-REPO`, `SCN-DIST`, `SCN-CONSOLE`). After the console's release.
 
 ### [ ] T-57 · secrets from the UI (P1)
