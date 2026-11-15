@@ -34,7 +34,7 @@ through `kubectl port-forward` (`url`), `helm test` and the state of the workloa
 
 ## Budget
 
-- System tests: 760 seconds in total on the CI runner. SCN-DIST-003, -004, -017, -022 and -026 each start the
+- System tests: 840 seconds in total on the CI runner. SCN-DIST-003, -004, -017, -022 and -026 each start the
   profile with Compose, 56 to 67 seconds with the images the CI job loaded before. SCN-DIST-009, -010, -019 and -021
   each install the chart on kind, 47 to 57 seconds. SCN-DIST-014 starts only intake with PostgreSQL and NATS, about
   10 seconds. SCN-DIST-033 only renders the chart with `helm template` in its kind namespace, about 2 seconds; a
@@ -43,6 +43,12 @@ through `kubectl port-forward` (`url`), `helm test` and the state of the workloa
   715 s of raw time, and 433 s to 619 s at BUDGET's measure; the 619 s came from the fastest raw run (568 s), whose
   CPU benchmark took 0.918 times the reference. The suite waits on Docker and kind I/O, which the CPU benchmark does
   not follow, so the budget keeps about 7% above the highest measure.
+- Measured for 840 s on 15 November 2026, with the factory repository on a forge (T-58, ADR 0150): 811.9 s of raw
+  time and 782.2 s at BUDGET's measure (benchmark 1.038 times the reference), with 35 scenarios. The four new ones
+  took 22 s together: SCN-DIST-043 14.5 with Forgejo's start and two clones, -042 5.5, -044 1.4, -045 0.6. The 31
+  before took 790 s, 50 more than in the run for 760 s: the four chart installs took 80 to 95 s each and the five
+  starts of the profile 37 to 80, which is 60 % of the suite. 840 is about 7 % above this measure. Open, and the way
+  to make the suite faster: the scenarios that only read a started profile or an installed chart share one start.
 - Measured for 760 s on 15 November 2026: the first run after a release took 739.8 s of raw time and 709.3 s at
   BUDGET's measure (benchmark 1.043 times the reference), with 29 scenarios. Each of the four chart installs took 72
   to 91 seconds and each of the five starts of the profile 39 to 86, with the newly released images; SCN-DIST-037 and
@@ -62,7 +68,7 @@ through `kubectl port-forward` (`url`), `helm test` and the state of the workloa
   present: SCN-DIST-042 runs the tools' `factory lint` and `plan --check` once each, 4.1 s; SCN-DIST-043 runs only
   `factory-repo` three times against the testkit's Forgejo, 11.4 s, of which Forgejo's start is 5 to 7 s once per
   worker; SCN-DIST-044 is `docker compose config` and one `factory --help`, 1.6 s; SCN-DIST-045 renders the chart like
-  SCN-DIST-033. About 19 s together, so the highest measure above would be about 728 s: under 760, with less room.
+  SCN-DIST-033. About 19 s together, 22 s in CI: see the measure for 840 s above.
 
 ## Scenario prefix
 
