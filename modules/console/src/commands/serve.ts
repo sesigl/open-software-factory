@@ -15,7 +15,7 @@ import type {
   WorkRequest,
 } from "@opensoftware/contracts";
 import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
-import { type Api, getJson, postJson } from "../adapters/apis.ts";
+import { type Api, getJson, type Prove, postJson } from "../adapters/apis.ts";
 import { readFactory } from "../adapters/factory-file.ts";
 import { proposals } from "../adapters/forge.ts";
 import { readImprovement } from "../adapters/improve-files.ts";
@@ -59,6 +59,9 @@ const CHANGES: Back = { href: "/changes", text: "Changes" };
 const POLICY =
   "default-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
 
+/** The console's key set of the person proof (ADR 0151). */
+const KEYS = "/.well-known/jwks.json";
+
 /** The favicon of the design system, which Astro's build copied into the console's own files. */
 const FAVICON = readFileSync(new URL("../web/client/favicon.svg", import.meta.url));
 
@@ -92,6 +95,10 @@ export async function serve(env: Env) {
   if (Array.isArray(sign)) throw new UsageError(sign.join("\n"));
   const accessPath = env.CONSOLE_ACCESS || join(dirname(factoryFile), "access.yaml");
   const actions = Boolean(userHeader) || Boolean(sign);
+  // The person proof (ADR 0151): its library loads only with the key; a malformed key stops the console.
+  const signer = env.CONSOLE_SIGNING_KEY
+    ? await (await import("./proof.ts")).signerOf(env.CONSOLE_SIGNING_KEY, now)
+    : undefined;
   // Roles come from the own sign-in, or from a sign-in proxy with an access file (ADR 0134).
   const proxyAccess = Boolean(userHeader) && existsSync(accessPath);
   // Secrets need an admin and a store; without either the page and its forms answer 404 (ADR 0137).
@@ -189,6 +196,10 @@ export async function serve(env: Env) {
       .send(),
   );
   // The probe of the profile's and the chart's health checks: the console runs and reads its factory, without a session.
+  // The keys of the person proof, for the modules that check it (ADR 0151): without a session, for every host.
+  app.get(KEYS, (_request, reply) =>
+    signer ? reply.header("cache-control", "max-age=300").send(signer.keys) : reply.code(404).send(),
+  );
   app.get("/v1/ready", (_request, reply) => {
     try {
       readFactory(factoryFile);
@@ -364,6 +375,12 @@ export async function serve(env: Env) {
     }
     return { person };
   };
+  /**
+   * The proof of the person of a form for the module `audience` (ADR 0151): their role from the access file, or member
+   * behind a proxy without one. None without CONSOLE_SIGNING_KEY.
+   */
+  const proofFor = (request: FastifyRequest, person: string, audience: string): Prove | undefined =>
+    signer?.prove({ id: person, name: personOf(request)?.name, role: actorOf(request)?.role ?? "member" }, audience);
   const secretsAdapter = env.CONSOLE_SECRETS_ADAPTER || "npx -y @opensoftware/secrets-openbao";
   const closedChanges = !sign && !proxyAccess ? NO_ROLES : undefined;
   // The skills in every mode; with a store, each secret a skill needs has its state (ADR 0141); with a factory
@@ -407,7 +424,7 @@ export async function serve(env: Env) {
       const { person, refused } = signedIn(request, reply, WORK);
       if (refused) return refused;
       const submission = submissionOf(request.body ?? {}, person, new Date(now()).toISOString());
-      const answer = await postJson(intake, "/v1/work-items", submission);
+      const answer = await postJson(intake, "/v1/work-items", submission, proofFor(request, person, "intake"));
       if (!answer.ok)
         return problemPage(request, reply, 502, { title: "Not submitted", detail: answer.note, back: WORK });
       return reply.code(303).header("location", "/work").send();
@@ -421,7 +438,8 @@ export async function serve(env: Env) {
       const { api, missing } = await findRun(runId, request, reply);
       if (!api) return missing;
       const retry: RunRetry = { by: { kind: "person", id: person } };
-      const answer = await postJson<RunView>(api, `/v1/runs/${encodeURIComponent(runId)}/retry`, retry);
+      const path = `/v1/runs/${encodeURIComponent(runId)}/retry`;
+      const answer = await postJson<RunView>(api, path, retry, proofFor(request, person, "foreman"));
       if (answer.ok) return reply.code(303).header("location", `/runs/${answer.body.runId}`).send();
       const detail = answer.detail ?? answer.note;
       return runProblem(request, reply, answer.status || 502, "Not run again", detail);
@@ -440,7 +458,8 @@ export async function serve(env: Env) {
         if (!api) return missing;
         const { type, message } = request.body ?? {};
         const signal = { type, ...(message ? { message } : {}), by: { kind: "person", id: person } } as RunSignal;
-        const answer = await postJson<RunView>(api, `/v1/runs/${encodeURIComponent(runId)}/signals`, signal);
+        const path = `/v1/runs/${encodeURIComponent(runId)}/signals`;
+        const answer = await postJson<RunView>(api, path, signal, proofFor(request, person, "foreman"));
         if (answer.ok) return reply.code(303).header("location", `/runs/${runId}`).send();
         return runProblem(request, reply, answer.status || 502, "Not sent", answer.detail ?? answer.note);
       },
@@ -461,7 +480,7 @@ export async function serve(env: Env) {
           ...(reason ? { reason } : {}),
         } as GateDecisionRequest;
         const path = `/v1/gates/${encodeURIComponent(gateId)}/decisions`;
-        const answer = await postJson<GateView>(gatekeeper, path, body);
+        const answer = await postJson<GateView>(gatekeeper, path, body, proofFor(request, person, "gatekeeper"));
         if (answer.ok) return reply.code(303).header("location", `/runs/${runId}`).send();
         return runProblem(request, reply, answer.status || 502, "Not decided", answer.detail ?? answer.note);
       },

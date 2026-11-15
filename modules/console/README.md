@@ -159,6 +159,25 @@ is sent there.
 Whoever may write to the factory's repository can make themselves `admin`: write access to that repository is admin
 access to the factory, and the repository should be private, since the access file holds emails.
 
+## The person proof
+
+With `CONSOLE_SIGNING_KEY`, the console proves to foreman, intake and gatekeeper who acts
+([ADR 0151](../../docs/decisions/0151-the-person-proven-to-every-module.md)). Each call it makes in a person's name
+(`POST /v1/work-items` of "submit work", a run's retry and signals, a gate's decision) carries, beside the module's
+API token, the header `OSF-Person`: a JSON Web Token signed with Ed25519 through
+[`@opensoftware/person-proof`](../../packages/person-proof/README.md), for 30 seconds, of the person, their name and
+their role, for that module, the request's method and path and the SHA-256 of its body. The person is the session's
+email with the own sign-in, with the role of the access file at that request, or the value of `CONSOLE_USER_HEADER`
+behind a proxy, with the role of an access file, or `member` without one. A read-only console signs nothing.
+
+The key is 64 hex digits, the seed of an Ed25519 key, like the output of `openssl rand -hex 32`; a malformed key stops
+the console. The console publishes the public keys at `GET /.well-known/jwks.json` (the format `person-keys`), without
+a session and for every host, with `cache-control: max-age=300`, so a module sets
+`<MODULE>_PERSON_KEYS=console=http://console:8080/.well-known/jwks.json`. To change the key, put the new key behind the
+old one (`old,new`), swap them after 10 minutes (`new,old`) and drop the old one a minute later: the first signs, every
+one is published. Without the key the console sends no proof, `/.well-known/jwks.json` answers 404, and `/health`
+warns, since a module that checks proofs refuses the console's actions.
+
 ## Secrets
 
 An admin or a factory engineer stores the values of the agents' secrets on `/secrets`
@@ -338,14 +357,18 @@ the branch up, with the reference factory's workflow that posts the check, and `
    `oidc` the provider's discovery document at `<CONSOLE_OIDC_ISSUER>/.well-known/openid-configuration` answers; and
    `access`, the access file holds and has an admin who is not the example's `admin@example.com`, the person the
    reference `access.yaml` ships in place of one.
-5. When an agent of the factory declares a secret of OpenBao (`ref:openbao/<name>`, [ADR 0137](../../docs/decisions/0137-secrets-port-write-side-and-openbao.md)):
+5. `person proof` ([ADR 0151](../../docs/decisions/0151-the-person-proven-to-every-module.md)): with
+   `CONSOLE_SIGNING_KEY`, the key is 64 hex digits, else it fails with the key's place; without it, and with
+   `CONSOLE_USER_HEADER` or `CONSOLE_SIGN_IN`, a warning: the console sends no proof, and the modules that check proofs
+   refuse its actions.
+6. When an agent of the factory declares a secret of OpenBao (`ref:openbao/<name>`, [ADR 0137](../../docs/decisions/0137-secrets-port-write-side-and-openbao.md)):
    `secrets`, the adapter in `CONSOLE_SECRETS_ADAPTER` answers `probe` and `list` with the store at
    `OSF_OPENBAO_ADDR` and the token `OSF_OPENBAO_TOKEN`, else it names the adapter's error and the three variables;
    `secrets token`, the console's token lives 7 days or more, else it warns with the time the token ends, so there is
    a week to give the console a new one (a token of OpenBao lives at most 32 days by default; one without an end, like
    the root token, never warns); and `secret <name>` for each declared secret, which fails when the store has no
    value for it and names the agents that need it.
-6. Only with `console doctor --deep` ([ADR 0120](../../docs/decisions/0120-deep-checks-of-console-doctor.md)):
+7. Only with `console doctor --deep` ([ADR 0120](../../docs/decisions/0120-deep-checks-of-console-doctor.md)):
    `model <route>`, one chat completion of one token per model route of the factory definition's agents through the
    gateway in `CONSOLE_MODEL_URL`, and `harness`, the command in `CONSOLE_HARNESS_COMMAND` answers ACP `initialize`
    within 10 seconds. A model call costs money, so `/health` and `console doctor` without `--deep` never make one.
@@ -420,6 +443,7 @@ as ok, adds itself to the count, like `all 5 checks ok, warnings: 1`, and shows 
 | `CONSOLE_SESSION_HOURS` | number | `12` | serve, with CONSOLE_SIGN_IN: how long a session lasts, in hours. |
 | `CONSOLE_SESSION_SECRET` | string |  | serve, with CONSOLE_SIGN_IN: the key of the encrypted session cookie, or several separated by commas: the first encrypts, every one decrypts, so a key changes without signing everyone out. |
 | `CONSOLE_SESSION_URL` | string |  | serve: the link to a stage's transcript, with {sessionId}, like https://langfuse.acme.dev/sessions/{sessionId}. |
+| `CONSOLE_SIGNING_KEY` | string |  | serve, doctor and /health: the Ed25519 key that signs the proof of the person, in the header OSF-Person, on each call the console makes in a person's name to foreman, intake and gatekeeper (ADR 0151): 64 hex digits, like the output of openssl rand -hex 32. Several separated by commas: the first signs, every one is published at /.well-known/jwks.json, so the key changes without a refused action. A malformed key stops the console. Unset, the console sends no proof and publishes no keys, and doctor warns when actions are on. |
 | `CONSOLE_SIGN_IN` | string |  | serve: switches on the console's own sign-in with this provider: oidc (OpenID Connect, like Google or a company's provider) or github (ADR 0134). Every page then needs a session, and who may sign in is the access file. Unset, the console is open and read-only, or behind the sign-in proxy of CONSOLE_USER_HEADER; both set, it does not start. |
 | `CONSOLE_SPAN_URL` | string |  | serve: the link to a stage's span in the run's trace, with {traceId} and {spanId}, like http://127.0.0.1:16686/trace/{traceId}?uiFind={spanId} for Jaeger. |
 | `CONSOLE_TEMPORAL_NAMESPACE` | string | `"default"` | serve: the Temporal namespace of the runs, the foreman's FOREMAN_TEMPORAL_NAMESPACE. |
@@ -673,3 +697,8 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-265 | implemented | The improvement page shows in the shell, with "Cost and scores" as the current page |
 | SCN-CONSOLE-266 | implemented | On a phone a person reads the health, the factory and the cost and scores as cards (journey) |
 | SCN-CONSOLE-267 | implemented | Every answer allows only the console's own files and no script, and the old stylesheet is gone |
+| SCN-CONSOLE-268 | implemented | An action of a signed-in person carries the person's proof, which the console's keys verify, to foreman, gatekeeper and intake |
+| SCN-CONSOLE-269 | implemented | The console publishes every key of "CONSOLE_SIGNING_KEY" at "/.well-known/jwks.json" without a session, for every host |
+| SCN-CONSOLE-270 | implemented | Behind a sign-in proxy without an access file the proof names the proxy's person as a member |
+| SCN-CONSOLE-271 | implemented | Without "CONSOLE_SIGNING_KEY" an action carries no proof, the console publishes no keys and "/health" warns |
+| SCN-CONSOLE-272 | implemented | A malformed "CONSOLE_SIGNING_KEY" fails "console doctor" and stops "console serve", and neither names the key |

@@ -14,6 +14,8 @@ const FLOW = "osf_signin";
 const FLOW_SECONDS = 600;
 /** The probe of a container's health check (ADR 0134): it needs no session and answers for every host. */
 const PROBE = "/v1/ready";
+/** The keys of the person proof (ADR 0151): a module fetches them at the console's address on its network. */
+const KEYS = "/.well-known/jwks.json";
 /** The paths a person reaches without a session. */
 const OPEN = new Set(["/signin", "/signin/start", "/signin/callback", "/favicon.svg"]);
 
@@ -35,8 +37,8 @@ export function useSignIn(app: FastifyInstance, sign: SignIn, accessPath: string
 
   app.addHook("onRequest", async (request, reply) => {
     const path = request.url.split("?")[0] ?? "/";
-    // A health check asks the probe at the container's own address, so the probe answers for every host.
-    if (path === PROBE) return;
+    // A health check asks the probe, and a module the keys, at the container's own address: both answer every host.
+    if (path === PROBE || path === KEYS) return;
     // A request for another host is sent to the console's own address first, so the cookies stay on one host.
     if (request.headers.host !== address.host)
       return reply.code(307).header("location", `${sign.url}${request.url}`).send();

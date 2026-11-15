@@ -147,6 +147,28 @@ async function repository(env: Env): Promise<Item[]> {
   return repositoryItems(found.forge.repository, found.branch, fetched, rules);
 }
 
+/**
+ * The person proof (ADR 0151): a malformed CONSOLE_SIGNING_KEY fails; a console with actions and without the key
+ * warns, since a module that checks proofs refuses its actions.
+ */
+async function signingItems(env: Env): Promise<Item[]> {
+  const name = "person proof";
+  const key = env.CONSOLE_SIGNING_KEY;
+  if (key) {
+    const { signerOf } = await import("./proof.ts");
+    const problem = await signerOf(key, Date.now).then(
+      () => undefined,
+      (failure: Error) => failure.message,
+    );
+    if (!problem) return [{ name, ok: true }];
+    return [{ name, ok: false, detail: `${problem}: set it to 64 random hex digits, like "openssl rand -hex 32"` }];
+  }
+  if (!env.CONSOLE_USER_HEADER && !env.CONSOLE_SIGN_IN) return [];
+  const detail =
+    "set CONSOLE_SIGNING_KEY: without it the console sends no proof of the person, and foreman, intake and gatekeeper refuse its actions when they check proofs";
+  return [{ name, ok: true, warn: true, detail }];
+}
+
 /** The checks of the secret store, through the secrets port's adapter's `probe` and `list` (ADR 0137). */
 async function secrets(env: Env, declared: Declared[]): Promise<Item[]> {
   const command = env.CONSOLE_SECRETS_ADAPTER || "npx -y @opensoftware/secrets-openbao";
@@ -186,6 +208,7 @@ export async function examine(env: Env, deep = false): Promise<Item[]> {
   items.push(...(await repository(env)));
   if (env.CONSOLE_GROUPS) items.push(groups(env.CONSOLE_GROUPS));
   if (env.CONSOLE_SIGN_IN) items.push(...(await signInItems(env, factory)));
+  items.push(...(await signingItems(env)));
   // Only a factory that declares a secret of OpenBao needs the store (ADR 0137).
   if (declared.length) items.push(...(await secrets(env, declared)));
   if (deep) items.push(...(await deepItems(env, routes)));

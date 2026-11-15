@@ -9,7 +9,9 @@ The only ways a system test or another program may use this module:
 - CLI: `console <command>` (see `README.md#commands`)
 - Web pages of `console serve` on `PORT` (see `README.md#pages`): `/`, `/runs/<runId>`, `/work`, `/factory`,
   `/factory/agents/<name>`, `/inbox`, `/improvement`, `/health`, `/secrets` and `/secrets/delete` (ADR 0137), `/skills` and `/skills/<name>` (ADR 0141), `/skills/<name>/switch` (ADR 0149), `/changes` (ADR 0144); the sign-in `/signin`, `/signin/start`,
-  `/signin/callback` and `POST /signout` (ADR 0134); `/theme` (ADR 0133); the probe `/v1/ready`; and the files
+  `/signin/callback` and `POST /signout` (ADR 0134); `/theme` (ADR 0133); the probe `/v1/ready`; the key set of the
+  person proof `/.well-known/jwks.json`, without a session and for every host, 404 without `CONSOLE_SIGNING_KEY`
+  (ADR 0151); and the files
   `/_astro/<file>` and `/favicon.svg`. Any other method but `GET` and `HEAD` answers 405, except the forms
   `POST /work`, `POST /runs/<runId>/retry`, `POST /runs/<runId>/signals` and `POST /runs/<runId>/gates/<gateId>` with
   `CONSOLE_USER_HEADER` or `CONSOLE_SIGN_IN` (ADR 0089, ADR 0105, ADR 0118, ADR 0134), and `POST /secrets` and
@@ -20,7 +22,8 @@ The only ways a system test or another program may use this module:
 - Outside systems it calls: the foremen's HTTP API at `CONSOLE_FOREMAN_URL`, intake's at `CONSOLE_INTAKE_URL` and
   gatekeeper's at `CONSOLE_GATEKEEPER_URL` (`contracts/openapi/openapi.json`), only with `GET`, and with `POST` for the actions (intake's
   `/v1/work-items`, the foreman's `/v1/runs/<runId>/retry` and `/v1/runs/<runId>/signals`, gatekeeper's
-  `/v1/gates/<gateId>/decisions`); the forge port's
+  `/v1/gates/<gateId>/decisions`), each action with `CONSOLE_SIGNING_KEY` with the person's proof in the header
+  `OSF-Person`, signed through `@opensoftware/person-proof` (ADR 0151); the forge port's
   adapter in `CONSOLE_FORGE_ADAPTER`, only with its read-only command `prs` (ADR 0073); with `console doctor --deep`
   only, the model gateway at `CONSOLE_MODEL_URL` (one `POST /chat/completions` per route) and the harness started by
   `CONSOLE_HARNESS_COMMAND` (ACP `initialize`, ADR 0120), the trace store, and the sandbox adapter in
@@ -109,7 +112,12 @@ which stays until live updates replace it (`TODO.md`, T-60).
 
 ## Budget
 
-- System tests: 335 seconds in total on the CI runner (208 scenarios). Raised from 326 seconds on 15 November 2026
+- System tests: 335 seconds in total on the CI runner (213 scenarios). The person proof (T-61, ADR 0151) adds
+  SCN-CONSOLE-268 to 272 without a new budget: measured on the development container in one run of the whole suite
+  (213.1 seconds of test time), they took 2.9 seconds together (0.5 to 0.8 seconds each: a console and fakes in the
+  test process, no browser), 1.4 % more, about 4 seconds on CI, inside the 8 % of the budget below. The library loads
+  only with `CONSOLE_SIGNING_KEY`, so a console without it starts as fast as before.
+- Before that: 335 seconds for 208 scenarios. Raised from 326 seconds on 15 November 2026
   with the factory pages, the cost and scores and the health page in the new look (T-60), measured on the development
   container in one run of the whole suite (211.8 seconds of test time): the 9 new scenarios took 7.2 seconds next to
   204.6 for the other 199; SCN-CONSOLE-258, 259 and 262 replace 203, 251 and 136, which took 1.4 seconds together,

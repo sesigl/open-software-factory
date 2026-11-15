@@ -186,6 +186,10 @@
       "type": "string",
       "description": "serve: the link to a stage's transcript, with {sessionId}, like https://langfuse.acme.dev/sessions/{sessionId}."
     },
+    "CONSOLE_SIGNING_KEY": {
+      "type": "string",
+      "description": "serve, doctor and /health: the Ed25519 key that signs the proof of the person, in the header OSF-Person, on each call the console makes in a person's name to foreman, intake and gatekeeper (ADR 0151): 64 hex digits, like the output of openssl rand -hex 32. Several separated by commas: the first signs, every one is published at /.well-known/jwks.json, so the key changes without a refused action. A malformed key stops the console. Unset, the console sends no proof and publishes no keys, and doctor warns when actions are on."
+    },
     "CONSOLE_SIGN_IN": {
       "type": "string",
       "enum": ["oidc", "github"],
