@@ -26,8 +26,8 @@ node tools/bin/osf.ts init --factory team/factory
 ```
 
 `osf init` writes `deploy/compose/.env`. It generates the secrets that only the factory's own services share: the
-database password, the LiteLLM master key, the API tokens of foreman, intake and gatekeeper, and the unseal key and
-the three tokens of OpenBao, the store of your agents' secrets. With `--factory`, it copies the reference factory to
+database password, the LiteLLM master key, the API tokens of foreman, intake and gatekeeper, the console's session
+key and signing key, and the unseal key and the three tokens of OpenBao, the store of your agents' secrets. With `--factory`, it copies the reference factory to
 `team/factory/` and points `FACTORY_DIR` there, so you change your copy. It ends with the list of values that are
 still empty. `.env` stays out of Git; never commit it, and keep a copy in your safe: without its
 `OSF_OPENBAO_UNSEAL_KEY`, no one can read the secrets you store. On an existing `.env`, `osf init` changes no value
@@ -74,7 +74,8 @@ So that only your team gets in, the console signs people in with Google or GitHu
 2. In `deploy/compose/.env`, set `CONSOLE_SIGN_IN=oidc` with `CONSOLE_OIDC_ISSUER=https://accounts.google.com`,
    `CONSOLE_OIDC_CLIENT_ID` and `CONSOLE_OIDC_CLIENT_SECRET`, or `CONSOLE_SIGN_IN=github` with
    `CONSOLE_GITHUB_CLIENT_ID` and `CONSOLE_GITHUB_CLIENT_SECRET`. `osf init` already generated
-   `CONSOLE_SESSION_SECRET`.
+   `CONSOLE_SESSION_SECRET` and `CONSOLE_SIGNING_KEY`, with which the console proves to foreman, intake and gatekeeper
+   who acts, so that a module's API token alone no longer acts as a person.
 3. In `team/factory/access.yaml`, put your email in place of `admin@example.com`, with the role `admin`. Add your
    team with the role `member`.
 4. Run `osf up`: it names each setting the provider still needs. Then `osf doctor`: its check `access` fails until

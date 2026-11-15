@@ -108,8 +108,10 @@ console:
     issuer: ""
     # The client ID of the provider's client, or of the GitHub OAuth app.
     clientId: ""
-    # The Secret, made by the operator, with the keys session-secret (the key of the session cookie) and
-    # client-secret (the client's secret). The chart holds neither value.
+    # The Secret, made by the operator, with the keys session-secret (the key of the session cookie), client-secret
+    # (the client's secret) and signing-key (64 hex digits, the seed of the Ed25519 key that signs the proof of the
+    # person, like the output of openssl rand -hex 32). With the sign-in, foreman, intake and gatekeeper check that
+    # proof with the console's key set (ADR 0151). The chart holds none of the values.
     secret: ""
 
 # The team's own OpenBao for the agents' secrets ref:openbao/<name> (ADR 0145); the chart installs none (ADR 0075).

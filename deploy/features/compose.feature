@@ -255,3 +255,12 @@ Feature: The Compose profile installs a complete factory with one command
     And the service "console" sets "CONSOLE_FACTORY_REPOSITORY", "CONSOLE_FACTORY_TOKEN", "CONSOLE_FACTORY_USER", "CONSOLE_FORGE_ADAPTER" and "CONSOLE_FORGE_URL" to the values, and "CONSOLE_FACTORY_COMMAND" to "factory"
     And no service but "factory-repo", "foreman" and "console" gets the token
     And "factory --help" runs in the service "console" and names the command "edit"
+
+  @id=SCN-DIST-046 @status=implemented
+  Scenario: With the sign-in and "CONSOLE_SIGNING_KEY", the console signs the proof of the person and foreman, intake and gatekeeper check it with the console's key set
+    Given the Compose profile with every value of ".env.example" set in ".env", "CONSOLE_SIGN_IN" set to "github" with its settings, and "CONSOLE_SIGNING_KEY" set
+    When the operator runs "docker compose config --format json"
+    Then the service "console" sets "CONSOLE_SIGNING_KEY" to the key, and no other service gets the key
+    And the services "foreman", "intake" and "gatekeeper" set "FOREMAN_PERSON_KEYS", "INTAKE_PERSON_KEYS" and "GATEKEEPER_PERSON_KEYS" to "console=http://console:8080/.well-known/jwks.json"
+    When the operator runs it again without "CONSOLE_SIGNING_KEY", and again with the key and without "CONSOLE_SIGN_IN"
+    Then both times the three settings of the modules are empty, so the modules take the person a caller names, as before
