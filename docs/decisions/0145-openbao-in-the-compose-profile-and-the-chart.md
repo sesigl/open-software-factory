@@ -140,9 +140,11 @@ What was verified on OpenBao 2.7.2, the binary `make install` pins and the image
   later (ADR 0139); its stage may fail, and a person runs it again.
 - OpenBao hashes a token with a chosen ID with SHA-1 where it obfuscates tokens; the ID is 32 random bytes, so the
   weaker hash reveals nothing that could be guessed. Revisit if OpenBao drops chosen IDs.
-- `docker compose up --wait` counts a one-shot that still runs as started. The whole profile waits for
-  `openbao-setup` through the console's and the foreman's `depends_on`; a start of OpenBao alone needs
-  `docker compose wait openbao-setup` after it, as SCN-DIST-039 does.
+- `docker compose up --wait` counts a one-shot that still runs as started, and one that ended before the wait looked
+  as failed. The whole profile waits for `openbao-setup` through the console's and the foreman's `depends_on`. A start
+  of OpenBao alone runs the job in the foreground with `docker compose run --rm openbao-setup`, as SCN-DIST-039 does:
+  `docker compose wait openbao-setup` after `up` is no way, as the Compose of GitHub's runner answers
+  `no containers for project` when the job has ended before the command runs.
 - The console's image now serves two services, `console` and `openbao-policies`, so `docker compose config --images`
   lists it twice; SCN-DIST-041 replaces SCN-DIST-023 to say so.
 - The audit log grows without rotation; OpenBao reopens the file on `SIGHUP`. Revisit with the egress log.

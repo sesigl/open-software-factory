@@ -212,7 +212,7 @@ Feature: The Compose profile installs a complete factory with one command
   @id=SCN-DIST-039 @status=implemented
   Scenario: The profile's OpenBao keeps a stored secret over a restart, unseals itself, and a sandbox still sends the value
     Given the Compose profile with every value of ".env.example" set in ".env", OpenBao's unseal key, root token and two token IDs as "osf init" generates them
-    And the operator ran "docker compose up --detach --wait openbao-setup docker-proxy" and "docker compose wait openbao-setup"
+    And the operator ran "docker compose run --rm openbao-setup" and "docker compose up --detach --wait docker-proxy"
     And the console's secrets adapter stored "linear-token" with the console's token, by "ada@acme.dev"
     When the operator runs "docker compose down" and then the same two commands again
     Then the service "openbao" is running, healthy and unsealed, and no person unsealed it

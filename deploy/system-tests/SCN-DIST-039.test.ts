@@ -3,9 +3,11 @@ import { OPENBAO, profile, words } from "./profile.ts";
 
 // The test template of the sandbox adapters' scenarios: curl and a shell, pulled by the foreman through docker-proxy.
 const TEMPLATE = "curlimages/curl:8.17.0@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3ff40";
-// The services that hold the secret: OpenBao with its job, and docker-proxy for the foreman's sandbox. The console and
-// the foreman run with "docker compose run --no-deps", as their settings are what the scenario proves.
-const UP = "docker compose up --detach --wait openbao-setup docker-proxy";
+// The services that hold the secret: OpenBao with its job, and docker-proxy for the foreman's sandbox. "run" starts
+// OpenBao, runs the job in the foreground and returns its exit code, so the tokens exist when it returns. The console
+// and the foreman run with "docker compose run --no-deps", as their settings are what the scenario proves.
+const JOB = "docker compose run --rm openbao-setup";
+const UP = "docker compose up --detach --wait docker-proxy";
 // Made up for the test: no store outside the scenario's own ever held it.
 const VALUE = "lin_made_up_value_7c41";
 
@@ -21,15 +23,13 @@ scenario("SCN-DIST-039", async ({ sut, fakes, given, when, then }) => {
   );
 
   const up = async () => {
+    const job = await compose.run(words(JOB));
+    expect(job.exitCode, job.stderr).toBe(0);
     const started = await compose.run(words(UP));
     expect(started.exitCode, started.stderr).toBe(0);
-    // "up --wait" sees a one-shot that runs as started: wait until the job has made the tokens.
-    const job = await compose.run(words("docker compose wait openbao-setup"));
-    expect(job.exitCode, job.stderr).toBe(0);
-    expect(job.stdout).toContain("exited with status code 0");
   };
   await given(
-    'the operator ran "docker compose up --detach --wait openbao-setup docker-proxy" and "docker compose wait openbao-setup"',
+    'the operator ran "docker compose run --rm openbao-setup" and "docker compose up --detach --wait docker-proxy"',
     up,
   );
 

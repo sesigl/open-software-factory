@@ -275,8 +275,8 @@ work this way. `GH_TOKEN` and `CLAUDE_CODE_OAUTH_TOKEN` of the reference factory
   `OSF_OPENBAO_ROOT_TOKEN`; at every start it unseals itself with `OSF_OPENBAO_UNSEAL_KEY`. Then `openbao-setup`
   writes the policies of `secrets-openbao`, enables the mount, and makes the console's and the egress proxy's tokens
   new with their IDs of `.env`. `docker compose logs openbao-setup` shows how long they live. The console and foreman
-  start after it; `docker compose up --detach --wait openbao-setup` alone returns while the job still runs, so
-  follow it with `docker compose wait openbao-setup`.
+  start after it. To start OpenBao alone, run `docker compose run --rm openbao-setup`: it starts OpenBao, runs the job
+  in the foreground and returns the job's exit code.
 - **The tokens live 768 hours (32 days)** from each `docker compose up`, OpenBao's maximum. `console doctor` and the
   page `/health` warn 7 days before the console's token ends; run `docker compose up --detach --wait` to make both new.
   When the console's token has ended, `/secrets` names the store's error `secrets-openbao: the store refused the token`
