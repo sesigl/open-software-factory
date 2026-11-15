@@ -9,10 +9,20 @@ using TypeSpec.Http;
 namespace Osf.Contracts;
 
 namespace IntakeApi {
-  /** Put work into the inbox. A submission with the dedupe key of a work item answers that work item. */
+  /**
+   * Put work into the inbox. A submission with the dedupe key of a work item answers that work item. With
+   * `INTAKE_PERSON_KEYS`, a requester of the kind `person` needs its proof in `OSF-Person` (ADR 0151): 401 without one
+   * or for one that does not verify, 403 for one of another request or person, 503 when its issuer's key set cannot be
+   * fetched.
+   */
   @route("/v1/work-items")
   @post
-  op submitWork(@body submission: WorkSubmission):
+  op submitWork(
+    /** The person proof of the requester: a JSON Web Token with the claims of `PersonProof` (ADR 0151). */
+    @header("OSF-Person") personProof?: string,
+
+    @body submission: WorkSubmission,
+  ):
     | {
         @statusCode statusCode: 201;
         @body workItem: WorkItemView;
@@ -22,7 +32,9 @@ namespace IntakeApi {
         @body workItem: WorkItemView;
       }
     | GatekeeperApi.Failure<400>
-    | GatekeeperApi.Failure<401>;
+    | GatekeeperApi.Failure<401>
+    | GatekeeperApi.Failure<403>
+    | GatekeeperApi.Failure<503>;
 
   /** The work item with this dedupe key, such as an issue's link (ADR 0065). */
   @route("/v1/work-items")

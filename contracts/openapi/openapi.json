@@ -691,8 +691,18 @@
     "/v1/work-items": {
       "post": {
         "operationId": "IntakeApi_submitWork",
-        "description": "Put work into the inbox. A submission with the dedupe key of a work item answers that work item.",
-        "parameters": [],
+        "description": "Put work into the inbox. A submission with the dedupe key of a work item answers that work item. With\n`INTAKE_PERSON_KEYS`, a requester of the kind `person` needs its proof in `OSF-Person` (ADR 0151): 401 without one\nor for one that does not verify, 403 for one of another request or person, 503 when its issuer's key set cannot be\nfetched.",
+        "parameters": [
+          {
+            "name": "OSF-Person",
+            "in": "header",
+            "required": false,
+            "description": "The person proof of the requester: a JSON Web Token with the claims of `PersonProof` (ADR 0151).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "The request has succeeded.",
@@ -726,6 +736,26 @@
           },
           "401": {
             "description": "Access is unauthorized.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access is forbidden.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable.",
             "content": {
               "application/problem+json": {
                 "schema": {

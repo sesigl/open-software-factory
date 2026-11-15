@@ -194,7 +194,12 @@ export type paths = {
         /** @description The work item with this dedupe key, such as an issue's link (ADR 0065). */
         get: operations["IntakeApi_findWorkItem"];
         put?: never;
-        /** @description Put work into the inbox. A submission with the dedupe key of a work item answers that work item. */
+        /**
+         * @description Put work into the inbox. A submission with the dedupe key of a work item answers that work item. With
+         *     `INTAKE_PERSON_KEYS`, a requester of the kind `person` needs its proof in `OSF-Person` (ADR 0151): 401 without one
+         *     or for one that does not verify, 403 for one of another request or person, 503 when its issuer's key set cannot be
+         *     fetched.
+         */
         post: operations["IntakeApi_submitWork"];
         delete?: never;
         options?: never;
@@ -2214,7 +2219,10 @@ export interface operations {
     IntakeApi_submitWork: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description The person proof of the requester: a JSON Web Token with the claims of `PersonProof` (ADR 0151). */
+                "OSF-Person"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2253,6 +2261,24 @@ export interface operations {
             };
             /** @description Access is unauthorized. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Access is forbidden. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Service unavailable. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
