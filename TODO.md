@@ -1826,8 +1826,8 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
     `--delete-branch` keeps the branch (`SCN-FORGE`, `SCN-FGITHUB`, `SCN-TK`).
   - [x] `factory edit` and `factory plan --check` in `factory-spec` (`SCN-FSPEC`).
   - [x] The flow and the page `/changes` in the console (`SCN-CONSOLE`, ADR 0144).
-  - [ ] The workflow with the check `factory` in the reference factory; the profile and the chart with a factory
-    repository on a forge; `console doctor` (`SCN-DIST`, `SCN-CONSOLE`). After the releases above.
+  - [x] The workflow with the check `factory` in the reference factory; the profile and the chart with a factory
+    repository on a forge; `console doctor` (`SCN-DIST`, `SCN-CONSOLE`, `SCN-REPO`, ADR 0150).
   - [ ] One smoke scenario in `e2e/`: a change from the console becomes the factory version of the next run
     (`SCN-E2E`).
 

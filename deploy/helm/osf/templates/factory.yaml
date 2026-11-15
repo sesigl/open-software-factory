@@ -1,4 +1,6 @@
-# The factory definition, each file under its path with "/" as "__" (ADR 0075).
+# The factory definition, each file under its path with "/" as "__" (ADR 0075). With factory.repository the pods read
+# the repository instead (ADR 0150).
+{{- if not .Values.factory.repository }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -9,3 +11,4 @@ data:
   {{- range $path, $content := include "osf.factoryFiles" . | fromYaml }}
   {{ $path | replace "/" "__" }}: {{ $content | quote }}
   {{- end }}
+{{- end }}

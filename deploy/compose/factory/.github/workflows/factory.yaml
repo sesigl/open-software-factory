@@ -1,0 +1,22 @@
+# The check "factory" of the factory's repository on GitHub (ADR 0150): factory-spec lints factory.yaml, its skills and
+# access.yaml, and fails when factory.lock is not current. GitHub names the job's check run "factory", which the main
+# branch requires and the console relies on before it asks for a merge (ADR 0144). Copy this folder into the factory's
+# repository; deploy/README.md#a-factory-on-a-forge sets up the branch.
+name: factory
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  factory:
+    name: factory
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: npx --yes @opensoftware/factory-spec@0.12.1 lint
+      - run: npx --yes @opensoftware/factory-spec@0.12.1 plan --check

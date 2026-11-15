@@ -127,9 +127,15 @@ the PostgreSQL image for psql, also with a managed PostgreSQL.
     {{- include "osf.secretEnv" (dict "root" .root "name" "PGPASSWORD" "key" "postgres-password") | nindent 4 }}
 {{- end -}}
 
-{{/* The volume of the factory definition: the ConfigMap, each file at its path. */}}
+{{/*
+The volume of the factory definition: the ConfigMap, each file at its path; with factory.repository an empty folder,
+which the init container of osf.factoryClone fills when the pod starts (ADR 0150).
+*/}}
 {{- define "osf.factoryVolume" -}}
 - name: factory-source
+{{- if .Values.factory.repository }}
+  emptyDir: {}
+{{- else }}
   configMap:
     name: {{ .Release.Name }}-factory
     items:
@@ -137,6 +143,38 @@ the PostgreSQL image for psql, also with a managed PostgreSQL.
       - key: {{ $path | replace "/" "__" }}
         path: {{ $path }}
       {{- end }}
+{{- end }}
+{{- end -}}
+
+{{/*
+With factory.repository (ADR 0150): an init container of the image .image that clones the newest commit of the
+repository's branch into the volume .volume at .folder, with the token factory-token of the Secret, by the profile's
+factory-repo.sh. Nothing without it.
+*/}}
+{{- define "osf.factoryClone" -}}
+{{- with .root.Values.factory.repository }}
+- name: factory-repo
+  image: {{ $.image }}
+  imagePullPolicy: {{ $.root.Values.images.pullPolicy }}
+  command: [sh, -c, {{ $.root.Files.Get "files/factory-repo.sh" | quote }}, factory-repo, {{ $.folder }}]
+  env:
+    - name: FACTORY_REPOSITORY
+      value: {{ . | quote }}
+    {{- include "osf.factoryTokenEnv" (dict "root" $.root "name" "FACTORY_TOKEN") | nindent 4 }}
+  volumeMounts:
+    - name: {{ $.volume }}
+      mountPath: {{ $.folder }}
+{{- end }}
+{{- end -}}
+
+{{/* The token factory-token of the Secret in the variable .name, for a private factory repository; optional. */}}
+{{- define "osf.factoryTokenEnv" -}}
+- name: {{ .name }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "osf.secret" .root }}
+      key: factory-token
+      optional: true
 {{- end -}}
 
 {{/* The files of the factory as a YAML map from path to content: factory.files, or files/factory/. */}}

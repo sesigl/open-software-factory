@@ -146,7 +146,7 @@ services:
 
   # One-shot: the two policies for the mount, as secrets-openbao prints them, into the volume openbao-policies.
   openbao-policies:
-    image: ghcr.io/sesigl/open-software-factory/console:0.10.1
+    image: ghcr.io/sesigl/open-software-factory/console:0.10.1-r1
     build: &console
       context: ../images
       target: module
@@ -154,7 +154,7 @@ services:
       args:
         PACKAGES: >-
           @opensoftware/console@0.10.1 @opensoftware/forge-github@0.8.1 @opensoftware/forge-forgejo@0.8.1
-          @opensoftware/secrets-openbao@0.1.1
+          @opensoftware/secrets-openbao@0.1.1 @opensoftware/factory-spec@0.12.1
     entrypoint: [sh, -c]
     command:
       - |
@@ -257,7 +257,9 @@ services:
       timeout: 5s
       retries: 120
 
-  # Copies FACTORY_DIR into the volume factory and commits it there: foreman reads a run's factory version from Git.
+  # One-shot at every start: the factory in the volume factory, which gatekeeper, the console and the tools read. With
+  # FACTORY_REPOSITORY a clone of its branch's newest commit, with FACTORY_TOKEN; without it FACTORY_DIR, committed
+  # there, as foreman reads a run's factory version from Git (ADR 0150).
   factory-repo:
     image: ghcr.io/sesigl/open-software-factory/factory-spec:0.12.1
     build: &factory-spec
@@ -266,20 +268,15 @@ services:
       secrets: [ca]
       args:
         PACKAGES: "@opensoftware/factory-spec@0.12.1"
+    environment:
+      FACTORY_REPOSITORY: ${FACTORY_REPOSITORY:-}
+      FACTORY_TOKEN: ${FACTORY_TOKEN:-}
     volumes:
       - ${FACTORY_DIR:-./factory}:/source:ro
+      - ./factory-repo/factory-repo.sh:/osf/factory-repo.sh:ro
       - factory:/factory
-    entrypoint: [sh, -c]
-    command:
-      - |
-        set -eu
-        cd /factory
-        find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
-        cp -R /source/. .
-        [ -d .git ] || git init -q -b main
-        git add -A
-        git diff --cached --quiet ||
-          git -c user.name=factory -c user.email=factory@localhost commit -q -m "factory from FACTORY_DIR"
+    entrypoint: [sh, /osf/factory-repo.sh]
+    command: [/factory, /source]
 
   gatekeeper:
     <<: *module
@@ -431,7 +428,10 @@ services:
       # One trace per run in Jaeger, with a span per stage (ADR 0087, ADR 0100).
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
       FOREMAN_API_TOKEN: ${FOREMAN_API_TOKEN:?set FOREMAN_API_TOKEN in .env}
-      FOREMAN_FACTORY: /factory/factory.yaml
+      # The factory's repository on a forge, fetched at each run with FACTORY_TOKEN, or the commit of the volume
+      # factory (ADR 0124, ADR 0150).
+      FOREMAN_FACTORY: ${FACTORY_REPOSITORY:-/factory/factory.yaml}
+      FOREMAN_FACTORY_TOKEN: ${FACTORY_TOKEN:-}
       FOREMAN_TEMPORAL_ADDRESS: temporal:7233
       FOREMAN_NATS_URL: nats://nats:4222
       # The stream OSF keeps an event, a dead letter too, 7 days (ADR 0116).
@@ -481,7 +481,7 @@ services:
 
   console:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/console:0.10.1
+    image: ghcr.io/sesigl/open-software-factory/console:0.10.1-r1
     build: *console
     command: [console, serve]
     depends_on:
@@ -504,7 +504,15 @@ services:
       CONSOLE_GATEKEEPER_TOKEN: ${GATEKEEPER_API_TOKEN:?set GATEKEEPER_API_TOKEN in .env}
       CONSOLE_FACTORY: /factory/factory.yaml
       CONSOLE_GROUPS: /factory/groups.json
-      CONSOLE_FORGE_ADAPTER: forge-github
+      # factory-spec of the image, for /skills and the edits of a change.
+      CONSOLE_FACTORY_COMMAND: factory
+      # With FACTORY_REPOSITORY, the console proposes each change of the factory as a pull request on it, with the
+      # token FACTORY_TOKEN of FACTORY_USER, and fetches its newest commit at each change (ADR 0144, ADR 0150).
+      CONSOLE_FACTORY_REPOSITORY: ${FACTORY_REPOSITORY:-}
+      CONSOLE_FACTORY_TOKEN: ${FACTORY_TOKEN:-}
+      CONSOLE_FACTORY_USER: ${FACTORY_USER:-}
+      CONSOLE_FORGE_ADAPTER: ${FACTORY_FORGE_ADAPTER:-forge-github}
+      CONSOLE_FORGE_URL: ${FACTORY_FORGE_URL:-}
       CONSOLE_TEMPORAL_URL: http://${OSF_HOST:-127.0.0.1}:${TEMPORAL_UI_PORT:-8233}
       # Each run links its trace in Jaeger.
       CONSOLE_TRACE_URL: http://${OSF_HOST:-127.0.0.1}:${JAEGER_PORT:-16686}/trace/{traceId}

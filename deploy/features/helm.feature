@@ -107,3 +107,14 @@ Feature: The Helm chart installs a complete factory on Kubernetes with one comma
     And the deployment "console" sets "OSF_OPENBAO_ADDR" and "OSF_OPENBAO_MOUNT" to the values, "CONSOLE_SECRETS_ADAPTER" to "secrets-openbao", and "OSF_OPENBAO_TOKEN" from the key "console-token" of the Secret "osf-openbao"
     And the deployment "foreman" sets "OSF_OPENBAO_ADDR" and "OSF_OPENBAO_MOUNT" to the values, "FOREMAN_SECRETS" to the adapter "secrets-openbao" for "openbao", and "OSF_OPENBAO_TOKEN" from the key "egress-token" of the Secret "osf-openbao"
     And no manifest of the chart is an OpenBao server or a Secret with a key of OpenBao's tokens
+
+  @id=SCN-DIST-045 @status=implemented
+  Scenario: The chart reads the factory from its repository on a forge with the token "factory-token", and the console proposes changes to it
+    Given a kind cluster with the images of the Compose profile
+    And a values file that sets every value under "secrets" with "factoryToken", under "factory" the repository "git+https://github.com/acme/factory.git#main" and the user "github:acme-factory"
+    When the operator runs "helm template osf deploy/helm/osf --values values.yaml"
+    Then the command exits with code 0
+    And the deployment "foreman" sets "FOREMAN_FACTORY" to the repository and "FOREMAN_FACTORY_TOKEN" from the key "factory-token" of the chart's Secret, and has no init container that commits the chart's files
+    And the deployments "gatekeeper" and "console" clone the repository with "FACTORY_TOKEN" from that key into their volume "factory-source" in the init container "factory-repo", which runs the profile's "factory-repo.sh"
+    And the deployment "console" sets "CONSOLE_FACTORY_REPOSITORY" to the repository, "CONSOLE_FACTORY_USER" to the user, "CONSOLE_FACTORY_TOKEN" from that key and "CONSOLE_FACTORY_COMMAND" to "factory"
+    And the chart renders no ConfigMap of the reference factory

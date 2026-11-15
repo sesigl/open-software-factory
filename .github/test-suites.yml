@@ -57,6 +57,8 @@
 # namespace of its own on kind, which gets the images of the chart first (ADR 0075).
 - suite: deploy
   filter: "@opensoftware/deploy"
+  # SCN-DIST-043 clones a private factory repository on the testkit's Forgejo (ADR 0150).
+  images: forge
   # kind with agent-sandbox: the chart's foreman starts the agents' sandboxes with the kubernetes adapter.
   kind: true
   kind-images: true

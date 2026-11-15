@@ -39,9 +39,9 @@ const run = <T>(forge: ChangeForge, command: string, args: string[], read: (stdo
     FORGE_TOKEN: forge.token,
   });
 
-/** The names of the checks that the branch requires. */
-export const requiredChecks = (forge: ChangeForge, branch: string) =>
-  run(forge, "rules", [branch], (stdout) => first<{ checks: string[] }>(stdout).checks);
+/** The names of the checks and the number of approvals that the branch requires. */
+export const branchRules = (forge: ChangeForge, branch: string) =>
+  run(forge, "rules", [branch], (stdout) => first<{ checks: string[]; approvals: number }>(stdout));
 
 /**
  * The newest 50 pull requests of the repository, open and closed. Not with "--head": a forge that deleted the branch

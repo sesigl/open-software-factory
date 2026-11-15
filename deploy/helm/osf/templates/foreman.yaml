@@ -58,9 +58,11 @@ spec:
               value: {{ include "osf.temporalAddress" . | quote }}
             - name: NAMESPACE
               value: {{ .Values.temporalNamespace | quote }}
+        {{- if not .Values.factory.repository }}
         # foreman reads a run's factory version from Git: the files go into a repository with a fixed author and
         # date, so equal files give the same commit after every restart. The repository is a folder that the pod's
-        # user creates: Git refuses the root of the volume, which belongs to root.
+        # user creates: Git refuses the root of the volume, which belongs to root. With factory.repository foreman
+        # fetches that repository itself at each run.
         - name: factory
           image: {{ include "osf.image" (dict "root" . "name" "foreman" "tag" .Values.images.foreman) }}
           imagePullPolicy: {{ .Values.images.pullPolicy }}
@@ -94,6 +96,7 @@ spec:
               readOnly: true
             - name: factory
               mountPath: /factory
+        {{- end }}
       containers:
         - name: foreman
           image: {{ include "osf.image" (dict "root" . "name" "foreman" "tag" .Values.images.foreman) }}
@@ -110,8 +113,15 @@ spec:
                   optional: true
             - name: OSF_DATA
               value: /home/node/data
+            {{- with .Values.factory.repository }}
+            # The factory's repository, fetched at each run (ADR 0124, ADR 0150).
+            - name: FOREMAN_FACTORY
+              value: {{ . | quote }}
+            {{- include "osf.factoryTokenEnv" (dict "root" $ "name" "FOREMAN_FACTORY_TOKEN") | nindent 12 }}
+            {{- else }}
             - name: FOREMAN_FACTORY
               value: /factory/repo/factory.yaml
+            {{- end }}
             - name: FOREMAN_TEMPORAL_ADDRESS
               value: {{ include "osf.temporalAddress" . | quote }}
             - name: FOREMAN_TEMPORAL_NAMESPACE

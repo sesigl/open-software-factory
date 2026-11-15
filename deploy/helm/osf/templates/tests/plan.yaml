@@ -12,6 +12,9 @@ spec:
   restartPolicy: Never
   {{- include "osf.podSecurity" . | nindent 2 }}
   initContainers:
+    {{- if .Values.factory.repository }}
+    {{- include "osf.factoryClone" (dict "root" . "image" (include "osf.image" (dict "root" . "name" "factory-spec" "tag" .Values.images.factorySpec)) "volume" "factory" "folder" "/factory") | nindent 4 }}
+    {{- else }}
     - name: factory
       image: {{ include "osf.image" (dict "root" . "name" "factory-spec" "tag" .Values.images.factorySpec) }}
       imagePullPolicy: {{ .Values.images.pullPolicy }}
@@ -24,6 +27,7 @@ spec:
           readOnly: true
         - name: factory
           mountPath: /factory
+    {{- end }}
   containers:
     - name: plan
       image: {{ include "osf.image" (dict "root" . "name" "factory-spec" "tag" .Values.images.factorySpec) }}

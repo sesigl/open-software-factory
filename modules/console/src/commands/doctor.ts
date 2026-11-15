@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { accessFile } from "../adapters/access.ts";
 import { type Api, probe } from "../adapters/apis.ts";
+import { branchRules } from "../adapters/changes.ts";
 import {
   callRoute,
   initializeHarness,
@@ -24,6 +25,7 @@ import {
   type Item,
   type PingOutcome,
   report,
+  repositoryItems,
   routeItem,
   routesOf,
   type Server,
@@ -131,6 +133,20 @@ async function signInItems(env: Env, factory: string): Promise<Item[]> {
   return items;
 }
 
+/**
+ * With CONSOLE_FACTORY_REPOSITORY (ADR 0150): the fetch of the newest commit with the token and the rules of the main
+ * branch, at the same time.
+ */
+async function repository(env: Env): Promise<Item[]> {
+  if (!env.CONSOLE_FACTORY_REPOSITORY) return [];
+  // The flow of the changes loads only for a factory on a forge, with the pages it renders.
+  const { FORGE_ADAPTER, factoryRepositoryOf } = await import("./changes.ts");
+  const adapter = { command: env.CONSOLE_FORGE_ADAPTER || FORGE_ADAPTER, url: env.CONSOLE_FORGE_URL || undefined };
+  const found = factoryRepositoryOf(env, adapter) as NonNullable<ReturnType<typeof factoryRepositoryOf>>;
+  const [fetched, rules] = await Promise.all([found.fetch(), branchRules(found.forge, found.branch)]);
+  return repositoryItems(found.forge.repository, found.branch, fetched, rules);
+}
+
 /** The checks of the secret store, through the secrets port's adapter's `probe` and `list` (ADR 0137). */
 async function secrets(env: Env, declared: Declared[]): Promise<Item[]> {
   const command = env.CONSOLE_SECRETS_ADAPTER || "npx -y @opensoftware/secrets-openbao";
@@ -167,6 +183,7 @@ export async function examine(env: Env, deep = false): Promise<Item[]> {
   } catch (failure) {
     items.push({ name: "factory", ok: false, detail: `${(failure as Error).message}: check CONSOLE_FACTORY` });
   }
+  items.push(...(await repository(env)));
   if (env.CONSOLE_GROUPS) items.push(groups(env.CONSOLE_GROUPS));
   if (env.CONSOLE_SIGN_IN) items.push(...(await signInItems(env, factory)));
   // Only a factory that declares a secret of OpenBao needs the store (ADR 0137).

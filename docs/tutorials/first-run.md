@@ -98,4 +98,7 @@ the run, its stages and its gates; the first gate asks the people of your `group
 
 - Change the prompts, the policy and the stages in `team/factory/`; each `osf up` commits the folder, so a run's
   factory version is a commit. See [Your factory](../../deploy/README.md#your-factory).
+- Let people change the factory from the console's page "Changes": push `team/factory/` to a repository on GitHub or
+  Forgejo and set `FACTORY_REPOSITORY`, as [A factory on a forge](../../deploy/README.md#a-factory-on-a-forge) says;
+  `osf up` names what that still needs.
 - Stop the factory with `docker compose down` in `deploy/compose/`; the volumes keep its data.

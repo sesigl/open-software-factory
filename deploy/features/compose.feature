@@ -221,3 +221,37 @@ Feature: The Compose profile installs a complete factory with one command
     And a sandbox that the service "foreman" creates with the egress allowlist "host.docker.internal" and "LINEAR_TOKEN" from "ref:openbao/linear-token" sends "Authorization: Bearer" and the value to the API at "host.docker.internal"
     And the audit log on the volume "openbao" names the read of "secret/data/linear-token" and does not hold the value
     And while the profile runs and nobody calls OpenBao for 5 seconds, its audit log gets no entry: the health check, every second, asks "sys/health", which OpenBao does not audit
+
+  @id=SCN-DIST-042 @status=implemented
+  Scenario: The reference factory's workflows post the check "factory" from "factory lint" and "factory plan --check", and both pass on the reference factory
+    Given the Compose profile with every value of ".env.example" set in ".env"
+    When the operator reads the workflows "factory" of the reference factory in ".github/workflows/" and ".forgejo/workflows/"
+    Then each runs on pull requests and on pushes to the branch "main"
+    And the job of GitHub's is named "factory", which is the name of its check
+    And the job of Forgejo's posts the commit status "factory" with "forge-forgejo check": "pending" first, then "success" or "failure"
+    And each runs "factory lint" and "factory plan --check" with "@opensoftware/factory-spec" at the version that the profile's service "factory" pins
+    And "docker compose run --rm factory lint" and "docker compose run --rm factory plan --check" exit with code 0 on the reference factory
+
+  @id=SCN-DIST-043 @status=implemented
+  Scenario: With "FACTORY_REPOSITORY", the service factory-repo clones the factory's private repository on a forge at each start, with "FACTORY_TOKEN"
+    Given a private repository "tester/factory" on the forge with the reference factory, which the containers reach as "host.docker.internal"
+    And the Compose profile with every value of ".env.example" set in ".env", "FACTORY_REPOSITORY" set to "git+<the forge>/tester/factory.git#main" and "FACTORY_TOKEN" to a token of the forge
+    When the operator runs "docker compose run --rm factory-repo"
+    Then the command exits with code 0
+    And the volume "factory" holds the newest commit of "main" with the repository's "factory.yaml" and "policy/spec.rego"
+    And no file of the volume "factory" holds the token
+    When a person commits a new "groups.json" on "main" and the operator runs "docker compose run --rm factory-repo" again
+    Then the volume "factory" holds that commit and its "groups.json"
+    When the operator runs "docker compose run --rm factory-repo" with an empty "FACTORY_TOKEN"
+    Then the command exits with code 1
+    And it prints "factory-repo: cannot clone main of <the forge>/tester/factory.git" and "check FACTORY_REPOSITORY and FACTORY_TOKEN"
+    And the volume "factory" still holds that commit
+
+  @id=SCN-DIST-044 @status=implemented
+  Scenario: With "FACTORY_REPOSITORY" on Forgejo, the foreman and the console read the factory from the repository with the one token, and the console edits it with the factory-spec of its image
+    Given the Compose profile with every value of ".env.example" set in ".env", and "FACTORY_REPOSITORY", "FACTORY_TOKEN", "FACTORY_USER", "FACTORY_FORGE_ADAPTER" and "FACTORY_FORGE_URL" set for a repository on Forgejo
+    When the operator runs "docker compose config --format json"
+    Then the service "foreman" sets "FOREMAN_FACTORY" to the repository and "FOREMAN_FACTORY_TOKEN" to the token
+    And the service "console" sets "CONSOLE_FACTORY_REPOSITORY", "CONSOLE_FACTORY_TOKEN", "CONSOLE_FACTORY_USER", "CONSOLE_FORGE_ADAPTER" and "CONSOLE_FORGE_URL" to the values, and "CONSOLE_FACTORY_COMMAND" to "factory"
+    And no service but "factory-repo", "foreman" and "console" gets the token
+    And "factory --help" runs in the service "console" and names the command "edit"

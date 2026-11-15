@@ -246,3 +246,33 @@ Feature: Health
     When the user runs "console doctor"
     Then the command exits with code 1
     And it prints "FAIL  access: <access file>: no person has the role admin: check CONSOLE_ACCESS"
+
+  @id=SCN-CONSOLE-241 @status=implemented
+  Scenario: "console doctor" fetches the private factory repository with its token and finds the check "factory" required on its main branch
+    Given a private factory repository "tester/factory" on the forge whose branch "main" requires the check "factory" and no approval, and a console with "CONSOLE_FACTORY_REPOSITORY", "CONSOLE_FACTORY_TOKEN" and "CONSOLE_FACTORY_USER" for it
+    When the user runs "console doctor"
+    Then the command exits with code 0
+    And it prints "ok    factory repository" and "ok    factory check"
+
+  @id=SCN-CONSOLE-242 @status=implemented
+  Scenario: "console doctor" names the settings when the factory repository does not answer
+    Given a console whose "CONSOLE_FACTORY_REPOSITORY" and "CONSOLE_FORGE_URL" name "http://127.0.0.1:9", where nothing listens
+    When the user runs "console doctor"
+    Then the command exits with code 1
+    And it prints "FAIL  factory repository: cannot fetch main of http://127.0.0.1:9/tester/factory.git: <Git's message>: check CONSOLE_FACTORY_REPOSITORY and CONSOLE_FACTORY_TOKEN"
+    And it prints "FAIL  factory check: <the forge adapter's error>: check that CONSOLE_FACTORY_TOKEN may read the rules of main, and CONSOLE_FORGE_ADAPTER and CONSOLE_FORGE_URL"
+
+  @id=SCN-CONSOLE-243 @status=implemented
+  Scenario: "console doctor" fails when the main branch of the factory repository does not require the check "factory"
+    Given a factory repository "tester/factory" on the forge whose branch "main" has no rules, and a console for it
+    When the user runs "console doctor"
+    Then the command exits with code 1
+    And it prints "ok    factory repository"
+    And it prints "FAIL  factory check: the branch main of tester/factory does not require the check factory, so the console refuses every change: require the check factory on main, with no approval"
+
+  @id=SCN-CONSOLE-244 @status=implemented
+  Scenario: "console doctor" fails when the main branch of the factory repository requires an approval
+    Given a factory repository "tester/factory" on the forge whose branch "main" requires the check "factory" and one approval, and a console for it
+    When the user runs "console doctor"
+    Then the command exits with code 1
+    And it prints "FAIL  factory check: the branch main of tester/factory requires an approval, which the user of CONSOLE_FACTORY_TOKEN cannot give to its own pull request, so no change merges: require only the check factory on main"
