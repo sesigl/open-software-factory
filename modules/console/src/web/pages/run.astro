@@ -1,0 +1,138 @@
+---
+import Shell from "@opensoftware/ui/components/Shell.astro";
+import type { RunData } from "../../pages/run.ts";
+
+const {
+  shell,
+  runId,
+  title,
+  attempt,
+  state,
+  stateClass,
+  factory,
+  version,
+  age,
+  pullRequest,
+  trace,
+  history,
+  retry,
+  signals,
+  requests,
+  stages,
+  actions,
+} = Astro.locals.page as RunData;
+Astro.response.status = Astro.locals.status;
+Astro.response.statusText = Astro.locals.statusText;
+---
+<Shell shell={shell}>
+  <div class="osf-intro">
+    <p class="osf-crumbs"><a href="/">Runs</a> / <span class="osf-mono">{runId}</span></p>
+    <h1>{title}</h1>
+  </div>
+  <dl class="osf-facts">
+    <div><dt>Run</dt><dd class="osf-mono">{runId}</dd></div>
+    {attempt && (
+      <div><dt>Attempt</dt><dd>Attempt {attempt.number}, after <a class="osf-mono" href={attempt.before.href}>{attempt.before.runId}</a></dd></div>
+    )}
+    <div><dt>State</dt><dd><span class={stateClass}>{state}</span></dd></div>
+    <div><dt>Factory</dt><dd>{factory} at <span class="osf-mono">{version}</span></dd></div>
+    <div><dt>Age</dt><dd class="osf-mono">{age}</dd></div>
+    <div><dt>Pull request</dt><dd>{pullRequest.href ? <a class="osf-mono" href={pullRequest.href}>{pullRequest.text}</a> : pullRequest.text}</dd></div>
+    <div><dt>Trace</dt><dd>{trace.href ? <a href={trace.href}>{trace.text}</a> : trace.text}</dd></div>
+    <div><dt>History</dt><dd>{history.href ? <a href={history.href}>{history.text}</a> : history.text}</dd></div>
+  </dl>
+  <div class="osf-buttons osf-toolbar">
+    {retry && (
+      <form method="post" action={retry}>
+        <button type="submit" class="osf-action">Run again</button>
+      </form>
+    )}
+    {signals && (
+      <form class="osf-inline" method="post" action={signals.action}>
+        <input type="hidden" name="type" value="steer" />
+        <label>Steer <input class="osf-input" name="message" type="text" required autocomplete="off" /></label>
+        <button type="submit" class="osf-button">Steer</button>
+      </form>
+    )}
+    {signals && (
+      <Fragment>
+        {signals.takeOver && (
+          <form method="post" action={signals.action}>
+            <input type="hidden" name="type" value="take-over" />
+            <button type="submit" class="osf-button">Take over</button>
+          </form>
+        )}
+        {signals.handBack && (
+          <form method="post" action={signals.action}>
+            <input type="hidden" name="type" value="hand-back" />
+            <button type="submit" class="osf-button">Hand back</button>
+          </form>
+        )}
+        <form method="post" action={signals.action}>
+          <input type="hidden" name="type" value="cancel" />
+          <button type="submit" class="osf-button">Cancel</button>
+        </form>
+      </Fragment>
+    )}
+  </div>
+  <section class="osf-section" aria-labelledby="origin">
+    <h2 id="origin">Origin</h2>
+    <ul class="osf-list">
+      {requests.map((request) => (
+        <li><span>{request.origin.href ? <a href={request.origin.href}>{request.origin.text}</a> : request.origin.text} asked by {request.requester}</span></li>
+      ))}
+    </ul>
+  </section>
+  <section class="osf-section" aria-labelledby="evidence">
+    <h2 id="evidence">Evidence</h2>
+    <table class="osf-table osf-cards">
+      <thead>
+        <tr>
+          <th scope="col">Stage</th>
+          <th scope="col">Agent</th>
+          <th scope="col">State</th>
+          <th scope="col">Transcript</th>
+          <th scope="col">Gate</th>
+          <th scope="col">Checks</th>
+          <th scope="col">Reason</th>
+        </tr>
+      </thead>
+      <tbody>
+        {stages.map((stage) => (
+          <tr>
+            <td class="osf-card-name osf-mono">{stage.name.href ? <a href={stage.name.href}>{stage.name.text}</a> : stage.name.text}</td>
+            <td class="osf-mono">{stage.agent}</td>
+            <td class="osf-card-state"><span class={stage.stateClass}>{stage.state}</span></td>
+            <td class="osf-mono">{stage.transcript.href ? <a href={stage.transcript.href}>{stage.transcript.text}</a> : stage.transcript.text}</td>
+            <td class="osf-card-wide">
+              <span class="osf-mono">{stage.gate}</span>
+              {stage.decide && (
+                <div class="osf-buttons">
+                  <form method="post" action={stage.decide}>
+                    <input type="hidden" name="decision" value="approved" />
+                    <button type="submit" class="osf-action">Approve</button>
+                  </form>
+                  <form class="osf-inline" method="post" action={stage.decide}>
+                    <input type="hidden" name="decision" value="rejected" />
+                    <label>Reason <input class="osf-input" name="reason" type="text" autocomplete="off" /></label>
+                    <button type="submit" class="osf-button">Reject</button>
+                  </form>
+                </div>
+              )}
+            </td>
+            <td class="osf-card-wide osf-mono">{stage.checks}</td>
+            <td class="osf-card-wide">{stage.reason}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+  {actions && (
+    <section class="osf-section" aria-labelledby="actions">
+      <h2 id="actions">Actions</h2>
+      <ul class="osf-list">
+        {actions.map((action) => <li>{action}</li>)}
+      </ul>
+    </section>
+  )}
+</Shell>

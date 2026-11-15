@@ -57,17 +57,19 @@ The runs page `/` has the new look of the design system ([ADR 0133](../../docs/d
 navigation column with the factory's name, only the pages that work in this console (the runs with a count of those
 that wait for a person, then the "Classic pages" in the old look and the dashboards), and the account with the
 signed-in person, "Sign out" and the link to the other theme. On a phone the navigation folds behind "Menu", each
-run is a card, and "Submit work" stays at the bottom of the screen. The theme
+run is a card, and "Submit work" stays at the bottom of the screen. The page of a run `/runs/<runId>` has the new
+look too: its facts below its title, its forms below them, and its stages as a table whose rows are cards on a phone; a
+run that no foreman knows, and a form of the page that a module refuses, answer with a problem in the same shell. The theme
 is dark unless the cookie `osf_theme` says light; `/theme?to=light&next=<path>` sets it and returns to the page. The
 secrets, skills and changes pages have the new look too, and its navigation links Secrets for an admin and a factory engineer, Skills for
 everyone and Changes with `CONSOLE_FACTORY_REPOSITORY`.
 The other pages keep the old look until they move one at a time.
 
-Every page links the runs, the work items (with `CONSOLE_INTAKE_URL`), the factory, the health page and the dashboards in `CONSOLE_LINKS`. The runs pages reload themselves every
+Every page links the runs, the work items (with `CONSOLE_INTAKE_URL`), the factory, the health page and the dashboards in `CONSOLE_LINKS`. The runs pages and the page of a run reload themselves every
 `CONSOLE_REFRESH` seconds. Without `CONSOLE_USER_HEADER` the console is read-only: it has no forms, and any method but
 `GET` and `HEAD` answers 405. It shows what the foreman and intake show, so run it behind your sign-in proxy, such as
 oauth2-proxy. Every answer carries a Content-Security-Policy that allows only the console's own files and no script.
-The pages render on the server; the health page was the first that Astro renders, the runs page the second ([ADR 0132](../../docs/decisions/0132-astro-in-the-console.md)),
+The pages render on the server; the health page was the first that Astro renders, the runs page the second ([ADR 0132](../../docs/decisions/0132-astro-in-the-console.md)), the page of a run among the later ones,
 the others follow one at a time with the same URLs.
 
 Actions ([ADR 0089](../../docs/decisions/0089-console-actions.md)): set `CONSOLE_USER_HEADER` to the header in which
@@ -639,3 +641,6 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-244 | implemented | "console doctor" fails when the main branch of the factory repository requires an approval |
 | SCN-CONSOLE-245 | implemented | The buttons of a failed change read well in Chromium and pass the accessibility checks |
 | SCN-CONSOLE-246 | implemented | On a phone the runs are cards and "Submit work" stays at the bottom of the screen (journey) |
+| SCN-CONSOLE-247 | implemented | The run page is in the shell of the new look, offers a read-only console no form and reloads itself |
+| SCN-CONSOLE-248 | implemented | A signal the foreman refuses shows the foreman's problem in the shell of the new look |
+| SCN-CONSOLE-249 | implemented | On a phone a person rejects a run's gate with a reason from the run page (journey) |

@@ -70,6 +70,13 @@ The plan was reviewed after the mock-ups were drawn. Where they differ, `TODO.md
   row of the runs' table laid out by `osf-cards`, so a screen reader still reads a table: the state and the age on
   top, the title, then the factory, the source, the requester and the pull request without dots between them. The
   title's link covers the card. The filters scroll in one line, and "Submit work" (`osf-dock`) stays at the bottom.
+- **The run page** (T-60) has no mock-up; it is built from the parts of the others. Below the way back and the title,
+  its facts sit on one panel (`osf-facts`), its forms in one row below them (`osf-toolbar`), the field of "Steer" and
+  of a gate's reason in one line with its button (`osf-inline`), then the panels Origin, Evidence and Actions. The
+  evidence is a table whose rows are cards on a phone, with the stage's state above its name and a gate's forms across
+  the card. "Run again" and a pending gate's "Approve" are the main action; the other forms have no colour. A run that
+  no foreman knows, and a form that a module refuses, show a problem in the same shell: its title and the reason in an
+  alert. The journey SCN-CONSOLE-249 keeps the phone's screenshot.
 - **States the mock-ups do not show:** an empty list, a server that does not answer, a form with a wrong value, the
   light theme of a whole page. The page that needs one adds it in the same language and adds a mock-up or a
   screenshot here.

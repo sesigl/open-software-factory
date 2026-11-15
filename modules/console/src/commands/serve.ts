@@ -31,7 +31,8 @@ import { healthData } from "../pages/health.ts";
 import { type Frame, page, problem } from "../pages/html.ts";
 import { improvementPage } from "../pages/improvement.ts";
 import { inboxPage } from "../pages/inbox.ts";
-import { runPage } from "../pages/run.ts";
+import { problemData } from "../pages/problem.ts";
+import { runData } from "../pages/run.ts";
 import { runsData, waitingOf } from "../pages/runs.ts";
 import { shellData } from "../pages/shell.ts";
 import { workPage } from "../pages/work.ts";
@@ -216,20 +217,30 @@ export async function serve(env: Env) {
     );
   });
 
+  /** A problem of a run's page or of its forms, in the new look, with the way back to the runs. */
+  const runProblem = (request: FastifyRequest, reply: FastifyReply, status: number, title: string, detail: string) =>
+    render(
+      request,
+      reply,
+      status,
+      problemData(shellOf(request, { title, current: "/" }), title, detail, { href: "/", text: "Runs" }),
+      "problem",
+    );
+
   /** The run and the foreman that knows it, or the answer 404. */
-  const findRun = async (runId: string, reply: FastifyReply) => {
+  const findRun = async (runId: string, request: FastifyRequest, reply: FastifyReply) => {
     const answers = await Promise.all(
       sources.map((api) => getJson<RunView>(api, `/v1/runs/${encodeURIComponent(runId)}`)),
     );
     const index = answers.findIndex((answer) => answer.ok);
     const found = answers[index];
-    if (!found?.ok) return { missing: send(reply, 404, { title: runId }, problem("Not found", `no run ${runId}`)) };
+    if (!found?.ok) return { missing: runProblem(request, reply, 404, "Not found", `no run ${runId}`) };
     return { run: found.body, api: sources[index] as Api };
   };
 
   app.get<{ Params: { runId: string } }>("/runs/:runId", async (request, reply) => {
     const { runId } = request.params;
-    const { run, missing } = await findRun(runId, reply);
+    const { run, missing } = await findRun(runId, request, reply);
     if (!run) return missing;
     const workItem = intake ? await getJson<WorkItemView>(intake, `/v1/work-items/${run.workItem.id}`) : undefined;
     const own: WorkRequest = {
@@ -257,12 +268,9 @@ export async function serve(env: Env) {
       span: (spanId: string) =>
         env.CONSOLE_SPAN_URL && run.traceId ? fill(env.CONSOLE_SPAN_URL, { traceId: run.traceId, spanId }) : undefined,
     };
-    return send(
-      reply,
-      200,
-      { title: run.workItem.title, refresh },
-      runPage(run, requests, gates, runLinks, now(), actions, Boolean(gatekeeper)),
-    );
+    const shell = shellOf(request, { title: run.workItem.title, current: "/", refresh });
+    const data = runData(shell, run, requests, gates, runLinks, now(), { actions, decides: Boolean(gatekeeper) });
+    return render(request, reply, 200, data, "run");
   });
 
   app.get("/factory", async (_request, reply) => {
@@ -391,13 +399,13 @@ export async function serve(env: Env) {
       const { runId } = request.params;
       const { person, refused } = signedIn(request, reply, runId);
       if (refused) return refused;
-      const { api, missing } = await findRun(runId, reply);
+      const { api, missing } = await findRun(runId, request, reply);
       if (!api) return missing;
       const retry: RunRetry = { by: { kind: "person", id: person } };
       const answer = await postJson<RunView>(api, `/v1/runs/${encodeURIComponent(runId)}/retry`, retry);
       if (answer.ok) return reply.code(303).header("location", `/runs/${answer.body.runId}`).send();
       const detail = answer.detail ?? answer.note;
-      return send(reply, answer.status || 502, { title: runId }, problem("Not run again", detail));
+      return runProblem(request, reply, answer.status || 502, "Not run again", detail);
     });
   }
 
@@ -409,13 +417,13 @@ export async function serve(env: Env) {
         const { runId } = request.params;
         const { person, refused } = signedIn(request, reply, runId);
         if (refused) return refused;
-        const { api, missing } = await findRun(runId, reply);
+        const { api, missing } = await findRun(runId, request, reply);
         if (!api) return missing;
         const { type, message } = request.body ?? {};
         const signal = { type, ...(message ? { message } : {}), by: { kind: "person", id: person } } as RunSignal;
         const answer = await postJson<RunView>(api, `/v1/runs/${encodeURIComponent(runId)}/signals`, signal);
         if (answer.ok) return reply.code(303).header("location", `/runs/${runId}`).send();
-        return send(reply, answer.status || 502, { title: runId }, problem("Not sent", answer.detail ?? answer.note));
+        return runProblem(request, reply, answer.status || 502, "Not sent", answer.detail ?? answer.note);
       },
     );
   }
@@ -436,12 +444,7 @@ export async function serve(env: Env) {
         const path = `/v1/gates/${encodeURIComponent(gateId)}/decisions`;
         const answer = await postJson<GateView>(gatekeeper, path, body);
         if (answer.ok) return reply.code(303).header("location", `/runs/${runId}`).send();
-        return send(
-          reply,
-          answer.status || 502,
-          { title: runId },
-          problem("Not decided", answer.detail ?? answer.note),
-        );
+        return runProblem(request, reply, answer.status || 502, "Not decided", answer.detail ?? answer.note);
       },
     );
   }

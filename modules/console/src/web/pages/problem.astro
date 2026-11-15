@@ -1,0 +1,15 @@
+---
+import Shell from "@opensoftware/ui/components/Shell.astro";
+import type { ProblemData } from "../../pages/problem.ts";
+
+const { shell, title, detail, back } = Astro.locals.page as ProblemData;
+Astro.response.status = Astro.locals.status;
+Astro.response.statusText = Astro.locals.statusText;
+---
+<Shell shell={shell}>
+  <div class="osf-intro">
+    <p class="osf-crumbs"><a href={back.href}>{back.text}</a></p>
+    <h1>{title}</h1>
+  </div>
+  <p role="alert" class="osf-alert">{detail}</p>
+</Shell>

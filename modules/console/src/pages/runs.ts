@@ -33,9 +33,10 @@ export interface RunsData {
   next?: string;
 }
 
-const linkOf = (url: string | undefined): RunRow["pullRequest"] => {
+/** A link with this text to an http or https URL; any other URL, such as "javascript:", gives the text, no URL a dash. */
+export const linkOf = (url: string | undefined, text = url): { href?: string; text: string } => {
   if (!url) return { text: "—" };
-  return /^https?:\/\//i.test(url) ? { href: url, text: url } : { text: url };
+  return /^https?:\/\//i.test(url) ? { href: url, text: text as string } : { text: text as string };
 };
 
 const rowOf = (run: RunView, now: number): RunRow => ({
