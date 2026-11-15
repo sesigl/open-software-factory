@@ -573,3 +573,7 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-223 | implemented | The console does not start with a factory repository and without "CONSOLE_FACTORY_USER" |
 | SCN-CONSOLE-224 | implemented | The form takes only an agent's name, so no text of it reaches a branch name or a title |
 | SCN-CONSOLE-225 | implemented | The form "Declare a secrets provider" opens a change for a name and a range, and names a range it refused |
+| SCN-CONSOLE-226 | implemented | The page says in a sentence what each edit changes |
+| SCN-CONSOLE-227 | implemented | The form names an unknown edit, a missing agent and each value that is no skill folder, secret reference, provider's name or range |
+| SCN-CONSOLE-228 | implemented | With a forge that does not answer, "/changes" says that the changes could not be listed and still offers every edit |
+| SCN-CONSOLE-229 | implemented | A value of each kind that the form takes passes its checks, with spaces around it too |

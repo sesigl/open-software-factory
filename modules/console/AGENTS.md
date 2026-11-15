@@ -81,11 +81,15 @@ which stays until live updates replace it (`TODO.md`, T-60).
 
 ## Budget
 
-- System tests: 230 seconds in total on the CI runner (174 scenarios). Raised from 120 seconds on 15 November 2026
-  with the changes of the factory (T-58, ADR 0144): their 20 scenarios run against Forgejo (`fakes.forge`), which the
-  console fetches with Git, as the TODO asks, since `fakes.github` holds no Git repository.
-  - Measured in CI on a runner whose benchmark took the reference time (slowdown 1): 210.3 seconds, of which the 154
-    scenarios before took 105.1 and the 20 of a change 105.2, 5.3 each. The budget is that measure and 9 %.
+- System tests: 250 seconds in total on the CI runner (178 scenarios). Raised from 120 seconds on 15 November 2026
+  with the changes of the factory (T-58, ADR 0144): 21 of their 24 scenarios open or read changes on Forgejo
+  (`fakes.forge`), which the console fetches with Git, as the TODO asks, since `fakes.github` holds no Git repository.
+  - Measured in CI on a runner whose benchmark took the reference time (slowdown 1): 210.3 seconds for the first 174
+    scenarios, of which the 154 before took 105.1 and the 20 of a change 105.2, 5.3 each.
+  - Four scenarios came after that run, from its mutation result: one reads six pull requests from Forgejo, three
+    send forms that need no forge. Here they take 15.8 seconds next to 153.1 for the other 174, so about 22 seconds
+    at CI's ratio and 232 for the suite. The budget is that and 8 %; set it to the next CI measure of this suite
+    with the next change of the console.
   - Where the time of a change goes: Forgejo starts once per worker, 5 to 7 seconds in the first such scenario of the
     worker; a change is one fetch, one run of `factory edit` and about ten runs of the forge adapter, each a start of
     Node; the scenario of a conflict takes about 18 seconds, 10 of them in forge-forgejo's `pr`. Forgejo finds

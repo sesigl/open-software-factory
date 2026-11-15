@@ -58,8 +58,6 @@ const VALUES: Record<EditName, { valid: (value: string) => boolean; what: string
 
 const isEdit = (name: string): name is EditName => (EDITS as readonly string[]).includes(name);
 
-const article = (what: string) => (/^[aeiou]/.test(what) ? "an" : "a");
-
 /** Checks the three words of an edit: the edit, the agent or the provider's name, and the value. */
 export function checkEdit(edit: string, target: string, value: string): Checked {
   if (!isEdit(edit)) return { ok: false, reason: `${edit || "no edit"} is not an edit: ${EDITS.join(", ")}` };
@@ -70,7 +68,7 @@ export function checkEdit(edit: string, target: string, value: string): Checked 
       reason: `${target || "nothing"} is not ${provider ? "a provider's name, like openbao" : "an agent's name, like triage"}`,
     };
   const { valid, what } = VALUES[edit];
-  if (!valid(value)) return { ok: false, reason: `${value || "nothing"} is not ${article(what)} ${what}` };
+  if (!valid(value)) return { ok: false, reason: `${value || "nothing"} is not a ${what}` };
   return { ok: true, edit: { edit, target, value } };
 }
 

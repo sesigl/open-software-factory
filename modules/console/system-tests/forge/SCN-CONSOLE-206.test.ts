@@ -47,8 +47,13 @@ scenario("SCN-CONSOLE-206", async ({ sut, fakes, given, when, then }) => {
       ]);
       head = pulls[0]?.head ?? "";
       expect(head).toMatch(new RegExp(`^console/add-egress-triage-${main.slice(0, 7)}-[0-9a-f]{8}$`));
-      expect(pulls[0]?.body).toContain("grace@acme.dev asked for this change of the factory in the console.");
-      expect(pulls[0]?.body).toContain("The agent `triage` may reach the host `api.linear.app`.");
+      expect(pulls[0]?.body.trimEnd().split("\n")).toEqual([
+        "The agent `triage` may reach the host `api.linear.app`.",
+        "",
+        "grace@acme.dev asked for this change of the factory in the console.",
+        "",
+        "The forge merges it into `main` when the check `factory` passes. A run keeps the factory version it started with, so the change is live for the next run.",
+      ]);
     },
   );
 

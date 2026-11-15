@@ -65,6 +65,26 @@ export async function commitOnMain(forge: Forge, files: Record<string, string>):
   await api(forge, "POST", "/contents", { branch: "main", message: "a commit of another person", files: operations });
 }
 
+/**
+ * A pull request with this title that the console's user "tester" opened from the branch: the factory.yaml of "main"
+ * with the host added, as an earlier change of the console left it on the forge.
+ */
+export async function pullRequestOf(forge: Forge, title: string, branch: string, host: string): Promise<void> {
+  const known = await fetch(`${forge.url}/api/v1/repos/${REPOSITORY}/contents/factory.yaml?ref=main`, {
+    headers: { authorization: `token ${forge.token}` },
+  });
+  const { sha } = (await known.json()) as { sha: string };
+  const content = Buffer.from(withHost(FACTORY, host)).toString("base64");
+  await api(forge, "PUT", "/contents/factory.yaml", {
+    branch: "main",
+    new_branch: branch,
+    sha,
+    content,
+    message: title,
+  });
+  await api(forge, "POST", "/pulls", { head: branch, base: "main", title });
+}
+
 /** The head commit of the branch, or undefined when the repository has no such branch. */
 export const headOf = async (forge: Forge, branch: string): Promise<string | undefined> =>
   (await forge.branches("factory")).find((each) => each.name === branch)?.sha;

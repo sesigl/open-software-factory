@@ -156,3 +156,36 @@ Feature: Changes
     Then the first form answers 400 and says "Not proposed: ^1 || ^2 is not a range, like ^0"
     And the second answers 303 to "/changes"
     And the forge has one open pull request titled "factory edit add-secrets-provider infisical ^1", whose body says "The factory declares the secrets provider `infisical` at `^1`."
+
+  @id=SCN-CONSOLE-226 @status=implemented
+  Scenario: The page says in a sentence what each edit changes
+    Given a factory repository "tester/factory" and a console behind a sign-in proxy with "grace@acme.dev" as "factory-engineer"
+    And the console's user opened pull requests from "console/" branches with the titles "factory edit add-skill triage ./skills/release-notes", "factory edit remove-skill triage skills/release-notes", "factory edit add-secret triage ref:openbao/linear-token", "factory edit remove-secret triage ref:env/SLACK_TOKEN", "factory edit remove-egress triage api.github.com" and "factory edit add-secrets-provider vault 1"
+    When "grace@acme.dev" opens "/changes"
+    Then the changes read "The agent triage gets the skill ./skills/release-notes.", "The agent triage no longer has the skill skills/release-notes.", "The agent triage gets the secret reference ref:openbao/linear-token.", "The agent triage no longer has the secret reference ref:env/SLACK_TOKEN.", "The agent triage may no longer reach the host api.github.com." and "The factory declares the secrets provider vault at 1."
+
+  @id=SCN-CONSOLE-227 @status=implemented
+  Scenario: The form names an unknown edit, a missing agent and each value that is no skill folder, secret reference, provider's name or range
+    Given a console with a factory repository at "http://127.0.0.1:9/tester/factory.git" that does not answer, and "grace@acme.dev" as "factory-engineer"
+    When "grace@acme.dev" sends the form "Propose change" with the edit "delete-agent", with no edit, and with "add-skill" and no agent
+    And with "add-skill" and each of the values "../outside", "skills/../outside", "!skills/notes" and "skills/notes!"
+    And with "add-secret" and each of the values "linear-token", "xref:openbao/linear-token" and "ref:openbao/linear-token!"
+    And with "add-secrets-provider" and each of the names "Vault", "9vault" and "vault!" at the range "^0", and the name "vault" at the range "latest"
+    Then each form answers 400
+    And the first three say "Not proposed: delete-agent is not an edit: add-skill, remove-skill, add-secret, remove-secret, add-egress, remove-egress, add-secrets-provider", "Not proposed: no edit is not an edit: add-skill, remove-skill, add-secret, remove-secret, add-egress, remove-egress, add-secrets-provider" and "Not proposed: nothing is not an agent's name, like triage"
+    And the others say "Not proposed: <value> is not a skill folder, like skills/release-notes", "Not proposed: <value> is not a secret reference, like ref:openbao/linear-token", "Not proposed: <name> is not a provider's name, like openbao" and "Not proposed: latest is not a range, like ^0"
+    And the console ran no "factory edit"
+
+  @id=SCN-CONSOLE-228 @status=implemented
+  Scenario: With a forge that does not answer, "/changes" says that the changes could not be listed and still offers every edit
+    Given a console with a factory repository at "http://127.0.0.1:9/tester/factory.git" that does not answer, and "grace@acme.dev" as "factory-engineer"
+    When "grace@acme.dev" opens "/changes"
+    Then the page answers 200 with an alert that starts with "The changes could not be listed:"
+    And the form "Propose a change" offers the changes "Add an egress host", "Remove an egress host", "Add a secret reference", "Remove a secret reference", "Add a skill" and "Remove a skill", and the agent "triage"
+
+  @id=SCN-CONSOLE-229 @status=implemented
+  Scenario: A value of each kind that the form takes passes its checks, with spaces around it too
+    Given a console with a factory repository at "http://127.0.0.1:9/tester/factory.git" that does not answer, and "grace@acme.dev" as "factory-engineer"
+    When "grace@acme.dev" sends the form "Propose change" with "add-skill" and "./skills/release-notes", "remove-skill" and "skills/release-notes", "add-secret" and "ref:openbao/linear-token", "remove-secret" and "ref:env/SLACK_TOKEN", "remove-egress" and "api.github.com", "add-secrets-provider" with the name "vault" at the range "1", and " add-egress " with the agent " triage " and the value " api.linear.app "
+    Then each form answers 502 and says "Not proposed: cannot fetch main of http://127.0.0.1:9/tester/factory.git": the console asked the repository, which does not answer
+    And the console ran no "factory edit"
