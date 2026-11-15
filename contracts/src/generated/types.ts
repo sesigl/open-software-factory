@@ -345,6 +345,45 @@ export type components = {
         BlockedOn: "checks";
         /** @description A path inside the bundle: relative, forward slashes, no "..". */
         BundlePath: string;
+        /** @description One skill, also one that lint refuses: then `problems` names why. */
+        CatalogSkill: {
+            /** @description The last segment of the skill's folder. */
+            name: string;
+            /** @description The description of its front matter; null without one. */
+            description: string | null;
+            /** @description Where the skill comes from. */
+            source: components["schemas"]["CatalogSkillSource"];
+            /** @description What it needs, from the `metadata` of its front matter. */
+            needs: components["schemas"]["SkillNeeds"];
+            /** @description Each agent that uses it, sorted by name. */
+            agents: components["schemas"]["CatalogSkillAgent"][];
+            /** @description The files of its folder, by their path below it, sorted. */
+            files: string[];
+            /**
+             * @description The text of SKILL.md below the line that ends its front matter, all of it without front matter; null without a
+             *     SKILL.md that is UTF-8 text.
+             */
+            body: string | null;
+            /**
+             * @description The problems of its own files as `factory lint` prints them, relative to the folder of factory.yaml, and a folder
+             *     without a SKILL.md.
+             */
+            problems: string[];
+        };
+        /** @description An agent that uses a skill. */
+        CatalogSkillAgent: {
+            name: string;
+            /** @description The agent's reference whose variable is each secret the skill needs, by the variable. */
+            secrets: {
+                [key: string]: components["schemas"]["SecretReference"];
+            };
+            /** @description Each needed secret the agent does not declare, and each needed host its sandbox does not allow. */
+            lacks: components["schemas"]["SkillNeeds"];
+        };
+        /** @description A folder of the factory's repository, relative to the folder of factory.yaml, like "skills/release-notes". */
+        CatalogSkillSource: {
+            folder: string;
+        };
         /** @description The name of a check on the forge: a commit status context. */
         CheckName: string;
         /**
@@ -1305,6 +1344,23 @@ export type components = {
         /** @description A reference to a secret, resolved at the egress proxy, never in the sandbox: "ref:<provider>/<name>". */
         SecretReference: string;
         Sha256: string;
+        /**
+         * @description What `factory skills` of factory-spec prints (ADR 0141, ADR 0143): every skill the factory's agents use, read with
+         *     the rules of `factory lint` (ADR 0140), sorted by name. The console reads it for its pages `/skills` and
+         *     `/skills/<name>`, so it never parses a SKILL.md itself.
+         */
+        SkillCatalog: {
+            skills: components["schemas"]["CatalogSkill"][];
+        };
+        /** @description A host as an entry of `sandbox.egress`, like "api.linear.app". */
+        SkillHost: string;
+        /** @description The secrets a skill needs, by the variable that holds each in a sandbox, and the hosts it reaches (ADR 0140). */
+        SkillNeeds: {
+            secrets: components["schemas"]["SkillSecretName"][];
+            hosts: components["schemas"]["SkillHost"][];
+        };
+        /** @description The variable of a secret in a sandbox (ADR 0068), like "LINEAR_TOKEN". */
+        SkillSecretName: string;
         Stage: {
             stage: components["schemas"]["Name"];
             /** @description Agent that runs the stage. Defaults to the agent with the stage's name. */

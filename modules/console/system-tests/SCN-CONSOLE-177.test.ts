@@ -48,8 +48,8 @@ scenario("SCN-CONSOLE-177", async ({ sut, fakes, given, when, then }) => {
   await then(
     'the navigation of "varun@acme.dev" does not link "Secrets", and the navigation of "ada@acme.dev" links "/secrets"',
     async () => {
-      expect(navLinks(runs).map((link) => link.href)).toEqual(["/", "/factory", "/health"]);
-      expect(navLinks(admin).map((link) => link.href)).toEqual(["/", "/secrets", "/factory", "/health"]);
+      expect(navLinks(runs).map((link) => link.href)).toEqual(["/", "/skills", "/factory", "/health"]);
+      expect(navLinks(admin).map((link) => link.href)).toEqual(["/", "/secrets", "/skills", "/factory", "/health"]);
     },
   );
 

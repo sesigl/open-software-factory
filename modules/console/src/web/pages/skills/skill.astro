@@ -1,0 +1,74 @@
+---
+import Shell from "@opensoftware/ui/components/Shell.astro";
+import type { SkillData } from "../../../pages/skills.ts";
+
+const { shell, notes, name, description, source, problems, agents, needsLabel, needs, files, shown, html } = Astro
+  .locals.page as SkillData;
+Astro.response.status = Astro.locals.status;
+Astro.response.statusText = Astro.locals.statusText;
+---
+<Shell shell={shell}>
+  <div class="osf-intro">
+    <p class="osf-crumbs"><a href="/skills">Skills</a> / {name}</p>
+    <h1 class="osf-mono">{name}</h1>
+    <p>{description}</p>
+    <p class="osf-meta">{source}</p>
+  </div>
+  {notes.map((note) => <p role="alert" class="osf-alert">{note}</p>)}
+  {problems.map((problem) => <p role="alert" class="osf-alert">factory lint: {problem}</p>)}
+  <div class="osf-split">
+    <div class="osf-split-side">
+      <section class="osf-section" aria-labelledby="agents">
+        <h2 id="agents">Agents</h2>
+        <ul class="osf-list" aria-label="Agents">
+          {agents.map((agent) => (
+            <li>
+              <div class="osf-list-text">
+                <span class="osf-mono osf-strong">{agent.name}</span>
+                <span class="osf-secondary">{agent.detail}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+      <section class="osf-section" aria-labelledby="needs">
+        <h2 id="needs">This skill needs</h2>
+        {needsLabel ? (
+          <ul class="osf-list" aria-label={needsLabel}>
+            {needs.map((need) => (
+              <li>
+                <div class="osf-list-text">
+                  <span class="osf-secondary">{need.kind}</span>
+                  <span class="osf-mono osf-strong">{need.name}</span>
+                  {need.detail && <span class="osf-secondary">{need.detail}</span>}
+                </div>
+                <div class="osf-list-end">
+                  {need.state && <span class={need.stateClass}>{need.state}</span>}
+                  {need.action && (
+                    <a class="osf-secondary" href={need.action.href}>{need.action.text}<span class="osf-hidden"> {need.name}</span></a>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p class="osf-empty osf-prose">No secret and no host.</p>
+        )}
+      </section>
+      <section class="osf-section" aria-labelledby="files">
+        <h2 id="files">Files</h2>
+        <ul class="osf-list" aria-label="Files">
+          {files.map((file) => <li><span class="osf-mono">{file}</span></li>)}
+        </ul>
+      </section>
+    </div>
+    <section class="osf-section osf-split-main" aria-labelledby="skill-md">
+      <h2 id="skill-md">SKILL.md</h2>
+      {shown ? (
+        <div class="osf-prose" set:html={html} />
+      ) : (
+        <p class="osf-empty osf-prose">The folder has no SKILL.md that the console can show.</p>
+      )}
+    </section>
+  </div>
+</Shell>

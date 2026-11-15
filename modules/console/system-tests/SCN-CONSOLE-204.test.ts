@@ -1,7 +1,7 @@
 import { scenario } from "@opensoftware/testkit";
 import { factoryEnv, foreman, navLinks, open, serving } from "./console.ts";
 
-scenario("SCN-CONSOLE-159", async ({ sut, fakes, given, when, then }) => {
+scenario("SCN-CONSOLE-204", async ({ sut, fakes, given, when, then }) => {
   await given(
     'a console with "CONSOLE_INTAKE_URL", "CONSOLE_INBOX_REPOSITORY" and "CONSOLE_IMPROVE_DIR" and the factory "acme"',
     async () => {
@@ -21,10 +21,11 @@ scenario("SCN-CONSOLE-159", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then(
-    'the navigation links "Runs" and the classic pages "Work", "Factory", "Inbox", "Cost and scores" and "Health"',
+    'the navigation links "Runs", "Skills" and the classic pages "Work", "Factory", "Inbox", "Cost and scores" and "Health"',
     async () => {
       expect(navLinks(page)).toEqual([
         { href: "/", text: "Runs" },
+        { href: "/skills", text: "Skills" },
         { href: "/work", text: "Work" },
         { href: "/factory", text: "Factory" },
         { href: "/inbox", text: "Inbox" },

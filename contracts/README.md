@@ -46,6 +46,7 @@ Each format has one schema, generated from `typespec/`, and fixtures that CONTRA
 | sandbox spec | `sandbox-spec/sandbox-spec.schema.json` | `SandboxSpec` | The input of a sandbox adapter's `create` (ADR 0054). Closed objects: an unknown field is an error. |
 | factory lock | `factory-lock/factory-lock.schema.json` | `FactoryLock` | `factory.lock` next to `factory.yaml`: the registry MCP servers and the adapters that `factory plan` pinned (ADR 0020, ADR 0125). factory-spec writes it, the foreman reads the adapter pins. |
 | access | `access/access.schema.json` | `Access` | `access.yaml` next to `factory.yaml`: the people who may sign in to the factory UI, each by email with one role, `member`, `factory-engineer` or `admin` (ADR 0134). The console reads it at each request. |
+| skill catalog | `skill-catalog/skill-catalog.schema.json` | `SkillCatalog` | What `factory skills` prints: every skill the factory's agents use, with its needs, its agents and what each lacks, its files, the Markdown of its `SKILL.md` and its problems (ADR 0141, ADR 0143). factory-spec writes it, the console reads it for `/skills`. |
 | events | `events/<event>/<event>.schema.json`, `events/asyncapi.yaml` | `WorkReceived`, `WorkRetryRequested`, `RunStarted`, `RunCompleted`, `RunBlocked`, `DoctorPing` … `IssueLabeled` | CloudEvents 1.0, structured JSON. |
 
 ## HTTP APIs
@@ -158,3 +159,5 @@ None. The CLI reads no environment variables.
 | SCN-CTR-012 | implemented | A factory definition with an unknown effort is rejected with the allowed levels |
 | SCN-CTR-013 | implemented | An access file with an admin and a member validates |
 | SCN-CTR-014 | implemented | An access file with an unknown role is rejected with the roles it allows |
+| SCN-CTR-015 | implemented | A skill catalog with a skill that one agent lacks the secret of validates |
+| SCN-CTR-016 | implemented | A skill catalog whose skill has no body is rejected with its path |

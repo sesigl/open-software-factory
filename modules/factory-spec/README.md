@@ -144,6 +144,45 @@ problem in a skill's own file names that file, its line and its column, for exam
 such as `license`, `allowed-tools`, Claude Code's `disable-model-invocation` or OpenCode's
 `metadata.opencode/autoinvoke`, stay as they are.
 
+### The skills as JSON
+
+`factory skills` prints every skill an agent uses as one JSON document, for a program that shows them, such as the
+console's pages `/skills` and `/skills/<name>`. It reads the skills with the rules above, so the program never parses
+a `SKILL.md` itself (ADR 0135). A skill that lint refuses is printed with its problems; only a `factory.yaml` that does
+not fit the contract fails the command, with the lines of `factory lint` on stderr and exit code 1. The document is
+the format `skill-catalog` of the contracts ([ADR 0143](../../docs/decisions/0143-skill-catalog-contract.md)):
+`validate("skill-catalog", …)` of `@opensoftware/contracts` checks it, and its types are `SkillCatalog` and
+`CatalogSkill`.
+
+```json
+{
+  "skills": [
+    {
+      "name": "release-notes",
+      "description": "Write the release notes of a change from its Linear issues. Use when a change ships.",
+      "source": { "folder": "skills/release-notes" },
+      "needs": { "secrets": ["LINEAR_TOKEN"], "hosts": ["api.linear.app"] },
+      "agents": [
+        { "name": "triage", "secrets": { "LINEAR_TOKEN": "ref:openbao/linear-token" }, "lacks": { "secrets": [], "hosts": [] } }
+      ],
+      "files": ["SKILL.md", "teams.md"],
+      "body": "\n# Release notes\n",
+      "problems": []
+    }
+  ]
+}
+```
+
+- The skills are sorted by name, and each skill's agents by name. A second folder of the same name is left out: lint
+  names it.
+- `source.folder` is the skill's folder relative to the folder of `factory.yaml`.
+- `agents[].secrets` gives, for each secret the skill needs, the agent's reference whose variable it is; `lacks` names
+  each needed secret the agent does not declare and each needed host its sandbox does not allow.
+- `description` is `null` without one. `body` is the text of `SKILL.md` below the line that ends its front matter, all
+  of it without front matter, and `null` without a `SKILL.md` that is UTF-8 text.
+- `problems` are the problems of the skill's own files as lint prints them, relative to the folder of `factory.yaml`,
+  and a folder without a `SKILL.md`.
+
 ## MCP servers and factory.lock
 
 - `<package>@<version>`, for example `@modelcontextprotocol/server-filesystem@2025.8.21`: an npm package that the
@@ -316,6 +355,7 @@ the minor version. The one-time setup is the same as for contracts
 | `factory apply [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]` | Render like render, register the webhooks of forgejo and github automations (github ones not with --gh-aw), and record what was applied in OSF_DATA. |
 | `factory diff <old> [<new>]` | Show the changes between two versions of factory.yaml, as files or Git revisions. |
 | `factory resolve` | Print the resolved definition as JSON: defaults filled in, registry servers pinned. |
+| `factory skills` | Print every skill the agents use as JSON: its description, source, files, Markdown and needs, and per agent the secret references that give them and what it lacks. |
 | `factory edit <edit> <agent> <value>` | Print factory.yaml with one edit, comments and anchors kept; the file stays as it is. <edit> is add-skill, remove-skill, add-secret, remove-secret, add-egress or remove-egress; "factory edit add-secrets-provider <name> <range>" declares a secrets provider. |
 
 ## Configuration
@@ -458,3 +498,7 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FSPEC-112 | implemented | Lint names a skill path that is no folder |
 | SCN-FSPEC-113 | implemented | Lint names a SKILL.md whose front matter is not closed or does not start on its first line |
 | SCN-FSPEC-114 | implemented | Lint names a SKILL.md that is not UTF-8 text once |
+| SCN-FSPEC-115 | implemented | The skills are printed with their needs, their agents and the Markdown below the front matter |
+| SCN-FSPEC-116 | implemented | A skill that lint refuses is printed with its problems |
+| SCN-FSPEC-117 | implemented | A factory.yaml that does not fit the contract fails "factory skills" with its problems |
+| SCN-FSPEC-118 | implemented | What "factory skills" prints is a valid skill catalog of the contracts, also for a skill that lint refuses |

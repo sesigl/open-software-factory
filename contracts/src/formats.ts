@@ -21,6 +21,7 @@ export const FORMATS: readonly Format[] = [
   format("sandbox-spec", "SandboxSpec"),
   format("factory-lock", "FactoryLock"),
   format("access", "Access"),
+  format("skill-catalog", "SkillCatalog"),
   format("events/work-received", "WorkReceived"),
   format("events/work-retry-requested", "WorkRetryRequested"),
   format("events/run-started", "RunStarted"),

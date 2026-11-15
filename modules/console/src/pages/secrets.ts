@@ -36,7 +36,7 @@ export interface DeleteData {
   effect: string;
 }
 
-const LOOKS: Record<State, { state: string; shape: string }> = {
+export const LOOKS: Record<State, { state: string; shape: string }> = {
   missing: { state: "Missing", shape: "failed" },
   unknown: { state: "Unknown", shape: "cancelled" },
   set: { state: "Set", shape: "complete" },

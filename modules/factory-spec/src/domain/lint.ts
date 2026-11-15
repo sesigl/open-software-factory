@@ -13,6 +13,8 @@ export interface Problem extends Place {
 export interface Linted {
   /** Only when there is no problem. */
   definition?: FactoryDefinition;
+  /** Whenever it parses and fits the contract, also with problems of the rules beyond it. */
+  fits?: FactoryDefinition;
   problems: Problem[];
   /** Fields that take no effect in a run; a warning is no problem (T-44). */
   warnings: Problem[];
@@ -52,7 +54,9 @@ export function lint(text: string, exists: (path: string) => boolean, files: Fol
     ),
     ...skills.warnings,
   ];
-  return problems.length > 0 ? { problems, warnings } : { definition, problems, warnings };
+  return problems.length > 0
+    ? { fits: definition, problems, warnings }
+    : { definition, fits: definition, problems, warnings };
 }
 
 /** The fields that a run does not use: a cron automation without gh-aw, and every scorer and benchmark (T-31). */

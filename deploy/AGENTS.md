@@ -34,7 +34,7 @@ through `kubectl port-forward` (`url`), `helm test` and the state of the workloa
 
 ## Budget
 
-- System tests: 700 seconds in total on the CI runner. SCN-DIST-003, -004, -017, -022 and -026 each start the
+- System tests: 760 seconds in total on the CI runner. SCN-DIST-003, -004, -017, -022 and -026 each start the
   profile with Compose, 56 to 67 seconds with the images the CI job loaded before. SCN-DIST-009, -010, -019 and -021
   each install the chart on kind, 47 to 57 seconds. SCN-DIST-014 starts only intake with PostgreSQL and NATS, about
   10 seconds. SCN-DIST-033 only renders the chart with `helm template` in its kind namespace, about 2 seconds; a
@@ -43,6 +43,10 @@ through `kubectl port-forward` (`url`), `helm test` and the state of the workloa
   715 s of raw time, and 433 s to 619 s at BUDGET's measure; the 619 s came from the fastest raw run (568 s), whose
   CPU benchmark took 0.918 times the reference. The suite waits on Docker and kind I/O, which the CPU benchmark does
   not follow, so the budget keeps about 7% above the highest measure.
+- Measured for 760 s on 15 November 2026: the first run after a release took 739.8 s of raw time and 709.3 s at
+  BUDGET's measure (benchmark 1.043 times the reference), with 29 scenarios. Each of the four chart installs took 72
+  to 91 seconds and each of the five starts of the profile 39 to 86, with the newly released images; SCN-DIST-037 and
+  -038, added with the sign-in, took 6.9 seconds together. 760 is again about 7% above the highest measure.
 - Measured for 700 s: T-31 adds SCN-DIST-034, which runs one pass of the Compose job improve (27 s while it builds
   the image observer, until publish-images has pushed it; then the image is pulled), and SCN-DIST-035, a helm
   template of 0.4 s. With them the suite took 730.2 s of raw time on a runner whose benchmark took 1.075 times the

@@ -1,4 +1,5 @@
 // The skills of the skill scenarios: a SKILL.md from its front matter, and a factory whose agent "triage" uses skills.
+import type { SkillCatalog } from "@opensoftware/contracts";
 import type { CliResult, Sut } from "@opensoftware/testkit";
 import { putTriage } from "./edit.ts";
 
@@ -31,6 +32,9 @@ export const SECRETS = ["harness:", '  claude-code: "^2"', "secrets:", '  env: "
  */
 export const putSkilled = (sut: Sut, skills: string[], extra: string[] = []): Promise<string> =>
   putTriage(sut, [`skills: [${skills.join(", ")}]`, ...extra], SECRETS);
+
+/** What "factory skills" prints: the format skill-catalog of the contracts (ADR 0143). */
+export type Catalog = SkillCatalog;
 
 /** The lines that "factory lint" printed. */
 export function lines(run: CliResult): string[] {

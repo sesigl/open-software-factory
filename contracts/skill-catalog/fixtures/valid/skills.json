@@ -1,0 +1,31 @@
+{
+  "skills": [
+    {
+      "name": "missing",
+      "description": null,
+      "source": { "folder": "skills/missing" },
+      "needs": { "secrets": [], "hosts": [] },
+      "agents": [{ "name": "triage", "secrets": {}, "lacks": { "secrets": [], "hosts": [] } }],
+      "files": ["README.md"],
+      "body": null,
+      "problems": ["the skill \"./skills/missing\" has no SKILL.md"]
+    },
+    {
+      "name": "release-notes",
+      "description": "Write the release notes of a change from its Linear issues. Use when a change ships.",
+      "source": { "folder": "skills/release-notes" },
+      "needs": { "secrets": ["LINEAR_TOKEN"], "hosts": ["api.linear.app"] },
+      "agents": [
+        { "name": "review", "secrets": {}, "lacks": { "secrets": ["LINEAR_TOKEN"], "hosts": ["api.linear.app"] } },
+        {
+          "name": "triage",
+          "secrets": { "LINEAR_TOKEN": "ref:openbao/linear-token" },
+          "lacks": { "secrets": [], "hosts": [] }
+        }
+      ],
+      "files": ["SKILL.md", "teams.md"],
+      "body": "\n# Release notes\n",
+      "problems": []
+    }
+  ]
+}

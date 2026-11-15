@@ -1,7 +1,7 @@
 // The rules of the skills an agent uses (ADR 0140): a folder with a SKILL.md in the Agent Skills format
 // (agentskills.io), files the foreman can copy as text (ADR 0112), one skill per name, and the secrets and hosts a
 // skill needs, which its agent declares.
-import type { FactoryDefinition } from "@opensoftware/contracts";
+import type { CatalogSkill, FactoryDefinition } from "@opensoftware/contracts";
 import { type Document, isMap, LineCounter, parseDocument } from "yaml";
 import { locate, type Place } from "./locate.ts";
 
@@ -38,11 +38,31 @@ const FORMS = {
   hosts: [/^[a-z0-9-]+(\.[a-z0-9-]+)*$/, "host name"],
 } as const;
 
-/** The findings of every skill the agents use. */
-export function skillRules(definition: FactoryDefinition, files: FolderFiles): SkillFindings {
-  const result: SkillFindings = { findings: [], problems: [], warnings: [] };
-  // Each skill by its name, the last segment of its folder, which names it in a session and in render's links.
-  const skills = new Map<string, { folder: string; path: string; needs: Needs }>();
+/** A skill an agent uses, read once for lint and for the catalog. */
+interface Read {
+  name: string;
+  /** The folder relative to the factory's folder, like "skills/release-notes". */
+  folder: string;
+  /** The entry of the first agent that uses it, as factory.yaml writes it. */
+  path: string;
+  needs: Needs;
+  /** The front matter's description, when it is text. */
+  description: string | undefined;
+  /** The Markdown of SKILL.md below its front matter, or all of it without one; none without a readable SKILL.md. */
+  body: string | undefined;
+  /** The finding of a folder without a SKILL.md. */
+  absent: string | undefined;
+  files: string[];
+  problems: FileFinding[];
+  warnings: FileFinding[];
+  /** The agents that use it, each with the place of its entry in factory.yaml. */
+  uses: { agent: string; at: string[] }[];
+}
+
+/** Every skill the agents use by its name, the last segment of its folder, and the findings of their entries. */
+function readSkills(definition: FactoryDefinition, files: FolderFiles): { skills: Read[]; findings: Finding[] } {
+  const skills = new Map<string, Read>();
+  const findings: Finding[] = [];
   for (const [name, agent] of Object.entries(definition.agents))
     for (const [index, path] of (agent.skills ?? []).entries()) {
       const at = ["agents", name, "skills", String(index)];
@@ -51,34 +71,80 @@ export function skillRules(definition: FactoryDefinition, files: FolderFiles): S
         .filter((part) => part && part !== ".")
         .join("/");
       const skill = folder.split("/").pop() as string;
-      const known = skills.get(skill) ?? { folder, path, needs: checked(path, folder, files(path), result, at) };
+      const known = skills.get(skill) ?? read(skill, path, folder, files(path), at, findings);
       skills.set(skill, known);
-      if (known.folder !== folder) {
+      if (known.folder === folder) known.uses.push({ agent: name, at });
+      else {
         const message = `the skill "${path}" has the name "${skill}" of the skill "${known.path}": a factory uses one skill of a name`;
-        result.findings.push([at, message]);
-      } else for (const message of lacks(name, agent, skill, known.needs)) result.findings.push([at, message]);
+        findings.push([at, message]);
+      }
     }
+  return { skills: [...skills.values()], findings };
+}
+
+/** The findings of every skill the agents use. */
+export function skillRules(definition: FactoryDefinition, files: FolderFiles): SkillFindings {
+  const { skills, findings } = readSkills(definition, files);
+  const result: SkillFindings = { findings, problems: [], warnings: [] };
+  for (const skill of skills) {
+    result.problems.push(...skill.problems);
+    result.warnings.push(...skill.warnings);
+    for (const { agent, at } of skill.uses)
+      for (const message of messagesOf(agent, skill.name, lacks(definition.agents[agent] as Agent, skill.needs)))
+        result.findings.push([at, message]);
+  }
   return result;
 }
 
+/** Every skill the agents use, sorted by name, with its agents sorted by name. */
+export function skillCatalog(definition: FactoryDefinition, files: FolderFiles): CatalogSkill[] {
+  return readSkills(definition, files)
+    .skills.map((skill) => ({
+      name: skill.name,
+      description: skill.description ?? null,
+      source: { folder: skill.folder },
+      needs: skill.needs,
+      agents: skill.uses
+        .map(({ agent }) => {
+          const declared = definition.agents[agent] as Agent;
+          const secrets = Object.fromEntries(
+            (declared.secrets ?? [])
+              .map((reference) => [variable(reference), reference] as const)
+              .filter(([name]) => skill.needs.secrets.includes(name)),
+          );
+          return { name: agent, secrets, lacks: lacks(declared, skill.needs) };
+        })
+        .sort((a, b) => a.name.localeCompare(b.name)),
+      files: skill.files,
+      body: skill.body ?? null,
+      problems: [
+        ...(skill.absent ? [skill.absent] : []),
+        ...skill.problems.map(({ file, line, column, message }) => `${file}:${line}:${column} ${message}`),
+      ],
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** The messages of what an agent lacks of its skill's needs. */
+const messagesOf = (name: string, skill: string, lacking: Needs): string[] => [
+  ...lacking.secrets.map(
+    (secret) =>
+      `agent "${name}" lacks the secret ${secret} that its skill "${skill}" needs: add a reference such as "ref:<provider>/${secret.toLowerCase().replaceAll("_", "-")}" to agents.${name}.secrets`,
+  ),
+  ...lacking.hosts.map(
+    (host) =>
+      `agent "${name}" lacks the host "${host}" that its skill "${skill}" needs: add it to agents.${name}.sandbox.egress`,
+  ),
+];
+
 /** What the agent lacks of the skill's needs; an agent without a sandbox reaches every host. */
-function lacks(name: string, agent: Agent, skill: string, needs: Needs): string[] {
+function lacks(agent: Agent, needs: Needs): Needs {
   const variables = new Set(agent.secrets?.map(variable));
   const egress = new Set(agent.sandbox?.egress);
-  return [
-    ...needs.secrets
-      .filter((secret) => !variables.has(secret))
-      .map(
-        (secret) =>
-          `agent "${name}" lacks the secret ${secret} that its skill "${skill}" needs: add a reference such as "ref:<provider>/${secret.toLowerCase().replaceAll("_", "-")}" to agents.${name}.secrets`,
-      ),
-    ...(agent.sandbox ? needs.hosts : [])
-      .filter((host) => !egress.has(host))
-      .map(
-        (host) =>
-          `agent "${name}" lacks the host "${host}" that its skill "${skill}" needs: add it to agents.${name}.sandbox.egress`,
-      ),
-  ];
+  return {
+    secrets: needs.secrets.filter((secret) => !variables.has(secret)),
+    hosts: (agent.sandbox ? needs.hosts : []).filter((host) => !egress.has(host)),
+  };
 }
 
 /** The variable that holds a secret reference in a sandbox, as the foreman names it (ADR 0068). */
@@ -88,14 +154,19 @@ const variable = (reference: string): string =>
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "_");
 
-/** Checks the files of one skill folder and returns its needs; a folder without SKILL.md is a finding at `at`. */
-function checked(
+/** Reads the files of one skill folder with the format's rules; a folder without SKILL.md is a finding at `at`. */
+function read(
+  name: string,
   path: string,
   folder: string,
   files: Record<string, Uint8Array>,
-  result: SkillFindings,
   at: string[],
-): Needs {
+  findings: Finding[],
+): Read {
+  const skill: Read = {
+    ...{ name, folder, path, needs: NONE, description: undefined, body: undefined, absent: undefined },
+    ...{ files: Object.keys(files).sort(), problems: [], warnings: [], uses: [] },
+  };
   const texts: Record<string, string> = {};
   for (const [file, bytes] of Object.entries(files)) {
     try {
@@ -103,17 +174,21 @@ function checked(
     } catch {
       const message =
         "the file is not UTF-8 text: the foreman copies a skill's files as text, so keep binary files out of the skill";
-      result.problems.push({ file: `${folder}/${file}`, line: 1, column: 1, message });
+      skill.problems.push({ file: `${folder}/${file}`, line: 1, column: 1, message });
     }
   }
   const text = texts["SKILL.md"];
-  if (text !== undefined) return frontMatter(folder, text, result);
-  if (!files["SKILL.md"]) result.findings.push([at, `the skill "${path}" has no SKILL.md`]);
-  return NONE;
+  if (text !== undefined) frontMatter(skill, text);
+  else if (!files["SKILL.md"]) {
+    skill.absent = `the skill "${path}" has no SKILL.md`;
+    findings.push([at, skill.absent]);
+  }
+  return skill;
 }
 
-/** The rules of the format for SKILL.md and its front matter; returns the needs it names. */
-function frontMatter(folder: string, text: string, result: SkillFindings): Needs {
+/** The rules of the format for SKILL.md and its front matter; sets the skill's body, description and needs. */
+function frontMatter(result: Read, text: string): void {
+  const { folder } = result;
   const file = `${folder}/SKILL.md`;
   const lines = text.replace(/\n$/, "").split("\n");
   if (lines.length >= 500) {
@@ -126,8 +201,13 @@ function frontMatter(folder: string, text: string, result: SkillFindings): Needs
     const message =
       'SKILL.md has no front matter: it starts with a line "---", the fields name and description and a line "---"';
     result.problems.push({ file, line: 1, column: 1, message });
-    return NONE;
+    result.body = text;
+    return;
   }
+  result.body = text
+    .split("\n")
+    .slice(end + 1)
+    .join("\n");
   const counter = new LineCounter();
   const document = parseDocument(lines.slice(1, end).join("\n"), { lineCounter: counter, prettyErrors: false });
   // The front matter starts on the second line of SKILL.md.
@@ -138,7 +218,7 @@ function frontMatter(folder: string, text: string, result: SkillFindings): Needs
     const { line, col } = counter.linePos(error.pos[0]);
     at({ line, column: col }, error.message.split("\n")[0] as string);
   }
-  if (document.errors.length > 0) return NONE;
+  if (document.errors.length > 0) return;
   const fields = (isMap(document.contents) ? document.toJS() : {}) as Record<string, unknown>;
   const skill = folder.split("/").pop() as string;
   const { name, description, compatibility } = fields;
@@ -157,7 +237,8 @@ function frontMatter(folder: string, text: string, result: SkillFindings): Needs
     const length = typeof value === "string" ? [...value].length : 0;
     if (length > max) problem([field], `${field} has ${length} characters, more than the ${max} the format allows`);
   }
-  return needsOf(document, fields.metadata as Record<string, unknown>, problem);
+  if (description) result.description = String(description);
+  result.needs = needsOf(document, fields.metadata as Record<string, unknown>, problem);
 }
 
 /** The needs that metadata names: each key's text, split at spaces, with the names that fit their form. */
