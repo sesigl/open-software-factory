@@ -231,6 +231,13 @@
       "component": "secrets-openbao",
       "initial-version": "0.1.0",
       "bump-minor-pre-major": true
+    },
+    "packages/factory-source": {
+      "release-type": "node",
+      "package-name": "@opensoftware/factory-source",
+      "component": "factory-source",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
     }
   }
 }

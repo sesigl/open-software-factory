@@ -448,6 +448,9 @@ importers:
       '@opensoftware/contracts':
         specifier: workspace:*
         version: link:../../contracts
+      '@opensoftware/factory-source':
+        specifier: workspace:*
+        version: link:../../packages/factory-source
       '@temporalio/activity':
         specifier: 1.24.0
         version: 1.24.0
@@ -713,6 +716,12 @@ importers:
         version: link:../testkit
 
   packages/cli:
+    devDependencies:
+      '@opensoftware/testkit':
+        specifier: workspace:*
+        version: link:../testkit
+
+  packages/factory-source:
     devDependencies:
       '@opensoftware/testkit':
         specifier: workspace:*
