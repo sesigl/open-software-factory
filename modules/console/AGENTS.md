@@ -67,9 +67,18 @@ which stays until live updates replace it (`TODO.md`, T-60).
 
 ## Budget
 
-- System tests: 75 seconds in total on the CI runner (117 scenarios in about 48 to 52 seconds of test time and 17
-  seconds on 4 workers on the development container; 65.7 seconds on the reference runner in CI). Raised from 60 seconds
-  on 14 November 2026, when the scenarios grew from 88 to 117 with the sign-in, the shell and two journeys, measured:
+- System tests: 95 seconds in total on the CI runner (140 scenarios; 83.8 seconds on the reference runner in CI).
+  Raised from 75 seconds on 15 November 2026, when the scenarios grew from 123 to 140 with the secrets page, measured:
+  - a scenario of the secrets takes about twice the time of another one: the console runs the built adapter
+    `secrets-openbao` as a program against the testkit's real OpenBao. Each page of `/secrets` is one start of the
+    adapter and a stored value two; a start takes about 0.15 s on the busy development container, 0.06 s of it Node's
+    own, with Node's compile cache already on (the testkit sets it);
+  - OpenBao starts once per worker (0.45 s), not per scenario, and `console doctor` already runs `probe` and `list`
+    at the same time, so neither is left to save;
+  - at the time of an older scenario each, the 17 new ones would still bring the suite to about 76 seconds.
+- Before that: 75 seconds for 117 scenarios (48 to 52 seconds of test time and 17 seconds on 4 workers on the
+  development container; 65.7 seconds on the reference runner in CI). Raised from 60 seconds on 14 November 2026, when
+  the scenarios grew from 88 to 117 with the sign-in, the shell and two journeys, measured:
   - each scenario starts its own console: about 200 ms to listen (Node, then 90 ms of imports for `serve`; `cli.ts`
     loads only the command it runs, which saved about 20 ms per scenario), and the foremen, intake and gatekeeper are
     `fakes.http`; the inbox's forge is `fakes.github` behind the built forge-github adapter;

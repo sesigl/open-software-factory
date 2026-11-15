@@ -101,6 +101,13 @@ Feature: Secrets
     Then the page says "The secrets could not be listed: the store at <address> does not answer"
     And the list says "linear-token" is "Unknown", "Needed by the agent triage"
 
+  @id=SCN-CONSOLE-190 @status=implemented
+  Scenario: An adapter whose output is no JSON is named on "/secrets", and its secrets say "Unknown"
+    Given a factory whose agent "triage" declares "ref:openbao/linear-token", and "CONSOLE_SECRETS_ADAPTER" is "echo", which prints its arguments
+    When the admin opens "/secrets"
+    Then the page says "The secrets could not be listed: the secrets adapter printed a line that is no JSON"
+    And the list says "linear-token" is "Unknown", "Needed by the agent triage"
+
   @id=SCN-CONSOLE-186 @status=implemented
   Scenario: "console doctor" names each secret of OpenBao that the factory declares without a value
     Given a factory whose agent "triage" declares "ref:openbao/linear-token" and whose agent "review" declares "ref:openbao/sentry-token", and a store with only "linear-token"

@@ -31,8 +31,9 @@ function run<T>(command: string, args: string[], input = ""): Promise<Outcome<T[
         }
         const lines = stdout.split("\n").filter((line) => line.trim());
         resolve({ ok: true, body: lines.map((line) => JSON.parse(line) as T) });
-      } catch (failure) {
-        resolve({ ok: false, usage: false, note: (failure as Error).message });
+      } catch {
+        // The error of JSON.parse would quote the line, and the console shows a note to the person.
+        resolve({ ok: false, usage: false, note: "the secrets adapter printed a line that is no JSON" });
       }
     });
     // An adapter that ends before it reads its input closes the pipe; that is its error, not the console's.

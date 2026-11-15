@@ -442,3 +442,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-187 | implemented | "console doctor" names a store that does not answer |
 | SCN-CONSOLE-188 | implemented | "console doctor" and "/health" warn when the console's token for the store ends within 7 days |
 | SCN-CONSOLE-189 | implemented | An admin signs in and stores a secret (journey) |
+| SCN-CONSOLE-190 | implemented | An adapter whose output is no JSON is named on "/secrets", and its secrets say "Unknown" |
