@@ -82,7 +82,7 @@ Feature: Work
     Then the first answer has the status 401, the title "Sign in", the navigation "Main" with "Work" as the current page and the way back "Work"
     And the second answer has the status 403, the title "Forbidden", the navigation "Main" with "Runs" as the current page and the way back "Runs"
 
-  @id=SCN-CONSOLE-257 @status=planned @kind=journey
+  @id=SCN-CONSOLE-257 @status=implemented @kind=journey
   Scenario: On a phone a person reads the inbox as cards and submits work from the work form (journey)
     Given a console behind a sign-in proxy with an intake whose inbox holds "Import reports from CSV", received two days ago, and the inbox of "tester/web" with the proposal "Triage asks before it investigates"
     When the person "ada@acme.dev" opens "/inbox" on a phone

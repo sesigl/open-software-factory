@@ -77,6 +77,15 @@ The plan was reviewed after the mock-ups were drawn. Where they differ, `TODO.md
   the card. "Run again" and a pending gate's "Approve" are the main action; the other forms have no colour. A run that
   no foreman knows, and a form that a module refuses, show a problem in the same shell: its title and the reason in an
   alert. The journey SCN-CONSOLE-249 keeps the phone's screenshot.
+- **The work page and the inbox** (T-60) have no mock-up. The work page is a list beside its form, like Secrets, but
+  the form "Submit work" comes first: on a wide screen it stands left of the work items, on a phone above them, since
+  a person comes to the page from "Submit work". Its fields stand in one column, "Type" a `select` and "Description"
+  a `textarea` (`osf-input`). The work items and the inbox's proposals are tables whose rows are cards on a phone, as
+  on the runs page; a work item without a run shows the state "received" as an open ring, and a proposal "needs
+  review" in the colour of work that waits for a person. Work and Inbox are pages of the navigation, no longer classic
+  pages. A page without its setting, a submission that intake refuses, and every form's "sign in first" and "another
+  site" show a problem in the same shell, with the way back to the form's page. The journey SCN-CONSOLE-257 keeps the
+  phone's screenshots.
 - **States the mock-ups do not show:** an empty list, a server that does not answer, a form with a wrong value, the
   light theme of a whole page. The page that needs one adds it in the same language and adds a mock-up or a
   screenshot here.
