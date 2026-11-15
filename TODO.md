@@ -1718,7 +1718,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
   - [x] The page `/secrets` with its journey, and the checks of `console doctor` (`SCN-CONSOLE`).
   - [x] One smoke scenario in `e2e/` from a stored value to a sandbox's request (`SCN-E2E-007`).
 
-### [ ] T-58 · a change to the factory from the UI is a pull request (P1)
+### [x] T-58 · a change to the factory from the UI is a pull request (P1)
 
 - **Problem:** `factory.yaml` changes only by hand in Git. The forge port cannot commit a file, cannot ask the forge
   to merge when the checks pass, cannot close a pull request and cannot read a branch's merge rules
@@ -1828,10 +1828,10 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
   - [x] The flow and the page `/changes` in the console (`SCN-CONSOLE`, ADR 0144).
   - [x] The workflow with the check `factory` in the reference factory; the profile and the chart with a factory
     repository on a forge; `console doctor` (`SCN-DIST`, `SCN-CONSOLE`, `SCN-REPO`, ADR 0150).
-  - [ ] One smoke scenario in `e2e/`: a change from the console becomes the factory version of the next run
-    (`SCN-E2E`).
+  - [x] One smoke scenario in `e2e/`: a change from the console becomes the factory version of the next run
+    (`SCN-E2E-008`).
 
-### [ ] T-59 · skills: a format, sources and the catalog (P1)
+### [x] T-59 · skills: a format, sources and the catalog (P1)
 
 - **Problem:** a skill is a path in `factory.yaml` (`skills: [./skills/x]`). `factory lint` checks only that the path
   exists. Nothing says which secret or host a skill needs, so a skill fails inside a run. Sharing a skill between
@@ -1897,8 +1897,8 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
     (`SCN-CONSOLE`); `factory skills` prints them in the contract `skill-catalog` (`SCN-FSPEC`, `SCN-CTR`, ADR 0141,
     ADR 0143). Skills of other repositories join the catalog with the next slice.
   - [x] The switch per agent as a change of T-58, with its journey (`SCN-CONSOLE`, ADR 0149).
-  - [ ] One smoke scenario in `e2e/`: a skill switched on in the console and its stored secret reach a run
-    (`SCN-E2E`). After the releases above.
+  - [x] One smoke scenario in `e2e/`: a skill switched on in the console and its stored secret reach a run
+    (`SCN-E2E-009`).
 
 ### [ ] T-60 · the remaining pages in the new look (P2)
 
