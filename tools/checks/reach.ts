@@ -10,8 +10,10 @@ import { addedLines, changedFiles } from "./lib/git.ts";
 import { type Finding, isLibrary, type Repo } from "./lib/repo.ts";
 
 const COVERAGE = "reports/coverage";
+// A `.tsx` file of a module counts too: code in Node is reached through its source map, and code that runs only in a
+// browser is reached by no module process, so it belongs in an island of the library `packages/ui` (ADR 0152).
 const SOURCE =
-  /^(modules\/[^/]+|packages\/[^/]+|adapters\/[^/]+\/[^/]+)\/(src|bin)\/(?!.*__unit__\/).+(?<!\.d)\.(ts|js|mjs)$/;
+  /^(modules\/[^/]+|packages\/[^/]+|adapters\/[^/]+\/[^/]+)\/(src|bin)\/(?!.*__unit__\/).+(?<!\.d)\.(ts|tsx|js|mjs)$/;
 
 type FunctionCoverage = Parameters<ReturnType<typeof v8ToIstanbul>["applyCoverage"]>[0][number];
 interface Script {

@@ -71,14 +71,24 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
   again and keep the scenario's cookies; redirects are followed unless `follow` is false. `sut.pages.send(path,
   fields, { headers, follow })` sends fields as a form does, for a request that no page offers, like a program's. A
   test finds elements by role, name, label and text, never by a tag, a class or a test ID.
-- `sut.browser.open(path, { viewport, headers })`: opens a page of the server `sut.http` started in Chromium and
-  returns Playwright's `Page`, for a journey or an island scenario (ADR 0131). One browser per test process, a new
+- `sut.browser.open(path, { viewport, headers })`: opens a page of the folder `sut.site` serves, or else of the
+  server `sut.http` started, in Chromium and returns Playwright's `Page`, for a journey or an island scenario (ADR 0131). One browser per test process, a new
   context per scenario: the testkit's clock (2026-01-01T00:00:00Z), the locale `en-US`, the time zone `UTC`, reduced
   motion and the viewport `phone` (390 × 844) or `desktop` (1280 × 800, the default). A request that leaves loopback
   is refused, and it, an error in the browser's console or the page's script and a failed request fail the scenario.
   `expectAccessible(page)` runs axe-core and fails on a violation; `screenshot(page, name)` keeps
   `reports/screenshots/<scenario ID>/<name>.png` as the journey's evidence. Find elements with `getByRole`,
-  `getByLabel` and `getByText` only. Install the browser once with `make browser`.
+  `getByLabel` and `getByText` only. Install the browser once with `make browser`. When the test process has
+  `__STRYKER_ACTIVE_MUTANT__`, as during `osf mutation`, every page of the scenario gets
+  `globalThis.__stryker__ = { activeMutant }` before its first script, where Stryker's instrumented code reads it, so
+  a mutant in an island's bundled code is active in the browser
+  ([ADR 0152](../../docs/decisions/0152-an-islands-code-counts.md)).
+- `sut.site.serve(folder, { headers })`: serves a folder of the unit, such as the built workbench of `@opensoftware/ui`,
+  on `127.0.0.1` until the scenario ends and returns its base URL; `sut.site.url()` gives it again. A path answers
+  its file, or a folder's `index.html`, with the file's content type (HTML, JavaScript, CSS, JSON, SVG, else
+  `application/octet-stream`) and the `headers`, such as the console's Content-Security-Policy. A path outside the
+  folder, also through an encoded `..` or a symbolic link, answers 404, and a folder outside the unit is refused
+  (ADR 0152).
 - `sut.mcp.connect(args, { env })`: starts the module's `bin` as an MCP server on stdio and returns a connected
   MCP client (`listTools`, `callTool`, ...).
 - `sut.action(inputs, { event, eventName, repository, sha, env })`: runs the module's composite `action.yml` like a
@@ -383,7 +393,7 @@ The testkit reads these environment variables:
 | --- | --- |
 | `CI` | Set, `testkit timed` measures the runner's speed ([ADR 0103](../../docs/decisions/0103-budget-takes-the-runner-speed-into-account.md)). CI sets it; a local run does not, so it takes no extra time. |
 | `PLAYWRIGHT_BROWSERS_PATH` | Where Playwright keeps its browsers. The module gets it like `PATH`, since its `HOME` is the working folder. |
-| `__STRYKER_ACTIVE_MUTANT__` | The mutant Stryker activates during a mutation run (`osf mutation`, ADR 0037). The module's instrumented build reads it in its own process. |
+| `__STRYKER_ACTIVE_MUTANT__` | The mutant Stryker activates during a mutation run (`osf mutation`, ADR 0037). The module's instrumented build reads it in its own process, and `sut.browser` sets it in every page before its first script (ADR 0152). |
 | `DOCKER_HOST` | The Docker daemon, as for any `docker` command, such as `unix://$HOME/.rd/docker.sock` of Rancher Desktop. The module's processes get it like `PATH`, so a module that starts containers and the fakes reach the same daemon. Default: Docker's own (`/var/run/docker.sock`). |
 | `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE`, `TESTCONTAINERS_HOST_OVERRIDE` | How testcontainers reaches the daemon of a Docker that runs in a VM, such as Rancher Desktop: the socket path in the VM, which Ryuk mounts, and the host of the mapped ports. The module's processes get them like `DOCKER_HOST`. |
 | `DOCKER_CONFIG` | The Docker CLI's configuration folder. `sut.compose` lets `docker` find the plugins in its `cli-plugins/`, like `docker compose`, and nothing else from it, since the module's `HOME` is the working folder. Default: `~/.docker`. |
@@ -601,3 +611,7 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-182 | implemented | fakes.personIssuer signs a proof on the testkit's clock that the key set it serves verifies |
 | SCN-TK-183 | implemented | fakes.personIssuer with a name signs a proof whose claims and header the test changed |
 | SCN-TK-184 | implemented | fakes.personProof reads a proof that a module sent, with whether a key set verifies it and its body matches |
+| SCN-TK-185 | implemented | sut.site serves each file of a folder with its content type and the headers the test names |
+| SCN-TK-186 | implemented | sut.site answers 404 for a path outside its folder and serves no folder outside the unit |
+| SCN-TK-187 | implemented | A page that sut.browser opens during a mutation run runs the active mutant's branch of an instrumented script |
+| SCN-TK-188 | implemented | A page that sut.browser opens without an active mutant runs the original branch of an instrumented script |

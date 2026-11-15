@@ -272,13 +272,16 @@ export function mutationPackage(name: string): string {
   return `${JSON.stringify(manifest, null, 2)}\n`;
 }
 
-/** A Stryker JSON report of modules/demo/src/run.ts with one mutant per entry. */
-export function mutationReport(mutants: { line: number; status: string; replacement?: string }[]): string {
+/** A Stryker JSON report of `file` (default src/run.ts) of modules/demo with one mutant per entry. */
+export function mutationReport(
+  mutants: { line: number; status: string; replacement?: string }[],
+  file = "src/run.ts",
+): string {
   const report = {
     schemaVersion: "2",
     thresholds: { high: 80, low: 60 },
     files: {
-      "src/run.ts": {
+      [file]: {
         language: "typescript",
         source: "",
         mutants: mutants.map(({ line, status, replacement = "false" }, index) => ({

@@ -412,6 +412,15 @@ Feature: Repository checks
     And the output contains "REACH modules/demo/src/extra.ts:1 no system test loads this file"
     And the output does not contain "types.ts"
 
+  @id=SCN-REPO-174 @status=implemented
+  Scenario: REACH rejects a new .tsx file of a module that no system test loads
+    Given a base commit with "modules/demo/src/run.ts" whose function "used" a system test runs
+    And a change that adds "modules/demo/src/clock.tsx" with a function that returns markup
+    And a coverage report in which the system tests ran only "used"
+    When the developer runs "osf check REACH" against the base commit
+    Then the command exits with code 1
+    And the output contains "REACH modules/demo/src/clock.tsx:1 no system test loads this file"
+
   @id=SCN-REPO-060 @status=implemented
   Scenario: REACH leaves the lines of a library to MUTATION
     Given a base commit with the library "packages/money" named "@opensoftware/money"

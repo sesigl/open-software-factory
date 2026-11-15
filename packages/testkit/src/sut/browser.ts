@@ -19,7 +19,7 @@ export type { BrowserPage };
 
 export interface Browser {
   /**
-   * Opens the path of the server sut.http started in a new tab of the scenario's Chromium context, with the viewport
+   * Opens the path of the folder sut.site serves, or else of the server sut.http started, in a new tab of the scenario's Chromium context, with the viewport
    * "desktop" unless named, and these headers on every request of the tab. Tabs of a scenario share its cookies.
    */
   open(path: string, options?: { viewport?: Viewport; headers?: Record<string, string> }): Promise<BrowserPage>;
@@ -62,6 +62,11 @@ export function makeBrowser(
       });
       onStop(() => opened.close());
       await opened.clock.setFixedTime(new Date(FIXED_DATE));
+      // MUTATION (ADR 0152): Stryker names the active mutant in this variable of the test process. Instrumented code
+      // reads it from globalThis.__stryker__.activeMutant, and falls back to process.env only where `process` exists,
+      // which a browser lacks: so every document of the context gets it before its first script.
+      const mutant = process.env.__STRYKER_ACTIVE_MUTANT__;
+      if (mutant) await opened.addInitScript(`globalThis.__stryker__ = { activeMutant: ${JSON.stringify(mutant)} };`);
       await opened.route("**/*", (route) => {
         const url = new URL(route.request().url());
         if (LOOPBACK.has(url.hostname)) return route.continue();
