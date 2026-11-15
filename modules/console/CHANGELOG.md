@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/sesigl/open-software-factory/compare/console-v0.10.0...console-v0.10.1) (2026-11-15)
+
+
+### Bug Fixes
+
+* **console, factory-spec:** release both again, as 0.10.0 and 0.12.0 got no release tag; the kind helper reads the proxy's image again ([#342](https://github.com/sesigl/open-software-factory/issues/342)) ([5f08723](https://github.com/sesigl/open-software-factory/commit/5f08723f4ca4c413e4a742bae170108dfc0a7bba))
+
 ## [0.10.0](https://github.com/sesigl/open-software-factory/compare/console-v0.9.0...console-v0.10.0) (2026-11-15)
 
 This version was never published: its release got no tag. Version 0.10.1 holds these changes.

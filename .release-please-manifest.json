@@ -3,7 +3,7 @@
   "packages/testkit": "0.39.0",
   "packages/cli": "0.4.1",
   "packages/spec-files": "0.2.0",
-  "modules/factory-spec": "0.12.0",
+  "modules/factory-spec": "0.12.1",
   "modules/runlog": "0.5.1",
   "modules/proof": "0.6.1",
   "modules/spec-trace": "0.5.0",
@@ -29,7 +29,7 @@
   "packages/postgres": "0.2.0",
   "modules/intake": "0.7.1",
   "modules/foreman": "0.14.0",
-  "modules/console": "0.10.0",
+  "modules/console": "0.10.1",
   "adapters/secrets/openbao": "0.1.1",
   "packages/factory-source": "0.1.0"
 }
