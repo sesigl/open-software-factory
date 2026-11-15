@@ -89,7 +89,12 @@ which stays until live updates replace it (`TODO.md`, T-60).
     runner at reference speed; the budget follows the first CI measure of this suite once it is in.
   - Where the time of a change goes: Forgejo starts once per worker, 5 to 7 seconds in the first such scenario of the
     worker; a change is one fetch, one run of `factory edit` and about ten runs of the forge adapter, each a start of
-    Node; the scenario of a conflict waits about 18 seconds until Forgejo has found the conflict.
+    Node; the scenario of a conflict takes about 18 seconds, 10 of them in forge-forgejo's `pr`. Forgejo finds
+    the conflict in under a second, but its API reads "not mergeable" both for a conflict and while it still checks,
+    so `pr` waits 10 seconds for every pull request that is not mergeable (the adapter's README, "Merge state").
+    Probed on Forgejo 11 on 15 November 2026: no field of the pull request and no answer of a merge tells the two
+    apart, and the API refuses to set a pull request's update time, so a rule by the pull request's age has no fast
+    system test. Open: a faster answer for a conflict.
   - Made faster first: the scenarios start Forgejo once per worker and not per scenario, wait on the forge and not
     on a reload of the page, and the scenarios of a refused form use no forge at all.
 - Before that: 120 seconds for 154 scenarios. Raised from 95 seconds on 15 November 2026
