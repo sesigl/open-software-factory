@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/sesigl/open-software-factory/compare/runlog-v0.5.0...runlog-v0.5.1) (2026-11-15)
+
+
+### Bug Fixes
+
+* **cli:** a command named like toString or constructor names no command ([#335](https://github.com/sesigl/open-software-factory/issues/335)) ([c3bd872](https://github.com/sesigl/open-software-factory/commit/c3bd872b074ea799bc9264f70bbfa7028bed38f1))
+
 ## [0.5.0](https://github.com/sesigl/open-software-factory/compare/runlog-v0.4.1...runlog-v0.5.0) (2026-11-11)
 
 

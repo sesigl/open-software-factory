@@ -146,15 +146,15 @@ services:
 
   # One-shot: the two policies for the mount, as secrets-openbao prints them, into the volume openbao-policies.
   openbao-policies:
-    image: ghcr.io/sesigl/open-software-factory/console:0.9.0-r1
+    image: ghcr.io/sesigl/open-software-factory/console:0.10.0
     build: &console
       context: ../images
       target: module
       secrets: [ca]
       args:
         PACKAGES: >-
-          @opensoftware/console@0.9.0 @opensoftware/forge-github@0.8.0 @opensoftware/forge-forgejo@0.8.0
-          @opensoftware/secrets-openbao@0.1.0
+          @opensoftware/console@0.10.0 @opensoftware/forge-github@0.8.1 @opensoftware/forge-forgejo@0.8.1
+          @opensoftware/secrets-openbao@0.1.1
     entrypoint: [sh, -c]
     command:
       - |
@@ -259,13 +259,13 @@ services:
 
   # Copies FACTORY_DIR into the volume factory and commits it there: foreman reads a run's factory version from Git.
   factory-repo:
-    image: ghcr.io/sesigl/open-software-factory/factory-spec:0.11.0
+    image: ghcr.io/sesigl/open-software-factory/factory-spec:0.12.0
     build: &factory-spec
       context: ../images
       target: module
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/factory-spec@0.11.0"
+        PACKAGES: "@opensoftware/factory-spec@0.12.0"
     volumes:
       - ${FACTORY_DIR:-./factory}:/source:ro
       - factory:/factory
@@ -283,13 +283,13 @@ services:
 
   gatekeeper:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/gatekeeper:0.10.0-r1
+    image: ghcr.io/sesigl/open-software-factory/gatekeeper:0.10.1
     build:
       context: ../images
       target: gatekeeper
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/gatekeeper@0.10.0 @opensoftware/channel-slack@0.3.0 @opensoftware/forge-github@0.8.0"
+        PACKAGES: "@opensoftware/gatekeeper@0.10.1 @opensoftware/channel-slack@0.3.0 @opensoftware/forge-github@0.8.1"
     # Asks in the Slack channel GATEKEEPER_SLACK_CHANNEL, on the run's pull request with GATEKEEPER_FORGE_TOKEN, or both.
     entrypoint: [sh, -c]
     command:
@@ -321,13 +321,13 @@ services:
 
   intake:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/intake:0.7.0-r1
+    image: ghcr.io/sesigl/open-software-factory/intake:0.7.1
     build:
       context: ../images
       target: module
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/intake@0.7.0 @opensoftware/channel-slack@0.3.0 @opensoftware/forge-github@0.8.0 @opensoftware/forge-forgejo@0.8.0"
+        PACKAGES: "@opensoftware/intake@0.7.1 @opensoftware/channel-slack@0.3.0 @opensoftware/forge-github@0.8.1 @opensoftware/forge-forgejo@0.8.1"
     command: [intake, serve]
     depends_on:
       postgres:
@@ -393,16 +393,16 @@ services:
 
   foreman:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/foreman:0.13.0-r1
+    image: ghcr.io/sesigl/open-software-factory/foreman:0.14.0
     build:
       context: ../images
       target: foreman
       secrets: [ca]
       args:
         PACKAGES: >-
-          @opensoftware/foreman@0.13.0 @opensoftware/harness-claude-code@0.6.0 @opensoftware/forge-github@0.8.0
-          @opensoftware/forge-forgejo@0.8.0 @opensoftware/inference-litellm@0.5.0 @opensoftware/sandbox-docker@0.7.0
-          @opensoftware/sandbox-kubernetes@0.5.0 @opensoftware/secrets-openbao@0.1.0
+          @opensoftware/foreman@0.14.0 @opensoftware/harness-claude-code@0.6.0 @opensoftware/forge-github@0.8.1
+          @opensoftware/forge-forgejo@0.8.1 @opensoftware/inference-litellm@0.5.1 @opensoftware/sandbox-docker@0.8.0
+          @opensoftware/sandbox-kubernetes@0.6.0 @opensoftware/secrets-openbao@0.1.1
     command: [foreman, serve]
     depends_on:
       openbao-setup:
@@ -481,7 +481,7 @@ services:
 
   console:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/console:0.9.0-r1
+    image: ghcr.io/sesigl/open-software-factory/console:0.10.0
     build: *console
     command: [console, serve]
     depends_on:
@@ -545,13 +545,13 @@ services:
   # its folder reports, which the console skips, as they hold no record. Judging runs is a paid model call: scorekit
   # scores only with IMPROVE_SCORERS set, like "redundant-tests scope-creep", through litellm.
   improve:
-    image: ghcr.io/sesigl/open-software-factory/observer:0.2.0-r1
+    image: ghcr.io/sesigl/open-software-factory/observer:0.2.1
     build:
       context: ../images
       target: module
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/observer@0.2.0 @opensoftware/scorekit@0.6.0 @opensoftware/ledger@0.8.0"
+        PACKAGES: "@opensoftware/observer@0.2.1 @opensoftware/scorekit@0.6.1 @opensoftware/ledger@0.8.0"
     profiles: [improve]
     restart: unless-stopped
     init: true
@@ -587,7 +587,7 @@ services:
 
   # factory-spec on the factory in the volume, for the commands of factory: docker compose run --rm factory plan
   factory:
-    image: ghcr.io/sesigl/open-software-factory/factory-spec:0.11.0
+    image: ghcr.io/sesigl/open-software-factory/factory-spec:0.12.0
     build: *factory-spec
     profiles: [tools]
     depends_on:

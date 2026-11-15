@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.6.0](https://github.com/sesigl/open-software-factory/compare/contracts-v2.5.0...contracts-v2.6.0) (2026-11-15)
+
+
+### Features
+
+* **console:** the pages /skills and /skills/&lt;name&gt;, read-only, with safe Markdown (T-59, ADR 0141, ADR 0143) ([#332](https://github.com/sesigl/open-software-factory/issues/332)) ([5ce9bb8](https://github.com/sesigl/open-software-factory/commit/5ce9bb83202e2b60dd8fa271b3e5d670062dea87))
+* **factory-spec, foreman:** an agent can use a skill of another Git repository, pinned in factory.lock (T-59, ADR 0146) ([#338](https://github.com/sesigl/open-software-factory/issues/338)) ([1e7f645](https://github.com/sesigl/open-software-factory/commit/1e7f6459270b6dd21def313b26bfb437981c678e))
+* **sandbox-egress:** the library is the egress proxy of a sandbox and no longer exports readSpec, copyEnds, WORKSPACE, memoryBytes, placeholder, envVariable and the proxy's five constants, which are the fields of EGRESS_PROXY; contracts gets readDocument, copyEnds and SANDBOX_WORKSPACE (T-62, ADR 0147) ([4eb088b](https://github.com/sesigl/open-software-factory/commit/4eb088b43fe3c74e11694fd5db6100faa65d90b9))
+
 ## [2.5.0](https://github.com/sesigl/open-software-factory/compare/contracts-v2.4.0...contracts-v2.5.0) (2026-11-14)
 
 

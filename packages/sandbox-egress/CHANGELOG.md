@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/sesigl/open-software-factory/compare/sandbox-egress-v0.5.0...sandbox-egress-v0.6.0) (2026-11-15)
+
+
+### Features
+
+* **sandbox-egress:** the library is the egress proxy of a sandbox and no longer exports readSpec, copyEnds, WORKSPACE, memoryBytes, placeholder, envVariable and the proxy's five constants, which are the fields of EGRESS_PROXY; contracts gets readDocument, copyEnds and SANDBOX_WORKSPACE (T-62, ADR 0147) ([4eb088b](https://github.com/sesigl/open-software-factory/commit/4eb088b43fe3c74e11694fd5db6100faa65d90b9))
+
 ## [0.5.0](https://github.com/sesigl/open-software-factory/compare/sandbox-egress-v0.4.0...sandbox-egress-v0.5.0) (2026-11-15)
 
 

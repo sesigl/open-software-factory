@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.14.0](https://github.com/sesigl/open-software-factory/compare/foreman-v0.13.0...foreman-v0.14.0) (2026-11-15)
+
+
+### Features
+
+* **factory-source:** one library fetches a factory's folder from Git, and the foreman uses it (T-56, ADR 0142) ([#334](https://github.com/sesigl/open-software-factory/issues/334)) ([9cc98d8](https://github.com/sesigl/open-software-factory/commit/9cc98d8e46e72731a2a25ed4ea373bbdd7c65350))
+* **factory-spec, foreman:** an agent can use a skill of another Git repository, pinned in factory.lock (T-59, ADR 0146) ([#338](https://github.com/sesigl/open-software-factory/issues/338)) ([1e7f645](https://github.com/sesigl/open-software-factory/commit/1e7f6459270b6dd21def313b26bfb437981c678e))
+
+
+### Bug Fixes
+
+* **cli:** a command named like toString or constructor names no command ([#335](https://github.com/sesigl/open-software-factory/issues/335)) ([c3bd872](https://github.com/sesigl/open-software-factory/commit/c3bd872b074ea799bc9264f70bbfa7028bed38f1))
+
 ## [0.13.0](https://github.com/sesigl/open-software-factory/compare/foreman-v0.12.0...foreman-v0.13.0) (2026-11-15)
 
 

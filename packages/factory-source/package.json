@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/factory-source",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Give the folder of a factory of the open software factory, from a path or from a Git remote at a ref.",
   "license": "Apache-2.0",
   "repository": {

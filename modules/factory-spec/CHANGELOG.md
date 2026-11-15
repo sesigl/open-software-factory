@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.12.0](https://github.com/sesigl/open-software-factory/compare/factory-spec-v0.11.0...factory-spec-v0.12.0) (2026-11-15)
+
+
+### Features
+
+* **console:** the pages /skills and /skills/&lt;name&gt;, read-only, with safe Markdown (T-59, ADR 0141, ADR 0143) ([#332](https://github.com/sesigl/open-software-factory/issues/332)) ([5ce9bb8](https://github.com/sesigl/open-software-factory/commit/5ce9bb83202e2b60dd8fa271b3e5d670062dea87))
+* **factory-spec, foreman:** an agent can use a skill of another Git repository, pinned in factory.lock (T-59, ADR 0146) ([#338](https://github.com/sesigl/open-software-factory/issues/338)) ([1e7f645](https://github.com/sesigl/open-software-factory/commit/1e7f6459270b6dd21def313b26bfb437981c678e))
+
+
+### Bug Fixes
+
+* **cli:** a command named like toString or constructor names no command ([#335](https://github.com/sesigl/open-software-factory/issues/335)) ([c3bd872](https://github.com/sesigl/open-software-factory/commit/c3bd872b074ea799bc9264f70bbfa7028bed38f1))
+
 ## [0.11.0](https://github.com/sesigl/open-software-factory/compare/factory-spec-v0.10.0...factory-spec-v0.11.0) (2026-11-15)
 
 
