@@ -359,6 +359,9 @@ importers:
       '@opensoftware/factory-source':
         specifier: workspace:*
         version: link:../../packages/factory-source
+      '@opensoftware/person-proof':
+        specifier: workspace:*
+        version: link:../../packages/person-proof
       astro:
         specifier: 7.4.4
         version: 7.4.4(@types/node@24.19.2)(aws4fetch@1.0.20)(terser@5.51.2)(yaml@2.9.1)
