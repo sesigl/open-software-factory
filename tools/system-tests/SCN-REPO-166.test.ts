@@ -1,7 +1,12 @@
 import { scenario } from "@opensoftware/testkit";
 import { ENV, EXAMPLE } from "./setup.ts";
 
-const OPENBAO = ["OSF_OPENBAO_UNSEAL_KEY", "OSF_OPENBAO_ROOT_TOKEN", "OSF_OPENBAO_CONSOLE_TOKEN", "OSF_OPENBAO_EGRESS_TOKEN"];
+const OPENBAO = [
+  "OSF_OPENBAO_UNSEAL_KEY",
+  "OSF_OPENBAO_ROOT_TOKEN",
+  "OSF_OPENBAO_CONSOLE_TOKEN",
+  "OSF_OPENBAO_EGRESS_TOKEN",
+];
 
 scenario("SCN-REPO-166", async ({ sut, given, when, then }) => {
   await given(

@@ -4,7 +4,12 @@ import { randomBytes } from "node:crypto";
 import type { Compose, FakeSlack, Fakes, Forge, Harness, HarnessTurn, Sut } from "@opensoftware/testkit";
 
 /** The values of .env that osf init generates for the profile's OpenBao. */
-const OPENBAO = ["OSF_OPENBAO_UNSEAL_KEY", "OSF_OPENBAO_ROOT_TOKEN", "OSF_OPENBAO_CONSOLE_TOKEN", "OSF_OPENBAO_EGRESS_TOKEN"];
+const OPENBAO = [
+  "OSF_OPENBAO_UNSEAL_KEY",
+  "OSF_OPENBAO_ROOT_TOKEN",
+  "OSF_OPENBAO_CONSOLE_TOKEN",
+  "OSF_OPENBAO_EGRESS_TOKEN",
+];
 
 export const FOREMAN_TOKEN = "foreman-token-1";
 export const INTAKE_TOKEN = "intake-token-1";

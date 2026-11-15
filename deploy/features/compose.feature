@@ -201,7 +201,7 @@ Feature: The Compose profile installs a complete factory with one command
     And "ada@acme.dev" comes back from GitHub, the console trades the code with the client of ".env", and the page "/" has the heading "Runs" and the account "ada@acme.dev · admin"
     And "mallory@acme.dev" comes back from GitHub and reads "mallory@acme.dev is not on this factory's access list"
 
-  @id=SCN-DIST-039 @status=planned
+  @id=SCN-DIST-039 @status=implemented
   Scenario: The profile's OpenBao keeps a stored secret over a restart, unseals itself, and a sandbox still sends the value
     Given the Compose profile with every value of ".env.example" set in ".env", OpenBao's unseal key, root token and two token IDs as "osf init" generates them
     And the operator ran "docker compose up --detach --wait openbao-setup docker-proxy"
