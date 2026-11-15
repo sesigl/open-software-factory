@@ -1,0 +1,12 @@
+{
+  "keys": [
+    {
+      "kty": "OKP",
+      "crv": "Ed25519",
+      "alg": "Ed25519",
+      "use": "sig",
+      "kid": "fixture-kid-worthless-made-up-0000000000000",
+      "x": "fixture-public-key-worthless-made-up-000000"
+    }
+  ]
+}

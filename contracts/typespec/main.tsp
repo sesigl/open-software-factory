@@ -18,4 +18,5 @@ import "./sandbox.tsp";
 import "./factory-lock.tsp";
 import "./access.tsp";
 import "./skill-catalog.tsp";
+import "./person-proof.tsp";
 import "./health.tsp";

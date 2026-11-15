@@ -54,6 +54,8 @@ Each format has one schema, generated from `typespec/`, and fixtures that CONTRA
 | factory lock | `factory-lock/factory-lock.schema.json` | `FactoryLock` | `factory.lock` next to `factory.yaml`: the registry MCP servers, the adapters and the skills of other Git repositories that `factory plan` pinned, a skill with its commit and the hash of its files (ADR 0020, ADR 0125, ADR 0146). factory-spec writes it, the foreman reads the adapter pins and the skill pins. |
 | access | `access/access.schema.json` | `Access` | `access.yaml` next to `factory.yaml`: the people who may sign in to the factory UI, each by email with one role, `member`, `factory-engineer` or `admin` (ADR 0134). The console reads it at each request. |
 | skill catalog | `skill-catalog/skill-catalog.schema.json` | `SkillCatalog` | What `factory skills` prints: every skill the factory's agents use, with its needs, its agents and what each lacks, its files, the Markdown of its `SKILL.md` and its problems, and for a skill of another Git repository its URL and commit (ADR 0141, ADR 0143, ADR 0146). factory-spec writes it, the console reads it for `/skills`. |
+| person proof | `person-proof/person-proof.schema.json` | `PersonProof` | The claims of the JSON Web Token in the header `OSF-Person` that the console signs for one call of a module API in a person's name: the issuer, the person and their role, the module as the audience, 30 seconds from its issue, and the request's method, path and the SHA-256 of its body (ADR 0151). foreman, intake and gatekeeper check it. Open: a reader ignores a claim it does not know. |
+| person keys | `person-keys/person-keys.schema.json` | `PersonKeys` | The JSON Web Key Set of an issuer of person proofs, as the console publishes it at `/.well-known/jwks.json`: Ed25519 public keys, each with its thumbprint as `kid` (ADR 0151). Closed: a key with a private part is invalid. |
 | events | `events/<event>/<event>.schema.json`, `events/asyncapi.yaml` | `WorkReceived`, `WorkRetryRequested`, `RunStarted`, `RunCompleted`, `RunBlocked`, `DoctorPing` … `IssueLabeled` | CloudEvents 1.0, structured JSON. |
 
 ## HTTP APIs
@@ -176,3 +178,9 @@ None. The CLI reads no environment variables.
 | SCN-CTR-022 | implemented | A pinned skill with a short commit is rejected with its path |
 | SCN-CTR-023 | implemented | The pins of skills in factory.lock are no breaking change |
 | SCN-CTR-024 | implemented | A skill catalog with a skill of another repository at its commit validates |
+| SCN-CTR-025 | implemented | A person proof for one call of the foreman validates |
+| SCN-CTR-026 | implemented | A person proof without claims is rejected with the path of each required claim |
+| SCN-CTR-027 | implemented | A person proof with an unknown role, a method in lower case and a short body digest is rejected with their paths |
+| SCN-CTR-028 | implemented | A key set with one Ed25519 public key validates |
+| SCN-CTR-029 | implemented | A key set whose key holds its private part is rejected with its path |
+| SCN-CTR-030 | implemented | The person proof and its key set are no breaking change |

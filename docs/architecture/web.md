@@ -13,7 +13,7 @@ item of the wave says which part it builds.
 
 ```text
 browser ─────────────▶ console            the only server a browser reaches: pages, forms, the session cookie
-                         ├─ HTTP with a service token and the person ─▶ foreman, intake, gatekeeper (as today)
+                         ├─ HTTP with a service token and the person proof ─▶ foreman, intake, gatekeeper
                          ├─ secrets adapter, a program ─▶ OpenBao       writes values, lists names, cannot read a value
                          ├─ forge adapter, a program ───▶ the forge     commit, pull request, merge when green
                          └─ a folder, or git fetch ─────▶ the factory's files: factory.yaml, access.yaml, skills
@@ -47,6 +47,17 @@ sandbox's egress proxy ─ reads ─▶ OpenBao  as today: it swaps the placehol
 
 The own sign-in is switched on by name, never inferred. With it on, a missing provider setting stops the console at
 its start.
+
+## The person, proven to the modules
+
+A form's call of foreman, intake or gatekeeper names the person in its body, as `requester` or `by`. A module trusts
+that name only with a person proof (ADR 0151, T-61): a JSON Web Token in the header `OSF-Person` that the console
+signs with its Ed25519 key `CONSOLE_SIGNING_KEY` for this one call. It names the person and their role, the module as
+its audience, the request's method, path and body digest, and ends after 30 seconds. The console publishes its public
+keys at `/.well-known/jwks.json`; a module fetches them from the address in its setting `<MODULE>_PERSON_KEYS`. In
+both modes with actions the console signs: for the session's person, or for the person of the proxy's header. A team's
+own tool acts as itself with the API token, or signs proofs with a key of its own that the modules' setting names. The
+formats are `person-proof` and `person-keys` in `contracts/`.
 
 ## Three kinds of UI test
 

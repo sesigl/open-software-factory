@@ -71,6 +71,7 @@ Use these terms in scenarios, code, UI text and docs.
 | Factory engineer | A person who improves the factory itself. |
 | Drift | A difference between the factory definition and the running factory. |
 | Access file | The file in the factory's Git repository that lists the people who may sign in to the factory UI and their roles (`member`, `factory-engineer`, `admin`). |
+| Person proof | A short-lived token, signed by the console, that proves to foreman, intake or gatekeeper which person acts in one call; the module's API token alone can no longer name a person (ADR 0151). |
 | Change | An edit of the factory made in the factory UI: a pull request on the factory's repository that names the person and merges when its checks are green (ADR 0130). |
 | Island | A part of a server-rendered page that runs script in the browser, such as a live state; no feature depends on one. |
 | Page scenario | A UI scenario whose test reads the console's HTML over HTTP by role and name, without a browser; the default kind. |
