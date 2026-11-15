@@ -34,7 +34,7 @@ try {
 
 | Export | What it does |
 | --- | --- |
-| `factorySource(setting, { cache, token })` | A source with one method, `fetch()`. `setting` is a path to the factory's file, or `git+<url>#<ref>` (without `#<ref>`: the remote's `HEAD`) with `factory.yaml` at the root of the commit. `fetch()` gives `{ folder, file, commit }`: for a path, its folder and the path itself, no commit and no Git process; for a remote, the ref's commit, fetched again at each call, and its files in `<cache>/<commit>/`. The fetches of one source run one at a time. |
+| `factorySource(setting, { cache, token })` | A source with one method, `fetch()`. `setting` is a path to the factory's file, or, when it starts with `git+`, `git+<url>#<ref>` (without `#<ref>`: the remote's `HEAD`) with `factory.yaml` at the root of the commit. `fetch()` gives `{ folder, file, commit }`: for a path, its folder and the path itself, no commit and no Git process; for a remote, the ref's commit, fetched again at each call, and its files in `<cache>/<commit>/`. The fetches of one source run one at a time. Paths stay as given: pass absolute ones for absolute folders. |
 | `FetchError` | What `fetch()` throws for a remote whose ref cannot be fetched: `cannot fetch <ref> of <url>: <Git's message>`. |
 
 ## The cache
@@ -72,7 +72,7 @@ This library reads no environment variables: its caller passes the cache folder 
 | SCN-FSOURCE-001 | implemented | A factory in a Git remote gives the files of the commit of its ref |
 | SCN-FSOURCE-002 | implemented | A remote without a ref gives the commit of its HEAD |
 | SCN-FSOURCE-003 | implemented | A ref that the remote does not have is a FetchError with Git's message |
-| SCN-FSOURCE-004 | implemented | A path gives its file and its folder, with no commit and nothing in the cache |
+| SCN-FSOURCE-004 | implemented | A path, also one with "git+" inside it, gives its file and its folder, with no commit and nothing in the cache |
 | SCN-FSOURCE-005 | implemented | A new commit on the ref gives a new folder, and the folder of the old commit stays as it was |
 | SCN-FSOURCE-006 | implemented | A folder that a stopped fetch left half written is written again from nothing |
 | SCN-FSOURCE-007 | implemented | Two fetches at once of one source both give the folder of the commit |

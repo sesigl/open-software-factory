@@ -23,10 +23,10 @@ Feature: A factory's folder from a path or a Git remote
     Then the fetch fails with a FetchError "cannot fetch no-such-branch of file://<path>: " and Git's message "couldn't find remote ref no-such-branch"
 
   @id=SCN-FSOURCE-004 @status=implemented
-  Scenario: A path gives its file and its folder, with no commit and nothing in the cache
-    Given the file "factory/hello.yaml" that is not committed
-    When a program fetches the source "<path of factory/hello.yaml>" with a cache folder
-    Then it gets the folder "factory", the file "factory/hello.yaml" and no commit
+  Scenario: A path, also one with "git+" inside it, gives its file and its folder, with no commit and nothing in the cache
+    Given the file "git+factory/hello.yaml" that is not committed
+    When a program fetches the source "<path of git+factory/hello.yaml>" with a cache folder
+    Then it gets the folder "git+factory", the file "git+factory/hello.yaml" and no commit
     And the cache folder holds nothing
 
   @id=SCN-FSOURCE-005 @status=implemented

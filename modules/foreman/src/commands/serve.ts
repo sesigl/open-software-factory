@@ -132,7 +132,7 @@ export async function serve(env: Env) {
   const token = env.FOREMAN_API_TOKEN;
   if (!token) throw new UsageError("set FOREMAN_API_TOKEN: the token that callers of the API send");
   const data = resolve(env.OSF_DATA || ".foreman");
-  const source = factorySource(env.FOREMAN_FACTORY || "factory.yaml", data, env.FOREMAN_FACTORY_TOKEN || undefined);
+  const source = factorySource(env.FOREMAN_FACTORY || "factory.yaml", data, env.FOREMAN_FACTORY_TOKEN);
   const { definition } = await source.read();
   const maps = Object.fromEntries(
     PORTS.map((port) => [port, JSON.parse(env[MAP_OF[port]] || "{}") as CommandLines]),

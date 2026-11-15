@@ -1,12 +1,12 @@
 // A factory's source (ADR 0135, ADR 0142): a path to its file, or git+<url>#<ref> with factory.yaml at the root of
 // the ref's commit.
-import { dirname, join, resolve } from "node:path";
+import { dirname, join } from "node:path";
 import { fetchCommit } from "./git.ts";
 
 export interface FactoryFolder {
-  /** The absolute folder of the factory: the folder of the path, or `<cache>/<commit>` of a remote. */
+  /** The folder of the factory: the folder of the path, or `<cache>/<commit>` of a remote. */
   folder: string;
-  /** The absolute path of the factory's file: the path itself, or `factory.yaml` in the folder of a remote. */
+  /** The factory's file: the path itself, or `factory.yaml` in the folder of a remote. */
   file: string;
   /** The commit of a remote's ref; undefined for a path, whose version is the caller's to find. */
   commit?: string;
@@ -26,15 +26,15 @@ export interface FactorySource {
 
 const GIT = /^git\+(.+?)(?:#(.+))?$/;
 
-/** The source that `setting` names: a path, or `git+<url>#<ref>` (default ref: the remote's HEAD). */
+/**
+ * The source that `setting` names: a path, or `git+<url>#<ref>` (default ref: the remote's HEAD). Paths stay as
+ * given: a relative path or cache gives a folder relative to the working directory.
+ */
 export function factorySource(setting: string, options: SourceOptions): FactorySource {
   const remote = GIT.exec(setting);
-  if (!remote) {
-    const file = resolve(setting);
-    return { fetch: async () => ({ folder: dirname(file), file }) };
-  }
+  if (!remote) return { fetch: async () => ({ folder: dirname(setting), file: setting }) };
   const [, url, ref = "HEAD"] = remote as unknown as [string, string, string?];
-  const cache = resolve(options.cache);
+  const { cache } = options;
   // One fetch at a time: callers fetch at once and share the bare repository.
   let queue: Promise<unknown> = Promise.resolve();
   const fetch = async (): Promise<FactoryFolder> => {

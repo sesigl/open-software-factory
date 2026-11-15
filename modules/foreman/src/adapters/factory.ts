@@ -38,7 +38,7 @@ export function factorySource(setting: string, data: string, token: string | und
       const fetched = await source.fetch().catch((failure: unknown) => {
         throw failure instanceof FetchError ? new UsageError(`FOREMAN_FACTORY: ${failure.message}`) : failure;
       });
-      folder = fetched.folder;
+      folder = resolve(fetched.folder);
       return readFactory(fetched.file, fetched.commit);
     },
   };
