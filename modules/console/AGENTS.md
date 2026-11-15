@@ -86,7 +86,12 @@ which stays until live updates replace it (`TODO.md`, T-60).
 
 ## Budget
 
-- System tests: 280 seconds in total on the CI runner (186 scenarios). Raised from 250 seconds on 15 November 2026
+- System tests: 300 seconds in total on the CI runner (190 scenarios). Raised from 280 seconds on 15 November 2026
+  with the checks of the factory repository in `console doctor` (T-58, ADR 0150): three of its four scenarios read a
+  repository and its rules on Forgejo, about 4 seconds each here, 13 seconds for the four. At CI's ratio to this
+  machine that is about 16 seconds on top of the 261.6 measured for 186 scenarios, 278 for the suite; the budget is
+  that and 8 %. Set it to the next CI measure.
+- Before that: 280 seconds for 186 scenarios. Raised from 250 seconds on 15 November 2026
   with the switches of a skill (T-59, ADR 0149), measured on the development container in one run of the whole suite:
   the 7 new scenarios took 22.7 seconds next to 200.9 for the other 178, so 11.3 % more, about 26 seconds on top of
   the 232 estimated for CI below, 258 for the suite; the budget is that and 8 %. The first CI measure of the 186

@@ -37,7 +37,7 @@ if [ -n "${FACTORY_TOKEN:-}" ]; then
   export GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0
 fi
 clone=$(mktemp -d)
-if ! GIT_TERMINAL_PROMPT=0 git clone --quiet --depth 1 --branch "$branch" "$url" "$clone/factory" 2>"$clone/error"; then
+if ! GIT_TERMINAL_PROMPT=0 git clone --quiet --depth 1 --branch "$branch" -- "$url" "$clone/factory" 2>"$clone/error"; then
   echo "factory-repo: cannot clone $branch of $named: $(cat "$clone/error"): check FACTORY_REPOSITORY and FACTORY_TOKEN" >&2
   rm -rf "$clone"
   exit 1
