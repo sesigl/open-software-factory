@@ -117,6 +117,7 @@ Each adapter gets only these variables, `PATH`, and its own temporary `HOME`, `O
 | SCN-E2E-006 | implemented | An agent in a sandbox pushes to the forge with a placeholder, and holds no token of the foreman |
 | SCN-E2E-007 | implemented | A value that a factory engineer stores in the console reaches the next run's request, with no restart |
 | SCN-E2E-008 | implemented | A change that a factory engineer proposes in the console merges after its check and is the factory version of the next run |
+| SCN-E2E-009 | implemented | A skill that a factory engineer switches on in the console reaches the agent's next run with the secret it needs |
 
 ## Paid reference run
 

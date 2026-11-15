@@ -735,7 +735,7 @@ Feature: Product engineering and factory engineering
       When the factory engineer changes the model mix in the factory definition
       Then the change is measured with the same metrics, scorers and benchmarks
 
-    @scenario_id=SCN-FACTORY-ROLE-003 @status=planned @evidence=derived @source=owner-2026-11 @source=08:22
+    @scenario_id=SCN-FACTORY-ROLE-003 @status=implemented @evidence=derived @source=owner-2026-11 @source=08:22
     Scenario: A factory engineer gives an agent a skill in the factory UI
       Given the factory's skill catalog has the skill "release-notes"
       When a person with the role "factory-engineer" gives the skill to the agent "implement" in the factory UI

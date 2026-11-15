@@ -98,6 +98,6 @@ not `deprecated` is `implemented`; otherwise it says `planned`. The check VISION
 | SCN-FACTORY-BENCH-006 | implemented | SCN-TASK-030 (implemented), SCN-TASK-031 (implemented), SCN-INFER-003 (implemented) |
 | SCN-FACTORY-ROLE-001 | planned | none |
 | SCN-FACTORY-ROLE-002 | planned | none |
-| SCN-FACTORY-ROLE-003 | planned | none |
+| SCN-FACTORY-ROLE-003 | implemented | SCN-E2E-009 (implemented) |
 | SCN-FACTORY-OUTCOME-001 | implemented | SCN-LEDGER-028 (implemented), SCN-LEDGER-065 (implemented) |
 | SCN-FACTORY-OUTCOME-002 | implemented | SCN-LEDGER-027 (implemented) |

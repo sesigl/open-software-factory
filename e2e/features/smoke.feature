@@ -76,3 +76,16 @@ Feature: Key use cases across modules
     When a program posts a second work item to foreman's "/v1/runs", with no restart
     Then the stage "implement" of the second run succeeded with the merge commit as its factory version
 
+  @id=SCN-E2E-009 @status=implemented @realizes=SCN-FACTORY-ROLE-003
+  Scenario: A skill that a factory engineer switches on in the console reaches the agent's next run with the secret it needs
+    Given a factory repository on Forgejo that declares the secrets provider "env", whose agent "notes" uses the skill "linear-notes", which needs the secret "LINEAR_TOKEN" and the host "host.docker.internal", whose agent "implement" runs in a sandbox of the workspace image that reaches "host.docker.internal" and has no secret and no skill, and whose main branch requires the check "factory"
+    And the Compose profile with that repository in "FACTORY_REPOSITORY", and the scripted harness that prints the skill's "SKILL.md" and asks the API at "host.docker.internal" with "Authorization: Bearer $LINEAR_TOKEN" when asked to implement
+    And the console with the sign-in of GitHub, where "grace@acme.dev" of the repository's "access.yaml" signed in as "factory-engineer"
+    When the factory engineer opens "/skills/linear-notes", presses "Switch on for implement" and then "Propose change"
+    Then the page that asked first listed "The factory declares the secrets provider openbao at ^0.", "The agent implement gets the secret reference ref:openbao/linear-token." and "The agent implement gets the skill ./skills/linear-notes."
+    And the console answered 303 to "/changes"
+    When the check "factory" of the pull request's head passes, posted as the factory's workflow posts it, and the forge merges it
+    And the factory engineer stores a value for "linear-token" in the form of the page "/secrets", and a program posts the work item to foreman's "/v1/runs"
+    Then the stage "implement" of the run succeeded with the merge commit as its factory version
+    And the agent found the "SKILL.md" of the repository in ".claude/skills/linear-notes" of its folder
+    And the API got one request, with "Authorization: Bearer" and the stored value
