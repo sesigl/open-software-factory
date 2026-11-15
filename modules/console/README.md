@@ -221,7 +221,7 @@ foreman's `temporal` check covers Temporal.
 
 A server of a release before `/v1/health` fails its check with the advice to update it. When every check is ok,
 `console doctor` prints the count last, like `all 7 checks ok`. A warning prints `WARN  <check>: <what to do>`, counts
-as ok, adds itself to the count, like `all 5 checks ok, 1 warns`, and shows on `/health` as "warning" with status 200.
+as ok, adds itself to the count, like `all 5 checks ok, warnings: 1`, and shows on `/health` as "warning" with status 200.
 
 ## Configuration
 

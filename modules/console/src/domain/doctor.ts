@@ -54,7 +54,7 @@ export function report(items: Item[]): string[] {
   const line = ({ name, ok, detail, warn }: Item) =>
     ok ? (warn ? `WARN  ${name}: ${detail}` : `ok    ${name}`) : `FAIL  ${name}: ${detail}`;
   const warns = items.filter(({ warn }) => warn).length;
-  const count = `all ${items.length} checks ok${warns ? `, ${warns} warns` : ""}`;
+  const count = `all ${items.length} checks ok${warns ? `, warnings: ${warns}` : ""}`;
   return items.every(({ ok }) => ok) ? [...items.map(line), count] : items.map(line);
 }
 

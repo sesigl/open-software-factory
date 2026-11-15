@@ -35,8 +35,8 @@ scenario("SCN-CONSOLE-188", async ({ sut, fakes, given, when, then }) => {
     },
   );
 
-  await then('its last line is "all 5 checks ok, 1 warns"', async () => {
-    expect(run.stdout.split("\n").at(-2)).toBe("all 5 checks ok, 1 warns");
+  await then('its last line is "all 5 checks ok, warnings: 1"', async () => {
+    expect(run.stdout.split("\n").at(-2)).toBe("all 5 checks ok, warnings: 1");
   });
 
   await then('"/health" answers 200 with the row "secrets token", "warning" and the same advice', async () => {

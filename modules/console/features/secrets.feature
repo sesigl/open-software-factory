@@ -121,7 +121,7 @@ Feature: Secrets
     Given a factory whose agent "triage" declares "ref:openbao/linear-token", a store with it, and a console's token that lives 72 hours
     When the user runs "console doctor" and a person opens "/health"
     Then the command exits with code 0 and prints "WARN  secrets token: the token in OSF_OPENBAO_TOKEN ends at <time>, within 7 days: give the console a new token"
-    And its last line is "all 5 checks ok, 1 warns"
+    And its last line is "all 5 checks ok, warnings: 1"
     And "/health" answers 200 with the row "secrets token", "warning" and the same advice
 
   @id=SCN-CONSOLE-189 @status=implemented @kind=journey
