@@ -27,8 +27,10 @@ docker compose run --rm factory plan
 ```
 
 `console doctor` checks each server's health and token, the factory definition and its groups, in that order
-([ADR 0086](../docs/decisions/0086-health-routes.md)). Then open the console at http://127.0.0.1:8080. `up` pulls the signed module images from GHCR; an image that is not
+([ADR 0086](../docs/decisions/0086-health-routes.md)). Then open the console at http://localhost:8080. `up` pulls the signed module images from GHCR; an image that is not
 published yet, like one whose pin moved a moment ago, is built from npm, which takes a minute or two.
+
+The console is open and read-only until you [turn on the sign-in](#turn-on-the-sign-in).
 
 ## What runs
 
@@ -48,7 +50,7 @@ published yet, like one whose pin moved a moment ago, is built from npm, which t
 | `docker-proxy` | the foreman's only way to the Docker API, for the agents' sandboxes; see [Sandboxes](#sandboxes) | none |
 | `agent-template` | one-shot: puts the image `harness-claude-code` on this machine, the template of the agents' sandboxes | none |
 | `foreman` | runs the factory's workflow on Temporal | `FOREMAN_PORT`, 8083 |
-| `console` | the web view of the runs and the factory | `CONSOLE_PORT`, 8080 |
+| `console` | the web view of the runs and the factory; its health check asks `/v1/ready`, which needs no session | `CONSOLE_PORT`, 8080 |
 | `factory` | factory-spec for `docker compose run --rm factory <command>`; profile `tools` | none |
 
 The module images are `ghcr.io/sesigl/open-software-factory/<module>:<version>`, built from
@@ -90,7 +92,8 @@ foreman gets a key with the factory's budget for each run, and the spend log nam
 owner's Claude subscription ([ADR 0080](../docs/decisions/0080-dogfood-on-a-subscription.md)). Its agents clone the
 issue's repository with `gh`, follow its `AGENTS.md` and open a draft pull request with the scenarios. The gate before
 `implement` asks the owner on that pull request; the owner comments `/approve`, and the agents implement, review,
-wait for the check `verify` and mark the pull request ready. The owner merges it. In `.env`:
+wait for the check `verify` and mark the pull request ready. The owner merges it. It has no `access.yaml`, so with
+the [sign-in](#turn-on-the-sign-in) on nobody gets in until the owner adds one with their own email. In `.env`:
 
 ```sh
 FACTORY_DIR=../dogfood/factory
@@ -186,7 +189,12 @@ and names it, like `set FOREMAN_API_TOKEN in .env`.
 | `FACTORY_DIR` | `./factory` | The folder of the factory definition, its prompts, policy and groups. |
 | `DOCKER_SOCKET` | `/var/run/docker.sock` | The host's Docker socket, which only `docker-proxy` mounts. For rootless Docker, like `$XDG_RUNTIME_DIR/docker.sock`. |
 | `OSF_HOST` | `127.0.0.1` | The address every published port listens on. `0.0.0.0` makes them reachable from other machines. |
-| `CONSOLE_PORT` | `8080` | The port of the console. `0` picks a free port. |
+| `CONSOLE_PORT` | `8080` | The port of the console. `0` picks a free port, but not with the sign-in: its callback names the port. |
+| `CONSOLE_SIGN_IN` | | The console's own sign-in: `oidc` (Google, a company's provider) or `github`. Empty: the console is open and read-only. See [Turn on the sign-in](#turn-on-the-sign-in). |
+| `CONSOLE_SESSION_SECRET` | | With the sign-in: the key of the session cookie; `osf init` generates it. |
+| `CONSOLE_OIDC_ISSUER`, `CONSOLE_OIDC_CLIENT_ID`, `CONSOLE_OIDC_CLIENT_SECRET` | | With `CONSOLE_SIGN_IN=oidc`: the provider's issuer, like `https://accounts.google.com`, and the client's ID and secret. |
+| `CONSOLE_GITHUB_CLIENT_ID`, `CONSOLE_GITHUB_CLIENT_SECRET` | | With `CONSOLE_SIGN_IN=github`: the client ID and secret of a GitHub OAuth app. |
+| `CONSOLE_URL` | `http://localhost:<CONSOLE_PORT>` | Where people open the console. The provider's callback is `<CONSOLE_URL>/signin/callback`. With the sign-in it must be `https://` or loopback. |
 | `INTAKE_PORT` | `8081` | The port of intake, for the webhooks of Slack, the forge and Sentry. |
 | `GATEKEEPER_PORT` | `8082` | The port of gatekeeper, for Slack's events and buttons. |
 | `FOREMAN_PORT` | `8083` | The port of foreman's API. |
@@ -196,6 +204,55 @@ and names it, like `set FOREMAN_API_TOKEN in .env`.
 | `IMPROVE_INTERVAL` | `3600` | With the profile `improve`: the seconds between the runs of the improvement jobs. `0` runs them once. |
 | `IMPROVE_SCORERS` | | With the profile `improve`: the scorers of scorekit that judge each run, like `redundant-tests scope-creep`. Each judgment is a paid model call. Empty: no run is judged. |
 | `OSF_BUILD_CA` | `../images/no-ca.pem` | Behind a proxy that inspects TLS: the proxy's CA for npm in the image builds, as a path inside `deploy/`, like `../images/local-ca.pem`. |
+
+### Turn on the sign-in
+
+The console signs people in itself when `CONSOLE_SIGN_IN` names the provider
+([ADR 0134](../docs/decisions/0134-console-sign-in-roles-and-modes.md)). Every page then needs a session, and only the
+people of the factory's `access.yaml` get past the sign-in page; anyone else reads that they are not on the list. On
+a laptop:
+
+1. Register the console at the provider, with the callback `http://localhost:8080/signin/callback` (with another
+   `CONSOLE_PORT`, that port):
+   - Google: in the Google Cloud console, APIs & Services → Credentials → Create credentials → OAuth client ID, of the
+     type "Web application", with the callback as an authorized redirect URI.
+   - GitHub: Settings → Developer settings → OAuth Apps → New OAuth App, with the homepage `http://localhost:8080` and
+     the callback as the authorization callback URL.
+2. Set in `.env`:
+
+   ```sh
+   CONSOLE_SIGN_IN=oidc                            # or github
+   CONSOLE_OIDC_ISSUER=https://accounts.google.com
+   CONSOLE_OIDC_CLIENT_ID=...
+   CONSOLE_OIDC_CLIENT_SECRET=...
+   # with github instead: CONSOLE_GITHUB_CLIENT_ID=... and CONSOLE_GITHUB_CLIENT_SECRET=...
+   ```
+
+   `osf init` generated `CONSOLE_SESSION_SECRET`; without it, set it to a long random value, like the output of
+   `openssl rand -hex 32`.
+3. List yourself in the factory's `access.yaml` in place of `admin@example.com`, with the email that your provider
+   verified (on GitHub, your primary email):
+
+   ```yaml
+   version: 1
+   people:
+     - email: ada@acme.dev
+       role: admin
+   ```
+
+4. Run `docker compose up --detach --wait` again, open http://localhost:8080 and sign in.
+
+`osf up` names each setting that the provider still needs. The console does not start without one, and
+`docker compose logs console` names it. With the sign-in on, `console doctor` also checks `sign-in`, that the
+provider's discovery answers (with `oidc`), and `access`, that `access.yaml` has an admin who is not
+`admin@example.com`.
+
+Open the console on `localhost`, not `127.0.0.1`: a browser sends the cookie of a host to every port of that host,
+and Jaeger, LiteLLM and the Temporal UI stay on `OSF_HOST`, `127.0.0.1`, so they never get the session cookie. The
+console sends a request for another host to `CONSOLE_URL` first. Whoever may write to the factory's repository can
+make themselves `admin`, and `access.yaml` holds emails: keep that repository private. On a private network, put a TLS
+proxy in front of the console and set `CONSOLE_URL` to its `https://` address; with the sign-in on, the console does
+not start on an address that is neither `https://` nor loopback.
 
 ### Receive GitHub issues on your machine
 
@@ -251,6 +308,23 @@ helm test osf --logs          # plans the factory definition with factory-spec
 kubectl port-forward service/osf-console 8080:8080
 ```
 
+Then open http://localhost:8080. To [turn on the sign-in](#turn-on-the-sign-in), register the same callback
+`http://localhost:8080/signin/callback`, list yourself in the factory's `access.yaml`, make a Secret with the session
+key and the client's secret, and name it in the values; the chart never holds either value:
+
+```sh
+kubectl create secret generic osf-sign-in \
+  --from-literal=session-secret="$(openssl rand -hex 32)" --from-literal=client-secret=<the client's secret>
+cat >> values.yaml <<'YAML'
+console:
+  signIn:
+    provider: oidc                        # or github, without issuer
+    issuer: https://accounts.google.com
+    clientId: <the client's ID>
+    secret: osf-sign-in
+YAML
+```
+
 From a clone, install `deploy/helm/osf` instead of the OCI address. Object storage, Langfuse and OpenBao are installed
 with their own charts; no module uses them yet, so the chart has no wiring for them.
 
@@ -296,6 +370,10 @@ Each stage of the reference factory runs in a sandbox of the
 | `foreman.harnesses`, `foreman.forges` | claude-code; github and forgejo | foreman's `FOREMAN_HARNESSES` and `FOREMAN_FORGES`. |
 | `foreman.persistence.size` | `1Gi` | The volume of the runs' working folders. |
 | `console.temporalUrl`, `console.links` | | The Temporal UI and the dashboards the console links, like `Langfuse=https://langfuse.acme.dev`. |
+| `console.signIn.provider` | | The console's own sign-in, `oidc` or `github` ([ADR 0134](../docs/decisions/0134-console-sign-in-roles-and-modes.md)); only the people of the factory's `access.yaml` sign in. Empty: the console is open and read-only. |
+| `console.signIn.url` | the console's own, `http://localhost:8080` | Where people open the console, its `CONSOLE_URL`; the provider's callback is `<url>/signin/callback`. Empty, the chart sets no `CONSOLE_URL`; the default suits `kubectl port-forward`. Behind an Ingress with TLS, its `https://` address. |
+| `console.signIn.issuer`, `console.signIn.clientId` | | With `oidc` the provider's issuer; the client ID of the provider's client or of the GitHub OAuth app. |
+| `console.signIn.secret` | | Required with a provider: a Secret you make, with the keys `session-secret`, the key of the session cookie, and `client-secret`, the client's secret. |
 | `improve.enabled` | `false` | The CronJob `improve` with the commands of the Compose service `improve`, and the claim `osf-improve` that the console's `/improvement` reads. Its pod and the console then run on foreman's node, as the claims are ReadWriteOnce. |
 | `improve.schedule`, `improve.scorers`, `improve.persistence.size`, `improve.resources` | `17 * * * *`, empty, `1Gi` | When the job runs, the scorers that judge each run (each judgment is a paid model call; empty: none), its claim's size and its resources. |
 | `postgresql.enabled` | `true` | PostgreSQL with pgvector in the cluster. `false` uses `externalDatabase`. |
@@ -390,3 +468,5 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-034 | implemented | The service improve writes the reports of ledger and observer and judges no run without scorers |
 | SCN-DIST-035 | implemented | The chart runs the improvement jobs as a CronJob on foreman's run records, without scorers by default |
 | SCN-DIST-036 | implemented | The console of the Compose profile renders its health page from the templates its package ships |
+| SCN-DIST-037 | implemented | With the sign-in on, the console of the Compose profile lets in only the people of the factory's access.yaml |
+| SCN-DIST-038 | implemented | The chart switches the console's sign-in on with the client secret and the session key from a Secret the operator names |

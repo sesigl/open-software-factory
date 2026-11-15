@@ -81,6 +81,21 @@ console:
   # The dashboards every page links, as name=url, comma-separated, like Langfuse=https://langfuse.acme.dev.
   links: ""
   resources: {}
+  # The console's own sign-in (ADR 0134), off unless provider names it: oidc (Google, a company's provider) or github.
+  # Only the people of the factory's access.yaml sign in.
+  signIn:
+    provider: ""
+    # Where people open the console; the provider's callback is <url>/signin/callback. It must be https:// or
+    # loopback. Empty: CONSOLE_URL stays unset, and the console takes its own default http://localhost:8080, for
+    # kubectl port-forward.
+    url: ""
+    # With oidc: the provider's issuer, like https://accounts.google.com.
+    issuer: ""
+    # The client ID of the provider's client, or of the GitHub OAuth app.
+    clientId: ""
+    # The Secret, made by the operator, with the keys session-secret (the key of the session cookie) and
+    # client-secret (the client's secret). The chart holds neither value.
+    secret: ""
 
 # The improvement path (ADR 0123): a CronJob that copies foreman's run records into a claim that console's /improvement
 # reads, and writes the reports of scorekit, ledger and observer. Its pod and console then run on foreman's node.

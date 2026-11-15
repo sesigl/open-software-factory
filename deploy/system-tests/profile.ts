@@ -24,12 +24,13 @@ const PORTS = [
   "LITELLM_PORT",
 ];
 
-/** Writes `.env` without the value `except` and with the values `more`, and returns the profile. */
+/** Writes `.env` without the value `except` and with the values `more`, a port among them, and returns the profile. */
 export async function profile(sut: Sut, except?: string, more: Record<string, string> = {}): Promise<Compose> {
   const lines = Object.entries({ ...VALUES, ...more })
     .filter(([name]) => name !== except)
     .map(([name, value]) => `${name}=${value}`);
-  await sut.files.put("$INPUT/.env", [...lines, ...PORTS.map((name) => `${name}=0`), ""].join("\n"));
+  const ports = PORTS.filter((name) => !(name in more)).map((name) => `${name}=0`);
+  await sut.files.put("$INPUT/.env", [...lines, ...ports, ""].join("\n"));
   return sut.compose("compose/compose.yaml");
 }
 
@@ -44,14 +45,22 @@ export function stageOf(stdout: string, name: string): Record<string, unknown> |
   return factory.workflow.find((stage) => stage.stage === name);
 }
 
+/** The example of each file of the reference factory, and the person an operator puts in its place. */
+const OPERATOR: Record<string, [string, string]> = {
+  "groups.json": ["slack:U0EXAMPLE", "slack:U0OPERATOR"],
+  "access.yaml": ["admin@example.com", "ada@acme.dev"],
+};
+
 /**
  * The reference factory as an operator sets it up after the quick start, for FACTORY_DIR: a copy whose group
- * "maintainers" names a person in place of the example's member slack:U0EXAMPLE (ADR 0114). Returns its path.
+ * "maintainers" names a person in place of the example's member slack:U0EXAMPLE (ADR 0114), and whose access.yaml
+ * names the admin ada@acme.dev in place of the example's admin@example.com (ADR 0134). Returns its path.
  */
 export async function operatorFactory(sut: Sut, fakes: Fakes): Promise<string> {
   const files = fakes.fromRepository("deploy/compose/factory");
   for (const [path, text] of Object.entries(files)) {
-    const content = path === "groups.json" ? text.replaceAll("slack:U0EXAMPLE", "slack:U0OPERATOR") : text;
+    const [example, person] = OPERATOR[path] ?? ["", ""];
+    const content = example ? text.replaceAll(example, person) : text;
     await sut.files.put(`$INPUT/factory/${path}`, content);
   }
   return sut.files.path("$INPUT/factory");

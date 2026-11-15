@@ -187,3 +187,16 @@ Feature: The Compose profile installs a complete factory with one command
     When the operator runs "docker compose --profile improve run --rm improve"
     Then the command exits with code 0
     And the volume "improve" holds "reports/ledger.json" and "reports/problems.json" and no "scores/scores.jsonl"
+
+  @id=SCN-DIST-037 @status=implemented @realizes=SCN-FACTORY-RUNTIME-011
+  Scenario: With the sign-in on, the console of the Compose profile lets in only the people of the factory's access.yaml
+    Given the Compose profile with every value of ".env.example" set in ".env", "CONSOLE_SIGN_IN" set to "github" with the client of a GitHub OAuth app, and "CONSOLE_PORT" set to "18080"
+    And the operator's factory, whose "access.yaml" lists "ada@acme.dev" as "admin" in place of "admin@example.com"
+    And GitHub is a fake on the Docker host, which the console reaches as "host.docker.internal"
+    And the operator ran "docker compose run --rm factory-repo", which commits the factory into its volume
+    When the operator runs "docker compose up --detach --wait --no-deps console"
+    Then the service "console" is running and healthy
+    And the console's page "/" sends a person without a session to the sign-in page with the button "Sign in with GitHub"
+    And the button sends the person to GitHub with the callback "http://localhost:18080/signin/callback"
+    And "ada@acme.dev" comes back from GitHub, the console trades the code with the client of ".env", and the page "/" has the heading "Runs" and the account "ada@acme.dev · admin"
+    And "mallory@acme.dev" comes back from GitHub and reads "mallory@acme.dev is not on this factory's access list"

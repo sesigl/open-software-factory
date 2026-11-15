@@ -58,10 +58,42 @@ spec:
             - name: CONSOLE_LINKS
               value: {{ . | quote }}
             {{- end }}
+            {{- with .Values.console.signIn }}
+            {{- if .provider }}
+            {{- /* A setting the provider misses stops the console at its start, which names it (ADR 0134). */}}
+            {{- $client := ternary "CONSOLE_GITHUB" "CONSOLE_OIDC" (eq .provider "github") }}
+            {{- $secret := required "set console.signIn.secret to a Secret with the keys session-secret and client-secret" .secret }}
+            - name: CONSOLE_SIGN_IN
+              value: {{ .provider | quote }}
+            {{- with .url }}
+            - name: CONSOLE_URL
+              value: {{ . | quote }}
+            {{- end }}
+            {{- if and .issuer (ne .provider "github") }}
+            - name: CONSOLE_OIDC_ISSUER
+              value: {{ .issuer | quote }}
+            {{- end }}
+            {{- with .clientId }}
+            - name: {{ $client }}_CLIENT_ID
+              value: {{ . | quote }}
+            {{- end }}
+            - name: CONSOLE_SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secret }}
+                  key: session-secret
+            - name: {{ $client }}_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secret }}
+                  key: client-secret
+            {{- end }}
+            {{- end }}
           ports:
             - name: http
               containerPort: 8080
-          {{- include "osf.moduleProbe" "/factory" | nindent 10 }}
+          {{- /* Without a session, whether the console reads its factory: a page needs a session with the sign-in on. */}}
+          {{- include "osf.moduleProbe" "/v1/ready" | nindent 10 }}
           {{- with .Values.console.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
