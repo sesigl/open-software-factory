@@ -29,6 +29,6 @@ scenario("SCN-SECRET-019", async ({ sut, fakes, given, when, then }) => {
   );
 
   await then('neither output contains "lin_test_51c2"', async () => {
-    for (const run of runs) expect(run.stdout + run.stderr).not.toContain(VALUE);
+    expect(runs.map((run) => run.stdout + run.stderr).join("\n")).not.toContain(VALUE);
   });
 });
