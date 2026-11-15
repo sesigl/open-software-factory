@@ -172,3 +172,29 @@ Feature: Quality limits
     When the developer runs "osf mutation-merge plan.json reports/mutation-incremental"
     Then the command exits with code 0
     And "reports/mutation-incremental" holds only "modules-demo.aaaa.json", with the killed and the survived mutant
+
+  @id=SCN-REPO-171 @status=implemented
+  Scenario: MUTATION rejects a mutant that no test notices in a line a change adds to a .tsx file
+    Given a base commit with module "demo", the limit "at least 70% of the mutants in changed lines" and "src/clock.tsx" of 3 lines
+    And a change that adds lines 4 to 6 to "src/clock.tsx"
+    And a mutation report of "src/clock.tsx" with a killed and a survived mutant on line 5
+    When the developer runs "osf check MUTATION" against the base commit
+    Then the command exits with code 1
+    And the output contains "50% of the mutants in changed lines of modules/demo were detected, the limit is 70%"
+    And the output contains "MUTATION modules/demo/src/clock.tsx:5 no test notices the mutant ConditionalExpression"
+
+  @id=SCN-REPO-172 @status=implemented
+  Scenario: osf mutation lists the line ranges a change adds to a .tsx file and none of a template
+    Given a base commit with module "demo", the limit "at least 70% of the mutants in changed lines", "src/clock.tsx" of 3 lines and the template "src/web/clock.astro"
+    And a change that adds lines 4 to 6 to "src/clock.tsx" and a line to "src/web/clock.astro"
+    When the developer runs "osf mutation modules/demo --list" against the base commit
+    Then the command exits with code 0
+    And the output is "src/clock.tsx:4-6"
+
+  @id=SCN-REPO-173 @status=implemented
+  Scenario: osf mutation-plan counts the lines a change adds to a .tsx file
+    Given a base commit with module "demo", the limit "at least 70% of the mutants in changed lines" and "src/clock.tsx" of 3 lines
+    And a change that adds lines 4 to 6 to "src/clock.tsx"
+    When the developer runs "osf mutation-plan" against the base commit
+    Then the command exits with code 0
+    And the output lists the shard "1/1" of "modules/demo"

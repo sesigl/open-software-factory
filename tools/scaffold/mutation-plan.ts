@@ -5,7 +5,7 @@
 // and the file name of those `results` (mutation-keys.ts, ADR 0091).
 import { addedLines, baseCommit, changedFiles } from "../checks/lib/git.ts";
 import { Repo } from "../checks/lib/repo.ts";
-import { mutatedUnits } from "../checks/quality.ts";
+import { mutatedSources, mutatedUnits } from "../checks/quality.ts";
 import { mutatedRanges } from "./mutation.ts";
 import { type KeyedUnit, mutationKeys } from "./mutation-keys.ts";
 import { incrementalFile } from "./mutation-merge.ts";
@@ -49,7 +49,7 @@ export function mutationPlan(root: string, args: string[]): number {
   for (const [folder, files] of [...mutatedUnits(repo)].sort(([a], [b]) => a.localeCompare(b))) {
     const manifest = JSON.parse(repo.read(`${folder}/package.json`)) as Manifest;
     if (!manifest.scripts?.mutation) continue;
-    const sources = files.filter((file) => file.endsWith(".ts"));
+    const sources = mutatedSources(files);
     const lines = base
       ? sources.filter((file) => changed?.has(file)).reduce((sum, file) => sum + addedLines(root, base, file).length, 0)
       : sources.reduce((sum, file) => sum + lineCount(repo.read(file)), 0);

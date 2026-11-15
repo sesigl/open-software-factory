@@ -11,7 +11,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { addedLines, baseCommit, changedFiles } from "../checks/lib/git.ts";
 import { Repo } from "../checks/lib/repo.ts";
-import { mutatedUnits, mutationReport } from "../checks/quality.ts";
+import { mutatedSources, mutatedUnits, mutationReport } from "../checks/quality.ts";
 import { removeCommand } from "./mutation-runner.ts";
 
 export async function mutation(root: string, args: string[]): Promise<number> {
@@ -50,8 +50,9 @@ export async function mutation(root: string, args: string[]): Promise<number> {
     inPlace: true,
     ...runner(cwd, unit, shard, settings),
     buildCommand: "pnpm run build",
-    // Only the sources: tsc builds them with the instrumented code, which does not type-check.
-    disableTypeChecks: "src/**/*.ts",
+    // Only the sources: tsc builds them with the instrumented code, which does not type-check; the build of an
+    // island's `.tsx` does not type-check either (ADR 0152).
+    disableTypeChecks: "src/**/*.{ts,tsx}",
     // One mutant per CPU, each in one Vitest worker: the CPUs then test different mutants, and none of them runs the
     // rest of a mutant's scenarios after the first one failed. A unit whose scenarios start heavy services, such as
     // Temporal, sets fewer in osf.mutationConcurrency (ADR 0084).
@@ -165,12 +166,12 @@ export function mutatedRanges(repo: Repo, files: string[], all: boolean): string
   return all ? allLines(files) : changedLines(repo, files);
 }
 
-/** Each TypeScript source file whole. */
+/** Each source file that Stryker mutates (`.ts` and `.tsx`), whole. */
 function allLines(files: string[]): string[] {
-  return files.filter((file) => file.endsWith(".ts"));
+  return mutatedSources(files);
 }
 
-/** `file:start-end` for each run of lines the change adds to a TypeScript source file since OSF_BASE. */
+/** `file:start-end` for each run of lines the change adds to a source file that Stryker mutates since OSF_BASE. */
 function changedLines(repo: Repo, files: string[]): string[] | string {
   const base = baseCommit(repo.root);
   if (!base) return "osf mutation needs OSF_BASE to find the changed lines, or --all to mutate every line";

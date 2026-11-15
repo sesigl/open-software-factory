@@ -13,8 +13,19 @@ import { type Finding, isLibrary, lineOf, type Repo } from "./lib/repo.ts";
 const UNIT_MANIFESTS = ["modules/*/package.json", "packages/*/package.json", "adapters/*/*/package.json"];
 /** Units whose system tests run the built artifact through the testkit, so Stryker can mutate them. */
 const MUTATED = /^(modules\/[^/]+|adapters\/[^/]+\/[^/]+)$/;
-// An Astro template counts for DUP; MUTATION mutates only `.ts` files, and TEMPLATE keeps logic out of templates.
+// An Astro template counts for DUP; MUTATION mutates only `.ts` and `.tsx` files, and TEMPLATE keeps logic out of
+// templates.
 const SOURCE = /^(src|bin)\/.+\.(ts|tsx|js|mjs|astro)$/;
+/**
+ * The files Stryker mutates: TypeScript, and TSX, the form of an island's code (ADR 0152). Stryker's instrumenter
+ * parses both; it has no parser for `.astro`.
+ */
+const MUTATED_EXTENSIONS = [".ts", ".tsx"];
+
+/** The source files of a unit that Stryker mutates. */
+export function mutatedSources(files: string[]): string[] {
+  return files.filter((file) => MUTATED_EXTENSIONS.includes(posix.extname(file)));
+}
 const TOOLS_SOURCE = /^tools\/(bin|checks|scaffold)\/.+\.ts$/;
 const SKIPPED = /(^|\/)__unit__\/|\.d\.ts$/;
 
@@ -226,8 +237,8 @@ export function mutation(context: Context): Finding[] {
     // The lines that count: every line, or the lines of mutated source files that the change adds.
     const lines = new Map<string, Set<number>>();
     if (base) {
-      for (const file of files) {
-        if (!changed.has(file) || !file.endsWith(".ts")) continue;
+      for (const file of mutatedSources(files)) {
+        if (!changed.has(file)) continue;
         const added = addedLines(repo.root, base, file);
         if (added.length > 0) lines.set(file, new Set(added));
       }
