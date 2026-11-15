@@ -40,7 +40,9 @@ UPDATE gatekeeper.gates SET thread = channel || ':' || thread WHERE thread ~ '^[
 UPDATE gatekeeper.presses
 SET ts = (split_part(ts, '.', 1)::bigint * 1000000 + rpad(split_part(ts, '.', 2), 6, '0')::bigint)::text
 WHERE ts ~ '^[0-9]+[.][0-9]+$';
-UPDATE gatekeeper.presses SET action = initcap(substr(action, 12)) WHERE action LIKE 'gatekeeper.%';`;
+UPDATE gatekeeper.presses SET action = initcap(substr(action, 12)) WHERE action LIKE 'gatekeeper.%';
+-- Since ADR 0151 a decision through the API keeps the name of its person proof.
+ALTER TABLE gatekeeper.presses ADD COLUMN IF NOT EXISTS name text;`;
 
 /** Any number: only one server creates the tables at a time. */
 const SCHEMA_LOCK = 4_715_048;
@@ -49,6 +51,8 @@ export interface Press {
   ts: string;
   author: string;
   action: string;
+  /** The author's name from a person proof (ADR 0151); null for a press in Slack. */
+  name?: string | null;
 }
 
 /** What one transaction on a gate may do. */
@@ -109,7 +113,9 @@ export async function openStore(url: string): Promise<Store> {
   };
   const write = (client: pg.PoolClient, gate: string) => ({
     async presses() {
-      const { rows } = await client.query("SELECT ts, author, action FROM gatekeeper.presses WHERE gate = $1", [gate]);
+      const { rows } = await client.query("SELECT ts, author, action, name FROM gatekeeper.presses WHERE gate = $1", [
+        gate,
+      ]);
       return rows as Press[];
     },
     async update(row: StoredGate) {
@@ -154,10 +160,10 @@ export async function openStore(url: string): Promise<Store> {
       );
       return rows.map((row) => ({ id: row.id as string, channel: row.channel as string }));
     },
-    async press(gate, { ts, author, action }) {
+    async press(gate, { ts, author, action, name }) {
       await pool.query(
-        "INSERT INTO gatekeeper.presses (gate, ts, author, action) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
-        [gate, ts, author, action],
+        "INSERT INTO gatekeeper.presses (gate, ts, author, action, name) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING",
+        [gate, ts, author, action, name],
       );
     },
     locked: (id, work) =>

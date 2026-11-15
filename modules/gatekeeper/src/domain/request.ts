@@ -41,6 +41,8 @@ export const gateId = ({ workItem, stage, change }: GateRequest): string =>
 /** A person's decision through the API (ADR 0118), as the reply in the channel it stands for. */
 export interface ApiDecision {
   person: string;
+  /** The person's name to show, from their person proof (ADR 0151). */
+  name?: string;
   /** "approve", or "reject" and the reason. */
   text: string;
 }

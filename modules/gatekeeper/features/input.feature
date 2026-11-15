@@ -140,3 +140,10 @@ Feature: Refuse wrong input
     When the user runs "gatekeeper request" for the channel "slack:C0GATES" with the README files, and with "plain.rego" for a change of "docs/guide.md"
     Then each command exits with code 0
     And the outputs say "gate <gate> asks maintainers in slack:C0GATES (risk high)" and "gate <gate> asks maintainers in slack:C0GATES"
+
+  @id=SCN-GATE-106 @status=implemented
+  Scenario: A groups file names a member by an email address, as the console names a person, but not by a bare "ada@"
+    Given the README policy and request, and the groups files "email.json" whose "maintainers" is "ada@acme.dev" and "at.json" whose "maintainers" is "ada@"
+    When the user runs "gatekeeper request" with each groups file
+    Then the commands exit with the codes 0 and 2
+    And the outputs say "gate <gate> asks maintainers in slack:C0GATES (risk high)" and that "at.json" must map each group to its members

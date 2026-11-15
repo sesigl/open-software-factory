@@ -55,14 +55,18 @@ export function groupsWithoutPeople(value: unknown): string[] {
     .map(([name]) => name);
 }
 
-/** Each group lists its members as identities like "slack:U024BE7LH" or "github:octocat". */
+/**
+ * An identity like "slack:U024BE7LH" or "github:octocat", or an email address like "ada@acme.dev", as the console
+ * names a person who decides through the API (ADR 0118, ADR 0151).
+ */
+const IDENTITY = /^(?:[a-z]+:\S+|[^\s@]+@[^\s@]+)$/;
+
+/** Each group lists its members as identities. */
 export function parseGroups(value: unknown, file: string, rules: Rules): Groups {
   const valid =
     value &&
     typeof value === "object" &&
-    Object.values(value).every(
-      (members) => Array.isArray(members) && members.every((id) => /^[a-z]+:\S+$/.test(String(id))),
-    );
+    Object.values(value).every((members) => Array.isArray(members) && members.every((id) => IDENTITY.test(String(id))));
   if (!valid) throw new UsageError(`${file} must map each group to its members, like {"maintainers": ["slack:U0ADA"]}`);
   const groups = value as Groups;
   for (const name of [...rules.approvers, ...(rules.escalation?.to ?? [])]) {
