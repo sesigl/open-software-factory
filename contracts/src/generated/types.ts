@@ -159,7 +159,10 @@ export type paths = {
         };
         get?: never;
         put?: never;
-        /** @description Run a run that failed or was cancelled again, as a new run that names it (ADR 0105). */
+        /**
+         * @description Run a run that failed or was cancelled again, as a new run that names it (ADR 0105). With `FOREMAN_PERSON_KEYS`, a
+         *     `by` of kind `person` needs the person's proof in `OSF-Person`, as for a signal (ADR 0151).
+         */
         post: operations["ForemanApi_retryRun"];
         delete?: never;
         options?: never;
@@ -176,7 +179,11 @@ export type paths = {
         };
         get?: never;
         put?: never;
-        /** @description Steer the running stage's agent, or cancel the run. */
+        /**
+         * @description Steer the running stage's agent, or cancel the run. With `FOREMAN_PERSON_KEYS`, a `by` of kind `person` needs the
+         *     person's proof in `OSF-Person`: 401 without it or for one that does not verify, 403 for one of another request,
+         *     503 when its issuer's key set cannot be read (ADR 0151).
+         */
         post: operations["ForemanApi_signalRun"];
         delete?: never;
         options?: never;
@@ -2046,7 +2053,9 @@ export interface operations {
     ForemanApi_retryRun: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "OSF-Person"?: string;
+            };
             path: {
                 runId: string;
             };
@@ -2085,6 +2094,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ApiProblem"];
                 };
             };
+            /** @description Access is forbidden. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
@@ -2103,12 +2121,23 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ApiProblem"];
                 };
             };
+            /** @description Service unavailable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
         };
     };
     ForemanApi_signalRun: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "OSF-Person"?: string;
+            };
             path: {
                 runId: string;
             };
@@ -2147,6 +2176,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ApiProblem"];
                 };
             };
+            /** @description Access is forbidden. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
@@ -2158,6 +2196,15 @@ export interface operations {
             };
             /** @description The request conflicts with the current state of the server. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Service unavailable. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
