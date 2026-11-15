@@ -34,7 +34,7 @@ sandbox's egress proxy ─ reads ─▶ OpenBao  as today: it swaps the placehol
 | --- | --- |
 | A page | The browser asks the console for `GET /runs`. The console checks the session (or the proxy's header), asks the foremen with their service tokens, renders the HTML on the server and answers it. |
 | A form | The browser posts the form to the console. The console checks the session, the role and that the `Origin` is its own, makes one call of a module API, a secrets adapter or a forge adapter with the person as the actor, and answers with a redirect (303) to a page that shows the result. |
-| A change | A factory engineer edits a setting of the factory. The console reads the factory's files from its cache, writes the edit on a new branch through the forge adapter, opens a pull request that names the person and asks the forge to merge it when its checks are green. The page of the change shows the pull request's state and links it when it fails. The merged commit is the factory version of the next run. |
+| A change | A factory engineer edits a setting of the factory on `/changes`. The console fetches the newest commit of the factory's repository into its cache, runs `factory edit` on it, writes the result on a new branch from that commit through the forge adapter, opens a pull request that names the person and asks the forge to merge it when its check `factory` is green (ADR 0144). The page asks the forge for each change's state and links the pull request when it fails. The merged commit is the factory version of the next run. |
 
 ## The three modes
 

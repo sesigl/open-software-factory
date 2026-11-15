@@ -1,0 +1,98 @@
+---
+import Shell from "@opensoftware/ui/components/Shell.astro";
+import type { ChangesData } from "../../pages/changes.ts";
+
+const { shell, closed, notes, rows, empty, form } = Astro.locals.page as ChangesData;
+Astro.response.status = Astro.locals.status;
+Astro.response.statusText = Astro.locals.statusText;
+---
+<Shell shell={shell}>
+  <div class="osf-intro">
+    <h1>Changes</h1>
+    <p>
+      A change of the factory is a pull request on the factory's repository that names the person who asked for it.
+      The forge merges it when its check factory passes. A run keeps the factory version it started with, so a change
+      is live for the next run.
+    </p>
+  </div>
+  {closed && <p class="osf-empty">{closed}</p>}
+  {notes.map((note) => <p role="alert" class="osf-alert">{note}</p>)}
+  {!closed && (
+    <div class="osf-split">
+      <div class="osf-split-main">
+        {empty ? (
+          <p class="osf-empty">No changes yet.</p>
+        ) : (
+          <ul class="osf-list" aria-label="Changes">
+            {rows.map((row) => (
+              <li>
+                <div class="osf-list-text">
+                  <span class="osf-strong">{row.text}</span>
+                  <span class="osf-secondary">{row.detail}</span>
+                  <a class="osf-secondary" href={row.link.href}>{row.link.text}</a>
+                </div>
+                <div class="osf-list-end">
+                  <span class={row.stateClass}>{row.state}</span>
+                  {row.buttons.map((button) => (
+                    <form method="post" action={button.action}>
+                      <button type="submit" class="osf-button">{button.name}</button>
+                    </form>
+                  ))}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      {form && (
+        <div class="osf-split-side forms">
+          <form class="osf-panel" method="post" action="/changes" aria-labelledby="propose">
+            <h2 id="propose">Propose a change</h2>
+            <div class="osf-field">
+              <label for="change-edit">Change</label>
+              <select id="change-edit" class="osf-input" name="edit">
+                {form.edits.map((edit) => <option value={edit.value}>{edit.label}</option>)}
+              </select>
+            </div>
+            <div class="osf-field">
+              <label for="change-agent">Agent</label>
+              <select id="change-agent" class="osf-input osf-mono" name="agent">
+                {form.agents.map((agent) => <option value={agent}>{agent}</option>)}
+              </select>
+            </div>
+            <div class="osf-field">
+              <label for="change-value">Value</label>
+              <input id="change-value" class="osf-input osf-mono" name="value" type="text" required autocomplete="off" spellcheck="false" aria-describedby="change-value-hint" />
+              <p id="change-value-hint" class="osf-hint">A host name like api.linear.app, a secret reference like ref:openbao/linear-token, or a skill folder like skills/release-notes.</p>
+            </div>
+            <div class="osf-buttons">
+              <button type="submit" class="osf-action">Propose change</button>
+            </div>
+          </form>
+          <form class="osf-panel" method="post" action="/changes" aria-labelledby="provider">
+            <h2 id="provider">Declare a secrets provider</h2>
+            <input type="hidden" name="edit" value="add-secrets-provider" />
+            <div class="osf-field">
+              <label for="provider-name">Name</label>
+              <input id="provider-name" class="osf-input osf-mono" name="name" type="text" required autocomplete="off" spellcheck="false" />
+            </div>
+            <div class="osf-field">
+              <label for="provider-range">Range</label>
+              <input id="provider-range" class="osf-input osf-mono" name="range" type="text" required autocomplete="off" spellcheck="false" />
+            </div>
+            <div class="osf-buttons">
+              <button type="submit" class="osf-action">Propose provider</button>
+            </div>
+          </form>
+        </div>
+      )}
+    </div>
+  )}
+</Shell>
+<style>
+  .forms {
+    display: flex;
+    flex-direction: column;
+    gap: var(--osf-space-4);
+  }
+</style>

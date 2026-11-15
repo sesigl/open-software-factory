@@ -1825,7 +1825,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
     bytes exactly, `merge --when-green` twice is one request, `prs --limit` stops paging, and `close` without
     `--delete-branch` keeps the branch (`SCN-FORGE`, `SCN-FGITHUB`, `SCN-TK`).
   - [x] `factory edit` and `factory plan --check` in `factory-spec` (`SCN-FSPEC`).
-  - [ ] The flow and the page `/changes` in the console (`SCN-CONSOLE`).
+  - [x] The flow and the page `/changes` in the console (`SCN-CONSOLE`, ADR 0144).
   - [ ] The workflow with the check `factory` in the reference factory; the profile and the chart with a factory
     repository on a forge; `console doctor` (`SCN-DIST`, `SCN-CONSOLE`). After the releases above.
   - [ ] One smoke scenario in `e2e/`: a change from the console becomes the factory version of the next run

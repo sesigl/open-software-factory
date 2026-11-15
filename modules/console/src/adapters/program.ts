@@ -5,16 +5,21 @@ import { execFile } from "node:child_process";
 
 export type Outcome<T> = { ok: true; body: T } | { ok: false; usage: boolean; note: string };
 
-/** Runs the command line with these arguments and this standard input, and reads what it printed with `read`. */
+/**
+ * Runs the command line with these arguments and this standard input, and reads what it printed with `read`. `env`
+ * adds variables to the console's own, like a port adapter's FORGE_TOKEN.
+ */
 export function runProgram<T>(
   command: string,
   args: string[],
   read: (stdout: string) => T,
   input?: string,
+  env?: Record<string, string | undefined>,
 ): Promise<Outcome<T>> {
   const [file = "", ...words] = command.split(/\s+/);
+  const options = env ? { env: { ...process.env, ...env } } : {};
   return new Promise((resolve) => {
-    const child = execFile(file, [...words, ...args], (error, stdout, stderr) => {
+    const child = execFile(file, [...words, ...args], options, (error, stdout, stderr) => {
       try {
         // A program names itself before its error, like "secrets-openbao: the store refused the token"; exit code 2
         // is a usage error, like a name it refuses.
