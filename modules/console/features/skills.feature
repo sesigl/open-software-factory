@@ -86,6 +86,13 @@ Feature: Skills
     Then the panel "SKILL.md" links only "Docs", "Plain" and "Mail", each with "rel" "nofollow noreferrer"
     And it shows "Run", "Trick", "Open" and "Teams" as text
 
+  @id=SCN-CONSOLE-205 @status=implemented
+  Scenario: A link by reference, an autolink and a link in a list or a quote follow the same rule
+    Given the skill "release-notes" whose SKILL.md holds the link "Ref" by reference to "javascript:alert(1)", the autolink "<javascript:alert(2)>", the link "Item" to "javascript:alert(3)" in a list and the link "Quote" to "javascript:alert(4)" in a quote
+    When a person opens "/skills/release-notes"
+    Then the panel "SKILL.md" has no link
+    And it shows "Ref", "javascript:alert(2)", "Item" and "Quote" as text
+
   @id=SCN-CONSOLE-201 @status=implemented
   Scenario: A factory program that fails is named on both pages
     Given a console whose factory program exits with code 1 and the error "factory.yaml:7:3 /agents/triage/model: missing required field"

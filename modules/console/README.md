@@ -488,3 +488,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-202 | implemented | With the own sign-in a member opens both pages, without the link to store a value |
 | SCN-CONSOLE-203 | implemented | The navigation of a console without intake, an inbox or cost and scores links only the pages that work, Skills among them |
 | SCN-CONSOLE-204 | implemented | The navigation of a console with intake, an inbox and cost and scores links their pages too, Skills among them |
+| SCN-CONSOLE-205 | implemented | A link by reference, an autolink and a link in a list or a quote follow the same rule |
