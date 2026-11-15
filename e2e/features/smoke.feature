@@ -48,3 +48,16 @@ Feature: Key use cases across modules
     Then the stage "implement" succeeded, and Forgejo has the branch "sandboxed"
     And the agent's environment holds "FORGE_TOKEN" as "osf-secret-placeholder-FORGE_TOKEN"
     And it holds none of the forge token, the master key of litellm and the API tokens of foreman, intake and gatekeeper
+
+  @id=SCN-E2E-007 @status=implemented @realizes=SCN-FACTORY-RUNTIME-010
+  Scenario: A value that a factory engineer stores in the console reaches the next run's request, with no restart
+    Given a factory whose agent "implement" runs in a sandbox of the workspace image with the egress allowlist "host.docker.internal" and the secret "ref:openbao/linear-token"
+    And the scripted harness prints its environment and asks the API at "host.docker.internal" with "Authorization: Bearer $LINEAR_TOKEN" when asked to implement
+    And the console with the sign-in of GitHub, where "grace@acme.dev" of the factory's "access.yaml" signed in as "factory-engineer"
+    And a first run, whose stage "implement" failed for the reason 'the secret "ref:openbao/linear-token" has no value; store it and run again'
+    When the factory engineer stores a value for "linear-token" in the form of the page "/secrets", and a program posts a second work item to foreman's "/v1/runs"
+    Then the stage "implement" of the second run succeeded
+    And the API got one request, with "Authorization: Bearer" and the stored value
+    And the agent's environment holds "LINEAR_TOKEN" as "osf-secret-placeholder-LINEAR_TOKEN" and not the value
+    And the page "/secrets" names "linear-token" as "Set" by "grace@acme.dev" and does not hold the value
+    And the logs of the console and the foreman do not hold the value

@@ -52,6 +52,9 @@ services:
     <<: *workspace
     environment:
       <<: *clock
+      # GitHub for the console's own sign-in is a fake on the Docker host; without E2E_GITHUB_URL the sign-in is off.
+      CONSOLE_GITHUB_URL: ${E2E_GITHUB_URL:-https://github.com}
+      CONSOLE_GITHUB_API_URL: ${E2E_GITHUB_URL:-https://api.github.com}
 
   # The LLM gateway sends OpenAI models to the scripted model gateway, with the config of E2E_LITELLM_CONFIG.
   litellm:

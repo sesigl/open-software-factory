@@ -150,8 +150,10 @@ export async function smoke(
     ...more,
   };
   // Port 0 lets Docker pick free ports, so scenarios that run side by side do not collide.
+  // A scenario may name a port in `more`, like the console's, whose address the sign-in needs before the start.
   const ports = ["CONSOLE_PORT", "INTAKE_PORT", "GATEKEEPER_PORT", "FOREMAN_PORT", "TEMPORAL_UI_PORT", "JAEGER_PORT"];
-  const lines = [...Object.entries(values), ...[...ports, "LITELLM_PORT"].map((name) => [name, "0"])];
+  const free = [...ports, "LITELLM_PORT"].filter((name) => !(name in more));
+  const lines = [...Object.entries(values), ...free.map((name) => [name, "0"])];
   await sut.files.put("$INPUT/.env", `${lines.map(([name, value]) => `${name}=${value}`).join("\n")}\n`);
   const compose = sut.compose("compose/compose.yaml");
   return {
@@ -178,7 +180,13 @@ export async function smoke(
 
 /** Starts the services and points the fake Slack at intake's events and gatekeeper's buttons. */
 export async function started(smokeProfile: Smoke, services: string[]): Promise<void> {
-  await smokeProfile.run(["up", "--detach", "--wait", ...services]);
+  const up = ["up", "--detach", "--wait", ...services];
+  // Port 0 lets Docker pick a free port, and a scenario beside this one may take that port in the same moment: Docker
+  // then says "address already in use". "up" again starts what did not start, with a port Docker picks anew.
+  const first = await smokeProfile.compose.run(up);
+  if (first.exitCode !== 0 && !(first.stdout + first.stderr).includes("address already in use"))
+    expect(first.exitCode, `docker compose ${up.join(" ")}:\n${first.stdout}${first.stderr}`).toBe(0);
+  if (first.exitCode !== 0) await smokeProfile.run(up);
   const intake = await smokeProfile.url("intake").catch(() => undefined);
   const gatekeeper = await smokeProfile.url("gatekeeper").catch(() => undefined);
   smokeProfile.slack.deliverTo(

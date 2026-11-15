@@ -27,7 +27,8 @@ export function shellData(frame: Omit<Frame, "title">, at: ShellOf): ShellData {
     ...(frame.improvement ? [{ name: "Cost and scores", href: "/improvement" }] : []),
     { name: "Health", href: "/health" },
   ];
-  // Secrets only for a person who may open it (ADR 0134): an admin, in a console with a store. Skills in every mode,
+  // Secrets only for a person who may open it (ADR 0134, ADR 0148): an admin or a factory engineer, in a console
+  // with a store. Skills in every mode,
   // Changes with the factory's repository on a forge (ADR 0144).
   const pages: ShellLink[] = [
     { name: "Runs", href: "/" },

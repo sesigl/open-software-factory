@@ -41,7 +41,7 @@ The console is open and read-only until you [turn on the sign-in](#turn-on-the-s
 | `temporal` | the Temporal server on PostgreSQL, configured by `temporal/config.yaml` | none |
 | `temporal-namespace` | one-shot: the namespace `default` | none |
 | `temporal-ui` | the history of every run | `TEMPORAL_UI_PORT`, 8233 |
-| `openbao` | the secret store of the agents' secrets `ref:openbao/<name>`, which an admin stores on the console's `/secrets`: OpenBao on the volume `openbao`, with its audit log; it sets itself up on its first start and unseals itself at every start; see [Secrets in OpenBao](#secrets-in-openbao) ([ADR 0145](../docs/decisions/0145-openbao-in-the-compose-profile-and-the-chart.md)) | none |
+| `openbao` | the secret store of the agents' secrets `ref:openbao/<name>`, which an admin or a factory engineer stores on the console's `/secrets`: OpenBao on the volume `openbao`, with its audit log; it sets itself up on its first start and unseals itself at every start; see [Secrets in OpenBao](#secrets-in-openbao) ([ADR 0145](../docs/decisions/0145-openbao-in-the-compose-profile-and-the-chart.md)) | none |
 | `openbao-policies` | one-shot: the two policies that `secrets-openbao policy write` and `policy read` print | none |
 | `openbao-setup` | one-shot at every start: the policies, the mount and the console's and the egress proxy's tokens with the IDs of `.env` | none |
 | `nats` | NATS with JetStream for the events between the modules; intake and foreman keep an event in the stream `OSF` for `OSF_STREAM_MAX_AGE`, default `7d` ([ADR 0116](../docs/decisions/0116-events-not-lost-without-a-trace.md)) | none |

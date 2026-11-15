@@ -45,8 +45,8 @@ Open <http://localhost:8080>. The page lists the foreman's runs, the running one
 | `/factory/agents/<name>` | One agent's configuration, and the link to the file on the branch where it changes. 404 for an agent the factory does not declare. |
 | `/health` | The checks of `console doctor` as a table: each check, its state and what to do. 200 when every check is ok, else 503. |
 | `/inbox` | The self-improvement inbox: the open pull requests of `CONSOLE_INBOX_REPOSITORY` whose branch starts with `CONSOLE_INBOX_PREFIX` (default `observer/`), newest first, each with its link, branch, author, state ("approved", "changes requested" or "needs review") and age. A forge adapter that fails is named above the list. 404 without `CONSOLE_INBOX_REPOSITORY`. |
-| `/secrets` | Only for an admin ([Secrets](#secrets)): the secrets that the factory's agents declare and the names in the secret store, each "Missing", "Set", "Set outside the UI", "Not used" or "Unknown", and the form "Store a value". `?name=<name>` fills the form's name. A person without the role `admin` gets 403. 404 in a console without roles or without `OSF_OPENBAO_ADDR`. |
-| `/secrets/delete?name=<name>` | Only for an admin: asks before the secret of that name is deleted, with the button "Delete" and the link "Cancel". |
+| `/secrets` | Only for an admin or a factory engineer ([Secrets](#secrets)): the secrets that the factory's agents declare and the names in the secret store, each "Missing", "Set", "Set outside the UI", "Not used" or "Unknown", and the form "Store a value". `?name=<name>` fills the form's name. A person without the role `admin` gets 403. 404 in a console without roles or without `OSF_OPENBAO_ADDR`. |
+| `/secrets/delete?name=<name>` | Only for an admin ([ADR 0148](../../docs/decisions/0148-a-factory-engineer-stores-secrets.md)): asks before the secret of that name is deleted, with the button "Delete" and the link "Cancel". |
 | `/skills` | Every skill the factory's agents use ([Skills](#skills)): its name, description, folder, agents and what it needs, with the state of each secret it needs. In every mode. |
 | `/skills/<name>` | One skill: its `SKILL.md` as Markdown, its files, its agents and what it needs, and the problems lint names in its files. 404 for a skill no agent uses, 502 when `factory skills` fails. |
 | `/changes` | The changes of the factory that the console proposed as pull requests ([Changes](#changes)), each "Checking", "Ready", "Failed", "Conflict", "Live" or "Discarded", and for an admin or a factory engineer the forms "Propose a change" and "Declare a secrets provider" and the buttons "Try again", "Discard" and "Merge". Without `CONSOLE_FACTORY_REPOSITORY` it says that the factory is a local folder. |
@@ -57,7 +57,7 @@ navigation column with the factory's name, only the pages that work in this cons
 that wait for a person, then the "Classic pages" in the old look and the dashboards), and the account with the
 signed-in person, "Sign out" and the link to the other theme. On a phone the navigation folds behind "Menu". The theme
 is dark unless the cookie `osf_theme` says light; `/theme?to=light&next=<path>` sets it and returns to the page. The
-secrets, skills and changes pages have the new look too, and its navigation links Secrets for an admin, Skills for
+secrets, skills and changes pages have the new look too, and its navigation links Secrets for an admin and a factory engineer, Skills for
 everyone and Changes with `CONSOLE_FACTORY_REPOSITORY`.
 The other pages keep the old look until they move one at a time.
 
@@ -146,10 +146,14 @@ access to the factory, and the repository should be private, since the access fi
 
 ## Secrets
 
-An admin stores the values of the agents' secrets on `/secrets` ([ADR 0137](../../docs/decisions/0137-secrets-port-write-side-and-openbao.md)).
+An admin or a factory engineer stores the values of the agents' secrets on `/secrets`
+([ADR 0137](../../docs/decisions/0137-secrets-port-write-side-and-openbao.md),
+[ADR 0148](../../docs/decisions/0148-a-factory-engineer-stores-secrets.md)); only an admin deletes one.
 The page needs a role, so it exists with the own sign-in or behind a sign-in proxy with an access file, and needs the
 factory's OpenBao in `OSF_OPENBAO_ADDR`; otherwise it and its forms answer 404 and name what is missing, and the
-navigation does not link it. Only an `admin` sees it in the navigation; anyone else gets 403.
+navigation does not link it. Only an `admin` and a `factory-engineer` see it in the navigation; anyone else gets 403.
+A factory engineer's page offers no "Delete", and the page and the form of a delete answer 403 to them: a delete removes
+every version, and the next run of an agent that declares the secret fails.
 
 The page lists, the missing ones first:
 
@@ -200,7 +204,7 @@ Each secret a skill needs shows a state:
 | Set outside the UI | The agents give it from another provider, like `ref:env/<NAME>` |
 
 With several references the worst shows, in this order. A host shows "Not allowed" when the sandbox of an agent that
-uses the skill does not allow it. An admin, who may open `/secrets`, gets the link "Store a value" beside a missing
+uses the skill does not allow it. An admin or a factory engineer, who may open `/secrets`, gets the link "Store a value" beside a missing
 secret.
 
 The Markdown comes from a repository, so the page renders it safely with markdown-it: raw HTML, a script among it, is
@@ -371,7 +375,7 @@ as ok, adds itself to the count, like `all 5 checks ok, warnings: 1`, and shows 
 | `CONSOLE_URL` | string |  | serve: the console's own address, the source of the provider's callback address and of the same-origin rule of forms with the sign-in. Default http://localhost:<PORT>. With the sign-in it must be https:// or loopback, else the console does not start. A request for another host is sent to this address. |
 | `CONSOLE_USER_HEADER` | string |  | serve: the header in which the sign-in proxy sends the signed-in person, like X-Forwarded-Email. Set, the console takes actions in that person's name, such as submitting work on /work (ADR 0089); unset, it is read-only. Only set it behind a proxy that sets the header and removes it from the browser's requests. |
 | `OSF_NOW` | string |  | The current time, like 2026-01-01T00:00:00Z, for the age of a run, the sign-in and the waits of `console doctor --deep`, which then pass at once. Default: the clock. |
-| `OSF_OPENBAO_ADDR` | string |  | serve, doctor and /health: the address of the factory's OpenBao, like http://openbao:8200, for the secrets adapter. Set, an admin stores and deletes secrets on /secrets. |
+| `OSF_OPENBAO_ADDR` | string |  | serve, doctor and /health: the address of the factory's OpenBao, like http://openbao:8200, for the secrets adapter. Set, an admin or a factory engineer stores secrets on /secrets, and an admin deletes them. |
 | `OSF_OPENBAO_MOUNT` | string | `"secret"` | serve, doctor and /health: the factory's KV version 2 mount in OpenBao, the same as its sandboxes' egress proxy reads. |
 | `OSF_OPENBAO_TOKEN` | string |  | serve, doctor and /health: the console's OpenBao token, with the policy that secrets-openbao policy write prints: it writes, lists and deletes secrets and cannot read a value. console doctor warns 7 days before it ends. |
 | `OSF_SEED` | string |  | doctor --deep: set, the ID of the doctor's ping comes from it instead of from chance, so a test knows it. Leave it unset in a factory. |
@@ -524,9 +528,9 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-174 | implemented | A declared secret without a value says "Missing" and names the agents that need it |
 | SCN-CONSOLE-175 | implemented | A stored secret that no agent declares says "Not used" and offers "Delete" |
 | SCN-CONSOLE-176 | implemented | The secrets of the providers "env" and "file" are listed as set outside the UI |
-| SCN-CONSOLE-177 | implemented | A member gets 403 for "/secrets" and its form, and only an admin's navigation links "Secrets" |
-| SCN-CONSOLE-178 | implemented | In the open mode "/secrets" and its form answer 404 |
-| SCN-CONSOLE-179 | implemented | Behind a sign-in proxy without an access file "/secrets" answers 404, and the navigation does not link it |
+| SCN-CONSOLE-177 | deprecated | A member gets 403 for "/secrets" and its form, and only an admin's navigation links "Secrets" |
+| SCN-CONSOLE-178 | deprecated | In the open mode "/secrets" and its form answer 404 |
+| SCN-CONSOLE-179 | deprecated | Behind a sign-in proxy without an access file "/secrets" answers 404, and the navigation does not link it |
 | SCN-CONSOLE-180 | implemented | Without a store "/secrets" answers 404 and names the variable |
 | SCN-CONSOLE-181 | implemented | A stored value is in no output of the console |
 | SCN-CONSOLE-182 | implemented | A name that the store's adapter refuses answers 400 and names the problem |
@@ -577,3 +581,7 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-227 | implemented | The form names an unknown edit, a missing agent and each value that is no skill folder, secret reference, provider's name or range |
 | SCN-CONSOLE-228 | implemented | With a forge that does not answer, "/changes" says that the changes could not be listed and still offers every edit |
 | SCN-CONSOLE-229 | implemented | A value of each kind that the form takes passes its checks, with spaces around it too |
+| SCN-CONSOLE-230 | implemented | A member gets 403 for "/secrets" and its form, and the navigation links "Secrets" for an admin and a factory engineer |
+| SCN-CONSOLE-231 | implemented | A factory engineer stores a value and replaces it, and only an admin deletes a secret |
+| SCN-CONSOLE-232 | implemented | In the open mode "/secrets" and its form answer 404 and name the roles that open it |
+| SCN-CONSOLE-233 | implemented | Behind a sign-in proxy without an access file "/secrets" answers 404 and names the roles, and the navigation does not link it |

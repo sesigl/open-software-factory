@@ -1,5 +1,5 @@
-// The page "/secrets", the page that asks before a delete, and their two forms (ADR 0137): only an admin opens them,
-// in a console with roles and a store. The console runs the secrets port's adapter for each; a value goes only to
+// The page "/secrets", the page that asks before a delete, and their two forms (ADR 0137): an admin or a factory
+// engineer stores and replaces a value, only an admin deletes one (ADR 0148), in a console with roles and a store. The console runs the secrets port's adapter for each; a value goes only to
 // the standard input of its `put`, and no answer, redirect or note holds one.
 import type { ShellData } from "@opensoftware/ui";
 import type { FastifyError, FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
@@ -9,6 +9,9 @@ import { render } from "../adapters/web.ts";
 import { declaredOf, secretsOf } from "../domain/secrets.ts";
 import { deleteData, missingOf, secretsData } from "../pages/secrets.ts";
 import { actorOf } from "./person.ts";
+
+/** The roles that open the secrets, store a value and replace it (ADR 0148). */
+export const SECRET_ROLES = ["admin", "factory-engineer"];
 
 /** The most a form of the secrets may send: a key or a token fits many times over. */
 const LIMIT = 64 * 1024;
@@ -29,14 +32,16 @@ export interface SecretsSetup {
 
 export function useSecrets(app: FastifyInstance, setup: SecretsSetup): void {
   /** The person who may open the secrets, or the answer that refuses the request: 404 without roles or a store. */
-  const guard = (request: FastifyRequest, reply: FastifyReply, form: boolean) => {
+  const guard = (request: FastifyRequest, reply: FastifyReply, form: boolean, remove = false) => {
     if (setup.closed) return { refused: setup.problem(reply, 404, "No secrets", setup.closed) };
     const signed = form ? setup.signedIn(request, reply, "Secrets") : {};
     if (signed.refused) return signed;
     const actor = actorOf(request);
-    if (actor?.role === "admin") return { person: actor.email };
+    const roles = remove ? ["admin"] : SECRET_ROLES;
+    if (actor && roles.includes(actor.role)) return { person: actor.email };
     const who = actor ? `${actor.email} has the role ${actor.role}` : "nobody signed in";
-    return { refused: setup.problem(reply, 403, "Forbidden", `${who}: Secrets needs the role admin`) };
+    const needs = remove ? "deleting a secret needs the role admin" : `Secrets needs the role ${roles.join(" or ")}`;
+    return { refused: setup.problem(reply, 403, "Forbidden", `${who}: ${needs}`) };
   };
 
   /** The page with the secrets, these notes and the form for the secret of `chosen`. */
@@ -52,7 +57,8 @@ export function useSecrets(app: FastifyInstance, setup: SecretsSetup): void {
     const secrets = secretsOf(declared, listed.ok ? listed.body : undefined);
     const all = listed.ok ? notes : [...notes, `The secrets could not be listed: ${listed.note}`];
     const shell = setup.shell(request, "Secrets", "/secrets", missingOf(secrets));
-    return render(request, reply, status, secretsData(shell, secrets, all, chosen), "secrets");
+    const remove = actorOf(request)?.role === "admin";
+    return render(request, reply, status, secretsData(shell, secrets, all, chosen, remove), "secrets");
   };
 
   app.get<{ Querystring: { name?: string } }>("/secrets", (request, reply) => {
@@ -61,7 +67,7 @@ export function useSecrets(app: FastifyInstance, setup: SecretsSetup): void {
   });
 
   app.get<{ Querystring: { name?: string } }>("/secrets/delete", (request, reply) => {
-    const { refused } = guard(request, reply, false);
+    const { refused } = guard(request, reply, false, true);
     const name = request.query.name ?? "";
     const shell = setup.shell(request, `Delete ${name}`, "/secrets");
     return refused ?? render(request, reply, 200, deleteData(shell, name), "secrets/delete");
@@ -69,9 +75,9 @@ export function useSecrets(app: FastifyInstance, setup: SecretsSetup): void {
 
   /** A form that runs the adapter for one secret, then leads back to "/secrets", or shows the page with the problem. */
   const form =
-    (failed: string, run: (name: string, person: string, value: string) => Promise<Outcome<unknown>>) =>
+    (failed: string, run: (name: string, person: string, value: string) => Promise<Outcome<unknown>>, remove = false) =>
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const { person, refused } = guard(request, reply, true);
+      const { person, refused } = guard(request, reply, true, remove);
       if (refused) return refused;
       const body = (request.body ?? {}) as Record<string, unknown>;
       const name = String(body.name ?? "");
@@ -79,8 +85,8 @@ export function useSecrets(app: FastifyInstance, setup: SecretsSetup): void {
       if (outcome.ok) return reply.code(303).header("location", "/secrets").send();
       return answer(request, reply, outcome.usage ? 400 : 502, [`${failed}: ${outcome.note}`], name);
     };
-  // A form the console cannot read, like one over the limit, is named without a word of what it held, and only to an
-  // admin: the hooks ran before the body was read.
+  // A form the console cannot read, like one over the limit, is named without a word of what it held, and only to a
+  // person who may open the secrets: the hooks ran before the body was read.
   const options = {
     bodyLimit: LIMIT,
     errorHandler: (error: FastifyError, request: FastifyRequest, reply: FastifyReply) => {
@@ -98,6 +104,6 @@ export function useSecrets(app: FastifyInstance, setup: SecretsSetup): void {
   app.post(
     "/secrets/delete",
     options,
-    form("Not deleted", (name) => deleteSecret(setup.adapter, name)),
+    form("Not deleted", (name) => deleteSecret(setup.adapter, name), true),
   );
 }

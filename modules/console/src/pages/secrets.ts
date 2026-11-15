@@ -64,19 +64,20 @@ function detailOf({ state, declared, stored }: Secret): string {
   return `Needed by ${agentsText((declared as Declared).agents)}`;
 }
 
-function actionOf({ state, name }: Secret): SecretRow["action"] {
+/** The link of a row; "Delete" only for a person who may delete (ADR 0148). */
+function actionOf({ state, name }: Secret, remove: boolean): SecretRow["action"] {
   if (state === "missing") return { href: link("/secrets", name), text: "Store a value" };
   if (state === "set") return { href: link("/secrets", name), text: "Replace" };
-  return state === "not used" ? { href: link("/secrets/delete", name), text: "Delete" } : undefined;
+  return state === "not used" && remove ? { href: link("/secrets/delete", name), text: "Delete" } : undefined;
 }
 
-const rowOf = (secret: Secret): SecretRow => ({
+const rowOf = (secret: Secret, remove: boolean): SecretRow => ({
   name: secret.name,
   state: LOOKS[secret.state].state,
   stateClass: `osf-state osf-state-${LOOKS[secret.state].shape}`,
   rowClass: secret.state === "missing" ? "osf-missing" : undefined,
   detail: detailOf(secret),
-  action: actionOf(secret),
+  action: actionOf(secret, remove),
 });
 
 /** The count beside "Secrets" in the navigation, like "1 missing". */
@@ -97,19 +98,20 @@ function reachOf(secrets: Secret[], name: string): string {
 
 /**
  * The page: the secrets, the missing ones first, and the form for the secret of `chosen`, or else for the first
- * missing one.
+ * missing one. `remove` says whether the person may delete a secret.
  */
 export function secretsData(
   shell: ShellData,
   secrets: Secret[],
   notes: string[],
   chosen: string | undefined,
+  remove: boolean,
 ): SecretsData {
   const name = chosen ?? secrets.find(({ state }) => state === "missing")?.name ?? "";
   return {
     shell,
     notes,
-    rows: secrets.map(rowOf),
+    rows: secrets.map((secret) => rowOf(secret, remove)),
     empty: secrets.length === 0,
     form: { name, reach: reachOf(secrets, name) },
   };

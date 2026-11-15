@@ -37,7 +37,7 @@ Feature: Secrets
     And it says "linear-token" is "Set outside the UI", "Used by the agent ship · from the file linear-token in OSF_SECRETS_DIR of the sandbox adapter"
     And the page says when a new value takes effect, that it goes only to the hosts the agent may reach, and that a secret outside an HTTP request does not work this way
 
-  @id=SCN-CONSOLE-177 @status=implemented
+  @id=SCN-CONSOLE-177 @status=deprecated
   Scenario: A member gets 403 for "/secrets" and its form, and only an admin's navigation links "Secrets"
     Given a console behind a sign-in proxy with an access file with "ada@acme.dev" as "admin" and "varun@acme.dev" as "member", and a store
     When "varun@acme.dev" opens "/secrets" and "/", and sends the form "Store value", and "ada@acme.dev" opens "/"
@@ -45,13 +45,13 @@ Feature: Secrets
     And the navigation of "varun@acme.dev" does not link "Secrets", and the navigation of "ada@acme.dev" links "/secrets"
     And the store holds no value of "linear-token"
 
-  @id=SCN-CONSOLE-178 @status=implemented
+  @id=SCN-CONSOLE-178 @status=deprecated
   Scenario: In the open mode "/secrets" and its form answer 404
     Given a console without "CONSOLE_SIGN_IN" and "CONSOLE_USER_HEADER", and a store
     When a person opens "/secrets" and a program sends the form "Store value"
     Then both answer 404 and say "no secrets: they need a person with the role admin, so set CONSOLE_SIGN_IN, or an access file with CONSOLE_USER_HEADER"
 
-  @id=SCN-CONSOLE-179 @status=implemented
+  @id=SCN-CONSOLE-179 @status=deprecated
   Scenario: Behind a sign-in proxy without an access file "/secrets" answers 404, and the navigation does not link it
     Given a console behind a sign-in proxy with "CONSOLE_USER_HEADER" "X-Forwarded-Email" and no access file, and a store
     When the proxy sends "ada@acme.dev" to "/secrets" and to "/"
@@ -138,3 +138,33 @@ Feature: Secrets
     When the person signs in in Chromium, follows "Secrets", types a value for "linear-token" and presses "Store value"
     Then the person sees "linear-token" as "Set" by "ada@acme.dev"
     And the page passes the accessibility checks, and its screenshot is kept as "secrets"
+
+  @id=SCN-CONSOLE-230 @status=implemented @replaces=SCN-CONSOLE-177
+  Scenario: A member gets 403 for "/secrets" and its form, and the navigation links "Secrets" for an admin and a factory engineer
+    Given a console behind a sign-in proxy with an access file with "ada@acme.dev" as "admin", "grace@acme.dev" as "factory-engineer" and "varun@acme.dev" as "member", and a store
+    When "varun@acme.dev" opens "/secrets" and "/", and sends the form "Store value", and "ada@acme.dev" and "grace@acme.dev" open "/"
+    Then the page and the form answer 403 and say "varun@acme.dev has the role member: Secrets needs the role admin or factory-engineer"
+    And the navigation of "varun@acme.dev" does not link "Secrets", and the navigations of "ada@acme.dev" and "grace@acme.dev" link "/secrets"
+    And the store holds no value of "linear-token"
+
+  @id=SCN-CONSOLE-231 @status=implemented @realizes=SCN-FACTORY-RUNTIME-010
+  Scenario: A factory engineer stores a value and replaces it, and only an admin deletes a secret
+    Given a console behind a sign-in proxy with an access file with "ada@acme.dev" as "admin" and "grace@acme.dev" as "factory-engineer", a store, and the stored secret "old-token" that no agent declares
+    When "grace@acme.dev" stores a value for "linear-token" and then a second value
+    And "grace@acme.dev" opens "/secrets", opens "/secrets/delete?name=old-token" and sends its form
+    Then "linear-token" is "Set" in version 2 by "grace@acme.dev", and the store holds the second value
+    And her page offers no "Delete" for "old-token", and the page and the form of the delete answer 403 and say "grace@acme.dev has the role factory-engineer: deleting a secret needs the role admin"
+    And the store still holds "old-token", and the page of "ada@acme.dev" offers "Delete" for it
+
+  @id=SCN-CONSOLE-232 @status=implemented @replaces=SCN-CONSOLE-178
+  Scenario: In the open mode "/secrets" and its form answer 404 and name the roles that open it
+    Given a console without "CONSOLE_SIGN_IN" and "CONSOLE_USER_HEADER", and a store
+    When a person opens "/secrets" and a program sends the form "Store value"
+    Then both answer 404 and say "no secrets: they need a person with the role admin or factory-engineer, so set CONSOLE_SIGN_IN, or an access file with CONSOLE_USER_HEADER"
+
+  @id=SCN-CONSOLE-233 @status=implemented @replaces=SCN-CONSOLE-179
+  Scenario: Behind a sign-in proxy without an access file "/secrets" answers 404 and names the roles, and the navigation does not link it
+    Given a console behind a sign-in proxy with "CONSOLE_USER_HEADER" "X-Forwarded-Email" and no access file, and a store
+    When the proxy sends "ada@acme.dev" to "/secrets" and to "/"
+    Then "/secrets" answers 404 and says "no secrets: they need a person with the role admin or factory-engineer, so set CONSOLE_SIGN_IN, or an access file with CONSOLE_USER_HEADER"
+    And the navigation of "/" does not link "Secrets"

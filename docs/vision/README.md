@@ -33,7 +33,7 @@ not `deprecated` is `implemented`; otherwise it says `planned`. The check VISION
 | SCN-FACTORY-RUNTIME-005 | planned | none |
 | SCN-FACTORY-RUNTIME-006 | implemented | SCN-E2E-006 (implemented), SCN-FORE-033 (implemented), SCN-FORE-165 (implemented), SCN-SANDBOX-007 (implemented), SCN-SANDBOX-008 (implemented), SCN-SANDBOX-023 (implemented), SCN-SANDBOX-016 (implemented), SCN-SANDBOX-017 (implemented), SCN-SANDBOX-018 (implemented), SCN-SANDBOX-019 (implemented), SCN-SANDBOX-028 (implemented) |
 | SCN-FACTORY-RUNTIME-007 | implemented | SCN-FSPEC-040 (implemented), SCN-FSPEC-016 (implemented), SCN-SANDBOX-009 (implemented), SCN-SANDBOX-011 (implemented) |
-| SCN-FACTORY-RUNTIME-010 | planned | none |
+| SCN-FACTORY-RUNTIME-010 | implemented | SCN-E2E-007 (implemented), SCN-CONSOLE-231 (implemented) |
 | SCN-FACTORY-RUNTIME-008 | implemented | SCN-CTR-004 (implemented), SCN-RUN-011 (implemented), SCN-RUN-012 (implemented) |
 | SCN-FACTORY-RUNTIME-009 | implemented | SCN-CONSOLE-207 (implemented) |
 | SCN-FACTORY-RUNTIME-011 | implemented | SCN-DIST-037 (implemented), SCN-CONSOLE-163 (implemented), SCN-CONSOLE-137 (implemented), SCN-CONSOLE-138 (implemented), SCN-CONSOLE-144 (implemented) |

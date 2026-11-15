@@ -12,7 +12,9 @@ export const ADMIN = { "x-forwarded-email": "ada@acme.dev" };
 
 /** What "/secrets" says in a console without roles. */
 export const CLOSED =
-  "no secrets: they need a person with the role admin, so set CONSOLE_SIGN_IN, or an access file with CONSOLE_USER_HEADER";
+  "no secrets: they need a person with the role admin or factory-engineer, so set CONSOLE_SIGN_IN, or an access file with CONSOLE_USER_HEADER";
+
+export const ENGINEER = { "x-forwarded-email": "grace@acme.dev" };
 
 /**
  * The policy of the console's token for the mount, as "secrets-openbao policy write" prints it (ADR 0137): it writes,
