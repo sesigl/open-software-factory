@@ -53,6 +53,7 @@ The scenario writes these values into its `.env`, next to the profile's own valu
 | `E2E_HARNESS_DIR` | The folder of the agent's script and log, mounted into foreman at the same path. |
 | `E2E_FORGE_URL` | The Forgejo of the scenario as containers reach it, for `docker compose run factory`. |
 | `E2E_FORGE_TOKEN` | Its API token, for factory, observer and taskcapture, and foreman's `OSF_SECRET_FORGE_TOKEN`, the secret `ref:env/FORGE_TOKEN` of a sandboxed agent. |
+| `E2E_GITHUB_URL` | A fake GitHub as the console reaches it, for the console's own sign-in (`CONSOLE_SIGN_IN=github`) in the scenario of a stored secret. Default: GitHub itself, which no scenario calls. |
 | `E2E_WEBHOOK_SECRET` | The secret of the webhooks that `factory apply` creates. |
 | `E2E_WORK_DIR` | The folder that observer and taskcapture see as `/work`. Default: `./work`. |
 | `E2E_USER` | The user and group that observer and taskcapture run as, `<uid>:<gid>`: the scenario's own, so it owns and removes what they write. Default: `node`. |
@@ -108,6 +109,7 @@ Each adapter gets only these variables, `PATH`, and its own temporary `HOME`, `O
 | SCN-E2E-004 | implemented | A benchmark result becomes a routing rule |
 | SCN-E2E-005 | implemented | A manual change to a running factory is reported as drift |
 | SCN-E2E-006 | implemented | An agent in a sandbox pushes to the forge with a placeholder, and holds no token of the foreman |
+| SCN-E2E-007 | implemented | A value that an admin stores in the console reaches the next run's request, with no restart |
 
 ## Paid reference run
 

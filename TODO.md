@@ -1629,7 +1629,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
   - [x] `osf init`, `osf up`, the profile, the chart, `console doctor`, the tutorial; one scenario of the profile
     with sign-in on (`SCN-REPO`, `SCN-DIST`, `SCN-CONSOLE`). After the console's release.
 
-### [ ] T-57 · secrets from the UI (P1)
+### [x] T-57 · secrets from the UI (P1)
 
 - **Problem:** an agent's secret gets its value from a variable or a file of the foreman's host
   (`ports/secrets/README.md`). To set or change one, a person edits `.env` and restarts the foreman. Nothing shows
@@ -1716,7 +1716,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
   - [x] OpenBao in the Compose profile with `osf init`, the job and the restart scenario; the chart's values
     (`SCN-DIST`, `SCN-REPO`). After the releases above.
   - [x] The page `/secrets` with its journey, and the checks of `console doctor` (`SCN-CONSOLE`).
-  - [ ] One smoke scenario in `e2e/` from a stored value to a sandbox's request (`SCN-E2E`).
+  - [x] One smoke scenario in `e2e/` from a stored value to a sandbox's request (`SCN-E2E-007`).
 
 ### [ ] T-58 · a change to the factory from the UI is a pull request (P1)
 

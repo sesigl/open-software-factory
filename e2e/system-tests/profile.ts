@@ -150,8 +150,10 @@ export async function smoke(
     ...more,
   };
   // Port 0 lets Docker pick free ports, so scenarios that run side by side do not collide.
+  // A scenario may name a port in `more`, like the console's, whose address the sign-in needs before the start.
   const ports = ["CONSOLE_PORT", "INTAKE_PORT", "GATEKEEPER_PORT", "FOREMAN_PORT", "TEMPORAL_UI_PORT", "JAEGER_PORT"];
-  const lines = [...Object.entries(values), ...[...ports, "LITELLM_PORT"].map((name) => [name, "0"])];
+  const free = [...ports, "LITELLM_PORT"].filter((name) => !(name in more));
+  const lines = [...Object.entries(values), ...free.map((name) => [name, "0"])];
   await sut.files.put("$INPUT/.env", `${lines.map(([name, value]) => `${name}=${value}`).join("\n")}\n`);
   const compose = sut.compose("compose/compose.yaml");
   return {
