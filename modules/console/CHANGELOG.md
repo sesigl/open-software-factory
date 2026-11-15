@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.10.0](https://github.com/sesigl/open-software-factory/compare/console-v0.9.0...console-v0.10.0) (2026-11-15)
+
+
+### Features
+
+* **console:** a change to the factory from the UI is a pull request, with the page /changes (T-58, ADR 0144) ([#337](https://github.com/sesigl/open-software-factory/issues/337)) ([d20b961](https://github.com/sesigl/open-software-factory/commit/d20b9614c972d556f0c7d9eb3ef7c3badec7aed7))
+* **console:** a factory engineer stores secrets, and an end-to-end scenario proves a stored value reaches a run (T-57, ADR 0148) ([#339](https://github.com/sesigl/open-software-factory/issues/339)) ([f126b90](https://github.com/sesigl/open-software-factory/commit/f126b904064016aca7024ea98027023d95d2f026))
+* **console:** switch a skill on or off per agent, as one change with everything the skill needs (T-59, ADR 0149) ([#341](https://github.com/sesigl/open-software-factory/issues/341)) ([de950bd](https://github.com/sesigl/open-software-factory/commit/de950bd412f548dc121e1b9a282e2d166ca62f6d))
+* **console:** the pages /skills and /skills/&lt;name&gt;, read-only, with safe Markdown (T-59, ADR 0141, ADR 0143) ([#332](https://github.com/sesigl/open-software-factory/issues/332)) ([5ce9bb8](https://github.com/sesigl/open-software-factory/commit/5ce9bb83202e2b60dd8fa271b3e5d670062dea87))
+
+
+### Bug Fixes
+
+* **cli:** a command named like toString or constructor names no command ([#335](https://github.com/sesigl/open-software-factory/issues/335)) ([c3bd872](https://github.com/sesigl/open-software-factory/commit/c3bd872b074ea799bc9264f70bbfa7028bed38f1))
+
 ## [0.9.0](https://github.com/sesigl/open-software-factory/compare/console-v0.8.1...console-v0.9.0) (2026-11-15)
 
 

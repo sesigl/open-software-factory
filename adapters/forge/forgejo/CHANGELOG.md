@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/sesigl/open-software-factory/compare/forge-forgejo-v0.8.0...forge-forgejo-v0.8.1) (2026-11-15)
+
+
+### Bug Fixes
+
+* **cli:** a command named like toString or constructor names no command ([#335](https://github.com/sesigl/open-software-factory/issues/335)) ([c3bd872](https://github.com/sesigl/open-software-factory/commit/c3bd872b074ea799bc9264f70bbfa7028bed38f1))
+
 ## [0.8.0](https://github.com/sesigl/open-software-factory/compare/forge-forgejo-v0.7.0...forge-forgejo-v0.8.0) (2026-11-15)
 
 

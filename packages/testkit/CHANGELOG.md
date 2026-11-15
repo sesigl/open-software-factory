@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.39.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.38.0...testkit-v0.39.0) (2026-11-15)
+
+
+### Features
+
+* **factory-spec, foreman:** an agent can use a skill of another Git repository, pinned in factory.lock (T-59, ADR 0146) ([#338](https://github.com/sesigl/open-software-factory/issues/338)) ([1e7f645](https://github.com/sesigl/open-software-factory/commit/1e7f6459270b6dd21def313b26bfb437981c678e))
+
 ## [0.38.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.37.0...testkit-v0.38.0) (2026-11-15)
 
 

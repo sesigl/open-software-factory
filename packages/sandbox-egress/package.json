@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/sandbox-egress",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "The egress proxy of a sandbox of the open software factory, for every sandbox adapter: iron-proxy's configuration, secrets, start and log.",
   "license": "Apache-2.0",
   "repository": {
