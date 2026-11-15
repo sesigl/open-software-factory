@@ -352,6 +352,7 @@ the minor version. The one-time setup is the same as for contracts
 | `factory apply [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]` | Render like render, register the webhooks of forgejo and github automations (github ones not with --gh-aw), and record what was applied in OSF_DATA. |
 | `factory diff <old> [<new>]` | Show the changes between two versions of factory.yaml, as files or Git revisions. |
 | `factory resolve` | Print the resolved definition as JSON: defaults filled in, registry servers pinned. |
+| `factory skills` | Print every skill the agents use as JSON: its description, source, files, Markdown and needs, and per agent the secret references that give them and what it lacks. |
 | `factory edit <edit> <agent> <value>` | Print factory.yaml with one edit, comments and anchors kept; the file stays as it is. <edit> is add-skill, remove-skill, add-secret, remove-secret, add-egress or remove-egress; "factory edit add-secrets-provider <name> <range>" declares a secrets provider. |
 
 ## Configuration
@@ -494,3 +495,6 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FSPEC-112 | implemented | Lint names a skill path that is no folder |
 | SCN-FSPEC-113 | implemented | Lint names a SKILL.md whose front matter is not closed or does not start on its first line |
 | SCN-FSPEC-114 | implemented | Lint names a SKILL.md that is not UTF-8 text once |
+| SCN-FSPEC-115 | implemented | The skills are printed with their needs, their agents and the Markdown below the front matter |
+| SCN-FSPEC-116 | implemented | A skill that lint refuses is printed with its problems |
+| SCN-FSPEC-117 | implemented | A factory.yaml that does not fit the contract fails "factory skills" with its problems |
