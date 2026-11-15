@@ -26,9 +26,12 @@ node tools/bin/osf.ts init --factory team/factory
 ```
 
 `osf init` writes `deploy/compose/.env`. It generates the secrets that only the factory's own services share: the
-database password, the LiteLLM master key and the API tokens of foreman, intake and gatekeeper. With `--factory`, it
-copies the reference factory to `team/factory/` and points `FACTORY_DIR` there, so you change your copy. It ends with
-the list of values that are still empty. `.env` stays out of Git; never commit it.
+database password, the LiteLLM master key, the API tokens of foreman, intake and gatekeeper, and the unseal key and
+the three tokens of OpenBao, the store of your agents' secrets. With `--factory`, it copies the reference factory to
+`team/factory/` and points `FACTORY_DIR` there, so you change your copy. It ends with the list of values that are
+still empty. `.env` stays out of Git; never commit it, and keep a copy in your safe: without its
+`OSF_OPENBAO_UNSEAL_KEY`, no one can read the secrets you store. On an existing `.env`, `osf init` changes no value
+and only adds the ones a newer profile generates.
 
 ## 2. Say who approves and where
 
@@ -80,6 +83,10 @@ So that only your team gets in, the console signs people in with Google or GitHu
 Open http://localhost:8080 and sign in. Use `localhost`, not `127.0.0.1`: the other tools of the profile run on
 `127.0.0.1`, so they never get the console's cookie. See [Turn on the sign-in](../../deploy/README.md#turn-on-the-sign-in)
 for the details.
+
+Signed in as an admin, you store the values of your agents' secrets on the page `/secrets`: an agent that declares
+`ref:openbao/<name>` gets the value in its next run, with no restart and no edit of `.env`. See
+[Secrets in OpenBao](../../deploy/README.md#secrets-in-openbao), also for the backup of the store.
 
 ## 6. Give it work
 

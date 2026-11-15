@@ -1713,7 +1713,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
     adapter's prefix, `SCN-TK`); the adapter's first publish.
   - [x] Git's form of a secret from OpenBao, and the stage that fails first without a value (`SCN-SEGRESS`,
     `SCN-SANDBOX`, `SCN-FORE`).
-  - [ ] OpenBao in the Compose profile with `osf init`, the job and the restart scenario; the chart's values
+  - [x] OpenBao in the Compose profile with `osf init`, the job and the restart scenario; the chart's values
     (`SCN-DIST`, `SCN-REPO`). After the releases above.
   - [x] The page `/secrets` with its journey, and the checks of `console doctor` (`SCN-CONSOLE`).
   - [ ] One smoke scenario in `e2e/` from a stored value to a sandbox's request (`SCN-E2E`).

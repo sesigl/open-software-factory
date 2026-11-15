@@ -54,6 +54,10 @@ through `kubectl port-forward` (`url`), `helm test` and the state of the workloa
   s) are the cost; the budget keeps about 3% above that measure, as SCN-DIST-034 gets faster once the image exists.
 - T-56 adds no start of the whole profile: SCN-DIST-037 proves the sign-in with only the console, `--no-deps`, about
   5 s with its image present, and SCN-DIST-038 renders the chart like SCN-DIST-033.
+- T-57 adds OpenBao to every start of the profile: `openbao`, `openbao-policies` and `openbao-setup` are done about
+  5 s after the start, while Temporal's schema and namespace take about 8 s, so the chain is not on the path to a
+  healthy console. SCN-DIST-039 starts only OpenBao and docker-proxy, twice, with one sandbox: 21 to 31 s here.
+  SCN-DIST-040 renders the chart like SCN-DIST-033.
 
 ## Scenario prefix
 

@@ -26,6 +26,7 @@ const PROGRAMS = [
   "@opensoftware/harness-acp",
   "@opensoftware/inference-litellm",
   "@opensoftware/sandbox-docker",
+  "@opensoftware/secrets-openbao",
 ];
 
 const e2e = join(dirname(fileURLToPath(import.meta.url)), "..");

@@ -151,6 +151,13 @@ spec:
                   name: {{ include "osf.secret" . }}
                   key: claude-code-oauth-token
                   optional: true
+            {{- if .Values.openbao.address }}
+            # The secrets ref:openbao/<name>: foreman asks secrets-openbao whether each has a value before a stage
+            # (ADR 0139), and each sandbox's egress pod reads it with the token that only reads.
+            - name: FOREMAN_SECRETS
+              value: '{"openbao": "secrets-openbao"}'
+            {{- include "osf.openbaoEnv" (dict "root" . "key" "egress-token") | nindent 12 }}
+            {{- end }}
           ports:
             - name: http
               containerPort: 8080

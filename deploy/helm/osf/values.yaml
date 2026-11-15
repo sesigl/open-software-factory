@@ -29,8 +29,8 @@ images:
   pullPolicy: IfNotPresent
   gatekeeper: "0.10.0-r1"
   intake: "0.7.0-r1"
-  foreman: "0.13.0"
-  console: "0.9.0"
+  foreman: "0.13.0-r1"
+  console: "0.9.0-r1"
   factorySpec: "0.11.0"
   # The image of the improvement jobs: observer, scorekit and ledger.
   observer: "0.2.0-r1"
@@ -96,6 +96,17 @@ console:
     # The Secret, made by the operator, with the keys session-secret (the key of the session cookie) and
     # client-secret (the client's secret). The chart holds neither value.
     secret: ""
+
+# The team's own OpenBao for the agents' secrets ref:openbao/<name> (ADR 0145); the chart installs none (ADR 0075).
+# Empty address: the console has no /secrets, and a factory that declares such a secret fails its stage.
+openbao:
+  # Its address as the console, foreman and the sandboxes' egress pods reach it, like https://bao.acme.dev.
+  address: ""
+  # The KV version 2 mount of the factory's secrets.
+  mount: secret
+  # The Secret, made by the operator, with the keys console-token (policy of `secrets-openbao policy write`) and
+  # egress-token (policy of `secrets-openbao policy read`). Required with an address. The chart holds neither token.
+  secret: ""
 
 # The improvement path (ADR 0123): a CronJob that copies foreman's run records into a claim that console's /improvement
 # reads, and writes the reports of scorekit, ledger and observer. Its pod and console then run on foreman's node.

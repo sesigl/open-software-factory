@@ -89,6 +89,12 @@ spec:
                   key: client-secret
             {{- end }}
             {{- end }}
+            {{- if .Values.openbao.address }}
+            # /secrets stores, lists and deletes the agents' secrets with the token that cannot read a value.
+            - name: CONSOLE_SECRETS_ADAPTER
+              value: secrets-openbao
+            {{- include "osf.openbaoEnv" (dict "root" . "key" "console-token") | nindent 12 }}
+            {{- end }}
           ports:
             - name: http
               containerPort: 8080
