@@ -28,6 +28,13 @@ const problems = validate("factory-definition", document); // [] when valid, els
 `runSpans(record)` reads a run record as runlog writes it: each span with its decoded resource and attributes, or
 `undefined` when the value is no OTLP/JSON trace export request ([ADR 0041](../docs/decisions/0041-run-record-reader.md)).
 
+`readDocument(format, file)` reads a YAML or JSON file and gives `{ document, problems }`, the problems as
+`validate` gives them; a file that cannot be read or parsed throws. The sandbox port's command line has two values
+of its own ([ADR 0147](../docs/decisions/0147-sandbox-egress-is-the-egress-proxy.md)): `copyEnds(from, to)` gives the
+ends of `copy <from> <to>`, `{ id, inSandbox, local, into }` with a relative path below `SANDBOX_WORKSPACE`
+(`/workspace`), or `{ problem }` when not exactly one side is `<ID>:<path>`. Each gives a problem and throws no
+usage error: the adapter turns it into its own.
+
 The schema files are exported at the paths in the table below, for example
 `@opensoftware/contracts/work-item/work-item.schema.json`, along with `events/asyncapi.yaml`, `openapi/*` and `typespec/*`.
 
@@ -165,3 +172,7 @@ None. The CLI reads no environment variables.
 | SCN-CTR-022 | implemented | A pinned skill with a short commit is rejected with its path |
 | SCN-CTR-023 | implemented | The pins of skills in factory.lock are no breaking change |
 | SCN-CTR-024 | implemented | A skill catalog with a skill of another repository at its commit validates |
+| SCN-CTR-017 | implemented | readDocument gives a file's document and each problem with its path |
+| SCN-CTR-018 | implemented | A copy into a sandbox names a path below its working folder |
+| SCN-CTR-019 | implemented | A copy out of a sandbox keeps an absolute path |
+| SCN-CTR-020 | implemented | A copy that names a sandbox on both sides gives its problem |

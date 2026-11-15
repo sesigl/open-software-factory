@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import Ajv2020, { type ErrorObject, type ValidateFunction } from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
+import { parse } from "yaml";
 import { type Format, formatNamed } from "./formats.ts";
 import type { components } from "./generated/types.ts";
 
@@ -11,6 +12,7 @@ export { diff as breakingChanges, type Schema } from "./breaking.ts";
 export { FORMATS, type Format, formatNamed } from "./formats.ts";
 export type { components, paths } from "./generated/types.ts";
 export { type AttributeValue, type RunSpan, runSpans, type SpanAttributes } from "./run-record.ts";
+export { type CopyEnds, copyEnds, SANDBOX_WORKSPACE } from "./sandbox.ts";
 
 type Schemas = components["schemas"];
 export type FactoryDefinition = Schemas["FactoryDefinition"];
@@ -92,6 +94,15 @@ export function validate(format: Format | string, document: unknown): Problem[] 
     validators.set(name, check);
   }
   return check(document) ? [] : problems(check.errors ?? []);
+}
+
+/**
+ * The document of a YAML or JSON file and every problem of it against the format; JSON is YAML. A file that cannot
+ * be read or parsed throws.
+ */
+export function readDocument<T = unknown>(format: Format | string, file: string): { document: T; problems: Problem[] } {
+  const document = parse(readFileSync(file, "utf8")) as T;
+  return { document, problems: validate(format, document) };
 }
 
 /** True when the document matches the format, with its type narrowed. */
