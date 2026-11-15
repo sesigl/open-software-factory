@@ -11,8 +11,11 @@ scenario("SCN-CONSOLE-195", async ({ sut, fakes, given, when, then }) => {
     page = await sut.pages.open("/skills/changelog");
   });
 
-  await then('the page answers 404 and says "no skill changelog: no agent of the factory uses it"', async () => {
-    expect(page.status).toBe(404);
-    expect(page.text).toContain("no skill changelog: no agent of the factory uses it");
-  });
+  await then(
+    'the page "changelog" answers 404 and says "no skill changelog: no agent of the factory uses it"',
+    async () => {
+      expect([page.status, page.title]).toEqual([404, "changelog · console"]);
+      expect(page.text).toContain("no skill changelog: no agent of the factory uses it");
+    },
+  );
 });

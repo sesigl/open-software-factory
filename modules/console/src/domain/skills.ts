@@ -22,7 +22,7 @@ export type NeedState = State | "not declared" | "not allowed";
 
 /** A secret or a host a skill needs, with the agents that lack it and its state. */
 export interface Need {
-  kind: "secret" | "host";
+  kind: "Secret" | "Host";
   name: string;
   /** The references the agents give for a secret, sorted. */
   references: string[];
@@ -30,8 +30,8 @@ export interface Need {
   lacking: string[];
   /** None for a host every agent allows, and for a secret of OpenBao without a store. */
   state: NeedState | undefined;
-  /** The name in the store of a missing secret of OpenBao, for the link to store its value. */
-  missing: string | undefined;
+  /** The name of the secret with the worst state, like the name in the store of a missing one. */
+  worst: string | undefined;
 }
 
 const WORST: State[] = ["missing", "unknown", "set", "outside"];
@@ -44,10 +44,9 @@ export function statesOf(
   agents: Record<string, Record<string, unknown>> | undefined,
   stored: Stored[] | undefined,
 ): Map<string, Secret> {
+  // A stored secret that no agent declares has no provider, so no reference finds it.
   return new Map(
-    secretsOf(declaredOf(agents), stored).flatMap((secret) =>
-      secret.declared ? [[`ref:${secret.declared.provider}/${secret.name}`, secret] as const] : [],
-    ),
+    secretsOf(declaredOf(agents), stored).map((secret) => [`ref:${secret.declared?.provider}/${secret.name}`, secret]),
   );
 }
 
@@ -59,23 +58,24 @@ export function needsOf(skill: Skill, states: Map<string, Secret>, store: boolea
   const lacking = (kind: "secrets" | "hosts", name: string) =>
     skill.agents.filter((agent) => agent.lacks[kind].includes(name)).map((agent) => agent.name);
   const secrets = skill.needs.secrets.map((name): Need => {
-    const references = [...new Set(skill.agents.flatMap((agent) => agent.secrets[name] ?? []))].sort();
-    const found = references.flatMap((reference) => states.get(reference) ?? []);
-    const known = found.filter((secret) => store || secret.state !== "unknown");
-    const worst = WORST.find((state) => known.some((secret) => secret.state === state));
-    const missing = found.find((secret) => secret.state === "missing")?.name;
+    const references = [...new Set(skill.agents.flatMap((agent) => agent.secrets[name] ?? []))];
+    const known = references
+      .flatMap((reference) => states.get(reference) ?? [])
+      .filter((secret) => store || secret.state !== "unknown");
+    const worst = WORST.flatMap((state) => known.filter((secret) => secret.state === state))[0];
     const lacks = lacking("secrets", name);
-    return { kind: "secret", name, references, lacking: lacks, state: lacks.length ? "not declared" : worst, missing };
+    const state = lacks.length ? "not declared" : worst?.state;
+    return { kind: "Secret", name, references, lacking: lacks, state, worst: worst?.name };
   });
   const hosts = skill.needs.hosts.map((name): Need => {
     const lacks = lacking("hosts", name);
     return {
-      kind: "host",
+      kind: "Host",
       name,
       references: [],
       lacking: lacks,
       state: lacks.length ? "not allowed" : undefined,
-      missing: undefined,
+      worst: undefined,
     };
   });
   return [...secrets, ...hosts];

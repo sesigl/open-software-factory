@@ -29,7 +29,7 @@ export interface SkillRow {
   /** The name of the list of its needs, like "What release-notes needs", or undefined when it needs nothing. */
   needsLabel: string | undefined;
   needs: NeedRow[];
-  /** How many problems lint names in its files, like "1 problem". */
+  /** "Fails factory lint" when lint names a problem in its files. */
   problems: string | undefined;
 }
 
@@ -73,18 +73,18 @@ function needRow(need: Need, secrets: boolean): NeedRow {
   const look = need.state && lookOf(need.state);
   const lacks =
     need.lacking.length > 0
-      ? `${need.kind === "secret" ? "Not declared by" : "Not in the egress of"} ${agentsText(need.lacking)}`
+      ? `${need.kind === "Secret" ? "Not declared by" : "Not in the egress of"} ${agentsText(need.lacking)}`
       : undefined;
   const from = need.references.length > 0 ? `From ${need.references.join(", ")}` : undefined;
   const detail = [from, lacks].filter(Boolean).join(" · ") || undefined;
   return {
-    kind: need.kind === "secret" ? "Secret" : "Host",
+    kind: need.kind,
     name: need.name,
     detail,
     state: look?.state,
     stateClass: look && `osf-state osf-state-${look.shape}`,
     ...(secrets && need.state === "missing"
-      ? { action: { href: `/secrets?name=${encodeURIComponent(need.missing as string)}`, text: "Store a value" } }
+      ? { action: { href: `/secrets?name=${encodeURIComponent(need.worst as string)}`, text: "Store a value" } }
       : {}),
   };
 }
@@ -98,9 +98,6 @@ const needRows = (needs: Need[], secrets: boolean, label: string) => ({
 const sourceOf = (skill: Skill): string => `${skill.source.folder} in the factory's repository`;
 
 const usedBy = (skill: Skill): string => `Used by ${agentsText(skill.agents.map((agent) => agent.name))}`;
-
-const countOf = (problems: string[]): string | undefined =>
-  problems.length > 0 ? `${problems.length} ${problems.length > 1 ? "problems" : "problem"}` : undefined;
 
 /** The page "/skills": every skill, with what it needs; `needs` gives the needs of a skill. */
 export function skillsData(
@@ -120,7 +117,7 @@ export function skillsData(
       description: skill.description ?? DESCRIPTION,
       detail: `${sourceOf(skill)} · ${usedBy(skill)}`,
       ...needRows(needs(skill), secrets, `What ${skill.name} needs`),
-      problems: countOf(skill.problems),
+      problems: skill.problems.length > 0 ? "Fails factory lint" : undefined,
     })),
   };
 }

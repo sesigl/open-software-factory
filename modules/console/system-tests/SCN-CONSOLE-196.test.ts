@@ -33,16 +33,22 @@ scenario("SCN-CONSOLE-196", async ({ sut, fakes, given, when, then }) => {
     missing = await sut.pages.open("/skills/missing");
   });
 
-  await then('the list says "release-notes" has "1 problem" and "No description: SKILL.md names none."', async () => {
-    expect(skillRows(list)["release-notes"]).toBe(
-      "release-notes No description: SKILL.md names none. skills/release-notes in the factory's repository · Used by the agent triage 1 problem",
-    );
-  });
+  await then(
+    'the list says "release-notes" "Fails factory lint" and "No description: SKILL.md names none.", and names no need',
+    async () => {
+      expect(skillRows(list)["release-notes"]).toBe(
+        "release-notes No description: SKILL.md names none. skills/release-notes in the factory's repository · Used by the agent triage Fails factory lint",
+      );
+      expect(list.queryByRole("list", { name: "What release-notes needs" })).toBeUndefined();
+    },
+  );
 
   await then(
-    'the page of "release-notes" says "factory lint: skills/release-notes/SKILL.md:2:1 the skill has no description: say what it does and when to use it"',
+    'the page of "release-notes" says "factory lint: skills/release-notes/SKILL.md:2:1 the skill has no description: say what it does and when to use it" and "No secret and no host."',
     async () => {
       expect(notes.getByRole("alert").text).toBe(`factory lint: ${NO_DESCRIPTION}`);
+      expect(notes.queryByRole("list", { name: "This skill needs" })).toBeUndefined();
+      expect(notes.getByText("No secret and no host.").text).toBe("No secret and no host.");
     },
   );
 

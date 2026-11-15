@@ -28,7 +28,7 @@ function lines<T>(stdout: string): T[] {
 }
 
 /** Runs the adapter with these arguments and this standard input, and reads the JSON lines it prints. */
-const run = <T>(command: string, args: string[], input = ""): Promise<Outcome<T[]>> =>
+const run = <T>(command: string, args: string[], input?: string): Promise<Outcome<T[]>> =>
   runProgram(command, args, lines<T>, input);
 
 /** The secrets in the store, sorted by name. */

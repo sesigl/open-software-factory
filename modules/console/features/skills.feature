@@ -11,10 +11,11 @@ Feature: Skills
   Scenario: "/skills" lists each skill with its description, source, agents and needs, and the state of each secret
     Given a factory whose agent "triage" declares "ref:openbao/linear-token" and "ref:openbao/sentry-token", whose agent "review" declares "ref:env/GH_TOKEN", and a store with only "linear-token"
     And the skills "release-notes" of "triage", "changelog" of "review" and "sentry-triage" of "triage" and "review", which need "LINEAR_TOKEN" and the host "api.linear.app", "GH_TOKEN" and "SENTRY_TOKEN"
-    When the admin opens "/skills"
+    When the admin opens "/skills" and "/skills/sentry-triage"
     Then the list shows "changelog", "release-notes" and "sentry-triage" in this order, each with its description, its folder in the factory's repository and its agents
     And "release-notes" needs the secret "LINEAR_TOKEN", "Set", and the host "api.linear.app", "changelog" needs "GH_TOKEN", "Set outside the UI", and "sentry-triage" needs "SENTRY_TOKEN", "Not declared"
-    And the navigation's link "Skills" is the current page
+    And the page of "sentry-triage" says "SENTRY_TOKEN" "From ref:openbao/sentry-token · Not declared by the agent review" is "Not declared"
+    And the page "Skills" is the navigation's current page
     And the console ran the factory program with "skills --file <CONSOLE_FACTORY>"
 
   @id=SCN-CONSOLE-192 @status=implemented
@@ -47,14 +48,14 @@ Feature: Skills
   Scenario: The page of a skill that no agent uses answers 404
     Given a factory whose agent "triage" uses the skill "release-notes"
     When a person opens "/skills/changelog"
-    Then the page answers 404 and says "no skill changelog: no agent of the factory uses it"
+    Then the page "changelog" answers 404 and says "no skill changelog: no agent of the factory uses it"
 
   @id=SCN-CONSOLE-196 @status=implemented
   Scenario: A skill that lint refuses shows its problems, and a folder without a SKILL.md says so
     Given the skill "release-notes" whose SKILL.md has no description, and the skill "missing" whose folder has no SKILL.md
     When a person opens "/skills", "/skills/release-notes" and "/skills/missing"
-    Then the list says "release-notes" has "1 problem" and "No description: SKILL.md names none."
-    And the page of "release-notes" says "factory lint: skills/release-notes/SKILL.md:2:1 the skill has no description: say what it does and when to use it"
+    Then the list says "release-notes" "Fails factory lint" and "No description: SKILL.md names none.", and names no need
+    And the page of "release-notes" says "factory lint: skills/release-notes/SKILL.md:2:1 the skill has no description: say what it does and when to use it" and "No secret and no host."
     And the page of "missing" says "factory lint: the skill \"./skills/missing\" has no SKILL.md" and "The folder has no SKILL.md that the console can show."
 
   @id=SCN-CONSOLE-197 @status=implemented
@@ -80,10 +81,10 @@ Feature: Skills
 
   @id=SCN-CONSOLE-200 @status=implemented
   Scenario: A link of a SKILL.md keeps its anchor only to the web or an email address
-    Given the skill "release-notes" whose SKILL.md links "Docs" to "https://docs.example/notes", "Mail" to "mailto:ada@acme.dev", and "Run", "Open" and "Teams" to "javascript:alert(1)", "data:text/html,hi" and "teams.md"
+    Given the skill "release-notes" whose SKILL.md links "Docs" to "https://docs.example/notes", "Plain" to "http://plain.example", "Mail" to "mailto:ada@acme.dev", and "Run", "Trick", "Open" and "Teams" to "javascript:alert(1)", "javascript:void(0)//https://evil.example", "data:text/html,hi" and "teams.md"
     When a person opens "/skills/release-notes"
-    Then the panel "SKILL.md" links only "Docs" and "Mail", each with "rel" "nofollow noreferrer"
-    And it shows "Run", "Open" and "Teams" as text
+    Then the panel "SKILL.md" links only "Docs", "Plain" and "Mail", each with "rel" "nofollow noreferrer"
+    And it shows "Run", "Trick", "Open" and "Teams" as text
 
   @id=SCN-CONSOLE-201 @status=implemented
   Scenario: A factory program that fails is named on both pages

@@ -44,8 +44,10 @@ scenario("SCN-CONSOLE-191", async ({ sut, fakes, given, when, then }) => {
   );
 
   let page: Page;
-  await when('the admin opens "/skills"', async () => {
+  let sentry: Page;
+  await when('the admin opens "/skills" and "/skills/sentry-triage"', async () => {
     page = await sut.pages.open("/skills", { headers: ADMIN });
+    sentry = await sut.pages.open("/skills/sentry-triage", { headers: ADMIN });
   });
 
   await then(
@@ -57,7 +59,9 @@ scenario("SCN-CONSOLE-191", async ({ sut, fakes, given, when, then }) => {
       expect(rows["sentry-triage"]).toMatch(
         /^sentry-triage The skill sentry-triage\. Use it in the scenarios of the console\. skills\/sentry-triage in the factory's repository · Used by the agents review and triage /,
       );
-      expect(rows.changelog).toContain("skills/changelog in the factory's repository · Used by the agent review");
+      expect(rows.changelog).toBe(
+        "changelog The skill changelog. Use it in the scenarios of the console. skills/changelog in the factory's repository · Used by the agent review Secret GH_TOKEN Set outside the UI",
+      );
       expect(page.getByRole("link", { name: "release-notes" }).attribute("href")).toBe("/skills/release-notes");
     },
   );
@@ -71,7 +75,18 @@ scenario("SCN-CONSOLE-191", async ({ sut, fakes, given, when, then }) => {
     },
   );
 
-  await then('the navigation\'s link "Skills" is the current page', async () => {
+  await then(
+    'the page of "sentry-triage" says "SENTRY_TOKEN" "From ref:openbao/sentry-token · Not declared by the agent review" is "Not declared"',
+    async () => {
+      const needs = sentry.getByRole("list", { name: "This skill needs" }).queryAllByRole("listitem");
+      expect(needs.map((item) => item.text)).toEqual([
+        "Secret SENTRY_TOKEN From ref:openbao/sentry-token · Not declared by the agent review Not declared",
+      ]);
+    },
+  );
+
+  await then('the page "Skills" is the navigation\'s current page', async () => {
+    expect(page.title).toBe("Skills · Open Software Factory");
     const current = page.getByRole("navigation", { name: "Main" }).getByRole("link", { current: "page" });
     expect([current.attribute("href"), current.text]).toEqual(["/skills", "Skills"]);
   });

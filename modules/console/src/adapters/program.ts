@@ -10,9 +10,9 @@ export function runProgram<T>(
   command: string,
   args: string[],
   read: (stdout: string) => T,
-  input = "",
+  input?: string,
 ): Promise<Outcome<T>> {
-  const [file = "", ...words] = command.trim().split(/\s+/);
+  const [file = "", ...words] = command.split(/\s+/);
   return new Promise((resolve) => {
     const child = execFile(file, [...words, ...args], (error, stdout, stderr) => {
       try {

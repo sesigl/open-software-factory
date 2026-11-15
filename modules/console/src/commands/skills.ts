@@ -48,7 +48,7 @@ export function useSkills(app: FastifyInstance, setup: SkillsSetup): void {
   app.get("/skills", async (request, reply) => {
     const { skills, needs, notes } = await load();
     const shell = setup.shell(request, "Skills");
-    return render(request, reply, 200, skillsData(shell, skills, needs, notes, setup.secrets(request)), "skills");
+    return render(request, reply, 200, skillsData(shell, skills, needs, notes, setup.secrets(request)));
   });
 
   app.get<{ Params: { name: string } }>("/skills/:name", async (request, reply) => {
