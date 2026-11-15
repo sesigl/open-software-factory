@@ -1,6 +1,6 @@
 # AGENTS.md for module `console`
 
-Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0072, ADR 0073, ADR 0115, ADR 0120, ADR 0130, ADR 0132, ADR 0141, ADR 0144.
+Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0072, ADR 0073, ADR 0115, ADR 0120, ADR 0130, ADR 0132, ADR 0141, ADR 0144, ADR 0149.
 
 ## Public surface
 
@@ -8,7 +8,7 @@ The only ways a system test or another program may use this module:
 
 - CLI: `console <command>` (see `README.md#commands`)
 - Web pages of `console serve` on `PORT` (see `README.md#pages`): `/`, `/runs/<runId>`, `/work`, `/factory`,
-  `/factory/agents/<name>`, `/inbox`, `/improvement`, `/health`, `/secrets` and `/secrets/delete` (ADR 0137), `/skills` and `/skills/<name>` (ADR 0141), `/changes` (ADR 0144); the sign-in `/signin`, `/signin/start`,
+  `/factory/agents/<name>`, `/inbox`, `/improvement`, `/health`, `/secrets` and `/secrets/delete` (ADR 0137), `/skills` and `/skills/<name>` (ADR 0141), `/skills/<name>/switch` (ADR 0149), `/changes` (ADR 0144); the sign-in `/signin`, `/signin/start`,
   `/signin/callback` and `POST /signout` (ADR 0134); `/theme` (ADR 0133); the probe `/v1/ready`; and the files
   `/pico.css`, `/_astro/<file>` and `/favicon.svg`. Any other method but `GET` and `HEAD` answers 405, except the forms
   `POST /work`, `POST /runs/<runId>/retry`, `POST /runs/<runId>/signals` and `POST /runs/<runId>/gates/<gateId>` with
@@ -16,7 +16,7 @@ The only ways a system test or another program may use this module:
   `POST /secrets/delete`, which answer 404 without roles or a store and 403 to anyone but an admin (ADR 0137), and
   `POST /changes`, `POST /changes/<number>/retry`, `POST /changes/<number>/discard` and `POST /changes/<number>/merge`,
   which answer 404 without `CONSOLE_FACTORY_REPOSITORY` or roles and 403 to anyone but an admin or a factory engineer
-  (ADR 0144).
+  (ADR 0144); `POST /changes` takes one edit or, in the field `edits`, the line of several (ADR 0149).
 - Outside systems it calls: the foremen's HTTP API at `CONSOLE_FOREMAN_URL`, intake's at `CONSOLE_INTAKE_URL` and
   gatekeeper's at `CONSOLE_GATEKEEPER_URL` (`contracts/openapi/openapi.json`), only with `GET`, and with `POST` for the actions (intake's
   `/v1/work-items`, the foreman's `/v1/runs/<runId>/retry` and `/v1/runs/<runId>/signals`, gatekeeper's
@@ -29,7 +29,7 @@ The only ways a system test or another program may use this module:
   `/skills/<name>`, and with `probe` and `list` for `console doctor` and `/health`, with `OSF_OPENBAO_ADDR`, `OSF_OPENBAO_TOKEN` and `OSF_OPENBAO_MOUNT` (ADR 0137); a value goes
   only to the standard input of `put`; factory-spec's `factory` in `CONSOLE_FACTORY_COMMAND`, only with
   `skills --file <CONSOLE_FACTORY>`, which prints the `skill-catalog` contract (ADR 0141, ADR 0143), and
-  `edit --file <the fetched factory.yaml>` for a change; with `CONSOLE_FACTORY_REPOSITORY`, the forge adapter with
+  `edit --file <the fetched factory.yaml>`, or a file beside it for each edit after the first, for a change; with `CONSOLE_FACTORY_REPOSITORY`, the forge adapter with
   `CONSOLE_FACTORY_TOKEN` for `rules`, `branch`, `commit`, `open-pr`, `merge`, `prs`, `pr` and `close` on that
   repository, and Git, which fetches it into `CONSOLE_FACTORY_CACHE` through `@opensoftware/factory-source` (ADR 0144)
 - Input: the factory definition in `CONSOLE_FACTORY` and the access file in `CONSOLE_ACCESS`
@@ -50,7 +50,8 @@ into `dist/web/` and copies its brand files beside them (`publicDir`), and the c
 `/favicon.svg` from its own origin. So no built file may resolve `@opensoftware/ui`: the published console does not have it. Islands: none yet; each island
 a page uses is listed here with the reason why a page load is not enough (T-55). `domain` holds the run states, the order of a merged run list, a run's age, the URL
 templates, the inbox's states, the states of the secrets, what a skill needs and the safe HTML of a skill's Markdown
-(markdown-it, ADR 0141), and a change's edit, branch, title, body and state (ADR 0144), without I/O; `adapters` call
+(markdown-it, ADR 0141), a change's edits, branch, title, body and state (ADR 0144), and the edits of a skill's
+switch (ADR 0149), without I/O; `adapters` call
 the APIs, run the forge and the secrets adapters and `factory`, fetch the factory's repository, and read the factory
 file; `pages` are Preact components written
 with htm that render HTML and import only `domain` and the types of `adapters`; `commands` join them: `serve` runs the
@@ -75,6 +76,10 @@ A journey runs in Chromium (`@kind=journey`, ADR 0131) only for a main flow. Eac
 - SCN-CONSOLE-220, propose a change: the main flow of a factory engineer across the sign-in, the navigation and the
   form, and the only proof that a browser sends the form "Propose change" with its two lists and the console's own
   `Origin`, and that the page of the changes reads well and passes axe.
+
+- SCN-CONSOLE-235, switch a skill on: the main flow of T-59 across the skill's page, the page that asks first and
+  the changes, from "Checking" to "Live", and the only proof that a browser sends the switch's `GET` form and the
+  hidden line of edits, and that the skill's page with its switches passes axe.
 
 They start the console with `CONSOLE_REFRESH=0`: axe's rule `meta-refresh` (WCAG 2.2.1) flags the runs page's reload,
 which stays until live updates replace it (`TODO.md`, T-60).
