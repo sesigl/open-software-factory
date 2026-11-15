@@ -30,7 +30,8 @@ export function personName(by: string | undefined, secret: string): string {
 }
 
 /** The error of a token without the right. */
-export const mayNot = (what: "write" | "delete" | "read", name: string): string => `the token may not ${what} "${name}"`;
+export const mayNot = (what: "write" | "delete" | "read", name: string): string =>
+  `the token may not ${what} "${name}"`;
 export const MAY_NOT_LIST = "the token may not list the secrets";
 
 /** The error of a mount that does not exist, is no KV version 2 mount, or that the token may not use. */
