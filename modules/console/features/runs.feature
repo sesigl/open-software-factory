@@ -85,11 +85,18 @@ Feature: The runs page
     And the second foreman was asked only for its first page
     And the page "/?page=bm90LWEtcGFnZQ", which no foreman named, answers 400
 
-  @id=SCN-CONSOLE-135 @status=implemented
+  @id=SCN-CONSOLE-135 @status=deprecated
   Scenario: Every page allows only the console's own files and no script
     Given a foreman with the run "Export reports as CSV"
     When a person opens "/", "/health" and "/pico.css"
     Then each answer has the Content-Security-Policy "default-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+
+  @id=SCN-CONSOLE-267 @status=implemented @replaces=SCN-CONSOLE-135
+  Scenario: Every answer allows only the console's own files and no script, and the old stylesheet is gone
+    Given a foreman with the run "Export reports as CSV"
+    When a person opens "/", "/health", "/favicon.svg" and "/pico.css"
+    Then each answer has the Content-Security-Policy "default-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+    And "/favicon.svg" answers 200 and "/pico.css" answers 404
 
   @id=SCN-CONSOLE-246 @status=implemented @kind=journey
   Scenario: On a phone the runs are cards and "Submit work" stays at the bottom of the screen (journey)

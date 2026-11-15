@@ -80,7 +80,8 @@ and the dashboards in `CONSOLE_LINKS`. The runs pages, the page of a run and the
 `GET` and `HEAD` answers 405. It shows what the foreman and intake show, so run it behind your sign-in proxy, such as
 oauth2-proxy. Every answer carries a Content-Security-Policy that allows only the console's own files and no script.
 The pages render on the server; the health page was the first that Astro renders, the runs page the second ([ADR 0132](../../docs/decisions/0132-astro-in-the-console.md)), and
-since T-60 Astro renders every page, with the same URLs.
+since T-60 Astro renders every page, with the same URLs, in the look of the design system. The old stylesheet
+`/pico.css` is gone and answers 404.
 
 Actions ([ADR 0089](../../docs/decisions/0089-console-actions.md)): set `CONSOLE_USER_HEADER` to the header in which
 your sign-in proxy sends the signed-in person, like `X-Forwarded-Email`. Then `/work` has the form "submit work"
@@ -539,7 +540,7 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-132 | implemented | "console doctor --deep" names the stream when no stream takes the ping |
 | SCN-CONSOLE-133 | implemented | "console doctor --deep" names the variable when NATS does not answer |
 | SCN-CONSOLE-134 | implemented | "console doctor --deep" without "CONSOLE_NATS_URL" skips the events |
-| SCN-CONSOLE-135 | implemented | Every page allows only the console's own files and no script |
+| SCN-CONSOLE-135 | deprecated | Every page allows only the console's own files and no script |
 | SCN-CONSOLE-136 | deprecated | The page "/health" of a healthy factory answers 200 and has the navigation of every page |
 | SCN-CONSOLE-137 | implemented | A person on the access list signs in and lands on the runs |
 | SCN-CONSOLE-138 | implemented | A person who is not on the access list is refused and reads why |
@@ -671,3 +672,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-264 | implemented | An agent's page shows a list or a map of the agent as YAML |
 | SCN-CONSOLE-265 | implemented | The improvement page shows in the shell, with "Cost and scores" as the current page |
 | SCN-CONSOLE-266 | implemented | On a phone a person reads the health, the factory and the cost and scores as cards (journey) |
+| SCN-CONSOLE-267 | implemented | Every answer allows only the console's own files and no script, and the old stylesheet is gone |
