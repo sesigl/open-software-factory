@@ -246,7 +246,7 @@ Feature: Factories as code
       When a factory engineer rolls back to "v2"
       Then new runs use "v2"
 
-    @scenario_id=SCN-FACTORY-CODE-008 @status=planned @evidence=derived @source=owner-2026-11 @source=06:01
+    @scenario_id=SCN-FACTORY-CODE-008 @status=implemented @evidence=derived @source=owner-2026-11 @source=06:01
     Scenario: A factory engineer changes the factory in the factory UI
       Given a person with the role "factory-engineer" is signed in to the factory UI
       When the person changes the model of the triage agent in the factory UI

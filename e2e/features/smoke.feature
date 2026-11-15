@@ -61,3 +61,18 @@ Feature: Key use cases across modules
     And the agent's environment holds "LINEAR_TOKEN" as "osf-secret-placeholder-LINEAR_TOKEN" and not the value
     And the page "/secrets" names "linear-token" as "Set" by "grace@acme.dev" and does not hold the value
     And the logs of the console and the foreman do not hold the value
+
+  @id=SCN-E2E-008 @status=implemented @realizes=SCN-FACTORY-CODE-008
+  Scenario: A change that a factory engineer proposes in the console merges after its check and is the factory version of the next run
+    Given a factory repository on Forgejo whose agent "implement" runs in a sandbox of the workspace image with the egress allowlist "host.docker.internal", and whose main branch requires the check "factory" and no approval
+    And the Compose profile with "FACTORY_REPOSITORY" set to that repository's "main", "FACTORY_TOKEN" and "FACTORY_USER" to a token of the forge and its user, and "FACTORY_FORGE_ADAPTER" to "forge-forgejo", and the scripted harness that answers when asked to implement
+    And the console with the sign-in of GitHub, where "grace@acme.dev" of the repository's "access.yaml" signed in as "factory-engineer"
+    And a first run, whose stage "implement" succeeded with the newest commit of "main" as its factory version
+    When the factory engineer sends the form "Propose change" of the page "/changes" with "add-egress", the agent "implement" and the value "api.linear.app"
+    Then the console answered 303 to "/changes", and the forge has one open pull request "factory edit add-egress implement api.linear.app" whose body names "grace@acme.dev"
+    When the check "factory" of the pull request's head passes, posted as the factory's workflow posts it, and the factory engineer opens "/changes"
+    Then the forge merged the pull request into "main" without another person, and the "factory.yaml" of "main" lets "implement" reach "api.linear.app"
+    And the page "/changes" shows the change as "Live" with "Live for the next run: factory version <the merge commit>"
+    When a program posts a second work item to foreman's "/v1/runs", with no restart
+    Then the stage "implement" of the second run succeeded with the merge commit as its factory version
+

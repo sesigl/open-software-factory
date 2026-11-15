@@ -1,5 +1,6 @@
 // The factory of a smoke scenario on the Compose profile (ADR 0076): the e2e factory with the scenario's factory.yaml
 // in $INPUT/factory, the fake Slack and the scripted agent for containers, and the profile's .env with every value set.
+import type { RunView } from "@opensoftware/contracts";
 import type { Compose, FakeSlack, Fakes, Forge, Harness, HarnessTurn, Sut } from "@opensoftware/testkit";
 
 /** The values of .env that osf init generates for the profile's OpenBao (ADR 0145), made up for the tests. */
@@ -37,11 +38,12 @@ export const WORK = {
 /**
  * factory.yaml of the e2e factory with an agent and a stage for each name; the stage "spec" waits for the gate of
  * "maintainers". The agents run on the harness `acp`, which foreman starts as the scripted agent, or on `harness`.
- * `providers` and `agent` add lines below `providers:` and to each agent; `tail` adds lines at the end.
+ * `providers` and `agent` add lines below `providers:` and to each agent; `agents` adds lines below the agents, like
+ * an agent of no stage; `tail` adds lines at the end.
  */
 export function factoryYaml(
   stages: string[],
-  more: { harness?: string; providers?: string[]; agent?: string[]; tail?: string[] } = {},
+  more: { harness?: string; providers?: string[]; agent?: string[]; agents?: string[]; tail?: string[] } = {},
 ): string {
   const harness = more.harness ?? "acp";
   return [
@@ -60,6 +62,7 @@ export function factoryYaml(
       `    prompt: ./agents/${stage}.md`,
       ...(more.agent ?? []).map((line) => `    ${line}`),
     ]),
+    ...(more.agents ?? []).map((line) => `  ${line}`),
     "workflow:",
     ...stages.flatMap((stage) =>
       stage === "spec"
@@ -209,4 +212,179 @@ export async function api(
   });
   const text = await answer.text();
   return { status: answer.status, body: text ? JSON.parse(text) : undefined };
+}
+
+/** Posts a work item to foreman's "/v1/runs" with the API token, as a program does, and gives the run's ID. */
+export async function postRun(foreman: string, work: typeof WORK): Promise<string> {
+  const answer = await api(foreman, FOREMAN_TOKEN, "/v1/runs", { method: "POST", body: work });
+  expect(answer.status, JSON.stringify(answer.body)).toBe(201);
+  return (answer.body as RunView).runId;
+}
+
+/** The run as foreman's API shows it. */
+export const runView = async (foreman: string, runId: string): Promise<RunView> =>
+  (await api(foreman, FOREMAN_TOKEN, `/v1/runs/${runId}`)).body as RunView;
+
+/** The stage "implement" of the run, as foreman's API shows it. */
+export const implementOf = async (foreman: string, runId: string) =>
+  (await runView(foreman, runId)).stages.find((candidate) => candidate.stage === "implement");
+
+/** The factory's access file: "ada@acme.dev" is its admin and "grace@acme.dev" its factory engineer. */
+export const ACCESS = [
+  "version: 1",
+  "people:",
+  "  - email: ada@acme.dev",
+  "    role: admin",
+  "  - email: grace@acme.dev",
+  "    role: factory-engineer",
+  "",
+].join("\n");
+
+/** One answer of the console to a browser that follows no redirect. */
+export interface Answer {
+  status: number;
+  location: string;
+  html: string;
+}
+
+/** Opens a path of the console, or sends a form to it when `form` is given. */
+export type Browser = (path: string, form?: Record<string, string>) => Promise<Answer>;
+
+/**
+ * A browser without script: it keeps the console's cookies and follows no redirect, so each step sees one answer.
+ * A form names the console's own address `origin` in Origin, as a browser does (ADR 0134).
+ */
+export function browser(base: string, origin: string): Browser {
+  const jar = new Map<string, string>();
+  return async (path, form) => {
+    const cookie = [...jar].map(([name, value]) => `${name}=${value}`).join("; ");
+    const response = await fetch(new URL(path, base), {
+      method: form ? "POST" : "GET",
+      redirect: "manual",
+      headers: {
+        ...(cookie ? { cookie } : {}),
+        ...(form ? { origin, "content-type": "application/x-www-form-urlencoded" } : {}),
+      },
+      body: form ? new URLSearchParams(form).toString() : undefined,
+    });
+    for (const line of response.headers.getSetCookie()) {
+      const [name, value] = (line.split(";")[0] ?? "").split("=", 2) as [string, string];
+      if (value) jar.set(name, value);
+      else jar.delete(name);
+    }
+    return { status: response.status, location: response.headers.get("location") ?? "", html: await response.text() };
+  };
+}
+
+/**
+ * The console's own sign-in with GitHub (ADR 0134) on this port of localhost: a fake GitHub's token exchange and API,
+ * as the console calls them from its container, for "grace@acme.dev". `env` holds the values of .env; the console's
+ * address names its port before it starts, so the port cannot be 0. `signIn` signs her in as a person does who
+ * consents in the browser, and gives the browser with her session.
+ */
+export async function githubSignIn(fakes: Fakes, port: string) {
+  const github = await fakes.http(
+    [
+      { method: "POST", path: "/login/oauth/access_token", body: { access_token: "gho_grace" } },
+      { path: "/user", body: { login: "grace", name: "Grace" } },
+      { path: "/user/emails", body: [{ email: "grace@acme.dev", primary: true, verified: true }] },
+    ],
+    { containers: true },
+  );
+  const env: Record<string, string> = {
+    CONSOLE_PORT: port,
+    CONSOLE_SIGN_IN: "github",
+    // The OAuth app of the operator, made up for the test: no GitHub issued it.
+    CONSOLE_GITHUB_CLIENT_ID: "Iv1.acme0console",
+    CONSOLE_GITHUB_CLIENT_SECRET: "github-oauth-secret-1",
+    CONSOLE_SESSION_SECRET: "console-session-secret-1",
+    E2E_GITHUB_URL: github.containerUrl as string,
+  };
+  return {
+    env,
+    async signIn(profile: Smoke, next: string): Promise<Browser> {
+      // The person opens the console on localhost, CONSOLE_URL's host, where the profile publishes its port.
+      const base = (await profile.compose.url("console", 8080)).replace("127.0.0.1", "localhost");
+      const open = browser(base, `http://localhost:${port}`);
+      const authorize = new URL((await open(`/signin/start?next=${encodeURIComponent(next)}`)).location);
+      // GitHub's answer after the person consents: back to the callback with a code and the sign-in's state.
+      const callback = new URL(authorize.searchParams.get("redirect_uri") ?? "");
+      callback.searchParams.set("code", "github-code-grace");
+      callback.searchParams.set("state", authorize.searchParams.get("state") ?? "");
+      const signedIn = await open(callback.pathname + callback.search);
+      expect({ status: signedIn.status, location: signedIn.location }).toEqual({ status: 303, location: next });
+      return open;
+    },
+  };
+}
+
+/** Calls Forgejo's API on the repository "factory" as its owner, as a person or the factory's workflow would. */
+export async function factoryApi(forge: Forge, method: string, path: string, body?: unknown): Promise<unknown> {
+  const answer = await fetch(`${forge.url}/api/v1/repos/${forge.owner}/factory${path}`, {
+    method,
+    headers: { authorization: `token ${forge.token}`, "content-type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!answer.ok) throw new Error(`the forge answered ${method} ${path} with ${answer.status}: ${await answer.text()}`);
+  return answer.json();
+}
+
+/**
+ * The factory's repository "factory" on the forge (ADR 0150): the e2e factory with this factory.yaml, ACCESS and the
+ * files; its main branch requires the check "factory" and no approval, as the console asks (ADR 0144). Gives the
+ * values of .env that point the profile at it, with the forge's token and its user, as the containers reach the forge.
+ */
+export async function factoryRepository(
+  fakes: Fakes,
+  forge: Forge,
+  factory: string,
+  files: Record<string, string> = {},
+): Promise<Record<string, string>> {
+  const e2e = fakes.fromRepository("e2e/factory");
+  await forge.createRepository("factory", { ...e2e, "factory.yaml": factory, "access.yaml": ACCESS, ...files });
+  const rule = {
+    rule_name: "main",
+    enable_status_check: true,
+    status_check_contexts: ["factory"],
+    required_approvals: 0,
+  };
+  await factoryApi(forge, "POST", "/branch_protections", rule);
+  const server = fromContainer(forge.url);
+  return {
+    FACTORY_REPOSITORY: `git+${server}/${forge.owner}/factory.git#main`,
+    FACTORY_TOKEN: forge.token,
+    FACTORY_USER: `forgejo:${forge.owner}`,
+    FACTORY_FORGE_ADAPTER: "forge-forgejo",
+    FACTORY_FORGE_URL: server,
+  };
+}
+
+/** The head commit of "main" of the repository "factory". */
+export const mainOf = async (forge: Forge): Promise<string | undefined> =>
+  (await forge.branches("factory")).find((branch) => branch.name === "main")?.sha;
+
+/**
+ * Posts the check "factory" with "success" on the head of the newest pull request, as the factory's workflow posts it
+ * (ADR 0150): nothing in the profile runs that workflow.
+ */
+export async function passCheck(forge: Forge): Promise<void> {
+  const [pull] = await forge.pullRequests("factory");
+  const head = (await forge.branches("factory")).find((branch) => branch.name === pull?.head)?.sha;
+  await factoryApi(forge, "POST", `/statuses/${head}`, { context: "factory", state: "success" });
+}
+
+/** A pull request of the repository "factory" as Forgejo's API gives it. */
+export interface PullOfForge {
+  number: number;
+  merged: boolean;
+  merge_commit_sha: string;
+  merged_by: { login: string } | null;
+}
+
+/** Waits until Forgejo merged the newest pull request in the background, once its check passed, and gives it. */
+export async function merged(forge: Forge): Promise<PullOfForge> {
+  const state = async () => (await forge.pullRequests("factory"))[0]?.state;
+  await expect.poll(state, { timeout: WAIT_MS, interval: 500 }).toBe("closed");
+  const [pull] = await forge.pullRequests("factory");
+  return (await factoryApi(forge, "GET", `/pulls/${pull?.number}`)) as PullOfForge;
 }

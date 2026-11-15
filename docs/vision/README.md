@@ -43,7 +43,7 @@ not `deprecated` is `implemented`; otherwise it says `planned`. The check VISION
 | SCN-FACTORY-CODE-003 | planned | none |
 | SCN-FACTORY-CODE-004 | implemented | SCN-FSPEC-026 (implemented), SCN-FSPEC-029 (implemented), SCN-TASK-022 (implemented) |
 | SCN-FACTORY-CODE-005 | implemented | SCN-FSPEC-028 (implemented) |
-| SCN-FACTORY-CODE-008 | planned | none |
+| SCN-FACTORY-CODE-008 | implemented | SCN-E2E-008 (implemented) |
 | SCN-FACTORY-CODE-006 | implemented | SCN-SCORE-005 (implemented) |
 | SCN-FACTORY-OPEN-001 | implemented | SCN-FSPEC-025 (implemented), SCN-FORE-051 (implemented), SCN-INFER-002 (implemented) |
 | SCN-FACTORY-OPEN-002 | implemented | SCN-HCLAUDE-001 (implemented), SCN-HCODEX-001 (implemented), SCN-HOPENCODE-001 (implemented), SCN-FSPEC-010 (implemented), SCN-FSPEC-011 (implemented), SCN-HARNESS-001 (implemented) |
