@@ -134,4 +134,19 @@ scenario("SCN-DIST-039", async ({ sut, fakes, given, when, then }) => {
       expect(audit.stdout).not.toContain(VALUE);
     },
   );
+
+  await then(
+    'while the profile runs and nobody calls OpenBao for 5 seconds, its audit log gets no entry: the health check, every second, asks "sys/health", which OpenBao does not audit',
+    async () => {
+      const lines = async () => {
+        const counted = await compose.run(["exec", "-T", "openbao", "sh", "-c", "wc -l < /openbao/file/audit.log"]);
+        expect(counted.exitCode, counted.stderr).toBe(0);
+        return Number(counted.stdout.trim());
+      };
+      const before = await lines();
+      // Five runs of the health check, whose interval is a second.
+      await new Promise((resolve) => setTimeout(resolve, 5_000));
+      expect(await lines()).toBe(before);
+    },
+  );
 });

@@ -38,13 +38,23 @@ What was verified on OpenBao 2.7.2, the binary `make install` pins and the image
 - Measured on this development machine with the images present: `docker compose up --detach --wait openbao-setup`
   on an empty volume takes 4.2 s (OpenBao sets itself up, the job writes the policies, the mount and two tokens), and
   2.8 s again after `docker compose down`.
+- **A health check must not ask with a token.** A first version checked health with `bao token lookup`, an
+  authenticated request that OpenBao audits: on this machine the audit log grew from 27 to 73 lines in 30 s of an idle
+  profile (52 entries for `auth/token/lookup-self`), about 1.5 lines a second for as long as the service runs, on the
+  volume with the data. With `sys/health` it stayed at 23 lines over the same 30 s; SCN-DIST-039 checks that an idle
+  profile adds no entry in 5 s.
+- BusyBox `wget` in OpenBao's image follows `http_proxy` and ignores `no_proxy`, so the health check passes `-Y off`.
 
 ## Decision
 
 - **The service `openbao`** in `deploy/compose/compose.yaml` runs `quay.io/openbao/openbao:2.7.2`, always on, with
   `deploy/compose/openbao/config.hcl`: the integrated storage of one node and the audit log `audit.log` on the volume
-  `openbao`, a listener without TLS on the profile's network only (no published port), and no UI. Its health check is
-  a lookup of the root token, which answers once the store is unsealed and its first start set it up.
+  `openbao`, a listener without TLS on the profile's network only (no published port), and no UI. Its health check
+  asks `sys/health` every second, which needs no token and which OpenBao does not audit, so the check writes nothing
+  to the audit log. `openbao-setup` waits, at most 30 s, until the root token of `.env` answers, and otherwise fails
+  with a message that names `OSF_OPENBAO_ROOT_TOKEN`: on the first start the `initialize` block sets the token up a
+  moment after the store answers. The service gets no `BAO_TOKEN`: no service needs the root token there, and an
+  operator who runs `bao` in it names `$OSF_OPENBAO_ROOT_TOKEN`, which the service holds for its first start.
 - **OpenBao initializes itself.** On the first start of an empty volume, the configuration's `initialize` block gives
   the root token the ID `OSF_OPENBAO_ROOT_TOKEN` of `.env`. No person runs `bao operator init`, and there are no
   unseal or recovery keys to hand out: the static seal has none.

@@ -220,3 +220,4 @@ Feature: The Compose profile installs a complete factory with one command
     And OpenBao refuses the console's token a read of the value of "linear-token" with 403
     And a sandbox that the service "foreman" creates with the egress allowlist "host.docker.internal" and "LINEAR_TOKEN" from "ref:openbao/linear-token" sends "Authorization: Bearer" and the value to the API at "host.docker.internal"
     And the audit log on the volume "openbao" names the read of "secret/data/linear-token" and does not hold the value
+    And while the profile runs and nobody calls OpenBao for 5 seconds, its audit log gets no entry: the health check, every second, asks "sys/health", which OpenBao does not audit

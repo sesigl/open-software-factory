@@ -132,14 +132,14 @@ services:
       OSF_OPENBAO_UNSEAL_KEY: ${OSF_OPENBAO_UNSEAL_KEY:?set OSF_OPENBAO_UNSEAL_KEY in .env}
       OSF_OPENBAO_ROOT_TOKEN: ${OSF_OPENBAO_ROOT_TOKEN:?set OSF_OPENBAO_ROOT_TOKEN in .env}
       BAO_ADDR: http://127.0.0.1:8200
-      # Only for the bao commands an operator runs here with docker compose exec; the server reads no such variable.
-      BAO_TOKEN: ${OSF_OPENBAO_ROOT_TOKEN:?set OSF_OPENBAO_ROOT_TOKEN in .env}
     volumes:
       - ./openbao/config.hcl:/openbao/config/osf.hcl:ro
       - openbao:/openbao/file
     healthcheck:
-      # 0 once the store is unsealed, and the root token of .env answers once its first start set it up.
-      test: [CMD, bao, token, lookup, -format=json]
+      # 200 once the store is initialized, unsealed and active. sys/health needs no token, and OpenBao writes no
+      # audit entry for it, so the check that runs every second adds nothing to the audit log.
+      # -Y off: straight to the server, also where Docker gives the container a proxy (BusyBox wget skips NO_PROXY).
+      test: [CMD, wget, -Y, "off", -q, -O, /dev/null, http://127.0.0.1:8200/v1/sys/health]
       interval: 1s
       timeout: 5s
       retries: 60
@@ -180,6 +180,17 @@ services:
     command:
       - |
         set -eu
+        # The first start sets the root token up a moment after the store answers: wait for it, at most 30 s.
+        tries=0
+        until bao token lookup >/dev/null 2>&1; do
+          tries=$$((tries + 1))
+          if [ "$$tries" -ge 30 ]; then
+            echo "openbao-setup: the root token OSF_OPENBAO_ROOT_TOKEN of .env does not answer at $$BAO_ADDR after 30 s;" >&2
+            echo "  a volume openbao set up with another .env needs that .env's root token" >&2
+            exit 1
+          fi
+          sleep 1
+        done
         bao policy write osf-console /policies/osf-console.hcl
         bao policy write osf-egress /policies/osf-egress.hcl
         bao secrets list -format=json | grep -q "\"$$MOUNT/\"" || bao secrets enable -path="$$MOUNT" -version=2 kv

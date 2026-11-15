@@ -281,7 +281,8 @@ work this way. `GH_TOKEN` and `CLAUDE_CODE_OAUTH_TOKEN` of the reference factory
   page `/health` warn 7 days before the console's token ends; run `docker compose up --detach --wait` to make both new.
 - **The audit log** is `/openbao/file/audit.log` on the volume, one JSON line per request and answer, each value as an
   HMAC: `docker compose exec openbao tail /openbao/file/audit.log`. It grows without rotation.
-- **An operator's commands** run in the service, with the root token: `docker compose exec openbao bao kv list secret`.
+- **An operator's commands** run in the service with the root token of `.env`, which the service holds for its first
+  start: `docker compose exec openbao sh -c 'BAO_TOKEN=$OSF_OPENBAO_ROOT_TOKEN bao kv list secret'`.
   OpenBao listens only on the profile's network.
 
 **Back up the volume and the key together.** The volume `openbao` holds the values, encrypted with
