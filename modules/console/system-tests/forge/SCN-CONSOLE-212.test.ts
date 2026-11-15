@@ -8,7 +8,7 @@ import {
   openChanges,
   postCheck,
   press,
-} from "./changes.ts";
+} from "../changes.ts";
 
 scenario("SCN-CONSOLE-212", async ({ sut, fakes, given, when, then }) => {
   let change: Change;

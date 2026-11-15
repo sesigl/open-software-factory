@@ -1,17 +1,13 @@
-import { type Forge, type Page, scenario } from "@opensoftware/testkit";
-import { changesEnv, factoryRepository, openChanges, propose, servingChanges } from "./changes.ts";
+import { type Page, scenario } from "@opensoftware/testkit";
+import { factoryRuns, openChanges, propose, servingChanges, unreachableEnv } from "./changes.ts";
 
 const MEMBER = { "x-forwarded-email": "varun@acme.dev" };
 
 scenario("SCN-CONSOLE-207", async ({ sut, fakes, given, when, then }) => {
-  let forge: Forge;
-  await given(
-    'a factory repository "tester/factory" whose main branch requires the check "factory", and a console behind a sign-in proxy with "varun@acme.dev" as "member"',
-    async () => {
-      forge = await factoryRepository(sut, fakes);
-      await servingChanges(sut, fakes, changesEnv(sut, forge));
-    },
-  );
+  await given('a console with a factory repository, and "varun@acme.dev" as "member"', async () => {
+    // The console refuses the form before it asks the forge or the repository.
+    await servingChanges(sut, fakes, unreachableEnv(sut));
+  });
 
   let sent: Page;
   let page: Page;
@@ -24,14 +20,12 @@ scenario("SCN-CONSOLE-207", async ({ sut, fakes, given, when, then }) => {
     'the form answers 403 and says "varun@acme.dev has the role member: a change needs the role admin or factory-engineer"',
     async () => {
       expect(sent.status).toBe(403);
-      expect(sent.text).toContain(
-        "varun@acme.dev has the role member: a change needs the role admin or factory-engineer",
-      );
+      expect(sent.text).toContain("varun@acme.dev has the role member: a change needs the role admin or factory-engineer");
     },
   );
 
-  await then("the forge has no pull request", async () => {
-    expect(await forge.pullRequests("factory")).toEqual([]);
+  await then('the console ran no "factory edit"', async () => {
+    expect(await factoryRuns(sut)).toEqual([]);
   });
 
   await then('"/changes" has no form "Propose a change"', async () => {

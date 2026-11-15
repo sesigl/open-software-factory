@@ -39,15 +39,21 @@ export async function factoryRepository(sut: Sut, fakes: Fakes, required = true)
   const forge = await fakes.forge();
   await forge.createRepository("factory", { "factory.yaml": FACTORY });
   if (!required) return forge;
-  await port(sut, forge, ["protect", REPOSITORY, "main", "--check", "factory"]);
-  // A person who may write still pushes to main, as another person's commit in a scenario does; a pull request still
-  // needs the check.
-  const allowed = await fetch(`${forge.url}/api/v1/repos/${REPOSITORY}/branch_protections/main`, {
-    method: "PATCH",
+  // The rule that the port's `protect` writes, in one call of Forgejo's API, and a person who may write still pushes
+  // to main, as another person's commit in a scenario does; a pull request still needs the check.
+  const rule = {
+    rule_name: "main",
+    enable_status_check: true,
+    status_check_contexts: ["factory"],
+    required_approvals: 0,
+    enable_push: true,
+  };
+  const protectedMain = await fetch(`${forge.url}/api/v1/repos/${REPOSITORY}/branch_protections`, {
+    method: "POST",
     headers: { authorization: `token ${forge.token}`, "content-type": "application/json" },
-    body: JSON.stringify({ enable_push: true }),
+    body: JSON.stringify(rule),
   });
-  if (!allowed.ok) throw new Error(`the forge did not allow pushes to main: ${allowed.status}`);
+  if (!protectedMain.ok) throw new Error(`the forge did not protect main: ${protectedMain.status}`);
   return forge;
 }
 
@@ -130,6 +136,18 @@ export const changesEnv = (sut: Sut, forge: Forge): Record<string, string> => ({
   CONSOLE_FACTORY_CACHE: sut.files.path("$OUTPUT/cache"),
   CONSOLE_FORGE_ADAPTER: sut.adapter("forge/forgejo"),
   CONSOLE_FORGE_URL: forge.url,
+});
+
+/**
+ * The variables of a factory repository that no scenario reaches: for the scenarios in which the console refuses a
+ * form before it asks the forge.
+ */
+export const unreachableEnv = (sut: Sut): Record<string, string> => ({
+  CONSOLE_FACTORY_REPOSITORY: `git+http://127.0.0.1:9/${REPOSITORY}.git#main`,
+  CONSOLE_FACTORY_USER: "forgejo:tester",
+  CONSOLE_FACTORY_CACHE: sut.files.path("$OUTPUT/cache"),
+  CONSOLE_FORGE_ADAPTER: sut.adapter("forge/forgejo"),
+  CONSOLE_FORGE_URL: "http://127.0.0.1:9",
 });
 
 /** Starts a console behind a sign-in proxy with PEOPLE, the stand-in factory program and these variables. */

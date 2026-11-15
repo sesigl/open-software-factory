@@ -7,8 +7,9 @@ import {
   commitOnMain,
   FACTORY,
   openChanges,
+  REPOSITORY,
   withHost,
-} from "./changes.ts";
+} from "../changes.ts";
 
 /** factory.yaml of the other person's commit: another host at the same place. */
 const OTHER = withHost(FACTORY, "api.slack.com");
@@ -24,12 +25,16 @@ scenario("SCN-CONSOLE-210", async ({ sut, fakes, given, when, then }) => {
     'another commit on "main" changes the hosts of "triage" and a factory engineer opens "/changes"',
     async () => {
       await commitOnMain(sut, change.forge, { "factory.yaml": OTHER });
-      // Forgejo checks the open pull requests against their base in the background after a push.
-      const state = async () => {
-        page = await openChanges(sut);
-        return changeTexts(page)[0] ?? "";
+      // Forgejo checks the open pull requests against their base in the background after a push: the test waits for
+      // that on the forge, then opens the page once.
+      const mergeable = async () => {
+        const answer = await fetch(`${change.forge.url}/api/v1/repos/${REPOSITORY}/pulls/${change.pr.number}`, {
+          headers: { authorization: `token ${change.forge.token}` },
+        });
+        return ((await answer.json()) as { mergeable: boolean }).mergeable;
       };
-      await expect.poll(state, { timeout: 30_000, interval: 200 }).toMatch(/ Conflict /);
+      await expect.poll(mergeable, { timeout: 30_000, interval: 100 }).toBe(false);
+      page = await openChanges(sut);
     },
   );
 

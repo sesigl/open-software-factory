@@ -1,5 +1,5 @@
 import { type Forge, type Page, scenario } from "@opensoftware/testkit";
-import { changesEnv, changeTexts, factoryRepository, headOf, openChanges, press, servingChanges } from "./changes.ts";
+import { changesEnv, changeTexts, factoryRepository, headOf, openChanges, press, servingChanges } from "../changes.ts";
 
 const BRANCH = "console/add-egress-triage-1a2b3c4-5e6f7a8b";
 

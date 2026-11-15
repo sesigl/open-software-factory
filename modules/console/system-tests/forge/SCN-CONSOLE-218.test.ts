@@ -1,5 +1,5 @@
 import { type Page, scenario } from "@opensoftware/testkit";
-import { type Change, changeOfConsole, headOf, postCheck, press, REPOSITORY } from "./changes.ts";
+import { type Change, changeOfConsole, headOf, postCheck, press, REPOSITORY } from "../changes.ts";
 
 const TITLE = "factory edit add-egress triage api.linear.app;curl";
 

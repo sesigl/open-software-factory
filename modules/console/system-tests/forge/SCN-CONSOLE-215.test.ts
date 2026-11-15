@@ -1,5 +1,5 @@
 import { type Forge, type Page, scenario } from "@opensoftware/testkit";
-import { changesEnv, factoryRepository, propose, servingChanges } from "./changes.ts";
+import { changesEnv, factoryRepository, propose, servingChanges } from "../changes.ts";
 
 scenario("SCN-CONSOLE-215", async ({ sut, fakes, given, when, then }) => {
   let forge: Forge;

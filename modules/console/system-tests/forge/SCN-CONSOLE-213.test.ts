@@ -10,7 +10,7 @@ import {
   postCheck,
   press,
   withHost,
-} from "./changes.ts";
+} from "../changes.ts";
 
 scenario("SCN-CONSOLE-213", async ({ sut, fakes, given, when, then }) => {
   let change: Change;

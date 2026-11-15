@@ -18,10 +18,10 @@ Feature: Changes
 
   @id=SCN-CONSOLE-207 @status=implemented @realizes=SCN-FACTORY-RUNTIME-009
   Scenario: A member gets 403 for the form "Propose change", and "/changes" offers a member no form
-    Given a factory repository "tester/factory" whose main branch requires the check "factory", and a console behind a sign-in proxy with "varun@acme.dev" as "member"
+    Given a console with a factory repository, and "varun@acme.dev" as "member"
     When "varun@acme.dev" sends the form "Propose change" and opens "/changes"
     Then the form answers 403 and says "varun@acme.dev has the role member: a change needs the role admin or factory-engineer"
-    And the forge has no pull request
+    And the console ran no "factory edit"
     And "/changes" has no form "Propose a change"
 
   @id=SCN-CONSOLE-208 @status=implemented

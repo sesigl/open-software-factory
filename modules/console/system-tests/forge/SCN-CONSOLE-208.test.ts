@@ -1,5 +1,5 @@
 import { type Page, scenario } from "@opensoftware/testkit";
-import { type Change, changeButtons, changeOfConsole, changeTexts, headOf, openChanges, postCheck } from "./changes.ts";
+import { type Change, changeButtons, changeOfConsole, changeTexts, headOf, openChanges, postCheck } from "../changes.ts";
 
 scenario("SCN-CONSOLE-208", async ({ sut, fakes, given, when, then }) => {
   let change: Change;

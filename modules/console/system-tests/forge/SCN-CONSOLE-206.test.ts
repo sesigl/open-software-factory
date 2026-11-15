@@ -10,7 +10,7 @@ import {
   propose,
   servingChanges,
   withHost,
-} from "./changes.ts";
+} from "../changes.ts";
 
 scenario("SCN-CONSOLE-206", async ({ sut, fakes, given, when, then }) => {
   let forge: Forge;

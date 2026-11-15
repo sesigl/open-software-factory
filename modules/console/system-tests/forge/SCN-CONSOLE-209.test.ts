@@ -7,8 +7,8 @@ import {
   changeTexts,
   openChanges,
   postCheck,
-} from "./changes.ts";
-import { links } from "./console.ts";
+} from "../changes.ts";
+import { links } from "../console.ts";
 
 scenario("SCN-CONSOLE-209", async ({ sut, fakes, given, when, then }) => {
   let change: Change;
