@@ -1715,7 +1715,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
     `SCN-SANDBOX`, `SCN-FORE`).
   - [ ] OpenBao in the Compose profile with `osf init`, the job and the restart scenario; the chart's values
     (`SCN-DIST`, `SCN-REPO`). After the releases above.
-  - [ ] The page `/secrets` with its journey, and the checks of `console doctor` (`SCN-CONSOLE`).
+  - [x] The page `/secrets` with its journey, and the checks of `console doctor` (`SCN-CONSOLE`).
   - [ ] One smoke scenario in `e2e/` from a stored value to a sandbox's request (`SCN-E2E`).
 
 ### [ ] T-58 · a change to the factory from the UI is a pull request (P1)
