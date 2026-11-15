@@ -159,3 +159,5 @@ None. The CLI reads no environment variables.
 | SCN-CTR-012 | implemented | A factory definition with an unknown effort is rejected with the allowed levels |
 | SCN-CTR-013 | implemented | An access file with an admin and a member validates |
 | SCN-CTR-014 | implemented | An access file with an unknown role is rejected with the roles it allows |
+| SCN-CTR-015 | implemented | A skill catalog with a skill that one agent lacks the secret of validates |
+| SCN-CTR-016 | implemented | A skill catalog whose skill has no body is rejected with its path |
