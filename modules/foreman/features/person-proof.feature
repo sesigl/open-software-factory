@@ -45,3 +45,9 @@ Feature: The person proven to the foreman
     When the user runs "foreman serve" with "FOREMAN_PERSON_KEYS" set to "console", and then without it
     Then the first command exits with code 2 and names the setting and the pair "console"
     And the server without it warned once "FOREMAN_PERSON_KEYS is not set: a caller with FOREMAN_API_TOKEN acts as any person it names (ADR 0151)"
+
+  @id=SCN-FORE-177 @status=implemented
+  Scenario: A signal or a retry whose "by" has a kind other than "person" or "trigger" is refused with 400 before the run is looked up
+    Given a server with "FOREMAN_PERSON_KEYS" set to the issuer "console"
+    When a caller with the API token posts the signal "cancel" and a retry, each by the kind "human" and the made-up person "ada@acme.dev", without "OSF-Person", for a run the server does not know
+    Then both answers have the status 400 and a problem that names the kind "human"

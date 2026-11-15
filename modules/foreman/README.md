@@ -423,7 +423,8 @@ like console=http://console:8080/.well-known/jwks.json: "console" is not`.
 2. The run records the person the proof names: `id` from its `sub`, `displayName` from its `name`, not the
    `displayName` of the body.
 3. A `by` of kind `trigger`, like `{ "kind": "trigger", "id": "tool:acme-portal" }` for a team's tool that acts as
-   itself, and a signal without `by` need no proof. `POST /v1/runs` and the events start work and need none.
+   itself, and a signal without `by` need no proof. `POST /v1/runs` and the events start work and need none. A `by` of
+   another kind is 400 that names the kind, with the setting or without it: the contract knows only these two.
 4. A refusal changes nothing and answers a problem: 401 `send OSF-Person: the console's proof of the person (ADR
    0151)` without the header; 401 with the reason for a proof that does not verify, of an issuer the setting does not
    name, for another module, or that ended, like `the person proof ended at 2026-01-01T00:00:30Z`; 403 for a proof of
@@ -797,3 +798,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-174 | implemented | A team's own tool that the setting names proves its person, and a tool that acts as itself needs no proof |
 | SCN-FORE-175 | implemented | A retry by a person needs the person's proof, and the new run names the person the proof names |
 | SCN-FORE-176 | implemented | Without "FOREMAN_PERSON_KEYS" the server warns once that the API token names any person, and a malformed setting stops it |
+| SCN-FORE-177 | implemented | A signal or a retry whose "by" has a kind other than "person" or "trigger" is refused with 400 before the run is looked up |

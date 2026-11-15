@@ -41,7 +41,7 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
 
 ## Budget
 
-- System tests: 540 seconds in total on the CI runner (170 scenarios; each uses a namespace of its own in the Temporal dev server of its test process, ADR 0129, and those with events start NATS, as
+- System tests: 540 seconds in total on the CI runner (171 scenarios; each uses a namespace of its own in the Temporal dev server of its test process, ADR 0129, and those with events start NATS, as
   pinned binaries on the host, ADR 0067, and the built `harness-acp` adapter with the testkit's scripted agent, which
   `turbo.json` builds before the tests; sandboxed stages use the testkit's fake sandbox adapter, ADR 0068; checks use
   `fakes.github` and the built `forge-github` adapter, ADR 0069; the gateway uses the testkit's fake inference adapter,
@@ -103,6 +103,9 @@ runs in `domain` in the worker's own thread. `pnpm build` bundles it into `dist/
   2.5 and 1.9 s, 15.5 s together. The refusals of SCN-FORE-173 need no run: a refused proof answers before the run is
   looked up. On a development machine without a runner benchmark the 170 scenarios took 525 s summed (265 s of wall
   time), under the 540 s but close to it: the next scenarios should share starts or make the start faster first.
+  SCN-FORE-177 (an actor's kind other than "person" or "trigger", refused before the run is looked up) adds 1.5 s
+  and starts no run. The 171 scenarios took 430 s summed (217 s of wall time) in a later run on the same machine, which
+  was less busy then: one run on a development machine cannot show the suite's time within 20%.
 
 ## Quality limits
 
