@@ -147,3 +147,11 @@ Feature: Factory definition
     When the user runs "foreman serve" with "FOREMAN_FACTORY" set to "git+<url>#no-such-branch"
     Then the command exits with code 2
     And the output contains "FOREMAN_FACTORY: cannot fetch no-such-branch of file://"
+
+  @id=SCN-FORE-167 @status=implemented
+  Scenario: The foreman fetches a factory in a Git remote with the token of FOREMAN_FACTORY_TOKEN as Git's Basic credentials
+    Given a forge over HTTP whose repository "/acme/factory.git" asks for credentials
+    When the user runs "foreman serve" with "FOREMAN_FACTORY" set to "git+<url>/acme/factory.git#main" and "FOREMAN_FACTORY_TOKEN" set to "factory-token-0001"
+    Then the command exits with code 2
+    And the output contains "FOREMAN_FACTORY: cannot fetch main of <url>/acme/factory.git: " and not the token
+    And the forge received "Authorization: Basic" with the base64 of "x-access-token:factory-token-0001"

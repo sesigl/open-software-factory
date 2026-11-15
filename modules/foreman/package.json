@@ -38,6 +38,7 @@
     "@nats-io/transport-node": "3.4.0",
     "@opensoftware/cli": "workspace:*",
     "@opensoftware/contracts": "workspace:*",
+    "@opensoftware/factory-source": "workspace:*",
     "@temporalio/activity": "1.24.0",
     "@temporalio/client": "1.24.0",
     "@temporalio/worker": "1.24.0",

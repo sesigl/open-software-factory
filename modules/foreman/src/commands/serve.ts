@@ -2,7 +2,7 @@
 // FOREMAN_NATS_URL it also starts runs for work.received@v1, runs a run again for work.retry-requested@v1, passes gate.decided@v1 to the waiting runs and keeps the IDs of doctor.ping@v1 (ADR 0120). A factory
 // with an inference adapter gets its gateway while the server runs (ADR 0070). It runs until SIGTERM or SIGINT.
 import { timingSafeEqual } from "node:crypto";
-import { dirname, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { type Health, healthOf, UsageError } from "@opensoftware/cli";
 import type { GateDecided, WorkItem, WorkRetryRequested } from "@opensoftware/contracts";
@@ -132,7 +132,7 @@ export async function serve(env: Env) {
   const token = env.FOREMAN_API_TOKEN;
   if (!token) throw new UsageError("set FOREMAN_API_TOKEN: the token that callers of the API send");
   const data = resolve(env.OSF_DATA || ".foreman");
-  const source = factorySource(env.FOREMAN_FACTORY || "factory.yaml", data);
+  const source = factorySource(env.FOREMAN_FACTORY || "factory.yaml", data, env.FOREMAN_FACTORY_TOKEN || undefined);
   const { definition } = await source.read();
   const maps = Object.fromEntries(
     PORTS.map((port) => [port, JSON.parse(env[MAP_OF[port]] || "{}") as CommandLines]),
