@@ -27,11 +27,13 @@ export function shellData(frame: Omit<Frame, "title">, at: ShellOf): ShellData {
     ...(frame.improvement ? [{ name: "Cost and scores", href: "/improvement" }] : []),
     { name: "Health", href: "/health" },
   ];
-  // Secrets only for a person who may open it (ADR 0134): an admin, in a console with a store. Skills in every mode.
+  // Secrets only for a person who may open it (ADR 0134): an admin, in a console with a store. Skills in every mode,
+  // Changes with the factory's repository on a forge (ADR 0144).
   const pages: ShellLink[] = [
     { name: "Runs", href: "/" },
     ...(frame.secrets ? [{ name: "Secrets", href: "/secrets" }] : []),
     { name: "Skills", href: "/skills" },
+    ...(frame.changes ? [{ name: "Changes", href: "/changes" }] : []),
   ].map((link) =>
     link.href === at.current ? { ...link, current: "page", ...(at.count ? { count: at.count } : {}) } : link,
   );

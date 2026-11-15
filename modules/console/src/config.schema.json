@@ -19,12 +19,28 @@
     "CONSOLE_FACTORY_COMMAND": {
       "type": "string",
       "default": "npx -y @opensoftware/factory-spec",
-      "description": "serve: the command line of factory-spec's factory, which /skills and /skills/<name> run with skills --file <CONSOLE_FACTORY> (ADR 0141)."
+      "description": "serve: the command line of factory-spec's factory, which /skills and /skills/<name> run with skills --file <CONSOLE_FACTORY> (ADR 0141), and a change with edit --file <the newest factory.yaml> (ADR 0144)."
+    },
+    "CONSOLE_FACTORY_CACHE": {
+      "type": "string",
+      "description": "serve, with CONSOLE_FACTORY_REPOSITORY: the folder of the console's copy of the factory's repository. Default: a folder per repository below the system's temporary folder."
     },
     "CONSOLE_FACTORY_PATH": {
       "type": "string",
       "default": "factory.yaml",
       "description": "serve: the path of the factory definition in its Git repository."
+    },
+    "CONSOLE_FACTORY_REPOSITORY": {
+      "type": "string",
+      "description": "serve: the factory's repository on a forge as git+<url>#<branch>, like git+https://github.com/acme/factory.git#main. With it, /changes proposes a change of the factory as a pull request into that branch (ADR 0144); without it the factory is a local folder and the console changes nothing."
+    },
+    "CONSOLE_FACTORY_TOKEN": {
+      "type": "string",
+      "description": "serve, with CONSOLE_FACTORY_REPOSITORY: the forge token of the changes, the forge adapter's FORGE_TOKEN for them. It writes the contents and the pull requests of the repository and reads its branch's rules; the console fetches the repository with it too (ADR 0142)."
+    },
+    "CONSOLE_FACTORY_USER": {
+      "type": "string",
+      "description": "serve, with CONSOLE_FACTORY_REPOSITORY: the user of CONSOLE_FACTORY_TOKEN as the forge adapter names an author, like forgejo:factory-bot or github:acme-factory. /changes lists only its pull requests."
     },
     "CONSOLE_FOREMAN_TOKEN": {
       "type": "string",

@@ -356,6 +356,9 @@ importers:
       '@opensoftware/contracts':
         specifier: workspace:*
         version: link:../../contracts
+      '@opensoftware/factory-source':
+        specifier: workspace:*
+        version: link:../../packages/factory-source
       '@picocss/pico':
         specifier: 2.1.1
         version: 2.1.1
@@ -390,6 +393,9 @@ importers:
       '@astrojs/check':
         specifier: 0.9.12
         version: 0.9.12(prettier@3.9.10)(typescript@5.9.3)
+      '@opensoftware/forge-forgejo':
+        specifier: workspace:*
+        version: link:../../adapters/forge/forgejo
       '@opensoftware/forge-github':
         specifier: workspace:*
         version: link:../../adapters/forge/github

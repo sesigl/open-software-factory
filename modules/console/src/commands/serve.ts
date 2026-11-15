@@ -35,6 +35,7 @@ import { runPage } from "../pages/run.ts";
 import { runsData, waitingOf } from "../pages/runs.ts";
 import { shellData } from "../pages/shell.ts";
 import { workPage } from "../pages/work.ts";
+import { factoryRepositoryOf, NO_ROLES, useChanges } from "./changes.ts";
 import { actorOf, fromConsole, personOf } from "./person.ts";
 import { useSecrets } from "./secrets.ts";
 import { useSkills } from "./skills.ts";
@@ -91,6 +92,7 @@ export async function serve(env: Env) {
         : "no secret store: set OSF_OPENBAO_ADDR and OSF_OPENBAO_TOKEN to the factory's OpenBao";
   const prefix = env.CONSOLE_INBOX_PREFIX || "observer/";
   const improve = env.CONSOLE_IMPROVE_DIR || undefined;
+  const factoryCommand = env.CONSOLE_FACTORY_COMMAND || "npx -y @opensoftware/factory-spec";
   const forge = {
     command: env.CONSOLE_FORGE_ADAPTER || "npx -y @opensoftware/forge-github",
     url: env.CONSOLE_FORGE_URL || undefined,
@@ -106,8 +108,16 @@ export async function serve(env: Env) {
     }
   };
 
+  const changes = factoryRepositoryOf(env, forge);
+
   /** The frame of every page: the dashboards and which optional pages the navigation links. */
-  const frameOf = () => ({ links, inbox: Boolean(inbox), work: Boolean(intake), improvement: Boolean(improve) });
+  const frameOf = () => ({
+    links,
+    inbox: Boolean(inbox),
+    work: Boolean(intake),
+    improvement: Boolean(improve),
+    changes: Boolean(changes),
+  });
 
   /** Whether the person may open the secrets: an admin in a console with a store. */
   const maySecrets = (request: FastifyRequest): boolean => !closedSecrets && actorOf(request)?.role === "admin";
@@ -335,11 +345,22 @@ export async function serve(env: Env) {
   const secretsAdapter = env.CONSOLE_SECRETS_ADAPTER || "npx -y @opensoftware/secrets-openbao";
   // The skills in every mode; with a store, each secret a skill needs has its state (ADR 0141).
   useSkills(app, {
-    command: env.CONSOLE_FACTORY_COMMAND || "npx -y @opensoftware/factory-spec",
+    command: factoryCommand,
     factoryFile,
     store: env.OSF_OPENBAO_ADDR ? secretsAdapter : undefined,
     shell: (request, title) => shellOf(request, { title, current: "/skills" }),
     secrets: maySecrets,
+    problem: (reply, status, title, detail) => send(reply, status, { title }, problem(title, detail)),
+  });
+  useChanges(app, {
+    repository: changes,
+    command: factoryCommand,
+    factoryFile,
+    closed: !sign && !proxyAccess ? NO_ROLES : undefined,
+    refresh,
+    shell: (request, title, reload) =>
+      shellOf(request, { title, current: "/changes", ...(reload ? { refresh: reload } : {}) }),
+    signedIn,
     problem: (reply, status, title, detail) => send(reply, status, { title }, problem(title, detail)),
   });
   useSecrets(app, {

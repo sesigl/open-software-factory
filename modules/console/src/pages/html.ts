@@ -21,6 +21,8 @@ export interface Frame {
   improvement?: boolean;
   /** Whether the navigation of the new look links Secrets: only for an admin, in a console with a store. */
   secrets?: boolean;
+  /** Whether the navigation of the new look links Changes: only with the factory's repository on a forge. */
+  changes?: boolean;
   /** The signed-in person of the own sign-in, with their role and the form "Sign out" (ADR 0134). */
   person?: { email: string; role: string };
 }

@@ -264,8 +264,12 @@ as ok, adds itself to the count, like `all 5 checks ok, warnings: 1`, and shows 
 | `CONSOLE_ACCESS` | string |  | serve, with CONSOLE_SIGN_IN: the access file, read again at each request. Default access.yaml beside CONSOLE_FACTORY. Without a valid file with an admin nobody signs in. |
 | `CONSOLE_BRANCH` | string | `"main"` | serve: the branch where the factory definition changes. |
 | `CONSOLE_FACTORY` | string | `"factory.yaml"` | serve: the factory definition that /factory shows, read-only. |
-| `CONSOLE_FACTORY_COMMAND` | string | `"npx -y @opensoftware/factory-spec"` | serve: the command line of factory-spec's factory, which /skills and /skills/<name> run with skills --file <CONSOLE_FACTORY> (ADR 0141). |
+| `CONSOLE_FACTORY_COMMAND` | string | `"npx -y @opensoftware/factory-spec"` | serve: the command line of factory-spec's factory, which /skills and /skills/<name> run with skills --file <CONSOLE_FACTORY> (ADR 0141), and a change with edit --file <the newest factory.yaml> (ADR 0144). |
+| `CONSOLE_FACTORY_CACHE` | string |  | serve, with CONSOLE_FACTORY_REPOSITORY: the folder of the console's copy of the factory's repository. Default: a folder per repository below the system's temporary folder. |
 | `CONSOLE_FACTORY_PATH` | string | `"factory.yaml"` | serve: the path of the factory definition in its Git repository. |
+| `CONSOLE_FACTORY_REPOSITORY` | string |  | serve: the factory's repository on a forge as git+<url>#<branch>, like git+https://github.com/acme/factory.git#main. With it, /changes proposes a change of the factory as a pull request into that branch (ADR 0144); without it the factory is a local folder and the console changes nothing. |
+| `CONSOLE_FACTORY_TOKEN` | string |  | serve, with CONSOLE_FACTORY_REPOSITORY: the forge token of the changes, the forge adapter's FORGE_TOKEN for them. It writes the contents and the pull requests of the repository and reads its branch's rules; the console fetches the repository with it too (ADR 0142). |
+| `CONSOLE_FACTORY_USER` | string |  | serve, with CONSOLE_FACTORY_REPOSITORY: the user of CONSOLE_FACTORY_TOKEN as the forge adapter names an author, like forgejo:factory-bot or github:acme-factory. /changes lists only its pull requests. |
 | `CONSOLE_FOREMAN_TOKEN` | string |  | serve: the foreman's FOREMAN_API_TOKEN, sent as Authorization: Bearer <token>; several, comma-separated, in the order of CONSOLE_FOREMAN_URL, or one for all. |
 | `CONSOLE_FOREMAN_URL` | string |  | serve: the base URL of a foreman's API, or several, comma-separated, one per factory. Required. |
 | `CONSOLE_FORGE_ADAPTER` | string | `"npx -y @opensoftware/forge-github"` | serve: the command line of the forge port's adapter that /inbox runs with prs (ADR 0073). |
@@ -491,3 +495,18 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-203 | implemented | The navigation of a console without intake, an inbox or cost and scores links only the pages that work, Skills among them |
 | SCN-CONSOLE-204 | implemented | The navigation of a console with intake, an inbox and cost and scores links their pages too, Skills among them |
 | SCN-CONSOLE-205 | implemented | A link by reference, an autolink and a link in a list or a quote follow the same rule |
+| SCN-CONSOLE-206 | implemented | A factory engineer's change opens a pull request from the newest commit that names the person |
+| SCN-CONSOLE-207 | implemented | A member gets 403 for the form "Propose change", and "/changes" offers a member no form |
+| SCN-CONSOLE-208 | implemented | A change whose check passes merges and shows "Live" with the new factory version |
+| SCN-CONSOLE-209 | implemented | A change whose check fails shows "Failed" with the check and the link to its pull request |
+| SCN-CONSOLE-210 | implemented | A change made on an older commit shows "Conflict", and the main branch keeps the newer commit |
+| SCN-CONSOLE-211 | implemented | "Try again" closes the failed pull request, deletes its branch and makes the change again on the newest commit |
+| SCN-CONSOLE-212 | implemented | "Discard" closes the failed pull request and deletes its branch, and the change shows "Discarded" |
+| SCN-CONSOLE-213 | implemented | On a forge that cannot merge when green, a change waits as "Checking", shows "Ready" with "Merge" once its check passes, and "Merge" merges it |
+| SCN-CONSOLE-214 | implemented | "Merge" of a change whose check "factory" failed answers 409 and merges nothing |
+| SCN-CONSOLE-215 | implemented | A repository whose main branch does not require the check "factory" gets no change, and the console says what is missing |
+| SCN-CONSOLE-216 | implemented | A factory from a local folder offers no change and says why |
+| SCN-CONSOLE-217 | implemented | The form takes only a host name as an egress host and names what it refused |
+| SCN-CONSOLE-218 | implemented | "Try again" checks the edit in the pull request's title like a form, and refuses a title that a person changed |
+| SCN-CONSOLE-219 | implemented | A pull request from a "console/" branch that another user opened is not a change of the console |
+| SCN-CONSOLE-220 | implemented | A factory engineer proposes a change in Chromium and sees it checking |

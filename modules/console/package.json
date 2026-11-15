@@ -28,6 +28,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "0.9.12",
+    "@opensoftware/forge-forgejo": "workspace:*",
     "@opensoftware/forge-github": "workspace:*",
     "@opensoftware/secrets-openbao": "workspace:*",
     "@opensoftware/testkit": "workspace:*",
@@ -40,6 +41,7 @@
     "@nats-io/transport-node": "3.4.0",
     "@opensoftware/cli": "workspace:*",
     "@opensoftware/contracts": "workspace:*",
+    "@opensoftware/factory-source": "workspace:*",
     "@picocss/pico": "2.1.1",
     "astro": "7.4.4",
     "fastify": "5.12.7",
