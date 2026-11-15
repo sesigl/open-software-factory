@@ -103,19 +103,17 @@ export async function editFactory(command: string, file: string, { edit, target,
 /** The repository of the factory: its newest commit on the ref, fetched into the cache folder. */
 export function factoryRepository(setting: string, cache: string, token: string | undefined) {
   // The library loads with the first change: most pages never fetch the repository.
-  let loaded: Promise<{ source: FactorySource; FetchError: new (...args: never[]) => Error }> | undefined;
+  let loaded: Promise<FactorySource> | undefined;
   return async (): Promise<Outcome<{ file: string; commit: string }>> => {
-    loaded ??= import("@opensoftware/factory-source").then((library) => ({
-      source: library.factorySource(setting, { cache, token }),
-      FetchError: library.FetchError,
-    }));
-    const { source, FetchError } = await loaded;
+    loaded ??= import("@opensoftware/factory-source").then((library) =>
+      library.factorySource(setting, { cache, token }),
+    );
     try {
-      const { file, commit } = await source.fetch();
+      const { file, commit } = await (await loaded).fetch();
       return { ok: true, body: { file, commit: commit as string } };
     } catch (failure) {
-      if (failure instanceof FetchError) return { ok: false, usage: false, note: failure.message };
-      throw failure;
+      // A FetchError names the ref, the URL without its credentials and Git's message, never the token (ADR 0142).
+      return { ok: false, usage: false, note: (failure as Error).message };
     }
   };
 }
