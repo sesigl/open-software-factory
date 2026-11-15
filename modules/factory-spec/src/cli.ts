@@ -12,7 +12,8 @@ Commands:
   factory apply [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]    Render like render, register the webhooks of forgejo and github automations (github ones not with --gh-aw), and record what was applied in OSF_DATA.
   factory diff <old> [<new>]                      Show the changes between two versions of factory.yaml, as files or Git revisions.
   factory resolve                                 Print the resolved definition as JSON: defaults filled in, registry servers pinned.
-  factory edit <edit> <agent> <value>             Print factory.yaml with one edit, comments and anchors kept; the file stays as it is. <edit> is add-skill, remove-skill, add-secret, remove-secret, add-egress or remove-egress; "factory edit add-secrets-provider <name> <range>" declares a secrets provider.
+  factory skills                                  Print every skill the agents use as JSON: its description, source, files, Markdown and needs, and per agent the secret references that give them and what it lacks.
+  factory edit <edit> <agent> <value>            Print factory.yaml with one edit, comments and anchors kept; the file stays as it is. <edit> is add-skill, remove-skill, add-secret, remove-secret, add-egress or remove-egress; "factory edit add-secrets-provider <name> <range>" declares a secrets provider.
 
 Options:
   --file <path>   The factory definition. Default factory.yaml.
@@ -78,6 +79,10 @@ async function main(): Promise<number> {
     },
     async edit() {
       process.stdout.write((await import("./commands/edit.ts")).edit(file, rest));
+      return 0;
+    },
+    async skills() {
+      print([JSON.stringify((await import("./commands/skills.ts")).skills(file), null, 2)]);
       return 0;
     },
     async resolve() {

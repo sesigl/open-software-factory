@@ -22,9 +22,9 @@ export function lintFile(
   file: string,
   ghAw = false,
   text = readText(file),
-): { dir: string; definition?: FactoryDefinition; problems: string[]; warnings: string[] } {
+): { dir: string; definition?: FactoryDefinition; fits?: FactoryDefinition; problems: string[]; warnings: string[] } {
   const dir = dirname(resolve(file));
-  const { definition, problems, warnings } = lint(
+  const { definition, fits, problems, warnings } = lint(
     text,
     (path) => exists(join(dir, path)),
     (path) => filesBelow(join(dir, path)),
@@ -36,7 +36,7 @@ export function lintFile(
       (problem) =>
         `${problem.file ? join(dirname(file), problem.file) : file}:${problem.line}:${problem.column} ${problem.message}`,
     );
-  return { dir, definition, problems: lines(problems), warnings: lines(warnings) };
+  return { dir, definition, fits, problems: lines(problems), warnings: lines(warnings) };
 }
 
 /** The problems of the access file beside factory.yaml, when there is one: the console's sign-in reads it (ADR 0134). */

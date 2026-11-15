@@ -32,6 +32,20 @@ export const SECRETS = ["harness:", '  claude-code: "^2"', "secrets:", '  env: "
 export const putSkilled = (sut: Sut, skills: string[], extra: string[] = []): Promise<string> =>
   putTriage(sut, [`skills: [${skills.join(", ")}]`, ...extra], SECRETS);
 
+/** What "factory skills" prints (README.md#the-skills-as-json). */
+export interface Catalog {
+  skills: {
+    name: string;
+    description: string | null;
+    source: { folder: string };
+    needs: { secrets: string[]; hosts: string[] };
+    agents: { name: string; secrets: Record<string, string>; lacks: { secrets: string[]; hosts: string[] } }[];
+    files: string[];
+    body: string | null;
+    problems: string[];
+  }[];
+}
+
 /** The lines that "factory lint" printed. */
 export function lines(run: CliResult): string[] {
   return run.stdout.split("\n").filter(Boolean);

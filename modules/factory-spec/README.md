@@ -144,6 +144,42 @@ problem in a skill's own file names that file, its line and its column, for exam
 such as `license`, `allowed-tools`, Claude Code's `disable-model-invocation` or OpenCode's
 `metadata.opencode/autoinvoke`, stay as they are.
 
+### The skills as JSON
+
+`factory skills` prints every skill an agent uses as one JSON document, for a program that shows them, such as the
+console's pages `/skills` and `/skills/<name>`. It reads the skills with the rules above, so the program never parses
+a `SKILL.md` itself (ADR 0135). A skill that lint refuses is printed with its problems; only a `factory.yaml` that does
+not fit the contract fails the command, with the lines of `factory lint` on stderr and exit code 1.
+
+```json
+{
+  "skills": [
+    {
+      "name": "release-notes",
+      "description": "Write the release notes of a change from its Linear issues. Use when a change ships.",
+      "source": { "folder": "skills/release-notes" },
+      "needs": { "secrets": ["LINEAR_TOKEN"], "hosts": ["api.linear.app"] },
+      "agents": [
+        { "name": "triage", "secrets": { "LINEAR_TOKEN": "ref:openbao/linear-token" }, "lacks": { "secrets": [], "hosts": [] } }
+      ],
+      "files": ["SKILL.md", "teams.md"],
+      "body": "\n# Release notes\n",
+      "problems": []
+    }
+  ]
+}
+```
+
+- The skills are sorted by name, and each skill's agents by name. A second folder of the same name is left out: lint
+  names it.
+- `source.folder` is the skill's folder relative to the folder of `factory.yaml`.
+- `agents[].secrets` gives, for each secret the skill needs, the agent's reference whose variable it is; `lacks` names
+  each needed secret the agent does not declare and each needed host its sandbox does not allow.
+- `description` is `null` without one. `body` is the text of `SKILL.md` below the line that ends its front matter, all
+  of it without front matter, and `null` without a `SKILL.md` that is UTF-8 text.
+- `problems` are the problems of the skill's own files as lint prints them, relative to the folder of `factory.yaml`,
+  and a folder without a `SKILL.md`.
+
 ## MCP servers and factory.lock
 
 - `<package>@<version>`, for example `@modelcontextprotocol/server-filesystem@2025.8.21`: an npm package that the
