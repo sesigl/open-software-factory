@@ -1900,7 +1900,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
   - [x] One smoke scenario in `e2e/`: a skill switched on in the console and its stored secret reach a run
     (`SCN-E2E-009`).
 
-### [ ] T-60 · the remaining pages in the new look (P2)
+### [x] T-60 · the remaining pages in the new look (P2)
 
 - **Problem:** after T-56 the run page, the work form, the inbox, the factory pages, the improvement page and the
   health page still have the old look, and the console carries two stacks.
@@ -1918,7 +1918,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
   - [x] The run page with its forms.
   - [x] The work form and the inbox.
   - [x] The factory pages, the improvement page and the health page (on Astro since T-53, in Pico's look).
-  - [ ] Remove the old stack and the route `/pico.css`.
+  - [x] Remove the old stack and the route `/pico.css`.
 
 ### [ ] T-61 · the person, proven to every module (P2)
 

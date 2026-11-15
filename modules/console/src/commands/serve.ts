@@ -1,7 +1,6 @@
 // console serve: the read-only web view of the factory (ADR 0072). Each page asks the foremen, intake and gatekeeper
 // when it is opened, and keeps nothing. It runs until SIGTERM or SIGINT.
 import { existsSync, readFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { UsageError } from "@opensoftware/cli";
 import type {
@@ -62,8 +61,6 @@ const POLICY =
 
 /** The favicon of the design system, which Astro's build copied into the console's own files. */
 const FAVICON = readFileSync(new URL("../web/client/favicon.svg", import.meta.url));
-
-const PICO = readFileSync(createRequire(import.meta.url).resolve("@picocss/pico/css/pico.min.css"));
 
 /** Each foreman of CONSOLE_FOREMAN_URL with its token: the one at the same place, else the first. */
 function foremen(env: Env): Api[] {
@@ -174,7 +171,6 @@ export async function serve(env: Env) {
   if (sign) (await import("./signin.ts")).useSignIn(app, sign, accessPath, now);
   // Behind a sign-in proxy, an access file's roles apply; without one, every person of the proxy acts as a member.
   if (userHeader && proxyAccess) (await import("./signin.ts")).useProxyAccess(app, userHeader, accessPath, now);
-  app.get("/pico.css", (_request, reply) => reply.type("text/css").send(PICO));
   // The styles and the faces of the design system that Astro built, and the favicon (ADR 0133): from the console's
   // own origin, as the Content-Security-Policy allows.
   app.get<{ Params: { file: string } }>("/_astro/:file", (request, reply) => {

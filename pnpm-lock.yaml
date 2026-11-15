@@ -359,18 +359,12 @@ importers:
       '@opensoftware/factory-source':
         specifier: workspace:*
         version: link:../../packages/factory-source
-      '@picocss/pico':
-        specifier: 2.1.1
-        version: 2.1.1
       astro:
         specifier: 7.4.4
         version: 7.4.4(@types/node@24.19.2)(aws4fetch@1.0.20)(terser@5.51.2)(yaml@2.9.1)
       fastify:
         specifier: 5.12.7
         version: 5.12.7
-      htm:
-        specifier: 3.1.1
-        version: 3.1.1
       jose:
         specifier: 6.2.17
         version: 6.2.17
@@ -380,12 +374,6 @@ importers:
       openid-client:
         specifier: 6.9.0
         version: 6.9.0
-      preact:
-        specifier: 11.0.1
-        version: 11.0.1(preact-render-to-string@6.8.0)
-      preact-render-to-string:
-        specifier: 6.8.0
-        version: 6.8.0(preact@11.0.1)
       yaml:
         specifier: 2.9.1
         version: 2.9.1
@@ -2348,9 +2336,6 @@ packages:
 
   '@oxc-project/types@0.156.0':
     resolution: {integrity: sha512-1Duyg48TdJNdyhEB8Xn1L36bT9Pv6GUtlKjHxOys8xkaF/rQq3XJE+bAurSK/AgIz5mGFsb77cn9Pb20+WCScw==}
-
-  '@picocss/pico@2.1.1':
-    resolution: {integrity: sha512-kIDugA7Ps4U+2BHxiNHmvgPIQDWPDU4IeU6TNRdvXQM1uZX+FibqDQT2xUOnnO2yq/LUHcwnGlu1hvf4KfXnMg==}
 
   '@pinojs/redact@0.4.0':
     resolution: {integrity: sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg==}
@@ -4316,9 +4301,6 @@ packages:
     resolution: {integrity: sha512-CQ46U0ZkAGmbT/4UxdzzGJpacP2IeKgY4a5/tOI9AABbpOMfK739wfDXmv1usCk+3RkKj1hQy4/fjhiwa2xlrA==}
     engines: {node: '>=16.9.0'}
 
-  htm@3.1.1:
-    resolution: {integrity: sha512-983Vyg8NwUE7JkZ6NmOqpCZ+sh1bKv2iYTlUkzlWmA5JD2acKoxd4KVxbMmxX/85mtfdnDmTFoNKcg5DGAvxNQ==}
-
   html-escaper@3.0.3:
     resolution: {integrity: sha512-RuMffC89BOWQoY0WKGpIhn5gX3iI54O6nRA0yC124NYVtzjmFWBIiFd8M0x+ZdX0P9R4lADg1mgP8C7PxGOWuQ==}
 
@@ -5504,19 +5486,6 @@ packages:
   powershell-utils@0.2.1:
     resolution: {integrity: sha512-C+y9x90UElAddDZmV4qOx9W53B61PO7cIqWz2dQsWlwswuq4mr8NEwytdGKboYbQlGZ3awrkTeNvcZiZNHnQ8A==}
     engines: {node: '>=20'}
-
-  preact-render-to-string@6.8.0:
-    resolution: {integrity: sha512-2qiMrReQz+MZ5+/bT27kbVnFE7QNCC2fku/Tnc2H5bFUS3I3ASbRy0q72XLZ+2p2KyDE5xMfvSEtkmVo6TRNyA==}
-    peerDependencies:
-      preact: '>=10 || >= 11.0.0-0'
-
-  preact@11.0.1:
-    resolution: {integrity: sha512-TNNwEq++jYNHy747LziCjPRVgEwnLSOIOAw/oYcjI3Tdnubx2EXtt76I0an8PATvUWtx/DX1kFIg1eFN+O/fkw==}
-    peerDependencies:
-      preact-render-to-string: '>=6.7.0'
-    peerDependenciesMeta:
-      preact-render-to-string:
-        optional: true
 
   prettier@3.9.10:
     resolution: {integrity: sha512-skGHTH1Yb9QvaTC4hWnRTzEYtCpApF0UMBPz+t/0ZPzP8ihefo/btKd+QA7pUE0fEwA1SbS/NmhyEcstdXOIdA==}
@@ -8314,8 +8283,6 @@ snapshots:
 
   '@oxc-project/types@0.156.0': {}
 
-  '@picocss/pico@2.1.1': {}
-
   '@pinojs/redact@0.4.0': {}
 
   '@pkgjs/parseargs@0.11.0':
@@ -10616,8 +10583,6 @@ snapshots:
 
   hono@4.13.13: {}
 
-  htm@3.1.1: {}
-
   html-escaper@3.0.3: {}
 
   html-void-elements@3.0.0: {}
@@ -11805,14 +11770,6 @@ snapshots:
       xtend: 4.0.2
 
   powershell-utils@0.2.1: {}
-
-  preact-render-to-string@6.8.0(preact@11.0.1):
-    dependencies:
-      preact: 11.0.1(preact-render-to-string@6.8.0)
-
-  preact@11.0.1(preact-render-to-string@6.8.0):
-    optionalDependencies:
-      preact-render-to-string: 6.8.0(preact@11.0.1)
 
   prettier@3.9.10: {}
 

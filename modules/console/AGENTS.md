@@ -10,7 +10,7 @@ The only ways a system test or another program may use this module:
 - Web pages of `console serve` on `PORT` (see `README.md#pages`): `/`, `/runs/<runId>`, `/work`, `/factory`,
   `/factory/agents/<name>`, `/inbox`, `/improvement`, `/health`, `/secrets` and `/secrets/delete` (ADR 0137), `/skills` and `/skills/<name>` (ADR 0141), `/skills/<name>/switch` (ADR 0149), `/changes` (ADR 0144); the sign-in `/signin`, `/signin/start`,
   `/signin/callback` and `POST /signout` (ADR 0134); `/theme` (ADR 0133); the probe `/v1/ready`; and the files
-  `/pico.css`, `/_astro/<file>` and `/favicon.svg`. Any other method but `GET` and `HEAD` answers 405, except the forms
+  `/_astro/<file>` and `/favicon.svg`. Any other method but `GET` and `HEAD` answers 405, except the forms
   `POST /work`, `POST /runs/<runId>/retry`, `POST /runs/<runId>/signals` and `POST /runs/<runId>/gates/<gateId>` with
   `CONSOLE_USER_HEADER` or `CONSOLE_SIGN_IN` (ADR 0089, ADR 0105, ADR 0118, ADR 0134), and `POST /secrets` and
   `POST /secrets/delete`, which answer 404 without roles or a store and 403 to anyone but an admin (ADR 0137), and
@@ -42,7 +42,7 @@ The only ways a system test or another program may use this module:
 ## Architecture
 
 Layers, top to bottom, in `architecture.json` (ADR 0014): `entry` (`src/cli.ts`) → `commands` → `templates`
-(`src/web/`) → `pages` → `adapters` → `domain`. A page that has moved to Astro (ADR 0132) is a template in
+(`src/web/`) → `pages` → `adapters` → `domain`. Every page is a template on Astro (ADR 0132), in
 `src/web/pages/<path>.astro`: its route in `serve` loads the data, a function of `pages` computes every value it shows,
 and `adapters/web.ts` hands them to Astro as `locals.page` with the status. A template holds no logic (TEMPLATE); the
 health page is the first. Astro's own Origin check is off: the route of each form checks `Origin` first and answers a
@@ -54,10 +54,8 @@ templates, the inbox's states, the states of the secrets, what a skill needs and
 (markdown-it, ADR 0141), a change's edits, branch, title, body and state (ADR 0144), and the edits of a skill's
 switch (ADR 0149), without I/O; `adapters` call
 the APIs, run the forge and the secrets adapters and `factory`, fetch the factory's repository, and read the factory
-file; `pages` compute the data of each template and import only `domain` and the types of `adapters` (since T-60
-every page is a template; `pages/html.ts`, the old frame in Preact and htm, `pages/frame.ts` and
-`web/components/Frame.astro` stay
-unused until the old stack goes); `commands` join them: `serve` runs the
+file; `pages` compute the data of each template and import only `domain` and the types of `adapters` (since T-60 the console has
+no other stack: no Preact, htm or Pico CSS); `commands` join them: `serve` runs the
 Fastify server. The ARCH check enforces the layers.
 
 ## Allowed exceptions

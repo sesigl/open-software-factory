@@ -42,15 +42,11 @@
     "@opensoftware/cli": "workspace:*",
     "@opensoftware/contracts": "workspace:*",
     "@opensoftware/factory-source": "workspace:*",
-    "@picocss/pico": "2.1.1",
     "astro": "7.4.4",
     "fastify": "5.12.7",
-    "htm": "3.1.1",
     "jose": "6.2.17",
     "markdown-it": "15.0.3",
     "openid-client": "6.9.0",
-    "preact": "11.0.1",
-    "preact-render-to-string": "6.8.0",
     "yaml": "2.9.1"
   }
 }
