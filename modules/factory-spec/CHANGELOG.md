@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/sesigl/open-software-factory/compare/factory-spec-v0.10.0...factory-spec-v0.11.0) (2026-11-15)
+
+
+### Features
+
+* **factory-spec:** factory lint checks each skill and what it needs from its agent (T-59, ADR 0140) ([#331](https://github.com/sesigl/open-software-factory/issues/331)) ([521e280](https://github.com/sesigl/open-software-factory/commit/521e280d6d86a35ddc5bd26c31d32e7b2ba58c70))
+
 ## [0.10.0](https://github.com/sesigl/open-software-factory/compare/factory-spec-v0.9.0...factory-spec-v0.10.0) (2026-11-14)
 
 

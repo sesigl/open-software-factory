@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/sesigl/open-software-factory/compare/foreman-v0.12.0...foreman-v0.13.0) (2026-11-15)
+
+
+### Features
+
+* **secrets:** a secret from OpenBao works for Git, and a stage fails first when its secret has no value (T-57, ADR 0139) ([#329](https://github.com/sesigl/open-software-factory/issues/329)) ([4256e99](https://github.com/sesigl/open-software-factory/commit/4256e99e09eb40f212eb0f8dc958c2d8b02cf916))
+
 ## [0.12.0](https://github.com/sesigl/open-software-factory/compare/foreman-v0.11.0...foreman-v0.12.0) (2026-11-14)
 
 

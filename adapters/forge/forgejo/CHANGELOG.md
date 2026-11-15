@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/sesigl/open-software-factory/compare/forge-forgejo-v0.7.0...forge-forgejo-v0.8.0) (2026-11-15)
+
+
+### Features
+
+* **forge:** the forge port commits, merges when green, reads rules and closes (T-58, ADR 0136) ([#325](https://github.com/sesigl/open-software-factory/issues/325)) ([57f8d34](https://github.com/sesigl/open-software-factory/commit/57f8d347c09060d1add37aa9d54f3a865e98ee10))
+
 ## [0.7.0](https://github.com/sesigl/open-software-factory/compare/forge-forgejo-v0.6.0...forge-forgejo-v0.7.0) (2026-11-14)
 
 
