@@ -8,9 +8,10 @@ import { join, relative, resolve } from "node:path";
 const PROFILE = "deploy/compose";
 const ENV = `${PROFILE}/.env`;
 // The secrets that only the factory's own services share: init generates them. Every other value is the team's.
-// OpenBao's unseal key, its root token and the IDs of its two tokens are 64 hex digits too (ADR 0145).
+// OpenBao's unseal key, its root token and the IDs of its two tokens are 64 hex digits too (ADR 0145), and so is the
+// seed of the console's Ed25519 key, which signs the proof of the person (ADR 0151).
 const GENERATED =
-  /^(?:[A-Z0-9_]*_PASSWORD|[A-Z0-9_]*_API_TOKEN|[A-Z0-9_]*_MASTER_KEY|[A-Z0-9_]*_SESSION_SECRET|OSF_OPENBAO_UNSEAL_KEY|OSF_OPENBAO_[A-Z]+_TOKEN)$/;
+  /^(?:[A-Z0-9_]*_PASSWORD|[A-Z0-9_]*_API_TOKEN|[A-Z0-9_]*_MASTER_KEY|[A-Z0-9_]*_SESSION_SECRET|[A-Z0-9_]*_SIGNING_KEY|OSF_OPENBAO_UNSEAL_KEY|OSF_OPENBAO_[A-Z]+_TOKEN)$/;
 const SLACK = ["GATEKEEPER_SLACK_CHANNEL", "GATEKEEPER_SLACK_TOKEN", "GATEKEEPER_SLACK_SIGNING_SECRET"];
 // The settings that the console's own sign-in needs, by provider (ADR 0134).
 const SIGN_IN: Record<string, string[]> = {
