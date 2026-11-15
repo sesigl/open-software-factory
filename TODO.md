@@ -1915,7 +1915,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
 - **Done when:** no page uses Pico CSS, and `modules/console/package.json` has no dependency on Preact or htm.
 - **Slices:**
   - [x] The runs list as cards on a phone, with the main action at the bottom (`docs/design/runs-phone.html`).
-  - [ ] The run page with its forms.
+  - [x] The run page with its forms.
   - [ ] The work form and the inbox.
   - [ ] The factory pages, the improvement page and the health page (on Astro since T-53, in Pico's look).
   - [ ] Remove the old stack and the route `/pico.css`.
