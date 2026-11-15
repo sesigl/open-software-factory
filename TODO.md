@@ -1891,8 +1891,8 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
 - **Slices:**
   - [x] The ADR; the format and its rules in `factory lint`, which owns them (ADR 0135, ADR 0140); this repository's
     skills pass (`SCN-FSPEC`).
-  - [ ] Skills of other repositories: the entry's form, `factory.lock`, `plan`, `render` and the foreman
-    (`SCN-CTR`, `SCN-FSPEC`, `SCN-FORE`).
+  - [x] Skills of other repositories: the entry's form, `factory.lock`, `plan`, `render` and the foreman
+    (`SCN-CTR`, `SCN-FSPEC`, `SCN-FORE`, `SCN-FSOURCE`, ADR 0146). The console's pages show them with the switch.
   - [x] The pages `/skills` and `/skills/<name>`, read-only, for the skills in the factory's own folders
     (`SCN-CONSOLE`); `factory skills` prints them in the contract `skill-catalog` (`SCN-FSPEC`, `SCN-CTR`, ADR 0141,
     ADR 0143). Skills of other repositories join the catalog with the next slice.

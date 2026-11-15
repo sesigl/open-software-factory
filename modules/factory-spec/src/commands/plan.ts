@@ -6,18 +6,20 @@ import { packageVersions } from "../adapters/npm.ts";
 import { versionsOf } from "../adapters/registry.ts";
 import { readState, writeState } from "../adapters/state.ts";
 import { diff, summary } from "../domain/diff.ts";
-import { fail } from "../domain/errors.ts";
+import { FactoryError, fail } from "../domain/errors.ts";
 import { PROGRAM_PORTS, registryReferences, staleLock } from "../domain/lock.ts";
 import { type AdapterPin, type Lock, type LockEntry, parseReference } from "../domain/mcp.ts";
 import { resolveDefinition } from "../domain/resolve.ts";
-import type { Factory } from "./load.ts";
+import { type Factory, lintFile } from "./load.ts";
+import { pinSkills } from "./pins.ts";
 import { type RenderOptions, render } from "./render.ts";
 import { applyWebhooks, webhookDrift } from "./webhooks.ts";
 
 /**
  * factory.lock with an entry for every registry server: kept from the lock, or pinned from the registry once. With
  * `adapters`, every adapter of the ports the foreman runs as programs too (ADR 0125); without, the lock's adapter pins
- * stay as they are.
+ * stay as they are. Every skill of another repository is pinned, or kept while its entry is unchanged, and the rules
+ * of lint check its fetched files before factory.lock is written (ADR 0146).
  */
 export async function pin(factory: Factory, adapters = false): Promise<Factory> {
   const references = registryReferences(factory.definition);
@@ -26,7 +28,13 @@ export async function pin(factory: Factory, adapters = false): Promise<Factory> 
     lock.mcp[reference] = factory.lock.mcp[reference] ?? (await fromRegistry(reference));
   const pins = adapters ? await pinAdapters(factory) : factory.lock.adapters;
   if (pins) lock.adapters = pins;
-  if (references.length > 0 || pins) writeLock(factory.dir, lock);
+  const skills = await pinSkills(factory.definition, factory.lock);
+  if (Object.keys(skills.pins).length > 0) {
+    lock.skills = skills.pins;
+    const { problems } = lintFile(factory.file, false, undefined, skills.folders);
+    if (problems.length > 0) throw new FactoryError(problems.join("\n"));
+  }
+  if (references.length > 0 || pins || lock.skills) writeLock(factory.dir, lock);
   return { ...factory, lock };
 }
 
@@ -83,7 +91,9 @@ export const checkLock = (factory: Factory): string[] => staleLock(factory.defin
 export async function plan(loaded: Factory, output: string, adapters = false): Promise<string[]> {
   const factory = await pin(loaded, adapters);
   const state = readState();
-  const changes = diff(state?.model ?? {}, model(factory));
+  // What factory.lock pins anew for a skill of another repository, and each pin that moves: old commit, new commit.
+  const pinned = diff(loaded.lock.skills ?? {}, factory.lock.skills ?? {}, "factory.lock.skills");
+  const changes = [...pinned, ...diff(state?.model ?? {}, model(factory))];
   const drift = Object.entries(state?.files ?? {})
     .filter(([path, hash]) => hashOf(output, path) !== hash)
     .map(([path]) => `! ${path} changed outside "factory apply"`);
@@ -93,7 +103,7 @@ export async function plan(loaded: Factory, output: string, adapters = false): P
 
 export async function apply(loaded: Factory, output: string, options: RenderOptions): Promise<string> {
   const factory = await pin(loaded);
-  const files = render(factory, output, options);
+  const files = await render(factory, output, options);
   const applied = model(factory);
   const hooks = await applyWebhooks(factory.definition, readState()?.hooks, options.ghAw);
   writeState({ model: applied, files, hooks });

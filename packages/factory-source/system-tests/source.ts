@@ -22,6 +22,18 @@ export function privateForge(fakes: Fakes): Promise<FakeHttp> {
   return fakes.http([{ path: INFO_REFS, status: 401, body: "", contentType: "text/plain" }]);
 }
 
+export const SKILL = "---\nname: review\ndescription: Review a plan.\n---\nRead plan.md twice.\n";
+
+/** Commits the folder "skills/review" with its SKILL.md and `more` files in $INPUT and gives the commit. */
+export async function committedSkill(sut: Sut, text = SKILL, more: Record<string, string> = {}): Promise<string> {
+  await sut.files.put("$INPUT/skills/review/SKILL.md", text);
+  for (const [path, content] of Object.entries(more)) await sut.files.put(`$INPUT/skills/review/${path}`, content);
+  return sut.git.commit("the skill review");
+}
+
+/** The reference of a folder of $INPUT at a ref. */
+export const folderOf = (sut: Sut, ref: string, path: string): string => `git+${fileUrl(sut)}#${ref}:${path}`;
+
 /** The text of every file below `$OUTPUT/<dir>`, by its path. */
 export async function texts(sut: Sut, dir: string): Promise<string[]> {
   const files = await sut.files.list(`$OUTPUT/${dir}`);

@@ -15,14 +15,23 @@ export interface AdapterPin {
   version: string;
 }
 
+/** A skill of another Git repository at the commit `factory plan` resolved its ref to, with its files' hash (ADR 0146). */
+export interface SkillPin {
+  /** The entry of factory.yaml it was resolved from, `git+<url>#<ref>:<path>`. */
+  source: string;
+  commit: string;
+  hash: string;
+}
+
 /**
  * factory.lock (contract factory-lock): the exact version of every registry server, keyed by its reference in
- * factory.yaml, and of the adapters under `providers`, per port and name.
+ * factory.yaml, of the adapters under `providers`, per port and name, and of the skills of other repositories, by name.
  */
 export interface Lock {
   version: 1;
   mcp: Record<string, LockEntry>;
   adapters?: Record<string, Record<string, AdapterPin>>;
+  skills?: Record<string, SkillPin>;
 }
 
 /** How a harness reaches one MCP server: a local command over stdio, or a remote URL. */

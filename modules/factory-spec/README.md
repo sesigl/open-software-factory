@@ -8,7 +8,7 @@ One `factory.yaml` rendered for every harness. Claude Code, Codex and OpenCode r
 servers, and `factory plan` shows what a change does before `factory apply` writes it. It also registers the forge
 webhooks of automations, writes kagent and gh-aw files, and `factory edit` changes `factory.yaml` for a program such as
 the console. Decisions:
-[ADR 0020](../../docs/decisions/0020-factory-spec.md), [ADR 0022](../../docs/decisions/0022-factory-spec-automations-and-targets.md), [ADR 0060](../../docs/decisions/0060-factory-spec-forge-port.md), [ADR 0078](../../docs/decisions/0078-agent-effort.md), [ADR 0107](../../docs/decisions/0107-a-stage-that-only-waits.md), [ADR 0135](../../docs/decisions/0135-one-job-and-a-listed-surface.md) and [ADR 0140](../../docs/decisions/0140-skills-in-the-agent-skills-format.md). The format is the `factory-definition` contract
+[ADR 0020](../../docs/decisions/0020-factory-spec.md), [ADR 0022](../../docs/decisions/0022-factory-spec-automations-and-targets.md), [ADR 0060](../../docs/decisions/0060-factory-spec-forge-port.md), [ADR 0078](../../docs/decisions/0078-agent-effort.md), [ADR 0107](../../docs/decisions/0107-a-stage-that-only-waits.md), [ADR 0135](../../docs/decisions/0135-one-job-and-a-listed-surface.md), [ADR 0140](../../docs/decisions/0140-skills-in-the-agent-skills-format.md) and [ADR 0146](../../docs/decisions/0146-skills-of-other-repositories-pinned-in-factory-lock.md). The format is the `factory-definition` contract
 ([`contracts/`](../../contracts/README.md)).
 
 ## Quick start
@@ -182,6 +182,40 @@ the format `skill-catalog` of the contracts ([ADR 0143](../../docs/decisions/014
   of it without front matter, and `null` without a `SKILL.md` that is UTF-8 text.
 - `problems` are the problems of the skill's own files as lint prints them, relative to the folder of `factory.yaml`,
   and a folder without a `SKILL.md`.
+- A skill of another repository (below) has `source.folder`, its folder in that repository, `source.repository`, the
+  repository's URL, and `source.commit`, the commit `factory.lock` pins. It is read from its folder fetched at that
+  commit. Without a pin it has no commit, no files and no body, and its problem is the missing pin.
+
+### Skills of other repositories
+
+An agent may use a folder of another Git repository at a ref:
+`git+<url>#<ref>:<path>` ([ADR 0146](../../docs/decisions/0146-skills-of-other-repositories-pinned-in-factory-lock.md)).
+`<ref>` is a branch, a tag or a commit, and `<path>` the skill's folder below the repository's root; the skill's name
+is the last part of the path. Quote the entry in YAML.
+
+```yaml
+agents:
+  triage:
+    skills: ["git+https://github.com/acme/skills.git#v1.2:skills/release-notes"]
+```
+
+- `factory plan` fetches the ref and pins the commit and the hash of the skill's files in `skills.<name>` of
+  `factory.lock`: `{ "source": <the entry>, "commit": <the full commit>, "hash": "h1:…" }`, the hash in the form of Go's
+  `go.sum`. Commit the lock. The pin stays while the entry is unchanged, so a branch does not move it: change the ref
+  (for example `v1.2` to `v1.3`) to move it. `plan` prints each new and each moved pin first, a move with both commits:
+  `~ factory.lock.skills.release-notes.commit: "<old commit>" -> "<new commit>"`.
+- Before it writes the lock, `plan` checks every fetched skill with the rules above, also the secrets and hosts its
+  agent must declare. A problem stops `plan`, writes no lock, and names the skill's file by its entry:
+  `git+https://github.com/acme/skills.git#v1.2:skills/release-notes/SKILL.md:2:1 the skill has no description: …`.
+- `render` links the skill's folder fetched at its pin, and `skills` reads it there. Both, and the foreman, fetch only
+  the pinned commit and refuse files whose hash is not the pin's. Without a pin they fail with
+  `factory.lock has no pin of the skill "release-notes" for "<entry>": run "factory plan"`.
+- `lint` reads no network. It refuses an entry that starts with `git+` and has no ref or folder, or a folder outside its
+  repository (`..`), and a second skill of one name, also one local and one of another repository. An entry that the
+  lock does not pin is a warning; `plan --check` names it and exits with 1.
+- The fetched skills are kept in `skills/` of the state folder `OSF_DATA`, one folder per repository and commit, so a
+  pinned commit is fetched once. A private repository needs Git's own credentials, such as a credential helper or an
+  SSH key; no token is sent.
 
 ## MCP servers and factory.lock
 
@@ -351,7 +385,7 @@ the minor version. The one-time setup is the same as for contracts
 | --- | --- |
 | `factory lint [--gh-aw]` | Check factory.yaml, the skills its agents use and the access.yaml beside it; print each problem and each warning with its file, line and column. --gh-aw: the factory is rendered with gh-aw, so a cron automation runs. |
 | `factory render [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]` | Write AGENTS.md, the MCP servers and the skill links of one agent to $OUTPUT. --harness all writes every declared harness; --k8s adds its kagent resources and SandboxTemplate; --gh-aw adds a gh-aw workflow per GitHub automation. |
-| `factory plan [--adapters] [--check]` | Pin registry MCP servers in factory.lock; show what apply changes and what drifted, rendered files and webhooks. --adapters also pins each adapter under providers to the newest npm version in its range. --check only names what factory.lock does not pin, exits with 1 then, and writes nothing. |
+| `factory plan [--adapters] [--check]` | Pin registry MCP servers and skills of other repositories in factory.lock; show what apply changes and what drifted, rendered files and webhooks. --adapters also pins each adapter under providers to the newest npm version in its range. --check only names what factory.lock does not pin, exits with 1 then, and writes nothing. |
 | `factory apply [--agent <name>] [--harness <name>] [--k8s] [--gh-aw]` | Render like render, register the webhooks of forgejo and github automations (github ones not with --gh-aw), and record what was applied in OSF_DATA. |
 | `factory diff <old> [<new>]` | Show the changes between two versions of factory.yaml, as files or Git revisions. |
 | `factory resolve` | Print the resolved definition as JSON: defaults filled in, registry servers pinned. |
@@ -503,3 +537,12 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FSPEC-117 | implemented | A factory.yaml that does not fit the contract fails "factory skills" with its problems |
 | SCN-FSPEC-118 | implemented | What "factory skills" prints is a valid skill catalog of the contracts, also for a skill that lint refuses |
 | SCN-FSPEC-119 | implemented | A command that factory does not have prints the help and exits with code 2 |
+| SCN-FSPEC-120 | implemented | Plan pins a skill of another repository with its commit and the hash of its files |
+| SCN-FSPEC-121 | implemented | Plan keeps a pin while its entry is unchanged, also when its branch moves, and shows the old and the new commit when its ref changes |
+| SCN-FSPEC-122 | implemented | Plan refuses a fetched skill that the rules of lint refuse, names the file by its entry, and writes no factory.lock |
+| SCN-FSPEC-123 | implemented | Lint refuses a local skill and a skill of another repository with one name |
+| SCN-FSPEC-124 | implemented | Lint names an entry of another repository without a folder or outside it, and warns about one without a pin |
+| SCN-FSPEC-125 | implemented | "factory plan --check" names a skill of another repository that factory.lock does not pin, and writes nothing |
+| SCN-FSPEC-126 | implemented | Render links a skill of another repository at the commit of its pin, also after its branch moved |
+| SCN-FSPEC-127 | implemented | Render refuses a skill of another repository that factory.lock does not pin |
+| SCN-FSPEC-128 | implemented | "factory skills" prints a pinned skill with its repository and commit, and one without a pin with its problem |

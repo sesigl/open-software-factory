@@ -32,6 +32,16 @@
               "folder": {
                 "type": "string",
                 "minLength": 1
+              },
+              "repository": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The URL of the other Git repository, as the entry `git+<url>#<ref>:<path>` names it."
+              },
+              "commit": {
+                "type": "string",
+                "pattern": "^([0-9a-f]{40}|[0-9a-f]{64})$",
+                "description": "The commit of the other repository that factory.lock pins; none while factory.lock has no pin."
               }
             },
             "required": [

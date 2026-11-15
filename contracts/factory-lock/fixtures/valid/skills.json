@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "mcp": {},
+  "skills": {
+    "review": {
+      "source": "git+https://forge.example/acme/skills.git#v1.2:skills/review",
+      "commit": "3f786850e387550fdab836ed7e6dc881de23001b",
+      "hash": "h1:uPQnZjYBqRPfDTJKbPXlBPw5mRhYBO1ZbmwgcsT0W2c="
+    }
+  }
+}

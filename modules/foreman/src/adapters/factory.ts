@@ -1,14 +1,15 @@
 // Reads the factory (ADR 0067): factory.yaml, checked against the contract and for its stages' agents, the text of
 // each agent's prompt, the files of its skills and its MCP servers with their pins in factory.lock (ADR 0112), and the
 // factory version, the commit of the folder that holds the file, which must be clean (ADR 0110), or the commit of a
-// Git remote that @opensoftware/factory-source fetched (ADR 0124, ADR 0142).
+// Git remote that @opensoftware/factory-source fetched (ADR 0124, ADR 0142). A skill of another Git repository is
+// fetched with the same library at the commit factory.lock pins, and its files must have the pin's hash (ADR 0146).
 import { execFile } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { promisify } from "node:util";
 import { UsageError } from "@opensoftware/cli";
 import { type FactoryDefinition, validate } from "@opensoftware/contracts";
-import { FetchError, factorySource as sourceOf } from "@opensoftware/factory-source";
+import { FetchError, type Pin, pinnedFolder, factorySource as sourceOf } from "@opensoftware/factory-source";
 import { parse } from "yaml";
 import { type Definition, definitionOf, stageProblems } from "../domain/definition.ts";
 
@@ -40,16 +41,18 @@ export function factorySource(setting: string, data: string, token: string | und
         throw failure instanceof FetchError ? new UsageError(`FOREMAN_FACTORY: ${failure.message}`) : failure;
       });
       folder = resolve(fetched.folder);
-      return readFactory(fetched.file, fetched.commit);
+      // Stryker disable next-line StringLiteral: the cache is the foreman's private data, which no test may read
+      return readFactory(fetched.file, join(data, "skills"), fetched.commit);
     },
   };
 }
 
 /**
  * The factory at `path`; a file that cannot run is a usage error that names the file, the path in it and why. With
- * `commit`, the file is a fetched commit and that commit is its version; else its folder must be clean.
+ * `commit`, the file is a fetched commit and that commit is its version; else its folder must be clean. The skills of
+ * other repositories are fetched into `skills`, the cache of their repositories.
  */
-export async function readFactory(path: string, commit?: string): Promise<Factory> {
+export async function readFactory(path: string, skills: string, commit?: string): Promise<Factory> {
   const file = resolve(path);
   const name = basename(file);
   const document: unknown = parse(readFileSync(file, "utf8"));
@@ -61,9 +64,38 @@ export async function readFactory(path: string, commit?: string): Promise<Factor
   const version = commit ?? (await mustBeClean(folder, name, filesOf(document as FactoryDefinition, folder, file)));
   const read = (path: string) => readFileSync(resolve(folder, path), "utf8");
   const lock = join(folder, "factory.lock");
-  const { mcp: pins = {}, adapters = {} } = existsSync(lock) ? JSON.parse(read(lock)) : {};
-  const files = { read, folder: (path: string) => filesBelow(resolve(folder, path)), pins, adapters };
+  const { mcp: pins = {}, adapters = {}, skills: pinned = {} } = existsSync(lock) ? JSON.parse(read(lock)) : {};
+  const fetched = await skillFolders(document as FactoryDefinition, pinned, skills, name);
+  const files = { read, folder: (path: string) => filesBelow(fetched[path] ?? resolve(folder, path)), pins, adapters };
   return { definition: definitionOf(document as FactoryDefinition, files), version };
+}
+
+/**
+ * The folder of each skill of another repository, `git+<url>#<ref>:<path>`, fetched at the commit of its pin in
+ * factory.lock, by its entry. An entry without a pin, a pin of another entry, a fetch that fails and files whose hash
+ * is not the pin's are each a usage error that names the file.
+ */
+async function skillFolders(
+  factory: FactoryDefinition,
+  pins: Record<string, Pin & { source: string }>,
+  cache: string,
+  name: string,
+): Promise<Record<string, string>> {
+  const folders: Record<string, string> = {};
+  for (const agent of Object.values(factory.agents))
+    for (const entry of (agent.skills ?? []).filter((skill) => skill.startsWith("git+"))) {
+      const skill = entry.split("/").filter(Boolean).pop() as string;
+      const pin = pins[skill];
+      if (pin?.source !== entry)
+        throw new UsageError(
+          `${name}: factory.lock has no pin of the skill "${skill}" for "${entry}": run "factory plan"`,
+        );
+      const fetched = await pinnedFolder(entry, { cache, pin }).catch((failure: unknown) => {
+        throw failure instanceof FetchError ? new UsageError(`${name}: ${failure.message}`) : failure;
+      });
+      folders[entry] = fetched.folder;
+    }
+  return folders;
 }
 
 /** The text of every file below the folder, by its path relative to it (ADR 0112). */

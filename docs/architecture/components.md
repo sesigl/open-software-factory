@@ -86,7 +86,8 @@ Plus `contracts` and `testkit` (core, wave 0) and the `open-software-factory` di
 `packages/` hold code that several modules share, without a CLI or state of their own (ADR 0039): `cli` runs the
 commands of a module (ADR 0040), `spec-files` reads feature files and JUnit reports (ADR 0042), `postgres` opens the
 pools and runs the transactions of modules on PostgreSQL (ADR 0082), `factory-source` gives a factory's folder from a
-path or a Git remote at a ref, with a token for a private one (ADR 0142). The reader of run
+path or a Git remote at a ref, with a token for a private one (ADR 0142), and a skill's folder of another repository
+at the commit `factory.lock` pins, with the hash of its files (ADR 0146). The reader of run
 records, `runSpans`, lives in `contracts` (ADR 0041).
 
 ## Adopt, don't rebuild

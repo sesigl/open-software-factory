@@ -49,10 +49,22 @@ model CatalogSkill {
   problems: string[];
 }
 
-/** A folder of the factory's repository, relative to the folder of factory.yaml, like "skills/release-notes". */
+/**
+ * A folder of the factory's repository, relative to the folder of factory.yaml, like "skills/release-notes"; or, for a
+ * skill of another Git repository, its folder there with the repository's URL and the commit factory.lock pins
+ * (ADR 0146).
+ */
 model CatalogSkillSource {
   @minLength(1)
   folder: string;
+
+  /** The URL of the other Git repository, as the entry `git+<url>#<ref>:<path>` names it. */
+  @minLength(1)
+  repository?: string;
+
+  /** The commit of the other repository that factory.lock pins; none while factory.lock has no pin. */
+  @pattern("^([0-9a-f]{40}|[0-9a-f]{64})$")
+  commit?: string;
 }
 
 /** The secrets a skill needs, by the variable that holds each in a sandbox, and the hosts it reaches (ADR 0140). */

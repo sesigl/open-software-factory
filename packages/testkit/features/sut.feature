@@ -33,6 +33,13 @@ Feature: The sut handle
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-181 @status=implemented
+  Scenario: sut.files.link makes a symbolic link that follows its target
+    Given a module whose system test puts "$INPUT/notes.md" with "one", links "$INPUT/docs/alias.md" to "../notes.md", puts "two" into "$INPUT/notes.md" and expects to read "two" from "$INPUT/docs/alias.md"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-005 @status=implemented
   Scenario: The module runs with a fixed clock and seed
     Given a module whose CLI prints the environment variables "OSF_NOW" and "OSF_SEED"

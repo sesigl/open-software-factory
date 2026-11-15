@@ -12,13 +12,16 @@ export interface AppliedState {
   hooks?: Record<string, Hook>;
 }
 
-const statePath = (): string => join(resolve(process.env.OSF_DATA ?? ".factory"), "state.json");
+/** The state folder: OSF_DATA, or .factory in the current folder. */
+export const stateFolder = (): string => resolve(process.env.OSF_DATA ?? ".factory");
+
+const statePath = (): string => join(stateFolder(), "state.json");
 
 export function readState(): AppliedState | undefined {
   return existsSync(statePath()) ? (JSON.parse(readFileSync(statePath(), "utf8")) as AppliedState) : undefined;
 }
 
 export function writeState(state: AppliedState): void {
-  mkdirSync(resolve(process.env.OSF_DATA ?? ".factory"), { recursive: true });
+  mkdirSync(stateFolder(), { recursive: true });
   writeFileSync(statePath(), `${JSON.stringify(state, null, 2)}\n`);
 }

@@ -106,3 +106,32 @@ Feature: Shared formats
     When the developer runs "osf-contracts validate skill-catalog skills.json"
     Then the command exits with code 1
     And the output contains "skills.json /skills/0/body: missing required field"
+
+  @id=SCN-CTR-021 @status=implemented
+  Scenario: A factory lock with a pinned skill of another repository validates
+    Given a factory lock "factory.lock" that pins the skill "review" of "git+https://forge.example/acme/skills.git#v1.2:skills/review" at a commit with its hash
+    When the developer runs "osf-contracts validate factory-lock factory.lock"
+    Then the command exits with code 0
+    And the output contains "factory.lock: valid factory-lock"
+
+  @id=SCN-CTR-022 @status=implemented
+  Scenario: A pinned skill with a short commit is rejected with its path
+    Given a factory lock "factory.lock" that pins the skill "review" at the commit "4b825dc"
+    When the developer runs "osf-contracts validate factory-lock factory.lock"
+    Then the command exits with code 1
+    And the output contains "factory.lock /skills/review/commit: must match pattern"
+
+  @id=SCN-CTR-023 @status=implemented
+  Scenario: The pins of skills in factory.lock are no breaking change
+    Given the release tag "contracts-v2.5.0" of the contracts with the factory lock without "skills"
+    And the change that adds the optional "skills" to the factory lock and sets the version "2.6.0"
+    When the developer runs "osf-contracts breaking"
+    Then the command exits with code 0
+    And the output contains "no breaking change since contracts-v2.5.0"
+
+  @id=SCN-CTR-024 @status=implemented
+  Scenario: A skill catalog with a skill of another repository at its commit validates
+    Given a skill catalog "skills.json" whose skill "review" has the source folder "skills/review" of the repository "https://forge.example/acme/skills.git" at a commit
+    When the developer runs "osf-contracts validate skill-catalog skills.json"
+    Then the command exits with code 0
+    And the output contains "skills.json: valid skill-catalog"

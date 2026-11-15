@@ -28,7 +28,7 @@ function gitEnv(url: string, token: string | undefined): NodeJS.ProcessEnv {
 }
 
 /** The URL as an error names it: without the user and the password that a URL may carry. Git's own messages leave them out. */
-const named = (url: string): string => url.replace(/\/\/[^/@]*@/, "//");
+export const named = (url: string): string => url.replace(/\/\/[^/@]*@/, "//");
 
 /** Fetches `ref` of `url` into the bare repository below `cache`, writes its files once and gives its commit. */
 export async function fetchCommit(url: string, ref: string, cache: string, token?: string): Promise<string> {

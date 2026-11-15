@@ -21,6 +21,29 @@ model FactoryLock {
    * counts only while its `range` is the range factory.yaml declares.
    */
   adapters?: Record<Record<FactoryLockAdapterPin>>;
+
+  /**
+   * The skills of other Git repositories that `factory plan` pinned, by the skill's name (ADR 0146). A pin counts only
+   * while its `source` is the entry factory.yaml declares; the foreman and `factory render` fetch its commit and check
+   * its hash.
+   */
+  skills?: Record<FactoryLockSkillPin>;
+}
+
+/** One skill of another Git repository at the commit its ref had when `factory plan` pinned it. */
+@extension("additionalProperties", Json<false>)
+model FactoryLockSkillPin {
+  /** The entry of `skills` in factory.yaml that the pin was resolved from, `git+<url>#<ref>:<path>`. */
+  @pattern("^git\\+.+#[^:]+:.+$")
+  source: string;
+
+  /** The full commit, 40 hexadecimal characters, or 64 in a repository of SHA-256. */
+  @pattern("^([0-9a-f]{40}|[0-9a-f]{64})$")
+  commit: string;
+
+  /** The hash of the skill folder's files in the form of Go's modules: "h1:" and the base64 of a SHA-256. */
+  @pattern("^h1:[A-Za-z0-9+/]{43}=$")
+  hash: string;
 }
 
 /** One registry MCP server at its exact version, with the npm package or the remote it starts. */
