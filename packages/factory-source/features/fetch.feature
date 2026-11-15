@@ -8,6 +8,7 @@ Feature: A factory's folder from a path or a Git remote
     Given a "factory.yaml" is committed on the branch "main" of a Git repository at a "file://" URL
     When a program fetches the source "git+<url>#main" with a cache folder
     Then it gets the commit of "main", the folder "<cache>/<commit>" and its "factory.yaml" with its text
+    And the cache folder holds the bare repository "repository.git" and the folder of the commit, nothing else
 
   @id=SCN-FSOURCE-002 @status=implemented
   Scenario: A remote without a ref gives the commit of its HEAD
@@ -21,6 +22,12 @@ Feature: A factory's folder from a path or a Git remote
     Given a "factory.yaml" is committed on the branch "main" of a Git repository at a "file://" URL
     When a program fetches the source "git+<url>#no-such-branch" with a cache folder
     Then the fetch fails with a FetchError "cannot fetch no-such-branch of file://<path>: " and Git's message "couldn't find remote ref no-such-branch"
+
+  @id=SCN-FSOURCE-010 @status=implemented
+  Scenario: A remote without a ref and without a commit is a FetchError that names HEAD
+    Given a Git repository at a "file://" URL without a commit
+    When a program fetches the source "git+<url>" with a cache folder
+    Then the fetch fails with a FetchError "cannot fetch HEAD of file://<path>: " and Git's message "couldn't find remote ref HEAD"
 
   @id=SCN-FSOURCE-004 @status=implemented
   Scenario: A path, also one with "git+" inside it, gives its file and its folder, with no commit and nothing in the cache

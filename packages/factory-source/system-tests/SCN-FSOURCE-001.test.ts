@@ -22,4 +22,13 @@ scenario("SCN-FSOURCE-001", async ({ sut, given, when, then }) => {
       expect(await sut.files.read(`$OUTPUT/cache/${commit}/factory.yaml`)).toBe(FACTORY);
     },
   );
+
+  await then(
+    'the cache folder holds the bare repository "repository.git" and the folder of the commit, nothing else',
+    async () => {
+      const tops = new Set((await sut.files.list("$OUTPUT/cache")).map((file) => file.split("/")[0]));
+      expect(tops).toEqual(new Set(["repository.git", commit]));
+      expect(await sut.files.list("$OUTPUT/cache/repository.git")).toContain("HEAD");
+    },
+  );
 });

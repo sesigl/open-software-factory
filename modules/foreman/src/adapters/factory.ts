@@ -30,6 +30,7 @@ export interface FactorySource {
  * `token` for a private one (ADR 0142).
  */
 export function factorySource(setting: string, data: string, token: string | undefined): FactorySource {
+  // Stryker disable next-line StringLiteral: the cache is the foreman's private data, which no test may read
   const source = sourceOf(setting, { cache: join(data, "factory"), token });
   let folder = "";
   return {

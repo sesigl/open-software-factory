@@ -15,6 +15,7 @@ const run = promisify(execFile);
 
 /** The environment of Git: no prompt for a password, and the token as Basic credentials for `url` only. */
 function gitEnv(url: string, token: string | undefined): NodeJS.ProcessEnv {
+  // Stryker disable next-line StringLiteral: Git reads an empty GIT_TERMINAL_PROMPT as false, like "0"
   const env = { ...process.env, GIT_TERMINAL_PROMPT: "0" };
   if (!token) return env;
   const basic = Buffer.from(`x-access-token:${token}`).toString("base64");
@@ -34,7 +35,7 @@ export async function fetchCommit(url: string, ref: string, cache: string, token
     run("git", ["--git-dir", bare, ...args], { env }).then(({ stdout }) => stdout.trim());
   mkdirSync(cache, { recursive: true });
   // Again on a repository that exists, git init changes nothing.
-  await run("git", ["init", "--quiet", "--bare", bare], { env });
+  await run("git", ["init", "--quiet", "--bare", bare]);
   const commit = await git("fetch", "--quiet", "--no-tags", "--end-of-options", url, ref)
     .then(() => git("rev-parse", "--verify", "FETCH_HEAD^{commit}"))
     .catch((failure: { stderr: string }) => {

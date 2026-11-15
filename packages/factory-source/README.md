@@ -78,3 +78,4 @@ This library reads no environment variables: its caller passes the cache folder 
 | SCN-FSOURCE-007 | implemented | Two fetches at once of one source both give the folder of the commit |
 | SCN-FSOURCE-008 | implemented | A remote over HTTP gets the token as Git's Basic credentials, and no file of the cache holds it |
 | SCN-FSOURCE-009 | implemented | A private remote without the token is a FetchError at once, with no prompt for a password |
+| SCN-FSOURCE-010 | implemented | A remote without a ref and without a commit is a FetchError that names HEAD |
