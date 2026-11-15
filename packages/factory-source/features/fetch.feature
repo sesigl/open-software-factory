@@ -107,3 +107,10 @@ Feature: A factory's folder from a path or a Git remote
     Given the folder "skills/review" is committed on the branch "main" of a Git repository at a "file://" URL
     When a program fetches "<url>#main:skills/review", "git+<url>#main", "git+<url>#main:../review", "git+<url>#main:/etc" and "git+<url>#main:skills/missing"
     Then the fetches fail with the FetchErrors "is no git+<url>#<ref>:<path>" twice, "names a folder outside its repository" twice and "the commit <commit> of <url> has no folder skills/missing"
+
+  @id=SCN-FSOURCE-016 @status=implemented
+  Scenario: A folder that is a symbolic link, lies behind one or holds one is a FetchError that names the link
+    Given the folder "skills/review" is committed on the branch "main" of a Git repository at a "file://" URL
+    And the commit also holds the links "skills/out" to "/etc", "linked" to "skills" and "skills/review/notes.md" to "/etc/hostname"
+    When a program fetches "git+<url>#main:skills/out", "git+<url>#main:linked/review" and "git+<url>#main:skills/review"
+    Then the fetches fail with the FetchErrors "the commit <commit> of <url> has the symbolic link" "skills/out at skills/out", "linked at linked/review" and "skills/review/notes.md at skills/review"

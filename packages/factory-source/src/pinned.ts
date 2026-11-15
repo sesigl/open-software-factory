@@ -1,9 +1,9 @@
 // A folder of another Git repository (ADR 0146): git+<url>#<ref>:<path>, fetched at its ref to pin it, or at the
 // commit of its pin, whose files must have the pin's hash.
 import { createHash } from "node:crypto";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, lstatSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
-import { FetchError, fetchCommit } from "./git.ts";
+import { FetchError, fetchCommit, named } from "./git.ts";
 import type { SourceOptions } from "./source.ts";
 
 /** A commit and the hash of the files of the folder at that commit, as factory.lock holds them. */
@@ -36,23 +36,26 @@ const queues = new Map<string, Promise<unknown>>();
  */
 export async function pinnedFolder(reference: string, options: PinnedOptions): Promise<PinnedFolder> {
   const parts = REFERENCE.exec(reference);
-  if (!parts) throw new FetchError(`"${reference}" is no git+<url>#<ref>:<path>`);
+  if (!parts) throw new FetchError(`"${named(reference)}" is no git+<url>#<ref>:<path>`);
   const [, url, ref, path] = parts as unknown as [string, string, string, string];
   if (path.split("/").includes("..") || path.startsWith("/"))
-    throw new FetchError(`"${reference}" names a folder outside its repository`);
+    throw new FetchError(`"${named(reference)}" names a folder outside its repository`);
   const repository = join(options.cache, createHash("sha256").update(url).digest("hex").slice(0, 16));
   const { pin, token } = options;
   const fetch = async (): Promise<PinnedFolder> => {
     // Stryker disable next-line ConditionalExpression: Git fetches a commit its bare repository holds without the remote
     const cached = pin && existsSync(join(repository, pin.commit));
     const commit = cached ? pin.commit : await fetchCommit(url, pin?.commit ?? ref, repository, token);
-    const folder = join(repository, commit, path);
+    const files = join(repository, commit);
+    const folder = join(files, path);
+    const link = linkOn(files, path);
+    if (link) throw new FetchError(`the commit ${commit} of ${named(url)} has the symbolic link ${link} at ${path}`);
     if (!existsSync(folder) || !statSync(folder).isDirectory())
-      throw new FetchError(`the commit ${commit} of ${url} has no folder ${path}`);
+      throw new FetchError(`the commit ${commit} of ${named(url)} has no folder ${path}`);
     const hash = hashOf(folder);
     if (pin && hash !== pin.hash)
       throw new FetchError(
-        `the folder ${path} of ${url} at ${commit} has the hash ${hash}, not the hash ${pin.hash} of its pin`,
+        `the folder ${path} of ${named(url)} at ${commit} has the hash ${hash}, not the hash ${pin.hash} of its pin`,
       );
     return { folder, commit, hash };
   };
@@ -63,6 +66,22 @@ export async function pinnedFolder(reference: string, options: PinnedOptions): P
     next.catch(() => undefined),
   );
   return await next;
+}
+
+/**
+ * The first symbolic link on the way to the folder `path` below `files` or inside it, as its path below `files`. Git
+ * writes a link of a commit as a link, and one may point anywhere on this machine: whoever reads the folder would read
+ * files that are not the repository's, and the hash would not cover them.
+ */
+function linkOn(files: string, path: string): string | undefined {
+  const isLink = (below: string) => lstatSync(join(files, below), { throwIfNoEntry: false })?.isSymbolicLink();
+  const parts = path.split("/").filter(Boolean);
+  const above = parts.map((_, index) => parts.slice(0, index + 1).join("/")).find(isLink);
+  if (above || !existsSync(join(files, path))) return above;
+  const inside = readdirSync(join(files, path), { recursive: true, withFileTypes: true }).find((entry) =>
+    entry.isSymbolicLink(),
+  );
+  return inside && relative(files, join(inside.parentPath, inside.name)).split(sep).join("/");
 }
 
 /** Go's dirhash "h1": the SHA-256 of one line "<SHA-256 of the file>  <path>\n" per file, sorted by path. */

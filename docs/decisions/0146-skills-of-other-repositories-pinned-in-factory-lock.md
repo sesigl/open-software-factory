@@ -30,7 +30,10 @@ run must never follow a branch, and a person must see what an update changes. Op
   branch, a tag or a commit; `<path>` is the skill's folder below the root of the repository. This is the factory's
   own form with Git's own `<rev>:<path>` (as in `git show v1.2:skills/release-notes`): a ref cannot hold a `:`
   (`git check-ref-format`), so the first `:` after `#` ends the ref. The ref and the path are required. A path that
-  leaves the repository (a part `..` or a leading `/`) is refused. The skill's name is the last part of the path, as
+  leaves the repository (a part `..` or a leading `/`) is refused. So is a symbolic link: Git writes a link of a
+  commit as a link, and one may point anywhere on the machine that fetches, so the foreman would give an agent files
+  that are not the repository's, like its own secrets, and the hash would not cover them. A folder that is a link,
+  lies behind one or holds one fails with the link's path. The skill's name is the last part of the path, as
   for a local folder. Every entry without the prefix `git+` stays a path of the factory's repository.
 - **`factory.lock` gets an optional `skills`**: one pin per skill of another repository, by the skill's name, which is
   unique in a factory (ADR 0140): `{ source, commit, hash }`. `source` is the entry as `factory.yaml` writes it,

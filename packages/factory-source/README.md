@@ -38,7 +38,7 @@ try {
 | Export | What it does |
 | --- | --- |
 | `factorySource(setting, { cache, token })` | A source with one method, `fetch()`. `setting` is a path to the factory's file, or, when it starts with `git+`, `git+<url>#<ref>` (without `#<ref>`: the remote's `HEAD`) with `factory.yaml` at the root of the commit. `fetch()` gives `{ folder, file, commit }`: for a path, its folder and the path itself, no commit and no Git process; for a remote, the ref's commit, fetched again at each call, and its files in `<cache>/<commit>/`. The fetches of one source run one at a time. Paths stay as given: pass absolute ones for absolute folders. |
-| `pinnedFolder(reference, { cache, token, pin })` | The folder that `reference` names, `git+<url>#<ref>:<path>`: a folder of the repository at a ref (a branch, a tag or a commit). Without `pin`, it fetches the ref and gives `{ folder, commit, hash }`. With `pin` (`{ commit, hash }`, as `factory.lock` holds it), it fetches the pin's commit, never the ref, and only when the cache does not hold that commit yet; files whose hash is not the pin's are a `FetchError`. `cache` holds one folder per repository. |
+| `pinnedFolder(reference, { cache, token, pin })` | The folder that `reference` names, `git+<url>#<ref>:<path>`: a folder of the repository at a ref (a branch, a tag or a commit). Without `pin`, it fetches the ref and gives `{ folder, commit, hash }`. With `pin` (`{ commit, hash }`, as `factory.lock` holds it), it fetches the pin's commit, never the ref, and only when the cache does not hold that commit yet; files whose hash is not the pin's are a `FetchError`. So is a folder that is a symbolic link, lies behind one or holds one: a link may point outside the repository's files. `cache` holds one folder per repository. |
 | `FetchError` | What `fetch()` and `pinnedFolder` throw for a remote whose ref cannot be fetched: `cannot fetch <ref> of <url>: <Git's message>`, the URL without a user and a password it carries. |
 
 ## The cache
@@ -99,3 +99,4 @@ This library reads no environment variables: its caller passes the cache folder 
 | SCN-FSOURCE-013 | implemented | A folder with a pin gives the pinned commit after its ref moved, and from the cache once the remote is gone |
 | SCN-FSOURCE-014 | implemented | A pin whose hash is not the hash of the fetched files is a FetchError that names both hashes |
 | SCN-FSOURCE-015 | implemented | A reference without "git+" or a folder, a folder outside the repository and a folder that the commit lacks are each a FetchError |
+| SCN-FSOURCE-016 | implemented | A folder that is a symbolic link, lies behind one or holds one is a FetchError that names the link |
