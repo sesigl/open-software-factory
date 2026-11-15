@@ -168,12 +168,21 @@
     "/v1/gates/{gateId}/decisions": {
       "post": {
         "operationId": "GatekeeperApi_decideGate",
-        "description": "A person decides a pending gate (ADR 0118): 403 when they are in no group the gate waits for, 409 when the gate\nis no longer pending.",
+        "description": "A person decides a pending gate (ADR 0118): 403 when they are in no group the gate waits for, 409 when the gate\nis no longer pending. With GATEKEEPER_PERSON_KEYS every decision needs `OSF-Person` (ADR 0151): 401 without a\nproof or with one that does not verify, 403 for a proof of another request or person, 503 when the issuer's key\nset cannot be read.",
         "parameters": [
           {
             "name": "gateId",
             "in": "path",
             "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "OSF-Person",
+            "in": "header",
+            "required": false,
+            "description": "The person proof (format `person-proof`, ADR 0151) for this request and the person in `by`.",
             "schema": {
               "type": "string"
             }
@@ -232,6 +241,16 @@
           },
           "409": {
             "description": "The request conflicts with the current state of the server.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable.",
             "content": {
               "application/problem+json": {
                 "schema": {
