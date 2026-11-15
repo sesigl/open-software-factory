@@ -23,6 +23,10 @@ spec:
       {{- if .Values.improve.enabled }}
       {{- include "osf.onForemansNode" . | nindent 6 }}
       {{- end }}
+      {{- if .Values.factory.repository }}
+      initContainers:
+        {{- include "osf.factoryClone" (dict "root" . "image" (include "osf.image" (dict "root" . "name" "console" "tag" .Values.images.console)) "volume" "factory-source" "folder" "/factory") | nindent 8 }}
+      {{- end }}
       containers:
         - name: console
           image: {{ include "osf.image" (dict "root" . "name" "console" "tag" .Values.images.console) }}
@@ -46,6 +50,21 @@ spec:
               value: {{ .Values.temporalNamespace | quote }}
             - name: CONSOLE_FORGE_ADAPTER
               value: {{ .Values.console.forgeAdapter | quote }}
+            {{- with .Values.console.forgeUrl }}
+            - name: CONSOLE_FORGE_URL
+              value: {{ . | quote }}
+            {{- end }}
+            # factory-spec of the image, for /skills and the edits of a change.
+            - name: CONSOLE_FACTORY_COMMAND
+              value: factory
+            {{- with .Values.factory.repository }}
+            # Each change of the factory is a pull request on its repository (ADR 0144, ADR 0150).
+            - name: CONSOLE_FACTORY_REPOSITORY
+              value: {{ . | quote }}
+            - name: CONSOLE_FACTORY_USER
+              value: {{ required "set factory.user to the user of secrets.factoryToken, like github:acme-factory" $.Values.factory.user | quote }}
+            {{- include "osf.factoryTokenEnv" (dict "root" $ "name" "CONSOLE_FACTORY_TOKEN") | nindent 12 }}
+            {{- end }}
             {{- with .Values.console.temporalUrl }}
             - name: CONSOLE_TEMPORAL_URL
               value: {{ . | quote }}

@@ -1,0 +1,29 @@
+# The check "factory" of the factory's repository on Forgejo (ADR 0150), for a runner of Forgejo Actions with the label
+# ubuntu-latest and Node 24, like ubuntu-latest:docker://node:24-bookworm. factory-spec lints factory.yaml, its skills
+# and access.yaml, and fails when factory.lock is not current. Forgejo names the status of a job
+# "<workflow> / <job> (<event>)", so the job posts the status "factory" itself, with the forge adapter's check and the
+# job's own token: the main branch requires it, and the console relies on it before it asks for a merge (ADR 0144).
+# Forgejo reads this folder in place of .github/workflows; deploy/README.md#a-factory-on-a-forge sets up the branch.
+name: factory
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  factory:
+    runs-on: ubuntu-latest
+    env:
+      FORGE_URL: ${{ github.server_url }}
+      FORGE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPOSITORY: ${{ github.repository }}
+      SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: npx --yes @opensoftware/forge-forgejo@0.8.1 check "$REPOSITORY" "$SHA" factory pending --url "$RUN"
+      - run: npx --yes @opensoftware/factory-spec@0.12.1 lint
+      - run: npx --yes @opensoftware/factory-spec@0.12.1 plan --check
+      - if: success()
+        run: npx --yes @opensoftware/forge-forgejo@0.8.1 check "$REPOSITORY" "$SHA" factory success --url "$RUN"
+      - if: failure()
+        run: npx --yes @opensoftware/forge-forgejo@0.8.1 check "$REPOSITORY" "$SHA" factory failure --url "$RUN"

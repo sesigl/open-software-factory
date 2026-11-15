@@ -47,7 +47,7 @@ The console is open and read-only until you [turn on the sign-in](#turn-on-the-s
 | `nats` | NATS with JetStream for the events between the modules; intake and foreman keep an event in the stream `OSF` for `OSF_STREAM_MAX_AGE`, default `7d` ([ADR 0116](../docs/decisions/0116-events-not-lost-without-a-trace.md)) | none |
 | `jaeger` | the trace store: the runs' traces from foreman, by OTLP, kept on the volume `jaeger` ([ADR 0100](../docs/decisions/0100-jaeger-trace-store.md)); the console links each run and each stage's span there ([ADR 0121](../docs/decisions/0121-stage-run-record-in-the-trace.md)) | `JAEGER_PORT`, 16686 |
 | `litellm` | the LLM gateway, configured by `litellm/config.yaml`: LiteLLM's image with its bytecode compiled, so it starts sooner ([ADR 0098](../docs/decisions/0098-litellm-image-with-bytecode.md)), and without BerriAI's enterprise code, whose license allows no changed copies ([ADR 0102](../docs/decisions/0102-litellm-image-without-enterprise-code.md)) | `LITELLM_PORT`, 4000 |
-| `factory-repo` | one-shot: copies `FACTORY_DIR` into the volume `factory` and commits it | none |
+| `factory-repo` | one-shot at every start: copies `FACTORY_DIR` into the volume `factory` and commits it, or clones the newest commit of `FACTORY_REPOSITORY` there (see [A factory on a forge](#a-factory-on-a-forge)) | none |
 | `gatekeeper` | approvals in Slack or on pull requests, with the policy and groups of the factory | `GATEKEEPER_PORT`, 8082 |
 | `intake` | work from Slack, the forge and Sentry | `INTAKE_PORT`, 8081 |
 | `docker-proxy` | the foreman's only way to the Docker API, for the agents' sandboxes; see [Sandboxes](#sandboxes) | none |
@@ -81,7 +81,7 @@ member, gatekeeper names it when it starts and `console doctor` fails its check 
 ([ADR 0114](../docs/decisions/0114-the-example-member-of-the-reference-groups.md)). Its `access.yaml`, which the
 console's own sign-in reads (ADR 0134), names `admin@example.com` the same way: with `CONSOLE_SIGN_IN` set,
 `console doctor` fails its check `access` until an admin of yours is listed. Each
-`docker compose up` commits the folder into the volume `factory`, so a run's factory version is a commit. The factory
+`docker compose up` commits the folder into the volume `factory`, so a run's factory version is a commit; to change the factory from the console, move it to [a repository on a forge](#a-factory-on-a-forge). The factory
 attaches to `litellm` with `inference/litellm.yaml`, so its agents' models are the routes in
 `compose/litellm/config.yaml`. Add your models there, with their keys in `.env`. Its routes point at Anthropic's
 models without a key, for `CLAUDE_CODE_OAUTH_TOKEN`.
@@ -194,6 +194,10 @@ and names it, like `set FOREMAN_API_TOKEN in .env`.
 | `INTAKE_FORGE_ADAPTER` | `forge-github` | The forge adapter of intake's webhook: `forge-github` or `forge-forgejo`. |
 | `INTAKE_WEBHOOK_SECRET` | | The secret that the forge signs its webhook deliveries with. Set: intake takes them at `/forge/events`, and an issue labeled `factory` becomes a work item. Empty: intake takes no forge webhooks. |
 | `FACTORY_DIR` | `./factory` | The folder of the factory definition, its prompts, policy and groups. |
+| `FACTORY_REPOSITORY` | | The factory's repository on a forge in place of `FACTORY_DIR`, as `git+<url>#<branch>`, like `git+https://github.com/acme/factory.git#main`. Set: `factory-repo` clones it at each start, foreman fetches it at each run, and the console proposes changes to it. See [A factory on a forge](#a-factory-on-a-forge). |
+| `FACTORY_TOKEN` | | With `FACTORY_REPOSITORY`: a forge token of that repository only, for the clone, foreman's fetch and the console's changes. |
+| `FACTORY_USER` | | With `FACTORY_REPOSITORY`: the user of `FACTORY_TOKEN` as the forge adapter names an author, like `github:acme-factory`. The console lists only that user's pull requests as its changes. |
+| `FACTORY_FORGE_ADAPTER`, `FACTORY_FORGE_URL` | `forge-github`, GitHub's API | The console's forge adapter and its forge's URL, for the inbox and the factory's repository: on Forgejo `forge-forgejo` and the forge's URL, like `https://codeberg.org`. |
 | `DOCKER_SOCKET` | `/var/run/docker.sock` | The host's Docker socket, which only `docker-proxy` mounts. For rootless Docker, like `$XDG_RUNTIME_DIR/docker.sock`. |
 | `OSF_HOST` | `127.0.0.1` | The address every published port listens on. `0.0.0.0` makes them reachable from other machines. |
 | `CONSOLE_PORT` | `8080` | The port of the console. `0` picks a free port, but not with the sign-in: its callback names the port. |
@@ -331,6 +335,70 @@ page "Recent Deliveries".
 
 For a URL that does not depend on a relay, see [Give intake a public URL](../docs/how-to/public-intake.md).
 
+### A factory on a forge
+
+By default the factory is the folder `FACTORY_DIR`: the console shows it, offers no change, and says why. To let an
+admin or a factory engineer change it on the console's `/changes`, move it to a repository on GitHub or Forgejo
+([ADR 0150](../docs/decisions/0150-a-factory-repository-on-a-forge-in-the-profile.md)). Each change is then a pull
+request that names the person, and the forge merges it when its check `factory` passes
+([ADR 0144](../docs/decisions/0144-console-changes-as-pull-requests.md)).
+
+1. **The repository.** Make a private repository and push your factory folder to its branch `main`, with the two
+   workflows of the reference factory: `cp -R factory/. <your clone>` copies `.github/workflows/factory.yaml` and
+   `.forgejo/workflows/factory.yaml` too. Keep it private: whoever may write to it can make themselves `admin` in
+   `access.yaml`.
+2. **The check `factory`.** Each workflow runs `factory lint` and `factory plan --check` (which fails when
+   `factory.lock` is not current) on every pull request and every push to `main`.
+   - GitHub runs `.github/workflows/factory.yaml`; its job `factory` is the check `factory`.
+   - Forgejo runs `.forgejo/workflows/factory.yaml` on a runner of Forgejo Actions, which the profile does not start.
+     Turn on Actions in the repository's settings and register a runner with the label `ubuntu-latest` and an image
+     with Node 24, like `forgejo-runner register --labels ubuntu-latest:docker://node:24-bookworm`. Forgejo names a
+     job's status `factory / factory (pull_request)`, so the job posts the status `factory` itself, with the forge
+     adapter's `check` and the job's own token.
+3. **The rules of `main`.** Require the check `factory` and no approval. The console's token cannot approve its own
+   pull requests, so a required approval stops every change; observer's proposals still wait for a person, as
+   observer never asks for a merge.
+   - GitHub: Settings, Branches (or Rules, Rulesets) for `main`: require status checks to pass, with `factory`, and
+     no required approvals. Then Settings, General: "Allow auto-merge".
+   - Forgejo: Settings, Branches, a protection of `main`: "Enable status check" with the pattern `factory`, and
+     "Required approvals" 0.
+4. **The token**, for this repository only, of a user who may write to it, best a user of its own for the factory: it
+   is the author of every change. It is not the agents' `GH_TOKEN`.
+   - GitHub, a fine-grained token: Contents read and write, Pull requests read and write, Commit statuses read,
+     Checks read, Administration read (to read the rules of `main`) and Metadata read.
+   - Forgejo: the scopes `write:repository` and `write:issue`.
+5. **`.env`**, then `osf up`, which names what is missing, or `docker compose up --detach --wait`:
+
+   ```sh
+   FACTORY_REPOSITORY=git+https://github.com/acme/factory.git#main
+   FACTORY_TOKEN=...                         # the token of step 4
+   FACTORY_USER=github:acme-factory          # its user, or forgejo:<login>
+   # on Forgejo, like Codeberg:
+   FACTORY_FORGE_ADAPTER=forge-forgejo
+   FACTORY_FORGE_URL=https://codeberg.org
+   ```
+
+6. **Check it** with `docker compose run --rm console console doctor`: `factory repository` fails when the repository
+   cannot be fetched with the token, and `factory check` when `main` does not require the check `factory` or requires
+   an approval. Each names what to do.
+
+`factory-repo` then clones the newest commit of `main` into the volume `factory` at each start, in place of
+`FACTORY_DIR`, with the token in Git's environment only. A change takes effect at these times:
+
+| What reads the factory | When a merged change takes effect |
+| --- | --- |
+| foreman | The next run: it fetches `main` at each run, and a run keeps the factory version it started with. The page `/changes` says "Live for the next run". |
+| The console's changes | At once: each change starts from the newest commit of `main`. |
+| gatekeeper's policy and groups, the console's pages, groups and `access.yaml`, and `docker compose run --rm factory` | At the next `docker compose up --detach --wait`, when `factory-repo` clones again. |
+
+**Auto-merge on GitHub.** The console asks GitHub to merge each change once its required checks pass. GitHub then
+waits only for the checks that `main` requires, so require `factory`. Auto-merge needs "Allow auto-merge" in the
+repository's settings, and GitHub offers it, like required checks, for private repositories only on paid plans. In a
+repository without auto-merge a change waits as "Ready" once its check passed, and an admin or a factory engineer
+presses "Merge". In a private repository on a plan without required checks, `main` cannot require the check: the
+console then refuses every change, and `console doctor` says so. Go back to a local folder by emptying
+`FACTORY_REPOSITORY`.
+
 ## Helm chart
 
 The chart `osf` installs LiteLLM, gatekeeper, intake, foreman and console with the reference factory on Kubernetes.
@@ -421,11 +489,32 @@ lists and deletes values and cannot read one; the egress token only reads. Your 
 lives (768 hours by default): `console doctor` warns 7 days before the console's token ends. The sandboxes' egress pods
 in the sandboxes' namespace must reach the address.
 
+### A factory on a forge on Kubernetes
+
+Set up the repository, its check `factory`, the rules of `main` and the token as in
+[A factory on a forge](#a-factory-on-a-forge), then:
+
+```yaml
+secrets:
+  factoryToken: <the token>          # or the key factory-token of secrets.existingSecret
+factory:
+  repository: git+https://github.com/acme/factory.git#main
+  user: github:acme-factory
+console:
+  forgeAdapter: forge-forgejo        # on Forgejo, with
+  forgeUrl: https://codeberg.org
+```
+
+foreman then fetches the repository at each run. gatekeeper and the console clone it in their init container
+`factory-repo`, with the profile's `factory-repo.sh`, when their pods start; `kubectl rollout restart deployment
+osf-gatekeeper osf-console` takes a merged change to them. `factory.files` and the chart's ConfigMap of the factory
+are not used then.
+
 ### Helm values
 
 | Value | Default | Meaning |
 | --- | --- | --- |
-| `secrets.existingSecret` | | A Secret with the keys `postgres-password`, `foreman-api-token`, `intake-api-token`, `gatekeeper-api-token`, `litellm-master-key` and, optional, `gatekeeper-slack-token` and `gatekeeper-slack-signing-secret` (with `gatekeeper.slackChannel`), `forge-token`, `github-token` and `claude-code-oauth-token`, for example filled from OpenBao by its operator or the External Secrets Operator. Set, the chart makes no Secret. |
+| `secrets.existingSecret` | | A Secret with the keys `postgres-password`, `foreman-api-token`, `intake-api-token`, `gatekeeper-api-token`, `litellm-master-key` and, optional, `gatekeeper-slack-token` and `gatekeeper-slack-signing-secret` (with `gatekeeper.slackChannel`), `forge-token`, `github-token`, `claude-code-oauth-token` and `factory-token`, for example filled from OpenBao by its operator or the External Secrets Operator. Set, the chart makes no Secret. |
 | `secrets.postgresPassword` | | Required without `existingSecret`. The password of the database user; it goes into URLs, so use letters, digits, `-` and `_`. |
 | `secrets.foremanApiToken`, `secrets.intakeApiToken`, `secrets.gatekeeperApiToken` | | Required without `existingSecret`. The API tokens of foreman, intake and gatekeeper. |
 | `secrets.gatekeeperSlackToken`, `secrets.gatekeeperSlackSigningSecret` | | The bot token and signing secret of gatekeeper's Slack app. Set them, `secrets.forgeToken` or both; without either the chart names the three. Without them gatekeeper asks on pull requests only. |
@@ -439,6 +528,10 @@ in the sandboxes' namespace must reach the address.
 | `images.registry` | `ghcr.io/sesigl/open-software-factory` | Where the module images come from. |
 | `images.gatekeeper`, `images.intake`, `images.foreman`, `images.console`, `images.factorySpec`, `images.observer` | the pins of `compose.yaml` | The tags of the module images; `observer` is the image of the improvement jobs, with scorekit and ledger. |
 | `factory.files` | the reference factory | Your factory definition as path: content, like `factory.yaml: "version: 1 ..."`. foreman commits it into Git with a fixed author and date. |
+| `factory.repository` | | Or your factory's repository on a forge, as `git+<url>#<branch>` ([A factory on a forge on Kubernetes](#a-factory-on-a-forge-on-kubernetes)). Set: foreman fetches it at each run, gatekeeper and the console clone it when their pods start, and the console proposes changes to it. |
+| `factory.user` | | Required with a repository: the user of `secrets.factoryToken` as the forge adapter names an author, like `github:acme-factory`. |
+| `secrets.factoryToken` | | With a repository: the forge token of that repository only, the key `factory-token`; see [A factory on a forge](#a-factory-on-a-forge) for its permissions. |
+| `console.forgeAdapter`, `console.forgeUrl` | `forge-github`, the adapter's own | The console's forge adapter and its forge's URL, for the inbox and the factory's repository, like `forge-forgejo` and `https://codeberg.org`. |
 | `gatekeeper.slackChannel` | `C0GATES` | The Slack channel where gatekeeper asks, with the Slack secrets. With `existingSecret`, empty turns Slack off. |
 | `foreman.harnesses`, `foreman.forges` | claude-code; github and forgejo | foreman's `FOREMAN_HARNESSES` and `FOREMAN_FORGES`. |
 | `foreman.persistence.size` | `1Gi` | The volume of the runs' working folders. |
@@ -472,7 +565,8 @@ make test-scenario ID=SCN-DIST-019
 ## Releases
 
 Each release moves the pins of `compose/compose.yaml` and `helm/osf/` to the released versions: the release workflow
-runs `osf profile-pins` in the release pull request ([ADR 0095](../docs/decisions/0095-profile-pins-move-with-releases.md)).
+runs `osf profile-pins` in the release pull request ([ADR 0095](../docs/decisions/0095-profile-pins-move-with-releases.md)),
+and the versions of the packages that the reference factory's two workflows run.
 The workflow `publish-images` publishes after each change to `compose/compose.yaml`, `images/` or `helm/osf/` on
 `main`, once npm serves the packages of the pins. It builds every module image whose tag GHCR does not have yet for `linux/amd64` and `linux/arm64`, with an SBOM
 and SLSA provenance attached by BuildKit, and signs it with cosign through the workflow's GitHub identity. A tag never
@@ -549,3 +643,7 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-039 | implemented | The profile's OpenBao keeps a stored secret over a restart, unseals itself, and a sandbox still sends the value |
 | SCN-DIST-040 | implemented | The chart gives the console and the foreman the team's own OpenBao with the two tokens from a Secret the operator names |
 | SCN-DIST-041 | implemented | The Compose profile takes the module images, the agents' template and the LLM gateway from the factory's registry, and OpenBao from its own |
+| SCN-DIST-042 | implemented | The reference factory's workflows post the check "factory" from "factory lint" and "factory plan --check", and both pass on the reference factory |
+| SCN-DIST-043 | implemented | With "FACTORY_REPOSITORY", the service factory-repo clones the factory's private repository on a forge at each start, with "FACTORY_TOKEN" |
+| SCN-DIST-044 | implemented | With "FACTORY_REPOSITORY" on Forgejo, the foreman and the console read the factory from the repository with the one token, and the console edits it with the factory-spec of its image |
+| SCN-DIST-045 | implemented | The chart reads the factory from its repository on a forge with the token "factory-token", and the console proposes changes to it |

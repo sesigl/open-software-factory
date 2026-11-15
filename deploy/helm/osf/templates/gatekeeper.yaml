@@ -22,6 +22,7 @@ spec:
       {{- include "osf.podSecurity" . | nindent 6 }}
       initContainers:
         {{- include "osf.databasesInit" (dict "root" . "databases" (list "gatekeeper")) | nindent 8 }}
+        {{- include "osf.factoryClone" (dict "root" . "image" (include "osf.image" (dict "root" . "name" "gatekeeper" "tag" .Values.images.gatekeeper)) "volume" "factory-source" "folder" "/factory") | nindent 8 }}
       containers:
         - name: gatekeeper
           image: {{ include "osf.image" (dict "root" . "name" "gatekeeper" "tag" .Values.images.gatekeeper) }}

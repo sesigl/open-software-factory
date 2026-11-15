@@ -58,6 +58,11 @@ through `kubectl port-forward` (`url`), `helm test` and the state of the workloa
   5 s after the start, while Temporal's schema and namespace take about 8 s, so the chain is not on the path to a
   healthy console. SCN-DIST-039 starts only OpenBao and docker-proxy, twice, with one sandbox: 21 to 31 s here.
   SCN-DIST-040 renders the chart like SCN-DIST-033.
+- T-58 adds no start of the whole profile either (ADR 0150), measured on the development container with the images
+  present: SCN-DIST-042 runs the tools' `factory lint` and `plan --check` once each, 4.1 s; SCN-DIST-043 runs only
+  `factory-repo` three times against the testkit's Forgejo, 11.4 s, of which Forgejo's start is 5 to 7 s once per
+  worker; SCN-DIST-044 is `docker compose config` and one `factory --help`, 1.6 s; SCN-DIST-045 renders the chart like
+  SCN-DIST-033. About 19 s together, so the highest measure above would be about 728 s: under 760, with less room.
 
 ## Scenario prefix
 

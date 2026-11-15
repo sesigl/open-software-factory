@@ -3,7 +3,8 @@
 # Every secret of the factory. Set each value, or name a Secret with the same keys in existingSecret, for example one
 # that OpenBao fills through its operator or the External Secrets Operator. The keys: postgres-password,
 # foreman-api-token, intake-api-token, gatekeeper-api-token, litellm-master-key and, optional,
-# gatekeeper-slack-token and gatekeeper-slack-signing-secret, forge-token, github-token and claude-code-oauth-token.
+# gatekeeper-slack-token and gatekeeper-slack-signing-secret, forge-token, github-token, claude-code-oauth-token and
+# factory-token.
 # gatekeeper asks in Slack, on the run's pull request with forgeToken, or both: set the Slack secrets, forgeToken or both.
 secrets:
   existingSecret: ""
@@ -21,6 +22,9 @@ secrets:
   # egress pod gets them; the agent holds a placeholder. Without them, a stage that needs them fails.
   githubToken: ""
   claudeCodeOauthToken: ""
+  # With factory.repository: the forge token of that repository only (deploy/README.md#a-factory-on-a-forge), with
+  # which foreman, gatekeeper and the console fetch it and the console opens and merges its changes. Key factory-token.
+  factoryToken: ""
 
 # The module images, published and signed by the workflow publish-images. The tags equal the pins in
 # deploy/compose/compose.yaml.
@@ -30,7 +34,7 @@ images:
   gatekeeper: "0.10.1"
   intake: "0.7.1"
   foreman: "0.14.0"
-  console: "0.10.1"
+  console: "0.10.1-r1"
   factorySpec: "0.12.1"
   # The image of the improvement jobs: observer, scorekit and ledger.
   observer: "0.2.1"
@@ -39,6 +43,14 @@ images:
 # files/factory/. foreman commits the files into Git, so a run's factory version is a commit.
 factory:
   files: {}
+  # Or the factory's repository on a forge (ADR 0150), as git+<url>#<branch>, like
+  # git+https://github.com/acme/factory.git#main, with the token secrets.factoryToken. Then foreman fetches it at each
+  # run, gatekeeper and the console clone it when their pods start, and the console proposes each change of the factory
+  # as a pull request on it. Empty: the files above.
+  repository: ""
+  # With a repository: the user of secrets.factoryToken as the forge adapter names an author, like github:acme-factory
+  # or forgejo:factory-bot. The console lists only that user's pull requests as its changes.
+  user: ""
 
 gatekeeper:
   # The Slack channel where gatekeeper asks for decisions, like C0GATES, with the Slack secrets. With existingSecret,
@@ -75,7 +87,10 @@ foreman:
   resources: {}
 
 console:
+  # The forge adapter of the inbox and of the factory's repository: forge-github or forge-forgejo.
   forgeAdapter: forge-github
+  # Its forge's API, like https://codeberg.org for forge-forgejo. Empty: the adapter's own, GitHub's API.
+  forgeUrl: ""
   # The base URL of the Temporal UI, for the link to a run's history. Optional.
   temporalUrl: ""
   # The dashboards every page links, as name=url, comma-separated, like Langfuse=https://langfuse.acme.dev.
