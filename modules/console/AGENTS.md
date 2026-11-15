@@ -81,6 +81,10 @@ A journey runs in Chromium (`@kind=journey`, ADR 0131) only for a main flow. Eac
   the changes, from "Checking" to "Live", and the only proof that a browser sends the switch's `GET` form and the
   hidden line of edits, and that the skill's page with its switches passes axe.
 
+- SCN-CONSOLE-245, the buttons of a failed change: no other journey shows a change's buttons ("Try again",
+  "Discard", "Merge" are one class, `osf-button`, as a button of a form), so it is the only proof that they keep the
+  design system's colours in a browser and pass axe's colour contrast.
+
 They start the console with `CONSOLE_REFRESH=0`: axe's rule `meta-refresh` (WCAG 2.2.1) flags the runs page's reload,
 which stays until live updates replace it (`TODO.md`, T-60).
 

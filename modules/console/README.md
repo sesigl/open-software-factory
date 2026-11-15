@@ -636,3 +636,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-242 | implemented | "console doctor" names the settings when the factory repository does not answer |
 | SCN-CONSOLE-243 | implemented | "console doctor" fails when the main branch of the factory repository does not require the check "factory" |
 | SCN-CONSOLE-244 | implemented | "console doctor" fails when the main branch of the factory repository requires an approval |
+| SCN-CONSOLE-245 | implemented | The buttons of a failed change read well in Chromium and pass the accessibility checks |

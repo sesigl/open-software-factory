@@ -13,7 +13,8 @@ The only ways a page, a system test or another program may use the library:
   `Page` and `Brand`, for the sign-in page, and `Shell` with the type `ShellData`, for the runs page (T-56), the
   secrets pages (T-57), the skills pages (T-59) and the changes page (T-58), whose list, form and fields are classes of `src/styles/base.css`;
   the skills pages add the way back (`osf-crumbs`), an exact line (`osf-meta`), a panel with a label (`osf-section`),
-  the needs of a record (`osf-needs`) and Markdown rendered on the server (`osf-prose`)
+  the needs of a record (`osf-needs`) and Markdown rendered on the server (`osf-prose`); the changes page adds panels
+  one below the other (`osf-stack`), and `osf-button` serves a link and a button of a form alike
 
 The library's system tests import it by its package name and read the files it names (ADR 0039).
 
