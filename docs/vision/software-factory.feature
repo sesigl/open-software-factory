@@ -168,7 +168,7 @@ Feature: Cloud execution, sandboxes and governance
       When an agent tries to call an MCP server that its definition does not declare
       Then the call is refused and recorded
 
-    @scenario_id=SCN-FACTORY-RUNTIME-010 @status=planned @evidence=derived @source=owner-2026-11 @source=09:54
+    @scenario_id=SCN-FACTORY-RUNTIME-010 @status=implemented @evidence=derived @source=owner-2026-11 @source=09:54
     Scenario: A person stores the value of a secret in the factory UI
       Given the agent "implement" declares the secret "LINEAR_TOKEN"
       When a person with the role "factory-engineer" stores a value for "LINEAR_TOKEN" in the factory UI

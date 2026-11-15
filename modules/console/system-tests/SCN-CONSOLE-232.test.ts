@@ -2,7 +2,7 @@ import { type Page, scenario } from "@opensoftware/testkit";
 import { foreman, serving } from "./console.ts";
 import { CLOSED, factoryOf, store, VALUE } from "./secrets.ts";
 
-scenario("SCN-CONSOLE-178", async ({ sut, fakes, given, when, then }) => {
+scenario("SCN-CONSOLE-232", async ({ sut, fakes, given, when, then }) => {
   await given('a console without "CONSOLE_SIGN_IN" and "CONSOLE_USER_HEADER", and a store', async () => {
     const { env } = await store(sut, fakes);
     const factory = await factoryOf(sut, { triage: { secrets: ["ref:openbao/linear-token"] } });
@@ -17,7 +17,7 @@ scenario("SCN-CONSOLE-178", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then(
-    'both answer 404 and say "no secrets: they need a person with the role admin, so set CONSOLE_SIGN_IN, or an access file with CONSOLE_USER_HEADER"',
+    'both answer 404 and say "no secrets: they need a person with the role admin or factory-engineer, so set CONSOLE_SIGN_IN, or an access file with CONSOLE_USER_HEADER"',
     async () => {
       expect([page.status, form.status]).toEqual([404, 404]);
       expect(page.text).toContain(CLOSED);

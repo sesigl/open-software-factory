@@ -109,7 +109,7 @@ Each adapter gets only these variables, `PATH`, and its own temporary `HOME`, `O
 | SCN-E2E-004 | implemented | A benchmark result becomes a routing rule |
 | SCN-E2E-005 | implemented | A manual change to a running factory is reported as drift |
 | SCN-E2E-006 | implemented | An agent in a sandbox pushes to the forge with a placeholder, and holds no token of the foreman |
-| SCN-E2E-007 | implemented | A value that an admin stores in the console reaches the next run's request, with no restart |
+| SCN-E2E-007 | implemented | A value that a factory engineer stores in the console reaches the next run's request, with no restart |
 
 ## Paid reference run
 

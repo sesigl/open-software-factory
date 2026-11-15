@@ -61,9 +61,9 @@ scenario("SCN-E2E-007", async ({ sut, fakes, given, when, then }) => {
   // GitHub's token exchange and API, as the console calls them from its container; the person consents in the browser.
   const github = await fakes.http(
     [
-      { method: "POST", path: "/login/oauth/access_token", body: { access_token: "gho_ada" } },
-      { path: "/user", body: { login: "ada", name: "Ada" } },
-      { path: "/user/emails", body: [{ email: "ada@acme.dev", primary: true, verified: true }] },
+      { method: "POST", path: "/login/oauth/access_token", body: { access_token: "gho_grace" } },
+      { path: "/user", body: { login: "grace", name: "Grace" } },
+      { path: "/user/emails", body: [{ email: "grace@acme.dev", primary: true, verified: true }] },
     ],
     { containers: true },
   );
@@ -99,9 +99,16 @@ scenario("SCN-E2E-007", async ({ sut, fakes, given, when, then }) => {
 
   let open: ReturnType<typeof browser>;
   await given(
-    'the console with the sign-in of GitHub, where "ada@acme.dev" of the factory\'s "access.yaml" signed in as "admin"',
+    'the console with the sign-in of GitHub, where "grace@acme.dev" of the factory\'s "access.yaml" signed in as "factory-engineer"',
     async () => {
-      const access = ["version: 1", "people:", "  - email: ada@acme.dev", "    role: admin", ""].join("\n");
+      // The access file needs an admin; the person who signs in is the factory engineer.
+      const people = [
+        "  - email: ada@acme.dev",
+        "    role: admin",
+        "  - email: grace@acme.dev",
+        "    role: factory-engineer",
+      ];
+      const access = ["version: 1", "people:", ...people, ""].join("\n");
       await sut.files.put("$INPUT/factory/access.yaml", access);
       await started(profile, ["foreman", "console"]);
       // The person opens the console on localhost, CONSOLE_URL's host, where the profile publishes its port.
@@ -109,11 +116,11 @@ scenario("SCN-E2E-007", async ({ sut, fakes, given, when, then }) => {
       const authorize = new URL((await open("/signin/start?next=%2Fsecrets")).location);
       // GitHub's answer after the person consents: back to the callback with a code and the sign-in's state.
       const callback = new URL(authorize.searchParams.get("redirect_uri") ?? "");
-      callback.searchParams.set("code", "github-code-ada");
+      callback.searchParams.set("code", "github-code-grace");
       callback.searchParams.set("state", authorize.searchParams.get("state") ?? "");
       const signedIn = await open(callback.pathname + callback.search);
       expect({ status: signedIn.status, location: signedIn.location }).toEqual({ status: 303, location: "/secrets" });
-      expect((await open("/secrets")).html).toContain("ada@acme.dev · admin");
+      expect((await open("/secrets")).html).toContain("grace@acme.dev · factory-engineer");
     },
   );
 
@@ -142,7 +149,7 @@ scenario("SCN-E2E-007", async ({ sut, fakes, given, when, then }) => {
 
   let second = "";
   await when(
-    'the admin stores a value for "linear-token" in the form of the page "/secrets", and a program posts a second work item to foreman\'s "/v1/runs"',
+    'the factory engineer stores a value for "linear-token" in the form of the page "/secrets", and a program posts a second work item to foreman\'s "/v1/runs"',
     async () => {
       const stored = await open("/secrets", { name: "linear-token", value: VALUE });
       expect({ status: stored.status, location: stored.location }, stored.html).toEqual({
@@ -177,15 +184,22 @@ scenario("SCN-E2E-007", async ({ sut, fakes, given, when, then }) => {
   );
 
   await then(
-    'the page "/secrets" names "linear-token" as "Set" by "ada@acme.dev" and does not hold the value',
+    'the page "/secrets" names "linear-token" as "Set" by "grace@acme.dev" and does not hold the value',
     async () => {
       const page = await open("/secrets");
       expect(page.status).toBe(200);
       expect(page.html).toMatch(
-        /linear-token<\/span>\s*<span[^>]*>Used by the agent implement · version 1, set by ada@acme\.dev on /,
+        /linear-token<\/span>\s*<span[^>]*>Used by the agent implement · version 1, set by grace@acme\.dev on /,
       );
       expect(page.html).toMatch(/>Set<\/span>/);
       expect(page.html).not.toContain(VALUE);
     },
   );
+
+  await then("the logs of the console and the foreman do not hold the value", async () => {
+    const logs = await profile.compose.run(["logs", "--no-color", "console", "foreman"]);
+    expect(logs.exitCode, logs.stderr).toBe(0);
+    expect(logs.stdout).toContain("console");
+    expect(logs.stdout + logs.stderr).not.toContain(VALUE);
+  });
 });

@@ -37,7 +37,7 @@ import { shellData } from "../pages/shell.ts";
 import { workPage } from "../pages/work.ts";
 import { factoryRepositoryOf, NO_ROLES, useChanges } from "./changes.ts";
 import { actorOf, fromConsole, personOf } from "./person.ts";
-import { useSecrets } from "./secrets.ts";
+import { SECRET_ROLES, useSecrets } from "./secrets.ts";
 import { useSkills } from "./skills.ts";
 
 type Env = Record<string, string | undefined>;
@@ -86,7 +86,7 @@ export async function serve(env: Env) {
   // Secrets need an admin and a store; without either the page and its forms answer 404 (ADR 0137).
   const closedSecrets =
     !sign && !proxyAccess
-      ? "no secrets: they need a person with the role admin, so set CONSOLE_SIGN_IN, or an access file with CONSOLE_USER_HEADER"
+      ? "no secrets: they need a person with the role admin or factory-engineer, so set CONSOLE_SIGN_IN, or an access file with CONSOLE_USER_HEADER"
       : env.OSF_OPENBAO_ADDR
         ? undefined
         : "no secret store: set OSF_OPENBAO_ADDR and OSF_OPENBAO_TOKEN to the factory's OpenBao";
@@ -119,8 +119,9 @@ export async function serve(env: Env) {
     changes: Boolean(changes),
   });
 
-  /** Whether the person may open the secrets: an admin in a console with a store. */
-  const maySecrets = (request: FastifyRequest): boolean => !closedSecrets && actorOf(request)?.role === "admin";
+  /** Whether the person may open the secrets: an admin or a factory engineer in a console with a store. */
+  const maySecrets = (request: FastifyRequest): boolean =>
+    !closedSecrets && SECRET_ROLES.includes(actorOf(request)?.role ?? "");
 
   /** The shell of a page in the new look: Secrets only for a person who may open them. */
   const shellOf = (request: FastifyRequest, at: { title: string; current: string; count?: string; refresh?: number }) =>

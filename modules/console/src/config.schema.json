@@ -226,7 +226,7 @@
     },
     "OSF_OPENBAO_ADDR": {
       "type": "string",
-      "description": "serve, doctor and /health: the address of the factory's OpenBao, like http://openbao:8200, for the secrets adapter. Set, an admin stores and deletes secrets on /secrets."
+      "description": "serve, doctor and /health: the address of the factory's OpenBao, like http://openbao:8200, for the secrets adapter. Set, an admin or a factory engineer stores secrets on /secrets, and an admin deletes them."
     },
     "OSF_OPENBAO_MOUNT": {
       "type": "string",

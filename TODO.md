@@ -1515,8 +1515,8 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
     | Role | May |
     | --- | --- |
     | `member` | See every page but Secrets; submit work; act on runs and gates, as a signed-in person does today |
-    | `factory-engineer` | The same, and change the factory from the UI (T-58, T-59) |
-    | `admin` | The same, and store and delete secrets (T-57) |
+    | `factory-engineer` | The same, change the factory from the UI (T-58, T-59), and store secrets (T-57, ADR 0148) |
+    | `admin` | The same, and delete secrets (T-57) |
 
   - **The mode.** One setting switches the own sign-in on by name ("The console's three modes"). With it on, the
     console does not start without the provider's settings, the session key and its address. A missing access file

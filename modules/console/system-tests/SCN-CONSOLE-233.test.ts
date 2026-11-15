@@ -2,7 +2,7 @@ import { type Page, scenario } from "@opensoftware/testkit";
 import { foreman, navLinks, serving } from "./console.ts";
 import { ADMIN, CLOSED, factoryOf, store } from "./secrets.ts";
 
-scenario("SCN-CONSOLE-179", async ({ sut, fakes, given, when, then }) => {
+scenario("SCN-CONSOLE-233", async ({ sut, fakes, given, when, then }) => {
   await given(
     'a console behind a sign-in proxy with "CONSOLE_USER_HEADER" "X-Forwarded-Email" and no access file, and a store',
     async () => {
@@ -24,7 +24,7 @@ scenario("SCN-CONSOLE-179", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then(
-    '"/secrets" answers 404 and says "no secrets: they need a person with the role admin, so set CONSOLE_SIGN_IN, or an access file with CONSOLE_USER_HEADER"',
+    '"/secrets" answers 404 and says "no secrets: they need a person with the role admin or factory-engineer, so set CONSOLE_SIGN_IN, or an access file with CONSOLE_USER_HEADER"',
     async () => {
       expect(secrets.status).toBe(404);
       expect(secrets.text).toContain(CLOSED);
