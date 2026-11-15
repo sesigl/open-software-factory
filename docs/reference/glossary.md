@@ -12,7 +12,7 @@ Use these terms in scenarios, code, UI text and docs.
 | Factory definition | `factory.yaml` plus prompts, skills and policies in Git; the desired state of a factory. |
 | Skill | A folder with a `SKILL.md` in the Agent Skills format: front matter with its name, the folder's name, and a description of what it does and when to use it, then short instructions, with details in files beside it. An agent names its skills in `factory.yaml`; the skill's `metadata` names the secrets and hosts it needs, which `factory lint` asks the agent to declare (ADR 0140). |
 | Factory version | The commit hash of the factory definition a run used; the foreman refuses a factory folder with changes that are not committed (ADR 0110). |
-| Lock file | `factory.lock` next to `factory.yaml`: the exact version of each MCP server from a registry, pinned by `factory plan`. |
+| Lock file | `factory.lock` next to `factory.yaml`: the exact version of each MCP server from a registry and of each adapter, and the commit and the hash of the files of each skill of another Git repository, pinned by `factory plan` (ADR 0146). |
 | Compose profile | `deploy/compose/`: the factory with all its services on one machine, started with one `docker compose up` (ADR 0074). |
 | Helm chart | `deploy/helm/osf/`: the factory on Kubernetes for platform teams, installed with one `helm install`; PostgreSQL, NATS and Temporal are in it or the team's own (ADR 0075). |
 | Reference factory | The factory definition in `deploy/compose/factory/` that the Compose profile runs unless `FACTORY_DIR` names another. |

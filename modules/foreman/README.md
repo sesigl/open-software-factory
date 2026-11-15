@@ -453,7 +453,10 @@ took it over, and a `reason` when it failed for a reason the foreman knows.
   characters, after the line `[… the first <n> characters are cut]` when it wrote more (ADR 0111). It allows the tool calls the adapter asks
   about; limit them with the adapter's `--allow`. Before the session, the foreman writes the files of each of the
   agent's `skills` into the run's folder below `.claude/skills/<name>` and `.agents/skills/<name>`, replacing a folder
-  of that name (ADR 0112), and clones each of the agent's `repositories` with `git clone --depth 1` below
+  of that name (ADR 0112). A skill of another Git repository, `git+<url>#<ref>:<path>`, comes from the commit that
+  `factory.lock` pins for it: the library fetches that commit into `OSF_DATA/skills` once, never the ref, and its
+  files must have the pin's hash. A skill without a pin, a fetch that fails and another hash each stop the server at
+  the start and keep a run from starting (ADR 0146); the foreman gives Git no token for it. It then clones each of the agent's `repositories` with `git clone --depth 1` below
 `repositories/<name>`, `<name>` the last segment of its URL without `.git`, unless an earlier stage left that folder:
 a clone URL as it is, `<owner>/<name>` from `https://github.com`. The foreman gives Git no token; a private repository
 needs credentials that Git on the foreman's host has, and a clone that fails fails the run (ADR 0126). The session's MCP servers are the agent's `mcp`: `<package>@<version>` runs as
@@ -750,3 +753,6 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-165 | implemented | A stage whose agent's secret from OpenBao has a value runs in its sandbox |
 | SCN-FORE-166 | implemented | A stage whose secrets store does not answer fails before its first turn with the reason |
 | SCN-FORE-167 | implemented | The foreman fetches a factory in a Git remote with the token of FOREMAN_FACTORY_TOKEN as Git's Basic credentials |
+| SCN-FORE-168 | implemented | A stage's agent finds a skill of another repository at the commit factory.lock pins, not at the newer commit of its branch |
+| SCN-FORE-169 | implemented | A skill of another repository that factory.lock does not pin stops the server at the start |
+| SCN-FORE-170 | implemented | A pinned skill whose files do not have the hash of its pin stops the server at the start |

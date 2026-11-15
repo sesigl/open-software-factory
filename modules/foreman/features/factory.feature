@@ -155,3 +155,25 @@ Feature: Factory definition
     Then the command exits with code 2
     And the output contains "FOREMAN_FACTORY: cannot fetch main of <url>/acme/factory.git: " and not the token
     And the forge received "Authorization: Basic" with the base64 of "x-access-token:factory-token-0001"
+
+  @id=SCN-FORE-168 @status=implemented @realizes=SCN-FACTORY-CODE-001
+  Scenario: A stage's agent finds a skill of another repository at the commit factory.lock pins, not at the newer commit of its branch
+    Given the skill "review" is committed in "shared/review" of a Git repository that the server reaches at a "file://" URL, and its branch "main" has a newer commit of it
+    And "foreman serve" runs the README's "factory.yaml" whose agent "plan" has the skill "git+<url>#main:shared/review" and a "factory.lock" that pins it at the first commit, with a scripted harness whose "plan" turn prints the skill's files
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then the agent of "plan" found the "SKILL.md" of the first commit in ".claude/skills/review" and ".agents/skills/review" of its folder
+
+  @id=SCN-FORE-169 @status=implemented
+  Scenario: A skill of another repository that factory.lock does not pin stops the server at the start
+    Given the README's "factory.yaml" whose agent "plan" has the skill "git+https://forge.example/acme/skills.git#v1:skills/review" is committed without a "factory.lock"
+    When the user runs "foreman serve"
+    Then the command exits with code 2
+    And the output contains "factory.yaml: factory.lock has no pin of the skill \"review\" for \"git+https://forge.example/acme/skills.git#v1:skills/review\": run \"factory plan\""
+
+  @id=SCN-FORE-170 @status=implemented
+  Scenario: A pinned skill whose files do not have the hash of its pin stops the server at the start
+    Given the skill "review" is committed in "shared/review" of a Git repository that the server reaches at a "file://" URL
+    And the README's "factory.yaml" whose agent "plan" has the skill "git+<url>#main:shared/review" is committed with a "factory.lock" that pins its commit and the hash "h1:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+    When the user runs "foreman serve"
+    Then the command exits with code 2
+    And the output contains "factory.yaml: the folder shared/review of file://<path> at <commit> has the hash h1:c7yV/uKhC1mA4AQfa0iqY95BjwgtdubuRKOgs06JHx0=, not the hash h1:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= of its pin"
