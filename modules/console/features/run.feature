@@ -180,3 +180,10 @@ Feature: The run page
     And the page passes the accessibility checks, and its screenshot is kept as "run-phone"
     And after "Reject" with the reason "needs a test" the browser is back on the run's page
     And gatekeeper received the decision "rejected" with the reason "needs a test" by the person "ada@acme.dev"
+
+  @id=SCN-CONSOLE-250 @status=implemented
+  Scenario: A gate that is decided offers no form "Approve" or "Reject"
+    Given a console with "CONSOLE_USER_HEADER" set to "X-Forwarded-Email", a foreman with a run whose stage "ship" waits at the gate "g0123456789abcdef", and gatekeeper whose gate is "approved"
+    When the person "ada@acme.dev" opens the run's page
+    Then the page shows the gate "g0123456789abcdef" of the stage "ship" as "approved"
+    And the page has the forms "Steer" and "Cancel", and no form "Approve" or "Reject"

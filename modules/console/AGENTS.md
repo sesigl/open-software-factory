@@ -98,16 +98,17 @@ which stays until live updates replace it (`TODO.md`, T-60).
 
 ## Budget
 
-- System tests: 316 seconds in total on the CI runner (195 scenarios). Raised from 312 seconds on 15 November 2026
-  with the run page in the new look (T-60), measured on the development container in one run of the whole suite: the 3
-  new scenarios took 2.4 seconds next to 203.1 for the other 192, so 1.2 % more, about 3.5 seconds on top of the 289
-  estimated for CI below, 292.5 for the suite; the budget is that and 8 %. Set it to the next CI measure.
+- System tests: 319 seconds in total on the CI runner (196 scenarios). Raised from 312 seconds on 15 November 2026
+  with the run page in the new look (T-60), measured on the development container in one run of the whole suite: the 4
+  new scenarios took 4.4 seconds next to 205.8 for the other 192, so 2.1 % more, about 6 seconds on top of the 289
+  estimated for CI below, 295 for the suite; the budget is that and 8 %. Set it to the next CI measure.
   - Where their time goes: the journey SCN-CONSOLE-249 takes 1.6 seconds: Chromium on a phone, axe, and one form
-    sent and its page loaded again; SCN-CONSOLE-247 opens two run pages, 0.5 seconds; SCN-CONSOLE-248 0.3 seconds.
-  - The move itself adds no time: the 24 scenarios of the run page took 10.2 seconds, 0.43 each, as the page
-    scenarios of the runs list, which Astro rendered before (0.44 each in the same run).
+    sent and its page loaded again; the three page scenarios SCN-CONSOLE-247, 248 and 250 take 0.7 to 1.1 seconds
+    each in that run, and 0.3 to 0.8 in the run before.
+  - The move itself adds no time to measure: the 24 scenarios of the run page took 11.0 seconds, 0.46 each, next to
+    0.44 for the page scenarios of the runs list, which Astro rendered before, in the same run.
   - Made cheap first: the journey needs no sign-in (the proxy's header) and no forge, and sends one form; the problem
-    in the new look is proven by a page scenario, not in Chromium.
+    in the new look and the decided gate are proven by page scenarios, not in Chromium.
 - Before that: 312 seconds for 192 scenarios. Raised from 300 seconds on 15 November 2026
   with two journeys (T-54, T-60), measured on the development container in one run of the whole suite: the 2 new
   scenarios took 11.4 seconds next to 281.3 for the other 190, so 4.1 % more, about 11 seconds on top of the 278

@@ -644,3 +644,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-247 | implemented | The run page is in the shell of the new look, offers a read-only console no form and reloads itself |
 | SCN-CONSOLE-248 | implemented | A signal the foreman refuses shows the foreman's problem in the shell of the new look |
 | SCN-CONSOLE-249 | implemented | On a phone a person rejects a run's gate with a reason from the run page (journey) |
+| SCN-CONSOLE-250 | implemented | A gate that is decided offers no form "Approve" or "Reject" |
