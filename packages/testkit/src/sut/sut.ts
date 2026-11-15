@@ -23,6 +23,7 @@ import { type Http, makeHttp } from "./http.ts";
 import { adapterCommand, makeLaunch } from "./launch.ts";
 import { type Mcp, makeMcp } from "./mcp.ts";
 import { makePages, type Pages } from "./pages.ts";
+import { makeSite, type Site } from "./site.ts";
 
 export interface Sut {
   /**
@@ -45,11 +46,14 @@ export interface Sut {
    */
   pages: Pages;
   /**
-   * The pages of the server sut.http started in Chromium, for a journey or an island scenario (ADR 0131): one browser
-   * per test process and a context per scenario. A request that leaves loopback, an error in the browser's console
-   * and a failed request fail the scenario.
+   * The pages of the server sut.http started, or of the folder sut.site serves, in Chromium, for a journey or an island
+   * scenario (ADR 0131): one browser per test process and a context per scenario. A request that leaves loopback, an
+   * error in the browser's console and a failed request fail the scenario. During a mutation run the page gets
+   * Stryker's active mutant before its first script (ADR 0152).
    */
   browser: Browser;
+  /** A folder of the unit as a static site on loopback, such as the workbench of an island scenario (ADR 0152). */
+  site: Site;
   /** The module as an MCP server on stdio. It gets the same environment as `cli`. */
   mcp: Mcp;
   /** The module as an ACP agent on stdio, such as a harness adapter. It gets the same environment as `cli`. */
@@ -152,7 +156,8 @@ export function makeSut(moduleRoot: string, dirs: Folders, hosts: () => string[]
     return full;
   };
   const http = makeHttp(launch, onStop);
-  const chromium = makeBrowser(() => http.url(), moduleRoot, scenario, onStop);
+  const site = makeSite(moduleRoot, onStop);
+  const chromium = makeBrowser(() => site.base() ?? http.url(), moduleRoot, scenario, onStop);
   const sut: Sut = {
     async cli(args, options = {}) {
       const { command, argv, cwd, env } = launch(args, options.env);
@@ -162,6 +167,7 @@ export function makeSut(moduleRoot: string, dirs: Folders, hosts: () => string[]
     http,
     pages: makePages(() => http.url(), onStop),
     browser: chromium.browser,
+    site: site.site,
     mcp: makeMcp(launch, onStop),
     acp: makeAcp(launch, onStop, inside),
     events: makeEvents(onStop),

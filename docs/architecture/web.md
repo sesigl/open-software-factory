@@ -27,6 +27,11 @@ sandbox's egress proxy ─ reads ─▶ OpenBao  as today: it swaps the placehol
   secret's value is in OpenBao, and the state of a change is its pull request. Its only folder is a cache of the
   factory's repository.
 - A page renders on the server and works without script. An island adds comfort; no feature depends on one.
+- An island is a SolidJS component in `.tsx` in `packages/ui/src/islands/`. A page includes it with a `<script>` of an
+  Astro component, which Vite bundles into a file of `/_astro/`; no `client:*` directive, since Astro writes those as
+  inline scripts. So the console's policy allows scripts of its own origin only: `script-src 'self'`, without inline
+  script, hash or nonce. The first island keeps the list of the work page fresh, which reloads itself today
+  (ADR 0152).
 
 ## The path of a request
 
@@ -71,3 +76,7 @@ Each is a system test: one scenario, one test, the built console from outside (T
 
 A test finds elements by role, label or text, never by a CSS class, a tag or a test ID. No test compares pixels; a
 journey's screenshots are evidence on the pull request.
+
+The workbench is a static site of plain Astro pages in `packages/ui`, one page per island and state. An island
+scenario serves it with `sut.site` and opens a page with `sut.browser`. During a mutation run `sut.browser` sets
+Stryker's active mutant in the page before its first script, so MUTATION counts an island's lines (ADR 0152).

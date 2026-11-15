@@ -153,7 +153,10 @@ Three kinds, each a system test (ADR 0131):
   journey counts for no mutant: the mutation runner leaves it out, and page scenarios notice the server's code.
 - An island scenario for each island, at the level of the island. It gets its data as properties on its page of the
   workbench; one that loads data takes the address as a property, which the workbench points at a static file. No
-  island is proven only by a journey.
+  island is proven only by a journey. The test serves the built workbench with `sut.site.serve(folder, { headers })`,
+  with the console's Content-Security-Policy, and opens its page with `sut.browser.open` (ADR 0152).
+- An island scenario counts for MUTATION. During a mutation run `sut.browser` sets Stryker's active mutant in every
+  page before its first script, so a mutant in the island's bundled code is active in Chromium (ADR 0152).
 - No test of a component inside an island, and none of a single `.astro` component. No component test imports from
   `src/` (BOUNDARY).
 - A UI test finds elements only by role, label or text, or reads the page reader's facts of the document (UI-QUERY).
@@ -162,6 +165,8 @@ Three kinds, each a system test (ADR 0131):
 
 Measured on the development container (ADR 0131): a page parses in about 5 ms and its queries take about 20 ms;
 Chromium starts in about 60 ms, a context in 30 to 60 ms, a page with a click in 80 to 100 ms, axe-core in 200 ms.
+For an island-like probe page (ADR 0152): the first scenario of a test process took 476 ms with the start of
+Chromium, the next one 112 ms, and a mutant of a library with two such scenarios about 1.4 s per runner.
 
 ## Test speed
 

@@ -77,3 +77,4 @@ Use these terms in scenarios, code, UI text and docs.
 | Page scenario | A UI scenario whose test reads the console's HTML over HTTP by role and name, without a browser; the default kind. |
 | Journey scenario | A UI scenario whose test runs one main flow of a person across pages in Chromium. |
 | Island scenario | A UI scenario whose test runs one island as a whole on its page of the workbench, in Chromium. |
+| Workbench | The static site of plain Astro pages in `packages/ui`, one page per island and state, where island scenarios run (ADR 0152). |
