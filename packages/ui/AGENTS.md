@@ -10,8 +10,10 @@ The only ways a page, a system test or another program may use the library:
   text, imported as `@opensoftware/ui`
 - Files: `@opensoftware/ui/tokens.css` and `@opensoftware/ui/brand/<file>.svg`
 - Components: `src/components/*.astro` and `src/styles/*.css`, which a page of the console compiles into its build:
-  `Page` and `Brand`, for the sign-in page, and `Shell` with the type `ShellData`, for the runs page (T-56) and the
-  secrets pages (T-57), whose list, form and fields are classes of `src/styles/base.css`
+  `Page` and `Brand`, for the sign-in page, and `Shell` with the type `ShellData`, for the runs page (T-56), the
+  secrets pages (T-57) and the skills pages (T-59), whose list, form and fields are classes of `src/styles/base.css`;
+  the skills pages add the way back (`osf-crumbs`), an exact line (`osf-meta`), a panel with a label (`osf-section`),
+  the needs of a record (`osf-needs`) and Markdown rendered on the server (`osf-prose`)
 
 The library's system tests import it by its package name and read the files it names (ADR 0039).
 

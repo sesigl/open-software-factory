@@ -404,6 +404,138 @@ button.osf-action {
   text-decoration: none;
 }
 
+/* The way back above a page's title, like "Skills / release-notes". */
+.osf-crumbs {
+  margin: 0 0 var(--osf-space-2);
+  font-size: var(--osf-size-secondary);
+  color: var(--osf-text-muted);
+}
+
+.osf-crumbs a {
+  color: var(--osf-text-muted);
+}
+
+/* An exact line below a title, like where a skill comes from: mono and small. */
+.osf-meta {
+  font-family: var(--osf-font-mono);
+  font-size: 12px;
+  color: var(--osf-text-subtle);
+}
+
+/* A panel with a label in mono capitals, its rows below a line. */
+.osf-section {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--osf-space-6);
+  border: 1px solid var(--osf-line);
+  border-radius: var(--osf-radius-panel);
+  background: var(--osf-bg-surface);
+}
+
+.osf-section > h2 {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--osf-space-3);
+  margin: 0;
+  padding: var(--osf-space-3) var(--osf-space-4);
+  border-bottom: 1px solid var(--osf-line);
+  font-family: var(--osf-font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--osf-text-subtle);
+}
+
+.osf-section .osf-list {
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+/* What a record needs, as a row of small items below its detail. */
+.osf-needs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--osf-space-1) var(--osf-space-4);
+  margin: var(--osf-space-1) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--osf-size-secondary);
+}
+
+.osf-needs li {
+  display: flex;
+  align-items: center;
+  gap: var(--osf-space-2);
+}
+
+/* Markdown from a repository, rendered on the server: text in a measure that reads well. */
+.osf-prose {
+  padding: 20px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.osf-prose > :first-child {
+  margin-top: 0;
+}
+
+.osf-prose > :last-child {
+  margin-bottom: 0;
+}
+
+.osf-prose :is(h3, h4, h5, h6) {
+  margin: var(--osf-space-6) 0 var(--osf-space-2);
+  font-weight: var(--osf-weight-strong);
+}
+
+.osf-prose h3 {
+  font-size: 18px;
+}
+
+.osf-prose :is(h4, h5, h6) {
+  font-size: var(--osf-size-text);
+}
+
+.osf-prose :is(p, ul, ol, pre, table, blockquote) {
+  max-width: 44rem;
+  margin: 0 0 var(--osf-space-3);
+}
+
+.osf-prose :is(ul, ol) {
+  padding-left: 20px;
+}
+
+.osf-prose code {
+  font-family: var(--osf-font-mono);
+  font-size: var(--osf-size-secondary);
+}
+
+.osf-prose pre {
+  overflow-x: auto;
+  padding: var(--osf-space-3);
+  border: 1px solid var(--osf-line);
+  border-radius: var(--osf-radius-control);
+  background: var(--osf-bg-ground);
+}
+
+.osf-prose blockquote {
+  padding-left: var(--osf-space-3);
+  border-left: 2px solid var(--osf-line-strong);
+  color: var(--osf-text-muted);
+}
+
+.osf-prose table {
+  border-collapse: collapse;
+}
+
+.osf-prose :is(th, td) {
+  padding: var(--osf-space-1) var(--osf-space-3);
+  border: 1px solid var(--osf-line);
+  text-align: left;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none;
