@@ -55,7 +55,7 @@ prints. Open questions:
   the console proposes exactly what the page showed.
 - Switching on adds, in this order: the secrets provider `openbao` at `^0` when the factory declares none of that name
   and the agent lacks a secret; for each secret the agent lacks, the reference `ref:openbao/<name>`, the secret's
-  variable in lower case with `-` for `_`, which gives back the variable (ADR 0140) and is the name an admin stores on
+  variable in lower case with `-` for `_`, which gives back the variable (ADR 0140) and is the name an admin or a factory engineer stores on
   `/secrets` (ADR 0137); for each host the agent's sandbox lacks, the host; then the skill. An agent without a sandbox
   reaches every host and gets no host. What the agent lacks comes from `factory.yaml` in `CONSOLE_FACTORY`, by the
   rule of factory-spec: the variable of a reference is its name in upper case with `_` for every character outside

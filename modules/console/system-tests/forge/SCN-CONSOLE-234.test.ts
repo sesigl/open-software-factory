@@ -52,7 +52,7 @@ scenario("SCN-CONSOLE-234", async ({ sut, fakes, given, when, then }) => {
         asked
           .getByText(/^The console opens a pull request/)
           .text.endsWith(
-            "review has the skill from its next run. An admin stores the value of each added secret on Secrets.",
+            "review has the skill from its next run. An admin or a factory engineer stores the value of each added secret on Secrets.",
           ),
       ).toBe(true);
     },

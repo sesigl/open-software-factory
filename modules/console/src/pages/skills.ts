@@ -223,7 +223,7 @@ export interface SwitchData {
 export function switchData(shell: ShellData, skill: string, agent: string, change: Switch): SwitchData {
   const what = change.on ? `${agent} has the skill` : `${agent} no longer has the skill`;
   const store = change.edits.some(({ edit }) => edit === "add-secret")
-    ? " An admin stores the value of each added secret on Secrets."
+    ? " An admin or a factory engineer stores the value of each added secret on Secrets."
     : "";
   return {
     shell,

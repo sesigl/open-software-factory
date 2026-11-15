@@ -227,7 +227,7 @@ lists every edit of the change in plain words before the person presses "Propose
 
 - Switching on adds what the agent lacks of the skill's needs, then the skill: the secrets provider `openbao` at `^0`
   when the factory does not declare it and a secret is missing; for each missing secret the reference
-  `ref:openbao/<name>`, like `ref:openbao/linear-token` for `LINEAR_TOKEN`, whose value an admin stores on
+  `ref:openbao/<name>`, like `ref:openbao/linear-token` for `LINEAR_TOKEN`, whose value an admin or a factory engineer stores on
   [Secrets](#secrets); for each host the agent's sandbox does not allow, the host, which widens what the sandbox can
   reach. An agent without a sandbox gets no host. What the agent lacks comes from `CONSOLE_FACTORY`.
 - Switching off removes only the skill's entry: a secret or a host may serve another skill of the agent.
