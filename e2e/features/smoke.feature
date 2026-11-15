@@ -89,3 +89,17 @@ Feature: Key use cases across modules
     Then the stage "implement" of the run succeeded with the merge commit as its factory version
     And the agent found the "SKILL.md" of the repository in ".claude/skills/linear-notes" of its folder
     And the API got one request, with "Authorization: Bearer" and the stored value
+
+  @id=SCN-E2E-010 @status=implemented
+  Scenario: The console proves the signed-in person to foreman, intake and gatekeeper, and a module's API token with a made-up person is refused
+    Given a factory whose "spec" stage needs approval by the group "maintainers", of which "grace@acme.dev" is a member, and whose agent "implement" waits for a steering message
+    And the Compose profile with "CONSOLE_SIGNING_KEY" set, and the console with the sign-in of GitHub, where "grace@acme.dev" of the factory's "access.yaml" signed in as "factory-engineer"
+    When the factory engineer sends the form "Submit work" of the page "/work"
+    Then the console answered 303 to "/work", and intake recorded the work item with "grace@acme.dev" as its requester, named "Grace" as the proof names her
+    And its run waits at the gate of the stage "spec"
+    When a program with the API tokens of intake, foreman and gatekeeper names the made-up person "varun@acme.dev" in a work item, a steering message of the run and an approval of the gate
+    Then intake, foreman and gatekeeper each answer 401 with "send OSF-Person: the console's proof of the person (ADR 0151)"
+    And nothing changed: intake holds the one work item, the gate is still pending, and the run has no action
+    When the factory engineer approves the gate on the page of the run, and steers the running stage "implement" there
+    Then gatekeeper recorded the approval by "grace@acme.dev", named "Grace"
+    And the run recorded the steering message by "grace@acme.dev", and its stage "implement" succeeded
