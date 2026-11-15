@@ -2,8 +2,8 @@
 import Shell from "@opensoftware/ui/components/Shell.astro";
 import type { SkillData } from "../../../pages/skills.ts";
 
-const { shell, notes, name, description, source, problems, agents, needsLabel, needs, files, shown, html } = Astro
-  .locals.page as SkillData;
+const { shell, notes, name, description, source, problems, agents, switchNote, needsLabel, needs, files, shown, html } =
+  Astro.locals.page as SkillData;
 Astro.response.status = Astro.locals.status;
 Astro.response.statusText = Astro.locals.statusText;
 ---
@@ -27,9 +27,22 @@ Astro.response.statusText = Astro.locals.statusText;
                 <span class="osf-mono osf-strong">{agent.name}</span>
                 <span class="osf-secondary">{agent.detail}</span>
               </div>
+              {agent.change && (
+                <div class="osf-list-end">
+                  <span class={agent.change.stateClass}>{agent.change.state}</span>
+                  <a class="osf-secondary" href={agent.change.link.href}>{agent.change.link.text}</a>
+                </div>
+              )}
+              {agent.button && (
+                <form class="osf-list-end" method="get" action={agent.button.action}>
+                  <input type="hidden" name="agent" value={agent.name} />
+                  <button type="submit" class="osf-button">{agent.button.text}<span class="osf-hidden"> for {agent.name}</span></button>
+                </form>
+              )}
             </li>
           ))}
         </ul>
+        {switchNote && <p class="osf-empty osf-prose">{switchNote}</p>}
       </section>
       <section class="osf-section" aria-labelledby="needs">
         <h2 id="needs">This skill needs</h2>
@@ -72,3 +85,12 @@ Astro.response.statusText = Astro.locals.statusText;
     </section>
   </div>
 </Shell>
+<style>
+  /* The design system styles .osf-button for a link; as a button it keeps the browser's background (T-54). */
+  button.osf-button {
+    background: transparent;
+    font-family: var(--osf-font-sans);
+    font-size: var(--osf-size-secondary);
+    cursor: pointer;
+  }
+</style>

@@ -1,0 +1,25 @@
+---
+import Shell from "@opensoftware/ui/components/Shell.astro";
+import type { SwitchData } from "../../../pages/skills.ts";
+
+const { shell, title, effect, edits, line, back } = Astro.locals.page as SwitchData;
+Astro.response.status = Astro.locals.status;
+Astro.response.statusText = Astro.locals.statusText;
+---
+<Shell shell={shell}>
+  <div class="osf-intro">
+    <h1>{title}</h1>
+    <p>{effect}</p>
+  </div>
+  <section class="osf-section" aria-labelledby="edits">
+    <h2 id="edits">What the change does</h2>
+    <ul class="osf-list" aria-label="What the change does">
+      {edits.map((edit) => <li><span>{edit}</span></li>)}
+    </ul>
+  </section>
+  <form class="osf-buttons" method="post" action="/changes">
+    <input type="hidden" name="edits" value={line} />
+    <button type="submit" class="osf-action">Propose change</button>
+    <a class="osf-button" href={back}>Cancel</a>
+  </form>
+</Shell>

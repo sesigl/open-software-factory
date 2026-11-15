@@ -585,3 +585,10 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-231 | implemented | A factory engineer stores a value and replaces it, and only an admin deletes a secret |
 | SCN-CONSOLE-232 | implemented | In the open mode "/secrets" and its form answer 404 and name the roles that open it |
 | SCN-CONSOLE-233 | implemented | Behind a sign-in proxy without an access file "/secrets" answers 404 and names the roles, and the navigation does not link it |
+| SCN-CONSOLE-234 | implemented | A factory engineer switches a skill on for an agent, and the change lists the added provider, secret and host |
+| SCN-CONSOLE-235 | implemented | A factory engineer switches a skill on in Chromium and sees the change checking, then live |
+| SCN-CONSOLE-236 | implemented | A member sees whether each agent has the skill and why there is no switch, and a forge that does not answer is named |
+| SCN-CONSOLE-237 | implemented | A factory from a local folder shows no switch on a skill's page and says why |
+| SCN-CONSOLE-238 | implemented | Switching a skill off only removes the agent's entry |
+| SCN-CONSOLE-239 | implemented | A skill of another repository whose needs an agent meets adds nothing but the skill's entry |
+| SCN-CONSOLE-240 | implemented | A skill of another repository shows its repository and pinned commit, and one without a pin says so |

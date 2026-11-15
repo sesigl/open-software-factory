@@ -1,6 +1,7 @@
 // The changes of the factory that the console proposes as pull requests (ADR 0144): the edits of `factory edit`, the
-// check of a form's text before any program sees it, the pull request's title that is the edit's line for a program,
-// its branch, body and commit message, and the state of a change from what the forge port prints. Without I/O.
+// check of a form's text before any program sees it, the pull request's title that is the line of its edits for a
+// program (ADR 0149), its branch, body and commit message, and the state of a change from what the forge port prints.
+// Without I/O.
 import { createHash } from "node:crypto";
 
 /** The edits of factory-spec's `factory edit` (modules/factory-spec/README.md). */
@@ -26,17 +27,23 @@ export interface Edit {
 /** The text of a form or a title that is checked, or why it was refused. */
 export type Checked = { ok: true; edit: Edit } | { ok: false; reason: string };
 
+/** The edits of a change that are checked, or why they were refused (ADR 0149). */
+export type CheckedEdits = { ok: true; edits: Edit[] } | { ok: false; reason: string };
+
 const LABEL = "[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?";
 const HOST = new RegExp(`^(?=.{1,253}$)${LABEL}(\\.${LABEL})*$`);
 const NAME = /^[a-z][a-z0-9-]{0,62}$/;
 const AGENT = /^[A-Za-z0-9][A-Za-z0-9_-]{0,62}$/;
 const REFERENCE = /^ref:[a-z][a-z0-9-]*\/[A-Za-z0-9_./-]{1,200}$/;
 const SKILL = /^(\.\/)?[A-Za-z0-9_][A-Za-z0-9_./-]{0,200}$/;
+// A skill of another Git repository as factory.yaml names it, git+<url>#<ref>:<path> (ADR 0146, ADR 0149).
+const GIT_SKILL =
+  /^git\+(https?|ssh):\/\/([A-Za-z0-9._-]+@)?[A-Za-z0-9.-]+(:[0-9]{1,5})?(\/[A-Za-z0-9._~-]+)+#[A-Za-z0-9._/-]{1,200}:[A-Za-z0-9_][A-Za-z0-9_./-]{0,200}$/;
 // Without a space: the title is the edit's line of three words, which "Try again" reads again.
 const RANGE = /^[0-9A-Za-z^~<>=.*|-]{1,64}$/;
 
 const skill = {
-  valid: (value: string) => SKILL.test(value) && !value.split("/").includes(".."),
+  valid: (value: string) => (SKILL.test(value) || GIT_SKILL.test(value)) && !value.split(/[/:]/).includes(".."),
   what: "skill folder, like skills/release-notes",
 };
 const reference = {
@@ -72,27 +79,51 @@ export function checkEdit(edit: string, target: string, value: string): Checked 
   return { ok: true, edit: { edit, target, value } };
 }
 
-/** The edit of a form: "edit", and "agent" and "value", or "name" and "range" for a secrets provider. */
-export function editOfForm(fields: Record<string, unknown>): Checked {
+const SEPARATOR = "; ";
+
+/** The edits as the words after "factory edit ": the three words of each edit, separated by "; " (ADR 0149). */
+export const lineOf = (edits: Edit[]): string =>
+  edits.map(({ edit, target, value }) => `${edit} ${target} ${value}`).join(SEPARATOR);
+
+/** The edits of such a line, each checked like a form, or why they are none; `whole` names the text in a refusal. */
+export function editsOf(line: string, whole: string): CheckedEdits {
+  const edits: Edit[] = [];
+  for (const part of line.split(SEPARATOR)) {
+    const words = part.split(" ");
+    if (words.length !== 3) return { ok: false, reason: `${whole} is not a line of factory edit` };
+    const checked = checkEdit(...(words as [string, string, string]));
+    if (!checked.ok) return checked;
+    edits.push(checked.edit);
+  }
+  return { ok: true, edits };
+}
+
+/**
+ * The edits of a form: "edits", the line of several edits that the page which asks first holds, or one edit: "edit",
+ * and "agent" and "value", or "name" and "range" for a secrets provider.
+ */
+export function editsOfForm(fields: Record<string, unknown>): CheckedEdits {
   const field = (name: string) => String(fields[name] ?? "").trim();
+  const line = field("edits");
+  if (line) return editsOf(line, `"${line}"`);
   const edit = field("edit");
-  return edit === "add-secrets-provider"
-    ? checkEdit(edit, field("name"), field("range"))
-    : checkEdit(edit, field("agent"), field("value"));
+  const checked =
+    edit === "add-secrets-provider"
+      ? checkEdit(edit, field("name"), field("range"))
+      : checkEdit(edit, field("agent"), field("value"));
+  return checked.ok ? { ok: true, edits: [checked.edit] } : checked;
 }
 
 const TITLE = "factory edit ";
 
-/** The pull request's title: the command line of the edit, the line a program reads again (ADR 0144). */
-export const titleOf = ({ edit, target, value }: Edit): string => `${TITLE}${edit} ${target} ${value}`;
+/** The pull request's title: the command line of the edits, the line a program reads again (ADR 0144, ADR 0149). */
+export const titleOf = (edits: Edit[]): string => `${TITLE}${lineOf(edits)}`;
 
-/** The edit of a pull request's title, checked like a form, or why it is none. */
-export function editOfTitle(title: string): Checked {
-  const words = title.startsWith(TITLE) ? title.slice(TITLE.length).split(" ") : [];
-  if (words.length !== 3) return { ok: false, reason: `the title "${title}" is not a line of factory edit` };
-  const [edit, target, value] = words as [string, string, string];
-  return checkEdit(edit, target, value);
-}
+/** The edits of a pull request's title, each checked like a form, or why they are none. */
+export const editsOfTitle = (title: string): CheckedEdits =>
+  title.startsWith(TITLE)
+    ? editsOf(title.slice(TITLE.length), `the title "${title}"`)
+    : { ok: false, reason: `the title "${title}" is not a line of factory edit` };
 
 /** What the edit changes, as a sentence, with each word of the form wrapped by `name`. */
 export function sentenceOf({ edit, target, value }: Edit, name: (text: string) => string = (text) => text): string {
@@ -109,16 +140,20 @@ export function sentenceOf({ edit, target, value }: Edit, name: (text: string) =
   return sentences[edit];
 }
 
-/** The first 8 hexadecimal digits of the SHA-256 of the edit's three words. */
-export const hashOf = ({ edit, target, value }: Edit): string =>
-  createHash("sha256").update(`${edit}\n${target}\n${value}`).digest("hex").slice(0, 8);
+/** The first 8 hexadecimal digits of the SHA-256 of the three words of every edit. */
+export const hashOf = (edits: Edit[]): string =>
+  createHash("sha256")
+    .update(edits.map(({ edit, target, value }) => `${edit}\n${target}\n${value}`).join("\n"))
+    .digest("hex")
+    .slice(0, 8);
 
 export const PREFIX = "console/";
 
-/** The branch of the edit on this commit: "console/<edit>-<agent>-<commit>-<hash of the edit>". */
-export function branchOf(edit: Edit, commit: string): string {
-  const what = `${edit.edit}-${edit.target.toLowerCase().replace(/[^a-z0-9-]/g, "-")}`;
-  return `${PREFIX}${what}-${commit.slice(0, 7)}-${hashOf(edit)}`;
+/** The branch of the edits on this commit: "console/<the last edit>-<its agent>-<commit>-<hash of the edits>". */
+export function branchOf(edits: Edit[], commit: string): string {
+  const last = edits.at(-1) as Edit;
+  const what = `${last.edit}-${last.target.toLowerCase().replace(/[^a-z0-9-]/g, "-")}`;
+  return `${PREFIX}${what}-${commit.slice(0, 7)}-${hashOf(edits)}`;
 }
 
 /** A text in Markdown with each character escaped that could start a link, an emphasis, a tag or a table cell. */
@@ -130,10 +165,21 @@ const code = (text: string): string => `\`${text}\``;
 /** The person as one line: no line break or control character reaches a trailer or the body. */
 const oneLine = (text: string): string => text.replace(/\p{Cc}/gu, " ");
 
+/**
+ * What the edits change: the sentence of one edit, or one item per edit after a sentence, so that the body never
+ * starts with "-", which a program's options would read as an option.
+ */
+const changesOf = (edits: Edit[]): string =>
+  edits.length === 1
+    ? sentenceOf(edits[0] as Edit, code)
+    : ["The change makes these edits of the factory:", "", ...edits.map((edit) => `- ${sentenceOf(edit, code)}`)].join(
+        "\n",
+      );
+
 /** The body of the pull request: what changes, who asked for it, and when it is live. */
-export const bodyOf = (edit: Edit, person: string, branch: string): string =>
+export const bodyOf = (edits: Edit[], person: string, branch: string): string =>
   [
-    sentenceOf(edit, code),
+    changesOf(edits),
     "",
     `${markdownText(oneLine(person))} asked for this change of the factory in the console.`,
     "",
@@ -142,8 +188,8 @@ export const bodyOf = (edit: Edit, person: string, branch: string): string =>
   ].join("\n");
 
 /** The commit message: the title, and the person in the trailer "Requested-by". */
-export const messageOf = (edit: Edit, person: string): string =>
-  `${titleOf(edit)}\n\nRequested-by: ${oneLine(person)}\n`;
+export const messageOf = (edits: Edit[], person: string): string =>
+  `${titleOf(edits)}\n\nRequested-by: ${oneLine(person)}\n`;
 
 /** A pull request as the forge port's `prs` prints it. */
 export interface Listed {
@@ -175,7 +221,7 @@ export const CHECK = "factory";
 export const isChange = (pull: Pick<Listed, "head" | "author" | "state" | "title">, user: string): boolean =>
   pull.author === user &&
   (pull.head.startsWith(PREFIX) ||
-    (pull.state !== "open" && /^refs\/pull\/\d+\/head$/.test(pull.head) && editOfTitle(pull.title).ok));
+    (pull.state !== "open" && /^refs\/pull\/\d+\/head$/.test(pull.head) && editsOfTitle(pull.title).ok));
 
 /** The state of a change: from `prs` for a closed one, from `pr` for an open one. */
 export function stateOf(pull: Listed | Pull): ChangeState {
