@@ -221,9 +221,13 @@ export async function postRun(foreman: string, work: typeof WORK): Promise<strin
   return (answer.body as RunView).runId;
 }
 
-/** The run as foreman's API shows it. */
-export const runView = async (foreman: string, runId: string): Promise<RunView> =>
-  (await api(foreman, FOREMAN_TOKEN, `/v1/runs/${runId}`)).body as RunView;
+/** The run as foreman's API shows it; another status than 200 fails with the status and the body, which name the cause. */
+export async function runView(foreman: string, runId: string): Promise<RunView> {
+  const answer = await api(foreman, FOREMAN_TOKEN, `/v1/runs/${runId}`);
+  if (answer.status !== 200)
+    throw new Error(`GET /v1/runs/${runId} answered ${answer.status}: ${JSON.stringify(answer.body)}`);
+  return answer.body as RunView;
+}
 
 /** The stage "implement" of the run, as foreman's API shows it. */
 export const implementOf = async (foreman: string, runId: string) =>
