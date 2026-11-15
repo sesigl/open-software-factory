@@ -20,7 +20,9 @@ scenario("SCN-CONSOLE-207", async ({ sut, fakes, given, when, then }) => {
     'the form answers 403 and says "varun@acme.dev has the role member: a change needs the role admin or factory-engineer"',
     async () => {
       expect(sent.status).toBe(403);
-      expect(sent.text).toContain("varun@acme.dev has the role member: a change needs the role admin or factory-engineer");
+      expect(sent.text).toContain(
+        "varun@acme.dev has the role member: a change needs the role admin or factory-engineer",
+      );
     },
   );
 

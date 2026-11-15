@@ -76,7 +76,7 @@ agent's name in lower-case letters, digits and hyphens, and hexadecimal digits.
 
 ### The states
 
-The page runs `prs <repo> --head console/ --state all --limit 20`, keeps the author `CONSOLE_FACTORY_USER`, and runs
+The page runs `prs <repo> --state all --limit 50`, keeps the changes of the author `CONSOLE_FACTORY_USER`, and runs
 `pr` only for the changes that are still open, at the same time:
 
 | State | When | Buttons (roles only) |
@@ -133,6 +133,12 @@ changes: each waits as "Checking" until its check passes, and then a person pres
 - Three wishes for the forge port, each of which simplifies the console: `whoami` (in place of
   `CONSOLE_FACTORY_USER`), the checks of a commit (for the case above), and the body of a pull request in `pr`.
 - Posting the check `factory` on Forgejo (a runner of Forgejo Actions or the `factory` tools in a job of the profile)
-  is decided with the workflow of the reference factory, the next slice of T-58; the scenarios post it with the port's
-  `check`.
+  is decided with the workflow of the reference factory, the next slice of T-58. The scenarios post it as the commit
+  status that the port's `check` writes, with Forgejo's API, since a system test starts no program but the module.
+- The page lists the newest 50 pull requests of the repository without `--head`, because Forgejo names the head of a
+  closed pull request whose branch was deleted `refs/pull/<n>/head`; such a pull request of the token's user counts
+  as a change when its title is a line of `factory edit`. A repository with many other pull requests, like
+  observer's proposals, may push older changes off the page.
+- A change waits as "Conflict" only after `pr` answers, and forge-forgejo's `pr` waits up to 10 seconds for a pull
+  request that is not mergeable, so the page of a conflicting change takes that long.
 - Revisit when the port gets those operations, or when a change edits more than one file.

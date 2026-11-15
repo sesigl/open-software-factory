@@ -14,7 +14,7 @@ scenario("SCN-CONSOLE-212", async ({ sut, fakes, given, when, then }) => {
   let change: Change;
   await given('a change of the console whose check "factory" failed', async () => {
     change = await changeOfConsole(sut, fakes);
-    await postCheck(sut, change, "failure");
+    await postCheck(change, "failure");
   });
 
   let sent: Page;

@@ -28,7 +28,7 @@ scenario("SCN-CONSOLE-213", async ({ sut, fakes, given, when, then }) => {
     'a factory engineer opens "/changes", the check "factory" passes, and the person opens "/changes" again and presses "Merge"',
     async () => {
       first = await openChanges(sut);
-      await postCheck(sut, change, "success");
+      await postCheck(change, "success");
       ready = await openChanges(sut);
       sent = await press(sut, change.pr.number, "merge");
     },

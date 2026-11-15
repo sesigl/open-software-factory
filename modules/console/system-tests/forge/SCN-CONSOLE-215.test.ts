@@ -6,7 +6,7 @@ scenario("SCN-CONSOLE-215", async ({ sut, fakes, given, when, then }) => {
   await given(
     'a factory repository "tester/factory" whose main branch has no rules, and a console behind a sign-in proxy with "grace@acme.dev" as "factory-engineer"',
     async () => {
-      forge = await factoryRepository(sut, fakes, false);
+      forge = await factoryRepository(fakes, false);
       await servingChanges(sut, fakes, changesEnv(sut, forge));
     },
   );

@@ -7,7 +7,7 @@ scenario("SCN-CONSOLE-214", async ({ sut, fakes, given, when, then }) => {
     'a forge adapter that cannot merge a pull request of "tester/factory" when its checks pass, and a change of the console whose check "factory" failed',
     async () => {
       change = await changeOfConsole(sut, fakes, { CONSOLE_FORGE_ADAPTER: await noMergeWhenGreen(sut) });
-      await postCheck(sut, change, "failure");
+      await postCheck(change, "failure");
     },
   );
 

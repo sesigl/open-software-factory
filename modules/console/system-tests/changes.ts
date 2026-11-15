@@ -3,14 +3,10 @@
 // the built adapter forge-forgejo; and a stand-in of factory-spec's "factory", since ISOLATION keeps the console's tests
 // from starting another module. The stand-in prints the file it is given with the value added below "egress:", as
 // "factory edit add-egress" does for the factories here, and records its arguments.
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import type { Fakes, Forge, Page, Sut } from "@opensoftware/testkit";
 import { foreman, serving } from "./console.ts";
 import { factoryOf, factoryYaml } from "./secrets.ts";
 import { accessYaml } from "./signin.ts";
-
-const exec = promisify(execFile);
 
 export const REPOSITORY = "tester/factory";
 
@@ -27,15 +23,18 @@ export const FACTORY = factoryYaml({ triage: { egress: ["api.github.com"] } });
 export const withHost = (yaml: string, host: string): string =>
   yaml.replace("      egress:\n", `      egress:\n        - ${host}\n`);
 
-/** Runs a command of the forge port's adapter forge-forgejo against the forge, as a person or the check would. */
-export async function port(sut: Sut, forge: Forge, args: string[]): Promise<string> {
-  const [file = "", ...words] = sut.adapter("forge/forgejo").split(" ");
-  const env = { ...process.env, FORGE_URL: forge.url, FORGE_TOKEN: forge.token };
-  return (await exec(file, [...words, ...args], { env })).stdout;
+/** Calls Forgejo's API on the repository as the user "tester", as a person or the factory's workflow would. */
+async function api(forge: Forge, method: string, path: string, body?: unknown): Promise<void> {
+  const answer = await fetch(`${forge.url}/api/v1/repos/${REPOSITORY}${path}`, {
+    method,
+    headers: { authorization: `token ${forge.token}`, "content-type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!answer.ok) throw new Error(`the forge answered ${method} ${path} with ${answer.status}`);
 }
 
 /** The factory's repository "tester/factory" with FACTORY; its main branch requires the check "factory" unless not. */
-export async function factoryRepository(sut: Sut, fakes: Fakes, required = true): Promise<Forge> {
+export async function factoryRepository(fakes: Fakes, required = true): Promise<Forge> {
   const forge = await fakes.forge();
   await forge.createRepository("factory", { "factory.yaml": FACTORY });
   if (!required) return forge;
@@ -48,23 +47,22 @@ export async function factoryRepository(sut: Sut, fakes: Fakes, required = true)
     required_approvals: 0,
     enable_push: true,
   };
-  const protectedMain = await fetch(`${forge.url}/api/v1/repos/${REPOSITORY}/branch_protections`, {
-    method: "POST",
-    headers: { authorization: `token ${forge.token}`, "content-type": "application/json" },
-    body: JSON.stringify(rule),
-  });
-  if (!protectedMain.ok) throw new Error(`the forge did not protect main: ${protectedMain.status}`);
+  await api(forge, "POST", "/branch_protections", rule);
   return forge;
 }
 
-/** Commits these files on "main" of the repository with the port's `commit`, as another person would. */
-export async function commitOnMain(sut: Sut, forge: Forge, files: Record<string, string>): Promise<void> {
-  const paths = [];
+/** Commits these files on "main" of the repository in one commit, as another person would. */
+export async function commitOnMain(forge: Forge, files: Record<string, string>): Promise<void> {
+  const operations = [];
   for (const [path, text] of Object.entries(files)) {
-    await sut.files.put(`$INPUT/main/${path}`, text);
-    paths.push(`${path}=${sut.files.path(`$INPUT/main/${path}`)}`);
+    const known = await fetch(`${forge.url}/api/v1/repos/${REPOSITORY}/contents/${path}?ref=main`, {
+      headers: { authorization: `token ${forge.token}` },
+    });
+    const sha = known.ok ? ((await known.json()) as { sha: string }).sha : undefined;
+    const content = Buffer.from(text).toString("base64");
+    operations.push(sha ? { operation: "update", path, content, sha } : { operation: "create", path, content });
   }
-  await port(sut, forge, ["commit", REPOSITORY, "main", "--message", "a commit of another person", ...paths]);
+  await api(forge, "POST", "/contents", { branch: "main", message: "a commit of another person", files: operations });
 }
 
 /** The head commit of the branch, or undefined when the repository has no such branch. */
@@ -185,7 +183,7 @@ export interface Change {
  * "api.linear.app" to "triage"; `env` may replace the forge adapter.
  */
 export async function changeOfConsole(sut: Sut, fakes: Fakes, env: Record<string, string> = {}): Promise<Change> {
-  const forge = await factoryRepository(sut, fakes);
+  const forge = await factoryRepository(fakes);
   await servingChanges(sut, fakes, { ...changesEnv(sut, forge), ...env });
   const sent = await propose(sut);
   if (sent.status !== 303) throw new Error(`the console did not open the change: ${sent.status} ${sent.text}`);
@@ -198,9 +196,12 @@ export async function changeOfConsole(sut: Sut, fakes: Fakes, env: Record<string
   };
 }
 
-/** Posts the check "factory" on the head of the change with the port's `check`, as the factory's workflow does. */
-export const postCheck = (sut: Sut, change: Change, state: "success" | "failure") =>
-  port(sut, change.forge, ["check", REPOSITORY, change.pr.sha, "factory", state]);
+/**
+ * Posts the check "factory" on the head of the change as a commit status: what the port's `check` writes and the
+ * factory's workflow posts.
+ */
+export const postCheck = (change: Change, state: "success" | "failure") =>
+  api(change.forge, "POST", `/statuses/${change.pr.sha}`, { context: "factory", state });
 
 /** The items of the list "Changes" of the page. */
 export const changeItems = (page: Page) =>

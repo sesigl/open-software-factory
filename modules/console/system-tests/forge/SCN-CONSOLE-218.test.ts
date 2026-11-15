@@ -9,7 +9,7 @@ scenario("SCN-CONSOLE-218", async ({ sut, fakes, given, when, then }) => {
     'a change of the console whose check "factory" failed, and whose title a person changed to "factory edit add-egress triage api.linear.app;curl"',
     async () => {
       change = await changeOfConsole(sut, fakes);
-      await postCheck(sut, change, "failure");
+      await postCheck(change, "failure");
       const renamed = await fetch(`${change.forge.url}/api/v1/repos/${REPOSITORY}/pulls/${change.pr.number}`, {
         method: "PATCH",
         headers: { authorization: `token ${change.forge.token}`, "content-type": "application/json" },

@@ -18,7 +18,7 @@ scenario("SCN-CONSOLE-206", async ({ sut, fakes, given, when, then }) => {
   await given(
     'a factory repository "tester/factory" whose main branch requires the check "factory" and whose agent "triage" may reach "api.github.com", and a console behind a sign-in proxy with "grace@acme.dev" as "factory-engineer"',
     async () => {
-      forge = await factoryRepository(sut, fakes);
+      forge = await factoryRepository(fakes);
       main = (await headOf(forge, "main")) as string;
       await servingChanges(sut, fakes, changesEnv(sut, forge));
     },

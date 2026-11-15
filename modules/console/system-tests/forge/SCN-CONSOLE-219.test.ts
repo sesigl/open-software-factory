@@ -9,7 +9,7 @@ scenario("SCN-CONSOLE-219", async ({ sut, fakes, given, when, then }) => {
   await given(
     'a factory repository "tester/factory" with an open pull request from "console/add-egress-triage-1a2b3c4-5e6f7a8b" by "forgejo:tester", and a console whose "CONSOLE_FACTORY_USER" is "forgejo:factory-bot"',
     async () => {
-      forge = await factoryRepository(sut, fakes);
+      forge = await factoryRepository(fakes);
       ({ sha } = await forge.openPullRequest("factory", {
         branch: BRANCH,
         title: "factory edit add-egress triage api.linear.app",

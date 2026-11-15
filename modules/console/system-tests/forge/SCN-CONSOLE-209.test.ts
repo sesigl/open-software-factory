@@ -18,7 +18,7 @@ scenario("SCN-CONSOLE-209", async ({ sut, fakes, given, when, then }) => {
 
   let page: Page;
   await when('the check "factory" of its pull request fails and a factory engineer opens "/changes"', async () => {
-    await postCheck(sut, change, "failure");
+    await postCheck(change, "failure");
     page = await openChanges(sut);
   });
 

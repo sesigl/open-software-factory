@@ -24,7 +24,7 @@ scenario("SCN-CONSOLE-210", async ({ sut, fakes, given, when, then }) => {
   await when(
     'another commit on "main" changes the hosts of "triage" and a factory engineer opens "/changes"',
     async () => {
-      await commitOnMain(sut, change.forge, { "factory.yaml": OTHER });
+      await commitOnMain(change.forge, { "factory.yaml": OTHER });
       // Forgejo checks the open pull requests against their base in the background after a push: the test waits for
       // that on the forge, then opens the page once.
       const mergeable = async () => {

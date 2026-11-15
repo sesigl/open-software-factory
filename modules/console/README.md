@@ -49,6 +49,7 @@ Open <http://localhost:8080>. The page lists the foreman's runs, the running one
 | `/secrets/delete?name=<name>` | Only for an admin: asks before the secret of that name is deleted, with the button "Delete" and the link "Cancel". |
 | `/skills` | Every skill the factory's agents use ([Skills](#skills)): its name, description, folder, agents and what it needs, with the state of each secret it needs. In every mode. |
 | `/skills/<name>` | One skill: its `SKILL.md` as Markdown, its files, its agents and what it needs, and the problems lint names in its files. 404 for a skill no agent uses, 502 when `factory skills` fails. |
+| `/changes` | The changes of the factory that the console proposed as pull requests ([Changes](#changes)), each "Checking", "Ready", "Failed", "Conflict", "Live" or "Discarded", and for an admin or a factory engineer the forms "Propose a change" and "Declare a secrets provider" and the buttons "Try again", "Discard" and "Merge". Without `CONSOLE_FACTORY_REPOSITORY` it says that the factory is a local folder. |
 | `/improvement` | Cost and scores of the factory's runs, from the files below `CONSOLE_IMPROVE_DIR`: the total cost and the number of runs, each scorer with its scored runs, passes, pass rate and judge cost, and each stage of a run with its outcome and cost, linked to the run's page. 404 without `CONSOLE_IMPROVE_DIR`. |
 
 The runs page `/` has the new look of the design system ([ADR 0133](../../docs/decisions/0133-design-system.md)): a
@@ -56,7 +57,8 @@ navigation column with the factory's name, only the pages that work in this cons
 that wait for a person, then the "Classic pages" in the old look and the dashboards), and the account with the
 signed-in person, "Sign out" and the link to the other theme. On a phone the navigation folds behind "Menu". The theme
 is dark unless the cookie `osf_theme` says light; `/theme?to=light&next=<path>` sets it and returns to the page. The
-secrets and skills pages have the new look too, and its navigation links Secrets for an admin and Skills for everyone.
+secrets, skills and changes pages have the new look too, and its navigation links Secrets for an admin, Skills for
+everyone and Changes with `CONSOLE_FACTORY_REPOSITORY`.
 The other pages keep the old look until they move one at a time.
 
 Every page links the runs, the work items (with `CONSOLE_INTAKE_URL`), the factory, the health page and the dashboards in `CONSOLE_LINKS`. The runs pages reload themselves every
@@ -205,6 +207,62 @@ The Markdown comes from a repository, so the page renders it safely with markdow
 text; an image shows its alternative text, so no image loads from anywhere; a link keeps its anchor only to `https:`,
 `http:` or `mailto:`, with `rel="nofollow noreferrer"`, and any other, like `javascript:`, `data:` or a relative path,
 keeps only its words. The page's Content-Security-Policy forbids every script as well.
+
+## Changes
+
+A person with the role `admin` or `factory-engineer` changes the factory on `/changes`
+([ADR 0144](../../docs/decisions/0144-console-changes-as-pull-requests.md)). Each change is a pull request on the
+factory's repository that names the person; the forge merges it when its check `factory` passes, and a run keeps the
+factory version it started with, so a change is live for the next run. Everyone who may open the console sees the
+page; its forms and buttons need the role, anyone else gets 403.
+
+Set `CONSOLE_FACTORY_REPOSITORY` to the repository as `git+<url>#<branch>`, `CONSOLE_FACTORY_TOKEN` to a forge token
+for it, `CONSOLE_FACTORY_USER` to that token's user as the forge adapter names an author, and the forge adapter in
+`CONSOLE_FORGE_ADAPTER` with `CONSOLE_FORGE_URL`, like `npx -y @opensoftware/forge-forgejo`. The console fetches the
+repository with Git into `CONSOLE_FACTORY_CACHE`. Without `CONSOLE_FACTORY_REPOSITORY` the factory is a local folder:
+the page says so, offers no form, and the forms answer 404.
+
+The token is not the inbox's read-only `CONSOLE_FORGE_TOKEN`:
+
+| Forge | The token needs |
+| --- | --- |
+| GitHub | A fine-grained token or an app for the one repository: Contents read and write, Pull requests read and write, Commit statuses read, Checks read, Administration read (to read the branch's rules) and Metadata read |
+| Forgejo | The scopes `write:repository` and `write:issue`, of a user who may write to the repository |
+
+The form "Propose a change" takes one edit of `factory edit` ([factory-spec](../factory-spec/README.md#edits-factory-edit)):
+add or remove an egress host, a secret reference or a skill of an agent; "Declare a secrets provider" takes a name and
+a range. The console checks each value first and names what it refused: an egress host must be a host name like
+`api.linear.app`, without a scheme, a port, a path or a wildcard. Then it:
+
+1. fetches the newest commit of the branch and reads the branch's rules with `rules`; a branch that does not require
+   the check `factory` gets no change (409), since nothing would check it before it merges;
+2. runs `factory edit --file <the fetched factory.yaml> <edit> -- <agent or name> <value>` in `CONSOLE_FACTORY_COMMAND`
+   (400 when it refuses the edit or the edit changes nothing);
+3. creates the branch `console/<edit>-<agent>-<commit>-<hash of the edit>` from that commit, commits the edited
+   `factory.yaml` with the trailer `Requested-by: <email>`, and opens the pull request titled
+   `factory edit <edit> <agent or name> <value>`, whose body says what changes and who asked;
+4. asks the forge to merge it when its checks pass (`merge --when-green`) and answers 303 to `/changes`.
+
+The branch starts at the commit that was read, so a change that reached the branch in between shows as a conflict and
+overwrites nothing. The page asks the forge when it is opened, for the newest 50 pull requests of the token's user;
+the console keeps no state:
+
+| State | When | Buttons |
+| --- | --- | --- |
+| Checking | Open, while its check `factory` has no result. The page reloads itself every `CONSOLE_REFRESH` seconds | none |
+| Ready | Open, its check `factory` passed, and the forge has not merged it: a forge that cannot merge when green, like a GitHub repository without "Allow auto-merge" or on a plan without it | "Merge" |
+| Failed | A check failed; the page names it and links the pull request | "Try again", "Discard" |
+| Conflict | It conflicts with a newer commit of the branch | "Try again", "Discard" |
+| Live | Merged: "Live for the next run: factory version <commit>" | none |
+| Discarded | Closed without a merge | none |
+
+"Try again" closes the pull request, deletes its branch and makes the same change on the newest commit; it reads the
+edit from the pull request's title and checks it like a form, since anyone who may write to the repository can change
+a title. "Discard" closes it and deletes its branch. "Merge" merges a change whose check `factory` passed, and answers
+409 for any other. Each button acts only on a pull request of `CONSOLE_FACTORY_USER` from a `console/` branch.
+
+On GitHub, a private repository on a plan without auto-merge or required checks cannot require the check: the
+console then refuses changes, and the docs of the reference factory's workflow will say how to set the branch up.
 
 ## Health
 

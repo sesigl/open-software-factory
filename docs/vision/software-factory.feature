@@ -182,7 +182,7 @@ Feature: Cloud execution, sandboxes and governance
       Given a run started from a Slack message by "Varun"
       Then the run records "Varun" as requester and "Slack" as source
 
-    @scenario_id=SCN-FACTORY-RUNTIME-009 @status=planned @evidence=derived @source=22:20
+    @scenario_id=SCN-FACTORY-RUNTIME-009 @status=implemented @evidence=derived @source=22:20
     Scenario: Only authorized roles can change a factory
       Given a person without the role "factory-engineer"
       When the person tries to change the factory definition

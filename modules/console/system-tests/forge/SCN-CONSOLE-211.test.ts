@@ -6,8 +6,8 @@ scenario("SCN-CONSOLE-211", async ({ sut, fakes, given, when, then }) => {
   let newer: string;
   await given('a change of the console whose check "factory" failed, and a newer commit on "main"', async () => {
     change = await changeOfConsole(sut, fakes);
-    await postCheck(sut, change, "failure");
-    await commitOnMain(sut, change.forge, { "README.md": "# The factory of Acme\n" });
+    await postCheck(change, "failure");
+    await commitOnMain(change.forge, { "README.md": "# The factory of Acme\n" });
     newer = (await headOf(change.forge, "main")) as string;
   });
 

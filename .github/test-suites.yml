@@ -78,9 +78,11 @@
     temporalio/ui:2.57.0 nats:2.11.9-alpine jaegertracing/jaeger:2.22.0
     openpolicyagent/opa:1.21.0-static node:24.11.1-bookworm
     wollomatic/socket-proxy:1.13.2 quay.io/openbao/openbao:2.7.2
-# The console's journeys open its pages in Chromium (ADR 0131).
+# The console's journeys open its pages in Chromium (ADR 0131); its scenarios of a change fetch the factory's
+# repository from Forgejo with Git (ADR 0144).
 - suite: console
   filter: "@opensoftware/console"
+  images: forge
   browser: chromium
 # Every other package, so a new module runs without a change here.
 - suite: rest
