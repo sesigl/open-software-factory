@@ -158,12 +158,20 @@ Feature: The Compose profile installs a complete factory with one command
     Then the command exits with code 0
     And the output lists the images "gatekeeper", "intake", "foreman", "console", "factory-spec" and "harness-claude-code" as "ghcr.io/sesigl/open-software-factory/<name>:<version>"
 
-  @id=SCN-DIST-023 @status=implemented @replaces=SCN-DIST-018
+  @id=SCN-DIST-023 @status=deprecated @replaces=SCN-DIST-018
   Scenario: The Compose profile takes the module images, the agents' template and the LLM gateway from the factory's registry
     Given the Compose profile with every value of ".env.example" set in ".env"
     When the operator runs "docker compose config --images"
     Then the command exits with code 0
     And the output lists the images "gatekeeper", "intake", "foreman", "console", "factory-spec", "harness-claude-code" and "litellm" as "ghcr.io/sesigl/open-software-factory/<name>:<version>"
+
+  @id=SCN-DIST-041 @status=implemented @replaces=SCN-DIST-023
+  Scenario: The Compose profile takes the module images, the agents' template and the LLM gateway from the factory's registry, and OpenBao from its own
+    Given the Compose profile with every value of ".env.example" set in ".env"
+    When the operator runs "docker compose config --images"
+    Then the command exits with code 0
+    And the output lists the images "gatekeeper", "intake", "foreman", "console", "factory-spec", "harness-claude-code" and "litellm" as "ghcr.io/sesigl/open-software-factory/<name>:<version>", "console" twice: for "console" and for the job "openbao-policies"
+    And the output lists "quay.io/openbao/openbao:2.7.2" twice: for "openbao" and for the job "openbao-setup"
 
   @id=SCN-DIST-027 @status=implemented
   Scenario: The profile's LLM gateway holds no code under BerriAI's enterprise license

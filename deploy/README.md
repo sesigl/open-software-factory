@@ -524,7 +524,7 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-020 | implemented | The plan of the reference factory adds the factory and finds no problems, with its inference config |
 | SCN-DIST-021 | implemented | The test of the Helm chart plans the reference factory without problems, with its inference config |
 | SCN-DIST-022 | implemented | The foreman of the Helm chart starts a sandbox of agent-sandbox from the agents' template, with rights only in the sandboxes' namespace |
-| SCN-DIST-023 | implemented | The Compose profile takes the module images, the agents' template and the LLM gateway from the factory's registry |
+| SCN-DIST-023 | deprecated | The Compose profile takes the module images, the agents' template and the LLM gateway from the factory's registry |
 | SCN-DIST-026 | implemented | Every service of the Compose profile is healthy after one command, Jaeger as the trace store, and each server's health checks pass |
 | SCN-DIST-027 | implemented | The profile's LLM gateway holds no code under BerriAI's enterprise license |
 | SCN-DIST-028 | implemented | The reference factory asks for approval of the spec after the stage "spec" and before "implement" |
@@ -540,3 +540,4 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-038 | implemented | The chart switches the console's sign-in on with the client secret and the session key from a Secret the operator names |
 | SCN-DIST-039 | implemented | The profile's OpenBao keeps a stored secret over a restart, unseals itself, and a sandbox still sends the value |
 | SCN-DIST-040 | implemented | The chart gives the console and the foreman the team's own OpenBao with the two tokens from a Secret the operator names |
+| SCN-DIST-041 | implemented | The Compose profile takes the module images, the agents' template and the LLM gateway from the factory's registry, and OpenBao from its own |
