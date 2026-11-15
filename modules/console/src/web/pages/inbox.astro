@@ -1,0 +1,40 @@
+---
+import Shell from "@opensoftware/ui/components/Shell.astro";
+import type { InboxData } from "../../pages/inbox.ts";
+
+const { shell, repository, notes, rows, empty } = Astro.locals.page as InboxData;
+Astro.response.status = Astro.locals.status;
+Astro.response.statusText = Astro.locals.statusText;
+---
+<Shell shell={shell}>
+  <div class="osf-intro">
+    <h1>Inbox</h1>
+    <p>The open proposals in {repository}.</p>
+  </div>
+  {notes.map((note) => <p role="alert" class="osf-alert">{note}</p>)}
+  {empty && <p class="osf-empty">No open proposals. Observer opens one as a pull request when it proposes a change.</p>}
+  <div class="osf-table-panel">
+    <table class="osf-table osf-cards">
+      <thead>
+        <tr>
+          <th scope="col">Proposal</th>
+          <th scope="col">Branch</th>
+          <th scope="col">Author</th>
+          <th scope="col">State</th>
+          <th scope="col">Age</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr>
+            <td class="osf-card-title">{row.title.href ? <a href={row.title.href}>{row.title.text}</a> : row.title.text}</td>
+            <td class="osf-mono">{row.branch}</td>
+            <td>{row.author}</td>
+            <td class="osf-card-state"><span class={row.stateClass}>{row.state}</span></td>
+            <td class="osf-mono osf-card-corner">{row.age}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</Shell>

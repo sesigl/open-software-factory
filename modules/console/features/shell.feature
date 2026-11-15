@@ -24,11 +24,19 @@ Feature: The shell of the pages in the new look
     When a person opens "/"
     Then the navigation links "Runs" as the current page, "Skills" and the classic pages "Factory" and "Health"
 
-  @id=SCN-CONSOLE-204 @status=implemented @replaces=SCN-CONSOLE-159
+  @id=SCN-CONSOLE-204 @status=deprecated @replaces=SCN-CONSOLE-159
   Scenario: The navigation of a console with intake, an inbox and cost and scores links their pages too, Skills among them
     Given a console with "CONSOLE_INTAKE_URL", "CONSOLE_INBOX_REPOSITORY" and "CONSOLE_IMPROVE_DIR" and the factory "acme"
     When a person opens "/"
     Then the navigation links "Runs", "Skills" and the classic pages "Work", "Factory", "Inbox", "Cost and scores" and "Health"
+    And the shell names the factory "acme"
+    And the page offers "Submit work" as its main action
+
+  @id=SCN-CONSOLE-251 @status=implemented @replaces=SCN-CONSOLE-204
+  Scenario: The navigation of a console with intake, an inbox and cost and scores links Work and Inbox among the pages in the new look
+    Given a console with "CONSOLE_INTAKE_URL", "CONSOLE_INBOX_REPOSITORY" and "CONSOLE_IMPROVE_DIR" and the factory "acme"
+    When a person opens "/"
+    Then the navigation links "Runs", "Work", "Inbox", "Skills" and the classic pages "Factory", "Cost and scores" and "Health"
     And the shell names the factory "acme"
     And the page offers "Submit work" as its main action
 

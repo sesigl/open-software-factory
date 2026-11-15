@@ -1,7 +1,7 @@
 import { scenario } from "@opensoftware/testkit";
-import { factoryEnv, foreman, navLinks, open, serving } from "./console.ts";
+import { factoryEnv, foreman, links, navLinks, open, serving } from "./console.ts";
 
-scenario("SCN-CONSOLE-204", async ({ sut, fakes, given, when, then }) => {
+scenario("SCN-CONSOLE-251", async ({ sut, fakes, given, when, then }) => {
   await given(
     'a console with "CONSOLE_INTAKE_URL", "CONSOLE_INBOX_REPOSITORY" and "CONSOLE_IMPROVE_DIR" and the factory "acme"',
     async () => {
@@ -21,16 +21,22 @@ scenario("SCN-CONSOLE-204", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then(
-    'the navigation links "Runs", "Skills" and the classic pages "Work", "Factory", "Inbox", "Cost and scores" and "Health"',
+    'the navigation links "Runs", "Work", "Inbox", "Skills" and the classic pages "Factory", "Cost and scores" and "Health"',
     async () => {
       expect(navLinks(page)).toEqual([
         { href: "/", text: "Runs" },
-        { href: "/skills", text: "Skills" },
         { href: "/work", text: "Work" },
-        { href: "/factory", text: "Factory" },
         { href: "/inbox", text: "Inbox" },
+        { href: "/skills", text: "Skills" },
+        { href: "/factory", text: "Factory" },
         { href: "/improvement", text: "Cost and scores" },
         { href: "/health", text: "Health" },
+      ]);
+      // The first list holds the pages in the new look, the second the classic pages.
+      const [pages, classic] = page.getByRole("navigation", { name: "Main" }).queryAllByRole("list");
+      expect([links(pages).map((link) => link.text), links(classic).map((link) => link.text)]).toEqual([
+        ["Runs", "Work", "Inbox", "Skills"],
+        ["Factory", "Cost and scores", "Health"],
       ]);
     },
   );

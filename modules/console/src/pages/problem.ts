@@ -2,15 +2,21 @@
 // that no foreman knows or a form that a module refused, with the reason and the way back. The template only reads it.
 import type { ShellData } from "@opensoftware/ui";
 
+/** The way back above a problem's title, to the page it belongs to. */
+export interface Back {
+  href: string;
+  text: string;
+}
+
 export interface ProblemData {
   shell: ShellData;
   title: string;
   detail: string;
   /** The way back above the title, like the runs. */
-  back: { href: string; text: string };
+  back: Back;
 }
 
-export const problemData = (shell: ShellData, title: string, detail: string, back: ProblemData["back"]) => ({
+export const problemData = (shell: ShellData, title: string, detail: string, back: Back) => ({
   shell,
   title,
   detail,

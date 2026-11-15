@@ -18,4 +18,7 @@ export default defineConfig({
   devToolbar: { enabled: false },
   // Every style comes from the console's own files: no inline stylesheet, which the Content-Security-Policy forbids.
   build: { inlineStylesheets: "never" },
+  // The Fastify route of a form checks its Origin before anything else (ADR 0089, ADR 0134) and answers a form from
+  // another site with its own problem page; Astro only renders that answer, so its own check would replace the page.
+  security: { checkOrigin: false },
 });

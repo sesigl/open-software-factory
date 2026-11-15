@@ -7,6 +7,7 @@ import { readFactory } from "../adapters/factory-file.ts";
 import { deleteSecret, listSecrets, type Outcome, putSecret } from "../adapters/secrets.ts";
 import { render } from "../adapters/web.ts";
 import { declaredOf, secretsOf } from "../domain/secrets.ts";
+import type { Back } from "../pages/problem.ts";
 import { deleteData, missingOf, secretsData } from "../pages/secrets.ts";
 import { actorOf } from "./person.ts";
 
@@ -25,7 +26,7 @@ export interface SecretsSetup {
   /** The shell of a page in the new look for this request. */
   shell(request: FastifyRequest, title: string, current: string, count?: string): ShellData;
   /** The person of a form from the console's own site, or the answer that refuses it (ADR 0089, ADR 0134). */
-  signedIn(request: FastifyRequest, reply: FastifyReply, title: string): { person?: string; refused?: unknown };
+  signedIn(request: FastifyRequest, reply: FastifyReply, back: Back): { person?: string; refused?: unknown };
   /** Answers with a page that names a problem. */
   problem(reply: FastifyReply, status: number, title: string, detail: string): unknown;
 }
@@ -34,7 +35,7 @@ export function useSecrets(app: FastifyInstance, setup: SecretsSetup): void {
   /** The person who may open the secrets, or the answer that refuses the request: 404 without roles or a store. */
   const guard = (request: FastifyRequest, reply: FastifyReply, form: boolean, remove = false) => {
     if (setup.closed) return { refused: setup.problem(reply, 404, "No secrets", setup.closed) };
-    const signed = form ? setup.signedIn(request, reply, "Secrets") : {};
+    const signed = form ? setup.signedIn(request, reply, { href: "/secrets", text: "Secrets" }) : {};
     if (signed.refused) return signed;
     const actor = actorOf(request);
     const roles = remove ? ["admin"] : SECRET_ROLES;

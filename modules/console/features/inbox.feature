@@ -2,7 +2,8 @@
 Feature: The self-improvement inbox
   The page "/inbox" lists observer's proposals: the open pull requests of "CONSOLE_INBOX_REPOSITORY" whose branch starts
   with "observer/", with their age and review state. The console asks the forge port's adapter in
-  "CONSOLE_FORGE_ADAPTER" with "prs" when the page is opened (ADR 0073). The test forge is the testkit's fake GitHub
+  "CONSOLE_FORGE_ADAPTER" with "prs" when the page is opened (ADR 0073). It is a page in the new look, in the shell
+  of the design system (T-60): on a phone each proposal is a card. The test forge is the testkit's fake GitHub
   with the repository "tester/web", and the adapter is forge-github.
 
   @id=SCN-CONSOLE-030 @status=implemented @realizes=SCN-FACTORY-IMPROVE-004
@@ -44,3 +45,10 @@ Feature: The self-improvement inbox
     When a person opens "/inbox"
     Then the page answers 404 and says "no inbox: set CONSOLE_INBOX_REPOSITORY to the repository of observer's pull requests"
     And the page's navigation does not link "/inbox"
+
+  @id=SCN-CONSOLE-256 @status=implemented
+  Scenario: The inbox is in the shell of the new look and says when no proposal is open
+    Given the forge's repository "tester/web" without open pull requests
+    When a person opens "/inbox"
+    Then the page has the title "Inbox", the navigation "Main" with "Inbox" as the current page, and does not link "/pico.css"
+    And the page says "No open proposals." and names the repository "tester/web"

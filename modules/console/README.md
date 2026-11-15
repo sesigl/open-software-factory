@@ -598,7 +598,7 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-201 | implemented | A factory program that fails is named on both pages |
 | SCN-CONSOLE-202 | implemented | With the own sign-in a member opens both pages, without the link to store a value |
 | SCN-CONSOLE-203 | implemented | The navigation of a console without intake, an inbox or cost and scores links only the pages that work, Skills among them |
-| SCN-CONSOLE-204 | implemented | The navigation of a console with intake, an inbox and cost and scores links their pages too, Skills among them |
+| SCN-CONSOLE-204 | deprecated | The navigation of a console with intake, an inbox and cost and scores links their pages too, Skills among them |
 | SCN-CONSOLE-205 | implemented | A link by reference, an autolink and a link in a list or a quote follow the same rule |
 | SCN-CONSOLE-206 | implemented | A factory engineer's change opens a pull request from the newest commit that names the person |
 | SCN-CONSOLE-207 | implemented | A member gets 403 for the form "Propose change", and "/changes" offers a member no form |
@@ -645,3 +645,10 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-248 | implemented | A signal the foreman refuses shows the foreman's problem in the shell of the new look |
 | SCN-CONSOLE-249 | implemented | On a phone a person rejects a run's gate with a reason from the run page (journey) |
 | SCN-CONSOLE-250 | implemented | A gate that is decided offers no form "Approve" or "Reject" |
+| SCN-CONSOLE-251 | implemented | The navigation of a console with intake, an inbox and cost and scores links Work and Inbox among the pages in the new look |
+| SCN-CONSOLE-252 | implemented | The work page is in the shell of the new look and offers a signed-in person the form "Submit work" |
+| SCN-CONSOLE-253 | implemented | A submission that intake refuses shows intake's answer in the shell of the new look |
+| SCN-CONSOLE-254 | implemented | An intake that does not answer is named on the work page |
+| SCN-CONSOLE-255 | implemented | A form the console refuses shows the reason in the shell of the new look, with the way back to its page |
+| SCN-CONSOLE-256 | implemented | The inbox is in the shell of the new look and says when no proposal is open |
+| SCN-CONSOLE-257 | planned | On a phone a person reads the inbox as cards and submits work from the work form (journey) |
