@@ -20,6 +20,10 @@
       "type": "string",
       "description": "serve: the token that callers of /v1 send as Authorization: Bearer <token>. Required."
     },
+    "FOREMAN_PERSON_KEYS": {
+      "type": "string",
+      "description": "serve: the issuers of person proofs, as name=url pairs of their key sets separated by commas, like console=http://console:8080/.well-known/jwks.json. Set, a signal or a retry whose by names a person needs that person's proof in the header OSF-Person, and the run records the person the proof names (ADR 0151). Unset: the API token names any person, as before."
+    },
     "FOREMAN_FACTORY": {
       "type": "string",
       "default": "factory.yaml",

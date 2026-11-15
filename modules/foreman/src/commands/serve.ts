@@ -1,14 +1,16 @@
 // foreman serve: the run API on PORT and a Temporal worker that runs the factory's workflow (ADR 0067). With
 // FOREMAN_NATS_URL it also starts runs for work.received@v1, runs a run again for work.retry-requested@v1, passes gate.decided@v1 to the waiting runs and keeps the IDs of doctor.ping@v1 (ADR 0120). A factory
-// with an inference adapter gets its gateway while the server runs (ADR 0070). It runs until SIGTERM or SIGINT.
+// with an inference adapter gets its gateway while the server runs (ADR 0070). With FOREMAN_PERSON_KEYS a signal or a
+// retry that names a person needs the person's proof (ADR 0151). It runs until SIGTERM or SIGINT.
 import { timingSafeEqual } from "node:crypto";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { type Health, healthOf, UsageError } from "@opensoftware/cli";
 import type { GateDecided, WorkItem, WorkRetryRequested } from "@opensoftware/contracts";
+import { type Actor, type PersonChecker, personChecker } from "@opensoftware/person-proof";
 import { Client, Connection, WorkflowNotFoundError } from "@temporalio/client";
 import { NativeConnection, Worker } from "@temporalio/worker";
-import Fastify, { type FastifyReply } from "fastify";
+import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 import { factorySource } from "../adapters/factory.ts";
 import { gatekeeper } from "../adapters/gatekeeper.ts";
 import { type Attached, attachGateway, startGateway } from "../adapters/inference.ts";
@@ -38,6 +40,30 @@ const BUNDLE = fileURLToPath(new URL("../workflows.bundle.js", import.meta.url))
 const problem = (reply: FastifyReply, status: number, title: string, detail: string) =>
   reply.code(status).type("application/problem+json").send({ title, status, detail });
 
+/** The title of each refusal of a person proof (ADR 0151). */
+const REFUSED = {
+  401: "Unauthorized",
+  403: "The person proof does not fit the request",
+  503: "The person proof cannot be checked",
+} as const;
+
+/**
+ * The checker of FOREMAN_PERSON_KEYS (ADR 0151); without the setting none, and a warning that the API token names any
+ * person. A malformed setting stops the server.
+ */
+function checkerOf(env: Env, warn: (text: string) => void): PersonChecker | undefined {
+  const setting = env.FOREMAN_PERSON_KEYS;
+  if (!setting) {
+    warn("FOREMAN_PERSON_KEYS is not set: a caller with FOREMAN_API_TOKEN acts as any person it names (ADR 0151)");
+    return undefined;
+  }
+  try {
+    return personChecker(setting, { audience: "foreman", now: () => new Date(isoNow(env.OSF_NOW)) });
+  } catch (error) {
+    throw new UsageError(`FOREMAN_PERSON_KEYS: ${(error as Error).message}`);
+  }
+}
+
 /** Whether the request carries the token; compared in constant time. */
 function authorized(header: string | undefined, token: string): boolean {
   const [sent, wanted] = [Buffer.from(header ?? ""), Buffer.from(`Bearer ${token}`)];
@@ -49,13 +75,56 @@ type Pings = Map<string, string>;
 /** The server keeps the newest pings only, so pings cannot fill its memory. */
 const KEPT_PINGS = 100;
 
-function api(work: Runs, token: string, pings: Pings, health: () => Promise<Health>) {
+interface Api {
+  work: Runs;
+  token: string;
+  pings: Pings;
+  health: () => Promise<Health>;
+  /** The checker of FOREMAN_PERSON_KEYS, when it is set (ADR 0151). */
+  persons: PersonChecker | undefined;
+  warn: (text: string) => void;
+}
+
+function api({ work, token, pings, health, persons, warn }: Api) {
   const app = Fastify();
   app.setErrorHandler((error: Error & { statusCode?: number }, _request, reply) => {
     if (error instanceof UsageError) return problem(reply, 400, "Bad request", error.message);
     if (error instanceof Conflict) return problem(reply, 409, error.title, error.message);
     return problem(reply, error.statusCode ?? 500, "The request failed", error.message);
   });
+  // A person proof covers the body's bytes as they arrived, so the parser keeps them beside the parsed body.
+  const bodies = new WeakMap<FastifyRequest, Buffer>();
+  // Stryker disable next-line StringLiteral: Fastify's own defaults; no scenario sends a body with "__proto__"
+  const json = app.getDefaultJsonParser("error", "error");
+  app.removeContentTypeParser("application/json");
+  app.addContentTypeParser("application/json", { parseAs: "buffer" }, (request, body, done) => {
+    bodies.set(request, body as Buffer);
+    json(request, body.toString(), done);
+  });
+  /**
+   * With FOREMAN_PERSON_KEYS, a body whose `by` names a person needs the proof of that person; the body then names the
+   * person the proof names. A refusal is logged with the person the body claims, never with the proof (ADR 0151).
+   */
+  const proven = async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = request.body as { by?: Actor } | null;
+    const by = body?.by;
+    // A body without a person is the domain's to check.
+    if (!persons || typeof by?.id !== "string") return;
+    const { method, url } = request;
+    const check = await persons.check({
+      headers: request.headers,
+      method,
+      path: url,
+      body: bodies.get(request) as Buffer,
+      actor: by,
+    });
+    if (check.ok) {
+      request.body = { ...body, by: check.actor };
+      return;
+    }
+    warn(`refused ${method} ${url} of "${check.sub}": ${check.reason}`);
+    return problem(reply, check.status, REFUSED[check.status], check.reason);
+  };
   // The health route needs no token (ADR 0086).
   app.get("/v1/health", async (_request, reply) => {
     const answer = await health();
@@ -79,11 +148,12 @@ function api(work: Runs, token: string, pings: Pings, health: () => Promise<Heal
     const view = await work.view(request.params.runId);
     return view ?? unknown(reply, request.params.runId);
   });
-  app.post<{ Params: { runId: string } }>("/v1/runs/:runId/signals", async (request, reply) => {
+  // A signal and a retry are the actions of a person on a run; POST /v1/runs starts work and needs no proof (ADR 0151).
+  app.post<{ Params: { runId: string } }>("/v1/runs/:runId/signals", { preHandler: proven }, async (request, reply) => {
     const view = await work.signal(request.params.runId, request.body);
     return view ? reply.code(202).send(view) : unknown(reply, request.params.runId);
   });
-  app.post<{ Params: { runId: string } }>("/v1/runs/:runId/retry", async (request, reply) => {
+  app.post<{ Params: { runId: string } }>("/v1/runs/:runId/retry", { preHandler: proven }, async (request, reply) => {
     const view = await work.retry(request.params.runId, request.body);
     return view ? reply.code(201).send(view) : unknown(reply, request.params.runId);
   });
@@ -131,6 +201,8 @@ function listen(bus: Bus, work: Runs, pings: Pings, now: () => string, warn: (te
 export async function serve(env: Env) {
   const token = env.FOREMAN_API_TOKEN;
   if (!token) throw new UsageError("set FOREMAN_API_TOKEN: the token that callers of the API send");
+  const warn = (text: string) => process.stderr.write(`foreman: ${text}\n`);
+  const persons = checkerOf(env, warn);
   const data = resolve(env.OSF_DATA || ".foreman");
   const source = factorySource(env.FOREMAN_FACTORY || "factory.yaml", data, env.FOREMAN_FACTORY_TOKEN);
   const { definition } = await source.read();
@@ -138,7 +210,6 @@ export async function serve(env: Env) {
     PORTS.map((port) => [port, JSON.parse(env[MAP_OF[port]] || "{}") as CommandLines]),
   ) as Record<Port, CommandLines>;
   const now = () => isoNow(env.OSF_NOW);
-  const warn = (text: string) => process.stderr.write(`foreman: ${text}\n`);
   const address = env.FOREMAN_TEMPORAL_ADDRESS || "localhost:7233";
   // Unset, the client and the worker use the namespace "default".
   const namespace = env.FOREMAN_TEMPORAL_NAMESPACE;
@@ -205,7 +276,7 @@ export async function serve(env: Env) {
     const pings: Pings = new Map();
     if (bus) await listen(bus, work, pings, now, warn);
 
-    const app = api(work, token, pings, () =>
+    const health = () =>
       healthOf([
         {
           name: "temporal",
@@ -240,8 +311,8 @@ export async function serve(env: Env) {
               },
             ]
           : []),
-      ]),
-    );
+      ]);
+    const app = api({ work, token, pings, health, persons, warn });
 
     const port = Number(env.PORT || 8080);
     await app.listen({ port, host: "0.0.0.0" });

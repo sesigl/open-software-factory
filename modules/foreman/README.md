@@ -400,6 +400,40 @@ and its state, a run that already ran again with 409 that names the later run. T
 the other gets 409. The new run's `run.started@v1` and `run.completed@v1` have `retryOf`, and intake's
 `work.retry-requested@v1` runs a run again as this route does ([Events](#events)).
 
+## The person's proof
+
+Without `FOREMAN_PERSON_KEYS`, a caller with the API token names any person in `by`, and the server warns once at its
+start: `FOREMAN_PERSON_KEYS is not set: a caller with FOREMAN_API_TOKEN acts as any person it names (ADR 0151)`. With
+it, the server checks the person ([ADR 0151](../../docs/decisions/0151-the-person-proven-to-every-module.md)):
+
+```sh
+FOREMAN_PERSON_KEYS=console=http://console:8080/.well-known/jwks.json foreman serve
+```
+
+The setting names each issuer of person proofs and the URL of its key set, as `name=url` pairs separated by commas:
+the console, and a team's own tool that signs in its people itself and publishes a key set of its own, like
+`console=…,acme-portal=https://portal.acme.dev/.well-known/jwks.json`. The library
+[`@opensoftware/person-proof`](../../packages/person-proof/README.md) checks each proof. A setting that is no such
+list stops `foreman serve` with exit code 2 and names the pair, like `FOREMAN_PERSON_KEYS: a key set is <name>=<url>,
+like console=http://console:8080/.well-known/jwks.json: "console" is not`.
+
+1. A signal or a retry whose `by` names a person (`"kind": "person"`) needs that person's proof in the header
+   `OSF-Person`, beside the API token: a JSON Web Token that an issuer of the setting signed for `foreman`, this
+   request's method, path and body bytes, and the person of `by`, at most 60 seconds long.
+2. The run records the person the proof names: `id` from its `sub`, `displayName` from its `name`, not the
+   `displayName` of the body.
+3. A `by` of kind `trigger`, like `{ "kind": "trigger", "id": "tool:acme-portal" }` for a team's tool that acts as
+   itself, and a signal without `by` need no proof. `POST /v1/runs` and the events start work and need none.
+4. A refusal changes nothing and answers a problem: 401 `send OSF-Person: the console's proof of the person (ADR
+   0151)` without the header; 401 with the reason for a proof that does not verify, of an issuer the setting does not
+   name, for another module, or that ended, like `the person proof ended at 2026-01-01T00:00:30Z`; 403 for a proof of
+   another method, path, body or person, with the claim; 503 when the issuer's key set cannot be read, with the
+   issuer and its URL. The server logs it with the person the proof names, never the proof: `foreman: refused POST
+   /v1/runs/run_…/signals of "ada@acme.dev": the person proof ended at …`.
+
+The server fetches a key set when a proof first needs it, keeps it for 10 minutes and fetches it again for a key it
+does not know. Its clock is `OSF_NOW` when that is set.
+
 ## Commands
 
 | Command | What it does |
@@ -416,8 +450,8 @@ the other gets 409. The new run's `run.started@v1` and `run.completed@v1` have `
 | `GET /v1/runs/{runId}` | The run: `state`, `factory`, `factoryVersion`, `pullRequest`, `folder`, `startedAt`, `endedAt` and its `stages`; for a run that runs a run before it again, `attempt`, `retryOf` and `retriedBy`; once a signal named its person, `actions`. 404 for a run the server does not know. |
 | `GET /v1/health` | Whether the server reaches Temporal and, with `FOREMAN_NATS_URL`, NATS without a dead letter (ADR 0116): 200 with `status: ok`, else 503 with the failing check and what to fix ([ADR 0086](../../docs/decisions/0086-health-routes.md)). Needs no token. |
 | `GET /v1/doctor/pings/{id}` | The [`doctor.ping@v1`](../../contracts/events/doctor-ping/doctor-ping.schema.json) with this ID that the consumer received since the server started: `{ "id", "receivedAt" }`; 404 for another ID. `console doctor --deep` publishes one and asks for it ([ADR 0120](../../docs/decisions/0120-deep-checks-of-console-doctor.md)). The server keeps the newest 100. |
-| `POST /v1/runs/{runId}/signals` | `{ "type": "steer", "message": "…" }` sends the message to the running stage's agent; `{ "type": "cancel" }` cancels the run; `{ "type": "take-over" }` and `{ "type": "hand-back" }` hand the running stage to a person and back ([Take over](#take-over)). With `"by": { "kind": "person", "id": "…" }` the run records the signal, its person and its time in its view's `actions`, oldest first ([ADR 0118](../../docs/decisions/0118-actions-record-the-person.md)). 202 with the run, 409 when the run ended or the signal does not fit its state. |
-| `POST /v1/runs/{runId}/retry` | `{ "by": { "kind": "person", "id": "…" }, "from": "<stage>" }` runs a run that failed or was cancelled again ([Run again](#run-again)); `from` is optional. 201 with the new run, 400 without `by`, with a `from` the run does not have or a `from` after the first stage that did not succeed, 404 for an unknown run, 409 for a run in another state, a run that already ran again, or a `from` other than the first stage when the factory's stages changed. |
+| `POST /v1/runs/{runId}/signals` | `{ "type": "steer", "message": "…" }` sends the message to the running stage's agent; `{ "type": "cancel" }` cancels the run; `{ "type": "take-over" }` and `{ "type": "hand-back" }` hand the running stage to a person and back ([Take over](#take-over)). With `"by": { "kind": "person", "id": "…" }` the run records the signal, its person and its time in its view's `actions`, oldest first ([ADR 0118](../../docs/decisions/0118-actions-record-the-person.md)). With `FOREMAN_PERSON_KEYS`, a person in `by` needs the header `OSF-Person` ([The person's proof](#the-persons-proof)). 202 with the run, 401, 403 or 503 for a refused proof, 409 when the run ended or the signal does not fit its state. |
+| `POST /v1/runs/{runId}/retry` | `{ "by": { "kind": "person", "id": "…" }, "from": "<stage>" }` runs a run that failed or was cancelled again ([Run again](#run-again)); `from` is optional. With `FOREMAN_PERSON_KEYS`, a person in `by` needs the header `OSF-Person` ([The person's proof](#the-persons-proof)). 201 with the new run, 401, 403 or 503 for a refused proof, 400 without `by`, with a `from` the run does not have or a `from` after the first stage that did not succeed, 404 for an unknown run, 409 for a run in another state, a run that already ran again, or a `from` other than the first stage when the factory's stages changed. |
 
 The OpenAPI of the routes is in [`contracts/openapi/openapi.json`](../../contracts/openapi/openapi.json); the
 TypeScript type `paths` of `@opensoftware/contracts` types a client. Every route except `/v1/health` needs
@@ -555,6 +589,7 @@ the minor version. The one-time setup is the same as for contracts
 | `OSF_DATA` | string | `".foreman"` | serve: the folder of the runs' working folders, runs/<run ID>, and of the harness adapters' session records. |
 | `OSF_NOW` | string |  | The current time, like 2026-01-01T00:00:00Z, for the times of runs and stages. Default: the clock. |
 | `FOREMAN_API_TOKEN` | string |  | serve: the token that callers of /v1 send as Authorization: Bearer <token>. Required. |
+| `FOREMAN_PERSON_KEYS` | string |  | serve: the issuers of person proofs, as name=url pairs of their key sets separated by commas, like console=http://console:8080/.well-known/jwks.json. Set, a signal or a retry whose by names a person needs that person's proof in the header OSF-Person, and the run records the person the proof names (ADR 0151). Unset: the API token names any person, as before. |
 | `FOREMAN_FACTORY` | string | `"factory.yaml"` | serve: the factory definition. A path: its folder must be in a Git repository and clean, with every tracked file and every file the foreman reads committed: a run's factory version is its commit (ADR 0110). Or git+<url>#<ref>: the foreman fetches the ref, default the remote's HEAD, into OSF_DATA/factory, reads factory.yaml at the root of that commit, and the commit is the factory version (ADR 0124). |
 | `FOREMAN_FACTORY_TOKEN` | string |  | serve: a token for a FOREMAN_FACTORY of git+https://… in a private repository, sent to that URL only as Git's Basic credentials of x-access-token. Never written to a file or a command line (ADR 0142). Unset: Git's own credentials. |
 | `FOREMAN_TEMPORAL_ADDRESS` | string | `"localhost:7233"` | serve: the gRPC address of the Temporal server. |
@@ -756,3 +791,9 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-168 | implemented | A stage's agent finds a skill of another repository at the commit factory.lock pins, not at the newer commit of its branch |
 | SCN-FORE-169 | implemented | A skill of another repository that factory.lock does not pin for its entry stops the server at the start |
 | SCN-FORE-170 | implemented | A pinned skill whose files do not have the hash of its pin stops the server at the start |
+| SCN-FORE-171 | implemented | A signal with the proof of its person is recorded with the person and the name the proof names |
+| SCN-FORE-172 | implemented | A signal with the API token and a made-up person without a proof is refused and changes nothing |
+| SCN-FORE-173 | implemented | A proof past its end, for another module or of an issuer whose key set cannot be read is refused, and one for another path, body or person is refused with 403 |
+| SCN-FORE-174 | implemented | A team's own tool that the setting names proves its person, and a tool that acts as itself needs no proof |
+| SCN-FORE-175 | implemented | A retry by a person needs the person's proof, and the new run names the person the proof names |
+| SCN-FORE-176 | implemented | Without "FOREMAN_PERSON_KEYS" the server warns once that the API token names any person, and a malformed setting stops it |
