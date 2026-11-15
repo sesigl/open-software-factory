@@ -1936,7 +1936,10 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
 - **Done when:** a call with a module's API token and a made-up person is refused by foreman, intake and gatekeeper.
 - **Slices:**
   - [x] The ADR and the contract (`SCN-CTR`, ADR 0151).
-  - [ ] The console signs; foreman, intake and gatekeeper check (one slice per module).
+  - [x] The console signs; foreman, intake and gatekeeper check (one slice per module).
+  - [ ] The Compose profile, the chart and `osf init` make the console's signing key and pass the settings, so a
+        factory of the profile checks the proof (ADR 0151, "Keys" and "Migration"); an `e2e` scenario for a made-up
+        person. Needs the release that holds `@opensoftware/person-proof`.
 
 ### Not in this wave
 
