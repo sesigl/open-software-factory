@@ -70,6 +70,10 @@
     "GATEKEEPER_API_TOKEN": {
       "type": "string",
       "description": "serve: the token that callers of the API send as Authorization: Bearer <token>. Required for serve. Never written to a file."
+    },
+    "GATEKEEPER_PERSON_KEYS": {
+      "type": "string",
+      "description": "serve: the issuers of person proofs as name=url pairs of their key sets, separated by commas, like console=http://console:8080/.well-known/jwks.json (ADR 0151). With it, each decision through the API needs the header OSF-Person, a proof of the person that one of them signed. Unset: a caller with the API token names any person."
     }
   }
 }

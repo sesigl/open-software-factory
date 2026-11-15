@@ -62,7 +62,8 @@ Each format has one schema, generated from `typespec/`, and fixtures that CONTRA
 
 `openapi/openapi.json` also holds the paths of the module APIs, from the operations in `typespec/` (ADR 0048). The
 first is gatekeeper's: `POST /v1/gates`, `GET /v1/gates/{gateId}` and `POST /v1/gates/{gateId}/decisions` (ADR 0118) with the models `GateRequest`, `GateView`, `GateDecisionRequest` and
-`ApiProblem` (RFC 9457). The second is intake's (ADR 0063): `POST /v1/work-items` and
+`ApiProblem` (RFC 9457); the decision route takes the optional header `OSF-Person`, the person proof of who
+decides, and may answer 503 (ADR 0151). The second is intake's (ADR 0063): `POST /v1/work-items` and
 `GET /v1/work-items/{workItemId}` with the models `WorkSubmission`, `WorkItemView` and `WorkRequest`, and
 `GET /v1/inbox` with `WorkItemList`; `POST /v1/work-items` takes the optional header `OSF-Person`, the person proof of
 a requester that is a person, and may answer 403 and 503 (ADR 0151). The third is the

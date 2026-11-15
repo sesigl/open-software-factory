@@ -10,7 +10,8 @@ The only ways a system test or another program may use this module:
 - GitHub Action: `action.yml` with `action.sh` (see `README.md#github-action`)
 - HTTP API of `gatekeeper serve` on `PORT`: `/v1/gates` (OpenAPI in `contracts/openapi/openapi.json`), and
   `/slack/events` and `/slack/actions` for Slack (see `README.md#server`)
-- Input: the request file, the Rego policy and the groups file named on the command line; a Slack channel through the
+- Input: the request file, the Rego policy and the groups file named on the command line; the header `OSF-Person`
+  of a decision through the API, checked against the key sets of `GATEKEEPER_PERSON_KEYS` (ADR 0151); a Slack channel through the
   channel port's adapter in `GATEKEEPER_SLACK_ADAPTER`; a pull request on GitHub or Forgejo through the forge port's
   adapter in `GATEKEEPER_FORGE_ADAPTER` (ADR 0062); `opa` as a separate process
 - Output: `$OUTPUT/gate.json` (or `--out`) and `$OUTPUT/record.json` (or `--record`); messages in the Slack channel;
@@ -40,7 +41,9 @@ ARCH check enforces the layers.
   process, which took the suite past the earlier 180 seconds. SCN-GATE-012, -025 and -055 to -057 start NATS on the host (ADR 0067);
   the server scenarios SCN-GATE-041 to -058 use a database of `fakes.postgres()`, which needs Docker (ADR 0129); all use fake Slack, a
   scripted forge API and the pinned `opa` of `make install`. The tests run the built `channel-slack` and
-  `forge-github` adapters (`sut.adapter`); `turbo.json` builds them before the tests.
+  `forge-github` adapters (`sut.adapter`); `turbo.json` builds them before the tests. The person proof scenarios
+  SCN-GATE-098 to -106 (ADR 0151) use `fakes.personIssuer()` in the test process; measured locally they add 16 seconds,
+  128 seconds for the 105 scenarios in total.
 
 ## Quality limits
 

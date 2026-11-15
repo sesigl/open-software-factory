@@ -29,7 +29,7 @@ export function buildRecord(
     channel: context.channel,
     requestedAt: toIso(context.requestedAt),
     decision: outcome.state,
-    decidedBy: outcome.state === "expired" ? undefined : deciderOf(outcome.by),
+    decidedBy: outcome.state === "expired" ? undefined : deciderOf(outcome.by, outcome.name),
     decidedAt: toIso(outcome.at),
     reason: outcome.state === "rejected" ? outcome.reason : undefined,
   };

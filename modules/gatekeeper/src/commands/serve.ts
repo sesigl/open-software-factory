@@ -3,6 +3,7 @@
 // comments every GATEKEEPER_POLL_MS (ADR 0080). It runs until SIGTERM or SIGINT.
 import { timingSafeEqual } from "node:crypto";
 import { healthOf, UsageError } from "@opensoftware/cli";
+import { type Actor, type PersonChecker, personChecker } from "@opensoftware/person-proof";
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
 import { readJson, readText } from "../adapters/files.ts";
 import { reachNats } from "../adapters/nats.ts";
@@ -37,6 +38,15 @@ function required(env: ServeOptions["env"], name: string, what: string): string 
 const problem = (reply: FastifyReply, status: number, title: string, detail?: string) =>
   reply.code(status).type("application/problem+json").send({ title, status, detail });
 
+/** The checker of person proofs from GATEKEEPER_PERSON_KEYS (ADR 0151), or a usage error that says what is wrong. */
+function personsOf(setting: string, now: () => number): PersonChecker {
+  try {
+    return personChecker(setting, { audience: "gatekeeper", now: () => new Date(now() / 1000) });
+  } catch (error) {
+    throw new UsageError(`GATEKEEPER_PERSON_KEYS: ${(error as Error).message}`);
+  }
+}
+
 export async function serve(options: ServeOptions) {
   const { env } = options;
   const pullRequests = Boolean(env.GATEKEEPER_FORGE_TOKEN);
@@ -63,6 +73,12 @@ export async function serve(options: ServeOptions) {
   const signingKey = env.GATEKEEPER_SIGNING_KEY || undefined;
   // A key that cannot sign stops the server before it starts, not at the first decision.
   if (signingKey) signingKeyOf(signingKey);
+  const personKeys = env.GATEKEEPER_PERSON_KEYS;
+  const persons = personKeys ? personsOf(personKeys, now) : undefined;
+  if (!persons)
+    process.stderr.write(
+      "gatekeeper: GATEKEEPER_PERSON_KEYS is not set, so a caller with GATEKEEPER_API_TOKEN decides a gate as any person it names (ADR 0151)\n",
+    );
 
   const store = await openStore(database);
   const opa = env.GATEKEEPER_OPA || "opa";
@@ -112,6 +128,14 @@ export async function serve(options: ServeOptions) {
       if (given.length !== expected.length || !timingSafeEqual(given, expected))
         return problem(reply, 401, "Unauthorized", "send Authorization: Bearer <GATEKEEPER_API_TOKEN>");
     });
+    // A person proof covers the body's bytes as they arrived (ADR 0151): keep them, and parse them as Fastify does.
+    const arrived = new WeakMap<FastifyRequest, Buffer>();
+    const json = api.getDefaultJsonParser("error", "error");
+    api.removeContentTypeParser("application/json");
+    api.addContentTypeParser("application/json", { parseAs: "buffer" }, (request, body, done) => {
+      arrived.set(request, body as Buffer);
+      json(request, body as never, done);
+    });
     api.post("/v1/gates", async (request, reply) => {
       const { created, gate } = await service.request(parseRequest(request.body, "the request"));
       return reply.code(created ? 201 : 200).send(viewOf(gate));
@@ -121,9 +145,30 @@ export async function serve(options: ServeOptions) {
       if (!gate) return problem(reply, 404, "No such gate", `the server has no gate ${request.params.gateId}`);
       return viewOf(gate);
     });
-    api.post<{ Params: { gateId: string } }>("/v1/gates/:gateId/decisions", async (request) =>
-      viewOf(await service.decide(request.params.gateId, parseDecision(request.body))),
-    );
+    api.post<{ Params: { gateId: string } }>("/v1/gates/:gateId/decisions", async (request, reply) => {
+      const decision = parseDecision(request.body);
+      if (persons) {
+        // A gate is decided by a person: every decision needs a proof, whatever kind of actor it names.
+        const check = await persons.check({
+          headers: request.headers,
+          method: request.method,
+          path: request.url,
+          body: arrived.get(request) as Buffer,
+          actor: (request.body as { by: Actor }).by,
+          always: true,
+        });
+        if (!check.ok) {
+          process.stderr.write(
+            `gatekeeper: refused ${request.method} ${request.url} for ${JSON.stringify(check.sub)}: ${check.reason}\n`,
+          );
+          const title = check.status === 503 ? "The person cannot be checked" : "The person is not proven";
+          return problem(reply, check.status, title, check.reason);
+        }
+        // The proven person: the proof's sub, which is by.id, and its name.
+        Object.assign(decision, { person: check.actor.id, name: check.actor.displayName });
+      }
+      return viewOf(await service.decide(request.params.gateId, decision));
+    });
   });
 
   if (slack) await app.register(slackRoutes(slack, service));

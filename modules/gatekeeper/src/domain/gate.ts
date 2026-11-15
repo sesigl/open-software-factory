@@ -21,6 +21,8 @@ export interface Message {
   time: number;
   text: string;
   mine: boolean;
+  /** The author's name to show, from a person proof (ADR 0151). */
+  name?: string;
 }
 
 /** How a channel shows people and how a person decides there. */
@@ -32,7 +34,7 @@ export interface Speech {
 
 export type Outcome =
   | { state: "pending"; waitingFor: string[] }
-  | { state: "approved" | "rejected"; by: string; at: number; reason?: string }
+  | { state: "approved" | "rejected"; by: string; name?: string; at: number; reason?: string }
   | { state: "expired"; at: number };
 
 export type Decided = Exclude<Outcome, { state: "pending" }>;
@@ -111,7 +113,8 @@ export function decide(
     if (!decision || (expiresAt !== undefined && message.time >= expiresAt)) continue;
     const groups = deciders(escalated);
     if (groups.some((group) => gate.groups[group]?.includes(message.author))) {
-      outcome = { state: decision.verb, by: message.author, at: message.time, reason: decision.reason };
+      const { author: by, name, time: at } = message;
+      outcome = { state: decision.verb, by, name, at, reason: decision.reason };
       break;
     }
     post(
@@ -160,8 +163,15 @@ export const DECISION_CHOICES = ["Approve", "Reject"];
 export const isDecisionChoice = (choice: string): boolean => DECISION_CHOICES.includes(choice);
 
 /** A press of a decision button, as the message a reply with its verb would be. */
-export function pressMessage(press: { choice: string; author: string; id: string; time: number }): Message {
+export function pressMessage(press: {
+  choice: string;
+  author: string;
+  name?: string;
+  id: string;
+  time: number;
+}): Message {
   // "Approve" and "Reject" read as the replies, case aside; a decision through the API keeps its reply as the choice:
-  // "approve" or "reject <reason>" (ADR 0118).
-  return { id: press.id, author: press.author, time: press.time, text: press.choice, mine: false };
+  // "approve" or "reject <reason>" (ADR 0118), and the name of the person proof (ADR 0151).
+  const { id, author, name, time } = press;
+  return { id, author, name, time, text: press.choice, mine: false };
 }

@@ -126,6 +126,7 @@ export function gates(config: GatesConfig, store: Store) {
         pressMessage({
           choice: press.action,
           author: press.author,
+          name: press.name ?? undefined,
           id: press.ts,
           time: Math.max(Number(press.ts), stored.requestedAt),
         }),
@@ -216,7 +217,12 @@ export function gates(config: GatesConfig, store: Store) {
       // parseGroups fails for a group the policy names that the groups file does not have.
       if (!stored.waitingFor.flatMap((group) => groups[group] as string[]).includes(decision.person))
         throw new Refused(403, `${decision.person} is not in ${stored.waitingFor.join(", ")}`);
-      await store.press(id, { ts: String(config.now()), author: decision.person, action: decision.text });
+      await store.press(id, {
+        ts: String(config.now()),
+        author: decision.person,
+        action: decision.text,
+        name: decision.name,
+      });
       await decideGate(id);
       return (await store.get(id)) as StoredGate;
     },

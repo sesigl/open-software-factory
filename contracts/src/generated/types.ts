@@ -65,7 +65,9 @@ export type paths = {
         put?: never;
         /**
          * @description A person decides a pending gate (ADR 0118): 403 when they are in no group the gate waits for, 409 when the gate
-         *     is no longer pending.
+         *     is no longer pending. With GATEKEEPER_PERSON_KEYS every decision needs `OSF-Person` (ADR 0151): 401 without a
+         *     proof or with one that does not verify, 403 for a proof of another request or person, 503 when the issuer's key
+         *     set cannot be read.
          */
         post: operations["GatekeeperApi_decideGate"];
         delete?: never;
@@ -1778,7 +1780,10 @@ export interface operations {
     GatekeeperApi_decideGate: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description The person proof (format `person-proof`, ADR 0151) for this request and the person in `by`. */
+                "OSF-Person"?: string;
+            };
             path: {
                 gateId: string;
             };
@@ -1837,6 +1842,15 @@ export interface operations {
             };
             /** @description The request conflicts with the current state of the server. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Service unavailable. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

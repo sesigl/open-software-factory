@@ -9,7 +9,7 @@ a change, for example by its risk. gatekeeper asks them in Slack or on the pull 
 anyone outside the groups, asks a second group after a timeout, and writes a signed record of who decided what and
 when. As a server it takes requests over HTTP and decides on Slack's events and buttons without polling. Decisions:
 [ADR 0047](../../docs/decisions/0047-gatekeeper.md), [ADR 0048](../../docs/decisions/0048-gatekeeper-server.md),
-[ADR 0062](../../docs/decisions/0062-gatekeeper-ports.md).
+[ADR 0062](../../docs/decisions/0062-gatekeeper-ports.md), [ADR 0151](../../docs/decisions/0151-the-person-proven-to-every-module.md).
 
 ## Quick start
 
@@ -114,7 +114,9 @@ gatekeeper runs `opa eval` with the request as `input` and reads the rules of th
 | `expire_after` | Optional: after this time without a decision, the gate expires. |
 
 Times are like `30m`, `4h` or `2d`. The groups file maps each group to its members, as identities like
-`slack:U024BE7LH`, `github:octocat` or `forgejo:octocat`. A group the policy names must be in it.
+`slack:U024BE7LH`, `github:octocat` or `forgejo:octocat`, or as email addresses like `ada@acme.dev`, as the console
+names a person who decides through the [server's API](#the-person-who-decides). A group the policy names must be in
+it.
 
 ## Decisions
 
@@ -202,7 +204,7 @@ curl -H "Authorization: Bearer $GATEKEEPER_API_TOKEN" -H "content-type: applicat
 | --- | --- |
 | `POST /v1/gates` | Ask for a decision on a request (the JSON of [Request](#request)). 201 with the new gate, 200 with the gate the same request made before, 400 with a problem that names the field. |
 | `GET /v1/gates/{gateId}` | The gate: `state` (`pending`, `approved`, `rejected` or `expired`), `waitingFor`, `requestedAt`, `expiresAt` and, once decided, the `record`. 404 for a gate the server does not know. |
-| `POST /v1/gates/{gateId}/decisions` | A person decides a pending gate: `{ "decision": "approved" or "rejected", "by": { "kind": "person", "id": "…" }, "reason": "…" }` decides like a reply `approve` or `reject <reason>` from `by.id` in the gate's channel, with the same record, event and reply ([ADR 0118](../../docs/decisions/0118-actions-record-the-person.md)). 200 with the gate, 400 without `by` or with another decision, 403 when `by.id` is in no group of `waitingFor`, 404 for an unknown gate, 409 when the gate is no longer pending. |
+| `POST /v1/gates/{gateId}/decisions` | A person decides a pending gate: `{ "decision": "approved" or "rejected", "by": { "kind": "person", "id": "…" }, "reason": "…" }` decides like a reply `approve` or `reject <reason>` from `by.id` in the gate's channel, with the same record, event and reply ([ADR 0118](../../docs/decisions/0118-actions-record-the-person.md)). 200 with the gate, 400 without `by` or with another decision, 403 when `by.id` is in no group of `waitingFor`, 404 for an unknown gate, 409 when the gate is no longer pending. With `GATEKEEPER_PERSON_KEYS`, 401, 403 or 503 for the proof of the person ([The person who decides](#the-person-who-decides)). |
 | `GET /v1/health` | Whether the server reaches its database, can start OPA and, with `GATEKEEPER_NATS_URL`, reaches NATS: 200 with `status: ok`, else 503 with the failing check and what to fix ([ADR 0086](../../docs/decisions/0086-health-routes.md)). Needs no token. |
 | `POST /slack/events` | Slack's Events API: a message in the channel makes the server read the threads of its pending gates, so a reply decides like `status`. |
 | `POST /slack/actions` | Slack's interactivity: a press of Approve or Reject decides like a reply `approve` or `reject`. |
@@ -219,6 +221,39 @@ reference `groups.json` of `deploy/` ships in place of a person, makes the serve
 the group, as nobody decides its gates; the server starts all the same
 ([ADR 0114](../../docs/decisions/0114-the-example-member-of-the-reference-groups.md)). The server checks every pending gate when it starts
 and then every minute, so an escalation or an expiry needs no event.
+
+### The person who decides
+
+Without `GATEKEEPER_PERSON_KEYS`, a caller with the API token names any person in `by`, and the server says so once
+when it starts. With it, the server checks a person proof for each `POST /v1/gates/{gateId}/decisions`
+([ADR 0151](../../docs/decisions/0151-the-person-proven-to-every-module.md)), with the library
+[`@opensoftware/person-proof`](../../packages/person-proof/README.md). The setting names the issuers as `name=url`
+pairs of their key sets, separated by commas:
+
+```sh
+export GATEKEEPER_PERSON_KEYS=console=http://console:8080/.well-known/jwks.json
+```
+
+The caller sends the API token and, in the header `OSF-Person`, a proof that an issuer of the setting signed for
+`gatekeeper`, this request's method, path and body bytes, and the person in `by.id`. A gate is decided by a person, so
+every decision needs a proof, whatever kind of actor `by` names. The server checks the body first (400), then the proof:
+
+| Status | When |
+| --- | --- |
+| 401 | No `OSF-Person`, a proof that does not verify (another `alg` or `typ`, an issuer the setting does not name, an unknown key, a bad signature), one for another module, claims that are no valid `person-proof`, or a proof that ended more than 10 seconds ago. |
+| 403 | A valid proof for another method, path, body or person; the problem names the claim. |
+| 503 | The issuer's key set cannot be fetched, answers another status than 200, or is no valid `person-keys`; the problem names the issuer. The person did nothing wrong. |
+
+Each refusal is a problem with the reason as `detail`, changes nothing, and writes one line to stderr, like
+`gatekeeper: refused POST /v1/gates/g…/decisions for "ada@acme.dev": the person proof ended at 2026-11-15T10:00:30Z`,
+which names the person the proof claims and never holds the proof. A decision with a valid proof is recorded with the
+proven person: `decidedBy` of the record and of `gate.decided@v1` has the proof's `sub` as `id` and its `name` as
+`displayName`. So list the person as the console names them, like `ada@acme.dev`, in the groups file. A team's own tool
+decides a gate only with a key set of its own, named in the setting, like `acme-portal=https://portal.acme.dev/jwks.json`.
+Replies and presses in Slack and comments on a pull request need no proof: Slack and the forge name the person
+themselves. A setting that is no list of `name=url` pairs stops `serve` with code 2, like
+`GATEKEEPER_PERSON_KEYS: a key set is <name>=<url>, like console=http://console:8080/.well-known/jwks.json: "console" is not`.
+In tests the clock of the check is `OSF_NOW`.
 
 ### Pull requests in server mode
 
@@ -298,6 +333,7 @@ the decision. The event ID is the gate's ID with `.requested` or `.decided`.
 | `GATEKEEPER_NATS_URL` | string |  | NATS server, like nats://localhost:4222, for the events gate.requested@v1 and gate.decided@v1. Unset: no events. serve keeps them in its outbox while NATS is unreachable. |
 | `GATEKEEPER_DATABASE_URL` | string |  | serve: the PostgreSQL database, like postgres://gatekeeper@db/gatekeeper, for the gates and the outbox. Required for serve. |
 | `GATEKEEPER_API_TOKEN` | string |  | serve: the token that callers of the API send as Authorization: Bearer <token>. Required for serve. Never written to a file. |
+| `GATEKEEPER_PERSON_KEYS` | string |  | serve: the issuers of person proofs as name=url pairs of their key sets, separated by commas, like console=http://console:8080/.well-known/jwks.json (ADR 0151). With it, each decision through the API needs the header OSF-Person, a proof of the person that one of them signed. Unset: a caller with the API token names any person. |
 
 ## Releases
 
@@ -414,3 +450,12 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-GATE-095 | implemented | A member of the approver group rejects a gate through the API, and the record names the person |
 | SCN-GATE-096 | implemented | A decision through the API by a person outside the approver groups is refused |
 | SCN-GATE-097 | implemented | A decision through the API without a person, of an unknown gate or of a decided gate is refused |
+| SCN-GATE-098 | implemented | A decision with the console's proof of the person is recorded with that person and the proof's name |
+| SCN-GATE-099 | implemented | A decision with the API token but without a proof is refused, for a made-up person and for a trigger, after the body is checked |
+| SCN-GATE-100 | implemented | A proof past its end is refused, and the log names the person and the reason but not the proof |
+| SCN-GATE-101 | implemented | A proof for another module, another path, another body or another person is refused and names the claim |
+| SCN-GATE-102 | implemented | A team's own tool named in the setting decides with its own proof, and an issuer that the setting does not name is refused |
+| SCN-GATE-103 | implemented | A server whose GATEKEEPER_PERSON_KEYS is no list of name=url pairs exits with code 2 and names the pair |
+| SCN-GATE-104 | implemented | Without GATEKEEPER_PERSON_KEYS a decision for a made-up person is accepted as before, and the server says so once |
+| SCN-GATE-105 | implemented | An issuer whose key set answers 500 gives the status 503 that names the issuer, and the gate stays pending |
+| SCN-GATE-106 | implemented | A groups file names a member by an email address, as the console names a person, but not by a bare "ada@" |

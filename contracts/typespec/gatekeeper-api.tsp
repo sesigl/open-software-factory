@@ -39,15 +39,25 @@ namespace GatekeeperApi {
 
   /**
    * A person decides a pending gate (ADR 0118): 403 when they are in no group the gate waits for, 409 when the gate
-   * is no longer pending.
+   * is no longer pending. With GATEKEEPER_PERSON_KEYS every decision needs `OSF-Person` (ADR 0151): 401 without a
+   * proof or with one that does not verify, 403 for a proof of another request or person, 503 when the issuer's key
+   * set cannot be read.
    */
   @route("/v1/gates/{gateId}/decisions")
   @post
-  op decideGate(@path gateId: string, @body decision: GateDecisionRequest):
+  op decideGate(
+    @path gateId: string,
+
+    /** The person proof (format `person-proof`, ADR 0151) for this request and the person in `by`. */
+    @header("OSF-Person") person?: string,
+
+    @body decision: GateDecisionRequest,
+  ):
     | GateView
     | Failure<400>
     | Failure<401>
     | Failure<403>
     | Failure<404>
-    | Failure<409>;
+    | Failure<409>
+    | Failure<503>;
 }

@@ -19,8 +19,12 @@ const envelope = <Type extends string>(type: Type, gate: string, now: number) =>
   datacontenttype: "application/json" as const,
 });
 
-/** A person decides as a person; a policy without approver groups decides as a trigger. */
-export const deciderOf = (by: string) => ({ kind: by.startsWith("policy:") ? "trigger" : "person", id: by }) as const;
+/**
+ * A person decides as a person, with the name of their person proof (ADR 0151); a policy without approver groups
+ * decides as a trigger.
+ */
+export const deciderOf = (by: string, name?: string) =>
+  ({ kind: by.startsWith("policy:") ? "trigger" : "person", id: by, ...(name ? { displayName: name } : {}) }) as const;
 
 export function requestedEvent(gate: Gate, requestedAt: number, now: number): Outgoing {
   const { expireAfter } = gate.rules;
@@ -51,7 +55,7 @@ export function decidedEvent(gate: Gate, outcome: Decided, now: number): Outgoin
         gateId: gate.id,
         workItemId: gate.request.workItem,
         decision: outcome.state,
-        decidedBy: outcome.state === "expired" ? undefined : deciderOf(outcome.by),
+        decidedBy: outcome.state === "expired" ? undefined : deciderOf(outcome.by, outcome.name),
         decidedAt: toIso(outcome.at),
         reason: outcome.state === "rejected" ? outcome.reason : undefined,
       },
