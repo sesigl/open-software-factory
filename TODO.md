@@ -1491,7 +1491,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
   - Measure one island scenario and one mutation shard with a browser, and write the numbers into the ADR.
 - **Done when:** an island scenario passes in `make verify` on CI, and a missed mutant in an island fails MUTATION.
 - **Slices:**
-  - [ ] The ADR; `.tsx` in the checks; the static file server and the active mutant in the page (`SCN-TK`,
+  - [x] The ADR; `.tsx` in the checks; the static file server and the active mutant in the page (`SCN-TK`,
     `SCN-REPO`).
   - [ ] The workbench and the first island with its island scenarios and its suite (`SCN-UI`).
 
