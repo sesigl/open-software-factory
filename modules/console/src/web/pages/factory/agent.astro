@@ -1,0 +1,22 @@
+---
+import Shell from "@opensoftware/ui/components/Shell.astro";
+import type { AgentData } from "../../../pages/factory.ts";
+
+const { shell, name, where, fields } = Astro.locals.page as AgentData;
+Astro.response.status = Astro.locals.status;
+Astro.response.statusText = Astro.locals.statusText;
+---
+<Shell shell={shell}>
+  <div class="osf-intro">
+    <p class="osf-crumbs"><a href="/factory">Factory</a> / <span class="osf-mono">{name}</span></p>
+    <h1 class="osf-mono">{name}</h1>
+    <p>Read-only. Change it in Git, on the branch {where.branch}: {where.file.href ? <a class="osf-mono" href={where.file.href}>{where.file.text}</a> : where.file.text}</p>
+  </div>
+  <dl class="osf-facts">
+    {fields.map((field) => (
+      field.yaml
+        ? <div class="osf-fact-wide"><dt>{field.key}</dt><dd><pre class="osf-code">{field.yaml}</pre></dd></div>
+        : <div><dt>{field.key}</dt><dd class="osf-mono">{field.text}</dd></div>
+    ))}
+  </dl>
+</Shell>

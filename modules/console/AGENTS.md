@@ -54,8 +54,10 @@ templates, the inbox's states, the states of the secrets, what a skill needs and
 (markdown-it, ADR 0141), a change's edits, branch, title, body and state (ADR 0144), and the edits of a skill's
 switch (ADR 0149), without I/O; `adapters` call
 the APIs, run the forge and the secrets adapters and `factory`, fetch the factory's repository, and read the factory
-file; `pages` are Preact components written
-with htm that render HTML and import only `domain` and the types of `adapters`; `commands` join them: `serve` runs the
+file; `pages` compute the data of each template and import only `domain` and the types of `adapters` (since T-60
+every page is a template; `pages/html.ts`, the old frame in Preact and htm, `pages/frame.ts` and
+`web/components/Frame.astro` stay
+unused until the old stack goes); `commands` join them: `serve` runs the
 Fastify server. The ARCH check enforces the layers.
 
 ## Allowed exceptions
@@ -99,12 +101,31 @@ A journey runs in Chromium (`@kind=journey`, ADR 0131) only for a main flow. Eac
   screen, that it sends the form "Submit work" with its `select` and the console's own `Origin`, and that both pages
   pass axe.
 
+- SCN-CONSOLE-266, the health, the factory and the cost and scores on a phone: only a browser lays out their tables
+  as cards (a check with its state above its name, an agent whose card opens its page, a count that names its column)
+  and an agent's facts inside the screen, and only it shows that "Menu" leads to "Factory" and that the four pages
+  pass axe.
+
 They start the console with `CONSOLE_REFRESH=0`: axe's rule `meta-refresh` (WCAG 2.2.1) flags the runs page's reload,
 which stays until live updates replace it (`TODO.md`, T-60).
 
 ## Budget
 
-- System tests: 326 seconds in total on the CI runner (202 scenarios). Raised from 319 seconds on 15 November 2026
+- System tests: 335 seconds in total on the CI runner (208 scenarios). Raised from 326 seconds on 15 November 2026
+  with the factory pages, the cost and scores and the health page in the new look (T-60), measured on the development
+  container in one run of the whole suite (211.8 seconds of test time): the 9 new scenarios took 7.2 seconds next to
+  204.6 for the other 199; SCN-CONSOLE-258, 259 and 262 replace 203, 251 and 136, which took 1.4 seconds together,
+  so the suite grew by 5.8 seconds, 2.8 % more, about 8.5 seconds on top of the 302 estimated for CI below, 310 for
+  the suite; the budget is that and 8 %. Set it to the next CI measure.
+  - Where their time goes: the journey SCN-CONSOLE-266 takes 3.4 seconds: Chromium on a phone, four pages with axe,
+    three screenshots, and a tap that opens an agent's page; the page scenarios SCN-CONSOLE-258 to 265 take 0.4 to 0.6
+    seconds each.
+  - The move itself adds no time to measure: the old scenarios of these pages took 0.37 to 0.49 seconds each in that
+    run, as before.
+  - Made cheap first: one journey for the four pages, with no sign-in and no forge; the ways back of every problem are
+    two page scenarios, one console without settings and one behind the sign-in proxy whose store and repository need
+    not answer.
+- Before that: 326 seconds for 202 scenarios. Raised from 319 seconds on 15 November 2026
   with the work page and the inbox in the new look (T-60), measured on the development container in one run of the
   whole suite: the 7 new scenarios took 5.0 seconds next to 208.2 for the other 195; SCN-CONSOLE-251 replaces
   SCN-CONSOLE-204 at the same cost (0.46 seconds), so the suite grew by 4.5 seconds, 2.2 % more, about 6.5 seconds on

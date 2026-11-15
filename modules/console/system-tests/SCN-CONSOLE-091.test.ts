@@ -15,7 +15,7 @@ scenario("SCN-CONSOLE-091", async ({ sut, given, when, then }) => {
     'the page answers 404 and says "no cost and scores: set CONSOLE_IMPROVE_DIR to the folder of the improvement jobs"',
     async () => {
       expect(page.status).toBe(404);
-      expect(page.title).toBe("Cost and scores · console");
+      expect(page.title).toBe("No cost and scores · Open Software Factory");
       expect(page.text).toContain("No cost and scores");
       expect(page.text).toContain("no cost and scores: set CONSOLE_IMPROVE_DIR to the folder of the improvement jobs");
     },

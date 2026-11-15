@@ -1,55 +1,38 @@
-// The page "/improvement": cost and scores of the factory's runs, from the improvement jobs' files (ADR 0123).
+// The data of the page "/improvement" (src/web/pages/improvement.astro): cost and scores of the factory's runs, from
+// the improvement jobs' files (ADR 0123), in the shell of the new look. The template only reads it.
+import type { ShellData } from "@opensoftware/ui";
 import type { Improvement } from "../domain/improvement.ts";
 import { usd } from "../domain/money.ts";
-import { html } from "./html.ts";
 
-export function improvementPage({ stages, scorers }: Improvement) {
+export interface ImprovementData {
+  shell: ShellData;
+  /** "<cost> over <count> runs." */
+  total: string;
+  scorers: { name: string; scored: number; passed: number; rate: string; usd: string }[];
+  stages: { run: string; href: string; stage: string; outcome: string; outcomeClass: string; usd: string }[];
+}
+
+export function improvementData(shell: ShellData, { stages, scorers }: Improvement): ImprovementData {
   const runs = new Set(stages.map((stage) => stage.run)).size;
   const total = stages.reduce((sum, stage) => sum + stage.usd, 0);
-  return html`<h1>Cost and scores</h1>
-    <p>${usd(total)} over ${runs} runs.</p>
-    <h2>Scores</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Scorer</th>
-          <th>Scored</th>
-          <th>Passed</th>
-          <th>Pass rate</th>
-          <th>Judge cost</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${scorers.map(
-          (scorer) => html`<tr>
-            <td>${scorer.name}</td>
-            <td>${scorer.scored}</td>
-            <td>${scorer.passed}</td>
-            <td>${Math.round((100 * scorer.passed) / scorer.scored)}%</td>
-            <td>${usd(scorer.usd)}</td>
-          </tr>`,
-        )}
-      </tbody>
-    </table>
-    <h2>Runs</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Run</th>
-          <th>Stage</th>
-          <th>Outcome</th>
-          <th>Cost</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${stages.map(
-          (stage) => html`<tr>
-            <td><a href=${`/runs/${stage.run}`}>${stage.run}</a></td>
-            <td>${stage.stage}</td>
-            <td>${stage.outcome}</td>
-            <td>${usd(stage.usd)}</td>
-          </tr>`,
-        )}
-      </tbody>
-    </table>`;
+  return {
+    shell,
+    total: `${usd(total)} over ${runs} runs.`,
+    scorers: scorers.map((scorer) => ({
+      name: scorer.name,
+      scored: scorer.scored,
+      passed: scorer.passed,
+      rate: `${Math.round((100 * scorer.passed) / scorer.scored)}%`,
+      usd: usd(scorer.usd),
+    })),
+    stages: stages.map((stage) => ({
+      run: stage.run,
+      href: `/runs/${stage.run}`,
+      stage: stage.stage,
+      outcome: stage.outcome,
+      // A stage's outcome as a state: a shape and a word, like "succeeded" and "failed".
+      outcomeClass: `osf-state osf-state-${stage.outcome}`,
+      usd: usd(stage.usd),
+    })),
+  };
 }

@@ -1,7 +1,7 @@
 import { scenario } from "@opensoftware/testkit";
 import { factoryEnv, healthyServer, navLinks, open, serving, TOKEN_ROUTES } from "./console.ts";
 
-scenario("SCN-CONSOLE-136", async ({ sut, fakes, given, when, then }) => {
+scenario("SCN-CONSOLE-262", async ({ sut, fakes, given, when, then }) => {
   let env: Record<string, string> = {};
   let foreman = "";
   await given(
@@ -25,22 +25,29 @@ scenario("SCN-CONSOLE-136", async ({ sut, fakes, given, when, then }) => {
     page = await open(sut, "/health");
   });
 
-  await then('the page answers 200 with the title "Health · console"', async () => {
-    expect([page.status, page.title]).toEqual([200, "Health · console"]);
-  });
+  await then(
+    'the page answers 200 with the title "Health · Open Software Factory" and the heading "Health"',
+    async () => {
+      expect([page.status, page.title]).toEqual([200, "Health · Open Software Factory"]);
+      expect(page.getByRole("heading", { level: 1 }).text).toBe("Health");
+    },
+  );
 
   await then(
-    'the page\'s navigation links "/", "/work", "/factory", "/inbox", "/improvement", "/health" and "https://grafana.acme.dev"',
+    'the page\'s navigation links "/", "/work", "/inbox", "/skills", "/factory", "/improvement", "/health" and "https://grafana.acme.dev", with "Health" as the current page',
     async () => {
-      expect(navLinks(page)).toEqual([
-        { href: "/", text: "Runs" },
-        { href: "/work", text: "Work" },
-        { href: "/factory", text: "Factory" },
-        { href: "/inbox", text: "Inbox" },
-        { href: "/improvement", text: "Cost and scores" },
-        { href: "/health", text: "Health" },
-        { href: "https://grafana.acme.dev", text: "Grafana" },
+      expect(navLinks(page).map((link) => link.href)).toEqual([
+        "/",
+        "/work",
+        "/inbox",
+        "/skills",
+        "/factory",
+        "/improvement",
+        "/health",
+        "https://grafana.acme.dev",
       ]);
+      const current = page.getByRole("navigation", { name: "Main" }).getByRole("link", { current: "page" });
+      expect([current.attribute("href"), current.text]).toEqual(["/health", "Health"]);
     },
   );
 });

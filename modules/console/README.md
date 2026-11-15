@@ -41,8 +41,8 @@ Open <http://localhost:8080>. The page lists the foreman's runs, the running one
 | `/?state=<state>` | Only the runs in the state `running`, `blocked`, `complete`, `failed` or `cancelled`, as the foremen filter them. Another state answers 400. |
 | `/runs/<runId>` | One run: its state, factory and factory version, age, pull request, trace and Temporal history; its origin, or with `CONSOLE_INTAKE_URL` every request of its work item; and its stages as its evidence, each with its agent ("waits" for a stage that only waits, ADR 0107), state, transcript, gate, checks and the reason it failed. A run that a person ran again names its attempt and links the run before it. 404 when no foreman knows the run. |
 | `/work` | With `CONSOLE_INTAKE_URL`: intake's latest work items, the one received last first, each with its origin, type, status, source, requester, run and age, also work that waits without a run, one page of intake's inbox at a time with a link "Next page" (`?cursor=`) while more follow; an intake that does not answer is named above the list. With actions, the form "Submit work". 404 without `CONSOLE_INTAKE_URL`. |
-| `/factory` | The factory definition in `CONSOLE_FACTORY`: its name, description, providers and agents with their harness and model. |
-| `/factory/agents/<name>` | One agent's configuration, and the link to the file on the branch where it changes. 404 for an agent the factory does not declare. |
+| `/factory` | The factory definition in `CONSOLE_FACTORY`: its name, description, agents with their harness, model and effort, and providers, and the link to the file on the branch where it changes. |
+| `/factory/agents/<name>` | One agent's configuration, each field with its value and a list or a map as YAML, and the link to the file on the branch where it changes. 404 for an agent the factory does not declare. |
 | `/health` | The checks of `console doctor` as a table: each check, its state and what to do. 200 when every check is ok, else 503. |
 | `/inbox` | The self-improvement inbox: the open pull requests of `CONSOLE_INBOX_REPOSITORY` whose branch starts with `CONSOLE_INBOX_PREFIX` (default `observer/`), newest first, each with its link, branch, author, state ("approved", "changes requested" or "needs review") and age. A forge adapter that fails is named above the list. 404 without `CONSOLE_INBOX_REPOSITORY`. |
 | `/secrets` | Only for an admin or a factory engineer ([Secrets](#secrets)): the secrets that the factory's agents declare and the names in the secret store, each "Missing", "Set", "Set outside the UI", "Not used" or "Unknown", and the form "Store a value". `?name=<name>` fills the form's name. A person without the role `admin` gets 403. 404 in a console without roles or without `OSF_OPENBAO_ADDR`. |
@@ -55,7 +55,7 @@ Open <http://localhost:8080>. The page lists the foreman's runs, the running one
 
 The runs page `/` has the new look of the design system ([ADR 0133](../../docs/decisions/0133-design-system.md)): a
 navigation column with the factory's name, only the pages that work in this console (the runs with a count of those
-that wait for a person, then the "Classic pages" in the old look and the dashboards), and the account with the
+that wait for a person, and the dashboards below them), and the account with the
 signed-in person, "Sign out" and the link to the other theme. On a phone the navigation folds behind "Menu", each
 run is a card, and "Submit work" stays at the bottom of the screen. The page of a run `/runs/<runId>` has the new
 look too: its facts below its title, its forms below them, and its stages as a table whose rows are cards on a phone; a
@@ -66,15 +66,21 @@ the proposals as tables whose rows are cards on a phone. A form without the sign
 answers with a problem in the same shell, with the way back to the form's page. The theme
 is dark unless the cookie `osf_theme` says light; `/theme?to=light&next=<path>` sets it and returns to the page. The
 secrets, skills and changes pages have the new look too, and its navigation links Secrets for an admin and a factory engineer, Skills for
-everyone and Changes with `CONSOLE_FACTORY_REPOSITORY`.
-The other pages keep the old look until they move one at a time.
+everyone and Changes with `CONSOLE_FACTORY_REPOSITORY`. Since T-60 every page has the new look, and the navigation
+has no "Classic pages": the factory's definition `/factory` with its agents as a table whose rows are cards on a
+phone, an agent's page with its fields as facts below the way back, the cost and scores `/improvement` (with
+`CONSOLE_IMPROVE_DIR`) with its two tables, and the health page `/health` with a check per row and its state as a
+shape and a word. Every problem of a page, like an unknown state of the runs, a page without its setting, a person
+without the role or a change that fails, answers in the same shell, with the way back to a page this console has.
 
-Every page links the runs, the work items (with `CONSOLE_INTAKE_URL`), the factory, the health page and the dashboards in `CONSOLE_LINKS`. The runs pages, the page of a run and the work page reload themselves every
+Every page links the runs, the work items (with `CONSOLE_INTAKE_URL`), the inbox (with `CONSOLE_INBOX_REPOSITORY`),
+Secrets, Skills and Changes as above, the factory, the cost and scores (with `CONSOLE_IMPROVE_DIR`), the health page
+and the dashboards in `CONSOLE_LINKS`. The runs pages, the page of a run and the work page reload themselves every
 `CONSOLE_REFRESH` seconds. Without `CONSOLE_USER_HEADER` the console is read-only: it has no forms, and any method but
 `GET` and `HEAD` answers 405. It shows what the foreman and intake show, so run it behind your sign-in proxy, such as
 oauth2-proxy. Every answer carries a Content-Security-Policy that allows only the console's own files and no script.
-The pages render on the server; the health page was the first that Astro renders, the runs page the second ([ADR 0132](../../docs/decisions/0132-astro-in-the-console.md)), the page of a run, the work page and the inbox among the later ones,
-the others follow one at a time with the same URLs.
+The pages render on the server; the health page was the first that Astro renders, the runs page the second ([ADR 0132](../../docs/decisions/0132-astro-in-the-console.md)), and
+since T-60 Astro renders every page, with the same URLs.
 
 Actions ([ADR 0089](../../docs/decisions/0089-console-actions.md)): set `CONSOLE_USER_HEADER` to the header in which
 your sign-in proxy sends the signed-in person, like `X-Forwarded-Email`. Then `/work` has the form "submit work"
@@ -534,7 +540,7 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-133 | implemented | "console doctor --deep" names the variable when NATS does not answer |
 | SCN-CONSOLE-134 | implemented | "console doctor --deep" without "CONSOLE_NATS_URL" skips the events |
 | SCN-CONSOLE-135 | implemented | Every page allows only the console's own files and no script |
-| SCN-CONSOLE-136 | implemented | The page "/health" of a healthy factory answers 200 and has the navigation of every page |
+| SCN-CONSOLE-136 | deprecated | The page "/health" of a healthy factory answers 200 and has the navigation of every page |
 | SCN-CONSOLE-137 | implemented | A person on the access list signs in and lands on the runs |
 | SCN-CONSOLE-138 | implemented | A person who is not on the access list is refused and reads why |
 | SCN-CONSOLE-139 | implemented | An email that the provider did not verify is refused |
@@ -601,7 +607,7 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-200 | implemented | A link of a SKILL.md keeps its anchor only to the web or an email address |
 | SCN-CONSOLE-201 | implemented | A factory program that fails is named on both pages |
 | SCN-CONSOLE-202 | implemented | With the own sign-in a member opens both pages, without the link to store a value |
-| SCN-CONSOLE-203 | implemented | The navigation of a console without intake, an inbox or cost and scores links only the pages that work, Skills among them |
+| SCN-CONSOLE-203 | deprecated | The navigation of a console without intake, an inbox or cost and scores links only the pages that work, Skills among them |
 | SCN-CONSOLE-204 | deprecated | The navigation of a console with intake, an inbox and cost and scores links their pages too, Skills among them |
 | SCN-CONSOLE-205 | implemented | A link by reference, an autolink and a link in a list or a quote follow the same rule |
 | SCN-CONSOLE-206 | implemented | A factory engineer's change opens a pull request from the newest commit that names the person |
@@ -649,10 +655,19 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-248 | implemented | A signal the foreman refuses shows the foreman's problem in the shell of the new look |
 | SCN-CONSOLE-249 | implemented | On a phone a person rejects a run's gate with a reason from the run page (journey) |
 | SCN-CONSOLE-250 | implemented | A gate that is decided offers no form "Approve" or "Reject" |
-| SCN-CONSOLE-251 | implemented | The navigation of a console with intake, an inbox and cost and scores links Work and Inbox among the pages in the new look |
+| SCN-CONSOLE-251 | deprecated | The navigation of a console with intake, an inbox and cost and scores links Work and Inbox among the pages in the new look |
 | SCN-CONSOLE-252 | implemented | The work page is in the shell of the new look and offers a signed-in person the form "Submit work" |
 | SCN-CONSOLE-253 | implemented | A submission that intake refuses shows intake's answer in the shell of the new look |
 | SCN-CONSOLE-254 | implemented | An intake that does not answer is named on the work page |
 | SCN-CONSOLE-255 | implemented | A form the console refuses shows the reason in the shell of the new look, with the way back to its page |
 | SCN-CONSOLE-256 | implemented | The inbox is in the shell of the new look and says when no proposal is open |
 | SCN-CONSOLE-257 | implemented | On a phone a person reads the inbox as cards and submits work from the work form (journey) |
+| SCN-CONSOLE-258 | implemented | The navigation of a console without intake, an inbox or cost and scores links only the pages that work, in one list |
+| SCN-CONSOLE-259 | implemented | The navigation of a console with intake, an inbox and cost and scores links their pages in one list, the dashboards below it |
+| SCN-CONSOLE-260 | implemented | Each problem of a page shows in the shell, with a way back that this console has |
+| SCN-CONSOLE-261 | implemented | A problem of the secrets or the changes leads back to their page for a person who may open it |
+| SCN-CONSOLE-262 | implemented | The page "/health" of a healthy factory answers 200 in the shell, with the navigation of every page |
+| SCN-CONSOLE-263 | implemented | The factory page and an agent's page show in the shell, with "Factory" as the current page |
+| SCN-CONSOLE-264 | implemented | An agent's page shows a list or a map of the agent as YAML |
+| SCN-CONSOLE-265 | implemented | The improvement page shows in the shell, with "Cost and scores" as the current page |
+| SCN-CONSOLE-266 | implemented | On a phone a person reads the health, the factory and the cost and scores as cards (journey) |

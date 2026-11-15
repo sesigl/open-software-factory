@@ -26,11 +26,7 @@ const { shell } = Astro.props as { shell: ShellData };
               </li>
             ))}
           </ul>
-          <p class="group osf-mono">Classic pages</p>
-          <ul class="links classic">
-            {shell.classic.map((link) => <li><a href={link.href}>{link.name}</a></li>)}
-          </ul>
-          <ul class="links classic">
+          <ul class="links tools">
             {shell.tools.map((link) => <li><a href={link.href}>{link.name}</a></li>)}
           </ul>
         </nav>
@@ -118,16 +114,8 @@ const { shell } = Astro.props as { shell: ShellData };
     font-size: var(--osf-size-label);
     color: var(--osf-signal);
   }
-  .classic a {
+  .tools a {
     min-height: 32px;
-  }
-  .group {
-    margin: 0;
-    padding: 0 var(--osf-space-2) var(--osf-space-2);
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--osf-text-subtle);
   }
   .account {
     border-top: 1px solid var(--osf-line);

@@ -42,3 +42,26 @@ Feature: The factory's configuration, read-only
     Given "CONSOLE_LINKS" is "Grafana=https://grafana.acme.dev,Langfuse=https://langfuse.acme.dev"
     When a person opens "/factory"
     Then the page links "Grafana" to "https://grafana.acme.dev" and "Langfuse" to "https://langfuse.acme.dev"
+
+  @id=SCN-CONSOLE-263 @status=implemented @realizes=SCN-FACTORY-CODE-002
+  Scenario: The factory page and an agent's page show in the shell, with "Factory" as the current page
+    Given "CONSOLE_FACTORY" names a "factory.yaml" with the agent "triage"
+    When a person opens "/factory" and "/factory/agents/triage"
+    Then both pages have the title of their heading, "acme" and "triage", and mark "Factory" as the current page
+    And the agent's page leads back to "Factory" at "/factory" above its heading
+
+  @id=SCN-CONSOLE-264 @status=implemented @realizes=SCN-FACTORY-CODE-002
+  Scenario: An agent's page shows a list or a map of the agent as YAML
+    Given "CONSOLE_FACTORY" names a "factory.yaml" with the agent "implement", whose "secrets" list "ref:openbao/linear-token" and whose "sandbox" has the template "node-24" and the egress "api.linear.app"
+    When a person opens "/factory/agents/implement"
+    Then the agent's "secrets" show the YAML "- ref:openbao/linear-token" and its "sandbox" the YAML "template: node-24 egress: - api.linear.app"
+    And its "harness" shows "claude-code" and its "effort" "high"
+
+  @id=SCN-CONSOLE-266 @status=implemented @kind=journey
+  Scenario: On a phone a person reads the health, the factory and the cost and scores as cards (journey)
+    Given a console with the factory "acme" and its agent "triage", a healthy foreman, and a folder of cost and scores with the stage "implement" of "run_a" and the scorer "redundant-tests"
+    When a person opens "/health" on a phone
+    Then the check "foreman token" is a card across the screen with its state "ok" above its name, and the page passes the accessibility checks; its screenshot is kept as "health-phone"
+    And after "Menu" and "Factory" the agent "triage" is a card across the screen, and the page passes the accessibility checks; its screenshot is kept as "factory-phone"
+    And a tap on the card opens "/factory/agents/triage", whose facts stand inside the screen, and the page passes the accessibility checks
+    And on "/improvement" the scorer and the stage are cards across the screen, the stage's outcome above its run, and the page passes the accessibility checks; its screenshot is kept as "improvement-phone"

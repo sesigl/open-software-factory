@@ -239,6 +239,12 @@ a:hover {
     display: none;
   }
 
+  /* A cell that is only a number or a word, like a count, names its column on the card. */
+  .osf-cards td[data-label]::before {
+    content: attr(data-label) " ";
+    color: var(--osf-text-subtle);
+  }
+
   .osf-card-title a::after {
     content: "";
     position: absolute;
@@ -307,24 +313,28 @@ a:hover {
   border-radius: 50%;
 }
 
-/* Work that waits for a person, like a blocked run or a proposal that needs a review. */
+/* Work that waits for a person, like a blocked run, a proposal that needs a review or a check that warns. */
 .osf-state-blocked,
-.osf-state-needs-review {
+.osf-state-needs-review,
+.osf-state-warning {
   color: var(--osf-state-waiting);
 }
 
 .osf-state-blocked::before,
-.osf-state-needs-review::before {
+.osf-state-needs-review::before,
+.osf-state-warning::before {
   background: currentColor;
 }
 
 .osf-state-failed,
-.osf-state-rejected {
+.osf-state-rejected,
+.osf-state-failing {
   color: var(--osf-state-failed);
 }
 
 .osf-state-failed::before,
-.osf-state-rejected::before {
+.osf-state-rejected::before,
+.osf-state-failing::before {
   background:
     linear-gradient(45deg, transparent 40%, currentColor 40% 60%, transparent 60%),
     linear-gradient(-45deg, transparent 40%, currentColor 40% 60%, transparent 60%);
@@ -332,13 +342,15 @@ a:hover {
 
 .osf-state-complete,
 .osf-state-succeeded,
-.osf-state-approved {
+.osf-state-approved,
+.osf-state-ok {
   color: var(--osf-state-complete);
 }
 
 .osf-state-complete::before,
 .osf-state-succeeded::before,
-.osf-state-approved::before {
+.osf-state-approved::before,
+.osf-state-ok::before {
   width: 6px;
   margin: 0 2px;
   border: solid currentColor;
@@ -618,6 +630,28 @@ button.osf-action {
 .osf-facts dd {
   margin: 0;
   overflow-wrap: anywhere;
+}
+
+/* A fact across the whole panel, like a list or a map of a definition in an `osf-code` block. */
+.osf-facts .osf-fact-wide {
+  grid-column: 1 / -1;
+}
+
+/* An exact text of several lines, like YAML of a definition: mono, on the ground, scrolled sideways when it is wide. */
+.osf-code {
+  margin: 0;
+  padding: var(--osf-space-3) var(--osf-space-4);
+  overflow-x: auto;
+  font-family: var(--osf-font-mono);
+  font-size: var(--osf-size-secondary);
+  line-height: 1.6;
+  color: var(--osf-text);
+}
+
+.osf-facts .osf-code {
+  border: 1px solid var(--osf-line);
+  border-radius: var(--osf-radius-control);
+  background: var(--osf-bg-ground);
 }
 
 /* The forms of a record below its facts, in one row that wraps; without a form it takes no room. */

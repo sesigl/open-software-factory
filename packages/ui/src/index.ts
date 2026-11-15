@@ -40,10 +40,8 @@ export interface ShellData {
   refresh?: number;
   /** The factory's name, when the page knows it. */
   factory?: string;
-  /** The pages in the new look, with the current one. */
+  /** The pages, with the current one. */
   pages: ShellLink[];
-  /** The pages that still have the old look. */
-  classic: ShellLink[];
   /** The dashboards of other tools, like the traces. */
   tools: ShellLink[];
   /** The signed-in person: "<email> · <role>". */

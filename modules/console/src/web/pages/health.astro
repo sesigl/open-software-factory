@@ -1,29 +1,30 @@
 ---
+import Shell from "@opensoftware/ui/components/Shell.astro";
 import type { HealthData } from "../../pages/health.ts";
-import Frame from "../components/Frame.astro";
 
-const { frame, items } = Astro.locals.page as HealthData;
+const { shell, items } = Astro.locals.page as HealthData;
 Astro.response.status = Astro.locals.status;
 Astro.response.statusText = Astro.locals.statusText;
 ---
-<Frame frame={frame}>
-  <h1>Health</h1>
-  <table>
-    <thead>
-      <tr>
-        <th>Check</th>
-        <th>State</th>
-        <th>What to do</th>
-      </tr>
-    </thead>
-    <tbody>
-      {items.map((item) => (
-        <tr>
-          <td>{item.name}</td>
-          <td>{item.state}</td>
-          <td>{item.todo}</td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</Frame>
+<Shell shell={shell}>
+  <div class="osf-intro">
+    <h1>Health</h1>
+    <p>What console doctor finds: each server of the factory, its token and the factory definition, with what to do when a check fails.</p>
+  </div>
+  <div class="osf-table-panel">
+    <table class="osf-table osf-cards">
+      <thead>
+        <tr><th>Check</th><th>State</th><th>What to do</th></tr>
+      </thead>
+      <tbody>
+        {items.map((item) => (
+          <tr>
+            <td class="osf-card-name osf-mono">{item.name}</td>
+            <td class="osf-card-state"><span class={item.stateClass}>{item.state}</span></td>
+            <td class="osf-card-wide">{item.todo}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</Shell>

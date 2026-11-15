@@ -25,11 +25,9 @@ import { cursorsOf, fill, isState, list, namedLinks, nextPageOf, orderRuns, quer
 import { safeNext, signInOf } from "../domain/signin.ts";
 import { submissionOf } from "../domain/submit.ts";
 import { themeCookie, themeOf } from "../domain/theme.ts";
-import { agentPage, factoryPage, type Source } from "../pages/factory.ts";
-import { frameData } from "../pages/frame.ts";
+import { agentData, factoryData, type Source } from "../pages/factory.ts";
 import { healthData } from "../pages/health.ts";
-import { type Frame, page, problem } from "../pages/html.ts";
-import { improvementPage } from "../pages/improvement.ts";
+import { improvementData } from "../pages/improvement.ts";
 import { inboxData } from "../pages/inbox.ts";
 import { type Back, problemData } from "../pages/problem.ts";
 import { runData } from "../pages/run.ts";
@@ -53,6 +51,10 @@ interface Problem {
 const RUNS: Back = { href: "/", text: "Runs" };
 const WORK: Back = { href: "/work", text: "Work" };
 const INBOX: Back = { href: "/inbox", text: "Inbox" };
+const FACTORY: Back = { href: "/factory", text: "Factory" };
+const SECRETS: Back = { href: "/secrets", text: "Secrets" };
+const SKILLS: Back = { href: "/skills", text: "Skills" };
+const CHANGES: Back = { href: "/changes", text: "Changes" };
 
 /** The Content-Security-Policy of every answer: the console's own origin only, no script and no frame (ADR 0132). */
 const POLICY =
@@ -148,16 +150,20 @@ export async function serve(env: Env) {
       },
     );
 
-  const send = (
-    reply: FastifyReply,
-    status: number,
-    frame: Omit<Frame, "links" | "inbox" | "work" | "improvement">,
-    content: Parameters<typeof page>[1],
-  ) =>
-    reply
-      .code(status)
-      .type("text/html; charset=utf-8")
-      .send(page({ ...frame, ...frameOf(), person: personOf(reply.request) }, content));
+  /** A problem in the new look, with the way back to the page it belongs to, which the navigation marks. */
+  const problemPage = (request: FastifyRequest, reply: FastifyReply, status: number, problem: Problem) =>
+    render(
+      request,
+      reply,
+      status,
+      problemData(
+        shellOf(request, { title: problem.title, current: problem.back.href }),
+        problem.title,
+        problem.detail,
+        problem.back,
+      ),
+      "problem",
+    );
 
   const app = Fastify({ logger: false });
   // Every answer, also one that Astro writes itself, allows only the console's own files and no script (ADR 0132).
@@ -198,15 +204,17 @@ export async function serve(env: Env) {
 
   app.get<{ Querystring: { state?: string; page?: string } }>("/", async (request, reply) => {
     const { state, page: at } = request.query;
-    if (state !== undefined && !isState(state))
-      return send(
-        reply,
-        400,
-        { title: "Runs" },
-        problem("No such state", `no state ${state}: ${STATES.slice(0, -1).join(", ")} or ${STATES.at(-1)}`),
-      );
+    if (state !== undefined && !isState(state)) {
+      const detail = `no state ${state}: ${STATES.slice(0, -1).join(", ")} or ${STATES.at(-1)}`;
+      return problemPage(request, reply, 400, { title: "No such state", detail, back: RUNS });
+    }
     const cursors = cursorsOf(at, sources.length);
-    if (!cursors) return send(reply, 400, { title: "Runs" }, problem("No such page", `no page ${at} of the runs`));
+    if (!cursors)
+      return problemPage(request, reply, 400, {
+        title: "No such page",
+        detail: `no page ${at} of the runs`,
+        back: RUNS,
+      });
     // Each foreman answers one page of its runs; one whose runs ended on an earlier page is not asked (ADR 0115).
     const answers = await Promise.all(
       sources.map((api, index) => {
@@ -227,21 +235,6 @@ export async function serve(env: Env) {
       "runs",
     );
   });
-
-  /** A problem in the new look, with the way back to the page it belongs to, which the navigation marks. */
-  const problemPage = (request: FastifyRequest, reply: FastifyReply, status: number, problem: Problem) =>
-    render(
-      request,
-      reply,
-      status,
-      problemData(
-        shellOf(request, { title: problem.title, current: problem.back.href }),
-        problem.title,
-        problem.detail,
-        problem.back,
-      ),
-      "problem",
-    );
 
   /** A problem of a run's page or of its forms, with the way back to the runs. */
   const runProblem = (request: FastifyRequest, reply: FastifyReply, status: number, title: string, detail: string) =>
@@ -293,16 +286,22 @@ export async function serve(env: Env) {
     return render(request, reply, 200, data, "run");
   });
 
-  app.get("/factory", async (_request, reply) => {
-    const factory = readFactory(factoryFile);
-    return send(reply, 200, { title: "Factory" }, factoryPage(factory, source));
+  app.get("/factory", async (request, reply) => {
+    const shell = shellOf(request, { title: "Factory", current: FACTORY.href });
+    return render(request, reply, 200, factoryData(shell, readFactory(factoryFile), source));
   });
 
   app.get<{ Params: { name: string } }>("/factory/agents/:name", async (request, reply) => {
     const { name } = request.params;
     const agent = readFactory(factoryFile).agents?.[name];
-    if (!agent) return send(reply, 404, { title: name }, problem("Not found", `no agent ${name} in ${path}`));
-    return send(reply, 200, { title: name }, agentPage(name, agent, source));
+    if (!agent)
+      return problemPage(request, reply, 404, {
+        title: "Not found",
+        detail: `no agent ${name} in ${path}`,
+        back: FACTORY,
+      });
+    const shell = shellOf(request, { title: name, current: FACTORY.href });
+    return render(request, reply, 200, agentData(shell, name, agent, source), "factory/agent");
   });
 
   app.get("/inbox", async (request, reply) => {
@@ -318,18 +317,15 @@ export async function serve(env: Env) {
     return render(request, reply, 200, inboxData(shell, inbox, answer.ok ? answer.body : [], now(), notes));
   });
 
-  app.get("/improvement", async (_request, reply) => {
+  app.get("/improvement", async (request, reply) => {
     if (!improve)
-      return send(
-        reply,
-        404,
-        { title: "Cost and scores" },
-        problem(
-          "No cost and scores",
-          "no cost and scores: set CONSOLE_IMPROVE_DIR to the folder of the improvement jobs",
-        ),
-      );
-    return send(reply, 200, { title: "Cost and scores" }, improvementPage(await readImprovement(improve)));
+      return problemPage(request, reply, 404, {
+        title: "No cost and scores",
+        detail: "no cost and scores: set CONSOLE_IMPROVE_DIR to the folder of the improvement jobs",
+        back: RUNS,
+      });
+    const shell = shellOf(request, { title: "Cost and scores", current: "/improvement" });
+    return render(request, reply, 200, improvementData(shell, await readImprovement(improve)));
   });
 
   app.get<{ Querystring: { cursor?: string } }>("/work", async (request, reply) => {
@@ -384,7 +380,8 @@ export async function serve(env: Env) {
     closed: closedChanges,
     shell: (request, title) => shellOf(request, { title, current: "/skills" }),
     secrets: maySecrets,
-    problem: (reply, status, title, detail) => send(reply, status, { title }, problem(title, detail)),
+    problem: (reply, status, title, detail) =>
+      problemPage(reply.request, reply, status, { title, detail, back: SKILLS }),
   });
   useChanges(app, {
     repository: changes,
@@ -395,7 +392,9 @@ export async function serve(env: Env) {
     shell: (request, title, reload) =>
       shellOf(request, { title, current: "/changes", ...(reload ? { refresh: reload } : {}) }),
     signedIn,
-    problem: (reply, status, title, detail) => send(reply, status, { title }, problem(title, detail)),
+    // Without the factory's repository the navigation has no Changes, so the way back is the runs.
+    problem: (reply, status, title, detail) =>
+      problemPage(reply.request, reply, status, { title, detail, back: changes ? CHANGES : RUNS }),
   });
   useSecrets(app, {
     adapter: secretsAdapter,
@@ -403,7 +402,9 @@ export async function serve(env: Env) {
     closed: closedSecrets,
     shell: (request, title, current, count) => shellOf(request, { title, current, ...(count ? { count } : {}) }),
     signedIn,
-    problem: (reply, status, title, detail) => send(reply, status, { title }, problem(title, detail)),
+    // A person who may not open the secrets goes back to the runs.
+    problem: (reply, status, title, detail) =>
+      problemPage(reply.request, reply, status, { title, detail, back: maySecrets(reply.request) ? SECRETS : RUNS }),
   });
   if (actions && intake) {
     app.post<{ Body: Record<string, string> }>("/work", async (request, reply) => {
@@ -477,12 +478,7 @@ export async function serve(env: Env) {
     const { examine } = await import("./doctor.ts");
     const items = await examine(env);
     const status = items.every(({ ok }) => ok) ? 200 : 503;
-    await render(
-      request,
-      reply,
-      status,
-      healthData(frameData({ ...frameOf(), title: "Health", person: personOf(request) }), items),
-    );
+    await render(request, reply, status, healthData(shellOf(request, { title: "Health", current: "/health" }), items));
   });
 
   // Read-only: any method but GET and HEAD answers 405.

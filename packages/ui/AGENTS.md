@@ -11,14 +11,16 @@ The only ways a page, a system test or another program may use the library:
 - Files: `@opensoftware/ui/tokens.css` and `@opensoftware/ui/brand/<file>.svg`
 - Components: `src/components/*.astro` and `src/styles/*.css`, which a page of the console compiles into its build:
   `Page` and `Brand`, for the sign-in page, and `Shell` with the type `ShellData`, for the runs page (T-56), the
-  secrets pages (T-57), the skills pages (T-59), the changes page (T-58), the run page, the work page and the inbox (T-60), whose list, form and fields are classes of `src/styles/base.css`;
+  secrets pages (T-57), the skills pages (T-59), the changes page (T-58), the run page, the work page and the inbox, the factory pages, the cost and scores and the health page (T-60), whose list, form and fields are classes of `src/styles/base.css`;
   the skills pages add the way back (`osf-crumbs`), an exact line (`osf-meta`), a panel with a label (`osf-section`),
   the needs of a record (`osf-needs`) and Markdown rendered on the server (`osf-prose`); the changes page adds panels
   one below the other (`osf-stack`), and `osf-button` serves a link and a button of a form alike; the runs page
   adds a table's rows as cards on a phone (`osf-cards`) and the main action at the bottom (`osf-dock`) (T-60); the run
   page adds a record's facts (`osf-facts`), its forms below them (`osf-toolbar`), a field with its button in one line
   (`osf-inline`), cards whose name is no link (`osf-card-name`, `osf-card-wide`) and the states of a stage (T-60); the work page and the inbox add a `select` and a `textarea` as `osf-input`, and the states of a work item and
-  of a proposal (T-60)
+  of a proposal (T-60); the factory pages, the cost and scores and the health page add an exact text of several lines
+  (`osf-code`), a fact across the panel (`osf-fact-wide`), a card's cell that names its column (`data-label`) and the
+  states of a check (T-60). Since T-60 the shell has no group "Classic pages": `ShellData` lists `pages` and `tools`
 
 The library's system tests import it by its package name and read the files it names (ADR 0039).
 

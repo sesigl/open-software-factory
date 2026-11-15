@@ -35,7 +35,7 @@ scenario("SCN-CONSOLE-090", async ({ sut, given, when, then }) => {
     'the table "Scores" shows "redundant-tests" with 2 scored, 1 passed, "50%" and "0.02 USD", and "slow-tests" with 1 scored, 0 passed, "0%" and "0.00 USD"',
     async () => {
       expect(page.status).toBe(200);
-      expect(page.title).toBe("Cost and scores · console");
+      expect(page.title).toBe("Cost and scores · Open Software Factory");
       expect(table(page, "Scores")).toEqual([
         ["redundant-tests", "2", "1", "50%", "0.02 USD"],
         ["slow-tests", "1", "0", "0%", "0.00 USD"],
