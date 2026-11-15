@@ -1,6 +1,6 @@
 // runChannel: the command line of a channel adapter, from its arguments to its exit code (ADR 0059).
 import { parseArgs } from "node:util";
-import { type Command, type Io, runProgram } from "@opensoftware/cli";
+import { type Command, commandOf, type Io, runProgram } from "@opensoftware/cli";
 import { type Channel, messages, post, receive } from "./commands.ts";
 
 /** Runs `receive`, `reply` or `ask` of the channel with the arguments and returns the exit code. */
@@ -28,7 +28,7 @@ A thread is ${channel.thread.form}.${channel.channel ? ` A channel, ${channel.ch
     ask: [2, () => post(channel, a, { question: b, choices: flags.choice ?? [] })],
     messages: [1, () => messages(channel, a)],
   };
-  const chosen = name === undefined ? undefined : commands[name];
+  const chosen = commandOf(commands, name);
   return runProgram(
     {
       name: channel.name,
