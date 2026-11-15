@@ -568,3 +568,7 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-218 | implemented | "Try again" checks the edit in the pull request's title like a form, and refuses a title that a person changed |
 | SCN-CONSOLE-219 | implemented | A pull request from a "console/" branch that another user opened is not a change of the console |
 | SCN-CONSOLE-220 | implemented | A factory engineer proposes a change in Chromium and sees it checking |
+| SCN-CONSOLE-221 | implemented | A factory repository that cannot be fetched answers 502 and names Git's error |
+| SCN-CONSOLE-222 | implemented | The console does not start with a factory repository that is not "git+<url>#<branch>" |
+| SCN-CONSOLE-223 | implemented | The console does not start with a factory repository and without "CONSOLE_FACTORY_USER" |
+| SCN-CONSOLE-224 | implemented | The form takes only an agent's name, so no text of it reaches a branch name or a title |

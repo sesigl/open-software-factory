@@ -16,10 +16,15 @@ scenario("SCN-CONSOLE-214", async ({ sut, fakes, given, when, then }) => {
     sent = await press(sut, change.pr.number, "merge");
   });
 
-  await then('the form answers 409 and says "Not merged: the check factory of #1 is not green"', async () => {
-    expect(sent.status).toBe(409);
-    expect(sent.text).toContain(`Not merged: the check factory of #${change.pr.number} is not green`);
-  });
+  await then(
+    'the form answers 409 and says "Not merged: #1 is failed; only a change whose check factory passed merges"',
+    async () => {
+      expect(sent.status).toBe(409);
+      expect(sent.text).toContain(
+        `Not merged: #${change.pr.number} is failed; only a change whose check factory passed merges`,
+      );
+    },
+  );
 
   await then("the pull request is still open", async () => {
     expect((await change.forge.pullRequests("factory")).map((pull) => pull.state)).toEqual(["open"]);

@@ -74,7 +74,7 @@ Feature: Changes
   Scenario: "Merge" of a change whose check "factory" failed answers 409 and merges nothing
     Given a forge adapter that cannot merge a pull request of "tester/factory" when its checks pass, and a change of the console whose check "factory" failed
     When a factory engineer sends the form "Merge" of the change
-    Then the form answers 409 and says "Not merged: the check factory of #1 is not green"
+    Then the form answers 409 and says "Not merged: #1 is failed; only a change whose check factory passed merges"
     And the pull request is still open
 
   @id=SCN-CONSOLE-215 @status=implemented
@@ -120,3 +120,31 @@ Feature: Changes
     When the person signs in in Chromium, follows "Changes", chooses "Add an egress host", the agent "triage", types "api.linear.app" and presses "Propose change"
     Then the person sees "The agent triage may reach the host api.linear.app." as "Checking" on "/changes"
     And the page passes the accessibility checks, and its screenshot is kept as "changes"
+
+  @id=SCN-CONSOLE-221 @status=implemented
+  Scenario: A factory repository that cannot be fetched answers 502 and names Git's error
+    Given a console with a factory repository at "http://127.0.0.1:9/tester/factory.git" that does not answer, and "grace@acme.dev" as "factory-engineer"
+    When "grace@acme.dev" sends the form "Propose change"
+    Then the form answers 502 and says "Not proposed: cannot fetch main of http://127.0.0.1:9/tester/factory.git"
+    And the console ran no "factory edit"
+
+  @id=SCN-CONSOLE-222 @status=implemented
+  Scenario: The console does not start with a factory repository that is not "git+<url>#<branch>"
+    Given a console whose "CONSOLE_FACTORY_REPOSITORY" is "https://forge.acme.dev/acme/factory"
+    When the user runs "console serve"
+    Then the command exits with code 2
+    And it prints "CONSOLE_FACTORY_REPOSITORY is git+<url>#<branch> of the factory's repository"
+
+  @id=SCN-CONSOLE-223 @status=implemented
+  Scenario: The console does not start with a factory repository and without "CONSOLE_FACTORY_USER"
+    Given a console with "CONSOLE_FACTORY_REPOSITORY" and without "CONSOLE_FACTORY_USER"
+    When the user runs "console serve"
+    Then the command exits with code 2
+    And it prints "set CONSOLE_FACTORY_USER to the user of CONSOLE_FACTORY_TOKEN"
+
+  @id=SCN-CONSOLE-224 @status=implemented
+  Scenario: The form takes only an agent's name, so no text of it reaches a branch name or a title
+    Given a console with a factory repository, and "grace@acme.dev" as "factory-engineer"
+    When "grace@acme.dev" sends the form "Propose change" with "add-egress", the agent "triage main" and the value "api.linear.app"
+    Then the form answers 400 and says "Not proposed: triage main is not an agent's name, like triage"
+    And the console ran no "factory edit"

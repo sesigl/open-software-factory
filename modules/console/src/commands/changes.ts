@@ -266,8 +266,12 @@ export function useChanges(app: FastifyInstance, setup: ChangesSetup): void {
   );
 }
 
-/** Why a button does not act on a change in this state. */
-function whyNot(name: keyof typeof BUTTONS, number: number, state: string): string {
-  if (name === "merge") return `the check ${CHECK} of #${number} is not green`;
-  return `#${number} is ${state}, not failed or in conflict`;
-}
+/** Why a button does not act on a change in this state: "Merge" needs the check, the others a failed change. */
+const NEEDS: Record<keyof typeof BUTTONS, string> = {
+  merge: `only a change whose check ${CHECK} passed merges`,
+  retry: "only a failed change or one in conflict is tried again",
+  discard: "only a failed change or one in conflict is discarded",
+};
+
+const whyNot = (name: keyof typeof BUTTONS, number: number, state: string): string =>
+  `#${number} is ${state}; ${NEEDS[name]}`;
