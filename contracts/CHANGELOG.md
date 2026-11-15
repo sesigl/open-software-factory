@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.0](https://github.com/sesigl/open-software-factory/compare/contracts-v2.6.0...contracts-v2.7.0) (2026-11-15)
+
+
+### Features
+
+* **contracts:** the design and the format for proving the signed-in person to every module (T-61, ADR 0151) ([#351](https://github.com/sesigl/open-software-factory/issues/351)) ([5b9de4e](https://github.com/sesigl/open-software-factory/commit/5b9de4e2fb495a117ce95ea67781f5795503c8ef))
+
 ## [2.6.0](https://github.com/sesigl/open-software-factory/compare/contracts-v2.5.0...contracts-v2.6.0) (2026-11-15)
 
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.11.0](https://github.com/sesigl/open-software-factory/compare/console-v0.10.1...console-v0.11.0) (2026-11-15)
+
+
+### Features
+
+* **console:** remove the old stack and the route /pico.css (T-60) ([#355](https://github.com/sesigl/open-software-factory/issues/355)) ([a7909d1](https://github.com/sesigl/open-software-factory/commit/a7909d194fe0dbbf7f50e3763f3cd6af5863d1a3))
+* **console:** the factory pages, the cost and scores and the health page in the new look (T-60) ([#354](https://github.com/sesigl/open-software-factory/issues/354)) ([7f8886d](https://github.com/sesigl/open-software-factory/commit/7f8886d8bb295744f121897b0721534d87367ed4))
+* **console:** the run page and its forms in the new look (T-60) ([#352](https://github.com/sesigl/open-software-factory/issues/352)) ([80ca476](https://github.com/sesigl/open-software-factory/commit/80ca476c6fcb0e67a8ad8f528d9d20efbb92d38f))
+* **console:** the work form and the inbox in the new look (T-60) ([#353](https://github.com/sesigl/open-software-factory/issues/353)) ([288f52f](https://github.com/sesigl/open-software-factory/commit/288f52ff8d1bffc7bcbb8bda6596168b00e3de49))
+* **deploy:** the profile and the chart run a factory from a repository on a forge, with the check "factory" (T-58, ADR 0150) ([#346](https://github.com/sesigl/open-software-factory/issues/346)) ([e490044](https://github.com/sesigl/open-software-factory/commit/e4900442d1f677d5db126cf99c533f8903e62892))
+* **ui, console:** buttons read well everywhere, and the runs are cards on a phone (T-54, T-60) ([#350](https://github.com/sesigl/open-software-factory/issues/350)) ([56d31d0](https://github.com/sesigl/open-software-factory/commit/56d31d0379c5b5a455c44535cf75d45087c2c41e))
+
 ## [0.10.1](https://github.com/sesigl/open-software-factory/compare/console-v0.10.0...console-v0.10.1) (2026-11-15)
 
 

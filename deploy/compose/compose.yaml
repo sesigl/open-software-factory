@@ -146,14 +146,14 @@ services:
 
   # One-shot: the two policies for the mount, as secrets-openbao prints them, into the volume openbao-policies.
   openbao-policies:
-    image: ghcr.io/sesigl/open-software-factory/console:0.10.1-r1
+    image: ghcr.io/sesigl/open-software-factory/console:0.11.0
     build: &console
       context: ../images
       target: module
       secrets: [ca]
       args:
         PACKAGES: >-
-          @opensoftware/console@0.10.1 @opensoftware/forge-github@0.8.1 @opensoftware/forge-forgejo@0.8.1
+          @opensoftware/console@0.11.0 @opensoftware/forge-github@0.8.1 @opensoftware/forge-forgejo@0.8.1
           @opensoftware/secrets-openbao@0.1.1 @opensoftware/factory-spec@0.12.1
     entrypoint: [sh, -c]
     command:
@@ -390,14 +390,14 @@ services:
 
   foreman:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/foreman:0.14.0
+    image: ghcr.io/sesigl/open-software-factory/foreman:0.14.1
     build:
       context: ../images
       target: foreman
       secrets: [ca]
       args:
         PACKAGES: >-
-          @opensoftware/foreman@0.14.0 @opensoftware/harness-claude-code@0.6.0 @opensoftware/forge-github@0.8.1
+          @opensoftware/foreman@0.14.1 @opensoftware/harness-claude-code@0.6.0 @opensoftware/forge-github@0.8.1
           @opensoftware/forge-forgejo@0.8.1 @opensoftware/inference-litellm@0.5.1 @opensoftware/sandbox-docker@0.8.0
           @opensoftware/sandbox-kubernetes@0.6.0 @opensoftware/secrets-openbao@0.1.1
     command: [foreman, serve]
@@ -481,7 +481,7 @@ services:
 
   console:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/console:0.10.1-r1
+    image: ghcr.io/sesigl/open-software-factory/console:0.11.0
     build: *console
     command: [console, serve]
     depends_on:

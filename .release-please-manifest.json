@@ -1,5 +1,5 @@
 {
-  "contracts": "2.6.0",
+  "contracts": "2.7.0",
   "packages/testkit": "0.39.0",
   "packages/cli": "0.4.1",
   "packages/spec-files": "0.2.0",
@@ -28,8 +28,8 @@
   "packages/channel-kit": "0.3.1",
   "packages/postgres": "0.2.0",
   "modules/intake": "0.7.1",
-  "modules/foreman": "0.14.0",
-  "modules/console": "0.10.1",
+  "modules/foreman": "0.14.1",
+  "modules/console": "0.11.0",
   "adapters/secrets/openbao": "0.1.1",
   "packages/factory-source": "0.1.0"
 }

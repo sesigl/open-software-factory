@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.14.1](https://github.com/sesigl/open-software-factory/compare/foreman-v0.14.0...foreman-v0.14.1) (2026-11-15)
+
+
+### Bug Fixes
+
+* **foreman:** a read at the wrong moment no longer breaks a run ([#356](https://github.com/sesigl/open-software-factory/issues/356)) ([771e4a9](https://github.com/sesigl/open-software-factory/commit/771e4a979f87b84bbd1f6b5bfb781750083e6839))
+* **foreman:** a run that was read during its first step can be read again after it ends ([#348](https://github.com/sesigl/open-software-factory/issues/348)) ([d426b0f](https://github.com/sesigl/open-software-factory/commit/d426b0fe9e0fd59dcf94aa22ba35db33ed17444d))
+
 ## [0.14.0](https://github.com/sesigl/open-software-factory/compare/foreman-v0.13.0...foreman-v0.14.0) (2026-11-15)
 
 
