@@ -15,7 +15,9 @@ The only ways a page, a system test or another program may use the library:
   the skills pages add the way back (`osf-crumbs`), an exact line (`osf-meta`), a panel with a label (`osf-section`),
   the needs of a record (`osf-needs`) and Markdown rendered on the server (`osf-prose`); the changes page adds panels
   one below the other (`osf-stack`), and `osf-button` serves a link and a button of a form alike; the runs page
-  adds a table's rows as cards on a phone (`osf-cards`) and the main action at the bottom (`osf-dock`) (T-60)
+  adds a table's rows as cards on a phone (`osf-cards`) and the main action at the bottom (`osf-dock`) (T-60); the run
+  page adds a record's facts (`osf-facts`), its forms below them (`osf-toolbar`), a field with its button in one line
+  (`osf-inline`), cards whose name is no link (`osf-card-name`, `osf-card-wide`) and the states of a stage (T-60)
 
 The library's system tests import it by its package name and read the files it names (ADR 0039).
 
