@@ -51,8 +51,12 @@ const MEMO_PATCH = "memo-view";
  * replays without the patch, so its history schedules the same commands; from the patch on it keeps its memo current.
  */
 async function apply(run: RunView, fact: Fact, actions: RunAction[]): Promise<RunView> {
+  // Asked before the local activity, so the patch's marker is a command of the workflow task that asked. Asked after
+  // it, the marker went to a later task when a query split the task while the activity ran, and every replay of the
+  // run then failed with a nondeterminism error (TMPRL1100): no query of the ended run, no restart of a running one.
+  const memo = patched(MEMO_PATCH);
   const next = await local.apply(run, fact);
-  if (patched(MEMO_PATCH)) upsertMemo({ view: withActions(next, actions) });
+  if (memo) upsertMemo({ view: withActions(next, actions) });
   return next;
 }
 

@@ -23,7 +23,9 @@ foreman's worker busy. intake's `GET /v1/inbox` answered the 50 latest work item
   `state`, the foreman filters the page, so a page may hold fewer runs than `limit` and still have a `next`.
 - Each run keeps its view in its memo: the foreman starts the workflow with the memo `view`, and the workflow upserts it
   after each fact it applies, behind the patch `memo-view`, so a replay of a run that started before schedules the
-  same commands. The run list reads the views from the memos, without a query or result per run. A run without a memo
+  same commands. The workflow asks for the patch before the local activity `apply`, not after it: a query that split
+  the workflow task while the activity ran moved the marker to a later task, and no replay of that run succeeded. The
+  run list reads the views from the memos, without a query or result per run. A run without a memo
   (one that started before) is read with the query, as before.
 - intake's cursor is the received time and ID of the page's last work item in base64url; a page is one keyset query
   on `(received_at DESC, id)`, with an index.
