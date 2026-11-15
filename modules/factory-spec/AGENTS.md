@@ -12,7 +12,7 @@ The only ways a system test or another program may use this module:
 - Input: `factory.yaml` (the `factory-definition` contract), its prompts and skills, and `factory.lock`, in the
   current folder (`$INPUT` in tests)
 - Output folder: `$OUTPUT`; state folder: `OSF_DATA`. `factory edit` writes no file: it prints the edited
-  `factory.yaml` on stdout
+  `factory.yaml` on stdout, and `factory skills` prints the `skill-catalog` contract on stdout (ADR 0143)
 - Outside systems: the MCP Registry at `FACTORY_MCP_REGISTRY`, only in `factory plan`; the forge port's adapters
   (`FACTORY_FORGEJO_ADAPTER`, `FACTORY_GITHUB_ADAPTER`) as separate processes, in `factory plan` and `factory apply`
   when the factory has forgejo or github automations. The system tests pass the built adapters of this repository

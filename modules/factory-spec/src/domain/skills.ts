@@ -1,7 +1,7 @@
 // The rules of the skills an agent uses (ADR 0140): a folder with a SKILL.md in the Agent Skills format
 // (agentskills.io), files the foreman can copy as text (ADR 0112), one skill per name, and the secrets and hosts a
 // skill needs, which its agent declares.
-import type { FactoryDefinition } from "@opensoftware/contracts";
+import type { CatalogSkill, FactoryDefinition } from "@opensoftware/contracts";
 import { type Document, isMap, LineCounter, parseDocument } from "yaml";
 import { locate, type Place } from "./locate.ts";
 
@@ -94,21 +94,6 @@ export function skillRules(definition: FactoryDefinition, files: FolderFiles): S
         result.findings.push([at, message]);
   }
   return result;
-}
-
-/** A skill as "factory skills" prints it (README.md#the-skills-as-json). */
-export interface CatalogSkill {
-  name: string;
-  description: string | null;
-  /** Where the skill comes from: a folder of the factory's repository, relative to its folder. */
-  source: { folder: string };
-  needs: Needs;
-  /** Each agent that uses it: the reference that gives each needed secret, and what it lacks. */
-  agents: { name: string; secrets: Record<string, string>; lacks: Needs }[];
-  files: string[];
-  body: string | null;
-  /** The problems of its own files, like lint prints them, and of its folder. */
-  problems: string[];
 }
 
 /** Every skill the agents use, sorted by name, with its agents sorted by name. */

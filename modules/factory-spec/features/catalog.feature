@@ -35,3 +35,11 @@ Feature: Print the skills of a factory
     Then the command exits with code 1
     And the error is "factory.yaml:7:3 /agents/triage/model: missing required field" and "factory.yaml:7:3 /agents/triage/effort: missing required field"
     And the output is empty
+
+  @id=SCN-FSPEC-118 @status=implemented
+  Scenario: What "factory skills" prints is a valid skill catalog of the contracts, also for a skill that lint refuses
+    Given the skill "release-notes" whose SKILL.md has the metadata "opensoftware/secrets: LINEAR_TOKEN" and "opensoftware/hosts: api.linear.app"
+    And a factory.yaml whose agent "triage" has the skills "./skills/release-notes" and "./skills/missing", the secret "ref:openbao/linear-token" and only the egress host "github.com"
+    When the console runs "factory skills"
+    Then the command exits with code 0
+    And the output is a valid skill-catalog with the skills "missing" and "release-notes"

@@ -149,7 +149,10 @@ such as `license`, `allowed-tools`, Claude Code's `disable-model-invocation` or 
 `factory skills` prints every skill an agent uses as one JSON document, for a program that shows them, such as the
 console's pages `/skills` and `/skills/<name>`. It reads the skills with the rules above, so the program never parses
 a `SKILL.md` itself (ADR 0135). A skill that lint refuses is printed with its problems; only a `factory.yaml` that does
-not fit the contract fails the command, with the lines of `factory lint` on stderr and exit code 1.
+not fit the contract fails the command, with the lines of `factory lint` on stderr and exit code 1. The document is
+the format `skill-catalog` of the contracts ([ADR 0143](../../docs/decisions/0143-skill-catalog-contract.md)):
+`validate("skill-catalog", …)` of `@opensoftware/contracts` checks it, and its types are `SkillCatalog` and
+`CatalogSkill`.
 
 ```json
 {
@@ -498,3 +501,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FSPEC-115 | implemented | The skills are printed with their needs, their agents and the Markdown below the front matter |
 | SCN-FSPEC-116 | implemented | A skill that lint refuses is printed with its problems |
 | SCN-FSPEC-117 | implemented | A factory.yaml that does not fit the contract fails "factory skills" with its problems |
+| SCN-FSPEC-118 | implemented | What "factory skills" prints is a valid skill catalog of the contracts, also for a skill that lint refuses |
