@@ -30,18 +30,29 @@ import { frameData } from "../pages/frame.ts";
 import { healthData } from "../pages/health.ts";
 import { type Frame, page, problem } from "../pages/html.ts";
 import { improvementPage } from "../pages/improvement.ts";
-import { inboxPage } from "../pages/inbox.ts";
-import { problemData } from "../pages/problem.ts";
+import { inboxData } from "../pages/inbox.ts";
+import { type Back, problemData } from "../pages/problem.ts";
 import { runData } from "../pages/run.ts";
 import { runsData, waitingOf } from "../pages/runs.ts";
 import { shellData } from "../pages/shell.ts";
-import { workPage } from "../pages/work.ts";
+import { workData } from "../pages/work.ts";
 import { FORGE_ADAPTER, factoryRepositoryOf, NO_ROLES, useChanges } from "./changes.ts";
 import { actorOf, fromConsole, personOf } from "./person.ts";
 import { SECRET_ROLES, useSecrets } from "./secrets.ts";
 import { useSkills } from "./skills.ts";
 
 type Env = Record<string, string | undefined>;
+
+/** A request the console cannot answer: its title, the reason and the way back to the page it belongs to. */
+interface Problem {
+  title: string;
+  detail: string;
+  back: Back;
+}
+
+const RUNS: Back = { href: "/", text: "Runs" };
+const WORK: Back = { href: "/work", text: "Work" };
+const INBOX: Back = { href: "/inbox", text: "Inbox" };
 
 /** The Content-Security-Policy of every answer: the console's own origin only, no script and no frame (ADR 0132). */
 const POLICY =
@@ -217,15 +228,24 @@ export async function serve(env: Env) {
     );
   });
 
-  /** A problem of a run's page or of its forms, in the new look, with the way back to the runs. */
-  const runProblem = (request: FastifyRequest, reply: FastifyReply, status: number, title: string, detail: string) =>
+  /** A problem in the new look, with the way back to the page it belongs to, which the navigation marks. */
+  const problemPage = (request: FastifyRequest, reply: FastifyReply, status: number, problem: Problem) =>
     render(
       request,
       reply,
       status,
-      problemData(shellOf(request, { title, current: "/" }), title, detail, { href: "/", text: "Runs" }),
+      problemData(
+        shellOf(request, { title: problem.title, current: problem.back.href }),
+        problem.title,
+        problem.detail,
+        problem.back,
+      ),
       "problem",
     );
+
+  /** A problem of a run's page or of its forms, with the way back to the runs. */
+  const runProblem = (request: FastifyRequest, reply: FastifyReply, status: number, title: string, detail: string) =>
+    problemPage(request, reply, status, { title, detail, back: RUNS });
 
   /** The run and the foreman that knows it, or the answer 404. */
   const findRun = async (runId: string, request: FastifyRequest, reply: FastifyReply) => {
@@ -285,17 +305,17 @@ export async function serve(env: Env) {
     return send(reply, 200, { title: name }, agentPage(name, agent, source));
   });
 
-  app.get("/inbox", async (_request, reply) => {
+  app.get("/inbox", async (request, reply) => {
     if (!inbox)
-      return send(
-        reply,
-        404,
-        { title: "Inbox" },
-        problem("No inbox", "no inbox: set CONSOLE_INBOX_REPOSITORY to the repository of observer's pull requests"),
-      );
+      return problemPage(request, reply, 404, {
+        title: "No inbox",
+        detail: "no inbox: set CONSOLE_INBOX_REPOSITORY to the repository of observer's pull requests",
+        back: RUNS,
+      });
     const answer = await proposals(forge, inbox, prefix);
     const notes = answer.ok ? [] : [answer.note];
-    return send(reply, 200, { title: "Inbox", notes }, inboxPage(inbox, answer.ok ? answer.body : [], now()));
+    const shell = shellOf(request, { title: "Inbox", current: INBOX.href });
+    return render(request, reply, 200, inboxData(shell, inbox, answer.ok ? answer.body : [], now(), notes));
   });
 
   app.get("/improvement", async (_request, reply) => {
@@ -314,18 +334,18 @@ export async function serve(env: Env) {
 
   app.get<{ Querystring: { cursor?: string } }>("/work", async (request, reply) => {
     if (!intake)
-      return send(
-        reply,
-        404,
-        { title: "Work" },
-        problem("No work items", "no work items: set CONSOLE_INTAKE_URL to the base URL of intake's API"),
-      );
+      return problemPage(request, reply, 404, {
+        title: "No work items",
+        detail: "no work items: set CONSOLE_INTAKE_URL to the base URL of intake's API",
+        back: RUNS,
+      });
     const answer = await getJson<WorkItemList>(intake, `/v1/inbox${queryOf({ cursor: request.query.cursor })}`);
     const notes = answer.ok ? [] : [answer.note];
     const items = answer.ok ? answer.body.workItems : [];
     // intake's cursor of the next page is the console's (ADR 0115).
     const next = answer.ok && answer.body.next ? `/work${queryOf({ cursor: answer.body.next })}` : undefined;
-    return send(reply, 200, { title: "Work", refresh, notes }, workPage(items, now(), actions, next));
+    const shell = shellOf(request, { title: "Work", current: WORK.href, refresh });
+    return render(request, reply, 200, workData(shell, items, now(), { notes, form: actions, next }));
   });
 
   // Actions (ADR 0089): only with CONSOLE_USER_HEADER, from the same origin, in the name of the signed-in person.
@@ -334,21 +354,22 @@ export async function serve(env: Env) {
     done(null, Object.fromEntries(new URLSearchParams(body as string))),
   );
   /** The signed-in person of a form from the same site, or the answer that refuses it. */
-  const signedIn = (request: FastifyRequest, reply: FastifyReply, title: string) => {
+  // A refusal is a problem in the new look, with the way back to the form's page.
+  const signedIn = (request: FastifyRequest, reply: FastifyReply, back: Back) => {
+    const elsewhere = { title: "Forbidden", detail: "the form came from another site", back };
     if (sign) {
       // With the own sign-in a form names the console's own address in Origin (ADR 0134).
-      if (!fromConsole(request, sign))
-        return { refused: send(reply, 403, { title }, problem("Forbidden", "the form came from another site")) };
+      if (!fromConsole(request, sign)) return { refused: problemPage(request, reply, 403, elsewhere) };
       return { person: personOf(request)?.email ?? "" };
     }
     const origin = request.headers.origin;
     if (origin && new URL(origin).host !== request.headers.host)
-      return { refused: send(reply, 403, { title }, problem("Forbidden", "the form came from another site")) };
+      return { refused: problemPage(request, reply, 403, elsewhere) };
     const person = String(request.headers[userHeader as string] ?? "");
-    if (!person)
-      return {
-        refused: send(reply, 401, { title }, problem("Sign in", `sign in first: the console needs ${userHeader}`)),
-      };
+    if (!person) {
+      const detail = `sign in first: the console needs ${userHeader}`;
+      return { refused: problemPage(request, reply, 401, { title: "Sign in", detail, back }) };
+    }
     return { person };
   };
   const secretsAdapter = env.CONSOLE_SECRETS_ADAPTER || "npx -y @opensoftware/secrets-openbao";
@@ -386,18 +407,19 @@ export async function serve(env: Env) {
   });
   if (actions && intake) {
     app.post<{ Body: Record<string, string> }>("/work", async (request, reply) => {
-      const { person, refused } = signedIn(request, reply, "Work");
+      const { person, refused } = signedIn(request, reply, WORK);
       if (refused) return refused;
       const submission = submissionOf(request.body ?? {}, person, new Date(now()).toISOString());
       const answer = await postJson(intake, "/v1/work-items", submission);
-      if (!answer.ok) return send(reply, 502, { title: "Work" }, problem("Not submitted", answer.note));
+      if (!answer.ok)
+        return problemPage(request, reply, 502, { title: "Not submitted", detail: answer.note, back: WORK });
       return reply.code(303).header("location", "/work").send();
     });
   }
   if (actions) {
     app.post<{ Params: { runId: string } }>("/runs/:runId/retry", async (request, reply) => {
       const { runId } = request.params;
-      const { person, refused } = signedIn(request, reply, runId);
+      const { person, refused } = signedIn(request, reply, RUNS);
       if (refused) return refused;
       const { api, missing } = await findRun(runId, request, reply);
       if (!api) return missing;
@@ -415,7 +437,7 @@ export async function serve(env: Env) {
       "/runs/:runId/signals",
       async (request, reply) => {
         const { runId } = request.params;
-        const { person, refused } = signedIn(request, reply, runId);
+        const { person, refused } = signedIn(request, reply, RUNS);
         if (refused) return refused;
         const { api, missing } = await findRun(runId, request, reply);
         if (!api) return missing;
@@ -433,7 +455,7 @@ export async function serve(env: Env) {
       "/runs/:runId/gates/:gateId",
       async (request, reply) => {
         const { runId, gateId } = request.params;
-        const { person, refused } = signedIn(request, reply, runId);
+        const { person, refused } = signedIn(request, reply, RUNS);
         if (refused) return refused;
         const { decision, reason } = request.body ?? {};
         const body = {

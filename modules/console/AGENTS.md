@@ -45,7 +45,8 @@ Layers, top to bottom, in `architecture.json` (ADR 0014): `entry` (`src/cli.ts`)
 (`src/web/`) → `pages` → `adapters` → `domain`. A page that has moved to Astro (ADR 0132) is a template in
 `src/web/pages/<path>.astro`: its route in `serve` loads the data, a function of `pages` computes every value it shows,
 and `adapters/web.ts` hands them to Astro as `locals.page` with the status. A template holds no logic (TEMPLATE); the
-health page is the first. Every answer has a Content-Security-Policy without script. The design system `@opensoftware/ui` is a `devDependency`: Astro compiles its components, styles and faces
+health page is the first. Astro's own Origin check is off: the route of each form checks `Origin` first and answers a
+form from another site with its own problem page, which Astro only renders. Every answer has a Content-Security-Policy without script. The design system `@opensoftware/ui` is a `devDependency`: Astro compiles its components, styles and faces
 into `dist/web/` and copies its brand files beside them (`publicDir`), and the console serves them at `/_astro/` and
 `/favicon.svg` from its own origin. So no built file may resolve `@opensoftware/ui`: the published console does not have it. Islands: none yet; each island
 a page uses is listed here with the reason why a page load is not enough (T-55). `domain` holds the run states, the order of a merged run list, a run's age, the URL
@@ -93,12 +94,28 @@ A journey runs in Chromium (`@kind=journey`, ADR 0131) only for a main flow. Eac
   inside the screen, and only it shows that the field "Reason" of the inline form takes the typed text and that a
   browser's form with the console's own `Origin` leads back to the run's page; the run page passes axe there.
 
+- SCN-CONSOLE-257, submit work on a phone: the main flow of a person who brings work, and the only proof that a
+  browser lays out the inbox's proposals and the work items as cards and the form's fields in one column inside the
+  screen, that it sends the form "Submit work" with its `select` and the console's own `Origin`, and that both pages
+  pass axe.
+
 They start the console with `CONSOLE_REFRESH=0`: axe's rule `meta-refresh` (WCAG 2.2.1) flags the runs page's reload,
 which stays until live updates replace it (`TODO.md`, T-60).
 
 ## Budget
 
-- System tests: 319 seconds in total on the CI runner (196 scenarios). Raised from 312 seconds on 15 November 2026
+- System tests: 326 seconds in total on the CI runner (202 scenarios). Raised from 319 seconds on 15 November 2026
+  with the work page and the inbox in the new look (T-60), measured on the development container in one run of the
+  whole suite: the 7 new scenarios took 5.0 seconds next to 208.2 for the other 195; SCN-CONSOLE-251 replaces
+  SCN-CONSOLE-204 at the same cost (0.46 seconds), so the suite grew by 4.5 seconds, 2.2 % more, about 6.5 seconds on
+  top of the 295 estimated for CI below, 302 for the suite; the budget is that and 8 %. Set it to the next CI measure.
+  - Where their time goes: the journey SCN-CONSOLE-257 takes 2.3 seconds: Chromium on a phone, two pages with axe,
+    one start of the forge adapter for the inbox, and one form sent and its page loaded again; the page scenarios
+    SCN-CONSOLE-252 to 256 take 0.4 to 0.5 seconds each.
+  - Made cheap first: one journey for both pages, with the sign-in proxy's header and no sign-in; the problems in
+    the new look, the refused submission and the intake that does not answer are page scenarios, not in Chromium,
+    and only the inbox scenarios start the forge.
+- Before that: 319 seconds for 196 scenarios. Raised from 312 seconds on 15 November 2026
   with the run page in the new look (T-60), measured on the development container in one run of the whole suite: the 4
   new scenarios took 4.4 seconds next to 205.8 for the other 192, so 2.1 % more, about 6 seconds on top of the 289
   estimated for CI below, 295 for the suite; the budget is that and 8 %. Set it to the next CI measure.

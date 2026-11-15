@@ -1,57 +1,61 @@
-// The work page "/work": intake's latest work items, each with its origin, status, requester, run and age, so a person
-// sees the work that waits, also work without a run yet.
+// The data of the work page "/work" (src/web/pages/work.astro): intake's latest work items, each with its origin,
+// status, requester, run and age, so a person sees the work that waits, also work without a run yet; and the form
+// "Submit work" when the console takes actions (ADR 0089), in the shell of the new look. The template only reads it.
 import type { WorkItemView } from "@opensoftware/contracts";
+import type { ShellData } from "@opensoftware/ui";
 import { age } from "../domain/runs.ts";
-import { html, linkOr, nextLink } from "./html.ts";
+import { linkOf } from "./runs.ts";
 
-/** The form "submit work", shown when the console takes actions (ADR 0089). */
-const submitForm = html`<form method="post" action="/work">
-  <fieldset>
-    <legend>Submit work</legend>
-    <label>Title <input name="title" required maxlength="300" /></label>
-    <label
-      >Type
-      <select name="type">
-        <option value="task">task</option>
-        <option value="bug">bug</option>
-        <option value="idea">idea</option>
-        <option value="automation">automation</option>
-      </select>
-    </label>
-    <label>Description <textarea name="description"></textarea></label>
-  </fieldset>
-  <button type="submit">Submit</button>
-</form>`;
+export interface WorkRow {
+  /** The work item's title, linked to its origin when that is an http or https URL. */
+  title: ReturnType<typeof linkOf>;
+  type: string;
+  status: string;
+  /** The classes of the status: its shape and colour. */
+  statusClass: string;
+  source: string;
+  requester: string;
+  /** The run that works on it, or a dash before a run took it. */
+  run: { href?: string; text: string };
+  age: string;
+}
 
-export function workPage(items: WorkItemView[], now: number, actions = false, next?: string) {
-  return html`<h1>Work</h1>
-    ${actions ? submitForm : null}
-    <p>The latest work items, the one received last first.</p>
-    <table>
-      <thead>
-        <tr>
-          <th>Work item</th>
-          <th>Type</th>
-          <th>Status</th>
-          <th>Source</th>
-          <th>Requester</th>
-          <th>Run</th>
-          <th>Age</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${items.map(
-          ({ workItem, status, runId, receivedAt }) => html`<tr>
-            <td>${linkOr(workItem.origin.url, workItem.title)}</td>
-            <td>${workItem.type}</td>
-            <td>${status}</td>
-            <td>${workItem.origin.source}</td>
-            <td>${workItem.requester.displayName ?? workItem.requester.id}</td>
-            <td>${runId ? html`<a href=${`/runs/${runId}`}>${runId}</a>` : "—"}</td>
-            <td>${age(receivedAt, now)}</td>
-          </tr>`,
-        )}
-      </tbody>
-    </table>
-    ${nextLink(next)}`;
+export interface WorkData {
+  shell: ShellData;
+  /** Why intake's work items are missing. */
+  notes: string[];
+  rows: WorkRow[];
+  /** Whether intake answered with no work item. */
+  empty: boolean;
+  /** Whether the page offers the form "Submit work": only when the console takes actions. */
+  form: boolean;
+  next?: string;
+}
+
+const rowOf = ({ workItem, status, runId, receivedAt }: WorkItemView, now: number): WorkRow => ({
+  title: linkOf(workItem.origin.url, workItem.title),
+  type: workItem.type,
+  status,
+  statusClass: `osf-state osf-state-${status}`,
+  source: workItem.origin.source,
+  requester: workItem.requester.displayName ?? workItem.requester.id,
+  run: runId ? { href: `/runs/${runId}`, text: runId } : { text: "—" },
+  age: age(receivedAt, now),
+});
+
+export function workData(
+  shell: ShellData,
+  items: WorkItemView[],
+  now: number,
+  at: { notes: string[]; form: boolean; next: string | undefined },
+): WorkData {
+  return {
+    shell,
+    notes: at.notes,
+    rows: items.map((item) => rowOf(item, now)),
+    // "No work items yet" only when intake answered: without its answer the page does not know.
+    empty: items.length === 0 && at.notes.length === 0,
+    form: at.form,
+    ...(at.next ? { next: at.next } : {}),
+  };
 }

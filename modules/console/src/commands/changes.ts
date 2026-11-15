@@ -40,6 +40,7 @@ import {
   titleOf,
 } from "../domain/changes.ts";
 import { changeRow, changesData, checking } from "../pages/changes.ts";
+import type { Back } from "../pages/problem.ts";
 import { actorOf } from "./person.ts";
 
 /** The factory's repository on a forge, from CONSOLE_FACTORY_REPOSITORY. */
@@ -63,7 +64,7 @@ export interface ChangesSetup {
   closed: string | undefined;
   refresh: number;
   shell(request: FastifyRequest, title: string, refresh?: number): ShellData;
-  signedIn(request: FastifyRequest, reply: FastifyReply, title: string): { person?: string; refused?: unknown };
+  signedIn(request: FastifyRequest, reply: FastifyReply, back: Back): { person?: string; refused?: unknown };
   problem(reply: FastifyReply, status: number, title: string, detail: string): unknown;
 }
 
@@ -186,7 +187,7 @@ export function useChanges(app: FastifyInstance, setup: ChangesSetup): void {
     | { refused?: undefined; person: string; repository: FactoryRepository } => {
     const why = whyNoChange(repository, setup.closed, request);
     if (why?.status === 404) return { refused: setup.problem(reply, 404, "No changes", why.detail) };
-    const signed = setup.signedIn(request, reply, "Changes");
+    const signed = setup.signedIn(request, reply, { href: "/changes", text: "Changes" });
     if (signed.refused) return { refused: signed.refused };
     if (why) return { refused: setup.problem(reply, 403, "Forbidden", why.detail) };
     return { person: actorOf(request)?.email as string, repository: repository as FactoryRepository };

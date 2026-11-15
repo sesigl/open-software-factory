@@ -307,11 +307,14 @@ a:hover {
   border-radius: 50%;
 }
 
-.osf-state-blocked {
+/* Work that waits for a person, like a blocked run or a proposal that needs a review. */
+.osf-state-blocked,
+.osf-state-needs-review {
   color: var(--osf-state-waiting);
 }
 
-.osf-state-blocked::before {
+.osf-state-blocked::before,
+.osf-state-needs-review::before {
   background: currentColor;
 }
 
@@ -328,12 +331,14 @@ a:hover {
 }
 
 .osf-state-complete,
-.osf-state-succeeded {
+.osf-state-succeeded,
+.osf-state-approved {
   color: var(--osf-state-complete);
 }
 
 .osf-state-complete::before,
-.osf-state-succeeded::before {
+.osf-state-succeeded::before,
+.osf-state-approved::before {
   width: 6px;
   margin: 0 2px;
   border: solid currentColor;
@@ -350,12 +355,19 @@ a:hover {
   background: currentColor;
 }
 
-/* A stage that has not started: no colour, an open ring. */
-.osf-state-pending {
+/*
+ * Work that waits for no person yet: no colour, an open ring. A stage that has not started, a work item that intake
+ * received and no run took yet, a proposal whose author has to change it.
+ */
+.osf-state-pending,
+.osf-state-received,
+.osf-state-changes-requested {
   color: var(--osf-text-subtle);
 }
 
-.osf-state-pending::before {
+.osf-state-pending::before,
+.osf-state-received::before,
+.osf-state-changes-requested::before {
   border: 2px solid currentColor;
   border-radius: 50%;
 }
@@ -495,6 +507,20 @@ a:hover {
   background: var(--osf-bg-ground);
   color: var(--osf-text);
   font-size: var(--osf-size-text);
+}
+
+/* A choice of a few values, like a work item's type. */
+select.osf-input {
+  font-family: var(--osf-font-sans);
+}
+
+/* A text of several lines, like a description: room for a few lines, taller when the person drags it. */
+textarea.osf-input {
+  min-height: 7rem;
+  padding: var(--osf-space-2) var(--osf-space-3);
+  font-family: var(--osf-font-sans);
+  line-height: 1.5;
+  resize: vertical;
 }
 
 .osf-input:focus-visible {

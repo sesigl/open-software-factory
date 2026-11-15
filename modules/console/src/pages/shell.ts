@@ -10,7 +10,7 @@ export interface ShellOf {
   path: string;
   theme: Theme;
   factory: string | undefined;
-  /** The link of the page in the new look that is open: "/" or "/secrets". */
+  /** The link of the page in the new look that is open, like "/" or "/secrets". */
   current: string;
   /** The count beside the open page's link, like "1 waits" or "1 missing", when the page knows it. */
   count?: string;
@@ -21,17 +21,17 @@ export interface ShellOf {
 
 export function shellData(frame: Omit<Frame, "title">, at: ShellOf): ShellData {
   const classic: ShellLink[] = [
-    ...(frame.work ? [{ name: "Work", href: "/work" }] : []),
     { name: "Factory", href: "/factory" },
-    ...(frame.inbox ? [{ name: "Inbox", href: "/inbox" }] : []),
     ...(frame.improvement ? [{ name: "Cost and scores", href: "/improvement" }] : []),
     { name: "Health", href: "/health" },
   ];
-  // Secrets only for a person who may open it (ADR 0134, ADR 0148): an admin or a factory engineer, in a console
-  // with a store. Skills in every mode,
-  // Changes with the factory's repository on a forge (ADR 0144).
+  // Work with intake, the inbox with its repository (T-60). Secrets only for a person who may open it (ADR 0134,
+  // ADR 0148): an admin or a factory engineer, in a console with a store. Skills in every mode, Changes with the
+  // factory's repository on a forge (ADR 0144).
   const pages: ShellLink[] = [
     { name: "Runs", href: "/" },
+    ...(frame.work ? [{ name: "Work", href: "/work" }] : []),
+    ...(frame.inbox ? [{ name: "Inbox", href: "/inbox" }] : []),
     ...(frame.secrets ? [{ name: "Secrets", href: "/secrets" }] : []),
     { name: "Skills", href: "/skills" },
     ...(frame.changes ? [{ name: "Changes", href: "/changes" }] : []),
