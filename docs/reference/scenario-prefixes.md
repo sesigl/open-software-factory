@@ -18,6 +18,7 @@ adds a row.
 | SEGRESS | sandbox-egress library | `packages/sandbox-egress/features/` |
 | CKIT | channel-kit library | `packages/channel-kit/features/` |
 | PG | postgres library | `packages/postgres/features/` |
+| FSOURCE | factory-source library | `packages/factory-source/features/` |
 | FSPEC | factory-spec | `modules/factory-spec/features/` |
 | RUN | runlog | `modules/runlog/features/` |
 | PROOF | proof | `modules/proof/features/` |

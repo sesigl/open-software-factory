@@ -436,7 +436,11 @@ took it over, and a `reason` when it failed for a reason the foreman knows.
   [factory definition](../../contracts/factory-definition/factory-definition.schema.json) when it starts, and that each
   stage's agent is declared; a wrong file exits 2 with the path in the file. Each run reads the file again when it
   starts and keeps that version until it ends. Its `factoryVersion` is the commit of the repository that holds the
-  file.
+  file. With `git+<url>#<ref>`, the library
+  [`@opensoftware/factory-source`](../../packages/factory-source/README.md) fetches the ref into
+  `OSF_DATA/factory` (ADR 0124); a private repository over HTTPS takes the token of `FOREMAN_FACTORY_TOKEN`, which Git
+  gets as Basic credentials of `x-access-token` for that URL only, in its environment, never in a file or on a
+  command line (ADR 0142). Without it, Git's own credentials apply.
 - **Stages.** The stages run in the order of `workflow`, each in the run's folder `OSF_DATA/runs/<run ID>`, or in a
   sandbox when the stage's agent declares one ([Sandboxes](#sandboxes)). The foreman
   starts the stage's harness adapter from `FOREMAN_HARNESSES`, speaks ACP to it, opens a session with the agent's MCP
@@ -549,6 +553,7 @@ the minor version. The one-time setup is the same as for contracts
 | `OSF_NOW` | string |  | The current time, like 2026-01-01T00:00:00Z, for the times of runs and stages. Default: the clock. |
 | `FOREMAN_API_TOKEN` | string |  | serve: the token that callers of /v1 send as Authorization: Bearer <token>. Required. |
 | `FOREMAN_FACTORY` | string | `"factory.yaml"` | serve: the factory definition. A path: its folder must be in a Git repository and clean, with every tracked file and every file the foreman reads committed: a run's factory version is its commit (ADR 0110). Or git+<url>#<ref>: the foreman fetches the ref, default the remote's HEAD, into OSF_DATA/factory, reads factory.yaml at the root of that commit, and the commit is the factory version (ADR 0124). |
+| `FOREMAN_FACTORY_TOKEN` | string |  | serve: a token for a FOREMAN_FACTORY of git+https://… in a private repository, sent to that URL only as Git's Basic credentials of x-access-token. Never written to a file or a command line (ADR 0142). Unset: Git's own credentials. |
 | `FOREMAN_TEMPORAL_ADDRESS` | string | `"localhost:7233"` | serve: the gRPC address of the Temporal server. |
 | `FOREMAN_TEMPORAL_NAMESPACE` | string | `"default"` | serve: the Temporal namespace of the runs. |
 | `FOREMAN_TASK_QUEUE` | string | `"foreman"` | serve: the Temporal task queue of the runs' workflows and activities. |
@@ -744,3 +749,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-164 | implemented | A stage whose agent declares a secret from OpenBao without a value fails before its first turn and names the secret |
 | SCN-FORE-165 | implemented | A stage whose agent's secret from OpenBao has a value runs in its sandbox |
 | SCN-FORE-166 | implemented | A stage whose secrets store does not answer fails before its first turn with the reason |
+| SCN-FORE-167 | implemented | The foreman fetches a factory in a Git remote with the token of FOREMAN_FACTORY_TOKEN as Git's Basic credentials |

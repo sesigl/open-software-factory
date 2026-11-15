@@ -1,13 +1,14 @@
 // Reads the factory (ADR 0067): factory.yaml, checked against the contract and for its stages' agents, the text of
 // each agent's prompt, the files of its skills and its MCP servers with their pins in factory.lock (ADR 0112), and the
 // factory version, the commit of the folder that holds the file, which must be clean (ADR 0110), or the commit of a
-// Git remote that the foreman fetched (ADR 0124).
+// Git remote that @opensoftware/factory-source fetched (ADR 0124, ADR 0142).
 import { execFile } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { promisify } from "node:util";
 import { UsageError } from "@opensoftware/cli";
 import { type FactoryDefinition, validate } from "@opensoftware/contracts";
+import { FetchError, factorySource as sourceOf } from "@opensoftware/factory-source";
 import { parse } from "yaml";
 import { type Definition, definitionOf, stageProblems } from "../domain/definition.ts";
 
@@ -24,57 +25,24 @@ export interface FactorySource {
   read(): Promise<Factory>;
 }
 
-const GIT = /^git\+(.+?)(?:#(.+))?$/;
-
-/** The source that `FOREMAN_FACTORY` names; a remote is fetched into `data`/factory. */
-export function factorySource(setting: string, data: string): FactorySource {
-  const remote = GIT.exec(setting);
-  if (!remote) {
-    const file = resolve(setting);
-    return { folder: () => dirname(file), read: () => readFactory(file) };
-  }
-  const [, url, ref = "HEAD"] = remote as unknown as [string, string, string?];
-  const store = join(data, "factory");
+/**
+ * The source that `FOREMAN_FACTORY` names; @opensoftware/factory-source fetches a remote into `data`/factory, with
+ * `token` for a private one (ADR 0142).
+ */
+export function factorySource(setting: string, data: string, token: string | undefined): FactorySource {
+  // Stryker disable next-line StringLiteral: the cache is the foreman's private data, which no test may read
+  const source = sourceOf(setting, { cache: join(data, "factory"), token });
   let folder = "";
-  // One fetch at a time, as runs start at once and share the repository.
-  let queue: Promise<unknown> = Promise.resolve();
-  const read = async () => {
-    const commit = await fetchCommit(url, ref, store);
-    folder = join(store, commit);
-    return readFactory(join(folder, "factory.yaml"), commit);
-  };
   return {
     folder: () => folder,
-    read: () => {
-      const next = queue.then(read);
-      queue = next.catch(() => undefined);
-      return next;
+    read: async () => {
+      const fetched = await source.fetch().catch((failure: unknown) => {
+        throw failure instanceof FetchError ? new UsageError(`FOREMAN_FACTORY: ${failure.message}`) : failure;
+      });
+      folder = resolve(fetched.folder);
+      return readFactory(fetched.file, fetched.commit);
     },
   };
-}
-
-/** Fetches `ref` of `url` into a bare repository below `store` and writes its files to `store`/<commit>. */
-async function fetchCommit(url: string, ref: string, store: string): Promise<string> {
-  const bare = join(store, "repository.git");
-  const git = (...args: string[]) =>
-    promisify(execFile)("git", ["--git-dir", bare, ...args]).then(({ stdout }) => stdout.trim());
-  mkdirSync(store, { recursive: true });
-  // Again on a repository that exists, git init changes nothing.
-  await promisify(execFile)("git", ["init", "--quiet", "--bare", bare]);
-  const commit = await git("fetch", "--quiet", "--no-tags", "--end-of-options", url, ref)
-    .then(() => git("rev-parse", "--verify", "FETCH_HEAD^{commit}"))
-    .catch((failure: { stderr: string }) => {
-      throw new UsageError(`FOREMAN_FACTORY: cannot fetch ${ref} of ${url}: ${failure.stderr.trim()}`);
-    });
-  const folder = join(store, commit);
-  if (!existsSync(folder)) {
-    const partial = `${folder}.partial`;
-    // A folder that a stopped server left half written is written again.
-    mkdirSync(partial, { recursive: true });
-    await git("--work-tree", partial, "checkout", "--quiet", commit, "--", ".");
-    renameSync(partial, folder);
-  }
-  return commit;
 }
 
 /**
