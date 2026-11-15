@@ -1709,7 +1709,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
   `ref:openbao/<name>`, and the next run's request to the allowed host carries it, with no restart and no edit of
   `.env`.
 - **Slices:**
-  - [ ] The ADR; the port's write side and the adapter `secrets-openbao`, with `fakes.openbao()` (`SCN-SECRET`, the
+  - [x] The ADR; the port's write side and the adapter `secrets-openbao`, with `fakes.openbao()` (`SCN-SECRET`, the
     adapter's prefix, `SCN-TK`); the adapter's first publish.
   - [x] Git's form of a secret from OpenBao, and the stage that fails first without a value (`SCN-SEGRESS`,
     `SCN-SANDBOX`, `SCN-FORE`).
