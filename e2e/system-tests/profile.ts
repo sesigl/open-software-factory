@@ -180,7 +180,13 @@ export async function smoke(
 
 /** Starts the services and points the fake Slack at intake's events and gatekeeper's buttons. */
 export async function started(smokeProfile: Smoke, services: string[]): Promise<void> {
-  await smokeProfile.run(["up", "--detach", "--wait", ...services]);
+  const up = ["up", "--detach", "--wait", ...services];
+  // Port 0 lets Docker pick a free port, and a scenario beside this one may take that port in the same moment: Docker
+  // then says "address already in use". "up" again starts what did not start, with a port Docker picks anew.
+  const first = await smokeProfile.compose.run(up);
+  if (first.exitCode !== 0 && !(first.stdout + first.stderr).includes("address already in use"))
+    expect(first.exitCode, `docker compose ${up.join(" ")}:\n${first.stdout}${first.stderr}`).toBe(0);
+  if (first.exitCode !== 0) await smokeProfile.run(up);
   const intake = await smokeProfile.url("intake").catch(() => undefined);
   const gatekeeper = await smokeProfile.url("gatekeeper").catch(() => undefined);
   smokeProfile.slack.deliverTo(
