@@ -1,6 +1,15 @@
 // The handle on the module under test: its CLI, HTTP API, MCP server, ACP agent and events, its input and output folders and
 // the Git repository in $INPUT.
-import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { listFiles, quickStart } from "../support/module.ts";
 import { type CliResult, mustRun, run } from "../support/process.ts";
@@ -64,6 +73,11 @@ export interface Sut {
   files: {
     /** Writes the file, a text as UTF-8 or bytes as they are; `executable` lets the owner run it, like a plugin. */
     put(path: string, content: string | Uint8Array, options?: { executable?: boolean }): Promise<void>;
+    /**
+     * Makes a symbolic link at `path` whose target is the text `target`, relative to the link's folder or absolute. A
+     * link may point anywhere, as one in a repository that a module fetches can.
+     */
+    link(path: string, target: string): Promise<void>;
     read(path: string): Promise<string>;
     list(dir?: string): Promise<string[]>;
     remove(path: string): Promise<void>;
@@ -159,6 +173,11 @@ export function makeSut(moduleRoot: string, dirs: Folders, hosts: () => string[]
         mkdirSync(dirname(full), { recursive: true });
         writeFileSync(full, content);
         if (options.executable) chmodSync(full, 0o755);
+      },
+      async link(path, target) {
+        const full = inside(path);
+        mkdirSync(dirname(full), { recursive: true });
+        symlinkSync(target, full);
       },
       async read(path) {
         return readFileSync(inside(path), "utf8");
