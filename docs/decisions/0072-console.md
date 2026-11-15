@@ -1,5 +1,5 @@
 ---
-status: accepted; no build step, no client script and read-only only superseded by 0130
+status: accepted; no build step, no client script and read-only only superseded by 0130; Preact, htm and Pico CSS superseded by 0132 and 0133
 date: 2026-10-26
 ---
 
