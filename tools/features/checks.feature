@@ -797,6 +797,14 @@ Feature: Repository checks
     Then the command exits with code 0
     And the reference factory names the template "ghcr.io/sesigl/open-software-factory/demo:0.2.0"
 
+  @id=SCN-REPO-168 @status=implemented
+  Scenario: PROFILE rejects a workflow of the reference factory that runs a package at another version than the workspace's
+    Given a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them
+    And the reference factory's workflow "factory" runs "npx --yes @opensoftware/demo@0.1.0 lint"
+    When the developer runs "osf check PROFILE"
+    Then the command exits with code 1
+    And the output contains "PROFILE deploy/compose/factory/.github/workflows/factory.yaml:3 is not the released pin; osf profile-pins writes "- run: npx --yes @opensoftware/demo@0.2.0 lint""
+
   @id=SCN-REPO-114 @status=implemented
   Scenario: osf profile-pins moves a module image to the new version of its module
     Given a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them

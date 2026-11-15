@@ -105,3 +105,12 @@ Feature: Setup of a factory from a clone
     Then the command exits with code 0
     And "deploy/compose/.env" still has "POSTGRES_PASSWORD=mine" and sets "OSF_OPENBAO_UNSEAL_KEY" to 64 hex digits, and has no line "GH_TOKEN="
     And the output contains "deploy/compose/.env exists: kept it, and added OSF_OPENBAO_UNSEAL_KEY"
+
+  @id=SCN-REPO-169 @status=implemented
+  Scenario: osf up names what a factory repository on a forge misses, and a setting that is not git+<url>
+    Given a "deploy/compose/compose.yaml" that requires "POSTGRES_PASSWORD" with "${POSTGRES_PASSWORD:?...}"
+    And a fake docker that logs its arguments
+    When the developer runs "osf up" with "FACTORY_REPOSITORY=git+https://github.com/acme/factory.git#main" and no "FACTORY_TOKEN" or "FACTORY_USER", and again with "FACTORY_REPOSITORY=https://github.com/acme/factory.git" and both set
+    Then the first run prints only "set FACTORY_TOKEN in deploy/compose/.env: FACTORY_REPOSITORY needs it" and the same for "FACTORY_USER"
+    And the second run prints only "set FACTORY_REPOSITORY in deploy/compose/.env to git+<url>#<branch>, like git+https://github.com/acme/factory.git#main, not https://github.com/acme/factory.git"
+    And both exit with code 1 and the fake docker was not called

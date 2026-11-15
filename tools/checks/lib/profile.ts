@@ -3,7 +3,8 @@
 // module image whose packages change gets a new tag: the module's new version, or `<version>-r<n+1>` when only an
 // adapter of it moved, as a published tag never changes. The chart's `images.*` take the same tags, and the chart's
 // version moves by a patch when they change. The factories of deploy/ name the agents' template, an image of the
-// profile, at the same tag (ADR 0096).
+// profile, at the same tag (ADR 0096). The reference factory's workflows run each package at the workspace's version
+// (ADR 0150).
 import type { Repo } from "./repo.ts";
 import { workspace } from "./workspace.ts";
 
@@ -11,6 +12,11 @@ export const COMPOSE = "deploy/compose/compose.yaml";
 export const VALUES = "deploy/helm/osf/values.yaml";
 export const CHART = "deploy/helm/osf/Chart.yaml";
 export const FACTORIES = ["deploy/compose/factory/factory.yaml", "deploy/dogfood/factory/factory.yaml"];
+/** The workflows of the reference factory that post its check `factory` (ADR 0150): they run packages at their pins. */
+export const WORKFLOWS = [
+  "deploy/compose/factory/.github/workflows/factory.yaml",
+  "deploy/compose/factory/.forgejo/workflows/factory.yaml",
+];
 export const REGISTRY = "ghcr.io/sesigl/open-software-factory";
 
 const PIN = /@opensoftware\/([a-z0-9-]+)@(\d+\.\d+\.\d+)/g;
@@ -115,6 +121,12 @@ export function pins(repo: Repo): Pins {
       text = text.replaceAll(new RegExp(`(${ESCAPED}/${module}):[^\\s"']+`, "g"), `$1:${tag}`);
     }
     files.push([factory, text]);
+  }
+  for (const workflow of WORKFLOWS.filter((file) => repo.exists(file))) {
+    const text = repo.read(workflow);
+    const pinned = (_pin: string, name: string, version: string) =>
+      `@opensoftware/${name}@${versions.get(name) ?? version}`;
+    files.push([workflow, text.replace(PIN, pinned)]);
   }
   return { compose, values, chart, files, tags };
 }

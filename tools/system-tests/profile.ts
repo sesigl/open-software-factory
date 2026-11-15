@@ -31,6 +31,8 @@ export interface Profile {
   template?: string;
   /** The tag of the image litellm that the profile builds, which the chart's LiteLLM uses too. */
   gateway?: string;
+  /** The command that the reference factory's workflow "factory" runs. */
+  workflow?: string;
 }
 
 /** A Dockerfile whose stage demo builds on the stage base and the global ARG NODE. */
@@ -61,6 +63,7 @@ export function profileRepository(profile: Profile = {}): Record<string, string>
     volume = false,
     template,
     gateway,
+    workflow,
   } = profile;
   const manifest = (name: string, version: string, tested = false) => {
     const scripts = tested ? { scripts: { "test:system": "vitest run" } } : {};
@@ -94,6 +97,9 @@ export function profileRepository(profile: Profile = {}): Record<string, string>
     ...(dockerfile ? { "deploy/images/Dockerfile": dockerfile } : {}),
     ...(template
       ? { "deploy/compose/factory/factory.yaml": `agents:\n  a:\n    sandbox:\n      template: ${template}\n` }
+      : {}),
+    ...(workflow
+      ? { "deploy/compose/factory/.github/workflows/factory.yaml": `jobs:\n  factory:\n    - run: ${workflow}\n` }
       : {}),
     "deploy/helm/osf/values.yaml": `images:\n  demo: "${chartTag}"\npostgres:\n  image: ${chartImage}\n${
       gateway ? `litellm:\n  image: ${REGISTRY}/litellm:${gateway}\n` : ""

@@ -80,9 +80,26 @@ export function up(root: string, args: string[]): number {
     for (const name of needs ?? [])
       if (!values.get(name)) problems.push(`set ${name} in ${ENV}: CONSOLE_SIGN_IN=${signIn} needs it`);
   }
+  problems.push(...repositoryProblems(values));
   for (const problem of problems) process.stdout.write(`${problem}\n`);
   if (problems.length > 0) return 1;
   return docker(root, ["compose", "up", "--detach", "--wait", ...args]);
+}
+
+/**
+ * A factory repository on a forge (ADR 0150): git+<url>, with the token that clones it and opens the console's
+ * changes, and that token's user, without whom the console does not start.
+ */
+function repositoryProblems(values: Map<string, string>): string[] {
+  const repository = values.get("FACTORY_REPOSITORY");
+  if (!repository) return [];
+  if (!repository.startsWith("git+"))
+    return [
+      `set FACTORY_REPOSITORY in ${ENV} to git+<url>#<branch>, like git+https://github.com/acme/factory.git#main, not ${repository}`,
+    ];
+  return ["FACTORY_TOKEN", "FACTORY_USER"]
+    .filter((name) => !values.get(name))
+    .map((name) => `set ${name} in ${ENV}: FACTORY_REPOSITORY needs it`);
 }
 
 export function doctor(root: string): number {

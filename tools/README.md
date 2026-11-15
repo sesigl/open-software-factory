@@ -295,3 +295,5 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-165 | implemented | DEPS-RUNTIME accepts the imports that osf bundle compiles in and rejects a lookup by name |
 | SCN-REPO-166 | implemented | osf init generates OpenBao's unseal key, its root token and the IDs of the console's and the egress proxy's tokens |
 | SCN-REPO-167 | implemented | osf init adds to an existing .env the generated values it lacks and changes no value it has |
+| SCN-REPO-168 | implemented | PROFILE rejects a workflow of the reference factory that runs a package at another version than the workspace's |
+| SCN-REPO-169 | implemented | osf up names what a factory repository on a forge misses, and a setting that is not git+<url> |
