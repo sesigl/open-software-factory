@@ -1,0 +1,49 @@
+---
+import Shell from "@opensoftware/ui/components/Shell.astro";
+import type { SkillsData } from "../../pages/skills.ts";
+
+const { shell, notes, rows, empty } = Astro.locals.page as SkillsData;
+Astro.response.status = Astro.locals.status;
+Astro.response.statusText = Astro.locals.statusText;
+---
+<Shell shell={shell}>
+  <div class="osf-intro">
+    <h1>Skills</h1>
+    <p>
+      The skills the factory's agents use, from the folders of its repository. An agent names its skills in the
+      factory definition; a skill names the secrets and hosts it needs, and each agent that uses it must declare them.
+    </p>
+  </div>
+  {notes.map((note) => <p role="alert" class="osf-alert">{note}</p>)}
+  {empty ? (
+    <p class="osf-empty">No skills yet. An agent names one in the factory definition, like skills: [./skills/release-notes].</p>
+  ) : (
+    <ul class="osf-list" aria-label="Skills">
+      {rows.map((row) => (
+        <li>
+          <div class="osf-list-text">
+            <a class="osf-mono osf-strong" href={row.href}>{row.name}</a>
+            <span>{row.description}</span>
+            <span class="osf-secondary">{row.detail}</span>
+            {row.needsLabel && (
+              <ul class="osf-needs" aria-label={row.needsLabel}>
+                {row.needs.map((need) => (
+                  <li>
+                    <span class="osf-secondary">{need.kind}</span>
+                    <span class="osf-mono">{need.name}</span>
+                    {need.state && <span class={need.stateClass}>{need.state}</span>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          {row.problems && (
+            <div class="osf-list-end">
+              <span class="osf-state osf-state-failed">{row.problems}</span>
+            </div>
+          )}
+        </li>
+      ))}
+    </ul>
+  )}
+</Shell>

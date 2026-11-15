@@ -1,6 +1,6 @@
 # AGENTS.md for module `console`
 
-Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0072, ADR 0073, ADR 0115, ADR 0120, ADR 0130, ADR 0132.
+Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0072, ADR 0073, ADR 0115, ADR 0120, ADR 0130, ADR 0132, ADR 0141.
 
 ## Public surface
 
@@ -8,7 +8,7 @@ The only ways a system test or another program may use this module:
 
 - CLI: `console <command>` (see `README.md#commands`)
 - Web pages of `console serve` on `PORT` (see `README.md#pages`): `/`, `/runs/<runId>`, `/work`, `/factory`,
-  `/factory/agents/<name>`, `/inbox`, `/improvement`, `/health`, `/secrets` and `/secrets/delete` (ADR 0137); the sign-in `/signin`, `/signin/start`,
+  `/factory/agents/<name>`, `/inbox`, `/improvement`, `/health`, `/secrets` and `/secrets/delete` (ADR 0137), `/skills` and `/skills/<name>` (ADR 0141); the sign-in `/signin`, `/signin/start`,
   `/signin/callback` and `POST /signout` (ADR 0134); `/theme` (ADR 0133); the probe `/v1/ready`; and the files
   `/pico.css`, `/_astro/<file>` and `/favicon.svg`. Any other method but `GET` and `HEAD` answers 405, except the forms
   `POST /work`, `POST /runs/<runId>/retry`, `POST /runs/<runId>/signals` and `POST /runs/<runId>/gates/<gateId>` with
@@ -22,9 +22,10 @@ The only ways a system test or another program may use this module:
   only, the model gateway at `CONSOLE_MODEL_URL` (one `POST /chat/completions` per route) and the harness started by
   `CONSOLE_HARNESS_COMMAND` (ACP `initialize`, ADR 0120), the trace store, and the sandbox adapter in
   `CONSOLE_SANDBOX_COMMAND`, only with its command `probe` (ADR 0120); the secrets port's adapter in
-  `CONSOLE_SECRETS_ADAPTER` with `list`, `put` and `delete` for `/secrets` and with `probe` and `list` for `console
-  doctor` and `/health`, with `OSF_OPENBAO_ADDR`, `OSF_OPENBAO_TOKEN` and `OSF_OPENBAO_MOUNT` (ADR 0137); a value goes
-  only to the standard input of `put`
+  `CONSOLE_SECRETS_ADAPTER` with `list`, `put` and `delete` for `/secrets`, with `list` for `/skills` and
+  `/skills/<name>`, and with `probe` and `list` for `console doctor` and `/health`, with `OSF_OPENBAO_ADDR`, `OSF_OPENBAO_TOKEN` and `OSF_OPENBAO_MOUNT` (ADR 0137); a value goes
+  only to the standard input of `put`; factory-spec's `factory` in `CONSOLE_FACTORY_COMMAND`, only with
+  `skills --file <CONSOLE_FACTORY>` (ADR 0141)
 - Input: the factory definition in `CONSOLE_FACTORY` and the access file in `CONSOLE_ACCESS`
 - With `CONSOLE_SIGN_IN`: the identity provider at `CONSOLE_OIDC_ISSUER`, or GitHub at `CONSOLE_GITHUB_URL` and
   `CONSOLE_GITHUB_API_URL`
@@ -41,8 +42,9 @@ health page is the first. Every answer has a Content-Security-Policy without scr
 into `dist/web/` and copies its brand files beside them (`publicDir`), and the console serves them at `/_astro/` and
 `/favicon.svg` from its own origin. So no built file may resolve `@opensoftware/ui`: the published console does not have it. Islands: none yet; each island
 a page uses is listed here with the reason why a page load is not enough (T-55). `domain` holds the run states, the order of a merged run list, a run's age, the URL
-templates, the inbox's states and the states of the secrets, without I/O; `adapters` call the APIs, run the forge and
-the secrets adapters and read the factory file; `pages` are Preact components written
+templates, the inbox's states, the states of the secrets, what a skill needs and the safe HTML of a skill's Markdown
+(markdown-it, ADR 0141), without I/O; `adapters` call the APIs, run the forge and the secrets adapters and
+`factory`, and read the factory file; `pages` are Preact components written
 with htm that render HTML and import only `domain` and the types of `adapters`; `commands` join them: `serve` runs the
 Fastify server. The ARCH check enforces the layers.
 

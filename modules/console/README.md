@@ -47,6 +47,8 @@ Open <http://localhost:8080>. The page lists the foreman's runs, the running one
 | `/inbox` | The self-improvement inbox: the open pull requests of `CONSOLE_INBOX_REPOSITORY` whose branch starts with `CONSOLE_INBOX_PREFIX` (default `observer/`), newest first, each with its link, branch, author, state ("approved", "changes requested" or "needs review") and age. A forge adapter that fails is named above the list. 404 without `CONSOLE_INBOX_REPOSITORY`. |
 | `/secrets` | Only for an admin ([Secrets](#secrets)): the secrets that the factory's agents declare and the names in the secret store, each "Missing", "Set", "Set outside the UI", "Not used" or "Unknown", and the form "Store a value". `?name=<name>` fills the form's name. A person without the role `admin` gets 403. 404 in a console without roles or without `OSF_OPENBAO_ADDR`. |
 | `/secrets/delete?name=<name>` | Only for an admin: asks before the secret of that name is deleted, with the button "Delete" and the link "Cancel". |
+| `/skills` | Every skill the factory's agents use ([Skills](#skills)): its name, description, folder, agents and what it needs, with the state of each secret it needs. In every mode. |
+| `/skills/<name>` | One skill: its `SKILL.md` as Markdown, its files, its agents and what it needs, and the problems lint names in its files. 404 for a skill no agent uses, 502 when `factory skills` fails. |
 | `/improvement` | Cost and scores of the factory's runs, from the files below `CONSOLE_IMPROVE_DIR`: the total cost and the number of runs, each scorer with its scored runs, passes, pass rate and judge cost, and each stage of a run with its outcome and cost, linked to the run's page. 404 without `CONSOLE_IMPROVE_DIR`. |
 
 The runs page `/` has the new look of the design system ([ADR 0133](../../docs/decisions/0133-design-system.md)): a
@@ -54,7 +56,8 @@ navigation column with the factory's name, only the pages that work in this cons
 that wait for a person, then the "Classic pages" in the old look and the dashboards), and the account with the
 signed-in person, "Sign out" and the link to the other theme. On a phone the navigation folds behind "Menu". The theme
 is dark unless the cookie `osf_theme` says light; `/theme?to=light&next=<path>` sets it and returns to the page. The
-other pages keep the old look until they move one at a time.
+secrets and skills pages have the new look too, and its navigation links Secrets for an admin and Skills for everyone.
+The other pages keep the old look until they move one at a time.
 
 Every page links the runs, the work items (with `CONSOLE_INTAKE_URL`), the factory, the health page and the dashboards in `CONSOLE_LINKS`. The runs pages reload themselves every
 `CONSOLE_REFRESH` seconds. Without `CONSOLE_USER_HEADER` the console is read-only: it has no forms, and any method but
@@ -174,6 +177,33 @@ to the hosts that the agents which declare it may reach (their `sandbox.egress`)
 in an HTTP request, so a secret that is not sent in one, like an SSH key or a database password, does not work this
 way.
 
+## Skills
+
+`/skills` lists every skill that the factory's agents use from the folders of its repository, and `/skills/<name>`
+shows one ([ADR 0141](../../docs/decisions/0141-skills-pages-and-markdown-from-a-repository.md)). Both pages are
+read-only and exist in every mode: open, behind a sign-in proxy and with the own sign-in. The console does not read a
+`SKILL.md` itself: it runs factory-spec's `factory skills --file <CONSOLE_FACTORY>` with the command line in
+`CONSOLE_FACTORY_COMMAND` and shows what it prints, so the pages know what `factory lint` knows
+([factory-spec](../factory-spec/README.md#the-skills-as-json)). When the program fails, `/skills` names its error above
+an empty list and `/skills/<name>` answers 502.
+
+Each secret a skill needs shows a state:
+
+| State | When |
+| --- | --- |
+| Not declared | An agent that uses the skill declares no reference for it; `factory lint` fails |
+| Missing, Unknown, Set | The agents give it from OpenBao, and the store at `OSF_OPENBAO_ADDR` has no such secret, does not answer, or has it, as on [Secrets](#secrets). Without `OSF_OPENBAO_ADDR` such a secret has no state |
+| Set outside the UI | The agents give it from another provider, like `ref:env/<NAME>` |
+
+With several references the worst shows, in this order. A host shows "Not allowed" when the sandbox of an agent that
+uses the skill does not allow it. An admin, who may open `/secrets`, gets the link "Store a value" beside a missing
+secret.
+
+The Markdown comes from a repository, so the page renders it safely with markdown-it: raw HTML, a script among it, is
+text; an image shows its alternative text, so no image loads from anywhere; a link keeps its anchor only to `https:`,
+`http:` or `mailto:`, with `rel="nofollow noreferrer"`, and any other, like `javascript:`, `data:` or a relative path,
+keeps only its words. The page's Content-Security-Policy forbids every script as well.
+
 ## Health
 
 `console doctor` and `/health` check, in this order ([ADR 0086](../../docs/decisions/0086-health-routes.md)):
@@ -232,6 +262,7 @@ as ok, adds itself to the count, like `all 5 checks ok, warnings: 1`, and shows 
 | `CONSOLE_ACCESS` | string |  | serve, with CONSOLE_SIGN_IN: the access file, read again at each request. Default access.yaml beside CONSOLE_FACTORY. Without a valid file with an admin nobody signs in. |
 | `CONSOLE_BRANCH` | string | `"main"` | serve: the branch where the factory definition changes. |
 | `CONSOLE_FACTORY` | string | `"factory.yaml"` | serve: the factory definition that /factory shows, read-only. |
+| `CONSOLE_FACTORY_COMMAND` | string | `"npx -y @opensoftware/factory-spec"` | serve: the command line of factory-spec's factory, which /skills and /skills/<name> run with skills --file <CONSOLE_FACTORY> (ADR 0141). |
 | `CONSOLE_FACTORY_PATH` | string | `"factory.yaml"` | serve: the path of the factory definition in its Git repository. |
 | `CONSOLE_FOREMAN_TOKEN` | string |  | serve: the foreman's FOREMAN_API_TOKEN, sent as Authorization: Bearer <token>; several, comma-separated, in the order of CONSOLE_FOREMAN_URL, or one for all. |
 | `CONSOLE_FOREMAN_URL` | string |  | serve: the base URL of a foreman's API, or several, comma-separated, one per factory. Required. |
@@ -410,8 +441,8 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-155 | implemented | The probe "/v1/ready" answers 503 when the console cannot read its factory |
 | SCN-CONSOLE-156 | implemented | With the sign-in a form without a session answers 401 |
 | SCN-CONSOLE-157 | implemented | A new user opens the runs page of the quick start in the look of the design system |
-| SCN-CONSOLE-158 | implemented | The navigation of a console without intake, an inbox or cost and scores links only the pages that work |
-| SCN-CONSOLE-159 | implemented | The navigation of a console with intake, an inbox and cost and scores links their pages too |
+| SCN-CONSOLE-158 | deprecated | The navigation of a console without intake, an inbox or cost and scores links only the pages that work |
+| SCN-CONSOLE-159 | deprecated | The navigation of a console with intake, an inbox and cost and scores links their pages too |
 | SCN-CONSOLE-160 | implemented | The link "Runs" counts the runs that wait for a person |
 | SCN-CONSOLE-161 | implemented | A person switches to the light theme and back, and stays on the page |
 | SCN-CONSOLE-162 | implemented | The shell has a skip link to the content and its landmarks |
@@ -442,4 +473,17 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-187 | implemented | "console doctor" names a store that does not answer |
 | SCN-CONSOLE-188 | implemented | "console doctor" and "/health" warn when the console's token for the store ends within 7 days |
 | SCN-CONSOLE-189 | implemented | An admin signs in and stores a secret (journey) |
-| SCN-CONSOLE-190 | implemented | An adapter whose output is no JSON is named on "/secrets", and its secrets say "Unknown" |
+| SCN-CONSOLE-191 | implemented | "/skills" lists each skill with its description, source, agents and needs, and the state of each secret |
+| SCN-CONSOLE-192 | implemented | In the open mode and without a store, both pages answer, and a secret of OpenBao has no state |
+| SCN-CONSOLE-193 | implemented | A store that does not answer is named on "/skills", and the secret's state is "Unknown" |
+| SCN-CONSOLE-194 | implemented | A skill's page shows its SKILL.md as Markdown, its files, its agents and what it needs |
+| SCN-CONSOLE-195 | implemented | The page of a skill that no agent uses answers 404 |
+| SCN-CONSOLE-196 | implemented | A skill that lint refuses shows its problems, and a folder without a SKILL.md says so |
+| SCN-CONSOLE-197 | implemented | Raw HTML in a SKILL.md is shown as text |
+| SCN-CONSOLE-198 | implemented | A script in a SKILL.md is shown as text and never runs |
+| SCN-CONSOLE-199 | implemented | An image in a SKILL.md is shown as its text, so no remote image loads |
+| SCN-CONSOLE-200 | implemented | A link of a SKILL.md keeps its anchor only to the web or an email address |
+| SCN-CONSOLE-201 | implemented | A factory program that fails is named on both pages |
+| SCN-CONSOLE-202 | implemented | With the own sign-in a member opens both pages, without the link to store a value |
+| SCN-CONSOLE-203 | implemented | The navigation of a console without intake, an inbox or cost and scores links only the pages that work, Skills among them |
+| SCN-CONSOLE-204 | implemented | The navigation of a console with intake, an inbox and cost and scores links their pages too, Skills among them |

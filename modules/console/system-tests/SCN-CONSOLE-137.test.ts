@@ -36,7 +36,7 @@ scenario("SCN-CONSOLE-137", async ({ sut, fakes, given, when, then }) => {
       expect(landed.path).toBe("/");
       expect(landed.getByRole("heading", { level: 1 }).text).toBe("Runs");
       expect(landed.getByRole("banner").getByText("ada@acme.dev · admin").text).toBe("ada@acme.dev · admin");
-      expect(navLinks(landed).map((link) => link.href)).toEqual(["/", "/factory", "/health"]);
+      expect(navLinks(landed).map((link) => link.href)).toEqual(["/", "/skills", "/factory", "/health"]);
     },
   );
 });

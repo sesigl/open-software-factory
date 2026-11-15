@@ -38,6 +38,7 @@ import { workPage } from "../pages/work.ts";
 import { examine } from "./doctor.ts";
 import { actorOf, fromConsole, personOf } from "./person.ts";
 import { useSecrets } from "./secrets.ts";
+import { useSkills } from "./skills.ts";
 
 type Env = Record<string, string | undefined>;
 
@@ -109,10 +110,13 @@ export async function serve(env: Env) {
   /** The frame of every page: the dashboards and which optional pages the navigation links. */
   const frameOf = () => ({ links, inbox: Boolean(inbox), work: Boolean(intake), improvement: Boolean(improve) });
 
-  /** The shell of a page in the new look: Secrets only for an admin in a console with a store. */
+  /** Whether the person may open the secrets: an admin in a console with a store. */
+  const maySecrets = (request: FastifyRequest): boolean => !closedSecrets && actorOf(request)?.role === "admin";
+
+  /** The shell of a page in the new look: Secrets only for a person who may open them. */
   const shellOf = (request: FastifyRequest, at: { title: string; current: string; count?: string; refresh?: number }) =>
     shellData(
-      { ...frameOf(), person: personOf(request), secrets: !closedSecrets && actorOf(request)?.role === "admin" },
+      { ...frameOf(), person: personOf(request), secrets: maySecrets(request) },
       {
         ...at,
         path: request.url,
@@ -329,8 +333,18 @@ export async function serve(env: Env) {
       };
     return { person };
   };
+  const secretsAdapter = env.CONSOLE_SECRETS_ADAPTER || "npx -y @opensoftware/secrets-openbao";
+  // The skills in every mode; with a store, each secret a skill needs has its state (ADR 0141).
+  useSkills(app, {
+    command: env.CONSOLE_FACTORY_COMMAND || "npx -y @opensoftware/factory-spec",
+    factoryFile,
+    store: env.OSF_OPENBAO_ADDR ? secretsAdapter : undefined,
+    shell: (request, title) => shellOf(request, { title, current: "/skills" }),
+    secrets: maySecrets,
+    problem: (reply, status, title, detail) => send(reply, status, { title }, problem(title, detail)),
+  });
   useSecrets(app, {
-    adapter: env.CONSOLE_SECRETS_ADAPTER || "npx -y @opensoftware/secrets-openbao",
+    adapter: secretsAdapter,
     factoryFile,
     closed: closedSecrets,
     shell: (request, title, current, count) => shellOf(request, { title, current, ...(count ? { count } : {}) }),

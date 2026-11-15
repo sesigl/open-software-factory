@@ -27,7 +27,7 @@ scenario("SCN-CONSOLE-174", async ({ sut, fakes, given, when, then }) => {
     const navigation = page.getByRole("navigation", { name: "Main" });
     const current = navigation.getByRole("link", { current: "page" });
     expect([current.attribute("href"), current.text]).toEqual(["/secrets", "Secrets 1 missing"]);
-    expect(links(navigation).map((link) => link.href)).toEqual(["/", "/secrets", "/factory", "/health"]);
+    expect(links(navigation).map((link) => link.href)).toEqual(["/", "/secrets", "/skills", "/factory", "/health"]);
   });
 
   await then(

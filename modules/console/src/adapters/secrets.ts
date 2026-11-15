@@ -1,11 +1,12 @@
 // The secrets port's adapter as a program (ADR 0137), like the forge's: the console runs `list`, `put`, `delete` and
 // `probe` and reads the JSON lines they print. A value goes only to `put`'s standard input: never into an argument, a
 // variable, a log line or an error. The adapter gets the console's environment, with OSF_OPENBAO_ADDR,
-// OSF_OPENBAO_TOKEN and OSF_OPENBAO_MOUNT. A failure is a note with the adapter's error, never an exception.
-import { execFile } from "node:child_process";
+// OSF_OPENBAO_TOKEN and OSF_OPENBAO_MOUNT. A failure is a note with the adapter's error, never an exception; its
+// errors never hold a value (ports/secrets/README.md).
 import type { Stored } from "../domain/secrets.ts";
+import { type Outcome, runProgram } from "./program.ts";
 
-export type Outcome<T> = { ok: true; body: T } | { ok: false; usage: boolean; note: string };
+export type { Outcome };
 
 /** What `probe` prints: how many seconds the token still lives (0 for no end), and when it ends. */
 export interface Probe {
@@ -13,34 +14,22 @@ export interface Probe {
   expires: string | null;
 }
 
-/** Runs the adapter with these arguments and this standard input, and reads the JSON lines it prints. */
-function run<T>(command: string, args: string[], input = ""): Promise<Outcome<T[]>> {
-  const [file = "", ...words] = command.trim().split(/\s+/);
-  return new Promise((resolve) => {
-    const child = execFile(file, [...words, ...args], (error, stdout, stderr) => {
-      try {
-        // The adapter names itself before its error, like "secrets-openbao: the store refused the token". Its errors
-        // never hold a value (ports/secrets/README.md); exit code 2 is a usage error, like a name it refuses.
-        if (error) {
-          const note =
-            stderr
-              .trim()
-              .split("\n")[0]
-              ?.replace(/^[\w-]+: /, "") || error.message;
-          return resolve({ ok: false, usage: error.code === 2, note });
-        }
-        const lines = stdout.split("\n").filter((line) => line.trim());
-        resolve({ ok: true, body: lines.map((line) => JSON.parse(line) as T) });
-      } catch {
-        // The error of JSON.parse would quote the line, and the console shows a note to the person.
-        resolve({ ok: false, usage: false, note: "the secrets adapter printed a line that is no JSON" });
-      }
-    });
-    // An adapter that ends before it reads its input closes the pipe; that is its error, not the console's.
-    child.stdin?.on("error", () => {});
-    child.stdin?.end(input);
-  });
+/** The JSON lines a command of the adapter printed. */
+function lines<T>(stdout: string): T[] {
+  try {
+    return stdout
+      .split("\n")
+      .filter((line) => line.trim())
+      .map((line) => JSON.parse(line) as T);
+  } catch {
+    // The error of JSON.parse would quote the line, and the console shows a note to the person.
+    throw new Error("the secrets adapter printed a line that is no JSON");
+  }
 }
+
+/** Runs the adapter with these arguments and this standard input, and reads the JSON lines it prints. */
+const run = <T>(command: string, args: string[], input = ""): Promise<Outcome<T[]>> =>
+  runProgram(command, args, lines<T>, input);
 
 /** The secrets in the store, sorted by name. */
 export const listSecrets = (command: string) => run<Stored>(command, ["list"]);

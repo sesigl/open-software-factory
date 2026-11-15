@@ -63,6 +63,9 @@ The plan was reviewed after the mock-ups were drawn. Where they differ, `TODO.md
   Secrets and Changes (T-56).
 - **The navigation** lists only what works in the console's mode and for the person's role. "Changes" comes with
   T-58, and the group "Classic pages" shrinks as T-60 moves each page.
+- **A skill's page** shows no switch and no change yet: the first slice of T-59 is read-only. Its secrets and hosts
+  carry the states of the secrets page and "Not declared" or "Not allowed" for what an agent lacks, and its files
+  are a list beside the panel `SKILL.md`.
 - **States the mock-ups do not show:** an empty list, a server that does not answer, a form with a wrong value, the
   light theme of a whole page. The page that needs one adds it in the same language and adds a mock-up or a
   screenshot here.

@@ -4,17 +4,31 @@ Feature: The shell of the pages in the new look
   with only the pages that work in this console, the factory's name, the account and a link to the other theme. On a
   phone the navigation folds away. The pages in the old look stay reachable as "Classic pages".
 
-  @id=SCN-CONSOLE-158 @status=implemented
+  @id=SCN-CONSOLE-158 @status=deprecated
   Scenario: The navigation of a console without intake, an inbox or cost and scores links only the pages that work
     Given a console without "CONSOLE_INTAKE_URL", "CONSOLE_INBOX_REPOSITORY" and "CONSOLE_IMPROVE_DIR"
     When a person opens "/"
     Then the navigation links "Runs" as the current page and the classic pages "Factory" and "Health"
 
-  @id=SCN-CONSOLE-159 @status=implemented
+  @id=SCN-CONSOLE-159 @status=deprecated
   Scenario: The navigation of a console with intake, an inbox and cost and scores links their pages too
     Given a console with "CONSOLE_INTAKE_URL", "CONSOLE_INBOX_REPOSITORY" and "CONSOLE_IMPROVE_DIR" and the factory "acme"
     When a person opens "/"
     Then the navigation links "Runs" and the classic pages "Work", "Factory", "Inbox", "Cost and scores" and "Health"
+    And the shell names the factory "acme"
+    And the page offers "Submit work" as its main action
+
+  @id=SCN-CONSOLE-203 @status=implemented @replaces=SCN-CONSOLE-158
+  Scenario: The navigation of a console without intake, an inbox or cost and scores links only the pages that work, Skills among them
+    Given a console without "CONSOLE_INTAKE_URL", "CONSOLE_INBOX_REPOSITORY" and "CONSOLE_IMPROVE_DIR"
+    When a person opens "/"
+    Then the navigation links "Runs" as the current page, "Skills" and the classic pages "Factory" and "Health"
+
+  @id=SCN-CONSOLE-204 @status=implemented @replaces=SCN-CONSOLE-159
+  Scenario: The navigation of a console with intake, an inbox and cost and scores links their pages too, Skills among them
+    Given a console with "CONSOLE_INTAKE_URL", "CONSOLE_INBOX_REPOSITORY" and "CONSOLE_IMPROVE_DIR" and the factory "acme"
+    When a person opens "/"
+    Then the navigation links "Runs", "Skills" and the classic pages "Work", "Factory", "Inbox", "Cost and scores" and "Health"
     And the shell names the factory "acme"
     And the page offers "Submit work" as its main action
 

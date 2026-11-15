@@ -16,6 +16,11 @@
       "default": "factory.yaml",
       "description": "serve: the factory definition that /factory shows, read-only."
     },
+    "CONSOLE_FACTORY_COMMAND": {
+      "type": "string",
+      "default": "npx -y @opensoftware/factory-spec",
+      "description": "serve: the command line of factory-spec's factory, which /skills and /skills/<name> run with skills --file <CONSOLE_FACTORY> (ADR 0141)."
+    },
     "CONSOLE_FACTORY_PATH": {
       "type": "string",
       "default": "factory.yaml",
