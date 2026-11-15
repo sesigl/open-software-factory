@@ -56,3 +56,12 @@ Feature: The factory's configuration, read-only
     When a person opens "/factory/agents/implement"
     Then the agent's "secrets" show the YAML "- ref:openbao/linear-token" and its "sandbox" the YAML "template: node-24 egress: - api.linear.app"
     And its "harness" shows "claude-code" and its "effort" "high"
+
+  @id=SCN-CONSOLE-266 @status=implemented @kind=journey
+  Scenario: On a phone a person reads the health, the factory and the cost and scores as cards (journey)
+    Given a console with the factory "acme" and its agent "triage", a healthy foreman, and a folder of cost and scores with the stage "implement" of "run_a" and the scorer "redundant-tests"
+    When a person opens "/health" on a phone
+    Then the check "foreman token" is a card across the screen with its state "ok" above its name, and the page passes the accessibility checks; its screenshot is kept as "health-phone"
+    And after "Menu" and "Factory" the agent "triage" is a card across the screen, and the page passes the accessibility checks; its screenshot is kept as "factory-phone"
+    And a tap on the card opens "/factory/agents/triage", whose facts stand inside the screen, and the page passes the accessibility checks
+    And on "/improvement" the scorer and the stage are cards across the screen, the stage's outcome above its run, and the page passes the accessibility checks; its screenshot is kept as "improvement-phone"

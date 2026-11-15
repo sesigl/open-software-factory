@@ -670,3 +670,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-263 | implemented | The factory page and an agent's page show in the shell, with "Factory" as the current page |
 | SCN-CONSOLE-264 | implemented | An agent's page shows a list or a map of the agent as YAML |
 | SCN-CONSOLE-265 | implemented | The improvement page shows in the shell, with "Cost and scores" as the current page |
+| SCN-CONSOLE-266 | implemented | On a phone a person reads the health, the factory and the cost and scores as cards (journey) |
