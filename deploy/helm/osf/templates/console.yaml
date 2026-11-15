@@ -81,7 +81,7 @@ spec:
             {{- if .provider }}
             {{- /* A setting the provider misses stops the console at its start, which names it (ADR 0134). */}}
             {{- $client := ternary "CONSOLE_GITHUB" "CONSOLE_OIDC" (eq .provider "github") }}
-            {{- $secret := required "set console.signIn.secret to a Secret with the keys session-secret and client-secret" .secret }}
+            {{- $secret := required "set console.signIn.secret to a Secret with the keys session-secret, client-secret and signing-key" .secret }}
             - name: CONSOLE_SIGN_IN
               value: {{ .provider | quote }}
             {{- with .url }}
@@ -106,6 +106,13 @@ spec:
                 secretKeyRef:
                   name: {{ $secret }}
                   key: client-secret
+            # The seed of the Ed25519 key that signs the proof of the person on each action, which foreman, intake and
+            # gatekeeper check with the key set the console publishes (ADR 0151).
+            - name: CONSOLE_SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secret }}
+                  key: signing-key
             {{- end }}
             {{- end }}
             {{- if .Values.openbao.address }}

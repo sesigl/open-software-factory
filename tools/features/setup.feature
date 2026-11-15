@@ -106,6 +106,16 @@ Feature: Setup of a factory from a clone
     And "deploy/compose/.env" still has "POSTGRES_PASSWORD=mine" and sets "OSF_OPENBAO_UNSEAL_KEY" to 64 hex digits, and has no line "GH_TOKEN="
     And the output contains "deploy/compose/.env exists: kept it, and added OSF_OPENBAO_UNSEAL_KEY"
 
+  @id=SCN-REPO-170 @status=implemented
+  Scenario: osf init generates the console's signing key, in a new .env and in an existing one that lacks it
+    Given a "deploy/compose/.env.example" with "CONSOLE_SESSION_SECRET=" and "CONSOLE_SIGNING_KEY="
+    When the developer runs "osf init"
+    Then the command exits with code 0
+    And "deploy/compose/.env" sets "CONSOLE_SIGNING_KEY" to 64 hex digits, another value than "CONSOLE_SESSION_SECRET"
+    When the developer removes the line of "CONSOLE_SIGNING_KEY" from ".env" and runs "osf init" again
+    Then the output contains "deploy/compose/.env exists: kept it, and added CONSOLE_SIGNING_KEY"
+    And "deploy/compose/.env" keeps its "CONSOLE_SESSION_SECRET" and sets "CONSOLE_SIGNING_KEY" to a new value of 64 hex digits
+
   @id=SCN-REPO-169 @status=implemented
   Scenario: osf up names what a factory repository on a forge misses, and a setting that is not git+<url>
     Given a "deploy/compose/compose.yaml" that requires "POSTGRES_PASSWORD" with "${POSTGRES_PASSWORD:?...}"

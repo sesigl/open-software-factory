@@ -50,6 +50,16 @@ mount and the token. Nothing without openbao.address.
 {{- default (printf "%s-sandboxes" .Release.Namespace) .Values.sandboxes.namespace | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{/*
+The issuer of the person proofs that foreman, intake and gatekeeper check (ADR 0151): the console's key set at its
+service. A module gets it only when the console's actions are on, with console.signIn, whose Secret holds the key
+that signs them; without the sign-in the module takes the person a caller with its API token names, as before.
+*/}}
+{{- define "osf.personKeys" -}}
+- name: {{ .name }}
+  value: {{ printf "console=http://%s:8080/.well-known/jwks.json" (include "osf.name" (dict "root" .root "component" "console")) | quote }}
+{{- end -}}
+
 {{- define "osf.secretEnv" -}}
 - name: {{ .name }}
   valueFrom:

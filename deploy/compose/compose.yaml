@@ -21,6 +21,11 @@ x-module: &module
     timeout: 5s
     retries: 60
 
+# The issuer of person proofs that foreman, intake and gatekeeper check (ADR 0151): the console's key set, on only when
+# the console has actions, with CONSOLE_SIGN_IN, and signs them, with CONSOLE_SIGNING_KEY. Without either the modules
+# take the person a caller with their API token names, as before; a module that checks refuses an unsigned console.
+x-person-keys: &person-keys ${CONSOLE_SIGN_IN:+${CONSOLE_SIGNING_KEY:+console=http://console:8080/.well-known/jwks.json}}
+
 services:
   postgres:
     image: pgvector/pgvector:0.8.7-pg17-trixie
@@ -311,6 +316,7 @@ services:
       GATEKEEPER_SLACK_SIGNING_SECRET: ${GATEKEEPER_SLACK_SIGNING_SECRET:-}
       GATEKEEPER_FORGE_ADAPTER: forge-github
       GATEKEEPER_FORGE_TOKEN: ${GATEKEEPER_FORGE_TOKEN:-}
+      GATEKEEPER_PERSON_KEYS: *person-keys
     volumes:
       - factory:/factory:ro
     ports:
@@ -341,6 +347,7 @@ services:
       INTAKE_SLACK_ADAPTER: channel-slack
       INTAKE_FORGE_ADAPTER: ${INTAKE_FORGE_ADAPTER:-forge-github}
       INTAKE_WEBHOOK_SECRET: ${INTAKE_WEBHOOK_SECRET:-}
+      INTAKE_PERSON_KEYS: *person-keys
     ports:
       - ${OSF_HOST:-127.0.0.1}:${INTAKE_PORT:-8081}:8080
 
@@ -428,6 +435,7 @@ services:
       # One trace per run in Jaeger, with a span per stage (ADR 0087, ADR 0100).
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
       FOREMAN_API_TOKEN: ${FOREMAN_API_TOKEN:?set FOREMAN_API_TOKEN in .env}
+      FOREMAN_PERSON_KEYS: *person-keys
       # The factory's repository on a forge, fetched at each run with FACTORY_TOKEN, or the commit of the volume
       # factory (ADR 0124, ADR 0150).
       FOREMAN_FACTORY: ${FACTORY_REPOSITORY:-/factory/factory.yaml}
@@ -535,6 +543,9 @@ services:
       CONSOLE_OIDC_CLIENT_SECRET: ${CONSOLE_OIDC_CLIENT_SECRET:-}
       CONSOLE_GITHUB_CLIENT_ID: ${CONSOLE_GITHUB_CLIENT_ID:-}
       CONSOLE_GITHUB_CLIENT_SECRET: ${CONSOLE_GITHUB_CLIENT_SECRET:-}
+      # The seed of the Ed25519 key that signs the proof of the person on each action, and whose public key the console
+      # publishes at /.well-known/jwks.json for the modules (ADR 0151).
+      CONSOLE_SIGNING_KEY: ${CONSOLE_SIGNING_KEY:-}
       # /secrets, for an admin with the sign-in on: the console stores, lists and deletes the agents' secrets in
       # openbao with its own token, which cannot read a value (ADR 0137, ADR 0145).
       CONSOLE_SECRETS_ADAPTER: secrets-openbao

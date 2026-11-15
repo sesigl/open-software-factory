@@ -113,6 +113,9 @@ spec:
                   optional: true
             - name: OSF_DATA
               value: /home/node/data
+            {{- if .Values.console.signIn.provider }}
+            {{- include "osf.personKeys" (dict "root" . "name" "FOREMAN_PERSON_KEYS") | nindent 12 }}
+            {{- end }}
             {{- with .Values.factory.repository }}
             # The factory's repository, fetched at each run (ADR 0124, ADR 0150).
             - name: FOREMAN_FACTORY

@@ -51,6 +51,9 @@ spec:
               value: {{ include "osf.natsUrl" . | quote }}
             - name: GATEKEEPER_FORGE_ADAPTER
               value: {{ .Values.gatekeeper.forgeAdapter | quote }}
+            {{- if .Values.console.signIn.provider }}
+            {{- include "osf.personKeys" (dict "root" . "name" "GATEKEEPER_PERSON_KEYS") | nindent 12 }}
+            {{- end }}
           ports:
             - name: http
               containerPort: 8080

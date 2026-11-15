@@ -38,6 +38,9 @@ spec:
               value: channel-slack
             - name: INTAKE_FORGE_ADAPTER
               value: {{ .Values.intake.forgeAdapter | quote }}
+            {{- if .Values.console.signIn.provider }}
+            {{- include "osf.personKeys" (dict "root" . "name" "INTAKE_PERSON_KEYS") | nindent 12 }}
+            {{- end }}
           ports:
             - name: http
               containerPort: 8080

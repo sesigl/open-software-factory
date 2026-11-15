@@ -29,7 +29,9 @@ Never import a module, read a module's database or volume, or exec into a contai
   images the CI job loaded before; SCN-E2E-004 also starts LiteLLM with its database, about 80 seconds.
   SCN-E2E-008 and SCN-E2E-009, a change from the console on a factory repository of Forgejo, each take about 40
   seconds alone and 45 to 57 seconds side by side, measured on a 4-core machine with warm images; the merge on
-  Forgejo takes under 2 seconds of that.
+  Forgejo takes under 2 seconds of that. SCN-E2E-010, the person proven to foreman, intake and gatekeeper (ADR 0151),
+  starts the profile once with the sign-in and takes about 28 seconds alone with warm images on the development
+  container; the run's two stages take a few seconds of that.
 
 ## Scenario prefix
 

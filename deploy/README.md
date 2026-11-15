@@ -203,6 +203,7 @@ and names it, like `set FOREMAN_API_TOKEN in .env`.
 | `CONSOLE_PORT` | `8080` | The port of the console. `0` picks a free port, but not with the sign-in: its callback names the port. |
 | `CONSOLE_SIGN_IN` | | The console's own sign-in: `oidc` (Google, a company's provider) or `github`. Empty: the console is open and read-only. See [Turn on the sign-in](#turn-on-the-sign-in). |
 | `CONSOLE_SESSION_SECRET` | | With the sign-in: the key of the session cookie; `osf init` generates it. |
+| `CONSOLE_SIGNING_KEY` | | The seed of the console's Ed25519 key, 64 hex digits; `osf init` generates it. With the sign-in on, the console signs with it the proof of the person on each action, and foreman, intake and gatekeeper check it: see [The person, proven](#the-person-proven). |
 | `CONSOLE_OIDC_ISSUER`, `CONSOLE_OIDC_CLIENT_ID`, `CONSOLE_OIDC_CLIENT_SECRET` | | With `CONSOLE_SIGN_IN=oidc`: the provider's issuer, like `https://accounts.google.com`, and the client's ID and secret. |
 | `CONSOLE_GITHUB_CLIENT_ID`, `CONSOLE_GITHUB_CLIENT_SECRET` | | With `CONSOLE_SIGN_IN=github`: the client ID and secret of a GitHub OAuth app. |
 | `CONSOLE_URL` | `http://localhost:<CONSOLE_PORT>` | Where people open the console. The provider's callback is `<CONSOLE_URL>/signin/callback`. With the sign-in it must be `https://` or loopback. |
@@ -239,8 +240,8 @@ a laptop:
    # with github instead: CONSOLE_GITHUB_CLIENT_ID=... and CONSOLE_GITHUB_CLIENT_SECRET=...
    ```
 
-   `osf init` generated `CONSOLE_SESSION_SECRET`; without it, set it to a long random value, like the output of
-   `openssl rand -hex 32`.
+   `osf init` generated `CONSOLE_SESSION_SECRET` and `CONSOLE_SIGNING_KEY`; without them, set each to a long random
+   value, like the output of `openssl rand -hex 32`.
 3. List yourself in the factory's `access.yaml` in place of `admin@example.com`, with the email that your provider
    verified (on GitHub, your primary email):
 
@@ -264,6 +265,22 @@ console sends a request for another host to `CONSOLE_URL` first. Whoever may wri
 make themselves `admin`, and `access.yaml` holds emails: keep that repository private. On a private network, put a TLS
 proxy in front of the console and set `CONSOLE_URL` to its `https://` address; with the sign-in on, the console does
 not start on an address that is neither `https://` nor loopback.
+
+### The person, proven
+
+With the sign-in on and `CONSOLE_SIGNING_KEY` set, the console proves to foreman, intake and gatekeeper who acts
+([ADR 0151](../docs/decisions/0151-the-person-proven-to-every-module.md)). Each action in a person's name carries,
+beside the module's API token, a proof of 30 seconds that the console signs, and the profile sets
+`FOREMAN_PERSON_KEYS`, `INTAKE_PERSON_KEYS` and `GATEKEEPER_PERSON_KEYS` to the console's key set,
+`console=http://console:8080/.well-known/jwks.json`. A call with a module's API token that names a person without
+that proof is refused with 401, so a leaked token no longer acts as a person. A team's own tool acts as itself, with a
+requester or `by` of the kind `trigger`, like `{ "kind": "trigger", "id": "tool:acme-portal" }`.
+
+Without the sign-in the console has no actions, and without the key it signs none: then the profile leaves the three
+settings empty, and the modules take the person a caller names, as before. A module that checks would refuse the
+actions of a console that does not sign, so the settings go on only together. To change the key, set
+`CONSOLE_SIGNING_KEY` to `old,new`, after 10 minutes to `new,old`, and a minute later to `new`. An image of a release
+before ADR 0151 ignores the key and the settings.
 
 ### Secrets in OpenBao
 
@@ -429,11 +446,12 @@ kubectl port-forward service/osf-console 8080:8080
 
 Then open http://localhost:8080. To [turn on the sign-in](#turn-on-the-sign-in), register the same callback
 `http://localhost:8080/signin/callback`, list yourself in the factory's `access.yaml`, make a Secret with the session
-key and the client's secret, and name it in the values; the chart never holds either value:
+key, the client's secret and the signing key, and name it in the values; the chart never holds any of them:
 
 ```sh
 kubectl create secret generic osf-sign-in \
-  --from-literal=session-secret="$(openssl rand -hex 32)" --from-literal=client-secret=<the client's secret>
+  --from-literal=session-secret="$(openssl rand -hex 32)" --from-literal=signing-key="$(openssl rand -hex 32)" \
+  --from-literal=client-secret=<the client's secret>
 cat >> values.yaml <<'YAML'
 console:
   signIn:
@@ -539,7 +557,7 @@ are not used then.
 | `console.signIn.provider` | | The console's own sign-in, `oidc` or `github` ([ADR 0134](../docs/decisions/0134-console-sign-in-roles-and-modes.md)); only the people of the factory's `access.yaml` sign in. Empty: the console is open and read-only. |
 | `console.signIn.url` | the console's own, `http://localhost:8080` | Where people open the console, its `CONSOLE_URL`; the provider's callback is `<url>/signin/callback`. Empty, the chart sets no `CONSOLE_URL`; the default suits `kubectl port-forward`. Behind an Ingress with TLS, its `https://` address. |
 | `console.signIn.issuer`, `console.signIn.clientId` | | With `oidc` the provider's issuer; the client ID of the provider's client or of the GitHub OAuth app. |
-| `console.signIn.secret` | | Required with a provider: a Secret you make, with the keys `session-secret`, the key of the session cookie, and `client-secret`, the client's secret. |
+| `console.signIn.secret` | | Required with a provider: a Secret you make, with the keys `session-secret`, the key of the session cookie, `client-secret`, the client's secret, and `signing-key`, 64 hex digits that sign the proof of the person. With a provider, foreman, intake and gatekeeper check that proof with the console's key set at `http://<release>-console:8080/.well-known/jwks.json` ([The person, proven](#the-person-proven)). |
 | `openbao.address` | | Your team's OpenBao, like `https://bao.acme.dev`, as the console, foreman and the sandboxes' egress pods reach it; the chart installs none. Set, the console has `/secrets` and foreman checks a stage's secrets `ref:openbao/<name>` (see [OpenBao on Kubernetes](#openbao-on-kubernetes)). Empty: no setting of OpenBao. |
 | `openbao.mount` | `secret` | The KV version 2 mount of the factory's secrets. |
 | `openbao.secret` | | Required with an address: a Secret you make, with the keys `console-token`, the console's token with the policy of `secrets-openbao policy write`, and `egress-token`, the token with the policy of `secrets-openbao policy read`. |
@@ -647,3 +665,5 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-043 | implemented | With "FACTORY_REPOSITORY", the service factory-repo clones the factory's private repository on a forge at each start, with "FACTORY_TOKEN" |
 | SCN-DIST-044 | implemented | With "FACTORY_REPOSITORY" on Forgejo, the foreman and the console read the factory from the repository with the one token, and the console edits it with the factory-spec of its image |
 | SCN-DIST-045 | implemented | The chart reads the factory from its repository on a forge with the token "factory-token", and the console proposes changes to it |
+| SCN-DIST-046 | implemented | With the sign-in and "CONSOLE_SIGNING_KEY", the console signs the proof of the person and foreman, intake and gatekeeper check it with the console's key set |
+| SCN-DIST-047 | implemented | With the sign-in, the chart gives the console its signing key from the sign-in's Secret, and foreman, intake and gatekeeper the console's key set |

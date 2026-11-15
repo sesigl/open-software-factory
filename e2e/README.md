@@ -118,6 +118,7 @@ Each adapter gets only these variables, `PATH`, and its own temporary `HOME`, `O
 | SCN-E2E-007 | implemented | A value that a factory engineer stores in the console reaches the next run's request, with no restart |
 | SCN-E2E-008 | implemented | A change that a factory engineer proposes in the console merges after its check and is the factory version of the next run |
 | SCN-E2E-009 | implemented | A skill that a factory engineer switches on in the console reaches the agent's next run with the secret it needs |
+| SCN-E2E-010 | implemented | The console proves the signed-in person to foreman, intake and gatekeeper, and a module's API token with a made-up person is refused |
 
 ## Paid reference run
 

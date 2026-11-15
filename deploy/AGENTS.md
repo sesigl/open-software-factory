@@ -69,6 +69,8 @@ through `kubectl port-forward` (`url`), `helm test` and the state of the workloa
   `factory-repo` three times against the testkit's Forgejo, 11.4 s, of which Forgejo's start is 5 to 7 s once per
   worker; SCN-DIST-044 is `docker compose config` and one `factory --help`, 1.6 s; SCN-DIST-045 renders the chart like
   SCN-DIST-033. About 19 s together, 22 s in CI: see the measure for 840 s above.
+- T-61 adds no start either (ADR 0151): SCN-DIST-046 runs `docker compose config` three times, 0.5 s on the
+  development container; SCN-DIST-047 renders the chart twice like SCN-DIST-033, about 1 s.
 
 ## Scenario prefix
 
