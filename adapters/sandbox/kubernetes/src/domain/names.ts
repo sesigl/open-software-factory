@@ -1,5 +1,5 @@
 // What the objects of one sandbox are called in the namespace, and how a sandbox ID looks (ADR 0055).
-import { EGRESS_PORT } from "@opensoftware/sandbox-egress";
+import { EGRESS_PROXY } from "@opensoftware/sandbox-egress";
 
 /** The sandbox's ID: 12 random hex digits. */
 export const ID = /^[0-9a-f]{12}$/;
@@ -17,7 +17,7 @@ export const caName = (id: string): string => `osf-sandbox-${id}-ca`;
 export const snapshotName = (id: string): string => `osf-snapshot-${id}`;
 
 /** The URL the sandbox reaches its egress proxy at: the Service of the egress pod. */
-export const egressUrl = (id: string): string => `http://${egressName(id)}:${EGRESS_PORT}`;
+export const egressUrl = (id: string): string => `http://${egressName(id)}:${EGRESS_PROXY.port}`;
 
 /** The label every object of a sandbox carries; destroy removes the sandbox by it. */
 export const ID_LABEL = "osf.sandbox.id";

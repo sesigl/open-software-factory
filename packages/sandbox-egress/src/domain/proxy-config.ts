@@ -1,7 +1,7 @@
 // The iron-proxy configuration of one sandbox (ADR 0054, ADR 0055): the hosts it may reach, the secrets to swap
 // and where each comes from, and the MCP tools it may call. JSON is YAML, so iron-proxy reads it as written.
 import type { SandboxSpec } from "@opensoftware/contracts";
-import { PROXY_DIR, placeholder } from "./names.ts";
+import { EGRESS_PROXY, placeholder } from "./egress-proxy.ts";
 import type { Secret } from "./secrets.ts";
 
 export interface ProxyOptions {
@@ -25,7 +25,7 @@ export function proxyConfig(spec: SandboxSpec, secrets: Secret[], options: Proxy
   return {
     dns: { listen: "127.0.0.1:5353", proxy_ip: "127.0.0.1" },
     proxy: { http_listen: ":8081", https_listen: ":8443", tunnel_listen: ":8080" },
-    tls: { ca_cert: `${PROXY_DIR}/ca.crt`, ca_key: `${PROXY_DIR}/ca.key` },
+    tls: { ca_cert: `${EGRESS_PROXY.dir}/ca.crt`, ca_key: `${EGRESS_PROXY.dir}/ca.key` },
     transforms: [
       { name: "allowlist", config: { domains: hosts } },
       // A secret is swapped only for the hosts of egress; without any, it goes nowhere.
@@ -51,7 +51,7 @@ export function proxyConfig(spec: SandboxSpec, secrets: Secret[], options: Proxy
 
 /** Where iron-proxy reads the secret: a file of the proxy, a variable of the proxy, or OpenBao's KV engine. */
 function source(secret: Secret, mount: string): Record<string, string> {
-  if (secret.provider === "file") return { type: "file", path: `${PROXY_DIR}/secrets/${secret.variable}` };
+  if (secret.provider === "file") return { type: "file", path: `${EGRESS_PROXY.dir}/secrets/${secret.variable}` };
   if (secret.provider === "env") return { type: "env", var: secret.name };
   return { type: "vault_kv", mount, path: secret.path, json_key: "value" };
 }

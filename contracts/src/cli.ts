@@ -1,11 +1,9 @@
 #!/usr/bin/env node
 // osf-contracts: validate documents against the shared formats, check schema compatibility with the last release,
 // and round-trip the fixtures through the generated clients.
-import { readFileSync } from "node:fs";
-import { parse } from "yaml";
 import { breaking } from "./breaking.ts";
 import { FORMATS, formatNamed } from "./formats.ts";
-import { validate } from "./index.ts";
+import { type Problem, readDocument } from "./index.ts";
 import { CLIENTS, roundtrip } from "./roundtrip.ts";
 
 const USAGE = `Usage: osf-contracts <command>
@@ -47,14 +45,13 @@ function main(argv: string[]): number {
 function validateCommand([name, file]: string[]): number {
   const format = name ? formatNamed(name) : undefined;
   if (!format || !file) return usage(name && !format ? `Unknown format: ${name}` : "Give a format and a file");
-  let document: unknown;
+  let problems: Problem[];
   try {
-    document = parse(readFileSync(file, "utf8"));
+    ({ problems } = readDocument(format, file));
   } catch (error) {
     process.stdout.write(`${file}: not readable as YAML or JSON: ${(error as Error).message}\n`);
     return 1;
   }
-  const problems = validate(format, document);
   for (const problem of problems) process.stdout.write(`${file} ${problem.path}: ${problem.message}\n`);
   if (problems.length > 0) return 1;
   process.stdout.write(`${file}: valid ${format.name}\n`);

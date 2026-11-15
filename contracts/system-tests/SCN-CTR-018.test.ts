@@ -1,8 +1,8 @@
-import { type CopyEnds, copyEnds } from "@opensoftware/sandbox-egress";
+import { copyEnds } from "@opensoftware/contracts";
 import { scenario } from "@opensoftware/testkit";
 
-scenario("SCN-SEGRESS-019", async ({ when, then }) => {
-  let ends: CopyEnds | undefined;
+scenario("SCN-CTR-018", async ({ when, then }) => {
+  let ends: ReturnType<typeof copyEnds> | undefined;
   await when('the adapter calls copyEnds with "notes.md" and "0123456789ab:docs/notes.md"', async () => {
     ends = copyEnds("notes.md", "0123456789ab:docs/notes.md");
   });

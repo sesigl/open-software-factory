@@ -1,15 +1,7 @@
 // The Kubernetes objects of one sandbox (ADR 0055): the egress pod with iron-proxy, its Service and configuration,
 // and the agent-sandbox SandboxTemplate, SandboxWarmPool and SandboxClaim of the sandbox itself. No I/O.
-import type { SandboxSpec } from "@opensoftware/contracts";
-import {
-  CA_FILE,
-  EGRESS_IMAGE,
-  EGRESS_PORT,
-  PROXY_DIR,
-  sandboxEnv,
-  startScript,
-  WORKSPACE,
-} from "@opensoftware/sandbox-egress";
+import { SANDBOX_WORKSPACE, type SandboxSpec } from "@opensoftware/contracts";
+import { EGRESS_PROXY, sandboxEnv, startScript } from "@opensoftware/sandbox-egress";
 import { BASE_ANNOTATION, caName, egressName, egressUrl, ID_LABEL, ROLE_LABEL, sandboxName, VOLUMES } from "./names.ts";
 import type { Container, PodTemplate } from "./pod.ts";
 import type { Settings } from "./settings.ts";
@@ -22,7 +14,7 @@ const EXTENSIONS = "extensions.agents.x-k8s.io/v1beta1";
  */
 export const GRACE_SECONDS = 1;
 
-/** Where the egress pod mounts its ConfigMap; the start script copies the configuration into PROXY_DIR. */
+/** Where the egress pod mounts its ConfigMap; the start script copies the configuration into the proxy's folder. */
 const CONFIG_DIR = "/osf-config";
 
 /** The labels of the egress pod and its objects, and of the sandbox's objects; list finds the sandboxes' claims by the role. */
@@ -60,9 +52,9 @@ export function egressEnv(id: string, variables: Record<string, string>): unknow
 export function egressPod(id: string, settings: Settings, files: string | undefined): unknown {
   const name = egressName(id);
   const mounts = [
-    { name: "state", mountPath: PROXY_DIR },
+    { name: "state", mountPath: EGRESS_PROXY.dir },
     { name: "config", mountPath: CONFIG_DIR },
-    ...(files ? [{ name: "secrets", mountPath: `${PROXY_DIR}/secrets` }] : []),
+    ...(files ? [{ name: "secrets", mountPath: `${EGRESS_PROXY.dir}/secrets` }] : []),
   ];
   return {
     apiVersion: "v1",
@@ -75,14 +67,14 @@ export function egressPod(id: string, settings: Settings, files: string | undefi
       containers: [
         {
           name: "egress",
-          image: EGRESS_IMAGE,
+          image: EGRESS_PROXY.image,
           command: [
             "sh",
             "-c",
-            `cp ${CONFIG_DIR}/proxy.yaml ${PROXY_DIR}/proxy.yaml && exec sh ${CONFIG_DIR}/start.sh`,
+            `cp ${CONFIG_DIR}/proxy.yaml ${EGRESS_PROXY.dir}/proxy.yaml && exec sh ${CONFIG_DIR}/start.sh`,
           ],
           envFrom: [{ secretRef: { name } }],
-          ports: [{ containerPort: EGRESS_PORT }],
+          ports: [{ containerPort: EGRESS_PROXY.port }],
           volumeMounts: mounts,
         },
       ],
@@ -101,17 +93,17 @@ export function egressService(id: string): unknown {
     apiVersion: "v1",
     kind: "Service",
     metadata: { name: egressName(id), labels: egressLabels(id) },
-    spec: { selector: egressLabels(id), ports: [{ port: EGRESS_PORT, targetPort: EGRESS_PORT }] },
+    spec: { selector: egressLabels(id), ports: [{ port: EGRESS_PROXY.port, targetPort: EGRESS_PROXY.port }] },
   };
 }
 
-/** The ConfigMap with the egress proxy's CA, which the sandbox mounts next to CA_FILE. */
+/** The ConfigMap with the egress proxy's CA, which the sandbox mounts next to its CA file. */
 export function caConfig(id: string, certificate: string): unknown {
   return {
     apiVersion: "v1",
     kind: "ConfigMap",
     metadata: { name: caName(id), labels: egressLabels(id) },
-    data: { [CA_FILE.split("/").pop() as string]: certificate },
+    data: { [EGRESS_PROXY.caFile.split("/").pop() as string]: certificate },
   };
 }
 
@@ -124,13 +116,13 @@ export function sandboxTemplate(id: string, spec: SandboxSpec, base: PodTemplate
   const [first, ...others] = base.spec.containers as [Container, ...Container[]];
   const volumes = base.spec.volumes ?? [];
   const env = Object.entries(sandboxEnv(spec, egressUrl(id))).map(([name, value]) => ({ name, value }));
-  const ours = [WORKSPACE, CA_FILE.slice(0, CA_FILE.lastIndexOf("/"))];
+  const ours = [SANDBOX_WORKSPACE, EGRESS_PROXY.caFile.slice(0, EGRESS_PROXY.caFile.lastIndexOf("/"))];
   const container: Container = {
     ...first,
     imagePullPolicy: first.imagePullPolicy ?? "IfNotPresent",
     command: ["sleep"],
     args: ["infinity"],
-    workingDir: WORKSPACE,
+    workingDir: SANDBOX_WORKSPACE,
     env: [...(first.env ?? []).filter((entry) => !env.some((own) => own.name === entry.name)), ...env],
     ...(limits(spec) ?? (first.resources ? { resources: first.resources } : {})),
     securityContext: { ...first.securityContext, allowPrivilegeEscalation: false },
@@ -173,7 +165,7 @@ export function sandboxTemplate(id: string, spec: SandboxSpec, base: PodTemplate
         egress: [
           {
             to: [{ podSelector: { matchLabels: egressLabels(id) } }],
-            ports: [{ protocol: "TCP", port: EGRESS_PORT }],
+            ports: [{ protocol: "TCP", port: EGRESS_PROXY.port }],
           },
           {
             to: [

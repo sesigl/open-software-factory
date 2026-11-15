@@ -1,23 +1,19 @@
 // create <spec.json>: the sandbox's container on an internal network, and its iron-proxy as the only way out.
 import { join } from "node:path";
 import { check, type Outcome } from "@opensoftware/cli";
-import type { SandboxSpec } from "@opensoftware/contracts";
+import { readDocument, SANDBOX_WORKSPACE, type SandboxSpec } from "@opensoftware/contracts";
 import {
-  EGRESS_IMAGE,
-  memoryBytes,
-  PROXY_DIR,
+  EGRESS_PROXY,
   proxyConfig,
   proxyEnv,
-  READY,
-  readSpec,
   resolveSecrets,
   type Secret,
   sandboxEnv,
   startScript,
-  WORKSPACE,
 } from "@opensoftware/sandbox-egress";
 import { docker, dockerText } from "../adapters/docker.ts";
 import { withFolder } from "../adapters/files.ts";
+import { memoryBytes } from "../domain/memory.ts";
 import { EGRESS_URL, egressName, ROLE_LABEL, sandboxName } from "../domain/names.ts";
 import { destroySandbox } from "./destroy.ts";
 
@@ -25,7 +21,9 @@ const READY_TIMEOUT_MS = 20_000;
 
 export async function create(file: string | undefined, secretsDir: string): Promise<Outcome> {
   check(file, "name the sandbox spec, like create spec.json");
-  return { lines: [await start(readSpec(file as string), secretsDir)] };
+  const { document: spec, problems } = readDocument<SandboxSpec>("sandbox-spec", file);
+  check(!problems.length, problems.map(({ path, message }) => `${file}: ${path} ${message}`).join("\n"));
+  return { lines: [await start(spec, secretsDir)] };
 }
 
 /** Starts a sandbox from the spec and gives its ID; a sandbox that does not start is removed. */
@@ -58,7 +56,7 @@ function sandboxArgs(spec: SandboxSpec): string[] {
     "--security-opt",
     "no-new-privileges",
     "--workdir",
-    WORKSPACE,
+    SANDBOX_WORKSPACE,
     "--entrypoint",
     "sleep",
     ...env,
@@ -86,8 +84,8 @@ async function startEgress(id: string, spec: SandboxSpec, secrets: Secret[], sec
       ...passed,
       "--entrypoint",
       "sh",
-      EGRESS_IMAGE,
-      `${PROXY_DIR}/start.sh`,
+      EGRESS_PROXY.image,
+      `${EGRESS_PROXY.dir}/start.sh`,
     ],
     undefined,
     variables,
@@ -98,12 +96,12 @@ async function startEgress(id: string, spec: SandboxSpec, secrets: Secret[], sec
     "start.sh": startScript(),
     "secrets/.keep": "",
   };
-  await withFolder(files, (folder) => dockerText(["cp", `${folder}/.`, `${proxy}:${PROXY_DIR}`]));
+  await withFolder(files, (folder) => dockerText(["cp", `${folder}/.`, `${proxy}:${EGRESS_PROXY.dir}`]));
   // The Docker CLI copies each secret's file; the adapter never reads it.
   for (const secret of secrets) {
     if (secret.provider !== "file") continue;
     const { variable, file } = secret;
-    await dockerText(["cp", "-L", join(secretsDir, file), `${proxy}:${PROXY_DIR}/secrets/${variable}`]);
+    await dockerText(["cp", "-L", join(secretsDir, file), `${proxy}:${EGRESS_PROXY.dir}/secrets/${variable}`]);
   }
   await dockerText(["network", "connect", "--alias", "egress", sandboxName(id), proxy]);
   const shared = process.env.OSF_SANDBOX_NETWORK;
@@ -117,7 +115,7 @@ async function waitUntilReady(proxy: string): Promise<void> {
   for (;;) {
     const logs = await docker(["logs", proxy]);
     const text = logs.stdout.toString("utf8") + logs.stderr;
-    if (text.includes(READY)) return;
+    if (text.includes(EGRESS_PROXY.ready)) return;
     const state = await dockerText(["container", "inspect", "--format", "{{.State.Status}}", proxy]);
     if (state !== "running" || Date.now() > deadline) throw new Error(`the egress proxy did not start: ${text.trim()}`);
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -127,12 +125,12 @@ async function waitUntilReady(proxy: string): Promise<void> {
 /** The sandbox trusts the proxy's CA, moves to its network, starts, and owns its working folder. */
 async function startSandbox(id: string): Promise<void> {
   const container = sandboxName(id);
-  const ca = await docker(["cp", `${egressName(id)}:${PROXY_DIR}/out/osf`, "-"]);
+  const ca = await docker(["cp", `${egressName(id)}:${EGRESS_PROXY.dir}/out/osf`, "-"]);
   if (ca.code !== 0) throw new Error(`the egress proxy has no CA: ${ca.stderr.trim()}`);
   await dockerText(["cp", "-", `${container}:/etc`], ca.stdout);
   await dockerText(["network", "disconnect", "none", container]);
   await dockerText(["network", "connect", container, container]);
   await dockerText(["start", container]);
   const owner = `${await dockerText(["exec", container, "id", "-u"])}:${await dockerText(["exec", container, "id", "-g"])}`;
-  await dockerText(["exec", "--user", "0", container, "chown", owner, WORKSPACE]);
+  await dockerText(["exec", "--user", "0", container, "chown", owner, SANDBOX_WORKSPACE]);
 }

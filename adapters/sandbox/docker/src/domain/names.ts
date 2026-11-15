@@ -1,5 +1,5 @@
 // What the parts of one sandbox are called on the Docker host, and how a sandbox ID looks.
-import { EGRESS_PORT } from "@opensoftware/sandbox-egress";
+import { EGRESS_PROXY } from "@opensoftware/sandbox-egress";
 
 /** The sandbox's ID: the first 12 hex digits of its container's ID, which Docker chose. */
 export const ID = /^[0-9a-f]{12}$/;
@@ -14,4 +14,4 @@ export const egressName = (id: string): string => `osf-sandbox-${id}-egress`;
 export const ROLE_LABEL = "osf.sandbox.role=sandbox";
 
 /** The URL the sandbox reaches its egress proxy at, on the network alias "egress". */
-export const EGRESS_URL = `http://egress:${EGRESS_PORT}`;
+export const EGRESS_URL = `http://egress:${EGRESS_PROXY.port}`;

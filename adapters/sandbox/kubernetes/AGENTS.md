@@ -17,8 +17,8 @@ The only ways a system test or another program may use this adapter:
 
 Layers, top to bottom, in `architecture.json` (ADR 0014): `entry` (`src/cli.ts`) → `commands` → `adapters` →
 `domain`. `domain` names the parts of a sandbox and writes their Kubernetes resources, without I/O; `adapters` run
-kubectl; `commands` join them. The spec, the secrets, iron-proxy's configuration and the egress log come from
-`@opensoftware/sandbox-egress`. The ARCH check enforces the layers.
+kubectl; `commands` join them. The egress proxy, its secrets, configuration and log come from `@opensoftware/sandbox-egress`;
+reading the spec and the ends of a copy from `@opensoftware/contracts` (ADR 0147). The ARCH check enforces the layers.
 
 ## Allowed exceptions
 
