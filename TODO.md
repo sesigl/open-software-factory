@@ -1958,7 +1958,7 @@ policy of gatekeeper.
 - **Watch out:** both sandbox adapters and their `@conformance` scenarios pass unchanged; a release of each.
 - **Done when:** the library's surface names a handful of values with one job, and SURFACE passes.
 - **Slices:**
-  - [ ] The ADR with the split, and the libraries.
+  - [x] The ADR with the split, and the libraries (ADR 0147).
   - [ ] Both sandbox adapters on them; their releases.
 
 ## Paid runs (last; started by a maintainer, manual)
