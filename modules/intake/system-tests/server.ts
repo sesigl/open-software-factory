@@ -59,9 +59,12 @@ export async function serving(sut: Sut, env: Record<string, string> = {}) {
   };
 }
 
-/** The README's work with this requester, as the text a caller sends. */
+/**
+ * The README's work with this requester, as the text a caller sends: indented, as a person writes it, so only the
+ * bytes as they arrived match the proof's body digest, not the parsed body written again.
+ */
 export const workAs = (fakes: Fakes, requester: Record<string, string>): string =>
-  JSON.stringify({ ...readmeWork(fakes), requester });
+  JSON.stringify({ ...readmeWork(fakes), requester }, null, 2);
 
 /** POSTs the text to "/v1/work-items" with the API token and, when given, the proof in "OSF-Person". */
 export async function postWork(url: string, body: string, proof?: string) {

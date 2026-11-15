@@ -47,7 +47,10 @@ routes keep the body's bytes beside the parsed body for its digest. The ARCH che
   `fakes.postgres()`, as the profile does, which needs Docker (ADR 0129): 133 s for the 66 scenarios in one run on a
   development machine, 199 s before. The scenarios that call `serving` alone use the embedded PGlite. The Slack
   scenarios run the built `channel-slack` adapter and the forge scenarios the built `forge-github` adapter against
-  `fakes.github` (`sut.adapter`); `turbo.json` builds both before the tests.
+  `fakes.github` (`sut.adapter`); `turbo.json` builds both before the tests. The ten scenarios of the person proof,
+  SCN-INTAKE-067 to -076 (ADR 0151), each start one server on PGlite with `fakes.personIssuer`: 24 s together, about
+  2.3 s each and 0.3 s for -074, which exits at its start. The whole suite, 75 scenarios: 222 s in JUnit (76 s of
+  wall time) in one run on a development machine whose 4 cores another agent's tests also used (load 9 to 12).
 
 ## Quality limits
 
