@@ -11,8 +11,10 @@ runs:
       run: |
         export KUBECONFIG="$RUNNER_TEMP/kubeconfig"
         .tools/bin/kind create cluster --wait 120s
-        for image in $(node -e 'import("./packages/sandbox-egress/src/domain/names.ts").then(({ EGRESS_IMAGE }) =>
-          console.log(EGRESS_IMAGE))') $(grep -ho '"[a-z/-]*:[0-9a-z.]*@sha256:[0-9a-f]*"' adapters/sandbox/kubernetes/system-tests/sandbox.ts | tr -d '"'); do
+        egress=$(node -e 'import("./packages/sandbox-egress/src/domain/egress-proxy.ts").then(({ EGRESS_PROXY }) =>
+          console.log(EGRESS_PROXY.image))')
+        test -n "$egress"
+        for image in "$egress" $(grep -ho '"[a-z/-]*:[0-9a-z.]*@sha256:[0-9a-f]*"' adapters/sandbox/kubernetes/system-tests/sandbox.ts | tr -d '"'); do
           nohup docker exec kind-control-plane crictl pull "$image" >/dev/null 2>&1 &
         done
         kubectl apply -f .tools/bin/agent-sandbox.yaml
