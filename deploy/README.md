@@ -5,7 +5,7 @@ covers: [deploy/compose/**, deploy/images/**, deploy/helm/**]
 # deploy
 
 Install a complete factory with one command. The Compose profile in [`compose/`](compose/compose.yaml) runs the
-factory on one machine for one team: PostgreSQL with Temporal and pgvector, NATS, Jaeger, LiteLLM,
+factory on one machine for one team: PostgreSQL with Temporal and pgvector, NATS, Jaeger, LiteLLM, OpenBao,
 gatekeeper, intake, foreman and console, with the [reference factory](compose/factory/factory.yaml). The
 [Helm chart](#helm-chart) in [`helm/osf/`](helm/osf/Chart.yaml) runs the same modules on Kubernetes for platform
 teams. Decisions: [ADR 0074](../docs/decisions/0074-compose-profile.md),
@@ -41,6 +41,9 @@ The console is open and read-only until you [turn on the sign-in](#turn-on-the-s
 | `temporal` | the Temporal server on PostgreSQL, configured by `temporal/config.yaml` | none |
 | `temporal-namespace` | one-shot: the namespace `default` | none |
 | `temporal-ui` | the history of every run | `TEMPORAL_UI_PORT`, 8233 |
+| `openbao` | the secret store of the agents' secrets `ref:openbao/<name>`, which an admin stores on the console's `/secrets`: OpenBao on the volume `openbao`, with its audit log; it sets itself up on its first start and unseals itself at every start; see [Secrets in OpenBao](#secrets-in-openbao) ([ADR 0145](../docs/decisions/0145-openbao-in-the-compose-profile-and-the-chart.md)) | none |
+| `openbao-policies` | one-shot: the two policies that `secrets-openbao policy write` and `policy read` print | none |
+| `openbao-setup` | one-shot at every start: the policies, the mount and the console's and the egress proxy's tokens with the IDs of `.env` | none |
 | `nats` | NATS with JetStream for the events between the modules; intake and foreman keep an event in the stream `OSF` for `OSF_STREAM_MAX_AGE`, default `7d` ([ADR 0116](../docs/decisions/0116-events-not-lost-without-a-trace.md)) | none |
 | `jaeger` | the trace store: the runs' traces from foreman, by OTLP, kept on the volume `jaeger` ([ADR 0100](../docs/decisions/0100-jaeger-trace-store.md)); the console links each run and each stage's span there ([ADR 0121](../docs/decisions/0121-stage-run-record-in-the-trace.md)) | `JAEGER_PORT`, 16686 |
 | `litellm` | the LLM gateway, configured by `litellm/config.yaml`: LiteLLM's image with its bytecode compiled, so it starts sooner ([ADR 0098](../docs/decisions/0098-litellm-image-with-bytecode.md)), and without BerriAI's enterprise code, whose license allows no changed copies ([ADR 0102](../docs/decisions/0102-litellm-image-without-enterprise-code.md)) | `LITELLM_PORT`, 4000 |
@@ -176,6 +179,10 @@ and names it, like `set FOREMAN_API_TOKEN in .env`.
 | `FOREMAN_API_TOKEN` | | Required. The token of foreman's API; console sends it. |
 | `INTAKE_API_TOKEN` | | Required. The token of intake's API; console sends it. |
 | `GATEKEEPER_API_TOKEN` | | Required. The token of gatekeeper's API; foreman and console send it. |
+| `OSF_OPENBAO_UNSEAL_KEY` | | Required; `osf init` generates it. 32 bytes as 64 hex digits, with which OpenBao unseals the volume `openbao` at every start. Never change it for a volume that holds data. |
+| `OSF_OPENBAO_ROOT_TOKEN` | | Required; `osf init` generates it. The ID of OpenBao's root token, which only `openbao` and `openbao-setup` get. |
+| `OSF_OPENBAO_CONSOLE_TOKEN`, `OSF_OPENBAO_EGRESS_TOKEN` | | Required; `osf init` generates them. The IDs of the console's token, which stores and deletes values and cannot read one, and of the token with which foreman and the sandboxes' egress proxies only read. |
+| `OSF_OPENBAO_MOUNT` | `secret` | The KV version 2 mount of the factory's secrets in OpenBao. |
 | `GATEKEEPER_SLACK_CHANNEL` | | The ID of the Slack channel where gatekeeper asks, like `C0GATES`. Set it, `GATEKEEPER_FORGE_TOKEN` or both. |
 | `GATEKEEPER_SLACK_TOKEN` | | With a Slack channel: the bot token of gatekeeper's Slack app. |
 | `GATEKEEPER_SLACK_SIGNING_SECRET` | | With a Slack channel: the signing secret of gatekeeper's Slack app. |
@@ -253,6 +260,40 @@ console sends a request for another host to `CONSOLE_URL` first. Whoever may wri
 make themselves `admin`, and `access.yaml` holds emails: keep that repository private. On a private network, put a TLS
 proxy in front of the console and set `CONSOLE_URL` to its `https://` address; with the sign-in on, the console does
 not start on an address that is neither `https://` nor loopback.
+
+### Secrets in OpenBao
+
+An agent that declares a secret `ref:openbao/<name>` gets its value from the service `openbao`
+([ADR 0145](../docs/decisions/0145-openbao-in-the-compose-profile-and-the-chart.md)). An admin stores it on the
+console's page `/secrets`, which needs [the sign-in](#turn-on-the-sign-in); the factory's `factory.yaml` declares
+`providers.secrets.openbao`. A new value takes effect in the stages that start after you save it; nothing restarts,
+and `.env` does not change. The egress proxy sends it only to the hosts that the agent may reach, in place of a
+placeholder in an HTTP request, so a secret that is not sent in one, like an SSH key or a database password, does not
+work this way. `GH_TOKEN` and `CLAUDE_CODE_OAUTH_TOKEN` of the reference factory stay in `.env`.
+
+- **Set up by itself.** On its first start OpenBao initializes itself and gives its root token the ID
+  `OSF_OPENBAO_ROOT_TOKEN`; at every start it unseals itself with `OSF_OPENBAO_UNSEAL_KEY`. Then `openbao-setup`
+  writes the policies of `secrets-openbao`, enables the mount, and makes the console's and the egress proxy's tokens
+  new with their IDs of `.env`. `docker compose logs openbao-setup` shows how long they live.
+- **The tokens live 768 hours (32 days)** from each `docker compose up`, OpenBao's maximum. `console doctor` and the
+  page `/health` warn 7 days before the console's token ends; run `docker compose up --detach --wait` to make both new.
+- **The audit log** is `/openbao/file/audit.log` on the volume, one JSON line per request and answer, each value as an
+  HMAC: `docker compose exec openbao tail /openbao/file/audit.log`. It grows without rotation.
+- **An operator's commands** run in the service, with the root token: `docker compose exec openbao bao kv list secret`.
+  OpenBao listens only on the profile's network.
+
+**Back up the volume and the key together.** The volume `openbao` holds the values, encrypted with
+`OSF_OPENBAO_UNSEAL_KEY`; neither is any use without the other, and a lost key loses every value. Keep `.env`, with the
+key and the three tokens, in your safe, never in Git. To back up, stop OpenBao for a moment and copy its volume:
+
+```sh
+docker compose stop openbao
+docker run --rm -v osf_openbao:/data:ro -v "$PWD":/backup alpine tar -czf /backup/openbao.tar.gz -C /data .
+docker compose up --detach --wait
+```
+
+To restore, put the archive into an empty volume `osf_openbao` the same way, with the `.env` of the backup. The
+volume's name starts with the Compose project, `osf` unless you set another.
 
 ### Receive GitHub issues on your machine
 
@@ -348,6 +389,28 @@ Each stage of the reference factory runs in a sandbox of the
   `ref:env/CLAUDE_CODE_OAUTH_TOKEN` of the reference factory's agents. Only each sandbox's egress pod gets them; the
   agent holds a placeholder.
 
+### OpenBao on Kubernetes
+
+The chart installs no OpenBao ([ADR 0075](../docs/decisions/0075-helm-chart-and-images.md),
+[ADR 0145](../docs/decisions/0145-openbao-in-the-compose-profile-and-the-chart.md)): it takes your team's. Its
+operator makes a KV version 2 mount for the factory, the two policies that `secrets-openbao` prints for that mount,
+and a token of each, then puts the tokens into a Secret of the release's namespace:
+
+```sh
+export BAO_ADDR=https://bao.acme.dev OSF_OPENBAO_MOUNT=factory
+bao secrets enable -path=factory -version=2 kv
+npx @opensoftware/secrets-openbao@0.1.0 policy write | bao policy write osf-console -
+npx @opensoftware/secrets-openbao@0.1.0 policy read | bao policy write osf-egress -
+kubectl create secret generic osf-openbao \
+  --from-literal=console-token="$(bao token create -orphan -policy=osf-console -field=token)" \
+  --from-literal=egress-token="$(bao token create -orphan -policy=osf-egress -field=token)"
+```
+
+Then set `openbao.address`, `openbao.mount: factory` and `openbao.secret: osf-openbao`. The console's token writes,
+lists and deletes values and cannot read one; the egress token only reads. Your OpenBao decides how long a token
+lives (768 hours by default): `console doctor` warns 7 days before the console's token ends. The sandboxes' egress pods
+in the sandboxes' namespace must reach the address.
+
 ### Helm values
 
 | Value | Default | Meaning |
@@ -374,6 +437,9 @@ Each stage of the reference factory runs in a sandbox of the
 | `console.signIn.url` | the console's own, `http://localhost:8080` | Where people open the console, its `CONSOLE_URL`; the provider's callback is `<url>/signin/callback`. Empty, the chart sets no `CONSOLE_URL`; the default suits `kubectl port-forward`. Behind an Ingress with TLS, its `https://` address. |
 | `console.signIn.issuer`, `console.signIn.clientId` | | With `oidc` the provider's issuer; the client ID of the provider's client or of the GitHub OAuth app. |
 | `console.signIn.secret` | | Required with a provider: a Secret you make, with the keys `session-secret`, the key of the session cookie, and `client-secret`, the client's secret. |
+| `openbao.address` | | Your team's OpenBao, like `https://bao.acme.dev`, as the console, foreman and the sandboxes' egress pods reach it; the chart installs none. Set, the console has `/secrets` and foreman checks a stage's secrets `ref:openbao/<name>` (see [OpenBao on Kubernetes](#openbao-on-kubernetes)). Empty: no setting of OpenBao. |
+| `openbao.mount` | `secret` | The KV version 2 mount of the factory's secrets. |
+| `openbao.secret` | | Required with an address: a Secret you make, with the keys `console-token`, the console's token with the policy of `secrets-openbao policy write`, and `egress-token`, the token with the policy of `secrets-openbao policy read`. |
 | `improve.enabled` | `false` | The CronJob `improve` with the commands of the Compose service `improve`, and the claim `osf-improve` that the console's `/improvement` reads. Its pod and the console then run on foreman's node, as the claims are ReadWriteOnce. |
 | `improve.schedule`, `improve.scorers`, `improve.persistence.size`, `improve.resources` | `17 * * * *`, empty, `1Gi` | When the job runs, the scorers that judge each run (each judgment is a paid model call; empty: none), its claim's size and its resources. |
 | `postgresql.enabled` | `true` | PostgreSQL with pgvector in the cluster. `false` uses `externalDatabase`. |
