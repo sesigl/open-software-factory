@@ -43,24 +43,31 @@ const remote = proxyActivities<Activities>({
 const withActions = (view: RunView, actions: RunAction[]): RunView =>
   actions.length > 0 ? { ...view, actions: [...actions] } : view;
 
-/** Hold a run's memo of its view (ADR 0115). */
+/** Hold a run's memo of its view (ADR 0115), asked before the first fact. */
 const MEMO_PATCH = "memo-view";
+/** Hold a run's memo of its view, asked when the run starts (ADR 0115, note of 2026-11-15). */
+const MEMO_AT_START_PATCH = "memo-view-at-start";
 
 /**
  * The view after the fact, which the run's memo also holds for the run list (ADR 0115). A run that started before
  * replays without the patch, so its history schedules the same commands; from the patch on it keeps its memo current.
+ * `memoed` is the answer of MEMO_AT_START_PATCH; a run that started without it asks MEMO_PATCH here, as it did then.
  */
-async function apply(run: RunView, fact: Fact, actions: RunAction[]): Promise<RunView> {
+async function apply(run: RunView, fact: Fact, actions: RunAction[], memoed: boolean): Promise<RunView> {
   // Asked before the local activity, so the patch's marker is a command of the workflow task that asked. Asked after
   // it, the marker went to a later task when a query split the task while the activity ran, and every replay of the
   // run then failed with a nondeterminism error (TMPRL1100): no query of the ended run, no restart of a running one.
-  const memo = patched(MEMO_PATCH);
+  const memo = memoed || patched(MEMO_PATCH);
   const next = await local.apply(run, fact);
   if (memo) upsertMemo({ view: withActions(next, actions) });
   return next;
 }
 
 export async function factoryRun({ view, definition, before }: RunInput): Promise<RunView> {
+  // Asked in the run's first workflow task, before anything waits, so no query can split a task before the marker. A
+  // patch asked after a local activity, as MEMO_PATCH before the first `apply`, went to the next task when a query
+  // reached the worker while the activity `next` ran, and no replay of the run succeeded (TMPRL1100).
+  const memoed = patched(MEMO_AT_START_PATCH);
   let run = view;
   const steering: string[] = [];
   const decisions: GateDecision[] = [];
@@ -85,7 +92,7 @@ export async function factoryRun({ view, definition, before }: RunInput): Promis
   // 0111 has none, so a replay of an older run schedules the same activities.
   let previous: StageResult | undefined;
   const settle = async (fact: Fact) => {
-    run = await CancellationScope.nonCancellable(() => apply(run, fact, actions));
+    run = await CancellationScope.nonCancellable(() => apply(run, fact, actions, memoed));
   };
   try {
     await remote.publishStarted(run);
@@ -101,9 +108,9 @@ export async function factoryRun({ view, definition, before }: RunInput): Promis
         const left = limitMs - (Date.now() - checksSince.at);
         if (step.delayMs) await sleep(Math.max(1, Math.min(step.delayMs, left)));
         const last = Date.now() - checksSince.at >= limitMs ? limitMs : undefined;
-        run = await apply(run, await remote.readChecks(run, definition, index, last), actions);
+        run = await apply(run, await remote.readChecks(run, definition, index, last), actions, memoed);
       } else if (step.kind === "request-gate") {
-        run = await apply(run, await remote.requestGate(run, definition, index), actions);
+        run = await apply(run, await remote.requestGate(run, definition, index), actions, memoed);
       } else if (step.kind === "await-gate") {
         const { gateId } = step;
         const decided = await condition(() => decisions.some((decision) => decision.gateId === gateId), step.limitMs);
@@ -115,13 +122,14 @@ export async function factoryRun({ view, definition, before }: RunInput): Promis
             ? { kind: "gate", index, ...decision }
             : { kind: "gate", index, gateId, state: "expired", afterMs: step.limitMs },
           actions,
+          memoed,
         );
       } else if (step.kind === "await-hand-back") {
         await condition(() => handedBack);
         [handedBack, takeOver] = [false, undefined];
-        run = await apply(run, { kind: "handed-back", index }, actions);
+        run = await apply(run, { kind: "handed-back", index }, actions, memoed);
       } else {
-        run = await apply(run, { kind: "stage-started", index }, actions);
+        run = await apply(run, { kind: "stage-started", index }, actions, memoed);
         const ended = await remote.runStage(run, definition, index, steering.length, before, previous);
         if (ended.kind === "stage-ended" && ended.result) previous = ended.result;
         await settle(ended);

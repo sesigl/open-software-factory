@@ -23,9 +23,9 @@ foreman's worker busy. intake's `GET /v1/inbox` answered the 50 latest work item
   `state`, the foreman filters the page, so a page may hold fewer runs than `limit` and still have a `next`.
 - Each run keeps its view in its memo: the foreman starts the workflow with the memo `view`, and the workflow upserts it
   after each fact it applies, behind the patch `memo-view`, so a replay of a run that started before schedules the
-  same commands. The workflow asks for the patch before the local activity `apply`, not after it: a query that split
-  the workflow task while the activity ran moved the marker to a later task, and no replay of that run succeeded. The
-  run list reads the views from the memos, without a query or result per run. A run without a memo
+  same commands. A run asks for the patch `memo-view-at-start` in its first workflow task, before it waits for anything
+  (note of 2026-11-15); a run that started without it asks for `memo-view` before its first local activity `apply`, as
+  it did then. The run list reads the views from the memos, without a query or result per run. A run without a memo
   (one that started before) is read with the query, as before.
 - intake's cursor is the received time and ID of the page's last work item in base64url; a page is one keyset query
   on `(received_at DESC, id)`, with an index.
@@ -54,3 +54,16 @@ pattern of the GitHub and Stripe APIs (an opaque cursor, a page size with a maxi
   the Temporal dev server: see `modules/foreman/AGENTS.md#budget`.
 - Every applied fact adds an upsert to the run's history. Revisit if views grow near Temporal's memo size limit.
 - A filtered page can be short; filtering in Temporal needs search attributes (a later ADR).
+
+## Notes
+
+- 2026-11-15: a patch must be asked where no query can split the workflow task before its marker. First `memo-view`
+  was asked after the local activity `apply`, then before it; both times a query that reached the worker while a local
+  activity ran (`apply`, later `next`, which runs before the first `apply`) ended the task early, and the marker went
+  to the next task. A replay then asked for the patch in the task before, got false, and failed with TMPRL1100
+  ("Non-deprecated patch marker encountered for change memo-view"). Every query of an ended run replays it, so
+  `GET /v1/runs/<id>` answered 500 after the run ended, and a restart of the foreman could not go on with a running
+  run. A loop that read 300 runs every 2 ms broke 212 of them. Now a run asks for `memo-view-at-start` in its first
+  task, before anything waits, and keeps `memo-view` only for runs that started without it: the 88 sound histories of
+  the loop still replay, and in 300 new runs no read failed. Reading the single run from the memo instead was not
+  needed: the query then answers as before, also the actions of ADR 0118 that the memo gets only with the next fact.
