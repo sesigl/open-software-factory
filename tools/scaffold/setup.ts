@@ -8,7 +8,9 @@ import { join, relative, resolve } from "node:path";
 const PROFILE = "deploy/compose";
 const ENV = `${PROFILE}/.env`;
 // The secrets that only the factory's own services share: init generates them. Every other value is the team's.
-const GENERATED = /^(?:[A-Z0-9_]*_PASSWORD|[A-Z0-9_]*_API_TOKEN|[A-Z0-9_]*_MASTER_KEY|[A-Z0-9_]*_SESSION_SECRET)$/;
+// OpenBao's unseal key, its root token and the IDs of its two tokens are 64 hex digits too (ADR 0145).
+const GENERATED =
+  /^(?:[A-Z0-9_]*_PASSWORD|[A-Z0-9_]*_API_TOKEN|[A-Z0-9_]*_MASTER_KEY|[A-Z0-9_]*_SESSION_SECRET|OSF_OPENBAO_UNSEAL_KEY|OSF_OPENBAO_[A-Z]+_TOKEN)$/;
 const SLACK = ["GATEKEEPER_SLACK_CHANNEL", "GATEKEEPER_SLACK_TOKEN", "GATEKEEPER_SLACK_SIGNING_SECRET"];
 // The settings that the console's own sign-in needs, by provider (ADR 0134).
 const SIGN_IN: Record<string, string[]> = {
@@ -24,10 +26,16 @@ export function init(root: string, args: string[]): number {
     return 2;
   }
   const env = join(root, ENV);
+  const lines = readFileSync(join(root, `${PROFILE}/.env.example`), "utf8").split("\n");
   if (existsSync(env)) {
-    process.stdout.write(`${ENV} exists: kept it\n`);
+    // A value that a newer profile generates, like OpenBao's key, is added; every value of the .env stays.
+    const text = readFileSync(env, "utf8");
+    const have = parse(text);
+    const missing = lines.filter((line) => GENERATED.test(nameOf(line)) && !have.has(nameOf(line))).map(generate);
+    if (missing.length > 0) writeFileSync(env, `${text.replace(/\n?$/, "\n")}${missing.join("\n")}\n`);
+    const names = missing.map(nameOf).join(", ");
+    process.stdout.write(`${ENV} exists: kept it${names ? `, and added ${names}` : ""}\n`);
   } else {
-    const lines = readFileSync(join(root, `${PROFILE}/.env.example`), "utf8").split("\n");
     writeFileSync(env, lines.map(generate).join("\n"), { mode: 0o600 });
     process.stdout.write(`wrote ${ENV} with the factory's own secrets\n`);
   }
@@ -90,6 +98,8 @@ function docker(root: string, args: string[]): number {
   }
   return run.status ?? 1;
 }
+
+const nameOf = (line: string): string => /^([A-Z0-9_]+)=/.exec(line)?.[1] ?? "";
 
 function generate(line: string): string {
   const match = /^([A-Z0-9_]+)=(.*)$/.exec(line);

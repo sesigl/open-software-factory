@@ -89,7 +89,7 @@ Feature: Setup of a factory from a clone
     And the second run prints only "set CONSOLE_SIGN_IN in deploy/compose/.env to oidc or github, not saml"
     And both exit with code 1 and the fake docker was not called
 
-  @id=SCN-REPO-166 @status=planned
+  @id=SCN-REPO-166 @status=implemented
   Scenario: osf init generates OpenBao's unseal key, its root token and the IDs of the console's and the egress proxy's tokens
     Given a "deploy/compose/.env.example" with "OSF_OPENBAO_UNSEAL_KEY=", "OSF_OPENBAO_ROOT_TOKEN=", "OSF_OPENBAO_CONSOLE_TOKEN=", "OSF_OPENBAO_EGRESS_TOKEN=" and "OSF_OPENBAO_MOUNT="
     When the developer runs "osf init"
@@ -97,7 +97,7 @@ Feature: Setup of a factory from a clone
     And "deploy/compose/.env" sets "OSF_OPENBAO_UNSEAL_KEY", "OSF_OPENBAO_ROOT_TOKEN", "OSF_OPENBAO_CONSOLE_TOKEN" and "OSF_OPENBAO_EGRESS_TOKEN" to four different values of 64 hex digits
     And "deploy/compose/.env" keeps "OSF_OPENBAO_MOUNT=" empty
 
-  @id=SCN-REPO-167 @status=planned
+  @id=SCN-REPO-167 @status=implemented
   Scenario: osf init adds to an existing .env the generated values it lacks and changes no value it has
     Given a "deploy/compose/.env.example" with "POSTGRES_PASSWORD=", "OSF_OPENBAO_UNSEAL_KEY=" and "GH_TOKEN="
     And a "deploy/compose/.env" with "POSTGRES_PASSWORD=mine"

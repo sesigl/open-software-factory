@@ -1,8 +1,18 @@
 // The Compose profile as the operator sets it up: every value of compose/.env.example set in $INPUT/.env.
+import { randomBytes } from "node:crypto";
 import type { Compose, Fakes, Sut } from "@opensoftware/testkit";
+
+/** The values of .env that osf init generates for the profile's OpenBao (ADR 0145), new for each scenario. */
+export const OPENBAO = [
+  "OSF_OPENBAO_UNSEAL_KEY",
+  "OSF_OPENBAO_ROOT_TOKEN",
+  "OSF_OPENBAO_CONSOLE_TOKEN",
+  "OSF_OPENBAO_EGRESS_TOKEN",
+] as const;
 
 /** The values of `.env.example`, made up for the tests. */
 const VALUES: Record<string, string> = {
+  ...Object.fromEntries(OPENBAO.map((name) => [name, randomBytes(32).toString("hex")])),
   POSTGRES_PASSWORD: "postgres-password-1",
   LITELLM_MASTER_KEY: "sk-litellm-master-1",
   FOREMAN_API_TOKEN: "foreman-token-1",

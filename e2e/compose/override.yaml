@@ -14,6 +14,9 @@ x-clock: &clock
 services:
   factory-repo: *workspace
 
+  # The policies of the profile's OpenBao, from the workspace's secrets-openbao.
+  openbao-policies: *workspace
+
   # The reference factory of the scenarios runs no agent in a sandbox, so the template needs no harness.
   agent-template: *workspace
 

@@ -120,6 +120,89 @@ services:
       timeout: 5s
       retries: 60
 
+  # The secret store of the agents' secrets ref:openbao/<name> (ADR 0145): an admin stores a value on the console's
+  # /secrets, a sandbox's egress proxy reads it. It unseals itself with OSF_OPENBAO_UNSEAL_KEY and keeps its data and
+  # its audit log on the volume openbao. Never publish its port.
+  openbao:
+    image: quay.io/openbao/openbao:2.7.2
+    restart: unless-stopped
+    entrypoint: [bao]
+    command: [server, -config=/openbao/config/osf.hcl]
+    environment:
+      OSF_OPENBAO_UNSEAL_KEY: ${OSF_OPENBAO_UNSEAL_KEY:?set OSF_OPENBAO_UNSEAL_KEY in .env}
+      OSF_OPENBAO_ROOT_TOKEN: ${OSF_OPENBAO_ROOT_TOKEN:?set OSF_OPENBAO_ROOT_TOKEN in .env}
+      BAO_ADDR: http://127.0.0.1:8200
+      # Only for the bao commands an operator runs here with docker compose exec; the server reads no such variable.
+      BAO_TOKEN: ${OSF_OPENBAO_ROOT_TOKEN:?set OSF_OPENBAO_ROOT_TOKEN in .env}
+    volumes:
+      - ./openbao/config.hcl:/openbao/config/osf.hcl:ro
+      - openbao:/openbao/file
+    healthcheck:
+      # 0 once the store is unsealed, and the root token of .env answers once its first start set it up.
+      test: [CMD, bao, token, lookup, -format=json]
+      interval: 1s
+      timeout: 5s
+      retries: 60
+
+  # One-shot: the two policies for the mount, as secrets-openbao prints them, into the volume openbao-policies.
+  openbao-policies:
+    image: ghcr.io/sesigl/open-software-factory/console:0.9.0-r1
+    build: &console
+      context: ../images
+      target: module
+      secrets: [ca]
+      args:
+        PACKAGES: >-
+          @opensoftware/console@0.9.0 @opensoftware/forge-github@0.8.0 @opensoftware/forge-forgejo@0.8.0
+          @opensoftware/secrets-openbao@0.1.0
+    entrypoint: [sh, -c]
+    command:
+      - |
+        set -eu
+        secrets-openbao policy write > /home/node/data/osf-console.hcl
+        secrets-openbao policy read > /home/node/data/osf-egress.hcl
+    environment:
+      OSF_OPENBAO_MOUNT: ${OSF_OPENBAO_MOUNT:-secret}
+    volumes:
+      # A folder of the image's user, so the new volume is the user's too.
+      - openbao-policies:/home/node/data
+
+  # One-shot at every start: the mount, the two policies, and the tokens with the IDs of .env, each made new for
+  # 768 hours, OpenBao's maximum: the console's (writes, cannot read a value) and the egress proxy's (only reads).
+  openbao-setup:
+    image: quay.io/openbao/openbao:2.7.2
+    depends_on:
+      openbao:
+        condition: service_healthy
+      openbao-policies:
+        condition: service_completed_successfully
+    entrypoint: [sh, -c]
+    command:
+      - |
+        set -eu
+        bao policy write osf-console /policies/osf-console.hcl
+        bao policy write osf-egress /policies/osf-egress.hcl
+        bao secrets list -format=json | grep -q "\"$$MOUNT/\"" || bao secrets enable -path="$$MOUNT" -version=2 kv
+        token() {
+          bao token revoke "$$2" >/dev/null
+          # Prints only how long the token lives, never its ID; OpenBao's warning about a token with a chosen ID is
+          # in ADR 0145.
+          lives=$$(bao token create -id="$$2" -policy="$$1" -orphan -ttl=768h -display-name="$$1" -field=token_duration 2>/dev/null)
+          echo "$$1: a new token for $$lives seconds"
+        }
+        token osf-console "$$CONSOLE_TOKEN"
+        token osf-egress "$$EGRESS_TOKEN"
+    environment:
+      BAO_ADDR: http://openbao:8200
+      # Straight to openbao, also on a host whose Docker gives containers a proxy.
+      NO_PROXY: openbao
+      BAO_TOKEN: ${OSF_OPENBAO_ROOT_TOKEN:?set OSF_OPENBAO_ROOT_TOKEN in .env}
+      MOUNT: ${OSF_OPENBAO_MOUNT:-secret}
+      CONSOLE_TOKEN: ${OSF_OPENBAO_CONSOLE_TOKEN:?set OSF_OPENBAO_CONSOLE_TOKEN in .env}
+      EGRESS_TOKEN: ${OSF_OPENBAO_EGRESS_TOKEN:?set OSF_OPENBAO_EGRESS_TOKEN in .env}
+    volumes:
+      - openbao-policies:/policies:ro
+
   # The trace store (ADR 0100): Jaeger v2 takes the runs' spans by OTLP/HTTP and keeps them on the volume "jaeger".
   jaeger:
     image: jaegertracing/jaeger:2.22.0
@@ -299,7 +382,7 @@ services:
 
   foreman:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/foreman:0.13.0
+    image: ghcr.io/sesigl/open-software-factory/foreman:0.13.0-r1
     build:
       context: ../images
       target: foreman
@@ -308,9 +391,11 @@ services:
         PACKAGES: >-
           @opensoftware/foreman@0.13.0 @opensoftware/harness-claude-code@0.6.0 @opensoftware/forge-github@0.8.0
           @opensoftware/forge-forgejo@0.8.0 @opensoftware/inference-litellm@0.5.0 @opensoftware/sandbox-docker@0.7.0
-          @opensoftware/sandbox-kubernetes@0.5.0
+          @opensoftware/sandbox-kubernetes@0.5.0 @opensoftware/secrets-openbao@0.1.0
     command: [foreman, serve]
     depends_on:
+      openbao-setup:
+        condition: service_completed_successfully
       docker-proxy:
         condition: service_healthy
       agent-template:
@@ -354,6 +439,13 @@ services:
       # egress proxy of a sandbox gets them, and the agent a placeholder.
       OSF_SECRET_GH_TOKEN: ${GH_TOKEN:-}
       OSF_SECRET_CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
+      # The secrets ref:openbao/<name> that an admin stores on the console's /secrets (ADR 0145). Before a stage the
+      # foreman asks secrets-openbao whether each has a value (ADR 0139); a sandbox's egress proxy, on this project's
+      # network, reads it from openbao with the token that only reads.
+      FOREMAN_SECRETS: '{"openbao": "secrets-openbao"}'
+      OSF_OPENBAO_ADDR: http://openbao:8200
+      OSF_OPENBAO_MOUNT: ${OSF_OPENBAO_MOUNT:-secret}
+      OSF_OPENBAO_TOKEN: ${OSF_OPENBAO_EGRESS_TOKEN:?set OSF_OPENBAO_EGRESS_TOKEN in .env}
       # A token that may read pull requests and their checks, for the verify stage's check "verify". Optional.
       FOREMAN_FORGE_TOKEN: ${FOREMAN_FORGE_TOKEN:-}
       # A factory with providers.inference litellm attaches to the service litellm with its master key (ADR 0080).
@@ -378,15 +470,12 @@ services:
 
   console:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/console:0.9.0
-    build:
-      context: ../images
-      target: module
-      secrets: [ca]
-      args:
-        PACKAGES: "@opensoftware/console@0.9.0 @opensoftware/forge-github@0.8.0 @opensoftware/forge-forgejo@0.8.0"
+    image: ghcr.io/sesigl/open-software-factory/console:0.9.0-r1
+    build: *console
     command: [console, serve]
     depends_on:
+      openbao-setup:
+        condition: service_completed_successfully
       foreman:
         condition: service_healthy
       intake:
@@ -427,6 +516,12 @@ services:
       CONSOLE_OIDC_CLIENT_SECRET: ${CONSOLE_OIDC_CLIENT_SECRET:-}
       CONSOLE_GITHUB_CLIENT_ID: ${CONSOLE_GITHUB_CLIENT_ID:-}
       CONSOLE_GITHUB_CLIENT_SECRET: ${CONSOLE_GITHUB_CLIENT_SECRET:-}
+      # /secrets, for an admin with the sign-in on: the console stores, lists and deletes the agents' secrets in
+      # openbao with its own token, which cannot read a value (ADR 0137, ADR 0145).
+      CONSOLE_SECRETS_ADAPTER: secrets-openbao
+      OSF_OPENBAO_ADDR: http://openbao:8200
+      OSF_OPENBAO_MOUNT: ${OSF_OPENBAO_MOUNT:-secret}
+      OSF_OPENBAO_TOKEN: ${OSF_OPENBAO_CONSOLE_TOKEN:?set OSF_OPENBAO_CONSOLE_TOKEN in .env}
     volumes:
       - factory:/factory:ro
       - improve:/home/node/data:ro
@@ -511,3 +606,6 @@ volumes:
   factory-rendered:
   improve:
   foreman:
+  # OpenBao's data and audit log. Back it up together with OSF_OPENBAO_UNSEAL_KEY: neither is any use without the other.
+  openbao:
+  openbao-policies:

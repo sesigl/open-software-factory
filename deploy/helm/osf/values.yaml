@@ -29,8 +29,8 @@ images:
   pullPolicy: IfNotPresent
   gatekeeper: "0.10.0-r1"
   intake: "0.7.0-r1"
-  foreman: "0.13.0"
-  console: "0.9.0"
+  foreman: "0.13.0-r1"
+  console: "0.9.0-r1"
   factorySpec: "0.11.0"
   # The image of the improvement jobs: observer, scorekit and ledger.
   observer: "0.2.0-r1"
