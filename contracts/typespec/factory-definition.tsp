@@ -110,7 +110,10 @@ model Agent {
   /** MCP servers: `registry:<name>@<version>` or `<name>@<version>`. */
   mcp?: string[];
 
-  /** Paths to skill folders. */
+  /**
+   * The agent's skills: each a path to a skill folder, or a folder of another Git repository at a ref,
+   * `git+<url>#<ref>:<path>`, which `factory plan` pins in factory.lock (ADR 0146).
+   */
   skills?: string[];
 
   secrets?: SecretReference[];

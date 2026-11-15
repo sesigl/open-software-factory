@@ -1,7 +1,9 @@
 @module=factory-source @owner=maintainers
 Feature: A factory's folder from a path or a Git remote
   factorySource gives the folder of a factory: the folder of a path, or the files of the commit of a ref of a Git
-  remote, fetched into a cache, with a token for a private remote (ADR 0124, ADR 0142).
+  remote, fetched into a cache, with a token for a private remote (ADR 0124, ADR 0142). pinnedFolder gives a folder of
+  a Git remote at a ref, with its commit and the hash of its files, or at the commit of a pin whose hash it checks
+  (ADR 0146).
 
   @id=SCN-FSOURCE-001 @status=implemented
   Scenario: A factory in a Git remote gives the files of the commit of its ref
@@ -79,3 +81,29 @@ Feature: A factory's folder from a path or a Git remote
     When a program fetches the source "git+http://ada:url-password-0002@<host>/acme/factory.git#main" with a cache folder
     Then the fetch fails with a FetchError "cannot fetch main of http://<host>/acme/factory.git: "
     And the message does not contain "ada" or "url-password-0002"
+
+  @id=SCN-FSOURCE-012 @status=implemented
+  Scenario: A folder of a Git remote at a ref gives its commit, its folder in the cache and the hash of its files
+    Given the folder "skills/review" with "SKILL.md" and "notes/checklist.md" is committed on the branch "main" of a Git repository at a "file://" URL
+    When a program fetches the folder "git+<url>#main:skills/review" with a cache folder and no pin
+    Then it gets the commit of "main" and the folder "skills/review" of that commit below the cache folder, with both files
+    And the hash "h1:" with the base64 of the SHA-256 of one line "<SHA-256 of the file>  <path>" per file, sorted by path
+
+  @id=SCN-FSOURCE-013 @status=implemented
+  Scenario: A folder with a pin gives the pinned commit after its ref moved, and from the cache once the remote is gone
+    Given the folder "skills/review" is committed on the branch "main" of a Git repository at a "file://" URL, and a program pinned "git+<url>#main:skills/review"
+    And "main" has a newer commit that changes "skills/review/SKILL.md"
+    When the program fetches the folder with its pin, and again with its pin after the repository was removed
+    Then both fetches give the pinned commit and the first text of "SKILL.md"
+
+  @id=SCN-FSOURCE-014 @status=implemented
+  Scenario: A pin whose hash is not the hash of the fetched files is a FetchError that names both hashes
+    Given the folder "skills/review" is committed on the branch "main" of a Git repository at a "file://" URL
+    When a program fetches "git+<url>#main:skills/review" with a pin of the commit of "main" and the hash "h1:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+    Then the fetch fails with a FetchError "the folder skills/review of <url> at <commit> has the hash <hash>, not the hash h1:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= of its pin"
+
+  @id=SCN-FSOURCE-015 @status=implemented
+  Scenario: A reference without a folder, a folder outside the repository and a folder that the commit lacks are each a FetchError
+    Given the folder "skills/review" is committed on the branch "main" of a Git repository at a "file://" URL
+    When a program fetches "git+<url>#main", "git+<url>#main:../review", "git+<url>#main:/etc" and "git+<url>#main:skills/missing"
+    Then the fetches fail with the FetchErrors "is no git+<url>#<ref>:<path>", "names a folder outside its repository" twice and "the commit <commit> of <url> has no folder skills/missing"

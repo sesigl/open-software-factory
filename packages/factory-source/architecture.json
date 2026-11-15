@@ -1,7 +1,7 @@
 {
   "layers": [
     { "name": "api", "paths": ["src/index.ts"] },
-    { "name": "source", "paths": ["src/source.ts"] },
+    { "name": "source", "paths": ["src/source.ts", "src/pinned.ts"] },
     { "name": "git", "paths": ["src/git.ts"] }
   ]
 }

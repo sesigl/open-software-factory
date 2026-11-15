@@ -1042,7 +1042,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Paths to skill folders."
+            "description": "The agent's skills: each a path to a skill folder, or a folder of another Git repository at a ref,\n`git+<url>#<ref>:<path>`, which `factory plan` pins in factory.lock (ADR 0146)."
           },
           "secrets": {
             "type": "array",
@@ -1308,12 +1308,22 @@
           "folder": {
             "type": "string",
             "minLength": 1
+          },
+          "repository": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The URL of the other Git repository, as the entry `git+<url>#<ref>:<path>` names it."
+          },
+          "commit": {
+            "type": "string",
+            "pattern": "^([0-9a-f]{40}|[0-9a-f]{64})$",
+            "description": "The commit of the other repository that factory.lock pins; none while factory.lock has no pin."
           }
         },
         "required": [
           "folder"
         ],
-        "description": "A folder of the factory's repository, relative to the folder of factory.yaml, like \"skills/release-notes\"."
+        "description": "A folder of the factory's repository, relative to the folder of factory.yaml, like \"skills/release-notes\"; or, for a\nskill of another Git repository, its folder there with the repository's URL and the commit factory.lock pins\n(ADR 0146)."
       },
       "CheckName": {
         "type": "string",
@@ -1625,6 +1635,14 @@
               }
             },
             "description": "The adapters under `providers` that `factory plan --adapters` pinned, per port and adapter name (ADR 0125). A pin\ncounts only while its `range` is the range factory.yaml declares."
+          },
+          "skills": {
+            "type": "object",
+            "properties": {},
+            "unevaluatedProperties": {
+              "$ref": "#/components/schemas/FactoryLockSkillPin"
+            },
+            "description": "The skills of other Git repositories that `factory plan` pinned, by the skill's name (ADR 0146). A pin counts only\nwhile its `source` is the entry factory.yaml declares; the foreman and `factory render` fetch its commit and check\nits hash."
           }
         },
         "required": [
@@ -1710,6 +1728,33 @@
           "version"
         ],
         "description": "One registry MCP server at its exact version, with the npm package or the remote it starts."
+      },
+      "FactoryLockSkillPin": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "pattern": "^git\\+.+#[^:]+:.+$",
+            "description": "The entry of `skills` in factory.yaml that the pin was resolved from, `git+<url>#<ref>:<path>`."
+          },
+          "commit": {
+            "type": "string",
+            "pattern": "^([0-9a-f]{40}|[0-9a-f]{64})$",
+            "description": "The full commit, 40 hexadecimal characters, or 64 in a repository of SHA-256."
+          },
+          "hash": {
+            "type": "string",
+            "pattern": "^h1:[A-Za-z0-9+/]{43}=$",
+            "description": "The hash of the skill folder's files in the form of Go's modules: \"h1:\" and the base64 of a SHA-256."
+          }
+        },
+        "required": [
+          "source",
+          "commit",
+          "hash"
+        ],
+        "description": "One skill of another Git repository at the commit its ref had when `factory plan` pinned it.",
+        "additionalProperties": false
       },
       "FormatVersion": {
         "type": "integer",

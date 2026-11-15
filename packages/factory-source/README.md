@@ -4,12 +4,15 @@ covers: [packages/factory-source/src/**]
 
 # factory-source
 
-Give the folder of a factory, from a path or from a Git remote at a ref. The foreman reads its factory with this
-library; the console, `factory render` and the fetch of pinned skills follow (T-58, T-59). A library: it has no
+Give the folder of a factory, from a path or from a Git remote at a ref, and a folder of another Git repository at the
+commit of its pin, like a skill of `factory.yaml`. The foreman reads its factory and its pinned skills with this
+library, and `factory plan`, `factory render` and `factory skills` fetch the pinned skills with it; the console
+follows (T-58, T-59). A library: it has no
 command of its own, and its only state is the cache folder its caller names. Decisions:
 [ADR 0124](../../docs/decisions/0124-factory-version-from-git.md),
 [ADR 0135](../../docs/decisions/0135-one-job-and-a-listed-surface.md),
-[ADR 0142](../../docs/decisions/0142-factory-source-library-and-its-token.md).
+[ADR 0142](../../docs/decisions/0142-factory-source-library-and-its-token.md),
+[ADR 0146](../../docs/decisions/0146-skills-of-other-repositories-pinned-in-factory-lock.md).
 
 ## Quick start
 
@@ -35,13 +38,25 @@ try {
 | Export | What it does |
 | --- | --- |
 | `factorySource(setting, { cache, token })` | A source with one method, `fetch()`. `setting` is a path to the factory's file, or, when it starts with `git+`, `git+<url>#<ref>` (without `#<ref>`: the remote's `HEAD`) with `factory.yaml` at the root of the commit. `fetch()` gives `{ folder, file, commit }`: for a path, its folder and the path itself, no commit and no Git process; for a remote, the ref's commit, fetched again at each call, and its files in `<cache>/<commit>/`. The fetches of one source run one at a time. Paths stay as given: pass absolute ones for absolute folders. |
-| `FetchError` | What `fetch()` throws for a remote whose ref cannot be fetched: `cannot fetch <ref> of <url>: <Git's message>`, the URL without a user and a password it carries. |
+| `pinnedFolder(reference, { cache, token, pin })` | The folder that `reference` names, `git+<url>#<ref>:<path>`: a folder of the repository at a ref (a branch, a tag or a commit). Without `pin`, it fetches the ref and gives `{ folder, commit, hash }`. With `pin` (`{ commit, hash }`, as `factory.lock` holds it), it fetches the pin's commit, never the ref, and only when the cache does not hold that commit yet; files whose hash is not the pin's are a `FetchError`. `cache` holds one folder per repository. |
+| `FetchError` | What `fetch()` and `pinnedFolder` throw for a remote whose ref cannot be fetched: `cannot fetch <ref> of <url>: <Git's message>`, the URL without a user and a password it carries. |
 
 ## The cache
 
 The bare repository is `<cache>/repository.git`, and each commit's files are `<cache>/<commit>/`, written once with
 `git checkout <commit> -- .` (ADR 0124). The folder of an old commit stays until the caller deletes it. A folder that
 a stopped fetch left half written, `<commit>.partial`, is emptied and written again. One cache folder per remote.
+
+`pinnedFolder` takes one cache folder for every repository it fetches: each repository has the layout above in
+`<cache>/<first 16 hex digits of the SHA-256 of its URL>/`, and the folder is below its commit's files. Its fetches of
+one repository run one at a time in a process. A reference whose path leaves the repository (`..`, or a leading `/`)
+is a `FetchError`.
+
+## The hash of a folder
+
+`hash` is the form of Go's modules (`h1:` of `go.sum`, ADR 0146): the SHA-256 of one line
+`<SHA-256 of the file, in hex>  <path>\n` per file below the folder, sorted by the path with `/` between its parts,
+written as `h1:` and its base64. Only files count; a symbolic link does not.
 
 ## A private repository
 
@@ -80,3 +95,7 @@ This library reads no environment variables: its caller passes the cache folder 
 | SCN-FSOURCE-009 | implemented | A private remote without the token is a FetchError at once, with no prompt for a password |
 | SCN-FSOURCE-010 | implemented | A remote without a ref and without a commit is a FetchError that names HEAD |
 | SCN-FSOURCE-011 | implemented | A URL that carries a user and a password is named without them in a FetchError |
+| SCN-FSOURCE-012 | implemented | A folder of a Git remote at a ref gives its commit, its folder in the cache and the hash of its files |
+| SCN-FSOURCE-013 | implemented | A folder with a pin gives the pinned commit after its ref moved, and from the cache once the remote is gone |
+| SCN-FSOURCE-014 | implemented | A pin whose hash is not the hash of the fetched files is a FetchError that names both hashes |
+| SCN-FSOURCE-015 | implemented | A reference without a folder, a folder outside the repository and a folder that the commit lacks are each a FetchError |

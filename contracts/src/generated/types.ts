@@ -295,7 +295,10 @@ export type components = {
             repositories?: string[];
             /** @description MCP servers: `registry:<name>@<version>` or `<name>@<version>`. */
             mcp?: string[];
-            /** @description Paths to skill folders. */
+            /**
+             * @description The agent's skills: each a path to a skill folder, or a folder of another Git repository at a ref,
+             *     `git+<url>#<ref>:<path>`, which `factory plan` pins in factory.lock (ADR 0146).
+             */
             skills?: string[];
             secrets?: components["schemas"]["SecretReference"][];
             /** @description Runtime of the agent. */
@@ -380,9 +383,17 @@ export type components = {
             /** @description Each needed secret the agent does not declare, and each needed host its sandbox does not allow. */
             lacks: components["schemas"]["SkillNeeds"];
         };
-        /** @description A folder of the factory's repository, relative to the folder of factory.yaml, like "skills/release-notes". */
+        /**
+         * @description A folder of the factory's repository, relative to the folder of factory.yaml, like "skills/release-notes"; or, for a
+         *     skill of another Git repository, its folder there with the repository's URL and the commit factory.lock pins
+         *     (ADR 0146).
+         */
         CatalogSkillSource: {
             folder: string;
+            /** @description The URL of the other Git repository, as the entry `git+<url>#<ref>:<path>` names it. */
+            repository?: string;
+            /** @description The commit of the other repository that factory.lock pins; none while factory.lock has no pin. */
+            commit?: string;
         };
         /** @description The name of a check on the forge: a commit status context. */
         CheckName: string;
@@ -527,6 +538,14 @@ export type components = {
                     [key: string]: components["schemas"]["FactoryLockAdapterPin"];
                 };
             };
+            /**
+             * @description The skills of other Git repositories that `factory plan` pinned, by the skill's name (ADR 0146). A pin counts only
+             *     while its `source` is the entry factory.yaml declares; the foreman and `factory render` fetch its commit and check
+             *     its hash.
+             */
+            skills?: {
+                [key: string]: components["schemas"]["FactoryLockSkillPin"];
+            };
         };
         /** @description One adapter's npm package `@opensoftware/<port>-<name>` at the newest version inside its range. */
         FactoryLockAdapterPin: {
@@ -549,6 +568,15 @@ export type components = {
                 type: string;
                 url: string;
             };
+        };
+        /** @description One skill of another Git repository at the commit its ref had when `factory plan` pinned it. */
+        FactoryLockSkillPin: {
+            /** @description The entry of `skills` in factory.yaml that the pin was resolved from, `git+<url>#<ref>:<path>`. */
+            source: string;
+            /** @description The full commit, 40 hexadecimal characters, or 64 in a repository of SHA-256. */
+            commit: string;
+            /** @description The hash of the skill folder's files in the form of Go's modules: "h1:" and the base64 of a SHA-256. */
+            hash: string;
         };
         /**
          * @description The version of a format inside its documents. Only 1 exists; a new major version of a format adds the next.

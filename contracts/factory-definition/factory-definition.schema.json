@@ -186,7 +186,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Paths to skill folders."
+            "description": "The agent's skills: each a path to a skill folder, or a folder of another Git repository at a ref,\n`git+<url>#<ref>:<path>`, which `factory plan` pins in factory.lock (ADR 0146)."
           },
           "secrets": {
             "type": "array",
