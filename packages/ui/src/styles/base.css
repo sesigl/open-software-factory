@@ -137,6 +137,7 @@ a:hover {
 
 .osf-table td {
   padding: 14px var(--osf-space-4);
+  vertical-align: top;
   border-bottom: 1px solid var(--osf-line);
   color: var(--osf-text-muted);
 }
@@ -218,7 +219,7 @@ a:hover {
     font-size: 12px;
   }
 
-  .osf-table.osf-cards td.osf-card-title {
+  .osf-table.osf-cards td:is(.osf-card-title, .osf-card-name) {
     order: -1;
     flex: 1 1 100%;
     font-size: 15px;
@@ -228,6 +229,14 @@ a:hover {
 
   .osf-card-title a {
     text-decoration: none;
+  }
+
+  .osf-cards td.osf-card-wide {
+    flex: 1 1 100%;
+  }
+
+  .osf-cards td:empty {
+    display: none;
   }
 
   .osf-card-title a::after {
@@ -306,21 +315,25 @@ a:hover {
   background: currentColor;
 }
 
-.osf-state-failed {
+.osf-state-failed,
+.osf-state-rejected {
   color: var(--osf-state-failed);
 }
 
-.osf-state-failed::before {
+.osf-state-failed::before,
+.osf-state-rejected::before {
   background:
     linear-gradient(45deg, transparent 40%, currentColor 40% 60%, transparent 60%),
     linear-gradient(-45deg, transparent 40%, currentColor 40% 60%, transparent 60%);
 }
 
-.osf-state-complete {
+.osf-state-complete,
+.osf-state-succeeded {
   color: var(--osf-state-complete);
 }
 
-.osf-state-complete::before {
+.osf-state-complete::before,
+.osf-state-succeeded::before {
   width: 6px;
   margin: 0 2px;
   border: solid currentColor;
@@ -335,6 +348,16 @@ a:hover {
 .osf-state-cancelled::before {
   height: 2px;
   background: currentColor;
+}
+
+/* A stage that has not started: no colour, an open ring. */
+.osf-state-pending {
+  color: var(--osf-text-subtle);
+}
+
+.osf-state-pending::before {
+  border: 2px solid currentColor;
+  border-radius: 50%;
 }
 
 /* What a list says when it is empty. */
@@ -519,6 +542,72 @@ button.osf-action {
   font-weight: var(--osf-weight-strong);
   text-decoration: none;
   cursor: pointer;
+}
+
+/* A field and its button in one line, like "Steer" with its message: the label above the field, the button beside it. */
+.osf-inline {
+  display: flex;
+  flex: 1 1 22rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--osf-space-2);
+  min-width: 0;
+}
+
+.osf-inline label {
+  display: flex;
+  flex: 1 1 12rem;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  font-size: var(--osf-size-secondary);
+  font-weight: var(--osf-weight-strong);
+}
+
+/* The facts of a record below its title, like a run's state, factory and links: labels in mono capitals. */
+.osf-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: var(--osf-space-4) var(--osf-space-6);
+  margin: 0 0 var(--osf-space-6);
+  padding: var(--osf-space-4);
+  border: 1px solid var(--osf-line);
+  border-radius: var(--osf-radius-panel);
+  background: var(--osf-bg-surface);
+}
+
+.osf-facts div {
+  min-width: 0;
+}
+
+.osf-facts dt {
+  margin-bottom: var(--osf-space-1);
+  font-family: var(--osf-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--osf-text-subtle);
+}
+
+.osf-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* The forms of a record below its facts, in one row that wraps; without a form it takes no room. */
+.osf-toolbar {
+  align-items: flex-end;
+  margin-bottom: var(--osf-space-6);
+}
+
+.osf-toolbar:not(:has(form)) {
+  display: none;
+}
+
+/* Forms in a cell of a table, like a gate's "Approve" and "Reject", below the cell's text. */
+.osf-table td > .osf-buttons {
+  align-items: flex-end;
+  margin-top: var(--osf-space-3);
 }
 
 /* Panels one below the other, like two forms beside a list. */

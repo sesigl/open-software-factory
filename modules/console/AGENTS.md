@@ -89,12 +89,27 @@ A journey runs in Chromium (`@kind=journey`, ADR 0131) only for a main flow. Eac
   the screen while the page scrolls, and only it shows that the cards are still the rows of a table and that a tap
   on a card opens its run.
 
+- SCN-CONSOLE-249, a gate rejected on a phone: only a browser lays out a run's stages as cards with the gate's forms
+  inside the screen, and only it shows that the field "Reason" of the inline form takes the typed text and that a
+  browser's form with the console's own `Origin` leads back to the run's page; the run page passes axe there.
+
 They start the console with `CONSOLE_REFRESH=0`: axe's rule `meta-refresh` (WCAG 2.2.1) flags the runs page's reload,
 which stays until live updates replace it (`TODO.md`, T-60).
 
 ## Budget
 
-- System tests: 312 seconds in total on the CI runner (192 scenarios). Raised from 300 seconds on 15 November 2026
+- System tests: 319 seconds in total on the CI runner (196 scenarios). Raised from 312 seconds on 15 November 2026
+  with the run page in the new look (T-60), measured on the development container in one run of the whole suite: the 4
+  new scenarios took 4.4 seconds next to 205.8 for the other 192, so 2.1 % more, about 6 seconds on top of the 289
+  estimated for CI below, 295 for the suite; the budget is that and 8 %. Set it to the next CI measure.
+  - Where their time goes: the journey SCN-CONSOLE-249 takes 1.6 seconds: Chromium on a phone, axe, and one form
+    sent and its page loaded again; the three page scenarios SCN-CONSOLE-247, 248 and 250 take 0.7 to 1.1 seconds
+    each in that run, and 0.3 to 0.8 in the run before.
+  - The move itself adds no time to measure: the 24 scenarios of the run page took 11.0 seconds, 0.46 each, next to
+    0.44 for the page scenarios of the runs list, which Astro rendered before, in the same run.
+  - Made cheap first: the journey needs no sign-in (the proxy's header) and no forge, and sends one form; the problem
+    in the new look and the decided gate are proven by page scenarios, not in Chromium.
+- Before that: 312 seconds for 192 scenarios. Raised from 300 seconds on 15 November 2026
   with two journeys (T-54, T-60), measured on the development container in one run of the whole suite: the 2 new
   scenarios took 11.4 seconds next to 281.3 for the other 190, so 4.1 % more, about 11 seconds on top of the 278
   estimated for CI below, 289 for the suite; the budget is that and 8 %. Set it to the next CI measure.

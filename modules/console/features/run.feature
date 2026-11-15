@@ -1,7 +1,8 @@
 @module=console @owner=maintainers
 Feature: The run page
   The page "/runs/<runId>" shows one run: its origin, its stages as its evidence, and links to its trace, transcripts
-  and history (ADR 0072).
+  and history (ADR 0072). It is a page in the new look, in the shell of the design system (T-60): on a phone each
+  stage is a card.
 
   @id=SCN-CONSOLE-055 @status=implemented
   Scenario: The run page shows a stage that only waits with "waits" instead of an agent
@@ -155,3 +156,34 @@ Feature: The run page
     Given a console with "CONSOLE_USER_HEADER" set to "X-Forwarded-Email" and gatekeeper that answers a decision of the gate "g0123456789abcdef" with 403 and "ada@acme.dev is not in leads"
     When the person "ada@acme.dev" sends the form "Approve" of the run's page
     Then the page answers 403 and says "ada@acme.dev is not in leads"
+
+  @id=SCN-CONSOLE-247 @status=implemented
+  Scenario: The run page is in the shell of the new look, offers a read-only console no form and reloads itself
+    Given a foreman with the running run "Export reports as CSV" and the failed run "Add a dark mode"
+    When a person opens the page of each run in a console without "CONSOLE_USER_HEADER"
+    Then each page has the title of its run, the navigation "Main" with "Runs" as the current page and the way back "Runs"
+    And neither page links "/pico.css" or has a form
+    And each page asks the browser to reload it after 10 seconds
+
+  @id=SCN-CONSOLE-248 @status=implemented
+  Scenario: A signal the foreman refuses shows the foreman's problem in the shell of the new look
+    Given a console with "CONSOLE_USER_HEADER" set to "X-Forwarded-Email" and a foreman that answers the signal "cancel" of "run_5d41402abc4b2a76b971" with 409 and "run_5d41402abc4b2a76b971 is complete"
+    When the person "ada@acme.dev" sends the form "Cancel" of the run's page
+    Then the page answers 409 with the title "Not sent" and says "run_5d41402abc4b2a76b971 is complete"
+    And the page has the navigation "Main" with "Runs" as the current page and the way back "Runs"
+
+  @id=SCN-CONSOLE-249 @status=implemented @kind=journey
+  Scenario: On a phone a person rejects a run's gate with a reason from the run page (journey)
+    Given a console behind a sign-in proxy, a foreman with a run whose stage "ship" waits at the gate "g0123456789abcdef", and gatekeeper whose gate is "pending" for "leads"
+    When the person "ada@acme.dev" opens the run's page on a phone
+    Then each stage is a card across the screen with its state above its name, and nothing reaches past the screen's edge
+    And the page passes the accessibility checks, and its screenshot is kept as "run-phone"
+    And after "Reject" with the reason "needs a test" the browser is back on the run's page
+    And gatekeeper received the decision "rejected" with the reason "needs a test" by the person "ada@acme.dev"
+
+  @id=SCN-CONSOLE-250 @status=implemented
+  Scenario: A gate that is decided offers no form "Approve" or "Reject"
+    Given a console with "CONSOLE_USER_HEADER" set to "X-Forwarded-Email", a foreman with a run whose stage "ship" waits at the gate "g0123456789abcdef", and gatekeeper whose gate is "approved"
+    When the person "ada@acme.dev" opens the run's page
+    Then the page shows the gate "g0123456789abcdef" of the stage "ship" as "approved"
+    And the page has the forms "Steer" and "Cancel", and no form "Approve" or "Reject"
