@@ -88,3 +88,20 @@ Feature: Setup of a factory from a clone
     Then the first run prints only "set CONSOLE_SESSION_SECRET in deploy/compose/.env: CONSOLE_SIGN_IN=github needs it" and the same for "CONSOLE_GITHUB_CLIENT_ID" and "CONSOLE_GITHUB_CLIENT_SECRET"
     And the second run prints only "set CONSOLE_SIGN_IN in deploy/compose/.env to oidc or github, not saml"
     And both exit with code 1 and the fake docker was not called
+
+  @id=SCN-REPO-166 @status=planned
+  Scenario: osf init generates OpenBao's unseal key, its root token and the IDs of the console's and the egress proxy's tokens
+    Given a "deploy/compose/.env.example" with "OSF_OPENBAO_UNSEAL_KEY=", "OSF_OPENBAO_ROOT_TOKEN=", "OSF_OPENBAO_CONSOLE_TOKEN=", "OSF_OPENBAO_EGRESS_TOKEN=" and "OSF_OPENBAO_MOUNT="
+    When the developer runs "osf init"
+    Then the command exits with code 0
+    And "deploy/compose/.env" sets "OSF_OPENBAO_UNSEAL_KEY", "OSF_OPENBAO_ROOT_TOKEN", "OSF_OPENBAO_CONSOLE_TOKEN" and "OSF_OPENBAO_EGRESS_TOKEN" to four different values of 64 hex digits
+    And "deploy/compose/.env" keeps "OSF_OPENBAO_MOUNT=" empty
+
+  @id=SCN-REPO-167 @status=planned
+  Scenario: osf init adds to an existing .env the generated values it lacks and changes no value it has
+    Given a "deploy/compose/.env.example" with "POSTGRES_PASSWORD=", "OSF_OPENBAO_UNSEAL_KEY=" and "GH_TOKEN="
+    And a "deploy/compose/.env" with "POSTGRES_PASSWORD=mine"
+    When the developer runs "osf init"
+    Then the command exits with code 0
+    And "deploy/compose/.env" still has "POSTGRES_PASSWORD=mine" and sets "OSF_OPENBAO_UNSEAL_KEY" to 64 hex digits, and has no line "GH_TOKEN="
+    And the output contains "deploy/compose/.env exists: kept it, and added OSF_OPENBAO_UNSEAL_KEY"

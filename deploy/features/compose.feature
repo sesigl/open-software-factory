@@ -200,3 +200,15 @@ Feature: The Compose profile installs a complete factory with one command
     And the button sends the person to GitHub with the callback "http://localhost:18080/signin/callback"
     And "ada@acme.dev" comes back from GitHub, the console trades the code with the client of ".env", and the page "/" has the heading "Runs" and the account "ada@acme.dev · admin"
     And "mallory@acme.dev" comes back from GitHub and reads "mallory@acme.dev is not on this factory's access list"
+
+  @id=SCN-DIST-039 @status=planned
+  Scenario: The profile's OpenBao keeps a stored secret over a restart, unseals itself, and a sandbox still sends the value
+    Given the Compose profile with every value of ".env.example" set in ".env", OpenBao's unseal key, root token and two token IDs as "osf init" generates them
+    And the operator ran "docker compose up --detach --wait openbao-setup docker-proxy"
+    And the console's secrets adapter stored "linear-token" with the console's token, by "ada@acme.dev"
+    When the operator runs "docker compose down" and then "docker compose up --detach --wait openbao-setup docker-proxy"
+    Then the service "openbao" is running, healthy and unsealed, and no person unsealed it
+    And "secrets-openbao list" in the service "console" names "linear-token" in version 1 by "ada@acme.dev"
+    And OpenBao refuses the console's token a read of the value of "linear-token" with 403
+    And a sandbox that the service "foreman" creates with the egress allowlist "host.docker.internal" and "LINEAR_TOKEN" from "ref:openbao/linear-token" sends "Authorization: Bearer" and the value to the API at "host.docker.internal"
+    And the audit log on the volume "openbao" names the read of "secret/data/linear-token" and does not hold the value

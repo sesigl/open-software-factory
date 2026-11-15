@@ -97,3 +97,13 @@ Feature: The Helm chart installs a complete factory on Kubernetes with one comma
     And the deployment "console" sets "CONSOLE_SIGN_IN", "CONSOLE_URL", "CONSOLE_OIDC_ISSUER" and "CONSOLE_OIDC_CLIENT_ID" to the values, and "CONSOLE_SESSION_SECRET" and "CONSOLE_OIDC_CLIENT_SECRET" from the keys "session-secret" and "client-secret" of the Secret "osf-sign-in"
     And the console's readiness probe asks "/v1/ready", which needs no session
     And no manifest of the chart is a Secret with a key of the sign-in
+
+  @id=SCN-DIST-040 @status=planned
+  Scenario: The chart gives the console and the foreman the team's own OpenBao with the two tokens from a Secret the operator names
+    Given a kind cluster with the images of the Compose profile
+    And a values file that sets every value under "secrets", and under "openbao" the address "https://bao.acme.dev", the mount "factory" and the Secret "osf-openbao"
+    When the operator runs "helm template osf deploy/helm/osf --values values.yaml"
+    Then the command exits with code 0
+    And the deployment "console" sets "OSF_OPENBAO_ADDR" and "OSF_OPENBAO_MOUNT" to the values, "CONSOLE_SECRETS_ADAPTER" to "secrets-openbao", and "OSF_OPENBAO_TOKEN" from the key "console-token" of the Secret "osf-openbao"
+    And the deployment "foreman" sets "OSF_OPENBAO_ADDR" and "OSF_OPENBAO_MOUNT" to the values, "FOREMAN_SECRETS" to the adapter "secrets-openbao" for "openbao", and "OSF_OPENBAO_TOKEN" from the key "egress-token" of the Secret "osf-openbao"
+    And no manifest of the chart is an OpenBao server or a Secret with a key of OpenBao's tokens
