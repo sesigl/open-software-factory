@@ -279,6 +279,13 @@ work this way. `GH_TOKEN` and `CLAUDE_CODE_OAUTH_TOKEN` of the reference factory
   follow it with `docker compose wait openbao-setup`.
 - **The tokens live 768 hours (32 days)** from each `docker compose up`, OpenBao's maximum. `console doctor` and the
   page `/health` warn 7 days before the console's token ends; run `docker compose up --detach --wait` to make both new.
+  When the console's token has ended, `/secrets` names the store's error `secrets-openbao: the store refused the token`
+  above the list, whose declared secrets then say "Unknown", and `console doctor` fails its check `secrets` with the
+  same error.
+  Nothing warns before the read token ends, as it ends with the console's: then each stage whose agent declares a
+  secret `ref:openbao/<name>` fails before its first turn with the reason `the secrets adapter's exists failed:
+  secrets-openbao: the store refused the token`. For both, run `docker compose up --detach --wait`, then run the
+  failed runs again.
 - **The audit log** is `/openbao/file/audit.log` on the volume, one JSON line per request and answer, each value as an
   HMAC: `docker compose exec openbao tail /openbao/file/audit.log`. It grows without rotation.
 - **An operator's commands** run in the service with the root token of `.env`, which the service holds for its first
