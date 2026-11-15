@@ -300,6 +300,22 @@ Every server, client and subscription stops when the scenario ends, before the f
   a code, or with `error=access_denied` when nobody was named. The ID token is signed with RS256 and dated on the
   testkit's clock (2026-01-01T00:00:00Z), so a module with `OSF_NOW` accepts it. A token request with another client,
   secret, redirect address or PKCE verifier fails the scenario. `received()` lists the paths it was asked for.
+- `fakes.personIssuer({ name, containers })`: an issuer of person proofs in the test process
+  ([ADR 0151](../../docs/decisions/0151-the-person-proven-to-every-module.md)), named `name` ("console" by default).
+  It serves its key set (format `person-keys`, one Ed25519 key made for the test run and never written down) at `url`,
+  `/.well-known/jwks.json`, and gives `keys`, the same set, and `setting`, `<name>=<url>`, the value of a module's
+  `<MODULE>_PERSON_KEYS`. `prove(claims, header)` gives a signed proof for the header `OSF-Person`: `claims` names
+  `sub`, `aud` and `path`, and the rest has defaults: `iss` the issuer's name, `role` "member", `method` "POST", `iat`
+  the testkit's clock (2026-01-01T00:00:00Z), `exp` 30 seconds later, and `bodyDigest` the SHA-256 of `body` (empty by
+  default) in base64url. A claim set to `undefined` is left out, and any other claim is added. `header` changes `typ`
+  (default "osf-person+jwt"), `alg` ("Ed25519", or "EdDSA" for a proof a module must refuse) and `kid` (the key's
+  thumbprint). So a module's system test proves both "accepted" and "refused" without the console. `fetched()` counts
+  the fetches of the key set; any other request fails the scenario.
+- `fakes.personProof(proof, keys, body)`: reads a person proof that the module sent, as a fake received it in
+  `OSF-Person`, for a test of an issuer like the console. It gives `verified`, whether the key of the key set at the URL
+  `keys` that the proof's `kid` names verifies its Ed25519 signature, the `header` and the `claims`, and
+  `bodyMatches`, whether `bodyDigest` is the SHA-256 of `body` (empty by default), the text the fake received. It
+  checks no time: the test expects the claims.
 - `fakes.sentry()`: a fake of Sentry's integration platform with a `clientSecret`. `alert(url, {title, level,
   release, rule})` sends the URL an `event_alert` of the rule (default "Fatal errors") signed in
   `Sentry-Hook-Signature` with the client secret, or with a third argument instead, and gives the Sentry issue's ID,
@@ -582,3 +598,6 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-179 | implemented | fakes.openbao gives a later scenario the same server and a mount of its own |
 | SCN-TK-180 | implemented | fakes.openbao for containers answers a container at its container URL |
 | SCN-TK-181 | implemented | sut.files.link makes a symbolic link that follows its target |
+| SCN-TK-182 | implemented | fakes.personIssuer signs a proof on the testkit's clock that the key set it serves verifies |
+| SCN-TK-183 | implemented | fakes.personIssuer with a name signs a proof whose claims and header the test changed |
+| SCN-TK-184 | implemented | fakes.personProof reads a proof that a module sent, with whether a key set verifies it and its body matches |

@@ -13,6 +13,13 @@ import { type Inference, type InferenceOptions, startInference } from "./inferen
 import { type ModelGateway, type ModelGatewayOptions, type ScriptedReply, startModelGateway } from "./model-gateway.ts";
 import { type FakeOidc, type OidcOptions, startOidc } from "./oidc.ts";
 import { type OpenBao, type OpenBaoOptions, startOpenBao } from "./openbao.ts";
+import {
+  type FakePersonIssuer,
+  type PersonIssuerOptions,
+  type ReadProof,
+  readPersonProof,
+  startPersonIssuer,
+} from "./person-issuer.ts";
 import { type Postgres, startPostgres } from "./postgres.ts";
 import { type Sandbox, type SandboxOptions, startSandbox } from "./sandbox.ts";
 import { type FakeSentry, startSentry } from "./sentry.ts";
@@ -84,6 +91,18 @@ export interface Fakes {
    * client's secret. With `containers: true`, a container reaches it at `containerUrl`.
    */
   oidc(options?: OidcOptions): Promise<FakeOidc>;
+  /**
+   * An issuer of person proofs in the test process (ADR 0151): its key set at `url`, with an Ed25519 key made for the
+   * test run, and `prove(claims, header)`, a proof on the testkit's clock for the header `OSF-Person`. A module that
+   * checks proofs gets `setting` as its `<MODULE>_PERSON_KEYS`. With `containers: true`, a container reaches it at
+   * `containerUrl`.
+   */
+  personIssuer(options?: PersonIssuerOptions): Promise<FakePersonIssuer>;
+  /**
+   * Reads a person proof that the module sent, as a fake received it in `OSF-Person` (ADR 0151): whether the key set at
+   * the URL `keys` verifies its signature, its header and claims, and whether its `bodyDigest` is the SHA-256 of `body`.
+   */
+  personProof(proof: string, keys: string, body?: string): Promise<ReadProof>;
   /** A fake of Sentry that sends a webhook a signed alert about an event (ADR 0065). */
   sentry(): Promise<FakeSentry>;
   /** The OpenTelemetry Collector in a container, running `config`; it exports to OTEL_EXPORTER_OTLP_ENDPOINT. */
@@ -180,6 +199,10 @@ export function makeFakes(moduleRoot: string): FakesHandle {
       async oidc(options) {
         return (await inProcess(startOidc(options))).oidc;
       },
+      async personIssuer(options) {
+        return (await inProcess(startPersonIssuer(options))).issuer;
+      },
+      personProof: readPersonProof,
       async slack(options) {
         return (await inProcess(startSlack(options))).slack;
       },
