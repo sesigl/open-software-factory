@@ -98,7 +98,7 @@ Feature: The Helm chart installs a complete factory on Kubernetes with one comma
     And the console's readiness probe asks "/v1/ready", which needs no session
     And no manifest of the chart is a Secret with a key of the sign-in
 
-  @id=SCN-DIST-040 @status=planned
+  @id=SCN-DIST-040 @status=implemented
   Scenario: The chart gives the console and the foreman the team's own OpenBao with the two tokens from a Secret the operator names
     Given a kind cluster with the images of the Compose profile
     And a values file that sets every value under "secrets", and under "openbao" the address "https://bao.acme.dev", the mount "factory" and the Secret "osf-openbao"

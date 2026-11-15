@@ -25,6 +25,26 @@ app.kubernetes.io/component: {{ .component }}
 {{- default (printf "%s-secrets" .Release.Name) .Values.secrets.existingSecret -}}
 {{- end -}}
 
+{{/*
+The team's OpenBao (ADR 0145), for console and foreman with the key of their token in openbao.secret: the address, the
+mount and the token. Nothing without openbao.address.
+*/}}
+{{- define "osf.openbaoEnv" -}}
+{{- with .root.Values.openbao }}
+{{- if .address -}}
+- name: OSF_OPENBAO_ADDR
+  value: {{ .address | quote }}
+- name: OSF_OPENBAO_MOUNT
+  value: {{ .mount | quote }}
+- name: OSF_OPENBAO_TOKEN
+  valueFrom:
+    secretKeyRef:
+      name: {{ required "set openbao.secret to a Secret with the keys console-token and egress-token" .secret }}
+      key: {{ $.key }}
+{{- end }}
+{{- end }}
+{{- end -}}
+
 {{/* The namespace of the agents' sandboxes: sandboxes.namespace, or the release's namespace with -sandboxes. */}}
 {{- define "osf.sandboxNamespace" -}}
 {{- default (printf "%s-sandboxes" .Release.Namespace) .Values.sandboxes.namespace | trunc 63 | trimSuffix "-" -}}
