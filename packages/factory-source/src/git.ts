@@ -27,6 +27,9 @@ function gitEnv(url: string, token: string | undefined): NodeJS.ProcessEnv {
   };
 }
 
+/** The URL as an error names it: without the user and the password that a URL may carry. Git's own messages leave them out. */
+const named = (url: string): string => url.replace(/\/\/[^/@]*@/, "//");
+
 /** Fetches `ref` of `url` into the bare repository below `cache`, writes its files once and gives its commit. */
 export async function fetchCommit(url: string, ref: string, cache: string, token?: string): Promise<string> {
   const bare = join(cache, "repository.git");
@@ -39,7 +42,7 @@ export async function fetchCommit(url: string, ref: string, cache: string, token
   const commit = await git("fetch", "--quiet", "--no-tags", "--end-of-options", url, ref)
     .then(() => git("rev-parse", "--verify", "FETCH_HEAD^{commit}"))
     .catch((failure: { stderr: string }) => {
-      throw new FetchError(`cannot fetch ${ref} of ${url}: ${failure.stderr.trim()}`);
+      throw new FetchError(`cannot fetch ${ref} of ${named(url)}: ${failure.stderr.trim()}`);
     });
   const folder = join(cache, commit);
   if (!existsSync(folder)) {

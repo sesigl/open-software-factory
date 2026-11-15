@@ -35,7 +35,7 @@ in the Basic form that GitHub accepts for Git over HTTPS (ADR 0096). Four things
   `Authorization: Basic <base64 of x-access-token:<token>>`. Git sends the header only to that URL; nothing is
   written to the bare repository's config or to a credential store, and the command line holds no token. Git never
   asks for a password (`GIT_TERMINAL_PROMPT=0`): a refused fetch fails at once. A message of `FetchError` never
-  holds the token.
+  holds the token, and it names a URL without the user and the password that the URL may carry.
 - **The cache is the caller's folder.** A source keeps its bare repository at `<cache>/repository.git` and one folder
   per commit at `<cache>/<commit>/`, the layout of ADR 0124; the foreman passes `$OSF_DATA/factory`. A program that
   fetches several repositories passes one cache folder per repository. A folder that a stopped fetch left half

@@ -35,7 +35,7 @@ try {
 | Export | What it does |
 | --- | --- |
 | `factorySource(setting, { cache, token })` | A source with one method, `fetch()`. `setting` is a path to the factory's file, or, when it starts with `git+`, `git+<url>#<ref>` (without `#<ref>`: the remote's `HEAD`) with `factory.yaml` at the root of the commit. `fetch()` gives `{ folder, file, commit }`: for a path, its folder and the path itself, no commit and no Git process; for a remote, the ref's commit, fetched again at each call, and its files in `<cache>/<commit>/`. The fetches of one source run one at a time. Paths stay as given: pass absolute ones for absolute folders. |
-| `FetchError` | What `fetch()` throws for a remote whose ref cannot be fetched: `cannot fetch <ref> of <url>: <Git's message>`. |
+| `FetchError` | What `fetch()` throws for a remote whose ref cannot be fetched: `cannot fetch <ref> of <url>: <Git's message>`, the URL without a user and a password it carries. |
 
 ## The cache
 
@@ -79,3 +79,4 @@ This library reads no environment variables: its caller passes the cache folder 
 | SCN-FSOURCE-008 | implemented | A remote over HTTP gets the token as Git's Basic credentials, and no file of the cache holds it |
 | SCN-FSOURCE-009 | implemented | A private remote without the token is a FetchError at once, with no prompt for a password |
 | SCN-FSOURCE-010 | implemented | A remote without a ref and without a commit is a FetchError that names HEAD |
+| SCN-FSOURCE-011 | implemented | A URL that carries a user and a password is named without them in a FetchError |

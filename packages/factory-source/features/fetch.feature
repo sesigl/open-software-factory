@@ -72,3 +72,10 @@ Feature: A factory's folder from a path or a Git remote
     When a program fetches the source "git+<url>/acme/factory.git#main" with a cache folder and no token
     Then the forge received one request without credentials
     And the fetch fails at once with a FetchError "cannot fetch main of <url>/acme/factory.git: " and Git's "terminal prompts disabled"
+
+  @id=SCN-FSOURCE-011 @status=implemented
+  Scenario: A URL that carries a user and a password is named without them in a FetchError
+    Given a forge over HTTP whose repository "/acme/factory.git" asks for credentials
+    When a program fetches the source "git+http://ada:url-password-0002@<host>/acme/factory.git#main" with a cache folder
+    Then the fetch fails with a FetchError "cannot fetch main of http://<host>/acme/factory.git: "
+    And the message does not contain "ada" or "url-password-0002"
