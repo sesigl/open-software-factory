@@ -1,0 +1,38 @@
+{
+  "name": "@opensoftware/person-proof",
+  "version": "0.1.0",
+  "description": "Prove the person who acts to a module of the open software factory: sign a person proof, and check one against the issuers' key sets.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sesigl/open-software-factory.git",
+    "directory": "packages/person-proof"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:system": "testkit timed vitest run",
+    "mutation": "node ../../tools/bin/osf.ts mutation ."
+  },
+  "devDependencies": {
+    "@opensoftware/testkit": "workspace:*"
+  },
+  "dependencies": {
+    "@opensoftware/contracts": "workspace:*",
+    "jose": "6.2.17"
+  }
+}

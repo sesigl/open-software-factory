@@ -1,0 +1,7 @@
+{
+  "layers": [
+    { "name": "api", "paths": ["src/index.ts"] },
+    { "name": "proof", "paths": ["src/signer.ts", "src/checker.ts"] },
+    { "name": "keys", "paths": ["src/keys.ts"] }
+  ]
+}

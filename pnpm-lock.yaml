@@ -746,6 +746,19 @@ importers:
         specifier: workspace:*
         version: link:../testkit
 
+  packages/person-proof:
+    dependencies:
+      '@opensoftware/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+      jose:
+        specifier: 6.2.17
+        version: 6.2.17
+    devDependencies:
+      '@opensoftware/testkit':
+        specifier: workspace:*
+        version: link:../testkit
+
   packages/postgres:
     dependencies:
       pg:

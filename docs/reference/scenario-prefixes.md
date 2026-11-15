@@ -19,6 +19,7 @@ adds a row.
 | CKIT | channel-kit library | `packages/channel-kit/features/` |
 | PG | postgres library | `packages/postgres/features/` |
 | FSOURCE | factory-source library | `packages/factory-source/features/` |
+| PPROOF | person-proof library | `packages/person-proof/features/` |
 | FSPEC | factory-spec | `modules/factory-spec/features/` |
 | RUN | runlog | `modules/runlog/features/` |
 | PROOF | proof | `modules/proof/features/` |
