@@ -572,3 +572,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-222 | implemented | The console does not start with a factory repository that is not "git+<url>#<branch>" |
 | SCN-CONSOLE-223 | implemented | The console does not start with a factory repository and without "CONSOLE_FACTORY_USER" |
 | SCN-CONSOLE-224 | implemented | The form takes only an agent's name, so no text of it reaches a branch name or a title |
+| SCN-CONSOLE-225 | implemented | The form "Declare a secrets provider" opens a change for a name and a range, and names a range it refused |

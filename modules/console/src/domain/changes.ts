@@ -32,7 +32,8 @@ const NAME = /^[a-z][a-z0-9-]{0,62}$/;
 const AGENT = /^[A-Za-z0-9][A-Za-z0-9_-]{0,62}$/;
 const REFERENCE = /^ref:[a-z][a-z0-9-]*\/[A-Za-z0-9_./-]{1,200}$/;
 const SKILL = /^(\.\/)?[A-Za-z0-9_][A-Za-z0-9_./-]{0,200}$/;
-const RANGE = /^[0-9A-Za-z^~<>=.*| -]{1,64}$/;
+// Without a space: the title is the edit's line of three words, which "Try again" reads again.
+const RANGE = /^[0-9A-Za-z^~<>=.*|-]{1,64}$/;
 
 const skill = {
   valid: (value: string) => SKILL.test(value) && !value.split("/").includes(".."),

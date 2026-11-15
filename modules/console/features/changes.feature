@@ -148,3 +148,11 @@ Feature: Changes
     When "grace@acme.dev" sends the form "Propose change" with "add-egress", the agent "triage main" and the value "api.linear.app"
     Then the form answers 400 and says "Not proposed: triage main is not an agent's name, like triage"
     And the console ran no "factory edit"
+
+  @id=SCN-CONSOLE-225 @status=implemented
+  Scenario: The form "Declare a secrets provider" opens a change for a name and a range, and names a range it refused
+    Given a factory repository "tester/factory" whose main branch requires the check "factory", and a console behind a sign-in proxy with "grace@acme.dev" as "factory-engineer"
+    When "grace@acme.dev" sends the form "Declare a secrets provider" with the name "infisical" and the range "^1 || ^2", and then with the range "^1"
+    Then the first form answers 400 and says "Not proposed: ^1 || ^2 is not a range, like ^0"
+    And the second answers 303 to "/changes"
+    And the forge has one open pull request titled "factory edit add-secrets-provider infisical ^1", whose body says "The factory declares the secrets provider `infisical` at `^1`."
