@@ -213,7 +213,7 @@ Feature: Factories as code
       And it declares the automations that trigger work
       And it declares the scorers and benchmarks
 
-    @scenario_id=SCN-FACTORY-CODE-007 @status=planned @evidence=derived @source=owner-2026-11 @source=09:54
+    @scenario_id=SCN-FACTORY-CODE-007 @status=implemented @evidence=derived @source=owner-2026-11 @source=09:54
     Scenario: A skill declares the secrets and hosts it needs
       Given the skill "release-notes" declares the secret "LINEAR_TOKEN" and the host "api.linear.app"
       When a factory definition gives the skill to an agent that does not declare "LINEAR_TOKEN"

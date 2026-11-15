@@ -1,7 +1,7 @@
 // Loads factory.yaml for every command: lint first, then the lock next to it.
 import { dirname, join, resolve } from "node:path";
 import type { FactoryDefinition } from "@opensoftware/contracts";
-import { exists, readLock, readText } from "../adapters/files.ts";
+import { exists, filesBelow, readLock, readText } from "../adapters/files.ts";
 import { accessProblems } from "../domain/access.ts";
 import { FactoryError } from "../domain/errors.ts";
 import { lint, type Problem } from "../domain/lint.ts";
@@ -24,9 +24,18 @@ export function lintFile(
   text = readText(file),
 ): { dir: string; definition?: FactoryDefinition; problems: string[]; warnings: string[] } {
   const dir = dirname(resolve(file));
-  const { definition, problems, warnings } = lint(text, (path) => exists(join(dir, path)), ghAw);
+  const { definition, problems, warnings } = lint(
+    text,
+    (path) => exists(join(dir, path)),
+    (path) => filesBelow(join(dir, path)),
+    ghAw,
+  );
+  // A problem in a skill's file names it as factory.yaml is named: relative to the current folder, or absolute.
   const lines = (found: Problem[]) =>
-    found.map((problem) => `${file}:${problem.line}:${problem.column} ${problem.message}`);
+    found.map(
+      (problem) =>
+        `${problem.file ? join(dirname(file), problem.file) : file}:${problem.line}:${problem.column} ${problem.message}`,
+    );
   return { dir, definition, problems: lines(problems), warnings: lines(warnings) };
 }
 
