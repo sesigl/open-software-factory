@@ -1,6 +1,6 @@
 # AGENTS.md for module `console`
 
-Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0072, ADR 0073, ADR 0115, ADR 0120, ADR 0130, ADR 0132, ADR 0141, ADR 0144, ADR 0149.
+Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0072, ADR 0073, ADR 0115, ADR 0120, ADR 0130, ADR 0132, ADR 0141, ADR 0144, ADR 0149, ADR 0150.
 
 ## Public surface
 
@@ -31,7 +31,7 @@ The only ways a system test or another program may use this module:
   `skills --file <CONSOLE_FACTORY>`, which prints the `skill-catalog` contract (ADR 0141, ADR 0143), and
   `edit --file <the fetched factory.yaml>`, or a file beside it for each edit after the first, for a change; with `CONSOLE_FACTORY_REPOSITORY`, the forge adapter with
   `CONSOLE_FACTORY_TOKEN` for `rules`, `branch`, `commit`, `open-pr`, `merge`, `prs`, `pr` and `close` on that
-  repository, and Git, which fetches it into `CONSOLE_FACTORY_CACHE` through `@opensoftware/factory-source` (ADR 0144)
+  repository, and Git, which fetches it into `CONSOLE_FACTORY_CACHE` through `@opensoftware/factory-source` (ADR 0144); `console doctor` and `/health` fetch it and run `rules` too (ADR 0150)
 - Input: the factory definition in `CONSOLE_FACTORY` and the access file in `CONSOLE_ACCESS`
 - With `CONSOLE_SIGN_IN`: the identity provider at `CONSOLE_OIDC_ISSUER`, or GitHub at `CONSOLE_GITHUB_URL` and
   `CONSOLE_GITHUB_API_URL`

@@ -4,7 +4,7 @@
 // from starting another module. The stand-in prints the file it is given with the value added below "egress:", as
 // "factory edit add-egress" does for the factories here, and records its arguments.
 import type { Fakes, Forge, Page, Sut } from "@opensoftware/testkit";
-import { foreman, serving } from "./console.ts";
+import { foreman, healthyServer, serving, TOKEN_ROUTES } from "./console.ts";
 import { factoryOf, factoryYaml } from "./secrets.ts";
 import { accessYaml } from "./signin.ts";
 
@@ -33,8 +33,11 @@ async function api(forge: Forge, method: string, path: string, body?: unknown): 
   if (!answer.ok) throw new Error(`the forge answered ${method} ${path} with ${answer.status}`);
 }
 
-/** The factory's repository "tester/factory" with FACTORY; its main branch requires the check "factory" unless not. */
-export async function factoryRepository(fakes: Fakes, required = true): Promise<Forge> {
+/**
+ * The factory's repository "tester/factory" with FACTORY; its main branch requires the check "factory" unless not,
+ * and `approvals` approvals.
+ */
+export async function factoryRepository(fakes: Fakes, required = true, approvals = 0): Promise<Forge> {
   const forge = await fakes.forge();
   await forge.createRepository("factory", { "factory.yaml": FACTORY });
   if (!required) return forge;
@@ -44,12 +47,15 @@ export async function factoryRepository(fakes: Fakes, required = true): Promise<
     rule_name: "main",
     enable_status_check: true,
     status_check_contexts: ["factory"],
-    required_approvals: 0,
+    required_approvals: approvals,
     enable_push: true,
   };
   await api(forge, "POST", "/branch_protections", rule);
   return forge;
 }
+
+/** Makes the repository private, so that Git fetches it only with a token. */
+export const makePrivate = (forge: Forge): Promise<void> => api(forge, "PATCH", "", { private: true });
 
 /** Commits these files on "main" of the repository in one commit, as another person would. */
 export async function commitOnMain(forge: Forge, files: Record<string, string>): Promise<void> {
@@ -167,6 +173,13 @@ export const unreachableEnv = (sut: Sut): Record<string, string> => ({
   CONSOLE_FORGE_ADAPTER: sut.adapter("forge/forgejo"),
   CONSOLE_FORGE_URL: "http://127.0.0.1:9",
 });
+
+/** Runs "console doctor" with a healthy foreman, the factory with the agent "triage" and these variables. */
+export async function doctorOf(sut: Sut, fakes: Fakes, env: Record<string, string>) {
+  const api = await healthyServer(fakes, [{ name: "temporal", ok: true }], TOKEN_ROUTES.foreman);
+  const factory = await factoryOf(sut, { triage: { egress: ["api.github.com"] } });
+  return sut.cli(["doctor"], { env: { CONSOLE_FOREMAN_URL: api.url, ...factory, ...env } });
+}
 
 /** Starts a console behind a sign-in proxy with PEOPLE, the stand-in factory program and these variables. */
 export async function servingChanges(sut: Sut, fakes: Fakes, env: Record<string, string>): Promise<void> {

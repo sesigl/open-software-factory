@@ -1,4 +1,5 @@
 // What `console doctor` and the page /health find (ADR 0086): one item per check, with what to do when it fails.
+import { CHECK } from "./changes.ts";
 import { agentsText, type Declared, type Stored } from "./secrets.ts";
 
 export interface Item {
@@ -117,6 +118,47 @@ export function accessItem(problems: string[], admins: string[], file: string): 
   const ok = admins.some((admin) => admin !== EXAMPLE_ADMIN);
   const detail = `${file} has no admin but the example's ${EXAMPLE_ADMIN}: put your admins in ${file}`;
   return { name: "access", ok, detail };
+}
+
+/** What a forge adapter or the fetch answered: its body, or its error. */
+type Outcome<T> = { ok: true; body: T } | { ok: false; note: string };
+
+/**
+ * The checks of the factory's repository on a forge, with CONSOLE_FACTORY_REPOSITORY (ADR 0150): its newest commit can
+ * be fetched with the token, and its main branch requires the check `factory` and no approval, since the console asks
+ * for no merge without the check and the token's user cannot approve its own pull request.
+ */
+export function repositoryItems(
+  repository: string,
+  branch: string,
+  fetched: Outcome<unknown>,
+  rules: Outcome<{ checks: string[]; approvals: number }>,
+): Item[] {
+  const where = `the branch ${branch} of ${repository}`;
+  const check = (): Item => {
+    if (!rules.ok)
+      return {
+        name: "factory check",
+        ok: false,
+        detail: `${rules.note}: check that CONSOLE_FACTORY_TOKEN may read the rules of ${branch}, and CONSOLE_FORGE_ADAPTER and CONSOLE_FORGE_URL`,
+      };
+    if (!rules.body.checks.includes(CHECK))
+      return {
+        name: "factory check",
+        ok: false,
+        detail: `${where} does not require the check ${CHECK}, so the console refuses every change: require the check ${CHECK} on ${branch}, with no approval`,
+      };
+    const detail = `${where} requires an approval, which the user of CONSOLE_FACTORY_TOKEN cannot give to its own pull request, so no change merges: require only the check ${CHECK} on ${branch}`;
+    return { name: "factory check", ok: rules.body.approvals === 0, detail };
+  };
+  const fetch: Item = fetched.ok
+    ? { name: "factory repository", ok: true }
+    : {
+        name: "factory repository",
+        ok: false,
+        detail: `${fetched.note}: check CONSOLE_FACTORY_REPOSITORY and CONSOLE_FACTORY_TOKEN`,
+      };
+  return [fetch, check()];
 }
 
 /** The model routes of the factory definition's agents, each once, in the order of the agents. */

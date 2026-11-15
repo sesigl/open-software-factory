@@ -299,7 +299,8 @@ a title. "Discard" closes it and deletes its branch. "Merge" merges a change who
 409 for any other. Each button acts only on a pull request of `CONSOLE_FACTORY_USER` from a `console/` branch.
 
 On GitHub, a private repository on a plan without auto-merge or required checks cannot require the check: the
-console then refuses changes, and the docs of the reference factory's workflow will say how to set the branch up.
+console then refuses changes. [A factory on a forge](../../deploy/README.md#a-factory-on-a-forge) says how to set
+the branch up, with the reference factory's workflow that posts the check, and `console doctor` checks it.
 
 ## Health
 
@@ -309,6 +310,12 @@ console then refuses changes, and the docs of the reference factory's workflow w
    (such as `foreman temporal` or `intake nats`), and whether it accepts the console's token. A server that does not
    answer names the variable of its URL; a refused token names the console's variable and the server's own.
 2. `factory`: the definition in `CONSOLE_FACTORY` can be read.
+   With `CONSOLE_FACTORY_REPOSITORY` ([ADR 0150](../../docs/decisions/0150-a-factory-repository-on-a-forge-in-the-profile.md)):
+   `factory repository`, the newest commit of its branch can be fetched with `CONSOLE_FACTORY_TOKEN`, else it names
+   Git's error and the two variables; and `factory check`, the forge adapter's `rules` of that branch require the check
+   `factory` and no approval. Without the check the console refuses every change; with a required approval no change
+   merges, since the token's user cannot approve its own pull request. The rules that cannot be read name the token
+   and the adapter's variables.
 3. `groups`, with `CONSOLE_GROUPS`: each group of the gatekeeper's groups file has a member who is not the example's
    `slack:U0EXAMPLE`, the member the reference `groups.json` ships in place of a person
    ([ADR 0114](../../docs/decisions/0114-the-example-member-of-the-reference-groups.md)). The check reads every group,
@@ -625,3 +632,7 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-238 | implemented | Switching a skill off only removes the agent's entry |
 | SCN-CONSOLE-239 | implemented | A skill of another repository whose needs an agent meets adds nothing but the skill's entry |
 | SCN-CONSOLE-240 | implemented | A skill of another repository shows its repository and pinned commit, and one without a pin says so |
+| SCN-CONSOLE-241 | implemented | "console doctor" fetches the private factory repository with its token and finds the check "factory" required on its main branch |
+| SCN-CONSOLE-242 | implemented | "console doctor" names the settings when the factory repository does not answer |
+| SCN-CONSOLE-243 | implemented | "console doctor" fails when the main branch of the factory repository does not require the check "factory" |
+| SCN-CONSOLE-244 | implemented | "console doctor" fails when the main branch of the factory repository requires an approval |

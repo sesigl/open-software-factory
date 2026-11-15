@@ -35,7 +35,7 @@ import { runPage } from "../pages/run.ts";
 import { runsData, waitingOf } from "../pages/runs.ts";
 import { shellData } from "../pages/shell.ts";
 import { workPage } from "../pages/work.ts";
-import { factoryRepositoryOf, NO_ROLES, useChanges } from "./changes.ts";
+import { FORGE_ADAPTER, factoryRepositoryOf, NO_ROLES, useChanges } from "./changes.ts";
 import { actorOf, fromConsole, personOf } from "./person.ts";
 import { SECRET_ROLES, useSecrets } from "./secrets.ts";
 import { useSkills } from "./skills.ts";
@@ -94,7 +94,7 @@ export async function serve(env: Env) {
   const improve = env.CONSOLE_IMPROVE_DIR || undefined;
   const factoryCommand = env.CONSOLE_FACTORY_COMMAND || "npx -y @opensoftware/factory-spec";
   const forge = {
-    command: env.CONSOLE_FORGE_ADAPTER || "npx -y @opensoftware/forge-github",
+    command: env.CONSOLE_FORGE_ADAPTER || FORGE_ADAPTER,
     url: env.CONSOLE_FORGE_URL || undefined,
     token: env.CONSOLE_FORGE_TOKEN,
   };

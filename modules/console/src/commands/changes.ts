@@ -9,6 +9,7 @@ import { UsageError } from "@opensoftware/cli";
 import type { ShellData } from "@opensoftware/ui";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
+  branchRules,
   type ChangeForge,
   closeChange,
   editFactory,
@@ -17,7 +18,6 @@ import {
   mergeChange,
   openChange,
   readChange,
-  requiredChecks,
 } from "../adapters/changes.ts";
 import { readFactory } from "../adapters/factory-file.ts";
 import type { Outcome } from "../adapters/program.ts";
@@ -68,6 +68,9 @@ export interface ChangesSetup {
 }
 
 type Env = Record<string, string | undefined>;
+
+/** The forge adapter without CONSOLE_FORGE_ADAPTER. */
+export const FORGE_ADAPTER = "npx -y @opensoftware/forge-github";
 
 /**
  * The factory's repository of CONSOLE_FACTORY_REPOSITORY, "git+<url>#<branch>", with the forge adapter and the token
@@ -191,11 +194,11 @@ export function useChanges(app: FastifyInstance, setup: ChangesSetup): void {
 
   /** Makes the change on the newest commit of the main branch, in the name of the person. */
   const propose = async (found: FactoryRepository, edits: Edit[], person: string, failed: string): Promise<Done> => {
-    const [fetched, rules] = await Promise.all([found.fetch(), requiredChecks(found.forge, found.branch)]);
+    const [fetched, rules] = await Promise.all([found.fetch(), branchRules(found.forge, found.branch)]);
     if (!fetched.ok) return refused(502, failed, `${failed}: ${fetched.note}`);
     if (!rules.ok) return refused(502, failed, `${failed}: ${rules.note}`);
     // The check comes first: without it nothing would check the change before the forge merges it.
-    if (!rules.body.includes(CHECK))
+    if (!rules.body.checks.includes(CHECK))
       return refused(
         409,
         failed,
