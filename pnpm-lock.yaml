@@ -390,6 +390,9 @@ importers:
       '@opensoftware/forge-github':
         specifier: workspace:*
         version: link:../../adapters/forge/github
+      '@opensoftware/secrets-openbao':
+        specifier: workspace:*
+        version: link:../../adapters/secrets/openbao
       '@opensoftware/testkit':
         specifier: workspace:*
         version: link:../../packages/testkit

@@ -36,7 +36,8 @@ import { runsData, waitingOf } from "../pages/runs.ts";
 import { shellData } from "../pages/shell.ts";
 import { workPage } from "../pages/work.ts";
 import { examine } from "./doctor.ts";
-import { fromConsole, personOf } from "./person.ts";
+import { actorOf, fromConsole, personOf } from "./person.ts";
+import { useSecrets } from "./secrets.ts";
 
 type Env = Record<string, string | undefined>;
 
@@ -79,6 +80,15 @@ export async function serve(env: Env) {
   if (Array.isArray(sign)) throw new UsageError(sign.join("\n"));
   const accessPath = env.CONSOLE_ACCESS || join(dirname(factoryFile), "access.yaml");
   const actions = Boolean(userHeader) || Boolean(sign);
+  // Roles come from the own sign-in, or from a sign-in proxy with an access file (ADR 0134).
+  const proxyAccess = Boolean(userHeader) && existsSync(accessPath);
+  // Secrets need an admin and a store; without either the page and its forms answer 404 (ADR 0137).
+  const closedSecrets =
+    !sign && !proxyAccess
+      ? "no secrets: they need a person with the role admin, so set CONSOLE_SIGN_IN, or an access file with CONSOLE_USER_HEADER"
+      : env.OSF_OPENBAO_ADDR
+        ? undefined
+        : "no secret store: set OSF_OPENBAO_ADDR and OSF_OPENBAO_TOKEN to the factory's OpenBao";
   const prefix = env.CONSOLE_INBOX_PREFIX || "observer/";
   const improve = env.CONSOLE_IMPROVE_DIR || undefined;
   const forge = {
@@ -99,6 +109,19 @@ export async function serve(env: Env) {
   /** The frame of every page: the dashboards and which optional pages the navigation links. */
   const frameOf = () => ({ links, inbox: Boolean(inbox), work: Boolean(intake), improvement: Boolean(improve) });
 
+  /** The shell of a page in the new look: Secrets only for an admin in a console with a store. */
+  const shellOf = (request: FastifyRequest, at: { title: string; current: string; count?: string; refresh?: number }) =>
+    shellData(
+      { ...frameOf(), person: personOf(request), secrets: !closedSecrets && actorOf(request)?.role === "admin" },
+      {
+        ...at,
+        path: request.url,
+        theme: themeOf(request.headers.cookie),
+        factory: factoryName(),
+        session: Boolean(sign),
+      },
+    );
+
   const send = (
     reply: FastifyReply,
     status: number,
@@ -118,8 +141,7 @@ export async function serve(env: Env) {
   // The sign-in's libraries load only with the sign-in: a console without it starts faster.
   if (sign) (await import("./signin.ts")).useSignIn(app, sign, accessPath, now);
   // Behind a sign-in proxy, an access file's roles apply; without one, every person of the proxy acts as a member.
-  if (userHeader && existsSync(accessPath))
-    (await import("./signin.ts")).useProxyAccess(app, userHeader, accessPath, now);
+  if (userHeader && proxyAccess) (await import("./signin.ts")).useProxyAccess(app, userHeader, accessPath, now);
   app.get("/pico.css", (_request, reply) => reply.type("text/css").send(PICO));
   // The styles and the faces of the design system that Astro built, and the favicon (ADR 0133): from the console's
   // own origin, as the Content-Security-Policy allows.
@@ -170,18 +192,7 @@ export async function serve(env: Env) {
     const notes = answers.flatMap((answer) => (answer && !answer.ok ? [answer.note] : []));
     const page = nextPageOf(answers.map((answer) => (answer?.ok && answer.body.next) || null));
     const next = page && `/${queryOf({ state, page })}`;
-    const shell = shellData(
-      { ...frameOf(), person: personOf(request) },
-      {
-        title: "Runs",
-        path: request.url,
-        theme: themeOf(request.headers.cookie),
-        factory: factoryName(),
-        waiting: waitingOf(runs, state),
-        refresh,
-        session: Boolean(sign),
-      },
-    );
+    const shell = shellOf(request, { title: "Runs", current: "/", count: waitingOf(runs, state), refresh });
     return render(
       request,
       reply,
@@ -318,6 +329,14 @@ export async function serve(env: Env) {
       };
     return { person };
   };
+  useSecrets(app, {
+    adapter: env.CONSOLE_SECRETS_ADAPTER || "npx -y @opensoftware/secrets-openbao",
+    factoryFile,
+    closed: closedSecrets,
+    shell: (request, title, current, count) => shellOf(request, { title, current, ...(count ? { count } : {}) }),
+    signedIn,
+    problem: (reply, status, title, detail) => send(reply, status, { title }, problem(title, detail)),
+  });
   if (actions && intake) {
     app.post<{ Body: Record<string, string> }>("/work", async (request, reply) => {
       const { person, refused } = signedIn(request, reply, "Work");

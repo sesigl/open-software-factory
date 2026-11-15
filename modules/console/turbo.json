@@ -3,10 +3,10 @@
   "extends": ["//"],
   "tasks": {
     "test:system": {
-      "dependsOn": ["$TURBO_EXTENDS$", "@opensoftware/forge-github#build"]
+      "dependsOn": ["$TURBO_EXTENDS$", "@opensoftware/forge-github#build", "@opensoftware/secrets-openbao#build"]
     },
     "mutation": {
-      "dependsOn": ["$TURBO_EXTENDS$", "@opensoftware/forge-github#build"]
+      "dependsOn": ["$TURBO_EXTENDS$", "@opensoftware/forge-github#build", "@opensoftware/secrets-openbao#build"]
     }
   }
 }

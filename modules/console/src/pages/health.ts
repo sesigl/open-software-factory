@@ -10,5 +10,9 @@ export interface HealthData {
 
 export const healthData = (frame: FrameData, items: Item[]): HealthData => ({
   frame,
-  items: items.map(({ name, ok, detail }) => ({ name, state: ok ? "ok" : "failing", todo: ok ? "—" : (detail ?? "") })),
+  items: items.map(({ name, ok, detail, warn }) => ({
+    name,
+    state: ok ? (warn ? "warning" : "ok") : "failing",
+    todo: ok && !warn ? "—" : (detail ?? ""),
+  })),
 });

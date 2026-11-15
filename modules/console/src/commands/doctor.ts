@@ -14,6 +14,7 @@ import {
   within,
 } from "../adapters/deep.ts";
 import { readFactory } from "../adapters/factory-file.ts";
+import { listSecrets, probeStore } from "../adapters/secrets.ts";
 import {
   accessItem,
   DENIED_HOST,
@@ -27,10 +28,12 @@ import {
   routesOf,
   type Server,
   sandboxItem,
+  secretItems,
   serverItems,
   traceItem,
 } from "../domain/doctor.ts";
 import { list } from "../domain/runs.ts";
+import { type Declared, declaredOf, fromOpenBao } from "../domain/secrets.ts";
 
 type Env = Record<string, string | undefined>;
 
@@ -128,6 +131,13 @@ async function signInItems(env: Env, factory: string): Promise<Item[]> {
   return items;
 }
 
+/** The checks of the secret store, through the secrets port's adapter's `probe` and `list` (ADR 0137). */
+async function secrets(env: Env, declared: Declared[]): Promise<Item[]> {
+  const command = env.CONSOLE_SECRETS_ADAPTER || "npx -y @opensoftware/secrets-openbao";
+  const [probed, listed] = await Promise.all([probeStore(command), listSecrets(command)]);
+  return secretItems(declared, probed, listed);
+}
+
 export async function examine(env: Env, deep = false): Promise<Item[]> {
   const items = (
     await Promise.all(
@@ -148,14 +158,19 @@ export async function examine(env: Env, deep = false): Promise<Item[]> {
     });
   const factory = env.CONSOLE_FACTORY || "factory.yaml";
   let routes: string[] = [];
+  let declared: Declared[] = [];
   try {
-    routes = routesOf(readFactory(factory).agents);
+    const { agents } = readFactory(factory);
+    routes = routesOf(agents);
+    declared = fromOpenBao(declaredOf(agents));
     items.push({ name: "factory", ok: true });
   } catch (failure) {
     items.push({ name: "factory", ok: false, detail: `${(failure as Error).message}: check CONSOLE_FACTORY` });
   }
   if (env.CONSOLE_GROUPS) items.push(groups(env.CONSOLE_GROUPS));
   if (env.CONSOLE_SIGN_IN) items.push(...(await signInItems(env, factory)));
+  // Only a factory that declares a secret of OpenBao needs the store (ADR 0137).
+  if (declared.length) items.push(...(await secrets(env, declared)));
   if (deep) items.push(...(await deepItems(env, routes)));
   return items;
 }
