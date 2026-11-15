@@ -146,14 +146,14 @@ services:
 
   # One-shot: the two policies for the mount, as secrets-openbao prints them, into the volume openbao-policies.
   openbao-policies:
-    image: ghcr.io/sesigl/open-software-factory/console:0.10.0
+    image: ghcr.io/sesigl/open-software-factory/console:0.10.1
     build: &console
       context: ../images
       target: module
       secrets: [ca]
       args:
         PACKAGES: >-
-          @opensoftware/console@0.10.0 @opensoftware/forge-github@0.8.1 @opensoftware/forge-forgejo@0.8.1
+          @opensoftware/console@0.10.1 @opensoftware/forge-github@0.8.1 @opensoftware/forge-forgejo@0.8.1
           @opensoftware/secrets-openbao@0.1.1
     entrypoint: [sh, -c]
     command:
@@ -259,13 +259,13 @@ services:
 
   # Copies FACTORY_DIR into the volume factory and commits it there: foreman reads a run's factory version from Git.
   factory-repo:
-    image: ghcr.io/sesigl/open-software-factory/factory-spec:0.12.0
+    image: ghcr.io/sesigl/open-software-factory/factory-spec:0.12.1
     build: &factory-spec
       context: ../images
       target: module
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/factory-spec@0.12.0"
+        PACKAGES: "@opensoftware/factory-spec@0.12.1"
     volumes:
       - ${FACTORY_DIR:-./factory}:/source:ro
       - factory:/factory
@@ -481,7 +481,7 @@ services:
 
   console:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/console:0.10.0
+    image: ghcr.io/sesigl/open-software-factory/console:0.10.1
     build: *console
     command: [console, serve]
     depends_on:
@@ -587,7 +587,7 @@ services:
 
   # factory-spec on the factory in the volume, for the commands of factory: docker compose run --rm factory plan
   factory:
-    image: ghcr.io/sesigl/open-software-factory/factory-spec:0.12.0
+    image: ghcr.io/sesigl/open-software-factory/factory-spec:0.12.1
     build: *factory-spec
     profiles: [tools]
     depends_on:
