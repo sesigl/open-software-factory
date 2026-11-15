@@ -44,7 +44,9 @@ Layers, top to bottom, in `architecture.json` (ADR 0014). A file imports only it
   passed 240 seconds on main. SCN-TK-080 to -082 each start a Forgejo and take about 20 seconds. `sut.pages` and `sut.browser` load happy-dom, Testing Library and
   Playwright at their first use: imported with the testkit, they cost every test process about 0.4 seconds (ADR 0131).
   testcontainers, the MCP client and the ACP client load at their first use too: the testkit's import went from about
-  500 to about 145 milliseconds, and a demo module's scenario from about 2.5 to about 1.5 seconds.
+  500 to about 145 milliseconds, and a demo module's scenario from about 2.5 to about 1.5 seconds. SCN-TK-182 to -184
+  (fakes.personIssuer and fakes.personProof, ADR 0151) are demo modules too: about 1.4 seconds each, 4.2 together,
+  measured on the development container; jose loads with the first issuer, not with the testkit.
 
 ## Quality limits
 

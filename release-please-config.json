@@ -238,6 +238,13 @@
       "component": "factory-source",
       "initial-version": "0.1.0",
       "bump-minor-pre-major": true
+    },
+    "packages/person-proof": {
+      "release-type": "node",
+      "package-name": "@opensoftware/person-proof",
+      "component": "person-proof",
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
     }
   }
 }
