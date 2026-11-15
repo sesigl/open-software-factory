@@ -1495,7 +1495,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
     `SCN-REPO`).
   - [ ] The workbench and the first island with its island scenarios and its suite (`SCN-UI`).
 
-### [ ] T-56 · sign-in, roles and the shell (P0)
+### [x] T-56 · sign-in, roles and the shell (P0)
 
 - **Problem:** the product has no sign-in. The console trusts a header of a proxy that the team must run in front
   (`CONSOLE_USER_HEADER`, ADR 0089), every person behind it may do everything, and the first screen is a table in
@@ -1614,8 +1614,8 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
   and a profile without a provider works as today.
 - **Slices:**
   - [x] The ADR: the library, the session, the roles, the modes and the hook (ADR 0134).
-  - [ ] `@opensoftware/factory-source` with the fetch, used by the foreman (its own prefix; the foreman's `SCN-FORE`
-    scenarios of ADR 0124 pass unchanged); its first publish.
+  - [x] `@opensoftware/factory-source` with the fetch, used by the foreman (its own prefix; the foreman's `SCN-FORE`
+    scenarios of ADR 0124 pass unchanged); its first publish (0.1.0, ADR 0142).
   - [x] The access file in `factory lint` (`SCN-FSPEC`); its format in `contracts/` (`SCN-CTR`).
   - [x] `fakes.oidc()` and GitHub's sign-in in `fakes.github` (`SCN-TK`).
   - [x] The hook, sign-in, session and sign-out in the console, with the sign-in page and the probe route
@@ -1948,7 +1948,7 @@ policy of gatekeeper.
 
 ---
 
-### [ ] T-62 · `sandbox-egress` with one job (P2)
+### [x] T-62 · `sandbox-egress` with one job (P2)
 
 - **Problem:** `@opensoftware/sandbox-egress` is "what every sandbox adapter shares" and exports 20 values: the spec
   and its secrets, iron-proxy's configuration and start, its log, and the copy into a sandbox (ADR 0135).
@@ -1959,7 +1959,7 @@ policy of gatekeeper.
 - **Done when:** the library's surface names a handful of values with one job, and SURFACE passes.
 - **Slices:**
   - [x] The ADR with the split, and the libraries (ADR 0147).
-  - [ ] Both sandbox adapters on them; their releases.
+  - [x] Both sandbox adapters on them; their releases (sandbox-docker 0.8.0, sandbox-kubernetes 0.6.0).
 
 ## Paid runs (last; started by a maintainer, manual)
 
