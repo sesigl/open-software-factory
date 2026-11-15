@@ -32,7 +32,7 @@
     },
     "CONSOLE_FACTORY_REPOSITORY": {
       "type": "string",
-      "description": "serve: the factory's repository on a forge as git+<url>#<branch>, like git+https://github.com/acme/factory.git#main. With it, /changes proposes a change of the factory as a pull request into that branch (ADR 0144); without it the factory is a local folder and the console changes nothing."
+      "description": "serve: the factory's repository on a forge as git+<url>#<branch>, like git+https://github.com/acme/factory.git#main. With it, /changes proposes a change of the factory as a pull request into that branch (ADR 0144), and /skills/<name> switches a skill per agent (ADR 0149); without it the factory is a local folder and the console changes nothing."
     },
     "CONSOLE_FACTORY_TOKEN": {
       "type": "string",

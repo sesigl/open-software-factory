@@ -34,7 +34,15 @@ export function skillOf(
 }
 
 /** A shell word in single quotes. */
-const word = (text: string): string => `'${text.replaceAll("'", `'\\''`)}'`;
+export const word = (text: string): string => `'${text.replaceAll("'", `'\\''`)}'`;
+
+/** Writes these skills to $INPUT/skills.json, which must fit the format skill-catalog; gives the shell line that prints it. */
+export async function catalogOf(sut: Sut, skills: CatalogSkill[]): Promise<string> {
+  const catalog: SkillCatalog = { skills };
+  expect(validate("skill-catalog", catalog), "the stand-in's JSON fits the format skill-catalog").toEqual([]);
+  await sut.files.put("$INPUT/skills.json", JSON.stringify(catalog, null, 2));
+  return `cat ${word(sut.files.path("$INPUT/skills.json"))}`;
+}
 
 /**
  * Writes the factory program: it records its arguments in $OUTPUT/factory.log and prints these skills, which must fit
@@ -43,14 +51,7 @@ const word = (text: string): string => `'${text.replaceAll("'", `'\\''`)}'`;
  */
 export async function factoryProgram(sut: Sut, answer: CatalogSkill[] | { error: string }): Promise<string> {
   const log = word(sut.files.path("$OUTPUT/factory.log"));
-  const print = Array.isArray(answer)
-    ? [`cat ${word(sut.files.path("$INPUT/skills.json"))}`]
-    : [`echo ${word(answer.error)} >&2`, "exit 1"];
-  if (Array.isArray(answer)) {
-    const catalog: SkillCatalog = { skills: answer };
-    expect(validate("skill-catalog", catalog), "the stand-in's JSON fits the format skill-catalog").toEqual([]);
-    await sut.files.put("$INPUT/skills.json", JSON.stringify(catalog, null, 2));
-  }
+  const print = Array.isArray(answer) ? [await catalogOf(sut, answer)] : [`echo ${word(answer.error)} >&2`, "exit 1"];
   await sut.files.put("$INPUT/bin/factory", ["#!/bin/sh", `echo "$@" > ${log}`, ...print, ""].join("\n"), {
     executable: true,
   });

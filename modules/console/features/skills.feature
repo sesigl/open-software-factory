@@ -1,11 +1,14 @@
 @module=console @owner=maintainers
 Feature: Skills
-  The page "/skills" lists every skill that the factory's agents use from the folders of its repository, and
-  "/skills/<name>" shows one skill: its SKILL.md as Markdown, its files, its agents and what it needs (ADR 0141). The
-  console runs factory-spec's "factory skills" in "CONSOLE_FACTORY_COMMAND" for them and never reads a SKILL.md
-  itself. With a store at "OSF_OPENBAO_ADDR", each secret a skill needs has the state the page "/secrets" knows. Both
-  pages are read-only and exist in every mode of the console. The Markdown comes from a repository, so the page shows
-  no raw HTML, no script, no image and no link but to the web or an email address.
+  The page "/skills" lists every skill that the factory's agents use, from the folders of its repository and of other
+  repositories pinned in factory.lock, and "/skills/<name>" shows one skill: its SKILL.md as Markdown, its files, the
+  factory's agents and what it needs (ADR 0141). The console runs factory-spec's "factory skills" in
+  "CONSOLE_FACTORY_COMMAND" for them and never reads a SKILL.md itself. With a store at "OSF_OPENBAO_ADDR", each secret
+  a skill needs has the state the page "/secrets" knows. Both pages exist in every mode of the console. With a factory
+  repository in "CONSOLE_FACTORY_REPOSITORY", an admin or a factory engineer switches the skill on or off for each
+  agent: a change of the factory (ADR 0144) that also adds what the agent lacks of the skill's needs, which the page
+  "/skills/<name>/switch" lists before the person confirms (ADR 0149). The Markdown comes from a repository, so the
+  page shows no raw HTML, no script, no image and no link but to the web or an email address.
 
   @id=SCN-CONSOLE-191 @status=implemented
   Scenario: "/skills" lists each skill with its description, source, agents and needs, and the state of each secret
@@ -107,3 +110,69 @@ Feature: Skills
     When the person signs in and opens "/skills" and "/skills/release-notes"
     Then both answer 200, and the navigation links "/skills" and not "/secrets"
     And the page of "release-notes" says "LINEAR_TOKEN" is "Missing" without the link "Store a value"
+
+  @id=SCN-CONSOLE-234 @status=implemented
+  Scenario: A factory engineer switches a skill on for an agent, and the change lists the added provider, secret and host
+    Given a factory repository "tester/factory" whose main branch requires the check "factory", and a console behind a sign-in proxy with "grace@acme.dev" as "factory-engineer"
+    And a factory that declares the secrets provider "env", whose agent "triage" uses the skill "release-notes", which needs "LINEAR_TOKEN" and the host "api.linear.app", and whose agent "review" has a sandbox that reaches only "api.github.com" and declares no secret
+    When "grace@acme.dev" opens "/skills/release-notes", presses "Switch on for review" and then "Propose change"
+    Then the page that asked first said "Switch on release-notes for review?" and that an admin stores the value of each added secret on Secrets
+    And it listed "The factory declares the secrets provider openbao at ^0.", "The agent review gets the secret reference ref:openbao/linear-token.", "The agent review may reach the host api.linear.app." and "The agent review gets the skill ./skills/release-notes."
+    And the console answered 303 to "/changes"
+    And the forge has one open pull request titled "factory edit add-secrets-provider openbao ^0; add-secret review ref:openbao/linear-token; add-egress review api.linear.app; add-skill review ./skills/release-notes" from a branch "console/add-skill-review-<the newest commit>-<hash of the edits>", whose body lists the four edits in these words
+    And its one commit holds the factory.yaml that "factory edit" printed after the four edits, each run on the text of the one before
+    And "/skills/release-notes" shows "review" "Switching on", "Checking" and the link to the pull request in place of the switch, and "triage" with "Switch off for triage"
+
+  @id=SCN-CONSOLE-235 @status=implemented @kind=journey
+  Scenario: A factory engineer switches a skill on in Chromium and sees the change checking, then live
+    Given a console that signs in with OpenID Connect, an access file with "grace@acme.dev" as "factory-engineer", a factory repository "tester/factory" whose main branch requires the check "factory", and a factory whose agent "triage" uses the skill "release-notes" and whose agent "review" lacks what it needs
+    And the provider signs in "grace@acme.dev"
+    When the person signs in in Chromium, follows "Skills" and "release-notes", presses "Switch on for review" and "Propose change"
+    Then the person sees the change as "Checking" on "/changes", and "Switching on" and "Checking" beside "review" on "/skills/release-notes"
+    And the skill's page passes the accessibility checks, and its screenshot is kept as "skill-switch"
+    When the check "factory" of the pull request passes, the forge merges it, and the person opens "/changes"
+    Then the person sees the change as "Live"
+
+  @id=SCN-CONSOLE-236 @status=implemented
+  Scenario: A member sees whether each agent has the skill and why there is no switch, and a forge that does not answer is named
+    Given a console with a factory repository at "http://127.0.0.1:9/tester/factory.git" that does not answer, "grace@acme.dev" as "factory-engineer" and "varun@acme.dev" as "member"
+    And a factory whose agent "triage" uses the skill "release-notes" and whose agent "review" does not
+    When "grace@acme.dev" opens "/skills/release-notes" and "/skills/release-notes/switch?agent=spec", and "varun@acme.dev" opens "/skills/release-notes" and "/skills/release-notes/switch?agent=review"
+    Then the factory engineer's page has an alert that starts with "The changes could not be listed:" and offers "Switch on for review" and "Switch off for triage"
+    And the page for "spec" answers 404 and says "spec is not an agent of the factory"
+    And the member's list "Agents" says "review Does not have the skill" and "triage Has what the skill needs", without a button, and the page says "varun@acme.dev has the role member: a change needs the role admin or factory-engineer"
+    And the member's page that asks first answers 403 and says the same
+
+  @id=SCN-CONSOLE-237 @status=implemented
+  Scenario: A factory from a local folder shows no switch on a skill's page and says why
+    Given a console behind a sign-in proxy with "grace@acme.dev" as "factory-engineer", without "CONSOLE_FACTORY_REPOSITORY"
+    When "grace@acme.dev" opens "/skills/release-notes" and "/skills/release-notes/switch?agent=review"
+    Then the skill's page has no button and says "This factory is read from a local folder, so the console cannot change it. Set CONSOLE_FACTORY_REPOSITORY to its repository on a forge."
+    And the page that asks first answers 404 and says the same
+
+  @id=SCN-CONSOLE-238 @status=implemented
+  Scenario: Switching a skill off only removes the agent's entry
+    Given a console with a factory repository at "http://127.0.0.1:9/tester/factory.git" that does not answer, and "grace@acme.dev" as "factory-engineer"
+    And a factory whose agent "triage" uses the skill "release-notes" as "./skills/release-notes" with what it needs
+    When "grace@acme.dev" presses "Switch off for triage" on "/skills/release-notes" and then "Propose change"
+    Then the page that asked first said "Switch off release-notes for triage?" and "The console opens a pull request with these edits on the factory's repository. The forge merges it when its check factory passes, and triage no longer has the skill from its next run."
+    And it listed only "The agent triage no longer has the skill ./skills/release-notes."
+    And the form answered 502 and said "Not proposed: cannot fetch main of http://127.0.0.1:9/tester/factory.git": its edit passed the checks of a form
+
+  @id=SCN-CONSOLE-239 @status=implemented
+  Scenario: A skill of another repository whose needs an agent meets adds nothing but the skill's entry
+    Given a console with a factory repository at "http://127.0.0.1:9/tester/factory.git" that does not answer, and "grace@acme.dev" as "factory-engineer"
+    And the skill "release-notes" of "git+https://github.com/acme/skills.git#v1.2:skills/release-notes", used by "triage", which needs "LINEAR_TOKEN" and the host "api.linear.app"
+    And the agent "review", whose sandbox reaches "api.linear.app" and which declares "ref:env/LINEAR_TOKEN", and the agent "spec" without a sandbox, which declares "ref:env/linear-token"
+    When "grace@acme.dev" opens the pages that ask first for "review" and for "spec", and presses "Propose change" on the first
+    Then each lists only "The agent <agent> gets the skill git+https://github.com/acme/skills.git#v1.2:skills/release-notes."
+    And each says "The console opens a pull request with these edits on the factory's repository. The forge merges it when its check factory passes, and <agent> has the skill from its next run."
+    And the form answered 502 and said "Not proposed: cannot fetch main of http://127.0.0.1:9/tester/factory.git": its edit passed the checks of a form
+
+  @id=SCN-CONSOLE-240 @status=implemented
+  Scenario: A skill of another repository shows its repository and pinned commit, and one without a pin says so
+    Given the skill "release-notes" of "https://github.com/acme/skills.git" pinned at "7c2e91d4f0b3a8c6e5d2f1a0b9c8d7e6f5a4b3c2", and the skill "changelog" of the same repository without a pin, with its problem
+    When a person opens "/skills", "/skills/release-notes" and "/skills/changelog"
+    Then the list says "skills/release-notes in https://github.com/acme/skills.git at 7c2e91d" and "skills/changelog in https://github.com/acme/skills.git, not pinned in factory.lock" with "Fails factory lint"
+    And the page of "release-notes" says "skills/release-notes in https://github.com/acme/skills.git at 7c2e91d"
+    And the page of "changelog" says "skills/changelog in https://github.com/acme/skills.git, not pinned in factory.lock" and its problem

@@ -47,8 +47,9 @@ Open <http://localhost:8080>. The page lists the foreman's runs, the running one
 | `/inbox` | The self-improvement inbox: the open pull requests of `CONSOLE_INBOX_REPOSITORY` whose branch starts with `CONSOLE_INBOX_PREFIX` (default `observer/`), newest first, each with its link, branch, author, state ("approved", "changes requested" or "needs review") and age. A forge adapter that fails is named above the list. 404 without `CONSOLE_INBOX_REPOSITORY`. |
 | `/secrets` | Only for an admin or a factory engineer ([Secrets](#secrets)): the secrets that the factory's agents declare and the names in the secret store, each "Missing", "Set", "Set outside the UI", "Not used" or "Unknown", and the form "Store a value". `?name=<name>` fills the form's name. A person without the role `admin` gets 403. 404 in a console without roles or without `OSF_OPENBAO_ADDR`. |
 | `/secrets/delete?name=<name>` | Only for an admin ([ADR 0148](../../docs/decisions/0148-a-factory-engineer-stores-secrets.md)): asks before the secret of that name is deleted, with the button "Delete" and the link "Cancel". |
-| `/skills` | Every skill the factory's agents use ([Skills](#skills)): its name, description, folder, agents and what it needs, with the state of each secret it needs. In every mode. |
-| `/skills/<name>` | One skill: its `SKILL.md` as Markdown, its files, its agents and what it needs, and the problems lint names in its files. 404 for a skill no agent uses, 502 when `factory skills` fails. |
+| `/skills` | Every skill the factory's agents use ([Skills](#skills)): its name, description, source with its pinned commit, agents and what it needs, with the state of each secret it needs. In every mode. |
+| `/skills/<name>` | One skill: its `SKILL.md` as Markdown, its files, each agent of the factory with whether it has the skill, and what it needs, and the problems lint names in its files. For an admin or a factory engineer with `CONSOLE_FACTORY_REPOSITORY`, a switch per agent ([Switch a skill](#switch-a-skill)); an open change shows beside its agent. 404 for a skill no agent uses, 502 when `factory skills` fails. |
+| `/skills/<name>/switch?agent=<agent>` | The page that asks before a switch: each edit of its change in plain words, and the form "Propose change". 404 without `CONSOLE_FACTORY_REPOSITORY` or roles and for an agent the factory does not have, 403 to anyone but an admin or a factory engineer. |
 | `/changes` | The changes of the factory that the console proposed as pull requests ([Changes](#changes)), each "Checking", "Ready", "Failed", "Conflict", "Live" or "Discarded", and for an admin or a factory engineer the forms "Propose a change" and "Declare a secrets provider" and the buttons "Try again", "Discard" and "Merge". Without `CONSOLE_FACTORY_REPOSITORY` it says that the factory is a local folder. |
 | `/improvement` | Cost and scores of the factory's runs, from the files below `CONSOLE_IMPROVE_DIR`: the total cost and the number of runs, each scorer with its scored runs, passes, pass rate and judge cost, and each stage of a run with its outcome and cost, linked to the run's page. 404 without `CONSOLE_IMPROVE_DIR`. |
 
@@ -185,9 +186,13 @@ way.
 
 ## Skills
 
-`/skills` lists every skill that the factory's agents use from the folders of its repository, and `/skills/<name>`
-shows one ([ADR 0141](../../docs/decisions/0141-skills-pages-and-markdown-from-a-repository.md)). Both pages are
-read-only and exist in every mode: open, behind a sign-in proxy and with the own sign-in. The console does not read a
+`/skills` lists every skill that the factory's agents use, from the folders of its repository and of other
+repositories that `factory.lock` pins, and `/skills/<name>` shows one
+([ADR 0141](../../docs/decisions/0141-skills-pages-and-markdown-from-a-repository.md)). Both pages exist in every
+mode: open, behind a sign-in proxy and with the own sign-in. A skill of another repository shows its folder, the
+repository's URL and the first 7 characters of its pinned commit, like
+`skills/release-notes in https://github.com/acme/skills.git at 7c2e91d`, and one without a pin says
+"not pinned in factory.lock" and shows the catalog's problem. The console does not read a
 `SKILL.md` itself: it runs factory-spec's `factory skills --file <CONSOLE_FACTORY>` with the command line in
 `CONSOLE_FACTORY_COMMAND` and shows what it prints, so the pages know what `factory lint` knows
 ([factory-spec](../factory-spec/README.md#the-skills-as-json)). What it prints is the format `skill-catalog` of the
@@ -211,6 +216,26 @@ The Markdown comes from a repository, so the page renders it safely with markdow
 text; an image shows its alternative text, so no image loads from anywhere; a link keeps its anchor only to `https:`,
 `http:` or `mailto:`, with `rel="nofollow noreferrer"`, and any other, like `javascript:`, `data:` or a relative path,
 keeps only its words. The page's Content-Security-Policy forbids every script as well.
+
+### Switch a skill
+
+On `/skills/<name>`, an admin or a factory engineer switches the skill on or off for each agent of the factory
+([ADR 0149](../../docs/decisions/0149-a-skill-switched-per-agent-as-one-change.md)). A switch is a change of the
+factory ([Changes](#changes)), so it needs `CONSOLE_FACTORY_REPOSITORY`; without it, or without the role, the page shows
+whether each agent has the skill, no button, and why. Each button opens `/skills/<name>/switch?agent=<agent>`, which
+lists every edit of the change in plain words before the person presses "Propose change":
+
+- Switching on adds what the agent lacks of the skill's needs, then the skill: the secrets provider `openbao` at `^0`
+  when the factory does not declare it and a secret is missing; for each missing secret the reference
+  `ref:openbao/<name>`, like `ref:openbao/linear-token` for `LINEAR_TOKEN`, whose value an admin or a factory engineer stores on
+  [Secrets](#secrets); for each host the agent's sandbox does not allow, the host, which widens what the sandbox can
+  reach. An agent without a sandbox gets no host. What the agent lacks comes from `CONSOLE_FACTORY`.
+- Switching off removes only the skill's entry: a secret or a host may serve another skill of the agent.
+- The skill's entry is the one with which an agent already names it, like `./skills/release-notes` or
+  `git+https://github.com/acme/skills.git#v1.2:skills/release-notes`, so a skill of another repository keeps its pin.
+
+All edits of a switch are one pull request; its body lists each one. While it is open, the agent shows "Switching on"
+or "Switching off", the change's state and the link to its pull request in place of the button.
 
 ## Changes
 
@@ -247,6 +272,14 @@ a range. The console checks each value first and names what it refused: an egres
    `factory edit <edit> <agent or name> <value>`, whose body says what changes and who asked;
 4. asks the forge to merge it when its checks pass (`merge --when-green`) and answers 303 to `/changes`.
 
+A change may hold several edits, like a [switch of a skill](#switch-a-skill)
+([ADR 0149](../../docs/decisions/0149-a-skill-switched-per-agent-as-one-change.md)): `POST /changes` then takes them in
+the field `edits` as one line, each edit's three words separated by `; `, like
+`add-egress review api.linear.app; add-skill review ./skills/release-notes`, and checks each like the form. The
+console runs `factory edit` once per edit, in that order, each on the text the one before printed, and commits the
+result once. The title is `factory edit ` and that line, the branch names the last edit, the hash covers every edit,
+and the body lists each edit as an item. A forge refuses a title over 255 characters, about six edits.
+
 The branch starts at the commit that was read, so a change that reached the branch in between shows as a conflict and
 overwrites nothing. The page asks the forge when it is opened, for the newest 50 pull requests of the token's user;
 the console keeps no state:
@@ -261,7 +294,7 @@ the console keeps no state:
 | Discarded | Closed without a merge | none |
 
 "Try again" closes the pull request, deletes its branch and makes the same change on the newest commit; it reads the
-edit from the pull request's title and checks it like a form, since anyone who may write to the repository can change
+edits from the pull request's title and checks each like a form, since anyone who may write to the repository can change
 a title. "Discard" closes it and deletes its branch. "Merge" merges a change whose check `factory` passed, and answers
 409 for any other. Each button acts only on a pull request of `CONSOLE_FACTORY_USER` from a `console/` branch.
 
@@ -329,7 +362,7 @@ as ok, adds itself to the count, like `all 5 checks ok, warnings: 1`, and shows 
 | `CONSOLE_FACTORY_COMMAND` | string | `"npx -y @opensoftware/factory-spec"` | serve: the command line of factory-spec's factory, which /skills and /skills/<name> run with skills --file <CONSOLE_FACTORY> (ADR 0141), and a change with edit --file <the newest factory.yaml> (ADR 0144). |
 | `CONSOLE_FACTORY_CACHE` | string |  | serve, with CONSOLE_FACTORY_REPOSITORY: the folder of the console's copy of the factory's repository. Default: a folder per repository below the system's temporary folder. |
 | `CONSOLE_FACTORY_PATH` | string | `"factory.yaml"` | serve: the path of the factory definition in its Git repository. |
-| `CONSOLE_FACTORY_REPOSITORY` | string |  | serve: the factory's repository on a forge as git+<url>#<branch>, like git+https://github.com/acme/factory.git#main. With it, /changes proposes a change of the factory as a pull request into that branch (ADR 0144); without it the factory is a local folder and the console changes nothing. |
+| `CONSOLE_FACTORY_REPOSITORY` | string |  | serve: the factory's repository on a forge as git+<url>#<branch>, like git+https://github.com/acme/factory.git#main. With it, /changes proposes a change of the factory as a pull request into that branch (ADR 0144), and /skills/<name> switches a skill per agent (ADR 0149); without it the factory is a local folder and the console changes nothing. |
 | `CONSOLE_FACTORY_TOKEN` | string |  | serve, with CONSOLE_FACTORY_REPOSITORY: the forge token of the changes, the forge adapter's FORGE_TOKEN for them. It writes the contents and the pull requests of the repository and reads its branch's rules; the console fetches the repository with it too (ADR 0142). |
 | `CONSOLE_FACTORY_USER` | string |  | serve, with CONSOLE_FACTORY_REPOSITORY: the user of CONSOLE_FACTORY_TOKEN as the forge adapter names an author, like forgejo:factory-bot or github:acme-factory. /changes lists only its pull requests. |
 | `CONSOLE_FOREMAN_TOKEN` | string |  | serve: the foreman's FOREMAN_API_TOKEN, sent as Authorization: Bearer <token>; several, comma-separated, in the order of CONSOLE_FOREMAN_URL, or one for all. |
@@ -585,3 +618,10 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-231 | implemented | A factory engineer stores a value and replaces it, and only an admin deletes a secret |
 | SCN-CONSOLE-232 | implemented | In the open mode "/secrets" and its form answer 404 and name the roles that open it |
 | SCN-CONSOLE-233 | implemented | Behind a sign-in proxy without an access file "/secrets" answers 404 and names the roles, and the navigation does not link it |
+| SCN-CONSOLE-234 | implemented | A factory engineer switches a skill on for an agent, and the change lists the added provider, secret and host |
+| SCN-CONSOLE-235 | implemented | A factory engineer switches a skill on in Chromium and sees the change checking, then live |
+| SCN-CONSOLE-236 | implemented | A member sees whether each agent has the skill and why there is no switch, and a forge that does not answer is named |
+| SCN-CONSOLE-237 | implemented | A factory from a local folder shows no switch on a skill's page and says why |
+| SCN-CONSOLE-238 | implemented | Switching a skill off only removes the agent's entry |
+| SCN-CONSOLE-239 | implemented | A skill of another repository whose needs an agent meets adds nothing but the skill's entry |
+| SCN-CONSOLE-240 | implemented | A skill of another repository shows its repository and pinned commit, and one without a pin says so |

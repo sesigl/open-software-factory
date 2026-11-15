@@ -53,19 +53,21 @@ export async function store(sut: Sut, fakes: Fakes, ttl = "200h"): Promise<Store
   };
 }
 
-/** An agent of the factory definition: the secrets it declares and the hosts it may reach. */
+/** An agent of the factory definition: the skills it uses, the secrets it declares and the hosts it may reach. */
 export interface AgentOf {
+  skills?: string[];
   secrets?: string[];
   egress?: string[];
 }
 
-/** A factory definition "acme" with these agents. */
-export function factoryYaml(agents: Record<string, AgentOf>): string {
+/** A factory definition "acme" with these agents and the secrets provider "openbao", or this one. */
+export function factoryYaml(agents: Record<string, AgentOf>, provider = "openbao"): string {
   const lines = ["version: 1", "factory: acme", "providers:", "  harness:", '    claude-code: "^2"', "  secrets:"];
-  lines.push('    openbao: "^0"', "agents:");
-  for (const [name, { secrets, egress }] of Object.entries(agents)) {
+  lines.push(`    ${provider}: "^0"`, "agents:");
+  for (const [name, { skills, secrets, egress }] of Object.entries(agents)) {
     lines.push(`  ${name}:`, "    harness: claude-code", `    model: routes/${name}`, `    prompt: ./${name}.md`);
     lines.push("    effort: high");
+    if (skills) lines.push("    skills:", ...skills.map((skill) => `      - "${skill}"`));
     if (secrets) lines.push("    secrets:", ...secrets.map((secret) => `      - ${secret}`));
     if (egress)
       lines.push(

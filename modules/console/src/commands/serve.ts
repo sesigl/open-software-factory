@@ -344,11 +344,15 @@ export async function serve(env: Env) {
     return { person };
   };
   const secretsAdapter = env.CONSOLE_SECRETS_ADAPTER || "npx -y @opensoftware/secrets-openbao";
-  // The skills in every mode; with a store, each secret a skill needs has its state (ADR 0141).
+  const closedChanges = !sign && !proxyAccess ? NO_ROLES : undefined;
+  // The skills in every mode; with a store, each secret a skill needs has its state (ADR 0141); with a factory
+  // repository and the role, a switch per agent (ADR 0149).
   useSkills(app, {
     command: factoryCommand,
     factoryFile,
     store: env.OSF_OPENBAO_ADDR ? secretsAdapter : undefined,
+    repository: changes,
+    closed: closedChanges,
     shell: (request, title) => shellOf(request, { title, current: "/skills" }),
     secrets: maySecrets,
     problem: (reply, status, title, detail) => send(reply, status, { title }, problem(title, detail)),
@@ -357,7 +361,7 @@ export async function serve(env: Env) {
     repository: changes,
     command: factoryCommand,
     factoryFile,
-    closed: !sign && !proxyAccess ? NO_ROLES : undefined,
+    closed: closedChanges,
     refresh,
     shell: (request, title, reload) =>
       shellOf(request, { title, current: "/changes", ...(reload ? { refresh: reload } : {}) }),

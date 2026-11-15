@@ -6,7 +6,7 @@ import {
   BUTTONS,
   CHECK,
   type ChangeState,
-  editOfTitle,
+  editsOfTitle,
   failedOf,
   type Listed,
   type Pull,
@@ -36,7 +36,7 @@ export interface ChangesData {
   form: { agents: string[]; edits: { value: string; label: string }[] } | undefined;
 }
 
-const LOOKS: Record<ChangeState, { state: string; shape: string }> = {
+export const LOOKS: Record<ChangeState, { state: string; shape: string }> = {
   live: { state: "Live", shape: "complete" },
   discarded: { state: "Discarded", shape: "cancelled" },
   conflict: { state: "Conflict", shape: "failed" },
@@ -75,12 +75,12 @@ function detailOf(state: ChangeState, pull: Listed | Pull, branch: string): stri
 /** The row of a change; `act` says whether the person may press its buttons. */
 export function changeRow(pull: Listed | Pull, branch: string, act: boolean): ChangeRow {
   const state = stateOf(pull);
-  const edit = editOfTitle(pull.title);
+  const edits = editsOfTitle(pull.title);
   const buttons = (Object.keys(BUTTONS) as (keyof typeof BUTTONS)[])
     .filter((button) => act && BUTTONS[button].includes(state))
     .map((button) => ({ action: `/changes/${pull.number}/${button}`, name: BUTTON_NAMES[button] }));
   return {
-    text: edit.ok ? sentenceOf(edit.edit) : pull.title,
+    text: edits.ok ? edits.edits.map((edit) => sentenceOf(edit)).join(" ") : pull.title,
     state: LOOKS[state].state,
     stateClass: `osf-state osf-state-${LOOKS[state].shape}`,
     detail: detailOf(state, pull, branch),

@@ -27,11 +27,12 @@ import {
   bodyOf,
   branchOf,
   CHECK,
-  type Checked,
+  type CheckedEdits,
   type Edit,
-  editOfForm,
-  editOfTitle,
+  editsOfForm,
+  editsOfTitle,
   isChange,
+  type Listed,
   messageOf,
   type Pull,
   repositoryOf,
@@ -118,30 +119,55 @@ const SEE = { status: 303 } as const;
 
 const refused = (status: number, title: string, detail: string): Done => ({ status, title, detail });
 
+/**
+ * Why the person of the request cannot change the factory, with the status that refuses a form: 404 without a factory
+ * repository or roles, 403 without the role; undefined when the person can.
+ */
+export function whyNoChange(
+  repository: FactoryRepository | undefined,
+  closed: string | undefined,
+  request: FastifyRequest,
+): { status: number; detail: string } | undefined {
+  if (!repository) return { status: 404, detail: LOCAL };
+  if (closed) return { status: 404, detail: closed };
+  const actor = actorOf(request);
+  if (actor && ROLES.includes(actor.role)) return undefined;
+  const who = actor ? `${actor.email} has the role ${actor.role}` : "nobody signed in";
+  return { status: 403, detail: `${who}: a change needs the role admin or factory-engineer` };
+}
+
+/**
+ * The console's changes that `keep` keeps, the newest first, each open one as `pr` prints it, and what could not be
+ * read. `pr` runs only for the changes that are still open, at the same time.
+ */
+export async function readChanges(
+  repository: FactoryRepository,
+  keep: (pull: Listed) => boolean,
+): Promise<{ pulls: (Listed | Pull)[]; notes: string[] }> {
+  const listed = await listChanges(repository.forge);
+  const own = listed.ok ? listed.body.filter((pull) => isChange(pull, repository.user) && keep(pull)) : [];
+  const read = await Promise.all(
+    own.map((pull) => (pull.state === "open" ? readChange(repository.forge, pull.number) : undefined)),
+  );
+  const pulls = own.map((pull, index) => {
+    const answer = read[index];
+    return answer?.ok ? answer.body : pull;
+  });
+  const notes = [
+    ...(listed.ok ? [] : [`The changes could not be listed: ${listed.note}`]),
+    ...read.flatMap((answer) => (answer && !answer.ok ? [`A change could not be read: ${answer.note}`] : [])),
+  ];
+  return { pulls, notes };
+}
+
 export function useChanges(app: FastifyInstance, setup: ChangesSetup): void {
   const { repository } = setup;
-
-  /** Whether the person of the request may change the factory. */
-  const mayChange = (request: FastifyRequest): boolean => !setup.closed && ROLES.includes(actorOf(request)?.role ?? "");
 
   app.get("/changes", async (request, reply) => {
     if (!repository)
       return render(request, reply, 200, changesData(setup.shell(request, "Changes"), LOCAL, [], [], undefined));
-    const listed = await listChanges(repository.forge);
-    const own = listed.ok ? listed.body.filter((pull) => isChange(pull, repository.user)) : [];
-    // `pr` only for the changes that are still open, at the same time.
-    const read = await Promise.all(
-      own.map((pull) => (pull.state === "open" ? readChange(repository.forge, pull.number) : undefined)),
-    );
-    const pulls = own.map((pull, index) => {
-      const answer = read[index];
-      return answer?.ok ? answer.body : pull;
-    });
-    const notes = [
-      ...(listed.ok ? [] : [`The changes could not be listed: ${listed.note}`]),
-      ...read.flatMap((answer) => (answer && !answer.ok ? [`A change could not be read: ${answer.note}`] : [])),
-    ];
-    const act = mayChange(request);
+    const { pulls, notes } = await readChanges(repository, () => true);
+    const act = !whyNoChange(repository, setup.closed, request);
     const rows = pulls.map((pull) => changeRow(pull, repository.branch, act));
     const agents = act ? Object.keys(readFactory(setup.factoryFile).agents ?? {}) : undefined;
     const shell = setup.shell(request, "Changes", checking(pulls) ? setup.refresh : undefined);
@@ -155,20 +181,16 @@ export function useChanges(app: FastifyInstance, setup: ChangesSetup): void {
   ):
     | { refused: unknown; person?: undefined; repository?: undefined }
     | { refused?: undefined; person: string; repository: FactoryRepository } => {
-    if (!repository) return { refused: setup.problem(reply, 404, "No changes", LOCAL) };
-    if (setup.closed) return { refused: setup.problem(reply, 404, "No changes", setup.closed) };
+    const why = whyNoChange(repository, setup.closed, request);
+    if (why?.status === 404) return { refused: setup.problem(reply, 404, "No changes", why.detail) };
     const signed = setup.signedIn(request, reply, "Changes");
     if (signed.refused) return { refused: signed.refused };
-    const actor = actorOf(request);
-    if (actor && ROLES.includes(actor.role)) return { person: actor.email, repository };
-    const who = actor ? `${actor.email} has the role ${actor.role}` : "nobody signed in";
-    return {
-      refused: setup.problem(reply, 403, "Forbidden", `${who}: a change needs the role admin or factory-engineer`),
-    };
+    if (why) return { refused: setup.problem(reply, 403, "Forbidden", why.detail) };
+    return { person: actorOf(request)?.email as string, repository: repository as FactoryRepository };
   };
 
   /** Makes the change on the newest commit of the main branch, in the name of the person. */
-  const propose = async (found: FactoryRepository, edit: Edit, person: string, failed: string): Promise<Done> => {
+  const propose = async (found: FactoryRepository, edits: Edit[], person: string, failed: string): Promise<Done> => {
     const [fetched, rules] = await Promise.all([found.fetch(), requiredChecks(found.forge, found.branch)]);
     if (!fetched.ok) return refused(502, failed, `${failed}: ${fetched.note}`);
     if (!rules.ok) return refused(502, failed, `${failed}: ${rules.note}`);
@@ -180,19 +202,19 @@ export function useChanges(app: FastifyInstance, setup: ChangesSetup): void {
         `${failed}: the branch ${found.branch} of ${found.forge.repository} does not require the check ${CHECK}, so nothing would check the change before it merges. Require the check ${CHECK} on ${found.branch} first.`,
       );
     const { file, commit } = fetched.body;
-    const edited = await editFactory(setup.command, file, edit);
+    const edited = await editFactory(setup.command, file, edits);
     if (!edited.ok) return refused(400, failed, `${failed}: ${edited.note}`);
     if (!edited.body.changed)
       return refused(400, failed, `${failed}: the edit changes nothing in factory.yaml at ${commit.slice(0, 7)}`);
-    const branch = branchOf(edit, commit);
+    const branch = branchOf(edits, commit);
     const opened = await openChange(found.forge, {
       branch,
       from: commit,
       base: found.branch,
       text: edited.body.text,
-      message: messageOf(edit, person),
-      title: titleOf(edit),
-      body: bodyOf(edit, person, found.branch),
+      message: messageOf(edits, person),
+      title: titleOf(edits),
+      body: bodyOf(edits, person, found.branch),
     });
     if (!opened.ok) return refused(502, failed, `${failed}: ${opened.note}`);
     // A forge that cannot merge when green leaves the change "Checking", and "Merge" makes it live (ADR 0144).
@@ -208,9 +230,9 @@ export function useChanges(app: FastifyInstance, setup: ChangesSetup): void {
   app.post("/changes", async (request, reply) => {
     const { person, repository: found, refused: no } = guard(request, reply);
     if (no) return no;
-    const checked: Checked = editOfForm((request.body ?? {}) as Record<string, unknown>);
+    const checked: CheckedEdits = editsOfForm((request.body ?? {}) as Record<string, unknown>);
     if (!checked.ok) return answer(reply, refused(400, "Not proposed", `Not proposed: ${checked.reason}`));
-    return answer(reply, await propose(found as FactoryRepository, checked.edit, person as string, "Not proposed"));
+    return answer(reply, await propose(found as FactoryRepository, checked.edits, person as string, "Not proposed"));
   });
 
   /** A button of a change: only for a change of the console in a state that offers it. */
@@ -243,11 +265,11 @@ export function useChanges(app: FastifyInstance, setup: ChangesSetup): void {
     "/changes/:number/retry",
     button("retry", "Not tried again", async (found, pull, person) => {
       // The title is the edit's line; anyone who may write to the repository can change it, so it is a form.
-      const checked = editOfTitle(pull.title);
+      const checked = editsOfTitle(pull.title);
       if (!checked.ok) return refused(400, "Not tried again", `Not tried again: ${checked.reason}`);
       const closed = await closeChange(found.forge, pull.number);
       if (!closed.ok) return refused(502, "Not tried again", `Not tried again: ${closed.note}`);
-      return propose(found, checked.edit, person, "Not tried again");
+      return propose(found, checked.edits, person, "Not tried again");
     }),
   );
   app.post(

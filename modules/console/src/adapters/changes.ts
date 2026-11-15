@@ -2,9 +2,10 @@
 // commands `rules`, `branch`, `commit`, `open-pr`, `merge`, `prs`, `pr` and `close`; factory-spec's `factory edit`;
 // and the newest commit of the factory's repository through @opensoftware/factory-source (ADR 0142). A failure is a
 // note, never an exception.
+import { randomUUID } from "node:crypto";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import type { FactorySource } from "@opensoftware/factory-source";
 import type { Edit, Listed, Pull } from "../domain/changes.ts";
 import { type Outcome, runProgram } from "./program.ts";
@@ -92,12 +93,28 @@ export async function openChange(
  * factory.yaml with the edit, as `factory edit` of the factory program prints it for the file, and whether it differs
  * from the file. The agent and the value come after "--", so no word of a form is an option.
  */
-export async function editFactory(command: string, file: string, { edit, target, value }: Edit) {
+export async function editFactory(
+  command: string,
+  file: string,
+  edits: Edit[],
+): Promise<Outcome<{ text: string; changed: boolean }>> {
   const original = await readFile(file, "utf8");
-  return runProgram(command, ["edit", "--file", file, edit, "--", target, value], (text) => ({
-    text,
-    changed: text !== original,
-  }));
+  // Each edit after the first reads the text the one before printed, from a file beside factory.yaml, so that the
+  // skills, factory.lock and access.yaml are found as for the first (ADR 0149).
+  const between = join(dirname(file), `factory.console-${randomUUID()}.yaml`);
+  let text = original;
+  try {
+    for (const [index, { edit, target, value }] of edits.entries()) {
+      if (index > 0) await writeFile(between, text);
+      const input = index > 0 ? between : file;
+      const edited = await runProgram(command, ["edit", "--file", input, edit, "--", target, value], (out) => out);
+      if (!edited.ok) return edited;
+      text = edited.body;
+    }
+  } finally {
+    await rm(between, { force: true });
+  }
+  return { ok: true, body: { text, changed: text !== original } };
 }
 
 /** The repository of the factory: its newest commit on the ref, fetched into the cache folder. */
