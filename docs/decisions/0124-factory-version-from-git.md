@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; a token for a private remote added by 0142
 date: 2026-11-14
 ---
 
