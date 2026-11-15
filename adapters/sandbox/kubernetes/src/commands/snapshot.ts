@@ -2,7 +2,7 @@
 // whose sandboxes start with those files (ADR 0055).
 import { randomBytes } from "node:crypto";
 import type { Outcome } from "@opensoftware/cli";
-import { WORKSPACE } from "@opensoftware/sandbox-egress";
+import { SANDBOX_WORKSPACE } from "@opensoftware/contracts";
 import { BASE_ANNOTATION, sandboxName, snapshotName } from "../domain/names.ts";
 import type { PodTemplate } from "../domain/pod.ts";
 import { list } from "../domain/resources.ts";
@@ -41,7 +41,7 @@ export async function snapshot(context: Context, id: string | undefined): Promis
       return status?.status?.phase === "Running" ? true : undefined;
     });
     await kube.pipe(
-      ["exec", pod, "--", "tar", "-cf", "-", "-C", WORKSPACE, "."],
+      ["exec", pod, "--", "tar", "-cf", "-", "-C", SANDBOX_WORKSPACE, "."],
       ["exec", "--stdin", writer, "--", "tar", "-xf", "-", "-C", SNAPSHOT_DIR],
     );
     await kube.apply(snapshotTemplate(snap, base));

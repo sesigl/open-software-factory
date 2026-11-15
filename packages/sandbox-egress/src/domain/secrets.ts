@@ -22,7 +22,7 @@ const PROVIDERS = ["file", "env", "openbao"];
 const VARIABLE = /^[A-Z_][A-Z0-9_]*$/;
 
 /** The variable of the adapter that holds the value of `ref:env/<NAME>`. */
-export const envVariable = (name: string): string => `OSF_SECRET_${name}`;
+const envVariable = (name: string): string => `OSF_SECRET_${name}`;
 
 /** The spec's secrets with their sources, and why any of them cannot be resolved. */
 export function secretsOf(spec: SandboxSpec, settings: SecretSettings): { secrets: Secret[]; problems: string[] } {

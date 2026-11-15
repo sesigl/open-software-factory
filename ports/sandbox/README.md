@@ -53,9 +53,11 @@ The shared behavior is the `@conformance` scenarios in [`features/`](features/sa
 does is in its own `features/` folder. A community adapter shows conformance with
 `testkit conformance <its copy of this features folder> --junit report.xml`. The scenarios' APIs and MCP servers are
 `fakes.http(routes, { containers: true })` at `host.docker.internal`; OpenBao is `fakes.openbao({ containers: true })`,
-the real server, except in the scenarios whose steps name the request OpenBao received. What every adapter shares, the spec, the
+the real server, except in the scenarios whose steps name the request OpenBao received. What every adapter shares about the egress proxy, its
 secrets, iron-proxy's configuration and the egress log, is the library
-[`@opensoftware/sandbox-egress`](../../packages/sandbox-egress/README.md) (ADR 0055).
+[`@opensoftware/sandbox-egress`](../../packages/sandbox-egress/README.md) (ADR 0055). The adapters read the spec
+with `readDocument` and the ends of `copy` with `copyEnds` of [contracts](../../contracts/README.md), where the
+working folder `/workspace` is `SANDBOX_WORKSPACE` ([ADR 0147](../../docs/decisions/0147-sandbox-egress-is-the-egress-proxy.md)).
 
 ## Adapters
 

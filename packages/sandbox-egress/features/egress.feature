@@ -1,8 +1,10 @@
 @module=sandbox-egress @owner=maintainers
-Feature: What every sandbox adapter shares about the egress proxy
-  The sandbox-egress library turns a sandbox spec into what a sandbox adapter starts: iron-proxy's configuration and
-  variables, the sandbox's environment, and the secrets it resolves. It also reads the spec and turns iron-proxy's
-  audit lines into the egress log (ADR 0054, ADR 0055).
+Feature: The egress proxy of a sandbox
+  The sandbox-egress library turns a sandbox spec into what a sandbox adapter starts for its egress proxy: where the
+  proxy reads each secret, iron-proxy's configuration, variables and start script, and the sandbox's environment that
+  sends it through the proxy. It turns iron-proxy's audit lines into the egress log (ADR 0054, ADR 0055). Reading the
+  spec and the ends of a copy are the sandbox port's forms in contracts, and a memory quantity is the docker
+  adapter's (ADR 0147).
 
   @id=SCN-SEGRESS-001 @status=implemented
   Scenario: The proxy configuration allows the egress hosts and the hosts of the MCP servers
@@ -84,7 +86,7 @@ Feature: What every sandbox adapter shares about the egress proxy
     When the adapter calls egressEntries with the log
     Then the entry is a call of the tool "delete_page" of "wiki" refused by "mcp"
 
-  @id=SCN-SEGRESS-011 @status=implemented
+  @id=SCN-SEGRESS-011 @status=deprecated
   Scenario: A spec that is no valid sandbox spec is refused with the path of the problem
     Given the file "spec.json" with a sandbox spec whose CPU is "four"
     When the adapter calls readSpec with the file
@@ -126,22 +128,22 @@ Feature: What every sandbox adapter shares about the egress proxy
     When the adapter calls resolveSecrets with the spec
     Then it fails with a usage error that says the secret "LINEAR_TOKEN" needs "OSF_OPENBAO_ADDR" and "OSF_OPENBAO_TOKEN"
 
-  @id=SCN-SEGRESS-018 @status=implemented
+  @id=SCN-SEGRESS-018 @status=deprecated
   Scenario: A memory quantity is converted to bytes
     When the adapter calls memoryBytes with "256Mi" and "2Gi"
     Then it gives 268435456 and 2147483648
 
-  @id=SCN-SEGRESS-019 @status=implemented
+  @id=SCN-SEGRESS-019 @status=deprecated
   Scenario: A copy into a sandbox names a path below its working folder
     When the adapter calls copyEnds with "notes.md" and "0123456789ab:docs/notes.md"
     Then it gives the sandbox "0123456789ab", the path "/workspace/docs/notes.md", the client's path "notes.md" and a copy into the sandbox
 
-  @id=SCN-SEGRESS-020 @status=implemented
+  @id=SCN-SEGRESS-020 @status=deprecated
   Scenario: A copy out of a sandbox keeps an absolute path
     When the adapter calls copyEnds with "0123456789ab:/tmp/result.txt" and "result.txt"
     Then it gives the sandbox "0123456789ab", the path "/tmp/result.txt", the client's path "result.txt" and a copy out of the sandbox
 
-  @id=SCN-SEGRESS-021 @status=implemented
+  @id=SCN-SEGRESS-021 @status=deprecated
   Scenario: A copy that names a sandbox on both sides is refused
     When the adapter calls copyEnds with "0123456789ab:a.txt" and "ba9876543210:b.txt"
     Then it fails with a usage error that says to name the sandbox on one side only

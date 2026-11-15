@@ -1,19 +1,15 @@
 # AGENTS.md for `packages/sandbox-egress`
 
-Adds rules for the sandbox-egress library. The root `AGENTS.md` applies in full. Decisions: ADR 0054, ADR 0055, ADR 0139.
+Adds rules for the sandbox-egress library. The root `AGENTS.md` applies in full. Decisions: ADR 0054, ADR 0055, ADR 0139, ADR 0147.
 
 ## Public surface
 
 The only way a system test or another program may use the library:
 
 - Library: the exports of `src/index.ts` (see `README.md#api`), imported as `@opensoftware/sandbox-egress`:
-  - the spec and its secrets: `readSpec`, `resolveSecrets`, `sandboxEnv`, `memoryBytes`, `envVariable`, `proxyEnv`,
-    `placeholder`
-  - iron-proxy: `proxyConfig`, `startScript`, `EGRESS_IMAGE`, `EGRESS_PORT`, `PROXY_DIR`, `CA_FILE`, `READY`,
-    `WORKSPACE`
-  - its log and the copy into a sandbox: `egressEntries`, `copyEnds`
-
-  Seventeen values for one job is wide: `TODO.md` has the item that narrows it (ADR 0135).
+  `resolveSecrets`, `proxyConfig`, `proxyEnv`, `startScript`, `EGRESS_PROXY`, `sandboxEnv` and `egressEntries`.
+  One job: the egress proxy of a sandbox (ADR 0147). Reading the spec and the ends of a copy are the sandbox port's
+  forms in contracts; what one platform needs stays in its adapter.
 
 The library's system tests import it by its package name and call it in their own process (ADR 0039). Files go
 through `sut.files`; `sut.files.path` gives their absolute path.
@@ -25,10 +21,11 @@ Layers, top to bottom, in `architecture.json` (ADR 0014). A file imports only it
 | Layer | Paths | Holds |
 | --- | --- | --- |
 | api | `src/index.ts` | the public exports |
-| adapters | `src/spec-file.ts` | reading the spec and checking that a secret's file exists |
-| domain | `src/domain/` | secret references, iron-proxy's configuration and variables, the sandbox's environment, the egress log; no I/O |
+| adapters | `src/secret-files.ts` | checking that a secret's file exists |
+| domain | `src/domain/` | secret references, iron-proxy's container, configuration, variables and start script, the sandbox's environment, the egress log; no I/O |
 
-Only code that two or more sandbox adapters need belongs here. What one platform needs stays in its adapter.
+Only code about the egress proxy that two or more sandbox adapters need belongs here. What one platform needs stays in
+its adapter, and the sandbox port's forms are in contracts (ADR 0147).
 
 ## Allowed exceptions
 

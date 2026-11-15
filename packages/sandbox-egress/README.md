@@ -4,39 +4,39 @@ covers: [packages/sandbox-egress/src/**]
 
 # sandbox-egress
 
-What every sandbox adapter shares about the egress proxy of a sandbox: it reads and checks the sandbox spec, resolves
-the spec's secret references, writes the configuration and the variables of iron-proxy, gives the sandbox's
-environment, and turns iron-proxy's audit lines into the egress log. A library: the sandbox adapters depend on it,
-it has no command of its own. Decisions: [ADR 0054](../../docs/decisions/0054-sandbox-port.md),
+The egress proxy of a sandbox, for every sandbox adapter: from a sandbox spec it says where the proxy reads each
+secret, writes iron-proxy's configuration, variables and start script, gives the sandbox the environment that sends
+it through the proxy, and turns iron-proxy's audit lines into the egress log. A library: the sandbox adapters depend
+on it, it has no command of its own. The adapters read the spec and the ends of a copy with the sandbox port's forms
+in [contracts](../../contracts/README.md) ([ADR 0147](../../docs/decisions/0147-sandbox-egress-is-the-egress-proxy.md)).
+Decisions: [ADR 0054](../../docs/decisions/0054-sandbox-port.md),
 [ADR 0055](../../docs/decisions/0055-sandbox-kubernetes.md),
 [ADR 0139](../../docs/decisions/0139-git-basic-form-value-timing-and-the-check-before-a-stage.md).
 
 ## Quick start
 
 ```ts
-import { proxyConfig, proxyEnv, readSpec, resolveSecrets, sandboxEnv } from "@opensoftware/sandbox-egress";
+import { readDocument, type SandboxSpec } from "@opensoftware/contracts";
+import { EGRESS_PROXY, proxyConfig, proxyEnv, resolveSecrets, sandboxEnv } from "@opensoftware/sandbox-egress";
 
-const spec = readSpec("spec.json");
+const { document: spec } = readDocument<SandboxSpec>("sandbox-spec", "spec.json"); // and check its problems
 const secrets = resolveSecrets(spec, process.env.OSF_SECRETS_DIR ?? "/run/secrets");
 const config = proxyConfig(spec, secrets); // iron-proxy's proxy.yaml, as JSON
 const proxyVariables = proxyEnv(secrets, process.env); // only for the proxy
-const sandboxVariables = sandboxEnv(spec, "http://egress:8080"); // placeholders, never a secret
+const sandboxVariables = sandboxEnv(spec, `http://egress:${EGRESS_PROXY.port}`); // placeholders, never a secret
 ```
 
 ## API
 
 | Export | What it does |
 | --- | --- |
-| `readSpec(file)` | The `sandbox-spec` (contracts) in the file. A document that is no sandbox spec is a `UsageError` that names `<file>: <path> <problem>` for each problem. |
-| `resolveSecrets(spec, secretsDir, env)` | The spec's secrets with their provider: `file` (the file below `secretsDir`), `env` (the variable `OSF_SECRET_<NAME>` of `env`) or `openbao` (a path in OpenBao). A reference that cannot be resolved is a `UsageError` (see below). `env` defaults to the process's environment. |
+| `resolveSecrets(spec, secretsDir, env)` | The spec's secrets with the source the proxy reads each from: `file` (the file below `secretsDir`), `env` (the variable `OSF_SECRET_<NAME>` of `env`) or `openbao` (a path in OpenBao). A reference that cannot be resolved is a `UsageError` (see below). `env` defaults to the process's environment. |
 | `proxyConfig(spec, secrets, { openbaoMount })` | iron-proxy's configuration: the allowlist of the egress hosts and the MCP servers' hosts, one swap per secret in every header for the egress hosts only, and the MCP policy with the declared tools. JSON, which is YAML. iron-proxy also swaps a placeholder inside git's Basic credentials, `Authorization: Basic` of `<user>:<placeholder>`, so `git clone` and `git push` over HTTPS work with a secret of any provider and any user name ([ADR 0139](../../docs/decisions/0139-git-basic-form-value-timing-and-the-check-before-a-stage.md)). |
 | `proxyEnv(secrets, env)` | The proxy's own variables: `<NAME>` for each `env` secret, and `VAULT_ADDR` and `VAULT_TOKEN` from `OSF_OPENBAO_ADDR` and `OSF_OPENBAO_TOKEN` when a secret comes from OpenBao. |
-| `sandboxEnv(spec, egressUrl)` | The sandbox's variables: the spec's `env`, a placeholder per secret, `HTTP_PROXY` and `HTTPS_PROXY` (also lower case) at `egressUrl`, and the CA variables at `CA_FILE`. |
+| `startScript()` | The proxy's start script: it creates the CA and hands its certificate out in `<dir>/out/osf/`, then runs iron-proxy with `<dir>/proxy.yaml`. It writes nothing of a secret. |
+| `EGRESS_PROXY` | The proxy's container: `image`, the pinned iron-proxy image; `dir`, its folder `/osf`, with a secret's file at `secrets/<VARIABLE>`; `port`, 8080; `ready`, the log line that says the proxy is ready; `caFile`, where the sandbox finds the proxy's CA. |
+| `sandboxEnv(spec, egressUrl)` | The sandbox's variables: the spec's `env`, the placeholder `osf-secret-placeholder-<VARIABLE>` per secret, `HTTP_PROXY` and `HTTPS_PROXY` (also lower case) at `egressUrl`, and the CA variables at `caFile`. |
 | `egressEntries(log)` | The egress log from iron-proxy's audit lines: host, method, path, `allowed` or `refused`, what refused it, the MCP server and tool, and the names of the secrets the proxy put in. Header values and MCP arguments are left out. |
-| `memoryBytes(quantity)` | A Kubernetes quantity such as `256Mi` in bytes. |
-| `placeholder(variable)`, `envVariable(name)` | `osf-secret-placeholder-<variable>`, and `OSF_SECRET_<name>`. |
-| `startScript()` | The proxy's start script: it creates the CA and hands its certificate out in `<PROXY_DIR>/out/osf/`, then runs iron-proxy. It writes nothing of a secret. |
-| `EGRESS_IMAGE`, `READY`, `PROXY_DIR`, `EGRESS_PORT`, `CA_FILE`, `WORKSPACE` | The pinned iron-proxy image, the log line that says the proxy is ready, the proxy's folder `/osf`, its port 8080, the sandbox's CA file and working folder. |
 
 How secret references resolve (ADR 0055):
 
@@ -89,16 +89,16 @@ The library reads no variable itself. Its caller passes the environment to `reso
 | SCN-SEGRESS-008 | implemented | The egress log names the host that the allowlist refused |
 | SCN-SEGRESS-009 | implemented | The egress log names the secrets the proxy put in, never their values |
 | SCN-SEGRESS-010 | implemented | The egress log names a tool that the MCP policy refused |
-| SCN-SEGRESS-011 | implemented | A spec that is no valid sandbox spec is refused with the path of the problem |
+| SCN-SEGRESS-011 | deprecated | A spec that is no valid sandbox spec is refused with the path of the problem |
 | SCN-SEGRESS-012 | implemented | A secret from an unknown provider is refused |
 | SCN-SEGRESS-013 | implemented | A secret name that leaves the secrets folder is refused |
 | SCN-SEGRESS-014 | implemented | A secret whose file is missing is refused |
 | SCN-SEGRESS-015 | implemented | A secret from an unset variable is refused |
 | SCN-SEGRESS-016 | implemented | A secret from the environment whose name is no variable name is refused |
 | SCN-SEGRESS-017 | implemented | A secret from OpenBao without an address and a token is refused |
-| SCN-SEGRESS-018 | implemented | A memory quantity is converted to bytes |
-| SCN-SEGRESS-019 | implemented | A copy into a sandbox names a path below its working folder |
-| SCN-SEGRESS-020 | implemented | A copy out of a sandbox keeps an absolute path |
-| SCN-SEGRESS-021 | implemented | A copy that names a sandbox on both sides is refused |
+| SCN-SEGRESS-018 | deprecated | A memory quantity is converted to bytes |
+| SCN-SEGRESS-019 | deprecated | A copy into a sandbox names a path below its working folder |
+| SCN-SEGRESS-020 | deprecated | A copy out of a sandbox keeps an absolute path |
+| SCN-SEGRESS-021 | deprecated | A copy that names a sandbox on both sides is refused |
 | SCN-SEGRESS-022 | deprecated | A secret is swapped only for the hosts of the egress allowlist, also in git's Basic credentials |
 | SCN-SEGRESS-023 | implemented | Each secret is swapped by one rule in every header for the hosts of the egress allowlist, whatever its provider |

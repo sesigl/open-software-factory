@@ -16,8 +16,9 @@ The only ways a system test or another program may use this adapter:
 ## Architecture
 
 Layers, top to bottom, in `architecture.json` (ADR 0014): `entry` (`src/cli.ts`) → `commands` → `adapters` →
-`domain`. `domain` names the parts of a sandbox, turns the spec into the sandbox's environment and limits and into
-iron-proxy's configuration, and reads iron-proxy's audit lines, without I/O; `adapters` run the Docker CLI and touch
+`domain`. `domain` names the parts of a sandbox and turns the spec's memory into bytes, without I/O; the egress proxy, its
+secrets, configuration and log come from `@opensoftware/sandbox-egress`, reading the spec and the ends of a copy from
+`@opensoftware/contracts` (ADR 0147); `adapters` run the Docker CLI and touch
 files on the client's side; `commands` join them. The ARCH check enforces the layers.
 
 ## Allowed exceptions

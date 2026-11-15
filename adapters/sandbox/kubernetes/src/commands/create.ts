@@ -3,16 +3,8 @@
 import { randomBytes } from "node:crypto";
 import { join } from "node:path";
 import { check, type Outcome } from "@opensoftware/cli";
-import type { SandboxSpec } from "@opensoftware/contracts";
-import {
-  PROXY_DIR,
-  proxyConfig,
-  proxyEnv,
-  READY,
-  readSpec,
-  resolveSecrets,
-  type Secret,
-} from "@opensoftware/sandbox-egress";
+import { readDocument, type SandboxSpec } from "@opensoftware/contracts";
+import { EGRESS_PROXY, proxyConfig, proxyEnv, resolveSecrets, type Secret } from "@opensoftware/sandbox-egress";
 import { egressName, ID_LABEL, isImage, sandboxName } from "../domain/names.ts";
 import type { PodTemplate } from "../domain/pod.ts";
 import {
@@ -35,7 +27,9 @@ const SANDBOX_TIMEOUT_MS = 120_000;
 
 export async function create(context: Context, file: string | undefined): Promise<Outcome> {
   check(file, "name the sandbox spec, like create spec.json");
-  return { lines: [await start(context, readSpec(file as string))] };
+  const { document: spec, problems } = readDocument<SandboxSpec>("sandbox-spec", file);
+  check(!problems.length, problems.map(({ path, message }) => `${file}: ${path} ${message}`).join("\n"));
+  return { lines: [await start(context, spec)] };
 }
 
 /** Starts a sandbox from the spec and gives its ID; a sandbox that does not start is removed. */
@@ -87,9 +81,9 @@ async function startEgress({ kube, settings }: Context, id: string, spec: Sandbo
     const problem = pod && podProblem(pod);
     if (problem) throw new Error(`the egress proxy did not start: ${problem}`);
     const logs = await kube.run(["logs", name]);
-    return logs.code === 0 && logs.stdout.toString("utf8").includes(READY) ? true : undefined;
+    return logs.code === 0 && logs.stdout.toString("utf8").includes(EGRESS_PROXY.ready) ? true : undefined;
   });
-  const certificate = await kube.text(["exec", name, "--", "cat", `${PROXY_DIR}/out/osf/egress-ca.crt`]);
+  const certificate = await kube.text(["exec", name, "--", "cat", `${EGRESS_PROXY.dir}/out/osf/egress-ca.crt`]);
   await kube.apply(caConfig(id, certificate));
 }
 

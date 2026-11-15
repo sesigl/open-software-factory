@@ -1,6 +1,6 @@
 // The objects of a snapshot (ADR 0055): a PersistentVolumeClaim with the files of /workspace, a writer pod that
 // fills it, and a SandboxTemplate whose init container copies the files back into a new sandbox's /workspace.
-import { WORKSPACE } from "@opensoftware/sandbox-egress";
+import { SANDBOX_WORKSPACE } from "@opensoftware/contracts";
 import { snapshotName, VOLUMES } from "./names.ts";
 import type { Container, PodTemplate } from "./pod.ts";
 import { GRACE_SECONDS } from "./resources.ts";
@@ -58,11 +58,11 @@ export function snapshotTemplate(id: string, base: PodTemplate): unknown {
     name: "osf-restore",
     image: first.image,
     imagePullPolicy: first.imagePullPolicy ?? "IfNotPresent",
-    command: ["sh", "-c", `cp -a ${SNAPSHOT_DIR}/. ${WORKSPACE}/`],
+    command: ["sh", "-c", `cp -a ${SNAPSHOT_DIR}/. ${SANDBOX_WORKSPACE}/`],
     securityContext: ROOT,
     volumeMounts: [
       { name: VOLUMES.snapshot, mountPath: SNAPSHOT_DIR, readOnly: true },
-      { name: VOLUMES.workspace, mountPath: WORKSPACE },
+      { name: VOLUMES.workspace, mountPath: SANDBOX_WORKSPACE },
     ],
   };
   // A snapshot of a sandbox that started from a snapshot restores only the newer one.
