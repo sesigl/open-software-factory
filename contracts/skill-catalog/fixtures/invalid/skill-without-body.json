@@ -1,0 +1,13 @@
+{
+  "skills": [
+    {
+      "name": "release-notes",
+      "description": "Write the release notes of a change from its Linear issues. Use when a change ships.",
+      "source": { "folder": "skills/release-notes" },
+      "needs": { "secrets": [], "hosts": [] },
+      "agents": [],
+      "files": ["SKILL.md"],
+      "problems": []
+    }
+  ]
+}

@@ -91,3 +91,18 @@ Feature: Shared formats
     When the developer runs "osf-contracts validate access access.yaml"
     Then the command exits with code 1
     And the output contains "access.yaml /people/0/role: must be one of \"member\", \"factory-engineer\", \"admin\""
+
+  @id=SCN-CTR-015 @status=implemented
+  Scenario: A skill catalog with a skill that one agent lacks the secret of validates
+    Given a skill catalog "skills.json" whose skill "release-notes" needs "LINEAR_TOKEN", which the agent "triage" gives with "ref:openbao/linear-token" and the agent "review" lacks
+    And whose skill "missing" has no description and no body
+    When the developer runs "osf-contracts validate skill-catalog skills.json"
+    Then the command exits with code 0
+    And the output contains "skills.json: valid skill-catalog"
+
+  @id=SCN-CTR-016 @status=implemented
+  Scenario: A skill catalog whose skill has no body is rejected with its path
+    Given a skill catalog "skills.json" whose skill "release-notes" has every field but "body"
+    When the developer runs "osf-contracts validate skill-catalog skills.json"
+    Then the command exits with code 1
+    And the output contains "skills.json /skills/0/body: missing required field"

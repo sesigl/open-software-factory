@@ -53,6 +53,10 @@ export type FactoryLock = Schemas["FactoryLock"];
 export type Access = Schemas["Access"];
 export type AccessPerson = Schemas["AccessPerson"];
 export type AccessRole = Schemas["AccessRole"];
+export type SkillCatalog = Schemas["SkillCatalog"];
+export type CatalogSkill = Schemas["CatalogSkill"];
+export type CatalogSkillAgent = Schemas["CatalogSkillAgent"];
+export type SkillNeeds = Schemas["SkillNeeds"];
 export type Health = Schemas["Health"];
 export type HealthCheck = Schemas["HealthCheck"];
 

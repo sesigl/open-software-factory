@@ -17,4 +17,5 @@ import "./foreman-api.tsp";
 import "./sandbox.tsp";
 import "./factory-lock.tsp";
 import "./access.tsp";
+import "./skill-catalog.tsp";
 import "./health.tsp";

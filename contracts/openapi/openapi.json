@@ -1203,6 +1203,118 @@
         "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$))[^\\\\]+$",
         "description": "A path inside the bundle: relative, forward slashes, no \"..\"."
       },
+      "CatalogSkill": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The last segment of the skill's folder."
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The description of its front matter; null without one."
+          },
+          "source": {
+            "$ref": "#/components/schemas/CatalogSkillSource",
+            "description": "Where the skill comes from."
+          },
+          "needs": {
+            "$ref": "#/components/schemas/SkillNeeds",
+            "description": "What it needs, from the `metadata` of its front matter."
+          },
+          "agents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CatalogSkillAgent"
+            },
+            "description": "Each agent that uses it, sorted by name."
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The files of its folder, by their path below it, sorted."
+          },
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The text of SKILL.md below the line that ends its front matter, all of it without front matter; null without a\nSKILL.md that is UTF-8 text."
+          },
+          "problems": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The problems of its own files as `factory lint` prints them, relative to the folder of factory.yaml, and a folder\nwithout a SKILL.md."
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "source",
+          "needs",
+          "agents",
+          "files",
+          "body",
+          "problems"
+        ],
+        "description": "One skill, also one that lint refuses: then `problems` names why."
+      },
+      "CatalogSkillAgent": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "secrets": {
+            "type": "object",
+            "properties": {},
+            "unevaluatedProperties": {
+              "$ref": "#/components/schemas/SecretReference"
+            },
+            "description": "The agent's reference whose variable is each secret the skill needs, by the variable."
+          },
+          "lacks": {
+            "$ref": "#/components/schemas/SkillNeeds",
+            "description": "Each needed secret the agent does not declare, and each needed host its sandbox does not allow."
+          }
+        },
+        "required": [
+          "name",
+          "secrets",
+          "lacks"
+        ],
+        "description": "An agent that uses a skill."
+      },
+      "CatalogSkillSource": {
+        "type": "object",
+        "properties": {
+          "folder": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "folder"
+        ],
+        "description": "A folder of the factory's repository, relative to the folder of factory.yaml, like \"skills/release-notes\"."
+      },
       "CheckName": {
         "type": "string",
         "minLength": 1,
@@ -3706,6 +3818,53 @@
       "Sha256": {
         "type": "string",
         "pattern": "^[0-9a-f]{64}$"
+      },
+      "SkillCatalog": {
+        "type": "object",
+        "properties": {
+          "skills": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CatalogSkill"
+            }
+          }
+        },
+        "required": [
+          "skills"
+        ],
+        "description": "What `factory skills` of factory-spec prints (ADR 0141, ADR 0143): every skill the factory's agents use, read with\nthe rules of `factory lint` (ADR 0140), sorted by name. The console reads it for its pages `/skills` and\n`/skills/<name>`, so it never parses a SKILL.md itself."
+      },
+      "SkillHost": {
+        "type": "string",
+        "pattern": "^[a-z0-9-]+(\\.[a-z0-9-]+)*$",
+        "description": "A host as an entry of `sandbox.egress`, like \"api.linear.app\"."
+      },
+      "SkillNeeds": {
+        "type": "object",
+        "properties": {
+          "secrets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkillSecretName"
+            }
+          },
+          "hosts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkillHost"
+            }
+          }
+        },
+        "required": [
+          "secrets",
+          "hosts"
+        ],
+        "description": "The secrets a skill needs, by the variable that holds each in a sandbox, and the hosts it reaches (ADR 0140)."
+      },
+      "SkillSecretName": {
+        "type": "string",
+        "pattern": "^[A-Z0-9_]+$",
+        "description": "The variable of a secret in a sandbox (ADR 0068), like \"LINEAR_TOKEN\"."
       },
       "Stage": {
         "type": "object",
