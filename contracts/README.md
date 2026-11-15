@@ -168,11 +168,11 @@ None. The CLI reads no environment variables.
 | SCN-CTR-014 | implemented | An access file with an unknown role is rejected with the roles it allows |
 | SCN-CTR-015 | implemented | A skill catalog with a skill that one agent lacks the secret of validates |
 | SCN-CTR-016 | implemented | A skill catalog whose skill has no body is rejected with its path |
-| SCN-CTR-021 | implemented | A factory lock with a pinned skill of another repository validates |
-| SCN-CTR-022 | implemented | A pinned skill with a short commit is rejected with its path |
-| SCN-CTR-023 | implemented | The pins of skills in factory.lock are no breaking change |
-| SCN-CTR-024 | implemented | A skill catalog with a skill of another repository at its commit validates |
 | SCN-CTR-017 | implemented | readDocument gives a file's document and each problem with its path |
 | SCN-CTR-018 | implemented | A copy into a sandbox names a path below its working folder |
 | SCN-CTR-019 | implemented | A copy out of a sandbox keeps an absolute path |
 | SCN-CTR-020 | implemented | A copy that names a sandbox on both sides gives its problem |
+| SCN-CTR-021 | implemented | A factory lock with a pinned skill of another repository validates |
+| SCN-CTR-022 | implemented | A pinned skill with a short commit is rejected with its path |
+| SCN-CTR-023 | implemented | The pins of skills in factory.lock are no breaking change |
+| SCN-CTR-024 | implemented | A skill catalog with a skill of another repository at its commit validates |
