@@ -27,7 +27,7 @@ command line. A repository is `<owner>/<name>`; every command prints JSON lines.
 | list pull requests | `<adapter> prs <repo> [--head <prefix>] [--state open\|closed\|all] [--limit <n>]` prints one `{"number", "url", "title", "state", "head", "base", "author", "created", "draft", "review"}` per pull request, the highest number first, at most n; a merged one also has `mergeCommit` |
 | checks | `<adapter> check <repo> <sha> <name> <pending\|success\|failure\|error> [--description <text>] [--url <url>]` |
 | comment | `<adapter> comment <repo> <number> <text>` comments on the pull request or the issue with the number, and prints `{"id", "url"}` |
-| comments | `<adapter> comments <repo> <number>` prints one `{"id", "url", "author", "time", "text", "mine"}` per comment of the conversation, oldest first |
+| comments | `<adapter> comments <repo> <number>` prints one `{"id", "url", "author", "time", "text", "mine"}` per comment of the conversation, oldest first, every comment however long the conversation |
 | merge rules | `<adapter> protect <repo> <branch> [--check <name>]... [--approvals <n>]` |
 | read merge rules | `<adapter> rules <repo> <branch>` prints `{"checks", "approvals"}`, the checks and approvals the branch requires; a branch without rules prints `{"checks": [], "approvals": 0}` |
 | close | `<adapter> close <repo> <number> [--delete-branch]` closes the pull request without merging, prints `{"number", "state"}`, and with `--delete-branch` deletes its head branch |

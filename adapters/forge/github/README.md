@@ -95,7 +95,7 @@ npx @opensoftware/forge-github event delivery.json                # a pr.opened@
 | `forge-github prs <repo> [--head <prefix>] [--state open\|closed\|all] [--limit <n>]` | Print each pull request whose branch starts with the prefix, the highest number first and at most n, reading only the pages of the newest it needs, as `{"number", "url", "title", "state", "head", "base", "author", "created", "draft", "review"}`, a merged one with its `mergeCommit`; `review` is `approved`, `changes_requested` or `none` (ADR 0073). |
 | `forge-github check <repo> <sha> <name> <pending\|success\|failure\|error> [--description <text>] [--url <url>]` | Post a check on a commit. |
 | `forge-github comment <repo> <number> <text>` | Comment on a pull request; print `{"id", "url"}`. |
-| `forge-github comments <repo> <number>` | Print the first 100 comments of the conversation, oldest first, as `{"id", "url", "author", "time", "text", "mine"}`. |
+| `forge-github comments <repo> <number>` | Print every comment of the conversation, oldest first, read 100 to a page, as `{"id", "url", "author", "time", "text", "mine"}`. |
 | `forge-github protect <repo> <branch> [--check <name>]... [--approvals <n>]` | Replace the branch's protection. |
 | `forge-github rules <repo> <branch>` | Print the checks and approvals the branch requires as `{"checks", "approvals"}`. |
 | `forge-github close <repo> <number> [--delete-branch]` | Close a pull request without merging, and delete its branch; print `{"number", "state"}`. |

@@ -27,21 +27,21 @@ const PATHS = 100;
 /** The user of an Actions token, which GitHub does not let read GET /user. */
 const ACTIONS_USER = "github-actions[bot]";
 
-/** The most check runs GitHub gives on one page. */
-const RUNS_PAGE = 100;
+/** The most check runs or comments GitHub gives on one page. */
+const PAGE = 100;
 
 /** Every check run of the commit, page by page; a token that may not read them names the permission it needs. */
 async function checkRuns(api: GitHub, repo: string, sha: string): Promise<CheckRun[]> {
   const runs: CheckRun[] = [];
   for (let page = 1; ; page++) {
     const answer = await api
-      .request<{ check_runs: CheckRun[] }>("GET", `/commits/${sha}/check-runs?per_page=${RUNS_PAGE}&page=${page}`)
+      .request<{ check_runs: CheckRun[] }>("GET", `/commits/${sha}/check-runs?per_page=${PAGE}&page=${page}`)
       .catch((error: unknown) => {
         if (!(error instanceof GitHubError) || error.status !== 403) throw error;
         throw new Error(`the token may not read the check runs of ${repo}: give it the permission "Checks: read"`);
       });
     runs.push(...answer.check_runs);
-    if (answer.check_runs.length < RUNS_PAGE) return runs;
+    if (answer.check_runs.length < PAGE) return runs;
   }
 }
 
@@ -135,13 +135,18 @@ export async function comment(
   return print({ id: posted.id, url: posted.html_url });
 }
 
-/** comments <repo> <number>: one line per comment of the pull request's conversation, oldest first. */
+/** comments <repo> <number>: one line per comment of the pull request's conversation, oldest first, page by page. */
 export async function comments(repo: string | undefined, number: string | undefined): Promise<Outcome> {
   const api = connect(repo);
   const issue = numberOf(number);
-  const list = await about(repo as string, issue, () =>
-    api.request<CommentJson[]>("GET", `/issues/${issue}/comments?per_page=100`),
-  );
+  // A long conversation has more than one page; gatekeeper reads the decisions at its end (ADR 0062).
+  const list: CommentJson[] = [];
+  for (let page = 1; ; page++) {
+    const path = `/issues/${issue}/comments?per_page=${PAGE}&page=${page}`;
+    const answer = await about(repo as string, issue, () => api.request<CommentJson[]>("GET", path));
+    list.push(...answer);
+    if (answer.length < PAGE) break;
+  }
   const actions = (error: unknown) =>
     error instanceof GitHubError && error.status === 403 ? ACTIONS_USER : Promise.reject(error);
   const me = await api.user().catch(actions);

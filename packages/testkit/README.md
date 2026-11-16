@@ -286,7 +286,7 @@ Every server, client and subscription stops when the scenario ends, before the f
   read), which it lists by state and page, three-way merges with conflicts, commit statuses and the combined status, check runs that a test adds with
   `checkRun(pr, { name, status, conclusion, title })` and that it lists by page (`noChecksToken` may not read them
   and gets 403, [ADR 0104](../../docs/decisions/0104-forge-github-check-runs.md)),
-  comments, reviews, which it lists per pull request, branch protection that holds for admins only with `enforce_admins` and that it reads back (404
+  comments, which it lists by page as GitHub does (30 to a page, up to 100 with `per_page`), reviews, which it lists per pull request, branch protection that holds for admins only with `enforce_admins` and that it reads back (404
   `Branch not protected` without one), closing a pull request, the Git Data API's refs, commits, blobs (`utf-8` or `base64`, named
   by Git's SHA) and trees on a `base_tree` of entries with their text or a blob's `sha`; `fileBytes(repository,
   path, ref)` gives a file's bytes, the rules of the rulesets that `addRuleset(repository, { branches, checks,
@@ -626,3 +626,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-188 | implemented | A page that sut.browser opens without an active mutant runs the original branch of an instrumented script |
 | SCN-TK-189 | implemented | A page that sut.browser opens with its clock paused runs its timers only when the test runs the clock |
 | SCN-TK-190 | implemented | sut.files.put gives a file a mode and sut.files.mode reads it back |
+| SCN-TK-191 | implemented | fakes.github lists the comments of a pull request's conversation page by page, 30 to a page by default |

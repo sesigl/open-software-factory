@@ -28,8 +28,8 @@ enforces the layers.
 
 - System tests: 300 seconds in total on the CI runner, counted as the sum of the scenarios' times. Each Vitest
   worker starts one Forgejo, about 6 seconds, and its scenarios share it (ADR 0064); the webhook scenarios wait for
-  its deliveries, and SCN-FORGE-021 waits twice for 10 seconds on a pull request with a conflict. The sum is about
-  110 seconds. Vitest runs the files side by side. Docker must run.
+  its deliveries, SCN-FORGE-021 waits twice for 10 seconds on a pull request with a conflict, and SCN-FORGE-046
+  posts 120 comments one after the other, about 14 seconds. The sum is about 125 seconds. Vitest runs the files side by side. Docker must run.
 
 ## Quality limits
 

@@ -49,8 +49,14 @@ export function pullRequestForge(pr: PullRequest, run: Program): Forge {
           return (await comments()).find((entry) => entry.mine && entry.text.includes(`<!-- ${marker} -->`));
         },
         async thread(request) {
+          // Without its request, as when it was deleted, a gate has no thread: no comment decides it.
           const all = await comments();
-          return all.slice(all.findIndex((entry) => entry.id === request.id) + 1);
+          const at = all.findIndex((entry) => entry.id === request.id);
+          if (at === -1) return [];
+          // The forge's clock against the forge's clock: a comment listed later but dated before the request, like an
+          // "/approve" of an earlier gate, does not count. The server's own clock may differ from the forge's.
+          const asked = (all[at] as Message).time;
+          return all.slice(at + 1).filter((entry) => entry.time >= asked);
         },
         async ask(text, marker) {
           return { id: await comment(text, marker) };

@@ -1993,7 +1993,7 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   run's forge. The profile and the chart set the forge's address.
 - **Done when:** scenarios prove that a link to another host is never called and never decides a gate.
 
-### [ ] T-64 · a gate on a pull request counts only what came after its request (P0)
+### [x] T-64 · a gate on a pull request counts only what came after its request (P0)
 
 - **Problem:** when the request's comment is not in the list (deleted, or past the first page), every comment of
   the pull request counts (`modules/gatekeeper/src/adapters/forge.ts`, `thread`), and decisions past the first

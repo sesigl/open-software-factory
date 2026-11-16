@@ -46,6 +46,30 @@ Feature: Gate a pull request
     Then the command exits with code 1
     And the head commit of the pull request has the commit status "gatekeeper" with the state "failure"
 
+  @id=SCN-GATE-112 @status=implemented
+  Scenario: An "/approve" after more than 100 comments passes the gate
+    Given the pull request "acme/web#12" with the approval request of gatekeeper in a comment
+    And 120 later comments by others, then the comment "/approve" by "github:sesigl" of "maintainers"
+    When the user runs "gatekeeper status" for the pull request
+    Then the command exits with code 0
+    And the head commit of the pull request has the commit status "gatekeeper" with the state "success" and the description "approved by github:sesigl"
+
+  @id=SCN-GATE-116 @status=implemented
+  Scenario: An "/approve" that the forge lists after the request but dates before it does not pass the gate
+    Given the pull request "acme/web#12" with the approval request of gatekeeper in a comment at "2026-01-01T01:00:00Z"
+    And the forge lists after it the comment "/approve" by "github:sesigl" of "maintainers" dated "2026-01-01T00:30:00Z"
+    When the user runs "gatekeeper status" for the pull request
+    Then the command exits with code 3
+    And the head commit of the pull request has the commit status "gatekeeper" with the state "pending"
+
+  @id=SCN-GATE-117 @status=implemented
+  Scenario: In the second of the request the forge's order decides: a "/reject" listed before the request does not count, an "/approve" listed after it does
+    Given the pull request "acme/web#12" with the comment "/reject Too early" by "github:sesigl" of "maintainers" at "2026-01-01T01:00:00Z"
+    And after it the approval request of gatekeeper and then the comment "/approve" by "github:sesigl", both at "2026-01-01T01:00:00Z"
+    When the user runs "gatekeeper status" for the pull request
+    Then the command exits with code 0
+    And the head commit of the pull request has the commit status "gatekeeper" with the state "success" and the description "approved by github:sesigl"
+
   @id=SCN-GATE-040 @status=deprecated
   Scenario: A pull request that the forge does not know exits 1
     Given a forge that answers 404 for the pull request "acme/web#12"

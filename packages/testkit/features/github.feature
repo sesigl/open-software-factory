@@ -126,6 +126,14 @@ Feature: A fake of GitHub's REST API
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-191 @status=implemented
+  Scenario: fakes.github lists the comments of a pull request's conversation page by page, 30 to a page by default
+    Given a module whose CLI prints the number of comments on the first page and the texts on page 2 of 100 per page of pull request 1 at "DEMO_GITHUB_URL"
+    And its system test has "reviewer" say "Comment 1" to "Comment 102" on pull request 1 and expects "30 Comment 101 Comment 102"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-144 @status=implemented
   Scenario: fakes.github refuses to list check runs to a token that may not read them
     Given a module whose CLI prints the HTTP status of the check runs of a pull request's head commit at "DEMO_GITHUB_URL"

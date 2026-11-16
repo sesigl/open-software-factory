@@ -1,7 +1,8 @@
 import { scenario } from "@opensoftware/testkit";
+import { COMMENTS as LISTED } from "./gate.ts";
 import { askedOnPullRequest } from "./server.ts";
 
-const COMMENTS = "/repos/acme/web/issues/12/comments?per_page=100";
+const COMMENTS = `${LISTED}&page=1`;
 
 scenario("SCN-GATE-068", async ({ sut, fakes, given, when, then }) => {
   let server: Awaited<ReturnType<typeof askedOnPullRequest>>;
