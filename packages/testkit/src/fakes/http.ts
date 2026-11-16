@@ -16,6 +16,8 @@ export interface HttpRoute {
   body: unknown;
   /** The content type of a body that is not JSON, for example `text/html`; the body is then sent as is. */
   contentType?: string;
+  /** More headers of the answer, for example the `Api-Version` of a stand-in Docker daemon. */
+  headers?: Record<string, string>;
   /** Answer only this many requests; later requests go to the next route that matches. Default: every request. */
   times?: number;
   /**
@@ -103,6 +105,7 @@ export async function startHttp(routes: HttpRoute[], options: HttpOptions = {}):
       else unscripted.push(`unscripted HTTP request: ${line}`);
       const answer = () => {
         response.setHeader("content-type", route?.contentType ?? "application/json");
+        for (const [name, value] of Object.entries(route?.headers ?? {})) response.setHeader(name, value);
         response.statusCode = route ? (route.status ?? 200) : 404;
         if (route?.contentType) response.end(String(route.body));
         else response.end(JSON.stringify(route ? route.body : { error: `unscripted HTTP request: ${line}` }));

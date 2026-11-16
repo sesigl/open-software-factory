@@ -46,8 +46,8 @@ npx @opensoftware/sandbox-docker destroy "$id"
   host, even on `0.0.0.0`, does not answer the sandbox by any of the host's addresses (SCN-SANDBOX-030).
 - **Docker 28.0 or later.** The gateway mode `isolated` came with Docker Engine 28.0. An older daemon refuses the
   option or ignores it; `create` then finds a gateway on the network, removes the sandbox and exits with
-  `the sandbox <ID> did not start and was removed: its network has the gateway <address> on the Docker host; use
-  Docker 28.0 or later`.
+  `the sandbox <ID> did not start and was removed: its network has the gateways <addresses> on the Docker host; use
+  Docker 28.0 or later` (SCN-SDOCKER-007).
 - **A shared network.** With `OSF_SANDBOX_NETWORK`, the egress proxy also joins that Docker network, so an allowed
   host on it resolves by its name: in the Compose profile the sandbox reaches `litellm` this way. The sandbox itself
   stays on its own network.

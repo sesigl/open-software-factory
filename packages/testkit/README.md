@@ -161,12 +161,13 @@ Every server, client and subscription stops when the scenario ends, before the f
   first matching entry. `calls` lists every call with its `path`, `body` and `headers` (names in lower case). `fakes.modelGateway(script,
   { containers: true })` listens on every interface and also gives `containerUrl`,
   `http://host.docker.internal:<port>/v1`, as `fakes.http` does ([ADR 0076](../../docs/decisions/0076-e2e-smoke-suite.md)).
-- `fakes.http([{ method, path, status, body, contentType, times, until }])`: a scripted JSON API on `127.0.0.1`
+- `fakes.http([{ method, path, status, body, contentType, headers, times, until }])`: a scripted JSON API on `127.0.0.1`
   ([ADR 0021](../../docs/decisions/0021-testkit-scripted-http.md)). Pass its `url` to the module through its
   documented config. A request whose method (default `GET`) and exact path with query match a route gets its
   `status` (default 200) and JSON `body`; a route with `times` answers only that many requests, and later ones go to
   the next matching route, for example an outage before a success ([ADR 0023](../../docs/decisions/0023-runlog.md)).
   A route with `contentType`, such as `text/html`, answers its `body` text as is, for example a page to capture.
+  A route with `headers` adds them to its answer, for example the `Api-Version` of a stand-in Docker daemon.
   A route with `until` (a promise) answers only after the promise settles, for example to hold a module in the
   middle of a transaction. The fake reads `until`, `status` and `body` when it answers, so a test can change them on
   a route it already gave the fake.

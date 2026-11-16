@@ -56,7 +56,7 @@ async function createNetwork(id: string): Promise<void> {
   const config = await dockerText(["network", "inspect", "--format", "{{json .IPAM.Config}}", network]);
   const gateways = (JSON.parse(config) as { Gateway?: string }[]).flatMap(({ Gateway }) => (Gateway ? [Gateway] : []));
   if (gateways.length) {
-    throw new Error(`its network has the gateway ${gateways.join(", ")} on the Docker host; use Docker 28.0 or later`);
+    throw new Error(`its network has the gateways ${gateways.join(", ")} on the Docker host; use Docker 28.0 or later`);
   }
 }
 
