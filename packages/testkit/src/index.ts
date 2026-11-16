@@ -31,7 +31,7 @@ export type { FakeSentry, SentryAlert } from "./fakes/sentry.ts";
 export type { Nats, S3, Temporal } from "./fakes/services.ts";
 export type { FakeSlack, SlackMessage, SlackOptions } from "./fakes/slack.ts";
 export type { StoredSpan, TraceStore, TraceStoreOptions } from "./fakes/trace-store.ts";
-export { type ScenarioContext, type StepFn, scenario } from "./scenario.ts";
+export { type Example, type ScenarioContext, type StepFn, scenario } from "./scenario.ts";
 export type { CliResult } from "./support/process.ts";
 export type { Acp, AcpClient, AcpPermissionRequest, AcpSession, AcpStreams, AcpTurn } from "./sut/acp.ts";
 export type { Action, ActionOptions, ActionResult } from "./sut/action.ts";

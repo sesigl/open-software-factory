@@ -230,7 +230,7 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 
 ### [ ] T-83 · inference-litellm starts one gateway per test process (P2)
 
-### [ ] T-84 · Scenario Outlines, first for `factory lint` (P2)
+### [x] T-84 · Scenario Outlines, first for `factory lint` (P2)
 
 - **Build:** an examples form of `scenario()` in the testkit; the `factory lint` family becomes Outlines.
 

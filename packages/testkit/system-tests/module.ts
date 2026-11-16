@@ -8,10 +8,14 @@ export interface DemoOptions {
   readme?: string;
   /** Steps of SCN-DEMO-001, one Gherkin line each. */
   steps?: string[];
-  /** Body of the test of SCN-DEMO-001; the context gives `sut`, `fakes`, `given`, `when` and `then`. */
+  /** Body of the test of SCN-DEMO-001; the context gives `sut`, `fakes`, `given`, `when`, `then` and `example`. */
   test?: string[];
   /** A library: package.json has no bin and there is no CLI. */
   library?: boolean;
+  /** The rows of an Examples table, header first, one line each: SCN-DEMO-001 is then a Scenario Outline. */
+  examples?: string[];
+  /** The status of SCN-DEMO-001; "implemented" without it. */
+  status?: string;
 }
 
 const HELLO: Required<Pick<DemoOptions, "bin" | "steps" | "test">> = {
@@ -46,15 +50,16 @@ export function demoModule(options: DemoOptions = {}): Record<string, string> {
     "$INPUT/features/a.feature": [
       "Feature: Demo",
       "",
-      "  @id=SCN-DEMO-001 @status=implemented",
-      "  Scenario: Demo",
+      `  @id=SCN-DEMO-001 @status=${options.status ?? "implemented"}`,
+      options.examples ? "  Scenario Outline: Demo" : "  Scenario: Demo",
       ...steps.map((step) => `    ${step}`),
+      ...(options.examples ? ["", "    Examples:", ...options.examples.map((row) => `      ${row}`)] : []),
       "",
     ].join("\n"),
     "$INPUT/system-tests/SCN-DEMO-001.test.ts": [
       'import { scenario } from "@opensoftware/testkit";',
       "",
-      'scenario("SCN-DEMO-001", async ({ sut, fakes, given, when, then }) => {',
+      'scenario("SCN-DEMO-001", async ({ sut, fakes, given, when, then, example }) => {',
       ...test.map((line) => `  ${line}`),
       "});",
       "",
@@ -62,6 +67,36 @@ export function demoModule(options: DemoOptions = {}): Record<string, string> {
   };
   if (options.readme) files["$INPUT/README.md"] = options.readme;
   return files;
+}
+
+/**
+ * Module demo whose SCN-DEMO-001 is a Scenario Outline with the rows `examples` (header first): `When the user runs
+ * "demo <word>"` and `Then the output is <column>`, with `output` as that `<column>`. The CLI prints its arguments;
+ * the test's lines `before` run first in each row.
+ */
+export function outlineModule(
+  examples: string[],
+  output: string,
+  before: string[] = [],
+  status = "implemented",
+): Record<string, string> {
+  const column = output.slice(1, -1);
+  return demoModule({
+    bin: 'process.stdout.write(`${process.argv.slice(2).join(" ")}\\n`);\n',
+    status,
+    examples,
+    steps: ['When the user runs "demo <word>"', `Then the output is ${output}`],
+    test: [
+      ...before,
+      "let run: Awaited<ReturnType<typeof sut.cli>>;",
+      "await when('the user runs \"demo <word>\"', async () => {",
+      "  run = await sut.cli([example.word]);",
+      "});",
+      `await then('the output is ${output}', async () => {`,
+      `  expect(run.stdout).toBe(\`\${example["${column}"]}\\n\`);`,
+      "});",
+    ],
+  });
 }
 
 /**

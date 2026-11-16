@@ -38,7 +38,23 @@ Feature: Lint a factory definition
     Then the command exits with code 1
     And the output contains "factory.yaml:16:5 stage \"verify\" only waits, so it names checks, the evidence \"required\" or a gate"
 
-  @id=SCN-FSPEC-003 @status=implemented @realizes=SCN-FACTORY-CODE-001
+  @id=SCN-FSPEC-129 @status=implemented @realizes=SCN-FACTORY-CODE-001 @replaces=SCN-FSPEC-003 @replaces=SCN-FSPEC-004 @replaces=SCN-FSPEC-006 @replaces=SCN-FSPEC-007 @replaces=SCN-FSPEC-058
+  Scenario Outline: Lint names the line and column of an entry of an agent that it refuses, and what is wrong
+    Given a factory.yaml that declares the harness "claude-code", the secrets provider "openbao" and the agent "triage" with its prompt
+    And the agent "triage" has "<entry>" on line <line>
+    When the factory engineer runs "factory lint"
+    Then the command exits with code 1
+    And the output names "factory.yaml:<line>:<column>" and says "<says>"
+
+    Examples:
+      | entry                             | line | column | says                                                           |
+      | secrets: [ref:vault/linear-token] | 13   | 15     | the provider "vault", which providers.secrets does not declare |
+      | modle: routes/triage              | 13   | 5      | /agents/triage/modle: unknown field                            |
+      | effort: huge                      | 13   | 5      | must be one of "low", "medium", "high", "xhigh", "max"         |
+      | harness: codex                    | 10   | 5      | "codex" is not declared under providers.harness                |
+      | prompt: agents/missing.md         | 12   | 5      | the file "agents/missing.md" does not exist                    |
+
+  @id=SCN-FSPEC-003 @status=deprecated @realizes=SCN-FACTORY-CODE-001
   Scenario: Lint names the line of a secret whose provider is not declared
     Given a factory.yaml whose agent "triage" has the secret "ref:vault/linear-token" on line 14
     And providers.secrets declares only "openbao"
@@ -46,14 +62,14 @@ Feature: Lint a factory definition
     Then the command exits with code 1
     And the output contains "factory.yaml:14:9 secret \"ref:vault/linear-token\" uses the provider \"vault\", which providers.secrets does not declare"
 
-  @id=SCN-FSPEC-004 @status=implemented
+  @id=SCN-FSPEC-004 @status=deprecated
   Scenario: Lint names the line of a field the format does not know
     Given a factory.yaml whose agent "triage" has the field "modle" on line 9
     When the factory engineer runs "factory lint"
     Then the command exits with code 1
     And the output contains "factory.yaml:9:5 /agents/triage/modle: unknown field"
 
-  @id=SCN-FSPEC-058 @status=implemented
+  @id=SCN-FSPEC-058 @status=deprecated
   Scenario: Lint names the line of an effort the format does not know, with the allowed levels
     Given a factory.yaml whose agent "triage" has the effort "huge" on line 10
     When the factory engineer runs "factory lint"
@@ -67,7 +83,7 @@ Feature: Lint a factory definition
     Then the command exits with code 1
     And the output contains "factory.yaml:3:1 Map keys must be unique"
 
-  @id=SCN-FSPEC-006 @status=implemented
+  @id=SCN-FSPEC-006 @status=deprecated
   Scenario: Lint reports an agent whose harness is not declared
     Given a factory.yaml whose agent "triage" uses the harness "codex" on line 8
     And providers.harness declares only "claude-code"
@@ -75,7 +91,7 @@ Feature: Lint a factory definition
     Then the command exits with code 1
     And the output contains "factory.yaml:8:5 harness \"codex\" is not declared under providers.harness"
 
-  @id=SCN-FSPEC-007 @status=implemented
+  @id=SCN-FSPEC-007 @status=deprecated
   Scenario: Lint reports a referenced file that does not exist
     Given a factory.yaml whose agent "triage" has the prompt "agents/missing.md" on line 10
     And the working folder has no file "agents/missing.md"

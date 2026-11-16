@@ -48,18 +48,73 @@ export function moduleEnv(moduleRoot: string): Set<string> {
  */
 export function scenarioStatus(moduleRoot: string, id: string): string | undefined {
   const tag = new RegExp(`@id=${id}\\b[^\\n]*@status=(\\w+)|@status=(\\w+)[^\\n]*@id=${id}\\b`);
+  for (const file of featureFiles(moduleRoot)) {
+    const match = tag.exec(readFileSync(file, "utf8"));
+    if (match) return match[1] ?? match[2];
+  }
+  return undefined;
+}
+
+/** One row of an Outline's Examples: the value of each column, by the column's name. */
+export type Example<Column extends string = string> = Readonly<Record<Column, string>>;
+
+/**
+ * The rows of the Examples tables of the scenario, in the order of the feature file; undefined when the scenario is
+ * no Scenario Outline. An Outline without a row fails: it would test nothing.
+ */
+export function scenarioExamples(moduleRoot: string, id: string): Example[] | undefined {
+  const tag = new RegExp(`^\\s*@(\\S*\\s+@)*id=${id}(\\s|$)`);
+  for (const file of featureFiles(moduleRoot)) {
+    const lines = readFileSync(file, "utf8").split("\n");
+    const start = lines.findIndex((line) => tag.test(line));
+    if (start < 0) continue;
+    const at = start + lines.slice(start).findIndex((line) => /^\s*Scenario( Outline| Template)?:/.test(line));
+    if (!/^\s*Scenario (Outline|Template):/.test(lines[at] ?? "")) return undefined;
+    const rows: Example[] = [];
+    let header: string[] | undefined;
+    for (const line of lines.slice(at + 1)) {
+      const text = line.trim();
+      if (/^(Scenario|Example:|Rule:|Background:)/.test(text) || /^@(\S*\s+@)*id=/.test(text)) break;
+      if (/^(Examples|Scenarios):/.test(text)) header = undefined;
+      else if (text.startsWith("|")) {
+        const cells = tableCells(text);
+        if (header)
+          rows.push(Object.freeze(Object.fromEntries(header.map((name, index) => [name, cells[index] ?? ""]))));
+        else header = cells;
+      }
+    }
+    if (rows.length === 0) throw new Error(`${id} is a Scenario Outline without a row in its Examples (${file})`);
+    return rows;
+  }
+  return undefined;
+}
+
+/** The cells of a Gherkin table row, with its escapes: `\|` is a bar, `\n` a new line and `\\` a backslash. */
+function tableCells(row: string): string[] {
+  const cells: string[] = [];
+  let cell = "";
+  for (let index = 1; index < row.length; index++) {
+    const char = row[index];
+    if (char === "\\") {
+      const next = row[++index];
+      cell += next === "n" ? "\n" : next === "|" || next === "\\" ? next : `\\${next}`;
+    } else if (char === "|") {
+      cells.push(cell.trim());
+      cell = "";
+    } else cell += char;
+  }
+  return cells;
+}
+
+/** The feature files of the module, then those of its port when the module is an adapter. */
+function featureFiles(moduleRoot: string): string[] {
   const adapter = /(.*)\/adapters\/([^/]+)\/[^/]+$/.exec(moduleRoot);
   const folders = [
     join(moduleRoot, "features"),
     ...(process.env.OSF_TESTKIT_PORT_FEATURES ? [process.env.OSF_TESTKIT_PORT_FEATURES] : []),
     ...(adapter ? [join(adapter[1] as string, "ports", adapter[2] as string, "features")] : []),
   ];
-  for (const file of folders.flatMap(listFiles)) {
-    if (!file.endsWith(".feature")) continue;
-    const match = tag.exec(readFileSync(file, "utf8"));
-    if (match) return match[1] ?? match[2];
-  }
-  return undefined;
+  return folders.flatMap(listFiles).filter((file) => file.endsWith(".feature"));
 }
 
 export function listFiles(dir: string): string[] {
