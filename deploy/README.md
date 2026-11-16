@@ -657,7 +657,7 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-033 | implemented | The chart takes a forge token without Slack, and asks on pull requests only |
 | SCN-DIST-034 | implemented | The service improve writes the reports of ledger and observer and judges no run without scorers |
 | SCN-DIST-035 | implemented | The chart runs the improvement jobs as a CronJob on foreman's run records, without scorers by default |
-| SCN-DIST-036 | implemented | The console of the Compose profile renders its health page from the templates its package ships |
+| SCN-DIST-036 | deprecated | The console of the Compose profile renders its health page from the templates its package ships |
 | SCN-DIST-037 | implemented | With the sign-in on, the console of the Compose profile lets in only the people of the factory's access.yaml |
 | SCN-DIST-038 | implemented | The chart switches the console's sign-in on with the client secret and the session key from a Secret the operator names |
 | SCN-DIST-039 | implemented | The profile's OpenBao keeps a stored secret over a restart, unseals itself, and a sandbox still sends the value |
@@ -671,3 +671,4 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-047 | implemented | With the sign-in, the chart gives the console its signing key from the sign-in's Secret, and foreman, intake and gatekeeper the console's key set |
 | SCN-DIST-048 | implemented | With the sign-in and "CONSOLE_SIGNING_KEY", the released intake refuses a work item whose made-up person has no proof, and the console publishes its key |
 | SCN-DIST-049 | implemented | With the sign-in and without "CONSOLE_SIGNING_KEY", "console doctor" of the released console warns that the modules would refuse its actions |
+| SCN-DIST-050 | implemented | The console of the Compose profile renders its health page from the templates its package ships, and allows only its own files |
