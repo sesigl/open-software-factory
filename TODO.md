@@ -2113,11 +2113,18 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   - [ ] `factory.yaml` renders it: a field for a harness's stop check in `contracts/factory-definition` and in
     `factory render` (a contract change, plan mode first).
 
-### [ ] T-77 · fewer checks that do the same or nothing (P2)
+### [x] T-77 · fewer checks that do the same or nothing (P2)
 
 - **Build:** FLAKE goes (every config sets `retry: 0`; a check keeps that true), DEPS and TODO go, NOSKIP and the
   static part of BOUNDARY-ENV join the one lint of the tests, and BOUNDARY-STATIC, ISOLATION and ARCH read the
   files in one pass. Their scenarios are deprecated with their tests. `docs/quality/checks.md` and `AGENTS.md` follow.
+- **Done:** FLAKE is gone (`SCN-REPO-013` deprecated); AFFECTED keeps `retry: 0` in every Vitest config of a package
+  with system tests (`SCN-REPO-191`). BOUNDARY-STATIC, ISOLATION and ARCH read one cruise (about 9.5 s to 2.7 s for
+  the three); NOSKIP, ASSERT, UI-QUERY and BOUNDARY-ENV already shared one scan, which now wraps only the nodes it
+  reads, and AFFECTED shares its parse (`osf check` about 15 s to 11 s). Kept: DEPS, since intake still pins
+  `@electric-sql/pglite-prepopulatedfs` to its PGlite; TODO, since wave 7 ticks slices again and it catches a
+  forgotten tick for nothing; NOSKIP, since PASS sees a `.fails` test as passed; the static BOUNDARY-ENV, since the
+  testkit's guard does not see a variable a test sets in its own process, where a library's code runs.
 
 ### [x] T-78 · AFFECTED sees every folder a suite reads (P2)
 

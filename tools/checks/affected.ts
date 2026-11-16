@@ -5,10 +5,11 @@
 // where the suite writes its results, and that only pull requests use the cache.
 import { dirname, join, normalize } from "node:path";
 import picomatch from "picomatch";
-import { Node, Project } from "ts-morph";
+import { Node, type NoSubstitutionTemplateLiteral, type SourceFile, type StringLiteral, SyntaxKind } from "ts-morph";
 import { parse } from "yaml";
 import type { Context } from "./lib/context.ts";
 import { type Finding, lineOf, type Repo } from "./lib/repo.ts";
+import { parsed } from "./lib/tests.ts";
 import { type Unit, workspace } from "./lib/workspace.ts";
 
 const ID = "AFFECTED";
@@ -67,43 +68,37 @@ function declarations(repo: Repo, unit: Unit, units: Unit[]): Finding[] {
   const covered = coverage(repo, unit, units);
   const outside = `outside its package: declare the package, list the path in the inputs of test:system in ${unit.dir}/${TURBO} or in globalDependencies of ${TURBO}`;
   for (const file of repo.match(`${unit.dir}/system-tests/**/*.{ts,mts,js,mjs}`)) {
-    const source = new Project({ useInMemoryFileSystem: true }).createSourceFile(`/${file}`, repo.read(file));
-    source.forEachDescendant((node) => {
-      const line = node.getStartLineNumber();
-      if (Node.isCallExpression(node) && node.getExpression().getText().endsWith(".adapter")) {
-        const [argument] = node.getArguments();
-        if (!argument || !Node.isStringLiteral(argument)) return;
-        const adapter = units.find((candidate) => candidate.dir === `adapters/${argument.getLiteralText()}`);
-        if (adapter && !known(adapter.name)) {
-          findings.push(
-            finding(
-              file,
-              line,
-              `starts the adapter "${argument.getLiteralText()}", which ${manifest} does not declare`,
-            ),
-          );
-        }
-        return;
+    const source = parsed(file, repo.read(file));
+    for (const call of source.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+      if (!call.getExpression().getText().endsWith(".adapter")) continue;
+      const [argument] = call.getArguments();
+      if (!argument || !Node.isStringLiteral(argument)) continue;
+      const adapter = units.find((candidate) => candidate.dir === `adapters/${argument.getLiteralText()}`);
+      if (adapter && !known(adapter.name)) {
+        const message = `starts the adapter "${argument.getLiteralText()}", which ${manifest} does not declare`;
+        findings.push(finding(file, call.getStartLineNumber(), message));
       }
-      if (!Node.isStringLiteral(node) && !Node.isNoSubstitutionTemplateLiteral(node)) return;
+    }
+    for (const node of argumentLiterals(source)) {
+      const line = node.getStartLineNumber();
       const text = node.getLiteralText();
       const parent = node.getParent();
       const imported = Node.isImportDeclaration(parent) || Node.isExportDeclaration(parent) || isDynamicImport(parent);
       if (imported && text.startsWith("@opensoftware/")) {
         const name = text.split("/").slice(0, 2).join("/");
         if (!known(name)) findings.push(finding(file, line, `imports "${name}", which ${manifest} does not declare`));
-        return;
+        continue;
       }
       // `fakes.fromRepository("<folder>")` reads a folder of the repository by its path from the root.
       if (isFromRepository(parent, node)) {
         if (!covered(text)) findings.push(finding(file, line, `reads "${text}" ${outside}`));
-        return;
+        continue;
       }
-      if (!text.startsWith("../") || !(imported || isFileRelative(node))) return;
+      if (!text.startsWith("../") || !(imported || isFileRelative(node))) continue;
       const target = normalize(join(dirname(file), text))
         .split("\\")
         .join("/");
-      if (covered(target)) return;
+      if (covered(target)) continue;
       findings.push(
         finding(
           file,
@@ -111,16 +106,14 @@ function declarations(repo: Repo, unit: Unit, units: Unit[]): Finding[] {
           `reads "${text}" outside its package: declare the package or list the file in globalDependencies of turbo.json`,
         ),
       );
-    });
+    }
   }
   for (const script of testScripts(repo, unit)) {
-    const source = new Project({ useInMemoryFileSystem: true }).createSourceFile(`/${script}`, repo.read(script));
-    source.forEachDescendant((node) => {
-      if (!Node.isStringLiteral(node) && !Node.isNoSubstitutionTemplateLiteral(node)) return;
+    for (const node of literals(parsed(script, repo.read(script)))) {
       const text = node.getLiteralText();
-      if (!isRootPath(repo, text) || covered(text)) return;
+      if (!isRootPath(repo, text) || covered(text)) continue;
       findings.push(finding(script, node.getStartLineNumber(), `reads "${text}" ${outside}`));
-    });
+    }
   }
   const config = repo.match(`${unit.dir}/vitest.config.{ts,mts,js,mjs}`)[0];
   if (config && !new RegExp(`outputFile:\\s*["'\`]${JUNIT}["'\`]`).test(repo.read(config))) {
@@ -131,6 +124,11 @@ function declarations(repo: Repo, unit: Unit, units: Unit[]): Finding[] {
         `writes its JUnit results elsewhere than "${JUNIT}", which turbo stores and replays`,
       ),
     );
+  }
+  // No retry: a test that passes only on a retry hides a flaky scenario, and its JUnit result says it passed.
+  if (config && !/\bretry:\s*0\b/.test(repo.read(config))) {
+    const message = `sets no "retry: 0": a test that passed only on a retry would hide a flaky scenario`;
+    findings.push(finding(config, lineOf(repo.read(config), "retry"), message));
   }
   return findings;
 }
@@ -181,6 +179,31 @@ function testScripts(repo: Repo, unit: Unit): string[] {
 /** A literal of a script that names a file or folder of the repository by its path from the root, like `deploy/x`. */
 const isRootPath = (repo: Repo, text: string): boolean =>
   /^[\w@-][\w.@-]*\/[\w./@-]*$/.test(text) && !text.includes("..") && repo.exists(text);
+
+type Literal = StringLiteral | NoSubstitutionTemplateLiteral;
+const isLiteral = (node: Node | undefined): node is Literal =>
+  Node.isStringLiteral(node) || Node.isNoSubstitutionTemplateLiteral(node);
+
+/**
+ * The literals a system test can read a path or a package with: the specifiers of its imports and exports and the
+ * literal arguments of its calls and `new` expressions. Only these kinds are walked: wrapping every node of a file
+ * took most of the time.
+ */
+const argumentLiterals = (source: SourceFile): Literal[] => [
+  ...[...source.getImportDeclarations(), ...source.getExportDeclarations()]
+    .map((declaration): Node | undefined => declaration.getModuleSpecifier())
+    .filter(isLiteral),
+  ...[
+    ...source.getDescendantsOfKind(SyntaxKind.CallExpression),
+    ...source.getDescendantsOfKind(SyntaxKind.NewExpression),
+  ].flatMap((call) => (call.getArguments() as Node[]).filter(isLiteral)),
+];
+
+/** The string literals of a file, with and without backticks. */
+const literals = (source: SourceFile): Literal[] => [
+  ...source.getDescendantsOfKind(SyntaxKind.StringLiteral),
+  ...source.getDescendantsOfKind(SyntaxKind.NoSubstitutionTemplateLiteral),
+];
 
 const isDynamicImport = (node: Node | undefined): boolean =>
   Node.isCallExpression(node) && node.getExpression().getText() === "import";

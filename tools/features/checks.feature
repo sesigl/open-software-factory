@@ -261,7 +261,7 @@ Feature: Repository checks
     Then the command exits with code 0
     And the output contains "ASSERT ok"
 
-  @id=SCN-REPO-013 @status=implemented
+  @id=SCN-REPO-013 @status=deprecated
   Scenario: FLAKE rejects a test that passed only on retry
     Given a repository with the implemented scenario "SCN-DEMO-001" and its system test
     And a JUnit report in which the test of "SCN-DEMO-001" passed after 1 retry
@@ -935,6 +935,14 @@ Feature: Repository checks
     When the developer runs "osf check AFFECTED"
     Then the command exits with code 1
     And the output contains "AFFECTED turbo.json:1 test:system must cache with the inputs ["$TURBO_DEFAULT$"], the outputs ["reports/**"] and the env ["OSF_TEST_RUN"]"
+
+  @id=SCN-REPO-191 @status=implemented @replaces=SCN-REPO-013
+  Scenario: AFFECTED rejects a test suite that retries a failed test
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And "modules/demo/vitest.config.ts" retries a failed test with "retry: 2"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED modules/demo/vitest.config.ts:1 sets no "retry: 0": a test that passed only on a retry would hide a flaky scenario"
 
   @id=SCN-REPO-179 @status=implemented @replaces=SCN-REPO-075
   Scenario: AFFECTED rejects a test cache whose inputs leave out files of the package, in a hash without variables

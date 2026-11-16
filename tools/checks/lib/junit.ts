@@ -7,7 +7,6 @@ export interface TestResult {
   file: string;
   id: string | undefined;
   status: "passed" | "failed" | "skipped";
-  retries: number;
   seconds: number;
 }
 
@@ -26,7 +25,6 @@ export function readResults(repo: Repo): TestResult[] | undefined {
       file: file.startsWith(`${repo.root}/`) ? file.slice(repo.root.length + 1) : file,
       id: scenarioIdOf(test, ID),
       status: test.status,
-      retries: Math.max(Number(test.properties.retries ?? 0), test.reruns),
       seconds: test.seconds,
     };
   });

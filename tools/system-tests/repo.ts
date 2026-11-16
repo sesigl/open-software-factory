@@ -401,9 +401,9 @@ export const VERIFY_TESTS =
   "verify-tests:\n\t@$(TURBO) test:system $(if $(OSF_TEST_CACHE),,--force)\n" +
   "verify-static:\n\t@$(TURBO) lint typecheck build $(if $(OSF_TEST_CACHE),,--force)\n";
 
-/** A vitest config that writes JUnit results to `output`. */
-export const vitestConfig = (output = "reports/junit.xml"): string =>
-  `export default { test: { reporters: [["junit", { outputFile: "${output}" }]] } };\n`;
+/** A vitest config that writes JUnit results to `output` and retries no test (`retry`). */
+export const vitestConfig = (output = "reports/junit.xml", retry = 0): string =>
+  `export default { test: { retry: ${retry}, reporters: [["junit", { outputFile: "${output}" }]] } };\n`;
 
 /** A package with system tests, its vitest config and one system test. */
 export function testedPackage(

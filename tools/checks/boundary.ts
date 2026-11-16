@@ -1,118 +1,42 @@
 // BOUNDARY-STATIC, BOUNDARY-ENV, ISOLATION, NOSKIP and ASSERT: how tests and modules reach each other.
 
 import { documentedEnv, isDocumented } from "@opensoftware/testkit/readme";
-import type { ICruiseResult, IForbiddenRuleType, IReporterOutput } from "dependency-cruiser";
 import type { Context } from "./lib/context.ts";
+import { cruised } from "./lib/cruise.ts";
 import { type Finding, isLibrary, lineOf, moduleRootOf } from "./lib/repo.ts";
 import { loadTests } from "./lib/tests.ts";
 
-/** What every system test may import besides its own folder. */
-const TEST_IMPORTS = [
-  "^@opensoftware/(testkit|contracts)(/|$)",
-  "^vitest(/|$)",
-  "^packages/(testkit|contracts)/",
-  "^contracts/",
-  "(^|/)node_modules/(@opensoftware/(testkit|contracts)|vitest|@vitest)/",
-];
-
-/**
- * A system test imports only files in its own system-tests folder, @opensoftware/testkit, generated contract clients
- * (@opensoftware/contracts) and the test framework. The tests of a library in packages/ also import the library by
- * its package name, which resolves to its built entry point (ADR 0039). Workspace packages resolve to their folders.
- */
-const BOUNDARY_RULES: IForbiddenRuleType[] = [
-  {
-    name: "BOUNDARY-STATIC",
-    severity: "error",
-    from: { path: "^(.+/system-tests)/", pathNot: "^packages/" },
-    to: { pathNot: ["^$1/", ...TEST_IMPORTS] },
-  },
-  {
-    name: "BOUNDARY-STATIC",
-    severity: "error",
-    from: { path: "^packages/([^/]+)/system-tests/" },
-    to: {
-      pathNot: [
-        "^packages/$1/system-tests/",
-        "^@opensoftware/$1$",
-        "^packages/$1/dist/index\\.(js|d\\.ts)$",
-        "(^|/)node_modules/@opensoftware/$1/dist/index\\.(js|d\\.ts)$",
-        ...TEST_IMPORTS,
-      ],
-    },
-  },
-];
-
-/** No module imports another module; adapters do not import other adapters; ports import no module or adapter. */
-const ISOLATION_RULES: IForbiddenRuleType[] = [
-  {
-    name: "ISOLATION",
-    severity: "error",
-    from: { path: "^modules/([^/]+)/", pathNot: "/system-tests/" },
-    to: { path: "^(modules|adapters)/", pathNot: "^modules/$1/" },
-  },
-  {
-    name: "ISOLATION",
-    severity: "error",
-    from: { path: "^adapters/([^/]+/[^/]+)/", pathNot: "/system-tests/" },
-    to: { path: "^(modules|adapters)/", pathNot: "^adapters/$1/" },
-  },
-  {
-    name: "ISOLATION",
-    severity: "error",
-    from: { path: "^ports/([^/]+)/", pathNot: "/system-tests/" },
-    to: { path: "^(modules|adapters)/" },
-  },
-];
-
-async function violations(context: Context, files: string[], rules: IForbiddenRuleType[]): Promise<Finding[]> {
-  if (files.length === 0) return [];
-  // Loaded here: BOUNDARY-ENV, NOSKIP, ASSERT and UI-QUERY share this module and need no import graph.
-  const { cruise } = await import("dependency-cruiser");
-  const output = (await cruise(files, {
-    baseDir: context.repo.root,
-    validate: true,
-    // Only the listed files, each with its own imports. maxDepth 1 skipped the imports of a listed file that
-    // another listed file reached first.
-    doNotFollow: { path: ".+" },
-    tsPreCompilationDeps: true,
-    ruleSet: { forbidden: rules },
-  })) as IReporterOutput;
-  const result = output.output as ICruiseResult;
-  return result.summary.violations.map((violation) => {
-    // The specifier as written in the file, to point at its line.
-    const dependency = result.modules
-      .find((module) => module.source === violation.from)
-      ?.dependencies.find((candidate) => candidate.resolved === violation.to);
-    const text = context.repo.read(violation.from);
-    // dependency-cruiser drops the `node:` prefix of built-in modules; find the specifier with or without it.
-    const bare = dependency?.module ?? violation.to;
-    const quoted = (name: string): RegExp => new RegExp(`["']${escapeRegExp(name)}["']`);
-    const written = [bare, `node:${bare}`].find((name) => quoted(name).test(text)) ?? bare;
-    const line = text.split("\n").findIndex((row) => quoted(written).test(row)) + 1 || 1;
-    const check = violation.rule.name;
-    const message =
-      check === "BOUNDARY-STATIC"
-        ? `import "${written}" is not allowed in a system test; use @opensoftware/testkit, generated contract clients, the test framework or, in a library's test, the library`
-        : `imports ${violation.to}; modules share data only through contracts/`;
-    return { check, file: violation.from, line, message };
-  });
+/** The violations of `check` in the one import graph of the three checks (lib/cruise.ts). */
+async function violations(context: Context, check: "BOUNDARY-STATIC" | "ISOLATION"): Promise<Finding[]> {
+  const result = await cruised(context);
+  return result.summary.violations
+    .filter((violation) => violation.rule.name === check)
+    .map((violation) => {
+      // The specifier as written in the file, to point at its line.
+      const dependency = result.modules
+        .find((module) => module.source === violation.from)
+        ?.dependencies.find((candidate) => candidate.resolved === violation.to);
+      const text = context.repo.read(violation.from);
+      // dependency-cruiser drops the `node:` prefix of built-in modules; find the specifier with or without it.
+      const bare = dependency?.module ?? violation.to;
+      const quoted = (name: string): RegExp => new RegExp(`["']${escapeRegExp(name)}["']`);
+      const written = [bare, `node:${bare}`].find((name) => quoted(name).test(text)) ?? bare;
+      const line = text.split("\n").findIndex((row) => quoted(written).test(row)) + 1 || 1;
+      const message =
+        check === "BOUNDARY-STATIC"
+          ? `import "${written}" is not allowed in a system test; use @opensoftware/testkit, generated contract clients, the test framework or, in a library's test, the library`
+          : `imports ${violation.to}; modules share data only through contracts/`;
+      return { check, file: violation.from, line, message };
+    });
 }
 
 export async function boundaryStatic(context: Context): Promise<Finding[]> {
-  return violations(
-    context,
-    loadTests(context.repo).map((test) => test.file),
-    BOUNDARY_RULES,
-  );
+  return violations(context, "BOUNDARY-STATIC");
 }
 
 export async function isolation(context: Context): Promise<Finding[]> {
   const { repo } = context;
-  const sources = repo
-    .match("{modules,ports}/*/**/*.{ts,tsx,js,mjs,cjs}", "adapters/*/*/**/*.{ts,tsx,js,mjs,cjs}")
-    .filter((file) => !file.includes("/system-tests/") && !file.includes("/node_modules/"));
-  const findings = await violations(context, sources, ISOLATION_RULES);
+  const findings = await violations(context, "ISOLATION");
 
   // A module declares only @opensoftware/contracts, @opensoftware/testkit and the adapters its system tests start
   // (devDependencies, ADR 0081), the libraries in packages/ (ADR 0037) and external packages.

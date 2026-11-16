@@ -1,54 +1,9 @@
-// FLAKE and BUDGET: the test results. SPEC, TRACE, STEPS and PASS run in spec-trace (ADR 0031).
+// BUDGET: the wall time of the test runs. SPEC, TRACE, STEPS and PASS run in spec-trace (ADR 0031). FLAKE is gone:
+// every package's vitest config sets `retry: 0`, which AFFECTED keeps true, so no test passes on a retry.
 import type { Context } from "./lib/context.ts";
-import { type Scenario, statusOf } from "./lib/features.ts";
-import { readResults, type TestResult } from "./lib/junit.ts";
+import { readResults } from "./lib/junit.ts";
 import { type Finding, lineOf, moduleRootOf } from "./lib/repo.ts";
 import { shortName, workspace } from "./lib/workspace.ts";
-
-function implementedResults(
-  context: Context,
-  check: string,
-): { results: Map<string, TestResult[]>; findings: Finding[] } {
-  const results = new Map<string, TestResult[]>();
-  const all = readResults(context.repo);
-  if (!all) {
-    const findings = implemented(context).map((scenario) => ({
-      check,
-      file: scenario.file,
-      line: scenario.line,
-      message: `no JUnit results in ${process.env.OSF_JUNIT_DIR ?? "reports/junit"}: run make test first`,
-    }));
-    return { results, findings: findings.slice(0, 1) };
-  }
-  for (const result of all) {
-    if (result.id) results.set(result.id, [...(results.get(result.id) ?? []), result]);
-  }
-  return { results, findings: [] };
-}
-
-function implemented(context: Context): Scenario[] {
-  return context
-    .features()
-    .scenarios.filter((scenario) => statusOf(scenario) === "implemented" && scenario.ids.length === 1);
-}
-
-export function flake(context: Context): Finding[] {
-  const { results, findings } = implementedResults(context, "FLAKE");
-  if (findings.length > 0) return findings;
-  for (const scenario of implemented(context)) {
-    const id = scenario.ids[0] as string;
-    const retries = Math.max(0, ...(results.get(id) ?? []).map((result) => result.retries));
-    if (retries > 0) {
-      findings.push({
-        check: "FLAKE",
-        file: scenario.file,
-        line: scenario.line,
-        message: `${id} passed only after ${retries} ${retries === 1 ? "retry" : "retries"}`,
-      });
-    }
-  }
-  return findings;
-}
 
 /** The phrase of a budget line, with its seconds. */
 const BUDGET_LINE = /System tests:\s*(\d+(?:\.\d+)?)\s*seconds of wall time/;
