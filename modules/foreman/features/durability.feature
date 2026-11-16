@@ -65,6 +65,31 @@ Feature: Durability
     Then within 20 seconds the server publishes "run.started@v1" for the work item
     And it warned once about "osf.work.received.v1", for the delivery 1 of 5, and about no other subject
 
+  @id=SCN-FORE-182 @status=implemented @realizes=SCN-FACTORY-RUNTIME-001
+  Scenario: A work item that comes while the factory's Git remote cannot be fetched comes again and starts its run once it can
+    Given "foreman serve" runs with "FOREMAN_FACTORY" set to "git+<url>" of the README's "factory.yaml" and "FOREMAN_NATS_URL" set to a NATS server
+    And the Git remote is gone
+    When intake publishes "work.received@v1" with the README's "work.json"
+    And the Git remote is back
+    Then within 20 seconds the server publishes "run.started@v1" for the work item
+    And it warned about "osf.work.received.v1" that "FOREMAN_FACTORY: cannot fetch HEAD", for the delivery 1 of 5
+
+  @id=SCN-FORE-184 @status=implemented
+  Scenario: A work item that comes while the factory has changes that are not committed comes again and starts its run once they are committed
+    Given "foreman serve" runs the README's "factory.yaml" with "FOREMAN_NATS_URL" set to a NATS server
+    And "agents/plan.md" gets a change that is not committed
+    When intake publishes "work.received@v1" with the README's "work.json"
+    And the change is committed
+    Then within 20 seconds the server publishes "run.started@v1" for the work item
+    And it warned about "osf.work.received.v1" that "commit the changed files agents/plan.md", for the delivery 1 of 5
+
+  @id=SCN-FORE-185 @status=implemented
+  Scenario: A port that another program listens on ends "foreman serve" with code 1
+    Given another program listens on a port
+    When the user runs "foreman serve" with "PORT" set to that port, "FOREMAN_TEMPORAL_ADDRESS" set to Temporal and "FOREMAN_NATS_URL" set to a NATS server
+    Then the command exits with code 1
+    And the output contains "listen EADDRINUSE"
+
   @id=SCN-FORE-083 @status=implemented
   Scenario: A work item that breaks its contract and a gate decision for no run are one warning each and come no second time
     Given "foreman serve" runs the README's "factory.yaml" with "FOREMAN_NATS_URL" set to a NATS server

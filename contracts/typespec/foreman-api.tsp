@@ -10,7 +10,10 @@ using TypeSpec.Http;
 namespace Osf.Contracts;
 
 namespace ForemanApi {
-  /** Start a run of the factory's workflow for a work item. The same work item again answers its newest run. */
+  /**
+   * Start a run of the factory's workflow for a work item. The same work item again answers its newest run. 503 when
+   * the factory's Git remote cannot be fetched now.
+   */
   @route("/v1/runs")
   @post
   op startRun(@body workItem: WorkItem):
@@ -23,7 +26,8 @@ namespace ForemanApi {
         @body run: RunView;
       }
     | GatekeeperApi.Failure<400>
-    | GatekeeperApi.Failure<401>;
+    | GatekeeperApi.Failure<401>
+    | GatekeeperApi.Failure<503>;
 
   /**
    * A page of the runs of the server, running runs first, then the runs that ended, the one that ended last first; with
@@ -64,7 +68,8 @@ namespace ForemanApi {
 
   /**
    * Run a run that failed or was cancelled again, as a new run that names it (ADR 0105). With `FOREMAN_PERSON_KEYS`, a
-   * `by` of kind `person` needs the person's proof in `OSF-Person`, as for a signal (ADR 0151).
+   * `by` of kind `person` needs the person's proof in `OSF-Person`, as for a signal (ADR 0151). 503 also when the
+   * factory's Git remote cannot be fetched now.
    */
   @route("/v1/runs/{runId}/retry")
   @post

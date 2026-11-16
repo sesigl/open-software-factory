@@ -13,6 +13,16 @@ import { FetchError, type Pin, pinnedFolder, factorySource as sourceOf } from "@
 import { parse } from "yaml";
 import { type Definition, definitionOf, stageProblems } from "../domain/definition.ts";
 
+/**
+ * The factory cannot be read now and may be soon: its folder has changes that are not committed. A request that needs
+ * it is refused, and an event that needs it comes again. At the start of the server it stops the server, as every
+ * usage error does.
+ */
+export class FactoryNotReadable extends UsageError {}
+
+/** The factory's Git remote cannot be fetched now: the API answers 503. */
+export class FactoryUnreachable extends FactoryNotReadable {}
+
 export interface Factory {
   definition: Definition;
   /** The commit of the factory definition. */
@@ -38,7 +48,7 @@ export function factorySource(setting: string, data: string, token: string | und
     folder: () => folder,
     read: async () => {
       const fetched = await source.fetch().catch((failure: unknown) => {
-        throw failure instanceof FetchError ? new UsageError(`FOREMAN_FACTORY: ${failure.message}`) : failure;
+        throw failure instanceof FetchError ? new FactoryUnreachable(`FOREMAN_FACTORY: ${failure.message}`) : failure;
       });
       folder = resolve(fetched.folder);
       // Stryker disable next-line StringLiteral: the cache is the foreman's private data, which no test may read
@@ -90,6 +100,7 @@ async function skillFolders(
         throw new UsageError(
           `${name}: factory.lock has no pin of the skill "${skill}" for "${entry}": run "factory plan"`,
         );
+      // A skill's fetch also fails for a folder that is not there or files whose hash is not the pin's: a usage error.
       const fetched = await pinnedFolder(entry, { cache, pin }).catch((failure: unknown) => {
         throw failure instanceof FetchError ? new UsageError(`${name}: ${failure.message}`) : failure;
       });
@@ -141,7 +152,7 @@ async function mustBeClean(folder: string, name: string, read: string[]): Promis
     if (!entry.startsWith("??") || reads.has(path)) files.add(path);
   }
   if (files.size)
-    throw new UsageError(
+    throw new FactoryNotReadable(
       `${name}: commit the changed files ${[...files].sort().join(", ")}; a run's factory version is its commit`,
     );
   return version;

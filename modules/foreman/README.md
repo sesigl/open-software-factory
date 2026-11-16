@@ -95,7 +95,11 @@ A run names the versions it runs ([ADR 0110](../../docs/decisions/0110-versions-
   and a retry refuse a tracked file of the folder that differs from that commit, and a file the foreman reads
   (`factory.yaml`, the prompts, the inference config) that Git does not track, with
   `factory.yaml: commit the changed files <path>, <path>; a run's factory version is its commit`. The server exits
-  with code 2; `POST /v1/runs` and a retry answer 400. Other untracked files and ignored files do not count.
+  with code 2; `POST /v1/runs` and a retry answer 400, and a `work.received@v1` or `work.retry-requested@v1` comes
+  again until the change is committed ([Events](#events)). Other untracked files and ignored files do not count.
+- A factory in a Git remote whose fetch fails stops the server at its start with code 2. Once the server runs, a fetch
+  that fails is the factory not readable now: `POST /v1/runs` and a retry answer 503 with the problem
+  `FOREMAN_FACTORY: cannot fetch <ref> of <url>: …`, and an event that needs the factory comes again.
 - An adapter that `FOREMAN_HARNESSES`, `FOREMAN_SANDBOXES`, `FOREMAN_FORGES` or `FOREMAN_INFERENCES` does not name
   runs `npx -y @opensoftware/<port>-<name>@<version>` (`run` follows for a harness): the exact version that
   `factory plan --adapters` pinned in `adapters.<port>.<name>` of `factory.lock` next to `factory.yaml`, while that
@@ -439,14 +443,14 @@ does not know. Its clock is `OSF_NOW` when that is set.
 
 | Command | What it does |
 | --- | --- |
-| `foreman serve` | Serve the run API on `PORT` and run the workflow of `FOREMAN_FACTORY` on the Temporal server at `FOREMAN_TEMPORAL_ADDRESS`; with `FOREMAN_NATS_URL`, start a run for each `work.received@v1` and run a run again for each `work.retry-requested@v1`. |
+| `foreman serve` | Serve the run API on `PORT` and run the workflow of `FOREMAN_FACTORY` on the Temporal server at `FOREMAN_TEMPORAL_ADDRESS`; with `FOREMAN_NATS_URL`, start a run for each `work.received@v1` and run a run again for each `work.retry-requested@v1`. A server that cannot start, like one whose `PORT` another program holds, stops its worker and its connections and exits with code 1, or 2 for a setting or a factory that cannot run. |
 | `foreman resend` | Send the events that failed 5 times, the dead letters of the consumer `foreman` on the NATS server at `FOREMAN_NATS_URL`, again, and print the subject of each ([ADR 0116](../../docs/decisions/0116-events-not-lost-without-a-trace.md)). |
 
 ## API
 
 | Route | What it does |
 | --- | --- |
-| `POST /v1/runs` | Start the run of a work item (the [work item](../../contracts/work-item/work-item.schema.json) format). 201 with the new run, 200 with the newest run the same work item started before, 400 with a problem that names the field. |
+| `POST /v1/runs` | Start the run of a work item (the [work item](../../contracts/work-item/work-item.schema.json) format). 201 with the new run, 200 with the newest run the same work item started before, 400 with a problem that names the field, 503 while the factory's Git remote cannot be fetched ([Versions](#versions)). |
 | `GET /v1/runs` | The runs of the server, running runs first, then the runs that ended, the one that ended last first: `{ "runs": [...] }`, each as `GET /v1/runs/{runId}` shows it. `?state=` with `running`, `blocked`, `complete`, `failed` or `cancelled` lists only the runs in that state; another state is 400. One page at a time ([ADR 0115](../../docs/decisions/0115-lists-in-pages.md)): `?limit=` runs at most, 1 to 500, 50 by default; the answer's `next` is the `?cursor=` of the next page while more runs follow. With `?state=` a page may hold fewer runs than `limit`. Another `limit` or a cursor that is no page of the list is 400. Each run keeps its view in its Temporal memo, so a page is one call to Temporal's visibility. |
 | `GET /v1/runs/{runId}` | The run: `state`, `factory`, `factoryVersion`, `pullRequest`, `folder`, `startedAt`, `endedAt` and its `stages`; for a run that runs a run before it again, `attempt`, `retryOf` and `retriedBy`; once a signal named its person, `actions`. 404 for a run the server does not know. |
 | `GET /v1/health` | Whether the server reaches Temporal and, with `FOREMAN_NATS_URL`, NATS without a dead letter (ADR 0116): 200 with `status: ok`, else 503 with the failing check and what to fix ([ADR 0086](../../docs/decisions/0086-health-routes.md)). Needs no token. |
@@ -545,9 +549,10 @@ ends, with the outcome `succeeded`, `failed` or `cancelled` and, when the stage 
 foreman adds when it is missing, and the foreman reads them through its durable consumer `foreman` ([ADR
 0085](../../docs/decisions/0085-durable-events.md)). A work item or a gate decision published while the foreman is down
 reaches it when it starts again. A message is acknowledged after it is handled; one that fails comes again after 2
-seconds, at most 5 times. A work item that is not valid, a decision for a run that does not exist, or a retry request
-for a run that is unknown, not `failed` or `cancelled`, or already ran again, is a warning and does not come again:
-a second request for the same run starts no third run.
+seconds, at most 5 times, also while the factory cannot be read: its Git remote cannot be fetched, or its folder has
+changes that are not committed ([Versions](#versions)). A work item that is not valid, a decision for a run that does
+not exist, or a retry request for a run that is unknown, not `failed` or `cancelled`, or already ran again, is a
+warning and does not come again: a second request for the same run starts no third run.
 
 A message that fails the 5th time is a dead letter ([ADR
 0116](../../docs/decisions/0116-events-not-lost-without-a-trace.md)): the foreman keeps its body on
@@ -809,3 +814,7 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-179 | implemented | A stage whose sandbox takes longer to create than the heartbeat timeout sends its prompt once |
 | SCN-FORE-180 | implemented | A stage whose folder takes longer to copy out of its sandbox than the heartbeat timeout sends its prompt once |
 | SCN-FORE-181 | implemented | A cancel while a stage's sandbox is created stops the stage before its prompt |
+| SCN-FORE-182 | implemented | A work item that comes while the factory's Git remote cannot be fetched comes again and starts its run once it can |
+| SCN-FORE-183 | implemented | A run does not start while the factory's Git remote cannot be fetched, and the API answers 503 |
+| SCN-FORE-184 | implemented | A work item that comes while the factory has changes that are not committed comes again and starts its run once they are committed |
+| SCN-FORE-185 | implemented | A port that another program listens on ends "foreman serve" with code 1 |

@@ -328,6 +328,15 @@ async function npxOnPath(
   };
 }
 
+/** Waits until the server warned about the subject, as it does when a delivery of an event failed. */
+export async function untilWarned(sut: Sut, subject: string, timeoutMs = WAIT_MS): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (!sut.http.output().stderr.includes(`foreman: ${subject}: `)) {
+    if (Date.now() > deadline) throw new Error(`the server warned about no ${subject} after ${timeoutMs} ms`);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+}
+
 /** The server runs the README's work item; returns the run's ID. */
 export async function started(sut: Sut, fakes: Fakes, setup: Setup = {}) {
   const server = await serving(sut, fakes, setup);

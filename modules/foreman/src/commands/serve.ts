@@ -11,7 +11,7 @@ import { type Actor, type PersonChecker, personChecker } from "@opensoftware/per
 import { Client, Connection, WorkflowNotFoundError } from "@temporalio/client";
 import { NativeConnection, Worker } from "@temporalio/worker";
 import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
-import { factorySource } from "../adapters/factory.ts";
+import { FactoryNotReadable, FactoryUnreachable, factorySource } from "../adapters/factory.ts";
 import { gatekeeper } from "../adapters/gatekeeper.ts";
 import { type Attached, attachGateway, startGateway } from "../adapters/inference.ts";
 import { type Bus, openBus, SUBJECTS } from "../adapters/nats.ts";
@@ -88,6 +88,8 @@ interface Api {
 function api({ work, token, pings, health, persons, warn }: Api) {
   const app = Fastify();
   app.setErrorHandler((error: Error & { statusCode?: number }, _request, reply) => {
+    if (error instanceof FactoryUnreachable)
+      return problem(reply, 503, "The factory cannot be read now", error.message);
     if (error instanceof UsageError) return problem(reply, 400, "Bad request", error.message);
     if (error instanceof Conflict) return problem(reply, 409, error.title, error.message);
     return problem(reply, error.statusCode ?? 500, "The request failed", error.message);
@@ -172,7 +174,7 @@ function api({ work, token, pings, health, persons, warn }: Api) {
  * runs that wait for them and keeps when each doctor's ping came (ADR 0120), through the durable consumer "foreman"
  * (ADR 0085). An event that can never succeed, a work
  * item that is not valid, a decision for a run that does not exist, or a retry of a run that cannot run again, is a
- * warning and is acknowledged; another failure comes again.
+ * warning and is acknowledged; another failure comes again, also a factory that cannot be read now.
  */
 function listen(bus: Bus, work: Runs, pings: Pings, now: () => string, warn: (text: string) => void): Promise<void> {
   const subjects = [SUBJECTS.workReceived, SUBJECTS.workRetryRequested, SUBJECTS.gateDecided, SUBJECTS.doctorPing];
@@ -191,6 +193,8 @@ function listen(bus: Bus, work: Runs, pings: Pings, now: () => string, warn: (te
         if (!(await work.retry(runId, { by: requester }))) warn(`${subject}: the server has no run ${runId}`);
       } else await work.start(data as WorkItem);
     } catch (failure) {
+      // The factory may be readable at the next delivery, so the event comes again; it is not the event's fault.
+      if (failure instanceof FactoryNotReadable) throw failure;
       if (!(failure instanceof UsageError || failure instanceof WorkflowNotFoundError || failure instanceof Conflict))
         throw failure;
       warn(`${subject}: ${failure.message}`);
@@ -275,7 +279,6 @@ export async function serve(env: Env) {
     const work = runs({ client, taskQueue, factory, now, heartbeatMs, stopping: stopping.signal });
     const running = worker.run();
     const pings: Pings = new Map();
-    if (bus) await listen(bus, work, pings, now, warn);
 
     const health = () =>
       healthOf([
@@ -314,16 +317,29 @@ export async function serve(env: Env) {
           : []),
       ]);
     const app = api({ work, token, pings, health, persons, warn });
+    /** Stops what runs once the worker stopped: the open queries, the API, NATS and Temporal's client. */
+    const close = async () => {
+      stopping.abort();
+      await app.close();
+      await bus?.close();
+      await temporal.close();
+    };
 
     const port = Number(env.PORT || 8080);
-    await app.listen({ port, host: "0.0.0.0" });
+    try {
+      if (bus) await listen(bus, work, pings, now, warn);
+      await app.listen({ port, host: "0.0.0.0" });
+    } catch (error) {
+      // A server that cannot start, like one whose port is taken, stops what started, so the process ends.
+      worker.shutdown();
+      await running.catch(() => undefined);
+      await close();
+      throw error;
+    }
     process.stdout.write(`foreman serves the run API on port ${port}, task queue ${taskQueue} at ${address}\n`);
     // Temporal's runtime stops the worker on SIGTERM and SIGINT; the server stops with it.
     await running;
-    stopping.abort();
-    await app.close();
-    await bus?.close();
-    await temporal.close();
+    await close();
   } finally {
     await gateway?.stop();
   }
