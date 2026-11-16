@@ -1,63 +1,62 @@
 // `osf check`: runs checks by ID and prints one line per finding: `ID file:line message`.
-import { affected } from "./affected.ts";
-import { arch } from "./arch.ts";
-import { boundaryEnv, boundaryStatic, assert as checkAssert, isolation, noskip, uiQuery } from "./boundary.ts";
-import { contract } from "./contract.ts";
-import { deps } from "./deps.ts";
-import { contrast, tokens } from "./design.ts";
-import { adr, docsAffected, docsGen, docsLinks } from "./docs.ts";
 import { type Check, Context } from "./lib/context.ts";
 import { type Finding, Repo } from "./lib/repo.ts";
-import { profile } from "./profile.ts";
-import { dup, mutation } from "./quality.ts";
-import { reach } from "./reach.ts";
-import { release } from "./release.ts";
-import { budget, flake } from "./results.ts";
-import { runs } from "./runs.ts";
-import { depsRuntime } from "./shipped.ts";
-import { surface } from "./surface.ts";
-import { template } from "./templates.ts";
-import { todo, vision } from "./vision.ts";
+
+/**
+ * A check whose module loads only when the check runs. The modules import heavy libraries (dependency-cruiser,
+ * ts-morph, a native template parser): a start of `osf check` for one check loads only what that check needs.
+ */
+const lazy =
+  (load: () => Promise<Check>): Check =>
+  async (context) =>
+    (await load())(context);
+
+const boundary = () => import("./boundary.ts");
+const design = () => import("./design.ts");
+const docs = () => import("./docs.ts");
+const quality = () => import("./quality.ts");
+const results = () => import("./results.ts");
+const visionModule = () => import("./vision.ts");
 
 /** The fast set: static checks that need no test run and no base. SPEC, TRACE, STEPS and PASS are spec-trace's. */
 export const FAST: Record<string, Check> = {
-  NOSKIP: noskip,
-  ASSERT: checkAssert,
-  "UI-QUERY": uiQuery,
-  "BOUNDARY-STATIC": boundaryStatic,
-  "BOUNDARY-ENV": boundaryEnv,
-  ISOLATION: isolation,
-  ARCH: arch,
-  TEMPLATE: template,
-  SURFACE: surface,
-  CONTRAST: contrast,
-  TOKENS: tokens,
-  DUP: dup,
-  "DOCS-GEN": docsGen,
-  "DOCS-LINKS": docsLinks,
-  ADR: adr,
-  AFFECTED: affected,
-  RELEASE: release,
-  DEPS: deps,
-  "DEPS-RUNTIME": depsRuntime,
-  PROFILE: profile,
-  VISION: vision,
-  TODO: todo,
+  NOSKIP: lazy(async () => (await boundary()).noskip),
+  ASSERT: lazy(async () => (await boundary()).assert),
+  "UI-QUERY": lazy(async () => (await boundary()).uiQuery),
+  "BOUNDARY-STATIC": lazy(async () => (await boundary()).boundaryStatic),
+  "BOUNDARY-ENV": lazy(async () => (await boundary()).boundaryEnv),
+  ISOLATION: lazy(async () => (await boundary()).isolation),
+  ARCH: lazy(async () => (await import("./arch.ts")).arch),
+  TEMPLATE: lazy(async () => (await import("./templates.ts")).template),
+  SURFACE: lazy(async () => (await import("./surface.ts")).surface),
+  CONTRAST: lazy(async () => (await design()).contrast),
+  TOKENS: lazy(async () => (await design()).tokens),
+  DUP: lazy(async () => (await quality()).dup),
+  "DOCS-GEN": lazy(async () => (await docs()).docsGen),
+  "DOCS-LINKS": lazy(async () => (await docs()).docsLinks),
+  ADR: lazy(async () => (await docs()).adr),
+  AFFECTED: lazy(async () => (await import("./affected.ts")).affected),
+  RELEASE: lazy(async () => (await import("./release.ts")).release),
+  DEPS: lazy(async () => (await import("./deps.ts")).deps),
+  "DEPS-RUNTIME": lazy(async () => (await import("./shipped.ts")).depsRuntime),
+  PROFILE: lazy(async () => (await import("./profile.ts")).profile),
+  VISION: lazy(async () => (await visionModule()).vision),
+  TODO: lazy(async () => (await visionModule()).todo),
 };
 
 /** Checks that read test results or compare with OSF_BASE; `make verify` runs them after the tests. */
 export const SLOW: Record<string, Check> = {
-  FLAKE: flake,
-  BUDGET: budget,
-  "DOCS-AFFECTED": docsAffected,
-  CONTRACT: contract,
-  REACH: reach,
-  RUNS: runs,
+  FLAKE: lazy(async () => (await results()).flake),
+  BUDGET: lazy(async () => (await results()).budget),
+  "DOCS-AFFECTED": lazy(async () => (await docs()).docsAffected),
+  CONTRACT: lazy(async () => (await import("./contract.ts")).contract),
+  REACH: lazy(async () => (await import("./reach.ts")).reach),
+  RUNS: lazy(async () => (await import("./runs.ts")).runs),
 };
 
 /** Checks that read the results of a separate run: MUTATION reads the Stryker reports of `make mutation`. */
 export const SEPARATE: Record<string, Check> = {
-  MUTATION: mutation,
+  MUTATION: lazy(async () => (await quality()).mutation),
 };
 
 const ALL: Record<string, Check> = { ...FAST, ...SLOW, ...SEPARATE };

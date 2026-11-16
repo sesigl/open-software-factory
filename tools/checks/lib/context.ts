@@ -1,9 +1,11 @@
 import { loadScenarios, type ParsedFeatures } from "./features.ts";
 import { baseCommit } from "./git.ts";
 import type { Finding, Repo } from "./repo.ts";
-import { loadTests, type TestFile } from "./tests.ts";
 
-/** What every check gets: the repository, lazily parsed features and tests, and the base commit. */
+/**
+ * What every check gets: the repository, lazily parsed features, and the base commit. A check that reads the system
+ * tests calls `loadTests` itself, so the checks that do not never load ts-morph.
+ */
 export class Context {
   readonly repo: Repo;
   /** `osf docs-affected` prints every affected doc, not only the failing ones. */
@@ -22,10 +24,6 @@ export class Context {
   features(): ParsedFeatures {
     this.#features ??= loadScenarios(this.repo);
     return this.#features;
-  }
-
-  tests(): TestFile[] {
-    return loadTests(this.repo);
   }
 
   /** Checks whose comparison with the base did not run because OSF_BASE is not set. */
