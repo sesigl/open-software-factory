@@ -1,3 +1,5 @@
 # The operator's values and a proxy's CA stay on the machine.
 compose/.env
 images/local-ca.pem
+# The packs and the Dockerfile of the images built from this workspace (scripts/images.ts).
+images/.workspace/

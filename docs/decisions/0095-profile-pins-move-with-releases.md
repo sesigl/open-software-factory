@@ -57,3 +57,6 @@ have, so GHCR served the first chart.
   release first.
 - The `pull` rule does not find an image that only code starts, like the gateways of inference-litellm: such an image
   must be named in the code, so a stale entry is found, but a missing one is not.
+- The deploy suite no longer starts the images of the pins from GHCR or npm for the profile: it builds them from the
+  commit under the pinned tags ([ADR 0156](0156-the-deploy-suite-builds-the-commit.md)). The pins still name what a
+  release publishes, and PROFILE still holds them at the workspace's versions.

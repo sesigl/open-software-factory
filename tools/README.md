@@ -314,3 +314,4 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-184 | implemented | BUDGET rejects a unit with test results but no wall time of their run |
 | SCN-REPO-185 | implemented | BUDGET rejects a budget section of more than three lines |
 | SCN-REPO-186 | implemented | collect-reports copies the wall time of each package's run to the reports folder of the repository |
+| SCN-REPO-187 | implemented | PROFILE rejects a deploy package that does not declare a package that the Compose profile's images install |

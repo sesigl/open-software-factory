@@ -9,13 +9,15 @@
 // - The `pull` list of a suite in .github/test-suites.yml holds each image of the Compose files its tests start; any
 //   other entry, like the base of a Dockerfile or an image that code starts, is named in a file of the suite's packages
 //   or of the workspace packages they depend on. The testkit does not count: a suite names its fakes in `images`.
+// - deploy/package.json declares each package that compose.yaml installs: the deploy suite builds the module images
+//   from those packages of the workspace (ADR 0156), so their changes are in the turbo hash of its tests.
 import { statSync } from "node:fs";
 import { dirname, join, normalize } from "node:path";
 import { parse } from "yaml";
 import type { Context } from "./lib/context.ts";
 import { changedFiles, showAt } from "./lib/git.ts";
 import { CHART, COMPOSE, pins, services, VALUES } from "./lib/profile.ts";
-import type { Finding, Repo } from "./lib/repo.ts";
+import { type Finding, lineOf, type Repo } from "./lib/repo.ts";
 import { type Unit, workspace } from "./lib/workspace.ts";
 
 const ID = "PROFILE";
@@ -35,7 +37,29 @@ export function profile(context: Context): Finding[] {
     ...moved(context),
     ...rebuilt(context),
     ...pulls(repo),
+    ...declared(repo),
   ];
+}
+
+const DEPLOY = "deploy/package.json";
+
+/** The deploy package declares each package of the profile's images, whose workspace build its tests start. */
+function declared(repo: Repo): Finding[] {
+  if (!repo.exists(DEPLOY)) return [];
+  const text = repo.read(DEPLOY);
+  const manifest = JSON.parse(text) as { dependencies?: object; devDependencies?: object };
+  const names = new Set([...Object.keys(manifest.dependencies ?? {}), ...Object.keys(manifest.devDependencies ?? {})]);
+  const installed = new Set(services(repo.read(COMPOSE)).flatMap((service) => [...service.packages.keys()]));
+  return [...installed]
+    .sort()
+    .filter((name) => !names.has(`@opensoftware/${name}`))
+    .map((name) =>
+      finding(
+        DEPLOY,
+        lineOf(text, "devDependencies"),
+        `does not declare @opensoftware/${name}, which ${COMPOSE} installs: the deploy suite builds its images from the workspace (ADR 0156)`,
+      ),
+    );
 }
 
 /** Each line that `osf profile-pins` would change. */

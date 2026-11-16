@@ -7,7 +7,7 @@ const TOKEN = "intake-token-1";
 const MADE_UP = { kind: "person", id: "varun@acme.dev" };
 const DEDUPE_KEY = "task:delete-the-reports";
 
-scenario("SCN-DIST-048", async ({ sut, given, when, then }) => {
+scenario("SCN-DIST-054", async ({ sut, given, when, then }) => {
   let compose: Compose;
   await given(
     'the Compose profile with every value of ".env.example" set in ".env", "CONSOLE_SIGN_IN" set to "github" with its settings, and "CONSOLE_SIGNING_KEY" set',

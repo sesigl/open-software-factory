@@ -16,7 +16,7 @@ Use these names. The column "Elsewhere" gives the common name of the same kind o
 | Unit test | One pure function of `src/`, imported; only where a module's `AGENTS.md` allows it | none | yes | the module's own script | no | unit test |
 | System test | One built module or adapter from outside, for one scenario | fakes of the testkit | yes | `make check`, `verify` | TRACE, PASS, BUDGET, MUTATION | component test, black-box test |
 | Conformance scenario | A system test of an adapter for a scenario of its port | fakes of the testkit | yes | `make check`, `verify` | as a system test | contract test of an implementation |
-| Deployment scenario | The Compose profile with `sut.compose`, or the Helm chart on kind with `sut.helm` | fakes of the testkit | yes | `make check`, `verify` | as a system test | deployment test |
+| Deployment scenario | The Compose profile with `sut.compose`, its module images built from the commit (ADR 0156), or the Helm chart on kind with `sut.helm` | fakes of the testkit | yes | `make check`, `verify` | as a system test | deployment test |
 | Smoke scenario | The whole factory on the Compose profile, every module from the workspace image (`e2e/features/`) | fakes of the testkit on the Docker host | yes | `make smoke`, `verify` | as a system test | hermetic end-to-end test |
 | Live test | A harness adapter with a real model, through the real service (`e2e/paid/`) | real, paid | no | `make smoke-paid` only | no | live integration test, provider contract test |
 
