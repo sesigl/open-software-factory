@@ -175,6 +175,23 @@ Feature: Repository checks
     Then the command exits with code 0
     And the output contains "TEMPLATE ok"
 
+  @id=SCN-REPO-175 @status=implemented
+  Scenario: TEMPLATE accepts a component whose script only imports an island's mount script
+    Given the module "demo" whose component "src/components/List.astro" has a script that imports "../islands/list.mount.tsx"
+    When the developer runs "osf check TEMPLATE"
+    Then the command exits with code 0
+    And the output contains "TEMPLATE ok"
+
+  @id=SCN-REPO-176 @status=implemented
+  Scenario: TEMPLATE rejects a script with an attribute, with code, or with an import that is no island
+    Given the module "demo" whose component "src/components/List.astro" has a script "is:inline" on line 5, a script that imports "../islands/list.mount.tsx" and calls "console.log" on line 9, and a script that imports "../pages/list.ts" on line 12
+    When the developer runs "osf check TEMPLATE"
+    Then the command exits with code 1
+    And the output contains "TEMPLATE modules/demo/src/components/List.astro:5 a script has no attributes: Astro bundles it into a file of its own"
+    And the output contains "TEMPLATE modules/demo/src/components/List.astro:9 a script only imports an island's mount script, a .tsx file in src/islands/ of its unit"
+    And the output contains "TEMPLATE modules/demo/src/components/List.astro:12 a script only imports an island's mount script, a .tsx file in src/islands/ of its unit"
+    And the output does not contain "List.astro:6" or "List.astro:10"
+
   @id=SCN-REPO-143 @status=implemented
   Scenario: TEMPLATE rejects a template that computes in its frontmatter
     Given the module "demo" whose template "src/web/pages/runs.astro" counts the runs in its frontmatter
