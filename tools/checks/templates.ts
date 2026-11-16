@@ -178,6 +178,42 @@ function imports(repo: Repo, file: string, unit: string, statement: AstNode): st
 
 const unitOf = (file: string): string => file.split("/src/")[0] as string;
 
+/**
+ * Each `<script>` of the markup with what is wrong with it (ADR 0152): a script has no attributes, so Astro bundles it
+ * into an external module script, and it only imports an island's mount script, a `.tsx` file in the unit's
+ * `src/islands/`, so its logic is where MUTATION counts it.
+ */
+function scripts(value: unknown, file: string, unit: string, found: { at: number; message: string }[]): void {
+  const element = node(value);
+  if (!element) return;
+  const opening = node(element.openingElement);
+  const children = (element.children as unknown[] | undefined) ?? [];
+  if (node(opening?.name)?.name === "script") {
+    if (((opening?.attributes as unknown[]) ?? []).length > 0)
+      found.push({ at: element.start, message: "a script has no attributes: Astro bundles it into a file of its own" });
+    for (const child of children) {
+      for (const statement of (node(node(child)?.program)?.body as AstNode[] | undefined) ?? []) {
+        const source = String(node(statement.source)?.value ?? "");
+        const target = posix.normalize(posix.join(posix.dirname(file), source));
+        const island =
+          statement.type === "ImportDeclaration" &&
+          statement.importKind === "value" &&
+          ((statement.specifiers as unknown[]) ?? []).length === 0 &&
+          source.startsWith(".") &&
+          target.startsWith(`${unit}/src/islands/`) &&
+          target.endsWith(".tsx");
+        if (!island)
+          found.push({
+            at: statement.start,
+            message: "a script only imports an island's mount script, a .tsx file in src/islands/ of its unit",
+          });
+      }
+    }
+    return;
+  }
+  for (const child of children) scripts(child, file, unit, found);
+}
+
 export function template(context: Context): Finding[] {
   const { repo } = context;
   const findings: Finding[] = [];
@@ -197,6 +233,9 @@ export function template(context: Context): Finding[] {
     for (const part of ast.body ?? []) markup(part, problems);
     for (const problem of problems)
       at(problem.start, "the markup computes: an expression reads a property, maps a list or switches on a value");
+    const wrong: { at: number; message: string }[] = [];
+    for (const part of ast.body ?? []) scripts(part, file, unitOf(file), wrong);
+    for (const { at: offset, message } of wrong) at(offset, message);
   }
   return findings;
 }

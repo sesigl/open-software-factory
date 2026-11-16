@@ -153,7 +153,7 @@
     "CONSOLE_REFRESH": {
       "type": "string",
       "default": "10",
-      "description": "serve: the seconds after which the browser reloads the runs pages; 0 turns the reload off."
+      "description": "serve: the seconds after which the browser reloads the runs pages, and the work page loads its list again; 0 turns both off."
     },
     "CONSOLE_REPOSITORY_URL": {
       "type": "string",

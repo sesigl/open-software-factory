@@ -1,0 +1,13 @@
+---
+// The work list whose route answers a page instead of JSON, as a console answers a person whose session ended with
+// its sign-in page: here the route is the workbench's own page of rows.
+import Page from "../../../src/components/Page.astro";
+import WorkList from "../../../src/components/WorkList.astro";
+import { workList } from "../../work-list.ts";
+---
+<Page title="Work list whose route answers a page" theme="dark">
+  <main>
+    <h1>Work list whose route answers a page</h1>
+    <WorkList list={workList("/work-list/rows/", 10_000)} />
+  </main>
+</Page>

@@ -1,0 +1,12 @@
+---
+// The work list whose route fails: every 10 seconds the island loads a route that answers no list.
+import Page from "../../../src/components/Page.astro";
+import WorkList from "../../../src/components/WorkList.astro";
+import { workList } from "../../work-list.ts";
+---
+<Page title="Work list whose route fails" theme="dark">
+  <main>
+    <h1>Work list whose route fails</h1>
+    <WorkList list={workList("/work-list/failing.json", 10_000)} />
+  </main>
+</Page>

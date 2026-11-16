@@ -32,7 +32,7 @@ import { type Back, problemData } from "../pages/problem.ts";
 import { runData } from "../pages/run.ts";
 import { runsData, waitingOf } from "../pages/runs.ts";
 import { shellData } from "../pages/shell.ts";
-import { workData } from "../pages/work.ts";
+import { WORK_ITEMS, workData, workItems } from "../pages/work.ts";
 import { FORGE_ADAPTER, factoryRepositoryOf, NO_ROLES, useChanges } from "./changes.ts";
 import { actorOf, fromConsole, personOf } from "./person.ts";
 import { SECRET_ROLES, useSecrets } from "./secrets.ts";
@@ -55,9 +55,12 @@ const SECRETS: Back = { href: "/secrets", text: "Secrets" };
 const SKILLS: Back = { href: "/skills", text: "Skills" };
 const CHANGES: Back = { href: "/changes", text: "Changes" };
 
-/** The Content-Security-Policy of every answer: the console's own origin only, no script and no frame (ADR 0132). */
+/**
+ * The Content-Security-Policy of every answer: the console's own origin only, no frame, and only the scripts of its own
+ * files, the islands' (ADR 0132, ADR 0152): no inline script, hash, nonce or eval.
+ */
 const POLICY =
-  "default-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
+  "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
 
 /** The console's key set of the person proof (ADR 0151). */
 const KEYS = "/.well-known/jwks.json";
@@ -170,7 +173,7 @@ export async function serve(env: Env) {
     );
 
   const app = Fastify({ logger: false });
-  // Every answer, also one that Astro writes itself, allows only the console's own files and no script (ADR 0132).
+  // Every answer, also one that Astro writes itself, allows only the console's own files and scripts (ADR 0132, ADR 0152).
   app.addHook("onRequest", async (_request, reply) => {
     reply.raw.setHeader("content-security-policy", POLICY);
   });
@@ -335,20 +338,30 @@ export async function serve(env: Env) {
     return render(request, reply, 200, improvementData(shell, await readImprovement(improve)));
   });
 
+  const NO_INTAKE = "no work items: set CONSOLE_INTAKE_URL to the base URL of intake's API";
+  /** A page of intake's work items at the cursor. */
+  const inboxOf = (intake: Api, cursor: string | undefined) =>
+    getJson<WorkItemList>(intake, `/v1/inbox${queryOf({ cursor })}`);
+
   app.get<{ Querystring: { cursor?: string } }>("/work", async (request, reply) => {
-    if (!intake)
-      return problemPage(request, reply, 404, {
-        title: "No work items",
-        detail: "no work items: set CONSOLE_INTAKE_URL to the base URL of intake's API",
-        back: RUNS,
-      });
-    const answer = await getJson<WorkItemList>(intake, `/v1/inbox${queryOf({ cursor: request.query.cursor })}`);
+    if (!intake) return problemPage(request, reply, 404, { title: "No work items", detail: NO_INTAKE, back: RUNS });
+    const query = queryOf({ cursor: request.query.cursor });
+    const answer = await inboxOf(intake, request.query.cursor);
     const notes = answer.ok ? [] : [answer.note];
     const items = answer.ok ? answer.body.workItems : [];
     // intake's cursor of the next page is the console's (ADR 0115).
     const next = answer.ok && answer.body.next ? `/work${queryOf({ cursor: answer.body.next })}` : undefined;
-    const shell = shellOf(request, { title: "Work", current: WORK.href, refresh });
-    return render(request, reply, 200, workData(shell, items, now(), { notes, form: actions, next }));
+    // No reload: the island "work-list" loads the rows of WORK_ITEMS instead (ADR 0152).
+    const shell = shellOf(request, { title: "Work", current: WORK.href });
+    return render(request, reply, 200, workData(shell, items, now(), { notes, form: actions, next, query, refresh }));
+  });
+
+  // The rows of the work page as JSON, for its island (ADR 0152): the same sign-in, the same page of intake's inbox.
+  app.get<{ Querystring: { cursor?: string } }>(WORK_ITEMS, async (request, reply) => {
+    if (!intake) return reply.code(404).send({ title: "No work items", detail: NO_INTAKE });
+    const answer = await inboxOf(intake, request.query.cursor);
+    if (!answer.ok) return reply.code(502).send({ title: "Not refreshed", detail: answer.note });
+    return reply.header("cache-control", "no-store").send(workItems(answer.body.workItems, now(), []));
   });
 
   // Actions (ADR 0089): only with CONSOLE_USER_HEADER, from the same origin, in the name of the signed-in person.

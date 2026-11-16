@@ -1,13 +1,13 @@
 # AGENTS.md for module `console`
 
-Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0072, ADR 0073, ADR 0115, ADR 0120, ADR 0130, ADR 0132, ADR 0141, ADR 0144, ADR 0149, ADR 0150.
+Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0072, ADR 0073, ADR 0115, ADR 0120, ADR 0130, ADR 0132, ADR 0141, ADR 0144, ADR 0149, ADR 0150, ADR 0152.
 
 ## Public surface
 
 The only ways a system test or another program may use this module:
 
 - CLI: `console <command>` (see `README.md#commands`)
-- Web pages of `console serve` on `PORT` (see `README.md#pages`): `/`, `/runs/<runId>`, `/work`, `/factory`,
+- Web pages of `console serve` on `PORT` (see `README.md#pages`): `/`, `/runs/<runId>`, `/work`, the rows of its island `/work/items` as JSON (ADR 0152), `/factory`,
   `/factory/agents/<name>`, `/inbox`, `/improvement`, `/health`, `/secrets` and `/secrets/delete` (ADR 0137), `/skills` and `/skills/<name>` (ADR 0141), `/skills/<name>/switch` (ADR 0149), `/changes` (ADR 0144); the sign-in `/signin`, `/signin/start`,
   `/signin/callback` and `POST /signout` (ADR 0134); `/theme` (ADR 0133); the probe `/v1/ready`; the key set of the
   person proof `/.well-known/jwks.json`, without a session and for every host, 404 without `CONSOLE_SIGNING_KEY`
@@ -49,10 +49,16 @@ Layers, top to bottom, in `architecture.json` (ADR 0014): `entry` (`src/cli.ts`)
 `src/web/pages/<path>.astro`: its route in `serve` loads the data, a function of `pages` computes every value it shows,
 and `adapters/web.ts` hands them to Astro as `locals.page` with the status. A template holds no logic (TEMPLATE); the
 health page is the first. Astro's own Origin check is off: the route of each form checks `Origin` first and answers a
-form from another site with its own problem page, which Astro only renders. Every answer has a Content-Security-Policy without script. The design system `@opensoftware/ui` is a `devDependency`: Astro compiles its components, styles and faces
+form from another site with its own problem page, which Astro only renders. Every answer has a Content-Security-Policy whose scripts are only the console's own files (`script-src 'self'`, ADR 0152): no inline script, hash, nonce or eval. The design system `@opensoftware/ui` is a `devDependency`: Astro compiles its components, styles and faces
 into `dist/web/` and copies its brand files beside them (`publicDir`), and the console serves them at `/_astro/` and
-`/favicon.svg` from its own origin. So no built file may resolve `@opensoftware/ui`: the published console does not have it. Islands: none yet; each island
-a page uses is listed here with the reason why a page load is not enough (T-55). `domain` holds the run states, the order of a merged run list, a run's age, the URL
+`/favicon.svg` from its own origin. So no built file may resolve `@opensoftware/ui`: the published console does not have it; an island's SolidJS is bundled into its script in `dist/web/client/_astro/`, and `solid-js` and `vite-plugin-solid` are `devDependencies` for that build. Islands: each island a page uses is listed here with the reason why a page load is not enough (T-55):
+
+- `work-list` of `@opensoftware/ui` on `/work`: the page reloaded itself every `CONSOLE_REFRESH` seconds, which threw
+  away a half-typed "Submit work" form, and axe flags a reload (`meta-refresh`, WCAG 2.2.1). The island loads the
+  rows from `/work/items`, which the route of the page computes with the same functions (`pages/work.ts`), so the
+  browser formats nothing; a browser without script still reloads (`<noscript>`).
+
+ `domain` holds the run states, the order of a merged run list, a run's age, the URL
 templates, the inbox's states, the states of the secrets, what a skill needs and the safe HTML of a skill's Markdown
 (markdown-it, ADR 0141), a change's edits, branch, title, body and state (ADR 0144), and the edits of a skill's
 switch (ADR 0149), without I/O; `adapters` call
@@ -107,12 +113,23 @@ A journey runs in Chromium (`@kind=journey`, ADR 0131) only for a main flow. Eac
   and an agent's facts inside the screen, and only it shows that "Menu" leads to "Factory" and that the four pages
   pass axe.
 
-They start the console with `CONSOLE_REFRESH=0`: axe's rule `meta-refresh` (WCAG 2.2.1) flags the runs page's reload,
-which stays until live updates replace it (`TODO.md`, T-60).
+- SCN-CONSOLE-279, the work list refreshes while a person types: only a browser runs the island, so it is the only
+  proof that the list shows a new work item after `CONSOLE_REFRESH` seconds without a reload, that the typed title
+  stays, and that the work page with its refresh on passes axe. It pauses the browser's clock and runs it 10 seconds
+  on (Playwright's clock), after it typed, since Playwright's actions wait for animation frames.
+
+The others start the console with `CONSOLE_REFRESH=0`: axe's rule `meta-refresh` (WCAG 2.2.1) flags the runs page's
+reload, which stays until live updates replace it (`TODO.md`, T-60).
 
 ## Budget
 
-- System tests: 335 seconds in total on the CI runner (213 scenarios). The person proof (T-61, ADR 0151) adds
+- System tests: 335 seconds in total on the CI runner (219 scenarios). The island of the work page (T-55, ADR 0152)
+  adds SCN-CONSOLE-274 to 279 without a new budget: measured on the development container on 16 November 2026 in one
+  run of the whole suite (218.0 seconds of test time), they took 3.5 seconds together: 0.3 to 0.6 seconds each for
+  the route and the page, 1.3 for the journey SCN-CONSOLE-279 in Chromium with axe, which runs the browser's clock 10
+  seconds on instead of waiting; SCN-CONSOLE-273 replaces 267 at the same cost (0.44 seconds). That is 1.6 % more,
+  inside the 8 % of the budget below.
+- Before that: 335 seconds for 213 scenarios. The person proof (T-61, ADR 0151) adds
   SCN-CONSOLE-268 to 272 without a new budget: measured on the development container in one run of the whole suite
   (213.1 seconds of test time), they took 2.9 seconds together (0.5 to 0.8 seconds each: a console and fakes in the
   test process, no browser), 1.4 % more, about 4 seconds on CI, inside the 8 % of the budget below. The library loads

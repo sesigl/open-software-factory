@@ -30,8 +30,11 @@ sandbox's egress proxy ─ reads ─▶ OpenBao  as today: it swaps the placehol
 - An island is a SolidJS component in `.tsx` in `packages/ui/src/islands/`. A page includes it with a `<script>` of an
   Astro component, which Vite bundles into a file of `/_astro/`; no `client:*` directive, since Astro writes those as
   inline scripts. So the console's policy allows scripts of its own origin only: `script-src 'self'`, without inline
-  script, hash or nonce. The first island keeps the list of the work page fresh, which reloads itself today
-  (ADR 0152).
+  script, hash or nonce. The script imports the island's mount script, which renders the component into its element
+  with the properties the server wrote on it as JSON (`data-props`), and TEMPLATE allows a `<script>` nothing else.
+- The first island, `work-list`, keeps the list of the work page fresh without a reload: it loads the rows from
+  `/work/items` every `CONSOLE_REFRESH` seconds, ready to show, since the route computes them with the page's own
+  functions; a browser without script reloads the page, from a `<noscript>` (ADR 0152).
 
 ## The path of a request
 
@@ -79,4 +82,6 @@ journey's screenshots are evidence on the pull request.
 
 The workbench is a static site of plain Astro pages in `packages/ui`, one page per island and state. An island
 scenario serves it with `sut.site` and opens a page with `sut.browser`. During a mutation run `sut.browser` sets
-Stryker's active mutant in the page before its first script, so MUTATION counts an island's lines (ADR 0152).
+Stryker's active mutant in the page before its first script, so MUTATION counts an island's lines (ADR 0152). The
+build of `packages/ui` writes it to `dist/workbench/`, with static JSON in place of a route, and an island scenario
+pauses the browser's clock (`page.clock.pauseAt`) and runs it on (`page.clock.runFor`), so no test waits for time.

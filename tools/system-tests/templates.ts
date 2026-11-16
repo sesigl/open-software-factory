@@ -29,6 +29,14 @@ export const READS = [
   "</Frame>",
 ];
 
+/** The component of the island scenarios (ADR 0152): a list, then the scripts `scripts`, from line 5. */
+export const COMPONENT_FILE = "modules/demo/src/components/List.astro";
+export const componentOf = (scripts: string[]): string =>
+  templateOf(
+    ["const { list } = Astro.props as { list: string[] };"],
+    ["<ul>{list.map((item) => <li>{item}</li>)}</ul>", ...scripts],
+  );
+
 /** Puts the module demo with its layers and this template. */
 export async function putTemplate(sut: Sut, template: string, file = TEMPLATE_FILE): Promise<void> {
   await sut.files.put("$INPUT/modules/demo/package.json", '{ "name": "@opensoftware/demo" }\n');

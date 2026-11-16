@@ -302,3 +302,5 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-172 | implemented | osf mutation lists the line ranges a change adds to a .tsx file and none of a template |
 | SCN-REPO-173 | implemented | osf mutation-plan counts the lines a change adds to a .tsx file |
 | SCN-REPO-174 | implemented | REACH rejects a new .tsx file of a module that no system test loads |
+| SCN-REPO-175 | implemented | TEMPLATE accepts a component whose script only imports an island's mount script |
+| SCN-REPO-176 | implemented | TEMPLATE rejects a script with an attribute, with code, or with an import that is no island |

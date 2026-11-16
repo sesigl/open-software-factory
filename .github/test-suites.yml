@@ -86,8 +86,12 @@
   filter: "@opensoftware/console"
   images: forge
   browser: chromium
+# The island scenarios open the workbench of the design system in Chromium (ADR 0152).
+- suite: ui
+  filter: "@opensoftware/ui"
+  browser: chromium
 # Every other package, so a new module runs without a change here.
 - suite: rest
-  filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper !@opensoftware/intake !@opensoftware/foreman !@opensoftware/sandbox-docker !@opensoftware/sandbox-kubernetes !@opensoftware/inference-litellm !@opensoftware/forge-forgejo !@opensoftware/deploy !@opensoftware/e2e !@opensoftware/console"
+  filter: "!@opensoftware/testkit !@opensoftware/factory-spec !@opensoftware/tools !@opensoftware/runlog !@opensoftware/proof !@opensoftware/ledger !@opensoftware/observer !@opensoftware/gatekeeper !@opensoftware/intake !@opensoftware/foreman !@opensoftware/sandbox-docker !@opensoftware/sandbox-kubernetes !@opensoftware/inference-litellm !@opensoftware/forge-forgejo !@opensoftware/deploy !@opensoftware/e2e !@opensoftware/console !@opensoftware/ui"
   # packages/postgres uses fakes.postgres (ADR 0129).
   images: postgres

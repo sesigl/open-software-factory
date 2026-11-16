@@ -1466,7 +1466,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
     styles (heading, filters, table, states), compiled into the console's build.
   - [x] The components that Secrets and Skills need (with T-57 and T-59).
 
-### [ ] T-55 · the first island: code in the browser counts (P2)
+### [x] T-55 · the first island: code in the browser counts (P2)
 
 - **Starts when:** a page needs its first island (T-54). The first release needs none, so this item waits and blocks
   nothing.
@@ -1493,7 +1493,7 @@ package (`ui`, `factory-source`, `secrets-openbao`) needs its ADR, `skills/new-m
 - **Slices:**
   - [x] The ADR; `.tsx` in the checks; the static file server and the active mutant in the page (`SCN-TK`,
     `SCN-REPO`).
-  - [ ] The workbench and the first island with its island scenarios and its suite (`SCN-UI`).
+  - [x] The workbench and the first island with its island scenarios and its suite (`SCN-UI`).
 
 ### [x] T-56 · sign-in, roles and the shell (P0)
 

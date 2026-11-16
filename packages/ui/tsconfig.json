@@ -1,4 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["src/**/*.ts", "system-tests/**/*.ts", "vitest.config.ts"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "workbench/**/*.ts", "system-tests/**/*.ts", "vitest.config.ts"],
+  "compilerOptions": {
+    "lib": ["es2024", "dom", "dom.iterable"],
+    // An island's JSX is SolidJS's, which vite-plugin-solid compiles (ADR 0152).
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js"
+  }
 }

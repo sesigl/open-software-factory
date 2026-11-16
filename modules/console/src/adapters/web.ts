@@ -40,6 +40,8 @@ export async function render(
 
 const TYPES: Record<string, string> = {
   css: "text/css; charset=utf-8",
+  // The scripts of the islands (ADR 0152).
+  js: "text/javascript; charset=utf-8",
   woff2: "font/woff2",
   woff: "font/woff",
   svg: "image/svg+xml",

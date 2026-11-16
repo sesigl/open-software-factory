@@ -82,6 +82,48 @@ Feature: Work
     Then the first answer has the status 401, the title "Sign in", the navigation "Main" with "Work" as the current page and the way back "Work"
     And the second answer has the status 403, the title "Forbidden", the navigation "Main" with "Runs" as the current page and the way back "Runs"
 
+  @id=SCN-CONSOLE-274 @status=implemented
+  Scenario: The work page's list is the island "work-list", and only a browser without script reloads the page
+    Given an intake whose inbox holds "Import reports from CSV", received two days ago, and a console with "CONSOLE_REFRESH" 10
+    When a person opens "/work"
+    Then the region "Work items" lists "Import reports from CSV" and holds the island's properties: the route "/work/items", the interval 10000 milliseconds and the same row
+    And the page loads one script, a module script of "/_astro/" that the console answers as JavaScript, and has no inline script
+    And the page asks only a browser without script to reload it after 10 seconds
+    And on "/work?cursor=Y3Vyc29y" the island's route is "/work/items?cursor=Y3Vyc29y"
+
+  @id=SCN-CONSOLE-275 @status=implemented
+  Scenario: "/work/items" answers the rows of the work page, ready to show, for the same page of intake's inbox
+    Given an intake whose inbox holds "Import reports from CSV", received two days ago, and "Export reports as CSV", running in the run "run_5d41402abc4b2a76b971", and whose page at the cursor "Y3Vyc29y" is empty
+    When a program asks "/work/items" and "/work/items?cursor=Y3Vyc29y"
+    Then the first answer is 200 with the two rows as JSON, each with its title, type, status and its classes, source, requester, run and age, and "empty" false
+    And the second answer is 200 with no row and "empty" true, and intake was asked for "/v1/inbox" and "/v1/inbox?cursor=Y3Vyc29y"
+
+  @id=SCN-CONSOLE-276 @status=implemented
+  Scenario: "/work/items" answers 502 when intake does not answer, and 404 without intake
+    Given an intake whose inbox answers 503, and a second console without "CONSOLE_INTAKE_URL"
+    When a program asks "/work/items" of each console
+    Then the first answer is 502 with the title "Not refreshed" and says that intake did not answer with 503
+    And the second answer is 404 with the title "No work items" and names "CONSOLE_INTAKE_URL"
+
+  @id=SCN-CONSOLE-277 @status=implemented
+  Scenario: "/work/items" asks a person who is signed out to sign in first, like the work page
+    Given a console that signs in with OpenID Connect, with an intake
+    When a person who is signed out asks "/work/items"
+    Then the answer redirects to "/signin?next=%2Fwork%2Fitems" and intake was asked for nothing
+
+  @id=SCN-CONSOLE-278 @status=implemented
+  Scenario: "/work/items" refuses a person who is not on the access list, like the work page
+    Given a console behind a sign-in proxy with "CONSOLE_USER_HEADER" "X-Forwarded-Email", an access file with "ada@acme.dev" as "admin", and an intake
+    When the proxy sends "leo@acme.dev" to "/work/items"
+    Then the answer has the status 403 and says "leo@acme.dev is not on this factory's access list", and intake was asked for nothing
+
+  @id=SCN-CONSOLE-279 @status=implemented @kind=journey
+  Scenario: The list of work items refreshes while a person types into "Submit work", and the page passes axe (journey)
+    Given a console behind a sign-in proxy with "CONSOLE_REFRESH" 10 and an intake whose inbox holds "Import reports from CSV", and "Add a dark mode" too from its second answer on
+    When the person "ada@acme.dev" opens "/work" in Chromium and types "Add a dark mode" into the field "Title"
+    Then 10 seconds later the list shows "Add a dark mode" above "Import reports from CSV", the page was not loaded again, and the field "Title" still holds "Add a dark mode"
+    And the work page passes the accessibility checks with the refresh on, and its screenshot is kept as "work-refreshed"
+
   @id=SCN-CONSOLE-257 @status=implemented @kind=journey
   Scenario: On a phone a person reads the inbox as cards and submits work from the work form (journey)
     Given a console behind a sign-in proxy with an intake whose inbox holds "Import reports from CSV", received two days ago, and the inbox of "tester/web" with the proposal "Triage asks before it investigates"

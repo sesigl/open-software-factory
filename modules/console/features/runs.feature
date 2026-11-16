@@ -91,11 +91,18 @@ Feature: The runs page
     When a person opens "/", "/health" and "/pico.css"
     Then each answer has the Content-Security-Policy "default-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
 
-  @id=SCN-CONSOLE-267 @status=implemented @replaces=SCN-CONSOLE-135
+  @id=SCN-CONSOLE-267 @status=deprecated @replaces=SCN-CONSOLE-135
   Scenario: Every answer allows only the console's own files and no script, and the old stylesheet is gone
     Given a foreman with the run "Export reports as CSV"
     When a person opens "/", "/health", "/favicon.svg" and "/pico.css"
     Then each answer has the Content-Security-Policy "default-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+    And "/favicon.svg" answers 200 and "/pico.css" answers 404
+
+  @id=SCN-CONSOLE-273 @status=implemented @replaces=SCN-CONSOLE-267
+  Scenario: Every answer allows only the console's own files and scripts, and the old stylesheet is gone
+    Given a foreman with the run "Export reports as CSV"
+    When a person opens "/", "/health", "/favicon.svg" and "/pico.css"
+    Then each answer has the Content-Security-Policy "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
     And "/favicon.svg" answers 200 and "/pico.css" answers 404
 
   @id=SCN-CONSOLE-246 @status=implemented @kind=journey

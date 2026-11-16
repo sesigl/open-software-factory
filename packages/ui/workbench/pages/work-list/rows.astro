@@ -1,0 +1,19 @@
+---
+// The work list with rows: every 10 seconds the island loads two work items, one of them new. A field beside it
+// holds what a person types while the list refreshes.
+import Page from "../../../src/components/Page.astro";
+import WorkList from "../../../src/components/WorkList.astro";
+import { workList } from "../../work-list.ts";
+---
+<Page title="Work list with rows" theme="dark">
+  <main>
+    <h1>Work list with rows</h1>
+    <form class="osf-panel" aria-label="Submit work">
+      <div class="osf-field">
+        <label for="work-title">Title</label>
+        <input id="work-title" class="osf-input" name="title" type="text" autocomplete="off" />
+      </div>
+    </form>
+    <WorkList list={workList("/work-list/rows.json", 10_000)} />
+  </main>
+</Page>

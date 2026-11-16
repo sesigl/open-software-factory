@@ -71,7 +71,7 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
   again and keep the scenario's cookies; redirects are followed unless `follow` is false. `sut.pages.send(path,
   fields, { headers, follow })` sends fields as a form does, for a request that no page offers, like a program's. A
   test finds elements by role, name, label and text, never by a tag, a class or a test ID.
-- `sut.browser.open(path, { viewport, headers })`: opens a page of the folder `sut.site` serves, or else of the
+- `sut.browser.open(path, { viewport, headers, clock })`: opens a page of the folder `sut.site` serves, or else of the
   server `sut.http` started, in Chromium and returns Playwright's `Page`, for a journey or an island scenario (ADR 0131). One browser per test process, a new
   context per scenario: the testkit's clock (2026-01-01T00:00:00Z), the locale `en-US`, the time zone `UTC`, reduced
   motion and the viewport `phone` (390 × 844) or `desktop` (1280 × 800, the default). A request that leaves loopback
@@ -82,7 +82,11 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
   `__STRYKER_ACTIVE_MUTANT__`, as during `osf mutation`, every page of the scenario gets
   `globalThis.__stryker__ = { activeMutant }` before its first script, where Stryker's instrumented code reads it, so
   a mutant in an island's bundled code is active in the browser
-  ([ADR 0152](../../docs/decisions/0152-an-islands-code-counts.md)).
+  ([ADR 0152](../../docs/decisions/0152-an-islands-code-counts.md)). The browser's clock stands at the testkit's
+  clock while its timers run in real time; with `clock: "paused"` it stands still from before the page's first
+  script, so a timer runs only when the test runs `page.clock.runFor(ms)`, exactly that many milliseconds later, as
+  an island scenario needs (SCN-TK-189). Playwright's actions such as `fill` wait for animation frames, which a paused
+  clock holds back: resume it with `page.clock.resume()` first, and before `expectAccessible`.
 - `sut.site.serve(folder, { headers })`: serves a folder of the unit, such as the built workbench of `@opensoftware/ui`,
   on `127.0.0.1` until the scenario ends and returns its base URL; `sut.site.url()` gives it again. A path answers
   its file, or a folder's `index.html`, with the file's content type (HTML, JavaScript, CSS, JSON, SVG, else
@@ -615,3 +619,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-186 | implemented | sut.site answers 404 for a path outside its folder and serves no folder outside the unit |
 | SCN-TK-187 | implemented | A page that sut.browser opens during a mutation run runs the active mutant's branch of an instrumented script |
 | SCN-TK-188 | implemented | A page that sut.browser opens without an active mutant runs the original branch of an instrumented script |
+| SCN-TK-189 | implemented | A page that sut.browser opens with its clock paused runs its timers only when the test runs the clock |

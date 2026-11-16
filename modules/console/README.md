@@ -40,7 +40,8 @@ Open <http://localhost:8080>. The page lists the foreman's runs, the running one
 | `/` | The runs of every foreman: title, factory, state, source, requester, pull request and age. Runs that have not ended come first, the one that started last first, then the ended runs, the one that ended last first. A foreman that does not answer is named above the list. The page shows the first page of each foreman's runs and links "Next page" (`?page=`) while one has more ([ADR 0115](../../docs/decisions/0115-lists-in-pages.md)). |
 | `/?state=<state>` | Only the runs in the state `running`, `blocked`, `complete`, `failed` or `cancelled`, as the foremen filter them. Another state answers 400. |
 | `/runs/<runId>` | One run: its state, factory and factory version, age, pull request, trace and Temporal history; its origin, or with `CONSOLE_INTAKE_URL` every request of its work item; and its stages as its evidence, each with its agent ("waits" for a stage that only waits, ADR 0107), state, transcript, gate, checks and the reason it failed. A run that a person ran again names its attempt and links the run before it. 404 when no foreman knows the run. |
-| `/work` | With `CONSOLE_INTAKE_URL`: intake's latest work items, the one received last first, each with its origin, type, status, source, requester, run and age, also work that waits without a run, one page of intake's inbox at a time with a link "Next page" (`?cursor=`) while more follow; an intake that does not answer is named above the list. With actions, the form "Submit work". 404 without `CONSOLE_INTAKE_URL`. |
+| `/work` | With `CONSOLE_INTAKE_URL`: intake's latest work items, the one received last first, each with its origin, type, status, source, requester, run and age, also work that waits without a run, one page of intake's inbox at a time with a link "Next page" (`?cursor=`) while more follow; an intake that does not answer is named above the list. With actions, the form "Submit work". The list is an island ([ADR 0152](../../docs/decisions/0152-an-islands-code-counts.md)): every `CONSOLE_REFRESH` seconds the browser loads its rows from `/work/items` and shows them in place, so the page does not reload and a half-typed form stays; while that fails the list keeps its rows and says so. A browser without script reloads the page instead. 404 without `CONSOLE_INTAKE_URL`. |
+| `/work/items` | The rows of the same page of intake's inbox (`?cursor=`) as JSON, for the work page's island: `{ "rows": [...], "empty": false }`, each row with its title and link, type, status and its classes, source, requester, run and age as the page shows them. 502 `{ "title": "Not refreshed", "detail": ... }` when intake does not answer, 404 without `CONSOLE_INTAKE_URL`. The same sign-in as every page. |
 | `/factory` | The factory definition in `CONSOLE_FACTORY`: its name, description, agents with their harness, model and effort, and providers, and the link to the file on the branch where it changes. |
 | `/factory/agents/<name>` | One agent's configuration, each field with its value and a list or a map as YAML, and the link to the file on the branch where it changes. 404 for an agent the factory does not declare. |
 | `/health` | The checks of `console doctor` as a table: each check, its state and what to do. 200 when every check is ok, else 503. |
@@ -75,10 +76,12 @@ without the role or a change that fails, answers in the same shell, with the way
 
 Every page links the runs, the work items (with `CONSOLE_INTAKE_URL`), the inbox (with `CONSOLE_INBOX_REPOSITORY`),
 Secrets, Skills and Changes as above, the factory, the cost and scores (with `CONSOLE_IMPROVE_DIR`), the health page
-and the dashboards in `CONSOLE_LINKS`. The runs pages, the page of a run and the work page reload themselves every
-`CONSOLE_REFRESH` seconds. Without `CONSOLE_USER_HEADER` the console is read-only: it has no forms, and any method but
+and the dashboards in `CONSOLE_LINKS`. The runs pages and the page of a run reload themselves every `CONSOLE_REFRESH` seconds; the
+work page keeps its list fresh without a reload. Without `CONSOLE_USER_HEADER` the console is read-only: it has no forms, and any method but
 `GET` and `HEAD` answers 405. It shows what the foreman and intake show, so run it behind your sign-in proxy, such as
-oauth2-proxy. Every answer carries a Content-Security-Policy that allows only the console's own files and no script.
+oauth2-proxy. Every answer carries a Content-Security-Policy that allows only the console's own files, and scripts only as
+files of its own origin (`script-src 'self'`): no inline script, hash, nonce or eval. The only script is the work list's
+island, which Astro bundles into `/_astro/`.
 The pages render on the server; the health page was the first that Astro renders, the runs page the second ([ADR 0132](../../docs/decisions/0132-astro-in-the-console.md)), and
 since T-60 Astro renders every page, with the same URLs, in the look of the design system. The old stylesheet
 `/pico.css` is gone and answers 404.
@@ -248,7 +251,7 @@ secret.
 The Markdown comes from a repository, so the page renders it safely with markdown-it: raw HTML, a script among it, is
 text; an image shows its alternative text, so no image loads from anywhere; a link keeps its anchor only to `https:`,
 `http:` or `mailto:`, with `rel="nofollow noreferrer"`, and any other, like `javascript:`, `data:` or a relative path,
-keeps only its words. The page's Content-Security-Policy forbids every script as well.
+keeps only its words. The page's Content-Security-Policy forbids every inline script as well.
 
 ### Switch a skill
 
@@ -435,7 +438,7 @@ as ok, adds itself to the count, like `all 5 checks ok, warnings: 1`, and shows 
 | `CONSOLE_OIDC_CLIENT_SECRET` | string |  | serve, with CONSOLE_SIGN_IN=oidc: the client's secret. |
 | `CONSOLE_OIDC_ISSUER` | string |  | serve, with CONSOLE_SIGN_IN=oidc: the provider's issuer, whose discovery document is <issuer>/.well-known/openid-configuration, like https://accounts.google.com. |
 | `CONSOLE_OTLP_URL` | string |  | doctor --deep: the OTLP/HTTP base URL of the collector, like http://jaeger:4318; it gets one span "console doctor" of the service "console" at /v1/traces. |
-| `CONSOLE_REFRESH` | string | `"10"` | serve: the seconds after which the browser reloads the runs pages; 0 turns the reload off. |
+| `CONSOLE_REFRESH` | string | `"10"` | serve: the seconds after which the browser reloads the runs pages, and the work page loads its list again; 0 turns both off. |
 | `CONSOLE_REPOSITORY_URL` | string |  | serve: the web URL of the factory's Git repository, like https://github.com/acme/factory. Set, the configuration pages link the file. |
 | `CONSOLE_SANDBOX_COMMAND` | string |  | doctor --deep: the command line, run with sh -c, of a sandbox adapter, like sandbox-docker. Set, doctor --deep runs its probe <template> example.com, which starts a sandbox with no allowed host, and wants "refused example.com". |
 | `CONSOLE_SANDBOX_TEMPLATE` | string | `"curlimages/curl:8.17.0"` | doctor --deep: the template of the sandbox probe; it needs curl. |
@@ -696,9 +699,16 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-264 | implemented | An agent's page shows a list or a map of the agent as YAML |
 | SCN-CONSOLE-265 | implemented | The improvement page shows in the shell, with "Cost and scores" as the current page |
 | SCN-CONSOLE-266 | implemented | On a phone a person reads the health, the factory and the cost and scores as cards (journey) |
-| SCN-CONSOLE-267 | implemented | Every answer allows only the console's own files and no script, and the old stylesheet is gone |
+| SCN-CONSOLE-267 | deprecated | Every answer allows only the console's own files and no script, and the old stylesheet is gone |
 | SCN-CONSOLE-268 | implemented | An action of a signed-in person carries the person's proof, which the console's keys verify, to foreman, gatekeeper and intake |
 | SCN-CONSOLE-269 | implemented | The console publishes every key of "CONSOLE_SIGNING_KEY" at "/.well-known/jwks.json" without a session, for every host |
 | SCN-CONSOLE-270 | implemented | Behind a sign-in proxy without an access file the proof names the proxy's person as a member |
 | SCN-CONSOLE-271 | implemented | Without "CONSOLE_SIGNING_KEY" an action carries no proof, the console publishes no keys and "/health" warns |
 | SCN-CONSOLE-272 | implemented | A malformed "CONSOLE_SIGNING_KEY" fails "console doctor" and stops "console serve", and neither names the key |
+| SCN-CONSOLE-273 | implemented | Every answer allows only the console's own files and scripts, and the old stylesheet is gone |
+| SCN-CONSOLE-274 | implemented | The work page's list is the island "work-list", and only a browser without script reloads the page |
+| SCN-CONSOLE-275 | implemented | "/work/items" answers the rows of the work page, ready to show, for the same page of intake's inbox |
+| SCN-CONSOLE-276 | implemented | "/work/items" answers 502 when intake does not answer, and 404 without intake |
+| SCN-CONSOLE-277 | implemented | "/work/items" asks a person who is signed out to sign in first, like the work page |
+| SCN-CONSOLE-278 | implemented | "/work/items" refuses a person who is not on the access list, like the work page |
+| SCN-CONSOLE-279 | implemented | The list of work items refreshes while a person types into "Submit work", and the page passes axe (journey) |
