@@ -47,8 +47,20 @@ const signedText = (record: GateRecord): Buffer => {
 export const signWith = (record: GateRecord, key: string | undefined): GateRecord =>
   key ? signRecord(record, key) : record;
 
-/** The Ed25519 private key in GATEKEEPER_SIGNING_KEY, or a usage error that says what is wrong with it. */
+// The DER prefix of a PKCS #8 Ed25519 private key (RFC 8410); the 32 bytes of the seed follow it.
+const PKCS8_ED25519 = Buffer.from("302e020100300506032b657004220420", "hex");
+
+/**
+ * The Ed25519 private key in GATEKEEPER_SIGNING_KEY: a key in PEM, as `gatekeeper keys` writes it, or its seed in 64
+ * hex digits, like the output of `openssl rand -hex 32`. Else a usage error that says what is wrong with it.
+ */
 export function signingKeyOf(privateKeyPem: string): KeyObject {
+  if (/^[0-9a-fA-F]{64}$/.test(privateKeyPem))
+    return createPrivateKey({
+      key: Buffer.concat([PKCS8_ED25519, Buffer.from(privateKeyPem, "hex")]),
+      format: "der",
+      type: "pkcs8",
+    });
   let key: KeyObject;
   try {
     key = createPrivateKey(privateKeyPem);

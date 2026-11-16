@@ -57,7 +57,7 @@
     },
     "GATEKEEPER_SIGNING_KEY": {
       "type": "string",
-      "description": "Ed25519 private key in PEM that signs each record. Without it the record is unsigned."
+      "description": "The Ed25519 private key that signs each record: in PEM, as gatekeeper keys writes it, or its seed in 64 hex digits, like the output of openssl rand -hex 32. Without it the record is unsigned, and serve says so once at its start."
     },
     "GATEKEEPER_NATS_URL": {
       "type": "string",

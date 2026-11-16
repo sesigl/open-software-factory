@@ -3,7 +3,8 @@
   "extends": ["//"],
   "tasks": {
     "test:system": {
-      "dependsOn": ["$TURBO_EXTENDS$", "@opensoftware/channel-slack#build", "@opensoftware/forge-github#build"]
+      "dependsOn": ["$TURBO_EXTENDS$", "@opensoftware/channel-slack#build", "@opensoftware/forge-github#build"],
+      "inputs": ["$TURBO_EXTENDS$", "$TURBO_ROOT$/.github/gatekeeper/**"]
     },
     "mutation": {
       "dependsOn": ["$TURBO_EXTENDS$", "@opensoftware/channel-slack#build", "@opensoftware/forge-github#build"]

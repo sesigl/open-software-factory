@@ -271,3 +271,10 @@ Feature: Serve the gate API
     When the server read the pull request's comments twice
     Then "/v1/gates/<gate>" shows the state "pending"
     And the head commit of the pull request has only the commit status "gatekeeper" with the state "pending"
+
+  @id=SCN-GATE-113 @status=implemented
+  Scenario: Without "GATEKEEPER_SIGNING_KEY" the server writes unsigned records and says so once at its start
+    Given the server runs without "GATEKEEPER_SIGNING_KEY" and asked "maintainers" for approval of the README request
+    When a program posts with the API token the decision "approved" by the person "slack:U0ADA"
+    Then the answer shows the state "approved" and a record without a signature
+    And the server's error output says once "gatekeeper: GATEKEEPER_SIGNING_KEY is not set, so the approval records are not signed: set it to 64 hex digits, like the output of openssl rand -hex 32"

@@ -1,6 +1,6 @@
 # Dogfood of gatekeeper (ADR 0047): every pull request gets the commit status "gatekeeper". A factory-made pull
-# request (branch observer/ or factory/, or the label factory) waits for a maintainer's "/approve" comment; the policy
-# passes the others. Require the status "gatekeeper" on main to block the merge until then.
+# request (branch osf/, observer/ or factory/, or the label factory) waits for a maintainer's "/approve" comment; the
+# policy passes the others. Require the status "gatekeeper" on main to block the merge until then.
 name: gatekeeper
 
 on:

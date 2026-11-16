@@ -314,6 +314,19 @@ export GATEKEEPER_SIGNING_KEY="$(cat keys/gatekeeper.pem)"
 npx @opensoftware/gatekeeper verify --public-key keys/gatekeeper.pub record.json
 ```
 
+`GATEKEEPER_SIGNING_KEY` may also be the seed of the key in 64 hex digits, like the output of `openssl rand -hex 32`.
+Its public key in PEM, for `verify`:
+
+```sh
+node -e 'const c = require("node:crypto");
+const der = Buffer.from("302e020100300506032b657004220420" + process.env.GATEKEEPER_SIGNING_KEY, "hex");
+const key = c.createPrivateKey({ key: der, format: "der", type: "pkcs8" });
+process.stdout.write(c.createPublicKey(key).export({ type: "spki", format: "pem" }));' > gatekeeper.pub
+```
+
+Without the key, `gatekeeper status` says that the record is not signed, and `gatekeeper serve` says once at its
+start that its records are not signed.
+
 ## Events
 
 With `GATEKEEPER_NATS_URL`, `request` (and `POST /v1/gates`) publishes [`gate.requested@v1`](../../contracts/events/gate-requested/gate-requested.schema.json)
@@ -339,7 +352,7 @@ the decision. The event ID is the gate's ID with `.requested` or `.decided`.
 | `GATEKEEPER_FORGE_URL` | string |  | The forge adapter's FORGE_URL. serve: the server's only forge; a request's link counts as a pull request only on its origin (github.com for https://api.github.com), and no other host is called. Default: https://api.github.com; for --pull-request, https://api.github.com for github.com and the pull request's origin for Forgejo. |
 | `GATEKEEPER_FORGE_TOKEN` | string |  | The forge adapter's FORGE_TOKEN: a token that may read the pull request and its checks (on GitHub: Checks: read, since the adapter's pr lists the check runs), comment on it and set its commit status. serve: with it, a request that links a pull request of GATEKEEPER_FORGE_URL's forge is asked on the pull request. Never written to a file. |
 | `GATEKEEPER_POLL_MS` | string | `"30000"` | serve: the milliseconds between two reads of the comments of the pull requests with a pending gate (ADR 0080). Only with GATEKEEPER_FORGE_TOKEN. |
-| `GATEKEEPER_SIGNING_KEY` | string |  | Ed25519 private key in PEM that signs each record. Without it the record is unsigned. |
+| `GATEKEEPER_SIGNING_KEY` | string |  | The Ed25519 private key that signs each record: in PEM, as gatekeeper keys writes it, or its seed in 64 hex digits, like the output of openssl rand -hex 32. Without it the record is unsigned, and serve says so once at its start. |
 | `GATEKEEPER_NATS_URL` | string |  | NATS server, like nats://localhost:4222, for the events gate.requested@v1 and gate.decided@v1. Unset: no events. serve keeps them in its outbox while NATS is unreachable. |
 | `GATEKEEPER_DATABASE_URL` | string |  | serve: the PostgreSQL database, like postgres://gatekeeper@db/gatekeeper, for the gates and the outbox. Required for serve. |
 | `GATEKEEPER_API_TOKEN` | string |  | serve: the token that callers of the API send as Authorization: Bearer <token>. Required for serve. Never written to a file. |
@@ -475,5 +488,8 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-GATE-110 | implemented | Without "GATEKEEPER_FORGE_URL" the server's forge is GitHub, and a pull request link to another forge is never called |
 | SCN-GATE-111 | implemented | When the forge no longer lists the request's comment, no "/approve" decides the gate, also none from before the request |
 | SCN-GATE-112 | implemented | An "/approve" after more than 100 comments passes the gate |
+| SCN-GATE-113 | implemented | Without "GATEKEEPER_SIGNING_KEY" the server writes unsigned records and says so once at its start |
+| SCN-GATE-114 | implemented | A signing key of 64 hex digits, the seed of an Ed25519 key, signs a record that verifies with its public key |
+| SCN-GATE-115 | implemented | The merge gate of this repository asks "maintainers" for the factory's branches "osf/", "observer/" and "factory/" |
 | SCN-GATE-116 | implemented | An "/approve" that the forge lists after the request but dates before it does not pass the gate |
 | SCN-GATE-117 | implemented | In the second of the request the forge's order decides: a "/reject" listed before the request does not count, an "/approve" listed after it does |

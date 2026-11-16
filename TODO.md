@@ -2045,6 +2045,10 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 - **Build:** the policy gates `osf/`; serve warns once at its start without `GATEKEEPER_SIGNING_KEY`; `osf init`
   and the chart supply one.
 - **Done when:** scenarios for the warning and the generated key; the policy's own test covers `osf/`.
+- **Slices:**
+  - [x] The policy gates `osf/` (SCN-GATE-115 runs gatekeeper with this repository's policy), serve warns once at
+    its start without the key (SCN-GATE-113), and gatekeeper takes the key's seed in 64 hex digits (SCN-GATE-114).
+  - [ ] After the release of gatekeeper with the hex seed: `osf init`, the profile and the chart supply the key.
 
 ### [ ] T-70 · the profile runs no agent outside a sandbox (P1)
 
