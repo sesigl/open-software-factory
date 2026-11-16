@@ -33,6 +33,8 @@ export interface Profile {
   gateway?: string;
   /** The command that the reference factory's workflow "factory" runs. */
   workflow?: string;
+  /** The packages of the profile that deploy/package.json declares besides the testkit; default demo and adapter. */
+  declares?: string[];
 }
 
 /** A Dockerfile whose stage demo builds on the stage base and the global ARG NODE. */
@@ -64,10 +66,12 @@ export function profileRepository(profile: Profile = {}): Record<string, string>
     template,
     gateway,
     workflow,
+    declares = ["demo", "adapter"],
   } = profile;
   const manifest = (name: string, version: string, tested = false) => {
     const scripts = tested ? { scripts: { "test:system": "vitest run" } } : {};
-    const devDependencies = tested ? { devDependencies: { "@opensoftware/testkit": "workspace:*" } } : {};
+    const own = Object.fromEntries(declares.map((declared) => [`@opensoftware/${declared}`, "workspace:*"]));
+    const devDependencies = tested ? { devDependencies: { "@opensoftware/testkit": "workspace:*", ...own } } : {};
     return `${JSON.stringify({ name: `@opensoftware/${name}`, version, ...scripts, ...devDependencies })}\n`;
   };
   return {

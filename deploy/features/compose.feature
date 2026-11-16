@@ -272,7 +272,7 @@ Feature: The Compose profile installs a complete factory with one command
     When the operator runs it again without "CONSOLE_SIGNING_KEY", and again with the key and without "CONSOLE_SIGN_IN"
     Then both times the three settings of the modules are empty, so the modules take the person a caller names, as before
 
-  @id=SCN-DIST-048 @status=implemented
+  @id=SCN-DIST-048 @status=deprecated
   Scenario: With the sign-in and "CONSOLE_SIGNING_KEY", the released intake refuses a work item whose made-up person has no proof, and the console publishes its key
     Given the Compose profile with every value of ".env.example" set in ".env", "CONSOLE_SIGN_IN" set to "github" with its settings, and "CONSOLE_SIGNING_KEY" set
     And the operator ran "docker compose run --rm factory-repo", which commits the factory into its volume
@@ -282,8 +282,32 @@ Feature: The Compose profile installs a complete factory with one command
     And intake holds no work item with the dedupe key of the post
     And the console's "/.well-known/jwks.json" answers 200 with one key of "kty" "OKP"
 
-  @id=SCN-DIST-049 @status=implemented
+  @id=SCN-DIST-049 @status=deprecated
   Scenario: With the sign-in and without "CONSOLE_SIGNING_KEY", "console doctor" of the released console warns that the modules would refuse its actions
+    Given the Compose profile with every value of ".env.example" set in ".env", "CONSOLE_SIGN_IN" set to "github" with its settings, and no "CONSOLE_SIGNING_KEY"
+    When the operator runs "docker compose run --rm --no-deps console console doctor"
+    Then the output has the line "WARN  person proof: set CONSOLE_SIGNING_KEY: without it the console sends no proof of the person, and foreman, intake and gatekeeper refuse its actions when they check proofs"
+    And no line of the output starts with "FAIL  person proof"
+
+  @id=SCN-DIST-053 @status=implemented
+  Scenario: Each module image that the deploy suite starts installs the packages of the factory from this workspace's packs, not from npm
+    Given the module images of the Compose profile built from this workspace with "node scripts/images.ts", at the tags that "compose.yaml" pins
+    When the operator runs "npm ls --all --json" in "/opt/osf" of the services "agent-template", "console", "factory", "foreman", "gatekeeper", "improve" and "intake" with "docker compose run --rm --no-deps"
+    Then each package of the service's "PACKAGES" is installed at the version that "compose.yaml" pins
+    And every "@opensoftware" package in each image is resolved from a pack in "/opt/osf/packs"
+
+  @id=SCN-DIST-054 @status=implemented @replaces=SCN-DIST-048
+  Scenario: With the sign-in and "CONSOLE_SIGNING_KEY", intake refuses a work item whose made-up person has no proof, and the console publishes its key
+    Given the Compose profile with every value of ".env.example" set in ".env", "CONSOLE_SIGN_IN" set to "github" with its settings, and "CONSOLE_SIGNING_KEY" set
+    And the operator ran "docker compose run --rm factory-repo", which commits the factory into its volume
+    When the operator runs "docker compose up --detach --wait intake" and "docker compose up --detach --wait --no-deps console"
+    And a program posts a work item to intake's "/v1/work-items" with "INTAKE_API_TOKEN" and the requester "varun@acme.dev" of the kind "person", without the header "OSF-Person"
+    Then intake answers 401 with "send OSF-Person: the console's proof of the person (ADR 0151)"
+    And intake holds no work item with the dedupe key of the post
+    And the console's "/.well-known/jwks.json" answers 200 with one key of "kty" "OKP"
+
+  @id=SCN-DIST-055 @status=implemented @replaces=SCN-DIST-049
+  Scenario: With the sign-in and without "CONSOLE_SIGNING_KEY", "console doctor" warns that the modules would refuse its actions
     Given the Compose profile with every value of ".env.example" set in ".env", "CONSOLE_SIGN_IN" set to "github" with its settings, and no "CONSOLE_SIGNING_KEY"
     When the operator runs "docker compose run --rm --no-deps console console doctor"
     Then the output has the line "WARN  person proof: set CONSOLE_SIGNING_KEY: without it the console sends no proof of the person, and foreman, intake and gatekeeper refuse its actions when they check proofs"

@@ -269,6 +269,54 @@ importers:
 
   deploy:
     devDependencies:
+      '@opensoftware/channel-slack':
+        specifier: workspace:*
+        version: link:../adapters/channel/slack
+      '@opensoftware/console':
+        specifier: workspace:*
+        version: link:../modules/console
+      '@opensoftware/factory-spec':
+        specifier: workspace:*
+        version: link:../modules/factory-spec
+      '@opensoftware/foreman':
+        specifier: workspace:*
+        version: link:../modules/foreman
+      '@opensoftware/forge-forgejo':
+        specifier: workspace:*
+        version: link:../adapters/forge/forgejo
+      '@opensoftware/forge-github':
+        specifier: workspace:*
+        version: link:../adapters/forge/github
+      '@opensoftware/gatekeeper':
+        specifier: workspace:*
+        version: link:../modules/gatekeeper
+      '@opensoftware/harness-claude-code':
+        specifier: workspace:*
+        version: link:../adapters/harness/claude-code
+      '@opensoftware/inference-litellm':
+        specifier: workspace:*
+        version: link:../adapters/inference/litellm
+      '@opensoftware/intake':
+        specifier: workspace:*
+        version: link:../modules/intake
+      '@opensoftware/ledger':
+        specifier: workspace:*
+        version: link:../modules/ledger
+      '@opensoftware/observer':
+        specifier: workspace:*
+        version: link:../modules/observer
+      '@opensoftware/sandbox-docker':
+        specifier: workspace:*
+        version: link:../adapters/sandbox/docker
+      '@opensoftware/sandbox-kubernetes':
+        specifier: workspace:*
+        version: link:../adapters/sandbox/kubernetes
+      '@opensoftware/scorekit':
+        specifier: workspace:*
+        version: link:../modules/scorekit
+      '@opensoftware/secrets-openbao':
+        specifier: workspace:*
+        version: link:../adapters/secrets/openbao
       '@opensoftware/testkit':
         specifier: workspace:*
         version: link:../packages/testkit
@@ -287,6 +335,9 @@ importers:
       '@opensoftware/contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@opensoftware/deploy':
+        specifier: workspace:*
+        version: link:../deploy
       '@opensoftware/factory-spec':
         specifier: workspace:*
         version: link:../modules/factory-spec

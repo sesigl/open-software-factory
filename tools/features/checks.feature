@@ -861,6 +861,14 @@ Feature: Repository checks
     Then the command exits with code 0
     And the reference factory names the template "ghcr.io/sesigl/open-software-factory/demo:0.2.0"
 
+  @id=SCN-REPO-187 @status=implemented
+  Scenario: PROFILE rejects a deploy package that does not declare a package that the Compose profile's images install
+    Given a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them
+    And "deploy/package.json" declares "@opensoftware/demo" but not "@opensoftware/adapter"
+    When the developer runs "osf check PROFILE"
+    Then the command exits with code 1
+    And the output contains "PROFILE deploy/package.json:1 does not declare @opensoftware/adapter, which deploy/compose/compose.yaml installs: the deploy suite builds its images from the workspace (ADR 0156)"
+
   @id=SCN-REPO-168 @status=implemented
   Scenario: PROFILE rejects a workflow of the reference factory that runs a package at another version than the workspace's
     Given a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them

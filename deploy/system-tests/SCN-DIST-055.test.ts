@@ -4,7 +4,7 @@ import { profile, SIGN_IN, words } from "./profile.ts";
 const WARNING =
   "WARN  person proof: set CONSOLE_SIGNING_KEY: without it the console sends no proof of the person, and foreman, intake and gatekeeper refuse its actions when they check proofs";
 
-scenario("SCN-DIST-049", async ({ sut, given, when, then }) => {
+scenario("SCN-DIST-055", async ({ sut, given, when, then }) => {
   let compose: Compose;
   await given(
     'the Compose profile with every value of ".env.example" set in ".env", "CONSOLE_SIGN_IN" set to "github" with its settings, and no "CONSOLE_SIGNING_KEY"',

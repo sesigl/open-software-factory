@@ -19,8 +19,10 @@ make test-scenario ID=SCN-E2E-001  # one scenario
 ```
 
 `test:system` first builds the image `osf-e2e:workspace` with `scripts/images.ts`: `pnpm pack` of every program of
-the factory and its workspace dependencies, installed with npm by [`images/Dockerfile`](images/Dockerfile). Behind
-a proxy that inspects TLS, set `OSF_BUILD_CA` to the proxy's CA file, as for the profile's images.
+the factory and its workspace dependencies, with the packer that the deploy suite shares
+([`deploy/scripts/packs.ts`](../deploy/scripts/packs.ts), ADR 0156), installed with npm by
+[`images/Dockerfile`](images/Dockerfile). Behind a proxy that inspects TLS, set `OSF_BUILD_CA` to the proxy's CA
+file, as for the profile's images.
 
 ## How a scenario runs
 

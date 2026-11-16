@@ -8,9 +8,25 @@
   "scripts": {
     "lint": "biome check .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test:system": "testkit timed vitest run"
+    "test:system": "node scripts/images.ts && testkit timed vitest run"
   },
   "devDependencies": {
+    "@opensoftware/channel-slack": "workspace:*",
+    "@opensoftware/console": "workspace:*",
+    "@opensoftware/factory-spec": "workspace:*",
+    "@opensoftware/foreman": "workspace:*",
+    "@opensoftware/forge-forgejo": "workspace:*",
+    "@opensoftware/forge-github": "workspace:*",
+    "@opensoftware/gatekeeper": "workspace:*",
+    "@opensoftware/harness-claude-code": "workspace:*",
+    "@opensoftware/inference-litellm": "workspace:*",
+    "@opensoftware/intake": "workspace:*",
+    "@opensoftware/ledger": "workspace:*",
+    "@opensoftware/observer": "workspace:*",
+    "@opensoftware/sandbox-docker": "workspace:*",
+    "@opensoftware/sandbox-kubernetes": "workspace:*",
+    "@opensoftware/scorekit": "workspace:*",
+    "@opensoftware/secrets-openbao": "workspace:*",
     "@opensoftware/testkit": "workspace:*"
   }
 }

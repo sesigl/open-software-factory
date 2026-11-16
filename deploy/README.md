@@ -584,6 +584,25 @@ deploy/helm/kind-images.sh    # pulls or builds the images of compose.yaml, then
 make test-scenario ID=SCN-DIST-019
 ```
 
+## The images of the deploy suite
+
+The scenarios of the profile start the module images of the commit under test, not the releases
+([ADR 0156](../docs/decisions/0156-the-deploy-suite-builds-the-commit.md)), so a change of a module that breaks one
+fails its own pull request. The suite's `test:system` runs `node scripts/images.ts` first: it packs every package that
+`compose/compose.yaml` installs, with its workspace dependencies, writes a copy of `images/Dockerfile` into
+`images/.workspace/` whose one install step takes those packs in place of npm, and bakes each module target of
+`compose.yaml` from the copy under its pinned tag. `images/Dockerfile` stays what `publish-images` builds. The chart's
+scenarios still load the images that `helm/kind-images.sh` pulls.
+
+To run one scenario of the profile on your machine, after `pnpm turbo run build`:
+
+```sh
+(cd deploy && node scripts/images.ts)    # behind a proxy that inspects TLS, set OSF_BUILD_CA first
+make test-scenario ID=SCN-DIST-026
+```
+
+The images of the commit hide the released ones with the same tags until `docker compose pull` in `compose/`.
+
 ## Releases
 
 Each release moves the pins of `compose/compose.yaml` and `helm/osf/` to the released versions: the release workflow
@@ -671,6 +690,9 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-045 | implemented | The chart reads the factory from its repository on a forge with the token "factory-token", and the console proposes changes to it |
 | SCN-DIST-046 | implemented | With the sign-in and "CONSOLE_SIGNING_KEY", the console signs the proof of the person and foreman, intake and gatekeeper check it with the console's key set |
 | SCN-DIST-047 | implemented | With the sign-in, the chart gives the console its signing key from the sign-in's Secret, and foreman, intake and gatekeeper the console's key set |
-| SCN-DIST-048 | implemented | With the sign-in and "CONSOLE_SIGNING_KEY", the released intake refuses a work item whose made-up person has no proof, and the console publishes its key |
-| SCN-DIST-049 | implemented | With the sign-in and without "CONSOLE_SIGNING_KEY", "console doctor" of the released console warns that the modules would refuse its actions |
+| SCN-DIST-048 | deprecated | With the sign-in and "CONSOLE_SIGNING_KEY", the released intake refuses a work item whose made-up person has no proof, and the console publishes its key |
+| SCN-DIST-049 | deprecated | With the sign-in and without "CONSOLE_SIGNING_KEY", "console doctor" of the released console warns that the modules would refuse its actions |
 | SCN-DIST-050 | implemented | The console of the Compose profile renders its health page from the templates its package ships, and allows only its own files |
+| SCN-DIST-053 | implemented | Each module image that the deploy suite starts installs the packages of the factory from this workspace's packs, not from npm |
+| SCN-DIST-054 | implemented | With the sign-in and "CONSOLE_SIGNING_KEY", intake refuses a work item whose made-up person has no proof, and the console publishes its key |
+| SCN-DIST-055 | implemented | With the sign-in and without "CONSOLE_SIGNING_KEY", "console doctor" warns that the modules would refuse its actions |
