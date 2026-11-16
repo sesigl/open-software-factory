@@ -16,9 +16,10 @@ A family of independent open-source tools that together form a software factory.
 
 ## Current phase
 
-Phase 2 is done: every tool module of `TODO.md` T-00 to T-20 is built and released, and CI of this repository runs
-our own tools (ADR 0083). Wave 5 of `TODO.md` (T-22 to T-50) and T-21 are done: a v1 factory that people can trust
-with real work, and wave 6 (T-51 to T-62): the factory's UI with sign-in, secrets and skills. Next is wave 7 of
+Phase 2 is done: every tool module of T-00 to T-20 is built and released, and CI of this repository runs our own
+tools (ADR 0083). Wave 5 (T-22 to T-50) and T-21 are done: a v1 factory that people can trust with real work, and
+wave 6 (T-51 to T-62): the factory's UI with sign-in, secrets and skills. Their items are in
+`docs/history/todo-waves-0-6.md`. Next is wave 7 of
 `TODO.md` (T-63 to T-99): a sound foundation, from the audit of November 2026, before phase 3, in which the factory
 implements this repository's issues. Run `make install`
 once after cloning (Node 24, pnpm); the tooling is described in `tools/README.md`. Every pull request is reviewed

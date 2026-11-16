@@ -6,7 +6,7 @@ covers: [AGENTS.md, docs/**]
 
 Two sets. The **factory principles** say what the product must be; they come from the vision. The
 **engineering principles** say how we build it; each has a practice and an automatic check, because a principle
-without a check is a wish. When a requirement or a design question is not covered elsewhere, decide with these.
+without a check is a wish. Where the check is not built yet, its cell says "planned". When a requirement or a design question is not covered elsewhere, decide with these.
 
 ## Factory principles
 
@@ -39,16 +39,16 @@ without a check is a wish. When a requirement or a design question is not covere
 | Useful alone | Each module has a five-minute quick start without a server or a sibling module; it is scenario `-001`. | The quick-start scenario runs on every change. |
 | Formats over code | Modules share only versioned schemas and events. | ISOLATION, CONTRACT |
 | One job, a narrow surface | Every published package says what it does in one sentence and lists every way in, every exported value of a library included ([ADR 0135](decisions/0135-one-job-and-a-listed-surface.md)). | SURFACE |
-| Ports with conformance | Every outside system sits behind a port; each port has `@conformance` scenarios. | An adapter is listed only when it passes them. |
+| Ports with conformance | Every outside system sits behind a port; each port has `@conformance` scenarios. | TRACE asks each adapter of a port for one test of every `@conformance` scenario; PASS runs them. Planned: a catalog that lists only adapters that pass them. |
 | Adopt before build | Every new module, dependency or service records the prior art that was checked. | ADR check rejects an empty Prior art section. |
 | Open standards at every boundary | MCP, ACP, OpenAPI, CloudEvents, OTLP. | Interfaces are generated from TypeSpec, OpenAPI and AsyncAPI; review rejects custom wire formats. |
 | Record and correlate everything | Every run carries `osf.run.id`, `osf.work_item.id`, `osf.factory.version` (`contracts/run-record/`). | Ingest rejects records without them. |
-| Least privilege by default | No secrets in sandboxes; egress and MCP allowlists per agent. | Policy tests; a prompt-injection task in every benchmark suite. |
-| Humans at the gates | Gate policy as code by risk class. | Merge blocked without a signed approval record. |
-| Evidence or it didn't happen | No PR is ready without an evidence bundle for its scenarios. | proof and spec-trace are required checks. |
-| Measure before you change | Every factory change shows a score or benchmark comparison. | Merge rule on factory PRs. |
-| Cost is visible and bounded | Budget per run and per work item at the LLM gateway. | Gateway stops at budget; ledger alerts over target. |
-| Every change can be undone | Versions are immutable; rollback is a revert. | Runs reference the version hash; rollback drill each release. |
-| Deterministic tests | No real network, model, clock or randomness in system tests. | NOREAL |
+| Least privilege by default | No secrets in sandboxes; egress and MCP allowlists per agent. | The sandbox port's `@conformance` scenarios on egress and secrets; the prompt-injection task in every suite taskcapture writes (SCN-TASK-021). |
+| Humans at the gates | Gate policy as code by risk class. | `main` requires the commit status `gatekeeper`; a factory pull request waits for a maintainer's `/approve` (`.github/workflows/gatekeeper.yml`). Its records are unsigned until `GATEKEEPER_SIGNING_KEY` is set. Planned: no merge without a signed record. |
+| Evidence or it didn't happen | No PR is ready without an evidence bundle for its scenarios. | proof and spec-trace run on every pull request in `verify.yml`; proof sets the commit status `proof`. |
+| Measure before you change | Every factory change shows a score or benchmark comparison. | Planned: a merge rule on factory pull requests. |
+| Cost is visible and bounded | Budget per run and per work item at the LLM gateway. | The inference gateway refuses a run's calls over its budget. ledger reports the gap to a cost target (`--target`); planned: an alert over the target. |
+| Every change can be undone | Versions are immutable; rollback is a revert. | Every run names the commit of its factory version (ADR 0110). Planned: a rollback drill each release. |
+| Deterministic tests | No real network, model, clock or randomness in system tests. | The testkit's guard refuses real network in system tests (`NOREAL`); the testkit sets `OSF_NOW` and `OSF_SEED` for clock and randomness. |
 | Docs are part of done | Reference docs generated; hand-written docs declare what they cover. | DOCS-GEN, DOCS-AFFECTED |
-| Run it on ourselves first | Every release runs in our own factory first. | Release gate: time in the dogfood environment with no new failing scorer. |
+| Run it on ourselves first | Every release runs in our own factory first. | Planned: a release gate on time in the dogfood environment with no new failing scorer. |

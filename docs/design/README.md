@@ -4,9 +4,9 @@ covers: [docs/design/**]
 
 # Design direction: precise industrial
 
-The look of the factory's UI, approved by the owner on 14 November 2026. `TODO.md` wave 6 builds it: T-54 turns
-these values into the design system `@opensoftware/ui`, and T-56 to T-59 build the pages. Until that package exists,
-this folder is the reference: build a page so that it looks like its mock-up.
+The look of the factory's UI, approved by the owner on 14 November 2026. Wave 6 built it
+([`docs/history/todo-waves-0-6.md`](../history/todo-waves-0-6.md)): T-54 turned these values into the design system
+`@opensoftware/ui`, and T-56 to T-59 built the pages. Build a new page so that it looks like its mock-up.
 
 ## The mock-ups
 
@@ -53,7 +53,7 @@ of text and background; when a value fails it, the value changes and this table 
 
 ## Where the plan differs from the pictures
 
-The plan was reviewed after the mock-ups were drawn. Where they differ, `TODO.md` wins:
+The plan was reviewed after the mock-ups were drawn. Where they differ, the plan of wave 6 wins:
 
 - **No script in the first release.** The menu button on the phone is a `details` element, a switch on a skill's
   page is a form, and "Delete" asks on a page of its own (T-54, T-56).

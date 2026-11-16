@@ -21,7 +21,7 @@ covers: [modules/**, adapters/**]
 | gatekeeper | Human gates are a safety property, not an add-on |
 | runlog | Without a record nothing can be measured or improved |
 | proof | Evidence is part of the definition of done |
-| Port adapters: harness `acp` (generic), sandbox `docker`, forge `github` and `forgejo`, inference `litellm`, secrets `file`, `env` and `openbao`, telemetry `otlp` | The smallest set that runs one factory end to end, and Forgejo for deterministic tests |
+| Port adapters: harness `acp` (generic), sandbox `docker`, forge `github` and `forgejo`, inference `litellm`, secrets `openbao` (and `file` and `env`, which the sandbox adapters resolve), telemetry `otlp` through runlog's Collector config pack | The smallest set that runs one factory end to end, and Forgejo for deterministic tests |
 
 ## Optional (first-party)
 
@@ -34,7 +34,7 @@ covers: [modules/**, adapters/**]
 | taskcapture | Private benchmarks and routing rules |
 | intake | Chat, tracker and monitoring entry points, Factory MCP server |
 | console | The factory's web UI: runs, evidence and the self-improvement inbox; a change it proposes is a pull request |
-| Adapters: harness `claude-code`, `codex`, `opencode`; sandbox `kubernetes`; channel `slack`, `teams`, `github`, `linear` | Native control for the most used products beyond the generic ACP adapter |
+| Adapters: harness `claude-code`, `codex`, `opencode`; sandbox `kubernetes`; channel `slack` and `github`; planned: channel `teams` and `linear` | Native control for the most used products beyond the generic ACP adapter |
 | Install profiles: Compose, Helm chart, dashboards | Ready-made installs |
 
 ## Community
