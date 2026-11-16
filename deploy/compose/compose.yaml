@@ -315,6 +315,8 @@ services:
       GATEKEEPER_SLACK_TOKEN: ${GATEKEEPER_SLACK_TOKEN:-}
       GATEKEEPER_SLACK_SIGNING_SECRET: ${GATEKEEPER_SLACK_SIGNING_SECRET:-}
       GATEKEEPER_FORGE_ADAPTER: forge-github
+      # The forge's API; empty: GitHub's. A pull request link of a request counts only on this forge.
+      GATEKEEPER_FORGE_URL: ${GATEKEEPER_FORGE_URL:-}
       GATEKEEPER_FORGE_TOKEN: ${GATEKEEPER_FORGE_TOKEN:-}
       GATEKEEPER_PERSON_KEYS: *person-keys
     volumes:

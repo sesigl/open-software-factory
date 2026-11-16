@@ -57,6 +57,9 @@ gatekeeper:
   # empty turns Slack off.
   slackChannel: C0GATES
   forgeAdapter: forge-github
+  # The forge's API where gatekeeper asks on pull requests, like https://ghe.example/api/v3. Empty: GitHub's API. A
+  # request's pull request link counts only on this forge; gatekeeper calls no other host.
+  forgeUrl: ""
   resources: {}
 
 intake:

@@ -266,6 +266,14 @@ every `GATEKEEPER_POLL_MS` (default 30 seconds) and decides with the same rules 
 event `gate.decided@v1` are the same as for a gate in Slack. The commit status goes to the head commit that the server
 read when it asked; after a restart, the server reads the head commit again.
 
+The server's forge is configuration, never request data: `GATEKEEPER_FORGE_URL`, or GitHub's API without it. A link
+counts as the gate's pull request only on that forge's origin: `https://github.com` for `https://api.github.com`, the
+URL's own origin otherwise (like `https://forge.example` for Forgejo, or `https://ghe.example` for
+`https://ghe.example/api/v3`). The server never calls a link to another host and never sends it the token: such a
+request is asked in the Slack channel, or gets the status 400 on a server without one. The CLI's `--pull-request` is
+the caller's own configuration, so there the pull request's origin still picks the URL when `GATEKEEPER_FORGE_URL` is
+not set.
+
 A server can run without a Slack app:
 
 ```sh
@@ -326,8 +334,8 @@ the decision. The event ID is the gate's ID with `.requested` or `.decided`.
 | `GATEKEEPER_SLACK_TOKEN` | string |  | Slack bot token with chat:write and channels:history: the adapter's CHANNEL_TOKEN. Required for a slack: channel. |
 | `GATEKEEPER_SLACK_SIGNING_SECRET` | string |  | serve: the signing secret of the Slack app, the adapter's CHANNEL_SIGNING_SECRET, which checks every request from Slack. Required for serve with a Slack channel. |
 | `GATEKEEPER_FORGE_ADAPTER` | string |  | The command line of the forge port's adapter for --pull-request (ADR 0062). Default: npx -y @opensoftware/forge-github for github.com, npx -y @opensoftware/forge-forgejo for any other host. |
-| `GATEKEEPER_FORGE_URL` | string |  | The forge adapter's FORGE_URL. Default: https://api.github.com for github.com, the pull request's origin for Forgejo. |
-| `GATEKEEPER_FORGE_TOKEN` | string |  | The forge adapter's FORGE_TOKEN: a token that may read the pull request and its checks (on GitHub: Checks: read, since the adapter's pr lists the check runs), comment on it and set its commit status. serve: with it, a request that links a pull request is asked on the pull request. Never written to a file. |
+| `GATEKEEPER_FORGE_URL` | string |  | The forge adapter's FORGE_URL. serve: the server's only forge; a request's link counts as a pull request only on its origin (github.com for https://api.github.com), and no other host is called. Default: https://api.github.com; for --pull-request, https://api.github.com for github.com and the pull request's origin for Forgejo. |
+| `GATEKEEPER_FORGE_TOKEN` | string |  | The forge adapter's FORGE_TOKEN: a token that may read the pull request and its checks (on GitHub: Checks: read, since the adapter's pr lists the check runs), comment on it and set its commit status. serve: with it, a request that links a pull request of GATEKEEPER_FORGE_URL's forge is asked on the pull request. Never written to a file. |
 | `GATEKEEPER_POLL_MS` | string | `"30000"` | serve: the milliseconds between two reads of the comments of the pull requests with a pending gate (ADR 0080). Only with GATEKEEPER_FORGE_TOKEN. |
 | `GATEKEEPER_SIGNING_KEY` | string |  | Ed25519 private key in PEM that signs each record. Without it the record is unsigned. |
 | `GATEKEEPER_NATS_URL` | string |  | NATS server, like nats://localhost:4222, for the events gate.requested@v1 and gate.decided@v1. Unset: no events. serve keeps them in its outbox while NATS is unreachable. |
@@ -415,7 +423,7 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-GATE-060 | implemented | A forge token that the forge refuses exits 1 with the forge's error |
 | SCN-GATE-061 | implemented | A pull request that the forge does not have exits 1 and names it |
 | SCN-GATE-062 | implemented | A channel adapter that prints no JSON exits 1 and names the adapter |
-| SCN-GATE-063 | implemented | A request that links a pull request is asked in a comment on the pull request |
+| SCN-GATE-063 | deprecated | A request that links a pull request is asked in a comment on the pull request |
 | SCN-GATE-064 | implemented | An "/approve" comment of a maintainer approves the gate and is published as "gate.decided@v1" |
 | SCN-GATE-065 | implemented | A "/reject" comment of a maintainer rejects the gate with the reason |
 | SCN-GATE-066 | implemented | A request without a pull request link on a server without Slack gets the status 400 |
@@ -459,3 +467,7 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-GATE-104 | implemented | Without GATEKEEPER_PERSON_KEYS a decision for a made-up person is accepted as before, and the server says so once |
 | SCN-GATE-105 | implemented | An issuer whose key set answers 500 gives the status 503 that names the issuer, and the gate stays pending |
 | SCN-GATE-106 | implemented | A groups file names a member by an email address, as the console names a person, but not by a bare "ada@" |
+| SCN-GATE-107 | implemented | A request that links a pull request of the server's forge is asked in a comment on the pull request |
+| SCN-GATE-108 | implemented | A pull request link to another forge is never called, and without Slack the request gets the status 400 |
+| SCN-GATE-109 | implemented | A pull request link to another forge does not decide a gate: the server asks in Slack |
+| SCN-GATE-110 | implemented | Without "GATEKEEPER_FORGE_URL" the server's forge is GitHub, and a pull request link to another forge is never called |

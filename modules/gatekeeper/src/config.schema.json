@@ -44,11 +44,11 @@
     },
     "GATEKEEPER_FORGE_URL": {
       "type": "string",
-      "description": "The forge adapter's FORGE_URL. Default: https://api.github.com for github.com, the pull request's origin for Forgejo."
+      "description": "The forge adapter's FORGE_URL. serve: the server's only forge; a request's link counts as a pull request only on its origin (github.com for https://api.github.com), and no other host is called. Default: https://api.github.com; for --pull-request, https://api.github.com for github.com and the pull request's origin for Forgejo."
     },
     "GATEKEEPER_FORGE_TOKEN": {
       "type": "string",
-      "description": "The forge adapter's FORGE_TOKEN: a token that may read the pull request and its checks (on GitHub: Checks: read, since the adapter's pr lists the check runs), comment on it and set its commit status. serve: with it, a request that links a pull request is asked on the pull request. Never written to a file."
+      "description": "The forge adapter's FORGE_TOKEN: a token that may read the pull request and its checks (on GitHub: Checks: read, since the adapter's pr lists the check runs), comment on it and set its commit status. serve: with it, a request that links a pull request of GATEKEEPER_FORGE_URL's forge is asked on the pull request. Never written to a file."
     },
     "GATEKEEPER_POLL_MS": {
       "type": "string",

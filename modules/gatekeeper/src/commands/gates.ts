@@ -1,6 +1,6 @@
 // The gates of server mode: request, decide on a press or a message, check the pending gates, and relay the outbox
 // to NATS (ADR 0048, ADR 0062). A gate is asked in the Slack channel or, with the forge, on the pull request that the
-// request links (ADR 0080). The decision is the same domain function as "gatekeeper status".
+// request links on the server's forge (ADR 0080, T-63). The decision is the same domain function as "gatekeeper status".
 import { UsageError } from "@opensoftware/cli";
 import type { Forge } from "../adapters/forge.ts";
 import { publishAll } from "../adapters/nats.ts";
@@ -22,7 +22,7 @@ import {
   requestText,
 } from "../domain/gate.ts";
 import { parseGroups, parseRules } from "../domain/policy.ts";
-import { commitState, type PullLine, type PullRequest, pullRequestIn, pullRequestOf } from "../domain/pull-request.ts";
+import { commitState, type PullLine, type PullRequest, pullRequestIn, pullRequestOn } from "../domain/pull-request.ts";
 import { buildRecord, signWith } from "../domain/record.ts";
 import { type ApiDecision, type GateRequest, gateId } from "../domain/request.ts";
 import { gateOf, type StoredGate } from "../domain/stored.ts";
@@ -35,8 +35,11 @@ export interface GatesConfig {
   groups: unknown;
   /** The Slack channel, unless the server asks only on pull requests. */
   slack?: Channel;
-  /** The forge of a pull request, when the server has GATEKEEPER_FORGE_TOKEN (ADR 0080). */
-  forge?: (pr: PullRequest) => Forge;
+  /**
+   * The server's forge, when it has GATEKEEPER_FORGE_TOKEN (ADR 0080): the origin of its pull request links, and the
+   * pull request through it. A link on another origin is no pull request of a gate.
+   */
+  forge?: { origin: string; reach(pr: PullRequest): Forge };
   opa: string;
   signingKey?: string;
   nats?: string;
@@ -85,9 +88,9 @@ export function gates(config: GatesConfig, store: Store) {
   /** The place of a gate by its channel's name: the Slack channel or a pull request. Undefined for another name. */
   async function placeOf(id: string, name: string): Promise<Place | undefined> {
     if (slack?.name === name) return { channel: slack, report: async () => {} };
-    const pr = forge && pullRequestOf(name);
+    const pr = forge && pullRequestOn(forge.origin, name);
     if (!forge || !pr) return undefined;
-    const reached = forge(pr);
+    const reached = forge.reach(pr);
     const pull = pulls.get(id) ?? (await reached.read());
     pulls.set(id, pull);
     return {
@@ -155,10 +158,10 @@ export function gates(config: GatesConfig, store: Store) {
       const id = gateId(request);
       const existing = await store.get(id);
       if (existing) return { created: false, gate: existing };
-      const name = (forge && pullRequestIn(request.links)?.url) || slack?.name;
+      const name = (forge && pullRequestIn(forge.origin, request.links)?.url) || slack?.name;
       if (!name)
         throw new UsageError(
-          "the request links no pull request, like https://github.com/acme/web/pull/12, and the server has no Slack channel",
+          `the request links no pull request on ${forge?.origin}, like ${forge?.origin}/acme/web/pull/12, and the server has no Slack channel`,
         );
       const gate = gateFor(request, parseRules(await evaluate(config.opa, policy, request), policy));
       const now = config.now();

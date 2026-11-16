@@ -252,10 +252,13 @@ export function activities(deps: ActivityDeps) {
     async requestGate(view: RunView, definition: Definition, index: number): Promise<Fact> {
       const plan = definition.stages[index];
       const origin = view.workItem.origin.url;
-      // The run's pull request lets gatekeeper ask the approvers on it (ADR 0080).
+      // The run's pull request lets gatekeeper ask the approvers on it (ADR 0080), only when it is of the work
+      // item's repository: a link the agent wrote to another forge is no place for a gate (T-63).
+      const page = repositoryOf(origin)?.page;
+      const ours = view.pullRequest && page && repositoryOf(view.pullRequest)?.page === page;
       const links = [
         ...(origin ? [{ url: origin, title: "Origin" }] : []),
-        ...(view.pullRequest ? [{ url: view.pullRequest, title: "Pull request" }] : []),
+        ...(ours ? [{ url: view.pullRequest as string, title: "Pull request" }] : []),
       ];
       const gate = await deps.gatekeeper.request({
         workItem: view.workItem.id,

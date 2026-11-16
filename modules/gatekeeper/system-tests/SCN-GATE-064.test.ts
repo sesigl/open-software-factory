@@ -1,5 +1,5 @@
 import { scenario } from "@opensoftware/testkit";
-import { PR, statuses } from "./gate.ts";
+import { statuses } from "./gate.ts";
 import { askedOnPullRequest } from "./server.ts";
 
 scenario("SCN-GATE-064", async ({ sut, fakes, given, when, then }) => {
@@ -21,10 +21,10 @@ scenario("SCN-GATE-064", async ({ sut, fakes, given, when, then }) => {
     '"/v1/gates/<gate>" shows the state "approved" and a record approved by the person "github:sesigl"',
     async () => {
       const gate = await server.decided(server.id);
-      expect(gate).toMatchObject({ id: server.id, state: "approved", channel: PR });
+      expect(gate).toMatchObject({ id: server.id, state: "approved", channel: server.pr });
       expect(gate?.record).toMatchObject({
         gate: server.id,
-        channel: PR,
+        channel: server.pr,
         decision: "approved",
         decidedBy: { kind: "person", id: "github:sesigl" },
         decidedAt: "2026-01-01T00:10:00.000000Z",

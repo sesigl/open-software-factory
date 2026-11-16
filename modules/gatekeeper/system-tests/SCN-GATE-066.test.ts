@@ -9,7 +9,7 @@ scenario("SCN-GATE-066", async ({ sut, fakes, given, when, then }) => {
 
   let answer: GateAnswer;
   await when('a program posts a request that links only the issue "acme/web#7" to "/v1/gates"', async () => {
-    answer = await server.post(prRequest([{ url: "https://github.com/acme/web/issues/7", title: "Issue" }]));
+    answer = await server.post(prRequest([{ url: `${server.http.url}/acme/web/issues/7`, title: "Issue" }]));
   });
 
   await then(
