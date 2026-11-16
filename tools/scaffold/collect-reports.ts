@@ -1,6 +1,6 @@
 // `osf collect-reports`: each package's system tests write their results into the package's own reports/, which turbo
 // stores and replays (ADR 0081). This copies them to reports/junit/<name>.xml, reports/coverage/<name>-<file> and the
-// runner's speed of the same run to reports/speed/<name>.json (ADR 0103), where the checks read them.
+// wall time of the same run to reports/run-time/<name>.json (ADR 0155), where the checks read them.
 import { copyFileSync, existsSync, mkdirSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { Repo } from "../checks/lib/repo.ts";
@@ -15,10 +15,10 @@ export function collectReports(root: string): number {
       mkdirSync(join(root, "reports", "junit"), { recursive: true });
       copyFileSync(junit, join(root, "reports", "junit", `${name}.xml`));
     }
-    const speed = join(dir, "reports", "runner-speed.json");
-    if (existsSync(speed)) {
-      mkdirSync(join(root, "reports", "speed"), { recursive: true });
-      copyFileSync(speed, join(root, "reports", "speed", `${name}.json`));
+    const time = join(dir, "reports", "run-time.json");
+    if (existsSync(time)) {
+      mkdirSync(join(root, "reports", "run-time"), { recursive: true });
+      copyFileSync(time, join(root, "reports", "run-time", `${name}.json`));
     }
     const coverage = join(dir, "reports", "coverage");
     if (!existsSync(coverage)) continue;

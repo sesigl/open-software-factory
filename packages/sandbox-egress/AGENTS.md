@@ -33,7 +33,7 @@ its adapter, and the sandbox port's forms are in contracts (ADR 0147).
 
 ## Budget
 
-- System tests: 20 seconds in total on the CI runner. They call functions; nothing starts.
+- System tests: 45 seconds of wall time on the CI runner.
 
 ## Quality limits
 

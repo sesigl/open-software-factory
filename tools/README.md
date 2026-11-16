@@ -24,7 +24,7 @@ make verify      # everything: lint, types, all system tests, all checks
 | Command | Make target | What it does |
 | --- | --- | --- |
 | `osf check [ID ...]` | `make check` | Run the named checks. No ID runs the fast set: NOSKIP, ASSERT, UI-QUERY, BOUNDARY-STATIC, BOUNDARY-ENV, ISOLATION, ARCH, TEMPLATE, SURFACE, CONTRAST, TOKENS, DUP, DOCS-GEN, DOCS-LINKS, ADR, AFFECTED, RELEASE, DEPS, DEPS-RUNTIME, PROFILE, VISION, TODO. `make check` also runs `spec-trace check --only SPEC,TRACE,STEPS`. |
-| `osf check --all` | `make verify` | Also FLAKE, BUDGET (they read `reports/junit/`), DOCS-AFFECTED and CONTRACT (they compare with `OSF_BASE`; CONTRACT with the last `contracts-v*` tag when there is one), REACH (it reads `reports/coverage/` and compares with `OSF_BASE`) and RUNS (the run records in `runs/`; it needs no base). |
+| `osf check --all` | `make verify` | Also FLAKE, BUDGET (they read `reports/junit/`; BUDGET also the wall times in `reports/run-time/`), DOCS-AFFECTED and CONTRACT (they compare with `OSF_BASE`; CONTRACT with the last `contracts-v*` tag when there is one), REACH (it reads `reports/coverage/` and compares with `OSF_BASE`) and RUNS (the run records in `runs/`; it needs no base). |
 | `osf check MUTATION [--total]` | `make mutation` | Score the Stryker reports in `reports/mutation/`: the mutants in the lines changed since `OSF_BASE` against each module's first limit, or with `--total` every mutant against the second limit (ADR 0037). Neither `make check` nor `make verify` runs it. |
 | `osf mutation-plan [--all] [--keys]` | `nightly.yml`, `mutation.yml` | Print the shards of a mutation run as JSON, one object per runner with `package`, `folder` and `shard`. With `--keys`, from one `turbo run mutation --dry=json`, also the `key` of the shard's report (turbo's hash of the unit's `mutation` task and its added line ranges), the `guard` of the unit's mutant results (turbo's global inputs, its external dependencies, the builds it depends on and its input files except its `.ts` and `.tsx` sources and, for a module or an adapter, its `*.test.ts` files) and `results`, the file name of those results (ADR 0091). Without `--all`, each unit that the change since `OSF_BASE` adds source lines to, one shard per about 100 added lines (at most 10, or `osf.mutationLinesPerShard`). With `--all`, every unit with a mutation script, one shard per about 600 lines (at most 20, or `osf.mutationAllLinesPerShard`) (ADR 0084). |
 | `osf mutation <folder> [--all] [--list] [--shard i/n] [--incremental <file>]` | `make mutation` | Run Stryker on one module: the lines of its `.ts` and `.tsx` files in `src/` changed since `OSF_BASE`, or every line with `--all`; an island's `.tsx` counts, an Astro template does not (ADR 0152). `--list` prints the `file:start-end` ranges and runs nothing. `--incremental <file>` reuses the result of each mutant in that earlier report whose code and tests did not change (Stryker's incremental mode); with `--shard`, the file keeps only the shard's own mutants afterwards (ADR 0091). `--shard i/n` mutates the same lines but tests only every n-th mutant (those whose Stryker number modulo n is i - 1) and writes them to `reports/mutation/<unit>.shard-<i>.json`, so that n runners share a large change and a costly file spreads over all of them (ADR 0066). For a module or an adapter, each mutant reruns only the scenarios whose module processes ran it (`tools/scaffold/mutation-runner.ts`, ADR 0061), and each rerun ends by killing what its Vitest left running, such as a module's servers after the run stopped at its first failure, or when it reaches Stryker's timeout; each rerun takes its scenario files shortest first in one Vitest worker, with one Stryker worker per CPU (`osf.mutationConcurrency` and `osf.mutationWorkers` change both, ADR 0084); a library reruns all its tests. Each module's `mutation` script calls it; `make mutation ALL=1` mutates every line. |
@@ -143,7 +143,7 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-011 | implemented | NOSKIP rejects a skipped test |
 | SCN-REPO-012 | implemented | ASSERT rejects a then step that asserts only on a value the test created |
 | SCN-REPO-013 | implemented | FLAKE rejects a test that passed only on retry |
-| SCN-REPO-014 | implemented | BUDGET rejects system tests that take longer than the module budget |
+| SCN-REPO-014 | deprecated | BUDGET rejects system tests that take longer than the module budget |
 | SCN-REPO-015 | implemented | CONTRACT rejects a removed schema property without a major version |
 | SCN-REPO-016 | implemented | DOCS-GEN rejects a generated README section that is out of date |
 | SCN-REPO-017 | implemented | DOCS-LINKS rejects a link to a missing file |
@@ -250,7 +250,7 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-120 | implemented | PROFILE rejects a template of the reference factory whose tag differs from the profile's image |
 | SCN-REPO-121 | implemented | osf profile-pins moves the template of the reference factory to the tag of the profile's image |
 | SCN-REPO-122 | implemented | PROFILE accepts a chart image that the profile builds |
-| SCN-REPO-123 | implemented | BUDGET divides the time of a module's system tests by the slowdown of the runner that ran them |
+| SCN-REPO-123 | deprecated | BUDGET divides the time of a module's system tests by the slowdown of the runner that ran them |
 | SCN-REPO-124 | implemented | BUDGET rejects a package whose system tests do not run with "testkit timed" |
 | SCN-REPO-125 | implemented | DOCS-AFFECTED ignores the pins that osf profile-pins writes for a release |
 | SCN-REPO-126 | implemented | DOCS-AFFECTED lists a doc when the profile changes more than its pins |
@@ -309,3 +309,8 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-179 | implemented | AFFECTED rejects a test cache whose inputs leave out files of the package, in a hash without variables |
 | SCN-REPO-180 | implemented | AFFECTED rejects a Makefile that does not run the system tests without the cache by default |
 | SCN-REPO-181 | implemented | AFFECTED rejects a test cache with a variable of its own in the hash, which a pull request does not compute |
+| SCN-REPO-182 | implemented | BUDGET rejects a unit whose system tests ran longer than its budget of wall time |
+| SCN-REPO-183 | implemented | BUDGET compares the wall time of the run, not the sum of the tests' times |
+| SCN-REPO-184 | implemented | BUDGET rejects a unit with test results but no wall time of their run |
+| SCN-REPO-185 | implemented | BUDGET rejects a budget section of more than three lines |
+| SCN-REPO-186 | implemented | collect-reports copies the wall time of each package's run to the reports folder of the repository |

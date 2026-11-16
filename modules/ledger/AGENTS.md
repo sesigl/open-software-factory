@@ -35,8 +35,8 @@ The ARCH check enforces the layers.
 
 ## Budget
 
-- System tests: 120 seconds in total on the CI runner. The dashboard scenarios and the PostgreSQL scenarios need
-  Docker; each PostgreSQL scenario uses a database of `fakes.postgres()` (ADR 0129).
+- System tests: 50 seconds of wall time on the CI runner.
+- Most of it: the dashboard and PostgreSQL scenarios, which need Docker (`fakes.postgres()`, ADR 0129).
 
 ## Quality limits
 

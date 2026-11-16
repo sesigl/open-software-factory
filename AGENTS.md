@@ -58,7 +58,7 @@ A change is done only when `make verify` passes. `docs/quality/checks.md` lists 
 | DUP | Duplicated source lines stay under each unit's limit; no clone across modules. |
 | CONTRACT | No breaking change to `contracts/` without a major version. |
 | DOCS | Generated docs are current; docs that cover changed code were reviewed. |
-| BUDGET | Each module's system tests finish inside their time budget. |
+| BUDGET | Each module's system tests finish inside the wall time of their budget. |
 | RUNS | Every run record in `runs/` matches the `run-record` contract and holds no prompt content. No change has to add one. |
 | MUTATION | System tests notice mutants in the lines a pull request adds (`make mutation`, its own CI check). |
 
@@ -104,7 +104,7 @@ A new module starts with `skills/new-module`. A new dependency or service starts
 - When a suite comes near its BUDGET or goes over it, make it faster before you raise the budget. Measure where the
   time goes (process starts, imports, fakes, waits) and fix the cause in the module, its adapters or the testkit. The
   tests stay system tests from the outside: never test less, skip steps or reach inside. Raise a budget only with the
-  measured reason in the module's `AGENTS.md`.
+  measured reason in the commit message.
 
 ## Commands
 

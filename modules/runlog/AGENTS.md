@@ -31,7 +31,8 @@ and check the run against the contract. The ARCH check enforces this. `collector
 
 ## Budget
 
-- System tests: 120 seconds in total on the CI runner. The Collector scenarios need Docker.
+- System tests: 45 seconds of wall time on the CI runner.
+- Most of it: the Collector scenarios, which need Docker.
 
 ## Quality limits
 

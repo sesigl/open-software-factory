@@ -27,10 +27,9 @@ files on the client's side; `commands` join them. The ARCH check enforces the la
 
 ## Budget
 
-- System tests: 180 seconds in total on the CI runner. Each conformance scenario starts one or two sandboxes, each a
-  container and an iron-proxy container, so Docker 28.0 or later must run (the sandbox's network has the gateway
-  mode `isolated`, SCN-SANDBOX-030). The images `curlimages/curl` and `ironsh/iron-proxy`
-  are pulled before the tests in CI.
+- System tests: 50 seconds of wall time on the CI runner.
+- Most of it: each conformance scenario starts one or two sandboxes, a container and an iron-proxy container
+  each; Docker 28.0 or later must run.
 
 ## Quality limits
 

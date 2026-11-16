@@ -33,7 +33,7 @@ files, the registry, the forge adapters, Git and the state; `commands` join them
 
 ## Budget
 
-- System tests: 300 seconds in total on the CI runner.
+- System tests: 50 seconds of wall time on the CI runner.
 
 ## Quality limits
 

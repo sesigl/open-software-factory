@@ -29,7 +29,7 @@ Only code that two or more modules need around `pg` belongs here. Their tables a
 
 ## Budget
 
-- System tests: 30 seconds in total on the CI runner.
+- System tests: 45 seconds of wall time on the CI runner.
 
 ## Quality limits
 

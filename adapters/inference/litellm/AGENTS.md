@@ -30,21 +30,8 @@ layers.
 
 ## Budget
 
-- System tests: 540 seconds in total on the CI runner, counted as the sum of the scenarios' times. Twelve of the
-  thirteen port scenarios start their own gateway, a LiteLLM and a PostgreSQL container; SCN-INFER-004 and -005 also
-  wait eight seconds for the spend log. Of the adapter's own scenarios, only SCN-INFLITE-002 and -003 start a real
-  proxy, as a Compose project; the others use a fake of LiteLLM's admin API or no proxy, and each takes less than two
-  seconds. Vitest runs the files side by side, so the suite ends in about 90 seconds. Docker must run; the images are
-  pulled before the tests in CI.
-- Most of a gateway's start is CPU time of LiteLLM's Python import, not its database migrations (less than one
-  second). Measured on a laptop: 10.8 CPU seconds for a start that compiles LiteLLM, 5.7 seconds with the compiled
-  files of the volume `osf-inference-python`. `vitest.setup.ts` fills the volume once before the scenarios start their
-  gateways side by side, when it does not exist yet. The test proxy uses it too. On main, the same scenarios took
-  379 to 544 seconds on different CI runners before the cache: every scenario was slower by the same factor.
-- `vitest.setup.ts` also removes the containers and networks of gateways that a run started more than four minutes ago,
-  before the tests start. A mutant that breaks `stop`, or a test that times out, leaves its gateway behind; without
-  the cleanup a mutation run fills the runner's memory. Four minutes is longer than a test may run (180 seconds), so
-  it never removes the gateway of a test that is still running.
+- System tests: 280 seconds of wall time on the CI runner.
+- Most of it: twelve port scenarios each start a gateway, a LiteLLM and a PostgreSQL container; Docker must run.
 
 ## Quality limits
 

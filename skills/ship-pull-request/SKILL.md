@@ -25,8 +25,9 @@ docs. Never add a `Co-Authored-By` line or a "Generated with" line.
   workflow. Check `gh pr view <n> --json mergeable`, merge `main` into the branch and push.
 - **gate**: it runs as `pull_request_target`, with the workflow from `main`. A pull request that fixes the gate
   workflow cannot pass its own gate; merging it needs `--admin`, so ask the maintainer.
-- **BUDGET**: measure where the time goes (the JUnit times, the start of each process) and make the suite faster
-  first. Raise a budget only with the measured reason in the module's `AGENTS.md`.
+- **BUDGET**: it compares the wall time of a suite's run with its budget (ADR 0155). Measure where the time goes
+  (the JUnit times, the start of each process) and make the suite faster first. Raise a budget only with the
+  measured reason in the commit message; the budget section keeps one line and at most what dominates the time.
 - **A replayed result looks wrong**: see ADR 0081. Main runs every suite without the cache.
 
 ## Merging

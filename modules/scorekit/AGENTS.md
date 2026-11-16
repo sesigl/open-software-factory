@@ -30,7 +30,7 @@ Langfuse over HTTP; `commands` join them. The ARCH check enforces this.
 
 ## Budget
 
-- System tests: 60 seconds in total on the CI runner.
+- System tests: 45 seconds of wall time on the CI runner.
 
 ## Quality limits
 

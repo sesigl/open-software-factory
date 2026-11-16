@@ -18,9 +18,9 @@ description: Create a new module or adapter from the template. Use when a tool o
 2. Fill in `README.md`: the one problem the module solves alone, the quick start, inputs and outputs. Its first
    sentence and the `description` of `package.json` say the module's one job in one sentence (ADR 0135).
 3. Fill in `AGENTS.md` for the module: public surface (every command, route, event and file, and for a library every
-   value it exports: SURFACE), allowed exceptions (for example unit tests for a parser),
-   time budget for its system tests. Keep the "Quality limits" (duplication and mutation score) and the
-   `mutation` script in `package.json` from the template; DUP and MUTATION fail without them (ADR 0037).
+   value it exports: SURFACE), allowed exceptions (for example unit tests for a parser), the wall time budget of its
+   system tests (one line, ADR 0155). Keep the "Quality limits" (duplication and mutation score) and the `mutation`
+   script in `package.json` from the template; DUP and MUTATION fail without them (ADR 0037).
 4. Pick the module's layers in `architecture.json` (ADR 0014). The template starts with `entry` → `adapters` →
    `domain`; change it when the module needs another shape. A file may import its own layer and the layers below
    it. The ARCH check enforces this.

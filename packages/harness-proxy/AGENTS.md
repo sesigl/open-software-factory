@@ -32,7 +32,8 @@ Only code that two or more harness adapters need belongs here. What one product 
 
 ## Budget
 
-- System tests: 30 seconds in total on the CI runner. SCN-HPROXY-005 waits the 3 seconds of the cancel deadline.
+- System tests: 45 seconds of wall time on the CI runner.
+- Most of it: SCN-HPROXY-005 waits the 3 seconds of the cancel deadline.
 
 ## Quality limits
 

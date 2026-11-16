@@ -19,7 +19,7 @@ The only ways a system test or another program may use the contracts:
 
 ## Budget
 
-- System tests: 60 seconds in total on the CI runner.
+- System tests: 45 seconds of wall time on the CI runner.
 
 ## Scenario prefix
 

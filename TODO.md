@@ -2083,7 +2083,7 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 
 - **Build:** `verify.yml` cancels a running verify only for pull requests.
 
-### [ ] T-74 · BUDGET measures what a person waits for (P1)
+### [x] T-74 · BUDGET measures what a person waits for (P1)
 
 - **Problem:** BUDGET sums the tests' times under parallel load, so it grows when a suite gets more workers and
   ends sooner, and its speed factor moves more than the budgets' margins (ADR 0103). It failed 11 of 21 failed

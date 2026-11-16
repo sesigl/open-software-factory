@@ -24,8 +24,8 @@ Code that another harness adapter needs goes into that library, not here. The AR
 
 ## Budget
 
-- System tests: 120 seconds in total on the CI runner. Each test starts the real Claude Code (about 1 second) against
-  `fakes.modelGateway`; no test calls a real model.
+- System tests: 45 seconds of wall time on the CI runner.
+- Most of it: each test starts the real Claude Code (about 1 s) against `fakes.modelGateway`.
 
 ## Quality limits
 

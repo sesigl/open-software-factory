@@ -31,8 +31,8 @@ enforces this.
 
 ## Budget
 
-- System tests: 60 seconds in total on the CI runner. SCN-TASK-004 needs Docker (Forgejo); the other capture
-  scenarios read a Git repository in $INPUT and a scripted GitHub API.
+- System tests: 45 seconds of wall time on the CI runner.
+- Most of it: SCN-TASK-004 starts a Forgejo in Docker.
 
 ## Quality limits
 
