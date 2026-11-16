@@ -2,7 +2,7 @@ import { scenario } from "@opensoftware/testkit";
 import { putCached, runAffected } from "./affected.ts";
 import { cachedTurbo, TEST_GLOBALS } from "./repo.ts";
 
-scenario("SCN-REPO-075", async ({ sut, given, when, then }) => {
+scenario("SCN-REPO-179", async ({ sut, given, when, then }) => {
   await given(
     'a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081',
     async () => {
@@ -24,10 +24,10 @@ scenario("SCN-REPO-075", async ({ sut, given, when, then }) => {
   });
 
   await then(
-    'the output contains "AFFECTED turbo.json:1 test:system must cache with the inputs ["$TURBO_DEFAULT$"], the outputs ["reports/**"] and the env ["OSF_TEST_RUN"]"',
+    `the output contains "AFFECTED turbo.json:1 test:system must cache with the inputs ["$TURBO_DEFAULT$"], the outputs ["reports/**"] and no env, so that a pull request computes the hash of main's results"`,
     async () => {
       expect(run.stdout).toContain(
-        'AFFECTED turbo.json:1 test:system must cache with the inputs ["$TURBO_DEFAULT$"], the outputs ["reports/**"] and the env ["OSF_TEST_RUN"]',
+        `AFFECTED turbo.json:1 test:system must cache with the inputs ["$TURBO_DEFAULT$"], the outputs ["reports/**"] and no env, so that a pull request computes the hash of main's results`,
       );
     },
   );

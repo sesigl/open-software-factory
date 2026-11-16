@@ -2089,7 +2089,7 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 - **Done when:** the scenarios of BUDGET are replaced, `testkit timed` writes the wall time, and no budget section
   is longer than three lines.
 
-### [ ] T-75 · a first push replays what main already proved (P1)
+### [x] T-75 · a first push replays what main already proved (P1)
 
 - **Problem:** main stores its test results under a hash with its own `OSF_TEST_RUN`, which no pull request has: a
   pull request's first push runs every suite (ADR 0081, ADR 0094).

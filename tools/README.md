@@ -202,10 +202,10 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-072 | deprecated | AFFECTED rejects a package with system tests that no tests job of CI runs |
 | SCN-REPO-073 | deprecated | AFFECTED rejects a package with system tests that two tests jobs of CI run |
 | SCN-REPO-074 | implemented | AFFECTED rejects a test suite that writes its JUnit results outside its own reports folder |
-| SCN-REPO-075 | implemented | AFFECTED rejects a test cache whose inputs leave out files of the package |
+| SCN-REPO-075 | deprecated | AFFECTED rejects a test cache whose inputs leave out files of the package |
 | SCN-REPO-076 | implemented | AFFECTED rejects a test cache without a repository-wide file that the tests depend on |
 | SCN-REPO-077 | implemented | AFFECTED rejects a workflow that uses the test cache outside pull requests |
-| SCN-REPO-078 | implemented | AFFECTED rejects a Makefile that does not give each run of the system tests its own hash by default |
+| SCN-REPO-078 | deprecated | AFFECTED rejects a Makefile that does not give each run of the system tests its own hash by default |
 | SCN-REPO-079 | implemented | collect-reports copies the results of each package to the reports folder of the repository |
 | SCN-REPO-080 | implemented | ISOLATION accepts a module that declares an adapter in its devDependencies for its system tests |
 | SCN-REPO-081 | implemented | ISOLATION rejects a module that declares an adapter in its dependencies |
@@ -306,3 +306,6 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-176 | implemented | TEMPLATE rejects a script with an attribute, with code, or with an import that is no island |
 | SCN-REPO-177 | implemented | RUNS accepts agent commits that change no file in runs/ |
 | SCN-REPO-178 | implemented | osf init leaves .env readable only by its owner, also one that "cp .env.example .env" made |
+| SCN-REPO-179 | implemented | AFFECTED rejects a test cache whose inputs leave out files of the package, in a hash without variables |
+| SCN-REPO-180 | implemented | AFFECTED rejects a Makefile that does not run the system tests without the cache by default |
+| SCN-REPO-181 | implemented | AFFECTED rejects a test cache with a variable of its own in the hash, which a pull request does not compute |

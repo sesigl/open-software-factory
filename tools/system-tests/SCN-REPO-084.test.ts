@@ -11,7 +11,7 @@ scenario("SCN-REPO-084", async ({ sut, given, when, then }) => {
   );
 
   await given('the target "verify-static" of "Makefile" runs lint, typecheck and build without "--force"', async () => {
-    await putCached(sut, { Makefile: VERIFY_TESTS.replace(" $(if $(OSF_TEST_CACHE),,--force)", "") });
+    await putCached(sut, { Makefile: VERIFY_TESTS.replace("build $(if $(OSF_TEST_CACHE),,--force)", "build") });
   });
 
   let run: Awaited<ReturnType<typeof runAffected>>;
