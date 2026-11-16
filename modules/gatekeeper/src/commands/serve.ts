@@ -79,6 +79,10 @@ export async function serve(options: ServeOptions) {
     process.stderr.write(
       "gatekeeper: GATEKEEPER_PERSON_KEYS is not set, so a caller with GATEKEEPER_API_TOKEN decides a gate as any person it names (ADR 0151)\n",
     );
+  if (!signingKey)
+    process.stderr.write(
+      "gatekeeper: GATEKEEPER_SIGNING_KEY is not set, so the approval records are not signed: set it to 64 hex digits, like the output of openssl rand -hex 32\n",
+    );
 
   const store = await openStore(database);
   const opa = env.GATEKEEPER_OPA || "opa";

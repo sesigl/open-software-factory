@@ -39,3 +39,10 @@ Feature: Signed approval records
     Then the command exits with code 2
     And the error output says "GATEKEEPER_SIGNING_KEY is no private key in PEM"
     And the output folder has no "record.json"
+
+  @id=SCN-GATE-114 @status=implemented
+  Scenario: A signing key of 64 hex digits, the seed of an Ed25519 key, signs a record that verifies with its public key
+    Given a record that "gatekeeper status" wrote with "GATEKEEPER_SIGNING_KEY" set to the seed of an Ed25519 key in 64 hex digits
+    When the user runs "gatekeeper verify --public-key seed.pub record.json" with the public key of that seed in PEM
+    Then the command exits with code 0
+    And the output says "verified: approved by slack:U0ADA"

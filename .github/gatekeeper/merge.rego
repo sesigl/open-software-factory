@@ -2,6 +2,9 @@
 # Other pull requests pass without a person; the review of the pull request is their approval (ADR 0013).
 package gatekeeper
 
+# The foreman's branches are osf/<run ID> (modules/foreman, branchOf); observer's are observer/.
+factory_made if startswith(input.change.head, "osf/")
+
 factory_made if startswith(input.change.head, "observer/")
 
 factory_made if startswith(input.change.head, "factory/")

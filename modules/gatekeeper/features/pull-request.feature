@@ -70,6 +70,13 @@ Feature: Gate a pull request
     Then the command exits with code 0
     And the head commit of the pull request has the commit status "gatekeeper" with the state "success" and the description "approved by github:sesigl"
 
+  @id=SCN-GATE-115 @status=implemented
+  Scenario: The merge gate of this repository asks "maintainers" for the factory's branches "osf/", "observer/" and "factory/"
+    Given the policy and groups of ".github/gatekeeper" of this repository
+    When the user runs "gatekeeper request" for pull requests from the branches "osf/run-7f3a", "observer/research-skill-used-1a2b3c4d", "factory/fix-checkout" and "claude/todo-t-11-gatekeeper"
+    Then the first three wait for "maintainers" with the commit status "gatekeeper" "pending"
+    And the last passes without a person with the commit status "gatekeeper" "success"
+
   @id=SCN-GATE-040 @status=deprecated
   Scenario: A pull request that the forge does not know exits 1
     Given a forge that answers 404 for the pull request "acme/web#12"
