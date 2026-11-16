@@ -105,12 +105,15 @@ TR, D and E; items of one stage can run in parallel when they touch different un
     its start without the key (SCN-GATE-113), and gatekeeper takes the key's seed in 64 hex digits (SCN-GATE-114).
   - [ ] After the release of gatekeeper with the hex seed: `osf init`, the profile and the chart supply the key.
 
-### [ ] T-70 · the profile runs no agent outside a sandbox (P1)
+### [x] T-70 · the profile runs no agent outside a sandbox (P1)
 
 - **Problem:** an agent without `sandbox:` runs in the foreman's container with the foreman's environment.
 - **Build:** a setting of the foreman refuses a stage whose agent has no sandbox; the Compose profile and the chart
   switch it on. The docker-proxy allows only what the sandbox adapter calls on its own containers and networks.
 - **Done when:** a foreman scenario for the refusal, a deploy scenario for the profile's setting.
+- **Done:** `FOREMAN_REQUIRE_SANDBOX=true` refuses such a factory at the start of the server, a run and a retry
+  (SCN-FORE-186, SCN-DIST-056, SCN-DIST-057). The docker-proxy stays as it was: its rules match a request's method and
+  path only, which cannot tell the sandboxes' containers from others (ADR 0096).
 
 ### [ ] T-71 · no sandbox is left behind (P1)
 

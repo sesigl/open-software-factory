@@ -146,6 +146,10 @@ spec:
             # Each stage runs in a sandbox of agent-sandbox in the sandboxes' namespace (ADR 0096).
             - name: FOREMAN_SANDBOX
               value: kubernetes
+            # An agent without a sandbox would run in this pod, with its tokens: the foreman refuses a factory with
+            # such an agent (T-70).
+            - name: FOREMAN_REQUIRE_SANDBOX
+              value: "true"
             - name: FOREMAN_SANDBOXES
               value: '{"kubernetes": "sandbox-kubernetes"}'
             - name: OSF_SANDBOX_NAMESPACE

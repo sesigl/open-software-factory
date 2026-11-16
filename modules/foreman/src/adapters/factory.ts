@@ -11,7 +11,7 @@ import { UsageError } from "@opensoftware/cli";
 import { type FactoryDefinition, validate } from "@opensoftware/contracts";
 import { FetchError, type Pin, pinnedFolder, factorySource as sourceOf } from "@opensoftware/factory-source";
 import { parse } from "yaml";
-import { type Definition, definitionOf, stageProblems } from "../domain/definition.ts";
+import { type Definition, definitionOf, sandboxProblems, stageProblems } from "../domain/definition.ts";
 
 /**
  * The factory cannot be read now and may be soon: its folder has changes that are not committed. A request that needs
@@ -36,11 +36,21 @@ export interface FactorySource {
   read(): Promise<Factory>;
 }
 
+/** How the foreman reads a factory: with `requireSandbox`, every stage's agent must declare a sandbox. */
+export interface ReadOptions {
+  requireSandbox?: boolean;
+}
+
 /**
  * The source that `FOREMAN_FACTORY` names; @opensoftware/factory-source fetches a remote into `data`/factory, with
  * `token` for a private one (ADR 0142).
  */
-export function factorySource(setting: string, data: string, token: string | undefined): FactorySource {
+export function factorySource(
+  setting: string,
+  data: string,
+  token: string | undefined,
+  options: ReadOptions,
+): FactorySource {
   // Stryker disable next-line StringLiteral: the cache is the foreman's private data, which no test may read
   const source = sourceOf(setting, { cache: join(data, "factory"), token });
   let folder = "";
@@ -52,7 +62,7 @@ export function factorySource(setting: string, data: string, token: string | und
       });
       folder = resolve(fetched.folder);
       // Stryker disable next-line StringLiteral: the cache is the foreman's private data, which no test may read
-      return readFactory(fetched.file, join(data, "skills"), fetched.commit);
+      return readFactory(fetched.file, join(data, "skills"), fetched.commit, options);
     },
   };
 }
@@ -60,14 +70,23 @@ export function factorySource(setting: string, data: string, token: string | und
 /**
  * The factory at `path`; a file that cannot run is a usage error that names the file, the path in it and why. With
  * `commit`, the file is a fetched commit and that commit is its version; else its folder must be clean. The skills of
- * other repositories are fetched into `skills`, the cache of their repositories.
+ * other repositories are fetched into `skills`, the cache of their repositories. With `requireSandbox`, a stage's
+ * agent without a sandbox is one more reason why the file cannot run.
  */
-export async function readFactory(path: string, skills: string, commit?: string): Promise<Factory> {
+export async function readFactory(
+  path: string,
+  skills: string,
+  commit: string | undefined,
+  { requireSandbox }: ReadOptions,
+): Promise<Factory> {
   const file = resolve(path);
   const name = basename(file);
   const document: unknown = parse(readFileSync(file, "utf8"));
   const contract = validate("factory-definition", document);
-  const problems = contract.length ? contract : stageProblems(document as FactoryDefinition);
+  const factory = document as FactoryDefinition;
+  const problems = contract.length
+    ? contract
+    : stageProblems(factory).concat(requireSandbox ? sandboxProblems(factory) : []);
   if (problems.length)
     throw new UsageError(problems.map((problem) => `${name}: ${problem.path}: ${problem.message}`).join("\n"));
   const folder = dirname(file);

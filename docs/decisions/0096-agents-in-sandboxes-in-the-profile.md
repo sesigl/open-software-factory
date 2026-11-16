@@ -72,5 +72,10 @@ Three things stop the profile from using it:
   proxy, `SCN-SEGRESS-022` the configuration.
 - A compromised foreman can still create a privileged container through the socket proxy. Revisit when Sockguard has
   more than one regular maintainer, or when wollomatic/socket-proxy reads the request body.
+- An agent without `sandbox` would still run in the foreman's container, with every token above. Since T-70 the
+  profile and the chart set `FOREMAN_REQUIRE_SANDBOX=true`, and the foreman refuses such a factory (`SCN-FORE-186`).
+  The socket proxy's rules match the method and the path only (wollomatic/socket-proxy 1.13.2, read on 16 November
+  2026): Docker takes a container's ID in the path as well as its name, and a create names its container outside the
+  path, so the rules cannot keep the foreman to the sandboxes' own containers and networks, and stay as they are.
 - Forgejo accepts the token with the user name `x-access-token`, so the same Basic form works for it: `SCN-E2E-006`
   pushes to Forgejo from a sandbox. A forge that checks the user name needs its own Basic form.

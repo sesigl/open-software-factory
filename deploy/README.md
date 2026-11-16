@@ -130,13 +130,20 @@ Every agent of the reference factory runs in such a sandbox:
   `OSF_SECRET_GH_TOKEN` and `OSF_SECRET_CLAUDE_CODE_OAUTH_TOKEN`, and only the sandbox's egress proxy gets them; it
   puts them in on the way to the hosts of `egress`. The agent never sees a token of foreman or the master key of
   `litellm`.
-- `FACTORY_GIT_NAME` and `FACTORY_GIT_EMAIL` apply only to an agent without a sandbox.
+- foreman runs no agent outside a sandbox: the profile sets `FOREMAN_REQUIRE_SANDBOX=true`, so a factory with a stage
+  whose agent declares no `sandbox` stops foreman at its start, and a run of such a commit of `FACTORY_REPOSITORY` is
+  refused, with a line that names the agent. Outside a sandbox the agent would get foreman's environment: the master
+  key of `litellm`, the tokens of OpenBao and the forge, and `DOCKER_HOST`.
+- `FACTORY_GIT_NAME` and `FACTORY_GIT_EMAIL` apply only to an agent without a sandbox, which the profile does not run.
 
 foreman has no Docker socket. It reaches the Docker API through `docker-proxy`
 ([wollomatic/socket-proxy](https://github.com/wollomatic/socket-proxy)), which holds the host's socket read-only,
 answers only foreman, allows only the API paths that the adapter calls, and refuses every bind mount. A request it
 refuses gets `403 Forbidden`. It does not read the rest of a request, so a compromised foreman can still start a
-privileged container: the proxy narrows what foreman can do, it does not make foreman safe to expose.
+privileged container: the proxy narrows what foreman can do, it does not make foreman safe to expose. Its rules
+match a request's method and path only, so they cannot keep foreman to the sandboxes' own containers and networks: a
+container's name is in the path only when the client names it there, Docker takes its ID just as well, and a create
+carries the new name outside the path.
 
 Each agent of the reference factory names its effort level ([ADR 0078](../docs/decisions/0078-agent-effort.md)):
 `high` for triage and ship, which need a small model, and `medium` for spec, implement and review, which need a smart
@@ -487,6 +494,9 @@ Each stage of the reference factory runs in a sandbox of the
 - **The tokens.** `secrets.githubToken` and `secrets.claudeCodeOauthToken` are the secrets `ref:env/GH_TOKEN` and
   `ref:env/CLAUDE_CODE_OAUTH_TOKEN` of the reference factory's agents. Only each sandbox's egress pod gets them; the
   agent holds a placeholder.
+- **No agent outside a sandbox.** foreman runs with `FOREMAN_REQUIRE_SANDBOX=true`, as in the Compose profile: a
+  factory with a stage whose agent declares no `sandbox` stops foreman at its start, and a run of such a commit is
+  refused, so no agent gets the pod's tokens.
 
 ### OpenBao on Kubernetes
 
@@ -696,3 +706,5 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-053 | implemented | Each module image that the deploy suite starts installs the packages of the factory from this workspace's packs, not from npm |
 | SCN-DIST-054 | implemented | With the sign-in and "CONSOLE_SIGNING_KEY", intake refuses a work item whose made-up person has no proof, and the console publishes its key |
 | SCN-DIST-055 | implemented | With the sign-in and without "CONSOLE_SIGNING_KEY", "console doctor" warns that the modules would refuse its actions |
+| SCN-DIST-056 | implemented | The foreman of the Compose profile runs no agent outside a sandbox |
+| SCN-DIST-057 | implemented | The foreman of the Helm chart runs no agent outside a sandbox |
