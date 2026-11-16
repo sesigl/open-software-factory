@@ -1,7 +1,12 @@
 ---
 import "../styles/base.css";
 
-const { title, theme, refresh } = Astro.props as { title: string; theme: string; refresh?: number };
+const { title, theme, refresh, refreshWithoutScript } = Astro.props as {
+  title: string;
+  theme: string;
+  refresh?: number;
+  refreshWithoutScript?: number;
+};
 ---
 <!doctype html>
 <html lang="en" data-theme={theme}>
@@ -9,6 +14,7 @@ const { title, theme, refresh } = Astro.props as { title: string; theme: string;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     {refresh && <meta http-equiv="refresh" content={refresh} />}
+    {refreshWithoutScript && <noscript><meta http-equiv="refresh" content={refreshWithoutScript} /></noscript>}
     <title>{title} · Open Software Factory</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   </head>

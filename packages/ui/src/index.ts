@@ -38,6 +38,11 @@ export interface ShellData {
   theme: "dark" | "light";
   /** Seconds after which the browser reloads the page. */
   refresh?: number;
+  /**
+   * Seconds after which a browser without script reloads the page: an island of the page keeps it fresh where script
+   * runs, so a browser with script never reloads it (ADR 0152).
+   */
+  refreshWithoutScript?: number;
   /** The factory's name, when the page knows it. */
   factory?: string;
   /** The pages, with the current one. */
@@ -50,4 +55,55 @@ export interface ShellData {
   signOut: boolean;
   /** The link to the other theme. */
   otherTheme: ShellLink;
+}
+
+/** A cell's text, a link when it has `href`. */
+export interface LinkText {
+  href?: string;
+  text: string;
+}
+
+/** A row of the work list, ready to show: the server computed every text (ADR 0152). */
+export interface WorkListRow {
+  title: LinkText;
+  type: string;
+  status: string;
+  /** The classes of the status: its shape and colour. */
+  statusClass: string;
+  source: string;
+  requester: string;
+  run: LinkText;
+  age: string;
+}
+
+/** The rows of the work list, and whether its source answered with none: also the answer of the list's route. */
+export interface WorkListItems {
+  rows: WorkListRow[];
+  empty: boolean;
+}
+
+/** The properties of the island "work-list" (`islands/work-list.tsx`), which the server writes on its element. */
+export interface WorkListProps extends WorkListItems {
+  /** The route that answers the list's items as JSON (`WorkListItems`). */
+  src: string;
+  /** Milliseconds between two loads of the route; 0 loads it never. */
+  interval: number;
+  /** The names of the columns. */
+  columns: string[];
+  /** The text of an empty list. */
+  emptyText: string;
+  /** The text while the route does not answer the items; the list keeps the rows it had. */
+  failedText: string;
+}
+
+/**
+ * What `components/WorkList.astro` shows: the island's properties, and the same as JSON for its element, both computed
+ * by the page's route, so that the template only reads them (ADR 0132).
+ */
+export interface WorkListData {
+  /** The name of the list as a region of the page, like "Work items". */
+  label: string;
+  props: WorkListProps;
+  /** `props` as JSON. */
+  island: string;
 }

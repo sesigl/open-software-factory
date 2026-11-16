@@ -1,0 +1,25 @@
+{
+  "rows": [
+    {
+      "title": { "text": "Add a dark mode" },
+      "type": "idea",
+      "status": "running",
+      "statusClass": "osf-state osf-state-running",
+      "source": "console",
+      "requester": "ada@acme.dev",
+      "run": { "href": "/runs/run-7", "text": "run-7" },
+      "age": "1 min"
+    },
+    {
+      "title": { "href": "https://example.com/issues/1", "text": "Import reports from CSV" },
+      "type": "task",
+      "status": "received",
+      "statusClass": "osf-state osf-state-received",
+      "source": "slack",
+      "requester": "Varun",
+      "run": { "text": "—" },
+      "age": "2 d"
+    }
+  ],
+  "empty": false
+}

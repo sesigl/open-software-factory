@@ -5,7 +5,7 @@ import Page from "./Page.astro";
 
 const { shell } = Astro.props as { shell: ShellData };
 ---
-<Page title={shell.title} theme={shell.theme} refresh={shell.refresh}>
+<Page title={shell.title} theme={shell.theme} refresh={shell.refresh} refreshWithoutScript={shell.refreshWithoutScript}>
   <a class="skip" href="#content">Skip to the content</a>
   <div class="shell">
     <header class="side">

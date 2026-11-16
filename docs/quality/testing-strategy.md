@@ -160,13 +160,18 @@ Three kinds, each a system test (ADR 0131):
 - No test of a component inside an island, and none of a single `.astro` component. No component test imports from
   `src/` (BOUNDARY).
 - A UI test finds elements only by role, label or text, or reads the page reader's facts of the document (UI-QUERY).
-  It never waits for time to pass and uses only the named viewports `phone` and `desktop`.
+  It never waits for time to pass and uses only the named viewports `phone` and `desktop`. A scenario whose island
+  acts on a timer pauses the browser's clock (`page.clock.pauseAt` at the testkit's clock) and runs it on with
+  `page.clock.runFor`; it types or clicks before it pauses, since Playwright's actions wait for animation frames, and
+  resumes the clock before axe, which waits on timers of its own.
 - No pixel comparison. A journey keeps its screenshots with `sut.browser.screenshot` as evidence for the pull request.
 
 Measured on the development container (ADR 0131): a page parses in about 5 ms and its queries take about 20 ms;
 Chromium starts in about 60 ms, a context in 30 to 60 ms, a page with a click in 80 to 100 ms, axe-core in 200 ms.
 For an island-like probe page (ADR 0152): the first scenario of a test process took 476 ms with the start of
-Chromium, the next one 112 ms, and a mutant of a library with two such scenarios about 1.4 s per runner.
+Chromium, the next one 112 ms, and a mutant of a library with two such scenarios about 1.4 s per runner. The first
+island, `work-list` (T-55): its 7 scenarios take 0.1 to 0.7 s each, 1.2 s with axe, and its 22 mutants about 40 s on
+4 runners.
 
 ## Test speed
 

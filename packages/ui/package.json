@@ -27,17 +27,20 @@
     "src/styles"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && astro build",
     "lint": "biome check .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test:system": "testkit timed vitest run",
     "mutation": "node ../../tools/bin/osf.ts mutation ."
   },
   "devDependencies": {
-    "@opensoftware/testkit": "workspace:*"
+    "@opensoftware/testkit": "workspace:*",
+    "astro": "7.4.4",
+    "vite-plugin-solid": "2.11.15"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "5.3.0",
-    "@fontsource/ibm-plex-sans": "5.3.0"
+    "@fontsource/ibm-plex-sans": "5.3.0",
+    "solid-js": "1.9.18"
   }
 }

@@ -1,0 +1,12 @@
+---
+// The work list with polling off: the interval 0, as with CONSOLE_REFRESH=0, though its route has a new work item.
+import Page from "../../../src/components/Page.astro";
+import WorkList from "../../../src/components/WorkList.astro";
+import { workList } from "../../work-list.ts";
+---
+<Page title="Work list with polling off" theme="dark">
+  <main>
+    <h1>Work list with polling off</h1>
+    <WorkList list={workList("/work-list/rows.json", 0)} />
+  </main>
+</Page>

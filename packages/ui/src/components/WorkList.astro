@@ -1,0 +1,33 @@
+---
+import type { WorkListData } from "../index.ts";
+
+const { list } = Astro.props as { list: WorkListData };
+---
+<section aria-label={list.label} data-island="work-list" data-props={list.island}>
+  {list.props.empty && <p class="osf-empty">{list.props.emptyText}</p>}
+  <div class="osf-table-panel">
+    <table class="osf-table osf-cards">
+      <thead>
+        <tr>
+          {list.props.columns.map((column) => <th scope="col">{column}</th>)}
+        </tr>
+      </thead>
+      <tbody>
+        {list.props.rows.map((row) => (
+          <tr>
+            <td class="osf-card-title">{row.title.href ? <a href={row.title.href}>{row.title.text}</a> : row.title.text}</td>
+            <td>{row.type}</td>
+            <td class="osf-card-state"><span class={row.statusClass}>{row.status}</span></td>
+            <td>{row.source}</td>
+            <td>{row.requester}</td>
+            <td class="osf-mono">{row.run.href ? <a href={row.run.href}>{row.run.text}</a> : row.run.text}</td>
+            <td class="osf-mono osf-card-corner">{row.age}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</section>
+<script>
+  import "../islands/work-list.mount.tsx";
+</script>

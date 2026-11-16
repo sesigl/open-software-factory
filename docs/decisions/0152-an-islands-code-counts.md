@@ -169,5 +169,12 @@ site. It is about 80 lines on `node:http` (SCN-TK-185, SCN-TK-186).
   policy would refuse fails the scenario through the browser's console error.
 - A `.tsx` file in a module must be reached by a system test (REACH); browser code of a module therefore cannot pass,
   and every island stays in `packages/ui` (T-53).
+- 15 November 2026, slice 2: the compiler is `vite-plugin-solid` 2.11.15 (30 October 2026, MIT, maintained by the
+  SolidJS team; the Solid plugin that `@astrojs/solid-js` itself wraps), pinned beside `solid-js` 1.9.18 in
+  `packages/ui` (for the workbench) and in the console (for its build), without `@astrojs/solid-js`: that integration
+  also adds a renderer for `client:*` to the server's build, which no island uses. Through the lockfile it brings
+  `babel-preset-solid` 1.9.19 and `babel-plugin-jsx-dom-expressions` 0.40.14 (10 November 2026), which only run while
+  the build compiles. TEMPLATE now allows a `<script>` without attributes that only imports a `.tsx` file of the
+  unit's `src/islands/` (SCN-REPO-175, SCN-REPO-176).
 - Revisit when Stryker sets the active mutant for browser runs itself, when Astro emits islands without inline
   scripts, or when the number of islands makes a catalogue worth a second tool.
