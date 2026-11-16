@@ -146,8 +146,10 @@ npx @opensoftware/gatekeeper status --policy merge.rego --groups groups.json --p
 
 The request is built from the pull request: the work item is its URL, the stage is `merge`, and `change` holds
 `repository`, `number`, `author`, `head` (branch), `sha` (head commit), `base`, `labels`, `draft` and `paths` (up to
-100 changed files). The request is a comment; a decision is a later comment `/approve` or `/reject <reason>`. Each run
-sets the commit status `gatekeeper` of the head commit: `pending`, `success` or `failure`. A new commit is a new gate,
+100 changed files). The request is a comment; a decision is a later comment `/approve` or `/reject <reason>`,
+however many comments are in between. A comment that the forge dates before the request comment never decides, by the
+forge's own clock; without its request comment, deleted or not listed, no comment decides the gate: it stays pending.
+Each run sets the commit status `gatekeeper` of the head commit: `pending`, `success` or `failure`. A new commit is a new gate,
 so an approval of an older commit does not count. Require the status `gatekeeper` in a branch protection rule to
 block the merge until the gate is approved. On Forgejo, `GATEKEEPER_FORGE_URL` is the forge's origin, like
 `https://forge.example`, not its `/api/v1`.
@@ -471,3 +473,7 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-GATE-108 | implemented | A pull request link to another forge is never called, and without Slack the request gets the status 400 |
 | SCN-GATE-109 | implemented | A pull request link to another forge does not decide a gate: the server asks in Slack |
 | SCN-GATE-110 | implemented | Without "GATEKEEPER_FORGE_URL" the server's forge is GitHub, and a pull request link to another forge is never called |
+| SCN-GATE-111 | implemented | When the forge no longer lists the request's comment, no "/approve" decides the gate, also none from before the request |
+| SCN-GATE-112 | implemented | An "/approve" after more than 100 comments passes the gate |
+| SCN-GATE-116 | implemented | An "/approve" that the forge lists after the request but dates before it does not pass the gate |
+| SCN-GATE-117 | implemented | In the second of the request the forge's order decides: a "/reject" listed before the request does not count, an "/approve" listed after it does |

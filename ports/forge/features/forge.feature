@@ -327,3 +327,10 @@ Feature: Branches, pull requests, checks, merge rules and webhooks on any forge
     Given the branch "console/add-logo" of "tester/web" made from "main"
     When the client runs "commit tester/web console/add-logo --message 'Add the logo' logo.bin=<file>" with a file whose bytes are not UTF-8
     Then the branch's "logo.bin" holds exactly the bytes of the local file
+
+  @id=SCN-FORGE-046 @status=implemented @conformance
+  Scenario: comments lists every comment of a long conversation, past the forge's first page
+    Given an open pull request in "tester/web" with the 120 comments "Comment 1" to "Comment 120" by the person "reviewer"
+    When the client runs "comments" for it
+    Then comments prints 120 lines with the texts "Comment 1" to "Comment 120" in that order
+

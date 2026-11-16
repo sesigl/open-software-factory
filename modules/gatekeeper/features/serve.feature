@@ -263,3 +263,11 @@ Feature: Serve the gate API
     When a program posts a request that links only the pull request "acme/web#12" of the other forge to "/v1/gates"
     Then the answer has the status 400 and a problem whose detail says "the request links no pull request on https://github.com"
     And the other forge got no call
+
+  @id=SCN-GATE-111 @status=implemented
+  Scenario: When the forge no longer lists the request's comment, no "/approve" decides the gate, also none from before the request
+    Given the server asked "maintainers" on the pull request "acme/web#12" at "2026-01-01T00:00:00Z"
+    And the pull request no longer has the request's comment, and has an "/approve" by "github:sesigl" of "maintainers" from "2025-12-31T23:00:00Z" and one from "2026-01-01T00:10:00Z"
+    When the server read the pull request's comments twice
+    Then "/v1/gates/<gate>" shows the state "pending"
+    And the head commit of the pull request has only the commit status "gatekeeper" with the state "pending"

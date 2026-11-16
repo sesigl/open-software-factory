@@ -78,6 +78,10 @@ export async function putMergeFiles(sut: Sut, prefix = ""): Promise<void> {
   await sut.files.put(`$INPUT/${prefix}groups.json`, JSON.stringify({ maintainers: ["github:sesigl"] }));
 }
 
+/** The scripted GitHub API lists the comments of acme/web#12 here, 100 to a page, on this many pages. */
+export const COMMENTS = "/repos/acme/web/issues/12/comments?per_page=100";
+const PAGES = 3;
+
 export interface Comment {
   id: number;
   body: string;
@@ -104,12 +108,14 @@ export async function forge(
     created_at: at,
     user: { login },
   });
-  // The fake sends a route's body as JSON when it answers, so a comment added to this list is in the next answer.
+  // The fake sends a route's body as JSON when it answers, so a comment added to a page is in the next answer. GitHub
+  // gives 100 comments to a page; the pages hold the comments in order.
   const listed = comments.map(commentJson);
+  const pages = Array.from({ length: PAGES }, (_, index) => listed.slice(index * 100, (index + 1) * 100));
   // The fake answers with the route's status at the time of the call, so a test can make the reads fail for a while.
   const reads: { path: string; body: unknown; status?: number; until?: Promise<unknown> } = {
-    path: `${base}/issues/12/comments?per_page=100`,
-    body: listed,
+    path: `${COMMENTS}&page=1`,
+    body: pages[0],
   };
   const http = await fakes.http([
     {
@@ -133,8 +139,9 @@ export async function forge(
     { path: `${base}/commits/${SHA}/status`, body: { statuses: [] } },
     { path: `${base}/commits/${SHA}/check-runs?per_page=100&page=1`, body: { total_count: 0, check_runs: [] } },
     { path: "/user", body: { login: "gatekeeper-bot" } },
-    ...(before ? [{ path: `${base}/issues/12/comments?per_page=100`, body: before.map(commentJson), times: 1 }] : []),
+    ...(before ? [{ path: `${COMMENTS}&page=1`, body: before.map(commentJson), times: 1 }] : []),
     reads,
+    ...pages.slice(1).map((page, index) => ({ path: `${COMMENTS}&page=${index + 2}`, body: page })),
     {
       method: "POST",
       path: `${base}/issues/12/comments`,
@@ -143,7 +150,7 @@ export async function forge(
     { method: "POST", path: `${base}/statuses/${SHA}`, body: {} },
   ]);
   return Object.assign(http, {
-    comment: (added: Comment) => void listed.push(commentJson(added)),
+    comment: (added: Comment) => void pages.find((page) => page.length < 100)?.push(commentJson(added)),
     /** The reads of the comments answer with this status from now on; no status: they answer again. */
     failReads: (status?: number) => {
       reads.status = status;

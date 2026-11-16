@@ -91,9 +91,15 @@ const TOKENS: Record<string, string> = {
   [NO_CHECKS_TOKEN]: OWNER,
 };
 const OWNER_TOKEN = "ghp_testkit_tester";
-/** GitHub's default and largest page of check runs. */
-const RUNS_PAGE = 30;
-const RUNS_MAX = 100;
+/** GitHub's default and largest page of a list. */
+const PAGE = 30;
+const PAGE_MAX = 100;
+/** The page of a list that `per_page` and `page` ask for: GitHub gives 30 to a page unless per_page asks for up to 100. */
+const pageOf = <T>(list: T[], query: URLSearchParams): T[] => {
+  const size = Math.min(Number(query.get("per_page") ?? PAGE), PAGE_MAX);
+  const page = Number(query.get("page") ?? 1);
+  return list.slice((page - 1) * size, page * size);
+};
 const CHECK_STATES = ["pending", "success", "failure", "error"];
 /** The REST API versions the fake takes in X-GitHub-Api-Version; a request without the header gets the first. */
 const API_VERSIONS = ["2022-11-28"];
@@ -599,13 +605,11 @@ export async function startGitHub(): Promise<RunningGitHub> {
         const sha = repo.branches.get(ref) ?? commits.find(ref)?.sha;
         if (!sha) throw new Answer(422, `No commit found for SHA: ${ref}`);
         const runs = repo.runs.filter((run) => run.sha === sha);
-        const size = Math.min(Number(query.get("per_page") ?? RUNS_PAGE), RUNS_MAX);
-        const start = (Number(query.get("page") ?? 1) - 1) * size;
         return [
           200,
           {
             total_count: runs.length,
-            check_runs: runs.slice(start, start + size).map((run) => ({
+            check_runs: pageOf(runs, query).map((run) => ({
               id: run.id,
               head_sha: run.sha,
               name: run.name,
@@ -682,14 +686,12 @@ export async function startGitHub(): Promise<RunningGitHub> {
       "GET",
       /^\/pulls$/,
       (repo, _match, _body, _user, query) => {
-        // GitHub lists the newest first, 30 to a page unless per_page asks for up to 100.
+        // GitHub lists the newest first.
         const state = query.get("state") ?? "open";
         if (!["open", "closed", "all"].includes(state))
           throw new Answer(422, "Validation Failed: state is not included in the list");
-        const size = Math.min(Number(query.get("per_page") ?? 30), 100);
-        const page = Number(query.get("page") ?? 1);
         const listed = [...repo.pulls].reverse().filter((pr) => state === "all" || pr.state === state);
-        return [200, listed.slice((page - 1) * size, page * size).map((pr) => pullJson(repo, pr))];
+        return [200, pageOf(listed, query).map((pr) => pullJson(repo, pr))];
       },
     ],
     [
@@ -729,12 +731,11 @@ export async function startGitHub(): Promise<RunningGitHub> {
     [
       "GET",
       /^\/issues\/(\d+)\/comments$/,
-      (repo, [number = ""]) => {
+      (repo, [number = ""], _body, _user, query) => {
+        // GitHub lists a conversation oldest first, page by page.
         const pr = pull(repo, Number(number));
-        return [
-          200,
-          repo.comments.filter((entry) => entry.number === pr.number).map((entry) => commentJson(repo, pr, entry)),
-        ];
+        const listed = repo.comments.filter((entry) => entry.number === pr.number);
+        return [200, pageOf(listed, query).map((entry) => commentJson(repo, pr, entry))];
       },
     ],
     [
