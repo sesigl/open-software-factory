@@ -1,7 +1,8 @@
 @module=ledger @owner=maintainers
 Feature: Flow metrics
   "ledger report" shows how work flows through the factory: throughput, cycle time by segment, human interactions,
-  runs by agent type and the revert rate, from run records and pull request events.
+  runs by agent type, the revert rate and the factory's share of merged pull requests, from run records and pull
+  request events.
 
   @id=SCN-LEDGER-020 @status=implemented @realizes=SCN-FACTORY-METRIC-001
   Scenario: The report shows human interactions per pull request and their trend per day
@@ -49,6 +50,37 @@ Feature: Flow metrics
     When the user runs "ledger report data.jsonl"
     Then "report.json" shows the revert rate 0.25 with 1 revert of 4 merged pull requests
     And the output says "revert rate 25.0%"
+
+  @id=SCN-LEDGER-067 @status=implemented
+  Scenario: The report shows the factory's share of merged pull requests and the revert rate of each group
+    Given merged pull requests from the head branches "osf/run-01", "observer/tune-skill-1a2b3c4d", "factory/12-add-cart", "fix-login" and "add-sum"
+    And a merged pull request 'Revert "Add the sum"' from the head branch "revert-5-add-sum" that reverts the one from "add-sum"
+    When the user runs "ledger report data.jsonl"
+    Then "report.json" shows 3 merged pull requests of the factory and 3 of people, each a share of 0.5
+    And "report.json" shows the revert rate 0 for the factory and 0.3333 for people
+    And the output says "merged pull requests 6, factory share 50.0%, revert rate of the factory 0.0% and of people 33.3%"
+
+  @id=SCN-LEDGER-068 @status=implemented
+  Scenario: A revert counts for the group of the pull request it reverts
+    Given a merged pull request "Add the cart" from the head branch "osf/run-07"
+    And a merged pull request 'Revert "Add the cart"' from the head branch "revert-1-osf/run-07"
+    When the user runs "ledger report data.jsonl"
+    Then "report.json" shows the revert rate 1 for the factory with 1 revert of 1 merged pull request
+    And "report.json" shows the revert rate 0 for people with 0 reverts of 1 merged pull request
+
+  @id=SCN-LEDGER-069 @status=implemented
+  Scenario: A group without merged pull requests in the period shows no revert rate
+    Given a pull request from the head branch "osf/run-01" merged on 2026-01-04
+    And a pull request from the head branch "fix-login" merged on 2026-01-05
+    When the user runs "ledger report --since 2026-01-05 --until 2026-01-05 --markdown report.md data.jsonl"
+    Then "report.json" shows 0 merged pull requests of the factory, a share of 0 and the revert rate null
+    And "report.md" has under "## Factory and people" the table "Origin | Merged | Share | Reverts | Revert rate" with the rows "Factory | 0 | 0.0% | 0 | -" and "People | 1 | 100.0% | 0 | 0.0%"
+
+  @id=SCN-LEDGER-070 @status=implemented
+  Scenario: The option "--factory-branches" names the head branch prefixes of the factory's pull requests
+    Given merged pull requests from the head branches "bot/run-1", "ci/bump-2", "osf/run-3" and "fix-login"
+    When the user runs "ledger report --factory-branches 'bot/, ci/,' data.jsonl"
+    Then "report.json" shows the factory branches "bot/" and "ci/", 2 merged pull requests of the factory and 2 of people
 
   @id=SCN-LEDGER-027 @status=implemented @realizes=SCN-FACTORY-OUTCOME-002
   Scenario: The options "--since" and "--until" limit the period

@@ -6,6 +6,8 @@ export interface Options {
   target: number | null;
   computeUsdPerHour: number;
   platformUsd: number;
+  /** The head branch prefixes of the factory's pull requests. */
+  factoryBranches: string[];
 }
 
 export interface Slice {
@@ -26,6 +28,8 @@ export interface Facts {
   interactions: { perPullRequest: number | null; perDay: { date: string; perPullRequest: number }[] };
   runs: { total: number; topLevel: number; byAgent: { agent: string; total: number; topLevel: number }[] };
   reverts: number;
+  /** The merges and reverts of the period by the factory's and by people's pull requests. */
+  origin: { factoryMerged: number; peopleMerged: number; factoryReverts: number; peopleReverts: number };
   spend: {
     total: number;
     unattributed: number;
@@ -43,6 +47,13 @@ const hundredths = (value: number | null): number | null => (value === null ? nu
 const share = (part: number, whole: number): number => (whole ? Math.round((part / whole) * 10_000) / 10_000 : 0);
 
 export function buildReport(facts: Facts, options: Options) {
+  const { factoryMerged, peopleMerged, factoryReverts, peopleReverts } = facts.origin;
+  const group = (merged: number, reverts: number) => ({
+    merged,
+    share: factoryMerged + peopleMerged ? share(merged, factoryMerged + peopleMerged) : null,
+    reverts,
+    revertRate: merged ? share(reverts, merged) : null,
+  });
   const compute = facts.hours * options.computeUsdPerHour;
   const total = facts.spend.total + compute + options.platformUsd;
   const perPullRequest = facts.opened ? total / facts.opened : null;
@@ -88,6 +99,11 @@ export function buildReport(facts: Facts, options: Options) {
       reverts: facts.reverts,
       merged: facts.merged,
     },
+    origin: {
+      factoryBranches: options.factoryBranches,
+      factory: group(factoryMerged, factoryReverts),
+      people: group(peopleMerged, peopleReverts),
+    },
   };
 }
 
@@ -100,6 +116,12 @@ export const percent = (value: number | null): string => (value === null ? "-" :
 /** One line for standard output. */
 export function summary(report: Report): string {
   return `${report.pullRequests.opened} pull requests, cost per pull request ${usd(report.costPerPullRequest?.usd)}, revert rate ${percent(report.revertRate.rate)}`;
+}
+
+/** The line of phase 3's exit criterion: the factory's share of merges and each group's revert rate. */
+export function originSummary(report: Report): string {
+  const { factory, people } = report.origin;
+  return `merged pull requests ${factory.merged + people.merged}, factory share ${percent(factory.share)}, revert rate of the factory ${percent(factory.revertRate)} and of people ${percent(people.revertRate)}`;
 }
 
 export function markdown(report: Report): string {
@@ -176,6 +198,16 @@ export function markdown(report: Report): string {
     table(
       ["Reverts", "Merged", "Rate"],
       [[report.revertRate.reverts, report.revertRate.merged, percent(report.revertRate.rate)]],
+    ),
+    "## Factory and people",
+    table(
+      ["Origin", "Merged", "Share", "Reverts", "Revert rate"],
+      (
+        [
+          ["Factory", report.origin.factory],
+          ["People", report.origin.people],
+        ] as const
+      ).map(([name, group]) => [name, group.merged, percent(group.share), group.reverts, percent(group.revertRate)]),
     ),
   ].join("\n\n")}\n`;
 }

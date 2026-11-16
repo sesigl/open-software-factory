@@ -8,7 +8,8 @@ Know what each pull request costs and how work flows through your factory. ledge
 uses agents already has: the spend log of its LLM gateway (LiteLLM), the run records of its agent sessions
 ([runlog](../runlog/README.md)) and its forge's pull request events. It writes them into one DuckDB file and reports
 the cost per pull request, split into inference, compute and platform, the spend by source, user, agent and model,
-the most expensive pull requests, throughput, cycle time, human interactions, runs by agent type and the revert rate.
+the most expensive pull requests, throughput, cycle time, human interactions, runs by agent type and the revert rate,
+and how many of the merged pull requests came from the factory, with the revert rate of the factory's and of people's.
 For a team, it writes to PostgreSQL instead and ships a Grafana dashboard over the same views, or writes one static
 HTML dashboard page. A team without forge adapters imports its pull requests and reviews from GitHub or Forgejo, and a
 team without a gateway prices its runs' tokens with LiteLLM's price table.
@@ -25,7 +26,7 @@ and three pull request events:
 {"resourceSpans":[{"resource":{"attributes":[{"key":"osf.run.id","value":{"stringValue":"run-02"}},{"key":"osf.source","value":{"stringValue":"slack"}},{"key":"osf.requester.id","value":{"stringValue":"slack:U024BE7LH"}},{"key":"osf.harness.name","value":{"stringValue":"claude-code"}}]},"scopeSpans":[{"spans":[{"traceId":"4bf92f3577b34da6a3ce929d0e0e4736","spanId":"4bf92f3577b34da6","name":"invoke_agent","startTimeUnixNano":"1767265200000000000","endTimeUnixNano":"1767267000000000000","attributes":[{"key":"gen_ai.operation.name","value":{"stringValue":"invoke_agent"}},{"key":"gen_ai.request.model","value":{"stringValue":"claude-sonnet-5-5"}},{"key":"osf.cost.usd","value":{"doubleValue":1}},{"key":"osf.pull_request.urls","value":{"arrayValue":{"values":[{"stringValue":"https://github.com/acme/web/pull/2"}]}}}]}]}]}]}
 {"request_id":"req-01","spend":2,"startTime":"2026-01-01T09:10:00Z","model":"claude-sonnet-5-5","metadata":{"spend_logs_metadata":{"osf.run.id":"run-01"}}}
 {"request_id":"req-02","spend":0.5,"startTime":"2026-01-01T09:40:00Z","model":"claude-sonnet-5-5","metadata":{"spend_logs_metadata":{"osf.run.id":"run-01"}}}
-{"specversion":"1.0","id":"evt-01","source":"/osf/forge","type":"pr.opened@v1","time":"2026-01-01T10:00:00Z","data":{"url":"https://github.com/acme/web/pull/1","repository":"https://github.com/acme/web","number":1,"title":"Fix the login redirect","headBranch":"fix-1","baseBranch":"main","headCommit":"9b1c2d3","author":{"kind":"person","id":"github:mona"}}}
+{"specversion":"1.0","id":"evt-01","source":"/osf/forge","type":"pr.opened@v1","time":"2026-01-01T10:00:00Z","data":{"url":"https://github.com/acme/web/pull/1","repository":"https://github.com/acme/web","number":1,"title":"Fix the login redirect","headBranch":"osf/run-01","baseBranch":"main","headCommit":"9b1c2d3","author":{"kind":"person","id":"github:mona"}}}
 {"specversion":"1.0","id":"evt-02","source":"/osf/forge","type":"pr.opened@v1","time":"2026-01-01T11:30:00Z","data":{"url":"https://github.com/acme/web/pull/2","repository":"https://github.com/acme/web","number":2,"title":"Add a sum function","headBranch":"fix-2","baseBranch":"main","headCommit":"9b1c2d3","author":{"kind":"person","id":"github:mona"}}}
 {"specversion":"1.0","id":"evt-03","source":"/osf/forge","type":"pr.closed@v1","time":"2026-01-01T12:00:00Z","data":{"url":"https://github.com/acme/web/pull/1","merged":true}}
 ```
@@ -38,7 +39,9 @@ npx @opensoftware/ledger report ledger.jsonl
 
 It writes `ledger.duckdb` and `$OUTPUT/report.json`, and prints
 `2 pull requests, cost per pull request 1.75 USD, revert rate 0.0%`: run-01 cost 2.50 USD in spend rows, run-02
-1.00 USD by its own `osf.cost.usd`, and each run belongs to one pull request.
+1.00 USD by its own `osf.cost.usd`, and each run belongs to one pull request. Its second line,
+`merged pull requests 1, factory share 100.0%, revert rate of the factory 0.0% and of people -`, says that the one
+merged pull request came from the factory: its head branch `osf/run-01` is a branch of the factory's.
 
 ## Commands
 
@@ -58,6 +61,7 @@ Options of `report`:
 | `--target <usd>` | The cost per pull request to reach. The report adds it and the gap. |
 | `--compute-usd-per-hour <usd>` | What one hour of a run costs in compute, for example a sandbox. Default 0. |
 | `--platform-usd <usd>` | What the platform cost in the period: servers, licenses. It is spread over the pull requests. Default 0. |
+| `--factory-branches <prefixes>` | The head branch prefixes of the factory's pull requests, separated by commas. Default `osf/,observer/,factory/`: foreman's branches `osf/<run ID>`, observer's `observer/` and the factory agents' `factory/`, the same branches the merge gate of this repository treats as factory-made. |
 | `--markdown <file>` | Also write the report as Markdown tables. |
 | `--html <file>` | Also write the report as one HTML page. See [Dashboard page](#dashboard-page). |
 | `--prices <file>` | Price the tokens of runs without cost. See [Prices for token usage](#prices-for-token-usage). `ingest` takes it too. |
@@ -98,6 +102,14 @@ To attribute a gateway call to a run, the launcher sends LiteLLM's metadata with
   or a comment by a person.
 - **Revert:** a merged pull request whose title starts with `Revert "`, as the revert button of GitHub, GitLab and
   Forgejo writes it. The revert rate is reverts divided by merged pull requests.
+- **The factory's pull request:** one whose head branch, from `pr.opened@v1`, starts with a prefix of
+  `--factory-branches`; every other pull request is people's. The branch decides, not the author: a factory that
+  pushes with a person's token opens pull requests in that person's name, and a person's agent session also writes
+  run records, so neither the author nor a linked run tells the two apart. The **factory share** is the factory's
+  merged pull requests divided by all merged in the period. A revert counts for the group of the pull request it
+  reverts, the merged one whose title its title quotes, and for its own group when that one is not in the ledger;
+  each group's revert rate is its reverts divided by its merged pull requests. A group without merged pull requests
+  has no revert rate (`null`, `-`), and a period without merges no share.
 
 Amounts are rounded to cents, shares to four digits; durations are medians in hours.
 
@@ -112,7 +124,7 @@ The database is yours to query, for example with the DuckDB CLI: `duckdb ledger.
 | `run_cost` | run | `run_id`, `work_item_id`, `source`, `requester_id`, `agent`, `model`, `started_at`, `ended_at`, `top_level`, `hours`, `inference_usd` |
 | `spend_attributed` | spent amount | `spent_at`, `usd`, `run_id`, `source`, `user_id`, `agent`, `model` |
 | `pr_runs` | run of a pull request | `pr_url`, `run_id`, `share` |
-| `pr_flow` | pull request | `url`, `title`, `author_id`, `opened_at`, `kickoff_at`, `first_human_review_at`, `merged_at`, `closed_at`, `is_revert`, `human_interactions` |
+| `pr_flow` | pull request | `url`, `title`, `author_id`, `opened_at`, `kickoff_at`, `first_human_review_at`, `merged_at`, `closed_at`, `is_revert`, `human_interactions`, `head_branch`, `reverted_url` (for a revert, the pull request it reverts) |
 | `pr_cost` | pull request | `url`, `title`, `opened_at`, `inference_usd`, `hours` |
 
 ## Prices for token usage
@@ -136,7 +148,8 @@ result is the list price of the tokens, not what a subscription bills.
 ## Dashboard page
 
 `ledger report --html ledger.html` writes the report as one HTML page that needs no server, no database and no
-network: tiles for the cost per pull request, its split, the gap to the target and the revert rate; throughput, runs by
+network: tiles for the cost per pull request, its split, the gap to the target, the revert rate, the factory share and
+the revert rate of the factory's and of people's pull requests; throughput, runs by
 agent and a bar chart of pull requests opened and merged per day; the median cycle time by segment; the 20 most
 expensive pull requests as links; and the spend by source, user, agent and model. It has no script, and every value
 from the input is shown as text. Put it on any static host. This repository publishes its own page this way: see
@@ -199,8 +212,12 @@ compute, platform), `costPerPullRequest` (the same per pull request, with `targe
 requests), `spend` (total, unattributed, and `bySource`, `byUser`, `byAgent`, `byModel` with each group's share),
 `topPullRequests` (the 20 most expensive), `cycleTime` (median hours of `kickoffToPullRequest`, `kickoffToMerge`,
 `pullRequestToFirstHumanReview`, `firstHumanReviewToMerge`), `humanInteractions` (per pull request, per day),
-`runs` (total, top-level, by agent) and `revertRate` (rate, reverts, merged). Read cost next to throughput and the
-revert rate: a cheaper pull request is no gain when more of them are reverted.
+`runs` (total, top-level, by agent), `revertRate` (rate, reverts, merged) and `origin` (`factoryBranches`, and for
+`factory` and `people` each: `merged`, `share`, `reverts`, `revertRate`). Read cost next to throughput and the
+revert rate: a cheaper pull request is no gain when more of them are reverted. `origin` holds the two numbers of
+phase 3's exit criterion ([bootstrapping](../../docs/explanation/bootstrapping.md)): the factory's share of merged
+pull requests, and its revert rate next to people's. The Markdown report shows them in the section "Factory and
+people".
 
 ## Releases
 
@@ -293,3 +310,8 @@ with a trusted publisher for `publish-ledger.yml`. No credential is stored in th
 | SCN-LEDGER-064 | implemented | A price table that is no JSON is refused |
 | SCN-LEDGER-065 | implemented | The Markdown report shows each measure of the period in its table |
 | SCN-LEDGER-066 | implemented | Without pull requests the Markdown report shows a dash for each value it cannot compute |
+| SCN-LEDGER-067 | implemented | The report shows the factory's share of merged pull requests and the revert rate of each group |
+| SCN-LEDGER-068 | implemented | A revert counts for the group of the pull request it reverts |
+| SCN-LEDGER-069 | implemented | A group without merged pull requests in the period shows no revert rate |
+| SCN-LEDGER-070 | implemented | The option "--factory-branches" names the head branch prefixes of the factory's pull requests |
+| SCN-LEDGER-071 | implemented | The page shows the factory's share of merged pull requests and the revert rate of each group |

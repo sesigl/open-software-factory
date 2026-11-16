@@ -88,6 +88,9 @@ ${tile("Compute", usd(cost?.compute))}
 ${tile("Platform", usd(cost?.platform))}
 ${tile("Gap to target", usd(cost?.gap))}
 ${tile("Revert rate", percent(report.revertRate.rate))}
+${tile("Factory share", percent(report.origin.factory.share))}
+${tile("Revert rate of the factory", percent(report.origin.factory.revertRate))}
+${tile("Revert rate of people", percent(report.origin.people.revertRate))}
 </div>
 <h2>Throughput</h2>
 <div class="grid">

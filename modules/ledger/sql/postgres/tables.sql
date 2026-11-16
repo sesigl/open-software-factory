@@ -47,8 +47,12 @@ CREATE TABLE IF NOT EXISTS pull_requests (
   author_id VARCHAR NOT NULL,
   opened_at TIMESTAMP NOT NULL,
   work_item_id VARCHAR,
-  run_id VARCHAR
+  run_id VARCHAR,
+  head_branch VARCHAR
 );
+
+-- A database of ledger 0.8 and older has no head_branch yet.
+ALTER TABLE pull_requests ADD COLUMN IF NOT EXISTS head_branch VARCHAR;
 
 CREATE TABLE IF NOT EXISTS closes (
   url VARCHAR PRIMARY KEY,

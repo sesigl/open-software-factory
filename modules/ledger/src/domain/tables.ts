@@ -85,7 +85,7 @@ export function tableRows(records: Records): Writes {
       ),
       table(
         "pull_requests",
-        ["url", "title", "author_id", "opened_at", "work_item_id", "run_id"],
+        ["url", "title", "author_id", "opened_at", "work_item_id", "run_id", "head_branch"],
         events("pr.opened@v1").map(({ time, data }) => [
           String(data.url),
           String(data.title),
@@ -93,6 +93,7 @@ export function tableRows(records: Records): Writes {
           utc(time) as string,
           text(data.workItemId),
           text(data.runId),
+          String(data.headBranch),
         ]),
         1,
         ["opened_at"],

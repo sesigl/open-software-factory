@@ -14,8 +14,8 @@ const HELP = `Usage: ledger <command> [options]
 
 Commands:
   ingest [--db <file or URL>] [--prices <file>] <file or folder>...  Read LiteLLM spend log rows, OTLP/JSON runs and CloudEvents (.json, .jsonl) into the database --db.
-  report [--db <file or URL>] [--prices <file>] [--since <date>] [--until <date>] [--target <usd>] [--compute-usd-per-hour <usd>] [--platform-usd <usd>] [--out <file>] [--markdown <file>] [--html <file>] [<file or folder>...]
-         Ingest the files named, then write cost per pull request, spend, throughput, cycle time, runs and revert rate to --out ($OUTPUT/report.json), as Markdown to --markdown and as a dashboard page to --html.
+  report [--db <file or URL>] [--prices <file>] [--since <date>] [--until <date>] [--target <usd>] [--compute-usd-per-hour <usd>] [--platform-usd <usd>] [--factory-branches <prefixes>] [--out <file>] [--markdown <file>] [--html <file>] [<file or folder>...]
+         Ingest the files named, then write cost per pull request, spend, throughput, cycle time, runs, revert rate and the factory's share of merges to --out ($OUTPUT/report.json), as Markdown to --markdown and as a dashboard page to --html.
   query [--db <file or URL>] <SQL>  Run one SQL statement, like "SELECT * FROM pr_cost", and print its rows as JSON Lines.
   dashboard [--out <file>]  Write the Grafana dashboard over the PostgreSQL views to --out ($OUTPUT/ledger-dashboard.json).
   import [--forge github|forgejo] [--since <date>] [--out <file>] <repository URL>
@@ -23,6 +23,7 @@ Commands:
 
 --db is a DuckDB file or a postgres:// URL; its default is $LEDGER_DB, else ledger.duckdb.
 --prices is a LiteLLM price table (model_prices_and_context_window.json): runs without their own cost cost their tokens.
+--factory-branches lists the head branch prefixes of the factory's pull requests; default osf/,observer/,factory/.
 `;
 
 const { positionals, values } = parseArgs({
@@ -40,6 +41,7 @@ const { positionals, values } = parseArgs({
     "compute-usd-per-hour": { type: "string", default: "0" },
     "platform-usd": { type: "string", default: "0" },
     forge: { type: "string" },
+    "factory-branches": { type: "string", default: "osf/,observer/,factory/" },
   },
 });
 const [command, ...paths] = positionals;
@@ -61,6 +63,10 @@ async function main(): Promise<string[]> {
     target: values.target === undefined ? null : usd("target", values.target),
     computeUsdPerHour: usd("compute-usd-per-hour", values["compute-usd-per-hour"]),
     platformUsd: usd("platform-usd", values["platform-usd"]),
+    factoryBranches: values["factory-branches"]
+      .split(",")
+      .map((prefix) => prefix.trim())
+      .filter(Boolean),
   };
   const output = (file: string) => outputPath(file, values.out);
   if (command === "dashboard") return [dashboard(output("ledger-dashboard.json"))];

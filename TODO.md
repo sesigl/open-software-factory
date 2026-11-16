@@ -295,7 +295,7 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 - **Build:** the six stages of this repository's factory on a scratch repository on GitHub with the scripted agent,
   started by a maintainer: issue, spec, gate on the pull request, implement, checks, ship.
 
-### [ ] T-96 · ledger tells factory pull requests from people's (P1)
+### [x] T-96 · ledger tells factory pull requests from people's (P1)
 
 - **Build:** the share of merged pull requests from the factory and the revert rate of each group, the two numbers
   of phase 3's exit criterion.

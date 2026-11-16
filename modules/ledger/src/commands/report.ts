@@ -3,7 +3,15 @@
 import { writeText } from "@opensoftware/cli";
 import type { Ledger, Parameter, Row } from "../adapters/ledger.ts";
 import { page } from "../domain/page.ts";
-import { buildReport, type Facts, markdown, type Options, type Slice, summary } from "../domain/report.ts";
+import {
+  buildReport,
+  type Facts,
+  markdown,
+  type Options,
+  originSummary,
+  type Slice,
+  summary,
+} from "../domain/report.ts";
 
 /** The period as [from, to) timestamps; an open end is infinity. */
 const bounds = ({ since, until }: Options): string[] => [
@@ -32,6 +40,23 @@ export async function report(
       count(*) FILTER (WHERE ${between("merged_at")} AND is_revert)::INTEGER AS reverts,
       (avg(human_interactions) FILTER (WHERE ${between("opened_at")}))::DOUBLE PRECISION AS interactions
     FROM pr_flow`);
+  // A pull request is the factory's when its head branch starts with one of the prefixes; a revert counts for the
+  // group of the pull request it reverts, else for its own.
+  const prefixes = options.factoryBranches;
+  const factory =
+    prefixes.map((_, index) => `starts_with(coalesce(head_branch, ''), $${index + 3}::VARCHAR)`).join(" OR ") ||
+    "false";
+  const merged = between("f.merged_at");
+  const origin = await one(
+    `WITH origin AS (SELECT url, (${factory}) AS factory FROM pr_flow)
+    SELECT
+      count(*) FILTER (WHERE ${merged} AND o.factory)::INTEGER AS "factoryMerged",
+      count(*) FILTER (WHERE ${merged} AND NOT o.factory)::INTEGER AS "peopleMerged",
+      count(*) FILTER (WHERE ${merged} AND f.is_revert AND coalesce(r.factory, o.factory))::INTEGER AS "factoryReverts",
+      count(*) FILTER (WHERE ${merged} AND f.is_revert AND NOT coalesce(r.factory, o.factory))::INTEGER AS "peopleReverts"
+    FROM pr_flow f JOIN origin o ON o.url = f.url LEFT JOIN origin r ON r.url = f.reverted_url`,
+    [...period, ...prefixes],
+  );
   const perDay = await all(`SELECT ${day("day")} AS date, sum(opened)::INTEGER AS opened, sum(merged)::INTEGER AS merged
     FROM (SELECT opened_at::DATE AS day, 1 AS opened, 0 AS merged FROM pr_flow WHERE ${between("opened_at")}
           UNION ALL SELECT merged_at::DATE, 0, 1 FROM pr_flow WHERE ${between("merged_at")}) AS days
@@ -66,6 +91,7 @@ export async function report(
     opened: totals.opened as number,
     merged: totals.merged as number,
     reverts: totals.reverts as number,
+    origin: origin as Facts["origin"],
     perDay: perDay as Facts["perDay"],
     cycle: cycle as Facts["cycle"],
     interactions: {
@@ -99,5 +125,5 @@ export async function report(
     writeText(files.html, page(built));
     written.push(files.html);
   }
-  return [summary(built), `wrote ${written.join(" and ")}`];
+  return [summary(built), originSummary(built), `wrote ${written.join(" and ")}`];
 }

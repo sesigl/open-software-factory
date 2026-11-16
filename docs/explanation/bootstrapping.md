@@ -16,6 +16,10 @@ the next phase needs.
 | 3 · Factory builds factory | The factory, on issues labeled `factory`; people approve specs and merges | The Compose profile on the owner's machine runs the factory of `deploy/dogfood/factory/` on this repository's issues, with the gate on the pull request (ADR 0080). Before it: stage E of wave 7 in `TODO.md` | Half of merged pull requests come from the factory for four weeks, with a revert rate no higher than human pull requests |
 | 4 · Self-improvement | The factory and its observer | observer opens pull requests against our own `factory.yaml`; taskcapture benchmarks them | Two observer changes merged with a measured improvement |
 
+Phase 3's two numbers, the factory's share of merged pull requests and the revert rate of the factory's pull requests
+next to people's, are printed by `ledger report --since <day> --until <day>` for the four weeks, in `origin` of
+`report.json` (a pull request is the factory's when its head branch starts with `osf/`, `observer/` or `factory/`).
+
 ## What changes per phase
 
 The ten skills in `skills/` serve every phase; none is tied to one phase yet.
