@@ -1965,6 +1965,263 @@ policy of gatekeeper.
   - [x] The ADR with the split, and the libraries (ADR 0147).
   - [x] Both sandbox adapters on them; their releases (sandbox-docker 0.8.0, sandbox-kubernetes 0.6.0).
 
+## Wave 7 · a sound foundation before phase 3
+
+From the audit of 16 November 2026. The first version works, but the human gate, the sandbox, the foreman's failure
+handling and the release path have defects, the pipeline reports things that are not true, and the repository carries
+more text and packages than it needs. Each item is one pull request unless it lists slices. Order: A, then CI, then
+TR, D and E; items of one stage can run in parallel when they touch different units.
+
+### Decided by the owner (November 2026)
+
+- **The testing rule stays "one scenario, one test, from outside"**, with a shared start for scenarios that only read
+  an expensive stack, Scenario Outlines for families of "one input, one message", and wording that may change in
+  place while the behavior stays (T-81).
+- **The Helm and Kubernetes suites run only when needed**, side by side with the others (T-75, T-79).
+- **Small packages merge**, and a rule keeps a new package from being created for a small thing (T-88 to T-90).
+- **Nobody adds a file to `runs/` by hand** (T-80).
+- **Open:** the identity the factory's agents act with on GitHub (T-99).
+
+### Stage A · gates, sandbox and foreman hold
+
+### [ ] T-63 · gatekeeper asks only on its configured forge (P0)
+
+- **Problem:** `gatekeeper serve` takes the forge's address from the pull-request link of a gate request
+  (`modules/gatekeeper/src/commands/load.ts`, `forgeFor`). The forge is configuration, not request data.
+- **Build:** a link counts as the gate's pull request only on the origin of the configured forge; any other link is
+  no pull request for the gate (Slack, or 400 without a channel). The foreman passes on only a pull request of the
+  run's forge. The profile and the chart set the forge's address.
+- **Done when:** scenarios prove that a link to another host is never called and never decides a gate.
+
+### [ ] T-64 · a gate on a pull request counts only what came after its request (P0)
+
+- **Problem:** when the request's comment is not in the list (deleted, or past the first page), every comment of
+  the pull request counts (`modules/gatekeeper/src/adapters/forge.ts`, `thread`), and decisions past the first
+  page of comments are never seen.
+- **Build:** no request found means an empty thread; messages older than the request never count; the forge
+  adapters page a pull request's comments.
+- **Done when:** scenarios prove an older "/approve" does not approve, and a decision after 100 comments does.
+
+### [ ] T-65 · a Docker sandbox does not reach the Docker host (P0)
+
+- **Problem:** the sandbox's internal network still has the bridge gateway, so a service that listens on the host
+  answers a sandbox without the egress proxy. SCN-SANDBOX-006 passes only because a host name does not resolve.
+- **Build:** create the network without a gateway address (`com.docker.network.bridge.gateway_mode_ipv4=isolated`);
+  a conformance scenario reaches for the host by address and is refused.
+- **Done when:** the new scenario passes for the docker adapter, and the kubernetes adapter passes it too.
+
+### [ ] T-66 · a stage survives slow setup and hears a cancel from its start (P0)
+
+- **Problem:** a stage heartbeats only while its turn runs (`modules/foreman/src/workflows/activities.ts`), with a
+  heartbeat timeout of one minute and three attempts: a create, clone or copy that takes longer runs the stage again
+  and fails the run. A cancel or SIGTERM before the turn starts is not heard (against ADR 0101).
+- **Build:** heartbeat from the start of the stage to its end; listen for the cancel first and stop between the
+  setup steps.
+- **Done when:** scenarios prove a slow create and a slow copy-out send the prompt once, and a cancel during create
+  stops the stage.
+
+### [ ] T-67 · no work is lost when the factory cannot be read for a moment (P0)
+
+- **Problem:** a failed fetch of the factory's remote or a changed folder is a usage error, which the consumer
+  acknowledges: the event is gone and no run exists (against SCN-FORE-082). After a fatal error at its start,
+  `foreman serve` stays alive as a worker without an API.
+- **Build:** "not readable now" is its own error: the event comes again, the API answers 503. A fatal start error
+  ends the process with a code that is not 0.
+- **Done when:** scenarios prove the event starts a run once the factory is readable, and a taken port ends serve.
+
+### [ ] T-68 · the console returns only to itself, and `osf init` keeps `.env` private (P1)
+
+- **Problem:** `next` with a control character after the first slash leaves the console
+  (`modules/console/src/domain/signin.ts`, `safeNext`). `osf init` writes secrets into an existing `.env` without
+  setting its mode.
+- **Build:** resolve `next` against the console's own origin; set mode 0600 on every write of `.env`.
+- **Done when:** a scenario for each.
+
+### [ ] T-69 · the merge gate covers the factory's branches, and unsigned records are said aloud (P1)
+
+- **Problem:** `.github/gatekeeper/merge.rego` gates `observer/`, `factory/` and the label `factory`, but the
+  foreman's branches are `osf/<run ID>`. `gatekeeper serve` writes unsigned records without a word, and neither
+  profile gives it a signing key.
+- **Build:** the policy gates `osf/`; serve warns once at its start without `GATEKEEPER_SIGNING_KEY`; `osf init`
+  and the chart supply one.
+- **Done when:** scenarios for the warning and the generated key; the policy's own test covers `osf/`.
+
+### [ ] T-70 · the profile runs no agent outside a sandbox (P1)
+
+- **Problem:** an agent without `sandbox:` runs in the foreman's container with the foreman's environment.
+- **Build:** a setting of the foreman refuses a stage whose agent has no sandbox; the Compose profile and the chart
+  switch it on. The docker-proxy allows only what the sandbox adapter calls on its own containers and networks.
+- **Done when:** a foreman scenario for the refusal, a deploy scenario for the profile's setting.
+
+### [ ] T-71 · no sandbox is left behind (P1)
+
+- **Problem:** a sandbox's ID lives only in the activity's memory; nothing removes the sandbox of a foreman that
+  died. `destroy` ignores exit codes. Each Docker sandbox takes one bridge network of a pool that ends near 30.
+- **Build:** sandboxes carry the run and the owner as labels; the foreman removes its leftovers at its start, as
+  ADR 0090 does for gateways; destroy fails when a removal fails; small subnets from a pool of the adapter's own.
+- **Done when:** scenarios prove a leftover is removed at the next start and a failed removal is reported.
+
+### Stage CI · a pipeline that tells the truth
+
+### [ ] T-72 · the deploy suite tests the commit (P0)
+
+- **Problem:** the deploy suite starts released images only, so a change reaches it one release late, and the
+  release commit pins versions that are not published yet: main was red after 8 of 8 releases.
+- **Build:** on a pull request and on main the profile's and the chart's module images are built from the commit,
+  as the e2e suite builds its image; `deploy` declares what it starts, so AFFECTED reruns it. One job after
+  `publish-images` starts the released images. The release pull request passes verify without `--admin`.
+- **Done when:** a change of a module that breaks a deploy scenario fails that pull request; a release merge is green.
+- **Slices:**
+  - [ ] The decision record, and the images from the commit in the deploy suite.
+  - [ ] The job on the released images after publishing; the dispatched verify of release pull requests green or gone.
+
+### [ ] T-73 · a push to main never cancels the run before it (P1)
+
+- **Build:** `verify.yml` cancels a running verify only for pull requests.
+
+### [ ] T-74 · BUDGET measures what a person waits for (P1)
+
+- **Problem:** BUDGET sums the tests' times under parallel load, so it grows when a suite gets more workers and
+  ends sooner, and its speed factor moves more than the budgets' margins (ADR 0103). It failed 11 of 21 failed
+  pull-request runs; each time the budget was raised.
+- **Build:** a decision record that supersedes ADR 0103; the budget is the wall time of a suite's test run with
+  wide room, no factor; each `AGENTS.md` keeps one budget line, its history stays in Git.
+- **Done when:** the scenarios of BUDGET are replaced, `testkit timed` writes the wall time, and no budget section
+  is longer than three lines.
+
+### [ ] T-75 · a first push replays what main already proved (P1)
+
+- **Problem:** main stores its test results under a hash with its own `OSF_TEST_RUN`, which no pull request has: a
+  pull request's first push runs every suite (ADR 0081, ADR 0094).
+- **Build:** main still runs everything, and stores the results under the hash a pull request computes. With it the
+  Helm and Kubernetes suites run only for a change that reaches them.
+- **Done when:** a pull request that changes one README starts no test runner on its first push.
+
+### [ ] T-76 · the Stop hook blocks or goes (P2)
+
+- **Build:** the hook of `.claude/settings.json` ends with code 2 when `make check-fast` fails and does nothing on
+  a clean tree; `factory.yaml` renders it.
+
+### [ ] T-77 · fewer checks that do the same or nothing (P2)
+
+- **Build:** FLAKE goes (every config sets `retry: 0`; a check keeps that true), DEPS and TODO go, NOSKIP and the
+  static part of BOUNDARY-ENV join the one lint of the tests, and BOUNDARY-STATIC, ISOLATION and ARCH read the
+  files in one pass. Their scenarios are deprecated with their tests. `docs/quality/checks.md` and `AGENTS.md` follow.
+
+### [ ] T-78 · AFFECTED sees every folder a suite reads (P2)
+
+- **Build:** `fakes.fromRepository(...)` and the folders `e2e/scripts/` reads count as inputs; the scenarios that
+  pin lines of the Makefile word for word are deprecated.
+
+### [ ] T-79 · small suites share a runner (P2)
+
+- **Build:** the suites with under 40 seconds of tests share two jobs; the kind node image and the chart's images
+  come from a cache, so the deploy job's setup is under a minute.
+
+### [ ] T-80 · no run record by hand (P1)
+
+- **Problem:** every agent pull request commits its session to `runs/` by hand (ADR 0027): 25 MB so far, and RUNS
+  accepts any changed file.
+- **Build:** a decision record that supersedes ADR 0027: RUNS no longer asks a pull request for a file, `make
+  run-record` leaves the loop of `AGENTS.md` and the skills. ledger and scorekit keep reading what `runs/` holds.
+- **Done when:** a pull request with an agent's trailer and no file in `runs/` passes.
+
+### Stage TR · the testing rule
+
+### [ ] T-81 · the testing rule, decided (P0)
+
+- **Build:** a decision record that amends ADR 0007 and ADR 0074: one scenario, one test, from outside, with three
+  additions. Scenarios that only read a system whose start takes more than about 10 seconds may share that start,
+  each with its own `scenario()` and result, marked in the feature file. A family of "one input, one message" is a
+  Scenario Outline. The wording of an implemented scenario may change in place when the behavior stays;
+  `@replaces` is for behavior that changes or goes. `AGENTS.md`, `docs/quality/testing-strategy.md` and the skills
+  `write-scenario` and `write-system-test` follow.
+
+### [ ] T-82 · one start of the profile and one install of the chart for the scenarios that only read (P1)
+
+- **Build:** a shared form of `sut.compose` and `sut.helm` in the testkit; the deploy scenarios that only read use it.
+- **Done when:** the deploy suite starts the whole profile once and installs the whole chart once.
+
+### [ ] T-83 · inference-litellm starts one gateway per test process (P2)
+
+### [ ] T-84 · Scenario Outlines, first for `factory lint` (P2)
+
+- **Build:** an examples form of `scenario()` in the testkit; the `factory lint` family becomes Outlines.
+
+### [ ] T-85 · the testkit's fakes are tested as a library (P2)
+
+- **Build:** a fake's scenarios call it in the test's process (ADR 0039) instead of a demo module written as
+  strings and a nested Vitest; the scenarios of the scenario runner itself stay as they are. One fake per pull request.
+
+### Stage D · less weight
+
+### [ ] T-86 · status texts that are true (P1)
+
+- **Build:** the README's status, tools table and scenario count; the glossary's "run" (the foreman's pass over a
+  work item) and "session"; `docs/explanation/bootstrapping.md`; the principles and `docs/architecture/` say what
+  is built and what is planned; the finished items of this file move to `docs/history/`.
+
+### [ ] T-87 · `checks.md` and the skills, readable and without contradictions (P2)
+
+- **Build:** one line per check in the tables and a short section per check; one pass over the ten skills, with
+  every case to stop and ask in one list of `AGENTS.md`.
+
+### [ ] T-88 · a package earns its place (P1)
+
+- **Problem:** 34 npm packages for about 42,000 lines of source; four harness adapters of 21 to 109 lines each
+  have a package, a publish workflow and a changelog of their own.
+- **Build:** a decision record that amends ADR 0135: a new package needs a job of its own, a second consumer or a
+  reason to be installed alone, and a size that carries a release; a small shared piece joins an existing library.
+  `AGENTS.md`, the skills `new-module` and `write-adr` say so, and DUP's rule "no clone across units" names the
+  existing libraries as the place for shared lines.
+- **Done when:** the rule is in `AGENTS.md`, and a check or the ADR check asks a new package for its reason.
+
+### [ ] T-89 · one harness package (P2)
+
+- **Build:** `@opensoftware/harness` with the commands of acp, claude-code, codex and opencode and the library
+  harness-proxy; the old names are deprecated on npm with a pointer. Profile, chart and factories follow.
+
+### [ ] T-90 · one channel package, and `postgres` in a shared library (P2)
+
+### [ ] T-91 · an index of the decisions that last (P2)
+
+- **Build:** `docs/decisions/README.md` lists the durable decisions; records of test and CI mechanics are marked
+  as design notes; ADR 0001 allows a status line to change; 0003, 0016, 0049 and 0093 get their notes.
+
+### [ ] T-92 · `init`, `up` and `doctor` are commands of `factory` (P2)
+
+### [ ] T-93 · test hooks are no product settings (P2)
+
+- **Build:** `OSF_NOW`, `OSF_SEED` and the intervals only tests set are honored only with an explicit test switch
+  and are listed apart from the configuration.
+
+### Stage E · ready for phase 3
+
+### [ ] T-94 · a sandbox that can check this repository (P0)
+
+- **Build:** a template image for this repository's factory with pnpm and the pinned tools; the prompts of
+  `deploy/dogfood/factory/` ask for `make check-fast` and leave the suites to CI.
+
+### [ ] T-95 · a rehearsal on GitHub (P0)
+
+- **Build:** the six stages of this repository's factory on a scratch repository on GitHub with the scripted agent,
+  started by a maintainer: issue, spec, gate on the pull request, implement, checks, ship.
+
+### [ ] T-96 · ledger tells factory pull requests from people's (P1)
+
+- **Build:** the share of merged pull requests from the factory and the revert rate of each group, the two numbers
+  of phase 3's exit criterion.
+
+### [ ] T-97 · a limit on runs side by side (P2)
+
+### [ ] T-98 · a failed check sends the run back to implement once (P2)
+
+### [ ] T-99 · the factory's own identity on GitHub (owner's decision)
+
+- **Problem:** the agents push and comment with the owner's token, and the owner is the only approver: a comment
+  of an agent would count as the owner's.
+- **Build:** after the owner chose a GitHub App or a second account.
+
 ## Paid runs (last; started by a maintainer, manual)
 
 Everything that needs a paid model call or a paid service, so the plan never waits for it. A maintainer starts each
