@@ -45,6 +45,14 @@ Feature: Running commands in an isolated sandbox
     Then curl fails
     And the API received no request
 
+  @id=SCN-SANDBOX-030 @status=implemented @conformance @realizes=SCN-FACTORY-RUNTIME-003
+  Scenario: A request to an address of the sandbox's host does not leave the sandbox
+    Given an API on every address of the host that runs the sandboxes
+    And a sandbox created from a spec with the test template and the egress allowlist "host.docker.internal"
+    When the client runs "curl --noproxy '*'" for the API at each address of the host in the sandbox
+    Then every request fails
+    And the API received no request
+
   @id=SCN-SANDBOX-007 @status=implemented @conformance @realizes=SCN-FACTORY-RUNTIME-006
   Scenario: The sandbox's environment holds a placeholder, never the real secret
     Given the secret file "linear-token" with the value "lin_real_7f3a"

@@ -33,7 +33,7 @@ export async function start(spec: SandboxSpec, secretsDir: string): Promise<stri
   const id = container.slice(0, 12);
   try {
     await dockerText(["rename", container, sandboxName(id)]);
-    await dockerText(["network", "create", "--internal", "--label", `osf.sandbox.id=${id}`, sandboxName(id)]);
+    await createNetwork(id);
     await startEgress(id, spec, secrets, secretsDir);
     await startSandbox(id);
   } catch (error) {
@@ -41,6 +41,23 @@ export async function start(spec: SandboxSpec, secretsDir: string): Promise<stri
     throw new Error(`the sandbox ${id} did not start and was removed: ${(error as Error).message}`);
   }
   return id;
+}
+
+/**
+ * The sandbox's network: internal, and with no gateway address on the Docker host, so a service that listens there
+ * cannot answer the sandbox around its egress proxy. The gateway mode "isolated" needs Docker 28.0; an older daemon
+ * ignores the option or refuses it, and a network that still has a gateway is refused.
+ */
+async function createNetwork(id: string): Promise<void> {
+  const isolated = ["ipv4", "ipv6"].flatMap((ip) => ["-o", `com.docker.network.bridge.gateway_mode_${ip}=isolated`]);
+  const network = sandboxName(id);
+  await dockerText(["network", "create", "--internal", ...isolated, "--label", `osf.sandbox.id=${id}`, network]);
+  // The JSON leaves out a gateway that is not there; the template would print "invalid IP" for it.
+  const config = await dockerText(["network", "inspect", "--format", "{{json .IPAM.Config}}", network]);
+  const gateways = (JSON.parse(config) as { Gateway?: string }[]).flatMap(({ Gateway }) => (Gateway ? [Gateway] : []));
+  if (gateways.length) {
+    throw new Error(`its network has the gateways ${gateways.join(", ")} on the Docker host; use Docker 28.0 or later`);
+  }
 }
 
 /** The sandbox's container: no network until its egress proxy runs, the spec's limits and its environment. */

@@ -36,7 +36,8 @@ The spec is the format `sandbox-spec` in [contracts](../../contracts/README.md):
 
 - The sandbox gets the spec's CPU and memory.
 - Every request that leaves the sandbox passes its egress proxy. The proxy refuses hosts outside `egress` and the
-  MCP servers' hosts, and a request around the proxy does not leave the sandbox.
+  MCP servers' hosts, and a request around the proxy does not leave the sandbox: not by a name, and not by any
+  address of the host that runs the sandboxes, where a service may listen on every interface (SCN-SANDBOX-030).
 - The sandbox holds a placeholder for each secret, never the real value. The proxy puts the real value in on the way
   out, for the hosts of `egress`, in any header and also inside git's Basic credentials `<user>:<placeholder>`, so git
   and `gh` clone and push with the placeholder as their token, whatever the secret's provider

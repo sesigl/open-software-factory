@@ -40,3 +40,11 @@ Feature: What the docker adapter checks before it starts a sandbox
     And a second sandbox created with "OSF_SANDBOX_NETWORK" set to the network of "server" and the egress allowlist that names the container of "server"
     When the client runs "curl http://<container of server>:8080/" in the second sandbox
     Then the request gets the answer "hello"
+
+  @id=SCN-SDOCKER-007 @status=implemented
+  Scenario: A daemon that gives the sandbox's network a gateway on the Docker host is refused, and the sandbox removed
+    Given a Docker daemon of the API version 1.47 that gives every network the gateways "172.30.0.1" and "fd30::1"
+    When the client runs "create" with a spec with the test template against that daemon
+    Then the daemon was asked for an internal network with the gateway mode "isolated" for IPv4 and IPv6
+    And create exits with code 1 and names the gateways "172.30.0.1, fd30::1" and "Docker 28.0 or later"
+    And the daemon was asked to remove the sandbox's container, its egress proxy and its network

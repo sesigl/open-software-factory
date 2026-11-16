@@ -161,12 +161,13 @@ Every server, client and subscription stops when the scenario ends, before the f
   first matching entry. `calls` lists every call with its `path`, `body` and `headers` (names in lower case). `fakes.modelGateway(script,
   { containers: true })` listens on every interface and also gives `containerUrl`,
   `http://host.docker.internal:<port>/v1`, as `fakes.http` does ([ADR 0076](../../docs/decisions/0076-e2e-smoke-suite.md)).
-- `fakes.http([{ method, path, status, body, contentType, times, until }])`: a scripted JSON API on `127.0.0.1`
+- `fakes.http([{ method, path, status, body, contentType, headers, times, until }])`: a scripted JSON API on `127.0.0.1`
   ([ADR 0021](../../docs/decisions/0021-testkit-scripted-http.md)). Pass its `url` to the module through its
   documented config. A request whose method (default `GET`) and exact path with query match a route gets its
   `status` (default 200) and JSON `body`; a route with `times` answers only that many requests, and later ones go to
   the next matching route, for example an outage before a success ([ADR 0023](../../docs/decisions/0023-runlog.md)).
   A route with `contentType`, such as `text/html`, answers its `body` text as is, for example a page to capture.
+  A route with `headers` adds them to its answer, for example the `Api-Version` of a stand-in Docker daemon.
   A route with `until` (a promise) answers only after the promise settles, for example to hold a module in the
   middle of a transaction. The fake reads `until`, `status` and `body` when it answers, so a test can change them on
   a route it already gave the fake.
@@ -178,7 +179,9 @@ Every server, client and subscription stops when the scenario ends, before the f
   interface instead and also gives `containerUrl`, `http://host.docker.internal:<port>`, for a module that reaches the
   fake from a container, such as a sandbox's egress proxy. Docker Desktop maps that host to the Docker host; on Linux
   the container needs `--add-host host.docker.internal:host-gateway`
-  ([ADR 0054](../../docs/decisions/0054-sandbox-port.md)).
+  ([ADR 0054](../../docs/decisions/0054-sandbox-port.md)). `hostUrls()` gives the fake at every address of this
+  host but loopback and link-local, read when called, for a scenario that proves a container cannot reach the host
+  by its addresses, such as SCN-SANDBOX-030.
 - `fakes.harness([{ when, edits, reply }])`: a scripted coding agent that speaks ACP on stdio
   ([ADR 0018](../../docs/decisions/0018-testkit-scripted-acp-harness.md)). Start it with its `command` and `args`.
   The first prompt that contains `when` gets the `edits` (files by path below the session's folder) and the
