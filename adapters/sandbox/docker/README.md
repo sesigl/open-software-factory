@@ -41,7 +41,13 @@ npx @opensoftware/sandbox-docker destroy "$id"
   the container's ID. The image needs `sleep`, `id`, `stat` and `chown`, as any image with a shell has.
 - **No way out but the proxy.** The sandbox's network is internal: it has no route to anywhere but its egress proxy,
   which it reaches as `egress`. `HTTP_PROXY` and `HTTPS_PROXY` point at `http://egress:8080`. A request around the
-  proxy fails, and only HTTP and HTTPS leave the sandbox.
+  proxy fails, and only HTTP and HTTPS leave the sandbox. The network has no gateway address on the Docker host
+  (`com.docker.network.bridge.gateway_mode_ipv4` and `_ipv6` set to `isolated`), so a service that listens on the
+  host, even on `0.0.0.0`, does not answer the sandbox by any of the host's addresses (SCN-SANDBOX-030).
+- **Docker 28.0 or later.** The gateway mode `isolated` came with Docker Engine 28.0. An older daemon refuses the
+  option or ignores it; `create` then finds a gateway on the network, removes the sandbox and exits with
+  `the sandbox <ID> did not start and was removed: its network has the gateway <address> on the Docker host; use
+  Docker 28.0 or later`.
 - **A shared network.** With `OSF_SANDBOX_NETWORK`, the egress proxy also joins that Docker network, so an allowed
   host on it resolves by its name: in the Compose profile the sandbox reaches `litellm` this way. The sandbox itself
   stays on its own network.

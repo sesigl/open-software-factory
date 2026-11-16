@@ -178,7 +178,9 @@ Every server, client and subscription stops when the scenario ends, before the f
   interface instead and also gives `containerUrl`, `http://host.docker.internal:<port>`, for a module that reaches the
   fake from a container, such as a sandbox's egress proxy. Docker Desktop maps that host to the Docker host; on Linux
   the container needs `--add-host host.docker.internal:host-gateway`
-  ([ADR 0054](../../docs/decisions/0054-sandbox-port.md)).
+  ([ADR 0054](../../docs/decisions/0054-sandbox-port.md)). `hostUrls()` gives the fake at every address of this
+  host but loopback and link-local, read when called, for a scenario that proves a container cannot reach the host
+  by its addresses, such as SCN-SANDBOX-030.
 - `fakes.harness([{ when, edits, reply }])`: a scripted coding agent that speaks ACP on stdio
   ([ADR 0018](../../docs/decisions/0018-testkit-scripted-acp-harness.md)). Start it with its `command` and `args`.
   The first prompt that contains `when` gets the `edits` (files by path below the session's folder) and the

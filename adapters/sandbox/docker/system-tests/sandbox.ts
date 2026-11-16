@@ -76,3 +76,12 @@ export function mcpCall(url: string, tool: string): string {
 
 /** An MCP server's answer to any call, for fakes.http. */
 export const MCP_RESULT = { jsonrpc: "2.0", id: 1, result: { content: [{ type: "text", text: "found" }] } };
+
+/** A script that requests each URL's /health around the egress proxy, all at once; prints "reached" or "failed". */
+export function reachEach(urls: string[]): string {
+  const tries = urls.map(
+    (url) =>
+      `(curl -s -o /dev/null --max-time 3 --noproxy '*' ${url}/health && echo reached ${url} || echo failed ${url}) &`,
+  );
+  return `${tries.join("\n")}\nwait`;
+}

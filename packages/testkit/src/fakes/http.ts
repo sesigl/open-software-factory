@@ -2,6 +2,7 @@
 // HTTP 404 and fails the scenario with the method and path it received.
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
+import { networkInterfaces } from "node:os";
 import { gunzipSync } from "node:zlib";
 
 export interface HttpRoute {
@@ -49,6 +50,11 @@ export interface FakeHttp {
    * Desktop maps that host to the Docker host; on Linux a container needs `--add-host host.docker.internal:host-gateway`.
    */
   containerUrl?: string;
+  /**
+   * With `containers: true`, the fake at every address of this host but loopback and link-local, read when called: an
+   * address of a Docker network's bridge is there only while a container is on that network (ADR 0054).
+   */
+  hostUrls?: () => string[];
   /** Every request the fake received, in order, as `METHOD /path`. */
   requests(): string[];
   /** Every request the fake received, in order, with its body. */
@@ -109,7 +115,9 @@ export async function startHttp(routes: HttpRoute[], options: HttpOptions = {}):
   return {
     http: {
       url: `http://127.0.0.1:${port}`,
-      ...(options.containers ? { containerUrl: `http://host.docker.internal:${port}` } : {}),
+      ...(options.containers
+        ? { containerUrl: `http://host.docker.internal:${port}`, hostUrls: () => hostUrls(port) }
+        : {}),
       requests: () => received.map((entry) => `${entry.method} ${entry.path}`),
       received: () => received.map((entry) => ({ ...entry })),
       headers: () => headers.map((entry) => ({ ...entry, headers: { ...entry.headers } })),
@@ -131,4 +139,11 @@ function parse(body: Buffer): unknown {
   } catch {
     return text;
   }
+}
+
+function hostUrls(port: number): string[] {
+  return Object.values(networkInterfaces())
+    .flat()
+    .flatMap((entry) => (entry && !entry.internal && !entry.address.startsWith("fe80:") ? [entry.address] : []))
+    .map((address) => `http://${address.includes(":") ? `[${address}]` : address}:${port}`);
 }

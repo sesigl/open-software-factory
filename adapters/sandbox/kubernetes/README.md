@@ -55,7 +55,8 @@ npx @opensoftware/sandbox-kubernetes destroy "$id"
   anything starts.
 - **No way out but the proxy.** The template's NetworkPolicy lets the sandbox reach only its egress pod on port 8080
   and the cluster DNS. `HTTP_PROXY` and `HTTPS_PROXY` point at `http://osf-sandbox-<ID>-egress:8080`, the egress pod's
-  Service. A request around the proxy fails.
+  Service. A request around the proxy fails, also one to an address of the host or node, such as the address
+  that `OSF_SANDBOX_HOST_ALIASES` gives the egress pod (SCN-SANDBOX-030).
 - **The egress allowlist.** The proxy refuses with HTTP 403 every host that is neither in `egress` nor the host of a
   declared MCP server. `OSF_SANDBOX_HOST_ALIASES` maps hostnames to addresses in the egress pod only.
 - **Secrets.** Each secret's variable holds `osf-secret-placeholder-<NAME>` in the sandbox. The proxy swaps it in any

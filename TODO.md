@@ -2002,7 +2002,7 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   adapters page a pull request's comments.
 - **Done when:** scenarios prove an older "/approve" does not approve, and a decision after 100 comments does.
 
-### [ ] T-65 · a Docker sandbox does not reach the Docker host (P0)
+### [x] T-65 · a Docker sandbox does not reach the Docker host (P0)
 
 - **Problem:** the sandbox's internal network still has the bridge gateway, so a service that listens on the host
   answers a sandbox without the egress proxy. SCN-SANDBOX-006 passes only because a host name does not resolve.
