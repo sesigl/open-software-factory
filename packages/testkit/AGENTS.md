@@ -48,7 +48,9 @@ Layers, top to bottom, in `architecture.json` (ADR 0014). A file imports only it
   (fakes.personIssuer and fakes.personProof, ADR 0151) are demo modules too: about 1.4 seconds each, 4.2 together,
   measured on the development container; jose loads with the first issuer, not with the testkit. SCN-TK-185 to -188
   (sut.site and the active mutant in the browser, ADR 0152) are demo libraries: 1.2 to 1.3 seconds each for sut.site
-  and 1.5 to 1.8 seconds each with Chromium, about 5.7 together, measured on the development container.
+  and 1.5 to 1.8 seconds each with Chromium, about 5.7 together, measured on the development container. SCN-TK-189
+  (the paused clock of sut.browser, T-55) is one more such library: 2.3 seconds, measured on the development container
+  while another suite ran.
 
 ## Quality limits
 

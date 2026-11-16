@@ -21,8 +21,14 @@ export interface Browser {
   /**
    * Opens the path of the folder sut.site serves, or else of the server sut.http started, in a new tab of the scenario's Chromium context, with the viewport
    * "desktop" unless named, and these headers on every request of the tab. Tabs of a scenario share its cookies.
+   * With `clock: "paused"` the scenario's clock stands still at the testkit's clock from before the page's first script: its
+   * timers run only when the test runs `page.clock.runFor(ms)`, as an island's timer in an island scenario (ADR 0152).
+   * Playwright's actions such as `fill` wait for animation frames, so a test resumes the clock before one.
    */
-  open(path: string, options?: { viewport?: Viewport; headers?: Record<string, string> }): Promise<BrowserPage>;
+  open(
+    path: string,
+    options?: { viewport?: Viewport; headers?: Record<string, string>; clock?: "paused" },
+  ): Promise<BrowserPage>;
   /** Runs axe-core on the page; a violation fails the test and names its rule and the elements. */
   expectAccessible(page: BrowserPage): Promise<void>;
   /**
@@ -91,6 +97,7 @@ export function makeBrowser(
         const reason = request.failure()?.errorText ?? "";
         if (!reason.includes("ERR_BLOCKED_BY_CLIENT")) problems.push(`a request failed: ${request.url()} (${reason})`);
       });
+      if (options.clock === "paused") await page.clock.pauseAt(new Date(FIXED_DATE));
       await page.goto(new URL(path, base()).href);
       return page;
     },

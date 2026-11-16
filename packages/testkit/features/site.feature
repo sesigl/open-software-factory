@@ -35,3 +35,11 @@ Feature: A folder served as a static site, and the active mutant in the browser
     When the developer runs "testkit run --junit report.xml" in the module without an active mutant
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-189 @status=implemented
+  Scenario: A page that sut.browser opens with its clock paused runs its timers only when the test runs the clock
+    Given a library whose folder "site" holds a page with an external script that shows "waiting", and "done" one second later
+    And its system test serves "site" with sut.site, opens "/" with sut.browser and the clock "paused", and expects "waiting", "waiting" after 999 milliseconds of page.clock.runFor, and "done" after one more
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

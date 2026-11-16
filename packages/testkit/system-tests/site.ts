@@ -81,6 +81,44 @@ document.querySelector("output").textContent = (stryMutAct_9fa48("7") ? hour >= 
 `,
 };
 
+/** The folder "site" of the timer: a page whose external script shows "waiting", and "done" one second later. */
+export const TIMER = {
+  "site/index.html": page(
+    "Timer",
+    "<main><h1>Timer</h1><output></output></main>",
+    '<script type="module" src="/timer.js"></script>',
+  ),
+  "site/timer.js": `const output = document.querySelector("output");
+output.textContent = "waiting";
+setTimeout(() => { output.textContent = "done"; }, 1000);
+`,
+};
+
+/** The test of the timer: it opens "/" with the clock paused and runs the clock on in two steps. */
+export const timerTest = () => ({
+  steps: [
+    'Given the folder "site" is served',
+    'When the user opens "/" in the browser with the clock paused',
+    'Then the status is "waiting", still after 999 milliseconds, and "done" after one more',
+  ],
+  test: [
+    "await given('the folder \"site\" is served', async () => {",
+    '  await sut.site.serve("site");',
+    "});",
+    "let page: Awaited<ReturnType<typeof sut.browser.open>>;",
+    "await when('the user opens \"/\" in the browser with the clock paused', async () => {",
+    '  page = await sut.browser.open("/", { clock: "paused" });',
+    "});",
+    'await then(\'the status is "waiting", still after 999 milliseconds, and "done" after one more\', async () => {',
+    '  expect(await page.getByRole("status").textContent()).toBe("waiting");',
+    "  await page.clock.runFor(999);",
+    '  expect(await page.getByRole("status").textContent()).toBe("waiting");',
+    "  await page.clock.runFor(1);",
+    '  expect(await page.getByRole("status").textContent()).toBe("done");',
+    "});",
+  ],
+});
+
 /** The test of the clock: it serves "site" with the policy, opens "/" in the browser and expects the status `shown`. */
 export const clockTest = (shown: string) => ({
   steps: [
