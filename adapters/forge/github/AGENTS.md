@@ -26,8 +26,8 @@ enforces the layers.
 
 ## Budget
 
-- System tests: 60 seconds in total on the CI runner, counted as the sum of the scenarios' times. Each scenario
-  starts the testkit's in-process fake GitHub, so no Docker is needed; the sum is about 15 seconds.
+- System tests: 45 seconds of wall time on the CI runner.
+- Each scenario starts the testkit's in-process fake GitHub; no Docker.
 
 ## Quality limits
 

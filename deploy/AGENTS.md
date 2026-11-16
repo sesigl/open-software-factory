@@ -34,47 +34,8 @@ through `kubectl port-forward` (`url`), `helm test` and the state of the workloa
 
 ## Budget
 
-- System tests: 840 seconds in total on the CI runner. SCN-DIST-003, -004, -017, -022 and -026 each start the
-  profile with Compose, 56 to 67 seconds with the images the CI job loaded before. SCN-DIST-009, -010, -019 and -021
-  each install the chart on kind, 47 to 57 seconds. SCN-DIST-014 starts only intake with PostgreSQL and NATS, about
-  10 seconds. SCN-DIST-033 only renders the chart with `helm template` in its kind namespace, about 2 seconds; a
-  scenario of the chart's rendering stays at that level, not a new install.
-- Measured for 660 s: these nine scenarios are about 525 s of the suite. In four CI runs the suite took 568 s to
-  715 s of raw time, and 433 s to 619 s at BUDGET's measure; the 619 s came from the fastest raw run (568 s), whose
-  CPU benchmark took 0.918 times the reference. The suite waits on Docker and kind I/O, which the CPU benchmark does
-  not follow, so the budget keeps about 7% above the highest measure.
-- Measured for 840 s on 15 November 2026, with the factory repository on a forge (T-58, ADR 0150): 811.9 s of raw
-  time and 782.2 s at BUDGET's measure (benchmark 1.038 times the reference), with 35 scenarios. The four new ones
-  took 22 s together: SCN-DIST-043 14.5 with Forgejo's start and two clones, -042 5.5, -044 1.4, -045 0.6. The 31
-  before took 790 s, 50 more than in the run for 760 s: the four chart installs took 80 to 95 s each and the five
-  starts of the profile 37 to 80, which is 60 % of the suite. 840 is about 7 % above this measure. Open, and the way
-  to make the suite faster: the scenarios that only read a started profile or an installed chart share one start.
-- Measured for 760 s on 15 November 2026: the first run after a release took 739.8 s of raw time and 709.3 s at
-  BUDGET's measure (benchmark 1.043 times the reference), with 29 scenarios. Each of the four chart installs took 72
-  to 91 seconds and each of the five starts of the profile 39 to 86, with the newly released images; SCN-DIST-037 and
-  -038, added with the sign-in, took 6.9 seconds together. 760 is again about 7% above the highest measure.
-- Measured for 700 s: T-31 adds SCN-DIST-034, which runs one pass of the Compose job improve (27 s while it builds
-  the image observer, until publish-images has pushed it; then the image is pulled), and SCN-DIST-035, a helm
-  template of 0.4 s. With them the suite took 730.2 s of raw time on a runner whose benchmark took 1.075 times the
-  reference, 679.3 s at BUDGET's measure. The kind installs (69 to 91 s each here) and the Compose starts (64 to 85
-  s) are the cost; the budget keeps about 3% above that measure, as SCN-DIST-034 gets faster once the image exists.
-- T-56 adds no start of the whole profile: SCN-DIST-037 proves the sign-in with only the console, `--no-deps`, about
-  5 s with its image present, and SCN-DIST-038 renders the chart like SCN-DIST-033.
-- T-57 adds OpenBao to every start of the profile: `openbao`, `openbao-policies` and `openbao-setup` are done about
-  5 s after the start, while Temporal's schema and namespace take about 8 s, so the chain is not on the path to a
-  healthy console. SCN-DIST-039 starts only OpenBao and docker-proxy, twice, with one sandbox: 21 to 31 s here.
-  SCN-DIST-040 renders the chart like SCN-DIST-033.
-- T-58 adds no start of the whole profile either (ADR 0150), measured on the development container with the images
-  present: SCN-DIST-042 runs the tools' `factory lint` and `plan --check` once each, 4.1 s; SCN-DIST-043 runs only
-  `factory-repo` three times against the testkit's Forgejo, 11.4 s, of which Forgejo's start is 5 to 7 s once per
-  worker; SCN-DIST-044 is `docker compose config` and one `factory --help`, 1.6 s; SCN-DIST-045 renders the chart like
-  SCN-DIST-033. About 19 s together, 22 s in CI: see the measure for 840 s above.
-- T-61 adds no start either (ADR 0151): SCN-DIST-046 runs `docker compose config` three times, 0.5 s on the
-  development container; SCN-DIST-047 renders the chart twice like SCN-DIST-033, about 1 s. With the released images
-  that sign and check, SCN-DIST-048 starts only intake with PostgreSQL and NATS, like SCN-DIST-014, and the console
-  with `--no-deps`, like SCN-DIST-037: 10.5 s with the images present. SCN-DIST-049 runs one `console doctor` with
-  `--no-deps` and starts nothing: 1.1 s. Both were measured on the development container against the released images
-  (console 0.12.0, intake 0.8.0). The budget stays 840 s while the suite stays inside it.
+- System tests: 340 seconds of wall time on the CI runner.
+- Most of it: four chart installs on kind and five starts of the Compose profile, 40 to 90 s each.
 
 ## Scenario prefix
 

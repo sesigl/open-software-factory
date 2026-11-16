@@ -28,9 +28,8 @@ enforces this.
 
 ## Budget
 
-- System tests: 90 seconds in total on the CI runner. SCN-OBS-013 to -016 and -029 need Docker (Forgejo). The suite
-  runs in one worker, so the first of them starts Forgejo (about 10 seconds) and the others reuse it (1 to 3 seconds
-  each); the others read files, a scripted model gateway and a scripted forge API.
+- System tests: 45 seconds of wall time on the CI runner.
+- Most of it: SCN-OBS-013 to -016 and -029 share one Forgejo in Docker, about 10 s to start.
 
 ## Quality limits
 

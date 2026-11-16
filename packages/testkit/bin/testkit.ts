@@ -2,8 +2,7 @@
 // `testkit run` runs the system tests of the module in the current directory with the testkit's settings and
 // writes a JUnit report in which every test case carries its scenario ID. `testkit conformance <features>` does
 // the same for an adapter and then reports, for every @conformance scenario of the port, whether it passed.
-// `testkit timed <command>...` runs a package's system tests; with CI set it also writes the runner's slowdown for
-// BUDGET (ADR 0103).
+// `testkit timed <command>...` runs a package's system tests and writes their wall time for BUDGET (ADR 0155).
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, extname, join, resolve } from "node:path";
@@ -94,8 +93,8 @@ if (command === "conformance") {
 process.exit(process.exitCode ?? 0);
 
 /**
- * Runs the command and gives its exit code. With CI set, it measures the runner before and after the command and writes
- * `reports/runner-speed.json`, which turbo stores and replays with the JUnit report of the same run.
+ * Runs the command and gives its exit code. It writes the command's wall time, from its start to its end, to
+ * `reports/run-time.json`, which turbo stores and replays with the JUnit report of the same run (ADR 0155).
  */
 async function timed(command: string[]): Promise<number> {
   const [program, ...args] = command;
@@ -103,9 +102,7 @@ async function timed(command: string[]): Promise<number> {
     process.stderr.write(`testkit: name the command to run\n${USAGE}`);
     return 2;
   }
-  const speed = join(dirname(self), "..", "src", "support", `runner-speed${extname(self)}`);
-  const { benchmark, REFERENCE_MS } = (await import(speed)) as typeof import("../src/support/runner-speed.ts");
-  const measured = process.env.CI ? [benchmark()] : [];
+  const start = performance.now();
   const code = await new Promise<number>((done) => {
     const child = spawn(program, args, { stdio: "inherit" });
     child.on("error", (error) => {
@@ -114,14 +111,10 @@ async function timed(command: string[]): Promise<number> {
     });
     child.on("close", (exit) => done(exit ?? 1));
   });
-  if (measured.length === 0) return code;
-  measured.push(benchmark());
-  const ms = measured.map(Math.round);
-  const slowdown = Math.round((ms.reduce((sum, each) => sum + each, 0) / ms.length / REFERENCE_MS) * 1000) / 1000;
+  const seconds = Math.round(performance.now() - start) / 1000;
   mkdirSync("reports", { recursive: true });
-  const file = join("reports", "runner-speed.json");
-  writeFileSync(file, `${JSON.stringify({ benchmarkMs: ms, referenceMs: REFERENCE_MS, slowdown })}\n`);
-  process.stderr.write(`testkit: the benchmark took ${ms.join(" and ")} ms, ${slowdown} times the reference\n`);
+  writeFileSync(join("reports", "run-time.json"), `${JSON.stringify({ seconds })}\n`);
+  process.stderr.write(`testkit: ${program} took ${seconds} s of wall time\n`);
   return code;
 }
 

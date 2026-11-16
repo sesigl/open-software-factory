@@ -26,9 +26,9 @@ reading the spec and the ends of a copy from `@opensoftware/contracts` (ADR 0147
 
 ## Budget
 
-- System tests: 480 seconds in total on the CI runner. Each conformance scenario starts one or two sandboxes, each a
-  pod from agent-sandbox and an egress pod, so a cluster with agent-sandbox must run. CI starts kind and loads the
-  images `curlimages/curl`, `ironsh/iron-proxy` and `hello-world` into it before the tests.
+- System tests: 120 seconds of wall time on the CI runner.
+- Most of it: each conformance scenario starts one or two sandboxes, an agent-sandbox pod and an egress pod
+  on kind.
 
 ## Quality limits
 

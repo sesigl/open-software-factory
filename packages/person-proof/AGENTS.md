@@ -32,8 +32,7 @@ keys stay with its caller.
 
 ## Budget
 
-- System tests: 15 seconds in total on the CI runner. The 16 scenarios take about 1 second locally: each starts
-  fakes in the test process, and none starts a process.
+- System tests: 45 seconds of wall time on the CI runner.
 
 ## Quality limits
 

@@ -24,8 +24,8 @@ One layer in `architecture.json` (ADR 0014): `entry` (`src/cli.ts`) parses the c
 
 ## Budget
 
-- System tests: 60 seconds in total on the CI runner. The agent behind the adapter is the testkit's scripted harness;
-  SCN-HARNESS-013 waits 4 seconds after a cancel.
+- System tests: 45 seconds of wall time on the CI runner.
+- Most of it: SCN-HARNESS-013 waits 4 seconds after a cancel.
 
 ## Quality limits
 

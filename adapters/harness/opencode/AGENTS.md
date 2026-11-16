@@ -24,11 +24,8 @@ Code that another harness adapter needs goes into that library, not here. The AR
 
 ## Budget
 
-- System tests: 150 seconds in total on the CI runner. Each test starts the real opencode against
-  `fakes.modelGateway`; no test calls a real model. Measured on 2026-11-08: opencode needs about 2 seconds from its
-  start to the end of a first turn (0.8 s `initialize`, 0.6 s `session/new`, 0.4 s for the prompt), and a test takes
-  about 5 seconds; the rest is the adapter, the harness proxy and the fakes, the same for every harness adapter. The
-  7 scenarios SCN-HOPENCODE-008 to -014 took the suite from about 95 to 130 seconds on the CI runner.
+- System tests: 80 seconds of wall time on the CI runner.
+- Most of it: each test starts the real opencode against `fakes.modelGateway`, about 2 s to a first turn.
 
 ## Quality limits
 

@@ -30,9 +30,8 @@ forge API and upload to the store;
 
 ## Budget
 
-- System tests: 120 seconds in total on the CI runner. The attach scenarios need Docker (Forgejo, SeaweedFS); the
-  capture scenarios need Chromium (`npx playwright-core install chromium`, and `PLAYWRIGHT_BROWSERS_PATH` when it is
-  not in the default folder).
+- System tests: 60 seconds of wall time on the CI runner.
+- Most of it: the attach scenarios (Forgejo, SeaweedFS in Docker) and the capture scenarios in Chromium.
 
 ## Quality limits
 

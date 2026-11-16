@@ -269,7 +269,7 @@ Feature: Repository checks
     Then the command exits with code 1
     And the output contains "FLAKE modules/demo/features/a.feature:5 SCN-DEMO-001 passed only after 1 retry"
 
-  @id=SCN-REPO-014 @status=implemented
+  @id=SCN-REPO-014 @status=deprecated
   Scenario: BUDGET rejects system tests that take longer than the module budget
     Given a repository whose module "demo" has a budget of 10 seconds
     And a JUnit report in which the system tests of "demo" took 12.5 seconds
@@ -278,12 +278,42 @@ Feature: Repository checks
     And the output contains "BUDGET modules/demo/AGENTS.md"
     And the output contains "12.5 s"
 
-  @id=SCN-REPO-123 @status=implemented
+  @id=SCN-REPO-123 @status=deprecated
   Scenario: BUDGET divides the time of a module's system tests by the slowdown of the runner that ran them
     Given a repository whose module "demo" has a budget of 10 seconds and runs its system tests with "testkit timed"
     And a JUnit report in which the system tests of "demo" took 12.5 seconds, on a runner whose slowdown was 1.5
     When the developer runs "osf check BUDGET"
     Then the command exits with code 0
+
+  @id=SCN-REPO-182 @status=implemented @replaces=SCN-REPO-014
+  Scenario: BUDGET rejects a unit whose system tests ran longer than its budget of wall time
+    Given a repository whose module "demo" has a budget of 10 seconds of wall time
+    And a JUnit report of the system tests of "demo" and a wall time of 12.5 seconds for their run
+    When the developer runs "osf check BUDGET"
+    Then the command exits with code 1
+    And the output contains "BUDGET modules/demo/AGENTS.md:5" and "took 12.5 s of wall time, the budget is 10 s"
+
+  @id=SCN-REPO-183 @status=implemented @replaces=SCN-REPO-123
+  Scenario: BUDGET compares the wall time of the run, not the sum of the tests' times
+    Given a repository whose module "demo" has a budget of 10 seconds of wall time
+    And a JUnit report in which the system tests of "demo" took 30 seconds together, in a run of 8 seconds of wall time
+    When the developer runs "osf check BUDGET"
+    Then the command exits with code 0
+
+  @id=SCN-REPO-184 @status=implemented
+  Scenario: BUDGET rejects a unit with test results but no wall time of their run
+    Given a repository whose module "demo" has a budget of 10 seconds of wall time
+    And a JUnit report of the system tests of "demo" without a wall time for their run
+    When the developer runs "osf check BUDGET"
+    Then the command exits with code 1
+    And the output contains "BUDGET modules/demo/AGENTS.md:5" and "no wall time of the run of the system tests"
+
+  @id=SCN-REPO-185 @status=implemented
+  Scenario: BUDGET rejects a budget section of more than three lines
+    Given a repository whose module "demo" has a budget of 10 seconds of wall time and three more lines about it
+    When the developer runs "osf check BUDGET"
+    Then the command exits with code 1
+    And the output contains "BUDGET modules/demo/AGENTS.md:3 the budget section has 4 lines, at most 3"
 
   @id=SCN-REPO-124 @status=implemented
   Scenario: BUDGET rejects a package whose system tests do not run with "testkit timed"
@@ -952,6 +982,14 @@ Feature: Repository checks
     When the developer runs "osf collect-reports"
     Then the command exits with code 0
     And "reports/junit/demo.xml" and "reports/coverage/demo-coverage-7-1-0.json" have the content of the package's files
+
+  @id=SCN-REPO-186 @status=implemented
+  Scenario: collect-reports copies the wall time of each package's run to the reports folder of the repository
+    Given a repository with the modules "demo" and "other"
+    And "modules/demo/reports/run-time.json", which "testkit timed" wrote
+    When the developer runs "osf collect-reports"
+    Then the command exits with code 0
+    And "reports/run-time/demo.json" has the content of the package's file, and there is no "reports/run-time/other.json"
 
   @id=SCN-REPO-085 @status=implemented
   Scenario: RELEASE accepts the release files that osf release-files wrote

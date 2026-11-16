@@ -44,7 +44,7 @@ check-repository:
 	@status=0; $(SPEC_TRACE) check --only SPEC,TRACE,STEPS || status=1; $(OSF) check || status=1; exit $$status
 
 verify: ## everything from a clean state; required before you report done
-	@rm -rf reports/junit reports/coverage
+	@rm -rf reports/junit reports/coverage reports/run-time
 	@# The repository checks run even when tests fail, so PASS can name each failing scenario.
 	@status=0; $(MAKE) verify-static || status=$$?; \
 	$(MAKE) verify-tests || status=$$?; \
@@ -55,7 +55,7 @@ verify: ## everything from a clean state; required before you report done
 verify-static: ## part of verify: lint, typecheck and build every package, without the cache unless OSF_TEST_CACHE is set
 	@$(TURBO) lint typecheck build $(if $(OSF_TEST_CACHE),,--force)
 
-# One system test suite at a time: BUDGET adds up test times, and suites that share the cores slow each other.
+# One system test suite at a time: BUDGET reads the wall time of each, and suites that share the cores slow each other.
 # Every suite runs unless OSF_TEST_CACHE is set, which only pull requests in CI do (ADR 0081): --force reads no cache
 # and stores each result under the hash a pull request computes, so a pull request replays what main proved
 # (ADR 0154). It also builds the suite's packages again. (--only would leave the builds of the dependencies out of

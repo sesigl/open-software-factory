@@ -38,19 +38,9 @@ Layers, top to bottom, in `architecture.json` (ADR 0014). A file imports only it
 
 ## Budget
 
-- System tests: 480 seconds in total on the CI runner (409 seconds on CI with SCN-TK-109 to -112, ADR 0070; 446.6
-  seconds with SCN-TK-121 and -122, ADR 0078). Most scenarios run `testkit run` on a demo module, which starts a
-  nested vitest: about 2.5 seconds each, of which recording coverage for REACH is 0.3. With 79 scenarios the total
-  passed 240 seconds on main. SCN-TK-080 to -082 each start a Forgejo and take about 20 seconds. `sut.pages` and `sut.browser` load happy-dom, Testing Library and
-  Playwright at their first use: imported with the testkit, they cost every test process about 0.4 seconds (ADR 0131).
-  testcontainers, the MCP client and the ACP client load at their first use too: the testkit's import went from about
-  500 to about 145 milliseconds, and a demo module's scenario from about 2.5 to about 1.5 seconds. SCN-TK-182 to -184
-  (fakes.personIssuer and fakes.personProof, ADR 0151) are demo modules too: about 1.4 seconds each, 4.2 together,
-  measured on the development container; jose loads with the first issuer, not with the testkit. SCN-TK-185 to -188
-  (sut.site and the active mutant in the browser, ADR 0152) are demo libraries: 1.2 to 1.3 seconds each for sut.site
-  and 1.5 to 1.8 seconds each with Chromium, about 5.7 together, measured on the development container. SCN-TK-189
-  (the paused clock of sut.browser, T-55) is one more such library: 2.3 seconds, measured on the development container
-  while another suite ran.
+- System tests: 230 seconds of wall time on the CI runner.
+- Most of it: the nested vitest of `testkit run` on a demo module, about 1.5 s each; SCN-TK-080 to -082 each
+  start a Forgejo.
 
 ## Quality limits
 

@@ -91,6 +91,30 @@ export function demoModule(test: TestOptions = {}): Record<string, string> {
   };
 }
 
+/**
+ * Module demo in a workspace, its system tests run by "testkit timed", and the lines of its budget section in its
+ * AGENTS.md (ADR 0155).
+ */
+export function budgetedDemo(...budget: string[]): Record<string, string> {
+  const manifest = {
+    name: "@opensoftware/demo",
+    version: "0.1.0",
+    type: "module",
+    scripts: { "test:system": "testkit timed vitest run" },
+  };
+  return {
+    ...demoModule(),
+    "pnpm-workspace.yaml": "packages:\n  - modules/*\n",
+    "modules/demo/package.json": `${JSON.stringify(manifest, null, 2)}\n`,
+    "modules/demo/AGENTS.md": `# demo\n\n## Budget\n\n${budget.join("\n")}\n\n## Scenario prefix\n\n\`SCN-DEMO-NNN\`\n`,
+  };
+}
+
+/** The wall time that "testkit timed" wrote and "osf collect-reports" copied, for the unit "demo". */
+export const runTime = (seconds: number): Record<string, string> => ({
+  "reports/run-time/demo.json": `${JSON.stringify({ seconds })}\n`,
+});
+
 export function junit(cases: { file: string; id: string; time?: number; body?: string }[]): string {
   const suites = cases.map(({ file, id, time = 0.1, body = "" }) =>
     [

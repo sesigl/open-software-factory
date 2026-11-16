@@ -37,13 +37,9 @@ ARCH check enforces the layers.
 
 ## Budget
 
-- System tests: 200 seconds in total on the CI runner. Since ADR 0062 each Slack or forge call starts an adapter
-  process, which took the suite past the earlier 180 seconds. SCN-GATE-012, -025 and -055 to -057 start NATS on the host (ADR 0067);
-  the server scenarios SCN-GATE-041 to -058 use a database of `fakes.postgres()`, which needs Docker (ADR 0129); all use fake Slack, a
-  scripted forge API and the pinned `opa` of `make install`. The tests run the built `channel-slack` and
-  `forge-github` adapters (`sut.adapter`); `turbo.json` builds them before the tests. The person proof scenarios
-  SCN-GATE-098 to -106 (ADR 0151) use `fakes.personIssuer()` in the test process; measured locally they add 16 seconds,
-  128 seconds for the 105 scenarios in total.
+- System tests: 80 seconds of wall time on the CI runner.
+- Most of it: an adapter process for each Slack or forge call (ADR 0062), NATS on the host and
+  `fakes.postgres()` for the server scenarios.
 
 ## Quality limits
 

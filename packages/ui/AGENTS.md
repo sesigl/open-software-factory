@@ -55,10 +55,8 @@ types an island imports). Components join as templates (TEMPLATE).
 
 ## Budget
 
-- System tests: 20 seconds in total on the CI runner. Measured on the development container on 16 November 2026 with
-  the first island: the suite takes 2.5 seconds for 9 scenarios in one Vitest worker (`maxWorkers: 1`, see below);
-  an island scenario takes 0.1 to 0.3 seconds, the first one about 0.6 with the start of Chromium, and SCN-UI-007 1.2
-  with axe. The build before it takes 3 seconds, 0.7 of them for the workbench's Astro build. No new budget is needed.
+- System tests: 45 seconds of wall time on the CI runner.
+- Most of it: the first island scenario's start of Chromium; the build before it is not timed.
 
 ## Quality limits
 

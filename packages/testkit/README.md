@@ -28,7 +28,7 @@ Each test case in `report.xml` is named after its scenario and has the property 
 | --- | --- |
 | `testkit run --junit <file>` | Run `system-tests/**/*.test.ts` of the module in the current folder with globals, no retries and a 120 s test timeout. Write the JUnit report to `<file>`. Exit 1 when a test fails. |
 | `testkit conformance <port features folder> --junit <file>` | Run an adapter's system tests like `run`, then print `CONFORMANCE <id> passed` (or `failed`, `was skipped`, `has no system test`) for every implemented `@conformance` scenario in the folder and `N of M conformance scenarios passed`. Exit 1 unless all passed. |
-| `testkit timed <command>...` | Run the command, a package's system tests, and exit with its code. With `CI` set, also run a short benchmark before and after it and write `reports/runner-speed.json`: both times in milliseconds, the reference time and the slowdown, for BUDGET ([ADR 0103](../../docs/decisions/0103-budget-takes-the-runner-speed-into-account.md)). |
+| `testkit timed <command>...` | Run the command, a package's system tests, and exit with its code. Write its wall time, from its start to its end, to `reports/run-time.json` (`{"seconds": 12.345}`) for BUDGET, on CI and locally ([ADR 0155](../../docs/decisions/0155-budget-is-the-wall-time-of-a-suite.md)). |
 
 ## Writing a system test
 
@@ -400,7 +400,6 @@ The testkit reads these environment variables:
 
 | Variable | Meaning |
 | --- | --- |
-| `CI` | Set, `testkit timed` measures the runner's speed ([ADR 0103](../../docs/decisions/0103-budget-takes-the-runner-speed-into-account.md)). CI sets it; a local run does not, so it takes no extra time. |
 | `PLAYWRIGHT_BROWSERS_PATH` | Where Playwright keeps its browsers. The module gets it like `PATH`, since its `HOME` is the working folder. |
 | `__STRYKER_ACTIVE_MUTANT__` | The mutant Stryker activates during a mutation run (`osf mutation`, ADR 0037). The module's instrumented build reads it in its own process, and `sut.browser` sets it in every page before its first script (ADR 0152). |
 | `DOCKER_HOST` | The Docker daemon, as for any `docker` command, such as `unix://$HOME/.rd/docker.sock` of Rancher Desktop. The module's processes get it like `PATH`, so a module that starts containers and the fakes reach the same daemon. Default: Docker's own (`/var/run/docker.sock`). |
@@ -574,8 +573,8 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-136 | implemented | A scripted harness for sandboxes takes its script and sends its log over HTTP, with no folder of its script mounted |
 | SCN-TK-137 | implemented | sut.helm uninstalls the scenario's releases when the scenario ends, with their objects outside its namespace |
 | SCN-TK-138 | implemented | The fake inference adapter fails start with its message until the test makes it ready |
-| SCN-TK-139 | implemented | testkit timed runs the command, and with CI set it writes the runner's slowdown |
-| SCN-TK-140 | implemented | testkit timed without CI only runs the command |
+| SCN-TK-139 | deprecated | testkit timed runs the command, and with CI set it writes the runner's slowdown |
+| SCN-TK-140 | deprecated | testkit timed without CI only runs the command |
 | SCN-TK-141 | implemented | sut.acp hangs up, and a module that ends with its client exits |
 | SCN-TK-142 | implemented | fakes.temporal and fakes.nats listen below the range of module ports |
 | SCN-TK-143 | implemented | fakes.github lists the check runs that a test adds to a pull request's head commit, page by page |
@@ -627,3 +626,5 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-189 | implemented | A page that sut.browser opens with its clock paused runs its timers only when the test runs the clock |
 | SCN-TK-190 | implemented | sut.files.put gives a file a mode and sut.files.mode reads it back |
 | SCN-TK-191 | implemented | fakes.github lists the comments of a pull request's conversation page by page, 30 to a page by default |
+| SCN-TK-196 | implemented | testkit timed runs the command and writes its wall time |
+| SCN-TK-197 | implemented | testkit timed writes the wall time without the environment variable "CI" too |
