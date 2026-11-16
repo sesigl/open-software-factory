@@ -1,9 +1,10 @@
 // BOUNDARY-STATIC, BOUNDARY-ENV, ISOLATION, NOSKIP and ASSERT: how tests and modules reach each other.
 
 import { documentedEnv, isDocumented } from "@opensoftware/testkit/readme";
-import { cruise, type ICruiseResult, type IForbiddenRuleType, type IReporterOutput } from "dependency-cruiser";
+import type { ICruiseResult, IForbiddenRuleType, IReporterOutput } from "dependency-cruiser";
 import type { Context } from "./lib/context.ts";
 import { type Finding, isLibrary, lineOf, moduleRootOf } from "./lib/repo.ts";
+import { loadTests } from "./lib/tests.ts";
 
 /** What every system test may import besides its own folder. */
 const TEST_IMPORTS = [
@@ -66,6 +67,8 @@ const ISOLATION_RULES: IForbiddenRuleType[] = [
 
 async function violations(context: Context, files: string[], rules: IForbiddenRuleType[]): Promise<Finding[]> {
   if (files.length === 0) return [];
+  // Loaded here: BOUNDARY-ENV, NOSKIP, ASSERT and UI-QUERY share this module and need no import graph.
+  const { cruise } = await import("dependency-cruiser");
   const output = (await cruise(files, {
     baseDir: context.repo.root,
     validate: true,
@@ -99,7 +102,7 @@ async function violations(context: Context, files: string[], rules: IForbiddenRu
 export async function boundaryStatic(context: Context): Promise<Finding[]> {
   return violations(
     context,
-    context.tests().map((test) => test.file),
+    loadTests(context.repo).map((test) => test.file),
     BOUNDARY_RULES,
   );
 }
@@ -146,7 +149,7 @@ export async function isolation(context: Context): Promise<Finding[]> {
 
 export function boundaryEnv(context: Context): Finding[] {
   const findings: Finding[] = [];
-  for (const test of context.tests()) {
+  for (const test of loadTests(context.repo)) {
     if (test.env.length === 0) continue;
     const readme = `${moduleRootOf(test.file)}/README.md`;
     const documented = context.repo.exists(readme) ? documentedEnv(context.repo.read(readme)) : new Set<string>();
@@ -165,7 +168,7 @@ export function boundaryEnv(context: Context): Finding[] {
 }
 
 export function noskip(context: Context): Finding[] {
-  return context.tests().flatMap((test) =>
+  return loadTests(context.repo).flatMap((test) =>
     test.skips.map(({ name, line }) => ({
       check: "NOSKIP",
       file: test.file,
@@ -176,7 +179,7 @@ export function noskip(context: Context): Finding[] {
 }
 
 export function uiQuery(context: Context): Finding[] {
-  return context.tests().flatMap((test) =>
+  return loadTests(context.repo).flatMap((test) =>
     test.queries.map(({ name, line }) => ({
       check: "UI-QUERY",
       file: test.file,
@@ -188,7 +191,7 @@ export function uiQuery(context: Context): Finding[] {
 
 export function assert(context: Context): Finding[] {
   const findings: Finding[] = [];
-  for (const test of context.tests().filter((file) => file.isTest)) {
+  for (const test of loadTests(context.repo).filter((file) => file.isTest)) {
     for (const scenario of test.scenarios) {
       for (const step of scenario.steps.filter((candidate) => candidate.keyword === "Then")) {
         const label = step.label ?? "(no literal label)";
