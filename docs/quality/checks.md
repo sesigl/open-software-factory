@@ -98,7 +98,7 @@ artifact `spec-trace` holds the JSON report. Both actions run the release from n
 | DOCS-AFFECTED | Every hand-written doc whose `covers:` paths changed is updated or listed as `docs-reviewed:` in the pull request. | Path match between the diff and the front matter. The files of a release (`CHANGELOG.md`, the release-please manifest, a `package.json` that only changes `version`, a JSON extra file of `release-please-config.json` that only changes the value at its `jsonpath`, and a file of the profile or the chart that is exactly what `osf profile-pins` writes from the base commit's file) do not count. |
 | DOCS-LINKS | Internal links and anchors resolve. | lychee in offline mode. |
 | ADR | New modules, dependencies and services have an accepted ADR with a filled Prior art section. | Parse the ADR front matter and sections. |
-| RUNS | Every `runs/*.jsonl` line is a run whose root span `invoke_agent` matches the `run-record` contract and that holds no prompt or tool content; a change with a commit since `OSF_BASE` whose `Co-Authored-By:` trailer names Claude, Codex or OpenCode adds or changes a file in `runs/` (ADR 0027). | Parse each line, validate with `@opensoftware/contracts`; `git log` for the trailers. Fix: `make run-record`, then commit `runs/`. |
+| RUNS | Every `runs/*.jsonl` line is a run whose root span `invoke_agent` matches the `run-record` contract and that holds no prompt or tool content (ADR 0027). No change has to add or change a file in `runs/` (ADR 0153). | Parse each line, validate with `@opensoftware/contracts`. Fix: export the record again with `make run-record` (without `--include-content`), or remove the line. |
 
 ## End-to-end
 

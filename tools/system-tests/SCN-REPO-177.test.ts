@@ -1,6 +1,6 @@
 import { scenario } from "@opensoftware/testkit";
 
-scenario("SCN-REPO-040", async ({ sut, given, when, then }) => {
+scenario("SCN-REPO-177", async ({ sut, given, when, then }) => {
   let base = "";
   await given("a base commit", async () => {
     await sut.files.put("$INPUT/README.md", "# Demo\n");
@@ -20,11 +20,11 @@ scenario("SCN-REPO-040", async ({ sut, given, when, then }) => {
     run = await sut.cli(["check", "RUNS"], { env: { OSF_BASE: base } });
   });
 
-  await then("the command exits with code 1", async () => {
-    expect(run.exitCode, run.stdout + run.stderr).toBe(1);
+  await then("the command exits with code 0", async () => {
+    expect(run.exitCode, run.stdout + run.stderr).toBe(0);
   });
 
-  await then('the output contains "no run record in runs/ changed: run make run-record and commit runs/"', async () => {
-    expect(run.stdout).toContain("no run record in runs/ changed: run make run-record and commit runs/");
+  await then('the output contains "RUNS ok"', async () => {
+    expect(run.stdout).toContain("RUNS ok");
   });
 });

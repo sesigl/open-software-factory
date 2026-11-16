@@ -89,8 +89,8 @@ runlog export --latest ~/.claude/projects ~/.codex/sessions --per-run
 folders and exports the session whose last event is the latest. Without one it exits with code 1. `--per-run`
 writes the run to `$OUTPUT/<run id>.jsonl` and replaces that file, instead of appending to `$OUTPUT/runs.jsonl`. The
 run ID is `osf.run.id`, with every character other than letters, digits, `.`, `_` and `-` turned into `-`. This
-repository commits the run of each agent session this way
-([ADR 0027](../../docs/decisions/0027-runlog-dogfood-run-records.md)).
+repository's optional `make run-record` exports a session this way
+([ADR 0027](../../docs/decisions/0027-runlog-dogfood-run-records.md), [ADR 0153](../../docs/decisions/0153-no-run-record-by-hand.md)).
 
 ## Agent Trace
 

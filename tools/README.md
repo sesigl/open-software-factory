@@ -24,7 +24,7 @@ make verify      # everything: lint, types, all system tests, all checks
 | Command | Make target | What it does |
 | --- | --- | --- |
 | `osf check [ID ...]` | `make check` | Run the named checks. No ID runs the fast set: NOSKIP, ASSERT, UI-QUERY, BOUNDARY-STATIC, BOUNDARY-ENV, ISOLATION, ARCH, TEMPLATE, SURFACE, CONTRAST, TOKENS, DUP, DOCS-GEN, DOCS-LINKS, ADR, AFFECTED, RELEASE, DEPS, DEPS-RUNTIME, PROFILE, VISION, TODO. `make check` also runs `spec-trace check --only SPEC,TRACE,STEPS`. |
-| `osf check --all` | `make verify` | Also FLAKE, BUDGET (they read `reports/junit/`), DOCS-AFFECTED and CONTRACT (they compare with `OSF_BASE`; CONTRACT with the last `contracts-v*` tag when there is one), REACH (it reads `reports/coverage/` and compares with `OSF_BASE`) and RUNS (the run records in `runs/`; it compares the commits with `OSF_BASE`). |
+| `osf check --all` | `make verify` | Also FLAKE, BUDGET (they read `reports/junit/`), DOCS-AFFECTED and CONTRACT (they compare with `OSF_BASE`; CONTRACT with the last `contracts-v*` tag when there is one), REACH (it reads `reports/coverage/` and compares with `OSF_BASE`) and RUNS (the run records in `runs/`; it needs no base). |
 | `osf check MUTATION [--total]` | `make mutation` | Score the Stryker reports in `reports/mutation/`: the mutants in the lines changed since `OSF_BASE` against each module's first limit, or with `--total` every mutant against the second limit (ADR 0037). Neither `make check` nor `make verify` runs it. |
 | `osf mutation-plan [--all] [--keys]` | `nightly.yml`, `mutation.yml` | Print the shards of a mutation run as JSON, one object per runner with `package`, `folder` and `shard`. With `--keys`, from one `turbo run mutation --dry=json`, also the `key` of the shard's report (turbo's hash of the unit's `mutation` task and its added line ranges), the `guard` of the unit's mutant results (turbo's global inputs, its external dependencies, the builds it depends on and its input files except its `.ts` and `.tsx` sources and, for a module or an adapter, its `*.test.ts` files) and `results`, the file name of those results (ADR 0091). Without `--all`, each unit that the change since `OSF_BASE` adds source lines to, one shard per about 100 added lines (at most 10, or `osf.mutationLinesPerShard`). With `--all`, every unit with a mutation script, one shard per about 600 lines (at most 20, or `osf.mutationAllLinesPerShard`) (ADR 0084). |
 | `osf mutation <folder> [--all] [--list] [--shard i/n] [--incremental <file>]` | `make mutation` | Run Stryker on one module: the lines of its `.ts` and `.tsx` files in `src/` changed since `OSF_BASE`, or every line with `--all`; an island's `.tsx` counts, an Astro template does not (ADR 0152). `--list` prints the `file:start-end` ranges and runs nothing. `--incremental <file>` reuses the result of each mutant in that earlier report whose code and tests did not change (Stryker's incremental mode); with `--shard`, the file keeps only the shard's own mutants afterwards (ADR 0091). `--shard i/n` mutates the same lines but tests only every n-th mutant (those whose Stryker number modulo n is i - 1) and writes them to `reports/mutation/<unit>.shard-<i>.json`, so that n runners share a large change and a costly file spreads over all of them (ADR 0066). For a module or an adapter, each mutant reruns only the scenarios whose module processes ran it (`tools/scaffold/mutation-runner.ts`, ADR 0061), and each rerun ends by killing what its Vitest left running, such as a module's servers after the run stopped at its first failure, or when it reaches Stryker's timeout; each rerun takes its scenario files shortest first in one Vitest worker, with one Stryker worker per CPU (`osf.mutationConcurrency` and `osf.mutationWorkers` change both, ADR 0084); a library reruns all its tests. Each module's `mutation` script calls it; `make mutation ALL=1` mutates every line. |
@@ -52,7 +52,7 @@ file or folder, such as a worktree in `.claude/worktrees/`. `osf docs` reads no 
 `make run-record` builds `modules/runlog` and runs `runlog export --latest --per-run` with `OUTPUT=runs` on the
 Claude Code project folder of this checkout, below `CLAUDE_CONFIG_DIR` when it is set and `~/.claude` when not, and
 `~/.codex/sessions` (ADR 0027). `RUN_SESSIONS=<folder>` overrides
-the folders.
+the folders. It is optional: no pull request has to commit a run record (ADR 0153).
 
 `make agents-sync` builds `modules/factory-spec` and runs `factory render --harness all` on the repository's
 `factory.yaml` (ADR 0020): `CLAUDE.md`, `.mcp.json`, `.codex/config.toml`, `opencode.json` and the skill links in
@@ -167,9 +167,9 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-037 | implemented | DOCS-AFFECTED lists a doc when package.json changes more than its version |
 | SCN-REPO-038 | implemented | RUNS rejects a run record with prompt content |
 | SCN-REPO-039 | implemented | RUNS rejects a run record that does not match the run-record contract |
-| SCN-REPO-040 | implemented | RUNS rejects agent commits without a run record |
+| SCN-REPO-040 | deprecated | RUNS rejects agent commits without a run record |
 | SCN-REPO-041 | implemented | RUNS accepts agent commits that add a run record |
-| SCN-REPO-042 | implemented | RUNS asks no run record of commits without an agent trailer |
+| SCN-REPO-042 | deprecated | RUNS asks no run record of commits without an agent trailer |
 | SCN-REPO-043 | implemented | A module created from the template passes the fast checks of osf |
 | SCN-REPO-044 | implemented | DUP rejects a module whose duplicated lines exceed its limit |
 | SCN-REPO-045 | implemented | DUP rejects a clone between two modules |
@@ -304,3 +304,4 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-174 | implemented | REACH rejects a new .tsx file of a module that no system test loads |
 | SCN-REPO-175 | implemented | TEMPLATE accepts a component whose script only imports an island's mount script |
 | SCN-REPO-176 | implemented | TEMPLATE rejects a script with an attribute, with code, or with an import that is no island |
+| SCN-REPO-177 | implemented | RUNS accepts agent commits that change no file in runs/ |

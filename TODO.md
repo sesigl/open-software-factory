@@ -2118,13 +2118,14 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 - **Build:** the suites with under 40 seconds of tests share two jobs; the kind node image and the chart's images
   come from a cache, so the deploy job's setup is under a minute.
 
-### [ ] T-80 · no run record by hand (P1)
+### [x] T-80 · no run record by hand (P1)
 
 - **Problem:** every agent pull request commits its session to `runs/` by hand (ADR 0027): 25 MB so far, and RUNS
   accepts any changed file.
 - **Build:** a decision record that supersedes ADR 0027: RUNS no longer asks a pull request for a file, `make
   run-record` leaves the loop of `AGENTS.md` and the skills. ledger and scorekit keep reading what `runs/` holds.
-- **Done when:** a pull request with an agent's trailer and no file in `runs/` passes.
+- **Done when:** a pull request with an agent's trailer and no file in `runs/` passes. Done: ADR 0153,
+  `SCN-REPO-177` (replaces `SCN-REPO-040`; `SCN-REPO-042` deprecated).
 
 ### Stage TR · the testing rule
 

@@ -61,8 +61,8 @@ export const SEPARATE: Record<string, Check> = {
 
 const ALL: Record<string, Check> = { ...FAST, ...SLOW, ...SEPARATE };
 
-/** Checks with parts that run without a base (ADR: modules; CONTRACT: fixtures; RUNS: the records). */
-const PARTLY_BASED = new Set(["ADR", "CONTRACT", "RUNS"]);
+/** Checks with parts that run without a base (ADR: modules; CONTRACT: fixtures). */
+const PARTLY_BASED = new Set(["ADR", "CONTRACT"]);
 
 export async function runChecks(root: string, args: string[]): Promise<number> {
   const ids = args.filter((arg) => !arg.startsWith("--"));

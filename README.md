@@ -64,6 +64,10 @@ into the summary of its job `score`: [the latest scores](https://github.com/sesi
 ([ADR 0077](docs/decisions/0077-paid-dogfood.md)). Its job `observe` gives the failed scores to observer, which
 opens one pull request with a fix of `AGENTS.md` for a new problem and measures the merged fixes.
 
+Since November 2026 no pull request has to commit its run to `runs/`, so both sets of numbers cover the pull requests
+up to then and stand still until run records come from somewhere else
+([ADR 0153](docs/decisions/0153-no-run-record-by-hand.md)).
+
 ## Working on this repository
 
 Every change, by a person or an agent, follows [`AGENTS.md`](AGENTS.md): Gherkin scenario first, exactly one
