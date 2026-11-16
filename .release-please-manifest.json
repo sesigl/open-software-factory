@@ -1,6 +1,6 @@
 {
-  "contracts": "2.7.0",
-  "packages/testkit": "0.39.0",
+  "contracts": "2.8.0",
+  "packages/testkit": "0.40.0",
   "packages/cli": "0.4.1",
   "packages/spec-files": "0.2.0",
   "modules/factory-spec": "0.12.1",
@@ -11,7 +11,7 @@
   "modules/ledger": "0.8.0",
   "modules/taskcapture": "0.3.1",
   "modules/observer": "0.2.1",
-  "modules/gatekeeper": "0.10.1",
+  "modules/gatekeeper": "0.11.0",
   "adapters/harness/acp": "0.4.0",
   "packages/harness-proxy": "0.4.1",
   "adapters/harness/claude-code": "0.6.0",
@@ -27,10 +27,10 @@
   "adapters/channel/github": "0.3.0",
   "packages/channel-kit": "0.3.1",
   "packages/postgres": "0.2.0",
-  "modules/intake": "0.7.1",
-  "modules/foreman": "0.14.1",
-  "modules/console": "0.11.0",
+  "modules/intake": "0.8.0",
+  "modules/foreman": "0.15.0",
+  "modules/console": "0.12.0",
   "adapters/secrets/openbao": "0.1.1",
   "packages/factory-source": "0.1.0",
-  "packages/person-proof": "0.1.0"
+  "packages/person-proof": "0.2.0"
 }

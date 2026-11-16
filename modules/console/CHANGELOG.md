@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.12.0](https://github.com/sesigl/open-software-factory/compare/console-v0.11.0...console-v0.12.0) (2026-11-16)
+
+
+### Features
+
+* **console:** sign the proof of the person for each action and publish the keys (T-61) ([#359](https://github.com/sesigl/open-software-factory/issues/359)) ([315754e](https://github.com/sesigl/open-software-factory/commit/315754ef1746fc40ce73b784b03e897635866246))
+* **console:** the work page's list stays fresh without a reload: the first island (T-55) ([#365](https://github.com/sesigl/open-software-factory/issues/365)) ([5cd1a17](https://github.com/sesigl/open-software-factory/commit/5cd1a17c12fa8414d1c134f600147697f898de95))
+
 ## [0.11.0](https://github.com/sesigl/open-software-factory/compare/console-v0.10.1...console-v0.11.0) (2026-11-15)
 
 

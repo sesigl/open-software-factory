@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/sesigl/open-software-factory/compare/intake-v0.7.1...intake-v0.8.0) (2026-11-16)
+
+
+### Features
+
+* foreman and intake check the proof of the person (T-61) ([#360](https://github.com/sesigl/open-software-factory/issues/360)) ([c29e697](https://github.com/sesigl/open-software-factory/commit/c29e697b91228c7ec7f3aab2ad0fb4e9ab626c46))
+
 ## [0.7.1](https://github.com/sesigl/open-software-factory/compare/intake-v0.7.0...intake-v0.7.1) (2026-11-15)
 
 

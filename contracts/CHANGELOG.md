@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.8.0](https://github.com/sesigl/open-software-factory/compare/contracts-v2.7.0...contracts-v2.8.0) (2026-11-16)
+
+
+### Features
+
+* foreman and intake check the proof of the person (T-61) ([#360](https://github.com/sesigl/open-software-factory/issues/360)) ([c29e697](https://github.com/sesigl/open-software-factory/commit/c29e697b91228c7ec7f3aab2ad0fb4e9ab626c46))
+* **gatekeeper:** check the proof of the person for each decision through the API (T-61) ([#361](https://github.com/sesigl/open-software-factory/issues/361)) ([e21dc77](https://github.com/sesigl/open-software-factory/commit/e21dc77a4e6cbbac8ad5d73663fd1e5ebd43e73b))
+
 ## [2.7.0](https://github.com/sesigl/open-software-factory/compare/contracts-v2.6.0...contracts-v2.7.0) (2026-11-15)
 
 

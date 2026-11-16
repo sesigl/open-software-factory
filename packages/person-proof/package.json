@@ -1,6 +1,6 @@
 {
   "name": "@opensoftware/person-proof",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Prove the person who acts to a module of the open software factory: sign a person proof, and check one against the issuers' key sets.",
   "license": "Apache-2.0",
   "repository": {

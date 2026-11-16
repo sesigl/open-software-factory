@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/sesigl/open-software-factory/compare/gatekeeper-v0.10.1...gatekeeper-v0.11.0) (2026-11-16)
+
+
+### Features
+
+* **gatekeeper:** check the proof of the person for each decision through the API (T-61) ([#361](https://github.com/sesigl/open-software-factory/issues/361)) ([e21dc77](https://github.com/sesigl/open-software-factory/commit/e21dc77a4e6cbbac8ad5d73663fd1e5ebd43e73b))
+
 ## [0.10.1](https://github.com/sesigl/open-software-factory/compare/gatekeeper-v0.10.0...gatekeeper-v0.10.1) (2026-11-15)
 
 
