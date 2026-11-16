@@ -254,8 +254,8 @@ export function activities(deps: ActivityDeps) {
       const origin = view.workItem.origin.url;
       // The run's pull request lets gatekeeper ask the approvers on it (ADR 0080), only when it is of the work
       // item's repository: a link the agent wrote to another forge is no place for a gate (T-63).
-      const page = repositoryOf(origin)?.page;
-      const ours = view.pullRequest && page && repositoryOf(view.pullRequest)?.page === page;
+      const stated = repositoryOf(view.pullRequest);
+      const ours = stated !== undefined && stated.page === repositoryOf(origin)?.page;
       const links = [
         ...(origin ? [{ url: origin, title: "Origin" }] : []),
         ...(ours ? [{ url: view.pullRequest as string, title: "Pull request" }] : []),

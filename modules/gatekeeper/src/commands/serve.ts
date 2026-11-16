@@ -11,7 +11,7 @@ import { opaVersion } from "../adapters/opa.ts";
 import { openStore } from "../adapters/postgres.ts";
 import { receive } from "../adapters/slack.ts";
 import { EXAMPLE_MEMBER, groupsWithoutPeople } from "../domain/policy.ts";
-import { forgeOrigin, GITHUB_API, pullRequestOn } from "../domain/pull-request.ts";
+import { forgeOrigin, GITHUB_API, pullRequestOf } from "../domain/pull-request.ts";
 import { signingKeyOf } from "../domain/record.ts";
 import { parseDecision, parseRequest } from "../domain/request.ts";
 import { viewOf } from "../domain/stored.ts";
@@ -190,7 +190,7 @@ export async function serve(options: ServeOptions) {
   const poll = pullRequests
     ? setInterval(() => {
         polling ??= service
-          .check((name) => pullRequestOn(origin, name) !== undefined)
+          .check((name) => pullRequestOf(name) !== undefined)
           .catch((error: Error) => {
             warn(error);
           })

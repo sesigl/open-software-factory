@@ -98,6 +98,17 @@ export function gates(config: GatesConfig, store: Store) {
       report: (outcome) => reached.status(pull.sha, commitState(outcome), describe(outcome)),
     };
   }
+  /** Where a new gate is asked: the first pull request of the server's forge that the request links, else Slack. */
+  function channelNameOf(request: GateRequest): string {
+    const pr = forge && pullRequestIn(forge.origin, request.links);
+    if (pr) return pr.url;
+    if (slack) return slack.name;
+    // serve starts only with Slack or the forge, so a server without Slack has the forge.
+    const { origin } = forge as NonNullable<typeof forge>;
+    throw new UsageError(
+      `the request links no pull request on ${origin}, like ${origin}/acme/web/pull/12, and the server has no Slack channel`,
+    );
+  }
   const events = (outgoing: Outgoing): Outgoing | undefined => (config.nats ? outgoing : undefined);
 
   let relaying: Promise<void> = Promise.resolve();
@@ -158,11 +169,7 @@ export function gates(config: GatesConfig, store: Store) {
       const id = gateId(request);
       const existing = await store.get(id);
       if (existing) return { created: false, gate: existing };
-      const name = (forge && pullRequestIn(forge.origin, request.links)?.url) || slack?.name;
-      if (!name)
-        throw new UsageError(
-          `the request links no pull request on ${forge?.origin}, like ${forge?.origin}/acme/web/pull/12, and the server has no Slack channel`,
-        );
+      const name = channelNameOf(request);
       const gate = gateFor(request, parseRules(await evaluate(config.opa, policy, request), policy));
       const now = config.now();
       const base = { id, request, rules: gate.rules, channel: name, thread: null, requestedAt: now };
