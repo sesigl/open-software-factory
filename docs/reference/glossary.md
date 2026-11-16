@@ -21,7 +21,7 @@ Use these terms in scenarios, code, UI text and docs.
 | Dedupe key | The key that makes requests one work item: intake keeps one work item per key and lists every request that sent it. |
 | Stage | One step of the delivery loop: triage, spec, implement, review, verify, ship, monitor. A stage runs one agent, or with `wait: true` only waits for its checks, evidence and gate (ADR 0107). |
 | Gate | A point where work waits for a deterministic check or a human decision. |
-| Approval record | What gatekeeper writes when a gate is decided: the request, the policy, who decided, what and when; signed with Ed25519. |
+| Approval record | What gatekeeper writes when a gate is decided: the request, the policy, who decided, what and when; signed with Ed25519 when `GATEKEEPER_SIGNING_KEY` is set, unsigned without it. |
 | Outbox | A table where a server writes its events in the same transaction as the change they report; a relay publishes them to NATS later, so no event is lost (ADR 0003, ADR 0048). |
 | Human touchpoint | A gate where a person reviews the spec, the code or the product. |
 | Take over | A person ends the running stage's turn and goes on with the work in the run's folder; a hand back lets the run go on from there (ADR 0070). |
@@ -33,15 +33,16 @@ Use these terms in scenarios, code, UI text and docs.
 | Sandbox spec | The input of a sandbox adapter's `create`: template, CPU, memory, egress allowlist, variables, secret references and MCP servers with their tools (ADR 0054). |
 | Egress proxy | The proxy that every request leaving a sandbox passes: it refuses hosts outside the allowlist, swaps secret placeholders for the real values and allows only declared MCP tools (iron-proxy, ADR 0054). |
 | Secret placeholder | The value a sandbox holds in place of a secret, `osf-secret-placeholder-<NAME>`; worthless outside the sandbox's egress proxy. |
-| Run | One harness session for one stage of one work item. |
-| Run record | The stored transcript, trace, cost and links of a run, in OpenTelemetry form. |
-| Agent Trace record | The lines of the files a run wrote, attributed to the agent and its model, in the open Agent Trace format. |
+| Run | The foreman's pass over one work item through the stages of its workflow, as one Temporal workflow. A failed or cancelled run runs again as a new run (ADR 0105). |
+| Session | One harness session: the inner loop of one agent in one stage of a run. |
+| Run record | The stored record of one session: its transcript, trace, cost and links in OpenTelemetry form, with the ID of the run it belongs to (`osf.run.id`). The name stays for the contract `run-record`. |
+| Agent Trace record | The lines of the files a session wrote, attributed to the agent and its model, in the open Agent Trace format. |
 | Evidence bundle | The screenshots, video, traces and test results that prove a change works. |
-| Scorer | An LLM-judge or code check that grades sampled runs on one dimension. |
-| Score | The result of one scorer on one run. |
+| Scorer | An LLM-judge or code check that grades sampled run records on one dimension. |
+| Score | The result of one scorer on one run record. |
 | Benchmark suite | A set of real tasks captured from past work, replayed to compare configurations. |
 | Cell | One configuration and one model in a benchmark report, with its correctness and average cost per trial. |
-| Replay | Running a captured task again with no side effects: during its run the agent reaches only the model gateway, never a real chat or forge. |
+| Replay | Running a captured task again with no side effects: during the replay the agent reaches only the model gateway, never a real chat or forge. |
 | Hidden tests | The tests of a captured pull request: the agent never sees them; they decide the task's reward. |
 | Routing rule | A rule in the LLM gateway that picks a model for a class of tasks. |
 | Routing alias | The model name an agent calls, such as `routes/triage`; the inference gateway's config routes it to a model of a provider (ADR 0056). |
@@ -54,9 +55,12 @@ Use these terms in scenarios, code, UI text and docs.
 | Channel | A chat where people talk with the factory, such as Slack or the conversation of a GitHub pull request; a channel adapter turns its messages into work items and decisions (ADR 0059). |
 | Thread | One conversation in a channel, named by Vercel Chat SDK's thread ID, for example `slack:C0WEB:1767225600.000001`; the factory replies in the thread of the work item it came from. |
 | Approval card | A message in a thread that asks a person a question with choices, such as `approve` and `reject`; the person's choice is a decision with their identity (ADR 0059). |
-| Problem | One scorer that failed many runs, recorded by observer with its count, its reasons and links to the failed runs. |
+| Problem | One scorer that failed many run records, recorded by observer with its count, its reasons and links to the failed run records. |
 | Self-improvement inbox | The console's page `/inbox`: observer's open proposals, the pull requests from `observer/` branches, with their age and the state "needs review", "approved" or "changes requested" from the forge port's `prs` (ADR 0073). |
 | Self-improvement | The loop that turns repeated failures into reviewed changes to the factory definition. |
+| Module | One tool of the factory in `modules/<name>/`, with its own scenarios, `AGENTS.md`, version and release. A module never imports another module. |
+| Unit | What a check measures one at a time: a module, a library in `packages/`, an adapter or `tools/`. DUP, MUTATION and BUDGET each have a limit per unit. |
+| Suite | A group of packages in `.github/test-suites.yml` whose system tests run together on one CI runner; each package with system tests is in exactly one suite. |
 | Port | An interface to an outside system. |
 | Adapter | An implementation of a port for one product. |
 | Library | A package in `packages/` without a `bin` that modules may depend on: shared code with no CLI and no state of its own. Its system tests import it by its package name (ADR 0037, ADR 0039). |

@@ -2,7 +2,7 @@
 # recorded talk, 25:51. Every scenario carries:
 #   @source=<mm:ss>   where the talk says or shows it (several tags when several moments support it)
 #   @source=owner-<yyyy-mm> not from the talk: the repository owner's request of that month, written down in
-#                     TODO.md (the factory UI of wave 6 is owner-2026-11)
+#                     TODO.md or docs/history/ (the factory UI of wave 6 is owner-2026-11)
 #   @evidence=spoken  said in the talk
 #   @evidence=screen  visible on a slide or in the product demo, not said
 #   @evidence=derived not stated; a requirement that the talk implies or needs, marked so it can be challenged

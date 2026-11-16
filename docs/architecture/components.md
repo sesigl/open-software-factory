@@ -50,7 +50,11 @@ flowchart LR
 The delivery path ships one change. The improvement path reads every recorded run and changes the factory only
 through a reviewed PR to `factory-spec`, which the foreman loads as its next version.
 
-## Five shared formats
+## Shared formats
+
+The five formats that carry the delivery and improvement paths. [`contracts/`](../../contracts/README.md#formats)
+holds twelve formats and the events; the other seven are the gate record, the sandbox spec, the factory lock, the
+access file, the skill catalog, the person proof and the person keys.
 
 | Format | Status | Based on | Carries | Written by → read by |
 | --- | --- | --- | --- | --- |
@@ -82,7 +86,7 @@ are in [`contracts/events/asyncapi.yaml`](../../contracts/events/asyncapi.yaml).
 | foreman | core | 4 | TS | Run declared multi-agent pipelines with gates | work items (HTTP or `work.received@v1`) + `factory.yaml` at a commit → one Temporal workflow per run: each stage's agent through the harness port, gate requests to gatekeeper, `gate.decided@v1` in, steering and cancel, `run.started@v1`, `run.completed@v1` with a failed stage's reason, and `run.blocked@v1` when a stage begins to wait for its checks; a stage whose agent declares a sandbox runs in a fresh one through the sandbox port; a stage with `checks` waits for them on the run's pull request through the forge port, which for a forge's issue is the forge's pull request of the branch `osf/<run ID>` or the one the agent states (ADR 0109); one inference gateway per factory with a key per run, kept across restarts and revoked when the run ended (ADR 0108); a person takes over a running stage and hands the run back; runs listed and filtered by state; a failed or cancelled run runs again as a new run, through the API or `work.retry-requested@v1` (ADR 0105) | Temporal, the harness port (ACP), the sandbox, forge and inference ports as adapter programs, Fastify, NATS | OpenHands covers much as one product; stay thin and support it as a harness; Argo and Tekton have no human gates or steering (ADR 0004, 0067, 0068, 0069, 0070, 0071, 0109) | `scripts/workflow/wf/next_action.py` |
 | console | optional | 4 | TS | The factory's web UI and the only server a browser reaches; read-only unless the sign-in proxy names the person or its own sign-in (OpenID Connect or GitHub, roles from `access.yaml`, ADR 0134) does (the target of wave 6, with its own sign-in, secrets, skills and changes as pull requests: [web.md](web.md)) | the foremen's run lists and runs, intake's work items, gatekeeper's gates and `factory.yaml` → HTML pages: runs filtered by state, a run's origin, stages, gates, checks and links to its transcript, trace and Temporal history, the agents' configuration with links to Git, and the self-improvement inbox of observer's open pull requests with their age and review state from the forge port's `prs`, and the cost and scores of the runs from the run records and scores the improvement jobs write; behind a sign-in proxy, forms that submit work, run a run again, steer, cancel, take over and hand back a run, and approve or reject a gate, each in the signed-in person's name; `console doctor --deep` publishes one `doctor.ping@v1` and finds it at the foreman | Astro in middleware mode, rendered on the server (ADR 0132), the design system `@opensoftware/ui` (ADR 0133) with its first island in SolidJS, the work list (ADR 0152), Fastify, the forge port as an adapter program, NATS for the doctor's ping | Temporal's UI shows workflows, not work items or gates; Backstage and Grafana are too large or about metrics (ADR 0072, 0073, 0089, 0118, 0123, 0130) | — |
 
-Plus `contracts` and `testkit` (core, wave 0) and the `open-software-factory` distribution (wave 4). Libraries in
+Plus `contracts` and `testkit` (core, wave 0) and the distribution in `deploy/` (wave 4). Libraries in
 `packages/` hold code that several modules share, without a CLI or state of their own (ADR 0039): `cli` runs the
 commands of a module (ADR 0040), `spec-files` reads feature files and JUnit reports (ADR 0042), `postgres` opens the
 pools and runs the transactions of modules on PostgreSQL (ADR 0082), `factory-source` gives a factory's folder from a
@@ -109,7 +113,7 @@ records, `runSpans`, lives in `contracts` (ADR 0041).
 | Code attribution | Agent Trace | — | trace records |
 | Browser verification | Playwright, Playwright MCP | browser-use, Stagehand | traces, video |
 | Policy | OPA | Cedar | policy files |
-| Agent memory | choose later | Graphiti, mem0, Letta | MCP server |
+| Agent memory | planned: pgvector first ([stack](stack.md#smaller-choices)) | Graphiti, mem0, Letta | MCP server |
 | Dashboards | Grafana | Langfuse dashboards | SQL views |
 | GitHub-only teams | gh-aw | — | factory-spec renders it |
 

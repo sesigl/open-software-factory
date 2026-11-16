@@ -13,7 +13,7 @@ work on. Each choice has an ADR in [`../decisions/`](../decisions/).
 | --- | --- | --- | --- | --- |
 | Languages | TypeScript for every module, port, adapter, the testkit and the checks; Python only for plugins into Python-only tools; no generated clients for other languages | one toolchain; no module edge needs Python | TypeScript + Python (ADR 0002, superseded) | 0009, 0012 |
 | Source of truth | Git | review, versions, rollback | — | — |
-| Operational database | PostgreSQL; SQLite in CLI mode | Temporal, Langfuse, pgvector run on it | — | 0003 |
+| Operational database | PostgreSQL; PGlite for a server on a laptop; files in CLI mode | Temporal, Langfuse, pgvector run on it | — | 0003, 0063 |
 | Analytics | DuckDB locally, PostgreSQL views in server mode, ClickHouse at scale | nearly the same SQL from laptop to large org | ClickHouse everywhere | 0003 |
 | Object storage | S3 API; SeaweedFS self-hosted; local folder in CLI mode | MinIO community edition archived April 2026; SeaweedFS is Apache-2.0 | Garage (AGPL) | 0003 |
 | Events | CloudEvents on NATS JetStream via a Postgres outbox; one stream, a durable consumer per reader | small binary; no lost events, also while a reader is down; a max age and dead letters | webhooks only | 0003, 0085, 0116 |
@@ -52,8 +52,8 @@ publish only the TypeScript package; clients for other languages are not built (
 
 | Concern | Pick |
 | --- | --- |
-| Format and lint | Biome; typescript-eslint only for type-aware rules |
-| Types | `tsc --strict`; Zod or TypeBox at boundaries |
+| Format and lint | Biome |
+| Types | `tsc --strict`; the contracts' `validate` (Ajv with their JSON Schemas) at boundaries |
 | Tests | Vitest |
 | Web pages in tests | happy-dom with Testing Library's queries by role and name, without a browser (`sut.pages`, ADR 0131) |
 | Browser in tests | Playwright's Chromium with axe-core, only for journey and island scenarios (`sut.browser`, ADR 0131) |
@@ -71,16 +71,16 @@ publish only the TypeScript package; clients for other languages are not built (
 | HTTP servers | Fastify |
 | Tool distribution | npm (`npx`), multi-arch container images on GHCR (ADR 0075); `@opensoftware/contracts` on npm |
 | Factory install | Docker Compose (`deploy/compose/`, ADR 0074) and Helm (`deploy/helm/osf/`, ADR 0075) |
-| Supply chain | Sigstore signatures, SLSA provenance, SBOMs, Renovate |
-| CI | GitHub Actions; each tool also ships as a GitHub Action |
+| Supply chain | Sigstore signatures, SLSA provenance and SBOMs for the images; npm provenance once the repository is public |
+| CI | GitHub Actions; gatekeeper, proof and spec-trace also ship as a GitHub Action (`action.yml`) |
 
 ## Install profiles
 
 | Profile | For | Stateful services |
 | --- | --- | --- |
-| Laptop | trying one tool | none: files, SQLite, DuckDB, local folder |
+| Laptop | trying one tool | none: files, PGlite, DuckDB, local folder |
 | Single VM (Compose) | one team | PostgreSQL (with Temporal and pgvector), NATS, Jaeger as trace store; Docker sandboxes |
-| Kubernetes (Helm) | platform teams | managed PostgreSQL, object storage, NATS, Temporal, Langfuse (ClickHouse, Valkey), OpenBao, agent-sandbox |
+| Kubernetes (Helm) | platform teams | PostgreSQL (in the chart or managed), NATS, Temporal, OpenBao, agent-sandbox; planned: object storage, Langfuse (ClickHouse, Valkey) |
 
 ## Smaller choices
 
@@ -89,7 +89,7 @@ publish only the TypeScript package; clients for other languages are not built (
 | Cache and queues for Langfuse | Valkey | Redis changed its license twice |
 | Secrets | OpenBao | Vault moved to the Business Source License |
 | Trace store | Langfuse (full); Jaeger (light, traces only, ADR 0100) | Langfuse brings ClickHouse, Valkey and S3; Arize Phoenix has the Elastic License 2.0 |
-| Agent memory | pgvector first | no extra service |
+| Agent memory | planned: pgvector first; the profile's PostgreSQL image has it, no module uses it yet | no extra service |
 | Gate policies | OPA (Rego) through its CLI | Cedar answers only allow or deny; the factory definition names Rego (ADR 0047) |
 | A server's store on a laptop | PGlite, PostgreSQL in process, in the data folder (intake, ADR 0063) | SQLite would be a second SQL dialect beside PostgreSQL |
 | Web UI | The console as the backend of the browser: pages on the server with Astro in the Node adapter's middleware mode behind Fastify, templates without logic and the design system `@opensoftware/ui`, SolidJS islands when a page needs one (ADR 0130, ADR 0132, ADR 0133, [web.md](web.md)); Preact with htm and Pico CSS (ADR 0072) are gone since T-60 | An API gateway or module APIs open to the browser put the tokens and the session in the browser or in one more service; a single-page app needs a browser in every test |

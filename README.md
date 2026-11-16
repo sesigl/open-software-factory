@@ -7,9 +7,11 @@ improving itself over time.
 Each tool solves one problem on its own and connects to the others only through open formats. Where a good
 open-source project already exists, the factory adopts it and builds only the adapter.
 
-> Status: **between phase 2 and phase 3.** Every tool below is built, tested and released on npm, and this
-> repository's CI uses them on its own pull requests. The factory does not yet implement this repository's issues on
-> its own: [`TODO.md`](TODO.md) wave 5 lists what a trustworthy v1 still needs.
+> Status: **phase 2 is done; phase 3 has not started.** Every tool below is built, tested and released on npm, and
+> this repository's CI uses them on its own pull requests. A first version of the factory and its UI with sign-in,
+> secrets and skills are built (waves 5 and 6, now in [`docs/history/`](docs/history/todo-waves-0-6.md)). The factory
+> does not yet implement this repository's issues on its own: [`TODO.md`](TODO.md) wave 7 lists the foundation it
+> needs first.
 
 ## Run a factory
 
@@ -23,7 +25,7 @@ On Kubernetes, the [Helm chart](deploy/README.md#helm-chart) installs the same f
 | You want to | Read |
 | --- | --- |
 | Understand what a software factory is and why | [`docs/vision/talk-analysis.md`](docs/vision/talk-analysis.md) |
-| See the requirements of the whole factory | [`docs/vision/software-factory.feature`](docs/vision/software-factory.feature) (82 scenarios) |
+| See the requirements of the whole factory | [`docs/vision/software-factory.feature`](docs/vision/software-factory.feature) (88 scenarios: 74 implemented, 14 planned) |
 | Know the principles every decision follows | [`docs/principles.md`](docs/principles.md) |
 | See the tools and how they connect | [`docs/architecture/components.md`](docs/architecture/components.md) |
 | Understand adapters, factory-as-code, loops and protocols | [`docs/architecture/internals.md`](docs/architecture/internals.md) |
@@ -47,9 +49,10 @@ On Kubernetes, the [Helm chart](deploy/README.md#helm-chart) installs the same f
 | `taskcapture` | Private benchmarks from merged pull requests, routing rules from results | optional |
 | `observer` | Repeated failures become reviewed pull requests to the factory | optional |
 | `intake` | One inbox for work from chat, trackers, forges and monitoring; Factory MCP server | optional |
+| `console` | The factory's web UI: runs, gates, the self-improvement inbox, sign-in, secrets and skills; a change it makes is a pull request | optional |
 
-Plus `contracts` and `testkit` (core), adapters per port, and the `open-software-factory` distribution
-(Docker Compose and Helm).
+Plus `contracts` and `testkit` (core), the adapters of six ports, the shared libraries in `packages/`, and the
+distribution in `deploy/` (Docker Compose and Helm).
 
 ## Our own numbers
 

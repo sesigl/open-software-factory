@@ -6,8 +6,8 @@ covers: [modules/console/**]
 
 The console is the factory's web UI and the backend of the browser (ADR 0130). A person reads the runs, signs in,
 stores secrets, gives agents skills and changes the factory there. Git stays the source of truth: the UI shows the
-factory and proposes a change as a pull request (P3). This page describes the target of wave 6 of `TODO.md`; each
-item of the wave says which part it builds.
+factory and proposes a change as a pull request (P3). This page describes the target of wave 6, whose items are in
+[`docs/history/todo-waves-0-6.md`](../history/todo-waves-0-6.md); each item of the wave says which part it builds.
 
 ## How the parts connect
 
