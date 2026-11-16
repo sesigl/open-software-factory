@@ -636,6 +636,31 @@ Feature: Repository checks
     Then the command exits with code 1
     And the output contains "AFFECTED modules/demo/system-tests/SCN-DEMO-001.test.ts:3 reads "../../other/features/a.feature" outside its package: declare the package or list the file in globalDependencies of turbo.json"
 
+  @id=SCN-REPO-188 @status=implemented
+  Scenario: AFFECTED rejects a system test that takes a folder of the repository that its package does not declare
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And "modules/demo/system-tests/SCN-DEMO-001.test.ts" takes the folder "deploy/compose" with "fakes.fromRepository"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED modules/demo/system-tests/SCN-DEMO-001.test.ts:3 reads "deploy/compose" outside its package: declare the package, list the path in the inputs of test:system in modules/demo/turbo.json or in globalDependencies of turbo.json"
+
+  @id=SCN-REPO-189 @status=implemented
+  Scenario: AFFECTED accepts a folder of the repository that the package's turbo.json adds to the inputs of its system tests
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And "modules/demo/system-tests/SCN-DEMO-001.test.ts" takes the folder "deploy/compose" with "fakes.fromRepository"
+    And "modules/demo/turbo.json" gives "test:system" the inputs "$TURBO_EXTENDS$" and "$TURBO_ROOT$/deploy/compose/**"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 0
+    And the output contains "AFFECTED ok"
+
+  @id=SCN-REPO-190 @status=implemented
+  Scenario: AFFECTED rejects a script of the system tests that reads a file outside its package
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And the script "test:system" of "modules/demo/package.json" first runs "node scripts/images.ts", which reads "deploy/images/Dockerfile"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED modules/demo/scripts/images.ts:2 reads "deploy/images/Dockerfile" outside its package: declare the package, list the path in the inputs of test:system in modules/demo/turbo.json or in globalDependencies of turbo.json"
+
   @id=SCN-REPO-072 @status=deprecated
   Scenario: AFFECTED rejects a package with system tests that no tests job of CI runs
     Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081

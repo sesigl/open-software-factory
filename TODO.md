@@ -2119,10 +2119,14 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   static part of BOUNDARY-ENV join the one lint of the tests, and BOUNDARY-STATIC, ISOLATION and ARCH read the
   files in one pass. Their scenarios are deprecated with their tests. `docs/quality/checks.md` and `AGENTS.md` follow.
 
-### [ ] T-78 · AFFECTED sees every folder a suite reads (P2)
+### [x] T-78 · AFFECTED sees every folder a suite reads (P2)
 
 - **Build:** `fakes.fromRepository(...)` and the folders `e2e/scripts/` reads count as inputs; the scenarios that
   pin lines of the Makefile word for word are deprecated.
+- **Done:** `SCN-REPO-188` to `-190`: a folder of `fakes.fromRepository("<path>")` and a path from the root that a
+  script of `test:system` reads must be in a declared package, a `$TURBO_ROOT$/` input of the package's `turbo.json`
+  or `globalDependencies`; `e2e/turbo.json` and `tools/turbo.json` list theirs. The Makefile scenarios stay
+  (`SCN-REPO-083`, `-084`, `-180`): each guards the hash of ADR 0081 and ADR 0154, which a change would break silently.
 
 ### [ ] T-79 · small suites share a runner (P2)
 

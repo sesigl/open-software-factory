@@ -3,7 +3,7 @@
 // complete: the workspace packages a system test starts, imports or reads, the repository-wide files, the suite of
 // .github/test-suites.yml that runs each package, the jobs of verify.yml that plan, run and cache the suites (ADR 0094),
 // where the suite writes its results, and that only pull requests use the cache.
-import { dirname, join, normalize, relative } from "node:path";
+import { dirname, join, normalize } from "node:path";
 import picomatch from "picomatch";
 import { Node, Project } from "ts-morph";
 import { parse } from "yaml";
@@ -64,7 +64,8 @@ function declarations(repo: Repo, unit: Unit, units: Unit[]): Finding[] {
   const findings: Finding[] = [];
   const manifest = `${unit.dir}/package.json`;
   const known = (name: string) => name === unit.name || unit.declared.has(name);
-  const globals = globalDependencies(repo);
+  const covered = coverage(repo, unit, units);
+  const outside = `outside its package: declare the package, list the path in the inputs of test:system in ${unit.dir}/${TURBO} or in globalDependencies of ${TURBO}`;
   for (const file of repo.match(`${unit.dir}/system-tests/**/*.{ts,mts,js,mjs}`)) {
     const source = new Project({ useInMemoryFileSystem: true }).createSourceFile(`/${file}`, repo.read(file));
     source.forEachDescendant((node) => {
@@ -93,14 +94,16 @@ function declarations(repo: Repo, unit: Unit, units: Unit[]): Finding[] {
         if (!known(name)) findings.push(finding(file, line, `imports "${name}", which ${manifest} does not declare`));
         return;
       }
+      // `fakes.fromRepository("<folder>")` reads a folder of the repository by its path from the root.
+      if (isFromRepository(parent, node)) {
+        if (!covered(text)) findings.push(finding(file, line, `reads "${text}" ${outside}`));
+        return;
+      }
       if (!text.startsWith("../") || !(imported || isFileRelative(node))) return;
       const target = normalize(join(dirname(file), text))
         .split("\\")
         .join("/");
-      if (!relative(unit.dir, target).startsWith("..")) return;
-      const owner = units.find((candidate) => target === candidate.dir || target.startsWith(`${candidate.dir}/`));
-      if (owner && known(owner.name)) return;
-      if (globals.some((global) => target === global || picomatch(global)(target))) return;
+      if (covered(target)) return;
       findings.push(
         finding(
           file,
@@ -108,6 +111,15 @@ function declarations(repo: Repo, unit: Unit, units: Unit[]): Finding[] {
           `reads "${text}" outside its package: declare the package or list the file in globalDependencies of turbo.json`,
         ),
       );
+    });
+  }
+  for (const script of testScripts(repo, unit)) {
+    const source = new Project({ useInMemoryFileSystem: true }).createSourceFile(`/${script}`, repo.read(script));
+    source.forEachDescendant((node) => {
+      if (!Node.isStringLiteral(node) && !Node.isNoSubstitutionTemplateLiteral(node)) return;
+      const text = node.getLiteralText();
+      if (!isRootPath(repo, text) || covered(text)) return;
+      findings.push(finding(script, node.getStartLineNumber(), `reads "${text}" ${outside}`));
     });
   }
   const config = repo.match(`${unit.dir}/vitest.config.{ts,mts,js,mjs}`)[0];
@@ -122,6 +134,53 @@ function declarations(repo: Repo, unit: Unit, units: Unit[]): Finding[] {
   }
   return findings;
 }
+
+/**
+ * Whether the hash of the unit's system tests covers a path from the root: the unit or a package it declares holds
+ * it, a `$TURBO_ROOT$/` input of test:system in the unit's own turbo.json matches it, or globalDependencies do.
+ */
+function coverage(repo: Repo, unit: Unit, units: Unit[]): (path: string) => boolean {
+  const globals = globalDependencies(repo);
+  const own = `${unit.dir}/${TURBO}`;
+  const task = repo.exists(own)
+    ? (JSON.parse(repo.read(own)) as { tasks?: Record<string, { inputs?: string[] }> }).tasks?.["test:system"]
+    : undefined;
+  const root = (prefix: string) =>
+    (task?.inputs ?? [])
+      .filter((input) => input.startsWith(`${prefix}$TURBO_ROOT$/`))
+      .map((input) => input.slice(`${prefix}$TURBO_ROOT$/`.length));
+  const matches = (patterns: string[], path: string) =>
+    patterns.some((pattern) => path === pattern || picomatch(pattern, { dot: true })(path));
+  const [inputs, excluded] = [root(""), root("!")];
+  return (path) => {
+    const owner = units.find((candidate) => path === candidate.dir || path.startsWith(`${candidate.dir}/`));
+    if (owner && (owner.name === unit.name || unit.declared.has(owner.name))) return true;
+    return matches(globals, path) || (matches(inputs, path) && !matches(excluded, path));
+  };
+}
+
+const isFromRepository = (call: Node | undefined, argument: Node): boolean =>
+  Node.isCallExpression(call) &&
+  call.getExpression().getText().endsWith(".fromRepository") &&
+  call.getArguments()[0] === argument;
+
+/** The files of the unit that its test:system script runs with `node <file>` before or after the tests. */
+function testScripts(repo: Repo, unit: Unit): string[] {
+  const script = (JSON.parse(repo.read(`${unit.dir}/package.json`)) as { scripts?: Record<string, string> }).scripts?.[
+    "test:system"
+  ];
+  return [...(script ?? "").matchAll(/\bnode\s+(?:--\S+\s+)*([^\s&|;]+\.[cm]?[jt]s)\b/g)]
+    .map((match) =>
+      normalize(join(unit.dir, match[1] as string))
+        .split("\\")
+        .join("/"),
+    )
+    .filter((file) => !file.startsWith("..") && repo.exists(file));
+}
+
+/** A literal of a script that names a file or folder of the repository by its path from the root, like `deploy/x`. */
+const isRootPath = (repo: Repo, text: string): boolean =>
+  /^[\w@-][\w.@-]*\/[\w./@-]*$/.test(text) && !text.includes("..") && repo.exists(text);
 
 const isDynamicImport = (node: Node | undefined): boolean =>
   Node.isCallExpression(node) && node.getExpression().getText() === "import";

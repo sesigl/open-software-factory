@@ -315,3 +315,6 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-185 | implemented | BUDGET rejects a budget section of more than three lines |
 | SCN-REPO-186 | implemented | collect-reports copies the wall time of each package's run to the reports folder of the repository |
 | SCN-REPO-187 | implemented | PROFILE rejects a deploy package that does not declare a package that the Compose profile's images install |
+| SCN-REPO-188 | implemented | AFFECTED rejects a system test that takes a folder of the repository that its package does not declare |
+| SCN-REPO-189 | implemented | AFFECTED accepts a folder of the repository that the package's turbo.json adds to the inputs of its system tests |
+| SCN-REPO-190 | implemented | AFFECTED rejects a script of the system tests that reads a file outside its package |
