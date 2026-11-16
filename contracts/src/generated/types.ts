@@ -127,7 +127,10 @@ export type paths = {
          */
         get: operations["ForemanApi_listRuns"];
         put?: never;
-        /** @description Start a run of the factory's workflow for a work item. The same work item again answers its newest run. */
+        /**
+         * @description Start a run of the factory's workflow for a work item. The same work item again answers its newest run. 503 when
+         *     the factory's Git remote cannot be fetched now.
+         */
         post: operations["ForemanApi_startRun"];
         delete?: never;
         options?: never;
@@ -163,7 +166,8 @@ export type paths = {
         put?: never;
         /**
          * @description Run a run that failed or was cancelled again, as a new run that names it (ADR 0105). With `FOREMAN_PERSON_KEYS`, a
-         *     `by` of kind `person` needs the person's proof in `OSF-Person`, as for a signal (ADR 0151).
+         *     `by` of kind `person` needs the person's proof in `OSF-Person`, as for a signal (ADR 0151). 503 also when the
+         *     factory's Git remote cannot be fetched now.
          */
         post: operations["ForemanApi_retryRun"];
         delete?: never;
@@ -2015,6 +2019,15 @@ export interface operations {
             };
             /** @description Access is unauthorized. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Service unavailable. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

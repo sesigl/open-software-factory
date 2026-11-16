@@ -61,6 +61,14 @@ Feature: Factory definition
     Then the answer has the status 400 and a problem that says "commit the changed files factory.yaml"
     And the scripted harness got no session
 
+  @id=SCN-FORE-183 @status=implemented
+  Scenario: A run does not start while the factory's Git remote cannot be fetched, and the API answers 503
+    Given "foreman serve" runs with "FOREMAN_FACTORY" set to "git+<url>" of the README's "factory.yaml"
+    And the Git remote is gone
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then the answer has the status 503 and a problem that says "FOREMAN_FACTORY: cannot fetch HEAD of file://"
+    And the scripted harness got no session
+
   @id=SCN-FORE-133 @status=implemented
   Scenario: The run's view names each adapter's version and the fallback's command line
     Given "foreman serve" runs the README's "factory.yaml" with "github" at "^0" under "providers.forge" and no "FOREMAN_FORGES"

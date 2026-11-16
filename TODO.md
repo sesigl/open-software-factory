@@ -2020,7 +2020,7 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 - **Done when:** scenarios prove a slow create and a slow copy-out send the prompt once, and a cancel during create
   stops the stage.
 
-### [ ] T-67 · no work is lost when the factory cannot be read for a moment (P0)
+### [x] T-67 · no work is lost when the factory cannot be read for a moment (P0)
 
 - **Problem:** a failed fetch of the factory's remote or a changed folder is a usage error, which the consumer
   acknowledges: the event is gone and no run exists (against SCN-FORE-082). After a fatal error at its start,
