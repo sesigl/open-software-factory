@@ -3,6 +3,8 @@ Feature: Serve the gate API
   "gatekeeper serve" takes requests over HTTP, asks in Slack with buttons, decides on Slack's events and button
   presses without polling, and publishes its events through a PostgreSQL outbox (ADR 0048). With the forge token, it
   asks on the pull request that a request links, and reads the comments of the pull request at an interval (ADR 0080).
+  The forge is configuration: "GATEKEEPER_FORGE_URL", or GitHub without it. A link to another address is no pull request
+  of a gate, and the server never calls it (T-63).
 
   @id=SCN-GATE-041 @status=implemented @realizes=SCN-FACTORY-ORCH-003
   Scenario: A program asks for approval over HTTP and the server asks in Slack with buttons
@@ -128,7 +130,7 @@ Feature: Serve the gate API
     Then the command exits with code 2
     And the error output says "set GATEKEEPER_DATABASE_URL"
 
-  @id=SCN-GATE-063 @status=implemented
+  @id=SCN-GATE-063 @status=deprecated
   Scenario: A request that links a pull request is asked in a comment on the pull request
     Given the server runs with "GATEKEEPER_FORGE_TOKEN" and without a Slack channel
     When a program posts a request that links the pull request "acme/web#12" to "/v1/gates"
@@ -228,3 +230,36 @@ Feature: Serve the gate API
     Then the answers have the statuses 400, 400, 404 and 409
     And their problems say 'the decision: the field "by" must name the person', 'the decision: the field "decision" must be approved or rejected', "the server has no gate g0000000000000000" and "the gate <gate> is rejected"
     And "/v1/gates/<gate>" shows a record rejected by "slack:U0ADA" without a reason
+
+  @id=SCN-GATE-107 @status=implemented @replaces=SCN-GATE-063
+  Scenario: A request that links a pull request of the server's forge is asked in a comment on the pull request
+    Given the server runs with "GATEKEEPER_FORGE_TOKEN" and "GATEKEEPER_FORGE_URL", and without a Slack channel
+    When a program posts a request that links the pull request "acme/web#12" of that forge to "/v1/gates"
+    Then the answer has the status 201 and a gate in the state "pending" for the channel of the pull request's link
+    And the pull request has a comment that asks "maintainers" to approve with "/approve"
+    And the head commit of the pull request has the commit status "gatekeeper" with the state "pending"
+
+  @id=SCN-GATE-108 @status=implemented
+  Scenario: A pull request link to another forge is never called, and without Slack the request gets the status 400
+    Given the server runs with "GATEKEEPER_FORGE_TOKEN" and "GATEKEEPER_FORGE_URL", and without a Slack channel
+    And another forge, at another address, has the pull request "acme/web#12" with an "/approve" of "github:sesigl"
+    When a program posts a request that links only the pull request "acme/web#12" of the other forge to "/v1/gates"
+    Then the answer has the status 400 and a problem whose detail says "the request links no pull request on" the address of "GATEKEEPER_FORGE_URL"
+    And neither forge got a call
+
+  @id=SCN-GATE-109 @status=implemented
+  Scenario: A pull request link to another forge does not decide a gate: the server asks in Slack
+    Given the server runs with "GATEKEEPER_FORGE_TOKEN", "GATEKEEPER_FORGE_URL" and the channel "slack:C0GATES"
+    And another forge, at another address, has the pull request "acme/web#12" with an "/approve" of "github:sesigl"
+    When a program posts a request that links only the pull request "acme/web#12" of the other forge to "/v1/gates"
+    Then the answer has the status 201 and a gate in the state "pending" for the channel "slack:C0GATES"
+    And the Slack channel "C0GATES" has a message that asks "maintainers" with the buttons "Approve" and "Reject"
+    And neither forge got a call
+
+  @id=SCN-GATE-110 @status=implemented
+  Scenario: Without "GATEKEEPER_FORGE_URL" the server's forge is GitHub, and a pull request link to another forge is never called
+    Given the server runs with "GATEKEEPER_FORGE_TOKEN", without "GATEKEEPER_FORGE_URL" and without a Slack channel
+    And another forge, at another address, has the pull request "acme/web#12" with an "/approve" of "github:sesigl"
+    When a program posts a request that links only the pull request "acme/web#12" of the other forge to "/v1/gates"
+    Then the answer has the status 400 and a problem whose detail says "the request links no pull request on https://github.com"
+    And the other forge got no call

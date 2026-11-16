@@ -40,6 +40,13 @@ Feature: Gates
     When a program posts the README's "work.json" with the origin "https://github.com/tester/web/issues/3" to "/v1/runs"
     Then gatekeeper received a request for the stage "implement" with the links "Origin" and "Pull request", in this order
 
+  @id=SCN-FORE-178 @status=implemented
+  Scenario: A gate request does not link a pull request outside the work item's repository
+    Given the README's factory with a gate before the stage "implement", whose "plan" turn replies with the link "https://forge.example/tester/web/pull/7"
+    And gatekeeper answers a request with the gate "g0a1b2c3d4e5f6a7b"
+    When a program posts the README's "work.json" with the origin "https://github.com/tester/web/issues/3" to "/v1/runs"
+    Then gatekeeper received a request for the stage "implement" with only the link "Origin"
+
   @id=SCN-FORE-115 @status=implemented
   Scenario: A gate without a decision after the foreman's limit ends as expired
     Given a run of the README's factory with "FOREMAN_GATE_TIMEOUT_MS" "1000" waits at the gate "g0a1b2c3d4e5f6a7b" before the stage "implement", whose policy names no "expire_after"

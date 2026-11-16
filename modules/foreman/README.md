@@ -504,7 +504,9 @@ needs credentials that Git on the foreman's host has, and a clone that fails fai
   request; a failing one fails the run ([Checks](#checks)).
 - **Gates.** Before a stage with a `gate` starts, the foreman asks gatekeeper at `FOREMAN_GATEKEEPER_URL`
   ([gatekeeper](../gatekeeper/README.md#server)): the work item's ID, the stage, the summary `<title>: start the
-  stage <stage>`, the origin's link and the run's pull request as `links` (`Origin`, `Pull request`), and the run's ID
+  stage <stage>`, the origin's link and the run's pull request as `links` (`Origin`, `Pull request`; the pull
+  request only when it is of the origin's repository, so a link the agent wrote to another forge never reaches the
+  gate), and the run's ID
   and the gate's `policy` and `approvers` in `change`, so each run's request is a new one. The run is `blocked` until a
   `gate.decided@v1` for that gate arrives on NATS, and the stage shows since when it waits as `waitingSince`.
   `approved` starts the stage; `rejected` or `expired` fails the run. Without a decision after
@@ -799,3 +801,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-175 | implemented | A retry by a person needs the person's proof, and the new run names the person the proof names |
 | SCN-FORE-176 | implemented | Without "FOREMAN_PERSON_KEYS" the server warns once that the API token names any person, and a malformed setting stops it |
 | SCN-FORE-177 | implemented | A signal or a retry whose "by" has a kind other than "person" or "trigger" is refused with 400 before the run is looked up |
+| SCN-FORE-178 | implemented | A gate request does not link a pull request outside the work item's repository |

@@ -187,6 +187,7 @@ and names it, like `set FOREMAN_API_TOKEN in .env`.
 | `GATEKEEPER_SLACK_TOKEN` | | With a Slack channel: the bot token of gatekeeper's Slack app. |
 | `GATEKEEPER_SLACK_SIGNING_SECRET` | | With a Slack channel: the signing secret of gatekeeper's Slack app. |
 | `GATEKEEPER_FORGE_TOKEN` | | A token that may comment on pull requests, set their commit status and read their checks (on GitHub: `Checks: read`, since the forge adapter's `pr` lists the check runs). Set: a gate request that links a pull request is asked on it, and decided by `/approve` or `/reject` comments. |
+| `GATEKEEPER_FORGE_URL` | GitHub's API | The forge's API where gatekeeper asks on pull requests, like `https://ghe.example/api/v3`. A request's pull request link counts only on this forge's origin (`https://github.com` for GitHub's API); gatekeeper calls no other host with its token. |
 | `FOREMAN_FORGE_TOKEN` | | A token that may read pull requests and their checks (on GitHub: commit statuses and `Checks: read`), for the verify stage's check `verify`. |
 | `CLAUDE_CODE_OAUTH_TOKEN` | | A token of `claude setup-token`. Set: Claude Code runs on that person's subscription, and its calls still go through `litellm` with the run's key ([ADR 0080](../docs/decisions/0080-dogfood-on-a-subscription.md)). |
 | `GH_TOKEN` | | A token with which the agents clone, push and open pull requests on github.com with `gh` and Git. |
@@ -553,6 +554,7 @@ are not used then.
 | `secrets.factoryToken` | | With a repository: the forge token of that repository only, the key `factory-token`; see [A factory on a forge](#a-factory-on-a-forge) for its permissions. |
 | `console.forgeAdapter`, `console.forgeUrl` | `forge-github`, the adapter's own | The console's forge adapter and its forge's URL, for the inbox and the factory's repository, like `forge-forgejo` and `https://codeberg.org`. |
 | `gatekeeper.slackChannel` | `C0GATES` | The Slack channel where gatekeeper asks, with the Slack secrets. With `existingSecret`, empty turns Slack off. |
+| `gatekeeper.forgeUrl` | GitHub's API | The forge's API where gatekeeper asks on pull requests, like `https://ghe.example/api/v3`; a pull request link of a request counts only on this forge. |
 | `foreman.harnesses`, `foreman.forges` | claude-code; github and forgejo | foreman's `FOREMAN_HARNESSES` and `FOREMAN_FORGES`. |
 | `foreman.persistence.size` | `1Gi` | The volume of the runs' working folders. |
 | `console.temporalUrl`, `console.links` | | The Temporal UI and the dashboards the console links, like `Langfuse=https://langfuse.acme.dev`. |

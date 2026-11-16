@@ -11,7 +11,7 @@ import { opaVersion } from "../adapters/opa.ts";
 import { openStore } from "../adapters/postgres.ts";
 import { receive } from "../adapters/slack.ts";
 import { EXAMPLE_MEMBER, groupsWithoutPeople } from "../domain/policy.ts";
-import { pullRequestOf } from "../domain/pull-request.ts";
+import { forgeOrigin, GITHUB_API, pullRequestOf } from "../domain/pull-request.ts";
 import { signingKeyOf } from "../domain/record.ts";
 import { parseDecision, parseRequest } from "../domain/request.ts";
 import { viewOf } from "../domain/stored.ts";
@@ -84,6 +84,9 @@ export async function serve(options: ServeOptions) {
   const opa = env.GATEKEEPER_OPA || "opa";
   const nats = env.GATEKEEPER_NATS_URL || undefined;
   const slack = options.channel === undefined ? undefined : slackOf(options.channel, env);
+  // The forge is configuration: the token goes only there, never to a host that a request names (T-63).
+  const forgeUrl = env.GATEKEEPER_FORGE_URL || GITHUB_API;
+  const origin = forgeOrigin(forgeUrl);
   const service = gates(
     {
       policy: options.policy,
@@ -91,7 +94,9 @@ export async function serve(options: ServeOptions) {
       groupsFile: options.groups,
       groups,
       slack,
-      forge: pullRequests ? (pr) => forgeFor(pr, env) : undefined,
+      forge: pullRequests
+        ? { origin, reach: (pr) => forgeFor(pr, { ...env, GATEKEEPER_FORGE_URL: forgeUrl }) }
+        : undefined,
       opa,
       signingKey,
       nats,

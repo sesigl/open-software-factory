@@ -37,10 +37,25 @@ export function pullRequestOf(url: string): PullRequest | undefined {
   };
 }
 
-/** The first link of a request that is a pull request: the server asks there (ADR 0080). */
-export function pullRequestIn(links: Link[]): PullRequest | undefined {
+/** GitHub's API, the forge of the server when GATEKEEPER_FORGE_URL names none. */
+export const GITHUB_API = "https://api.github.com";
+
+/** The origin of a forge's pull request links: the forge URL's own, and github.com for GitHub's API. */
+export function forgeOrigin(forgeUrl: string): string {
+  const { host, origin } = new URL(forgeUrl);
+  return host === "api.github.com" ? "https://github.com" : origin;
+}
+
+/** The pull request of the URL when it is on the forge of this origin; a link elsewhere is none (T-63). */
+export function pullRequestOn(origin: string, url: string): PullRequest | undefined {
+  const pr = pullRequestOf(url);
+  return pr && new URL(url).origin === origin ? pr : undefined;
+}
+
+/** The first link of a request that is a pull request on the server's forge: the server asks there (ADR 0080). */
+export function pullRequestIn(origin: string, links: Link[]): PullRequest | undefined {
   for (const link of links) {
-    const pr = pullRequestOf(link.url);
+    const pr = pullRequestOn(origin, link.url);
     if (pr) return pr;
   }
   return undefined;

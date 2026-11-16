@@ -2,7 +2,7 @@
 // and the typed client.
 import type { GateRequest, paths } from "@opensoftware/contracts";
 import type { Fakes, Sut } from "@opensoftware/testkit";
-import { forge, forgeEnv, PR, putMergeFiles, putReadme, readmeFiles } from "./gate.ts";
+import { forge, forgeEnv, putMergeFiles, putReadme, readmeFiles } from "./gate.ts";
 
 export const SERVE = ["serve", "--policy", "policy.rego", "--groups", "groups.json", "--channel", "slack:C0GATES"];
 export const API_TOKEN = "testkit-api-token";
@@ -74,8 +74,11 @@ export async function askedServer(
 
 export const BRANCH = "observer/research-skill-used-1a2b3c4d";
 
-/** A request of the stage "implement" whose links are these, by default the pull request acme/web#12. */
-export const prRequest = (links = [{ url: PR, title: "Pull request" }]): GateRequest => ({
+/** The link of the pull request acme/web#12 on the forge at this URL: the server's forge, or another one. */
+export const pullRequestAt = (forgeUrl: string): string => `${forgeUrl}/acme/web/pull/12`;
+
+/** A request of the stage "implement" whose links are these. */
+export const prRequest = (links: { url: string; title: string }[]): GateRequest => ({
   workItem: "https://github.com/acme/web/issues/7",
   stage: "implement",
   summary: "Implement the research skill",
@@ -83,18 +86,32 @@ export const prRequest = (links = [{ url: PR, title: "Pull request" }]): GateReq
   change: { head: BRANCH },
 });
 
-/** Starts the server with the forge token, without a Slack channel, on a new database and the scripted forge. */
-export async function prServing(sut: Sut, fakes: Fakes, env: Record<string, string> = {}) {
+/** A request of the stage "implement" that links the pull request at this URL. */
+export const linking = (url: string): GateRequest => prRequest([{ url, title: "Pull request" }]);
+
+/**
+ * Starts the server with the forge token, without a Slack channel unless `args` names one, on a new database and the
+ * scripted forge as GATEKEEPER_FORGE_URL, without the variables in `without`. `pr` is the link of acme/web#12 on that
+ * forge.
+ */
+export async function prServing(
+  sut: Sut,
+  fakes: Fakes,
+  env: Record<string, string> = {},
+  options: { args?: string[]; without?: string[] } = {},
+) {
   const [http, db] = await Promise.all([forge(fakes, BRANCH), fakes.postgres()]);
   await putMergeFiles(sut);
-  await sut.http.start(["serve", "--policy", "merge.rego", "--groups", "groups.json"], {
-    env: {
-      ...forgeEnv(sut, http),
-      GATEKEEPER_DATABASE_URL: db.url,
-      GATEKEEPER_API_TOKEN: API_TOKEN,
-      GATEKEEPER_POLL_MS: "20",
-      ...env,
-    },
+  const all: Record<string, string> = {
+    ...forgeEnv(sut, http),
+    GATEKEEPER_DATABASE_URL: db.url,
+    GATEKEEPER_API_TOKEN: API_TOKEN,
+    GATEKEEPER_POLL_MS: "20",
+    ...env,
+  };
+  for (const name of options.without ?? []) delete all[name];
+  await sut.http.start(["serve", "--policy", "merge.rego", "--groups", "groups.json", ...(options.args ?? [])], {
+    env: all,
   });
   const api = () => sut.http.client<paths>();
   const gate = gateOf(sut);
@@ -102,6 +119,7 @@ export async function prServing(sut: Sut, fakes: Fakes, env: Record<string, stri
     http,
     db,
     gate,
+    pr: pullRequestAt(http.url),
     post: (body: GateRequest) => api().POST("/v1/gates", { body, headers: AUTH }),
     /** Reads the gate until the server decided it. */
     async decided(id: string) {
@@ -111,10 +129,14 @@ export async function prServing(sut: Sut, fakes: Fakes, env: Record<string, stri
   };
 }
 
+/** Another scripted forge, at another address than the server's, with acme/web#12 and an "/approve" of sesigl. */
+export const otherForge = (fakes: Fakes) =>
+  forge(fakes, BRANCH, [{ id: 901, body: "/approve", login: "sesigl", at: "2026-01-01T00:10:00Z" }]);
+
 /** The server asked for approval in a comment on the pull request; the forge lists that comment from then on. */
 export async function askedOnPullRequest(sut: Sut, fakes: Fakes, env: Record<string, string> = {}) {
   const server = await prServing(sut, fakes, env);
-  const { data, response } = await server.post(prRequest());
+  const { data, response } = await server.post(linking(server.pr));
   const asked = server.http.received().find((call) => call.method === "POST" && call.path.endsWith("/comments"));
   if (response.status !== 201 || !data || !asked) throw new Error(`POST /v1/gates answered ${response.status}`);
   const body = (asked.body as { body: string }).body;

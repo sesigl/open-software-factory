@@ -51,6 +51,10 @@ spec:
               value: {{ include "osf.natsUrl" . | quote }}
             - name: GATEKEEPER_FORGE_ADAPTER
               value: {{ .Values.gatekeeper.forgeAdapter | quote }}
+            {{- with .Values.gatekeeper.forgeUrl }}
+            - name: GATEKEEPER_FORGE_URL
+              value: {{ . | quote }}
+            {{- end }}
             {{- if .Values.console.signIn.provider }}
             {{- include "osf.personKeys" (dict "root" . "name" "GATEKEEPER_PERSON_KEYS") | nindent 12 }}
             {{- end }}
