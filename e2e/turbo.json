@@ -1,0 +1,14 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "test:system": {
+      "inputs": [
+        "$TURBO_EXTENDS$",
+        "$TURBO_ROOT$/deploy/compose/compose.yaml",
+        "$TURBO_ROOT$/deploy/compose/litellm/**",
+        "$TURBO_ROOT$/deploy/images/**"
+      ]
+    }
+  }
+}

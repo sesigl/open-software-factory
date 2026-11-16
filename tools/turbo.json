@@ -1,0 +1,15 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "test:system": {
+      "inputs": [
+        "$TURBO_EXTENDS$",
+        "$TURBO_ROOT$/modules/_template/**",
+        "!$TURBO_ROOT$/modules/_template/node_modules/**",
+        "$TURBO_ROOT$/docs/decisions/**",
+        "$TURBO_ROOT$/docs/reference/**"
+      ]
+    }
+  }
+}
