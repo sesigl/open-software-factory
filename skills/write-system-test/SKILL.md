@@ -61,7 +61,15 @@ is tested with this same testkit through its CLI or API.
   or a fake, start module processes only through `sut`, inside the scenario, and never wait for time to pass. The
   rules are under "Test speed" in `docs/quality/testing-strategy.md`.
 - Every `given`, `when` and `then` label repeats the scenario's step text exactly. `And` steps use the keyword
-  of the step before them.
+  of the step before them. When the wording of an implemented scenario changes in place, change the labels in the
+  same commit (ADR 0157).
+- A Scenario Outline has one test for all its rows; a parameter `<name>` in a step matches any value in the label.
+  The testkit's examples form of `scenario()` comes with T-84.
+- A scenario tagged `@shared=<name>` keeps its own `scenario()` call and steps, and uses the group's one start
+  instead of its own (the testkit's API for it comes with T-82). It only reads the shared system, or works under a
+  name of its own: a project, a namespace, a key.
+- A `then` checks the fact the step states. When the step names a field, assert on that field, not on the whole
+  message.
 - Each `then` must assert on something the module produced. An assertion on a value the test created itself
   does not count.
 - Run the test before you implement: it must fail, and the failure must be about the missing behavior, not a

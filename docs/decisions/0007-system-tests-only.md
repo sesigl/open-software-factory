@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; amended by 0157 (shared starts, Outlines, wording in place)
 date: 2026-10-18
 ---
 

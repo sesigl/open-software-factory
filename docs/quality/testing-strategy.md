@@ -93,7 +93,7 @@ and takes the place of REACH for them.
 modules/proof/
   README.md            how to use; generated sections
   AGENTS.md            public surface, exceptions, budget, scenario prefix
-  features/            requirements (implemented steps never change; replace them)
+  features/            requirements (implemented steps change only in wording; replace changed behavior)
   system-tests/        one file per scenario: SCN-PROOF-004.test.ts
   src/                 private
   adapters/github/     runs ports/forge @conformance scenarios
@@ -106,6 +106,14 @@ docs/vision/           factory-level requirements; source for module scenarios, 
 
 - One Gherkin scenario per behavior, with `@id=SCN-<PREFIX>-NNN` and `@status`.
 - Exactly one system test per implemented scenario; `given`, `when`, `then` labels repeat the steps.
+- A family of scenarios with the same steps, where only the literals differ ("one input, one message"), is one
+  Scenario Outline: one ID, one test, the cases as rows of `Examples` (ADR 0157).
+- The text of an implemented scenario may change in place when its behavior stays the same, with the test's labels
+  in the same commit. Changed or removed behavior is a new scenario with `@replaces=` and a deprecated old one.
+- A `Then` states the fact a user relies on (`Then the error names the missing field "token"`), not a whole quoted
+  sentence, unless the exact text is the contract.
+- Scenarios that only read a system whose start takes more than about 10 seconds may share one start, each with
+  its own `scenario()` and result, tagged `@shared=<name>` (see "Test speed", ADR 0157).
 - Every module's `-001` is its README quick start.
 - No real network, model, clock or randomness. The forge in tests is a real Forgejo container, or for GitHub the
   testkit's in-process fake of its REST API (ADR 0058); the chat is the testkit's fake Slack, or the conversation
@@ -210,7 +218,12 @@ Rules for new scenarios, tests and test tooling:
   process started without the module's environment, counts as never reached: REACH fails its lines and its
   mutants count as missed.
 - Never share a module process across scenarios, for example a server started in a Vitest `globalSetup`. Its
-  coverage and its mutants belong to no scenario.
+  coverage and its mutants belong to no scenario. The one exception is a declared shared start (ADR 0157): scenarios
+  that only read a system whose start takes more than about 10 seconds (the Compose profile, an installed Helm
+  chart, a LiteLLM gateway) share one start per test process. Each carries `@shared=<name>` with the group's name,
+  keeps its own `scenario()`, steps and result, and changes the shared system not at all or only under a name of its
+  own (a project, a namespace, a key). One failed start fails the group. It is allowed only in units outside REACH and
+  MUTATION, today `deploy/` and `e2e/`; the testkit's API for it comes with T-82.
 - Use the fastest stand-in the port allows (ADR 0049). A container start of 20 to 30 seconds is paid again for
   each mutant of the lines it reaches.
 - Never wait for time to pass. When a module flushes or polls on an interval, make the interval configurable and
@@ -232,8 +245,11 @@ Rules for new scenarios, tests and test tooling:
 | Confidence that code is exercised | Coverage numbers agents learn to game | REACH (coverage of the running module) and MUTATION (the changed lines of each pull request, every line nightly) |
 
 Limits: STEPS proves the test follows the scenario's words, not their meaning. ASSERT, MUTATION and human
-review of the first tests in each module close most of the gap. Edits to implemented scenarios show up in the
-pull request diff, where the review catches them.
+review of the first tests in each module close most of the gap. The wording of an implemented scenario may change
+in place while its behavior stays (ADR 0157), so the review is the guard against an edit that makes a test pass: the
+edit shows in the pull request diff, and the spec-trace summary of `verify.yml` lists each scenario whose steps
+changed. A shared start trades isolation inside its group for one start: a scenario that changes the shared system
+by mistake can break the next one.
 
 ## Smoke tests
 

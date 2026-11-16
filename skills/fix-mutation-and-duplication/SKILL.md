@@ -15,8 +15,10 @@ Each finding names `file:line` and the change Stryker made. Decide which of thes
    Write the missing scenario (`skills/write-scenario`), then its system test (`skills/write-system-test`). The
    test drives the module from the outside, like every other system test.
 2. **A scenario that does not check enough.** The behavior is in a scenario, but its `then` steps do not look at
-   the value the mutant changes. Write a new scenario with the stricter `then` step and `@replaces=` the old one.
-   Never edit the steps of an `implemented` scenario.
+   the value the mutant changes. When the scenario already states that behavior, make its `then` step stricter in
+   place and change the test's label and assertion in the same commit: the behavior stays, so this is a change of
+   wording (ADR 0157). Only when the stricter step states a different behavior, write a new scenario with
+   `@replaces=` the old one.
 3. **Code that does nothing a user can see.** A default that is never used, a branch that cannot happen, a check
    another check already makes. Delete the code. Less code is the best fix.
 4. **An equivalent mutant.** The changed code behaves exactly like the original, for example `<` and `<=` at a
