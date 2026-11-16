@@ -1,6 +1,6 @@
 # AGENTS.md for adapter `sandbox/kubernetes`
 
-Adds rules for this adapter. The root `AGENTS.md` applies in full. Decisions: ADR 0054, ADR 0055.
+Adds rules for this adapter. The root `AGENTS.md` applies in full. Decisions: ADR 0054, ADR 0055, ADR 0158.
 
 ## Public surface
 

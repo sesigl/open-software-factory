@@ -115,13 +115,18 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   (SCN-FORE-186, SCN-DIST-056, SCN-DIST-057). The docker-proxy stays as it was: its rules match a request's method and
   path only, which cannot tell the sandboxes' containers from others (ADR 0096).
 
-### [ ] T-71 · no sandbox is left behind (P1)
+### [x] T-71 · no sandbox is left behind (P1)
 
 - **Problem:** a sandbox's ID lives only in the activity's memory; nothing removes the sandbox of a foreman that
   died. `destroy` ignores exit codes. Each Docker sandbox takes one bridge network of a pool that ends near 30.
 - **Build:** sandboxes carry the run and the owner as labels; the foreman removes its leftovers at its start, as
   ADR 0090 does for gateways; destroy fails when a removal fails; small subnets from a pool of the adapter's own.
 - **Done when:** scenarios prove a leftover is removed at the next start and a failed removal is reported.
+- **Done:** ADR 0158: the spec's `labels` and `list --label` (SCN-SANDBOX-031), `FOREMAN_SANDBOX_OWNER` with the
+  sweep at the start (SCN-FORE-187 to SCN-FORE-189), set by the profile and the chart (SCN-DIST-058,
+  SCN-DIST-059), and a destroy that reports a failed removal (SCN-SANDBOX-032). No subnets of the adapter's own: choosing free ranges
+  safely next to the daemon's other clients is not simple; the docker adapter's README names Docker's
+  `default-address-pools` for more than about 30 sandboxes per host.
 
 ### Stage CI · a pipeline that tells the truth
 

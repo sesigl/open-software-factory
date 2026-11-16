@@ -127,6 +127,20 @@ Feature: Running commands in an isolated sandbox
     Then the sandbox list does not hold the sandbox
     And exec in the sandbox fails with "no sandbox"
 
+  @id=SCN-SANDBOX-031 @status=implemented @conformance
+  Scenario: list with a label prints only the sandboxes whose spec carried that label
+    Given a sandbox created from a spec with the test template and the label "osf.run" set to "run-1"
+    And a second sandbox created from a spec with the test template and the label "osf.run" set to "run-2"
+    When the client runs "list --label osf.run=run-1"
+    Then the output holds the first sandbox and not the second
+
+  @id=SCN-SANDBOX-032 @status=implemented @conformance
+  Scenario: destroy of a sandbox that the platform refuses to remove exits with code 1 and names the sandbox
+    Given a sandbox that the platform refuses to remove
+    When the client destroys the sandbox
+    Then destroy exits with code 1 and writes "the sandbox <ID> was not removed: " and the platform's error
+    And it does not print "destroyed <ID>"
+
   @id=SCN-SANDBOX-024 @status=implemented @conformance @realizes=SCN-FACTORY-RUNTIME-003
   Scenario: probe starts a sandbox with no allowed host, finds a denied host refused and removes the sandbox
     Given the test template

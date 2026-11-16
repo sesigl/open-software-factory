@@ -73,6 +73,12 @@ npx @opensoftware/sandbox-docker destroy "$id"
   placeholders the proxy swapped. It holds no header values and no MCP arguments.
 - **No state of its own.** The Docker host holds every part of a sandbox: the container `osf-sandbox-<ID>`, the
   network of the same name and the proxy `osf-sandbox-<ID>-egress`. `destroy` removes all three; a snapshot stays.
+  The spec's `labels` go on the sandbox's container, so `list --label` finds it ([ADR 0158](../../../docs/decisions/0158-no-sandbox-is-left-behind.md)).
+- **About 30 sandboxes per Docker host.** Each sandbox takes one bridge network, and Docker's default address pools
+  end after about 30 of them: the next `create` fails with "all predefined address pools have been fully subnetted".
+  A host that runs more sandboxes at once needs smaller networks from a larger pool, in the daemon's `daemon.json`,
+  for example `"default-address-pools": [{"base": "10.200.0.0/16", "size": 28}]` for 4096 networks of 16 addresses.
+  The adapter chooses no subnet itself, so it never collides with a network that another client of the daemon made.
 
 ## Commands
 
@@ -82,8 +88,8 @@ npx @opensoftware/sandbox-docker destroy "$id"
 | `sandbox-docker exec <ID> -- <command>...` | Run the command in `/workspace` and exit with its code. |
 | `sandbox-docker copy <from> <to>` | Copy a file or folder into or out of a sandbox. The sandbox's side is `<ID>:<path>`; a relative path is below `/workspace`. What is copied in belongs to the sandbox's user. |
 | `sandbox-docker snapshot <ID>` | Save the sandbox's files with `docker commit` and print the image ID, a template for `create`. |
-| `sandbox-docker destroy <ID>` | Remove the sandbox, its files, its network and its egress proxy. |
-| `sandbox-docker list` | Print the IDs of the sandboxes on the Docker host. |
+| `sandbox-docker destroy <ID>` | Remove the sandbox, its files, its network and its egress proxy. A part that is gone already is no failure; a part that Docker does not remove, like a network whose removal the socket proxy refuses, exits 1 with `the sandbox <ID> was not removed: the network osf-sandbox-<ID>: ` and Docker's error. |
+| `sandbox-docker list [--label <name>=<value>]` | Print the IDs of the sandboxes on the Docker host; with `--label`, only those whose spec carried the label. |
 | `sandbox-docker egress-log <ID>` | Print one JSON line per request that left the sandbox. |
 | `sandbox-docker probe <template> <host>` | Start a sandbox from the template with no allowed host, send one HTTPS request to the host with `curl`, remove the sandbox, and print `refused <host>` when its egress proxy refused the request, else `reached <host>`. The deep check `sandbox` of `console doctor --deep` runs it (ADR 0120). |
 

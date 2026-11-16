@@ -41,7 +41,19 @@ model SandboxSpec {
 
   /** The MCP servers the sandbox may call. A call to any other MCP server is refused. */
   mcp?: SandboxMcpServer[];
+
+  /**
+   * Labels the adapter puts on the sandbox, by name, so that its client finds the sandboxes it started with
+   * `list --label <name>=<value>`, like the foreman's owner and run (ADR 0158). A name and a value fit the label rules of
+   * Docker and Kubernetes both.
+   */
+  @extension("propertyNames", #{ pattern: "^[a-z0-9]([a-z0-9.-]{0,61}[a-z0-9])?$" })
+  labels?: Record<SandboxLabel>;
 }
+
+/** The value of a sandbox's label, for example "run_0a1b2c3d4e5f60718293". */
+@pattern("^[A-Za-z0-9]([A-Za-z0-9._-]{0,61}[A-Za-z0-9])?$")
+scalar SandboxLabel extends string;
 
 /** A hostname without scheme or port, for example "api.linear.app". */
 @pattern("^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*$")

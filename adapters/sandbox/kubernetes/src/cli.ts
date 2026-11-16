@@ -24,13 +24,16 @@ Commands:
   copy <from> <to>            Copy a file or folder into or out of a sandbox; the sandbox's side is <ID>:<path>.
   snapshot <ID>               Save the sandbox's /workspace and print a SandboxTemplate that create accepts.
   destroy <ID>                Remove the sandbox and all its data.
-  list                        Print the IDs of the sandboxes.
+  list                        Print the IDs of the sandboxes (--label <name>=<value>: only those with the label).
   egress-log <ID>             Print one JSON line per request that left the sandbox.
   probe <template> <host>     Start a sandbox pod with no allowed host (--allow: only the host), send one HTTPS
                               request to the host, remove the sandbox, and print "refused <host>" or "reached <host>".
 `;
 
-const { positionals, values } = parseArgs({ allowPositionals: true, options: { help: flag, allow: flag } });
+const { positionals, values } = parseArgs({
+  allowPositionals: true,
+  options: { label: { type: "string" }, help: flag, allow: flag },
+});
 const [name, first, second, ...rest] = positionals;
 const settings = settingsOf(process.env);
 const context: Context = { kube: kubectl(settings.namespace), settings };
@@ -46,7 +49,7 @@ const commands: Record<string, Command> = {
   copy: () => copy(context, first, second),
   snapshot: () => snapshot(context, first),
   destroy: () => destroy(context, first),
-  list: () => list(context),
+  list: () => list(context, values.label),
   "egress-log": () => egressLog(context, first),
   probe: () => probeEgress(context, first as string, second, values.allow),
 };

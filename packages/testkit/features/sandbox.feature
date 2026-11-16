@@ -59,3 +59,19 @@ Feature: Fake sandbox adapter
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-199 @status=implemented
+  Scenario: The fake sandbox's list with a label prints only the sandboxes whose spec has that label
+    Given a module whose CLI creates a sandbox with the label "osf.run" set to "run-1" and one with "run-2", with the adapter in "DEMO_SANDBOX_COMMAND", and prints "list --label osf.run=run-1"
+    And its system test expects "000000000001"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-200 @status=implemented
+  Scenario: The fake sandbox holds from its start the sandboxes that its option "held" names, and counts its IDs on after them
+    Given a module whose CLI creates a sandbox with the adapter in "DEMO_SANDBOX_COMMAND" and prints the list
+    And its system test starts fakes.sandbox with two sandboxes under "held" and expects "000000000001", "000000000002" and "000000000003", of which "created()" names only the last
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

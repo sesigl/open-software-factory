@@ -13,9 +13,12 @@ export async function destroy(context: Context, id: string | undefined): Promise
 }
 
 /**
- * Removes whatever objects of the sandbox exist. The claim goes at once, so no command finds the sandbox after this;
- * Kubernetes stops its pods and removes their files in the background, which takes seconds.
+ * Removes whatever objects of the sandbox exist; a selector that finds none is no failure. The claim goes at once, so
+ * no command finds the sandbox after this; Kubernetes stops its pods and removes their files in the background, which
+ * takes seconds. A delete that the cluster refuses fails with kubectl's error.
  */
 export async function destroySandbox({ kube }: Context, id: string): Promise<void> {
-  await kube.run(["delete", KINDS, "--selector", `${ID_LABEL}=${id}`, "--wait=false"]);
+  const deleted = await kube.run(["delete", KINDS, "--selector", `${ID_LABEL}=${id}`, "--wait=false"]);
+  if (deleted.code !== 0)
+    throw new Error(`the sandbox ${id} was not removed: kubectl delete failed: ${deleted.stderr.trim()}`);
 }

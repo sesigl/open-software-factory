@@ -63,6 +63,10 @@
       "default": "docker",
       "description": "serve: the sandbox adapter of a factory that names none under providers.sandbox, like docker in the Compose profile and kubernetes in the Helm chart."
     },
+    "FOREMAN_SANDBOX_OWNER": {
+      "type": "string",
+      "description": "serve: the name of this foreman on its sandbox platform, like the Compose project or the Helm release: up to 63 letters, digits, dots, underscores and hyphens. Set, each sandbox it creates carries the labels osf.owner=<name> and osf.run=<run ID>, and at its start, before it runs a stage, it destroys the sandboxes with its osf.owner that the adapter of the factory lists (list --label): a foreman that died left them, and a stage that runs again creates a new one (ADR 0158). Give each foreman on one Docker host or in one namespace its own name, and run one foreman per name. It needs a sandbox adapter that takes labels, like sandbox-docker 0.9 or sandbox-kubernetes 0.7. Unset: no labels and no removal at the start."
+    },
     "FOREMAN_REQUIRE_SANDBOX": {
       "type": "string",
       "description": "serve: true runs no agent outside a sandbox: a factory with a stage whose agent declares no sandbox is refused like a factory that cannot run, at the start of the server, of a run and of a retry, and its message names each such agent. The Compose profile and the Helm chart set true, so no agent gets the foreman's environment with its tokens. Unset or another value: an agent without a sandbox runs on the foreman's machine."

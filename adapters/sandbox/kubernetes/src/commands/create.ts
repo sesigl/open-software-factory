@@ -39,7 +39,7 @@ export async function start(context: Context, spec: SandboxSpec): Promise<string
   const id = randomBytes(6).toString("hex");
   try {
     await startEgress(context, id, spec, secrets);
-    await context.kube.apply(list([sandboxTemplate(id, spec, base), ...claim(id)]));
+    await context.kube.apply(list([sandboxTemplate(id, spec, base), ...claim(id, spec.labels)]));
     await waitUntilRunning(context, id);
   } catch (error) {
     await destroySandbox(context, id);

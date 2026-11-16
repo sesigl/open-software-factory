@@ -235,6 +235,13 @@ function sandboxOf(declared: FactoryDefinition["agents"][string], hosts: string[
   return { ...sandbox, ...(egress.length ? { egress } : {}), secrets: secretsOf(declared.secrets ?? []) };
 }
 
+/** The label of a sandbox that names the foreman that created it, FOREMAN_SANDBOX_OWNER (ADR 0158). */
+export const OWNER_LABEL = "osf.owner";
+
+/** The labels of a stage's sandbox: with an owner, the owner and the run; without one, none. */
+export const labelsOf = (owner: string | undefined, runId: string): Pick<SandboxSpec, "labels"> =>
+  owner ? { labels: { [OWNER_LABEL]: owner, "osf.run": runId } } : {};
+
 /** The variable of a secret reference: its name in upper case, every character outside A-Z and 0-9 as "_". */
 export const secretVariable = (reference: string): string =>
   reference
