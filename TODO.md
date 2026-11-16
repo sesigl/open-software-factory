@@ -2010,7 +2010,7 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   a conformance scenario reaches for the host by address and is refused.
 - **Done when:** the new scenario passes for the docker adapter, and the kubernetes adapter passes it too.
 
-### [ ] T-66 · a stage survives slow setup and hears a cancel from its start (P0)
+### [x] T-66 · a stage survives slow setup and hears a cancel from its start (P0)
 
 - **Problem:** a stage heartbeats only while its turn runs (`modules/foreman/src/workflows/activities.ts`), with a
   heartbeat timeout of one minute and three attempts: a create, clone or copy that takes longer runs the stage again

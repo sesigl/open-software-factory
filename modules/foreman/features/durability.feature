@@ -17,6 +17,29 @@ Feature: Durability
     Then within 20 seconds the harness received the prompt "Implement plan.md" a second time
     And "/v1/runs/<id>" shows the stage "implement" "running"
 
+  @id=SCN-FORE-179 @status=implemented @realizes=SCN-FACTORY-RUNTIME-001
+  Scenario: A stage whose sandbox takes longer to create than the heartbeat timeout sends its prompt once
+    Given "foreman serve" runs the stage "plan" of the README's "sandboxed/factory.yaml" with "FOREMAN_HEARTBEAT_TIMEOUT_MS" set to "500" and a fake sandbox adapter whose create takes 800 milliseconds
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then "/v1/runs/<id>" shows the state "complete"
+    And the harness received the prompt "Write a plan" only once
+    And the sandbox adapter created 1 sandbox
+
+  @id=SCN-FORE-180 @status=implemented @realizes=SCN-FACTORY-RUNTIME-001
+  Scenario: A stage whose folder takes longer to copy out of its sandbox than the heartbeat timeout sends its prompt once
+    Given "foreman serve" runs the stage "plan" of the README's "sandboxed/factory.yaml" with "FOREMAN_HEARTBEAT_TIMEOUT_MS" set to "500" and a fake sandbox adapter whose copy out of a sandbox takes 800 milliseconds
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then "/v1/runs/<id>" shows the state "complete"
+    And the harness received the prompt "Write a plan" only once
+
+  @id=SCN-FORE-181 @status=implemented
+  Scenario: A cancel while a stage's sandbox is created stops the stage before its prompt
+    Given a run of the README's "sandboxed/factory.yaml" whose "plan" stage creates its sandbox with a fake sandbox adapter whose create takes 1 second
+    When a program posts the signal "cancel" to "/v1/runs/<id>/signals" while the sandbox is created
+    Then "/v1/runs/<id>" shows the state "cancelled" with the stage "plan" "cancelled"
+    And the harness never received the prompt "Write a plan"
+    And the sandbox adapter's sandbox list is empty
+
   @id=SCN-FORE-073 @status=implemented @realizes=SCN-FACTORY-RUNTIME-001
   Scenario: A work item that intake publishes while the foreman is down starts a run when the foreman starts again
     Given "foreman serve" runs the README's "factory.yaml" with "FOREMAN_NATS_URL" set to a NATS server

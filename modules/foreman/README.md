@@ -519,9 +519,12 @@ needs credentials that Git on the foreman's host has, and a clone that fails fai
   run is `cancelled`. A person takes a running stage over and hands the run back with the signals `take-over` and
   `hand-back` ([Take over](#take-over)).
 - **Restarts.** The runs live in Temporal's history. A foreman that stops and starts again goes on with them; a stage
-  that ran when it stopped runs again, up to 3 times. On SIGTERM, foreman gives running activities 1 second, then
-  cancels the turns of running stages and exits; Temporal runs those stages again when a foreman starts ([ADR
-  0101](../../docs/decisions/0101-foreman-stops-at-once.md)).
+  that ran when it stopped runs again, up to 3 times. A stage heartbeats every `FOREMAN_POLL_MS` from its start to
+  its end, also while it clones, creates its sandbox or copies its folder, so only a stage whose foreman stopped
+  heartbeating for `FOREMAN_HEARTBEAT_TIMEOUT_MS` (1 minute) runs again. On SIGTERM, foreman gives running
+  activities 1 second, then cancels the turns of running stages and exits; Temporal runs those stages again when a
+  foreman starts ([ADR 0101](../../docs/decisions/0101-foreman-stops-at-once.md)). A stage hears a cancel or SIGTERM
+  from its start: before its turn it stops after the step it is in, destroys its sandbox and sends no prompt.
 
 ## Events
 
@@ -614,6 +617,7 @@ the minor version. The one-time setup is the same as for contracts
 | `FOREMAN_CHECK_TIMEOUT_MS` | string | `"7200000"` | serve: how long a stage waits for its checks to succeed, in milliseconds; then it fails with a reason that names each check that did not end (ADR 0106). |
 | `FOREMAN_GATE_TIMEOUT_MS` | string | `"604800000"` | serve: how long a stage waits for the decision of its gate, in milliseconds; then the gate expires and the stage is rejected (ADR 0106). |
 | `FOREMAN_INFERENCE_RETRY_MS` | string | `"1000"` | serve: how long the server waits before it starts the factory's inference gateway again after a failed start, in milliseconds. Until a start succeeds, the health check inference fails. |
+| `FOREMAN_HEARTBEAT_TIMEOUT_MS` | string | `"60000"` | serve: how long a stage may go without a heartbeat before Temporal runs it again, in milliseconds. A stage heartbeats every FOREMAN_POLL_MS from its start to its end, so keep it several times FOREMAN_POLL_MS. Runs that started before keep their timeout. |
 | `FOREMAN_POLL_MS` | string | `"1000"` | serve: how often a running stage looks for steering messages and a cancel, in milliseconds. |
 | `FOREMAN_GATEKEEPER_URL` | string |  | serve: the URL of gatekeeper serve, which a stage with a gate asks for a decision. Required for a factory with gates. |
 | `FOREMAN_GATEKEEPER_TOKEN` | string |  | serve: gatekeeper's API token, GATEKEEPER_API_TOKEN. |
@@ -802,3 +806,6 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-176 | implemented | Without "FOREMAN_PERSON_KEYS" the server warns once that the API token names any person, and a malformed setting stops it |
 | SCN-FORE-177 | implemented | A signal or a retry whose "by" has a kind other than "person" or "trigger" is refused with 400 before the run is looked up |
 | SCN-FORE-178 | implemented | A gate request does not link a pull request outside the work item's repository |
+| SCN-FORE-179 | implemented | A stage whose sandbox takes longer to create than the heartbeat timeout sends its prompt once |
+| SCN-FORE-180 | implemented | A stage whose folder takes longer to copy out of its sandbox than the heartbeat timeout sends its prompt once |
+| SCN-FORE-181 | implemented | A cancel while a stage's sandbox is created stops the stage before its prompt |

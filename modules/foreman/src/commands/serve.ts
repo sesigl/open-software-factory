@@ -271,7 +271,8 @@ export async function serve(env: Env) {
       const read = await source.read();
       return { ...read, definition: { ...read.definition, adapters: adaptersOf(read.definition.ranges, maps) } };
     };
-    const work = runs({ client, taskQueue, factory, now, stopping: stopping.signal });
+    const heartbeatMs = Number(env.FOREMAN_HEARTBEAT_TIMEOUT_MS || 60_000);
+    const work = runs({ client, taskQueue, factory, now, heartbeatMs, stopping: stopping.signal });
     const running = worker.run();
     const pings: Pings = new Map();
     if (bus) await listen(bus, work, pings, now, warn);

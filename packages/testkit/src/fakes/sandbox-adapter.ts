@@ -56,9 +56,14 @@ function start(file: string): string {
   return id;
 }
 
-const commands: Record<string, () => void> = {
-  create() {
-    process.stdout.write(`${start(args[0] as string)}\n`);
+/** Waits as long as the options say the step takes. */
+const takes = (ms = 0): Promise<void> => new Promise((done) => setTimeout(done, ms));
+
+const commands: Record<string, () => void | Promise<void>> = {
+  async create() {
+    const id = start(args[0] as string);
+    await takes(options.takesMs?.create);
+    process.stdout.write(`${id}\n`);
   },
   // probe <template> <host>: a sandbox with no allowed host, whose request to the host gets the scripted outcome.
   probe() {
@@ -86,9 +91,11 @@ const commands: Record<string, () => void> = {
     child.on("exit", (code) => process.exit(code ?? 1));
     child.on("error", (error) => fail(error.message, 127));
   },
-  copy() {
+  async copy() {
     const [from, to] = args as [string, string];
-    cpSync(inSandbox(from) ?? from, inSandbox(to) ?? to, { recursive: true });
+    const source = inSandbox(from);
+    if (source) await takes(options.takesMs?.copyOut);
+    cpSync(source ?? from, inSandbox(to) ?? to, { recursive: true });
   },
   destroy() {
     rmSync(sandbox(args[0]), { recursive: true });
@@ -99,4 +106,4 @@ const commands: Record<string, () => void> = {
   },
 };
 
-(commands[command] ?? (() => fail(`the fake sandbox has no command ${command}`, 2)))();
+await (commands[command] ?? (() => fail(`the fake sandbox has no command ${command}`, 2)))();

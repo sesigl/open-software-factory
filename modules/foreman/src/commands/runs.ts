@@ -107,6 +107,8 @@ export function runs(options: {
   taskQueue: string;
   factory: () => Promise<Factory>;
   now: () => string;
+  /** How long a stage may go without a heartbeat before Temporal runs it again. */
+  heartbeatMs: number;
   /** Aborts the queries still open: once the worker stopped, no worker answers them. */
   stopping: AbortSignal;
 }): Runs {
@@ -138,7 +140,7 @@ export function runs(options: {
         taskQueue,
         // Each run ID starts one workflow, also after it ended.
         workflowIdReusePolicy: WorkflowIdReusePolicy.REJECT_DUPLICATE,
-        args: [input],
+        args: [{ ...input, heartbeatMs: options.heartbeatMs }],
         // The run list reads the view from the memo, which the workflow keeps current (ADR 0115).
         memo: { view: input.view },
       })

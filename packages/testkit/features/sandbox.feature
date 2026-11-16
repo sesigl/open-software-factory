@@ -51,3 +51,11 @@ Feature: Fake sandbox adapter
     When the developer runs "testkit run --junit report.xml" in the module
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
+
+  @id=SCN-TK-198 @status=implemented
+  Scenario: The fake sandbox's create and copy out of a sandbox take the time the options say
+    Given a module whose CLI creates a sandbox with the adapter in "DEMO_SANDBOX_COMMAND", copies the folder "work" in and out again, and prints whether the create and the copy out each took at least 300 milliseconds
+    And its system test starts fakes.sandbox with "takesMs" of 300 for "create" and "copyOut" and expects "create slow, copy out slow"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"

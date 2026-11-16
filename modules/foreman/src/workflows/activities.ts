@@ -15,7 +15,7 @@ import { createSandbox, type StageSandbox } from "../adapters/sandbox.ts";
 import { missingSecret } from "../adapters/secrets.ts";
 import { writeSkills } from "../adapters/skills.ts";
 import { type CommandLines, commandOf } from "../domain/adapters.ts";
-import { type Definition, storeSecrets } from "../domain/definition.ts";
+import { type AgentPlan, type Definition, type StagePlan, storeSecrets } from "../domain/definition.ts";
 import {
   apply,
   branchOf,
@@ -178,20 +178,21 @@ export function activities(deps: ActivityDeps) {
 
   /**
    * The turn's stop reason, and whether a person took the stage over; meanwhile it sends the run's new steering
-   * messages, ends the turn when a person takes the stage at `index` over, and reports that the stage lives.
+   * messages, and ends the turn when a person takes the stage at `index` over or when the stage is cancelled.
    */
   async function untilDone(
     turn: HarnessTurn,
+    cancelled: AbortSignal,
     runId: string,
     index: number,
     steered: number,
   ): Promise<{ stopReason: string; takenOver: boolean }> {
-    const context = Context.current();
-    context.cancellationSignal.addEventListener("abort", () => turn.cancel());
+    cancelled.addEventListener("abort", () => turn.cancel());
+    // A cancel that came while the turn started fired before the listener was there (ADR 0101).
+    if (cancelled.aborted) turn.cancel();
     let sent = steered;
     let takenOver = false;
     const watch = setInterval(() => {
-      context.heartbeat();
       deps.control(runId).then(
         ({ steering, takeOver }) => {
           for (const message of steering.slice(sent)) turn.steer(message);
@@ -208,11 +209,135 @@ export function activities(deps: ActivityDeps) {
       const stopReason = await turn.done;
       // A cancelled attempt throws its cancel. At a shutdown of the worker the attempt then fails, not the stage, so
       // Temporal runs it again soon (ADR 0101); a cancelled run ends as cancelled.
-      context.cancellationSignal.throwIfAborted();
+      cancelled.throwIfAborted();
       return { stopReason, takenOver };
     } finally {
       clearInterval(watch);
       await turn.close();
+    }
+  }
+
+  /**
+   * The steps of the stage at `index`, whose agent runs: its secrets, its clone, its sandbox, its turn and its pull
+   * request. Between the steps before the turn it stops once it is cancelled, so a cancelled attempt, at a shutdown or
+   * after its heartbeat timeout, never sends its prompt (ADR 0101).
+   */
+  async function stageOf(
+    cancelled: AbortSignal,
+    view: RunView,
+    definition: Definition,
+    index: number,
+    plan: StagePlan & AgentPlan,
+    steered: number,
+    before?: RunBefore,
+    previous?: StageResult,
+  ): Promise<Fact> {
+    // A secret without a value fails the stage before it clones, creates a sandbox or starts a turn (ADR 0139).
+    const secretsAdapter = (provider: string) => commandOf(deps.secrets, "secrets", provider, definition.ranges);
+    const missing = await missingSecret(storeSecrets(plan.sandbox?.secrets), secretsAdapter, deps.env);
+    if (missing) return { kind: "stage-failed", index, reason: missing };
+    const cwd = join(deps.data, "runs", view.runId);
+    mkdirSync(cwd, { recursive: true });
+    writeSkills(cwd, plan.skills ?? []);
+    await cloneRepositories(cwd, plan.repositories ?? []);
+    const attributes = {
+      "osf.run.id": view.runId,
+      "osf.work_item.id": view.workItem.id,
+      "osf.stage": plan.stage,
+      "osf.factory.version": view.factoryVersion,
+    };
+    const started = deps.now();
+    const resource = Object.entries(attributes)
+      .map(([key, value]) => `${key}=${value}`)
+      .join(",");
+    const harness = commandOf(deps.harnesses, "harness", plan.harness, definition.ranges);
+    const adapter = definition.sandboxAdapter ?? deps.sandbox;
+    // The agent's model and gateway (ADR 0070) and its effort level (ADR 0078), with or without a sandbox.
+    const agentEnv = {
+      ...(await gatewayEnv(view, definition, plan.model)),
+      OSF_EFFORT: plan.effort,
+      // The harness's spans join the run's trace below the stage's span (ADR 0087).
+      TRACEPARENT: traceparentOf(view.runId, index),
+    };
+    const harnessEnv = {
+      ...deps.env,
+      OSF_DATA: join(deps.data, "harness", plan.harness),
+      OTEL_RESOURCE_ATTRIBUTES: resource,
+      ...agentEnv,
+    };
+    // A cancel during the secrets, the clone or the wait for the gateway stops the stage before its sandbox.
+    cancelled.throwIfAborted();
+    let outcome: Outcome = "failed";
+    let sessionId: string | undefined;
+    const sandbox = plan.sandbox
+      ? await createSandbox(
+          commandOf(deps.sandboxes, "sandbox", adapter, definition.ranges),
+          { ...plan.sandbox, env: { OTEL_RESOURCE_ATTRIBUTES: resource, ...agentEnv } },
+          cwd,
+          view.runId,
+          deps.env,
+        )
+      : undefined;
+    // The work item's repository, whose pull request of the run's branch the forge gives the run (ADR 0109).
+    const repository = definition.forgeAdapter ? repositoryOf(view.workItem.origin.url) : undefined;
+    try {
+      // A cancel while the sandbox was created stops the stage here; the sandbox is destroyed below.
+      cancelled.throwIfAborted();
+      const prompt = promptOf(
+        plan.prompt,
+        view.workItem,
+        view.pullRequest,
+        before?.index === index ? before.line : undefined,
+        repository ? branchOf(view.runId) : undefined,
+        previous,
+      );
+      const mcpServers = plan.mcpServers ?? [];
+      const folder = sandbox ? await sandbox.copyIn() : cwd;
+      cancelled.throwIfAborted();
+      const turn = await startTurn(
+        sandbox
+          ? { command: sandbox.exec(harness), cwd, folder, env: deps.env, prompt, mcpServers }
+          : { command: harness, cwd, folder, env: harnessEnv, prompt, mcpServers },
+      );
+      sessionId = turn.sessionId;
+      const { stopReason, takenOver } = await untilDone(turn, cancelled, view.runId, index, steered);
+      outcome = outcomeOf(stopReason);
+      await sandbox?.copyOut();
+      const { pullRequest, note } = await pullRequestAfter(view, definition, repository, turn.transcript());
+      const said = turn.messages();
+      return {
+        kind: "stage-ended",
+        index,
+        stopReason,
+        sessionId: turn.sessionId,
+        ...(pullRequest ? { pullRequest } : {}),
+        ...(note ? { note } : {}),
+        ...(takenOver ? { takenOver: { folder: cwd } } : {}),
+        ...(said ? { result: { stage: plan.stage, text: resultOf(said) } } : {}),
+      };
+    } finally {
+      const end = deps.now();
+      // The session's run record joins the stage's span (ADR 0121); in a sandbox, before it is destroyed.
+      const record = await usage(harness, harnessEnv, sessionId, sandbox);
+      await sandbox?.destroy();
+      await trace({
+        runId: view.runId,
+        index,
+        name: `stage ${plan.stage}`,
+        start: started,
+        end,
+        outcome,
+        resource: { ...resourceOf(view), "osf.stage": plan.stage },
+        attributes: {
+          "osf.stage": plan.stage,
+          "osf.agent": plan.agent,
+          "osf.harness.name": plan.harness,
+          "gen_ai.request.model": plan.model,
+          "osf.effort": plan.effort,
+          "gen_ai.conversation.id": sessionId,
+          ...record,
+        },
+      });
     }
   }
 
@@ -313,106 +438,14 @@ export function activities(deps: ActivityDeps) {
       if (!plan) throw new Error(`no stage ${index}`);
       // A stage that only waits ends here: its checks and its gate came before it (ADR 0107).
       if (plan.agent === undefined) return { kind: "stage-ended", index, stopReason: "end_turn" };
-      // A secret without a value fails the stage before it clones, creates a sandbox or starts a turn (ADR 0139).
-      const secretsAdapter = (provider: string) => commandOf(deps.secrets, "secrets", provider, definition.ranges);
-      const missing = await missingSecret(storeSecrets(plan.sandbox?.secrets), secretsAdapter, deps.env);
-      if (missing) return { kind: "stage-failed", index, reason: missing };
-      const cwd = join(deps.data, "runs", view.runId);
-      mkdirSync(cwd, { recursive: true });
-      writeSkills(cwd, plan.skills ?? []);
-      await cloneRepositories(cwd, plan.repositories ?? []);
-      const attributes = {
-        "osf.run.id": view.runId,
-        "osf.work_item.id": view.workItem.id,
-        "osf.stage": plan.stage,
-        "osf.factory.version": view.factoryVersion,
-      };
-      const started = deps.now();
-      const resource = Object.entries(attributes)
-        .map(([key, value]) => `${key}=${value}`)
-        .join(",");
-      const harness = commandOf(deps.harnesses, "harness", plan.harness, definition.ranges);
-      const adapter = definition.sandboxAdapter ?? deps.sandbox;
-      // The agent's model and gateway (ADR 0070) and its effort level (ADR 0078), with or without a sandbox.
-      const agentEnv = {
-        ...(await gatewayEnv(view, definition, plan.model)),
-        OSF_EFFORT: plan.effort,
-        // The harness's spans join the run's trace below the stage's span (ADR 0087).
-        TRACEPARENT: traceparentOf(view.runId, index),
-      };
-      const harnessEnv = {
-        ...deps.env,
-        OSF_DATA: join(deps.data, "harness", plan.harness),
-        OTEL_RESOURCE_ATTRIBUTES: resource,
-        ...agentEnv,
-      };
-      let outcome: Outcome = "failed";
-      let sessionId: string | undefined;
-      const sandbox = plan.sandbox
-        ? await createSandbox(
-            commandOf(deps.sandboxes, "sandbox", adapter, definition.ranges),
-            { ...plan.sandbox, env: { OTEL_RESOURCE_ATTRIBUTES: resource, ...agentEnv } },
-            cwd,
-            view.runId,
-            deps.env,
-          )
-        : undefined;
-      // The work item's repository, whose pull request of the run's branch the forge gives the run (ADR 0109).
-      const repository = definition.forgeAdapter ? repositoryOf(view.workItem.origin.url) : undefined;
+      // The stage reports that it lives from its start to its end, also while it clones, creates its sandbox or copies
+      // its folder, so a slow step does not run it again; a cancel or a shutdown reaches it with a heartbeat's answer.
+      const context = Context.current();
+      const beat = setInterval(() => context.heartbeat(), deps.pollMs);
       try {
-        const prompt = promptOf(
-          plan.prompt,
-          view.workItem,
-          view.pullRequest,
-          before?.index === index ? before.line : undefined,
-          repository ? branchOf(view.runId) : undefined,
-          previous,
-        );
-        const mcpServers = plan.mcpServers ?? [];
-        const turn = await startTurn(
-          sandbox
-            ? { command: sandbox.exec(harness), cwd, folder: await sandbox.copyIn(), env: deps.env, prompt, mcpServers }
-            : { command: harness, cwd, folder: cwd, env: harnessEnv, prompt, mcpServers },
-        );
-        sessionId = turn.sessionId;
-        const { stopReason, takenOver } = await untilDone(turn, view.runId, index, steered);
-        outcome = outcomeOf(stopReason);
-        await sandbox?.copyOut();
-        const { pullRequest, note } = await pullRequestAfter(view, definition, repository, turn.transcript());
-        const said = turn.messages();
-        return {
-          kind: "stage-ended",
-          index,
-          stopReason,
-          sessionId: turn.sessionId,
-          ...(pullRequest ? { pullRequest } : {}),
-          ...(note ? { note } : {}),
-          ...(takenOver ? { takenOver: { folder: cwd } } : {}),
-          ...(said ? { result: { stage: plan.stage, text: resultOf(said) } } : {}),
-        };
+        return await stageOf(context.cancellationSignal, view, definition, index, plan, steered, before, previous);
       } finally {
-        const end = deps.now();
-        // The session's run record joins the stage's span (ADR 0121); in a sandbox, before it is destroyed.
-        const record = await usage(harness, harnessEnv, sessionId, sandbox);
-        await sandbox?.destroy();
-        await trace({
-          runId: view.runId,
-          index,
-          name: `stage ${plan.stage}`,
-          start: started,
-          end,
-          outcome,
-          resource: { ...resourceOf(view), "osf.stage": plan.stage },
-          attributes: {
-            "osf.stage": plan.stage,
-            "osf.agent": plan.agent,
-            "osf.harness.name": plan.harness,
-            "gen_ai.request.model": plan.model,
-            "osf.effort": plan.effort,
-            "gen_ai.conversation.id": sessionId,
-            ...record,
-          },
-        });
+        clearInterval(beat);
       }
     },
   };

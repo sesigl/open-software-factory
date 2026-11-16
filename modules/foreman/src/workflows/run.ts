@@ -32,12 +32,17 @@ export const handBackSignal = defineSignal("hand-back");
 export const actedSignal = defineSignal<[RunAction]>("acted");
 
 const local = proxyLocalActivities<Activities>({ startToCloseTimeout: "1 minute" });
-const remote = proxyActivities<Activities>({
-  startToCloseTimeout: "1 day",
-  heartbeatTimeout: "1 minute",
-  retry: { maximumAttempts: 3 },
-  cancellationType: ActivityCancellationType.WAIT_CANCELLATION_COMPLETED,
-});
+/**
+ * The activities that reach outside. A stage heartbeats from its start to its end, so a stage whose worker stopped
+ * runs again after `heartbeatMs`; a run that started without it waits 1 minute, as it did then.
+ */
+const remoteOf = (heartbeatMs?: number) =>
+  proxyActivities<Activities>({
+    startToCloseTimeout: "1 day",
+    heartbeatTimeout: heartbeatMs ?? "1 minute",
+    retry: { maximumAttempts: 3 },
+    cancellationType: ActivityCancellationType.WAIT_CANCELLATION_COMPLETED,
+  });
 
 /** The view with the signals people sent, when there are any (ADR 0118). */
 const withActions = (view: RunView, actions: RunAction[]): RunView =>
@@ -63,7 +68,8 @@ async function apply(run: RunView, fact: Fact, actions: RunAction[], memoed: boo
   return next;
 }
 
-export async function factoryRun({ view, definition, before }: RunInput): Promise<RunView> {
+export async function factoryRun({ view, definition, before, heartbeatMs }: RunInput): Promise<RunView> {
+  const remote = remoteOf(heartbeatMs);
   // Asked in the run's first workflow task, before anything waits, so no query can split a task before the marker. A
   // patch asked after a local activity, as MEMO_PATCH before the first `apply`, went to the next task when a query
   // reached the worker while the activity `next` ran, and no replay of the run succeeded (TMPRL1100).

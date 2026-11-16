@@ -122,6 +122,11 @@
       "default": "1000",
       "description": "serve: how long the server waits before it starts the factory's inference gateway again after a failed start, in milliseconds. Until a start succeeds, the health check inference fails."
     },
+    "FOREMAN_HEARTBEAT_TIMEOUT_MS": {
+      "type": "string",
+      "default": "60000",
+      "description": "serve: how long a stage may go without a heartbeat before Temporal runs it again, in milliseconds. A stage heartbeats every FOREMAN_POLL_MS from its start to its end, so keep it several times FOREMAN_POLL_MS. Runs that started before keep their timeout."
+    },
     "FOREMAN_POLL_MS": {
       "type": "string",
       "default": "1000",
