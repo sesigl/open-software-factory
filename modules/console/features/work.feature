@@ -89,6 +89,7 @@ Feature: Work
     Then the region "Work items" lists "Import reports from CSV" and holds the island's properties: the route "/work/items", the interval 10000 milliseconds and the same row
     And the page loads one script, a module script of "/_astro/" that the console answers as JavaScript, and has no inline script
     And the page asks only a browser without script to reload it after 10 seconds
+    And on "/work?cursor=Y3Vyc29y" the island's route is "/work/items?cursor=Y3Vyc29y"
 
   @id=SCN-CONSOLE-275 @status=implemented
   Scenario: "/work/items" answers the rows of the work page, ready to show, for the same page of intake's inbox

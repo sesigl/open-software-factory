@@ -13,7 +13,10 @@ scenario("SCN-CONSOLE-274", async ({ sut, fakes, given, when, then }) => {
   await given(
     'an intake whose inbox holds "Import reports from CSV", received two days ago, and a console with "CONSOLE_REFRESH" 10',
     async () => {
-      const intake = await fakes.http([{ path: "/v1/inbox", body: { workItems: [workItemOf(IMPORT)] } }]);
+      const intake = await fakes.http([
+        { path: "/v1/inbox", body: { workItems: [workItemOf(IMPORT)] } },
+        { path: "/v1/inbox?cursor=Y3Vyc29y", body: { workItems: [] } },
+      ]);
       await serving(sut, [(await foreman(fakes, [])).url], { CONSOLE_INTAKE_URL: intake.url, CONSOLE_REFRESH: "10" });
     },
   );
@@ -60,5 +63,10 @@ scenario("SCN-CONSOLE-274", async ({ sut, fakes, given, when, then }) => {
   await then("the page asks only a browser without script to reload it after 10 seconds", async () => {
     expect(html).toContain('<noscript><meta http-equiv="refresh" content="10"></noscript>');
     expect(html.match(/http-equiv="refresh"/g)).toEqual(['http-equiv="refresh"']);
+  });
+
+  await then('on "/work?cursor=Y3Vyc29y" the island\'s route is "/work/items?cursor=Y3Vyc29y"', async () => {
+    const second = (await open(sut, "/work?cursor=Y3Vyc29y")).getByRole("region", { name: "Work items" });
+    expect(JSON.parse(second.attribute("data-props") ?? "").src).toBe("/work/items?cursor=Y3Vyc29y");
   });
 });
