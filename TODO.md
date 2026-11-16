@@ -2101,6 +2101,11 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 
 - **Build:** the hook of `.claude/settings.json` ends with code 2 when `make check-fast` fails and does nothing on
   a clean tree; `factory.yaml` renders it.
+- **Slices:**
+  - [x] The hand-written hook ends with code 2 when `make check-fast` fails, does nothing on a clean tree, and blocks a
+    stop once (`stop_hook_active`), so an agent that cannot fix a check can stop and ask.
+  - [ ] `factory.yaml` renders it: a field for a harness's stop check in `contracts/factory-definition` and in
+    `factory render` (a contract change, plan mode first).
 
 ### [ ] T-77 · fewer checks that do the same or nothing (P2)
 
