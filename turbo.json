@@ -40,7 +40,6 @@
       "cache": true,
       "inputs": ["$TURBO_DEFAULT$"],
       "outputs": ["reports/**"],
-      "env": ["OSF_TEST_RUN"],
       "passThroughEnv": ["PLAYWRIGHT_BROWSERS_PATH", "KUBECONFIG", "OSF_SANDBOX_HOST_ALIASES", "CI"]
     },
     "docs": {

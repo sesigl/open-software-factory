@@ -307,13 +307,14 @@ export const TEST_GLOBALS = [
   ".github/test-suites.yml",
 ];
 
-/** A turbo.json that caches the system tests with these global dependencies and test inputs. */
+/** A turbo.json that caches the system tests with these global dependencies, test inputs and variables in the hash. */
 export function cachedTurbo(
   globals: string[] = TEST_GLOBALS,
   inputs: string[] = ["$TURBO_DEFAULT$"],
   cacheDir = ".turbo/cache",
+  env: string[] = [],
 ): string {
-  const task = { dependsOn: ["build", "^build"], cache: true, inputs, outputs: ["reports/**"], env: ["OSF_TEST_RUN"] };
+  const task = { dependsOn: ["build", "^build"], cache: true, inputs, outputs: ["reports/**"], env };
   return `${JSON.stringify({ cacheDir, globalDependencies: globals, tasks: { "test:system": task } })}\n`;
 }
 
@@ -371,9 +372,9 @@ export function verifyWorkflow(options: WorkflowOptions = {}): string {
   ].join("\n");
 }
 
-/** The Makefile target that gives each run its own test hash unless OSF_TEST_CACHE is set. */
+/** The Makefile targets of the tests and of lint, typecheck and build: no cache unless OSF_TEST_CACHE is set. */
 export const VERIFY_TESTS =
-  "verify-tests:\n\t@$(if $(OSF_TEST_CACHE),,OSF_TEST_RUN=$$$$-$$(date +%s)) $(TURBO) test:system\n" +
+  "verify-tests:\n\t@$(TURBO) test:system $(if $(OSF_TEST_CACHE),,--force)\n" +
   "verify-static:\n\t@$(TURBO) lint typecheck build $(if $(OSF_TEST_CACHE),,--force)\n";
 
 /** A vitest config that writes JUnit results to `output`. */

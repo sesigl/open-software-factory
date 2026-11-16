@@ -1,7 +1,8 @@
 import { scenario } from "@opensoftware/testkit";
 import { putCached, runAffected } from "./affected.ts";
+import { VERIFY_TESTS } from "./repo.ts";
 
-scenario("SCN-REPO-078", async ({ sut, given, when, then }) => {
+scenario("SCN-REPO-180", async ({ sut, given, when, then }) => {
   await given(
     'a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081',
     async () => {
@@ -9,8 +10,10 @@ scenario("SCN-REPO-078", async ({ sut, given, when, then }) => {
     },
   );
 
-  await given('the target "verify-tests" of "Makefile" runs the system tests without "OSF_TEST_RUN"', async () => {
-    await putCached(sut, { Makefile: "verify-tests:\n\t@$(TURBO) test:system\n" });
+  await given('the target "verify-tests" of "Makefile" runs the system tests without "--force"', async () => {
+    await putCached(sut, {
+      Makefile: VERIFY_TESTS.replace("test:system $(if $(OSF_TEST_CACHE),,--force)", "test:system"),
+    });
   });
 
   let run: Awaited<ReturnType<typeof runAffected>>;
@@ -23,10 +26,10 @@ scenario("SCN-REPO-078", async ({ sut, given, when, then }) => {
   });
 
   await then(
-    'the output contains "AFFECTED Makefile:1 verify-tests must give each run its own test hash with $(if $(OSF_TEST_CACHE),,OSF_TEST_RUN=$$$$-$$(date +%s))"',
+    'the output contains "AFFECTED Makefile:1 verify-tests must run the system tests with $(if $(OSF_TEST_CACHE),,--force)"',
     async () => {
       expect(run.stdout).toContain(
-        "AFFECTED Makefile:1 verify-tests must give each run its own test hash with $(if $(OSF_TEST_CACHE),,OSF_TEST_RUN=$$$$-$$(date +%s))",
+        "AFFECTED Makefile:1 verify-tests must run the system tests with $(if $(OSF_TEST_CACHE),,--force)",
       );
     },
   );

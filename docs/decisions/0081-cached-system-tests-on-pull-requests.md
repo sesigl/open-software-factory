@@ -1,5 +1,5 @@
 ---
-status: accepted; the suites planned by 0094
+status: accepted; the suites planned by 0094; OSF_TEST_RUN replaced by --force on main by 0154
 date: 2026-11-05
 ---
 

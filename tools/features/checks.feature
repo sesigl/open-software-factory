@@ -865,13 +865,29 @@ Feature: Repository checks
     Then the command exits with code 1
     And the output contains "AFFECTED modules/demo/vitest.config.ts:1 writes its JUnit results elsewhere than "reports/junit.xml", which turbo stores and replays"
 
-  @id=SCN-REPO-075 @status=implemented
+  @id=SCN-REPO-075 @status=deprecated
   Scenario: AFFECTED rejects a test cache whose inputs leave out files of the package
     Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
     And "turbo.json" gives "test:system" the inputs "$TURBO_DEFAULT$" and "!features/**"
     When the developer runs "osf check AFFECTED"
     Then the command exits with code 1
     And the output contains "AFFECTED turbo.json:1 test:system must cache with the inputs ["$TURBO_DEFAULT$"], the outputs ["reports/**"] and the env ["OSF_TEST_RUN"]"
+
+  @id=SCN-REPO-179 @status=implemented @replaces=SCN-REPO-075
+  Scenario: AFFECTED rejects a test cache whose inputs leave out files of the package, in a hash without variables
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And "turbo.json" gives "test:system" the inputs "$TURBO_DEFAULT$" and "!features/**"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED turbo.json:1 test:system must cache with the inputs ["$TURBO_DEFAULT$"], the outputs ["reports/**"] and no env, so that a pull request computes the hash of main's results"
+
+  @id=SCN-REPO-181 @status=implemented
+  Scenario: AFFECTED rejects a test cache with a variable of its own in the hash, which a pull request does not compute
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And "turbo.json" gives "test:system" the env "OSF_TEST_RUN"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED turbo.json:1 test:system must cache with the inputs ["$TURBO_DEFAULT$"], the outputs ["reports/**"] and no env, so that a pull request computes the hash of main's results"
 
   @id=SCN-REPO-076 @status=implemented
   Scenario: AFFECTED rejects a test cache without a repository-wide file that the tests depend on
@@ -913,13 +929,21 @@ Feature: Repository checks
     Then the command exits with code 1
     And the output contains "AFFECTED .github/workflows/verify.yml:3 sets OSF_TEST_CACHE outside pull requests: only a pull request may replay test results"
 
-  @id=SCN-REPO-078 @status=implemented
+  @id=SCN-REPO-078 @status=deprecated
   Scenario: AFFECTED rejects a Makefile that does not give each run of the system tests its own hash by default
     Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
     And the target "verify-tests" of "Makefile" runs the system tests without "OSF_TEST_RUN"
     When the developer runs "osf check AFFECTED"
     Then the command exits with code 1
     And the output contains "AFFECTED Makefile:1 verify-tests must give each run its own test hash with $(if $(OSF_TEST_CACHE),,OSF_TEST_RUN=$$$$-$$(date +%s))"
+
+  @id=SCN-REPO-180 @status=implemented @replaces=SCN-REPO-078
+  Scenario: AFFECTED rejects a Makefile that does not run the system tests without the cache by default
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And the target "verify-tests" of "Makefile" runs the system tests without "--force"
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED Makefile:1 verify-tests must run the system tests with $(if $(OSF_TEST_CACHE),,--force)"
 
   @id=SCN-REPO-079 @status=implemented
   Scenario: collect-reports copies the results of each package to the reports folder of the repository

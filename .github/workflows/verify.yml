@@ -81,7 +81,7 @@ jobs:
   # Plans the test suites (ADR 0094). The suites are in .github/test-suites.yml. On a pull request, turbo's dry run
   # finds each suite with a system test task that the cache cannot replay; this job replays the other suites and
   # uploads their results, so only the suites with work start a runner. Outside pull requests every suite runs
-  # (ADR 0081).
+  # (ADR 0081) and stores its results under the hash a pull request computes (ADR 0154).
   plan:
     name: plan the suites
     runs-on: ubuntu-24.04
@@ -294,7 +294,8 @@ jobs:
             jq -r '.tasks[] | select(.task == "test:system") | "\(.taskId) \(.hash) \(.cache.status)"' "$summary"
           done
       # A result over its budget stays out of the cache: replayed, it would fail BUDGET in every later pull request
-      # whose inputs of the suite are the same, while main, which runs every suite, passes. verify reports BUDGET.
+      # whose inputs of the suite are the same, while main, which runs every suite, passes. This holds for the
+      # results of main too, which pull requests replay (ADR 0154). verify reports BUDGET.
       - name: Check the budget of the suite
         id: budget
         if: always()

@@ -178,7 +178,8 @@ island, `work-list` (T-55): its 7 scenarios take 0.1 to 0.7 s each, 1.2 s with a
 System tests are the only tests, so their speed is the speed of every pull request. Speed comes from how the
 tests run and how scenarios are written, never from testing less: no unit tests, mocks or skipped scenarios. A pull
 request replays the passed result of a suite whose inputs did not change, from the turbo cache; `main` and `make verify`
-run every suite (ADR 0081). The check AFFECTED keeps the inputs of each suite complete.
+run every suite (ADR 0081) and store each result under the hash a pull request computes, so a pull request's first
+push replays what `main` proved (ADR 0154). The check AFFECTED keeps the inputs of each suite complete.
 
 Where the time went, and what each step changed:
 

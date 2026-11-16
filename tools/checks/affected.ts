@@ -35,11 +35,10 @@ const INPUTS = ["$TURBO_DEFAULT$"];
 const OUTPUTS = ["reports/**"];
 /** Set explicitly: turbo then keeps the cache per worktree and CI saves this folder. */
 const CACHE_DIR = ".turbo/cache";
-/** A run of its own: the hash of every test task changes, and the builds stay cached. */
-const FORCE = "$(if $(OSF_TEST_CACHE),,OSF_TEST_RUN=$$$$-$$(date +%s))";
-const ENV = ["OSF_TEST_RUN"];
-/** Lint, typecheck and build run again outside pull requests. */
-const STATIC_FORCE = "$(if $(OSF_TEST_CACHE),,--force)";
+/** Outside pull requests every task runs again and stores its result under the hash a pull request computes. */
+const FORCE = "$(if $(OSF_TEST_CACHE),,--force)";
+/** No variable in the hash of the tests: main and a pull request compute the same hash (ADR 0154). */
+const ENV: string[] = [];
 const PULL_REQUEST = "github.event_name == 'pull_request'";
 
 const finding = (file: string, line: number, message: string): Finding => ({ check: ID, file, line, message });
@@ -156,7 +155,7 @@ function cache(repo: Repo): Finding[] {
       finding(
         TURBO,
         1,
-        `test:system must cache with the inputs ${JSON.stringify(INPUTS)}, the outputs ${JSON.stringify(OUTPUTS)} and the env ${JSON.stringify(ENV)}`,
+        `test:system must cache with the inputs ${JSON.stringify(INPUTS)}, the outputs ${JSON.stringify(OUTPUTS)} and no env, so that a pull request computes the hash of main's results`,
       ),
     );
   }
@@ -262,20 +261,16 @@ function forced(repo: Repo): Finding[] {
   const findings: Finding[] = [];
   if (!recipe.includes(FORCE)) {
     findings.push(
-      finding(
-        MAKEFILE,
-        lineOf(text, "verify-tests:"),
-        `verify-tests must give each run its own test hash with ${FORCE}`,
-      ),
+      finding(MAKEFILE, lineOf(text, "verify-tests:"), `verify-tests must run the system tests with ${FORCE}`),
     );
   }
   const statics = /^verify-static:.*\n((?:\t.*\n?)*)/m.exec(text)?.[1] ?? "";
-  if (!statics.includes(STATIC_FORCE)) {
+  if (!statics.includes(FORCE)) {
     findings.push(
       finding(
         MAKEFILE,
         lineOf(text, "verify-static:"),
-        `verify-static must run lint, typecheck and build with ${STATIC_FORCE}`,
+        `verify-static must run lint, typecheck and build with ${FORCE}`,
       ),
     );
   }
