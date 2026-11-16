@@ -2075,7 +2075,7 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   - [ ] The decision record, and the images from the commit in the deploy suite.
   - [ ] The job on the released images after publishing; the dispatched verify of release pull requests green or gone.
 
-### [ ] T-73 · a push to main never cancels the run before it (P1)
+### [x] T-73 · a push to main never cancels the run before it (P1)
 
 - **Build:** `verify.yml` cancels a running verify only for pull requests.
 

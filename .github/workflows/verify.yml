@@ -21,9 +21,12 @@ permissions:
   pull-requests: read # the description of the merged pull request, for pushes to main
   statuses: write # the result of a dispatched run on the release pull request's head
 
+# A new push to a pull request, or a new dispatch for a release pull request, cancels the older run of that pull
+# request, which tested an old head. A push to main never cancels or replaces a run: each commit of main gets a group
+# of its own, so every commit of main gets a finished run.
 concurrency:
-  group: verify-${{ github.event.pull_request.number || inputs.pr || github.ref }}
-  cancel-in-progress: true
+  group: verify-${{ github.event.pull_request.number || inputs.pr || github.sha }}
+  cancel-in-progress: ${{ github.event_name != 'push' }}
 
 jobs:
   # `make verify` in three parts (Makefile): verify-static and verify-tests run side by side, then verify-checks
