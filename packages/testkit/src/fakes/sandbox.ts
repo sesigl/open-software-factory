@@ -22,6 +22,11 @@ export interface SandboxOptions {
   templates?: string[];
   /** What `probe <template> <host>` reports for the denied host, as it isolates nothing. Default: "refused". */
   probe?: "refused" | "reached";
+  /**
+   * How long `create` takes after it logged the sandbox, and how long a `copy` out of a sandbox takes, in milliseconds,
+   * as a slow image pull or a large folder does. Default: none.
+   */
+  takesMs?: { create?: number; copyOut?: number };
 }
 
 /** One line of the fake's log: a sandbox it created, or a command it ran. */

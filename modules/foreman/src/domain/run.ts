@@ -49,6 +49,11 @@ export interface RunInput {
   definition: Definition;
   /** For a run that runs a run before it again. */
   before?: RunBefore;
+  /**
+   * How long a stage may go without a heartbeat before Temporal runs it again, FOREMAN_HEARTBEAT_TIMEOUT_MS; a run
+   * that started without it waits 1 minute.
+   */
+  heartbeatMs?: number;
 }
 
 /** What the workflow does next for the stage at `index`. */

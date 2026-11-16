@@ -64,6 +64,9 @@ export const gatedFactory = (fakes: Fakes): string =>
 /** The README's factory whose agents run in sandboxes. */
 export const sandboxedFactory = (fakes: Fakes): string => readmeFiles(fakes)["sandboxed/factory.yaml"] as string;
 
+/** The README's "sandboxed/factory.yaml" with its stage "plan" only: one sandbox, for a scenario that slows it. */
+export const sandboxedPlan = (fakes: Fakes): string => sandboxedFactory(fakes).replace("  - stage: implement\n", "");
+
 /**
  * The README's "sandboxed/factory.yaml" whose agent "plan" also declares "ref:env/SLACK_TOKEN", which the sandbox
  * adapter resolves itself, and "ref:openbao/forge-token", from a store (ADR 0139).
