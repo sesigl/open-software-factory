@@ -37,6 +37,8 @@ file, as for the profile's images.
 - A scenario's agent can run in a sandbox of the docker sandbox adapter, started from the workspace image, which holds
   the scripted agent at `/opt/osf/harness-agent.ts`. The agent then takes its script over HTTP from the testkit, and
   gets the forge token as the placeholder of the secret `ref:env/FORGE_TOKEN`.
+- The other scenarios' agents run in foreman's container, without a sandbox. The profile's foreman refuses that
+  (`FOREMAN_REQUIRE_SANDBOX`), so the override switches the setting off for the smoke suite.
 - observer and taskcapture are services of the Compose profile `tools`: `docker compose run --rm observer <command>`
   works on the scenario's folder as `/work`.
 - [`factory/`](factory/) is the scenario's factory: the agents' prompts, the group `maintainers` and the gate

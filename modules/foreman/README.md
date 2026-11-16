@@ -180,7 +180,12 @@ stage then goes like this:
 `npx -y @opensoftware/sandbox-<name>@<range>` at the factory's range ([Versions](#versions)). A factory names at most one sandbox adapter. A factory that names none runs
 its sandboxes with the adapter of `FOREMAN_SANDBOX` (`docker`), so one factory runs in Docker on one machine and in
 Kubernetes in a cluster ([ADR 0096](../../docs/decisions/0096-agents-in-sandboxes-in-the-profile.md)). An agent without `sandbox` runs on
-the foreman's machine in the run's folder. A sandboxed agent's egress also allows the host of each of its remote MCP
+the foreman's machine in the run's folder, with the foreman's environment and every token in it. With
+`FOREMAN_REQUIRE_SANDBOX=true`, as the Compose profile and the Helm chart set it, the foreman runs no agent outside a
+sandbox: a factory with a stage whose agent declares none cannot run, like a factory with a mistake. `foreman serve`
+then stops at the start with exit code 2, and a run or a retry of a factory commit read later is refused, with a line
+per such agent: `factory.yaml: /agents/implement: declare a sandbox: FOREMAN_REQUIRE_SANDBOX runs no agent outside one`.
+A run that started before the setting was on keeps the factory it started with. A sandboxed agent's egress also allows the host of each of its remote MCP
 servers; a server that runs with `npx` needs `registry.npmjs.org` in the agent's own `egress`.
 
 ## Checks
@@ -609,6 +614,7 @@ the minor version. The one-time setup is the same as for contracts
 | `FOREMAN_HARNESSES` | string | `"{}"` | serve: a JSON object from harness name to the command line of its adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. A harness it does not name runs npx -y @opensoftware/harness-<name>@<range> run, at the range under providers.harness (ADR 0110). |
 | `FOREMAN_SANDBOXES` | string | `"{}"` | serve: a JSON object from sandbox adapter name to the command line of the adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. An adapter it does not name runs npx -y @opensoftware/sandbox-<name>@<range>, at the range under providers.sandbox (ADR 0110). The factory names its adapter under providers.sandbox, or else FOREMAN_SANDBOX picks it. |
 | `FOREMAN_SANDBOX` | string | `"docker"` | serve: the sandbox adapter of a factory that names none under providers.sandbox, like docker in the Compose profile and kubernetes in the Helm chart. |
+| `FOREMAN_REQUIRE_SANDBOX` | string |  | serve: true runs no agent outside a sandbox: a factory with a stage whose agent declares no sandbox is refused like a factory that cannot run, at the start of the server, of a run and of a retry, and its message names each such agent. The Compose profile and the Helm chart set true, so no agent gets the foreman's environment with its tokens. Unset or another value: an agent without a sandbox runs on the foreman's machine. |
 | `FOREMAN_FORGES` | string | `"{}"` | serve: a JSON object from forge adapter name to the command line of the adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. An adapter it does not name runs npx -y @opensoftware/forge-<name>@<range>, at the range under providers.forge (ADR 0110). The factory names its adapter under providers.forge. |
 | `FOREMAN_INFERENCES` | string | `"{}"` | serve: a JSON object from inference adapter name to the command line of the adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. An adapter it does not name runs npx -y @opensoftware/inference-<name>@<range>, at the range under providers.inference (ADR 0110). The factory names its adapter under providers.inference. |
 | `FOREMAN_SECRETS` | string | `"{}"` | serve: a JSON object from secrets provider name to the command line of its secrets adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. An adapter it does not name runs npx -y @opensoftware/secrets-<name>@<range>, at the range under providers.secrets. Before a sandboxed stage, the foreman runs its exists for each of the agent's secrets of that provider; file and env are the sandbox adapter's own (ADR 0139). |
@@ -818,3 +824,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-183 | implemented | A run does not start while the factory's Git remote cannot be fetched, and the API answers 503 |
 | SCN-FORE-184 | implemented | A work item that comes while the factory has changes that are not committed comes again and starts its run once they are committed |
 | SCN-FORE-185 | implemented | A port that another program listens on ends "foreman serve" with code 1 |
+| SCN-FORE-186 | implemented | With FOREMAN_REQUIRE_SANDBOX, a factory whose agent declares no sandbox stops the server at the start and names the agent |

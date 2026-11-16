@@ -312,3 +312,9 @@ Feature: The Compose profile installs a complete factory with one command
     When the operator runs "docker compose run --rm --no-deps console console doctor"
     Then the output has the line "WARN  person proof: set CONSOLE_SIGNING_KEY: without it the console sends no proof of the person, and foreman, intake and gatekeeper refuse its actions when they check proofs"
     And no line of the output starts with "FAIL  person proof"
+
+  @id=SCN-DIST-056 @status=implemented
+  Scenario: The foreman of the Compose profile runs no agent outside a sandbox
+    Given the Compose profile with every value of ".env.example" set in ".env"
+    When the operator runs "docker compose config --format json"
+    Then the service "foreman" sets "FOREMAN_REQUIRE_SANDBOX" to "true"

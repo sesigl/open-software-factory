@@ -453,6 +453,9 @@ services:
       # An agent with a sandbox runs in a container of the docker sandbox adapter, through docker-proxy (ADR 0096). Its
       # egress proxy joins this project's network, so a sandbox whose egress allows litellm reaches it.
       FOREMAN_SANDBOX: docker
+      # An agent without a sandbox would run in this container, with every token below: the foreman refuses a factory
+      # with such an agent (T-70).
+      FOREMAN_REQUIRE_SANDBOX: "true"
       FOREMAN_SANDBOXES: '{"docker": "sandbox-docker"}'
       DOCKER_HOST: tcp://docker-proxy:2375
       OSF_SANDBOX_NETWORK: ${COMPOSE_PROJECT_NAME}_default

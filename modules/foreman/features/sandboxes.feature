@@ -89,6 +89,14 @@ Feature: Sandboxes
     Then "/v1/runs/<id>" shows the state "complete"
     And the sandbox adapter created no sandbox
 
+  @id=SCN-FORE-186 @status=implemented
+  Scenario: With FOREMAN_REQUIRE_SANDBOX, a factory whose agent declares no sandbox stops the server at the start and names the agent
+    Given the README's "sandboxed/factory.yaml" whose agent "implement" declares no sandbox
+    When the user runs "foreman serve" with "FOREMAN_REQUIRE_SANDBOX" set to "true"
+    Then the command exits with code 2
+    And the output contains "factory.yaml: /agents/implement: declare a sandbox: FOREMAN_REQUIRE_SANDBOX runs no agent outside one"
+    And the output does not name the agent "plan", which declares one
+
   @id=SCN-FORE-070 @status=implemented
   Scenario: A sandboxed stage gets its agent's effort in its sandbox's environment
     Given "foreman serve" runs the README's "sandboxed/factory.yaml" with a fake sandbox adapter as "docker" and a scripted harness that ends every turn

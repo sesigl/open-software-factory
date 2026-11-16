@@ -88,6 +88,21 @@ function inferenceProblems(factory: FactoryDefinition): DefinitionProblem[] {
   return [];
 }
 
+/**
+ * The agents of the factory's stages that declare no sandbox, for a foreman with FOREMAN_REQUIRE_SANDBOX, which runs no
+ * agent outside one: on the foreman's machine an agent has the foreman's environment, with its tokens.
+ */
+export function sandboxProblems(factory: FactoryDefinition): DefinitionProblem[] {
+  // stageProblems found no stage whose agent the factory does not declare.
+  const agents = new Set((factory.workflow ?? []).filter((stage) => !stage.wait).map(agentOf));
+  return [...agents]
+    .filter((agent) => !(factory.agents[agent] as FactoryDefinition["agents"][string]).sandbox)
+    .map((agent) => ({
+      path: `/agents/${agent}`,
+      message: "declare a sandbox: FOREMAN_REQUIRE_SANDBOX runs no agent outside one",
+    }));
+}
+
 function checkProblems(factory: FactoryDefinition): DefinitionProblem[] {
   if (Object.keys(factory.providers?.forge ?? {}).length === 1) return [];
   return (factory.workflow ?? []).flatMap((stage, index) => [

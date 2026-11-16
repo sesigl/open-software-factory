@@ -129,3 +129,11 @@ Feature: The Helm chart installs a complete factory on Kubernetes with one comma
     And the deployments "foreman", "intake" and "gatekeeper" set "FOREMAN_PERSON_KEYS", "INTAKE_PERSON_KEYS" and "GATEKEEPER_PERSON_KEYS" to "console=http://osf-console:8080/.well-known/jwks.json"
     When the operator runs it again with a values file without "console.signIn"
     Then no deployment sets "CONSOLE_SIGNING_KEY" or a setting "_PERSON_KEYS"
+
+  @id=SCN-DIST-057 @status=implemented
+  Scenario: The foreman of the Helm chart runs no agent outside a sandbox
+    Given a kind cluster with the images of the Compose profile
+    And a values file that sets every value under "secrets"
+    When the operator runs "helm template osf deploy/helm/osf --values values.yaml"
+    Then the command exits with code 0
+    And the deployment "foreman" sets "FOREMAN_REQUIRE_SANDBOX" to "true"

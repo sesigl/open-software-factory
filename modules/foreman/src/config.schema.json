@@ -63,6 +63,10 @@
       "default": "docker",
       "description": "serve: the sandbox adapter of a factory that names none under providers.sandbox, like docker in the Compose profile and kubernetes in the Helm chart."
     },
+    "FOREMAN_REQUIRE_SANDBOX": {
+      "type": "string",
+      "description": "serve: true runs no agent outside a sandbox: a factory with a stage whose agent declares no sandbox is refused like a factory that cannot run, at the start of the server, of a run and of a retry, and its message names each such agent. The Compose profile and the Helm chart set true, so no agent gets the foreman's environment with its tokens. Unset or another value: an agent without a sandbox runs on the foreman's machine."
+    },
     "FOREMAN_FORGES": {
       "type": "string",
       "default": "{}",

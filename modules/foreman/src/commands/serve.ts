@@ -208,7 +208,10 @@ export async function serve(env: Env) {
   const warn = (text: string) => process.stderr.write(`foreman: ${text}\n`);
   const persons = checkerOf(env, warn);
   const data = resolve(env.OSF_DATA || ".foreman");
-  const source = factorySource(env.FOREMAN_FACTORY || "factory.yaml", data, env.FOREMAN_FACTORY_TOKEN);
+  // With FOREMAN_REQUIRE_SANDBOX a factory whose agent has no sandbox cannot run: the server, a run and a retry refuse it.
+  const source = factorySource(env.FOREMAN_FACTORY || "factory.yaml", data, env.FOREMAN_FACTORY_TOKEN, {
+    requireSandbox: env.FOREMAN_REQUIRE_SANDBOX === "true",
+  });
   const { definition } = await source.read();
   const maps = Object.fromEntries(
     PORTS.map((port) => [port, JSON.parse(env[MAP_OF[port]] || "{}") as CommandLines]),
