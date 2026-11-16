@@ -1,6 +1,6 @@
-// Reads system test files into one shape for TRACE, STEPS, NOSKIP, ASSERT, BOUNDARY-STATIC and BOUNDARY-ENV.
-// Every system test is TypeScript (ADR 0009); files are read with ts-morph.
-import { type CallExpression, Node, Project, SyntaxKind } from "ts-morph";
+// Reads system test files in one scan into one shape for NOSKIP, ASSERT, UI-QUERY and BOUNDARY-ENV; AFFECTED reads the
+// same parsed files. Every system test is TypeScript (ADR 0009); files are read with ts-morph.
+import { type CallExpression, Node, Project, type SourceFile, SyntaxKind } from "ts-morph";
 import { moduleRootOf, type Repo } from "./repo.ts";
 
 export const TEST_GLOBS = ["**/system-tests/**/*.test.ts"];
@@ -84,10 +84,23 @@ function ownPackage(repo: Repo, file: string): string | undefined {
   return repo.exists(manifest) ? (JSON.parse(repo.read(manifest)) as { name?: string }).name : undefined;
 }
 
+let project: Project | undefined;
+
+/**
+ * The syntax tree of a file, parsed once per run of `osf check` in one in-memory project: the lint of the tests and
+ * AFFECTED read the same files, and a project per file cost more than the parse.
+ */
+export function parsed(file: string, text: string): SourceFile {
+  project ??= new Project({ useInMemoryFileSystem: true, compilerOptions: { allowJs: true } });
+  const path = `/${file}`;
+  const known = project.getSourceFile(path);
+  if (known && known.getFullText() === text) return known;
+  return project.createSourceFile(path, text, { overwrite: true });
+}
+
 /** `own` is the package the test belongs to: values from its exports come from the system under test. */
 export function scanTypeScript(file: string, text: string, own?: string): TestFile {
-  const project = new Project({ useInMemoryFileSystem: true, compilerOptions: { allowJs: true } });
-  const source = project.createSourceFile(`/${file}`, text);
+  const source = parsed(file, text);
   const result: TestFile = { file, isTest: true, scenarios: [], imports: [], skips: [], env: [], queries: [] };
 
   const sources = new Set(SOURCES);
@@ -104,48 +117,45 @@ export function scanTypeScript(file: string, text: string, own?: string): TestFi
     if (other) sources.add(other.getText());
   }
 
-  for (const node of source.getDescendants()) {
-    if (Node.isCallExpression(node)) {
-      const callee = node.getExpression();
-      const first = node.getArguments()[0];
-      const literal = first && (Node.isStringLiteral(first) || Node.isNoSubstitutionTemplateLiteral(first));
-      if ((callee.getKind() === SyntaxKind.ImportKeyword || callee.getText() === "require") && literal) {
-        result.imports.push({ name: first.getLiteralText(), line: node.getStartLineNumber() });
-      }
-      if (Node.isIdentifier(callee) && SKIP_FUNCTIONS.has(callee.getText())) {
-        result.skips.push({ name: callee.getText(), line: node.getStartLineNumber() });
-      }
-      if (callee.getText() === "vi.stubEnv" && literal) {
-        result.env.push({ name: first.getLiteralText(), line: node.getStartLineNumber() });
-      }
-      if (Node.isPropertyAccessExpression(callee) && QUERIES.has(callee.getName())) {
-        result.queries.push({ name: callee.getName(), line: node.getStartLineNumber() });
-      }
-      if (Node.isIdentifier(callee) && callee.getText() === "scenario") {
-        result.scenarios.push(readScenario(node, sources));
+  // Only the kinds of node the lint reads are wrapped: wrapping every node of a file took most of the time.
+  for (const node of source.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+    const callee = node.getExpression();
+    const first = node.getArguments()[0];
+    const literal = first && (Node.isStringLiteral(first) || Node.isNoSubstitutionTemplateLiteral(first));
+    if ((callee.getKind() === SyntaxKind.ImportKeyword || callee.getText() === "require") && literal) {
+      result.imports.push({ name: first.getLiteralText(), line: node.getStartLineNumber() });
+    }
+    if (Node.isIdentifier(callee) && SKIP_FUNCTIONS.has(callee.getText())) {
+      result.skips.push({ name: callee.getText(), line: node.getStartLineNumber() });
+    }
+    if (callee.getText() === "vi.stubEnv" && literal) {
+      result.env.push({ name: first.getLiteralText(), line: node.getStartLineNumber() });
+    }
+    if (Node.isPropertyAccessExpression(callee) && QUERIES.has(callee.getName())) {
+      result.queries.push({ name: callee.getName(), line: node.getStartLineNumber() });
+    }
+    if (Node.isIdentifier(callee) && callee.getText() === "scenario") {
+      result.scenarios.push(readScenario(node, sources));
+    }
+  }
+  for (const node of source.getDescendantsOfKind(SyntaxKind.PropertyAccessExpression)) {
+    if (!SKIP_PROPERTIES.has(node.getName())) continue;
+    const root = rootIdentifier(node.getExpression());
+    if (root && RUNNERS.has(root)) result.skips.push({ name: node.getText(), line: node.getStartLineNumber() });
+  }
+  for (const node of source.getDescendantsOfKind(SyntaxKind.PropertyAssignment)) {
+    const value = node.getName() === "env" ? node.getInitializer() : undefined;
+    if (!value || !Node.isObjectLiteralExpression(value)) continue;
+    for (const property of value.getProperties()) {
+      if (Node.isPropertyAssignment(property) || Node.isShorthandPropertyAssignment(property)) {
+        result.env.push({ name: property.getName().replace(/^["']|["']$/g, ""), line: property.getStartLineNumber() });
       }
     }
-    if (Node.isPropertyAccessExpression(node) && SKIP_PROPERTIES.has(node.getName())) {
-      const root = rootIdentifier(node.getExpression());
-      if (root && RUNNERS.has(root)) result.skips.push({ name: node.getText(), line: node.getStartLineNumber() });
-    }
-    if (Node.isPropertyAssignment(node) && node.getName() === "env") {
-      const value = node.getInitializer();
-      if (value && Node.isObjectLiteralExpression(value)) {
-        for (const property of value.getProperties()) {
-          if (Node.isPropertyAssignment(property) || Node.isShorthandPropertyAssignment(property)) {
-            result.env.push({
-              name: property.getName().replace(/^["']|["']$/g, ""),
-              line: property.getStartLineNumber(),
-            });
-          }
-        }
-      }
-    }
-    if (Node.isBinaryExpression(node) && node.getOperatorToken().getKind() === SyntaxKind.EqualsToken) {
-      const name = /^process\.env(?:\.(\w+)|\[["'](\w+)["']\])$/.exec(node.getLeft().getText());
-      if (name) result.env.push({ name: (name[1] ?? name[2]) as string, line: node.getStartLineNumber() });
-    }
+  }
+  for (const node of source.getDescendantsOfKind(SyntaxKind.BinaryExpression)) {
+    if (node.getOperatorToken().getKind() !== SyntaxKind.EqualsToken) continue;
+    const name = /^process\.env(?:\.(\w+)|\[["'](\w+)["']\])$/.exec(node.getLeft().getText());
+    if (name) result.env.push({ name: (name[1] ?? name[2]) as string, line: node.getStartLineNumber() });
   }
   return result;
 }

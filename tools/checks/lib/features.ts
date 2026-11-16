@@ -1,8 +1,6 @@
 import { parseFeature, type Scenario } from "@opensoftware/spec-files";
 import type { Finding, Repo } from "./repo.ts";
 
-export { type Scenario, statusOf } from "@opensoftware/spec-files";
-
 /** Where scenarios live. `docs/vision/` is source material and is not checked. */
 const FEATURE_GLOBS = [
   "modules/*/features/**/*.feature",

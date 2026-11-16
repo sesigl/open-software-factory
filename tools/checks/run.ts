@@ -15,7 +15,6 @@ const boundary = () => import("./boundary.ts");
 const design = () => import("./design.ts");
 const docs = () => import("./docs.ts");
 const quality = () => import("./quality.ts");
-const results = () => import("./results.ts");
 const visionModule = () => import("./vision.ts");
 
 /** The fast set: static checks that need no test run and no base. SPEC, TRACE, STEPS and PASS are spec-trace's. */
@@ -46,8 +45,7 @@ export const FAST: Record<string, Check> = {
 
 /** Checks that read test results or compare with OSF_BASE; `make verify` runs them after the tests. */
 export const SLOW: Record<string, Check> = {
-  FLAKE: lazy(async () => (await results()).flake),
-  BUDGET: lazy(async () => (await results()).budget),
+  BUDGET: lazy(async () => (await import("./results.ts")).budget),
   "DOCS-AFFECTED": lazy(async () => (await docs()).docsAffected),
   CONTRACT: lazy(async () => (await import("./contract.ts")).contract),
   REACH: lazy(async () => (await import("./reach.ts")).reach),

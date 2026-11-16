@@ -1,12 +1,7 @@
 // ARCH: every module declares its layers in architecture.json, and its source files follow them.
-import { posix } from "node:path";
-import { cruise, type ICruiseResult, type IReporterOutput } from "dependency-cruiser";
 import type { Context } from "./lib/context.ts";
+import { cruised, unitSources } from "./lib/cruise.ts";
 import { type Finding, lineOf } from "./lib/repo.ts";
-
-/** Folders whose packages are modules with their own architecture. */
-const MODULE_MANIFESTS = ["modules/*/package.json", "packages/*/package.json", "adapters/*/*/package.json"];
-const SOURCE = /^(src|bin)\/.+\.(ts|tsx|js|mjs|cjs)$/;
 
 interface Layer {
   name: string;
@@ -17,12 +12,9 @@ interface Layer {
 export async function arch(context: Context): Promise<Finding[]> {
   const { repo } = context;
   const findings: Finding[] = [];
-  for (const manifest of repo.match(...MODULE_MANIFESTS)) {
-    const root = posix.dirname(manifest);
-    const sources = repo
-      .files()
-      .filter((file) => file.startsWith(`${root}/`) && SOURCE.test(file.slice(root.length + 1)));
+  for (const [root, sources] of unitSources(repo)) {
     if (sources.length === 0) continue;
+    const manifest = `${root}/package.json`;
 
     const declaration = `${root}/architecture.json`;
     if (!repo.exists(declaration)) {
@@ -82,16 +74,11 @@ async function upwardImports(
   layerOf: (file: string) => number,
 ): Promise<Finding[]> {
   if (files.length === 0) return [];
-  const output = (await cruise(files, {
-    baseDir: context.repo.root,
-    // Only the listed files: a deeper walk would stop at a file reached first as a dependency.
-    doNotFollow: { path: ".+" },
-    tsPreCompilationDeps: true,
-  })) as IReporterOutput;
-  const result = output.output as ICruiseResult;
+  const listed = new Set(files);
+  const result = await cruised(context);
   const findings: Finding[] = [];
   for (const module of result.modules) {
-    if (!files.includes(module.source)) continue;
+    if (!listed.has(module.source)) continue;
     const own = layerOf(module.source);
     for (const dependency of module.dependencies) {
       const target = layerOf(dependency.resolved);
