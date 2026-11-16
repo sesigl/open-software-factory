@@ -31,10 +31,10 @@ secrets:
 images:
   registry: ghcr.io/sesigl/open-software-factory
   pullPolicy: IfNotPresent
-  gatekeeper: "0.10.1"
-  intake: "0.7.1"
-  foreman: "0.14.1"
-  console: "0.11.0"
+  gatekeeper: "0.11.0"
+  intake: "0.8.0"
+  foreman: "0.15.0"
+  console: "0.12.0"
   factorySpec: "0.12.1"
   # The image of the improvement jobs: observer, scorekit and ledger.
   observer: "0.2.1"
