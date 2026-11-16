@@ -151,14 +151,14 @@ services:
 
   # One-shot: the two policies for the mount, as secrets-openbao prints them, into the volume openbao-policies.
   openbao-policies:
-    image: ghcr.io/sesigl/open-software-factory/console:0.11.0
+    image: ghcr.io/sesigl/open-software-factory/console:0.12.0
     build: &console
       context: ../images
       target: module
       secrets: [ca]
       args:
         PACKAGES: >-
-          @opensoftware/console@0.11.0 @opensoftware/forge-github@0.8.1 @opensoftware/forge-forgejo@0.8.1
+          @opensoftware/console@0.12.0 @opensoftware/forge-github@0.8.1 @opensoftware/forge-forgejo@0.8.1
           @opensoftware/secrets-openbao@0.1.1 @opensoftware/factory-spec@0.12.1
     entrypoint: [sh, -c]
     command:
@@ -285,13 +285,13 @@ services:
 
   gatekeeper:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/gatekeeper:0.10.1
+    image: ghcr.io/sesigl/open-software-factory/gatekeeper:0.11.0
     build:
       context: ../images
       target: gatekeeper
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/gatekeeper@0.10.1 @opensoftware/channel-slack@0.3.0 @opensoftware/forge-github@0.8.1"
+        PACKAGES: "@opensoftware/gatekeeper@0.11.0 @opensoftware/channel-slack@0.3.0 @opensoftware/forge-github@0.8.1"
     # Asks in the Slack channel GATEKEEPER_SLACK_CHANNEL, on the run's pull request with GATEKEEPER_FORGE_TOKEN, or both.
     entrypoint: [sh, -c]
     command:
@@ -324,13 +324,13 @@ services:
 
   intake:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/intake:0.7.1
+    image: ghcr.io/sesigl/open-software-factory/intake:0.8.0
     build:
       context: ../images
       target: module
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/intake@0.7.1 @opensoftware/channel-slack@0.3.0 @opensoftware/forge-github@0.8.1 @opensoftware/forge-forgejo@0.8.1"
+        PACKAGES: "@opensoftware/intake@0.8.0 @opensoftware/channel-slack@0.3.0 @opensoftware/forge-github@0.8.1 @opensoftware/forge-forgejo@0.8.1"
     command: [intake, serve]
     depends_on:
       postgres:
@@ -397,14 +397,14 @@ services:
 
   foreman:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/foreman:0.14.1
+    image: ghcr.io/sesigl/open-software-factory/foreman:0.15.0
     build:
       context: ../images
       target: foreman
       secrets: [ca]
       args:
         PACKAGES: >-
-          @opensoftware/foreman@0.14.1 @opensoftware/harness-claude-code@0.6.0 @opensoftware/forge-github@0.8.1
+          @opensoftware/foreman@0.15.0 @opensoftware/harness-claude-code@0.6.0 @opensoftware/forge-github@0.8.1
           @opensoftware/forge-forgejo@0.8.1 @opensoftware/inference-litellm@0.5.1 @opensoftware/sandbox-docker@0.8.0
           @opensoftware/sandbox-kubernetes@0.6.0 @opensoftware/secrets-openbao@0.1.1
     command: [foreman, serve]
@@ -489,7 +489,7 @@ services:
 
   console:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/console:0.11.0
+    image: ghcr.io/sesigl/open-software-factory/console:0.12.0
     build: *console
     command: [console, serve]
     depends_on:

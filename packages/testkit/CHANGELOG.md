@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.40.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.39.0...testkit-v0.40.0) (2026-11-16)
+
+
+### Features
+
+* **console:** the work page's list stays fresh without a reload: the first island (T-55) ([#365](https://github.com/sesigl/open-software-factory/issues/365)) ([5cd1a17](https://github.com/sesigl/open-software-factory/commit/5cd1a17c12fa8414d1c134f600147697f898de95))
+* **person-proof:** one library signs and checks the proof of a person (T-61) ([#357](https://github.com/sesigl/open-software-factory/issues/357)) ([68ec0c7](https://github.com/sesigl/open-software-factory/commit/68ec0c7e3ef37c3a258fa7740fbc8206ecd3eb88))
+* **testkit:** an island's code counts for the mutation check (T-55) ([#364](https://github.com/sesigl/open-software-factory/issues/364)) ([9a6462e](https://github.com/sesigl/open-software-factory/commit/9a6462ecb338cf49b6faef6a4a7d01b133957656))
+
 ## [0.39.0](https://github.com/sesigl/open-software-factory/compare/testkit-v0.38.0...testkit-v0.39.0) (2026-11-15)
 
 
