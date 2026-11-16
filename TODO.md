@@ -2029,7 +2029,7 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   ends the process with a code that is not 0.
 - **Done when:** scenarios prove the event starts a run once the factory is readable, and a taken port ends serve.
 
-### [ ] T-68 · the console returns only to itself, and `osf init` keeps `.env` private (P1)
+### [x] T-68 · the console returns only to itself, and `osf init` keeps `.env` private (P1)
 
 - **Problem:** `next` with a control character after the first slash leaves the console
   (`modules/console/src/domain/signin.ts`, `safeNext`). `osf init` writes secrets into an existing `.env` without

@@ -25,6 +25,13 @@ Feature: The sut handle
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-190 @status=implemented
+  Scenario: sut.files.put gives a file a mode and sut.files.mode reads it back
+    Given a module whose system test puts "$INPUT/a.txt" with the mode 0640, expects sut.files.mode of it to be 0640, and expects 0600 after its program narrows it
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-046 @status=implemented
   Scenario: A library without a bin uses sut.files
     Given a library whose package.json has no bin

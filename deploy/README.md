@@ -19,7 +19,7 @@ Compose starts.
 
 ```sh
 cd deploy/compose
-cp .env.example .env    # set the tokens, the database password, and Slack or a forge token for gatekeeper
+cp .env.example .env && chmod 600 .env    # set the tokens, the database password, and Slack or a forge token for gatekeeper
 $EDITOR factory/groups.json    # put your Slack member ID, like slack:U024BE7LH, or github:<login> in place of slack:U0EXAMPLE
 docker compose up --detach --wait
 docker compose run --rm console console doctor    # one line per check, and one fix per failure

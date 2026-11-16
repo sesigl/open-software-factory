@@ -2,7 +2,7 @@
 // ADR 0119). Only Node's own modules, so that the three commands run on a clone without `make install`.
 import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { cpSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 
 const PROFILE = "deploy/compose";
@@ -29,6 +29,9 @@ export function init(root: string, args: string[]): number {
   const env = join(root, ENV);
   const lines = readFileSync(join(root, `${PROFILE}/.env.example`), "utf8").split("\n");
   if (existsSync(env)) {
+    // The .env holds secrets: only its owner reads it, also one that `cp .env.example .env` made readable by everyone.
+    // Its mode is set before a secret goes in, as a new .env gets it when it is created.
+    chmodSync(env, 0o600);
     // A value that a newer profile generates, like OpenBao's key, is added; every value of the .env stays.
     const text = readFileSync(env, "utf8");
     const have = parse(text);

@@ -31,7 +31,8 @@ key and signing key, and the unseal key and the three tokens of OpenBao, the sto
 `team/factory/` and points `FACTORY_DIR` there, so you change your copy. It ends with the list of values that are
 still empty. `.env` stays out of Git; never commit it, and keep a copy in your safe: without its
 `OSF_OPENBAO_UNSEAL_KEY`, no one can read the secrets you store. On an existing `.env`, `osf init` changes no value
-and only adds the ones a newer profile generates.
+and only adds the ones a newer profile generates. It leaves `.env` readable only by you (mode 0600), also one you
+copied from `.env.example` yourself.
 
 ## 2. Say who approves and where
 

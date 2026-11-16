@@ -64,8 +64,15 @@ export function signInOf(env: Env): SignIn | undefined | string[] {
   return problems.length ? problems : sign;
 }
 
-/** The path a person comes back to after the sign-in: only a path of the console, else "/". */
+/** A stand-in for the console's own origin: `next` resolves against it as a browser resolves it against the page. */
+const OWN = "http://console.invalid";
+
+/**
+ * The path a person comes back to after the sign-in or a theme switch: only a page of the console, else "/". `next`
+ * is parsed as a browser parses a location, which drops a tab or a newline and reads a backslash as a slash, so
+ * "/\t/evil.example" is another site; only the path, query and fragment of a result on the console's origin go out.
+ */
 export function safeNext(next: string | undefined): string {
-  if (!next?.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return "/";
-  return next;
+  const url = URL.parse(next ?? "", OWN);
+  return url?.origin === OWN ? `${url.pathname}${url.search}${url.hash}` : "/";
 }

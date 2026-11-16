@@ -83,6 +83,13 @@ Feature: The shell of the pages in the new look
     Then the page "/?state=failed" has the light theme and links "Dark theme"
     And after "Dark theme" the page has the dark theme again
 
+  @id=SCN-CONSOLE-280 @status=implemented
+  Scenario: The theme link sends a person back only to a page of the console, also past a tab, a newline or a backslash
+    Given a foreman with no runs
+    When a program asks for "/theme?to=light" with the next "/%09/evil.example/x", "/%0A/evil.example/x", "/%5Cevil.example/x", "/%5C%09evil.example/x", "https://evil.example/x" and "https://[evil.example", without a next, and with the next "/runs?state=failed#top"
+    Then each of the first seven answers 303 to "/"
+    And the last answers 303 to "/runs?state=failed#top"
+
   @id=SCN-CONSOLE-162 @status=implemented
   Scenario: The shell has a skip link to the content and its landmarks
     Given a foreman with no runs
