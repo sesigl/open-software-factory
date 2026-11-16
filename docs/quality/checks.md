@@ -32,7 +32,8 @@ their JUnit and coverage results and runs `verify-checks`; it fails when any par
 suite runs in the suite `rest`. On a pull request, the job `plan` starts a runner only for a suite with a test task
 that is no turbo cache hit, and replays the results of the other suites itself; lint, typecheck and build replay the
 results of unchanged packages; on `main` and locally everything runs (ADR 0081, ADR 0094). AFFECTED keeps the hash
-complete.
+complete. A new push to a pull request cancels its running `verify`; a push to `main` never cancels the run of the
+commit before it, so every commit of `main` gets a finished run.
 Release pull requests are opened by release-please with `GITHUB_TOKEN`, and their `pull_request` run waits for a
 person's approval. So after each push to `main`, `release-please.yml` also starts `verify` on every open release
 pull request with `workflow_dispatch`. That run needs no approval. It uses `verify.yml` from `main`, merges the pull
