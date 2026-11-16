@@ -123,6 +123,7 @@ reload, which stays until live updates replace it (`TODO.md`, T-60).
 
 ## Budget
 
+- T-68 adds SCN-CONSOLE-280 and 281 without a new budget: 0.35 and 0.76 seconds on the development container.
 - System tests: 335 seconds in total on the CI runner (219 scenarios). The island of the work page (T-55, ADR 0152)
   adds SCN-CONSOLE-274 to 279 without a new budget: measured on the development container on 16 November 2026 in one
   run of the whole suite (218.0 seconds of test time), they took 3.5 seconds together: 0.3 to 0.6 seconds each for

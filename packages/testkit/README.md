@@ -41,12 +41,14 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
   for the scenario and which the test has no path into), `OSF_NOW=2026-01-01T00:00:00Z` and `OSF_SEED=1`.
   `env` may only name variables the module's README documents under Configuration. `bin` must be the built
   artifact: a `bin` in `src/` fails the test (BOUNDARY-RUNTIME).
-- `sut.files`: `put`, `link`, `read`, `list`, `remove` and `clear` in the module's input and output folders. Every path
+- `sut.files`: `put`, `link`, `read`, `mode`, `list`, `remove` and `clear` in the module's input and output folders. Every path
   starts with `$INPUT/` or `$OUTPUT/` and stays inside that folder; any other path fails the test. `path` gives
   the absolute path of a file there, for a library in `packages/` whose functions take paths (ADR 0039).
   `link(path, target)` makes a symbolic link at `path` with the text `target` as its target, which may point
   anywhere, as a link in a repository that a module fetches can.
-  `put(path, content, { executable: true })` writes a file its owner can run, like a fake program or plugin. `put`
+  `put(path, content, { executable: true })` writes a file its owner can run, like a fake program or plugin, and
+  `put(path, content, { mode: 0o644 })` gives it those permission bits. `mode(path)` reads them back, like `0o600`
+  for a file of secrets that only its owner reads. `put`
   writes a text as UTF-8 and a `Uint8Array`, such as a `Buffer`, byte for byte.
 - `sut.readme`: `quickStartArgs()` (the arguments of the README's `npx <package> ...` line) and
   `quickStartOutput()` (the first `$OUTPUT/<file>` it names).
@@ -623,3 +625,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-187 | implemented | A page that sut.browser opens during a mutation run runs the active mutant's branch of an instrumented script |
 | SCN-TK-188 | implemented | A page that sut.browser opens without an active mutant runs the original branch of an instrumented script |
 | SCN-TK-189 | implemented | A page that sut.browser opens with its clock paused runs its timers only when the test runs the clock |
+| SCN-TK-190 | implemented | sut.files.put gives a file a mode and sut.files.mode reads it back |

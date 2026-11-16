@@ -116,6 +116,14 @@ Feature: Setup of a factory from a clone
     Then the output contains "deploy/compose/.env exists: kept it, and added CONSOLE_SIGNING_KEY"
     And "deploy/compose/.env" keeps its "CONSOLE_SESSION_SECRET" and sets "CONSOLE_SIGNING_KEY" to a new value of 64 hex digits
 
+  @id=SCN-REPO-178 @status=implemented
+  Scenario: osf init leaves .env readable only by its owner, also one that "cp .env.example .env" made
+    Given a "deploy/compose/.env.example" with "POSTGRES_PASSWORD=" and "OSF_OPENBAO_UNSEAL_KEY="
+    And a "deploy/compose/.env" with "POSTGRES_PASSWORD=mine" and the mode 0644, as "cp" leaves it
+    When the developer runs "osf init", gives ".env" the mode 0644 again and runs "osf init" once more
+    Then both runs exit with code 0, and "deploy/compose/.env" has the mode 0600 after each
+    And "deploy/compose/.env" still has "POSTGRES_PASSWORD=mine" and sets "OSF_OPENBAO_UNSEAL_KEY" to 64 hex digits
+
   @id=SCN-REPO-169 @status=implemented
   Scenario: osf up names what a factory repository on a forge misses, and a setting that is not git+<url>
     Given a "deploy/compose/compose.yaml" that requires "POSTGRES_PASSWORD" with "${POSTGRES_PASSWORD:?...}"

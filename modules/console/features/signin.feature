@@ -33,6 +33,13 @@ Feature: Sign-in
     When the person opens "/signin?next=//evil.example/steal" and presses "Sign in"
     Then the person lands on "/" of the console
 
+  @id=SCN-CONSOLE-281 @status=implemented
+  Scenario: After the sign-in a tab after the first slash of the page to come back to does not lead to another site
+    Given a console that signs in with OpenID Connect and an access file with "ada@acme.dev" as "admin"
+    And the provider signs in "ada@acme.dev"
+    When the person opens "/signin?next=/%09/evil.example/steal" and presses "Sign in"
+    Then the person lands on "/" of the console
+
   @id=SCN-CONSOLE-141 @status=implemented
   Scenario: Sign out ends the session
     Given a person "ada@acme.dev" signed in to a console that signs in with OpenID Connect

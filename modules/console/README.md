@@ -65,7 +65,9 @@ work page `/work` and the inbox `/inbox` have the new look too, and the navigati
 form "Submit work" beside the work items, above them on a phone with its fields in one column, and the work items and
 the proposals as tables whose rows are cards on a phone. A form without the signed-in person or from another site
 answers with a problem in the same shell, with the way back to the form's page. The theme
-is dark unless the cookie `osf_theme` says light; `/theme?to=light&next=<path>` sets it and returns to the page. The
+is dark unless the cookie `osf_theme` says light; `/theme?to=light&next=<path>` sets it and returns to the page. Like the sign-in, it returns only to a page of the
+console: `next` is read as a browser reads it, so one that leads to another site, also past a tab or a backslash, returns
+to `/`. The
 secrets, skills and changes pages have the new look too, and its navigation links Secrets for an admin and a factory engineer, Skills for
 everyone and Changes with `CONSOLE_FACTORY_REPOSITORY`. Since T-60 every page has the new look, and the navigation
 has no "Classic pages": the factory's definition `/factory` with its agents as a table whose rows are cards on a
@@ -712,3 +714,5 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-277 | implemented | "/work/items" asks a person who is signed out to sign in first, like the work page |
 | SCN-CONSOLE-278 | implemented | "/work/items" refuses a person who is not on the access list, like the work page |
 | SCN-CONSOLE-279 | implemented | The list of work items refreshes while a person types into "Submit work", and the page passes axe (journey) |
+| SCN-CONSOLE-280 | implemented | The theme link sends a person back only to a page of the console, also past a tab, a newline or a backslash |
+| SCN-CONSOLE-281 | implemented | After the sign-in a tab after the first slash of the page to come back to does not lead to another site |

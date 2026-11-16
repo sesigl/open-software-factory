@@ -7,6 +7,7 @@ import {
   readdirSync,
   readFileSync,
   rmSync,
+  statSync,
   symlinkSync,
   writeFileSync,
 } from "node:fs";
@@ -75,8 +76,13 @@ export interface Sut {
    * folder; the module gets them as the environment variables `INPUT` and `OUTPUT`.
    */
   files: {
-    /** Writes the file, a text as UTF-8 or bytes as they are; `executable` lets the owner run it, like a plugin. */
-    put(path: string, content: string | Uint8Array, options?: { executable?: boolean }): Promise<void>;
+    /**
+     * Writes the file, a text as UTF-8 or bytes as they are; `executable` lets the owner run it, like a plugin, and
+     * `mode` gives it these permission bits, like 0o644 for a file that everyone may read.
+     */
+    put(path: string, content: string | Uint8Array, options?: { executable?: boolean; mode?: number }): Promise<void>;
+    /** The permission bits of the file, like 0o600 for one that only its owner reads and writes, as `ls -l` shows them. */
+    mode(path: string): Promise<number>;
     /**
      * Makes a symbolic link at `path` whose target is the text `target`, relative to the link's folder or absolute. A
      * link may point anywhere, as one in a repository that a module fetches can.
@@ -179,6 +185,10 @@ export function makeSut(moduleRoot: string, dirs: Folders, hosts: () => string[]
         mkdirSync(dirname(full), { recursive: true });
         writeFileSync(full, content);
         if (options.executable) chmodSync(full, 0o755);
+        if (options.mode !== undefined) chmodSync(full, options.mode);
+      },
+      async mode(path) {
+        return statSync(inside(path)).mode & 0o777;
       },
       async link(path, target) {
         const full = inside(path);

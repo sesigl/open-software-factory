@@ -1,5 +1,5 @@
 # The Compose profile of the factory: one command installs a complete factory on one machine (ADR 0074).
-#   cp .env.example .env    # then set every value in it
+#   cp .env.example .env && chmod 600 .env    # then set every value in it; `osf init` does both and generates secrets
 #   docker compose up --detach --wait
 # The module images are published to GHCR, signed, from npm at the versions below (ADR 0075); Compose builds one
 # itself only when the registry does not have it. The services are pinned images. Every port listens on OSF_HOST,
