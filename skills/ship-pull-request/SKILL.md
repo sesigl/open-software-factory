@@ -1,6 +1,6 @@
 ---
 name: ship-pull-request
-description: Open a pull request and bring its checks to green. Use when you push a branch, write a pull request description, or a check of a pull request fails (DOCS-AFFECTED, gate, BUDGET, a missing run).
+description: Open a pull request and bring its checks to green. Use when you push a branch, write a pull request description, or a check of a pull request fails (DOCS-AFFECTED, gate, BUDGET, a missing workflow run).
 ---
 
 # Ship a pull request
@@ -9,7 +9,7 @@ description: Open a pull request and bring its checks to green. Use when you pus
 
 - Work on a branch: in the main checkout, or in a git worktree of your own when agents work in parallel (root
   `AGENTS.md`, "How to work").
-- Run `make check`, then `make run-record`, and commit `runs/`.
+- Run `make check`. No pull request needs a run record in `runs/` (ADR 0153).
 
 ## The description
 
@@ -21,10 +21,8 @@ docs. Never add a `Co-Authored-By` line or a "Generated with" line.
 
 - **DOCS-AFFECTED**: open each doc it names. Update it when the change makes it wrong; otherwise add
   `docs-reviewed: <path>` to the description. Editing the description starts a new `verify` run.
-- **A run is missing after a push**: a pull request with a merge conflict starts no `pull_request` workflow. Check
-  `gh pr view <n> --json mergeable`, merge `main` into the branch and push.
-- **A conflict in `runs/<session>.jsonl`**: every pull request of one session writes that file. Take either side,
-  run `make run-record` (it writes the whole file again) and commit.
+- **A workflow run is missing after a push**: a pull request with a merge conflict starts no `pull_request`
+  workflow. Check `gh pr view <n> --json mergeable`, merge `main` into the branch and push.
 - **gate**: it runs as `pull_request_target`, with the workflow from `main`. A pull request that fixes the gate
   workflow cannot pass its own gate; merging it needs `--admin`, so ask the maintainer.
 - **BUDGET**: measure where the time goes (the JUnit times, the start of each process) and make the suite faster

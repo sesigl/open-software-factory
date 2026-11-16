@@ -535,7 +535,7 @@ Feature: Repository checks
     And the output contains "RUNS runs/run-1.jsonl:1 does not match the run-record contract"
     And the output contains "osf.run.id"
 
-  @id=SCN-REPO-040 @status=implemented
+  @id=SCN-REPO-040 @status=deprecated
   Scenario: RUNS rejects agent commits without a run record
     Given a base commit
     And a later commit with the trailer "Co-Authored-By: Claude <noreply@anthropic.com>" that changes no file in "runs/"
@@ -551,12 +551,20 @@ Feature: Repository checks
     Then the command exits with code 0
     And the output contains "RUNS ok"
 
-  @id=SCN-REPO-042 @status=implemented
+  @id=SCN-REPO-042 @status=deprecated
   Scenario: RUNS asks no run record of commits without an agent trailer
     Given a base commit
     And a later commit without a "Co-Authored-By:" trailer that changes no file in "runs/"
     When the developer runs "osf check RUNS" against the base commit
     Then the command exits with code 0
+
+  @id=SCN-REPO-177 @status=implemented @replaces=SCN-REPO-040
+  Scenario: RUNS accepts agent commits that change no file in runs/
+    Given a base commit
+    And a later commit with the trailer "Co-Authored-By: Claude <noreply@anthropic.com>" that changes no file in "runs/"
+    When the developer runs "osf check RUNS" against the base commit
+    Then the command exits with code 0
+    And the output contains "RUNS ok"
 
   @id=SCN-REPO-043 @status=implemented @replaces=SCN-REPO-001
   Scenario: A module created from the template passes the fast checks of osf

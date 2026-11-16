@@ -1,8 +1,6 @@
-// RUNS: the run records of this repository's agent sessions in runs/ (ADR 0027). Every line is an OTLP/JSON export
-// request whose root span "invoke_agent" matches the run-record contract and carries no content; a change with
-// agent commits since OSF_BASE adds or changes a run record.
+// RUNS: the run records in runs/ (ADR 0027, ADR 0153). Every line is an OTLP/JSON export request whose root span
+// "invoke_agent" matches the run-record contract and carries no content. No change has to add one (ADR 0153).
 import type { Context } from "./lib/context.ts";
-import { changedFiles, commitMessages } from "./lib/git.ts";
 import type { Finding } from "./lib/repo.ts";
 
 const RUNS = "runs/*.jsonl";
@@ -14,8 +12,6 @@ const CONTENT = [
   "gen_ai.tool.call.arguments",
   "gen_ai.tool.call.result",
 ];
-/** A trailer that marks a commit an agent made. */
-const AGENT_TRAILER = /^Co-Authored-By:.*\b(Claude|Codex|OpenCode)\b/im;
 
 interface AnyValue {
   stringValue?: string;
@@ -58,19 +54,6 @@ export async function runs(context: Context): Promise<Finding[]> {
       for (const message of problemsOf(text, validate))
         findings.push({ check: "RUNS", file, line: index + 1, message });
     }
-  }
-
-  const base = context.base("RUNS");
-  if (!base) return findings;
-  const agentCommits = commitMessages(repo.root, base).filter((message) => AGENT_TRAILER.test(message));
-  const changed = changedFiles(repo.root, base).filter(
-    (file) => /^runs\/[^/]+\.jsonl$/.test(file) && repo.exists(file),
-  );
-  if (agentCommits.length > 0 && changed.length === 0) {
-    findings.push({
-      check: "RUNS",
-      message: `${agentCommits.length} commit(s) since the base were made by an agent, but no run record in runs/ changed: run make run-record and commit runs/`,
-    });
   }
   return findings;
 }

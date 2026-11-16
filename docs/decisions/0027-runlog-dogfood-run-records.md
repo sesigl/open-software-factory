@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; the rule and the trailer part of RUNS superseded by 0153
 date: 2026-10-20
 ---
 
