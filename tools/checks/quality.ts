@@ -133,6 +133,11 @@ function clones(repo: Repo, files: string[]): Clone[] {
 
 /** `make new-module` copies the template, so a new module starts as a clone of it. */
 const TEMPLATE = "modules/_template";
+/** A clone across units of at most this many lines counts under each unit's own limit (ADR 0159). */
+const SHORT_CLONE = 15;
+const ACROSS =
+  "keep a copy of at most 15 lines, or move the code into an existing library whose job it fits " +
+  "(cli, testkit, contracts, factory-source, spec-files); a new package needs the bar of ADR 0159";
 
 export function dup(context: Context): Finding[] {
   const { repo } = context;
@@ -140,6 +145,12 @@ export function dup(context: Context): Finding[] {
   const unitOf = new Map([...all].flatMap(([unit, files]) => files.map((file) => [file, unit] as const)));
   const found = clones(repo, [...unitOf.keys()]);
   const findings: Finding[] = [];
+  const across = (clone: Clone): boolean => {
+    const first = unitOf.get(clone.first.file);
+    const second = unitOf.get(clone.second.file);
+    return first !== second && first !== TEMPLATE && second !== TEMPLATE;
+  };
+  const reported = new Set<Clone>();
 
   // Inside a unit: the share of its lines that are part of a clone stays under the unit's limit.
   for (const [unit, files] of all) {
@@ -156,9 +167,17 @@ export function dup(context: Context): Finding[] {
     const local = found.filter(
       (clone) => unitOf.get(clone.first.file) === unit && unitOf.get(clone.second.file) === unit,
     );
+    // A short clone with another unit counts here as a clone inside the unit does, with this unit's side only.
+    const short = found.filter(
+      (clone) =>
+        across(clone) &&
+        clone.lines <= SHORT_CLONE &&
+        (unitOf.get(clone.first.file) === unit || unitOf.get(clone.second.file) === unit),
+    );
     const cloned = new Set<string>();
-    for (const clone of local) {
+    for (const clone of [...local, ...short]) {
       for (const side of [clone.first, clone.second]) {
+        if (unitOf.get(side.file) !== unit) continue;
         for (let line = side.start; line <= side.end; line++) cloned.add(`${side.file}:${line}`);
       }
     }
@@ -173,16 +192,15 @@ export function dup(context: Context): Finding[] {
       message: `${round(share)}% of the lines of ${unit} are duplicated, the limit is ${max}%`,
     });
     for (const clone of local) findings.push(cloneFinding(clone, "extract the shared code into one function"));
+    for (const clone of short.filter((clone) => !reported.has(clone))) {
+      reported.add(clone);
+      findings.push(cloneFinding(clone, ACROSS));
+    }
   }
 
-  // Across units: none. Only a new module may start as a clone of the template.
-  for (const clone of found) {
-    const first = unitOf.get(clone.first.file);
-    const second = unitOf.get(clone.second.file);
-    if (first === second || first === TEMPLATE || second === TEMPLATE) continue;
-    findings.push(
-      cloneFinding(clone, "move the shared code into a package in packages/ or into contracts/ (ADR 0039)"),
-    );
+  // Across units: a longer clone fails. Only a new module may start as a clone of the template.
+  for (const clone of found.filter((clone) => across(clone) && clone.lines > SHORT_CLONE)) {
+    findings.push(cloneFinding(clone, ACROSS));
   }
   return findings;
 }

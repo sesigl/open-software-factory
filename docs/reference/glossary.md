@@ -63,9 +63,9 @@ Use these terms in scenarios, code, UI text and docs.
 | Suite | A group of packages in `.github/test-suites.yml` whose system tests run together on one CI runner; each package with system tests is in exactly one suite. |
 | Port | An interface to an outside system. |
 | Adapter | An implementation of a port for one product. |
-| Library | A package in `packages/` without a `bin` that modules may depend on: shared code with no CLI and no state of its own. Its system tests import it by its package name (ADR 0037, ADR 0039). |
+| Library | A package in `packages/` without a `bin` that modules may depend on: shared code with no CLI and no state of its own. Its system tests import it by its package name (ADR 0037, ADR 0039). A new one must earn its place (ADR 0159). |
 | Mutant | A small change Stryker makes to a module's code. A system test that fails on it detects the mutant; MUTATION scores the share detected. |
-| Clone | Source code of 50 tokens or more that appears twice. DUP limits clones inside a unit and forbids them across units. |
+| Clone | Source code of 50 tokens or more that appears twice. DUP limits clones inside a unit and fails a clone of more than 15 lines across units; a shorter one counts under each unit's limit (ADR 0159). |
 | Layer | A named group of a module's source files in its `architecture.json`; a file imports only its own layer and the layers below it. |
 | Conformance scenario | A port scenario every adapter of the port must pass. |
 | System test | The one test of an implemented scenario: it drives the built module or adapter from outside, with fakes for every outside system, and is deterministic. The kinds of tests are in `docs/quality/testing-strategy.md`. |

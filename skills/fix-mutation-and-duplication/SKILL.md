@@ -33,13 +33,14 @@ Then rerun only the changed lines: `make mutation` (with `OSF_BASE` set, as `mak
 ## A clone
 
 - **Inside a unit:** extract the repeated code into one function in the lowest layer both places may import.
-- **Across units:** move the code into a library in `packages/` (no CLI, no state, its own scenarios) or, when it
-  reads or writes a shared format, into `contracts/`. Check the existing libraries first: `@opensoftware/cli`
-  (commands, exit codes, input and output files), `@opensoftware/spec-files` (feature files, JUnit reports),
-  `@opensoftware/testkit/readme` (README rules) and `runSpans` in `@opensoftware/contracts` (run records). A new
-  library follows the layout in ADR 0039 (`packages/cli` is an example) and needs its own ADR
-  (`skills/write-adr`). Then delete the copies.
-- There is no baseline of allowed clones: DUP fails every clone across units.
+- **Across units:** a clone of at most 15 lines may stay as a copy: it counts toward each unit's duplication limit
+  (ADR 0159). A longer clone moves into an existing library whose job it fits, or, when it reads or writes a shared
+  format, into `contracts/`: `@opensoftware/cli` (commands, exit codes, input and output files),
+  `@opensoftware/spec-files` (feature files, JUnit reports), `@opensoftware/testkit/readme` (README rules),
+  `@opensoftware/factory-source` (a factory's folder) and `runSpans` in `@opensoftware/contracts` (run records).
+  Then delete the copies. A new library only when it earns its place (ADR 0159): it needs its own ADR with
+  `## Why a package` (`skills/write-adr`) and follows the layout in ADR 0039.
+- There is no baseline of allowed clones.
 
 ## Keep the tests fast
 

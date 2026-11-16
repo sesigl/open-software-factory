@@ -27,7 +27,7 @@ scenario("SCN-REPO-045", async ({ sut, given, when, then }) => {
     expect(run.stdout).toContain("duplicate modules/payroll/src/sum.ts");
   });
 
-  await then('the output contains "move the shared code into a package in packages/ or into contracts/"', async () => {
-    expect(run.stdout).toContain("move the shared code into a package in packages/ or into contracts/");
+  await then('the output contains "move the code into an existing library whose job it fits"', async () => {
+    expect(run.stdout).toContain("move the code into an existing library whose job it fits");
   });
 });

@@ -285,6 +285,39 @@ export function summingFunction(name: string): string {
   ].join("\n");
 }
 
+/** A function of 18 lines, longer than the clones DUP accepts across units (ADR 0159). */
+export function invoiceFunction(): string {
+  return [
+    "export function invoice(rows: { amount: number; currency: string; tax: number }[], currency: string) {",
+    "  const lines: string[] = [];",
+    "  let net = 0;",
+    "  let gross = 0;",
+    "  for (const row of rows) {",
+    "    if (row.currency !== currency) continue;",
+    '    if (row.amount < 0) throw new Error("negative amount in " + row.currency);',
+    '    if (row.tax < 0 || row.tax > 1) throw new Error("tax rate out of range: " + row.tax);',
+    "    const taxed = Math.round(row.amount * (1 + row.tax) * 100) / 100;",
+    "    net += row.amount;",
+    "    gross += taxed;",
+    '    lines.push(row.amount.toFixed(2) + " " + currency + " -> " + taxed.toFixed(2));',
+    "  }",
+    '  lines.push("net " + net.toFixed(2) + " " + currency);',
+    '  lines.push("gross " + gross.toFixed(2) + " " + currency);',
+    '  return lines.join("\\n");',
+    "}",
+    "",
+  ].join("\n");
+}
+
+/** Source of a module that holds no clone: one distinct constant per line. */
+export function distinctLines(name: string, count: number): string {
+  const lines = Array.from(
+    { length: count },
+    (_, i) => `export const ${name}${i} = ${i} * ${i + 7} + "${name}-${i}".length;`,
+  );
+  return `${lines.join("\n")}\n`;
+}
+
 /** package.json of a module with the mutation script of the template. */
 export function mutationPackage(name: string): string {
   const manifest = {

@@ -167,13 +167,21 @@ export function docsLinks(context: Context): Finding[] {
 /** A status, optionally followed by a note: `accepted; build tool part superseded by 0010`. */
 const ADR_STATUS = /^(proposed|accepted|rejected|deprecated|superseded by \d{4})(;.*)?$/;
 const TEMPLATE_PRIOR_ART = "Required for every new module";
+const TEMPLATE_WHY_PACKAGE = "Required for every new published package";
+/** The manifests of packages that need a reason to be a package (ADR 0159). */
+const PACKAGE_MANIFESTS = ["modules/*/package.json", "packages/*/package.json", "adapters/*/*/package.json"];
 
 interface Adr {
   file: string;
   status: string;
   text: string;
   priorArt: string | undefined;
+  whyPackage: string | undefined;
 }
+
+/** A section that is filled in: present, not empty and not the template's text. */
+const filled = (body: string | undefined, template: string): boolean =>
+  body !== undefined && body !== "" && !body.includes(template);
 
 export function adr(context: Context): Finding[] {
   const { repo } = context;
@@ -201,17 +209,17 @@ export function adr(context: Context): Finding[] {
     if (priorArt !== undefined && (priorArt === "" || priorArt.includes(TEMPLATE_PRIOR_ART))) {
       at("the Prior art section is empty: name the projects you checked", "## Prior art");
     }
-    adrs.push({ file, status, text, priorArt });
+    const whyPackage = section(text, "Why a package");
+    if (whyPackage !== undefined && !filled(whyPackage, TEMPLATE_WHY_PACKAGE)) {
+      at("the Why a package section is empty: answer the bar of ADR 0159", "## Why a package");
+    }
+    adrs.push({ file, status, text, priorArt, whyPackage });
   }
 
   const justified = (name: string): boolean =>
     adrs.some(
       (entry) =>
-        /^accepted\b/.test(entry.status) &&
-        entry.priorArt !== undefined &&
-        entry.priorArt !== "" &&
-        !entry.priorArt.includes(TEMPLATE_PRIOR_ART) &&
-        mentions(entry.text, name),
+        /^accepted\b/.test(entry.status) && filled(entry.priorArt, TEMPLATE_PRIOR_ART) && mentions(entry.text, name),
     );
 
   // Every module, port and adapter has an accepted ADR.
@@ -251,8 +259,39 @@ export function adr(context: Context): Finding[] {
         });
       }
     }
+
+    // Every package published since the base has an accepted ADR that says why it is a package (ADR 0159).
+    for (const manifest of repo.match(...PACKAGE_MANIFESTS)) {
+      const dir = posix.dirname(manifest);
+      const name = publishedName(repo.read(manifest), dir);
+      if (name === undefined || publishedName(showAt(repo.root, base, manifest), dir) !== undefined) continue;
+      const answered = adrs.some(
+        (entry) =>
+          /^accepted\b/.test(entry.status) &&
+          filled(entry.whyPackage, TEMPLATE_WHY_PACKAGE) &&
+          (mentions(entry.text, dir) || mentions(entry.text, name)),
+      );
+      if (answered) continue;
+      findings.push({
+        check: "ADR",
+        file: manifest,
+        line: 1,
+        message: `${name} is a new published package: it needs an accepted ADR that names "${dir}" and answers "## Why a package" (ADR 0159)`,
+      });
+    }
   }
   return findings;
+}
+
+/** The name of a published package, or undefined for a private package or a missing manifest. */
+function publishedName(text: string | undefined, dir: string): string | undefined {
+  if (text === undefined) return undefined;
+  try {
+    const manifest = JSON.parse(text) as { name?: string; private?: boolean };
+    return manifest.private === true ? undefined : manifest.name || dir;
+  } catch {
+    return undefined;
+  }
 }
 
 function section(text: string, title: string): string | undefined {
