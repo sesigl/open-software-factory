@@ -21,9 +21,8 @@ export const serveWorkbench = (sut: Sut) =>
  */
 export const pause = (page: BrowserPage) => page.clock.pauseAt(CLOCK);
 
-/** Opens a page of the workbench and pauses its clock. */
-export async function openPaused(sut: Sut, path: string): Promise<BrowserPage> {
-  const page = await sut.browser.open(path);
-  await pause(page);
-  return page;
-}
+/**
+ * Opens a page of the workbench with its clock paused from before its first script, so the island's timer is due
+ * exactly `interval` milliseconds of `page.clock.runFor` later.
+ */
+export const openPaused = (sut: Sut, path: string): Promise<BrowserPage> => sut.browser.open(path, { clock: "paused" });

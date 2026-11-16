@@ -56,19 +56,26 @@ types an island imports). Components join as templates (TEMPLATE).
 ## Budget
 
 - System tests: 20 seconds in total on the CI runner. Measured on the development container on 16 November 2026 with
-  the first island: the suite takes 1.8 seconds (3.3 seconds of test time) for 9 scenarios; an island scenario takes
-  0.1 to 0.3 seconds, the first of a worker about 0.6 with the start of Chromium, and SCN-UI-007 1.2 with axe. The
-  build before it takes 3 seconds, 0.7 of them for the workbench's Astro build. No new budget is needed.
+  the first island: the suite takes 2.5 seconds for 9 scenarios in one Vitest worker (`maxWorkers: 1`, see below);
+  an island scenario takes 0.1 to 0.3 seconds, the first one about 0.6 with the start of Chromium, and SCN-UI-007 1.2
+  with axe. The build before it takes 3 seconds, 0.7 of them for the workbench's Astro build. No new budget is needed.
 
 ## Quality limits
 
 Checked by DUP and MUTATION (ADR 0037). The library's code is `src/index.ts`, which names its files, and the `.tsx`
 files of its islands, which MUTATION counts like any source (ADR 0152); a component holds no logic (TEMPLATE). Each
-mutant reruns every scenario of the library, which starts Chromium once per Vitest worker and finds the active mutant
-in the page through `sut.browser`. Measured on the development container (4 cores) on 16 November 2026 with
-`OSF_BASE=origin/main make mutation`: 22 mutants in the lines of the first island, 9 killed and 13 timed out (each a
-change that stops the list from refreshing, so a scenario waits until Stryker stops it), 100 %, in 45 seconds with
-the build and the first run; a mutant planted on purpose that no scenario notices failed MUTATION.
+mutant reruns every scenario of the library and finds the active mutant in the page through `sut.browser`.
+
+- One Vitest worker, so one Chromium per run: Stryker runs one mutant per CPU, and with a Chromium per worker a run
+  took up to 8 seconds next to 2.2 alone, past Stryker's timeout of 1.5 times the first run and 5 seconds, so a mutant
+  that changed nothing counted as Timeout, which is detected. With one worker a run takes 3.0 seconds alone and 4.5
+  with four at once, and such a mutant survives as it should.
+- A mutant that stops the list from refreshing makes a scenario wait for a row or an alert until Stryker stops it:
+  Timeout, which is detected.
+- Measured on the development container (4 cores) on 16 November 2026 with `OSF_BASE=origin/main make mutation`: 22
+  mutants in the lines of the first island, 8 killed and 14 timed out, 100 %, in 46 seconds with the build and the
+  first run. Three lines planted on purpose that no scenario reads (data attributes) gave 20 missed mutants, 52.4 %,
+  and MUTATION failed and named each; then they were removed.
 
 - Duplication: at most 3% of the lines in src/.
 - Mutation score: at least 70% of the mutants in changed lines, 80% in total.
