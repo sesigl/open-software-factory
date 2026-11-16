@@ -1,7 +1,7 @@
 # The test suites of `make verify` (verify.yml, ADR 0094): each runs on its own runner, so suites never share cores and
 # BUDGET stays fair. The job "plan the suites" starts a runner only for a suite with a task that turbo cannot replay.
 # Fields: suite (the job's name), filter (turbo filters), images (the testkit's fakes to pull), pull (other images),
-# cluster: kind, kind (kind with agent-sandbox), kind-images (the chart's images in kind), browser, timeout (minutes).
+# cluster: kind, kind (kind with agent-sandbox), browser, timeout (minutes).
 - suite: testkit
   filter: "@opensoftware/testkit"
   images: postgres s3 forge
@@ -54,14 +54,14 @@
   filter: "@opensoftware/forge-forgejo"
   images: forge
 # Each scenario starts the Compose profile as its own project (ADR 0074), or installs the Helm chart in a
-# namespace of its own on kind, which gets the images of the chart first (ADR 0075).
+# namespace of its own on kind (ADR 0075). test:system first builds the module images of the commit and loads the
+# chart's images into kind (ADR 0156, deploy/README.md#the-images-of-the-deploy-suite).
 - suite: deploy
   filter: "@opensoftware/deploy"
   # SCN-DIST-043 clones a private factory repository on the testkit's Forgejo (ADR 0150).
   images: forge
   # kind with agent-sandbox: the chart's foreman starts the agents' sandboxes with the kubernetes adapter.
   kind: true
-  kind-images: true
   # Five scenarios install the whole chart, each with PostgreSQL, NATS and Temporal of its own.
   timeout: 40
   pull: >-

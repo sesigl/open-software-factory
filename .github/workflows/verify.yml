@@ -250,10 +250,6 @@ jobs:
       - name: Start kind
         if: matrix.cluster == 'kind'
         uses: ./.github/actions/kind
-      # The images of the chart osf, pulled from GHCR or built at the pins of compose.yaml, loaded into kind.
-      - name: Load the images of the Helm chart into kind
-        if: matrix.kind-images
-        run: deploy/helm/kind-images.sh
       # proof capture opens pages in Chromium (ADR 0029); the testkit hands PLAYWRIGHT_BROWSERS_PATH to the module.
       - name: Install the browser of the capture scenarios
         if: matrix.browser

@@ -13,13 +13,22 @@ Feature: The Helm chart installs a complete factory on Kubernetes with one comma
     Then the command exits with code 0
     And the workloads "postgres", "nats", "temporal", "gatekeeper", "intake", "foreman" and "console" are ready
 
-  @id=SCN-DIST-019 @status=implemented @realizes=SCN-FACTORY-OPEN-006 @replaces=SCN-DIST-007
+  @id=SCN-DIST-019 @status=deprecated @realizes=SCN-FACTORY-OPEN-006 @replaces=SCN-DIST-007
   Scenario: Every workload of the Helm chart is ready after one command, the LLM gateway included
     Given a kind cluster with the images of the Compose profile
     And a values file that sets every value under "secrets"
     When the operator runs "helm install osf deploy/helm/osf --values values.yaml --wait --timeout 10m"
     Then the command exits with code 0
     And the workloads "postgres", "nats", "temporal", "litellm", "gatekeeper", "intake", "foreman" and "console" are ready
+
+  @id=SCN-DIST-060 @status=implemented @realizes=SCN-FACTORY-OPEN-006 @replaces=SCN-DIST-019
+  Scenario: Every workload of the Helm chart is ready after one command and runs the module images of this workspace
+    Given a kind cluster with the images of the Compose profile, the module images built from this workspace with "node scripts/images.ts"
+    And a values file that sets every value under "secrets"
+    When the operator runs "helm install osf deploy/helm/osf --values values.yaml --wait --timeout 10m"
+    Then the command exits with code 0
+    And the workloads "postgres", "nats", "temporal", "litellm", "gatekeeper", "intake", "foreman" and "console" are ready
+    And the containers "gatekeeper", "intake", "foreman" and "console" each hold the pack of their own package in "/opt/osf/packs"
 
   @id=SCN-DIST-008 @status=implemented
   Scenario: The Helm chart names the secret that the values are missing

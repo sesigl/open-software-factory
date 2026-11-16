@@ -593,13 +593,14 @@ are not used then.
 | `temporalNamespace` | `default` | The Temporal namespace of the runs; foreman creates it when it is missing. |
 
 The chart's scenarios run on kind with agent-sandbox. To run them on your machine, start kind with agent-sandbox and
-load the chart's images first:
+build the images of the commit, which loads the chart's images into kind ([The images of the deploy
+suite](#the-images-of-the-deploy-suite)):
 
 ```sh
 .tools/bin/kind create cluster
 kubectl apply -f .tools/bin/agent-sandbox.yaml
-deploy/helm/kind-images.sh    # pulls or builds the images of compose.yaml, then loads the chart's images
-make test-scenario ID=SCN-DIST-019
+(cd deploy && node scripts/images.ts)    # builds the module images, then loads the chart's images into kind
+make test-scenario ID=SCN-DIST-060
 ```
 
 ## The images of the deploy suite
@@ -609,8 +610,19 @@ The scenarios of the profile start the module images of the commit under test, n
 fails its own pull request. The suite's `test:system` runs `node scripts/images.ts` first: it packs every package that
 `compose/compose.yaml` installs, with its workspace dependencies, writes a copy of `images/Dockerfile` into
 `images/.workspace/` whose one install step takes those packs in place of npm, and bakes each module target of
-`compose.yaml` from the copy under its pinned tag. `images/Dockerfile` stays what `publish-images` builds. The chart's
-scenarios still load the images that `helm/kind-images.sh` pulls.
+`compose.yaml` from the copy under its pinned tag. `images/Dockerfile` stays what `publish-images` builds.
+
+The chart's scenarios run the same images. When the current kube context is a local kind cluster (a context
+`kind-<cluster>` whose API is on the loopback address, the rule of `sut.helm`), the script then loads into that cluster
+with one `kind load docker-image` every image that `helm template` of the chart renders with the improvement job on, and
+the agents' template of the reference factory: the module images of the commit (console, factory-spec, foreman,
+gatekeeper, intake, observer and the agents' template harness-claude-code), and LiteLLM, PostgreSQL, NATS and
+Temporal's server and admin tools, which CI pulls with the suite's `pull` list. An image that Docker does not have is
+pulled first; one that its registry does not have yet and `compose.yaml` builds, like LiteLLM after its pin moved, is
+baked. The chart's pull policy `IfNotPresent` keeps the loaded images. Without a kind cluster the script says so in one
+line and loads nothing, and the chart's scenarios fail with the message of `sut.helm`. The load runs before
+`testkit timed`, so BUDGET does not count it. `node scripts/images.ts --dry-run` builds and loads nothing and prints
+what it would pull and load.
 
 To run one scenario of the profile on your machine, after `pnpm turbo run build`:
 
@@ -681,7 +693,7 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-016 | deprecated | Every service of the Compose profile is healthy after one command, and each server's health checks pass |
 | SCN-DIST-017 | implemented | The foreman of the Compose profile starts a sandbox from the agents' template through docker-proxy only |
 | SCN-DIST-018 | deprecated | The Compose profile takes the module images and the agents' template from the factory's registry |
-| SCN-DIST-019 | implemented | Every workload of the Helm chart is ready after one command, the LLM gateway included |
+| SCN-DIST-019 | deprecated | Every workload of the Helm chart is ready after one command, the LLM gateway included |
 | SCN-DIST-020 | implemented | The plan of the reference factory adds the factory and finds no problems, with its inference config |
 | SCN-DIST-021 | implemented | The test of the Helm chart plans the reference factory without problems, with its inference config |
 | SCN-DIST-022 | implemented | The foreman of the Helm chart starts a sandbox of agent-sandbox from the agents' template, with rights only in the sandboxes' namespace |
@@ -718,3 +730,4 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-057 | implemented | The foreman of the Helm chart runs no agent outside a sandbox |
 | SCN-DIST-058 | implemented | The foreman of the Compose profile names its sandboxes after the Compose project |
 | SCN-DIST-059 | implemented | The foreman of the Helm chart names its sandboxes after the release's namespace and name |
+| SCN-DIST-060 | implemented | Every workload of the Helm chart is ready after one command and runs the module images of this workspace |

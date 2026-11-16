@@ -140,7 +140,7 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 - **Done when:** a change of a module that breaks a deploy scenario fails that pull request; a release merge is green.
 - **Slices:**
   - [x] The decision record (ADR 0156), and the profile's module images from the commit in the deploy suite.
-  - [ ] The chart's scenarios on kind with the images from the commit; `kind-images.sh` goes.
+  - [x] The chart's scenarios on kind with the images from the commit; `kind-images.sh` goes.
   - [ ] The job on the released images after publishing, which tells the maintainers when it fails.
   - [ ] The release pull request: its dispatched verify green, and merged without `--admin`.
 
