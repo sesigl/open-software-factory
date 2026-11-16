@@ -66,6 +66,8 @@ Use these terms in scenarios, code, UI text and docs.
 | Conformance scenario | A port scenario every adapter of the port must pass. |
 | System test | The one test of an implemented scenario: it drives the built module or adapter from outside, with fakes for every outside system, and is deterministic. The kinds of tests are in `docs/quality/testing-strategy.md`. |
 | Smoke scenario | A scenario of `e2e/features/` that runs the whole factory on the Compose profile, with fakes at its edges. |
+| Shared start | One start of a slow system under test, such as the Compose profile, that scenarios tagged with the same `@shared=<name>` share because they only read it. Each keeps its own test and result (ADR 0157). |
+| Scenario Outline | A scenario with an `Examples` table: one ID and one test for a family of cases with the same steps, where only the literals differ (ADR 0157). |
 | Live test | A test against a real, paid outside service, without fakes: the paid smoke run `SMOKE-PAID`. It is no system test, and no check counts it. |
 | Product engineer | A person who delivers product value through the factory. |
 | Factory engineer | A person who improves the factory itself. |

@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; a Compose project per scenario amended by 0157 (scenarios that only read may share one start)
 date: 2026-10-27
 ---
 

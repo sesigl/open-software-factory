@@ -2140,7 +2140,7 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 
 ### Stage TR · the testing rule
 
-### [ ] T-81 · the testing rule, decided (P0)
+### [x] T-81 · the testing rule, decided (P0)
 
 - **Build:** a decision record that amends ADR 0007 and ADR 0074: one scenario, one test, from outside, with three
   additions. Scenarios that only read a system whose start takes more than about 10 seconds may share that start,

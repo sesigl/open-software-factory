@@ -90,8 +90,10 @@ A new module starts with `skills/new-module`. A new dependency or service starts
 - Test from the outside only: the module's CLI, HTTP API, MCP server, published events or published files.
   Never import from `src/`. Never read or write the module's database, cache or private files.
 - No real network, model, clock or randomness in system tests. Use the fakes in `@opensoftware/testkit`.
-- Never change the text of an `implemented` scenario to make a test pass. To change behavior on purpose, write
-  a new scenario with `@replaces=SCN-...`, mark the old one `deprecated` and delete its test in the same change.
+- You may edit the text of an `implemented` scenario only when the behavior it states stays the same (a reworded
+  message, a renamed label, a changed constant that is not its point); change the test's labels in the same commit.
+  When behavior changes or goes, write a new scenario with `@replaces=SCN-...`, mark the old one `deprecated` and
+  delete its test in the same change. Never edit a scenario to make a failing test pass (ADR 0157).
 - Fix a missed mutant or a clone with `skills/fix-mutation-and-duplication`: a scenario, a stricter `then` step,
   less code or a shared library. Never with a unit test or a mock.
 - Never skip or weaken the test of an `implemented` scenario. To remove behavior, mark the scenario `deprecated`
