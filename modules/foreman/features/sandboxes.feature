@@ -97,6 +97,27 @@ Feature: Sandboxes
     And the output contains "factory.yaml: /agents/implement: declare a sandbox: FOREMAN_REQUIRE_SANDBOX runs no agent outside one"
     And the output does not name the agent "plan", which declares one
 
+  @id=SCN-FORE-187 @status=implemented
+  Scenario: With FOREMAN_SANDBOX_OWNER, each stage's sandbox carries the owner and the run as labels
+    Given "foreman serve" runs the README's "sandboxed/factory.yaml" with "FOREMAN_SANDBOX_OWNER" set to "factory-a", a fake sandbox adapter as "docker" and a scripted harness that ends every turn
+    When a program posts the README's "work.json" to "/v1/runs" with the API token and the run completes
+    Then the spec of each stage's sandbox has the labels "osf.owner" "factory-a" and "osf.run" the run's ID
+    And the server's output names no sandbox that a foreman before left
+
+  @id=SCN-FORE-188 @status=implemented
+  Scenario: At its start the foreman destroys the sandboxes of its owner that a foreman before it left, and no other
+    Given a fake sandbox adapter as "docker" that holds a sandbox with the label "osf.owner" "factory-a", one with "osf.owner" "factory-b" and one without labels
+    When "foreman serve" starts with the README's "factory.yaml" and "FOREMAN_SANDBOX_OWNER" set to "factory-a"
+    Then the sandbox adapter's list holds the sandbox of "factory-b" and the one without labels, and not the one of "factory-a"
+    And the server's output has the line 'foreman: destroyed the sandbox 000000000001 of "factory-a" that a foreman before left'
+
+  @id=SCN-FORE-189 @status=implemented
+  Scenario: At its start the foreman warns when its sandbox adapter cannot list the sandboxes of its owner, and serves
+    Given the README's "factory.yaml" with "FOREMAN_SANDBOX_OWNER" set to "factory-a" and "FOREMAN_SANDBOXES" naming "false" as "docker", a sandbox adapter whose every command fails
+    When "foreman serve" starts
+    Then "/v1/health" answers 200
+    And the server's output has a line that starts with 'foreman: the sandboxes of "factory-a" that a foreman before left stay: the sandbox adapter's list failed: '
+
   @id=SCN-FORE-070 @status=implemented
   Scenario: A sandboxed stage gets its agent's effort in its sandbox's environment
     Given "foreman serve" runs the README's "sandboxed/factory.yaml" with a fake sandbox adapter as "docker" and a scripted harness that ends every turn

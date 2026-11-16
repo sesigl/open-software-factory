@@ -135,6 +135,11 @@ Every agent of the reference factory runs in such a sandbox:
   refused, with a line that names the agent. Outside a sandbox the agent would get foreman's environment: the master
   key of `litellm`, the tokens of OpenBao and the forge, and `DOCKER_HOST`.
 - `FACTORY_GIT_NAME` and `FACTORY_GIT_EMAIL` apply only to an agent without a sandbox, which the profile does not run.
+- Each sandbox carries the project's name as its owner (`FOREMAN_SANDBOX_OWNER`). When foreman starts, it removes the
+  sandboxes of its project that a foreman before it left, killed or with the machine: their containers, egress
+  proxies and networks ([ADR 0158](../docs/decisions/0158-no-sandbox-is-left-behind.md)). A Docker host holds about 30
+  sandboxes at once with Docker's default address pools; see the
+  [docker sandbox adapter](../adapters/sandbox/docker/README.md) for more.
 
 foreman has no Docker socket. It reaches the Docker API through `docker-proxy`
 ([wollomatic/socket-proxy](https://github.com/wollomatic/socket-proxy)), which holds the host's socket read-only,
@@ -497,6 +502,9 @@ Each stage of the reference factory runs in a sandbox of the
 - **No agent outside a sandbox.** foreman runs with `FOREMAN_REQUIRE_SANDBOX=true`, as in the Compose profile: a
   factory with a stage whose agent declares no `sandbox` stops foreman at its start, and a run of such a commit is
   refused, so no agent gets the pod's tokens.
+- **No sandbox left behind.** Each sandbox carries `<release namespace>.<release name>` as its owner
+  (`FOREMAN_SANDBOX_OWNER`); when foreman starts, it removes the sandboxes of its release that a foreman pod before it
+  left ([ADR 0158](../docs/decisions/0158-no-sandbox-is-left-behind.md)).
 
 ### OpenBao on Kubernetes
 
@@ -708,3 +716,5 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-055 | implemented | With the sign-in and without "CONSOLE_SIGNING_KEY", "console doctor" warns that the modules would refuse its actions |
 | SCN-DIST-056 | implemented | The foreman of the Compose profile runs no agent outside a sandbox |
 | SCN-DIST-057 | implemented | The foreman of the Helm chart runs no agent outside a sandbox |
+| SCN-DIST-058 | implemented | The foreman of the Compose profile names its sandboxes after the Compose project |
+| SCN-DIST-059 | implemented | The foreman of the Helm chart names its sandboxes after the release's namespace and name |

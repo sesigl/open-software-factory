@@ -16,6 +16,7 @@ import { gatekeeper } from "../adapters/gatekeeper.ts";
 import { type Attached, attachGateway, startGateway } from "../adapters/inference.ts";
 import { type Bus, openBus, SUBJECTS } from "../adapters/nats.ts";
 import { exporterOf } from "../adapters/otlp.ts";
+import { removeLeftovers } from "../adapters/sandbox.ts";
 import { adaptersOf, type CommandLines, commandOf, MAP_OF, PORTS, type Port } from "../domain/adapters.ts";
 import type { Definition } from "../domain/definition.ts";
 import { isoNow } from "../domain/time.ts";
@@ -229,6 +230,17 @@ export async function serve(env: Env) {
   const retryMs = Number(env.FOREMAN_INFERENCE_RETRY_MS || 1000);
   const gatewayFolder = join(data, "inference");
   const gateway = gatewayOf(definition, maps.inference, source.folder(), gatewayFolder, env, retryMs, warn);
+  const sandbox = env.FOREMAN_SANDBOX || "docker";
+  const owner = env.FOREMAN_SANDBOX_OWNER || undefined;
+  // The sandboxes that a foreman of this owner left go while the worker loads, before it runs a stage (ADR 0158).
+  const leftovers = owner
+    ? removeLeftovers(
+        commandOf(maps.sandbox, "sandbox", definition.sandboxAdapter ?? sandbox, definition.ranges),
+        owner,
+        env,
+        warn,
+      )
+    : undefined;
   // A gateway stops with the server, also when the server cannot start.
   try {
     const stopping = new AbortController();
@@ -245,7 +257,8 @@ export async function serve(env: Env) {
           gatekeeper: gatekeeper(env.FOREMAN_GATEKEEPER_URL, env.FOREMAN_GATEKEEPER_TOKEN),
           harnesses: maps.harness,
           sandboxes: maps.sandbox,
-          sandbox: env.FOREMAN_SANDBOX || "docker",
+          sandbox,
+          ...(owner ? { owner } : {}),
           forges: maps.forge,
           secrets: JSON.parse(env.FOREMAN_SECRETS || "{}") as CommandLines,
           forgeEnv: {
@@ -280,6 +293,7 @@ export async function serve(env: Env) {
     };
     const heartbeatMs = Number(env.FOREMAN_HEARTBEAT_TIMEOUT_MS || 60_000);
     const work = runs({ client, taskQueue, factory, now, heartbeatMs, stopping: stopping.signal });
+    await leftovers;
     const running = worker.run();
     const pings: Pings = new Map();
 

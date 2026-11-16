@@ -216,7 +216,7 @@ Every server, client and subscription stops when the scenario ends, before the f
   at `agent`, with the ACP SDK where the file finds it, and the agent takes its script and sends its log over HTTP at
   `host.docker.internal`, which the sandbox's egress must allow
   ([ADR 0096](../../docs/decisions/0096-agents-in-sandboxes-in-the-profile.md)).
-- `fakes.sandbox({ templates, probe, takesMs })`: a sandbox adapter with the commands `create`, `exec`, `copy`, `destroy`,
+- `fakes.sandbox({ templates, probe, takesMs, held })`: a sandbox adapter with the commands `create`, `exec`, `copy`, `destroy`,
   `list` and `probe` of the [sandbox port](../../ports/sandbox/README.md), whose sandboxes are folders on the host, for a module that
   drives the port without Docker ([ADR 0068](../../docs/decisions/0068-foreman-sandboxes.md)). Run it with its
   `command` and `args`, then the port's command. Its IDs are `000000000001` and on. `exec` runs the command in the
@@ -224,6 +224,9 @@ Every server, client and subscription stops when the scenario ends, before the f
   to that folder. With `templates`, `create` refuses another template with `no template <name>` and exit code 1.
   With `takesMs: { create, copyOut }`, `create` answers that many milliseconds after it created the sandbox, and a
   `copy` out of a sandbox starts that much later, as a slow image pull or a large folder would.
+  `list --label <name>=<value>` prints only the sandboxes whose spec has that label. With `held`, a list of specs, the
+  fake holds those sandboxes from its start, `000000000001` and on, as a process before the module left them; its
+  own IDs go on after them, and `created()` does not name them ([ADR 0158](../../docs/decisions/0158-no-sandbox-is-left-behind.md)).
   `probe <template> <host>` creates a sandbox with no allowed host, removes it and prints `refused <host>`, or
   `reached <host>` with `probe: "reached"`, as it cannot refuse anything itself.
   `created()` lists each sandbox's ID and spec, `execs()` each command with the files in the folder when it started,
@@ -631,3 +634,5 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-196 | implemented | testkit timed runs the command and writes its wall time |
 | SCN-TK-197 | implemented | testkit timed writes the wall time without the environment variable "CI" too |
 | SCN-TK-198 | implemented | The fake sandbox's create and copy out of a sandbox take the time the options say |
+| SCN-TK-199 | implemented | The fake sandbox's list with a label prints only the sandboxes whose spec has that label |
+| SCN-TK-200 | implemented | The fake sandbox holds from its start the sandboxes that its option "held" names, and counts its IDs on after them |

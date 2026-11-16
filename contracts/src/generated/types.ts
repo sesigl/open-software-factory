@@ -1323,6 +1323,8 @@ export type components = {
             /** @description Hostnames the sandbox may reach. Everything else is blocked. */
             egress?: string[];
         };
+        /** @description The value of a sandbox's label, for example "run_0a1b2c3d4e5f60718293". */
+        SandboxLabel: string;
         /** @description An MCP server that a sandbox may call over Streamable HTTP. */
         SandboxMcpServer: {
             /** @description The name in the egress log, for example "wiki". */
@@ -1358,6 +1360,14 @@ export type components = {
             };
             /** @description The MCP servers the sandbox may call. A call to any other MCP server is refused. */
             mcp?: components["schemas"]["SandboxMcpServer"][];
+            /**
+             * @description Labels the adapter puts on the sandbox, by name, so that its client finds the sandboxes it started with
+             *     `list --label <name>=<value>`, like the foreman's owner and run (ADR 0158). A name and a value fit the label rules of
+             *     Docker and Kubernetes both.
+             */
+            labels?: {
+                [key: string]: components["schemas"]["SandboxLabel"];
+            };
         };
         ScenarioEvidence: {
             id: components["schemas"]["ScenarioId"];

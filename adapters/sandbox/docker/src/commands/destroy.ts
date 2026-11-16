@@ -10,8 +10,21 @@ export async function destroy(id: string | undefined): Promise<Outcome> {
   return { lines: [`destroyed ${id}`] };
 }
 
-/** Removes whatever parts of the sandbox exist. */
+/**
+ * Removes whatever parts of the sandbox exist. A part that is gone already is no failure; a part that Docker does not
+ * remove is, and the error names each such part with Docker's reason.
+ */
 export async function destroySandbox(id: string): Promise<void> {
-  await docker(["rm", "--force", "--volumes", sandboxName(id), egressName(id)]);
-  await docker(["network", "rm", sandboxName(id)]);
+  const parts: [kind: "container" | "network", name: string, remove: string[]][] = [
+    ["container", sandboxName(id), ["rm", "--force", "--volumes"]],
+    ["container", egressName(id), ["rm", "--force", "--volumes"]],
+    ["network", sandboxName(id), ["network", "rm"]],
+  ];
+  const left: string[] = [];
+  for (const [kind, name, remove] of parts) {
+    const removed = await docker([...remove, name]);
+    if (removed.code !== 0 && (await docker([kind, "inspect", name])).code === 0)
+      left.push(`the ${kind} ${name}: ${removed.stderr.trim()}`);
+  }
+  if (left.length) throw new Error(`the sandbox ${id} was not removed: ${left.join("; ")}`);
 }

@@ -318,3 +318,9 @@ Feature: The Compose profile installs a complete factory with one command
     Given the Compose profile with every value of ".env.example" set in ".env"
     When the operator runs "docker compose config --format json"
     Then the service "foreman" sets "FOREMAN_REQUIRE_SANDBOX" to "true"
+
+  @id=SCN-DIST-058 @status=implemented
+  Scenario: The foreman of the Compose profile names its sandboxes after the Compose project
+    Given the Compose profile with every value of ".env.example" set in ".env"
+    When the operator runs "docker compose config --format json"
+    Then the service "foreman" sets "FOREMAN_SANDBOX_OWNER" to the name of the project, which its "OSF_SANDBOX_NETWORK" starts with

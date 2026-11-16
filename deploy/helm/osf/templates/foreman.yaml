@@ -150,6 +150,10 @@ spec:
             # such an agent (T-70).
             - name: FOREMAN_REQUIRE_SANDBOX
               value: "true"
+            # Each sandbox carries the release's namespace and name; at its start the foreman removes the sandboxes
+            # of a foreman of this release that died (ADR 0158).
+            - name: FOREMAN_SANDBOX_OWNER
+              value: {{ printf "%s.%s" .Release.Namespace .Release.Name | trunc 63 | trimSuffix "-" | trimSuffix "." | quote }}
             - name: FOREMAN_SANDBOXES
               value: '{"kubernetes": "sandbox-kubernetes"}'
             - name: OSF_SANDBOX_NAMESPACE

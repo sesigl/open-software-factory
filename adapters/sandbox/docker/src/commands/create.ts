@@ -63,9 +63,12 @@ async function createNetwork(id: string): Promise<void> {
 /** The sandbox's container: no network until its egress proxy runs, the spec's limits and its environment. */
 function sandboxArgs(spec: SandboxSpec): string[] {
   const env = Object.entries(sandboxEnv(spec, EGRESS_URL)).flatMap(([name, value]) => ["--env", `${name}=${value}`]);
+  // The spec's labels come first, so the adapter's own label wins over one of the same name.
+  const labels = Object.entries(spec.labels ?? {}).flatMap(([name, value]) => ["--label", `${name}=${value}`]);
   return [
     "--network",
     "none",
+    ...labels,
     "--label",
     ROLE_LABEL,
     ...(spec.cpu ? ["--cpus", String(spec.cpu)] : []),

@@ -15,7 +15,7 @@ import { createSandbox, type StageSandbox } from "../adapters/sandbox.ts";
 import { missingSecret } from "../adapters/secrets.ts";
 import { writeSkills } from "../adapters/skills.ts";
 import { type CommandLines, commandOf } from "../domain/adapters.ts";
-import { type AgentPlan, type Definition, type StagePlan, storeSecrets } from "../domain/definition.ts";
+import { type AgentPlan, type Definition, labelsOf, type StagePlan, storeSecrets } from "../domain/definition.ts";
 import {
   apply,
   branchOf,
@@ -57,6 +57,8 @@ export interface ActivityDeps {
   sandboxes: CommandLines;
   /** The sandbox adapter of a factory that names none, FOREMAN_SANDBOX. */
   sandbox: string;
+  /** FOREMAN_SANDBOX_OWNER, whose label each sandbox carries with its run's (ADR 0158). */
+  owner?: string;
   /** The adapter's command line per forge adapter name; others run `npx -y @opensoftware/forge-<name>@<range>`. */
   forges: CommandLines;
   /** The secrets adapter's command line per provider; others run `npx -y @opensoftware/secrets-<name>@<range>`. */
@@ -272,7 +274,11 @@ export function activities(deps: ActivityDeps) {
     const sandbox = plan.sandbox
       ? await createSandbox(
           commandOf(deps.sandboxes, "sandbox", adapter, definition.ranges),
-          { ...plan.sandbox, env: { OTEL_RESOURCE_ATTRIBUTES: resource, ...agentEnv } },
+          {
+            ...plan.sandbox,
+            ...labelsOf(deps.owner, view.runId),
+            env: { OTEL_RESOURCE_ATTRIBUTES: resource, ...agentEnv },
+          },
           cwd,
           view.runId,
           deps.env,

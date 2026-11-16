@@ -18,8 +18,8 @@ command line:
 | exec | `<adapter> exec <ID> -- <command>...` runs in `/workspace` and exits with the command's code |
 | copy | `<adapter> copy <from> <to>`, the sandbox's side written `<ID>:<path>` |
 | snapshot | `<adapter> snapshot <ID>` prints a template that `create` accepts |
-| destroy | `<adapter> destroy <ID>` removes the sandbox and all its data |
-| list | `<adapter> list` prints the IDs of the sandboxes |
+| destroy | `<adapter> destroy <ID>` removes the sandbox and all its data; when a part of it cannot be removed, it exits 1 with `the sandbox <ID> was not removed: ` and the platform's error |
+| list | `<adapter> list` prints the IDs of the sandboxes; `list --label <name>=<value>` only those whose spec carried that label |
 | egress log | `<adapter> egress-log <ID>` prints one JSON line per request that left the sandbox |
 | probe | `<adapter> probe <template> <host> [--allow]` starts a sandbox from the template with no allowed host (with `--allow`, only the host), sends one HTTPS request to the host, removes the sandbox and prints `refused <host>` or `reached <host>`; standard error names the sandbox, `sandbox <id>` |
 
@@ -30,7 +30,10 @@ or one with characters other than letters, digits, dots and hyphens exits 2 with
 with the reason. The template needs `curl`.
 
 The spec is the format `sandbox-spec` in [contracts](../../contracts/README.md): `template`, `cpu`, `memory`,
-`egress`, `env`, `secrets` and `mcp`. An unknown sandbox ID exits 1 with `no sandbox <ID>`.
+`egress`, `env`, `secrets`, `mcp` and `labels`. An unknown sandbox ID exits 1 with `no sandbox <ID>`. A client marks
+the sandboxes it starts with `labels` and finds them again with `list --label`: the foreman labels each sandbox with
+its owner and its run, and at its start destroys the sandboxes of its owner that a foreman before it left
+([ADR 0158](../../docs/decisions/0158-no-sandbox-is-left-behind.md)).
 
 ## What every adapter guarantees
 
@@ -45,7 +48,8 @@ The spec is the format `sandbox-spec` in [contracts](../../contracts/README.md):
 - A secret from OpenBao reaches a sandbox at its first request to an allowed host and keeps that value until the
   sandbox ends: a new value reaches the sandboxes that start after it is stored (SCN-SANDBOX-029).
 - A call to an MCP server that the spec does not declare, or to a tool it does not list, is refused and logged.
-- `destroy` removes the sandbox's files.
+- `destroy` removes the sandbox's files. A part that is gone already is no failure; a part that the platform refuses to
+  remove is (SCN-SANDBOX-032), so a client never takes a sandbox for removed that still runs.
 
 ## Conformance
 

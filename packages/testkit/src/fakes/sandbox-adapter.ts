@@ -1,7 +1,8 @@
 // The sandbox adapter that fakes.sandbox() hands a module: node sandbox-adapter.ts <state folder> <command> ...
-// It has the commands create, exec, copy, destroy and list of the sandbox port (ADR 0054). A sandbox is the folder
-// <state>/sandboxes/<ID>/workspace on the host, and exec runs the command there with the spec's variables and a
-// placeholder for each secret. It isolates nothing (ADR 0068). It logs each spec and each exec for the test.
+// It has the commands create, exec, copy, destroy, list (with --label) and probe of the sandbox port (ADR 0054). A
+// sandbox is the folder <state>/sandboxes/<ID>/workspace on the host, and exec runs the command there with the spec's
+// variables and a placeholder for each secret. It isolates nothing (ADR 0068). It logs each spec and each exec for the
+// test.
 import { spawn } from "node:child_process";
 import {
   appendFileSync,
@@ -101,8 +102,13 @@ const commands: Record<string, () => void | Promise<void>> = {
     rmSync(sandbox(args[0]), { recursive: true });
     process.stdout.write(`destroyed ${args[0]}\n`);
   },
+  // list [--label <name>=<value>]: with a label, only the sandboxes whose spec has it.
   list() {
-    for (const id of existsSync(root) ? readdirSync(root) : []) process.stdout.write(`${id}\n`);
+    const [name, value] = args[0] === "--label" ? (args[1] ?? "").split("=") : [];
+    const labelled = (id: string) =>
+      name === undefined ||
+      (JSON.parse(readFileSync(join(root, id, "spec.json"), "utf8")) as SandboxSpec).labels?.[name] === value;
+    for (const id of existsSync(root) ? readdirSync(root) : []) if (labelled(id)) process.stdout.write(`${id}\n`);
   },
 };
 

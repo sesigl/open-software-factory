@@ -194,8 +194,11 @@ function limits(spec: SandboxSpec): { resources: Record<string, unknown> } | und
   return Object.keys(amounts).length ? { resources: { requests: amounts, limits: amounts } } : undefined;
 }
 
-/** A warm pool without replicas, which a SandboxClaim needs, and the claim that starts the sandbox cold. */
-export function claim(id: string): unknown[] {
+/**
+ * A warm pool without replicas, which a SandboxClaim needs, and the claim that starts the sandbox cold. The claim also
+ * carries the spec's labels, by which list finds it; the adapter's own labels win over one of the same name.
+ */
+export function claim(id: string, labels: Record<string, string> = {}): unknown[] {
   const name = sandboxName(id);
   return [
     {
@@ -207,7 +210,7 @@ export function claim(id: string): unknown[] {
     {
       apiVersion: EXTENSIONS,
       kind: "SandboxClaim",
-      metadata: { name, labels: sandboxLabels(id) },
+      metadata: { name, labels: { ...labels, ...sandboxLabels(id) } },
       spec: { warmPoolRef: { name } },
     },
   ];

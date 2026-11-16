@@ -1,0 +1,4 @@
+{
+  "template": "node:24-alpine",
+  "labels": { "osf.owner": "osf profile" }
+}

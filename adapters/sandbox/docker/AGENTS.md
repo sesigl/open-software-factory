@@ -1,6 +1,6 @@
 # AGENTS.md for adapter `sandbox/docker`
 
-Adds rules for this adapter. The root `AGENTS.md` applies in full. Decision: ADR 0054.
+Adds rules for this adapter. The root `AGENTS.md` applies in full. Decisions: ADR 0054, ADR 0158.
 
 ## Public surface
 

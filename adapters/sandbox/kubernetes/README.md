@@ -82,7 +82,8 @@ npx @opensoftware/sandbox-kubernetes destroy "$id"
   exits 1 with the reason: the container, its waiting reason (any reason but `ContainerCreating` and
   `PodInitializing`) and Kubernetes' message.
 - **No state of its own.** The cluster holds every part of a sandbox, labelled `osf.sandbox.id=<ID>`. `destroy`
-  removes them all; a snapshot stays.
+  removes them all; a snapshot stays. The spec's `labels` go on the sandbox's SandboxClaim, so `list --label` finds it
+  ([ADR 0158](../../../docs/decisions/0158-no-sandbox-is-left-behind.md)).
 
 ## Commands
 
@@ -92,8 +93,8 @@ npx @opensoftware/sandbox-kubernetes destroy "$id"
 | `sandbox-kubernetes exec <ID> -- <command>...` | Run the command in `/workspace` and exit with its code. |
 | `sandbox-kubernetes copy <from> <to>` | Copy a file or folder into or out of a sandbox with `kubectl cp`. The sandbox's side is `<ID>:<path>`; a relative path is below `/workspace`. |
 | `sandbox-kubernetes snapshot <ID>` | Copy the sandbox's `/workspace` into a PersistentVolumeClaim of `OSF_SANDBOX_SNAPSHOT_SIZE` and print the name of a `SandboxTemplate` that starts with it, a template for `create`. |
-| `sandbox-kubernetes destroy <ID>` | Remove the sandbox, its files and its egress pod. It ends when the sandbox's claim is gone; Kubernetes stops the pods in the background, in some seconds. |
-| `sandbox-kubernetes list` | Print the IDs of the sandboxes in the namespace. |
+| `sandbox-kubernetes destroy <ID>` | Remove the sandbox, its files and its egress pod. It ends when the sandbox's claim is gone; Kubernetes stops the pods in the background, in some seconds. A delete that the cluster refuses, like one without the right to delete, exits 1 with `the sandbox <ID> was not removed: kubectl delete failed: ` and kubectl's error. |
+| `sandbox-kubernetes list [--label <name>=<value>]` | Print the IDs of the sandboxes in the namespace; with `--label`, only those whose spec carried the label. |
 | `sandbox-kubernetes egress-log <ID>` | Print one JSON line per request that left the sandbox. |
 | `sandbox-kubernetes probe <template> <host>` | Start a sandbox from the template with no allowed host, send one HTTPS request to the host with `curl`, remove the sandbox, and print `refused <host>` when its egress proxy refused the request, else `reached <host>`. The deep check `sandbox` of `console doctor --deep` runs it (ADR 0120). |
 

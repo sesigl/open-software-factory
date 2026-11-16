@@ -456,6 +456,9 @@ services:
       # An agent without a sandbox would run in this container, with every token below: the foreman refuses a factory
       # with such an agent (T-70).
       FOREMAN_REQUIRE_SANDBOX: "true"
+      # Each sandbox carries this project's name; at its start the foreman removes the sandboxes of a foreman of this
+      # project that died (ADR 0158). Docker gives each project on a host its own name.
+      FOREMAN_SANDBOX_OWNER: ${COMPOSE_PROJECT_NAME}
       FOREMAN_SANDBOXES: '{"docker": "sandbox-docker"}'
       DOCKER_HOST: tcp://docker-proxy:2375
       OSF_SANDBOX_NETWORK: ${COMPOSE_PROJECT_NAME}_default

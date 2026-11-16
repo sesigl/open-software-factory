@@ -188,6 +188,16 @@ per such agent: `factory.yaml: /agents/implement: declare a sandbox: FOREMAN_REQ
 A run that started before the setting was on keeps the factory it started with. A sandboxed agent's egress also allows the host of each of its remote MCP
 servers; a server that runs with `npx` needs `registry.npmjs.org` in the agent's own `egress`.
 
+A foreman that dies, killed or with its machine, cannot destroy its sandboxes, and Temporal runs each of its stages
+again in a new sandbox. With `FOREMAN_SANDBOX_OWNER`, a name of this foreman such as the Compose project, each sandbox
+carries the labels `osf.owner=<name>` and `osf.run=<run ID>`. At its start, before it runs a stage, the foreman
+destroys each sandbox that the factory's sandbox adapter lists with `list --label osf.owner=<name>`, and writes
+`destroyed the sandbox <ID> of "<name>" that a foreman before left`; one it cannot list or destroy is a warning, and the
+next start tries again ([ADR 0158](../../docs/decisions/0158-no-sandbox-is-left-behind.md)). Give each foreman on one
+Docker host or in one namespace its own name, and run one foreman per name: a second one with the same name destroys the
+first one's running sandboxes when it starts. The Compose profile and the Helm chart set it; it needs a sandbox adapter
+that takes `labels`, sandbox-docker 0.9 or sandbox-kubernetes 0.7 and later.
+
 ## Checks
 
 A stage can wait for CI: give it `checks`, the names of the checks that must succeed on the run's pull request before
@@ -614,6 +624,7 @@ the minor version. The one-time setup is the same as for contracts
 | `FOREMAN_HARNESSES` | string | `"{}"` | serve: a JSON object from harness name to the command line of its adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. A harness it does not name runs npx -y @opensoftware/harness-<name>@<range> run, at the range under providers.harness (ADR 0110). |
 | `FOREMAN_SANDBOXES` | string | `"{}"` | serve: a JSON object from sandbox adapter name to the command line of the adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. An adapter it does not name runs npx -y @opensoftware/sandbox-<name>@<range>, at the range under providers.sandbox (ADR 0110). The factory names its adapter under providers.sandbox, or else FOREMAN_SANDBOX picks it. |
 | `FOREMAN_SANDBOX` | string | `"docker"` | serve: the sandbox adapter of a factory that names none under providers.sandbox, like docker in the Compose profile and kubernetes in the Helm chart. |
+| `FOREMAN_SANDBOX_OWNER` | string |  | serve: the name of this foreman on its sandbox platform, like the Compose project or the Helm release: up to 63 letters, digits, dots, underscores and hyphens. Set, each sandbox it creates carries the labels osf.owner=<name> and osf.run=<run ID>, and at its start, before it runs a stage, it destroys the sandboxes with its osf.owner that the adapter of the factory lists (list --label): a foreman that died left them, and a stage that runs again creates a new one (ADR 0158). Give each foreman on one Docker host or in one namespace its own name, and run one foreman per name. It needs a sandbox adapter that takes labels, like sandbox-docker 0.9 or sandbox-kubernetes 0.7. Unset: no labels and no removal at the start. |
 | `FOREMAN_REQUIRE_SANDBOX` | string |  | serve: true runs no agent outside a sandbox: a factory with a stage whose agent declares no sandbox is refused like a factory that cannot run, at the start of the server, of a run and of a retry, and its message names each such agent. The Compose profile and the Helm chart set true, so no agent gets the foreman's environment with its tokens. Unset or another value: an agent without a sandbox runs on the foreman's machine. |
 | `FOREMAN_FORGES` | string | `"{}"` | serve: a JSON object from forge adapter name to the command line of the adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. An adapter it does not name runs npx -y @opensoftware/forge-<name>@<range>, at the range under providers.forge (ADR 0110). The factory names its adapter under providers.forge. |
 | `FOREMAN_INFERENCES` | string | `"{}"` | serve: a JSON object from inference adapter name to the command line of the adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. An adapter it does not name runs npx -y @opensoftware/inference-<name>@<range>, at the range under providers.inference (ADR 0110). The factory names its adapter under providers.inference. |
@@ -825,3 +836,6 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-184 | implemented | A work item that comes while the factory has changes that are not committed comes again and starts its run once they are committed |
 | SCN-FORE-185 | implemented | A port that another program listens on ends "foreman serve" with code 1 |
 | SCN-FORE-186 | implemented | With FOREMAN_REQUIRE_SANDBOX, a factory whose agent declares no sandbox stops the server at the start and names the agent |
+| SCN-FORE-187 | implemented | With FOREMAN_SANDBOX_OWNER, each stage's sandbox carries the owner and the run as labels |
+| SCN-FORE-188 | implemented | At its start the foreman destroys the sandboxes of its owner that a foreman before it left, and no other |
+| SCN-FORE-189 | implemented | At its start the foreman warns when its sandbox adapter cannot list the sandboxes of its owner, and serves |

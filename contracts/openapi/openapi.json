@@ -3789,6 +3789,11 @@
         ],
         "additionalProperties": false
       },
+      "SandboxLabel": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9]([A-Za-z0-9._-]{0,61}[A-Za-z0-9])?$",
+        "description": "The value of a sandbox's label, for example \"run_0a1b2c3d4e5f60718293\"."
+      },
       "SandboxMcpServer": {
         "type": "object",
         "properties": {
@@ -3865,6 +3870,17 @@
               "$ref": "#/components/schemas/SandboxMcpServer"
             },
             "description": "The MCP servers the sandbox may call. A call to any other MCP server is refused."
+          },
+          "labels": {
+            "type": "object",
+            "properties": {},
+            "unevaluatedProperties": {
+              "$ref": "#/components/schemas/SandboxLabel"
+            },
+            "description": "Labels the adapter puts on the sandbox, by name, so that its client finds the sandboxes it started with\n`list --label <name>=<value>`, like the foreman's owner and run (ADR 0158). A name and a value fit the label rules of\nDocker and Kubernetes both.",
+            "propertyNames": {
+              "pattern": "^[a-z0-9]([a-z0-9.-]{0,61}[a-z0-9])?$"
+            }
           }
         },
         "required": [

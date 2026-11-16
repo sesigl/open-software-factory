@@ -137,3 +137,11 @@ Feature: The Helm chart installs a complete factory on Kubernetes with one comma
     When the operator runs "helm template osf deploy/helm/osf --values values.yaml"
     Then the command exits with code 0
     And the deployment "foreman" sets "FOREMAN_REQUIRE_SANDBOX" to "true"
+
+  @id=SCN-DIST-059 @status=implemented
+  Scenario: The foreman of the Helm chart names its sandboxes after the release's namespace and name
+    Given a kind cluster with the images of the Compose profile
+    And a values file that sets every value under "secrets"
+    When the operator runs "helm template osf deploy/helm/osf --values values.yaml"
+    Then the command exits with code 0
+    And the deployment "foreman" sets "FOREMAN_SANDBOX_OWNER" to "<release namespace>.osf"
