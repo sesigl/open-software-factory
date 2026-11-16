@@ -22,7 +22,8 @@ scenario("SCN-CONSOLE-257", async ({ sut, fakes, given, when, then }) => {
         { method: "POST", path: "/v1/work-items", status: 201, body: {} },
       ]);
       const { forge } = await proposalForge(fakes, [{ branch: "observer/triage-inline-1a2b3c4d", title: PROPOSAL }]);
-      // Without the reload: axe's rule meta-refresh flags it until live updates replace it (TODO.md, T-60).
+      // The work page has no reload since its island (ADR 0152), and SCN-CONSOLE-279 runs it with one; here the island
+      // loads nothing, so no load of its list is cut off when the form sends the page away.
       await serving(sut, [(await foreman(fakes, [])).url], {
         CONSOLE_REFRESH: "0",
         CONSOLE_USER_HEADER: "X-Forwarded-Email",

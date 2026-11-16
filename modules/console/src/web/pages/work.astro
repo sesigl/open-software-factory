@@ -1,8 +1,9 @@
 ---
 import Shell from "@opensoftware/ui/components/Shell.astro";
+import WorkList from "@opensoftware/ui/components/WorkList.astro";
 import type { WorkData } from "../../pages/work.ts";
 
-const { shell, notes, rows, empty, form, next } = Astro.locals.page as WorkData;
+const { shell, notes, list, form, next } = Astro.locals.page as WorkData;
 Astro.response.status = Astro.locals.status;
 Astro.response.statusText = Astro.locals.statusText;
 ---
@@ -40,35 +41,7 @@ Astro.response.statusText = Astro.locals.statusText;
       </form>
     )}
     <div class="osf-split-main">
-      {empty && <p class="osf-empty">No work items yet. Work arrives from the factory's sources and from this form.</p>}
-      <div class="osf-table-panel">
-        <table class="osf-table osf-cards">
-          <thead>
-            <tr>
-              <th scope="col">Work item</th>
-              <th scope="col">Type</th>
-              <th scope="col">Status</th>
-              <th scope="col">Source</th>
-              <th scope="col">Requester</th>
-              <th scope="col">Run</th>
-              <th scope="col">Age</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr>
-                <td class="osf-card-title">{row.title.href ? <a href={row.title.href}>{row.title.text}</a> : row.title.text}</td>
-                <td>{row.type}</td>
-                <td class="osf-card-state"><span class={row.statusClass}>{row.status}</span></td>
-                <td>{row.source}</td>
-                <td>{row.requester}</td>
-                <td class="osf-mono">{row.run.href ? <a href={row.run.href}>{row.run.text}</a> : row.run.text}</td>
-                <td class="osf-mono osf-card-corner">{row.age}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <WorkList list={list} />
       {next && <p><a href={next} rel="next">Next page</a></p>}
     </div>
   </div>

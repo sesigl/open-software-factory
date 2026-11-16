@@ -2,9 +2,9 @@ import { scenario } from "@opensoftware/testkit";
 import { foreman, healthRoute, open, runOf, serving } from "./console.ts";
 
 const POLICY =
-  "default-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
+  "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
 
-scenario("SCN-CONSOLE-267", async ({ sut, fakes, given, when, then }) => {
+scenario("SCN-CONSOLE-273", async ({ sut, fakes, given, when, then }) => {
   let api: Awaited<ReturnType<typeof foreman>>;
   await given('a foreman with the run "Export reports as CSV"', async () => {
     api = await foreman(fakes, [runOf("Export reports as CSV")], [healthRoute([])]);
@@ -21,7 +21,7 @@ scenario("SCN-CONSOLE-267", async ({ sut, fakes, given, when, then }) => {
   });
 
   await then(
-    "each answer has the Content-Security-Policy \"default-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'\"",
+    "each answer has the Content-Security-Policy \"default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'\"",
     async () => {
       expect(policies).toEqual([POLICY, POLICY, POLICY, POLICY]);
     },
