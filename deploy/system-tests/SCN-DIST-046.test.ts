@@ -1,14 +1,6 @@
 import { type Compose, scenario } from "@opensoftware/testkit";
-import { profile, words } from "./profile.ts";
+import { profile, SIGN_IN, words } from "./profile.ts";
 
-/** The console's sign-in with GitHub and its signing key, made up for the test: no GitHub issued the app. */
-const SIGN_IN = {
-  CONSOLE_SIGN_IN: "github",
-  CONSOLE_SESSION_SECRET: "console-session-secret-1",
-  CONSOLE_GITHUB_CLIENT_ID: "Iv1.acme0console",
-  CONSOLE_GITHUB_CLIENT_SECRET: "github-oauth-secret-1",
-  CONSOLE_SIGNING_KEY: "0123456789abcdef".repeat(4),
-};
 const KEYS = "console=http://console:8080/.well-known/jwks.json";
 const MODULES = { foreman: "FOREMAN_PERSON_KEYS", intake: "INTAKE_PERSON_KEYS", gatekeeper: "GATEKEEPER_PERSON_KEYS" };
 

@@ -279,8 +279,10 @@ requester or `by` of the kind `trigger`, like `{ "kind": "trigger", "id": "tool:
 Without the sign-in the console has no actions, and without the key it signs none: then the profile leaves the three
 settings empty, and the modules take the person a caller names, as before. A module that checks would refuse the
 actions of a console that does not sign, so the settings go on only together. To change the key, set
-`CONSOLE_SIGNING_KEY` to `old,new`, after 10 minutes to `new,old`, and a minute later to `new`. An image of a release
-before ADR 0151 ignores the key and the settings.
+`CONSOLE_SIGNING_KEY` to `old,new`, after 10 minutes to `new,old`, and a minute later to `new`. With the sign-in on
+and without the key, `console doctor` and the console's page `/health` warn: `set CONSOLE_SIGNING_KEY: without it the
+console sends no proof of the person, and foreman, intake and gatekeeper refuse its actions when they check proofs`.
+An image of a release before ADR 0151 ignores the key and the settings.
 
 ### Secrets in OpenBao
 
@@ -655,7 +657,7 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-033 | implemented | The chart takes a forge token without Slack, and asks on pull requests only |
 | SCN-DIST-034 | implemented | The service improve writes the reports of ledger and observer and judges no run without scorers |
 | SCN-DIST-035 | implemented | The chart runs the improvement jobs as a CronJob on foreman's run records, without scorers by default |
-| SCN-DIST-036 | implemented | The console of the Compose profile renders its health page from the templates its package ships |
+| SCN-DIST-036 | deprecated | The console of the Compose profile renders its health page from the templates its package ships |
 | SCN-DIST-037 | implemented | With the sign-in on, the console of the Compose profile lets in only the people of the factory's access.yaml |
 | SCN-DIST-038 | implemented | The chart switches the console's sign-in on with the client secret and the session key from a Secret the operator names |
 | SCN-DIST-039 | implemented | The profile's OpenBao keeps a stored secret over a restart, unseals itself, and a sandbox still sends the value |
@@ -667,3 +669,6 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-045 | implemented | The chart reads the factory from its repository on a forge with the token "factory-token", and the console proposes changes to it |
 | SCN-DIST-046 | implemented | With the sign-in and "CONSOLE_SIGNING_KEY", the console signs the proof of the person and foreman, intake and gatekeeper check it with the console's key set |
 | SCN-DIST-047 | implemented | With the sign-in, the chart gives the console its signing key from the sign-in's Secret, and foreman, intake and gatekeeper the console's key set |
+| SCN-DIST-048 | implemented | With the sign-in and "CONSOLE_SIGNING_KEY", the released intake refuses a work item whose made-up person has no proof, and the console publishes its key |
+| SCN-DIST-049 | implemented | With the sign-in and without "CONSOLE_SIGNING_KEY", "console doctor" of the released console warns that the modules would refuse its actions |
+| SCN-DIST-050 | implemented | The console of the Compose profile renders its health page from the templates its package ships, and allows only its own files |

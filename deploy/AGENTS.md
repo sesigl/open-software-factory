@@ -70,7 +70,11 @@ through `kubectl port-forward` (`url`), `helm test` and the state of the workloa
   worker; SCN-DIST-044 is `docker compose config` and one `factory --help`, 1.6 s; SCN-DIST-045 renders the chart like
   SCN-DIST-033. About 19 s together, 22 s in CI: see the measure for 840 s above.
 - T-61 adds no start either (ADR 0151): SCN-DIST-046 runs `docker compose config` three times, 0.5 s on the
-  development container; SCN-DIST-047 renders the chart twice like SCN-DIST-033, about 1 s.
+  development container; SCN-DIST-047 renders the chart twice like SCN-DIST-033, about 1 s. With the released images
+  that sign and check, SCN-DIST-048 starts only intake with PostgreSQL and NATS, like SCN-DIST-014, and the console
+  with `--no-deps`, like SCN-DIST-037: 10.5 s with the images present. SCN-DIST-049 runs one `console doctor` with
+  `--no-deps` and starts nothing: 1.1 s. Both were measured on the development container against the released images
+  (console 0.12.0, intake 0.8.0). The budget stays 840 s while the suite stays inside it.
 
 ## Scenario prefix
 

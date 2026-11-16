@@ -1,7 +1,7 @@
 import { scenario } from "@opensoftware/testkit";
 import { profile, words } from "./profile.ts";
 
-scenario("SCN-DIST-036", async ({ sut, given, when, then }) => {
+scenario("SCN-DIST-050", async ({ sut, given, when, then }) => {
   let compose: Awaited<ReturnType<typeof profile>>;
   await given('the Compose profile with every value of ".env.example" set in ".env"', async () => {
     compose = await profile(sut);
@@ -26,9 +26,10 @@ scenario("SCN-DIST-036", async ({ sut, given, when, then }) => {
     },
   );
 
-  await then("the page allows only the console's own files and no script", async () => {
+  // An island is a script file of the console (ADR 0152); an inline script has no source the policy allows.
+  await then("the page allows only the console's own files, its script files too, and no inline script", async () => {
     expect(policy).toBe(
-      "default-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",
+      "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",
     );
   });
 });

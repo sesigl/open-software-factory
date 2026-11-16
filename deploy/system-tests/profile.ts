@@ -12,6 +12,18 @@ export const OPENBAO: Record<string, string> = {
   OSF_OPENBAO_EGRESS_TOKEN: "e3".repeat(32),
 };
 
+/**
+ * The console's sign-in with GitHub and its signing key (ADR 0151), made up for the tests: no GitHub issued the app,
+ * and the key is the seed the console's own tests use.
+ */
+export const SIGN_IN = {
+  CONSOLE_SIGN_IN: "github",
+  CONSOLE_SESSION_SECRET: "console-session-secret-1",
+  CONSOLE_GITHUB_CLIENT_ID: "Iv1.acme0console",
+  CONSOLE_GITHUB_CLIENT_SECRET: "github-oauth-secret-1",
+  CONSOLE_SIGNING_KEY: "0123456789abcdef".repeat(4),
+};
+
 /** The values of `.env.example`, made up for the tests. */
 const VALUES: Record<string, string> = {
   ...OPENBAO,
