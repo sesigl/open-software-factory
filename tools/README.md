@@ -329,3 +329,4 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-205 | implemented | osf suite-plan puts the suites with under 40 seconds of tests into two shared jobs |
 | SCN-REPO-206 | implemented | osf suite-plan gives a job of its own to a lone small suite and to a suite with kind, a filter with "!" or a module without a budget |
 | SCN-REPO-207 | implemented | osf suite-plan rejects a suite that the suites file does not have and plans no job for no suite |
+| SCN-REPO-215 | implemented | make docs lists the test hooks of a module's configuration apart, after the switch that turns them on |

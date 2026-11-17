@@ -73,6 +73,8 @@ export function makeLaunch(moduleRoot: string, dirs: Folders, hosts: () => strin
       OSF_DATA: dirs.data,
       OSF_NOW: FIXED_DATE,
       OSF_SEED: FIXED_SEED,
+      // The switch that turns the test hooks on, like OSF_NOW and OSF_SEED: a module honors them only with it (ADR 0166).
+      OSF_TEST_HOOKS: "1",
       NODE_OPTIONS,
       NODE_COMPILE_CACHE,
       OSF_TESTKIT_NOREAL_LOG: dirs.noreal,

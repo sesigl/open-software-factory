@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // scorekit <command>: the entry layer only parses arguments and calls the commands.
 import { parseArgs } from "node:util";
-import { type Command, commandOf, outputPath, runProgram } from "@opensoftware/cli";
+import { type Command, commandOf, outputPath, runProgram, testHook } from "@opensoftware/cli";
 import { calibrate } from "./commands/calibrate.ts";
 import { exportEvaluators } from "./commands/export.ts";
 import { push } from "./commands/push.ts";
@@ -54,7 +54,7 @@ const commands: Record<string, Command> = {
         sample: values.sample,
         model: values.model,
         out: output("scores.jsonl"),
-        now: env.OSF_NOW ?? new Date().toISOString(),
+        now: testHook(env, "OSF_NOW") ?? new Date().toISOString(),
       },
       env,
     ),

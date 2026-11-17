@@ -7,7 +7,7 @@ Adds rules for the cli library. The root `AGENTS.md` applies in full. Decisions:
 The only way a system test or another program may use the library:
 
 - Library: the exports of `src/index.ts` (`runProgram`, `commandOf`, `UsageError`, `check`, `readInputs`,
-  `writeText`, `outputPath`, `packageVersion`, `healthOf`), imported as `@opensoftware/cli`
+  `writeText`, `outputPath`, `packageVersion`, `healthOf`, `testHook`), imported as `@opensoftware/cli`
 
 The library's system tests import it by its package name and call it in their own process (ADR 0039). Files go
 through `sut.files`; `sut.files.path` gives their absolute path.
@@ -21,6 +21,7 @@ Layers, top to bottom, in `architecture.json` (ADR 0014). A file imports only it
 | api | `src/index.ts` | the public exports |
 | program | `src/program.ts` | `runProgram`: help, the command, its output and the exit code; `commandOf`: the command of a name |
 | files | `src/files.ts` | the input files, the output folder, the package version |
+| hooks | `src/hooks.ts` | `testHook`: a test hook only with the test switch `OSF_TEST_HOOKS=1` (ADR 0166) |
 | errors | `src/errors.ts` | `UsageError` and `check` |
 
 Only code that two or more modules need belongs here. Code of one module stays in that module.

@@ -17,6 +17,7 @@
     },
     "OSF_NOW": {
       "type": "string",
+      "x-test-hook": true,
       "description": "The current time, like 2026-01-01T00:00:00Z, that receive compares with X-Slack-Request-Timestamp. Default: the clock."
     }
   }

@@ -766,3 +766,4 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-062 | implemented | The foreman of the Helm chart runs at most 2 stages at once |
 | SCN-DIST-070 | implemented | The agents' template of this repository's factory has Node 24, pnpm 10.28.0, Git, make and lychee 0.20.1 |
 | SCN-DIST-071 | implemented | This repository's factory starts every agent from the image of "dogfood-template", and its prompts ask for "make check-fast" |
+| SCN-DIST-072 | implemented | No service of the Compose profile sets a test hook or the test switch |

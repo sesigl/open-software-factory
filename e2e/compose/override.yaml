@@ -8,8 +8,11 @@ x-workspace: &workspace
   build: !reset null
   extra_hosts: ["host.docker.internal:host-gateway"]
 
+# The fixed clock is a test hook, which a module honors only with the test switch (ADR 0166). The profile itself never
+# sets either.
 x-clock: &clock
   OSF_NOW: "2026-01-01T00:00:00Z"
+  OSF_TEST_HOOKS: "1"
 
 services:
   factory-repo: *workspace

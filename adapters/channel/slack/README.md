@@ -29,7 +29,7 @@ npx @opensoftware/channel-slack receive delivery.json
   receiver, and a bot token with `chat:write`, `users:read` and `channels:history`. The receiver answers Slack's
   `url_verification` and answers every request within 3 seconds; it then runs `receive` on the delivery.
 - **Signatures.** `receive` checks `X-Slack-Signature` (`v0`, HMAC-SHA256 with `CHANNEL_SIGNING_SECRET`) and refuses
-  a request that Slack signed more than 5 minutes from now, with the time from `OSF_NOW` or the clock. A refused
+  a request that Slack signed more than 5 minutes from now, with the time from the clock, or from the test hook `OSF_NOW` in a system test. A refused
   delivery exits 1 and prints nothing.
 - **Work items.** A person's message that mentions the bot (`<@bot>`) is a work item. Its title is the text's first
   line without the mention, its requester `slack:<user ID>` with the name `users.info` gives, and its origin links to
@@ -77,4 +77,14 @@ breaking change raises the minor version. The one-time setup is the same as for 
 | `CHANNEL_API_URL` | string | `"https://slack.com/api/"` | The base URL of Slack's Web API, ending in a slash. |
 | `CHANNEL_TOKEN` | string |  | The Slack bot token (xoxb-...) with chat:write, users:read and channels:history. Required by every command. |
 | `CHANNEL_SIGNING_SECRET` | string |  | The signing secret of the Slack app. receive refuses a delivery whose X-Slack-Signature does not match, or that Slack signed more than 5 minutes from now. |
-| `OSF_NOW` | string |  | The current time, like 2026-01-01T00:00:00Z, that receive compares with X-Slack-Request-Timestamp. Default: the clock. |
+
+### Test hooks
+
+Only the system tests set these. A module honors them only with `OSF_TEST_HOOKS=1`, which the testkit sets for every
+module process it starts and the Compose profile and the Helm chart never set; without it, a command that reads one
+exits 2 and names it (ADR 0166).
+
+| Variable | Meaning |
+| --- | --- |
+| `OSF_TEST_HOOKS` | `1` turns the test hooks on. |
+| `OSF_NOW` | The current time, like 2026-01-01T00:00:00Z, that receive compares with X-Slack-Request-Timestamp. Default: the clock. |

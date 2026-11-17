@@ -31,6 +31,13 @@ Feature: Factory definition
     Then the command exits with code 2
     And the output contains "FOREMAN_API_TOKEN"
 
+  @id=SCN-FORE-197 @status=implemented
+  Scenario: The test hook "OSF_NOW" without the test switch "OSF_TEST_HOOKS" stops the server at the start
+    Given the README's "factory.yaml"
+    When the user runs "foreman serve" with "OSF_NOW" set to "2026-01-01T05:00:00Z" and "OSF_TEST_HOOKS" set to ""
+    Then the command exits with code 2
+    And the output contains "OSF_NOW is a test hook, which works only with OSF_TEST_HOOKS=1 in the system tests: unset OSF_NOW"
+
   @id=SCN-FORE-026 @status=implemented
   Scenario: A factory outside a Git repository stops the server at the start
     Given the README's "factory.yaml" and its prompts in a folder outside any Git repository

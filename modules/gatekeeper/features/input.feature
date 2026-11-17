@@ -114,6 +114,21 @@ Feature: Refuse wrong input
     Then each command exits with code 2
     And each error output says that the time is not a time like 2026-01-01T05:00:00Z
 
+  @id=SCN-GATE-118 @status=implemented
+  Scenario: The test hook "OSF_NOW" without the test switch "OSF_TEST_HOOKS" exits 2 and names the hook
+    Given the README policy, groups and request
+    When the user runs "gatekeeper request" and "gatekeeper serve" with "OSF_NOW" set to "2026-01-01T05:00:00Z" and "OSF_TEST_HOOKS" set to ""
+    Then each command exits with code 2
+    And each error output says that OSF_NOW is a test hook, which works only with OSF_TEST_HOOKS=1 in the system tests
+    And the fake Slack has no message in "C0GATES"
+
+  @id=SCN-GATE-119 @status=implemented
+  Scenario: A "GATEKEEPER_POLL_MS" that is no whole number of 1 or more exits 2 and names the setting
+    Given the README policy and groups
+    When the user runs "gatekeeper serve" with "GATEKEEPER_POLL_MS" set to "0", "-5" and "1s"
+    Then each command exits with code 2
+    And each error output says that GATEKEEPER_POLL_MS needs a whole number of 1 or more, like 'GATEKEEPER_POLL_MS is "1s": set a whole number of 1 or more'
+
   @id=SCN-GATE-085 @status=implemented
   Scenario: A channel that is not like "slack:C0GATES", or a Slack channel without a token, exits 2
     Given the README policy, groups and request

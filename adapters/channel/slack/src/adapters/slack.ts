@@ -3,7 +3,7 @@
 import { createSlackAdapter, type SlackAdapter } from "@chat-adapter/slack";
 import { createMemoryState } from "@chat-adapter/state-memory";
 import type { Channel, Post } from "@opensoftware/channel-kit";
-import { check } from "@opensoftware/cli";
+import { check, testHook } from "@opensoftware/cli";
 import { Actions, Button, Card, CardText, Chat, ConsoleLogger, type Message } from "chat";
 import { decision, line, signed, workItem } from "../domain/messages.ts";
 
@@ -14,11 +14,12 @@ function connect(env: NodeJS.ProcessEnv = process.env) {
   const token = env.CHANNEL_TOKEN;
   check(token, "set CHANNEL_TOKEN to the Slack bot token");
   const secret = env.CHANNEL_SIGNING_SECRET ?? "";
-  const now = env.OSF_NOW ? new Date(env.OSF_NOW) : new Date();
+  const fixed = testHook(env, "OSF_NOW");
+  const now = fixed ? new Date(fixed) : new Date();
   const adapter = createSlackAdapter({
     apiUrl: env.CHANNEL_API_URL || "https://slack.com/api/",
     botToken: token,
-    // The SDK checks the time against the clock; the adapter checks it against OSF_NOW, which tests fix.
+    // The SDK checks the time against the clock; the adapter checks it against the test hook OSF_NOW when a test fixes it.
     webhookVerifier: (request, body) => signed(request.headers, body, secret, now),
     logger: QUIET,
   });

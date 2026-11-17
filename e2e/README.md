@@ -28,7 +28,8 @@ file, as for the profile's images.
 
 - [`compose/compose.yaml`](compose/compose.yaml) includes the profile's `deploy/compose/compose.yaml` and
   [`compose/override.yaml`](compose/override.yaml). The override runs every module from the workspace image with the
-  fixed clock `2026-01-01T00:00:00Z` and points the modules at the fakes.
+  fixed clock `2026-01-01T00:00:00Z`, with the test switch `OSF_TEST_HOOKS=1` without which a module refuses that test
+  hook (ADR 0166), and points the modules at the fakes.
 - The fakes run on the Docker host. Containers reach them at `host.docker.internal`, which the override maps to the
   host gateway.
 - foreman starts the testkit's scripted agent with `harness-acp run`. The agent's turns edit files and run commands

@@ -491,7 +491,7 @@ like console=http://console:8080/.well-known/jwks.json: "console" is not`.
    /v1/runs/run_…/signals of "ada@acme.dev": the person proof ended at …`.
 
 The server fetches a key set when a proof first needs it, keeps it for 10 minutes and fetches it again for a key it
-does not know. Its clock is `OSF_NOW` when that is set.
+does not know. Its clock is the test hook `OSF_NOW` when a system test sets it.
 
 ## Commands
 
@@ -667,7 +667,6 @@ the minor version. The one-time setup is the same as for contracts
 | --- | --- | --- | --- |
 | `PORT` | string | `"8080"` | serve: the port the HTTP server listens on. |
 | `OSF_DATA` | string | `".foreman"` | serve: the folder of the runs' working folders, runs/<run ID>, and of the harness adapters' session records. |
-| `OSF_NOW` | string |  | The current time, like 2026-01-01T00:00:00Z, for the times of runs and stages. Default: the clock. |
 | `FOREMAN_API_TOKEN` | string |  | serve: the token that callers of /v1 send as Authorization: Bearer <token>. Required. |
 | `FOREMAN_PERSON_KEYS` | string |  | serve: the issuers of person proofs, as name=url pairs of their key sets separated by commas, like console=http://console:8080/.well-known/jwks.json. Set, a signal or a retry whose by names a person needs that person's proof in the header OSF-Person, and the run records the person the proof names (ADR 0151). Unset: the API token names any person, as before. |
 | `FOREMAN_FACTORY` | string | `"factory.yaml"` | serve: the factory definition. A path: its folder must be in a Git repository and clean, with every tracked file and every file the foreman reads committed: a run's factory version is its commit (ADR 0110). Or git+<url>#<ref>: the foreman fetches the ref, default the remote's HEAD, into OSF_DATA/factory, reads factory.yaml at the root of that commit, and the commit is the factory version (ADR 0124). |
@@ -703,6 +702,17 @@ the minor version. The one-time setup is the same as for contracts
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | string |  | serve: the base URL of an OTLP/HTTP receiver, like http://phoenix:6006. Set, each run is one trace with a span per stage and one for the run, sent to <url>/v1/traces, and each stage's harness gets the trace in TRACEPARENT (ADR 0087). |
 | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | string |  | serve: the full URL of the OTLP/HTTP traces endpoint; takes precedence over OTEL_EXPORTER_OTLP_ENDPOINT. |
 | `OTEL_EXPORTER_OTLP_HEADERS` | string |  | serve: headers for the OTLP receiver as key=value pairs, comma-separated, like a token from a secret store. |
+
+### Test hooks
+
+Only the system tests set these. A module honors them only with `OSF_TEST_HOOKS=1`, which the testkit sets for every
+module process it starts and the Compose profile and the Helm chart never set; without it, a command that reads one
+exits 2 and names it (ADR 0166).
+
+| Variable | Meaning |
+| --- | --- |
+| `OSF_TEST_HOOKS` | `1` turns the test hooks on. |
+| `OSF_NOW` | The current time, like 2026-01-01T00:00:00Z, for the times of runs and stages. Default: the clock. |
 
 ## Scenarios
 
@@ -901,3 +911,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-194 | implemented | A check that fails again after the run went back fails the run |
 | SCN-FORE-195 | implemented | A factory whose stage sends a failed check back to a stage that cannot take it stops the server at the start |
 | SCN-FORE-196 | implemented | A stage that runs once more for a failed check keeps the approval of its gate |
+| SCN-FORE-197 | implemented | The test hook "OSF_NOW" without the test switch "OSF_TEST_HOOKS" stops the server at the start |

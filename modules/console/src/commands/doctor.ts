@@ -2,6 +2,7 @@
 // failure (ADR 0086); with --deep also each model route, the harness, a span's way to the trace store, a sandbox's egress and an event's way to the foreman (ADR 0120). It exits 1 when a check fails. The page /health shows the same.
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { testHook } from "@opensoftware/cli";
 import { accessFile } from "../adapters/access.ts";
 import { type Api, probe } from "../adapters/apis.ts";
 import { branchRules } from "../adapters/changes.ts";
@@ -75,8 +76,8 @@ function groups(file: string): Item {
  * Publishes one doctor's ping on NATS and asks the foremen every 250 ms for 10 s whether one of them received it
  * (ADR 0120).
  */
-async function pingForemen(env: Env, url: string): Promise<PingOutcome> {
-  const id = pingId(env.OSF_SEED);
+async function pingForemen(env: Env, url: string, hooks: TestHooks): Promise<PingOutcome> {
+  const id = pingId(hooks.seed);
   const sent = await publishPing(url, id);
   if (sent !== "sent") return sent;
   const foremen = servers(env).filter(({ kind }) => kind === "foreman");
@@ -84,14 +85,14 @@ async function pingForemen(env: Env, url: string): Promise<PingOutcome> {
     (await Promise.all(foremen.map((foreman) => probe(foreman, `/v1/doctor/pings/${id}`)))).some(
       ({ status }) => status === 200,
     );
-  return (await within(10_000, seen, Boolean(env.OSF_NOW))) ? "seen" : "not seen";
+  return (await within(10_000, seen, hooks.frozen)) ? "seen" : "not seen";
 }
 
 /**
  * The deep checks (ADR 0120): a model call per route, the harness's ACP initialize, one span to the trace store, a
  * sandbox that refuses a denied host and one event that reaches the foreman.
  */
-async function deepItems(env: Env, routes: string[]): Promise<Item[]> {
+async function deepItems(env: Env, routes: string[], hooks: TestHooks): Promise<Item[]> {
   const items: Item[] = [];
   const url = env.CONSOLE_MODEL_URL;
   if (!url) items.push({ name: "model", ok: false, detail: "set CONSOLE_MODEL_URL to the gateway's base URL" });
@@ -103,12 +104,12 @@ async function deepItems(env: Env, routes: string[]): Promise<Item[]> {
       : { name: "harness", ok: false, detail: "set CONSOLE_HARNESS_COMMAND to the command that starts the harness" },
   );
   const traces = env.CONSOLE_TRACES_URL;
-  if (traces) items.push(traceItem(await traceRoundTrip(env.CONSOLE_OTLP_URL ?? "", traces, Boolean(env.OSF_NOW))));
+  if (traces) items.push(traceItem(await traceRoundTrip(env.CONSOLE_OTLP_URL ?? "", traces, hooks.frozen)));
   const sandbox = env.CONSOLE_SANDBOX_COMMAND;
   const template = env.CONSOLE_SANDBOX_TEMPLATE || "curlimages/curl:8.17.0";
   if (sandbox) items.push(sandboxItem(await probeSandbox(sandbox, template, DENIED_HOST)));
   const nats = env.CONSOLE_NATS_URL;
-  if (nats) items.push(eventItem(await pingForemen(env, nats)));
+  if (nats) items.push(eventItem(await pingForemen(env, nats, hooks)));
   return items;
 }
 
@@ -176,7 +177,14 @@ async function secrets(env: Env, declared: Declared[]): Promise<Item[]> {
   return secretItems(declared, probed, listed);
 }
 
-export async function examine(env: Env, deep = false): Promise<Item[]> {
+/** The test hooks of the deep checks (ADR 0166): the seed of the ping's ID, and a frozen clock that skips the waits. */
+interface TestHooks {
+  seed: string | undefined;
+  frozen: boolean;
+}
+
+/** The checks of the console's settings; with `deep`, the test hooks of the deep checks, those too. */
+export async function examine(env: Env, deep?: TestHooks): Promise<Item[]> {
   const items = (
     await Promise.all(
       servers(env).map(async (server) => {
@@ -211,11 +219,13 @@ export async function examine(env: Env, deep = false): Promise<Item[]> {
   items.push(...(await signingItems(env)));
   // Only a factory that declares a secret of OpenBao needs the store (ADR 0137).
   if (declared.length) items.push(...(await secrets(env, declared)));
-  if (deep) items.push(...(await deepItems(env, routes)));
+  if (deep) items.push(...(await deepItems(env, routes, deep)));
   return items;
 }
 
 export async function doctor(env: Env, deep = false) {
-  const items = await examine(env, deep);
+  // The test hooks, before any check runs (ADR 0166).
+  const hooks = { seed: testHook(env, "OSF_SEED"), frozen: Boolean(testHook(env, "OSF_NOW")) };
+  const items = await examine(env, deep ? hooks : undefined);
   return { lines: report(items), exitCode: items.every(({ ok }) => ok) ? 0 : 1 };
 }

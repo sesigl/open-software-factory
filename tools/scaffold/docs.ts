@@ -97,17 +97,44 @@ function scenarioTable(dir: string): string {
   return ["| ID | Status | Scenario |", "| --- | --- | --- |", ...rows.sort()].join("\n");
 }
 
+interface Setting {
+  type?: string;
+  default?: unknown;
+  description?: string;
+  /** A variable that only the system tests set, like OSF_NOW (ADR 0166). */
+  "x-test-hook"?: boolean;
+}
+
+// The test hooks follow the settings under a heading of their own, after the switch that turns them on (ADR 0166).
+const TEST_HOOKS = [
+  "### Test hooks",
+  "",
+  "Only the system tests set these. A module honors them only with `OSF_TEST_HOOKS=1`, which the testkit sets for every",
+  "module process it starts and the Compose profile and the Helm chart never set; without it, a command that reads one",
+  "exits 2 and names it (ADR 0166).",
+  "",
+  "| Variable | Meaning |",
+  "| --- | --- |",
+  "| `OSF_TEST_HOOKS` | `1` turns the test hooks on. |",
+];
+
 function configTable(file: string): string {
   if (!existsSync(file)) return "This module has no configuration.";
-  const schema = JSON.parse(readFileSync(file, "utf8")) as {
-    properties?: Record<string, { type?: string; default?: unknown; description?: string }>;
-  };
-  const rows = Object.entries(schema.properties ?? {}).map(
-    ([name, property]) =>
-      `| \`${name}\` | ${property.type ?? ""} | ${property.default === undefined ? "" : `\`${JSON.stringify(property.default)}\``} | ${property.description ?? ""} |`,
-  );
-  if (rows.length === 0) return "This module has no configuration.";
-  return ["| Variable | Type | Default | Meaning |", "| --- | --- | --- | --- |", ...rows].join("\n");
+  const schema = JSON.parse(readFileSync(file, "utf8")) as { properties?: Record<string, Setting> };
+  const entries = Object.entries(schema.properties ?? {});
+  const rows = entries
+    .filter(([, property]) => !property["x-test-hook"])
+    .map(
+      ([name, property]) =>
+        `| \`${name}\` | ${property.type ?? ""} | ${property.default === undefined ? "" : `\`${JSON.stringify(property.default)}\``} | ${property.description ?? ""} |`,
+    );
+  const hooks = entries
+    .filter(([, property]) => property["x-test-hook"])
+    .map(([name, property]) => `| \`${name}\` | ${property.description ?? ""} |`);
+  const settings = rows.length
+    ? ["| Variable | Type | Default | Meaning |", "| --- | --- | --- | --- |", ...rows]
+    : ["This module has no configuration."];
+  return [...settings, ...(hooks.length ? ["", ...TEST_HOOKS, ...hooks] : [])].join("\n");
 }
 
 /** The "Commands:" block of `node <cli> --help`: one row per line, usage and meaning split by two spaces. */

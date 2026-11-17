@@ -70,6 +70,7 @@ Use these terms in scenarios, code, UI text and docs.
 | Layer | A named group of a module's source files in its `architecture.json`; a file imports only its own layer and the layers below it. |
 | Conformance scenario | A port scenario every adapter of the port must pass. |
 | System test | The one test of an implemented scenario: it drives the built module or adapter from outside, with fakes for every outside system, and is deterministic. The kinds of tests are in `docs/quality/testing-strategy.md`. |
+| Test hook | An environment variable that only the system tests set, like `OSF_NOW` for the clock or `OSF_SEED` for the random source. A module honors it only with the test switch `OSF_TEST_HOOKS=1`, which the testkit sets, and otherwise exits 2 and names it; the configuration table lists it under "Test hooks" (ADR 0166). |
 | Smoke scenario | A scenario of `e2e/features/` that runs the whole factory on the Compose profile, with fakes at its edges. |
 | Shared start | One start of a slow system under test, such as the Compose profile, that scenarios tagged with the same `@shared=<name>` share because they only read it. Each keeps its own test and result (ADR 0157). The testkit starts it once per test run with `sut.shared` (ADR 0162). |
 | Scenario Outline | A scenario with an `Examples` table: one ID and one test for a family of cases with the same steps, where only the literals differ (ADR 0157). |

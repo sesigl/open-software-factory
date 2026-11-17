@@ -198,7 +198,6 @@ with a trusted publisher for `publish-proof.yml`. No credential is stored in the
 | Variable | Type | Default | Meaning |
 | --- | --- | --- | --- |
 | `OUTPUT` | string | `"."` | Folder below which bundle writes evidence/ when --out is not given. |
-| `OSF_NOW` | string |  | The creation time of a bundle as an ISO 8601 timestamp. Default: the system clock. |
 | `GITHUB_SERVER_URL` | string |  | Set by GitHub Actions. With GITHUB_REPOSITORY, the repository of a bundle when --repository is not given. |
 | `GITHUB_REPOSITORY` | string |  | Set by GitHub Actions, for example acme/web. |
 | `PROOF_FORGE_URL` | string |  | Base URL of the forge API for attach. GitHub: the REST API, default https://api.github.com. Forgejo: the server, default the origin of the pull request URL; proof adds /api/v1. |
@@ -208,6 +207,17 @@ with a trusted publisher for `publish-proof.yml`. No credential is stored in the
 | `AWS_ACCESS_KEY_ID` | string |  | Access key of the store. |
 | `AWS_SECRET_ACCESS_KEY` | string |  | Secret key of the store. Never write the value into a file. |
 | `PLAYWRIGHT_BROWSERS_PATH` | string |  | Where Playwright keeps its browsers, for capture. Default: Playwright's cache folder below HOME. Install Chromium with npx playwright-core install chromium. |
+
+### Test hooks
+
+Only the system tests set these. A module honors them only with `OSF_TEST_HOOKS=1`, which the testkit sets for every
+module process it starts and the Compose profile and the Helm chart never set; without it, a command that reads one
+exits 2 and names it (ADR 0166).
+
+| Variable | Meaning |
+| --- | --- |
+| `OSF_TEST_HOOKS` | `1` turns the test hooks on. |
+| `OSF_NOW` | The creation time of a bundle as an ISO 8601 timestamp. Default: the system clock. |
 
 ## Scenarios
 

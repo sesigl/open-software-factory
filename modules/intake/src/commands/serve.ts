@@ -2,7 +2,7 @@
 // (ADR 0063, ADR 0065), and the foreman's run events, which move a work item on (ADR 0071). It runs until SIGTERM or
 // SIGINT.
 import { timingSafeEqual } from "node:crypto";
-import { healthOf, UsageError } from "@opensoftware/cli";
+import { healthOf, testHook, UsageError } from "@opensoftware/cli";
 import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
 import { type Channel, channelAdapter } from "../adapters/channel.ts";
 import { type Forge, forgeAdapter } from "../adapters/forge.ts";
@@ -119,10 +119,12 @@ export function natsOf(env: Env): NatsAt | undefined {
 }
 
 export async function serve(env: Env) {
+  // The test clock, before the server reads or starts anything (ADR 0166).
+  const fixed = testHook(env, "OSF_NOW");
   const apiToken = required(env, "INTAKE_API_TOKEN", "the token that callers of the API send");
   const channel = slackChannel(env);
   const forge = forgeOf(env);
-  const now = () => nowOf(env.OSF_NOW);
+  const now = () => nowOf(fixed);
   const warn = (text: string) => process.stderr.write(`intake: ${text}\n`);
   const prove = personCheckOf(env, now, warn);
   const store = await openStore(env.INTAKE_DATABASE_URL || undefined, env.OSF_DATA || ".intake");

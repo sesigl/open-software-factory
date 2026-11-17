@@ -55,6 +55,14 @@ Feature: The sut handle
     Then the command exits with code 0
     And "report.xml" has the passed test case "SCN-DEMO-001"
 
+  @id=SCN-TK-214 @status=implemented
+  Scenario: The module runs with the test switch that turns its test hooks on
+    Given a module whose CLI prints the environment variable "OSF_TEST_HOOKS"
+    And its system test expects the output "1"
+    When the developer runs "testkit run --junit report.xml" in the module
+    Then the command exits with code 0
+    And "report.xml" has the passed test case "SCN-DEMO-001"
+
   @id=SCN-TK-033 @status=implemented
   Scenario: sut.action runs the module's GitHub Action with its inputs
     Given a module whose composite action.yml has the input "name", checks "github.action_path" and "github.token", and runs its "command" with the name in a "run" step

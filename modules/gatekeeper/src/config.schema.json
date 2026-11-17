@@ -9,6 +9,7 @@
     },
     "OSF_NOW": {
       "type": "string",
+      "x-test-hook": true,
       "description": "The current time, like 2026-01-01T05:00:00Z, for escalation and expiry. Default: the clock."
     },
     "PORT": {
@@ -53,7 +54,7 @@
     "GATEKEEPER_POLL_MS": {
       "type": "string",
       "default": "30000",
-      "description": "serve: the milliseconds between two reads of the comments of the pull requests with a pending gate (ADR 0080). Only with GATEKEEPER_FORGE_TOKEN."
+      "description": "serve: the milliseconds between two reads of the comments of the pull requests with a pending gate (ADR 0080), a whole number of 1 or more. Only with GATEKEEPER_FORGE_TOKEN."
     },
     "GATEKEEPER_SIGNING_KEY": {
       "type": "string",

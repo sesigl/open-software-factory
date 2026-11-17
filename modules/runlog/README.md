@@ -178,7 +178,17 @@ with a trusted publisher for `publish-runlog.yml`. No credential is stored in th
 | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | string |  | Full URL of the OTLP/HTTP traces endpoint; takes precedence over OTEL_EXPORTER_OTLP_ENDPOINT. |
 | `OTEL_EXPORTER_OTLP_HEADERS` | string |  | Headers for the OTLP endpoint as key=value pairs, for example a token from a secret store. Never write the value into a file. |
 | `OSF_DATA` | string | `".runlog"` | Folder where watch remembers which session files it exported. |
-| `OSF_NOW` | string |  | The current time as an ISO 8601 timestamp, for watch to decide whether a session has ended. Default: the system clock. |
+
+### Test hooks
+
+Only the system tests set these. A module honors them only with `OSF_TEST_HOOKS=1`, which the testkit sets for every
+module process it starts and the Compose profile and the Helm chart never set; without it, a command that reads one
+exits 2 and names it (ADR 0166).
+
+| Variable | Meaning |
+| --- | --- |
+| `OSF_TEST_HOOKS` | `1` turns the test hooks on. |
+| `OSF_NOW` | The current time as an ISO 8601 timestamp, for watch to decide whether a session has ended. Default: the system clock. |
 
 ## Scenarios
 

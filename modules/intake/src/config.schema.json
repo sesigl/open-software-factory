@@ -14,6 +14,7 @@
     },
     "OSF_NOW": {
       "type": "string",
+      "x-test-hook": true,
       "description": "The current time, like 2026-01-01T00:00:00Z, for the time a work item and a request were received. Default: the clock."
     },
     "INTAKE_API_TOKEN": {

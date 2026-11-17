@@ -283,3 +283,10 @@ Feature: Health
     When the user runs "console doctor"
     Then the command exits with code 1
     And it prints "FAIL  factory check: the branch main of tester/factory requires an approval, which the user of CONSOLE_FACTORY_TOKEN cannot give to its own pull request, so no change merges: require only the check factory on main"
+
+  @id=SCN-CONSOLE-282 @status=implemented
+  Scenario: The test hooks "OSF_NOW" and "OSF_SEED" without the test switch "OSF_TEST_HOOKS" stop "console serve" and "console doctor"
+    Given a console without "CONSOLE_FOREMAN_URL"
+    When the user runs "console serve" with "OSF_NOW" set to "2026-01-01T05:00:00Z", and "console doctor --deep" with "OSF_SEED" set to "7", each with "OSF_TEST_HOOKS" set to ""
+    Then each command exits with code 2
+    And their error outputs are "console: OSF_NOW is a test hook, which works only with OSF_TEST_HOOKS=1 in the system tests: unset OSF_NOW" and "console: OSF_SEED is a test hook, which works only with OSF_TEST_HOOKS=1 in the system tests: unset OSF_SEED"

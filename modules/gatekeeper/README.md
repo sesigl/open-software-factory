@@ -255,7 +255,7 @@ decides a gate only with a key set of its own, named in the setting, like `acme-
 Replies and presses in Slack and comments on a pull request need no proof: Slack and the forge name the person
 themselves. A setting that is no list of `name=url` pairs stops `serve` with code 2, like
 `GATEKEEPER_PERSON_KEYS: a key set is <name>=<url>, like console=http://console:8080/.well-known/jwks.json: "console" is not`.
-In tests the clock of the check is `OSF_NOW`.
+In tests the clock of the check is the test hook `OSF_NOW` ([Test hooks](#test-hooks)).
 
 ### Pull requests in server mode
 
@@ -341,7 +341,6 @@ the decision. The event ID is the gate's ID with `.requested` or `.decided`.
 | Variable | Type | Default | Meaning |
 | --- | --- | --- | --- |
 | `OUTPUT` | string | `"."` | Folder of gate.json and record.json when --out and --record are not given. |
-| `OSF_NOW` | string |  | The current time, like 2026-01-01T05:00:00Z, for escalation and expiry. Default: the clock. |
 | `PORT` | string | `"8080"` | serve: the port the HTTP server listens on. |
 | `GATEKEEPER_OPA` | string | `"opa"` | The OPA 1.x program that evaluates the policy. |
 | `GATEKEEPER_SLACK_ADAPTER` | string | `"npx -y @opensoftware/channel-slack"` | The command line of the channel port's slack adapter, which reaches Slack for a slack: channel (ADR 0062). |
@@ -351,12 +350,23 @@ the decision. The event ID is the gate's ID with `.requested` or `.decided`.
 | `GATEKEEPER_FORGE_ADAPTER` | string |  | The command line of the forge port's adapter for --pull-request (ADR 0062). Default: npx -y @opensoftware/forge-github for github.com, npx -y @opensoftware/forge-forgejo for any other host. |
 | `GATEKEEPER_FORGE_URL` | string |  | The forge adapter's FORGE_URL. serve: the server's only forge; a request's link counts as a pull request only on its origin (github.com for https://api.github.com), and no other host is called. Default: https://api.github.com; for --pull-request, https://api.github.com for github.com and the pull request's origin for Forgejo. |
 | `GATEKEEPER_FORGE_TOKEN` | string |  | The forge adapter's FORGE_TOKEN: a token that may read the pull request and its checks (on GitHub: Checks: read, since the adapter's pr lists the check runs), comment on it and set its commit status. serve: with it, a request that links a pull request of GATEKEEPER_FORGE_URL's forge is asked on the pull request. Never written to a file. |
-| `GATEKEEPER_POLL_MS` | string | `"30000"` | serve: the milliseconds between two reads of the comments of the pull requests with a pending gate (ADR 0080). Only with GATEKEEPER_FORGE_TOKEN. |
+| `GATEKEEPER_POLL_MS` | string | `"30000"` | serve: the milliseconds between two reads of the comments of the pull requests with a pending gate (ADR 0080), a whole number of 1 or more. Only with GATEKEEPER_FORGE_TOKEN. |
 | `GATEKEEPER_SIGNING_KEY` | string |  | The Ed25519 private key that signs each record: in PEM, as gatekeeper keys writes it, or its seed in 64 hex digits, like the output of openssl rand -hex 32. Without it the record is unsigned, and serve says so once at its start. |
 | `GATEKEEPER_NATS_URL` | string |  | NATS server, like nats://localhost:4222, for the events gate.requested@v1 and gate.decided@v1. Unset: no events. serve keeps them in its outbox while NATS is unreachable. |
 | `GATEKEEPER_DATABASE_URL` | string |  | serve: the PostgreSQL database, like postgres://gatekeeper@db/gatekeeper, for the gates and the outbox. Required for serve. |
 | `GATEKEEPER_API_TOKEN` | string |  | serve: the token that callers of the API send as Authorization: Bearer <token>. Required for serve. Never written to a file. |
 | `GATEKEEPER_PERSON_KEYS` | string |  | serve: the issuers of person proofs as name=url pairs of their key sets, separated by commas, like console=http://console:8080/.well-known/jwks.json (ADR 0151). With it, each decision through the API needs the header OSF-Person, a proof of the person that one of them signed. Unset: a caller with the API token names any person. |
+
+### Test hooks
+
+Only the system tests set these. A module honors them only with `OSF_TEST_HOOKS=1`, which the testkit sets for every
+module process it starts and the Compose profile and the Helm chart never set; without it, a command that reads one
+exits 2 and names it (ADR 0166).
+
+| Variable | Meaning |
+| --- | --- |
+| `OSF_TEST_HOOKS` | `1` turns the test hooks on. |
+| `OSF_NOW` | The current time, like 2026-01-01T05:00:00Z, for escalation and expiry. Default: the clock. |
 
 ## Releases
 
@@ -493,3 +503,5 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-GATE-115 | implemented | The merge gate of this repository asks "maintainers" for the factory's branches "osf/", "observer/" and "factory/" |
 | SCN-GATE-116 | implemented | An "/approve" that the forge lists after the request but dates before it does not pass the gate |
 | SCN-GATE-117 | implemented | In the second of the request the forge's order decides: a "/reject" listed before the request does not count, an "/approve" listed after it does |
+| SCN-GATE-118 | implemented | The test hook "OSF_NOW" without the test switch "OSF_TEST_HOOKS" exits 2 and names the hook |
+| SCN-GATE-119 | implemented | A "GATEKEEPER_POLL_MS" that is no whole number of 1 or more exits 2 and names the setting |

@@ -226,6 +226,7 @@
     },
     "OSF_NOW": {
       "type": "string",
+      "x-test-hook": true,
       "description": "The current time, like 2026-01-01T00:00:00Z, for the age of a run, the sign-in and the waits of `console doctor --deep`, which then pass at once. Default: the clock."
     },
     "OSF_OPENBAO_ADDR": {
@@ -243,7 +244,8 @@
     },
     "OSF_SEED": {
       "type": "string",
-      "description": "doctor --deep: set, the ID of the doctor's ping comes from it instead of from chance, so a test knows it. Leave it unset in a factory."
+      "x-test-hook": true,
+      "description": "doctor --deep: set, the ID of the doctor's ping comes from it instead of from chance, so a test knows it."
     },
     "PORT": {
       "type": "string",

@@ -5,7 +5,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { type Health, healthOf, UsageError } from "@opensoftware/cli";
+import { type Health, healthOf, testHook, UsageError } from "@opensoftware/cli";
 import type { GateDecided, WorkItem, WorkRetryRequested } from "@opensoftware/contracts";
 import { type Actor, type PersonChecker, personChecker } from "@opensoftware/person-proof";
 import { Client, Connection, WorkflowNotFoundError } from "@temporalio/client";
@@ -60,14 +60,14 @@ const REFUSED = {
  * The checker of FOREMAN_PERSON_KEYS (ADR 0151); without the setting none, and a warning that the API token names any
  * person. A malformed setting stops the server.
  */
-function checkerOf(env: Env, warn: (text: string) => void): PersonChecker | undefined {
+function checkerOf(env: Env, warn: (text: string) => void, now: () => string): PersonChecker | undefined {
   const setting = env.FOREMAN_PERSON_KEYS;
   if (!setting) {
     warn("FOREMAN_PERSON_KEYS is not set: a caller with FOREMAN_API_TOKEN acts as any person it names (ADR 0151)");
     return undefined;
   }
   try {
-    return personChecker(setting, { audience: "foreman", now: () => new Date(isoNow(env.OSF_NOW)) });
+    return personChecker(setting, { audience: "foreman", now: () => new Date(now()) });
   } catch (error) {
     throw new UsageError(`FOREMAN_PERSON_KEYS: ${(error as Error).message}`);
   }
@@ -214,6 +214,9 @@ function listen(bus: Bus, work: Runs, pings: Pings, now: () => string, warn: (te
 export async function serve(env: Env) {
   const token = env.FOREMAN_API_TOKEN;
   if (!token) throw new UsageError("set FOREMAN_API_TOKEN: the token that callers of the API send");
+  // The test clock, before the server reads or starts anything (ADR 0166).
+  const fixed = testHook(env, "OSF_NOW");
+  const now = () => isoNow(fixed);
   // The numbers of the settings, before the server reads or starts anything.
   const pollMs = wholeOf(env, "FOREMAN_POLL_MS") ?? 1000;
   const retryMs = wholeOf(env, "FOREMAN_INFERENCE_RETRY_MS") ?? 1000;
@@ -226,7 +229,7 @@ export async function serve(env: Env) {
   // Unset, the stages run side by side without a limit, as before (ADR 0160).
   const maxStages = wholeOf(env, "FOREMAN_MAX_STAGES");
   const warn = (text: string) => process.stderr.write(`foreman: ${text}\n`);
-  const persons = checkerOf(env, warn);
+  const persons = checkerOf(env, warn, now);
   const data = resolve(env.OSF_DATA || ".foreman");
   // With FOREMAN_REQUIRE_SANDBOX a factory whose agent has no sandbox cannot run: the server, a run and a retry refuse it.
   const source = factorySource(env.FOREMAN_FACTORY || "factory.yaml", data, env.FOREMAN_FACTORY_TOKEN, {
@@ -236,7 +239,6 @@ export async function serve(env: Env) {
   const maps = Object.fromEntries(
     PORTS.map((port) => [port, JSON.parse(env[MAP_OF[port]] || "{}") as CommandLines]),
   ) as Record<Port, CommandLines>;
-  const now = () => isoNow(env.OSF_NOW);
   const address = env.FOREMAN_TEMPORAL_ADDRESS || "localhost:7233";
   // Unset, the client and the worker use the namespace "default".
   const namespace = env.FOREMAN_TEMPORAL_NAMESPACE;

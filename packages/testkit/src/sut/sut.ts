@@ -33,7 +33,8 @@ export { type Folders, folders };
 export interface Sut {
   /**
    * Runs the module's built artifact with these arguments, with $INPUT as the current directory. The module gets
-   * a fixed clock and seed as `OSF_NOW` (2026-01-01T00:00:00Z) and `OSF_SEED` (1). `stdin` is written to its
+   * a fixed clock and seed as `OSF_NOW` (2026-01-01T00:00:00Z) and `OSF_SEED` (1), and `OSF_TEST_HOOKS=1`, the switch
+   * without which a module refuses these test hooks (ADR 0166). `stdin` is written to its
    * standard input, which is then closed.
    */
   cli(args: string[], options?: { env?: Record<string, string>; stdin?: string }): Promise<CliResult>;

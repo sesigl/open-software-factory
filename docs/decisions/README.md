@@ -75,6 +75,7 @@ DOCS-GEN keeps it current.
 - [0049](0049-in-memory-stand-ins.md) Fast in-memory stand-ins for slow outside systems, starting with PGlite for PostgreSQL — the principle stands; fakes.postgres is a PostgreSQL container again since 0129
 - [0131](0131-ui-tests-pages-journeys-islands.md) Three kinds of UI test: pages over HTTP, journeys and islands in Chromium
 - [0157](0157-the-testing-rule-shared-starts-outlines-and-wording.md) The testing rule: shared starts, Outlines and wording in place — amended by 0162 (a shared start runs once per test run)
+- [0166](0166-test-hooks-need-a-switch.md) Test hooks need a switch
 
 ### Ports and adapters
 
