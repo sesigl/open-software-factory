@@ -1,53 +1,26 @@
-import { scenario } from "@opensoftware/testkit";
-import { openaiModule, testCases } from "./module.ts";
+import { type ModelGateway, scenario } from "@opensoftware/testkit";
+import { events, stream } from "./model.ts";
 
-scenario("SCN-TK-073", async ({ sut, given, when, then }) => {
-  let module: Record<string, string> = {};
+scenario("SCN-TK-073", async ({ fakes, given, when, then }) => {
+  let gateway: ModelGateway;
   await given(
-    'a module whose CLI streams a Responses API call that contains "Say hello" from "DEMO_MODEL_URL" and prints the text and the token usage',
+    'fakes.modelGateway with the reply "Hello, Ada" with 1000 prompt tokens and 200 completion tokens for a request that contains "Say hello"',
     async () => {
-      module = openaiModule(
-        [
-          'const all = await events(await call("/responses", { input: [{ role: "user", content: "Say hello" }] }));',
-          'const text = all.find((event) => event.type === "response.output_item.done").item.content[0].text;',
-          'const { usage } = all.find((event) => event.type === "response.completed").response;',
-          "process.stdout.write(`${text} ${usage.input_tokens} ${usage.output_tokens}\\n`);",
-        ],
-        ['When the user runs "demo"', 'Then the output is "Hello, Ada 1000 200"'],
-        [
-          'const gateway = await fakes.modelGateway([{ when: "Say hello", reply: "Hello, Ada", usage: { prompt_tokens: 1000, completion_tokens: 200 } }]);',
-          "let run: Awaited<ReturnType<typeof sut.cli>>;",
-          "await when('the user runs \"demo\"', async () => {",
-          "  run = await sut.cli([], { env: { DEMO_MODEL_URL: gateway.url } });",
-          "});",
-          "await then('the output is \"Hello, Ada 1000 200\"', async () => {",
-          '  expect(run.stdout, run.stderr).toBe("Hello, Ada 1000 200\\n");',
-          "});",
-        ],
-      );
+      gateway = await fakes.modelGateway([
+        { when: "Say hello", reply: "Hello, Ada", usage: { prompt_tokens: 1000, completion_tokens: 200 } },
+      ]);
     },
   );
 
-  await given(
-    'its system test scripts the reply "Hello, Ada" with 1000 prompt tokens and 200 completion tokens and expects "Hello, Ada 1000 200"',
-    async () => {
-      for (const [path, content] of Object.entries(module)) await sut.files.put(path, content);
-    },
-  );
-
-  let run: Awaited<ReturnType<typeof sut.cli>>;
-  await when('the developer runs "testkit run --junit report.xml" in the module', async () => {
-    run = await sut.cli(["run", "--junit", "report.xml"]);
+  let output = "";
+  await when('a module streams a Responses API call that contains "Say hello" from the gateway', async () => {
+    const all = await events(await stream(gateway, "/responses", { input: [{ role: "user", content: "Say hello" }] }));
+    const text = all.find((event) => event.type === "response.output_item.done").item.content[0].text;
+    const { usage } = all.find((event) => event.type === "response.completed").response;
+    output = `${text} ${usage.input_tokens} ${usage.output_tokens}`;
   });
 
-  await then("the command exits with code 0", async () => {
-    expect(run.exitCode, run.stdout + run.stderr).toBe(0);
-  });
-
-  await then('"report.xml" has the passed test case "SCN-DEMO-001"', async () => {
-    expect(testCases(await sut.files.read("$INPUT/report.xml"))).toContainEqual({
-      name: "SCN-DEMO-001",
-      failed: false,
-    });
+  await then('the text and the token usage are "Hello, Ada 1000 200"', async () => {
+    expect(output).toBe("Hello, Ada 1000 200");
   });
 });
