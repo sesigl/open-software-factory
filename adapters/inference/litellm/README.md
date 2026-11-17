@@ -63,8 +63,12 @@ the model the benchmark chose.
   key with its spend and the budget of its first `key`. `revoke` deletes the key with `POST /key/delete`; a key that
   is gone already (404) is no error.
 - **The spend log** is LiteLLM's spend rows as `GET /spend/logs` returns them, one JSON line each, oldest first: the
-  format ledger reads. `metadata.spend_logs_metadata."osf.run.id"` names the run. LiteLLM writes rows every one to
-  six seconds, so `spend-log` waits eight seconds before it reads.
+  format ledger reads. `metadata.spend_logs_metadata."osf.run.id"` names the run. LiteLLM keeps a call's row in a
+  queue and writes the queue every `proxy_batch_write_at` seconds plus zero to five, drawn when the proxy starts; it
+  has no call to write the queue now or to tell what is in it. So `spend-log` waits `proxy_batch_write_at` plus seven
+  seconds before it reads: eight for a gateway that `start` runs, which writes every one to six seconds. LiteLLM's
+  queue monitor may write the rows sooner; the wait does not count on it
+  ([ADR 0171](../../../docs/decisions/0171-spend-log-waits-the-proxys-write-interval.md)).
 - **Three APIs, one key.** Besides chat completions, the gateway serves the Anthropic Messages API at
   `<URL without /v1>/v1/messages` (the key as `x-api-key`), which Claude Code calls, and the OpenAI Responses API at
   `<URL>/responses`, which Codex calls. LiteLLM translates them for the provider; for an `openai/` model it calls the
@@ -91,6 +95,7 @@ osf:
   proxy:
     url: http://litellm:4000
     master_key: os.environ/OSF_SECRET_LITELLM_MASTER_KEY
+    proxy_batch_write_at: 10   # optional: the proxy's general_settings.proxy_batch_write_at; LiteLLM's default is 10
 ```
 
 ```sh
@@ -107,8 +112,15 @@ npx @opensoftware/inference-litellm start attach.yaml   # {"id":"3f2a...","url":
   `key`, `spend-log` and `stop` too.
 - **The model routes are the proxy's own config.** `start` does not read or change them; the rest of the config is
   not used. Change the routes in the proxy's config.
-- **The record.** `start` writes the gateway's ID, the proxy's URL and the name of the master key's variable to
-  `OSF_DATA/gateways/<ID>.json`, never the key's value. `key`, `spend-log`, `stop` and `list` look there first, then on
+- **The write interval.** `spend-log` waits `osf.proxy.proxy_batch_write_at` plus seven seconds, so that the rows of
+  the last calls are written (see the spend log above). LiteLLM's admin API does not tell a proxy's
+  `proxy_batch_write_at` (`/config/field/info` refuses the field, `/config/list` leaves it out), so the adapter cannot
+  read it and `attach` cannot refuse a proxy that writes less often: name it when the proxy's config or its
+  `PROXY_BATCH_WRITE_AT` changes it. Without it, `start` takes LiteLLM's default of 10, and `spend-log` waits 17
+  seconds. A value that is not a number of seconds above 0 exits 2. A shorter interval in the proxy's config, such as
+  `proxy_batch_write_at: 1`, makes each `spend-log` faster once `osf.proxy` names it too.
+- **The record.** `start` writes the gateway's ID, the proxy's URL, the write interval and the name of the master
+  key's variable to `OSF_DATA/gateways/<ID>.json`, never the key's value. `key`, `spend-log`, `stop` and `list` look there first, then on
   the Docker host.
 - **Shared proxy.** Other clients can use the same proxy. `spend-log` prints only the calls of the run keys that this
   gateway made. `stop` deletes the keys that `revoke` did not delete with `POST /key/delete` and removes the record;
@@ -145,7 +157,7 @@ No credential is stored in the repository.
 | Variable | Type | Default | Meaning |
 | --- | --- | --- | --- |
 | `DOCKER_HOST` | string |  | The Docker daemon to use, as for any docker command. Default: the Docker CLI's current context. |
-| `OSF_DATA` | string | `".inference-litellm"` | Folder where start records each gateway that it attached to a running proxy, as gateways/<ID>.json with the proxy's URL and the name of the master key's variable, the hashed tokens of its run keys with their runs as gateways/<ID>.keys, and the runs whose key revoke deleted as gateways/<ID>.revoked. It never holds a key's value. |
+| `OSF_DATA` | string | `".inference-litellm"` | Folder where start records each gateway that it attached to a running proxy, as gateways/<ID>.json with the proxy's URL, its write interval and the name of the master key's variable, the hashed tokens of its run keys with their runs as gateways/<ID>.keys, and the runs whose key revoke deleted as gateways/<ID>.revoked. It never holds a key's value. |
 | `OSF_SECRET_*` | string |  | OSF_SECRET_<NAME> holds a value the config names as os.environ/OSF_SECRET_<NAME>, such as a provider key, or the master key of a running proxy that osf.proxy.master_key names. The Docker CLI hands a provider key to the LiteLLM container only; it is never in the config. |
 | `OSF_INFERENCE_OWNER` | string |  | start: the process ID of the launcher that owns the gateway, like the foreman's. start labels the gateway with it and with this host, and removes the gateways whose owner on this host no longer runs (ADR 0090). Unset: the gateway has no owner and is never removed that way. |
 | `OSF_INFERENCE_ORPHAN_AGE` | string | `"120"` | start: the seconds after which a gateway whose owner no longer runs is removed (ADR 0090). The time leaves a gateway alone while another start still creates it. |

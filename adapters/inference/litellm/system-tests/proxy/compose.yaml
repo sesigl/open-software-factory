@@ -27,6 +27,10 @@ services:
       # The compiled Python files of LiteLLM, shared with the gateways that start runs (vitest.setup.ts).
       PYTHONPYCACHEPREFIX: /var/cache/osf-python
       PROVIDER_BASE: ${PROVIDER_BASE:?set PROVIDER_BASE in .env}
+      # How often LiteLLM writes its spend rows: every second, unless .env names LiteLLM's default of 10 (SCN-INFLITE-023),
+      # and its queue monitor, which writes them every 2 to 30 seconds, unless .env slows it down.
+      PROXY_BATCH_WRITE_AT: ${PROXY_BATCH_WRITE_AT:-1}
+      SPEND_LOG_QUEUE_POLL_INTERVAL: ${SPEND_LOG_QUEUE_POLL_INTERVAL:-2}
     volumes:
       - python:/var/cache/osf-python
     extra_hosts:
@@ -58,4 +62,3 @@ configs:
             api_key: unused
       general_settings:
         master_key: os.environ/LITELLM_MASTER_KEY
-        proxy_batch_write_at: 1

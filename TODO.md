@@ -290,13 +290,18 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   a changed row by a first cell that only it shares; a report of plain scenarios stays as it was. CI's job summary
   shows the rows after the next release of spec-trace, since the workflow runs the Action from npm.
 
-### [ ] T-101 · `spend-log` of an attached LiteLLM proxy waits long enough (P2)
+### [x] T-101 · `spend-log` of an attached LiteLLM proxy waits long enough (P2)
 
 - **Problem:** found in T-83. `spend-log` waits 8 seconds for the proxy to write its spend rows. A gateway that
   `start` runs writes them every 1 to 6 seconds; an attached proxy with LiteLLM's default writes every 10 to 15
   seconds, so the rows of the last calls can be missing.
 - **Build:** the wait follows the proxy's write interval, or `attach` refuses a proxy whose interval the wait does
   not cover; the README says which.
+- **Done:** the wait follows the interval: `spend-log` waits `proxy_batch_write_at` plus 7 seconds, 8 for a gateway
+  that `start` runs and, for an attached one, the interval that `osf.proxy.proxy_batch_write_at` names or LiteLLM's
+  default of 10 (17 s), since LiteLLM's admin API does not tell the interval and `attach` cannot check it (ADR 0171).
+  SCN-INFLITE-023 proves it on a real proxy with LiteLLM's default, whose call just after a write was missing with the
+  8 seconds; SCN-INFLITE-024 and 025 cover the setting.
 
 ### [x] T-102 · `fakes.postgres` labels its containers per run (P2)
 
