@@ -51,43 +51,48 @@ scenario("SCN-TK-152", async ({ sut, given, when, then }) => {
     },
   );
 
-  await given('its second scenario expects one container with the label "org.opensoftware.run=r8"', async () => {
-    const steps = ['    When the test creates the table "notes"', '    Then the answer is "CREATE TABLE"'];
-    const module = {
-      ...demoModule(),
-      "$INPUT/features/a.feature": [
-        "Feature: Demo",
-        "",
-        ...["SCN-DEMO-001", "SCN-DEMO-002"].flatMap((id) => [
-          `  @id=${id} @status=implemented`,
-          `  Scenario: Demo ${id}`,
-          ...steps,
+  await given(
+    'its second scenario expects one container with the label "org.opensoftware.run" of its run',
+    async () => {
+      const steps = ['    When the test creates the table "notes"', '    Then the answer is "CREATE TABLE"'];
+      const module = {
+        ...demoModule(),
+        "$INPUT/features/a.feature": [
+          "Feature: Demo",
           "",
-        ]),
-      ].join("\n"),
-      "$INPUT/system-tests/SCN-DEMO-001.test.ts": [
-        'import { execFileSync } from "node:child_process";',
-        'import { connect } from "node:net";',
-        'import { scenario } from "@opensoftware/testkit";',
-        "",
-        ...first,
-        ...demoScenario("SCN-DEMO-002", [
-          'const found = execFileSync("docker", ["ps", "--quiet", "--filter", "label=org.opensoftware.run=r8"], {',
-          '  encoding: "utf8",',
-          "});",
-          "expect(found.trim().split(/\\s+/)).toHaveLength(1);",
-        ]),
-        "",
-      ].join("\n"),
-    };
-    for (const [path, content] of Object.entries(module)) await sut.files.put(path, content);
-  });
+          ...["SCN-DEMO-001", "SCN-DEMO-002"].flatMap((id) => [
+            `  @id=${id} @status=implemented`,
+            `  Scenario: Demo ${id}`,
+            ...steps,
+            "",
+          ]),
+        ].join("\n"),
+        "$INPUT/system-tests/SCN-DEMO-001.test.ts": [
+          'import { execFileSync } from "node:child_process";',
+          'import { connect } from "node:net";',
+          'import { scenario } from "@opensoftware/testkit";',
+          "",
+          ...first,
+          ...demoScenario("SCN-DEMO-002", [
+            "const label = `label=org.opensoftware.run=${process.env.OSF_TESTKIT_RUN}`;",
+            'const found = execFileSync("docker", ["ps", "--quiet", "--filter", label], { encoding: "utf8" });',
+            "expect(found.split(/\\s+/).filter(Boolean)).toHaveLength(1);",
+          ]),
+          "",
+        ].join("\n"),
+      };
+      for (const [path, content] of Object.entries(module)) await sut.files.put(path, content);
+    },
+  );
 
   let run: Awaited<ReturnType<typeof sut.cli>>;
   await when(
-    'the developer runs "testkit run --junit report.xml" with OSF_TESTKIT_RUN "r8" in the module',
+    'the developer runs "testkit run --junit report.xml" with OSF_TESTKIT_RUN set to an ID of this test run in the module',
     async () => {
-      run = await sut.cli(["run", "--junit", "report.xml"], { env: { OSF_TESTKIT_RUN: "r8" } });
+      // The scenario's workspace has a folder name of its own: the containers of an earlier run, which Ryuk removes
+      // a few seconds after its process ends, carry another label (T-102).
+      const id = `r8-${sut.files.path("$INPUT").split("/").at(-2)}`;
+      run = await sut.cli(["run", "--junit", "report.xml"], { env: { OSF_TESTKIT_RUN: id } });
     },
   );
 

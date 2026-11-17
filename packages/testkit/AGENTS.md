@@ -17,10 +17,14 @@ The only ways a system test or another program may use the testkit:
 
 The testkit's own system tests use the CLI on small modules they write into `$INPUT`, and call
 `@opensoftware/testkit/readme` directly. A fake's scenarios call the fake in the test's process, as a library's
-tests do (ADR 0039, T-85): today those of `fakes.forge`, `fakes.github` and `fakes.modelGateway`, with the clients
-of `system-tests/forge.ts`, `system-tests/github.ts` and `system-tests/model.ts`. The scenarios of the scenario
-runner itself keep the nested run, and so do those of a fake that need it: across two scenarios (SCN-TK-101), a call
-that fails the nested test (SCN-TK-007, -089, -172) and a call from a container the module starts (SCN-TK-120).
+tests do (ADR 0039, T-85): today those of `fakes.forge`, `fakes.github`, `fakes.modelGateway`, `fakes.http`,
+`fakes.slack`, `fakes.oidc`, `fakes.personIssuer`, `fakes.traceStore` and `fakes.sentry`, with the clients of
+`system-tests/forge.ts`, `github.ts`, `model.ts`, `slack.ts`, `oidc.ts` and `person-issuer.ts`; `fakes.http` stands
+in for a module's webhook. The scenarios of the scenario runner itself keep the nested run, and so do those of a fake
+that need it: across two scenarios (SCN-TK-101), a call that fails the nested test (SCN-TK-007, -028, -055, -089,
+-172), a call from a container the module starts (SCN-TK-078, -116, -120), and a fake that is a program the module
+starts or that needs a socket client (`fakes.harness`, `fakes.inference`, `fakes.sandbox`, `fakes.nats`): a system
+test starts no process and imports no Node built-in.
 
 The testkit depends on no library in `packages/`: every library is tested with the testkit, so such a dependency
 would be a cycle.
@@ -44,7 +48,7 @@ Layers, top to bottom, in `architecture.json` (ADR 0014). A file imports only it
 
 ## Budget
 
-- System tests: 210 seconds of wall time on the CI runner.
+- System tests: 200 seconds of wall time on the CI runner.
 - Most of it: the nested vitest of `testkit run` on a demo module, about 1.3 s each, and a Forgejo per worker for
   the `fakes.forge` scenarios.
 

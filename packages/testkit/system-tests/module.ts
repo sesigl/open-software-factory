@@ -101,14 +101,9 @@ export function outlineModule(
 
 /**
  * Module demo whose CLI gets `/v0.1/servers?search=tracker` from `DEMO_API_URL` and prints the body; its test scripts
- * `fakes.http` with `routes` (TypeScript source) and expects the body `{"count":1}`. `before` (TypeScript lines) runs
- * before the fake starts, and `run` replaces the plain run of the CLI.
+ * `fakes.http` with `routes` (TypeScript source) and expects the body `{"count":1}`.
  */
-export function apiModule(
-  routes: string,
-  before: string[] = [],
-  run: string[] = ["run = await sut.cli([], { env: { DEMO_API_URL: api.url } });"],
-): Record<string, string> {
+export function apiModule(routes: string): Record<string, string> {
   return demoModule({
     bin: [
       "const response = await fetch(`${process.env.DEMO_API_URL}/v0.1/servers?search=tracker`);",
@@ -119,11 +114,10 @@ export function apiModule(
       "# demo\n\n## Configuration\n\n| Variable | Meaning |\n| --- | --- |\n| `DEMO_API_URL` | Base URL of the API. |\n",
     steps: ['When the user runs "demo"', 'Then the output is {"count":1}'],
     test: [
-      ...before,
       `const api = await fakes.http(${routes});`,
       "let run: Awaited<ReturnType<typeof sut.cli>>;",
       "await when('the user runs \"demo\"', async () => {",
-      ...run.map((line) => `  ${line}`),
+      "  run = await sut.cli([], { env: { DEMO_API_URL: api.url } });",
       "});",
       "await then('the output is {\"count\":1}', async () => {",
       "  expect(run.stdout).toBe('{\"count\":1}');",
@@ -185,38 +179,6 @@ export function functionCounts(reports: string[], suffix: string): Record<string
     }
   }
   return counts;
-}
-
-/**
- * Module demo whose CLI posts `{"n":1}` to `/v1/traces` at `DEMO_API_URL` twice and prints both status codes; its
- * test scripts `fakes.http` with `routes` (TypeScript source) and runs `expectations` (TypeScript lines with `run`
- * and `api`).
- */
-export function postModule(routes: string, expectations: string[]): Record<string, string> {
-  return demoModule({
-    bin: [
-      "const codes = [];",
-      "for (const _ of [1, 2]) {",
-      '  const response = await fetch(`${process.env.DEMO_API_URL}/v1/traces`, { method: "POST", body: \'{"n":1}\' });',
-      "  codes.push(response.status);",
-      "}",
-      'process.stdout.write(codes.join(" "));',
-      "",
-    ].join("\n"),
-    readme:
-      "# demo\n\n## Configuration\n\n| Variable | Meaning |\n| --- | --- |\n| `DEMO_API_URL` | Base URL of the API. |\n",
-    steps: ['When the user runs "demo"', "Then the fake answered as scripted"],
-    test: [
-      `const api = await fakes.http(${routes});`,
-      "let run: Awaited<ReturnType<typeof sut.cli>>;",
-      "await when('the user runs \"demo\"', async () => {",
-      "  run = await sut.cli([], { env: { DEMO_API_URL: api.url } });",
-      "});",
-      "await then('the fake answered as scripted', async () => {",
-      ...expectations.map((line) => `  ${line}`),
-      "});",
-    ],
-  });
 }
 
 /** A Collector config that receives OTLP/HTTP on 4318, runs the one `processor` (YAML lines) and exports as JSON. */

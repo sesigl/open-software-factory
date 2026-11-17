@@ -1,51 +1,26 @@
-import { scenario } from "@opensoftware/testkit";
-import { demoModule, testCases } from "./module.ts";
-import { SIGNED_README, SIGNED_SERVER } from "./slack-server.ts";
+import { type FakeHttp, type FakeSlack, scenario } from "@opensoftware/testkit";
+import { signedBodies } from "./slack.ts";
 
-scenario("SCN-TK-052", async ({ sut, given, when, then }) => {
-  let module: Record<string, string> = {};
-  await given(
-    'a module whose server checks the Slack signature with "DEMO_SLACK_SIGNING_SECRET" and keeps the text of each "message" event',
+scenario("SCN-TK-052", async ({ fakes, given, when, then }) => {
+  let slack: FakeSlack;
+  let receiver: FakeHttp;
+  await given("fakes.slack that delivers events to a URL of fakes.http", async () => {
+    slack = await fakes.slack();
+    receiver = await fakes.http([{ method: "POST", path: "/events", body: {} }]);
+    slack.deliverTo(`${receiver.url}/events`);
+  });
+
+  await when('a person says "approve" in "C1"', async () => {
+    await slack.say({ channel: "C1", text: "approve" });
+  });
+
+  await then(
+    'the URL got one "message" event with the text "approve", signed with the signing secret of fakes.slack',
     async () => {
-      module = demoModule({
-        bin: SIGNED_SERVER.join("\n"),
-        readme: SIGNED_README,
-        steps: ['When a person says "approve" in "C1"', 'Then the server has "approve"'],
-        test: [
-          "const slack = await fakes.slack();",
-          "const url = await sut.http.start([], { env: { DEMO_SLACK_SIGNING_SECRET: slack.signingSecret } });",
-          "slack.deliverTo(`${url}/events`);",
-          'await when(\'a person says "approve" in "C1"\', async () => {',
-          '  await slack.say({ channel: "C1", text: "approve" });',
-          "});",
-          "await then('the server has \"approve\"', async () => {",
-          '  expect((await sut.http.get("/kept")).body).toEqual(["approve"]);',
-          "});",
-        ],
-      });
+      const bodies = await signedBodies(receiver, "/events", slack.signingSecret);
+      expect(bodies.map(({ signed }) => signed)).toEqual([true]);
+      const { event } = JSON.parse(bodies[0]?.text ?? "{}");
+      expect([event?.type, event?.text]).toEqual(["message", "approve"]);
     },
   );
-
-  await given(
-    'its system test passes the signing secret of fakes.slack, says "approve" in "C1" and expects the server to have "approve"',
-    async () => {
-      for (const [path, content] of Object.entries(module)) await sut.files.put(path, content);
-    },
-  );
-
-  let run: Awaited<ReturnType<typeof sut.cli>>;
-  await when('the developer runs "testkit run --junit report.xml" in the module', async () => {
-    run = await sut.cli(["run", "--junit", "report.xml"]);
-  });
-
-  await then("the command exits with code 0", async () => {
-    expect(run.exitCode, run.stdout + run.stderr).toBe(0);
-  });
-
-  await then('"report.xml" has the passed test case "SCN-DEMO-001"', async () => {
-    expect(testCases(await sut.files.read("$INPUT/report.xml"))).toContainEqual({
-      name: "SCN-DEMO-001",
-      failed: false,
-    });
-  });
 });

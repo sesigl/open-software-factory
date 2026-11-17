@@ -87,9 +87,10 @@ the system under test. Files still go through `sut.files`, and
 `sut.files.path("$INPUT/...")` gives a library function the absolute path. MUTATION covers libraries like modules
 and takes the place of REACH for them. The testkit's fakes are tested the same way: a fake's scenarios call it
 through `@opensoftware/testkit` in the test's process, with no demo module and no nested Vitest (T-85; done for
-`fakes.forge`, `fakes.github` and `fakes.modelGateway`, the other fakes follow). The scenarios of the scenario runner
-itself keep a demo module and `testkit run`, because they observe what the nested run reports, and so do the
-scenarios of a fake that fails the nested test, such as an unscripted model call.
+the fakes that are servers in the test's process, such as `fakes.github`, `fakes.http` and `fakes.slack`). The
+scenarios of the scenario runner itself keep a demo module and `testkit run`, because they observe what the nested
+run reports, and so do the scenarios of a fake that fails the nested test, such as an unscripted model call, and of
+a fake that is a program the module starts, such as `fakes.harness`: a system test starts no process.
 
 ## Layout
 

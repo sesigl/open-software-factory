@@ -1,68 +1,67 @@
-// The demo module of the fakes.oidc scenarios: a CLI that signs in with the authorization code flow and PKCE.
-import { demoModule } from "./module.ts";
+// The client of the fakes.oidc scenarios: they call the provider in the test's process (ADR 0039), and a module would
+// sign in the same way, with the authorization code flow and PKCE, and verify the ID token with the provider's keys.
+// Web Crypto is a global of Node, so the client needs no import for it.
+import type { FakeOidc } from "@opensoftware/testkit";
 
-const SIGN_IN = [
-  'import { createHash, createPublicKey, verify } from "node:crypto";',
-  "const issuer = process.env.DEMO_ISSUER;",
-  "const config = await (await fetch(`${issuer}/.well-known/openid-configuration`)).json();",
-  'const verifier = "v".repeat(43);',
-  'const redirect = "http://127.0.0.1:9/callback";',
-  "const authorize = new URL(config.authorization_endpoint);",
-  "for (const [key, value] of Object.entries({ client_id: process.env.DEMO_CLIENT_ID, redirect_uri: redirect,",
-  '  response_type: "code", scope: "openid email profile", state: "state-1", nonce: "nonce-1",',
-  '  code_challenge: createHash("sha256").update(verifier).digest("base64url"), code_challenge_method: "S256" }))',
-  "  authorize.searchParams.set(key, value);",
-  'const back = new URL((await fetch(authorize, { redirect: "manual" })).headers.get("location"));',
-  'const state = back.searchParams.get("state");',
-  'if (back.searchParams.get("error")) {',
-  '  process.stdout.write(JSON.stringify({ state, error: back.searchParams.get("error") }));',
-  "  process.exit(0);",
-  "}",
-  'const basic = Buffer.from(`${process.env.DEMO_CLIENT_ID}:${process.env.DEMO_CLIENT_SECRET}`).toString("base64");',
-  "const token = await (await fetch(config.token_endpoint, {",
-  '  method: "POST",',
-  '  headers: { authorization: `Basic ${basic}`, "content-type": "application/x-www-form-urlencoded" },',
-  '  body: new URLSearchParams({ grant_type: "authorization_code", code: back.searchParams.get("code"),',
-  "    redirect_uri: redirect, code_verifier: verifier }),",
-  "})).json();",
-  'const [head, body, signature] = token.id_token.split(".");',
-  "const { keys } = await (await fetch(config.jwks_uri)).json();",
-  'const key = createPublicKey({ key: keys[0], format: "jwk" });',
-  'const valid = verify("RSA-SHA256", Buffer.from(`${head}.${body}`), key, Buffer.from(signature, "base64url"));',
-  'const claims = JSON.parse(Buffer.from(body, "base64url").toString());',
-  "process.stdout.write(JSON.stringify({ state, valid, issuer: claims.iss === issuer, email: claims.email,",
-  "  verified: claims.email_verified, name: claims.name, nonce: claims.nonce, aud: claims.aud,",
-  "  iat: new Date(claims.iat * 1000).toISOString() }));",
-  "",
-].join("\n");
+const VERIFIER = "v".repeat(43);
+const REDIRECT = "http://127.0.0.1:9/callback";
+const base64url = (bytes: ArrayBuffer): string => Buffer.from(bytes).toString("base64url");
+/** The parsed JSON of an answer. */
+// biome-ignore lint/suspicious/noExplicitAny: the client reads the provider's JSON as a module would.
+const json = async (answer: Response | Promise<Response>): Promise<any> => (await answer).json();
 
-/** The module whose test scripts fakes.oidc with `signIn` (TypeScript lines) and expects `printed`. */
-export const oidcModule = (signIn: string[], printed: unknown) =>
-  demoModule({
-    bin: SIGN_IN,
-    readme: [
-      "# demo",
-      "",
-      "## Configuration",
-      "",
-      "| Variable | Meaning |",
-      "| --- | --- |",
-      "| `DEMO_ISSUER` | The provider. |",
-      "| `DEMO_CLIENT_ID` | The client. |",
-      "| `DEMO_CLIENT_SECRET` | Its secret. |",
-      "",
-    ].join("\n"),
-    steps: ["When the user signs in", "Then the provider answers the sign-in"],
-    test: [
-      "const oidc = await fakes.oidc();",
-      ...signIn,
-      "let run: Awaited<ReturnType<typeof sut.cli>>;",
-      "await when('the user signs in', async () => {",
-      "  run = await sut.cli([], { env: { DEMO_ISSUER: oidc.url, DEMO_CLIENT_ID: oidc.clientId, DEMO_CLIENT_SECRET: oidc.clientSecret } });",
-      "});",
-      "await then('the provider answers the sign-in', async () => {",
-      "  expect(run.exitCode, run.stderr).toBe(0);",
-      `  expect(JSON.parse(run.stdout)).toEqual(${JSON.stringify(printed)});`,
-      "});",
-    ],
-  });
+/**
+ * Signs in at the provider as a module does and gives the state and the error, or the state, whether the provider's
+ * first key verifies the ID token, whether its issuer is the provider, and its claims.
+ */
+export async function signIn(oidc: FakeOidc): Promise<Record<string, unknown>> {
+  const config = await json(fetch(`${oidc.url}/.well-known/openid-configuration`));
+  const challenge = base64url(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(VERIFIER)));
+  const authorize = new URL(config.authorization_endpoint);
+  const query = {
+    client_id: oidc.clientId,
+    redirect_uri: REDIRECT,
+    response_type: "code",
+    scope: "openid email profile",
+    state: "state-1",
+    nonce: "nonce-1",
+    code_challenge: challenge,
+    code_challenge_method: "S256",
+  };
+  for (const [key, value] of Object.entries(query)) authorize.searchParams.set(key, value);
+  const back = new URL((await fetch(authorize, { redirect: "manual" })).headers.get("location") ?? "");
+  const state = back.searchParams.get("state");
+  const error = back.searchParams.get("error");
+  if (error) return { state, error };
+  const basic = Buffer.from(`${oidc.clientId}:${oidc.clientSecret}`).toString("base64");
+  const token = await json(
+    fetch(config.token_endpoint, {
+      method: "POST",
+      headers: { authorization: `Basic ${basic}`, "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        code: back.searchParams.get("code") ?? "",
+        redirect_uri: REDIRECT,
+        code_verifier: VERIFIER,
+      }),
+    }),
+  );
+  const [head, body, signature] = String(token.id_token).split(".");
+  const { keys } = await json(fetch(config.jwks_uri));
+  const algorithm = { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" };
+  const key = await crypto.subtle.importKey("jwk", keys[0], algorithm, false, ["verify"]);
+  const signed = new TextEncoder().encode(`${head}.${body}`);
+  const valid = await crypto.subtle.verify(algorithm, key, Buffer.from(signature ?? "", "base64url"), signed);
+  const claims = JSON.parse(Buffer.from(body ?? "", "base64url").toString());
+  return {
+    state,
+    valid,
+    issuer: claims.iss === oidc.url,
+    email: claims.email,
+    verified: claims.email_verified,
+    name: claims.name,
+    nonce: claims.nonce,
+    aud: claims.aud,
+    iat: new Date(claims.iat * 1000).toISOString(),
+  };
+}
