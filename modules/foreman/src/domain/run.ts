@@ -21,6 +21,17 @@ type Actor = RunAction["by"];
 export type { CheckView, RunView, StageView };
 export type RunState = RunView["state"];
 export type StageState = StageView["state"];
+/** Why a stage ran once more: the checks of a later stage failed (ADR 0165). */
+export type StageRework = NonNullable<StageView["rework"]>;
+export type FailedCheck = StageRework["checks"][number];
+
+/** A check as the forge port's `pr` prints it: its name, its state, and what the forge tells about it. */
+export interface PrintedCheck {
+  name: string;
+  state: string;
+  description?: string;
+  url?: string;
+}
 
 /** The line of the run before that the first stage of a new run gets in its prompt (ADR 0105). */
 export interface RunBefore {
@@ -99,7 +110,16 @@ export type Fact =
    * The checks as read; `afterMs` when this was the last read, after the foreman's limit, with the checks that the
    * pull request's head commit does not have at all in `missing`.
    */
-  | { kind: "checks"; index: number; checks: CheckView[]; reason?: string; afterMs?: number; missing?: string[] }
+  | {
+      kind: "checks";
+      index: number;
+      checks: CheckView[];
+      reason?: string;
+      afterMs?: number;
+      missing?: string[];
+      /** The stage at `rework.index` runs once more when a check failed, for these failed checks (ADR 0165). */
+      rework?: { index: number; checks: FailedCheck[] };
+    }
   | { kind: "stage-started"; index: number }
   | {
       kind: "stage-ended";
@@ -306,7 +326,7 @@ function applied(view: RunView, fact: Fact, at: string): RunView {
     case "gate":
       return gate(next, fact, end);
     case "checks":
-      return checks(next, fact, end);
+      return checks(next, fact, end, at);
     case "stage-started": {
       // The stage's span in the run's trace, which the console links (ADR 0121).
       const spanId = stageSpanIdOf(next.runId, fact.index);
@@ -364,11 +384,17 @@ function gate(next: RunView, fact: Extract<Fact, { kind: "gate" }>, end: (state:
   return end("failed");
 }
 
-function checks(next: RunView, fact: Extract<Fact, { kind: "checks" }>, end: (state: RunState) => RunView): RunView {
+function checks(
+  next: RunView,
+  fact: Extract<Fact, { kind: "checks" }>,
+  end: (state: RunState) => RunView,
+  at: string,
+): RunView {
   const stage = next.stages[fact.index] as StageView;
   if (fact.checks.length) stage.checks = fact.checks;
-  const failed = fact.checks.find((check) => check.state === "failure" || check.state === "error");
+  const failed = fact.checks.find(hasFailed);
   const reason = fact.reason ?? (failed ? `the check ${failed.name} ended with ${failed.state}` : timedOut(fact));
+  if (fact.rework) return reworked(next, fact.index, fact.rework, reason as string, at);
   if (reason) {
     Object.assign(stage, { state: "failed", reason });
     return end("failed");
@@ -379,6 +405,55 @@ function checks(next: RunView, fact: Extract<Fact, { kind: "checks" }>, end: (st
   }
   stage.state = "blocked";
   return { ...next, state: "blocked" };
+}
+
+const hasFailed = (check: CheckView): boolean => check.state === "failure" || check.state === "error";
+
+/**
+ * The view of a run whose checks at the stage `index` failed and go back to the stage at `rework.index` (ADR 0165):
+ * every stage after it up to `index` starts again as at its first time. The stage that runs once more keeps the
+ * decision of its gate, which approved it for this run, and why it runs again, with the session of its run before.
+ */
+function reworked(
+  next: RunView,
+  index: number,
+  rework: NonNullable<Extract<Fact, { kind: "checks" }>["rework"]>,
+  reason: string,
+  at: string,
+): RunView {
+  const failedAt = (next.stages[index] as StageView).stage;
+  const stages = next.stages.map((stage, position): StageView => {
+    if (position < rework.index || position > index) return stage;
+    const again = pendingStage({ stage: stage.stage, ...(stage.wait ? {} : { agent: stage.agent }) });
+    if (position > rework.index) return again;
+    const before = stage.sessionId ? { sessionId: stage.sessionId } : {};
+    const gate = stage.gateId ? { gateId: stage.gateId } : {};
+    return { ...again, ...gate, rework: { failedAt, reason, checks: rework.checks, ...before, at } };
+  });
+  return { ...next, state: "running", stages };
+}
+
+/**
+ * Where the failed checks of the stage at `index` send the run back once (ADR 0165): the stage its `rework` names,
+ * with each failed check and what the forge tells about it, when that stage did not run once more in this run yet.
+ */
+export function reworkOf(
+  view: RunView,
+  definition: Definition,
+  index: number,
+  checks: CheckView[],
+  printed: PrintedCheck[],
+): { index: number; checks: FailedCheck[] } | undefined {
+  const to = view.stages.findIndex((stage) => stage.stage === definition.stages[index]?.rework);
+  const failed = checks.filter(hasFailed);
+  if (to < 0 || view.stages[to]?.rework || !failed.length) return undefined;
+  return {
+    index: to,
+    checks: failed.map((check) => {
+      const { description, url } = printed.find((candidate) => candidate.name === check.name) ?? {};
+      return { ...check, ...(description ? { description } : {}), ...(url ? { url } : {}) };
+    }),
+  };
 }
 
 /** Why the checks' last read after the limit fails the stage: each check that did not end, and how (ADR 0106). */
@@ -490,6 +565,7 @@ export function promptOf(
   before?: string,
   branch?: string,
   previous?: StageResult,
+  rework?: StageRework,
 ): string {
   const description = workItem.description ? `\n\n${workItem.description}` : "";
   // The origin tells the agent where the work is, like the issue of a repository (ADR 0080).
@@ -499,7 +575,23 @@ export function promptOf(
   const link = pullRequest ? `\n\nPull request: ${pullRequest}` : "";
   const run = before ? `\n\n${before}` : "";
   const result = previous ? `\n\n# Result of the stage ${previous.stage}\n\n${previous.text}` : "";
-  return `${agentPrompt.trimEnd()}\n\n# Work item ${workItem.id}\n\n${workItem.title}${description}${origin}${pushTo}${link}${run}${result}\n`;
+  const failed = rework ? `\n\n${failedChecksOf(rework)}` : "";
+  return `${agentPrompt.trimEnd()}\n\n# Work item ${workItem.id}\n\n${workItem.title}${description}${origin}${pushTo}${link}${run}${result}${failed}\n`;
+}
+
+/** The part of the prompt of a stage that runs once more that names the failed checks (ADR 0165). */
+function failedChecksOf({ failedAt, checks }: StageRework): string {
+  const lines = checks.map(
+    ({ name, state, description, url }) =>
+      `- ${name}: ${state}${description ? `: ${description}` : ""}${url ? ` (${url})` : ""}`,
+  );
+  return [
+    `# Failed checks of the stage ${failedAt}`,
+    "",
+    `The checks of the stage ${failedAt} failed on the pull request, so the run came back to this stage, once. Fix the pull request; when its checks fail again, the run fails.`,
+    "",
+    ...lines,
+  ].join("\n");
 }
 
 /** What a running stage asks its run for: the steering messages so far, and the stage a person takes over. */
@@ -567,6 +659,10 @@ export function runStarted(view: RunView): RunStarted {
 export function runCompleted(view: RunView): RunCompleted {
   const endedAt = view.endedAt ?? view.startedAt;
   const last = [...view.stages].reverse().find((stage) => stage.state !== "pending");
+  // The stages that ran once more, and for which stage's checks (ADR 0165).
+  const reworks = view.stages.flatMap(({ stage, rework }) =>
+    rework ? [{ stage, failedAt: rework.failedAt, reason: rework.reason }] : [],
+  );
   return {
     specversion: "1.0",
     id: `${view.runId}.completed`,
@@ -587,6 +683,7 @@ export function runCompleted(view: RunView): RunCompleted {
       source: view.workItem.origin.source,
       ...(view.pullRequest ? { pullRequests: [view.pullRequest] } : {}),
       ...(view.retryOf ? { retryOf: view.retryOf } : {}),
+      ...(reworks.length ? { reworks } : {}),
     },
   };
 }

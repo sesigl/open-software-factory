@@ -1876,6 +1876,32 @@
         "description": "One skill of another Git repository at the commit its ref had when `factory plan` pinned it.",
         "additionalProperties": false
       },
+      "FailedCheck": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "$ref": "#/components/schemas/CheckName"
+          },
+          "state": {
+            "$ref": "#/components/schemas/CheckState"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The check's description on the forge, when it gives one."
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "The check's page on the forge, for example the CI job, when it gives one."
+          }
+        },
+        "required": [
+          "name",
+          "state"
+        ],
+        "description": "foreman: a check that failed, with what the forge gives about it (forge port)."
+      },
       "FormatVersion": {
         "type": "integer",
         "minimum": 1,
@@ -3306,6 +3332,13 @@
           "reason": {
             "type": "string",
             "description": "Why the stage the run ended at failed, when the foreman knows it (ADR 0127)."
+          },
+          "reworks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunRework"
+            },
+            "description": "The stages that ran once more because the checks of a later stage failed, in the order of the stages (ADR 0165)."
           }
         },
         "required": [
@@ -3432,6 +3465,30 @@
           "by"
         ],
         "description": "foreman: run a run that failed or was cancelled again, as a new run (ADR 0105). The new run starts at the first stage\nthat did not succeed, or at `from`, a stage at or before it."
+      },
+      "RunRework": {
+        "type": "object",
+        "properties": {
+          "stage": {
+            "$ref": "#/components/schemas/Name",
+            "description": "The stage that ran once more."
+          },
+          "failedAt": {
+            "$ref": "#/components/schemas/Name",
+            "description": "The stage whose checks failed."
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Why the checks failed."
+          }
+        },
+        "required": [
+          "stage",
+          "failedAt",
+          "reason"
+        ],
+        "description": "A stage of a run that ran once more because the checks of a later stage failed (ADR 0165)."
       },
       "RunSignal": {
         "type": "object",
@@ -4194,12 +4251,53 @@
           "wait": {
             "type": "boolean",
             "description": "The stage runs no agent: it only waits for its checks, its evidence and its gate, then succeeds (ADR 0107). It\nnames no agent and at least one of checks, evidence \"required\" or gate."
+          },
+          "rework": {
+            "$ref": "#/components/schemas/Name",
+            "description": "The stage before this one whose agent runs once more when a check of this stage fails, with the failed checks in\nits prompt; when the checks fail again, the stage fails as without it (ADR 0165). The stage waits for checks or\nthe evidence \"required\", and the stage it names runs an agent."
           }
         },
         "required": [
           "stage"
         ],
         "additionalProperties": false
+      },
+      "StageRework": {
+        "type": "object",
+        "properties": {
+          "failedAt": {
+            "$ref": "#/components/schemas/Name",
+            "description": "The stage whose checks failed."
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Why the checks failed, as the reason of a stage that fails at them."
+          },
+          "checks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FailedCheck"
+            },
+            "description": "The checks that failed, as the stage's prompt names them."
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "The session of the stage's agent before it ran once more."
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the run went back to the stage."
+          }
+        },
+        "required": [
+          "failedAt",
+          "reason",
+          "checks",
+          "at"
+        ],
+        "description": "foreman: why a stage ran once more: the checks of a later stage failed, and that stage names it as `rework` (ADR 0165)."
       },
       "StageState": {
         "type": "string",
@@ -4271,6 +4369,10 @@
             "type": "string",
             "minLength": 1,
             "description": "Why the stage gave the run no pull request: a refused link, a branch the forge has none of, or the forge adapter's error (ADR 0109)."
+          },
+          "rework": {
+            "$ref": "#/components/schemas/StageRework",
+            "description": "Why the stage ran once more, when the checks of a later stage sent the run back to it (ADR 0165)."
           },
           "startedAt": {
             "type": "string",

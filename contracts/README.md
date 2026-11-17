@@ -68,7 +68,7 @@ decides, and may answer 503 (ADR 0151). The second is intake's (ADR 0063): `POST
 `GET /v1/inbox` with `WorkItemList`; `POST /v1/work-items` takes the optional header `OSF-Person`, the person proof of
 a requester that is a person, and may answer 403 and 503 (ADR 0151). The third is the
 foreman's (ADR 0067): `POST /v1/runs`, `GET /v1/runs` with `RunList`, `GET /v1/runs/{runId}`, `POST /v1/runs/{runId}/signals` and
-`POST /v1/runs/{runId}/retry` (ADR 0105), and `GET /v1/doctor/pings/{id}` with `DoctorPingSeen` (ADR 0120), with the models `RunView` (its `adapters`, ADR 0110), `StageView` (its `waitingSince`, ADR 0106, and its `note`, ADR 0109), `CheckView` (ADR 0069), `RunSignal` (its `by`, ADR 0118), `RunAction`
+`POST /v1/runs/{runId}/retry` (ADR 0105), and `GET /v1/doctor/pings/{id}` with `DoctorPingSeen` (ADR 0120), with the models `RunView` (its `adapters`, ADR 0110), `StageView` (its `waitingSince`, ADR 0106, its `note`, ADR 0109, and its `rework`, `StageRework` with `FailedCheck`, ADR 0165), `CheckView` (ADR 0069), `RunSignal` (its `by`, ADR 0118), `RunAction`
 and `RunRetry`; `POST /v1/runs` and the retry may answer 503 while the factory's Git remote cannot be fetched. All three answer `GET /v1/health` with the models
 `Health` and `HealthCheck` (`HealthApi`, ADR 0086). Both lists take `limit` and `cursor` and answer the cursor of the next
 page in `next` (ADR 0115). `pnpm build` compiles the operations with the TypeSpec OpenAPI 3 emitter and copies their

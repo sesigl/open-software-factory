@@ -299,6 +299,11 @@
           "wait": {
             "type": "boolean",
             "description": "The stage runs no agent: it only waits for its checks, its evidence and its gate, then succeeds (ADR 0107). It\nnames no agent and at least one of checks, evidence \"required\" or gate."
+          },
+          "rework": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,62}$",
+            "description": "The stage before this one whose agent runs once more when a check of this stage fails, with the failed checks in\nits prompt; when the checks fail again, the stage fails as without it (ADR 0165). The stage waits for checks or\nthe evidence \"required\", and the stage it names runs an agent."
           }
         },
         "required": [

@@ -598,6 +598,18 @@ export type components = {
             /** @description The hash of the skill folder's files in the form of Go's modules: "h1:" and the base64 of a SHA-256. */
             hash: string;
         };
+        /** @description foreman: a check that failed, with what the forge gives about it (forge port). */
+        FailedCheck: {
+            name: components["schemas"]["CheckName"];
+            state: components["schemas"]["CheckState"];
+            /** @description The check's description on the forge, when it gives one. */
+            description?: string;
+            /**
+             * Format: uri
+             * @description The check's page on the forge, for example the CI job, when it gives one.
+             */
+            url?: string;
+        };
         /**
          * @description The version of a format inside its documents. Only 1 exists; a new major version of a format adds the next.
          * @constant
@@ -1138,6 +1150,8 @@ export type components = {
             retryOf?: components["schemas"]["Identifier"];
             /** @description Why the stage the run ended at failed, when the foreman knows it (ADR 0127). */
             reason?: string;
+            /** @description The stages that ran once more because the checks of a later stage failed, in the order of the stages (ADR 0165). */
+            reworks?: components["schemas"]["RunRework"][];
         };
         /** @description foreman: the runs of the server, running runs first, then the runs that ended, the one that ended last first, as `GET /v1/runs` answers them (ADR 0071). */
         RunList: {
@@ -1185,6 +1199,15 @@ export type components = {
             /** @description The person who asks. */
             by: components["schemas"]["Actor"];
             from?: components["schemas"]["Name"];
+        };
+        /** @description A stage of a run that ran once more because the checks of a later stage failed (ADR 0165). */
+        RunRework: {
+            /** @description The stage that ran once more. */
+            stage: components["schemas"]["Name"];
+            /** @description The stage whose checks failed. */
+            failedAt: components["schemas"]["Name"];
+            /** @description Why the checks failed. */
+            reason: string;
         };
         /**
          * @description foreman: a signal to a run: "steer" with a message for the running stage's agent, "cancel", "take-over" of the running
@@ -1486,6 +1509,28 @@ export type components = {
              *     names no agent and at least one of checks, evidence "required" or gate.
              */
             wait?: boolean;
+            /**
+             * @description The stage before this one whose agent runs once more when a check of this stage fails, with the failed checks in
+             *     its prompt; when the checks fail again, the stage fails as without it (ADR 0165). The stage waits for checks or
+             *     the evidence "required", and the stage it names runs an agent.
+             */
+            rework?: components["schemas"]["Name"];
+        };
+        /** @description foreman: why a stage ran once more: the checks of a later stage failed, and that stage names it as `rework` (ADR 0165). */
+        StageRework: {
+            /** @description The stage whose checks failed. */
+            failedAt: components["schemas"]["Name"];
+            /** @description Why the checks failed, as the reason of a stage that fails at them. */
+            reason: string;
+            /** @description The checks that failed, as the stage's prompt names them. */
+            checks: components["schemas"]["FailedCheck"][];
+            /** @description The session of the stage's agent before it ran once more. */
+            sessionId?: string;
+            /**
+             * Format: date-time
+             * @description When the run went back to the stage.
+             */
+            at: string;
         };
         /**
          * @description foreman: where a stage of a run stands.
@@ -1525,6 +1570,8 @@ export type components = {
             reason?: string;
             /** @description Why the stage gave the run no pull request: a refused link, a branch the forge has none of, or the forge adapter's error (ADR 0109). */
             note?: string;
+            /** @description Why the stage ran once more, when the checks of a later stage sent the run back to it (ADR 0165). */
+            rework?: components["schemas"]["StageRework"];
             /** Format: date-time */
             startedAt?: string;
             /** Format: date-time */

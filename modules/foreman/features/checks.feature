@@ -142,3 +142,43 @@ Feature: Checks before a stage
     And the scripted "implement" turn replies with the link of that pull request
     When a program posts the README's "work.json" to "/v1/runs" with the API token and the run completes
     Then the server published no "run.blocked@v1", and its "run.completed@v1" names no reason
+
+  @id=SCN-FORE-193 @status=implemented
+  Scenario: A failed check sends the run back once to the stage that "rework" names, with the failed check in its prompt
+    Given "foreman serve" runs the README's "checks/factory.yaml" whose stage "ship" has "rework: implement", with the fake GitHub and NATS, whose pull request "tester/web#1" has the check "verify" in the state "pending"
+    And the scripted "implement" turn replies with the link of that pull request, and its second turn sets the check "verify" to "success"
+    When a program posts the README's "work.json" to "/v1/runs" with the API token, and the fake GitHub sets the check "verify" to "failure" with the description "2 tests failed" and a link once the stage "ship" waits
+    Then "/v1/runs/<id>" shows the state "complete" with the stage "ship" "succeeded" and its check "verify" "success"
+    And the stage "implement" shows its "rework" for the stage "ship" with the reason "the check verify ended with failure", the check "verify" "failure" with its description and link, and the session of its first turn
+    And the harness received the prompt of the stage "plan" once and that of "implement" twice, whose second names the stage "ship", the check "verify", its state "failure", its description "2 tests failed" and its link
+    And the "run.completed@v1" names the outcome "succeeded" and the rework of the stage "implement" for the stage "ship" with the reason "the check verify ended with failure"
+
+  @id=SCN-FORE-194 @status=implemented
+  Scenario: A check that fails again after the run went back fails the run
+    Given "foreman serve" runs the README's "checks/factory.yaml" with the stage "verify" before "ship" that has "wait: true", the checks ["verify"] and "rework: implement", with the fake GitHub, whose pull request "tester/web#1" has the check "verify" in the state "failure"
+    And the scripted "implement" turn replies with the link of that pull request, and its second turn leaves the check as it is
+    When a program posts the README's "work.json" to "/v1/runs" with the API token
+    Then "/v1/runs/<id>" shows the state "failed" with the stage "verify" "failed", its check "verify" "failure" and the reason "the check verify ended with failure"
+    And the harness received the prompt of the stage "implement" twice, the second with the line "- verify: failure", and never the prompt "Merge the pull request"
+
+  @id=SCN-FORE-195 @status=implemented
+  Scenario Outline: A factory whose stage sends a failed check back to a stage that cannot take it stops the server at the start
+    Given the README's "checks/factory.yaml" with the stage "verify" before "ship" that has "wait: true" and the checks ["verify"], whose stage "<stage>" has "<entry>"
+    When the user runs "foreman serve"
+    Then the command exits with code 2
+    And the output contains "factory.yaml: <at>: <says>"
+
+    Examples:
+      | stage     | entry          | at                 | says                                                                                |
+      | verify    | rework: verify | /workflow/2/rework | the stage verify sends a failed check back to "verify", which is no stage before it |
+      | verify    | rework: ship   | /workflow/2/rework | the stage verify sends a failed check back to "ship", which is no stage before it   |
+      | ship      | rework: verify | /workflow/3/rework | the stage ship sends a failed check back to "verify", which only waits              |
+      | implement | rework: plan   | /workflow/1/rework | the stage implement sends a failed check back, but it waits for no check            |
+
+  @id=SCN-FORE-196 @status=implemented
+  Scenario: A stage that runs once more for a failed check keeps the approval of its gate
+    Given "foreman serve" runs the README's "checks/factory.yaml" with a gate before the stage "implement" and "rework: implement" on the stage "ship", with the fake GitHub and NATS, whose pull request "tester/web#1" has the check "verify" in the state "failure"
+    And the scripted "implement" turn replies with the link of that pull request, and its second turn sets the check "verify" to "success"
+    When a program posts the README's "work.json" to "/v1/runs" with the API token and gatekeeper publishes "gate.decided@v1" with the decision "approved" for the gate "g0a1b2c3d4e5f6a7b"
+    Then "/v1/runs/<id>" shows the state "complete" with the stage "implement" "succeeded", its gate "g0a1b2c3d4e5f6a7b" and its "rework" for the stage "ship"
+    And gatekeeper received one request, for the stage "implement"

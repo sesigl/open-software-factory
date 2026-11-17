@@ -21,6 +21,7 @@ Use these terms in scenarios, code, UI text and docs.
 | Dedupe key | The key that makes requests one work item: intake keeps one work item per key and lists every request that sent it. |
 | Stage | One step of the delivery loop: triage, spec, implement, review, verify, ship, monitor. A stage runs one agent, or with `wait: true` only waits for its checks, evidence and gate (ADR 0107). |
 | Gate | A point where work waits for a deterministic check or a human decision. |
+| Rework | A stage's `rework: <stage>` in `factory.yaml`: when a check of the stage fails, the run goes back to that earlier stage once, whose agent gets the failed checks in its prompt; when they fail again, the run fails (ADR 0165). |
 | Approval record | What gatekeeper writes when a gate is decided: the request, the policy, who decided, what and when; signed with Ed25519 when `GATEKEEPER_SIGNING_KEY` is set, unsigned without it. |
 | Outbox | A table where a server writes its events in the same transaction as the change they report; a relay publishes them to NATS later, so no event is lost (ADR 0003, ADR 0048). |
 | Human touchpoint | A gate where a person reviews the spec, the code or the product. |

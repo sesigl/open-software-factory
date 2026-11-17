@@ -124,6 +124,7 @@ function rules(definition: FactoryDefinition, exists: (path: string) => boolean)
       ]);
     }
     if (stage.gate) files.push([["workflow", String(index), "gate", "policy"], stage.gate.policy]);
+    if (stage.rework !== undefined) findings.push(...reworkFindings(definition.workflow ?? [], index));
   });
   for (const [name, scorer] of Object.entries(definition.scorers ?? {}))
     files.push([["scorers", name, "judge"], scorer.judge]);
@@ -148,6 +149,20 @@ function waitFindings(stage: NonNullable<FactoryDefinition["workflow"]>[number],
           ] as Finding,
         ]),
   ];
+}
+
+/**
+ * A stage that sends a failed check back waits for a check, and names a stage before it that runs an agent (ADR 0165).
+ */
+function reworkFindings(workflow: NonNullable<FactoryDefinition["workflow"]>, index: number): Finding[] {
+  const stage = workflow[index] as (typeof workflow)[number];
+  const path = ["workflow", String(index), "rework"];
+  const back = `stage "${stage.stage}" sends a failed check back`;
+  const target = workflow.slice(0, index).find((earlier) => earlier.stage === stage.rework);
+  if (!target) return [[path, `${back} to "${stage.rework}", which is no stage before it`]];
+  if (target.wait) return [[path, `${back} to "${stage.rework}", which only waits`]];
+  if (!stage.checks?.length && stage.evidence !== "required") return [[path, `${back}, but it waits for no check`]];
+  return [];
 }
 
 function place(lines: LineCounter, offset: number): Place {

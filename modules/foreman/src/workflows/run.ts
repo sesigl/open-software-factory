@@ -140,6 +140,9 @@ export async function factoryRun({ view, definition, before, heartbeatMs, stageQ
         [handedBack, takeOver] = [false, undefined];
         run = await apply(run, { kind: "handed-back", index }, actions, memoed);
       } else {
+        // A stage's wait for its checks ends when a stage runs. A stage whose failed checks sent the run back to an
+        // earlier stage waits anew after it, from its own limit (ADR 0165); before that no stage read its checks again.
+        checksSince = { index: -1, at: 0 };
         run = await apply(run, { kind: "stage-started", index }, actions, memoed);
         // A stage that only waits runs no agent and takes no place among the stages (ADR 0107).
         const runner = definition.stages[index]?.agent === undefined ? remote : stages;

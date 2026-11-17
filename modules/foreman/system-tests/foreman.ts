@@ -403,10 +403,17 @@ export interface ChecksSetup {
   /** Whether the "implement" turn replies with the pull request's link; default true. */
   linked?: boolean;
   nats?: boolean;
+  /** A scripted gatekeeper that answers each request with GATE in the state "pending". */
+  gatekeeper?: boolean;
   /** The text of factory.yaml; default: the README's "checks/factory.yaml". */
   factory?: string;
   /** More harness turns, after the turns of the three stages. */
   turns?: HarnessTurn[];
+  /**
+   * Harness turns before those of the three stages, which a stage that runs once more matches first: each stage starts
+   * the agent anew, so its turns answer again. The function gets the shell command that sets a check.
+   */
+  first?: (checkCommand: (state: string, context?: string) => string) => HarnessTurn[];
   /** More variables of the server. */
   env?: Record<string, string>;
 }
@@ -430,25 +437,39 @@ export async function servingChecks(sut: Sut, fakes: Fakes, setup: ChecksSetup =
     title: TITLE,
     files: { "export.ts": "export const csv = true;\n" },
   });
-  /** Sets the check of the pull request's head commit, "verify" unless named, as CI does. */
-  const check = async (state: string, context = "verify") => {
-    const response = await fetch(`${github.url}/repos/${github.owner}/web/statuses/${pr.sha}`, {
+  /** The request that sets the check of the pull request's head commit, with what CI tells about it. */
+  const checkRequest = (state: string, context: string, about: CheckAbout = {}) => ({
+    url: `${github.url}/repos/${github.owner}/web/statuses/${pr.sha}`,
+    init: {
       method: "POST",
       headers: { authorization: `token ${github.token}`, "content-type": "application/json" },
-      body: JSON.stringify({ state, context }),
-    });
+      body: JSON.stringify({ state, context, ...about }),
+    },
+  });
+  /** Sets the check of the pull request's head commit, "verify" unless named, as CI does. */
+  const check = async (state: string, context = "verify", about: CheckAbout = {}) => {
+    const { url, init } = checkRequest(state, context, about);
+    const response = await fetch(url, init);
     if (response.status !== 201) throw new Error(`the fake GitHub answered ${response.status} to the check`);
+  };
+  /** A shell command of an agent's turn that sets the check, "verify" unless named, as a push that CI checks does. */
+  const checkCommand = (state: string, context = "verify") => {
+    const { url, init } = checkRequest(state, context);
+    const script = `fetch(${JSON.stringify(url)}, ${JSON.stringify(init)}).then((r) => process.exit(r.status === 201 ? 0 : 1))`;
+    return `node -e ${word(script)}`;
   };
   if (setup.check) await check(setup.check);
   const server = await serving(sut, fakes, {
     factory: setup.factory ?? (readmeFiles(fakes)["checks/factory.yaml"] as string),
     turns: [
+      ...(setup.first?.(checkCommand) ?? []),
       { when: PLAN, reply: "plan.md is written" },
       { when: IMPLEMENT, reply: setup.linked === false ? "done" : `Opened ${pr.url} for review.` },
       { when: SHIP, reply: "merged" },
       ...(setup.turns ?? []),
     ],
     nats: setup.nats,
+    gatekeeper: setup.gatekeeper,
     env: {
       FOREMAN_FORGES: JSON.stringify({ github: sut.adapter("forge/github") }),
       FOREMAN_FORGE_URL: github.url,
@@ -457,8 +478,24 @@ export async function servingChecks(sut: Sut, fakes: Fakes, setup: ChecksSetup =
       ...setup.env,
     },
   });
-  return { ...server, github, pr, check };
+  return { ...server, github, pr, check, checkCommand };
 }
+
+/** What CI tells about a check on GitHub: its description and its page. */
+export interface CheckAbout {
+  description?: string;
+  target_url?: string;
+}
+
+/** The text that only the prompt of a stage that runs once more for a later stage's failed checks has (ADR 0165). */
+export const FAILED_CHECKS = "# Failed checks of the stage";
+
+/** The README's "checks/factory.yaml" whose stage "ship" sends a failed check back to "implement" (ADR 0165). */
+export const reworkFactory = (fakes: Fakes): string =>
+  (readmeFiles(fakes)["checks/factory.yaml"] as string).replace(
+    "    checks: [verify]\n",
+    "    checks: [verify]\n    rework: implement\n",
+  );
 
 /** A run of the README's "checks/factory.yaml" that waits for the pending check "verify"; returns the run's ID too. */
 export async function waitingForCheck(sut: Sut, fakes: Fakes) {

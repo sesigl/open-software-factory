@@ -68,7 +68,8 @@
       "stage": "ship",
       "wait": true,
       "checks": ["verify"],
-      "evidence": "required"
+      "evidence": "required",
+      "rework": "implement"
     }
   ],
   "automations": [

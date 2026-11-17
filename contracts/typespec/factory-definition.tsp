@@ -164,6 +164,13 @@ model Stage {
    * names no agent and at least one of checks, evidence "required" or gate.
    */
   wait?: boolean;
+
+  /**
+   * The stage before this one whose agent runs once more when a check of this stage fails, with the failed checks in
+   * its prompt; when the checks fail again, the stage fails as without it (ADR 0165). The stage waits for checks or
+   * the evidence "required", and the stage it names runs an agent.
+   */
+  rework?: Name;
 }
 
 /** The name of a check on the forge: a commit status context. */

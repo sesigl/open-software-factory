@@ -38,6 +38,8 @@ export type StagePlan = {
   gate?: { policy: string; approvers?: string[] };
   /** The checks that must succeed on the run's pull request before the stage starts. */
   checks?: string[];
+  /** The stage before it whose agent runs once more when one of its checks fails (ADR 0165). */
+  rework?: string;
 } & (AgentPlan | { agent?: undefined });
 
 export interface Definition {
@@ -71,7 +73,25 @@ export function stageProblems(factory: FactoryDefinition): DefinitionProblem[] {
     stageAgentProblems(factory),
     checkProblems(factory),
     inferenceProblems(factory),
+    (factory.workflow ?? []).flatMap(reworkProblems),
   );
+}
+
+/**
+ * A stage that sends a failed check back waits for a check, and names a stage before it that runs an agent (ADR 0165).
+ */
+function reworkProblems(
+  stage: NonNullable<FactoryDefinition["workflow"]>[number],
+  index: number,
+  workflow: NonNullable<FactoryDefinition["workflow"]>,
+): DefinitionProblem[] {
+  if (stage.rework === undefined) return [];
+  const problem = (message: string) => [{ path: `/workflow/${index}/rework`, message }];
+  const back = `the stage ${stage.stage} sends a failed check back`;
+  const target = workflow.slice(0, index).find((earlier) => earlier.stage === stage.rework);
+  if (!target) return problem(`${back} to "${stage.rework}", which is no stage before it`);
+  if (target.wait) return problem(`${back} to "${stage.rework}", which only waits`);
+  return checksOf(stage).length ? [] : problem(`${back}, but it waits for no check`);
 }
 
 function oneAdapter(factory: FactoryDefinition, port: "sandbox" | "inference"): DefinitionProblem[] {
@@ -203,6 +223,8 @@ export function definitionOf(factory: FactoryDefinition, files: FactoryFiles): D
         stage: stage.stage,
         ...(stage.gate ? { gate: stage.gate } : {}),
         ...(checksOf(stage).length ? { checks: checksOf(stage) } : {}),
+        // A run that started before ADR 0165 has no rework, so its failed checks end it as they did then.
+        ...(stage.rework ? { rework: stage.rework } : {}),
       };
       if (stage.wait) return waits;
       const agent = agentOf(stage);

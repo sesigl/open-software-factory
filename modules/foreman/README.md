@@ -16,7 +16,8 @@ sandboxes, [ADR 0069](../../docs/decisions/0069-foreman-checks.md) for checks, a
 [ADR 0111](../../docs/decisions/0111-the-result-of-a-stage-in-the-next-prompt.md) for the result of a stage in the next
 stage's prompt, and [ADR 0112](../../docs/decisions/0112-an-agents-mcp-servers-and-skills-in-its-session.md) for an
 agent's MCP servers and skills, and [ADR 0126](../../docs/decisions/0126-an-agents-repositories-in-its-folder.md)
-for an agent's repositories.
+for an agent's repositories, and [ADR 0165](../../docs/decisions/0165-a-failed-check-sends-the-run-back-once.md) for a
+failed check that sends the run back once.
 
 ## Quick start
 
@@ -264,7 +265,8 @@ Serve it as in the quick start, with the forge adapter's token: `export FOREMAN_
    `osf.run.blocked.v1` once, with the stage, `waitsFor` `checks`, the pull request and the names of the checks; its ID
    is the run's ID with `.blocked.<stage>` ([ADR 0127](../../docs/decisions/0127-a-run-blocked-at-its-checks.md)).
 3. Every check `success`: the stage starts. A check `failure` or `error`: the stage is `failed` without running its
-   agent, with the `reason` `the check verify ended with failure`, and the run is `failed`. A check `pending`, or one
+   agent, with the `reason` `the check verify ended with failure`, and the run is `failed`, unless the stage names
+   `rework` ([below](#a-failed-check-sends-the-run-back-once)). A check `pending`, or one
    the pull request does not have yet: the run and the stage are `blocked`, and the foreman reads the checks again
    every `FOREMAN_CHECK_POLL_MS`. The stage shows since when it waits as `waitingSince`. A cancel ends the wait.
 4. Checks that did not all succeed after `FOREMAN_CHECK_TIMEOUT_MS` (2 hours) fail the stage and the run, with a
@@ -292,6 +294,43 @@ session, no sandbox and no model call. The run shows it with `wait: true`, its o
 `factory.yaml: /workflow/<n>/wait: a stage that only waits names checks, the evidence "required" or a gate`. A later
 stage that must start only on checks that succeeded on the pull request's head commit, like `ship`, names the same
 checks again, so the foreman reads them once more before it starts.
+
+### A failed check sends the run back once
+
+A stage with checks may name `rework`, an earlier stage that runs an agent, usually the one that made the change
+([ADR 0165](../../docs/decisions/0165-a-failed-check-sends-the-run-back-once.md)):
+
+```yaml
+  - stage: verify
+    wait: true
+    checks: [verify]
+    rework: implement
+```
+
+When a check of the stage ends with `failure` or `error`, the run does not fail: it goes back to `implement` once.
+Every stage after `implement` up to the stage whose checks failed starts again as at its first time; `implement`
+keeps the decision of its gate, which approved it for this run, and its agent gets a prompt that ends with the failed
+checks, with what the forge adapter's `pr` gives about each, its description and its link:
+
+```text
+# Failed checks of the stage verify
+
+The checks of the stage verify failed on the pull request, so the run came back to this stage, once. Fix the pull request; when its checks fail again, the run fails.
+
+- verify: failure: 2 tests failed (https://ci.example/runs/1)
+```
+
+The run shows why on the stage that ran again, as `rework`: `failedAt` (the stage whose checks failed), the `reason`
+(`the check verify ended with failure`), the failed `checks` with their `description` and `url` when the forge gives
+them, the `sessionId` of its first session and when (`at`). `run.completed@v1` lists the same in `reworks`, as
+`{"stage", "failedAt", "reason"}`. When the checks fail again, the stage fails as without `rework`, with the same
+`reason`: a stage runs again at most once in a run. A pending check, one still pending at
+`FOREMAN_CHECK_TIMEOUT_MS`, and a stage without a pull request end as without it. `foreman serve` stops at the start,
+with `factory.yaml: /workflow/<n>/rework: …`, for a `rework` that names no stage before it
+(`the stage verify sends a failed check back to "ship", which is no stage before it`), one that only waits
+(`… to "verify", which only waits`), and a stage that waits for no check
+(`the stage implement sends a failed check back, but it waits for no check`). A run that started before a factory
+names `rework`, or before this release, ends at a failed check as it did then.
 
 ## Inference gateway
 
@@ -482,7 +521,8 @@ takes the SHA-256 of `<work item ID>#<n>` ([Run again](#run-again)). A run is
 `running`, `blocked` (at a gate, waiting for checks, or taken over by a person), `complete`, `failed` or `cancelled`. A stage is `pending`,
 `blocked` (at its gate, waiting for its checks, taken over, or waiting for a place of `FOREMAN_MAX_STAGES`), `running`, `succeeded`, `failed`, `rejected` (by its gate) or `cancelled`; it has its harness `sessionId` once
 it started, its `gateId` once its gate was asked, its `checks` once they were read, its `takenOverAt` once a person
-took it over, and a `reason` when it failed for a reason the foreman knows.
+took it over, a `reason` when it failed for a reason the foreman knows, and its `rework` when the failed checks of a
+later stage sent the run back to it ([A failed check sends the run back once](#a-failed-check-sends-the-run-back-once)).
 
 ## How a run goes
 
@@ -504,7 +544,9 @@ took it over, and a `reason` when it failed for a reason the foreman knows.
   forge ([Checks](#checks)), `Pull request: <link>` once the run has one, and `Run before: …`
   in the first stage of a run that runs a run before it again ([Run again](#run-again)), and last the section
   `# Result of the stage <stage>` with what the agent of the stage before wrote, without its tool calls: its last 4000
-  characters, after the line `[… the first <n> characters are cut]` when it wrote more (ADR 0111). It allows the tool calls the adapter asks
+  characters, after the line `[… the first <n> characters are cut]` when it wrote more (ADR 0111), and after it, in a
+  stage that runs again for the failed checks of a later stage, the section `# Failed checks of the stage <stage>`
+  (ADR 0165). It allows the tool calls the adapter asks
   about; limit them with the adapter's `--allow`. Before the session, the foreman writes the files of each of the
   agent's `skills` into the run's folder below `.claude/skills/<name>` and `.agents/skills/<name>`, replacing a folder
   of that name (ADR 0112). A skill of another Git repository, `git+<url>#<ref>:<path>`, comes from the commit that
@@ -571,7 +613,7 @@ release gets the subject when the server starts. A run publishes
 [`run.started@v1`](../../contracts/events/run-started/run-started.schema.json) on `osf.run.started.v1` when it starts and
 [`run.completed@v1`](../../contracts/events/run-completed/run-completed.schema.json) on `osf.run.completed.v1` when it
 ends, with the outcome `succeeded`, `failed` or `cancelled` and, when the stage it ended at failed with one, its
-`reason` (ADR 0127). Their IDs are the run's ID with `.started` and
+`reason` (ADR 0127), and the stages that ran again for failed checks in `reworks` (ADR 0165). Their IDs are the run's ID with `.started` and
 `.completed`; a run that runs a run before it again names that run in `retryOf`. The events are kept in the JetStream stream `OSF` on `osf.>`, which the
 foreman adds when it is missing, and the foreman reads them through its durable consumer `foreman` ([ADR
 0085](../../docs/decisions/0085-durable-events.md)). A work item or a gate decision published while the foreman is down
@@ -855,3 +897,7 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-190 | implemented | With FOREMAN_MAX_STAGES set to 1, the "plan" turns of two runs never run at the same time, and both runs complete |
 | SCN-FORE-191 | implemented | A stage that waits for a place of FOREMAN_MAX_STAGES shows "blocked" since when it waits, and its run "running" |
 | SCN-FORE-192 | implemented | A number setting that is not a whole number of 1 or more stops the server at the start |
+| SCN-FORE-193 | implemented | A failed check sends the run back once to the stage that "rework" names, with the failed check in its prompt |
+| SCN-FORE-194 | implemented | A check that fails again after the run went back fails the run |
+| SCN-FORE-195 | implemented | A factory whose stage sends a failed check back to a stage that cannot take it stops the server at the start |
+| SCN-FORE-196 | implemented | A stage that runs once more for a failed check keeps the approval of its gate |
