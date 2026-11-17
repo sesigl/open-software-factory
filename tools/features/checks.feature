@@ -1171,6 +1171,33 @@ Feature: Repository checks
     And the output contains "RELEASE .github/workflows/publish-demo.yml:1 publishes no published package of the workspace: run osf release-files"
     And the output contains "RELEASE release-please-config.json:3 modules/demo is no published package: run osf release-files"
 
+  @id=SCN-REPO-235 @status=implemented
+  Scenario: RELEASE accepts a release workflow that starts verify and gatekeeper from main on each release pull request
+    Given a repository with the published module "demo" at version "0.3.0" and the private module "other"
+    And the developer ran "osf release-files"
+    And ".github/workflows/release-please.yml" starts "verify.yml" and "gatekeeper.yml" from main with "-f pr=", and both take the input "pr"
+    When the developer runs "osf check RELEASE"
+    Then the command exits with code 0
+    And the output contains "RELEASE ok"
+
+  @id=SCN-REPO-236 @status=implemented
+  Scenario: RELEASE rejects a release workflow that starts gatekeeper on the release pull requests from another branch than main
+    Given a repository with the published module "demo" at version "0.3.0" and the private module "other"
+    And the developer ran "osf release-files"
+    And ".github/workflows/release-please.yml" starts "verify.yml" from main and "gatekeeper.yml" from the release branch, both with "-f pr=" on line 9
+    When the developer runs "osf check RELEASE"
+    Then the command exits with code 1
+    And the output contains "RELEASE .github/workflows/release-please.yml:9 starts no gatekeeper.yml from main for each release pull request (gh workflow run gatekeeper.yml --ref main -f pr=<number>), so they miss the required status gatekeeper (ADR 0174)"
+
+  @id=SCN-REPO-237 @status=implemented
+  Scenario: RELEASE rejects a workflow that release-please.yml starts without the input "pr"
+    Given a repository with the published module "demo" at version "0.3.0" and the private module "other"
+    And the developer ran "osf release-files"
+    And ".github/workflows/release-please.yml" starts "verify.yml" and "gatekeeper.yml" from main with "-f pr=", and only "verify.yml" takes the input "pr"
+    When the developer runs "osf check RELEASE"
+    Then the command exits with code 1
+    And the output contains "RELEASE .github/workflows/gatekeeper.yml:1 has no workflow_dispatch input pr, which release-please.yml passes for each release pull request (ADR 0174)"
+
   @id=SCN-REPO-127 @status=implemented
   Scenario: make docs writes the report of the vision scenarios and the module scenarios that realize them
     Given a vision scenario "SCN-FACTORY-DEMO-001" with the status "planned" and a vision scenario "SCN-FACTORY-DEMO-002" with the status "planned"

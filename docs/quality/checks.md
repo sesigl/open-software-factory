@@ -62,19 +62,27 @@ to the base of the pull request. Without it, a check that needs it prints "skipp
   hash complete.
 - A new push to a pull request cancels its running `verify`. A push to `main` never cancels the run of the commit
   before it, so every commit of `main` gets a finished run.
-- Release pull requests are opened by release-please with `GITHUB_TOKEN`, and their `pull_request` run waits for a
-  person's approval. So after each push to `main`, `release-please.yml` also starts `verify` on every open release
-  pull request with `workflow_dispatch`. That run needs no approval. It uses `verify.yml` from `main`, merges the
-  pull request into `main` before it tests, and reports the result as the `verify` commit status on the pull
-  request's head.
+- The branch protection of `main` requires the commit statuses `verify`, `proof` and `gatekeeper`.
+- Release pull requests are opened by release-please with `GITHUB_TOKEN`, whose events start no workflow: no
+  `pull_request` run of `verify` and no `pull_request_target` run of `gatekeeper`. So after each push to `main`,
+  `release-please.yml` starts `verify.yml` and `gatekeeper.yml` on every open release pull request with
+  `workflow_dispatch`, `--ref main` and `-f pr=<number>` (ADR 0174). The dispatched `verify` merges the pull request
+  into `main` before it tests, runs proof on the JUnit results and reports `verify` and `proof` on the head it merged.
+  The dispatched `gatekeeper` checks out `main`, never the pull request, and sets `gatekeeper` by the same policy; it
+  passes a release pull request, which is not factory-made. The release pull request then merges without `--admin`.
+  RELEASE fails when `release-please.yml` loses one of the two starts or a workflow loses its input `pr`.
+- `.github/workflows/gatekeeper.yml` runs the gatekeeper GitHub Action on each pull request (`pull_request_target`)
+  and each comment on one (`issue_comment`), with the policy `.github/gatekeeper/merge.rego` from `main`
+  ([ADR 0047](../decisions/0047-gatekeeper.md)). A maintainer starts it for any pull request with
+  `gh workflow run gatekeeper.yml --ref main -f pr=<number>`, for example after a run that ended in `startup_failure`.
 - On each pull request from this repository, the `verify` job runs the proof GitHub Action on the JUnit results of
   every suite ([ADR 0029](../decisions/0029-proof-capture-and-action.md)): one proof comment and the commit status
   `proof`.
 - The `verify` job also runs the spec-trace GitHub Action for its report: the job summary lists the scenarios a pull
   request adds, removes or changes, with the Examples rows of an Outline added, removed or changed, and the artifact
   `spec-trace` holds the JSON report.
-- Both actions run the release from npm at the version of the module's `package.json`, so a change to proof or
-  spec-trace reaches this check after its release.
+- Both actions run the build of the commit (`command: node modules/<name>/dist/cli.js`, ADR 0083), so a change to
+  proof or spec-trace reaches this check in its own pull request. The gatekeeper action runs the build of `main`.
 - Suites with extra setup: the `proof` suite's job installs Chromium for the capture scenarios. The `deploy` suite's
   job pulls the images of the Compose profile while it builds (ADR 0074) and starts kind with agent-sandbox; its
   `test:system` builds the module images of the commit and loads the images of the Helm chart into kind before the
@@ -289,12 +297,16 @@ to the base of the pull request. Without it, a check that needs it prints "skipp
 
 - **Reads:** every published workspace package (every package that is not `private`), the template
   `tools/scaffold/publish-workflow.yml`, `release-please-config.json` and `.release-please-manifest.json`. It renders
-  the template per package and compares, and parses the two JSON files.
+  the template per package and compares, and parses the two JSON files. With `.github/workflows/release-please.yml`,
+  also that file, `verify.yml` and `gatekeeper.yml`, the workflows of the required statuses (ADR 0174).
 - **Fails:** a package without `.github/workflows/publish-<name>.yml` exactly as the template renders it, without an
   entry in `release-please-config.json` with `release-type` `node`, its `package-name` and its `component`, or without
   its version from `package.json` in `.release-please-manifest.json`; a generated workflow or release entry that names
-  a package that is not published.
-- **Fix:** `osf release-files`; see `skills/release-packages`.
+  a package that is not published. A `release-please.yml` without a line `gh workflow run verify.yml` and one
+  `gh workflow run gatekeeper.yml`, each with `--ref main` and `-f pr=`, or one of the two workflows without the
+  `workflow_dispatch` input `pr`: the release pull request would miss a required status.
+- **Fix:** `osf release-files`; see `skills/release-packages`. For the starts: the step "Run verify and gatekeeper on
+  the open release pull requests" of `release-please.yml`.
 
 ### DEPS
 

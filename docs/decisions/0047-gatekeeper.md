@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; amended by 0174 (the dogfood gate also runs by workflow_dispatch for a pull request's number, so the release pull request gets it)
 topic: tools
 date: 2026-10-22
 ---

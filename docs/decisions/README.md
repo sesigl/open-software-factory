@@ -114,7 +114,7 @@ DOCS-GEN keeps it current.
 - [0044](0044-ledger-dogfood.md) The ledger dogfood: token prices, an HTML dashboard page and Vercel
 - [0045](0045-taskcapture-run.md) taskcapture runs the suite with Harbor, captures a run's pull request, and checks its own suite nightly
 - [0046](0046-observer.md) observer groups failed scores into problems, proposes reviewed fixes as pull requests and checks their effect
-- [0047](0047-gatekeeper.md) gatekeeper asks people for approval by a Rego policy and writes signed approval records
+- [0047](0047-gatekeeper.md) gatekeeper asks people for approval by a Rego policy and writes signed approval records — amended by 0174 (the dogfood gate also runs by workflow_dispatch for a pull request's number, so the release pull request gets it)
 - [0048](0048-gatekeeper-server.md) gatekeeper serve: an HTTP API, Slack events and buttons, and a Postgres outbox
 - [0062](0062-gatekeeper-ports.md) gatekeeper asks and reports through the channel and forge ports
 - [0063](0063-intake.md) intake: one inbox for agent work, over HTTP, Slack and MCP
@@ -218,11 +218,12 @@ DOCS-GEN keeps it current.
 - [0152](0152-an-islands-code-counts.md) An island's code counts: the active mutant in the page, `.tsx` in the checks, a workbench of Astro pages
 - [0154](0154-main-stores-results-under-the-pull-request-hash.md) main stores its test results under the hash a pull request computes
 - [0155](0155-budget-is-the-wall-time-of-a-suite.md) BUDGET is the wall time of a suite
-- [0156](0156-the-deploy-suite-builds-the-commit.md) The deploy suite builds the module images from the commit — since the second slice of T-72 scripts/images.ts also loads the chart's images into kind, and kind-images.sh is gone (deploy/README.md); amended by 0169 (OSF_DEPLOY_IMAGES=released pulls the released images for the job after publish-images)
+- [0156](0156-the-deploy-suite-builds-the-commit.md) The deploy suite builds the module images from the commit — since the second slice of T-72 scripts/images.ts also loads the chart's images into kind, and kind-images.sh is gone (deploy/README.md); amended by 0169 (OSF_DEPLOY_IMAGES=released pulls the released images for the job after publish-images); amended by 0174 (the release pull request gets gatekeeper and proof and merges without --admin)
 - [0162](0162-a-shared-start-is-once-per-test-run.md) A shared start runs once per test run, through the testkit's global setup
 - [0163](0163-small-suites-share-a-runner.md) Small suites share a runner, and kind starts in the background from cached images — amended by 0167 (the image caches are gone, slower than the registries)
 - [0167](0167-kind-images-come-from-their-registries.md) The kind jobs pull their images from the registries again; kind still starts in the background
 - [0169](0169-the-released-images-run-the-deploy-scenarios.md) The released images run the deploy scenarios after each publish, and an issue tells the maintainers
+- [0174](0174-the-release-pull-request-gets-its-gate.md) The release pull request gets its gate and its proof by workflow_dispatch, and merges without --admin
 
 ### Superseded, rejected and deprecated
 

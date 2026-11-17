@@ -147,7 +147,10 @@ TR, D and E; items of one stage can run in parallel when they touch different un
     workflow `released-images` on `workflow_run` of `publish-images` and by hand, on the published commit;
     `scripts/images.ts` with `OSF_DEPLOY_IMAGES=released` pulls the images and checks amd64 and arm64; the Compose
     scenarios of `osf released-images scenarios` run (the chart's not yet); a failure opens or comments on one issue.
-  - [ ] The release pull request: its dispatched verify green, and merged without `--admin`.
+  - [ ] The release pull request: its dispatched verify green, and merged without `--admin`. Built (ADR 0174):
+    `release-please.yml` also starts `gatekeeper.yml` by `workflow_dispatch`, and the dispatched verify reports
+    `proof`; RELEASE checks both starts. Proven by the next release pull request: `verify`, `proof` and `gatekeeper`
+    green on its head, and a merge without `--admin`. Then tick this slice and T-72.
 
 ### [x] T-73 · a push to main never cancels the run before it (P1)
 
