@@ -3,12 +3,13 @@
 version: 1
 factory: reference
 description: Turns a request into a reviewed, verified pull request, with a person's approval of the spec.
+# Each range is of the adapter's npm package, @opensoftware/<port>-<name>, which "factory plan --adapters" pins.
 providers:
   harness:
-    claude-code: "^2"
+    claude-code: "^0"
   # The forge that holds the repositories and the checks of the verify stage.
   forge:
-    github: "^0.5"
+    github: "^0"
   # The profile's LLM gateway: each run gets its own key, and the agents' models are its routes.
   inference:
     litellm: "^0"
@@ -89,10 +90,12 @@ workflow:
       approvers: [maintainers]
   - stage: review
   # Runs no agent (ADR 0107): waits until the check "verify" of the run's pull request succeeded, with evidence.
+  # A failed check sends the run back to implement once, with the failed checks in its prompt (ADR 0165).
   - stage: verify
     wait: true
     checks: [verify]
     evidence: required
+    rework: implement
   # Merges only when "verify" and proof's check succeeded on the pull request's head commit, read again after verify.
   - stage: ship
     checks: [verify]

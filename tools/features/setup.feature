@@ -132,3 +132,10 @@ Feature: Setup of a factory from a clone
     Then the first run prints only "set FACTORY_TOKEN in deploy/compose/.env: FACTORY_REPOSITORY needs it" and the same for "FACTORY_USER"
     And the second run prints only "set FACTORY_REPOSITORY in deploy/compose/.env to git+<url>#<branch>, like git+https://github.com/acme/factory.git#main, not https://github.com/acme/factory.git"
     And both exit with code 1 and the fake docker was not called
+
+  @id=SCN-REPO-228 @status=implemented
+  Scenario: osf init generates gatekeeper's signing key from the profile's own ".env.example"
+    Given the "deploy/compose/.env.example" of this repository
+    When the developer runs "osf init"
+    Then the command exits with code 0
+    And "deploy/compose/.env" sets "GATEKEEPER_SIGNING_KEY" to 64 hex digits, another value than "CONSOLE_SIGNING_KEY"

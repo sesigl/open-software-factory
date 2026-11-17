@@ -33,6 +33,8 @@ spec:
           env:
             {{- include "osf.secretEnv" (dict "root" . "name" "POSTGRES_PASSWORD" "key" "postgres-password") | nindent 12 }}
             {{- include "osf.secretEnv" (dict "root" . "name" "GATEKEEPER_API_TOKEN" "key" "gatekeeper-api-token") | nindent 12 }}
+            {{- /* Signs each approval record. */}}
+            {{- include "osf.secretEnv" (dict "root" . "name" "GATEKEEPER_SIGNING_KEY" "key" "gatekeeper-signing-key") | nindent 12 }}
             {{- if $slack }}
             {{- include "osf.secretEnv" (dict "root" . "name" "GATEKEEPER_SLACK_TOKEN" "key" "gatekeeper-slack-token") | nindent 12 }}
             {{- include "osf.secretEnv" (dict "root" . "name" "GATEKEEPER_SLACK_SIGNING_SECRET" "key" "gatekeeper-slack-signing-secret") | nindent 12 }}

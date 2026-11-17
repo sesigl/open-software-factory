@@ -8,9 +8,9 @@ factory: dogfood
 description: Implements the issues labeled factory of this repository, with the owner's approval of the spec on its pull request.
 providers:
   harness:
-    claude-code: "^2"
+    claude-code: "^0"
   forge:
-    github: "^0.5"
+    github: "^0"
   inference:
     litellm: "^0"
   # The agents' secrets are variables of the foreman, OSF_SECRET_<NAME>, which only the sandbox's egress proxy gets.
@@ -90,10 +90,12 @@ workflow:
       approvers: [maintainers]
   - stage: review
   # Runs no agent (ADR 0107): waits until the check "verify" of the run's pull request succeeded, with evidence.
+  # A failed check sends the run back to implement once, with the failed checks in its prompt (ADR 0165).
   - stage: verify
     wait: true
     checks: [verify]
     evidence: required
+    rework: implement
   # Merges only when "verify" and proof's check succeeded on the pull request's head commit, read again after verify.
   - stage: ship
     checks: [verify]

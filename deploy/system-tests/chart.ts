@@ -1,8 +1,12 @@
 // The Helm chart as a platform team installs it: a values file in $INPUT that sets every secret (ADR 0075).
 import type { CliResult, Helm, Shared, SharedSut, Sut } from "@opensoftware/testkit";
 
+/** The seed of gatekeeper's Ed25519 key, 64 hex digits, made up for the tests. */
+export const GATEKEEPER_SIGNING_KEY = "5eed".repeat(16);
+
 /** The secrets of the values file, made up for the tests. */
 const SECRETS: Record<string, string> = {
+  gatekeeperSigningKey: GATEKEEPER_SIGNING_KEY,
   postgresPassword: "postgres-password-1",
   foremanApiToken: "foreman-token-1",
   intakeApiToken: "intake-token-1",

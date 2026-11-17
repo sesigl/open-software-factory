@@ -19,7 +19,7 @@ Compose starts.
 
 ```sh
 cd deploy/compose
-cp .env.example .env && chmod 600 .env    # set the tokens, the database password, and Slack or a forge token for gatekeeper
+cp .env.example .env && chmod 600 .env    # set the tokens, the keys, the database password, and Slack or a forge token for gatekeeper
 $EDITOR factory/groups.json    # put your Slack member ID, like slack:U024BE7LH, or github:<login> in place of slack:U0EXAMPLE
 docker compose up --detach --wait
 docker compose run --rm console console doctor    # one line per check, and one fix per failure
@@ -67,7 +67,8 @@ and verified.
 
 The reference factory in `compose/factory/` has the stages triage, spec, implement (behind a gate that a member of
 `maintainers` approves in Slack, so the spec's pull request is approved before implement starts), review, verify (after the pull request's check `verify` succeeded, with
-evidence) and ship (again only after `verify` and the evidence succeeded on the pull request's head commit). foreman reads that check with `FOREMAN_FORGE_TOKEN`. Its prompts work on any GitHub repository:
+evidence; a failed check sends the run back to implement once, with the failed checks in its prompt:
+`rework: implement`, [ADR 0165](../docs/decisions/0165-a-failed-check-sends-the-run-back-once.md)) and ship (again only after `verify` and the evidence succeeded on the pull request's head commit). foreman reads that check with `FOREMAN_FORGE_TOKEN`. Its prompts work on any GitHub repository:
 each stage clones the repository of the issue in the work item's origin, reads the repository's own `AGENTS.md`,
 `CONTRIBUTING.md` and `README.md`, runs the checks they name, and starts from what the stage before it wrote, which
 the foreman puts at the end of its prompt ([ADR 0111](../docs/decisions/0111-the-result-of-a-stage-in-the-next-prompt.md)). Name your CI's check in the stage `verify` of
@@ -96,7 +97,7 @@ foreman gets a key with the factory's budget for each run, and the spend log nam
 owner's Claude subscription ([ADR 0080](../docs/decisions/0080-dogfood-on-a-subscription.md)). Its agents clone the
 issue's repository with `gh`, follow its `AGENTS.md` and open a draft pull request with the scenarios. The gate before
 `implement` asks the owner on that pull request; the owner comments `/approve`, and the agents implement, review,
-wait for the check `verify` and mark the pull request ready. The owner merges it. It has no `access.yaml`, so with
+wait for the check `verify`, implement once more when it fails, and mark the pull request ready. The owner merges it. It has no `access.yaml`, so with
 the [sign-in](#turn-on-the-sign-in) on nobody gets in until the owner adds one with their own email. In `.env`:
 
 ```sh
@@ -215,6 +216,7 @@ and names it, like `set FOREMAN_API_TOKEN in .env`.
 | `GATEKEEPER_SLACK_SIGNING_SECRET` | | With a Slack channel: the signing secret of gatekeeper's Slack app. |
 | `GATEKEEPER_FORGE_TOKEN` | | A token that may comment on pull requests, set their commit status and read their checks (on GitHub: `Checks: read`, since the forge adapter's `pr` lists the check runs). Set: a gate request that links a pull request is asked on it, and decided by `/approve` or `/reject` comments. |
 | `GATEKEEPER_FORGE_URL` | GitHub's API | The forge's API where gatekeeper asks on pull requests, like `https://ghe.example/api/v3`. A request's pull request link counts only on this forge's origin (`https://github.com` for GitHub's API); gatekeeper calls no other host with its token. |
+| `GATEKEEPER_SIGNING_KEY` | | Required; `osf init` generates it. The seed of gatekeeper's Ed25519 key, 64 hex digits, with which gatekeeper signs each approval record; `gatekeeper verify` checks a record with its public key. Only gatekeeper gets it. |
 | `FOREMAN_FORGE_TOKEN` | | A token that may read pull requests and their checks (on GitHub: commit statuses and `Checks: read`), for the verify stage's check `verify`. |
 | `CLAUDE_CODE_OAUTH_TOKEN` | | A token of `claude setup-token`. Set: Claude Code runs on that person's subscription, and its calls still go through `litellm` with the run's key ([ADR 0080](../docs/decisions/0080-dogfood-on-a-subscription.md)). |
 | `GH_TOKEN` | | A token with which the agents clone, push and open pull requests on github.com with `gh` and Git. |
@@ -463,6 +465,7 @@ secrets:
   foremanApiToken: change-me
   intakeApiToken: change-me
   gatekeeperApiToken: change-me
+  gatekeeperSigningKey: change-me    # 64 hex digits, like the output of `openssl rand -hex 32`
   gatekeeperSlackToken: xoxb-change-me     # Slack, a forge token or both, as in the Compose profile
   gatekeeperSlackSigningSecret: change-me
   forgeToken: change-me               # gatekeeper asks on the run's pull request; foreman reads its checks
@@ -570,9 +573,10 @@ are not used then.
 
 | Value | Default | Meaning |
 | --- | --- | --- |
-| `secrets.existingSecret` | | A Secret with the keys `postgres-password`, `foreman-api-token`, `intake-api-token`, `gatekeeper-api-token`, `litellm-master-key` and, optional, `gatekeeper-slack-token` and `gatekeeper-slack-signing-secret` (with `gatekeeper.slackChannel`), `forge-token`, `github-token`, `claude-code-oauth-token` and `factory-token`, for example filled from OpenBao by its operator or the External Secrets Operator. Set, the chart makes no Secret. |
+| `secrets.existingSecret` | | A Secret with the keys `postgres-password`, `foreman-api-token`, `intake-api-token`, `gatekeeper-api-token`, `gatekeeper-signing-key`, `litellm-master-key` and, optional, `gatekeeper-slack-token` and `gatekeeper-slack-signing-secret` (with `gatekeeper.slackChannel`), `forge-token`, `github-token`, `claude-code-oauth-token` and `factory-token`, for example filled from OpenBao by its operator or the External Secrets Operator. Set, the chart makes no Secret. |
 | `secrets.postgresPassword` | | Required without `existingSecret`. The password of the database user; it goes into URLs, so use letters, digits, `-` and `_`. |
 | `secrets.foremanApiToken`, `secrets.intakeApiToken`, `secrets.gatekeeperApiToken` | | Required without `existingSecret`. The API tokens of foreman, intake and gatekeeper. |
+| `secrets.gatekeeperSigningKey` | | Required without `existingSecret`. The seed of gatekeeper's Ed25519 key, 64 hex digits like the output of `openssl rand -hex 32`, with which gatekeeper signs each approval record. Key `gatekeeper-signing-key`. |
 | `secrets.gatekeeperSlackToken`, `secrets.gatekeeperSlackSigningSecret` | | The bot token and signing secret of gatekeeper's Slack app. Set them, `secrets.forgeToken` or both; without either the chart names the three. Without them gatekeeper asks on pull requests only. |
 | `secrets.litellmMasterKey` | | Required without `existingSecret`. The master key of LiteLLM, like `sk-<random>`; foreman makes each run's key with it. |
 | `secrets.forgeToken` | | gatekeeper's and foreman's forge token: gatekeeper asks on the run's pull request, foreman reads its checks. On GitHub it needs `Pull requests: write`, `Commit statuses: write` and `Checks: read`. |
@@ -759,8 +763,8 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-028 | implemented | The reference factory asks for approval of the spec after the stage "spec" and before "implement" |
 | SCN-DIST-029 | implemented | The ship stage of the reference factory starts only when the checks "verify" and "proof" succeeded |
 | SCN-DIST-030 | implemented | The ship stage of this repository's factory starts only when the checks "verify" and "proof" succeeded |
-| SCN-DIST-031 | implemented | The verify stage of the reference factory only waits and runs no agent |
-| SCN-DIST-032 | implemented | The verify stage of this repository's factory only waits and runs no agent |
+| SCN-DIST-031 | deprecated | The verify stage of the reference factory only waits and runs no agent |
+| SCN-DIST-032 | deprecated | The verify stage of this repository's factory only waits and runs no agent |
 | SCN-DIST-033 | implemented | The chart takes a forge token without Slack, and asks on pull requests only |
 | SCN-DIST-034 | implemented | The service improve writes the reports of ledger and observer and judges no run without scorers |
 | SCN-DIST-035 | implemented | The chart runs the improvement jobs as a CronJob on foreman's run records, without scorers by default |
@@ -794,3 +798,9 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-072 | implemented | No service of the Compose profile sets a test hook or the test switch |
 | SCN-DIST-080 | implemented | With "OSF_DEPLOY_IMAGES=released", the dry run of "scripts/images.ts" pulls every image of the factory's registry that "compose.yaml" pins and builds none |
 | SCN-DIST-081 | implemented | "scripts/images.ts" refuses a value of "OSF_DEPLOY_IMAGES" other than "commit" and "released" |
+| SCN-DIST-082 | implemented | gatekeeper gets "GATEKEEPER_SIGNING_KEY" of ".env", no other service gets the key, and the profile does not start without it |
+| SCN-DIST-083 | implemented | The gatekeeper of the Compose profile signs its approval records and does not say they are unsigned |
+| SCN-DIST-084 | implemented | The verify stage of the reference factory only waits, runs no agent, and sends a failed check back to implement |
+| SCN-DIST-085 | implemented | The verify stage of this repository's factory only waits, runs no agent, and sends a failed check back to implement |
+| SCN-DIST-086 | implemented | "factory plan --adapters" pins each adapter of the reference factory and of this repository's factory at the version the profile's foreman installs |
+| SCN-DIST-087 | implemented | The chart gives gatekeeper its signing key from the key "gatekeeper-signing-key" of its Secret, and names the value when it is missing |

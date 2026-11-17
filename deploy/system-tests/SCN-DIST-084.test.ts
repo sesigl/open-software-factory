@@ -1,7 +1,7 @@
 import { scenario } from "@opensoftware/testkit";
 import { profile, stageOf, words } from "./profile.ts";
 
-scenario("SCN-DIST-031", async ({ sut, given, when, then }) => {
+scenario("SCN-DIST-084", async ({ sut, given, when, then }) => {
   let compose: Awaited<ReturnType<typeof profile>>;
   await given('the Compose profile with every value of ".env.example" set in ".env"', async () => {
     compose = await profile(sut);
@@ -17,13 +17,14 @@ scenario("SCN-DIST-031", async ({ sut, given, when, then }) => {
   });
 
   await then(
-    'the stage "verify" of the resolved factory has "wait: true", no agent, the checks ["verify"] and the evidence "required"',
+    'the stage "verify" of the resolved factory has "wait: true", no agent, the checks ["verify"], the evidence "required" and "rework: implement"',
     async () => {
       expect(stageOf(resolve.stdout, "verify")).toEqual({
         stage: "verify",
         wait: true,
         checks: ["verify"],
         evidence: "required",
+        rework: "implement",
       });
     },
   );
