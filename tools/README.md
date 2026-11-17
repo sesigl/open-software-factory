@@ -340,3 +340,6 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-225 | implemented | PROFILE rejects a build argument of an image that is not the repository's pin of pnpm |
 | SCN-REPO-226 | implemented | osf profile-pins writes the version and the SHA-256 sums of lychee that "make install" pins into the build arguments of an image |
 | SCN-REPO-227 | implemented | PROFILE rejects a moved tool pin in the build arguments of an image without a new tag, compared with the base |
+| SCN-REPO-235 | implemented | RELEASE accepts a release workflow that starts verify and gatekeeper from main on each release pull request |
+| SCN-REPO-236 | implemented | RELEASE rejects a release workflow that starts gatekeeper on the release pull requests from another branch than main |
+| SCN-REPO-237 | implemented | RELEASE rejects a workflow that release-please.yml starts without the input "pr" |

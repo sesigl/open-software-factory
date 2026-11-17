@@ -9,6 +9,14 @@ on:
     types: [opened, synchronize, reopened, labeled, unlabeled]
   issue_comment:
     types: [created]
+  # The gate of the pull request with this number (ADR 0174). release-please.yml starts it for each release pull
+  # request, whose events start no workflow (GITHUB_TOKEN opens it); a maintainer can start it for any pull request:
+  # gh workflow run gatekeeper.yml --ref main -f pr=<number>. Only a run from the default branch gates.
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Number of the pull request to gate
+        required: true
 
 permissions:
   contents: read
@@ -18,12 +26,14 @@ permissions:
   checks: read # forge-github pr lists the check runs of the head commit (ADR 0104)
 
 concurrency:
-  group: gatekeeper-${{ github.event.pull_request.number || github.event.issue.number }}
+  group: gatekeeper-${{ github.event.pull_request.number || github.event.issue.number || inputs.pr }}
   cancel-in-progress: false
 
 jobs:
   gate:
-    if: github.event_name == 'pull_request_target' || github.event.issue.pull_request
+    if: >-
+      github.event_name == 'pull_request_target' || github.event.issue.pull_request ||
+      (github.event_name == 'workflow_dispatch' && github.ref_name == github.event.repository.default_branch)
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -43,6 +53,7 @@ jobs:
           --filter "@opensoftware/forge-github..."
       - run: pnpm --filter "@opensoftware/gatekeeper..." --filter "@opensoftware/forge-github..." build
       - uses: ./modules/gatekeeper
+        if: github.event_name != 'workflow_dispatch'
         env:
           # Unset until the owner adds the secret (gatekeeper keys); the record is then unsigned.
           GATEKEEPER_SIGNING_KEY: ${{ secrets.GATEKEEPER_SIGNING_KEY }}
@@ -52,3 +63,46 @@ jobs:
           policy: .github/gatekeeper/merge.rego
           groups: .github/gatekeeper/groups.json
           command: node modules/gatekeeper/dist/cli.js
+
+      # A dispatched run: the action reads the pull request from the event, which has none here, so the next steps
+      # run what the action runs (modules/gatekeeper/action.yml and action.sh) for the pull request of the input.
+      # The input is only a number: checked below, passed through env, and never checked out.
+      - uses: open-policy-agent/setup-opa@v2
+        if: github.event_name == 'workflow_dispatch'
+        continue-on-error: true
+        with:
+          version: 1.21.0
+      - if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash modules/gatekeeper/install-opa.sh
+      - name: The gate of the pull request of the input
+        id: dispatched
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          PR: ${{ inputs.pr }}
+          GATEKEEPER_SIGNING_KEY: ${{ secrets.GATEKEEPER_SIGNING_KEY }}
+          GATEKEEPER_FORGE_ADAPTER: node adapters/forge/github/dist/cli.js
+          GATEKEEPER_FORGE_TOKEN: ${{ github.token }}
+          GATEKEEPER_FORGE_URL: ${{ github.api_url }}
+        run: |
+          if ! [[ "$PR" =~ ^[1-9][0-9]{0,9}$ ]]; then
+            echo "gatekeeper: the input pr is no pull request number" >&2
+            exit 2
+          fi
+          record="$RUNNER_TEMP/gatekeeper/record.json"
+          args=(--policy .github/gatekeeper/merge.rego --groups .github/gatekeeper/groups.json
+            --pull-request "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/pull/$PR" --record "$record")
+          node modules/gatekeeper/dist/cli.js request "${args[@]}" --out "$RUNNER_TEMP/gatekeeper/gate.json" || exit $?
+          code=0
+          node modules/gatekeeper/dist/cli.js status "${args[@]}" || code=$?
+          [ -f "$record" ] && echo "record=$record" >> "$GITHUB_OUTPUT"
+          # 3: the gate waits for a person, and the commit status stays pending, as with the action.
+          [ "$code" -eq 3 ] && exit 0
+          exit "$code"
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.dispatched.outputs.record != ''
+        with:
+          name: gatekeeper-record
+          path: ${{ steps.dispatched.outputs.record }}
+          if-no-files-found: ignore

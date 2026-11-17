@@ -19,5 +19,30 @@ export const putModules = (sut: Sut): Promise<void> =>
     ".release-please-manifest.json": "{}\n",
   });
 
+/** release-please.yml whose loop over the release pull requests runs `starts`, the first of them on line 9. */
+export const releasePlease = (...starts: string[]): string =>
+  [
+    "name: release-please",
+    "on:",
+    "  push:",
+    "    branches: [main]",
+    "jobs:",
+    "  release-please:",
+    "    steps:",
+    "      - run: |",
+    ...starts.map((start) => `          gh workflow run ${start}`),
+    "",
+  ].join("\n");
+
+/** The start of `file` for the release pull request `$pr`, from main or from the branch in `$BRANCH`. */
+export const start = (file: string, ref = "main"): string =>
+  `${file} --repo "$GITHUB_REPOSITORY" --ref ${ref} -f pr="$pr"`;
+
+/** A workflow that takes the input pr with workflow_dispatch, or, with `takesPr` false, has no such input. */
+export const dispatched = (takesPr = true): string =>
+  takesPr
+    ? "on:\n  workflow_dispatch:\n    inputs:\n      pr:\n        required: true\njobs: {}\n"
+    : "on:\n  pull_request_target:\njobs: {}\n";
+
 export const releaseFiles = (sut: Sut) => sut.cli(["release-files"]);
 export const checkRelease = (sut: Sut) => sut.cli(["check", "RELEASE"]);

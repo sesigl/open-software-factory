@@ -384,13 +384,16 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      # A dispatched run tests the release pull request merged into main. GitHub's merge ref can lag behind main.
+      # A dispatched run tests the release pull request merged into main. GitHub's merge ref can lag behind main. Its
+      # statuses go to the head that this job merged and checked.
       - name: Merge the release pull request into main
+        id: merge
         if: inputs.pr
         env:
           PR: ${{ inputs.pr }}
         run: |
           git fetch --no-tags origin "pull/$PR/head"
+          echo "head=$(git rev-parse FETCH_HEAD)" >> "$GITHUB_OUTPUT"
           git -c user.name=verify -c user.email=verify@invalid merge --no-edit FETCH_HEAD
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
@@ -509,16 +512,47 @@ jobs:
           junit: reports/junit/*.xml
           command: node modules/proof/dist/cli.js
 
+      # The same for a dispatched run on a release pull request (ADR 0174): the action reads the pull request from the
+      # event, which has none here, so this step runs what the action runs (modules/proof/action.sh) for the pull
+      # request of the input and the head this job merged: one proof comment and the commit status proof.
+      - name: proof on the release pull request
+        id: proof-dispatched
+        if: always() && github.event_name == 'workflow_dispatch' && steps.merge.outputs.head != ''
+        env:
+          PROOF_FORGE_TOKEN: ${{ github.token }}
+          PROOF_FORGE_URL: ${{ github.api_url }}
+          PR: ${{ inputs.pr }}
+          HEAD: ${{ steps.merge.outputs.head }}
+        run: |
+          shopt -s nullglob
+          proof=(node modules/proof/dist/cli.js)
+          out="$RUNNER_TEMP/proof/evidence"
+          args=(bundle --out "$out" --commit "$HEAD" --pull-request "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/pull/$PR")
+          for file in reports/junit/*.xml; do args+=(--junit "$file"); done
+          "${proof[@]}" "${args[@]}"
+          echo "bundle=$out" >> "$GITHUB_OUTPUT"
+          verified=0
+          "${proof[@]}" verify "$out" || verified=$?
+          "${proof[@]}" attach "$out" --bundle-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          exit "$verified"
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.proof-dispatched.outputs.bundle != ''
+        with:
+          name: proof
+          path: ${{ steps.proof-dispatched.outputs.bundle }}
+          if-no-files-found: ignore
+
       # A dispatched run belongs to main, so its check does not show on the release pull request: report a status.
       - name: Report the result on the release pull request
         if: always() && github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ inputs.pr }}
+          HEAD: ${{ steps.merge.outputs.head }}
           STATE: ${{ job.status == 'success' && 'success' || 'failure' }}
           URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          head=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq '.headRefOid')
+          head=${HEAD:-$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq '.headRefOid')}
           gh api "repos/$GITHUB_REPOSITORY/statuses/$head" -f state="$STATE" -f context=verify \
             -f target_url="$URL" -f description="make verify on the merge into main"
 

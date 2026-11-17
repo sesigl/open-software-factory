@@ -33,10 +33,13 @@ agent.
 
 ## The release pull request
 
-- It never gets the required status `gatekeeper` (`GITHUB_TOKEN` starts no `pull_request_target`), so it merges
-  only with `gh pr merge <n> --squash --admin`. The merge publishes every package in it, so ask the maintainer first
-  (root `AGENTS.md`, "When to stop and ask").
-- Its `verify` runs with `workflow_dispatch` and reports a commit status on the pull request.
+- `GITHUB_TOKEN` opens it, so its events start no workflow. After each push to `main`, `release-please.yml` starts
+  `verify.yml` and `gatekeeper.yml` with `workflow_dispatch` for it, from `main` (ADR 0174). They report the required
+  statuses `verify`, `proof` and `gatekeeper` on its head; the policy passes it, as it is not factory-made.
+- Merge it with `gh pr merge <n> --squash` once the three are green, never with `--admin`. The merge publishes every
+  package in it, so ask the maintainer first (root `AGENTS.md`, "When to stop and ask").
+- A status is missing or old: `gh api repos/<owner>/<repo>/commits/<head>/status` lists them. Start the run again by
+  hand with `gh workflow run verify.yml --ref main -f pr=<n>` or `gh workflow run gatekeeper.yml --ref main -f pr=<n>`.
 
 ## After the merge
 

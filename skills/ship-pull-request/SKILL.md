@@ -25,7 +25,9 @@ commits or your report, not into the description. Never add a `Co-Authored-By` l
 - **A workflow run is missing after a push**: a pull request with a merge conflict starts no `pull_request`
   workflow. Check `gh pr view <n> --json mergeable`, merge `main` into the branch and push.
 - **gate**: it runs as `pull_request_target`, with the workflow from `main`. A pull request that fixes the gate
-  workflow cannot pass its own gate; merging it needs `--admin` (root `AGENTS.md`, "When to stop and ask").
+  workflow cannot pass its own gate; merging it needs `--admin` (root `AGENTS.md`, "When to stop and ask"). When its
+  run ended in `startup_failure` and no status `gatekeeper` came, start the gate again from `main`:
+  `gh workflow run gatekeeper.yml --ref main -f pr=<n>` (ADR 0174), or comment on the pull request.
 - **BUDGET**: it compares the wall time of a suite's run with its budget (ADR 0155). Follow the BUDGET rule of root
   `AGENTS.md` ("Hard rules"): measure where the time goes (the JUnit times, the start of each process) and make the
   suite faster first. The budget section keeps at most three lines: the budget and what dominates the time.
