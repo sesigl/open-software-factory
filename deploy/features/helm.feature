@@ -154,3 +154,11 @@ Feature: The Helm chart installs a complete factory on Kubernetes with one comma
     When the operator runs "helm template osf deploy/helm/osf --values values.yaml"
     Then the command exits with code 0
     And the deployment "foreman" sets "FOREMAN_SANDBOX_OWNER" to "<release namespace>.osf"
+
+  @id=SCN-DIST-062 @status=implemented
+  Scenario: The foreman of the Helm chart runs at most 2 stages at once
+    Given a kind cluster with the images of the Compose profile
+    And a values file that sets every value under "secrets"
+    When the operator runs "helm template osf deploy/helm/osf --values values.yaml"
+    Then the command exits with code 0
+    And the deployment "foreman" sets "FOREMAN_MAX_STAGES" to "2"

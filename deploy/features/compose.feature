@@ -324,3 +324,9 @@ Feature: The Compose profile installs a complete factory with one command
     Given the Compose profile with every value of ".env.example" set in ".env"
     When the operator runs "docker compose config --format json"
     Then the service "foreman" sets "FOREMAN_SANDBOX_OWNER" to the name of the project, which its "OSF_SANDBOX_NETWORK" starts with
+
+  @id=SCN-DIST-061 @status=implemented
+  Scenario: The foreman of the Compose profile runs at most 2 stages at once, or the number of "FOREMAN_MAX_STAGES"
+    Given the Compose profile with every value of ".env.example" set in ".env"
+    When the operator runs "docker compose config --format json", and again with "FOREMAN_MAX_STAGES=4" in ".env"
+    Then the service "foreman" sets "FOREMAN_MAX_STAGES" to "2", and then to "4"

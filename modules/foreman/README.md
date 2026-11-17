@@ -480,7 +480,7 @@ TypeScript type `paths` of `@opensoftware/contracts` types a client. Every route
 A run's ID is `run_` and 20 hex digits of the SHA-256 of the work item's ID; the `n`-th run of a work item, `n` ≥ 2,
 takes the SHA-256 of `<work item ID>#<n>` ([Run again](#run-again)). A run is
 `running`, `blocked` (at a gate, waiting for checks, or taken over by a person), `complete`, `failed` or `cancelled`. A stage is `pending`,
-`blocked`, `running`, `succeeded`, `failed`, `rejected` (by its gate) or `cancelled`; it has its harness `sessionId` once
+`blocked` (at its gate, waiting for its checks, taken over, or waiting for a place of `FOREMAN_MAX_STAGES`), `running`, `succeeded`, `failed`, `rejected` (by its gate) or `cancelled`; it has its harness `sessionId` once
 it started, its `gateId` once its gate was asked, its `checks` once they were read, its `takenOverAt` once a person
 took it over, and a `reason` when it failed for a reason the foreman knows.
 
@@ -519,6 +519,18 @@ needs credentials that Git on the foreman's host has, and a clone that fails fai
   fails or cancels it, ends the run, and leaves the later stages `pending`. The adapter gets
   `OTEL_RESOURCE_ATTRIBUTES` with `osf.run.id`, `osf.work_item.id`, `osf.stage` and `osf.factory.version`, and the
   factory's inference gateway with the run's key and the agent's model ([Inference gateway](#inference-gateway)).
+- **Stages side by side.** The runs go on side by side, each stage after the one before it. With
+  `FOREMAN_MAX_STAGES`, like `2` on one machine, the foreman runs at most that many stages with an agent at the same
+  time; a stage over the limit waits until one of them ends, and then starts (SCN-FORE-190). The wait has no limit and
+  uses none of the stage's attempts. Meanwhile `GET /v1/runs/<id>` shows the stage `blocked` with `waitingSince`, the
+  time it was due, and without `startedAt`; the run stays `running`, as nobody needs to act (SCN-FORE-191). The run
+  list and the events show the stage `running`. A stage that only waits, and the steps between the stages, take no
+  place. The stages with an agent run on the Temporal task queue `<FOREMAN_TASK_QUEUE>-stages`, whose worker takes at
+  most `FOREMAN_MAX_STAGES`; each foreman counts its own
+  ([ADR 0160](../../docs/decisions/0160-a-limit-on-stages-side-by-side.md)). The Compose profile and the Helm chart
+  set 2. `FOREMAN_MAX_STAGES` and the `FOREMAN_*_MS` settings take a whole number of 1 or more; another value, like
+  `1s`, stops `foreman serve` at its start with exit code 2 and `FOREMAN_POLL_MS is "1s": set a whole number of 1 or
+  more` (SCN-FORE-192).
 - **Checks.** Before a stage with `checks` starts, the foreman waits until those checks succeeded on the run's pull
   request; a failing one fails the run ([Checks](#checks)).
 - **Gates.** Before a stage with a `gate` starts, the foreman asks gatekeeper at `FOREMAN_GATEKEEPER_URL`
@@ -620,7 +632,8 @@ the minor version. The one-time setup is the same as for contracts
 | `FOREMAN_FACTORY_TOKEN` | string |  | serve: a token for a FOREMAN_FACTORY of git+https://… in a private repository, sent to that URL only as Git's Basic credentials of x-access-token. Never written to a file or a command line (ADR 0142). Unset: Git's own credentials. |
 | `FOREMAN_TEMPORAL_ADDRESS` | string | `"localhost:7233"` | serve: the gRPC address of the Temporal server. |
 | `FOREMAN_TEMPORAL_NAMESPACE` | string | `"default"` | serve: the Temporal namespace of the runs. |
-| `FOREMAN_TASK_QUEUE` | string | `"foreman"` | serve: the Temporal task queue of the runs' workflows and activities. |
+| `FOREMAN_TASK_QUEUE` | string | `"foreman"` | serve: the Temporal task queue of the runs' workflows and activities. The stages that run an agent go to the task queue <queue>-stages (ADR 0160). |
+| `FOREMAN_MAX_STAGES` | string |  | serve: how many stages that run an agent this foreman runs at the same time, a whole number of 1 or more, like 2 on one machine. A stage over the limit waits until a running one ends, without a timeout and without using one of its attempts; GET /v1/runs/<id> shows it blocked with waitingSince, and its run running. A stage that only waits takes no place. Each foreman counts its own stages (ADR 0160). The profile and the chart set 2. Unset: no limit. |
 | `FOREMAN_HARNESSES` | string | `"{}"` | serve: a JSON object from harness name to the command line of its adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. A harness it does not name runs npx -y @opensoftware/harness-<name>@<range> run, at the range under providers.harness (ADR 0110). |
 | `FOREMAN_SANDBOXES` | string | `"{}"` | serve: a JSON object from sandbox adapter name to the command line of the adapter. Each command line is a JSON list of the program and its arguments, or a string split at each space. An adapter it does not name runs npx -y @opensoftware/sandbox-<name>@<range>, at the range under providers.sandbox (ADR 0110). The factory names its adapter under providers.sandbox, or else FOREMAN_SANDBOX picks it. |
 | `FOREMAN_SANDBOX` | string | `"docker"` | serve: the sandbox adapter of a factory that names none under providers.sandbox, like docker in the Compose profile and kubernetes in the Helm chart. |
@@ -839,3 +852,6 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FORE-187 | implemented | With FOREMAN_SANDBOX_OWNER, each stage's sandbox carries the owner and the run as labels |
 | SCN-FORE-188 | implemented | At its start the foreman destroys the sandboxes of its owner that a foreman before it left, and no other |
 | SCN-FORE-189 | implemented | At its start the foreman warns when its sandbox adapter cannot list the sandboxes of its owner, and serves |
+| SCN-FORE-190 | implemented | With FOREMAN_MAX_STAGES set to 1, the "plan" turns of two runs never run at the same time, and both runs complete |
+| SCN-FORE-191 | implemented | A stage that waits for a place of FOREMAN_MAX_STAGES shows "blocked" since when it waits, and its run "running" |
+| SCN-FORE-192 | implemented | A number setting that is not a whole number of 1 or more stops the server at the start |

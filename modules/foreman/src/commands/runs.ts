@@ -4,6 +4,7 @@ import { UsageError } from "@opensoftware/cli";
 import { validate, type WorkItem } from "@opensoftware/contracts";
 import {
   type Client,
+  decodePendingActivityState,
   defaultPayloadConverter,
   WorkflowExecutionAlreadyStartedError,
   WorkflowIdReusePolicy,
@@ -24,6 +25,7 @@ import {
   retryOf,
   runIdOf,
   signalOf,
+  waitingForPlace,
 } from "../domain/run.ts";
 import {
   actedSignal,
@@ -51,6 +53,8 @@ export interface Runs {
   /** Starts the run of the work item, or finds its newest run. */
   start(workItem: unknown): Promise<{ created: boolean; view: RunView }>;
   view(runId: string): Promise<RunView | undefined>;
+  /** The view as `GET /v1/runs/<id>` shows it: a stage that waits for a place to run is blocked (ADR 0160). */
+  shown(runId: string): Promise<RunView | undefined>;
   /**
    * A page of the runs of the task queue, running ones first, then the latest ended first; with a state, only the runs
    * in it, so a page may hold fewer. Another state, a limit outside 1 to 500 or a cursor Temporal does not know is a
@@ -109,6 +113,8 @@ export function runs(options: {
   now: () => string;
   /** How long a stage may go without a heartbeat before Temporal runs it again. */
   heartbeatMs: number;
+  /** The task queue of the stages that run an agent (ADR 0160). */
+  stageQueue: string;
   /** Aborts the queries still open: once the worker stopped, no worker answers them. */
   stopping: AbortSignal;
 }): Runs {
@@ -126,6 +132,14 @@ export function runs(options: {
         () => true,
         (error: Error) => (error instanceof WorkflowNotFoundError ? false : Promise.reject(error)),
       );
+  /** Whether the run's stage waits on the task queue of the stages for a worker with a free place (ADR 0160). */
+  const waits = async (runId: string): Promise<boolean> => {
+    const { raw } = await ask(() => handle(runId).describe());
+    return (raw.pendingActivities ?? []).some(
+      (activity) =>
+        activity.activityType?.name === "runStage" && decodePendingActivityState(activity.state) === "SCHEDULED",
+    );
+  };
   /** The ID of the work item's newest run: run 1, 2, … until one is not found (ADR 0105). */
   const newest = async (workItemId: string): Promise<string> => {
     let n = 1;
@@ -140,7 +154,7 @@ export function runs(options: {
         taskQueue,
         // Each run ID starts one workflow, also after it ended.
         workflowIdReusePolicy: WorkflowIdReusePolicy.REJECT_DUPLICATE,
-        args: [{ ...input, heartbeatMs: options.heartbeatMs }],
+        args: [{ ...input, heartbeatMs: options.heartbeatMs, stageQueue: options.stageQueue }],
         // The run list reads the view from the memo, which the workflow keeps current (ADR 0115).
         memo: { view: input.view },
       })
@@ -172,6 +186,10 @@ export function runs(options: {
       return next.view;
     },
     view,
+    async shown(runId) {
+      const seen = await view(runId);
+      return seen?.state === "running" && (await waits(runId)) ? waitingForPlace(seen) : seen;
+    },
     async list({ state, limit, cursor } = {}) {
       if (state !== undefined && !isRunState(state))
         throw new UsageError(`state: no run is "${state}"; ask for running, blocked, complete, failed or cancelled`);

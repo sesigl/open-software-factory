@@ -459,6 +459,9 @@ services:
       # Each sandbox carries this project's name; at its start the foreman removes the sandboxes of a foreman of this
       # project that died (ADR 0158). Docker gives each project on a host its own name.
       FOREMAN_SANDBOX_OWNER: ${COMPOSE_PROJECT_NAME}
+      # At most this many stages run an agent at once, each in a sandbox, of 2 CPUs and 4 GiB in the reference factory,
+      # with a network of Docker's pools; the others wait for a place (ADR 0160).
+      FOREMAN_MAX_STAGES: ${FOREMAN_MAX_STAGES:-2}
       FOREMAN_SANDBOXES: '{"docker": "sandbox-docker"}'
       DOCKER_HOST: tcp://docker-proxy:2375
       OSF_SANDBOX_NETWORK: ${COMPOSE_PROJECT_NAME}_default

@@ -307,7 +307,11 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 - **Build:** the share of merged pull requests from the factory and the revert rate of each group, the two numbers
   of phase 3's exit criterion.
 
-### [ ] T-97 · a limit on runs side by side (P2)
+### [x] T-97 · a limit on runs side by side (P2)
+
+- **Built:** `FOREMAN_MAX_STAGES` limits the stages with an agent that one foreman runs at once, on a task queue of
+  the stages (ADR 0160); a waiting stage shows `blocked` in `GET /v1/runs/<id>`; the number settings refuse a value
+  that is not a whole number; the profile and the chart set 2 (SCN-FORE-190 to 192, SCN-DIST-061, SCN-DIST-062).
 
 ### [ ] T-98 · a failed check sends the run back to implement once (P2)
 

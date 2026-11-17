@@ -1,6 +1,6 @@
 # AGENTS.md for module `foreman`
 
-Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0004, ADR 0067, ADR 0068, ADR 0069, ADR 0070, ADR 0071, ADR 0107, ADR 0109, ADR 0111, ADR 0115, ADR 0126, ADR 0139, ADR 0142, ADR 0146, ADR 0151, ADR 0158.
+Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0004, ADR 0067, ADR 0068, ADR 0069, ADR 0070, ADR 0071, ADR 0107, ADR 0109, ADR 0111, ADR 0115, ADR 0126, ADR 0139, ADR 0142, ADR 0146, ADR 0151, ADR 0158, ADR 0160.
 
 ## Public surface
 
@@ -27,7 +27,7 @@ Layers, top to bottom, in `architecture.json` (ADR 0014): `entry` (`src/cli.ts`)
 its view, finds the run's pull request and reads its checks, and builds the events, without I/O. `adapters` read the
 factory and its commit, run a sandbox adapter's commands and a forge adapter's `pr` and `prs`, run a harness adapter over ACP,
 run an inference adapter's `start`, `key` and `stop` and a secrets adapter's `exists`, call gatekeeper and NATS. `workflows` holds the Temporal workflow `run.ts`
-and the activities; `commands` join them: `serve` runs Fastify, the Temporal worker and the NATS subscriptions. The ARCH check enforces the layers.
+and the activities; `commands` join them: `serve` runs Fastify, the Temporal workers (the runs' and the stages', ADR 0160) and the NATS subscriptions. The ARCH check enforces the layers.
 `serve` checks a person proof of `@opensoftware/person-proof` in Fastify, before a signal or a retry reaches
 Temporal, on the body's bytes that its JSON parser keeps (ADR 0151): a workflow never sees a proof.
 

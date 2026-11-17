@@ -84,6 +84,8 @@ sandboxes:
 foreman:
   harnesses: '{"claude-code": "harness-claude-code run"}'
   forges: '{"github": "forge-github", "forgejo": "forge-forgejo"}'
+  # How many stages run an agent at once, each in a sandbox; the others wait for a place (ADR 0160). Empty: no limit.
+  maxStages: 2
   persistence:
     size: 1Gi
     storageClass: ""

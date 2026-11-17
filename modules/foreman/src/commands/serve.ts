@@ -36,6 +36,14 @@ export function streamMaxAge(env: Env): number | undefined {
   return Number(match[1]) * SECONDS_OF[match[2] as keyof typeof SECONDS_OF] * 1000;
 }
 
+/** The setting as a whole number of 1 or more; undefined when it is unset. Another value stops the server. */
+export function wholeOf(env: Env, name: string): number | undefined {
+  const text = env[name];
+  if (!text) return undefined;
+  if (!/^[1-9][0-9]*$/.test(text)) throw new UsageError(`${name} is "${text}": set a whole number of 1 or more`);
+  return Number(text);
+}
+
 const BUNDLE = fileURLToPath(new URL("../workflows.bundle.js", import.meta.url));
 
 const problem = (reply: FastifyReply, status: number, title: string, detail: string) =>
@@ -148,7 +156,7 @@ function api({ work, token, pings, health, persons, warn }: Api) {
     work.list(request.query),
   );
   app.get<{ Params: { runId: string } }>("/v1/runs/:runId", async (request, reply) => {
-    const view = await work.view(request.params.runId);
+    const view = await work.shown(request.params.runId);
     return view ?? unknown(reply, request.params.runId);
   });
   // A signal and a retry are the actions of a person on a run; POST /v1/runs starts work and needs no proof (ADR 0151).
@@ -206,6 +214,17 @@ function listen(bus: Bus, work: Runs, pings: Pings, now: () => string, warn: (te
 export async function serve(env: Env) {
   const token = env.FOREMAN_API_TOKEN;
   if (!token) throw new UsageError("set FOREMAN_API_TOKEN: the token that callers of the API send");
+  // The numbers of the settings, before the server reads or starts anything.
+  const pollMs = wholeOf(env, "FOREMAN_POLL_MS") ?? 1000;
+  const retryMs = wholeOf(env, "FOREMAN_INFERENCE_RETRY_MS") ?? 1000;
+  const heartbeatMs = wholeOf(env, "FOREMAN_HEARTBEAT_TIMEOUT_MS") ?? 60_000;
+  const waits = {
+    checkPollMs: wholeOf(env, "FOREMAN_CHECK_POLL_MS") ?? 30_000,
+    checkTimeoutMs: wholeOf(env, "FOREMAN_CHECK_TIMEOUT_MS") ?? 7_200_000,
+    gateTimeoutMs: wholeOf(env, "FOREMAN_GATE_TIMEOUT_MS") ?? 604_800_000,
+  };
+  // Unset, the stages run side by side without a limit, as before (ADR 0160).
+  const maxStages = wholeOf(env, "FOREMAN_MAX_STAGES");
   const warn = (text: string) => process.stderr.write(`foreman: ${text}\n`);
   const persons = checkerOf(env, warn);
   const data = resolve(env.OSF_DATA || ".foreman");
@@ -222,12 +241,11 @@ export async function serve(env: Env) {
   // Unset, the client and the worker use the namespace "default".
   const namespace = env.FOREMAN_TEMPORAL_NAMESPACE;
   const taskQueue = env.FOREMAN_TASK_QUEUE || "foreman";
-  const pollMs = Number(env.FOREMAN_POLL_MS || 1000);
+  const stageQueue = `${taskQueue}-stages`;
   const bus = env.FOREMAN_NATS_URL ? await openBus(env.FOREMAN_NATS_URL, warn, streamMaxAge(env)) : undefined;
   const traces = exporterOf(env);
 
   // The gateway starts in the background, so the server does not wait for it (ADR 0099).
-  const retryMs = Number(env.FOREMAN_INFERENCE_RETRY_MS || 1000);
   const gatewayFolder = join(data, "inference");
   const gateway = gatewayOf(definition, maps.inference, source.folder(), gatewayFolder, env, retryMs, warn);
   const sandbox = env.FOREMAN_SANDBOX || "docker";
@@ -244,57 +262,62 @@ export async function serve(env: Env) {
   // A gateway stops with the server, also when the server cannot start.
   try {
     const stopping = new AbortController();
-    // The worker loads the workflow bundle, the longest step of the start, while the client connects (ADR 0067).
+    const acts = activities({
+      now,
+      bus,
+      gatekeeper: gatekeeper(env.FOREMAN_GATEKEEPER_URL, env.FOREMAN_GATEKEEPER_TOKEN),
+      harnesses: maps.harness,
+      sandboxes: maps.sandbox,
+      sandbox,
+      ...(owner ? { owner } : {}),
+      forges: maps.forge,
+      secrets: JSON.parse(env.FOREMAN_SECRETS || "{}") as CommandLines,
+      forgeEnv: {
+        ...(env.FOREMAN_FORGE_URL ? { FORGE_URL: env.FOREMAN_FORGE_URL } : {}),
+        ...(env.FOREMAN_FORGE_TOKEN ? { FORGE_TOKEN: env.FOREMAN_FORGE_TOKEN } : {}),
+      },
+      waits,
+      data,
+      pollMs,
+      control: (runId) => work.control(runId),
+      ...(gateway ? { gateway: gateway.gateway, gatewayFolder } : {}),
+      ...(traces ? { traces } : {}),
+      warn,
+      env,
+    });
+    const options = {
+      namespace,
+      maxHeartbeatThrottleInterval: pollMs,
+      defaultHeartbeatThrottleInterval: pollMs,
+      // At SIGTERM a short activity may end; after this time the worker cancels the running stages (ADR 0101).
+      shutdownGraceTime: "1 second",
+    } as const;
+    // The worker loads the workflow bundle, the longest step of the start, while the client connects (ADR 0067). The
+    // runs' workflows and their short activities run on `taskQueue`, the stages that run an agent on `stageQueue`,
+    // whose worker takes at most FOREMAN_MAX_STAGES at once: a stage waits there, and no wait for a gate or the checks
+    // waits behind it (ADR 0160). A run that started before the queue of the stages runs its stages on `taskQueue`.
     const loading = NativeConnection.connect({ address }).then((connection) =>
-      Worker.create({
-        connection,
-        namespace,
-        taskQueue,
-        workflowBundle: { codePath: BUNDLE },
-        activities: activities({
-          now,
-          bus,
-          gatekeeper: gatekeeper(env.FOREMAN_GATEKEEPER_URL, env.FOREMAN_GATEKEEPER_TOKEN),
-          harnesses: maps.harness,
-          sandboxes: maps.sandbox,
-          sandbox,
-          ...(owner ? { owner } : {}),
-          forges: maps.forge,
-          secrets: JSON.parse(env.FOREMAN_SECRETS || "{}") as CommandLines,
-          forgeEnv: {
-            ...(env.FOREMAN_FORGE_URL ? { FORGE_URL: env.FOREMAN_FORGE_URL } : {}),
-            ...(env.FOREMAN_FORGE_TOKEN ? { FORGE_TOKEN: env.FOREMAN_FORGE_TOKEN } : {}),
-          },
-          waits: {
-            checkPollMs: Number(env.FOREMAN_CHECK_POLL_MS || 30_000),
-            checkTimeoutMs: Number(env.FOREMAN_CHECK_TIMEOUT_MS || 7_200_000),
-            gateTimeoutMs: Number(env.FOREMAN_GATE_TIMEOUT_MS || 604_800_000),
-          },
-          data,
-          pollMs,
-          control: (runId) => work.control(runId),
-          ...(gateway ? { gateway: gateway.gateway, gatewayFolder } : {}),
-          ...(traces ? { traces } : {}),
-          warn,
-          env,
+      Promise.all([
+        Worker.create({ ...options, connection, taskQueue, workflowBundle: { codePath: BUNDLE }, activities: acts }),
+        Worker.create({
+          ...options,
+          connection,
+          taskQueue: stageQueue,
+          activities: { runStage: acts.runStage },
+          ...(maxStages ? { maxConcurrentActivityTaskExecutions: maxStages } : {}),
         }),
-        maxHeartbeatThrottleInterval: pollMs,
-        defaultHeartbeatThrottleInterval: pollMs,
-        // At SIGTERM a short activity may end; after this time the worker cancels the running stages (ADR 0101).
-        shutdownGraceTime: "1 second",
-      }),
+      ]),
     );
-    const [temporal, worker] = await Promise.all([Connection.connect({ address }), loading]);
+    const [temporal, [worker, stager]] = await Promise.all([Connection.connect({ address }), loading]);
     const client = new Client({ connection: temporal, namespace });
     // Each run names its adapters and the versions it asks for (ADR 0110).
     const factory = async () => {
       const read = await source.read();
       return { ...read, definition: { ...read.definition, adapters: adaptersOf(read.definition.ranges, maps) } };
     };
-    const heartbeatMs = Number(env.FOREMAN_HEARTBEAT_TIMEOUT_MS || 60_000);
-    const work = runs({ client, taskQueue, factory, now, heartbeatMs, stopping: stopping.signal });
+    const work = runs({ client, taskQueue, stageQueue, factory, now, heartbeatMs, stopping: stopping.signal });
     await leftovers;
-    const running = worker.run();
+    const running = both(worker, stager);
     const pings: Pings = new Map();
 
     const health = () =>
@@ -361,6 +384,16 @@ export async function serve(env: Env) {
     await gateway?.stop();
   }
   return { lines: [] };
+}
+
+/** Runs the workers until each stopped; when one stops, also by a failure, the others stop too, so the process ends. */
+async function both(...workers: Worker[]): Promise<void> {
+  const stop = () => {
+    for (const worker of workers) if (worker.getState() === "RUNNING") worker.shutdown();
+  };
+  const ends = await Promise.allSettled(workers.map((worker) => worker.run().finally(stop)));
+  const failed = ends.find((end) => end.status === "rejected");
+  if (failed) throw failed.reason;
 }
 
 /** The gateway of the factory's inference adapter from its config, a path relative to the factory's folder. */
