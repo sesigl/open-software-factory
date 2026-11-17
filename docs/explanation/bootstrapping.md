@@ -26,7 +26,9 @@ The ten skills in `skills/` serve every phase; none is tied to one phase yet.
 
 - **Phases 1 and 2** added no skill of their own.
 - **Phase 3**, planned: a skill for agents inside the factory that work a `factory` issue, and a narrower job for
-  local agents: work the factory cannot yet do, and the factory itself.
+  local agents: work the factory cannot yet do, and the factory itself. The factory's agents run in sandboxes of the
+  image `dogfood-agent`, which has no Docker: they check their change with `make check-fast`, and the check `verify`
+  of the pull request runs the suites (ADR 0164).
 - **Phase 4**, planned: a skill for people who review an observer pull request.
 
 ## What never changes

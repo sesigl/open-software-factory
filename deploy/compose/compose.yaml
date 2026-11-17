@@ -397,6 +397,19 @@ services:
         PACKAGES: "@opensoftware/harness-claude-code@0.6.0"
     entrypoint: ["true"]
 
+  # The template of the sandboxes of this repository's factory in dogfood/factory (ADR 0164): the agents' template with
+  # pnpm and lychee, for its `make check-fast`. Only with the profile dogfood, which COMPOSE_PROFILES=dogfood turns on.
+  dogfood-template:
+    image: ghcr.io/sesigl/open-software-factory/dogfood-agent:0.6.0
+    profiles: [dogfood]
+    build:
+      context: ../images
+      target: dogfood
+      secrets: [ca]
+      args:
+        PACKAGES: "@opensoftware/harness-claude-code@0.6.0"
+    entrypoint: ["true"]
+
   foreman:
     <<: *module
     image: ghcr.io/sesigl/open-software-factory/foreman:0.15.0
