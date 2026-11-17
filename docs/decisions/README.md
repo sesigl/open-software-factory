@@ -138,6 +138,7 @@ DOCS-GEN keeps it current.
 - [0160](0160-a-limit-on-stages-side-by-side.md) A limit on the stages that run side by side, on a task queue of their own
 - [0165](0165-a-failed-check-sends-the-run-back-once.md) A failed check sends the run back once
 - [0168](0168-a-stop-check-in-the-factory-definition.md) A stop check in the factory definition
+- [0173](0173-a-rehearsal-on-github.md) A rehearsal on GitHub with the scripted agent
 
 ### Runs of the foreman
 

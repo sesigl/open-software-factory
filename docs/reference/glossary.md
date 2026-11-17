@@ -78,6 +78,7 @@ Use these terms in scenarios, code, UI text and docs.
 | ADR | A decision record in `docs/decisions/`: why the repository does something the way it does. Its body stays as accepted; its status line names a later record that supersedes or amends it (ADR 0001, ADR 0161). |
 | Design note | An ADR about the mechanics of tests and CI, with `topic: design-note`; the index in `docs/decisions/README.md` lists it apart from the decisions that last (ADR 0161). |
 | Live test | A test against a real, paid outside service, without fakes: the paid smoke run `SMOKE-PAID`. It is no system test, and no check counts it. |
+| Rehearsal | One run of the six stages of this repository's factory on a scratch repository on the real GitHub, with the testkit's scripted agent in place of a model, started by a maintainer before phase 3 (ADR 0173). Like a live test, it is no system test, and no check counts it. |
 | Product engineer | A person who delivers product value through the factory. |
 | Factory engineer | A person who improves the factory itself. |
 | Drift | A difference between the factory definition and the running factory. |

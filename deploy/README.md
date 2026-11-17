@@ -105,7 +105,7 @@ FACTORY_DIR=../dogfood/factory
 COMPOSE_PROFILES=dogfood      # the template of its agents' sandboxes
 CLAUDE_CODE_OAUTH_TOKEN=...   # claude setup-token
 GH_TOKEN=...                  # fine-grained: this repository only, Contents, Issues and Pull requests write, Commit statuses write, Checks read
-GATEKEEPER_FORGE_TOKEN=...    # the same token
+GATEKEEPER_FORGE_TOKEN=...    # another identity than the owner's: gatekeeper skips its own comments (T-99, ADR 0173)
 FOREMAN_FORGE_TOKEN=...       # the same token
 INTAKE_WEBHOOK_SECRET=...     # see "Receive GitHub issues on your machine"
 ```
@@ -125,6 +125,74 @@ GitHub and its release files, `get.helm.sh` and `dl.k8s.io`, what `make install`
 package about 90 s; with 2 CPUs and 4 GiB, 50 s and 170 s. The sandbox has no Docker, so the prompts ask for
 `make check-fast`, and for `make test-scenario` only of a test that starts no container and no browser; the stage
 `verify` waits for the check `verify` of the pull request, which runs every suite.
+
+### The rehearsal
+
+Before this factory works on this repository's issues with a real model, the rehearsal runs its six stages once on
+the real GitHub, on a scratch repository, with the testkit's scripted agent in place of Claude Code, so no model is
+called ([ADR 0173](../docs/decisions/0173-a-rehearsal-on-github.md)): an issue labeled `factory` becomes a work item,
+triage and spec open a draft pull request, gatekeeper asks on it and a maintainer answers `/approve`, implement and
+review push to it, verify waits for its checks `verify` and `proof`, and ship marks it ready for review.
+
+The rehearsal is the workflow `rehearsal` of the scratch repository, from [`dogfood/rehearsal/seed/`](dogfood/rehearsal/seed/).
+It checks out this repository at the `ref` you give, builds the e2e image of that commit, which holds the scripted
+agent ([e2e](../e2e/README.md)), and runs [`dogfood/rehearsal/run.sh`](dogfood/rehearsal/run.sh): `osf rehearsal
+factory` writes the factory of `dogfood/factory/` with the same workflow and prompts, its agents on the scripted agent
+without a sandbox, and you as the only member of `maintainers`; the profile starts with the e2e override; `osf
+rehearsal run` opens the issue, posts its `labeled` event to intake signed with the run's webhook secret, as a webhook
+relay would, and follows the run ([tools](../tools/README.md#commands)). Two identities take part, so that your
+`/approve` is never gatekeeper's own comment, which gatekeeper skips:
+
+| Identity | Token | What it does |
+| --- | --- | --- |
+| You, through the agents | the secret `REHEARSAL_TOKEN` | opens the issue, clones, pushes the branch `osf/<run ID>`, opens the draft pull request and marks it ready |
+| `github-actions[bot]` | the workflow's `GITHUB_TOKEN` of the scratch repository | gatekeeper asks on the pull request and reads its comments; foreman reads the pull request and its checks |
+| You, by hand | none | `/approve` on the pull request, which counts because you are the only member of `maintainers` |
+
+Set it up once, on the scratch repository (`sesigl/factory-test-repo`):
+
+1. **Seed it.** Copy the seed, with its `.github/`, to the scratch repository's `main` and push:
+   `cp -R deploy/dogfood/rehearsal/seed/. <clone of the scratch repository>/`. It is a tiny Node library with one test
+   (`README.md`, `package.json`, `hello.js`, `hello.test.js`), `.github/workflows/verify.yml`, whose job `verify` runs
+   the tests and attaches their report with [proof's action](../modules/proof/README.md#github-action) as the status
+   `proof`, and `.github/workflows/rehearsal.yml`. The rehearsal creates its labels `factory` and `rehearsal`.
+2. **The token.** Create a fine-grained personal access token with access to the scratch repository only, a short
+   expiry, and the repository permissions Contents: read and write, Issues: read and write, Pull requests: read and
+   write (Metadata: read comes with them). It needs no Commit statuses, Checks, Workflows or Administration.
+3. **The secret.** `gh secret set REHEARSAL_TOKEN -R sesigl/factory-test-repo`, and paste the token. Nothing else is
+   stored: the factory's own tokens and secrets are random values of the run.
+
+Then start it, from a branch or commit of this repository that holds the rehearsal:
+
+```sh
+gh workflow run rehearsal.yml -R sesigl/factory-test-repo -f ref=main -f gate=person
+gh run watch -R sesigl/factory-test-repo
+```
+
+The log prints each stage's state. When it says `The gate before the stage implement waits: comment /approve on
+<link>`, open the pull request, check that `github-actions[bot]` asked there, and comment `/approve` yourself; gatekeeper
+reads the comments every 30 seconds. With `-f gate=token` the workflow comments `/approve` with `REHEARSAL_TOKEN`:
+that proves the path, not that a person answered, and the summary says so. `-f issue=<n>` rehearses on an open issue
+of the scratch repository instead of a new one. The job waits up to 90 minutes for the stages, the gate included.
+
+What to check when it ends: the job summary has `Passed`, all six stages `succeeded`, the gate `approved by
+github:<you> (on GitHub)` and the pull request `ready for review`; on the pull request, the checks `verify` and
+`proof` passed, and gatekeeper's request and decision are comments of `github-actions[bot]`. The artifact `rehearsal`
+holds the summary, `run.json`, the agent's log, foreman's data and the profile's log, with both tokens replaced by `***`.
+
+Clean up: everything the rehearsal leaves is labeled `rehearsal`. Close the pull request with its branch and the issue,
+`gh pr close <n> -R sesigl/factory-test-repo --delete-branch` and `gh issue close <n> -R sesigl/factory-test-repo`.
+Do not merge it: the next rehearsal writes the same files again. Revoke the token when you no longer rehearse.
+
+`osf rehearsal` refuses `sesigl/open-software-factory`, so the seed's workflow never runs on this repository. A
+machine with Docker runs the same with `REHEARSAL_REPOSITORY`, `REHEARSAL_TOKEN`, `REHEARSAL_SERVER_TOKEN` (a token
+of another account) and `REHEARSAL_APPROVER` set, after `node e2e/scripts/images.ts`: `deploy/dogfood/rehearsal/run.sh`.
+
+The rehearsal does not prove what it replaces: GitHub's webhook delivery to intake (the relay posts the event; see
+[Receive GitHub issues on your machine](#receive-github-issues-on-your-machine)), the sandboxes and the image
+`dogfood-agent` (the scripted agent runs in foreman's container, as in the smoke suite), Claude Code and its model, and
+the released images. And with one person's token for both the agents and the approval, the factory has no identity of
+its own yet (T-99 in `TODO.md`).
 
 ### Sandboxes
 

@@ -20,6 +20,9 @@ Phase 3's two numbers, the factory's share of merged pull requests and the rever
 next to people's, are printed by `ledger report --since <day> --until <day>` for the four weeks, in `origin` of
 `report.json` (a pull request is the factory's when its head branch starts with `osf/`, `observer/` or `factory/`).
 
+Before phase 3 starts, the rehearsal runs the six stages of that factory once on a scratch repository on GitHub with
+the scripted agent, started by a maintainer and with no model call (ADR 0173, [The rehearsal](../../deploy/README.md#the-rehearsal)).
+
 ## What changes per phase
 
 The ten skills in `skills/` serve every phase; none is tied to one phase yet.

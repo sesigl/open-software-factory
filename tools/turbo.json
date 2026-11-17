@@ -9,7 +9,9 @@
         "!$TURBO_ROOT$/modules/_template/node_modules/**",
         "$TURBO_ROOT$/docs/decisions/**",
         "$TURBO_ROOT$/docs/reference/**",
-        "$TURBO_ROOT$/deploy/compose/**"
+        "$TURBO_ROOT$/deploy/compose/**",
+        "$TURBO_ROOT$/deploy/dogfood/factory/**",
+        "$TURBO_ROOT$/deploy/dogfood/rehearsal/agent/**"
       ]
     }
   }

@@ -1,0 +1,8 @@
+{
+  "name": "factory-test-repo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}

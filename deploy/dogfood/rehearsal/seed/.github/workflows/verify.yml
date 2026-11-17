@@ -1,0 +1,30 @@
+# The checks the factory's stages "verify" and "ship" wait for (ADR 0173): the job "verify" is the check run "verify",
+# and proof's action sets the commit status "proof" with the JUnit report of the tests as evidence.
+name: verify
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write # proof's comment
+      statuses: write # the commit status proof
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=report.xml
+      - uses: sesigl/open-software-factory/modules/proof@proof-v0.7.0
+        if: always()
+        with:
+          junit: report.xml

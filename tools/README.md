@@ -32,6 +32,8 @@ make verify      # everything: lint, types, all system tests, all checks
 | `osf suite-plan --all \| <suite> ...` | `verify.yml` | Print the jobs of the tests matrix as JSON: each named suite of `.github/test-suites.yml` (`--all`: every suite) as its own entry, except the small ones. A suite whose units' budgets add up to at most 80 s, whose filter names its packages and that sets no `kind`, `cluster` or `timeout` shares one of two jobs, longest first into the job with the smaller sum; a shared job is named `a+b`, joins the filters, `images` and `pull` of its suites and takes `browser` from them (ADR 0163). An unknown suite exits 1; no suite prints `[]`. |
 | `osf released-images scenarios` | `released-images.yml` | Print the system tests, relative to `deploy/`, of the deploy scenarios that run on the released images: every implemented scenario of `deploy/features/` except those of `helm.feature` and those tagged `@images=commit` (ADR 0169). |
 | `osf released-images report <junit.xml> --run <url> --ref <commit>` | `released-images.yml` | Print the text of the issue "The released images fail the deploy scenarios": the run, the commit and the IDs of the scenarios that failed in the JUnit report, or that a step outside the scenarios failed. With `--passed` in place of the report: the comment that a run passed. |
+| `osf rehearsal factory <dir> --repository <owner/name> --approver <login>` | `deploy/dogfood/rehearsal/run.sh` | Write the factory of the rehearsal on GitHub into `<dir>/factory/` (ADR 0173): `deploy/dogfood/factory/` with the same workflow, its agents on the testkit's scripted agent (harness `acp`) without a sandbox, and `github:<login>` as the only member of `maintainers`; and `<dir>/harness/script.json`, the scripted agent's turn for the first line of each agent's prompt, which works on the repository with the files of `deploy/dogfood/rehearsal/agent/`. It refuses `sesigl/open-software-factory` with exit code 2. |
+| `osf rehearsal run --repository <owner/name> --out <dir> [--issue <n>] [--gate person\|token]` | `deploy/dogfood/rehearsal/run.sh` | Open the issue "Rehearsal: greet(name)" with the labels `factory` and `rehearsal` (it creates both labels), or label the open issue `--issue`; post its `labeled` event to intake's `/forge/events`, signed as GitHub signs a webhook delivery; follow the run of its work item at foreman and print each stage's state. At the gate it prints where to comment `/approve`, or with `--gate token` comments it once on the run's pull request with `REHEARSAL_TOKEN`. It writes `<dir>/summary.md` (the issue, the run, the gate's decision and who made it, the pull request and each stage) and `<dir>/run.json`, and exits 0 when the run completed and its pull request is ready for review or merged; 1 with the stage and its reason when a stage failed or did not end within `REHEARSAL_WAIT_MS`; 2 for this repository or a missing setting. |
 | `osf collect-reports` | `make verify-tests` | Copy each package's `reports/junit.xml` to `reports/junit/<name>.xml` and its `reports/coverage/` files to `reports/coverage/<name>-<file>`, where the checks read them. Each suite writes into its own `reports/`, which turbo stores and replays on pull requests (ADR 0081). |
 | `osf release-files` | after adding, renaming or unpublishing a package | Write `.github/workflows/publish-<name>.yml` of every published package from `tools/scaffold/publish-workflow.yml`, add or correct its `release-please-config.json` entry and its version in `.release-please-manifest.json`, and remove those of packages that are no longer published. RELEASE fails until they are current. |
 | `osf docs-affected` | `make docs-affected` | List hand-written docs whose `covers:` paths changed since `OSF_BASE`. |
@@ -126,6 +128,13 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | `OSF_PR_BODY` | File with the pull request description. DOCS-AFFECTED accepts `docs-reviewed: <path>` lines in it. CI passes the description of the pull request, and for a push to `main` the description of the merged pull request. |
 | `OSF_DOCKER` | The docker command of `osf up` and `osf doctor`. Default `docker`. |
 | `OSF_JUNIT_DIR` | Folder with JUnit XML results for BUDGET. Default `reports/junit`. spec-trace reads the `junit` folder of `spec-trace.json`. |
+| `REHEARSAL_TOKEN` | `osf rehearsal run`: the token of the scratch repository on GitHub with which it opens or labels the issue and, with `--gate token`, comments `/approve`. Never written to a file. |
+| `GITHUB_API_URL` | `osf rehearsal run`: GitHub's API. Default `https://api.github.com`; GitHub Actions sets it. |
+| `INTAKE_URL`, `INTAKE_API_TOKEN`, `INTAKE_WEBHOOK_SECRET` | `osf rehearsal run`: intake's address and API token, and the secret with which it signs the issue's `labeled` event for intake's `/forge/events`. |
+| `FOREMAN_URL`, `FOREMAN_API_TOKEN` | `osf rehearsal run`: foreman's address and API token, for the run's stages. |
+| `GATEKEEPER_URL`, `GATEKEEPER_API_TOKEN` | `osf rehearsal run`: gatekeeper's address and API token, for the record of the gate. |
+| `REHEARSAL_WAIT_MS` | `osf rehearsal run`: how long it waits for intake to start the run and for the run to end, the gate included. Default `3600000`. |
+| `REHEARSAL_POLL_MS` | `osf rehearsal run`: the milliseconds between two reads of the run. Default `5000`. |
 
 ## Scenarios
 
@@ -341,6 +350,12 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-226 | implemented | osf profile-pins writes the version and the SHA-256 sums of lychee that "make install" pins into the build arguments of an image |
 | SCN-REPO-227 | implemented | PROFILE rejects a moved tool pin in the build arguments of an image without a new tag, compared with the base |
 | SCN-REPO-228 | implemented | osf init generates gatekeeper's signing key from the profile's own ".env.example" |
+| SCN-REPO-230 | implemented | osf rehearsal run refuses this repository and calls nothing |
+| SCN-REPO-231 | implemented | osf rehearsal factory writes this repository's factory with its workflow, its agents on the scripted agent and the approver as the only maintainer |
+| SCN-REPO-232 | implemented | osf rehearsal run opens the issue, hands its labeled event to intake, follows the stages and writes the summary |
+| SCN-REPO-233 | implemented | With "--gate token", osf rehearsal run comments "/approve" once on the run's pull request and says that no person answered |
+| SCN-REPO-234 | implemented | osf rehearsal run fails with the name and the reason of the stage that failed |
 | SCN-REPO-235 | implemented | RELEASE accepts a release workflow that starts verify and gatekeeper from main on each release pull request |
 | SCN-REPO-236 | implemented | RELEASE rejects a release workflow that starts gatekeeper on the release pull requests from another branch than main |
 | SCN-REPO-237 | implemented | RELEASE rejects a workflow that release-please.yml starts without the input "pr" |
+| SCN-REPO-238 | implemented | osf rehearsal run fails when a stage does not end in time, and names the gate it waits at |

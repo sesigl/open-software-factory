@@ -31,6 +31,9 @@ const USAGE = `Usage: osf <command>
                           the jobs of the tests matrix of verify.yml as JSON; small suites share two jobs (ADR 0163)
   released-images scenarios | report [<junit.xml> | --passed] --run <url> --ref <commit>
                           the deploy scenarios that run on the released images, and the text of their issue (ADR 0169)
+  rehearsal factory <dir> --repository <owner/name> --approver <login>
+  rehearsal run --repository <owner/name> --out <dir> [--issue <n>] [--gate person|token]
+                          the factory and the driver of the rehearsal on a scratch repository on GitHub (ADR 0173)
   init [--factory <dir>]  write deploy/compose/.env with the factory's own secrets; copy the reference factory (ADR 0119)
   up [ARG ...]            check deploy/compose/.env, then docker compose up --detach --wait in deploy/compose
   doctor                  docker compose run --rm console console doctor in deploy/compose
@@ -84,6 +87,8 @@ async function main(argv: string[]): Promise<number> {
       return (await import("../scaffold/suite-plan.ts")).suitePlan(root, args);
     case "released-images":
       return (await import("../scaffold/released-images.ts")).releasedImages(root, args);
+    case "rehearsal":
+      return (await import("../scaffold/rehearsal.ts")).rehearsal(root, args);
     case "init":
       return (await import("../scaffold/setup.ts")).init(root, args);
     case "up":

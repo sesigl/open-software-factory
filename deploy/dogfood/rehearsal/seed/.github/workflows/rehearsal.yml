@@ -1,0 +1,89 @@
+# The rehearsal on GitHub (T-95, ADR 0173): the six stages of the factory of sesigl/open-software-factory, from the
+# branch or commit you name, run on this scratch repository with the testkit's scripted agent, so no model is called.
+# It opens an issue labeled factory and rehearsal, and the factory opens a draft pull request, asks the gate on it,
+# implements, waits for the checks verify and proof, and marks it ready for review.
+#
+# This workflow lives in the scratch repository, not in open-software-factory: its GITHUB_TOKEN is the second
+# identity, github-actions[bot], with which gatekeeper asks on the pull request and foreman reads the checks. The
+# agents push with REHEARSAL_TOKEN, whose pull request runs verify.yml (GitHub runs no workflow for a pull request that
+# GITHUB_TOKEN opens). So the approver's /approve is never gatekeeper's own comment.
+#
+#   gh workflow run rehearsal.yml -R <this repository> -f ref=main -f gate=person
+name: rehearsal
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: The branch, tag or commit of sesigl/open-software-factory whose factory rehearses.
+        required: true
+        default: main
+      gate:
+        description: "person: you comment /approve on the pull request; token: the workflow comments it with REHEARSAL_TOKEN."
+        required: true
+        type: choice
+        options: [person, token]
+        default: person
+      issue:
+        description: The number of an open issue of this repository to rehearse on; empty opens a new one.
+        required: false
+        default: ""
+
+# GITHUB_TOKEN of this repository: gatekeeper comments on the pull request, sets its commit status and reads its checks;
+# foreman reads the pull request and its checks.
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  statuses: write
+  checks: read
+
+concurrency:
+  group: rehearsal
+  cancel-in-progress: false
+
+jobs:
+  rehearsal:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: sesigl/open-software-factory
+          ref: ${{ inputs.ref }}
+          path: osf
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: osf/package.json
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: osf/.nvmrc
+          cache: pnpm
+          cache-dependency-path: osf/pnpm-lock.yaml
+      - name: Build the e2e image of that commit, with the scripted agent
+        working-directory: osf
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm exec turbo run build --filter=@opensoftware/e2e...
+          node e2e/scripts/images.ts
+      - name: Rehearse
+        working-directory: osf
+        env:
+          REHEARSAL_REPOSITORY: ${{ github.repository }}
+          REHEARSAL_TOKEN: ${{ secrets.REHEARSAL_TOKEN }}
+          REHEARSAL_SERVER_TOKEN: ${{ github.token }}
+          REHEARSAL_APPROVER: ${{ github.triggering_actor }}
+          REHEARSAL_GATE: ${{ inputs.gate }}
+          REHEARSAL_ISSUE: ${{ inputs.issue }}
+          # The wait for the stages, the gate included: 90 minutes.
+          REHEARSAL_WAIT_MS: "5400000"
+          OUT: ${{ runner.temp }}/rehearsal
+        run: deploy/dogfood/rehearsal/run.sh
+      - name: Write the summary
+        if: always()
+        run: cat "$RUNNER_TEMP/rehearsal/summary.md" >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rehearsal
+          path: ${{ runner.temp }}/rehearsal/

@@ -409,6 +409,19 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 
 - **Build:** the six stages of this repository's factory on a scratch repository on GitHub with the scripted agent,
   started by a maintainer: issue, spec, gate on the pull request, implement, checks, ship.
+- **Built:** ADR 0173: the workflow `rehearsal` of the scratch repository, from `deploy/dogfood/rehearsal/seed/`,
+  runs `deploy/dogfood/rehearsal/run.sh` on the e2e image of the `ref` it gets. `osf rehearsal factory` writes the
+  factory of `deploy/dogfood/factory/` with its workflow and prompts, its agents on the scripted agent and the
+  maintainer as the only member of `maintainers` (SCN-REPO-231); `osf rehearsal run` opens the issue, posts its
+  `labeled` event to intake as a relay would, follows the stages, comments `/approve` with `--gate token`, writes the
+  summary and fails with the stage and its reason (SCN-REPO-232 to -235); both refuse this repository (SCN-REPO-230).
+  gatekeeper and foreman use the scratch repository's `GITHUB_TOKEN`, the agents `REHEARSAL_TOKEN`, so the
+  maintainer's `/approve` is not gatekeeper's own comment, which it skips.
+- **Open, for the maintainer:** copy the seed to `main` of `sesigl/factory-test-repo`; create the fine-grained token
+  (that repository only; Contents, Issues and Pull requests: read and write) as its secret `REHEARSAL_TOKEN`; run
+  `gh workflow run rehearsal.yml -R sesigl/factory-test-repo -f ref=main`, comment `/approve` on the pull request when
+  the log asks, and check the summary ([The rehearsal](deploy/README.md#the-rehearsal)). Done when a rehearsal ran
+  green on GitHub.
 
 ### [x] T-96 · ledger tells factory pull requests from people's (P1)
 
@@ -437,6 +450,10 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 - **Done:** decided by the owner. The agents that develop this repository use the owner's identity. A factory's
   own identity on GitHub, a GitHub App or a second account as its user chooses, is a later feature and no item of
   this plan yet.
+- **Known (found by T-95):** gatekeeper skips the comments of its own token's user (ADR 0062), so with the owner's token as
+  `GATEKEEPER_FORGE_TOKEN`, as `deploy/README.md` sets up this repository's factory, the owner's `/approve` never
+  counts and the gate stays pending. gatekeeper needs another identity than the approver (ADR 0173). An App's
+  installation token cannot read `GET /user`, so forge-github would take it for `github-actions[bot]`.
 
 ---
 
