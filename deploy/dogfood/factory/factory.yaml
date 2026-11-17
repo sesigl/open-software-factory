@@ -1,7 +1,8 @@
 # The factory that implements this repository's own issues (ADR 0080): an issue labeled "factory" in
-# sesigl/open-software-factory becomes a pull request. Run it in the Compose profile with FACTORY_DIR=../dogfood/factory.
-# Claude Code runs on the owner's subscription through the profile's litellm; the owner approves the spec on the pull
-# request with /approve before the code is written, and merges the pull request.
+# sesigl/open-software-factory becomes a pull request. Run it in the Compose profile with FACTORY_DIR=../dogfood/factory
+# and COMPOSE_PROFILES=dogfood, which puts the agents' template dogfood-agent on the machine. Claude Code runs on the
+# owner's subscription through the profile's litellm; the owner approves the spec on the pull request with /approve
+# before the code is written, and merges the pull request.
 version: 1
 factory: dogfood
 description: Implements the issues labeled factory of this repository, with the owner's approval of the spec on its pull request.
@@ -23,10 +24,11 @@ inference:
 # Each agent names its effort level (ADR 0078): Opus for spec and implement, Sonnet for review, Haiku for triage and
 # ship, routed in the profile's litellm/config.yaml.
 #
-# Each agent runs in a sandbox of the agents' template (ADR 0096), as the reference factory's agents do, and never sees
-# a token of foreman or the master key of litellm. The egress allows what `make install` and `make verify` of this
-# repository download: GitHub and its release files (lychee, oasdiff, opa, temporal, nats-server, kind), the npm
-# registry (pnpm and the packages), get.helm.sh (helm) and dl.k8s.io (kubectl); see tools/scaffold/install-tools.ts.
+# Each agent runs in a sandbox (ADR 0096), as the reference factory's agents do, and never sees a token of foreman or
+# the master key of litellm. Its template dogfood-agent is the agents' template with pnpm and lychee, so the agent runs
+# `make check-fast` of this repository (ADR 0164); the sandbox has no Docker, so the suites run in CI. The egress allows
+# the npm registry, for `pnpm install`, and what `make install` downloads for the fakes of `make test-scenario`: GitHub
+# and its release files, get.helm.sh and dl.k8s.io; see tools/scaffold/install-tools.ts.
 agents:
   triage:
     harness: claude-code
@@ -35,7 +37,7 @@ agents:
     prompt: ./agents/triage.md
     secrets: &secrets [ref:env/GH_TOKEN, ref:env/CLAUDE_CODE_OAUTH_TOKEN]
     sandbox: &sandbox
-      template: ghcr.io/sesigl/open-software-factory/harness-claude-code:0.6.0
+      template: ghcr.io/sesigl/open-software-factory/dogfood-agent:0.6.0
       cpu: 4
       memory: 8Gi
       egress:

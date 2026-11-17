@@ -295,10 +295,14 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 
 ### Stage E · ready for phase 3
 
-### [ ] T-94 · a sandbox that can check this repository (P0)
+### [x] T-94 · a sandbox that can check this repository (P0)
 
 - **Build:** a template image for this repository's factory with pnpm and the pinned tools; the prompts of
   `deploy/dogfood/factory/` ask for `make check-fast` and leave the suites to CI.
+- **Done:** ADR 0164: the image `dogfood-agent` of the service `dogfood-template` (profile `dogfood`), the agents'
+  template with pnpm 10.28.0, lychee 0.20.1 and `TURBO_CONCURRENCY=4`, 1.12 GB (SCN-DIST-070); every agent of the
+  factory starts from it, and its prompts ask for `make check-fast` (SCN-DIST-071). In it, `make check-fast` of every
+  package took 92 s with 4 CPUs and 8 GiB, and 167 s with 2 CPUs and 4 GiB, after a build of 28 s and 52 s.
 
 ### [ ] T-95 · a rehearsal on GitHub (P0)
 

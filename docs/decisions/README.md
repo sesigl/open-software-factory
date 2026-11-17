@@ -188,6 +188,7 @@ DOCS-GEN keeps it current.
 - [0119](0119-setup-commands-around-compose.md) Setup commands around the Compose profile
 - [0145](0145-openbao-in-the-compose-profile-and-the-chart.md) OpenBao in the Compose profile: it sets itself up and unseals itself, and a job makes the two tokens
 - [0150](0150-a-factory-repository-on-a-forge-in-the-profile.md) A factory repository on a forge in the Compose profile and the chart, the check `factory`, and `console doctor`
+- [0164](0164-a-sandbox-that-checks-this-repository.md) A sandbox that checks this repository
 
 ### Design notes: test and CI mechanics
 

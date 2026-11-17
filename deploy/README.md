@@ -52,6 +52,7 @@ The console is open and read-only until you [turn on the sign-in](#turn-on-the-s
 | `intake` | work from Slack, the forge and Sentry | `INTAKE_PORT`, 8081 |
 | `docker-proxy` | the foreman's only way to the Docker API, for the agents' sandboxes; see [Sandboxes](#sandboxes) | none |
 | `agent-template` | one-shot: puts the image `harness-claude-code` on this machine, the template of the agents' sandboxes | none |
+| `dogfood-template` | one-shot: puts the image `dogfood-agent` on this machine, the template of the sandboxes of [this repository's factory](#the-factory-of-this-repository); profile `dogfood` | none |
 | `foreman` | runs the factory's workflow on Temporal | `FOREMAN_PORT`, 8083 |
 | `console` | the web view of the runs and the factory; its health check asks `/v1/ready`, which needs no session | `CONSOLE_PORT`, 8080 |
 | `factory` | factory-spec for `docker compose run --rm factory <command>`; profile `tools` | none |
@@ -100,6 +101,7 @@ the [sign-in](#turn-on-the-sign-in) on nobody gets in until the owner adds one w
 
 ```sh
 FACTORY_DIR=../dogfood/factory
+COMPOSE_PROFILES=dogfood      # the template of its agents' sandboxes
 CLAUDE_CODE_OAUTH_TOKEN=...   # claude setup-token
 GH_TOKEN=...                  # fine-grained: this repository only, Contents, Issues and Pull requests write, Commit statuses write, Checks read
 GATEKEEPER_FORGE_TOKEN=...    # the same token
@@ -109,9 +111,17 @@ INTAKE_WEBHOOK_SECRET=...     # see "Receive GitHub issues on your machine"
 
 Every agent of this factory runs in a sandbox, as the reference factory's agents do (see [Sandboxes](#sandboxes)): it
 gets `GH_TOKEN` and `CLAUDE_CODE_OAUTH_TOKEN` as placeholders and never sees a token of foreman or the master key of
-`litellm`. Its egress allows what `make install` and `make verify` of this repository download: `litellm`, GitHub and
-its release files, `registry.npmjs.org`, `get.helm.sh` and `dl.k8s.io`. The sandbox has no Docker, so the system tests
-that start containers do not run in it; the stage `verify` waits for the check `verify` of the pull request instead.
+`litellm`. Its template is `ghcr.io/sesigl/open-software-factory/dogfood-agent`, which `dogfood-template` pulls or
+builds from the target `dogfood` of [`images/Dockerfile`](images/Dockerfile): the agents' template with pnpm at the
+version of `packageManager` in `package.json`, lychee at the version that `make install` pins, and
+`TURBO_CONCURRENCY=4`, so the agents run `make check-fast` of this repository
+([ADR 0164](../docs/decisions/0164-a-sandbox-that-checks-this-repository.md)). They install the packages with
+`pnpm install --frozen-lockfile` through the egress, which allows `registry.npmjs.org`; it also allows `litellm`,
+GitHub and its release files, `get.helm.sh` and `dl.k8s.io`, what `make install` downloads for the fakes of
+`make test-scenario`. With 4 CPUs and 8 GiB, `pnpm turbo run build` takes about 30 s and `make check-fast` of every
+package about 90 s; with 2 CPUs and 4 GiB, 50 s and 170 s. The sandbox has no Docker, so the prompts ask for
+`make check-fast`, and for `make test-scenario` only of a test that starts no container and no browser; the stage
+`verify` waits for the check `verify` of the pull request, which runs every suite.
 
 ### Sandboxes
 
@@ -210,6 +220,7 @@ and names it, like `set FOREMAN_API_TOKEN in .env`.
 | `INTAKE_FORGE_ADAPTER` | `forge-github` | The forge adapter of intake's webhook: `forge-github` or `forge-forgejo`. |
 | `INTAKE_WEBHOOK_SECRET` | | The secret that the forge signs its webhook deliveries with. Set: intake takes them at `/forge/events`, and an issue labeled `factory` becomes a work item. Empty: intake takes no forge webhooks. |
 | `FACTORY_DIR` | `./factory` | The folder of the factory definition, its prompts, policy and groups. |
+| `COMPOSE_PROFILES` | | Docker Compose's profiles: `dogfood` with `FACTORY_DIR=../dogfood/factory`, so `dogfood-template` puts the template of that factory's agents on this machine. |
 | `FACTORY_REPOSITORY` | | The factory's repository on a forge in place of `FACTORY_DIR`, as `git+<url>#<branch>`, like `git+https://github.com/acme/factory.git#main`. Set: `factory-repo` clones it at each start, foreman fetches it at each run, and the console proposes changes to it. See [A factory on a forge](#a-factory-on-a-forge). |
 | `FACTORY_TOKEN` | | With `FACTORY_REPOSITORY`: a forge token of that repository only, for the clone, foreman's fetch and the console's changes. |
 | `FACTORY_USER` | | With `FACTORY_REPOSITORY`: the user of `FACTORY_TOKEN` as the forge adapter names an author, like `github:acme-factory`. The console lists only that user's pull requests as its changes. |
@@ -686,6 +697,7 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | Image | License | What the image holds |
 | --- | --- | --- |
 | The module images and the agents' templates | Apache-2.0, as this repository | The packages of this repository from npm, and their dependencies |
+| `dogfood-agent` | Apache-2.0, as this repository | The agents' template, and pnpm (MIT) from npm and lychee (Apache-2.0 or MIT) from its release on GitHub |
 | `litellm` | MIT, LiteLLM's license | BerriAI's image of LiteLLM, with compiled bytecode ([ADR 0098](../docs/decisions/0098-litellm-image-with-bytecode.md)) and without BerriAI's enterprise code, which has a license of its own (`SCN-DIST-027`, [ADR 0102](../docs/decisions/0102-litellm-image-without-enterprise-code.md)) |
 
 ## Scenarios
@@ -752,3 +764,5 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-060 | implemented | Every workload of the Helm chart is ready after one command and runs the module images of this workspace |
 | SCN-DIST-061 | implemented | The foreman of the Compose profile runs at most 2 stages at once, or the number of "FOREMAN_MAX_STAGES" |
 | SCN-DIST-062 | implemented | The foreman of the Helm chart runs at most 2 stages at once |
+| SCN-DIST-070 | implemented | The agents' template of this repository's factory has Node 24, pnpm 10.28.0, Git, make and lychee 0.20.1 |
+| SCN-DIST-071 | implemented | This repository's factory starts every agent from the image of "dogfood-template", and its prompts ask for "make check-fast" |
