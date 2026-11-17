@@ -1,55 +1,34 @@
-import { scenario } from "@opensoftware/testkit";
-import { openaiModule, testCases } from "./module.ts";
+import { type ModelGateway, scenario } from "@opensoftware/testkit";
+import { events, stream } from "./model.ts";
 
-scenario("SCN-TK-077", async ({ sut, given, when, then }) => {
-  let module: Record<string, string> = {};
+scenario("SCN-TK-077", async ({ fakes, given, when, then }) => {
+  let gateway: ModelGateway;
   await given(
-    'a module whose CLI streams a chat completions call that contains "fix the typo" from "DEMO_MODEL_URL" twice and prints each text and finish reason',
+    'fakes.modelGateway with the reply "first" and the reply "second" with the finish reason "content_filter" for requests that contain "fix the typo"',
     async () => {
-      module = openaiModule(
-        [
-          "for (const _ of [1, 2]) {",
-          '  const all = await events(await call("/chat/completions", { messages: [{ role: "user", content: "fix the typo" }] }));',
-          "  const choices = all.flatMap((event) => event.choices);",
-          '  const text = choices.map((choice) => choice.delta.content ?? "").join("");',
-          "  process.stdout.write(`${text} ${choices.find((choice) => choice.finish_reason).finish_reason}\\n`);",
-          "}",
-        ],
-        ['When the user runs "demo"', 'Then the output is "first stop" and "second content_filter"'],
-        [
-          'const gateway = await fakes.modelGateway([{ when: "fix the typo", reply: "first" }, { when: "fix the typo", reply: "second", stopReason: "content_filter" }]);',
-          "let run: Awaited<ReturnType<typeof sut.cli>>;",
-          "await when('the user runs \"demo\"', async () => {",
-          "  run = await sut.cli([], { env: { DEMO_MODEL_URL: gateway.url } });",
-          "});",
-          'await then(\'the output is "first stop" and "second content_filter"\', async () => {',
-          '  expect(run.stdout, run.stderr).toBe("first stop\\nsecond content_filter\\n");',
-          "});",
-        ],
-      );
+      gateway = await fakes.modelGateway([
+        { when: "fix the typo", reply: "first" },
+        { when: "fix the typo", reply: "second", stopReason: "content_filter" },
+      ]);
     },
   );
 
-  await given(
-    'its system test scripts the reply "first" and the reply "second" with the finish reason "content_filter" for requests that contain "fix the typo", and expects "first stop" and "second content_filter"',
+  let outputs: string[] = [];
+  await when(
+    'a module streams a chat completions call that contains "fix the typo" from the gateway twice',
     async () => {
-      for (const [path, content] of Object.entries(module)) await sut.files.put(path, content);
+      for (const _ of [1, 2]) {
+        const messages = [{ role: "user", content: "fix the typo" }];
+        const choices = (await events(await stream(gateway, "/chat/completions", { messages }))).flatMap(
+          (event) => event.choices,
+        );
+        const text = choices.map((choice) => choice.delta.content ?? "").join("");
+        outputs = [...outputs, `${text} ${choices.find((choice) => choice.finish_reason).finish_reason}`];
+      }
     },
   );
 
-  let run: Awaited<ReturnType<typeof sut.cli>>;
-  await when('the developer runs "testkit run --junit report.xml" in the module', async () => {
-    run = await sut.cli(["run", "--junit", "report.xml"]);
-  });
-
-  await then("the command exits with code 0", async () => {
-    expect(run.exitCode, run.stdout + run.stderr).toBe(0);
-  });
-
-  await then('"report.xml" has the passed test case "SCN-DEMO-001"', async () => {
-    expect(testCases(await sut.files.read("$INPUT/report.xml"))).toContainEqual({
-      name: "SCN-DEMO-001",
-      failed: false,
-    });
+  await then('the texts and finish reasons are "first stop" and "second content_filter"', async () => {
+    expect(outputs).toEqual(["first stop", "second content_filter"]);
   });
 });

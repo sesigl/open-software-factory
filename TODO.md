@@ -235,7 +235,15 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   five scenarios share `@shared=compose-profile` and five `@shared=helm-chart`. The 30 profile scenarios took 55 s
   locally, down from 85 s; the chart's first proof is CI.
 
-### [ ] T-83 · inference-litellm starts one gateway per test process (P2)
+### [x] T-83 · spend-log reads as soon as the rows are there (P2)
+
+- **Build:** measured, not built: `spend-log` keeps its fixed wait of 8 seconds. LiteLLM v1.106.2 has no way to
+  ask whether a spend row is still queued or to write the queue now; a gateway writes it every 1 to 6 seconds, chosen
+  at random when the proxy starts, so rows that are there say nothing about rows still in the queue.
+- **Done:** measured, not worth it. Five of 36 scenarios wait the 8 seconds, 40 s of the 691 s of their summed time
+  on 4 workers (242 s of wall time on the development container), so even no wait at all would save about 10 s of
+  wall time, 4 %. The rows were complete 0.2 to 1.9 seconds after `spend-log` began in 8 calls. The shared gateway
+  that ADR 0157 left to this item saves about 9 % and is not built either.
 
 ### [x] T-84 · Scenario Outlines, first for `factory lint` (P2)
 
@@ -247,11 +255,34 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   strings and a nested Vitest; the scenarios of the scenario runner itself stay as they are. One fake per pull request.
 - **Done:** `fakes.forge`: SCN-TK-012, -049, -050, -080 to -082, -097 and -103 call it in the test's process
   (SCN-TK-101 keeps the nested run: it needs two scenarios). Measured back to back on the development container:
-  the suite took 105.3 s instead of 117.8 s of wall time, the eight scenarios 23.0 s instead of 50.7 s summed; budget
-  220 s. Left, by summed time of their scenarios before: `fakes.github` (39.5 s, 29), `fakes.modelGateway` (21.0 s,
-  15), `fakes.harness` (20.9 s, 13), `fakes.http` (15.2 s, 7), `fakes.postgres` (12.1 s, 4), `fakes.s3` (11.4 s, 2),
-  `fakes.collector` (8.8 s, 2), `fakes.slack`, `fakes.nats`, `fakes.inference`, `fakes.sandbox`, `fakes.openbao`,
-  `fakes.temporal`, `fakes.oidc`, `fakes.personIssuer`, `fakes.traceStore`, `fakes.sentry`.
+  the suite took 105.3 s instead of 117.8 s of wall time, the eight scenarios 23.0 s instead of 50.7 s summed.
+  `fakes.github`: 27 of its 29 scenarios, with the client of `system-tests/github.ts` (SCN-TK-089 and -172 keep the
+  nested run: the fake fails the nested test). `fakes.modelGateway`: 13 of its 15 (SCN-TK-007 fails the nested test,
+  SCN-TK-120 needs a container that the module starts). Measured back to back: the suite took 96.3 s instead of
+  118.7 s, the 27 scenarios 0.7 s instead of 40.0 s and the 13 scenarios 1.3 s instead of 19.7 s summed; budget 210 s.
+  Left, by summed time of their scenarios before: `fakes.harness` (20.9 s, 13), `fakes.http` (15.2 s, 7),
+  `fakes.postgres` (12.1 s, 4), `fakes.s3` (11.4 s, 2), `fakes.collector` (8.8 s, 2), `fakes.slack`, `fakes.nats`,
+  `fakes.inference`, `fakes.sandbox`, `fakes.openbao`, `fakes.temporal`, `fakes.oidc`, `fakes.personIssuer`,
+  `fakes.traceStore`, `fakes.sentry`.
+
+### [ ] T-100 · spec-trace's report lists the changed rows of a Scenario Outline (P2)
+
+- **Build:** the report of the spec-trace action names an Outline as changed when an Examples row changes, but not
+  which row; it shows the rows added, removed and changed.
+
+### [ ] T-101 · `spend-log` of an attached LiteLLM proxy waits long enough (P2)
+
+- **Problem:** found in T-83. `spend-log` waits 8 seconds for the proxy to write its spend rows. A gateway that
+  `start` runs writes them every 1 to 6 seconds; an attached proxy with LiteLLM's default writes every 10 to 15
+  seconds, so the rows of the last calls can be missing.
+- **Build:** the wait follows the proxy's write interval, or `attach` refuses a proxy whose interval the wait does
+  not cover; the README says which.
+
+### [ ] T-102 · `fakes.postgres` labels its containers per run (P2)
+
+- **Problem:** found in T-85. SCN-TK-152 expects one container with the label `org.opensoftware.run=r8`; the label is
+  the same in every run, so a second run on the same Docker host within a few seconds finds two and fails.
+- **Build:** the scenario's run ID is unique per test run, or it counts only its own run's containers.
 
 ### Stage D · less weight
 
@@ -298,6 +329,13 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   and 0093 name the records that changed them.
 
 ### [ ] T-92 · `init`, `up` and `doctor` are commands of `factory` (P2)
+
+- **Found:** the three are commands of `osf` (`tools/scaffold/setup.ts`, ADR 0119), which runs only in a clone.
+  As commands of `factory` they would give factory-spec a second job, and the Compose profile they work on is not
+  published.
+- **Owner's decision:** keep `osf` and close this item; or publish a package `@opensoftware/profile` with the
+  profile and the three commands, so that `npx` works without a clone (recommended; it meets ADR 0159); or make
+  `factory` an umbrella CLI and rename factory-spec's binary, a breaking change over several pull requests.
 
 ### [x] T-93 · test hooks are no product settings (P2)
 
