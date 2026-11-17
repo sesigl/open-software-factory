@@ -1272,3 +1272,27 @@ Feature: Repository checks
     Then the command exits with code 1
     And the output contains "DEPS-RUNTIME modules/demo/src/serve.ts:3 chat is only a devDependency, which npm does not install with @opensoftware/demo: move it to dependencies, or stop loading it at run time"
     And the output does not name "src/serve.ts:1"
+
+  @id=SCN-REPO-205 @status=implemented
+  Scenario: osf suite-plan puts the suites with under 40 seconds of tests into two shared jobs
+    Given the suites "a", "b", "c" and "d" of ".github/test-suites.yml", whose modules have budgets of 45, 45, 50 and 60 seconds, and the suite "big", whose module has a budget of 200 seconds
+    And the suite "a" names the fake "postgres", and the suite "c" names the fake "forge" and "browser: chromium"
+    When the developer runs "osf suite-plan --all"
+    Then the command exits with code 0
+    And the output lists the jobs "a+c", "b+d" and "big"
+    And the job "a+c" runs the filter "@opensoftware/a @opensoftware/c" with the images "postgres forge" and "browser: chromium"
+
+  @id=SCN-REPO-206 @status=implemented
+  Scenario: osf suite-plan gives a job of its own to a lone small suite and to a suite with kind, a filter with "!" or a module without a budget
+    Given the suites "a" and "kube" of ".github/test-suites.yml", whose modules have budgets of 45 seconds, and the suite "kube" sets "kind: true"
+    And the suite "open", whose module has no budget, and the suite "rest" with the filter "!@opensoftware/a !@opensoftware/kube !@opensoftware/open", whose module has a budget of 45 seconds
+    When the developer runs "osf suite-plan a kube open rest"
+    Then the command exits with code 0
+    And the output lists the jobs "a", "kube", "open" and "rest", each as the suite's own entry of ".github/test-suites.yml"
+
+  @id=SCN-REPO-207 @status=implemented
+  Scenario: osf suite-plan rejects a suite that the suites file does not have and plans no job for no suite
+    Given the suite "a" of ".github/test-suites.yml"
+    When the developer runs "osf suite-plan a gone" and then "osf suite-plan" without a suite
+    Then the first run exits with code 1 and its error output contains "osf suite-plan: no suite gone in .github/test-suites.yml"
+    And the second run exits with code 0 and prints an empty list of jobs

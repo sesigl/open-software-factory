@@ -1,5 +1,5 @@
 ---
-status: accepted; main stores its results under the hash of a pull request since 0154
+status: accepted; main stores its results under the hash of a pull request since 0154; amended by 0163 (the small suites share two jobs)
 topic: design-note
 date: 2026-11-09
 ---

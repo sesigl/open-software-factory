@@ -208,13 +208,14 @@ DOCS-GEN keeps it current.
 - [0091](0091-mutation-reuses-unit-reports-and-mutant-results.md) Mutation on a pull request reuses the reports of unchanged units and the results of unchanged mutants — the option of a start after verify taken by 0092
 - [0092](0092-mutation-starts-after-verify.md) Mutation starts only after verify passed
 - [0093](0093-pglite-prepopulated-data-folder.md) A new PGlite database starts from PGlite's empty data folder, not from initdb — the testkit part superseded by 0129, which removed PGlite from the testkit; intake still starts PGlite this way
-- [0094](0094-planned-test-suites.md) verify plans its test suites and starts a runner only for a suite with work — main stores its results under the hash of a pull request since 0154
+- [0094](0094-planned-test-suites.md) verify plans its test suites and starts a runner only for a suite with work — main stores its results under the hash of a pull request since 0154; amended by 0163 (the small suites share two jobs)
 - [0129](0129-one-postgres-and-one-temporal-per-test-process.md) fakes.postgres and fakes.temporal start one server per test process
 - [0152](0152-an-islands-code-counts.md) An island's code counts: the active mutant in the page, `.tsx` in the checks, a workbench of Astro pages
 - [0154](0154-main-stores-results-under-the-pull-request-hash.md) main stores its test results under the hash a pull request computes
 - [0155](0155-budget-is-the-wall-time-of-a-suite.md) BUDGET is the wall time of a suite
 - [0156](0156-the-deploy-suite-builds-the-commit.md) The deploy suite builds the module images from the commit — since the second slice of T-72 scripts/images.ts also loads the chart's images into kind, and kind-images.sh is gone (deploy/README.md)
 - [0162](0162-a-shared-start-is-once-per-test-run.md) A shared start runs once per test run, through the testkit's global setup
+- [0163](0163-small-suites-share-a-runner.md) Small suites share a runner, and kind starts in the background from cached images
 
 ### Superseded, rejected and deprecated
 
