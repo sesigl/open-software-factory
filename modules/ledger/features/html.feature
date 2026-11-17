@@ -18,6 +18,12 @@ Feature: Dashboard page
     When the user runs "ledger report --html ledger.html data.jsonl"
     Then "ledger.html" shows "Pull requests merged 2", "Runs 3", "Top-level runs 2" and "Revert rate 50.0%"
 
+  @id=SCN-LEDGER-071 @status=implemented
+  Scenario: The page shows the factory's share of merged pull requests and the revert rate of each group
+    Given merged pull requests from the head branches "osf/run-01" and "fix-login", and a merged pull request 'Revert "Change 1"' from the head branch "revert-1-osf/run-01"
+    When the user runs "ledger report --html ledger.html data.jsonl"
+    Then "ledger.html" shows "Factory share 33.3%", "Revert rate of the factory 100.0%" and "Revert rate of people 0.0%"
+
   @id=SCN-LEDGER-059 @status=implemented @realizes=SCN-FACTORY-METRIC-003
   Scenario: The page charts pull requests opened and merged per day
     Given 2 pull requests opened on 2026-01-05 and one of them merged on 2026-01-05

@@ -133,13 +133,16 @@ const event = (type: string, time: string, data: unknown) => ({
 
 export const prUrl = (number: number) => `https://github.com/acme/web/pull/${number}`;
 
-export function opened(number: number, options: { at?: string; title?: string; workItem?: string; run?: string } = {}) {
+export function opened(
+  number: number,
+  options: { at?: string; title?: string; workItem?: string; run?: string; branch?: string } = {},
+) {
   return event("pr.opened@v1", options.at ?? "2026-01-05T09:00:00Z", {
     url: prUrl(number),
     repository: "https://github.com/acme/web",
     number,
     title: options.title ?? `Change ${number}`,
-    headBranch: `factory/change-${number}`,
+    headBranch: options.branch ?? `factory/change-${number}`,
     baseBranch: "main",
     headCommit: "9b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c",
     author: { kind: "person", id: "github:mona" },
@@ -171,6 +174,12 @@ export function received(workItem: string, at: string) {
     dedupeKey: `github:acme/web#${workItem}`,
   });
 }
+
+/** The events of a pull request from the head branch, opened on 2026-01-05 and merged at `at` (default 2026-01-06). */
+export const mergedFrom = (number: number, branch: string, options: { title?: string; at?: string } = {}) => [
+  opened(number, { branch, ...(options.title ? { title: options.title } : {}) }),
+  closed(number, options.at ?? "2026-01-06T10:00:00Z"),
+];
 
 /** JSON Lines of the given objects and ready lines. */
 export const lines = (...items: unknown[]): string =>

@@ -52,7 +52,8 @@ WITH links AS (
 SELECT pr_url, run_id, 1.0::DOUBLE PRECISION / count(*) OVER (PARTITION BY run_id) AS share FROM links
 WHERE pr_url IN (SELECT url FROM pull_requests);
 
--- Each pull request with its kickoff, first human review, merge, revert flag and human interactions.
+-- Each pull request with its kickoff, first human review, merge, revert flag, human interactions and head branch.
+-- reverted_url is, for a revert, the merged pull request whose title the revert's title quotes.
 CREATE OR REPLACE VIEW pr_flow AS
 WITH first_run AS (
   SELECT pr.pr_url, min(r.started_at) AS started_at FROM pr_runs pr JOIN runs r USING (run_id) GROUP BY pr.pr_url
@@ -67,7 +68,12 @@ SELECT
   CASE WHEN c.merged THEN c.closed_at END AS merged_at,
   c.closed_at,
   coalesce(c.merged, false) AND starts_with(p.title, 'Revert "') AS is_revert,
-  coalesce(human.interactions, 0)::INTEGER AS human_interactions
+  coalesce(human.interactions, 0)::INTEGER AS human_interactions,
+  p.head_branch,
+  CASE WHEN c.merged AND starts_with(p.title, 'Revert "') THEN (
+    SELECT min(o.url) FROM pull_requests o JOIN closes oc ON oc.url = o.url
+    WHERE oc.merged AND o.url <> p.url AND p.title = 'Revert "' || o.title || '"'
+  ) END AS reverted_url
 FROM pull_requests p
 LEFT JOIN work_items w ON w.id = p.work_item_id
 LEFT JOIN first_run ON first_run.pr_url = p.url
