@@ -85,7 +85,10 @@ A library in `packages/` (ADR 0039) has no artifact to start: its system tests i
 adds for them; an import from its `src/` still fails. For ASSERT, what its exports return counts as coming from
 the system under test. Files still go through `sut.files`, and
 `sut.files.path("$INPUT/...")` gives a library function the absolute path. MUTATION covers libraries like modules
-and takes the place of REACH for them.
+and takes the place of REACH for them. The testkit's fakes are tested the same way: a fake's scenarios call it
+through `@opensoftware/testkit` in the test's process, with no demo module and no nested Vitest (T-85; done for
+`fakes.forge`, the other fakes follow one at a time). The scenarios of the scenario runner itself keep a demo module
+and `testkit run`, because they observe what the nested run reports.
 
 ## Layout
 

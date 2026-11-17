@@ -1,66 +1,34 @@
-import { scenario } from "@opensoftware/testkit";
-import { demoModule, FORGE_API, FORGE_README, testCases } from "./module.ts";
+import { type Forge, scenario } from "@opensoftware/testkit";
+import { forgeClient } from "./forge.ts";
 
-scenario("SCN-TK-080", async ({ sut, given, when, then }) => {
-  let bin = "";
-  await given(
-    'a module whose CLI registers a webhook for pull request events of a repository at "DEMO_FORGE_URL" to the URL it is given',
-    async () => {
-      bin = [
-        ...FORGE_API,
-        'await api("POST", "/hooks", {',
-        '  type: "forgejo",',
-        '  config: { url: rest[0], content_type: "json" },',
-        '  events: ["pull_request"],',
-        "  active: true,",
-        "});",
-        "",
-      ].join("\n");
-    },
-  );
+scenario("SCN-TK-080", async ({ fakes, given, when, then }) => {
+  let receiver: Awaited<ReturnType<typeof fakes.http>>;
+  let forge: Forge;
+  await given('a fake for containers and the repository "demo" in fakes.forge', async () => {
+    receiver = await fakes.http([{ method: "POST", path: "/forge", body: {} }], { containers: true });
+    forge = await fakes.forge();
+    await forge.createRepository("demo");
+  });
 
-  await given(
-    'its system test passes the container URL of a fake for containers, opens a pull request in fakes.forge and expects a delivery with the event "pull_request"',
+  await when(
+    'a module registers a webhook for pull request events of "demo" to the container URL of that fake through the forge\'s API',
     async () => {
-      const module = demoModule({
-        bin,
-        readme: FORGE_README,
-        steps: [
-          'When the user runs "demo" and opens a pull request',
-          'Then the receiver gets a "pull_request" delivery',
-        ],
-        test: [
-          'const receiver = await fakes.http([{ method: "POST", path: "/forge", body: {} }], { containers: true });',
-          "const forge = await fakes.forge();",
-          'await forge.createRepository("demo");',
-          "await when('the user runs \"demo\" and opens a pull request', async () => {",
-          "  const env = { DEMO_FORGE_URL: forge.url, DEMO_FORGE_TOKEN: forge.token };",
-          "  await sut.cli([`${forge.owner}/demo`, `${receiver.containerUrl}/forge`], { env });",
-          '  await forge.openPullRequest("demo", { branch: "fix", title: "Fix the typo", files: { "notes.md": "hi\\n" } });',
-          "});",
-          "await then('the receiver gets a \"pull_request\" delivery', async () => {",
-          '  await expect.poll(() => receiver.headers().map((request) => request.headers["x-forgejo-event"]), { timeout: 20_000 })',
-          '    .toContain("pull_request");',
-          "});",
-        ],
+      await forgeClient(forge, "demo")("POST", "/hooks", {
+        type: "forgejo",
+        config: { url: `${receiver.containerUrl}/forge`, content_type: "json" },
+        events: ["pull_request"],
+        active: true,
       });
-      for (const [path, content] of Object.entries(module)) await sut.files.put(path, content);
     },
   );
 
-  let run: Awaited<ReturnType<typeof sut.cli>>;
-  await when('the developer runs "testkit run --junit report.xml" in the module', async () => {
-    run = await sut.cli(["run", "--junit", "report.xml"]);
+  await when("the test opens a pull request in fakes.forge", async () => {
+    await forge.openPullRequest("demo", { branch: "fix", title: "Fix the typo", files: { "notes.md": "hi\n" } });
   });
 
-  await then("the command exits with code 0", async () => {
-    expect(run.exitCode, run.stdout + run.stderr).toBe(0);
-  });
-
-  await then('"report.xml" has the passed test case "SCN-DEMO-001"', async () => {
-    expect(testCases(await sut.files.read("$INPUT/report.xml"))).toContainEqual({
-      name: "SCN-DEMO-001",
-      failed: false,
-    });
+  await then('the fake for containers gets a "pull_request" delivery', async () => {
+    const events = () => receiver.headers().map((request) => request.headers["x-forgejo-event"]);
+    await expect.poll(events, { timeout: 20_000 }).toContain("pull_request");
+    expect(events()).toContain("pull_request");
   });
 });

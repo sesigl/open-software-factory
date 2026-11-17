@@ -124,43 +124,34 @@ Feature: Services and outside systems
 
   @id=SCN-TK-012 @status=implemented
   Scenario: fakes.forge shows the comment and the commit status a module posts on a pull request
-    Given a module whose CLI comments "evidence bundle attached" and sets the status "proof" to "success" on a pull request at "DEMO_FORGE_URL"
-    And its system test opens a pull request in fakes.forge and expects that comment and that status
-    When the developer runs "testkit run --junit report.xml" in the module
-    Then the command exits with code 0
-    And "report.xml" has the passed test case "SCN-DEMO-001"
+    Given a pull request in fakes.forge
+    When a module comments "evidence bundle attached" and sets the status "proof" to "success" on it through the forge's API
+    Then fakes.forge shows that comment and that status
 
   @id=SCN-TK-049 @status=implemented
   Scenario: fakes.forge merges a pull request, so a module can read the merge commit
-    Given a module whose CLI prints whether a pull request at "DEMO_FORGE_URL" is merged and its merge commit
-    And its system test merges a pull request in fakes.forge and expects "merged" and the merge commit it got back
-    When the developer runs "testkit run --junit report.xml" in the module
-    Then the command exits with code 0
-    And "report.xml" has the passed test case "SCN-DEMO-001"
+    Given a pull request that the test merged in fakes.forge, and the merge commit it got back
+    When a module reads the pull request through the forge's API
+    Then the pull request is merged with that merge commit
 
   @id=SCN-TK-080 @status=implemented
   Scenario: fakes.forge delivers a pull request's webhook to a fake for containers
-    Given a module whose CLI registers a webhook for pull request events of a repository at "DEMO_FORGE_URL" to the URL it is given
-    And its system test passes the container URL of a fake for containers, opens a pull request in fakes.forge and expects a delivery with the event "pull_request"
-    When the developer runs "testkit run --junit report.xml" in the module
-    Then the command exits with code 0
-    And "report.xml" has the passed test case "SCN-DEMO-001"
+    Given a fake for containers and the repository "demo" in fakes.forge
+    When a module registers a webhook for pull request events of "demo" to the container URL of that fake through the forge's API
+    And the test opens a pull request in fakes.forge
+    Then the fake for containers gets a "pull_request" delivery
 
   @id=SCN-TK-081 @status=implemented
   Scenario: fakes.forge creates a branch with a commit and lists the branches and webhooks of a repository
-    Given a module whose CLI creates the branch "release" from "main" and a webhook to "http://intake.example/forge" at "DEMO_FORGE_URL"
-    And its system test creates the branch "fix" with "notes.md" in fakes.forge and expects the branches "fix", "main" and "release" with their head commits and that webhook
-    When the developer runs "testkit run --junit report.xml" in the module
-    Then the command exits with code 0
-    And "report.xml" has the passed test case "SCN-DEMO-001"
+    Given the repository "demo" in fakes.forge, in which the test created the branch "fix" with "notes.md"
+    When a module creates the branch "release" from "main" and a webhook to "http://intake.example/forge" through the forge's API
+    Then fakes.forge lists the branches "fix", "main" and "release" with their head commits, and that webhook
 
   @id=SCN-TK-082 @status=implemented
   Scenario: fakes.forge reviews a pull request as the person "reviewer"
-    Given a module whose CLI prints the user and state of each review of a pull request at "DEMO_FORGE_URL"
-    And its system test approves a pull request in fakes.forge and expects "reviewer APPROVED"
-    When the developer runs "testkit run --junit report.xml" in the module
-    Then the command exits with code 0
-    And "report.xml" has the passed test case "SCN-DEMO-001"
+    Given a pull request in fakes.forge that the test approved as the person "reviewer"
+    When a module reads the reviews of the pull request through the forge's API
+    Then the pull request has one review, "reviewer APPROVED"
 
   @id=SCN-TK-101 @status=implemented
   Scenario: fakes.forge gives a later scenario the same forge without the repositories of the earlier one
@@ -254,19 +245,15 @@ Feature: Services and outside systems
 
   @id=SCN-TK-050 @status=implemented
   Scenario: fakes.forge shows the pull request a module opens and the files of its branch
-    Given a module whose CLI commits "notes.md" with "hello" on the new branch "fix" and opens a pull request "Fix the notes" into "main" at "DEMO_FORGE_URL"
-    And its system test expects that pull request in fakes.forge and "notes.md" with "hello" only on the branch "fix"
-    When the developer runs "testkit run --junit report.xml" in the module
-    Then the command exits with code 0
-    And "report.xml" has the passed test case "SCN-DEMO-001"
+    Given the repository "demo" in fakes.forge
+    When a module commits "notes.md" with "hello" on the new branch "fix" and opens a pull request "Fix the notes" into "main" through the forge's API
+    Then fakes.forge shows the pull request "Fix the notes" from "fix" into "main" and "notes.md" with "hello" only on "fix"
 
   @id=SCN-TK-097 @status=implemented
   Scenario: fakes.forge comments on a pull request as the person "reviewer"
-    Given a module whose CLI prints the user and text of each comment of a pull request at "DEMO_FORGE_URL"
-    And its system test has "reviewer" say "Looks good" on a pull request in fakes.forge and expects "reviewer Looks good"
-    When the developer runs "testkit run --junit report.xml" in the module
-    Then the command exits with code 0
-    And "report.xml" has the passed test case "SCN-DEMO-001"
+    Given a pull request in fakes.forge on which the test had "reviewer" say "Looks good"
+    When a module reads the comments of the pull request through the forge's API
+    Then the pull request has one comment, "reviewer Looks good"
 
   @id=SCN-TK-100 @status=implemented
   Scenario: fakes.slack lists the messages at the top of a channel newest first, without the replies in threads
@@ -278,11 +265,9 @@ Feature: Services and outside systems
 
   @id=SCN-TK-103 @status=implemented
   Scenario: fakes.forge opens an issue and adds a label to it
-    Given a module whose CLI prints the title and the label names of issue 1 of a repository at "DEMO_FORGE_URL"
-    And its system test opens the issue "Export reports as CSV" in fakes.forge, adds the label "factory" and expects "Export reports as CSV factory"
-    When the developer runs "testkit run --junit report.xml" in the module
-    Then the command exits with code 0
-    And "report.xml" has the passed test case "SCN-DEMO-001"
+    Given the issue "Export reports as CSV" that the test opened in fakes.forge and gave the label "factory"
+    When a module reads the issue through the forge's API
+    Then issue 1 has the title "Export reports as CSV" and the one label "factory"
 
   @id=SCN-TK-104 @status=implemented
   Scenario: fakes.sentry sends a module's webhook an alert signed with the integration's client secret

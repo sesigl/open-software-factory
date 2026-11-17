@@ -16,7 +16,9 @@ The only ways a system test or another program may use the testkit:
 - CLI: `testkit <command>` (`bin/testkit.ts`, see `README.md#commands`), run in a module folder
 
 The testkit's own system tests use the CLI on small modules they write into `$INPUT`, and call
-`@opensoftware/testkit/readme` directly.
+`@opensoftware/testkit/readme` directly. A fake's scenarios call the fake in the test's process, as a library's
+tests do (ADR 0039, T-85): today those of `fakes.forge`, with the forge client of `system-tests/forge.ts`. The
+scenarios of the scenario runner itself, and of a fake across two scenarios (SCN-TK-101), keep the nested run.
 
 The testkit depends on no library in `packages/`: every library is tested with the testkit, so such a dependency
 would be a cycle.
@@ -40,9 +42,9 @@ Layers, top to bottom, in `architecture.json` (ADR 0014). A file imports only it
 
 ## Budget
 
-- System tests: 230 seconds of wall time on the CI runner.
-- Most of it: the nested vitest of `testkit run` on a demo module, about 1.5 s each; SCN-TK-080 to -082 each
-  start a Forgejo.
+- System tests: 220 seconds of wall time on the CI runner.
+- Most of it: the nested vitest of `testkit run` on a demo module, about 1.3 s each, and a Forgejo per worker for
+  the `fakes.forge` scenarios.
 
 ## Quality limits
 

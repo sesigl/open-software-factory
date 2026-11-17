@@ -241,6 +241,13 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 
 - **Build:** a fake's scenarios call it in the test's process (ADR 0039) instead of a demo module written as
   strings and a nested Vitest; the scenarios of the scenario runner itself stay as they are. One fake per pull request.
+- **Done:** `fakes.forge`: SCN-TK-012, -049, -050, -080 to -082, -097 and -103 call it in the test's process
+  (SCN-TK-101 keeps the nested run: it needs two scenarios). Measured back to back on the development container:
+  the suite took 105.3 s instead of 117.8 s of wall time, the eight scenarios 23.0 s instead of 50.7 s summed; budget
+  220 s. Left, by summed time of their scenarios before: `fakes.github` (39.5 s, 29), `fakes.modelGateway` (21.0 s,
+  15), `fakes.harness` (20.9 s, 13), `fakes.http` (15.2 s, 7), `fakes.postgres` (12.1 s, 4), `fakes.s3` (11.4 s, 2),
+  `fakes.collector` (8.8 s, 2), `fakes.slack`, `fakes.nats`, `fakes.inference`, `fakes.sandbox`, `fakes.openbao`,
+  `fakes.temporal`, `fakes.oidc`, `fakes.personIssuer`, `fakes.traceStore`, `fakes.sentry`.
 
 ### Stage D · less weight
 
