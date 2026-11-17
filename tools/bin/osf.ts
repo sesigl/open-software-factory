@@ -29,6 +29,8 @@ const USAGE = `Usage: osf <command>
                           join the shard reports of each unit of a plan into its mutant results for the next push
   suite-plan --all | <suite> ...
                           the jobs of the tests matrix of verify.yml as JSON; small suites share two jobs (ADR 0163)
+  released-images scenarios | report [<junit.xml> | --passed] --run <url> --ref <commit>
+                          the deploy scenarios that run on the released images, and the text of their issue (ADR 0169)
   init [--factory <dir>]  write deploy/compose/.env with the factory's own secrets; copy the reference factory (ADR 0119)
   up [ARG ...]            check deploy/compose/.env, then docker compose up --detach --wait in deploy/compose
   doctor                  docker compose run --rm console console doctor in deploy/compose
@@ -80,6 +82,8 @@ async function main(argv: string[]): Promise<number> {
       return (await import("../scaffold/mutation-merge.ts")).mutationMerge(root, args);
     case "suite-plan":
       return (await import("../scaffold/suite-plan.ts")).suitePlan(root, args);
+    case "released-images":
+      return (await import("../scaffold/released-images.ts")).releasedImages(root, args);
     case "init":
       return (await import("../scaffold/setup.ts")).init(root, args);
     case "up":

@@ -47,3 +47,10 @@ agent.
 3. Check every version of `.release-please-manifest.json` with
    `curl -s -o /dev/null -w '%{http_code}' https://registry.npmjs.org/<package>/<version>`. A new version can answer
    404 for some minutes ("being processed"); wait, then check again.
+4. Wait for `released-images`, which starts after a successful `publish-images` and runs the deploy suite's Compose
+   scenarios on the published images at the release's pins (ADR 0169). When it fails, it opens the issue "The released
+   images fail the deploy scenarios", or comments on it, with the run and the failed scenario IDs. Open the run's log:
+   a failed pull names an image missing from GHCR or an architecture (`gh workflow run publish-images.yml --ref main`
+   publishes what is missing); a failed scenario is a bug of the released image, fixed by a change and the next
+   release. Start `gh workflow run released-images.yml --ref main -f ref=<commit>` to check again; it comments when it
+   passes. The maintainer closes the issue once a run passed.

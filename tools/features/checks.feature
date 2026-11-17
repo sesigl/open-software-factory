@@ -1305,3 +1305,41 @@ Feature: Repository checks
     When the developer runs "osf suite-plan a gone" and then "osf suite-plan" without a suite
     Then the first run exits with code 1 and its error output contains "osf suite-plan: no suite gone in .github/test-suites.yml"
     And the second run exits with code 0 and prints an empty list of jobs
+
+  @id=SCN-REPO-220 @status=implemented
+  Scenario: osf released-images scenarios lists the system tests of the deploy scenarios that run on the released images
+    Given "deploy/features/compose.feature" with the implemented scenarios "SCN-DIST-001" and "SCN-DIST-002", the planned "SCN-DIST-003" and the implemented "SCN-DIST-004" with the tag "@images=commit"
+    And "deploy/features/helm.feature" with the implemented scenario "SCN-DIST-005"
+    When the developer runs "osf released-images scenarios"
+    Then the command exits with code 0
+    And the output is the lines "system-tests/SCN-DIST-001.test.ts" and "system-tests/SCN-DIST-002.test.ts"
+
+  @id=SCN-REPO-221 @status=implemented
+  Scenario: osf released-images report writes the issue text with the run's link, the released commit and the IDs of the failed scenarios of a JUnit report
+    Given the JUnit report "deploy/reports/junit.xml" in which "SCN-DIST-026" and "SCN-DIST-041" failed, "SCN-DIST-002" passed and "SCN-DIST-003" was skipped
+    When the developer runs "osf released-images report deploy/reports/junit.xml --run https://github.com/acme/factory/actions/runs/7 --ref 1a2b3c4"
+    Then the command exits with code 0
+    And the output names the run "https://github.com/acme/factory/actions/runs/7" and the commit "1a2b3c4"
+    And the output has the lines "- SCN-DIST-026" and "- SCN-DIST-041" and names neither "SCN-DIST-002" nor "SCN-DIST-003"
+
+  @id=SCN-REPO-222 @status=implemented
+  Scenario: osf released-images report says that a step outside the scenarios failed when the JUnit report is missing or names no failure
+    Given no file "deploy/reports/junit.xml", and the JUnit report "passed.xml" in which "SCN-DIST-002" passed
+    When the developer runs "osf released-images report deploy/reports/junit.xml --run https://github.com/acme/factory/actions/runs/7 --ref 1a2b3c4", and again with "passed.xml"
+    Then both runs exit with code 0
+    And each output names the run and contains "No scenario failed: a step before or after the scenarios failed, like the pull of a released image"
+
+  @id=SCN-REPO-223 @status=implemented
+  Scenario: osf released-images report --passed writes the comment that the released images passed
+    When the developer runs "osf released-images report --passed --run https://github.com/acme/factory/actions/runs/8 --ref 1a2b3c4"
+    Then the command exits with code 0
+    And the output is "The deploy scenarios passed on the released images of 1a2b3c4: https://github.com/acme/factory/actions/runs/8. A person closes this issue once its cause is fixed."
+
+  @id=SCN-REPO-224 @status=implemented
+  Scenario: AFFECTED rejects a workflow besides verify.yml that sets OSF_TEST_CACHE or saves the cache of the test results
+    Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
+    And ".github/workflows/released-images.yml" sets "OSF_TEST_CACHE: 1" on line 6 and saves ".turbo/cache" under the key "turbo-tests-released" on line 9
+    When the developer runs "osf check AFFECTED"
+    Then the command exits with code 1
+    And the output contains "AFFECTED .github/workflows/released-images.yml:6 sets OSF_TEST_CACHE outside pull requests: only a pull request may replay test results"
+    And the output contains "AFFECTED .github/workflows/released-images.yml:9 writes the cache of the test results turbo-tests-, which pull requests replay: only verify.yml may"

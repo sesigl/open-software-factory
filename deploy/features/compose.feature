@@ -291,7 +291,7 @@ Feature: The Compose profile installs a complete factory with one command
     Then the output has the line "WARN  person proof: set CONSOLE_SIGNING_KEY: without it the console sends no proof of the person, and foreman, intake and gatekeeper refuse its actions when they check proofs"
     And no line of the output starts with "FAIL  person proof"
 
-  @id=SCN-DIST-053 @status=implemented
+  @id=SCN-DIST-053 @status=implemented @images=commit
   Scenario: Each module image that the deploy suite starts installs the packages of the factory from this workspace's packs, not from npm
     Given the module images of the Compose profile built from this workspace with "node scripts/images.ts", at the tags that "compose.yaml" pins
     When the operator runs "npm ls --all --json" in "/opt/osf" of the services "agent-template", "console", "factory", "foreman", "gatekeeper", "improve" and "intake" with "docker compose run --rm --no-deps"

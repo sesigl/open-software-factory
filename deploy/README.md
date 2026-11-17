@@ -243,6 +243,7 @@ and names it, like `set FOREMAN_API_TOKEN in .env`.
 | `IMPROVE_INTERVAL` | `3600` | With the profile `improve`: the seconds between the runs of the improvement jobs. `0` runs them once. |
 | `IMPROVE_SCORERS` | | With the profile `improve`: the scorers of scorekit that judge each run, like `redundant-tests scope-creep`. Each judgment is a paid model call. Empty: no run is judged. |
 | `OSF_BUILD_CA` | `../images/no-ca.pem` | Behind a proxy that inspects TLS: the proxy's CA for npm in the image builds, as a path inside `deploy/`, like `../images/local-ca.pem`. |
+| `OSF_DEPLOY_IMAGES` | `commit` | Not for the profile: which module images `scripts/images.ts` gives the deploy suite. `commit` builds them from this workspace; `released` pulls the published ones that `compose.yaml` pins and builds none. See [The images of the deploy suite](#the-images-of-the-deploy-suite). |
 
 ### Turn on the sign-in
 
@@ -648,6 +649,27 @@ make test-scenario ID=SCN-DIST-026
 
 The images of the commit hide the released ones with the same tags until `docker compose pull` in `compose/`.
 
+### The released images
+
+The workflow `released-images` starts the scenarios on the images that users get
+([ADR 0169](../docs/decisions/0169-the-released-images-run-the-deploy-scenarios.md)). It runs after each successful
+run of `publish-images`, on the commit that run published, so the pins are the release's, and by hand
+(`workflow_dispatch`, with an optional tag or commit). With `OSF_DEPLOY_IMAGES=released`, `scripts/images.ts` builds
+nothing: it checks that GHCR has each image of the factory's registry that `compose.yaml` pins for amd64 and arm64,
+and pulls it, also over an image of the commit with the same tag. `osf released-images scenarios` lists the scenarios
+it runs: every implemented one of `features/` except the chart's, and except those tagged `@images=commit`, which
+prove the images of the commit, like SCN-DIST-053. The job runs them with `vitest run` here, not with turbo, so it
+writes no result that a pull request replays and no wall time that BUDGET reads.
+
+When it fails, it opens the issue "The released images fail the deploy scenarios" with the run and the scenarios that
+failed, or comments on it while it is open; a later run that passes comments so, and a person closes the issue.
+To try the released images on your machine:
+
+```sh
+(cd deploy && OSF_DEPLOY_IMAGES=released node scripts/images.ts)
+make test-scenario ID=SCN-DIST-055
+```
+
 ### One start of the profile, one install of the chart
 
 The scenarios that only read the whole profile, or work in a sandbox of their own, are tagged
@@ -673,7 +695,8 @@ The workflow `publish-images` publishes after each change to `compose/compose.ya
 and SLSA provenance attached by BuildKit, and signs it with cosign through the workflow's GitHub identity. A tag never
 changes: a new adapter pin without a new module version takes the tag `<version>-r<n>`. The chart goes to
 `oci://ghcr.io/sesigl/open-software-factory/charts/osf` at the version in `helm/osf/Chart.yaml`, signed the same way;
-change the version with the chart.
+change the version with the chart. After each successful run, the workflow `released-images` starts the Compose
+scenarios on the published images (see [The released images](#the-released-images)).
 
 Verify an image, and read its SBOM and provenance:
 
@@ -767,3 +790,5 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-070 | implemented | The agents' template of this repository's factory has Node 24, pnpm 10.28.0, Git, make and lychee 0.20.1 |
 | SCN-DIST-071 | implemented | This repository's factory starts every agent from the image of "dogfood-template", and its prompts ask for "make check-fast" |
 | SCN-DIST-072 | implemented | No service of the Compose profile sets a test hook or the test switch |
+| SCN-DIST-080 | implemented | With "OSF_DEPLOY_IMAGES=released", the dry run of "scripts/images.ts" pulls every image of the factory's registry that "compose.yaml" pins and builds none |
+| SCN-DIST-081 | implemented | "scripts/images.ts" refuses a value of "OSF_DEPLOY_IMAGES" other than "commit" and "released" |

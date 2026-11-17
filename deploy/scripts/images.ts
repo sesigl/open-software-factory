@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 // Builds the module images of the Compose profile from this commit and tags them with the pins of compose.yaml (ADR
 // 0156), so the deploy suite starts the code under review, not the last release. images/Dockerfile stays what
 // publish-images builds from npm: this script writes a copy into images/.workspace in which the one step that installs
@@ -5,8 +6,10 @@
 // stages and its build arguments are the Dockerfile's own, and the targets are compose.yaml's, as publish-images bakes.
 // When the current kube context is a local kind cluster, it then loads every image of the Helm chart into that cluster,
 // so the chart's scenarios run the same images; the chart's pull policy IfNotPresent keeps them (T-72).
+// With OSF_DEPLOY_IMAGES=released it builds nothing: it pulls each image of the factory's registry that compose.yaml
+// pins, after it checked that the registry has it for amd64 and arm64, for the workflow released-images (ADR 0169).
 //   node scripts/images.ts              (in deploy/, after turbo built the packages; test:system runs it first)
-//   node scripts/images.ts --dry-run    builds and loads nothing; prints what it would pull and load into kind
+//   node scripts/images.ts --dry-run    builds, pulls and loads nothing; prints what it would pull and load into kind
 import { execFileSync, spawnSync } from "node:child_process";
 import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -18,6 +21,10 @@ const images = join(deploy, "images");
 const context = join(images, ".workspace");
 const chart = join(deploy, "helm/osf");
 const bin = join(ROOT, ".tools/bin");
+/** The registry that publish-images pushes the images of compose.yaml to. */
+const REGISTRY = "ghcr.io/sesigl/open-software-factory/";
+/** The platforms that publish-images builds each image for. */
+const PLATFORMS = ["linux/amd64", "linux/arm64"];
 
 /** Each `@opensoftware/<name>` that a module image of compose.yaml installs. */
 export function pinned(text: string): string[] {
@@ -126,12 +133,41 @@ function kindCluster(): string | undefined {
   return name.slice("kind-".length);
 }
 
+/** The platforms of an image's index in its registry, like linux/amd64, without the attestations' unknown/unknown. */
+function platformsOf(image: string): string[] {
+  const raw = spawnSync("docker", ["buildx", "imagetools", "inspect", "--raw", image], { encoding: "utf8" });
+  if (raw.status !== 0) throw new Error(`images: the registry has no ${image}: ${raw.stderr.trim()}`);
+  const index = JSON.parse(raw.stdout) as { manifests?: { platform?: { os: string; architecture: string } }[] };
+  return (index.manifests ?? [])
+    .flatMap((manifest) => (manifest.platform ? [`${manifest.platform.os}/${manifest.platform.architecture}`] : []))
+    .filter((platform) => platform !== "unknown/unknown");
+}
+
+/**
+ * The released images in place of the commit's (ADR 0169): each image of the factory's registry that compose.yaml
+ * pins, checked for every platform of publish-images and pulled, also over an image of the commit with the same tag.
+ * Returns the images.
+ */
+export function pullReleased(dryRun: boolean): string[] {
+  const list = [...targets(bakeEnv(), false).keys()].filter((image) => image.startsWith(REGISTRY)).sort();
+  for (const image of list) {
+    console.log(`images: docker pull ${image}`);
+    if (dryRun) continue;
+    const missing = PLATFORMS.filter((platform) => !platformsOf(image).includes(platform));
+    if (missing.length > 0) throw new Error(`images: the registry has ${image} without ${missing.join(", ")}`);
+    execFileSync("docker", ["pull", "--quiet", image], { stdio: ["ignore", "ignore", "inherit"] });
+  }
+  console.log("images: the released images that compose.yaml pins, so none is built");
+  return list;
+}
+
 /**
  * Loads the chart's images into the kind cluster of the current context. The module images are the commit's, which
- * buildImages tagged. An image that Docker does not have is pulled (CI pulls the suite's `pull` list before), or baked
- * when compose.yaml builds it and its registry does not have it yet, like a LiteLLM pin that moved.
+ * buildImages tagged, or the released ones, which pullReleased pulled (`pulled`). An image that Docker does not have
+ * is pulled (CI pulls the suite's `pull` list before), or, for the commit's images, baked when compose.yaml builds it
+ * and its registry does not have it yet, like a LiteLLM pin that moved.
  */
-export function loadIntoKind(dryRun: boolean): void {
+export function loadIntoKind(dryRun: boolean, pulled: string[] = []): void {
   const cluster = kindCluster();
   if (!cluster && !dryRun) {
     console.log("images: the kube context is no local kind cluster, so the chart's images are not loaded into kind");
@@ -145,10 +181,11 @@ export function loadIntoKind(dryRun: boolean): void {
   const list = chartImages(rendered, readFileSync(join(chart, "files/factory/factory.yaml"), "utf8"));
   const env = bakeEnv();
   for (const image of list) {
+    if (pulled.includes(image)) continue;
     if (spawnSync("docker", ["image", "inspect", image], { stdio: "ignore" }).status === 0) continue;
     console.log(`images: docker pull ${image}`);
     if (dryRun || spawnSync("docker", ["pull", "--quiet", image], { stdio: "ignore" }).status === 0) continue;
-    const target = targets(env, false).get(image);
+    const target = pulled.length > 0 ? undefined : targets(env, false).get(image);
     if (!target) throw new Error(`images: ${image} of the chart is neither in Docker nor in its registry`);
     console.log(
       `images: ${image} is not in its registry yet, so it is baked from the target ${target} of compose.yaml`,
@@ -164,8 +201,20 @@ export function loadIntoKind(dryRun: boolean): void {
   console.log(`images: ${list.length} images loaded into kind in ${Math.round((Date.now() - started) / 1000)} s`);
 }
 
+/** Which images the deploy suite starts: `commit` (the default) or `released` (ADR 0169). */
+function mode(): "commit" | "released" {
+  const value = process.env.OSF_DEPLOY_IMAGES || "commit";
+  if (value === "commit" || value === "released") return value;
+  console.error(`images: OSF_DEPLOY_IMAGES is commit (the default) or released, not ${value}`);
+  process.exit(1);
+}
+
 if (process.argv[1] === import.meta.filename) {
   const dryRun = process.argv.includes("--dry-run");
-  if (!dryRun) buildImages();
-  loadIntoKind(dryRun);
+  if (mode() === "released") {
+    loadIntoKind(dryRun, pullReleased(dryRun));
+  } else {
+    if (!dryRun) buildImages();
+    loadIntoKind(dryRun);
+  }
 }

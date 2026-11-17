@@ -1,5 +1,5 @@
 ---
-status: accepted; since the second slice of T-72 scripts/images.ts also loads the chart's images into kind, and kind-images.sh is gone (deploy/README.md)
+status: accepted; since the second slice of T-72 scripts/images.ts also loads the chart's images into kind, and kind-images.sh is gone (deploy/README.md); amended by 0169 (OSF_DEPLOY_IMAGES=released pulls the released images for the job after publish-images)
 topic: design-note
 date: 2026-11-16
 ---

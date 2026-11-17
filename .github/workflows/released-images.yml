@@ -1,0 +1,110 @@
+# Starts the deploy suite's Compose scenarios on the images that publish-images released, as compose.yaml of the
+# released commit pins them, not on images built from the commit (ADR 0169). It runs after each successful run of
+# publish-images, on the commit that run published, and by hand. When it fails, it opens the issue "The released
+# images fail the deploy scenarios" with the run and the failed scenarios, or comments on that issue while it is open;
+# when it passes and the issue is open, it comments so. A person closes the issue. The texts come from
+# `osf released-images`; the steps are in skills/release-packages/SKILL.md.
+#
+# It runs the scenarios with Vitest in deploy/, not with turbo: it writes no result into the test cache that pull
+# requests replay (ADR 0081, ADR 0154) and no wall time that BUDGET reads (ADR 0155).
+name: released-images
+
+on:
+  workflow_run:
+    workflows: [publish-images]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: The tag or commit whose pins to start; empty for the head of main
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: released-images
+  cancel-in-progress: false
+
+jobs:
+  compose:
+    name: the Compose scenarios on the released images
+    # A failed publish shows in its own run; its images are not all there.
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      issues: write # the issue of a failed run, and the comment that a run passed
+    env:
+      # The commit that publish-images published, so the pins are the released ones and not main's head.
+      REF: ${{ inputs.ref || github.event.workflow_run.head_sha || github.sha }}
+      TITLE: The released images fail the deploy scenarios
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.REF }}
+      # Read only: verify.yml keeps this cache.
+      - name: Restore the pinned tools
+        uses: actions/cache/restore@v4
+        with:
+          path: .tools/bin
+          key: tools-${{ runner.os }}-${{ hashFiles('tools/scaffold/install-tools.ts') }}
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: make install
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      # Each image of the factory's registry that compose.yaml pins, for amd64 and arm64; none is built.
+      - name: Pull the released images
+        working-directory: deploy
+        env:
+          OSF_DEPLOY_IMAGES: released
+        run: node scripts/images.ts
+      # A step that hangs fails here, so the issue still opens; the job's own timeout would cancel it without one.
+      - name: Run the Compose scenarios
+        timeout-minutes: 35
+        run: |
+          pnpm --silent run osf released-images scenarios > "$RUNNER_TEMP/scenarios"
+          mapfile -t files < "$RUNNER_TEMP/scenarios"
+          echo "${#files[@]} scenarios"
+          cd deploy && pnpm exec vitest run "${files[@]}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reports-released-images
+          path: deploy/reports/junit.xml
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Open the issue, or comment on the open one
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # A run that failed before make install has no osf: the issue still names the run.
+          pnpm --silent run osf released-images report deploy/reports/junit.xml --run "$RUN_URL" --ref "$REF" \
+            > "$RUNNER_TEMP/issue.md" ||
+            printf 'The deploy scenarios failed on the released images of %s: %s\n' "$REF" "$RUN_URL" > "$RUNNER_TEMP/issue.md"
+          number=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --limit 500 --json number,title \
+            --jq 'map(select(.title == env.TITLE)) | .[0].number // ""')
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/issue.md"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --body-file "$RUNNER_TEMP/issue.md"
+          fi
+      - name: Comment on the open issue that the run passed
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          number=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --limit 500 --json number,title \
+            --jq 'map(select(.title == env.TITLE)) | .[0].number // ""')
+          [ -n "$number" ] || exit 0
+          pnpm --silent run osf released-images report --passed --run "$RUN_URL" --ref "$REF" > "$RUNNER_TEMP/passed.md"
+          gh issue comment "$number" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/passed.md"
