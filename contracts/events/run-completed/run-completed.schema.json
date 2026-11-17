@@ -147,6 +147,36 @@
         "reason": {
           "type": "string",
           "description": "Why the stage the run ended at failed, when the foreman knows it (ADR 0127)."
+        },
+        "reworks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "stage": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{0,62}$",
+                "description": "The stage that ran once more."
+              },
+              "failedAt": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{0,62}$",
+                "description": "The stage whose checks failed."
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Why the checks failed."
+              }
+            },
+            "required": [
+              "stage",
+              "failedAt",
+              "reason"
+            ],
+            "description": "A stage of a run that ran once more because the checks of a later stage failed (ADR 0165)."
+          },
+          "description": "The stages that ran once more because the checks of a later stage failed, in the order of the stages (ADR 0165)."
         }
       },
       "required": [

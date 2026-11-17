@@ -156,3 +156,25 @@ Feature: Lint a factory definition
     When the factory engineer runs "factory lint"
     Then the command exits with code 1
     And the output starts with "access.yaml: " and names the YAML problem, and then "factory.yaml: 1 problems"
+
+  @id=SCN-FSPEC-130 @status=implemented
+  Scenario: Lint accepts a stage that sends a failed check back to an earlier stage that runs an agent
+    Given a factory.yaml whose stage "ship" names the checks ["verify"], the forge "github" and "rework: implement", after the stage "implement"
+    When the factory engineer runs "factory lint"
+    Then the command exits with code 0
+    And the output is "factory.yaml: no problems"
+
+  @id=SCN-FSPEC-131 @status=implemented
+  Scenario Outline: Lint reports a stage that sends a failed check back to a stage that cannot take it
+    Given a factory.yaml with the stages "plan", "implement", "verify" with "wait: true" and the checks ["verify"], and "ship" with the checks ["verify"]
+    And the stage "<stage>" has "<entry>" on line <line>
+    When the factory engineer runs "factory lint"
+    Then the command exits with code 1
+    And the output names "factory.yaml:<line>:5" and says "<says>"
+
+    Examples:
+      | stage     | entry          | line | says                                                                              |
+      | verify    | rework: verify | 28   | stage "verify" sends a failed check back to "verify", which is no stage before it |
+      | verify    | rework: ship   | 28   | stage "verify" sends a failed check back to "ship", which is no stage before it   |
+      | ship      | rework: verify | 31   | stage "ship" sends a failed check back to "verify", which only waits              |
+      | implement | rework: plan   | 27   | stage "implement" sends a failed check back, but it waits for no check            |

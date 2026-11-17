@@ -320,7 +320,14 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   the stages (ADR 0160); a waiting stage shows `blocked` in `GET /v1/runs/<id>`; the number settings refuse a value
   that is not a whole number; the profile and the chart set 2 (SCN-FORE-190 to 192, SCN-DIST-061, SCN-DIST-062).
 
-### [ ] T-98 · a failed check sends the run back to implement once (P2)
+### [x] T-98 · a failed check sends the run back to implement once (P2)
+
+- **Done:** a stage with checks may name `rework: <stage>`, an earlier stage with an agent; a failed check sends the
+  run back to it once, with the failed checks' names, states, descriptions and links in its prompt, the stage keeps
+  its gate's approval, `GET /v1/runs/<id>` shows its `rework` and `run.completed@v1` lists it in `reworks`; a second
+  failure fails the run as before; `factory lint` and `foreman serve` refuse a `rework` that cannot work (ADR 0165,
+  SCN-FORE-193 to 196, SCN-FSPEC-130, SCN-FSPEC-131). Open: this repository's factory names `rework: implement` on
+  its stage `verify` once a release carries the field.
 
 ### [ ] T-99 · the factory's own identity on GitHub (owner's decision)
 

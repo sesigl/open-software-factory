@@ -33,6 +33,7 @@ import {
   type RunView,
   repositoryOf,
   resultOf,
+  reworkOf,
   runBlocked,
   runCompleted,
   runStarted,
@@ -296,6 +297,8 @@ export function activities(deps: ActivityDeps) {
         before?.index === index ? before.line : undefined,
         repository ? branchOf(view.runId) : undefined,
         previous,
+        // A stage that runs once more gets the failed checks of the later stage (ADR 0165).
+        view.stages[index]?.rework,
       );
       const mcpServers = plan.mcpServers ?? [];
       const folder = sandbox ? await sandbox.copyIn() : cwd;
@@ -416,12 +419,16 @@ export function activities(deps: ActivityDeps) {
         return { kind: "checks", index, checks: [], reason: "no earlier stage linked a pull request" };
       const { repo, number } = pullRequestOf(view.pullRequest);
       const printed = await pullRequestChecks(...forge(definition), repo, number);
+      const checks = checksOf(names, printed);
+      // A failed check of a stage that names its rework sends the run back once (ADR 0165).
+      const rework = reworkOf(view, definition, index, checks, printed);
       const fact: Fact = {
         kind: "checks",
         index,
-        checks: checksOf(names, printed),
+        checks,
         afterMs,
         missing: missingOf(names, printed),
+        ...(rework ? { rework } : {}),
       };
       // The requester hears once that the stage waits for its checks (ADR 0127).
       const blocked = runBlocked(view, apply(view, fact, deps.now()), index, names);

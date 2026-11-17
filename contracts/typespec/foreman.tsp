@@ -41,6 +41,37 @@ model CheckView {
   state: CheckState;
 }
 
+/** foreman: a check that failed, with what the forge gives about it (forge port). */
+model FailedCheck {
+  ...CheckView;
+
+  /** The check's description on the forge, when it gives one. */
+  @minLength(1)
+  description?: string;
+
+  /** The check's page on the forge, for example the CI job, when it gives one. */
+  url?: url;
+}
+
+/** foreman: why a stage ran once more: the checks of a later stage failed, and that stage names it as `rework` (ADR 0165). */
+model StageRework {
+  /** The stage whose checks failed. */
+  failedAt: Name;
+
+  /** Why the checks failed, as the reason of a stage that fails at them. */
+  @minLength(1)
+  reason: string;
+
+  /** The checks that failed, as the stage's prompt names them. */
+  checks: FailedCheck[];
+
+  /** The session of the stage's agent before it ran once more. */
+  sessionId?: string;
+
+  /** When the run went back to the stage. */
+  at: utcDateTime;
+}
+
 /** foreman: one stage of a run (ADR 0067). */
 model StageView {
   stage: Name;
@@ -83,6 +114,9 @@ model StageView {
   /** Why the stage gave the run no pull request: a refused link, a branch the forge has none of, or the forge adapter's error (ADR 0109). */
   @minLength(1)
   note?: string;
+
+  /** Why the stage ran once more, when the checks of a later stage sent the run back to it (ADR 0165). */
+  rework?: StageRework;
 
   startedAt?: utcDateTime;
   endedAt?: utcDateTime;

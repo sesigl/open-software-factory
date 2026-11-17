@@ -1,12 +1,7 @@
 // The run's pull request through the forge port (ADR 0057, ADR 0069). The adapter is a program; the foreman runs its
 // `pr` command and reads the checks of the pull request's head commit, and its `prs` for the run's branch (ADR 0109).
+import type { PrintedCheck } from "../domain/run.ts";
 import { adapterRun } from "./program.ts";
-
-/** A check of the pull request as the port prints it. */
-export interface PrintedCheck {
-  name: string;
-  state: string;
-}
 
 /** The checks of the pull request `<repo>#<number>`; a failure names the adapter's error. */
 export async function pullRequestChecks(

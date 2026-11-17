@@ -121,6 +121,22 @@ model RunCompletedData {
 
   /** Why the stage the run ended at failed, when the foreman knows it (ADR 0127). */
   reason?: string;
+
+  /** The stages that ran once more because the checks of a later stage failed, in the order of the stages (ADR 0165). */
+  reworks?: RunRework[];
+}
+
+/** A stage of a run that ran once more because the checks of a later stage failed (ADR 0165). */
+model RunRework {
+  /** The stage that ran once more. */
+  stage: Name;
+
+  /** The stage whose checks failed. */
+  failedAt: Name;
+
+  /** Why the checks failed. */
+  @minLength(1)
+  reason: string;
 }
 
 /** What a blocked stage waits for: the checks of the run's pull request. A gate has its own `gate.requested@v1`. */

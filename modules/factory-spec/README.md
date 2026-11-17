@@ -81,6 +81,14 @@ stage when it names an `agent` (`stage "verify" only waits, so it names no agent
 (`stage "verify" only waits, so it names checks, the evidence "required" or a gate`). `factory resolve` gives it no
 agent.
 
+A stage with checks may name `rework: <stage>`, an earlier stage whose agent runs once more, with the failed checks in
+its prompt, when a check of the stage fails; when they fail again, the run fails
+([ADR 0165](../../docs/decisions/0165-a-failed-check-sends-the-run-back-once.md)). `factory lint` reports a `rework`
+that names no stage before it (`stage "verify" sends a failed check back to "ship", which is no stage before it`) or a
+stage that only waits (`stage "ship" sends a failed check back to "verify", which only waits`), and one on a stage
+that waits for no check, neither `checks` nor `evidence: required`
+(`stage "implement" sends a failed check back, but it waits for no check`).
+
 ## Warnings
 
 `factory lint` also warns about the fields that take no effect in a run (T-44). A warning is no problem: the command
@@ -547,3 +555,5 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FSPEC-127 | implemented | Render refuses a skill of another repository that factory.lock does not pin |
 | SCN-FSPEC-128 | implemented | "factory skills" prints a pinned skill with its repository and commit, and one without a pin with its problem |
 | SCN-FSPEC-129 | implemented | Lint names the line and column of an entry of an agent that it refuses, and what is wrong |
+| SCN-FSPEC-130 | implemented | Lint accepts a stage that sends a failed check back to an earlier stage that runs an agent |
+| SCN-FSPEC-131 | implemented | Lint reports a stage that sends a failed check back to a stage that cannot take it |
