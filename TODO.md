@@ -166,14 +166,14 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   Helm and Kubernetes suites run only for a change that reaches them.
 - **Done when:** a pull request that changes one README starts no test runner on its first push.
 
-### [ ] T-76 · the Stop hook blocks or goes (P2)
+### [x] T-76 · the Stop hook blocks or goes (P2)
 
 - **Build:** the hook of `.claude/settings.json` ends with code 2 when `make check-fast` fails and does nothing on
   a clean tree; `factory.yaml` renders it.
 - **Slices:**
   - [x] The hand-written hook ends with code 2 when `make check-fast` fails, does nothing on a clean tree, and blocks a
     stop once (`stop_hook_active`), so an agent that cannot fix a check can stop and ask.
-  - [ ] `factory.yaml` renders it: a field for a harness's stop check in `contracts/factory-definition` and in
+  - [x] `factory.yaml` renders it: a field for a harness's stop check in `contracts/factory-definition` and in
     `factory render` (a contract change, plan mode first).
 
 ### [x] T-77 · fewer checks that do the same or nothing (P2)

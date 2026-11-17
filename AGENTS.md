@@ -2,7 +2,8 @@
 
 Rules for every agent and every person who changes this repository. Keep this file short and stable.
 Details live in `skills/` and `docs/`. This repository declares its own agent in `factory.yaml`; `make agents-sync`
-renders `CLAUDE.md`, the MCP files and the skill links of every harness from it with `factory render`.
+renders `CLAUDE.md`, the MCP files, the skill links of every harness and Claude Code's Stop hook from it with
+`factory render`.
 
 ## What this repository is
 
@@ -137,7 +138,7 @@ When a check fails, its output starts with the check ID and the file and line to
 - Skills live in `skills/` and are declared in `factory.yaml`. Run `make agents-sync` after you add or remove one.
 - Claude Code: a `Stop` hook in `.claude/settings.json` runs `make check-fast` (no system test, no container) before
   you end a turn in which the working tree changed. When it fails, the hook keeps the turn going once with its
-  output; fix it, or stop and ask. The file is written by hand: `factory render` does not write hooks yet. Use plan
+  output; fix it, or stop and ask. `make agents-sync` renders the hook from the `stopCheck` in `factory.yaml`. Use plan
   mode before a change that touches `contracts/` or more than one module. Use subagents for independent modules; never
   let two agents change the same module at the same time.
 - When `make check` fails, read the check ID in the output (for example `BOUNDARY`) and open

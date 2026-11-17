@@ -1,6 +1,6 @@
 // "factory render": writes the harness files of one agent to the output folder.
 import { join, normalize } from "node:path";
-import { linkSkills, readText, writeFiles } from "../adapters/files.ts";
+import { exists, linkSkills, readText, writeFiles } from "../adapters/files.ts";
 import { ghAwWorkflows } from "../domain/automations.ts";
 import { fail } from "../domain/errors.ts";
 import { kagentResources } from "../domain/kubernetes.ts";
@@ -20,15 +20,17 @@ export interface RenderOptions {
   ghAw?: boolean;
 }
 
+export interface Rendered {
+  /** The hash of every written file, by its path below the output folder. */
+  files: Record<string, string>;
+  /** A line for each harness that runs no stop check of the agent (ADR 0168). */
+  notes: string[];
+}
+
 /**
- * Renders the files and links and returns the hash of every written file by its path below `output`. A skill of
- * another repository is linked from the cache, fetched at its pin (ADR 0146).
+ * Renders the files and links. A skill of another repository is linked from the cache, fetched at its pin (ADR 0146).
  */
-export async function render(
-  factory: Factory,
-  output: string,
-  options: RenderOptions,
-): Promise<Record<string, string>> {
+export async function render(factory: Factory, output: string, options: RenderOptions): Promise<Rendered> {
   const names = Object.keys(factory.definition.agents);
   const name =
     options.agent ??
@@ -43,6 +45,16 @@ export async function render(
   const prompt = readText(join(factory.dir, agent.prompt));
   const files: Record<string, string> = { "AGENTS.md": prompt };
   for (const each of harnesses) Object.assign(files, harness(each).files(mcp));
+  const notes: string[] = [];
+  const command = agent.stopCheck?.command;
+  for (const each of command === undefined ? [] : harnesses) {
+    const stop = harness(each).stopCheck;
+    if (!stop) notes.push(`${each} runs no stop check, so factory render writes none for it`);
+    else {
+      const path = join(output, stop.path);
+      files[stop.path] = stop.write(exists(path) ? readText(path) : undefined, command as string);
+    }
+  }
   const { definition } = factory;
   if (options.ghAw) Object.assign(files, ghAwWorkflows(definition, agent.harness, prompt, mcp));
   if (options.k8s) {
@@ -67,5 +79,5 @@ export async function render(
     return fetched[skill] ?? fail(unpinned(remote.name, skill));
   });
   for (const each of harnesses) linkSkills(join(output, harness(each).skills), skills);
-  return written;
+  return { files: written, notes };
 }

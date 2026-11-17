@@ -14,6 +14,9 @@ agents:
     effort: medium
     prompt: ./AGENTS.md
     repositories: [sesigl/open-software-factory]
+    # The Stop hook of Claude Code: the fast checks run before a turn with changed files ends (ADR 0168).
+    stopCheck:
+      command: make check-fast --quiet
     skills:
       - ./skills/implement-scenario
       - ./skills/fix-mutation-and-duplication

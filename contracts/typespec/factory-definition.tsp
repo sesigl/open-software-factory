@@ -120,6 +120,21 @@ model Agent {
 
   /** Runtime of the agent. */
   sandbox?: Sandbox;
+
+  /**
+   * A check the agent's harness runs before the agent ends a turn in which it changed files (ADR 0168). When the check
+   * fails, the agent gets its output once and goes on; a turn that changed nothing, or one that the check already sent
+   * back, ends as it would without it. `factory render` writes it for the harnesses that can run it.
+   */
+  stopCheck?: StopCheck;
+}
+
+/** The check an agent's harness runs before the agent ends a turn with changed files (ADR 0168). */
+@extension("additionalProperties", Json<false>)
+model StopCheck {
+  /** The shell command, run in the repository's folder, for example "make check-fast". It fails with a code other than 0. */
+  @pattern("\\S")
+  command: string;
 }
 
 @extension("additionalProperties", Json<false>)

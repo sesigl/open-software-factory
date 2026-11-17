@@ -227,6 +227,21 @@
             ],
             "additionalProperties": false,
             "description": "Runtime of the agent."
+          },
+          "stopCheck": {
+            "type": "object",
+            "properties": {
+              "command": {
+                "type": "string",
+                "pattern": "\\S",
+                "description": "The shell command, run in the repository's folder, for example \"make check-fast\". It fails with a code other than 0."
+              }
+            },
+            "required": [
+              "command"
+            ],
+            "description": "A check the agent's harness runs before the agent ends a turn in which it changed files (ADR 0168). When the check\nfails, the agent gets its output once and goes on; a turn that changed nothing, or one that the check already sent\nback, ends as it would without it. `factory render` writes it for the harnesses that can run it.",
+            "additionalProperties": false
           }
         },
         "required": [
