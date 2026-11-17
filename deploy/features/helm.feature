@@ -163,3 +163,15 @@ Feature: The Helm chart installs a complete factory on Kubernetes with one comma
     When the operator runs "helm template osf deploy/helm/osf --values values.yaml"
     Then the command exits with code 0
     And the deployment "foreman" sets "FOREMAN_MAX_STAGES" to "2"
+
+  @id=SCN-DIST-087 @status=implemented
+  Scenario: The chart gives gatekeeper its signing key from the key "gatekeeper-signing-key" of its Secret, and names the value when it is missing
+    Given a kind cluster with the images of the Compose profile
+    And a values file that sets every value under "secrets", "gatekeeperSigningKey" among them
+    When the operator runs "helm template osf deploy/helm/osf --values values.yaml"
+    Then the command exits with code 0
+    And the chart's Secret has the key "gatekeeper-signing-key" with the value of "secrets.gatekeeperSigningKey"
+    And the deployment "gatekeeper" sets "GATEKEEPER_SIGNING_KEY" from the key "gatekeeper-signing-key" of the chart's Secret
+    When the operator runs it again with a values file that sets every value under "secrets" except "gatekeeperSigningKey"
+    Then the command exits with code 1
+    And the output contains "set secrets.gatekeeperSigningKey or secrets.existingSecret"

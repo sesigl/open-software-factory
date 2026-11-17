@@ -24,9 +24,13 @@ export const SIGN_IN = {
   CONSOLE_SIGNING_KEY: "0123456789abcdef".repeat(4),
 };
 
+/** The seed of gatekeeper's Ed25519 key, 64 hex digits as osf init generates it, made up for the tests. */
+export const GATEKEEPER_SIGNING_KEY = "5eed".repeat(16);
+
 /** The values of `.env.example`, made up for the tests. */
 const VALUES: Record<string, string> = {
   ...OPENBAO,
+  GATEKEEPER_SIGNING_KEY,
   POSTGRES_PASSWORD: "postgres-password-1",
   LITELLM_MASTER_KEY: "sk-litellm-master-1",
   FOREMAN_API_TOKEN: "foreman-token-1",

@@ -139,14 +139,14 @@ Feature: The Compose profile installs a complete factory with one command
     Then the command exits with code 0
     And the stage "ship" of the resolved factory has the checks ["verify"] and the evidence "required"
 
-  @id=SCN-DIST-031 @status=implemented
+  @id=SCN-DIST-031 @status=deprecated
   Scenario: The verify stage of the reference factory only waits and runs no agent
     Given the Compose profile with every value of ".env.example" set in ".env"
     When the operator runs "docker compose run --rm factory resolve"
     Then the command exits with code 0
     And the stage "verify" of the resolved factory has "wait: true", no agent, the checks ["verify"] and the evidence "required"
 
-  @id=SCN-DIST-032 @status=implemented
+  @id=SCN-DIST-032 @status=deprecated
   Scenario: The verify stage of this repository's factory only waits and runs no agent
     Given the Compose profile with every value of ".env.example" set in ".env" and "FACTORY_DIR" set to "../dogfood/factory"
     When the operator runs "docker compose run --rm factory resolve"
@@ -338,3 +338,40 @@ Feature: The Compose profile installs a complete factory with one command
     Given the Compose profile with every value of ".env.example" set in ".env"
     When the operator runs "docker compose --profile tools config --format json"
     Then no service sets "OSF_NOW", "OSF_SEED" or "OSF_TEST_HOOKS"
+
+  @id=SCN-DIST-082 @status=implemented
+  Scenario: gatekeeper gets "GATEKEEPER_SIGNING_KEY" of ".env", no other service gets the key, and the profile does not start without it
+    Given the Compose profile with every value of ".env.example" set in ".env", "GATEKEEPER_SIGNING_KEY" among them
+    When the operator runs "docker compose --profile tools config --format json"
+    Then the service "gatekeeper" sets "GATEKEEPER_SIGNING_KEY" to the key of ".env", and no other service gets the key
+    When the operator runs "docker compose up --detach --wait" with every value of ".env.example" set in ".env" except "GATEKEEPER_SIGNING_KEY"
+    Then the command exits with code 1
+    And the output contains "set GATEKEEPER_SIGNING_KEY in .env"
+
+  @id=SCN-DIST-083 @status=implemented @shared=compose-profile
+  Scenario: The gatekeeper of the Compose profile signs its approval records and does not say they are unsigned
+    Given the Compose profile with every value of ".env.example" set in ".env"
+    When the operator runs "docker compose up --detach --wait"
+    Then the log of the service "gatekeeper" does not contain "GATEKEEPER_SIGNING_KEY is not set"
+
+  @id=SCN-DIST-084 @status=implemented @replaces=SCN-DIST-031
+  Scenario: The verify stage of the reference factory only waits, runs no agent, and sends a failed check back to implement
+    Given the Compose profile with every value of ".env.example" set in ".env"
+    When the operator runs "docker compose run --rm factory resolve"
+    Then the command exits with code 0
+    And the stage "verify" of the resolved factory has "wait: true", no agent, the checks ["verify"], the evidence "required" and "rework: implement"
+
+  @id=SCN-DIST-085 @status=implemented @replaces=SCN-DIST-032
+  Scenario: The verify stage of this repository's factory only waits, runs no agent, and sends a failed check back to implement
+    Given the Compose profile with every value of ".env.example" set in ".env" and "FACTORY_DIR" set to "../dogfood/factory"
+    When the operator runs "docker compose run --rm factory resolve"
+    Then the command exits with code 0
+    And the stage "verify" of the resolved factory has "wait: true", no agent, the checks ["verify"], the evidence "required" and "rework: implement"
+
+  @id=SCN-DIST-086 @status=implemented
+  Scenario: "factory plan --adapters" pins each adapter of the reference factory and of this repository's factory at the version the profile's foreman installs
+    Given the npm registry is a fake that the service "factory" reaches as "host.docker.internal", with each adapter package that the profile's service "foreman" installs at that version, at "0.1.0" and at "1.0.0"
+    And the Compose profile with every value of ".env.example" set in ".env"
+    When the operator runs "docker compose run --rm factory plan --adapters" with "FACTORY_NPM_REGISTRY" set to the fake, and again with "FACTORY_DIR" set to "../dogfood/factory"
+    Then both exit with code 0
+    And each "factory.lock" pins the harness "claude-code", the forge "github" and the inference "litellm" at the version that the profile's service "foreman" installs

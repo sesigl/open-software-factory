@@ -2,7 +2,7 @@
 
 # Every secret of the factory. Set each value, or name a Secret with the same keys in existingSecret, for example one
 # that OpenBao fills through its operator or the External Secrets Operator. The keys: postgres-password,
-# foreman-api-token, intake-api-token, gatekeeper-api-token, litellm-master-key and, optional,
+# foreman-api-token, intake-api-token, gatekeeper-api-token, gatekeeper-signing-key, litellm-master-key and, optional,
 # gatekeeper-slack-token and gatekeeper-slack-signing-secret, forge-token, github-token, claude-code-oauth-token and
 # factory-token.
 # gatekeeper asks in Slack, on the run's pull request with forgeToken, or both: set the Slack secrets, forgeToken or both.
@@ -14,6 +14,9 @@ secrets:
   gatekeeperApiToken: ""
   gatekeeperSlackToken: ""
   gatekeeperSlackSigningSecret: ""
+  # The seed of gatekeeper's Ed25519 key, 64 hex digits like the output of openssl rand -hex 32, that signs each
+  # approval record. Key gatekeeper-signing-key.
+  gatekeeperSigningKey: ""
   # The master key of LiteLLM, like sk-<random>. foreman makes each run's own key with it.
   litellmMasterKey: ""
   # The forge token of gatekeeper, which asks on the run's pull request, and of foreman, which reads its checks.

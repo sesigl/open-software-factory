@@ -8,7 +8,8 @@
         "$TURBO_ROOT$/modules/_template/**",
         "!$TURBO_ROOT$/modules/_template/node_modules/**",
         "$TURBO_ROOT$/docs/decisions/**",
-        "$TURBO_ROOT$/docs/reference/**"
+        "$TURBO_ROOT$/docs/reference/**",
+        "$TURBO_ROOT$/deploy/compose/**"
       ]
     }
   }

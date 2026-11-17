@@ -27,7 +27,7 @@ node tools/bin/osf.ts init --factory team/factory
 
 `osf init` writes `deploy/compose/.env`. It generates the secrets that only the factory's own services share: the
 database password, the LiteLLM master key, the API tokens of foreman, intake and gatekeeper, the console's session
-key and signing key, and the unseal key and the three tokens of OpenBao, the store of your agents' secrets. With `--factory`, it copies the reference factory to
+key and signing key, gatekeeper's signing key for its approval records, and the unseal key and the three tokens of OpenBao, the store of your agents' secrets. With `--factory`, it copies the reference factory to
 `team/factory/` and points `FACTORY_DIR` there, so you change your copy. It ends with the list of values that are
 still empty. `.env` stays out of Git; never commit it, and keep a copy in your safe: without its
 `OSF_OPENBAO_UNSEAL_KEY`, no one can read the secrets you store. On an existing `.env`, `osf init` changes no value

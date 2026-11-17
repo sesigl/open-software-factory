@@ -11,6 +11,9 @@ const OPENBAO: Record<string, string> = {
   OSF_OPENBAO_EGRESS_TOKEN: "e3".repeat(32),
 };
 
+/** The seed of gatekeeper's Ed25519 key, 64 hex digits as osf init generates it, made up for the tests. */
+const GATEKEEPER_SIGNING_KEY = "5eed".repeat(16);
+
 export const FOREMAN_TOKEN = "foreman-token-1";
 export const INTAKE_TOKEN = "intake-token-1";
 export const GATEKEEPER_TOKEN = "gatekeeper-token-1";
@@ -137,6 +140,7 @@ export async function smoke(
     FOREMAN_API_TOKEN: FOREMAN_TOKEN,
     INTAKE_API_TOKEN: INTAKE_TOKEN,
     GATEKEEPER_API_TOKEN: GATEKEEPER_TOKEN,
+    GATEKEEPER_SIGNING_KEY,
     GATEKEEPER_SLACK_TOKEN: slack.token,
     GATEKEEPER_SLACK_SIGNING_SECRET: slack.signingSecret,
     GATEKEEPER_SLACK_CHANNEL: GATES,

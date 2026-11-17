@@ -9,7 +9,8 @@ const PROFILE = "deploy/compose";
 const ENV = `${PROFILE}/.env`;
 // The secrets that only the factory's own services share: init generates them. Every other value is the team's.
 // OpenBao's unseal key, its root token and the IDs of its two tokens are 64 hex digits too (ADR 0145), and so is the
-// seed of the console's Ed25519 key, which signs the proof of the person (ADR 0151).
+// seed of the console's Ed25519 key, which signs the proof of the person (ADR 0151), and of gatekeeper's, which signs
+// each approval record (SCN-GATE-114).
 const GENERATED =
   /^(?:[A-Z0-9_]*_PASSWORD|[A-Z0-9_]*_API_TOKEN|[A-Z0-9_]*_MASTER_KEY|[A-Z0-9_]*_SESSION_SECRET|[A-Z0-9_]*_SIGNING_KEY|OSF_OPENBAO_UNSEAL_KEY|OSF_OPENBAO_[A-Z]+_TOKEN)$/;
 const SLACK = ["GATEKEEPER_SLACK_CHANNEL", "GATEKEEPER_SLACK_TOKEN", "GATEKEEPER_SLACK_SIGNING_SECRET"];

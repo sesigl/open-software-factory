@@ -318,6 +318,8 @@ services:
       # The forge's API; empty: GitHub's. A pull request link of a request counts only on this forge.
       GATEKEEPER_FORGE_URL: ${GATEKEEPER_FORGE_URL:-}
       GATEKEEPER_FORGE_TOKEN: ${GATEKEEPER_FORGE_TOKEN:-}
+      # Signs each approval record; osf init generates it. Without it the records would be unsigned.
+      GATEKEEPER_SIGNING_KEY: ${GATEKEEPER_SIGNING_KEY:?set GATEKEEPER_SIGNING_KEY in .env}
       GATEKEEPER_PERSON_KEYS: *person-keys
     volumes:
       - factory:/factory:ro

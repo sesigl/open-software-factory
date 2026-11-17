@@ -94,7 +94,7 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 - **Build:** resolve `next` against the console's own origin; set mode 0600 on every write of `.env`.
 - **Done when:** a scenario for each.
 
-### [ ] T-69 · the merge gate covers the factory's branches, and unsigned records are said aloud (P1)
+### [x] T-69 · the merge gate covers the factory's branches, and unsigned records are said aloud (P1)
 
 - **Problem:** `.github/gatekeeper/merge.rego` gates `observer/`, `factory/` and the label `factory`, but the
   foreman's branches are `osf/<run ID>`. `gatekeeper serve` writes unsigned records without a word, and neither
@@ -105,7 +105,11 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 - **Slices:**
   - [x] The policy gates `osf/` (SCN-GATE-115 runs gatekeeper with this repository's policy), serve warns once at
     its start without the key (SCN-GATE-113), and gatekeeper takes the key's seed in 64 hex digits (SCN-GATE-114).
-  - [ ] After the release of gatekeeper with the hex seed: `osf init`, the profile and the chart supply the key.
+  - [x] After the release of gatekeeper with the hex seed: `osf init`, the profile and the chart supply the key.
+- **Done:** the policy gates `osf/`, serve warns without the key, and `osf init` generates
+  `GATEKEEPER_SIGNING_KEY`, which the Compose profile requires and passes to gatekeeper only, and the chart takes from
+  `secrets.gatekeeperSigningKey`, key `gatekeeper-signing-key`, required like the API tokens (SCN-REPO-228,
+  SCN-DIST-082, SCN-DIST-083, SCN-DIST-087).
 
 ### [x] T-70 · the profile runs no agent outside a sandbox (P1)
 
@@ -423,8 +427,8 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   run back to it once, with the failed checks' names, states, descriptions and links in its prompt, the stage keeps
   its gate's approval, `GET /v1/runs/<id>` shows its `rework` and `run.completed@v1` lists it in `reworks`; a second
   failure fails the run as before; `factory lint` and `foreman serve` refuse a `rework` that cannot work (ADR 0165,
-  SCN-FORE-193 to 196, SCN-FSPEC-130, SCN-FSPEC-131). Open: this repository's factory names `rework: implement` on
-  its stage `verify` once a release carries the field.
+  SCN-FORE-193 to 196, SCN-FSPEC-130, SCN-FSPEC-131). This repository's factory and the reference factory name
+  `rework: implement` on their stage `verify` (SCN-DIST-084, SCN-DIST-085).
 
 ### [x] T-99 · the factory's own identity on GitHub (owner's decision)
 
