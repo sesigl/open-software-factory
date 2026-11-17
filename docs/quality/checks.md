@@ -71,7 +71,8 @@ to the base of the pull request. Without it, a check that needs it prints "skipp
   every suite ([ADR 0029](../decisions/0029-proof-capture-and-action.md)): one proof comment and the commit status
   `proof`.
 - The `verify` job also runs the spec-trace GitHub Action for its report: the job summary lists the scenarios a pull
-  request adds, removes or changes, and the artifact `spec-trace` holds the JSON report.
+  request adds, removes or changes, with the Examples rows of an Outline added, removed or changed, and the artifact
+  `spec-trace` holds the JSON report.
 - Both actions run the release from npm at the version of the module's `package.json`, so a change to proof or
   spec-trace reaches this check after its release.
 - Suites with extra setup: the `proof` suite's job installs Chromium for the capture scenarios. The `deploy` suite's

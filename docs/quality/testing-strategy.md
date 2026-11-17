@@ -257,8 +257,8 @@ Limits: STEPS proves the test follows the scenario's words, not their meaning. A
 review of the first tests in each module close most of the gap. The wording of an implemented scenario may change
 in place while its behavior stays (ADR 0157), so the review is the guard against an edit that makes a test pass: the
 edit shows in the pull request diff, and the spec-trace summary of `verify.yml` lists each scenario whose steps
-changed. A shared start trades isolation inside its group for one start: a scenario that changes the shared system
-by mistake can break the next one.
+changed and each Examples row of an Outline added, removed or changed. A shared start trades isolation inside its
+group for one start: a scenario that changes the shared system by mistake can break the next one.
 
 ## Smoke tests
 

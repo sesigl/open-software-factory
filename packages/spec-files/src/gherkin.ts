@@ -25,6 +25,8 @@ export interface Scenario {
   steps: Step[];
   /** The rows of all Examples tables; 0 for a plain scenario. */
   examples: number;
+  /** The rows of all Examples tables, each by the names of its table's columns; empty for a plain scenario. */
+  rows: Record<string, string>[];
 }
 
 /** A feature file that does not parse, at the line the parser names. */
@@ -63,6 +65,7 @@ export function parseFeature(file: string, text: string): { scenarios: Scenario[
         tags: [...inherited, ...own],
         steps: [...shared, ...toSteps(child.scenario.steps)],
         examples: child.scenario.examples.reduce((sum, table) => sum + table.tableBody.length, 0),
+        rows: child.scenario.examples.flatMap(toRows),
       });
     }
   };
@@ -82,6 +85,18 @@ export function statusOf(scenario: Scenario): string | undefined {
 
 function names(tags: readonly { name: string }[]): string[] {
   return tags.map((tag) => tag.name);
+}
+
+type Table = {
+  tableHeader?: { cells: readonly { value: string }[] };
+  tableBody: readonly { cells: readonly { value: string }[] }[];
+};
+
+/** The rows of a table by its column names; none for an Examples section without a table. */
+function toRows({ tableHeader, tableBody }: Table): Record<string, string>[] {
+  if (!tableHeader) return [];
+  const columns = tableHeader.cells.map((cell) => cell.value);
+  return tableBody.map((row) => Object.fromEntries(row.cells.map((cell, index) => [columns[index], cell.value])));
 }
 
 // The parser classifies each step in every language; `And`, `But` and `*` take the keyword before them.

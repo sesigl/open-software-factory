@@ -78,7 +78,29 @@ export interface Report {
     removed: string[];
     status: { id: string; from: string; to: string }[];
     steps: string[];
+    examples?: { id: string; added: Row[]; removed: Row[]; changed: { from: Row; to: Row }[] }[];
   } | null;
+}
+
+/** An Examples row by its column names. */
+export type Row = Record<string, string>;
+
+/** The block of a Scenario Outline with the columns qty and price and one Examples row per `[qty, price]`. */
+export function outline(tags: string, rows: [number, number][]): string[] {
+  const steps = [
+    "Given an order of <qty> items",
+    "Then the price is <price>",
+    "",
+    "    Examples:",
+    "      | qty | price |",
+    ...rows.map(([qty, price]) => `      | ${qty} | ${price} |`),
+  ];
+  return block(tags, steps, "Scenario Outline: The price of an order");
+}
+
+/** The row `{ qty, price }` as the report has it. */
+export function row(qty: number, price: number): Row {
+  return { qty: String(qty), price: String(price) };
 }
 
 export async function readReport(sut: Sut, path = "$OUTPUT/spec-trace.json"): Promise<Report> {

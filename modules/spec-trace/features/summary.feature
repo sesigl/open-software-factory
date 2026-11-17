@@ -41,3 +41,11 @@ Feature: Markdown summary
     When the developer runs "spec-trace report --summary summary.md --base" with the base commit
     Then the command exits with code 0
     And the file "summary.md" in the working folder has the lines "## spec-trace", "", "2 scenarios: 1 implemented, 1 planned, 0 deprecated; 0 with a test, 0 passed", "", "### Changes since `<base>`", "", "since the base: 1 added, 1 removed, 1 with a new status, 1 with new steps.", "", "| Scenario | Change |", "| --- | --- |", "| SCN-SHOP-003 | added |", "| SCN-SHOP-002 | removed |", "| SCN-SHOP-001 | status planned → implemented |", "| SCN-SHOP-001 | steps changed |", "", "### Findings", "", "| Rule | Where | Finding |", "| --- | --- | --- |", "| TRACE | features/checkout.feature:4 | SCN-SHOP-001 is implemented but has no system test |", ""
+
+  @id=SCN-TRACE-074 @status=implemented
+  Scenario: The summary has one table row for each Examples row added, removed and changed
+    Given a base commit with the planned Scenario Outline "SCN-SHOP-001" with the rows "qty 1, price 3", "qty 2, price 6" and "qty 4, price 12"
+    And since the base commit its rows are "qty 1, price 3", "qty 2, price 7" and "qty 5, price 15"
+    When the developer runs "spec-trace report --summary summary.md --base" with the base commit
+    Then the command exits with code 0
+    And the file "summary.md" in the working folder has the lines "since the base: 0 added, 0 removed, 0 with a new status, 0 with new steps, 1 with new examples.", "", "| Scenario | Change |", "| --- | --- |", "| SCN-SHOP-001 | example added: qty = 5, price = 15 |", "| SCN-SHOP-001 | example removed: qty = 4, price = 12 |" and "| SCN-SHOP-001 | example changed: qty = 2, price = 6 → qty = 2, price = 7 |" after the heading of the changes

@@ -279,10 +279,16 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   `fakes.postgres` (12.1 s, 4), `fakes.s3` (11.4 s, 2), `fakes.collector` (8.8 s, 2), `fakes.openbao`,
   `fakes.temporal`.
 
-### [ ] T-100 · spec-trace's report lists the changed rows of a Scenario Outline (P2)
+### [x] T-100 · spec-trace's report lists the changed rows of a Scenario Outline (P2)
 
 - **Build:** the report of the spec-trace action names an Outline as changed when an Examples row changes, but not
   which row; it shows the rows added, removed and changed.
+- **Done:** the report did not notice a changed row at all (an Outline's steps keep their `<parameters>`). Now
+  `spec-files` gives each scenario its `rows` (SCN-SPECFILES-013), and `spec-trace report --base` adds the optional
+  `changes.examples` with the rows added, removed and changed of each Outline, the part `N with new examples` of the
+  output line and one summary line per row (SCN-TRACE-070 to SCN-TRACE-074). A row is the same row by all its cells,
+  a changed row by a first cell that only it shares; a report of plain scenarios stays as it was. CI's job summary
+  shows the rows after the next release of spec-trace, since the workflow runs the Action from npm.
 
 ### [ ] T-101 · `spend-log` of an attached LiteLLM proxy waits long enough (P2)
 

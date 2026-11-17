@@ -16,6 +16,12 @@ Feature: Feature files
     When the module parses the feature file
     Then the scenario has 5 examples
 
+  @id=SCN-SPECFILES-013 @status=implemented
+  Scenario: parseFeature gives the rows of the Examples tables by their column names
+    Given the feature file "a.feature" with a plain scenario and a Scenario Outline whose Examples tables have the rows "qty 1, price 3" and "qty 2, price 6" and the row "qty 4", and an Examples section without a table
+    When the module parses the feature file
+    Then the plain scenario has no rows and the Outline has the rows "qty 1, price 3", "qty 2, price 6" and "qty 4"
+
   @id=SCN-SPECFILES-003 @status=implemented
   Scenario: parseFeature reports a feature file that does not parse
     Given the feature file "broken.feature" whose line 12 is "Scenario without a colon" after 10 spaces

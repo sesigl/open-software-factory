@@ -116,8 +116,32 @@ IDs whose `steps` changed; it is `null` without `--base`. The output line then e
 `since the base: 1 added, 0 removed, 1 with a new status, 0 with new steps`. A base that is not a commit exits 2. The
 changes are for the review: no rule fails on them.
 
+A Scenario Outline is one scenario, so a changed `Examples` row changes none of its steps. When the rows of an
+Outline changed, `changes` also has `examples`: one entry for each such Outline, in the order of the feature files,
+with its ID and the rows `added`, `removed` and `changed` (`from` and `to`), each row an object from its column
+names to its cells. A new Outline lists all its rows as added; a removed Outline has no entry. The output line then ends with
+`…, 0 with new steps, 1 with new examples`. Without such an Outline, `examples` and that part of the line are left
+out, so a report of plain scenarios stays as it was.
+
+```json
+"examples": [
+  {
+    "id": "SCN-SHOP-003",
+    "added": [{ "qty": "5", "price": "15" }],
+    "removed": [{ "qty": "4", "price": "12" }],
+    "changed": [{ "from": { "qty": "2", "price": "6" }, "to": { "qty": "2", "price": "7" } }]
+  }
+]
+```
+
+A row with the same cells in the base is the same row wherever it stands, so moving rows is no change. Of the rows
+left, a removed row and an added row are one changed row when they alone share the first cell, the case's name or
+input in most tables: an inserted row then shows as one added row, not as every row below it changed. When more than
+one row shares a first cell, they stay removed and added.
+
 `--summary <file>` adds a Markdown summary to the end of the file: the totals, a table of the changes and a table of
-the findings. In a workflow, `--summary "$GITHUB_STEP_SUMMARY"` shows it on the run's page.
+the findings. In a workflow, `--summary "$GITHUB_STEP_SUMMARY"` shows it on the run's page. The table has one line
+for each changed Examples row, such as `| SCN-SHOP-003 | example changed: qty = 2, price = 6 → qty = 2, price = 7 |`.
 
 ## GitHub Action
 
@@ -251,3 +275,8 @@ with a trusted publisher for `publish-spec-trace.yml`. No credential is stored i
 | SCN-TRACE-067 | implemented | SPEC rejects an unknown kind of scenario |
 | SCN-TRACE-068 | implemented | SPEC accepts a journey scenario |
 | SCN-TRACE-069 | implemented | SPEC rejects a scenario with two kinds |
+| SCN-TRACE-070 | implemented | report lists the Examples rows of an Outline added, removed and changed since the base commit |
+| SCN-TRACE-071 | implemented | report lists every row of an Outline added since the base commit as added |
+| SCN-TRACE-072 | implemented | report lists rows whose first column is not unique as removed and added |
+| SCN-TRACE-073 | implemented | report lists no change for an Outline whose rows only moved |
+| SCN-TRACE-074 | implemented | The summary has one table row for each Examples row added, removed and changed |
