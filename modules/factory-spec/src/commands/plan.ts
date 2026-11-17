@@ -103,7 +103,7 @@ export async function plan(loaded: Factory, output: string, adapters = false): P
 
 export async function apply(loaded: Factory, output: string, options: RenderOptions): Promise<string> {
   const factory = await pin(loaded);
-  const files = await render(factory, output, options);
+  const { files } = await render(factory, output, options);
   const applied = model(factory);
   const hooks = await applyWebhooks(factory.definition, readState()?.hooks, options.ghAw);
   writeState({ model: applied, files, hooks });

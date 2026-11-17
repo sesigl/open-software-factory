@@ -29,6 +29,9 @@
       "sandbox": {
         "template": "small",
         "egress": ["api.linear.app"]
+      },
+      "stopCheck": {
+        "command": "make check-fast"
       }
     },
     "implement": {

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "factory": "web",
+  "agents": {
+    "implement": {
+      "harness": "claude-code",
+      "model": "routes/implement",
+      "effort": "medium",
+      "prompt": "./agents/implement.md",
+      "stopCheck": {
+        "command": "  "
+      }
+    }
+  }
+}

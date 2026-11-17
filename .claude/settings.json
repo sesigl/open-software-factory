@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "grep -Eq '\"stop_hook_active\": *true' && exit 0; [ -z \"$(git status --porcelain)\" ] && exit 0; make check-fast --quiet >&2 || { echo 'make check-fast failed: fix it before you report done, or stop and ask' >&2; exit 2; }"
+            "command": "grep -Eq '\"stop_hook_active\": *true' && exit 0; [ -z \"$(git status --porcelain)\" ] && exit 0; { make check-fast --quiet; } >&2 || { echo 'the stop check failed: fix it before you report done, or stop and ask' >&2; exit 2; }"
           }
         ]
       }

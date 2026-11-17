@@ -51,13 +51,32 @@ filesystem server with `npx`.
 | Harness | Files below `$OUTPUT` |
 | --- | --- |
 | every harness | `AGENTS.md`, a copy of the agent's prompt |
-| `claude-code` | `CLAUDE.md` (`@AGENTS.md`), `.mcp.json`, one link per skill in `.claude/skills/` |
+| `claude-code` | `CLAUDE.md` (`@AGENTS.md`), `.mcp.json`, one link per skill in `.claude/skills/`; with a stop check, the `Stop` hook in `.claude/settings.json` |
 | `codex` | `.codex/config.toml` (`[mcp_servers.<name>]`), one link per skill in `.agents/skills/` |
 | `opencode` | `opencode.json` (`mcp`), one link per skill in `.opencode/skills/` |
 
 `render` writes the agent's own harness; `--harness all` writes every harness under `providers.harness`. A link in
 a skill folder whose skill the factory no longer declares is removed. The model and the effort are not written:
 the inference gateway routes the model at run time, and the foreman hands each stage's agent its effort.
+
+### Stop check
+
+An agent may name a command its harness runs before the agent ends a turn in which it changed files (ADR 0168):
+
+```yaml
+agents:
+  implement:
+    stopCheck:
+      command: make check-fast
+```
+
+When the command fails, the agent gets its output once and goes on; a turn that changed nothing, or one that the
+check already sent back, ends as it would without it, so an agent that cannot fix the check can stop and ask.
+`render` writes it for Claude Code as the one `Stop` hook of `.claude/settings.json` (code 2 with the check's output
+when it fails). It reads the file first and keeps every other key and hook a person wrote there; without a stop check
+it leaves the file alone. Codex and opencode run no stop check: `render` writes nothing for them and prints
+`codex runs no stop check, so factory render writes none for it`. `factory lint` refuses a blank command, and
+`factory plan` reports a Stop hook changed by hand as drift.
 
 ## Model and effort
 
@@ -557,3 +576,8 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FSPEC-129 | implemented | Lint names the line and column of an entry of an agent that it refuses, and what is wrong |
 | SCN-FSPEC-130 | implemented | Lint accepts a stage that sends a failed check back to an earlier stage that runs an agent |
 | SCN-FSPEC-131 | implemented | Lint reports a stage that sends a failed check back to a stage that cannot take it |
+| SCN-FSPEC-132 | implemented | Render writes the stop check as the Stop hook of Claude Code and keeps the settings a person wrote |
+| SCN-FSPEC-133 | implemented | The rendered Stop hook skips a second stop and a clean tree, and ends with code 2 when the check fails |
+| SCN-FSPEC-134 | implemented | Render says which harness cannot run the stop check and writes none for it |
+| SCN-FSPEC-135 | implemented | Lint refuses a stop check without a command |
+| SCN-FSPEC-136 | implemented | Plan reports a Stop hook changed by hand as drift |

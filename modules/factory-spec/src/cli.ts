@@ -52,7 +52,8 @@ async function main(): Promise<number> {
     },
     async render() {
       const [{ load }, { render }] = await Promise.all([import("./commands/load.ts"), import("./commands/render.ts")]);
-      print(Object.keys(await render(load(file), outputFolder(), options)).map((path) => `wrote ${path}`));
+      const { files, notes } = await render(load(file), outputFolder(), options);
+      print([...Object.keys(files).map((path) => `wrote ${path}`), ...notes]);
       return 0;
     },
     async plan() {

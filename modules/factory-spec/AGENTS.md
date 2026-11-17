@@ -1,7 +1,7 @@
 # AGENTS.md for module `factory-spec`
 
 Adds rules for this module. The root `AGENTS.md` applies in full. Decisions: ADR 0020, ADR 0022, ADR 0060, ADR 0135,
-ADR 0140, ADR 0146.
+ADR 0140, ADR 0146, ADR 0168.
 
 ## Public surface
 

@@ -28,6 +28,7 @@ Use these terms in scenarios, code, UI text and docs.
 | Take over | A person ends the running stage's turn and goes on with the work in the run's folder; a hand back lets the run go on from there (ADR 0070). |
 | Foreman | The orchestrator that runs the stages of a factory as durable workflows. |
 | Harness | A coding-agent program that runs the inner tool loop, such as Claude Code, Codex or OpenCode. |
+| Stop check | An agent's `stopCheck` in `factory.yaml`: a command its harness runs before the agent ends a turn in which it changed files; when it fails, the agent gets its output once and goes on. `factory render` writes it as Claude Code's Stop hook (ADR 0168). |
 | Harness adapter | A program that runs one harness behind the harness port: it speaks ACP on stdio to its client and adds the tool allowlist, cancel within 5 seconds and the transcript export (ADR 0050). |
 | Harness proxy | The library `@opensoftware/harness-proxy` that every harness adapter runs its agent behind: it passes ACP on, applies the allowlist and the cancel deadline, records each session and exports it as a run record (ADR 0052). |
 | Sandbox | An isolated environment in which one stage's harness runs. |
