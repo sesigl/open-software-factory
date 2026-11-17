@@ -1,5 +1,6 @@
 ---
 status: accepted; the option of a start after verify taken by 0092
+topic: design-note
 date: 2026-11-08
 ---
 

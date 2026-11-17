@@ -1,5 +1,6 @@
 ---
 status: accepted
+topic: tools
 date: 2026-10-22
 ---
 

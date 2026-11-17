@@ -1,5 +1,6 @@
 ---
 status: superseded by 0009
+topic: stack
 date: 2026-10-18
 ---
 

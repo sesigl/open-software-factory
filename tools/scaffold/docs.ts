@@ -6,6 +6,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative } from "node:path";
 import { parseFeature } from "@opensoftware/spec-files";
+import { DECISIONS_DIR, decisionIndex } from "../checks/lib/decisions.ts";
 import { Repo, treeFiles } from "../checks/lib/repo.ts";
 import { VISION_FILE, visionTable } from "../checks/vision.ts";
 
@@ -75,6 +76,7 @@ export function refreshDocs(root: string, options: DocsOptions): StaleSection[] 
 
 function render(root: string, moduleDir: string, source: string): string | undefined {
   if (join(moduleDir, source) === join(root, VISION_FILE)) return visionTable(new Repo(root));
+  if (relative(root, join(moduleDir, source)) === DECISIONS_DIR) return decisionIndex(new Repo(root));
   if (source === "features/") return scenarioTable(join(moduleDir, "features"));
   if (source.endsWith("config.schema.json")) return configTable(join(moduleDir, source));
   if (source.endsWith(" --help")) return commandTable(moduleDir, source.slice(0, -" --help".length));
@@ -125,9 +127,10 @@ function commandTable(moduleDir: string, cli: string): string {
 
 function findReadmes(start: string, root: string): string[] {
   const found = treeFiles(start, SKIP_DIRS).filter((file) => basename(file) === "README.md" && dirname(file) !== root);
-  // docs/ holds examples of markers; only the vision report below it is generated.
-  const vision = join(root, dirname(VISION_FILE), "README.md");
-  if (existsSync(vision) && !relative(start, vision).startsWith("..")) found.push(vision);
+  // docs/ holds examples of markers; only the vision report and the index of decisions below it are generated.
+  for (const generated of [join(root, dirname(VISION_FILE), "README.md"), join(root, DECISIONS_DIR, "README.md")]) {
+    if (existsSync(generated) && !relative(start, generated).startsWith("..")) found.push(generated);
+  }
   return found;
 }
 

@@ -1,5 +1,6 @@
 ---
 status: accepted; the suites planned by 0094; OSF_TEST_RUN replaced by --force on main by 0154
+topic: design-note
 date: 2026-11-05
 ---
 

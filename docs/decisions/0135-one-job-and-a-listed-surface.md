@@ -1,5 +1,6 @@
 ---
 status: accepted; amended by 0159 (when a new package is right)
+topic: packages
 date: 2026-11-14
 ---
 

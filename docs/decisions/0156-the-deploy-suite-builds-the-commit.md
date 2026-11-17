@@ -1,5 +1,6 @@
 ---
 status: accepted; since the second slice of T-72 scripts/images.ts also loads the chart's images into kind, and kind-images.sh is gone (deploy/README.md)
+topic: design-note
 date: 2026-11-16
 ---
 

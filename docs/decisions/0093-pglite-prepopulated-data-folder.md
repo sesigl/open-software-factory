@@ -1,5 +1,6 @@
 ---
-status: accepted; fakes.postgres no longer uses PGlite since 0129
+status: accepted; the testkit part superseded by 0129, which removed PGlite from the testkit; intake still starts PGlite this way
+topic: design-note
 date: 2026-11-08
 ---
 

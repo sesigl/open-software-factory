@@ -1,5 +1,6 @@
 ---
 status: superseded by 0155
+topic: design-note
 date: 2026-11-10
 ---
 

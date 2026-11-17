@@ -1,5 +1,6 @@
 ---
 status: accepted
+topic: stack
 date: 2026-11-14
 ---
 

@@ -1,5 +1,6 @@
 ---
-status: accepted
+status: accepted; PGlite in place of SQLite in CLI mode, one SQL dialect, by 0063; node-postgres in place of a query layer by 0082
+topic: stack
 date: 2026-10-18
 ---
 

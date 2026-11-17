@@ -1,5 +1,6 @@
 ---
-status: proposed   # proposed | accepted | superseded by NNNN
+status: proposed   # proposed | accepted | superseded by NNNN; a later record may add a note: accepted; amended by NNNN (what)
+topic: process     # process | stack | packages | testing | ports | tools | factory | runs | console | install | design-note
 date: YYYY-MM-DD
 ---
 

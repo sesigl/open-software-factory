@@ -26,7 +26,7 @@ Each finding names `file:line` and the change Stryker made. Decide which of thes
    `// Stryker disable next-line <Mutator>: <why it is equivalent>` above the line.
 
 Never fix a mutant with a unit test, a mock, a test that imports from `src/`, or an assertion on an internal
-detail. Those make the score go up without proving any behavior.
+detail (root `AGENTS.md`, "Hard rules"). Those make the score go up without proving any behavior.
 
 Then rerun only the changed lines: `make mutation` (with `OSF_BASE` set, as `make` does).
 
@@ -44,7 +44,8 @@ Then rerun only the changed lines: `make mutation` (with `OSF_BASE` set, as `mak
 
 ## Keep the tests fast
 
-A mutation run reruns a module's whole suite once per mutant, so suite time multiplies. When a suite is slow:
+A mutation run reruns, per mutant, every scenario whose module processes ran it (a library: all its tests), so
+suite time multiplies. When a suite is slow, follow the BUDGET rule of root `AGENTS.md` ("Hard rules"):
 
 - Find the slowest scenarios in `reports/junit/`. A container start often costs more than the test itself.
 - Prefer a fake in `@opensoftware/testkit` that keeps the same behavior in memory over a container, when the
