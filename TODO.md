@@ -141,7 +141,10 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 - **Slices:**
   - [x] The decision record (ADR 0156), and the profile's module images from the commit in the deploy suite.
   - [x] The chart's scenarios on kind with the images from the commit; `kind-images.sh` goes.
-  - [ ] The job on the released images after publishing, which tells the maintainers when it fails.
+  - [x] The job on the released images after publishing, which tells the maintainers when it fails (ADR 0169): the
+    workflow `released-images` on `workflow_run` of `publish-images` and by hand, on the published commit;
+    `scripts/images.ts` with `OSF_DEPLOY_IMAGES=released` pulls the images and checks amd64 and arm64; the Compose
+    scenarios of `osf released-images scenarios` run (the chart's not yet); a failure opens or comments on one issue.
   - [ ] The release pull request: its dispatched verify green, and merged without `--admin`.
 
 ### [x] T-73 · a push to main never cancels the run before it (P1)

@@ -82,6 +82,12 @@ to the base of the pull request. Without it, a check that needs it prints "skipp
   install and the pulls run (`.github/scripts/kind-start.sh`, ADR 0163). With agent-sandbox, that start also applies
   its manifest once. Each line of its log carries the time it was written. kind and the suite's `pull` images come
   from their registries: a cache of their archives made the setup slower (ADR 0167).
+- `.github/workflows/released-images.yml` runs after each successful `publish-images`, on the commit it published,
+  and by hand: the deploy suite's Compose scenarios on the images in GHCR, pulled by `scripts/images.ts` with
+  `OSF_DEPLOY_IMAGES=released` (ADR 0169). It runs Vitest in `deploy/` without turbo, so it writes nothing into the
+  test cache and no wall time for BUDGET; AFFECTED fails another workflow that sets `OSF_TEST_CACHE` or writes the
+  cache `turbo-tests-`. When it fails, it opens or comments on the issue "The released images fail the deploy
+  scenarios" with the run and the failed scenarios; `skills/release-packages` says what to do.
 - `.github/workflows/mutation.yml` runs MUTATION for every pull request as a separate check, one runner per shard of
   about 100 added lines of each changed unit (see [MUTATION](#mutation)).
 
@@ -252,7 +258,7 @@ to the base of the pull request. Without it, a check that needs it prints "skipp
 ### AFFECTED
 
 - **Reads:** with ts-morph, `system-tests/` and the scripts of `test:system`; the workspace's `package.json` and
-  `turbo.json` files, the `Makefile`, `verify.yml` and `.github/test-suites.yml`.
+  `turbo.json` files, the `Makefile`, the workflows in `.github/workflows/` and `.github/test-suites.yml`.
 - **Why:** the turbo hash of each suite's system tests must cover what they use (ADR 0081), or a replay hides a
   change.
 - **Fails, when a test uses something its hash does not cover:**
@@ -275,7 +281,8 @@ to the base of the pull request. Without it, a check that needs it prints "skipp
   `globalDependencies`, `.github/test-suites.yml` among them.
 - **Fails, when the cache is used where it must not be:** `make verify-tests` runs the system tests and
   `make verify-static` runs lint, typecheck and build with `--force` unless `OSF_TEST_CACHE` is set; only pull requests
-  set it; no run of `test:system` uses `--only`.
+  set it, in any workflow; no workflow besides `verify.yml` writes the cache `turbo-tests-` with `actions/cache` or
+  `actions/cache/save` (ADR 0169); no run of `test:system` uses `--only`.
 
 ### RELEASE
 

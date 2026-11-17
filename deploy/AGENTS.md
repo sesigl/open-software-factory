@@ -10,8 +10,9 @@ The only ways a system test or an operator may use the distribution:
 - The reference factory in `compose/factory/` and this repository's factory in `dogfood/factory/`
 - The image build `images/Dockerfile`, with the build argument `PACKAGES`
 - `scripts/images.ts`, which builds the module images of `compose.yaml` from this workspace under their pinned tags
-  before the tests (ADR 0156) and loads the chart's images into a local kind cluster, and `scripts/packs.ts`, the
-  packer that the e2e suite shares
+  before the tests (ADR 0156) and loads the chart's images into a local kind cluster, or with
+  `OSF_DEPLOY_IMAGES=released` pulls the published ones (ADR 0169); it is the package's `bin`, so a system test runs
+  it with `sut.cli`. And `scripts/packs.ts`, the packer that the e2e suite shares
 - The Helm chart: `helm` with `helm/osf/` and a values file (see `README.md#helm-values`), and `helm test`
 
 System tests drive the profile with `sut.compose("compose/compose.yaml")` and reach the services only through their
@@ -32,6 +33,9 @@ its own.
   a copy of `images/Dockerfile` with its install step swapped (ADR 0156) and loads into kind. Keep that step one `RUN`
   with `npm install --global ... $PACKAGES`, which the script finds; `package.json` declares every package that
   `compose.yaml` installs, and PROFILE checks it. Keep `images.pullPolicy` at `IfNotPresent`, so kind keeps them.
+- The workflow `released-images` runs the scenarios on the published images after each publish (ADR 0169). Tag a
+  scenario that holds only for the images of the commit, like SCN-DIST-053, with `@images=commit`, after its other
+  tags, so that job leaves it out.
 - A change to the chart moves its version in `Chart.yaml`; PROFILE compares with the base.
 - The chart shares the reference factory and Temporal's configuration with the profile through the links in
   `helm/osf/files/`; never copy them.

@@ -22,7 +22,7 @@ Feature: The Helm chart installs a complete factory on Kubernetes with one comma
     Then the command exits with code 0
     And the workloads "postgres", "nats", "temporal", "litellm", "gatekeeper", "intake", "foreman" and "console" are ready
 
-  @id=SCN-DIST-060 @status=implemented @realizes=SCN-FACTORY-OPEN-006 @replaces=SCN-DIST-019 @shared=helm-chart
+  @id=SCN-DIST-060 @status=implemented @realizes=SCN-FACTORY-OPEN-006 @replaces=SCN-DIST-019 @shared=helm-chart @images=commit
   Scenario: Every workload of the Helm chart is ready after one command and runs the module images of this workspace
     Given a kind cluster with the images of the Compose profile, the module images built from this workspace with "node scripts/images.ts"
     And a values file that sets every value under "secrets"

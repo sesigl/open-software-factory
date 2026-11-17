@@ -359,23 +359,44 @@ function forced(repo: Repo): Finding[] {
   return findings;
 }
 
-/** Only a pull request sets OSF_TEST_CACHE. */
+/**
+ * Only a pull request sets OSF_TEST_CACHE, in any workflow; and only verify.yml writes the cache of the test results,
+ * so a job that runs suites on other inputs, like the released images (ADR 0169), never stores a result that a pull
+ * request replays.
+ */
 function pullRequestsOnly(repo: Repo): Finding[] {
-  if (!repo.exists(WORKFLOW)) return [];
-  return repo
-    .read(WORKFLOW)
-    .split("\n")
-    .flatMap((line, index) =>
-      /OSF_TEST_CACHE\s*:/.test(line) && !line.includes(PULL_REQUEST)
-        ? [
-            finding(
-              WORKFLOW,
-              index + 1,
-              "sets OSF_TEST_CACHE outside pull requests: only a pull request may replay test results",
-            ),
-          ]
-        : [],
-    );
+  return repo.match(".github/workflows/*.yml", ".github/workflows/*.yaml").flatMap((file) => {
+    const text = repo.read(file);
+    const replays = text
+      .split("\n")
+      .flatMap((line, index) =>
+        /OSF_TEST_CACHE\s*:/.test(line) && !line.includes(PULL_REQUEST)
+          ? [
+              finding(
+                file,
+                index + 1,
+                "sets OSF_TEST_CACHE outside pull requests: only a pull request may replay test results",
+              ),
+            ]
+          : [],
+      );
+    if (file === WORKFLOW) return replays;
+    const jobs = ((parse(text) ?? {}) as { jobs?: Record<string, { steps?: Step[] } | null> }).jobs ?? {};
+    const writes = Object.values(jobs)
+      .flatMap((job) => job?.steps ?? [])
+      .filter(
+        (step) =>
+          /^actions\/cache(\/save)?@/.test(step.uses ?? "") && String(step.with?.key ?? "").startsWith(TESTS_CACHE),
+      )
+      .map((step) =>
+        finding(
+          file,
+          lineOf(text, String(step.with?.key)),
+          `writes the cache of the test results ${TESTS_CACHE}, which pull requests replay: only verify.yml may`,
+        ),
+      );
+    return [...replays, ...writes];
+  });
 }
 
 /** `turbo run test:system --only` leaves the builds of the dependencies out of the test hash: a change in a

@@ -5,6 +5,9 @@
   "description": "Distribution: the Compose profile that installs a complete factory with one command.",
   "license": "Apache-2.0",
   "type": "module",
+  "bin": {
+    "osf-deploy-images": "scripts/images.ts"
+  },
   "scripts": {
     "lint": "biome check .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
