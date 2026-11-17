@@ -52,6 +52,13 @@ export function budget(context: Context): Finding[] {
   return [...findings, ...longSections(context)];
 }
 
+/** The seconds of the budget line in the unit's AGENTS.md, or undefined without one (osf suite-plan reads it too). */
+export function budgetOf(repo: Context["repo"], root: string): number | undefined {
+  const file = `${root}/AGENTS.md`;
+  const match = repo.exists(file) ? BUDGET_LINE.exec(repo.read(file)) : null;
+  return match ? Number(match[1]) : undefined;
+}
+
 /** The seconds that `testkit timed` measured around the run of the unit's system tests. */
 function wallTimeOf(context: Context, root: string): number | undefined {
   const unit = workspace(context.repo).find((each) => each.dir === root);

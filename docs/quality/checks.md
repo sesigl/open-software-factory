@@ -47,7 +47,13 @@ to the base of the pull request. Without it, a check that needs it prints "skipp
 - It runs the three parts of `make verify` as jobs: `verify-static` (lint, typecheck, build) and one `verify-tests`
   job per test suite of `.github/test-suites.yml`, side by side, each on its own runner. A package without its own
   suite runs in the suite `rest`. The `verify` job then collects their JUnit and coverage results and runs
-  `verify-checks`; it fails when any part failed.
+  `verify-checks`; it fails when any part failed, and PASS fails every scenario of a suite whose results are missing.
+- The small suites share two runners (ADR 0163): `osf suite-plan` turns the suites that run into the jobs of the
+  matrix. A suite whose units' budgets add up to at most 80 s (under 40 s of tests, as a budget is twice the measured
+  time), whose filter names its packages and that starts no kind cluster goes into one of two shared jobs, longest
+  first into the job with the smaller sum. A shared job is named after its suites, `tests (tools+ledger+...)`, and
+  runs their filters in one `make verify-tests`, one test task at a time, so BUDGET reads each unit's own wall time.
+  A new suite or a changed budget moves between the jobs without a change in the workflow.
 - On a pull request, the job `plan` starts a runner only for a suite with a test task that is no turbo cache hit,
   and replays the results of the other suites itself. Lint, typecheck and build replay the results of unchanged
   packages (ADR 0081, ADR 0094).
@@ -72,6 +78,11 @@ to the base of the pull request. Without it, a check that needs it prints "skipp
   job pulls the images of the Compose profile while it builds (ADR 0074) and starts kind with agent-sandbox; its
   `test:system` builds the module images of the commit and loads the images of the Helm chart into kind before the
   timed tests (ADR 0075, ADR 0156). The `testkit` suite's job starts kind for `sut.helm`.
+- A job with kind starts its cluster in the background right after the pinned tools are restored, while Node, the
+  install and the pulls run (`.github/scripts/kind-images.sh`, ADR 0163). The kind node image and the suite's `pull`
+  images come from GitHub's cache under keys of the node image's digest and of the image names; on a miss they come
+  from their registries as before, and `main` saves them after its tests. A pull request only reads these entries.
+  The module images that deploy builds from the commit are never cached.
 - `.github/workflows/mutation.yml` runs MUTATION for every pull request as a separate check, one runner per shard of
   about 100 added lines of each changed unit (see [MUTATION](#mutation)).
 
@@ -440,8 +451,8 @@ to the base of the pull request. Without it, a check that needs it prints "skipp
 - **Fails:** a unit whose system tests take longer than the budget; a unit with JUnit results and no wall time; a
   package with system tests whose `test:system` does not run them with `testkit timed`; a budget section of more than
   three lines (the budget line and what dominates the time).
-- **Measured alone:** `make verify` runs one suite at a time and CI gives each suite its own runner, so suites do not
-  slow each other.
+- **Measured alone:** `make verify` runs one test task at a time, and CI gives each suite its own runner or, for the
+  small suites, one of two shared runners that run one test task at a time too, so suites do not slow each other.
 - **The size of a budget:** the measured wall time times 2, rounded up to the next 10 s, at least 45 s: the runners'
   speed spreads by a factor of 1.8.
 - **Fix:** make the suite faster first (root `AGENTS.md`, Hard rules). Raise the budget only with the measured reason in
