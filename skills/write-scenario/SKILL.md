@@ -39,7 +39,7 @@ A scenario describes one observable behavior of one module, seen from outside th
 - New scenarios start as `@status=planned`. Only `implement-scenario` sets `implemented`, after the test passes.
 - Editing an `implemented` scenario follows the hard rule of root `AGENTS.md` (ADR 0157): wording in place when the
   behavior stays (a longer list of the same kind counts too), `@replaces=` when it changes or goes. The review reads
-  the "steps changed" rows of the spec-trace summary.
+  the "steps changed" and "example" rows of the spec-trace summary.
 - A port's shared behavior goes into `ports/<port>/features/` with `@conformance`. Every adapter of the port
   runs those scenarios.
 

@@ -49,3 +49,37 @@ Feature: changes since a base commit
     When the developer runs "spec-trace report --base 0000000000000000000000000000000000000001"
     Then the command exits with code 2
     And the error output contains "spec-trace: the base 0000000000000000000000000000000000000001 is not a commit of this repository"
+
+  @id=SCN-TRACE-070 @status=implemented
+  Scenario: report lists the Examples rows of an Outline added, removed and changed since the base commit
+    Given a base commit with the planned Scenario Outline "SCN-SHOP-001" with the rows "qty 1, price 3", "qty 2, price 6" and "qty 4, price 12"
+    And since the base commit its rows are "qty 1, price 3", "qty 2, price 7" and "qty 5, price 15"
+    When the developer runs "spec-trace report --base" with the base commit
+    Then the command exits with code 0
+    And the output ends with "since the base: 0 added, 0 removed, 0 with a new status, 0 with new steps, 1 with new examples"
+    And the report lists for "SCN-SHOP-001" the row "qty 5, price 15" as added, "qty 4, price 12" as removed and "qty 2, price 6" as changed to "qty 2, price 7"
+
+  @id=SCN-TRACE-071 @status=implemented
+  Scenario: report lists every row of an Outline added since the base commit as added
+    Given a base commit with the implemented scenario "SCN-SHOP-001" and its test
+    And the planned Scenario Outline "SCN-SHOP-002" with the rows "qty 1, price 3" and "qty 2, price 6" added since the base commit
+    When the developer runs "spec-trace report --base" with the base commit
+    Then the command exits with code 0
+    And the report lists "SCN-SHOP-002" as added and its rows "qty 1, price 3" and "qty 2, price 6" as added
+
+  @id=SCN-TRACE-072 @status=implemented
+  Scenario: report lists rows whose first column is not unique as removed and added
+    Given a base commit with the planned Scenario Outline "SCN-SHOP-001" with the rows "qty 2, price 6", "qty 3, price 9" and "qty 3, price 10"
+    And since the base commit its rows are "qty 2, price 7", "qty 2, price 8" and "qty 3, price 11"
+    When the developer runs "spec-trace report --base" with the base commit
+    Then the command exits with code 0
+    And the report lists for "SCN-SHOP-001" the rows "qty 2, price 7", "qty 2, price 8" and "qty 3, price 11" as added, "qty 2, price 6", "qty 3, price 9" and "qty 3, price 10" as removed and no row as changed
+
+  @id=SCN-TRACE-073 @status=implemented
+  Scenario: report lists no change for an Outline whose rows only moved
+    Given a base commit with the planned Scenario Outline "SCN-SHOP-001" with the rows "qty 1, price 3", "qty 2, price 6" and "qty 2, price 6"
+    And since the base commit its rows are "qty 2, price 6", "qty 1, price 3" and "qty 2, price 6"
+    When the developer runs "spec-trace report --base" with the base commit
+    Then the command exits with code 0
+    And the output ends with "since the base: 0 added, 0 removed, 0 with a new status, 0 with new steps"
+    And the report lists no Outline with new examples

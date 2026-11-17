@@ -1,5 +1,5 @@
 // The Markdown summary of a report, for example for the job summary of a workflow run.
-import { changeLine } from "./changes.ts";
+import { cells, changeLine } from "./changes.ts";
 import { type Report, summary } from "./report.ts";
 
 export function markdown(report: Report): string {
@@ -11,6 +11,11 @@ export function markdown(report: Report): string {
       ...changes.removed.map((id) => [id, "removed"]),
       ...changes.status.map(({ id, from, to }) => [id, `status ${from} → ${to}`]),
       ...changes.steps.map((id) => [id, "steps changed"]),
+      ...(changes.examples ?? []).flatMap(({ id, added, removed, changed }) => [
+        ...added.map((row) => [id, `example added: ${cells(row)}`]),
+        ...removed.map((row) => [id, `example removed: ${cells(row)}`]),
+        ...changed.map(({ from, to }) => [id, `example changed: ${cells(from)} → ${cells(to)}`]),
+      ]),
     ];
     lines.push(`### Changes since \`${changes.base}\``, "", `${changeLine(changes)}.`, "");
     if (rows.length > 0) lines.push(...table(["Scenario", "Change"], rows), "");
