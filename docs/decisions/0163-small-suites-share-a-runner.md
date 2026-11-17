@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; amended by 0167 (the image caches are gone, slower than the registries)
 topic: design-note
 date: 2026-11-17
 ---

@@ -2,7 +2,7 @@
 # BUDGET stays fair. The job "plan the suites" starts a runner only for a suite with a task that turbo cannot replay.
 # A suite whose units' budgets add up to at most 80 s, that names its packages and starts no kind cluster, shares one
 # of two runners with the other such suites, one test task at a time (osf suite-plan, ADR 0163). A suite with kind
-# loads the kind node image and its `pull` images from a cache that main fills (.github/scripts/kind-images.sh).
+# starts its cluster in the background while the job installs (.github/scripts/kind-start.sh).
 # Fields: suite (the job's name), filter (turbo filters), images (the testkit's fakes to pull), pull (other images),
 # cluster: kind, kind (kind with agent-sandbox), browser, timeout (minutes).
 - suite: testkit

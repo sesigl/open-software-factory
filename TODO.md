@@ -200,12 +200,14 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 
 ### [ ] T-79 · small suites share a runner (P2)
 
-- **Build:** the suites with under 40 seconds of tests share two jobs; the kind node image and the chart's images
-  come from a cache, so the deploy job's setup is under a minute.
+- **Build:** the suites with under 40 seconds of tests share two jobs; the kind jobs start their cluster sooner, so
+  the deploy job's setup is under a minute.
 - **Built:** ADR 0163, `SCN-REPO-205` to `-207`: `osf suite-plan` puts the nine suites with under 40 s of tests
-  (measured: 870 s of runner time, 555 s of it setup) into two jobs; kind starts in the background from the cached node
-  image and the suite's cached `pull` images. Open: measure the deploy job's setup (112 s before; about 65 to 70 s
-  expected) on `main` after the caches are filled, and tick this item when it is under a minute.
+  (measured: 870 s of runner time, 555 s of it setup) into two jobs; kind starts in the background right after the
+  pinned tools, with a time on each line of its log. ADR 0167: the cache of the kind node image and the `pull` images
+  is removed, because it made the deploy job's setup slower: 152 to 163 s with the cache, 89 and 107 s without it,
+  118 s median before 0163. Open: the deploy setup is still over a minute; read the timed log of the background start
+  and fix its largest part, then tick this item when the setup is under a minute.
 
 ### [x] T-80 · no run record by hand (P1)
 

@@ -216,7 +216,8 @@ DOCS-GEN keeps it current.
 - [0155](0155-budget-is-the-wall-time-of-a-suite.md) BUDGET is the wall time of a suite
 - [0156](0156-the-deploy-suite-builds-the-commit.md) The deploy suite builds the module images from the commit — since the second slice of T-72 scripts/images.ts also loads the chart's images into kind, and kind-images.sh is gone (deploy/README.md)
 - [0162](0162-a-shared-start-is-once-per-test-run.md) A shared start runs once per test run, through the testkit's global setup
-- [0163](0163-small-suites-share-a-runner.md) Small suites share a runner, and kind starts in the background from cached images
+- [0163](0163-small-suites-share-a-runner.md) Small suites share a runner, and kind starts in the background from cached images — amended by 0167 (the image caches are gone, slower than the registries)
+- [0167](0167-kind-images-come-from-their-registries.md) The kind jobs pull their images from the registries again; kind still starts in the background
 
 ### Superseded, rejected and deprecated
 

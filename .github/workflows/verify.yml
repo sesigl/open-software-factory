@@ -216,29 +216,13 @@ jobs:
         with:
           path: .tools/bin
           key: tools-${{ runner.os }}-${{ hashFiles('tools/scaffold/install-tools.ts') }}
-      # A suite with kind starts its cluster in the background, from the node image that main cached under the
-      # digest the pinned kind names; it runs while Node, the install and the pulls below take their time (ADR 0163).
-      - name: The cache keys of the kind images
-        id: kind-images
-        if: matrix.kind || matrix.cluster == 'kind'
-        env:
-          PULL: ${{ matrix.pull }}
-        # One argument per image: the list is split on purpose.
-        run: |
-          # shellcheck disable=SC2086
-          .github/scripts/kind-images.sh keys $PULL >> "$GITHUB_OUTPUT"
-      - name: Restore the kind node image
-        id: kind-node
-        if: steps.kind-images.outputs.node-key
-        uses: actions/cache/restore@v4
-        with:
-          path: ${{ runner.temp }}/kind-images/node
-          key: ${{ steps.kind-images.outputs.node-key }}
+      # A suite with kind starts its cluster in the background; it runs while Node, the install and the pulls below
+      # take their time (ADR 0163). kind pulls its node image from the registry: a cache of it was slower (ADR 0167).
       - name: Start kind in the background
         if: matrix.kind || matrix.cluster == 'kind'
         env:
           WITH: ${{ matrix.kind && 'agent-sandbox' || '' }}
-        run: .github/scripts/kind-images.sh start "$WITH"
+        run: .github/scripts/kind-start.sh start "$WITH"
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:
@@ -256,15 +240,6 @@ jobs:
       - run: make install
         env:
           GITHUB_TOKEN: ${{ github.token }}
-      # The suite's `pull` images of a suite with kind, which main cached under a key of their names. Never the module
-      # images that deploy's test:system builds from the commit (ADR 0156).
-      - name: Restore the suite's images of kind
-        id: kind-pull
-        if: steps.kind-images.outputs.pull-key
-        uses: actions/cache/restore@v4
-        with:
-          path: ${{ runner.temp }}/kind-images/pull
-          key: ${{ steps.kind-images.outputs.pull-key }}
       # The scenarios start these containers (ADR 0016). Pulling them now overlaps the download with the build.
       - name: Pull the container images in the background
         if: matrix.images
@@ -276,16 +251,16 @@ jobs:
             nohup docker pull --quiet "$image" >/dev/null 2>&1 &
             echo $! >> "$RUNNER_TEMP/pulls"
           done
-      # Images a suite needs besides the testkit's fakes, named in full: loaded from the cache restored above, and the
-      # others pulled.
+      # Images a suite needs besides the testkit's fakes, named in full.
       - name: Pull the suite's own images in the background
         if: matrix.pull
         env:
           PULL: ${{ matrix.pull }}
-        # One argument per image: the list is split on purpose.
         run: |
-          # shellcheck disable=SC2086
-          .github/scripts/kind-images.sh pull $PULL
+          for image in $PULL; do
+            nohup docker pull --quiet "$image" >/dev/null 2>&1 &
+            echo $! >> "$RUNNER_TEMP/pulls"
+          done
       # A kind cluster with agent-sandbox for the kubernetes sandbox adapter (ADR 0055).
       - name: Start kind with agent-sandbox
         if: matrix.kind
@@ -354,35 +329,6 @@ jobs:
           path: ${{ runner.temp }}/turbo-new/
           if-no-files-found: ignore
           retention-days: 1
-      # main fills the cache of the kind images when it missed, after the tests, from what this job pulled; a pull
-      # request only reads it, so the entries stay one per pin (GitHub keeps 10 GB per repository).
-      - name: Write the kind images that the cache missed
-        id: kind-save
-        # A full disk or a failed docker save leaves the cache as it was; it never fails the suite.
-        continue-on-error: true
-        if: >-
-          always() && github.event_name == 'push' && steps.kind-images.outputs.node-key &&
-          (steps.kind-node.outputs.cache-hit != 'true' || (steps.kind-images.outputs.pull-key && steps.kind-pull.outputs.cache-hit != 'true'))
-        env:
-          PULL: ${{ matrix.pull }}
-          KIND_NODE_HIT: ${{ steps.kind-node.outputs.cache-hit }}
-          KIND_PULL_HIT: ${{ steps.kind-pull.outputs.cache-hit }}
-        # One argument per image: the list is split on purpose.
-        run: |
-          # shellcheck disable=SC2086
-          .github/scripts/kind-images.sh save $PULL
-      - name: Save the kind node image
-        if: always() && steps.kind-save.outputs.node == 'saved'
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ runner.temp }}/kind-images/node
-          key: ${{ steps.kind-images.outputs.node-key }}
-      - name: Save the suite's images of kind
-        if: always() && steps.kind-save.outputs.pull == 'saved'
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ runner.temp }}/kind-images/pull
-          key: ${{ steps.kind-images.outputs.pull-key }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:

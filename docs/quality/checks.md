@@ -79,10 +79,9 @@ to the base of the pull request. Without it, a check that needs it prints "skipp
   `test:system` builds the module images of the commit and loads the images of the Helm chart into kind before the
   timed tests (ADR 0075, ADR 0156). The `testkit` suite's job starts kind for `sut.helm`.
 - A job with kind starts its cluster in the background right after the pinned tools are restored, while Node, the
-  install and the pulls run (`.github/scripts/kind-images.sh`, ADR 0163). The kind node image and the suite's `pull`
-  images come from GitHub's cache under keys of the node image's digest and of the image names; on a miss they come
-  from their registries as before, and `main` saves them after its tests. A pull request only reads these entries.
-  The module images that deploy builds from the commit are never cached.
+  install and the pulls run (`.github/scripts/kind-start.sh`, ADR 0163). With agent-sandbox, that start also applies
+  its manifest once. Each line of its log carries the time it was written. kind and the suite's `pull` images come
+  from their registries: a cache of their archives made the setup slower (ADR 0167).
 - `.github/workflows/mutation.yml` runs MUTATION for every pull request as a separate check, one runner per shard of
   about 100 added lines of each changed unit (see [MUTATION](#mutation)).
 
