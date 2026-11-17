@@ -420,11 +420,11 @@ the minor version. The one-time setup is the same as for contracts
 | --- | --- | --- |
 | SCN-FSPEC-001 | implemented | A new user renders the sample factory from the README |
 | SCN-FSPEC-002 | implemented | Lint accepts a factory without problems |
-| SCN-FSPEC-003 | implemented | Lint names the line of a secret whose provider is not declared |
-| SCN-FSPEC-004 | implemented | Lint names the line of a field the format does not know |
+| SCN-FSPEC-003 | deprecated | Lint names the line of a secret whose provider is not declared |
+| SCN-FSPEC-004 | deprecated | Lint names the line of a field the format does not know |
 | SCN-FSPEC-005 | implemented | Lint names the line of YAML that does not parse |
-| SCN-FSPEC-006 | implemented | Lint reports an agent whose harness is not declared |
-| SCN-FSPEC-007 | implemented | Lint reports a referenced file that does not exist |
+| SCN-FSPEC-006 | deprecated | Lint reports an agent whose harness is not declared |
+| SCN-FSPEC-007 | deprecated | Lint reports a referenced file that does not exist |
 | SCN-FSPEC-008 | implemented | Lint reports a stage whose agent is not declared |
 | SCN-FSPEC-009 | implemented | Render refuses a factory with problems |
 | SCN-FSPEC-010 | implemented | Render for Codex writes config.toml with the declared MCP servers |
@@ -475,7 +475,7 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FSPEC-055 | implemented | Apply asks for the webhook secret when an automation needs a webhook |
 | SCN-FSPEC-056 | implemented | Apply names the forge adapter it cannot start |
 | SCN-FSPEC-057 | implemented | Lint accepts a stage that waits for the check "verify" and asks for evidence |
-| SCN-FSPEC-058 | implemented | Lint names the line of an effort the format does not know, with the allowed levels |
+| SCN-FSPEC-058 | deprecated | Lint names the line of an effort the format does not know, with the allowed levels |
 | SCN-FSPEC-059 | implemented | Lint accepts a stage that only waits, without an agent of its name |
 | SCN-FSPEC-060 | implemented | Lint reports a stage that waits and names an agent |
 | SCN-FSPEC-061 | implemented | Lint reports a stage that waits for nothing |
@@ -546,3 +546,4 @@ the minor version. The one-time setup is the same as for contracts
 | SCN-FSPEC-126 | implemented | Render links a skill of another repository at the commit of its pin, also after its branch moved |
 | SCN-FSPEC-127 | implemented | Render refuses a skill of another repository that factory.lock does not pin |
 | SCN-FSPEC-128 | implemented | "factory skills" prints a pinned skill with its repository and commit, and one without a pin with its problem |
+| SCN-FSPEC-129 | implemented | Lint names the line and column of an entry of an agent that it refuses, and what is wrong |

@@ -65,8 +65,9 @@ Scenario Outline: lint names the field that is missing
     | stages |
 ```
 
-The testkit's examples form of `scenario()` comes with T-84; until then, write an Outline only where its test can
-run each row.
+Its test is one `scenario()` call that runs once for each row (see `skills/write-system-test`). When the old
+scenarios of a family become one Outline, mark each `deprecated`, delete its test, keep each case as a row and give
+the Outline one `@replaces=` tag for each of them.
 
 ## A shared start
 

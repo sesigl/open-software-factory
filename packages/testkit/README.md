@@ -35,6 +35,14 @@ Each test case in `report.xml` is named after its scenario and has the property 
 See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The context of `scenario` holds:
 
 - `given`, `when`, `then`: step functions; each label repeats the scenario's step text.
+- `example`: the row of a Scenario Outline's `Examples` that this run tests, by column name (ADR 0157). The test of
+  an Outline reads the rows from the feature file by the scenario ID and runs its body once for each row, in turn,
+  each with a workspace, fakes and `sut` of its own. Labels keep the parameters `<name>` as the feature file writes
+  them; a failed step shows the row's values in their place. The test is one test case in the JUnit report, named
+  after the scenario: it fails when any row failed and says `N of M examples of <id> failed`, with each failed row
+  and its values; a planned Outline fails when every row passed. The rows share the test's timeout. Name the
+  columns, `scenario<"field" | "message">(id, fn)`, to read `example.field` as a string; for a plain scenario
+  `example` is empty.
 - `sut.cli(args, { env, stdin })`: runs the module's `bin` in its own process, with `$INPUT` as the current directory.
   `stdin` is written to the program's standard input, which is then closed.
   The module gets `INPUT` and `OUTPUT` (the two folders), `OSF_DATA` (its private data folder, which persists
@@ -636,3 +644,6 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-198 | implemented | The fake sandbox's create and copy out of a sandbox take the time the options say |
 | SCN-TK-199 | implemented | The fake sandbox's list with a label prints only the sandboxes whose spec has that label |
 | SCN-TK-200 | implemented | The fake sandbox holds from its start the sandboxes that its option "held" names, and counts its IDs on after them |
+| SCN-TK-201 | implemented | The test of an Outline runs once for each row, each in a workspace of its own, as one passed test case |
+| SCN-TK-202 | implemented | One failed row fails the test case of the Outline and the failure names the row |
+| SCN-TK-203 | implemented | A planned Outline whose rows all pass fails |

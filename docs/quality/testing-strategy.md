@@ -107,7 +107,9 @@ docs/vision/           factory-level requirements; source for module scenarios, 
 - One Gherkin scenario per behavior, with `@id=SCN-<PREFIX>-NNN` and `@status`.
 - Exactly one system test per implemented scenario; `given`, `when`, `then` labels repeat the steps.
 - A family of scenarios with the same steps, where only the literals differ ("one input, one message"), is one
-  Scenario Outline: one ID, one test, the cases as rows of `Examples` (ADR 0157).
+  Scenario Outline: one ID, one test, the cases as rows of `Examples` (ADR 0157). The test runs once for each row,
+  each in a workspace of its own, and is one JUnit test case: PASS, proof, BUDGET and the mutation runner see the
+  Outline as one scenario.
 - The text of an implemented scenario may change in place when its behavior stays the same, with the test's labels
   in the same commit. Changed or removed behavior is a new scenario with `@replaces=` and a deprecated old one.
 - A `Then` states the fact a user relies on (`Then the error names the missing field "token"`), not a whole quoted

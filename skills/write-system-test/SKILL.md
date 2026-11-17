@@ -64,7 +64,10 @@ is tested with this same testkit through its CLI or API.
   of the step before them. When the wording of an implemented scenario changes in place, change the labels in the
   same commit (ADR 0157).
 - A Scenario Outline has one test for all its rows; a parameter `<name>` in a step matches any value in the label.
-  The testkit's examples form of `scenario()` comes with T-84.
+  Write the labels with the parameters as the feature file has them. `scenario()` reads the rows from the feature
+  file and runs the body once for each, each with its own workspace, fakes and `sut`; `example` holds the row's
+  values. Name the columns to read them as strings:
+  `scenario<"entry" | "line">("SCN-X-001", async ({ example, when }) => …)`. The examples share the test's timeout.
 - A scenario tagged `@shared=<name>` keeps its own `scenario()` call and steps, and uses the group's one start
   instead of its own (the testkit's API for it comes with T-82). It only reads the shared system, or works under a
   name of its own: a project, a namespace, a key.
