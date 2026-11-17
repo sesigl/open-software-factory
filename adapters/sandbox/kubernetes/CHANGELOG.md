@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.7.0](https://github.com/sesigl/open-software-factory/compare/sandbox-kubernetes-v0.6.0...sandbox-kubernetes-v0.7.0) (2026-11-17)
+
+
+### Features
+
+* **tools, testkit:** BUDGET measures the wall time of a suite (T-74, ADR 0155) ([#379](https://github.com/sesigl/open-software-factory/issues/379)) ([fde5791](https://github.com/sesigl/open-software-factory/commit/fde57913171d572f9aa9b03c93b7048da75b10c0))
+
+
+### Bug Fixes
+
+* **foreman, sandbox:** a foreman removes the sandboxes a dead one left, and destroy reports a failed removal (T-71) ([#388](https://github.com/sesigl/open-software-factory/issues/388)) ([b3c5339](https://github.com/sesigl/open-software-factory/commit/b3c53391d73deaa25544ecb99a1a52905b0b7373))
+* **sandbox-docker:** a sandbox does not reach the Docker host (T-65) ([#370](https://github.com/sesigl/open-software-factory/issues/370)) ([143b8ae](https://github.com/sesigl/open-software-factory/commit/143b8aeb1984fe55ac5e5f2f927f362e2a98a0fb))
+
 ## [0.6.0](https://github.com/sesigl/open-software-factory/compare/sandbox-kubernetes-v0.5.0...sandbox-kubernetes-v0.6.0) (2026-11-15)
 
 

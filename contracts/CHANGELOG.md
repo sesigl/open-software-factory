@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.9.0](https://github.com/sesigl/open-software-factory/compare/contracts-v2.8.0...contracts-v2.9.0) (2026-11-17)
+
+
+### Features
+
+* **factory-spec:** factory render writes an agent's stop check as Claude Code's Stop hook (T-76) ([#403](https://github.com/sesigl/open-software-factory/issues/403)) ([1610e20](https://github.com/sesigl/open-software-factory/commit/1610e20d87604c48ec561dbd8a7f47b83627e3b9))
+* **foreman:** a failed check sends the run back to implement once (T-98) ([#397](https://github.com/sesigl/open-software-factory/issues/397)) ([a4221ff](https://github.com/sesigl/open-software-factory/commit/a4221ff325a2247f50a09b852a48e3b68b4b0fbc))
+* **tools, testkit:** BUDGET measures the wall time of a suite (T-74, ADR 0155) ([#379](https://github.com/sesigl/open-software-factory/issues/379)) ([fde5791](https://github.com/sesigl/open-software-factory/commit/fde57913171d572f9aa9b03c93b7048da75b10c0))
+
+
+### Bug Fixes
+
+* **foreman, sandbox:** a foreman removes the sandboxes a dead one left, and destroy reports a failed removal (T-71) ([#388](https://github.com/sesigl/open-software-factory/issues/388)) ([b3c5339](https://github.com/sesigl/open-software-factory/commit/b3c53391d73deaa25544ecb99a1a52905b0b7373))
+* **foreman:** an event waits for a factory that cannot be read now, and a failed start ends serve (T-67) ([#381](https://github.com/sesigl/open-software-factory/issues/381)) ([c41515c](https://github.com/sesigl/open-software-factory/commit/c41515c12464e2119437da4a4a27b1a596a64cb1))
+
 ## [2.8.0](https://github.com/sesigl/open-software-factory/compare/contracts-v2.7.0...contracts-v2.8.0) (2026-11-16)
 
 

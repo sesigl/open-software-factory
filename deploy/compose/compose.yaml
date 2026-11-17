@@ -151,15 +151,15 @@ services:
 
   # One-shot: the two policies for the mount, as secrets-openbao prints them, into the volume openbao-policies.
   openbao-policies:
-    image: ghcr.io/sesigl/open-software-factory/console:0.12.0
+    image: ghcr.io/sesigl/open-software-factory/console:0.13.0
     build: &console
       context: ../images
       target: module
       secrets: [ca]
       args:
         PACKAGES: >-
-          @opensoftware/console@0.12.0 @opensoftware/forge-github@0.8.1 @opensoftware/forge-forgejo@0.8.1
-          @opensoftware/secrets-openbao@0.1.1 @opensoftware/factory-spec@0.12.1
+          @opensoftware/console@0.13.0 @opensoftware/forge-github@0.9.0 @opensoftware/forge-forgejo@0.9.0
+          @opensoftware/secrets-openbao@0.2.0 @opensoftware/factory-spec@0.13.0
     entrypoint: [sh, -c]
     command:
       - |
@@ -266,13 +266,13 @@ services:
   # FACTORY_REPOSITORY a clone of its branch's newest commit, with FACTORY_TOKEN; without it FACTORY_DIR, committed
   # there, as foreman reads a run's factory version from Git (ADR 0150).
   factory-repo:
-    image: ghcr.io/sesigl/open-software-factory/factory-spec:0.12.1
+    image: ghcr.io/sesigl/open-software-factory/factory-spec:0.13.0
     build: &factory-spec
       context: ../images
       target: module
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/factory-spec@0.12.1"
+        PACKAGES: "@opensoftware/factory-spec@0.13.0"
     environment:
       FACTORY_REPOSITORY: ${FACTORY_REPOSITORY:-}
       FACTORY_TOKEN: ${FACTORY_TOKEN:-}
@@ -285,13 +285,13 @@ services:
 
   gatekeeper:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/gatekeeper:0.11.0
+    image: ghcr.io/sesigl/open-software-factory/gatekeeper:0.12.0
     build:
       context: ../images
       target: gatekeeper
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/gatekeeper@0.11.0 @opensoftware/channel-slack@0.3.0 @opensoftware/forge-github@0.8.1"
+        PACKAGES: "@opensoftware/gatekeeper@0.12.0 @opensoftware/channel-slack@0.4.0 @opensoftware/forge-github@0.9.0"
     # Asks in the Slack channel GATEKEEPER_SLACK_CHANNEL, on the run's pull request with GATEKEEPER_FORGE_TOKEN, or both.
     entrypoint: [sh, -c]
     command:
@@ -326,13 +326,13 @@ services:
 
   intake:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/intake:0.8.0
+    image: ghcr.io/sesigl/open-software-factory/intake:0.9.0
     build:
       context: ../images
       target: module
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/intake@0.8.0 @opensoftware/channel-slack@0.3.0 @opensoftware/forge-github@0.8.1 @opensoftware/forge-forgejo@0.8.1"
+        PACKAGES: "@opensoftware/intake@0.9.0 @opensoftware/channel-slack@0.4.0 @opensoftware/forge-github@0.9.0 @opensoftware/forge-forgejo@0.9.0"
     command: [intake, serve]
     depends_on:
       postgres:
@@ -388,27 +388,27 @@ services:
   # The template of the agents' sandboxes (ADR 0096). It only makes sure that the image is on this machine, pulled or
   # built, before the foreman starts a sandbox from it.
   agent-template:
-    image: ghcr.io/sesigl/open-software-factory/harness-claude-code:0.6.0
+    image: ghcr.io/sesigl/open-software-factory/harness-claude-code:0.7.0
     build:
       context: ../images
       target: agent
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/harness-claude-code@0.6.0"
+        PACKAGES: "@opensoftware/harness-claude-code@0.7.0"
     entrypoint: ["true"]
 
   # The template of the sandboxes of this repository's factory in dogfood/factory (ADR 0164): the agents' template with
   # pnpm and lychee, for its `make check-fast`. Only with the profile dogfood, which COMPOSE_PROFILES=dogfood turns on.
   # osf profile-pins writes the versions of pnpm and lychee from package.json and tools/scaffold/install-tools.ts.
   dogfood-template:
-    image: ghcr.io/sesigl/open-software-factory/dogfood-agent:0.6.0-r1
+    image: ghcr.io/sesigl/open-software-factory/dogfood-agent:0.6.0-r2
     profiles: [dogfood]
     build:
       context: ../images
       target: dogfood
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/harness-claude-code@0.6.0"
+        PACKAGES: "@opensoftware/harness-claude-code@0.7.0"
         PNPM_VERSION: "10.28.0"
         LYCHEE_VERSION: "0.20.1"
         LYCHEE_SHA256_AMD64: "1dd08bb064e2114c2c9d0c9009f51577de24e805361d6332162807972d8e9474"
@@ -417,16 +417,16 @@ services:
 
   foreman:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/foreman:0.15.0
+    image: ghcr.io/sesigl/open-software-factory/foreman:0.16.0
     build:
       context: ../images
       target: foreman
       secrets: [ca]
       args:
         PACKAGES: >-
-          @opensoftware/foreman@0.15.0 @opensoftware/harness-claude-code@0.6.0 @opensoftware/forge-github@0.8.1
-          @opensoftware/forge-forgejo@0.8.1 @opensoftware/inference-litellm@0.5.1 @opensoftware/sandbox-docker@0.8.0
-          @opensoftware/sandbox-kubernetes@0.6.0 @opensoftware/secrets-openbao@0.1.1
+          @opensoftware/foreman@0.16.0 @opensoftware/harness-claude-code@0.7.0 @opensoftware/forge-github@0.9.0
+          @opensoftware/forge-forgejo@0.9.0 @opensoftware/inference-litellm@0.6.0 @opensoftware/sandbox-docker@0.9.0
+          @opensoftware/sandbox-kubernetes@0.7.0 @opensoftware/secrets-openbao@0.2.0
     command: [foreman, serve]
     depends_on:
       openbao-setup:
@@ -518,7 +518,7 @@ services:
 
   console:
     <<: *module
-    image: ghcr.io/sesigl/open-software-factory/console:0.12.0
+    image: ghcr.io/sesigl/open-software-factory/console:0.13.0
     build: *console
     command: [console, serve]
     depends_on:
@@ -593,13 +593,13 @@ services:
   # its folder reports, which the console skips, as they hold no record. Judging runs is a paid model call: scorekit
   # scores only with IMPROVE_SCORERS set, like "redundant-tests scope-creep", through litellm.
   improve:
-    image: ghcr.io/sesigl/open-software-factory/observer:0.2.1
+    image: ghcr.io/sesigl/open-software-factory/observer:0.3.0
     build:
       context: ../images
       target: module
       secrets: [ca]
       args:
-        PACKAGES: "@opensoftware/observer@0.2.1 @opensoftware/scorekit@0.6.1 @opensoftware/ledger@0.8.0"
+        PACKAGES: "@opensoftware/observer@0.3.0 @opensoftware/scorekit@0.7.0 @opensoftware/ledger@0.9.0"
     profiles: [improve]
     restart: unless-stopped
     init: true
@@ -635,7 +635,7 @@ services:
 
   # factory-spec on the factory in the volume, for the commands of factory: docker compose run --rm factory plan
   factory:
-    image: ghcr.io/sesigl/open-software-factory/factory-spec:0.12.1
+    image: ghcr.io/sesigl/open-software-factory/factory-spec:0.13.0
     build: *factory-spec
     profiles: [tools]
     depends_on:
