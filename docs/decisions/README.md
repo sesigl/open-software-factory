@@ -33,7 +33,7 @@ DOCS-GEN keeps it current.
 - [0117](0117-vision-status-from-realizing-scenarios.md) The status of a vision scenario follows the scenarios that realize it
 - [0128](0128-paid-reference-run.md) A paid run of the reference factory, started by a maintainer
 - [0153](0153-no-run-record-by-hand.md) No pull request has to commit a run record
-- [0159](0159-a-package-earns-its-place.md) A package earns its place
+- [0159](0159-a-package-earns-its-place.md) A package earns its place — amended by 0175 (an adapter of a port is its own package; the size floor is for libraries)
 - [0161](0161-an-index-of-the-decisions-that-last.md) An index of the decisions that last, and status lines that change
 
 ### Languages, stack and storage
@@ -63,6 +63,7 @@ DOCS-GEN keeps it current.
 - [0079](0079-bundled-cli-packages.md) A CLI package that starts often ships as one bundled file
 - [0135](0135-one-job-and-a-listed-surface.md) Every published package has one job and a listed surface; `factory-source` in place of `factory-files` — amended by 0159 (when a new package is right)
 - [0138](0138-a-published-package-runs-on-its-dependencies.md) A published package runs only on what it publishes and depends on
+- [0175](0175-an-adapter-of-a-port-is-its-own-package.md) An adapter of a port is its own package
 
 ### Testing
 

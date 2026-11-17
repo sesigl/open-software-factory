@@ -33,9 +33,11 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   an expensive stack, Scenario Outlines for families of "one input, one message", and wording that may change in
   place while the behavior stays (T-81).
 - **The Helm and Kubernetes suites run only when needed**, side by side with the others (T-75, T-79).
-- **Small packages merge**, and a rule keeps a new package from being created for a small thing (T-88 to T-90).
+- **A rule keeps a new package from being created for a small thing** (T-88). An adapter of a port stays its own
+  package, so the planned merges of small packages are not built (T-89, T-90, ADR 0175).
 - **Nobody adds a file to `runs/` by hand** (T-80).
-- **Open:** the identity the factory's agents act with on GitHub (T-99).
+- **The agents that develop this repository use the owner's identity** on GitHub. A factory's own identity, a
+  GitHub App or a second account as its user chooses, is a later feature and no item of this plan yet (T-99).
 
 ### Stage A · gates, sandbox and foreman hold
 
@@ -340,12 +342,21 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   ADR 0159; the ADR check asks a new published package for `## Why a package` (`SCN-REPO-192`, `SCN-REPO-193`); DUP
   counts a clone of at most 15 lines across units under each unit's limit (`SCN-REPO-194`, `SCN-REPO-195`).
 
-### [ ] T-89 · one harness package (P2)
+### [x] T-89 · one harness package (P2)
 
 - **Build:** `@opensoftware/harness` with the commands of acp, claude-code, codex and opencode and the library
   harness-proxy; the old names are deprecated on npm with a pointer. Profile, chart and factories follow.
+- **Done:** closed by the owner's decision: each adapter stays its own package `@opensoftware/harness-<name>`
+  (ADR 0175). One package would install every product's pinned binary (about 950 MB on Linux), and foreman's
+  fallback, `factory plan --adapters`, spec-trace's conformance and the testkit are built on the adapter's name and
+  folder. Nothing was built.
 
-### [ ] T-90 · one channel package, and `postgres` in a shared library (P2)
+### [x] T-90 · one channel package, and `postgres` in a shared library (P2)
+
+- **Done:** closed by the owner's decision (ADR 0175). The channel adapters stay their own packages, as the harness
+  adapters do: gatekeeper and intake start `@opensoftware/channel-slack` by its name, and the port's conformance finds
+  each adapter by its folder. `postgres` is already the shared library of gatekeeper and intake (34 lines, ADR 0082);
+  no existing library fits it, and no module repeats its code. Nothing was built.
 
 ### [x] T-91 · an index of the decisions that last (P2)
 
