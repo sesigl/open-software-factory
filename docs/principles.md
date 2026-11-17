@@ -39,6 +39,7 @@ without a check is a wish. Where the check is not built yet, its cell says "plan
 | Useful alone | Each module has a five-minute quick start without a server or a sibling module; it is scenario `-001`. | The quick-start scenario runs on every change. |
 | Formats over code | Modules share only versioned schemas and events. | ISOLATION, CONTRACT |
 | One job, a narrow surface | Every published package says what it does in one sentence and lists every way in, every exported value of a library included ([ADR 0135](decisions/0135-one-job-and-a-listed-surface.md)). | SURFACE |
+| A package earns its place | A new package has a job of its own, a reason to be installed or released alone, a second user today and enough code to carry a release; a small shared piece joins an existing library ([ADR 0159](decisions/0159-a-package-earns-its-place.md)). | ADR check asks a new published package for `## Why a package`. |
 | Ports with conformance | Every outside system sits behind a port; each port has `@conformance` scenarios. | TRACE asks each adapter of a port for one test of every `@conformance` scenario; PASS runs them. Planned: a catalog that lists only adapters that pass them. |
 | Adopt before build | Every new module, dependency or service records the prior art that was checked. | ADR check rejects an empty Prior art section. |
 | Open standards at every boundary | MCP, ACP, OpenAPI, CloudEvents, OTLP. | Interfaces are generated from TypeSpec, OpenAPI and AsyncAPI; review rejects custom wire formats. |

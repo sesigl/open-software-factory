@@ -45,7 +45,8 @@ others; scorer packs; stage modules such as security review or design review; po
 ## Rules for promotion
 
 - A module moves from community to optional when maintainers accept to support it and it passes every check
-  in this repository.
+  in this repository. As a new package here it must earn its place (ADR 0159); a small adapter joins the package
+  of its port family as one more command.
 - A module becomes core only through an ADR that shows every factory needs it.
 - A community adapter gets the "verified" mark in the catalog when it passes its port's `@conformance`
   scenarios with the current testkit.

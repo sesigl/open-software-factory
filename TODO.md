@@ -252,7 +252,7 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 - **Build:** one line per check in the tables and a short section per check; one pass over the ten skills, with
   every case to stop and ask in one list of `AGENTS.md`.
 
-### [ ] T-88 · a package earns its place (P1)
+### [x] T-88 · a package earns its place (P1)
 
 - **Problem:** 34 npm packages for about 42,000 lines of source; four harness adapters of 21 to 109 lines each
   have a package, a publish workflow and a changelog of their own.
@@ -260,7 +260,9 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   reason to be installed alone, and a size that carries a release; a small shared piece joins an existing library.
   `AGENTS.md`, the skills `new-module` and `write-adr` say so, and DUP's rule "no clone across units" names the
   existing libraries as the place for shared lines.
-- **Done when:** the rule is in `AGENTS.md`, and a check or the ADR check asks a new package for its reason.
+- **Done when:** the rule is in `AGENTS.md`, and a check or the ADR check asks a new package for its reason. Done:
+  ADR 0159; the ADR check asks a new published package for `## Why a package` (`SCN-REPO-192`, `SCN-REPO-193`); DUP
+  counts a clone of at most 15 lines across units under each unit's limit (`SCN-REPO-194`, `SCN-REPO-195`).
 
 ### [ ] T-89 · one harness package (P2)
 

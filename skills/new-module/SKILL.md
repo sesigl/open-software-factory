@@ -8,7 +8,13 @@ description: Create a new module or adapter from the template. Use when a tool o
 ## Before you start
 
 - An accepted ADR in `docs/decisions/` names the module, its tier (core, optional or community) and the prior art
-  that was checked. Without it, stop and use `skills/write-adr`.
+  that was checked, and answers `## Why a package` (ADR 0159). Without it, stop and use `skills/write-adr`.
+- The package earns its place: a job of its own, a reason to be installed or released alone (a user installs it
+  without the rest, or a factory names it as the adapter of a port in `factory.yaml`, or two units of different
+  release cadence need it), a second user today for a library, and about 300 lines of source for a library. An
+  adapter may be smaller; then prefer one package per port family with a command per product. When the bar is not
+  met, put the code into an existing library whose job it fits (`cli`, `testkit`, `contracts`, `factory-source`,
+  `spec-files`), or keep it in the one unit that uses it.
 
 ## Steps
 

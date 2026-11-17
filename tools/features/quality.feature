@@ -1,6 +1,6 @@
 @module=tools @owner=maintainers
 Feature: Quality limits
-  DUP limits duplicated code inside a unit and forbids it across units. MUTATION limits the mutants that no system
+  DUP limits duplicated code inside a unit and allows only short clones across units (ADR 0159). MUTATION limits the mutants that no system
   test notices, in the lines a change adds and in a module as a whole. Each unit states its limits in its AGENTS.md
   under "Quality limits" (ADR 0037).
 
@@ -20,7 +20,23 @@ Feature: Quality limits
     When the developer runs "osf check DUP"
     Then the command exits with code 1
     And the output contains "duplicate modules/payroll/src/sum.ts"
-    And the output contains "move the shared code into a package in packages/ or into contracts/"
+    And the output contains "move the code into an existing library whose job it fits"
+
+  @id=SCN-REPO-194 @status=implemented
+  Scenario: DUP accepts a clone of at most 15 lines between two units that stay under their limits
+    Given the modules "billing" and "payroll" with the limit "Duplication: at most 3%" and 800 lines of source each
+    And "modules/billing/src/sum.ts" and "modules/payroll/src/sum.ts" hold the same function of 9 lines
+    When the developer runs "osf check DUP"
+    Then the command exits with code 0
+
+  @id=SCN-REPO-195 @status=implemented
+  Scenario: DUP rejects a clone of more than 15 lines between two units that stay under their limits
+    Given the modules "billing" and "payroll" with the limit "Duplication: at most 3%" and 800 lines of source each
+    And "modules/billing/src/sum.ts" and "modules/payroll/src/sum.ts" hold the same function of 17 lines
+    When the developer runs "osf check DUP"
+    Then the command exits with code 1
+    And the output contains "duplicate modules/payroll/src/sum.ts"
+    And the output contains "keep a copy of at most 15 lines, or move the code into an existing library whose job it fits (cli, testkit, contracts, factory-source, spec-files); a new package needs the bar of ADR 0159"
 
   @id=SCN-REPO-146 @status=implemented
   Scenario: DUP rejects a clone between the templates of two modules

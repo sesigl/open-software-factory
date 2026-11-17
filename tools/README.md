@@ -319,3 +319,7 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-189 | implemented | AFFECTED accepts a folder of the repository that the package's turbo.json adds to the inputs of its system tests |
 | SCN-REPO-190 | implemented | AFFECTED rejects a script of the system tests that reads a file outside its package |
 | SCN-REPO-191 | implemented | AFFECTED rejects a test suite that retries a failed test |
+| SCN-REPO-192 | implemented | ADR rejects a new published package whose ADR does not say why it is a package |
+| SCN-REPO-193 | implemented | ADR accepts a new published package whose ADR says why it is a package, and a new private package |
+| SCN-REPO-194 | implemented | DUP accepts a clone of at most 15 lines between two units that stay under their limits |
+| SCN-REPO-195 | implemented | DUP rejects a clone of more than 15 lines between two units that stay under their limits |

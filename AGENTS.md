@@ -74,6 +74,8 @@ Follow this loop for every behavior change. Each step has a skill.
 5. Run `make verify` and report its result.
 
 A new module starts with `skills/new-module`. A new dependency or service starts with `skills/write-adr`.
+A new package must earn its place (ADR 0159): one job, a reason to be installed or released alone, a second user
+today and about 300 lines for a library. Otherwise the code goes into an existing library or stays where it is used.
 
 - One agent works on a branch in the main checkout. Agents that work in parallel each use a git worktree of their
   own (Claude Code puts a subagent's in `.claude/worktrees/`). A worktree keeps its own turbo cache (ADR 0081), so

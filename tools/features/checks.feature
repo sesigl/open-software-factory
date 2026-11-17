@@ -356,6 +356,24 @@ Feature: Repository checks
     And the output contains "ADR modules/demo/package.json"
     And the output contains "left-pad"
 
+  @id=SCN-REPO-192 @status=implemented
+  Scenario: ADR rejects a new published package whose ADR does not say why it is a package
+    Given a base commit without the package "packages/rates"
+    And a change that adds "packages/rates/package.json" for the published package "@opensoftware/rates"
+    And the only ADR that names "packages/rates" is accepted, has Prior art and an empty "Why a package" section
+    When the developer runs "osf check ADR" against the base commit
+    Then the command exits with code 1
+    And the output contains 'ADR packages/rates/package.json:1 @opensoftware/rates is a new published package: it needs an accepted ADR that names "packages/rates" and answers "## Why a package" (ADR 0159)'
+    And the output contains "the Why a package section is empty: answer the bar of ADR 0159"
+
+  @id=SCN-REPO-193 @status=implemented
+  Scenario: ADR accepts a new published package whose ADR says why it is a package, and a new private package
+    Given a base commit without the packages "packages/rates" and "packages/scratch"
+    And a change that adds the published package "@opensoftware/rates" and the private package "packages/scratch"
+    And an accepted ADR that names "@opensoftware/rates" and answers "Why a package"
+    When the developer runs "osf check ADR" against the base commit
+    Then the command exits with code 0
+
   @id=SCN-REPO-019 @status=implemented
   Scenario: BOUNDARY-STATIC names the line of a Node built-in import in a system test
     Given a repository with the implemented scenario "SCN-DEMO-001" and its system test
