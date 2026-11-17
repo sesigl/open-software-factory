@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // runlog <command>: the entry layer only parses arguments and calls the commands.
 import { parseArgs } from "node:util";
-import { type Command, commandOf, packageVersion, runProgram } from "@opensoftware/cli";
+import { type Command, commandOf, packageVersion, runProgram, testHook } from "@opensoftware/cli";
 import { attachSession } from "./commands/attach.ts";
 import { collectorConfig } from "./commands/collector.ts";
 import { type ExportOptions, exportLatest, exportSession } from "./commands/export.ts";
@@ -34,7 +34,7 @@ const { positionals, values } = parseArgs({
 });
 const [command, ...rest] = positionals;
 const [file] = rest;
-const { OUTPUT, OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_TRACES_ENDPOINT, OSF_NOW, TRACEPARENT } = process.env;
+const { OUTPUT, OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_TRACES_ENDPOINT, TRACEPARENT } = process.env;
 const options: ExportOptions = {
   includeContent: values["include-content"] ?? false,
   output: OUTPUT ?? ".",
@@ -51,11 +51,13 @@ const commands: Record<string, Command> = {
     print(await (values.latest ? exportLatest(rest, options) : exportSession(file as string, options))),
   attach: async () => print(await attachSession(file as string, TRACEPARENT, values.outcome, options)),
   watch: async () => {
+    // The test clock (ADR 0166).
+    const fixed = testHook(process.env, "OSF_NOW");
     const watch = {
       idle: Number(values.idle ?? 5),
       passes: Number(values.passes ?? Number.POSITIVE_INFINITY),
       interval: Number(values.interval ?? 60),
-      now: () => (OSF_NOW ? Date.parse(OSF_NOW) : Date.now()),
+      now: () => (fixed ? Date.parse(fixed) : Date.now()),
     };
     await watchFolders(rest, watch, options);
     return {};

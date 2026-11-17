@@ -299,10 +299,16 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 
 ### [ ] T-92 · `init`, `up` and `doctor` are commands of `factory` (P2)
 
-### [ ] T-93 · test hooks are no product settings (P2)
+### [x] T-93 · test hooks are no product settings (P2)
 
 - **Build:** `OSF_NOW`, `OSF_SEED` and the intervals only tests set are honored only with an explicit test switch
   and are listed apart from the configuration.
+- **Done:** ADR 0166: the eight units that read `OSF_NOW` or `OSF_SEED` (gatekeeper, foreman, console, intake, proof,
+  runlog, scorekit, channel-slack) read them with `testHook` of `@opensoftware/cli`, which refuses a hook without
+  `OSF_TEST_HOOKS=1` with exit code 2 and its name (SCN-CLI-021 to 023, SCN-GATE-118, SCN-FORE-197, SCN-CONSOLE-282);
+  the testkit sets the switch (SCN-TK-214) and the profile does not (SCN-DIST-072); `make docs` lists the hooks under
+  "Test hooks" (SCN-REPO-215). The intervals the tests shorten are settings an operator tunes, so they stay; the one
+  without a check, `GATEKEEPER_POLL_MS`, now needs a whole number of 1 or more (SCN-GATE-119).
 
 ### Stage E · ready for phase 3
 

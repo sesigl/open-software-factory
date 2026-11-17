@@ -50,6 +50,6 @@ without a check is a wish. Where the check is not built yet, its cell says "plan
 | Measure before you change | Every factory change shows a score or benchmark comparison. | Planned: a merge rule on factory pull requests. |
 | Cost is visible and bounded | Budget per run and per work item at the LLM gateway. | The inference gateway refuses a run's calls over its budget. ledger reports the gap to a cost target (`--target`); planned: an alert over the target. |
 | Every change can be undone | Versions are immutable; rollback is a revert. | Every run names the commit of its factory version (ADR 0110). Planned: a rollback drill each release. |
-| Deterministic tests | No real network, model, clock or randomness in system tests. | The testkit's guard refuses real network in system tests (`NOREAL`); the testkit sets `OSF_NOW` and `OSF_SEED` for clock and randomness. |
+| Deterministic tests | No real network, model, clock or randomness in system tests. | The testkit's guard refuses real network in system tests (`NOREAL`); the testkit sets the test hooks `OSF_NOW` and `OSF_SEED` for clock and randomness, with the switch `OSF_TEST_HOOKS=1` without which a module refuses them (ADR 0166). |
 | Docs are part of done | Reference docs generated; hand-written docs declare what they cover. | DOCS-GEN, DOCS-AFFECTED |
 | Run it on ourselves first | Every release runs in our own factory first. | Planned: a release gate on time in the dogfood environment with no new failing scorer. |

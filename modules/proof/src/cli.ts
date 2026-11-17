@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // proof <command>: the entry layer only parses arguments and calls the commands.
 import { parseArgs } from "node:util";
-import { type Command, commandOf, outputPath, packageVersion, runProgram } from "@opensoftware/cli";
+import { type Command, commandOf, outputPath, packageVersion, runProgram, testHook } from "@opensoftware/cli";
 import { attach } from "./commands/attach.ts";
 import { bundle } from "./commands/bundle.ts";
 import { capture } from "./commands/capture.ts";
@@ -64,7 +64,7 @@ const commands: Record<string, Command> = {
         commit: values.commit,
         pullRequest: values["pull-request"],
         version,
-        now: env.OSF_NOW ?? new Date().toISOString(),
+        now: testHook(env, "OSF_NOW") ?? new Date().toISOString(),
         warn: (line) => process.stderr.write(`proof: ${line}\n`),
       }),
     ],

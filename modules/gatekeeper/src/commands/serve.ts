@@ -2,7 +2,7 @@
 // check of the pending gates every minute (ADR 0048, ADR 0062), and with the forge token a read of the pull requests'
 // comments every GATEKEEPER_POLL_MS (ADR 0080). It runs until SIGTERM or SIGINT.
 import { timingSafeEqual } from "node:crypto";
-import { healthOf, UsageError } from "@opensoftware/cli";
+import { healthOf, testHook, UsageError } from "@opensoftware/cli";
 import { type Actor, type PersonChecker, personChecker } from "@opensoftware/person-proof";
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
 import { readJson, readText } from "../adapters/files.ts";
@@ -47,8 +47,19 @@ function personsOf(setting: string, now: () => number): PersonChecker {
   }
 }
 
+/** The milliseconds of GATEKEEPER_POLL_MS: a whole number of 1 or more, else a usage error. Unset: 30 s. */
+function pollOf(env: ServeOptions["env"]): number {
+  const text = env.GATEKEEPER_POLL_MS;
+  if (!text) return POLL_MS;
+  if (!/^[1-9][0-9]*$/.test(text))
+    throw new UsageError(`GATEKEEPER_POLL_MS is "${text}": set a whole number of 1 or more`);
+  return Number(text);
+}
+
 export async function serve(options: ServeOptions) {
   const { env } = options;
+  // The test clock, before the server reads or starts anything (ADR 0166).
+  const fixed = testHook(env, "OSF_NOW");
   const pullRequests = Boolean(env.GATEKEEPER_FORGE_TOKEN);
   if (options.channel === undefined && !pullRequests)
     throw new UsageError(
@@ -62,14 +73,14 @@ export async function serve(options: ServeOptions) {
     required(env, "GATEKEEPER_SLACK_TOKEN", "the Slack bot token");
     required(env, "GATEKEEPER_SLACK_SIGNING_SECRET", "the signing secret of the Slack app");
   }
-  const pollMs = Number(env.GATEKEEPER_POLL_MS) || POLL_MS;
+  const pollMs = pollOf(env);
   const policyText = readText(options.policy);
   const groups = readJson(options.groups);
   for (const name of groupsWithoutPeople(groups))
     process.stderr.write(
       `gatekeeper: the group "${name}" in ${options.groups} has no member but the example's ${EXAMPLE_MEMBER}, so nobody decides its gates: put its people in ${options.groups}\n`,
     );
-  const now = () => nowOf(env.OSF_NOW);
+  const now = () => nowOf(fixed);
   const signingKey = env.GATEKEEPER_SIGNING_KEY || undefined;
   // A key that cannot sign stops the server before it starts, not at the first decision.
   if (signingKey) signingKeyOf(signingKey);

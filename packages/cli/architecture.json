@@ -17,6 +17,10 @@
       "paths": ["src/files.ts"]
     },
     {
+      "name": "hooks",
+      "paths": ["src/hooks.ts"]
+    },
+    {
       "name": "errors",
       "paths": ["src/errors.ts"]
     }

@@ -46,7 +46,9 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
 - `sut.cli(args, { env, stdin })`: runs the module's `bin` in its own process, with `$INPUT` as the current directory.
   `stdin` is written to the program's standard input, which is then closed.
   The module gets `INPUT` and `OUTPUT` (the two folders), `OSF_DATA` (its private data folder, which persists
-  for the scenario and which the test has no path into), `OSF_NOW=2026-01-01T00:00:00Z` and `OSF_SEED=1`.
+  for the scenario and which the test has no path into), `OSF_NOW=2026-01-01T00:00:00Z` and `OSF_SEED=1`, and
+  `OSF_TEST_HOOKS=1`, the switch without which a module refuses these test hooks
+  ([ADR 0166](../../docs/decisions/0166-test-hooks-need-a-switch.md)).
   `env` may only name variables the module's README documents under Configuration. `bin` must be the built
   artifact: a `bin` in `src/` fails the test (BOUNDARY-RUNTIME).
 - `sut.files`: `put`, `link`, `read`, `mode`, `list`, `remove` and `clear` in the module's input and output folders. Every path
@@ -416,7 +418,9 @@ A `planned` scenario's test must fail; when it passes, the testkit fails it and 
 - Every Node process of the module, and the processes it starts, shares Node's compile cache (`NODE_COMPILE_CACHE`
   in the system's temporary folder): a start loads the code an earlier one compiled, which saves 0.1 to 0.3 s each.
 - The clock and the seed are fixed through `OSF_NOW` and `OSF_SEED`; a module reads them instead of the system
-  clock and a random seed.
+  clock and a random seed. They are test hooks: a module reads them with `testHook` of `@opensoftware/cli`, which
+  honors them only with `OSF_TEST_HOOKS=1`, and the testkit sets that switch too. A scenario that shows the refusal
+  sets `OSF_TEST_HOOKS` to `""` in `env` (ADR 0166).
 
 ## Configuration
 
@@ -662,3 +666,4 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-211 | implemented | When the shared start fails, each scenario of the group fails with the failure of the start, and the project goes down |
 | SCN-TK-212 | implemented | A scenario without the tag @shared cannot use a shared start, and a scenario with the tag must use it |
 | SCN-TK-213 | implemented | Two scenarios with the same tag @shared use one install of the chart in one namespace, which is deleted when the run ends |
+| SCN-TK-214 | implemented | The module runs with the test switch that turns its test hooks on |

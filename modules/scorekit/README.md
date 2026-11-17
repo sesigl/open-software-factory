@@ -172,7 +172,17 @@ with a trusted publisher for `publish-scorekit.yml`. No credential is stored in 
 | `LANGFUSE_HOST` | string | `"https://cloud.langfuse.com"` | Base URL of Langfuse for push and export --push. |
 | `LANGFUSE_PUBLIC_KEY` | string |  | Langfuse public key for push and export --push. |
 | `LANGFUSE_SECRET_KEY` | string |  | Langfuse secret key for push and export --push. Never write the value into a file. |
-| `OSF_NOW` | string |  | The time of new scores as an ISO 8601 timestamp. Default: the system clock. |
+
+### Test hooks
+
+Only the system tests set these. A module honors them only with `OSF_TEST_HOOKS=1`, which the testkit sets for every
+module process it starts and the Compose profile and the Helm chart never set; without it, a command that reads one
+exits 2 and names it (ADR 0166).
+
+| Variable | Meaning |
+| --- | --- |
+| `OSF_TEST_HOOKS` | `1` turns the test hooks on. |
+| `OSF_NOW` | The time of new scores as an ISO 8601 timestamp. Default: the system clock. |
 
 ## Scenarios
 

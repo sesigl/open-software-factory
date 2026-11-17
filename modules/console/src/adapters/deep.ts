@@ -80,7 +80,7 @@ export async function traceRoundTrip(
 
 /**
  * Asks `found` every 250 ms until it gives true, for `ms` at least once: whether it did. A failure counts as false.
- * With the test clock OSF_NOW, `frozen`, the 250 ms pass on that clock without a wait: a test sets no real clock.
+ * With the test hook OSF_NOW, `frozen`, the 250 ms pass on that clock without a wait: a test sets no real clock.
  */
 export async function within(ms: number, found: () => Promise<boolean>, frozen: boolean): Promise<boolean> {
   for (let left = ms; ; left -= 250) {
@@ -90,7 +90,7 @@ export async function within(ms: number, found: () => Promise<boolean>, frozen: 
   }
 }
 
-/** The ID of the doctor's ping: random, or from OSF_SEED when it is set, so a test knows it (ADR 0120). */
+/** The ID of the doctor's ping: random, or from the test hook OSF_SEED when a test sets it (ADR 0120, ADR 0166). */
 export const pingId = (seed: string | undefined): string =>
   `ping_${seed ? createHash("sha256").update(seed).digest("hex").slice(0, 20) : randomBytes(10).toString("hex")}`;
 

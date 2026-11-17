@@ -9,6 +9,7 @@
     },
     "OSF_NOW": {
       "type": "string",
+      "x-test-hook": true,
       "description": "The creation time of a bundle as an ISO 8601 timestamp. Default: the system clock."
     },
     "GITHUB_SERVER_URL": {

@@ -2,7 +2,7 @@
 // when it is opened, and keeps nothing. It runs until SIGTERM or SIGINT.
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { UsageError } from "@opensoftware/cli";
+import { testHook, UsageError } from "@opensoftware/cli";
 import type {
   GateDecisionRequest,
   GateView,
@@ -80,10 +80,12 @@ const optionalApi = (name: string, url: string | undefined, token: string | unde
   url ? { name, url, token } : undefined;
 
 export async function serve(env: Env) {
+  // The test clock, before the server reads or starts anything (ADR 0166).
+  const fixed = testHook(env, "OSF_NOW");
+  const now = () => (fixed ? Date.parse(fixed) : Date.now());
   const sources = foremen(env);
   const intake = optionalApi("intake", env.CONSOLE_INTAKE_URL, env.CONSOLE_INTAKE_TOKEN);
   const gatekeeper = optionalApi("gatekeeper", env.CONSOLE_GATEKEEPER_URL, env.CONSOLE_GATEKEEPER_TOKEN);
-  const now = () => (env.OSF_NOW ? Date.parse(env.OSF_NOW) : Date.now());
   const links = namedLinks(env.CONSOLE_LINKS);
   const refresh = Number(env.CONSOLE_REFRESH || 10);
   const factoryFile = env.CONSOLE_FACTORY || "factory.yaml";

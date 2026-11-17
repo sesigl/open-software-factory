@@ -1,5 +1,5 @@
 // What request and status share: the request, the policy's answer, the groups and the channel.
-import { UsageError } from "@opensoftware/cli";
+import { testHook, UsageError } from "@opensoftware/cli";
 import { readJson, readText, writeJson } from "../adapters/files.ts";
 import { type Forge, pullRequestForge } from "../adapters/forge.ts";
 import { publish } from "../adapters/nats.ts";
@@ -43,6 +43,8 @@ export interface Loaded {
 
 export async function load(options: Options): Promise<Loaded> {
   const { env } = options;
+  // The test clock, before anything is read or sent (ADR 0166).
+  const fixed = testHook(env, "OSF_NOW");
   let request: Gate["request"];
   let pr: Loaded["pr"];
   if (options.pullRequest) {
@@ -59,7 +61,7 @@ export async function load(options: Options): Promise<Loaded> {
   const rules = parseRules(await evaluate(env.GATEKEEPER_OPA || "opa", options.policy, request), options.policy);
   const groups = parseGroups(readJson(options.groups), options.groups, rules);
   const gate: Gate = { id: gateId(request), request, rules, groups, policy: options.policy };
-  return { gate, policyText, channel: channelOf(options, pr), pr, now: nowOf(env.OSF_NOW) };
+  return { gate, policyText, channel: channelOf(options, pr), pr, now: nowOf(fixed) };
 }
 
 function channelOf(options: Options, pr: Loaded["pr"]): Channel {

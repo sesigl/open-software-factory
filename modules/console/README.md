@@ -457,12 +457,22 @@ as ok, adds itself to the count, like `all 5 checks ok, warnings: 1`, and shows 
 | `CONSOLE_TRACE_URL` | string |  | serve: the link to a run's trace in the trace store, with {runId} or {traceId}, like https://langfuse.acme.dev/traces?run={runId} or Phoenix's http://127.0.0.1:6006/projects/UHJvamVjdDox/traces/{traceId}. A run without a traceId gets no link from a template with {traceId}. |
 | `CONSOLE_URL` | string |  | serve: the console's own address, the source of the provider's callback address and of the same-origin rule of forms with the sign-in. Default http://localhost:<PORT>. With the sign-in it must be https:// or loopback, else the console does not start. A request for another host is sent to this address. |
 | `CONSOLE_USER_HEADER` | string |  | serve: the header in which the sign-in proxy sends the signed-in person, like X-Forwarded-Email. Set, the console takes actions in that person's name, such as submitting work on /work (ADR 0089); unset, it is read-only. Only set it behind a proxy that sets the header and removes it from the browser's requests. |
-| `OSF_NOW` | string |  | The current time, like 2026-01-01T00:00:00Z, for the age of a run, the sign-in and the waits of `console doctor --deep`, which then pass at once. Default: the clock. |
 | `OSF_OPENBAO_ADDR` | string |  | serve, doctor and /health: the address of the factory's OpenBao, like http://openbao:8200, for the secrets adapter. Set, an admin or a factory engineer stores secrets on /secrets, and an admin deletes them. |
 | `OSF_OPENBAO_MOUNT` | string | `"secret"` | serve, doctor and /health: the factory's KV version 2 mount in OpenBao, the same as its sandboxes' egress proxy reads. |
 | `OSF_OPENBAO_TOKEN` | string |  | serve, doctor and /health: the console's OpenBao token, with the policy that secrets-openbao policy write prints: it writes, lists and deletes secrets and cannot read a value. console doctor warns 7 days before it ends. |
-| `OSF_SEED` | string |  | doctor --deep: set, the ID of the doctor's ping comes from it instead of from chance, so a test knows it. Leave it unset in a factory. |
 | `PORT` | string | `"8080"` | serve: the port the web pages are served on. |
+
+### Test hooks
+
+Only the system tests set these. A module honors them only with `OSF_TEST_HOOKS=1`, which the testkit sets for every
+module process it starts and the Compose profile and the Helm chart never set; without it, a command that reads one
+exits 2 and names it (ADR 0166).
+
+| Variable | Meaning |
+| --- | --- |
+| `OSF_TEST_HOOKS` | `1` turns the test hooks on. |
+| `OSF_NOW` | The current time, like 2026-01-01T00:00:00Z, for the age of a run, the sign-in and the waits of `console doctor --deep`, which then pass at once. Default: the clock. |
+| `OSF_SEED` | doctor --deep: set, the ID of the doctor's ping comes from it instead of from chance, so a test knows it. |
 
 ## Releases
 
@@ -716,3 +726,4 @@ GitHub environment `npm`, a token only for the first version, then a trusted pub
 | SCN-CONSOLE-279 | implemented | The list of work items refreshes while a person types into "Submit work", and the page passes axe (journey) |
 | SCN-CONSOLE-280 | implemented | The theme link sends a person back only to a page of the console, also past a tab, a newline or a backslash |
 | SCN-CONSOLE-281 | implemented | After the sign-in a tab after the first slash of the page to come back to does not lead to another site |
+| SCN-CONSOLE-282 | implemented | The test hooks "OSF_NOW" and "OSF_SEED" without the test switch "OSF_TEST_HOOKS" stop "console serve" and "console doctor" |

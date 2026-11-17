@@ -332,3 +332,9 @@ Feature: The Compose profile installs a complete factory with one command
     Given the Compose profile with every value of ".env.example" set in ".env"
     When the operator runs "docker compose config --format json", and again with "FOREMAN_MAX_STAGES=4" in ".env"
     Then the service "foreman" sets "FOREMAN_MAX_STAGES" to "2", and then to "4"
+
+  @id=SCN-DIST-072 @status=implemented
+  Scenario: No service of the Compose profile sets a test hook or the test switch
+    Given the Compose profile with every value of ".env.example" set in ".env"
+    When the operator runs "docker compose --profile tools config --format json"
+    Then no service sets "OSF_NOW", "OSF_SEED" or "OSF_TEST_HOOKS"

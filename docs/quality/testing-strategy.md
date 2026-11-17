@@ -120,7 +120,8 @@ docs/vision/           factory-level requirements; source for module scenarios, 
 - Scenarios that only read a system whose start takes more than about 10 seconds may share one start, each with
   its own `scenario()` and result, tagged `@shared=<name>` (see "Test speed", ADR 0157).
 - Every module's `-001` is its README quick start.
-- No real network, model, clock or randomness. The forge in tests is a real Forgejo container, or for GitHub the
+- No real network, model, clock or randomness. The testkit fixes the clock and the seed with the test hooks `OSF_NOW`
+  and `OSF_SEED` and the switch `OSF_TEST_HOOKS=1`, without which a module refuses them (ADR 0166). The forge in tests is a real Forgejo container, or for GitHub the
   testkit's in-process fake of its REST API (ADR 0058); the chat is the testkit's fake Slack, or the conversation
   of a pull request in its fake GitHub (ADR 0059); the harness is
   the scripted ACP agent from the testkit, or a real harness such as Claude Code against the scripted gateway

@@ -101,7 +101,7 @@ changes nothing and answers a problem whose `detail` is the reason:
 
 Each refusal is a line on the error output with the person the call claims and the reason, never the proof, like
 `intake: refused POST /v1/work-items for "ada@acme.dev": the person proof ended at 2026-01-01T00:00:30Z`. The check
-allows 10 seconds of clock skew and reads its clock from `OSF_NOW` when that is set. A key set is fetched when a proof
+allows 10 seconds of clock skew and reads its clock from the test hook `OSF_NOW` when a system test sets it. A key set is fetched when a proof
 first needs it and kept for 10 minutes.
 
 A requester of the kind `trigger` needs no proof: a team's own tool acts as itself, like
@@ -285,7 +285,6 @@ letter too, after that time; the profile and the chart set `7d`.
 | --- | --- | --- | --- |
 | `PORT` | string | `"8080"` | serve: the port the HTTP server listens on. |
 | `OSF_DATA` | string | `".intake"` | serve: the folder of the embedded PostgreSQL (PGlite) when INTAKE_DATABASE_URL is not set. |
-| `OSF_NOW` | string |  | The current time, like 2026-01-01T00:00:00Z, for the time a work item and a request were received. Default: the clock. |
 | `INTAKE_API_TOKEN` | string |  | serve: the token that callers of /v1 send as Authorization: Bearer <token>. Required. mcp: the token it sends to the server. Required. |
 | `INTAKE_PERSON_KEYS` | string |  | serve: the issuers of person proofs, name=url pairs of their key sets separated by commas, like console=http://console:8080/.well-known/jwks.json (ADR 0151). Set, a submission whose requester is a person needs that person's proof in the header OSF-Person, and the server records the person the proof names. Unset: a caller with the API token names any person, and the server says so at its start. |
 | `INTAKE_DATABASE_URL` | string |  | serve: the PostgreSQL database of the work items, schema intake. Default: an embedded PostgreSQL in OSF_DATA. |
@@ -308,6 +307,17 @@ letter too, after that time; the profile and the chart set `7d`.
 | `INTAKE_REQUESTER` | string |  | mcp: the person the agent works for, <source>:<id> like github:varun. The requester of its work is the trigger mcp:<requester>, since nothing proves the person (ADR 0151). Required. |
 | `INTAKE_FOREMAN_URL` | string |  | mcp: the base URL of foreman serve, like http://localhost:8081, for the tool run_evidence (ADR 0071). Unset: run_evidence is an error that names it. |
 | `INTAKE_FOREMAN_TOKEN` | string |  | mcp: the token of foreman serve's API, its FOREMAN_API_TOKEN, sent with INTAKE_FOREMAN_URL. |
+
+### Test hooks
+
+Only the system tests set these. A module honors them only with `OSF_TEST_HOOKS=1`, which the testkit sets for every
+module process it starts and the Compose profile and the Helm chart never set; without it, a command that reads one
+exits 2 and names it (ADR 0166).
+
+| Variable | Meaning |
+| --- | --- |
+| `OSF_TEST_HOOKS` | `1` turns the test hooks on. |
+| `OSF_NOW` | The current time, like 2026-01-01T00:00:00Z, for the time a work item and a request were received. Default: the clock. |
 
 ## Releases
 

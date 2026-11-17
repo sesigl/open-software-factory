@@ -44,6 +44,7 @@ process.exitCode = await runProgram({
 | `writeText(path, text)` | Writes the file and creates its folder. |
 | `outputPath(file, out?)` | `out` when the user gave `--out`, else `file` in `$OUTPUT`, else `file` in the current folder. |
 | `healthOf(probes)` | The answer of a server's `GET /v1/health` ([ADR 0086](../../docs/decisions/0086-health-routes.md)): runs each probe `{ name, check, fix }` at the same time, each within 2 seconds, and gives `{ status, checks }`. A probe that rejects or does not answer in time is `ok: false` with the detail `<what failed>: <fix>`. |
+| `testHook(env, name)` | The value of the test hook `name` in `env`, like `OSF_NOW` or `OSF_SEED`, which only the system tests set ([ADR 0166](../../docs/decisions/0166-test-hooks-need-a-switch.md)): `undefined` when it is unset or empty, its value when `OSF_TEST_HOOKS` is `1`, which the testkit sets for every module process it starts, and otherwise a `UsageError` `<name> is a test hook, which works only with OSF_TEST_HOOKS=1 in the system tests: unset <name>`, so a command exits 2. A module reads a test hook at the start of its command, before it reads or starts anything else. |
 | `packageVersion(url)` | The version in a `package.json`, for example `new URL("../package.json", import.meta.url)`. |
 
 ## Releases
@@ -63,6 +64,7 @@ the GitHub environment `npm`, a token only for the first version, then a trusted
 | Variable | Meaning |
 | --- | --- |
 | `OUTPUT` | The folder `outputPath` puts files into. Unset: the current folder. |
+| `OSF_TEST_HOOKS` | `1` turns on the test hooks that `testHook` reads; only the testkit sets it. |
 
 ## Scenarios
 
@@ -90,3 +92,6 @@ the GitHub environment `npm`, a token only for the first version, then a trusted
 | SCN-CLI-018 | implemented | A probe that fails makes the server failing and says what failed and how to fix it |
 | SCN-CLI-019 | implemented | A probe that does not answer within 2 seconds fails |
 | SCN-CLI-020 | implemented | commandOf gives the command of a name, and none for a name the commands do not hold |
+| SCN-CLI-021 | implemented | testHook gives the value of a test hook when OSF_TEST_HOOKS is 1 |
+| SCN-CLI-022 | implemented | A test hook without OSF_TEST_HOOKS set to 1 is a usage error that names it |
+| SCN-CLI-023 | implemented | Without OSF_TEST_HOOKS a test hook that is unset or empty gives no value |

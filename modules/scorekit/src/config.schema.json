@@ -30,6 +30,7 @@
     },
     "OSF_NOW": {
       "type": "string",
+      "x-test-hook": true,
       "description": "The time of new scores as an ISO 8601 timestamp. Default: the system clock."
     }
   }
