@@ -337,3 +337,6 @@ with `kind create cluster --kubeconfig "$HOME/.kube/kind"` and run the tests wit
 | SCN-REPO-222 | implemented | osf released-images report says that a step outside the scenarios failed when the JUnit report is missing or names no failure |
 | SCN-REPO-223 | implemented | osf released-images report --passed writes the comment that the released images passed |
 | SCN-REPO-224 | implemented | AFFECTED rejects a workflow besides verify.yml that sets OSF_TEST_CACHE or saves the cache of the test results |
+| SCN-REPO-225 | implemented | PROFILE rejects a build argument of an image that is not the repository's pin of pnpm |
+| SCN-REPO-226 | implemented | osf profile-pins writes the version and the SHA-256 sums of lychee that "make install" pins into the build arguments of an image |
+| SCN-REPO-227 | implemented | PROFILE rejects a moved tool pin in the build arguments of an image without a new tag, compared with the base |

@@ -115,7 +115,9 @@ gets `GH_TOKEN` and `CLAUDE_CODE_OAUTH_TOKEN` as placeholders and never sees a t
 builds from the target `dogfood` of [`images/Dockerfile`](images/Dockerfile): the agents' template with pnpm at the
 version of `packageManager` in `package.json`, lychee at the version that `make install` pins, and
 `TURBO_CONCURRENCY=4`, so the agents run `make check-fast` of this repository
-([ADR 0164](../docs/decisions/0164-a-sandbox-that-checks-this-repository.md)). They install the packages with
+([ADR 0164](../docs/decisions/0164-a-sandbox-that-checks-this-repository.md)). The two versions and lychee's SHA-256
+sums are build arguments of `dogfood-template`, which `osf profile-pins` writes from those pins
+([ADR 0172](../docs/decisions/0172-the-sandbox-image-takes-the-tool-pins-from-profile-pins.md)). They install the packages with
 `pnpm install --frozen-lockfile` through the egress, which allows `registry.npmjs.org`; it also allows `litellm`,
 GitHub and its release files, `get.helm.sh` and `dl.k8s.io`, what `make install` downloads for the fakes of
 `make test-scenario`. With 4 CPUs and 8 GiB, `pnpm turbo run build` takes about 30 s and `make check-fast` of every
@@ -787,7 +789,7 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-060 | implemented | Every workload of the Helm chart is ready after one command and runs the module images of this workspace |
 | SCN-DIST-061 | implemented | The foreman of the Compose profile runs at most 2 stages at once, or the number of "FOREMAN_MAX_STAGES" |
 | SCN-DIST-062 | implemented | The foreman of the Helm chart runs at most 2 stages at once |
-| SCN-DIST-070 | implemented | The agents' template of this repository's factory has Node 24, pnpm 10.28.0, Git, make and lychee 0.20.1 |
+| SCN-DIST-070 | implemented | The agents' template of this repository's factory has Node 24, Git, make, and pnpm and lychee at the repository's pins |
 | SCN-DIST-071 | implemented | This repository's factory starts every agent from the image of "dogfood-template", and its prompts ask for "make check-fast" |
 | SCN-DIST-072 | implemented | No service of the Compose profile sets a test hook or the test switch |
 | SCN-DIST-080 | implemented | With "OSF_DEPLOY_IMAGES=released", the dry run of "scripts/images.ts" pulls every image of the factory's registry that "compose.yaml" pins and builds none |

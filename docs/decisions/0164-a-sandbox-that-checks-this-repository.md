@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; amended by 0172 (pnpm and lychee are build arguments that osf profile-pins writes)
 topic: install
 date: 2026-11-17
 ---

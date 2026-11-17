@@ -323,10 +323,12 @@ to the base of the pull request. Without it, a check that needs it prints "skipp
 - **Fails, when the pins are not as `osf profile-pins` writes them (ADR 0095):** `compose.yaml`, `values.yaml`,
   `Chart.yaml` and the factories of `deploy/` pin each package at the workspace's version and each agents' template at
   the profile's tag of its image (ADR 0096); each package that the reference factory's workflows `factory` run is at
-  the workspace's version (ADR 0150); a module image's tag is the version of its own package, with or without `-r<n>`.
-- **Fails, compared with `OSF_BASE`:** an image whose packages changed has no new tag; an image whose stage of
-  `deploy/images/Dockerfile` changed (or a stage or global `ARG` it builds on; comments do not count) has no new tag;
-  a changed chart has no new version.
+  the workspace's version (ADR 0150); a module image's tag is the version of its own package, with or without `-r<n>`;
+  the build arguments `PNPM_VERSION` and `LYCHEE_*` of a service are the pins of `packageManager` in `package.json` and
+  of lychee in `tools/scaffold/install-tools.ts` (ADR 0172).
+- **Fails, compared with `OSF_BASE`:** an image whose packages or tool pins changed has no new tag; an image whose
+  stage of `deploy/images/Dockerfile` changed (or a stage or global `ARG` it builds on; comments do not count) has no
+  new tag; a changed chart has no new version.
 - **Fails, when chart, profile and CI disagree:** each image of the chart is an image of the profile, pulled or built
   (ADR 0098); the `pull` list of a suite holds each image of the Compose files its tests start, and its other entries
   are named in the files of the suite's packages or their workspace dependencies; `deploy/package.json` declares each

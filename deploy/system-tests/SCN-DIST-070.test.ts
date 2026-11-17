@@ -37,14 +37,23 @@ scenario("SCN-DIST-070", async ({ sut, given, when, then }) => {
 
   const lines = () => run.stdout.trim().split("\n");
   await then(
-    'the output names Node "v24.", pnpm "10.28.0", "git version", "GNU Make" and "lychee 0.20.1", one per line',
+    'the output names Node "v24.", pnpm at the build argument "PNPM_VERSION" of "dogfood-template", "git version", "GNU Make" and lychee at its build argument "LYCHEE_VERSION", one per line',
     async () => {
+      // The pins as compose.yaml passes them to the build; PROFILE keeps them equal to package.json and make install's.
+      const config = await compose.run(["--profile", "dogfood", "config", "--format", "json"]);
+      expect(config.exitCode, config.stderr).toBe(0);
+      const { services } = JSON.parse(config.stdout) as {
+        services: Record<string, { build?: { args?: Record<string, string> } }>;
+      };
+      const args = services["dogfood-template"]?.build?.args ?? {};
+      expect(args.PNPM_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
+      expect(args.LYCHEE_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
       const [node, pnpm, git, make, lychee] = lines();
       expect(node).toMatch(/^v24\.\d+\.\d+$/);
-      expect(pnpm).toBe("10.28.0");
+      expect(pnpm).toBe(args.PNPM_VERSION);
       expect(git).toMatch(/^git version \d/);
       expect(make).toMatch(/^GNU Make \d/);
-      expect(lychee).toBe("lychee 0.20.1");
+      expect(lychee).toBe(`lychee ${args.LYCHEE_VERSION}`);
     },
   );
 

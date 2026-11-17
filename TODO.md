@@ -238,7 +238,8 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 - **Done when:** the deploy suite starts the whole profile once and installs the whole chart once.
 - **Done:** `sut.shared` and the testkit's global setup run one start per test run (ADR 0162, SCN-TK-210 to -213);
   five scenarios share `@shared=compose-profile` and five `@shared=helm-chart`. The 30 profile scenarios took 55 s
-  locally, down from 85 s; the chart's first proof is CI.
+  locally, down from 85 s. On CI the whole deploy suite took 65, 69, 72, 92 and 65 s of wall time in the five runs
+  of `main` after it that ran the suite, so its budget went from 340 s to 190 s.
 
 ### [x] T-83 · spend-log reads as soon as the rows are there (P2)
 
@@ -373,7 +374,9 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 - **Done:** ADR 0164: the image `dogfood-agent` of the service `dogfood-template` (profile `dogfood`), the agents'
   template with pnpm 10.28.0, lychee 0.20.1 and `TURBO_CONCURRENCY=4`, 1.12 GB (SCN-DIST-070); every agent of the
   factory starts from it, and its prompts ask for `make check-fast` (SCN-DIST-071). In it, `make check-fast` of every
-  package took 92 s with 4 CPUs and 8 GiB, and 167 s with 2 CPUs and 4 GiB, after a build of 28 s and 52 s.
+  package took 92 s with 4 CPUs and 8 GiB, and 167 s with 2 CPUs and 4 GiB, after a build of 28 s and 52 s. ADR 0172:
+  the image's pnpm and lychee are build arguments that `osf profile-pins` writes from `packageManager` and
+  `install-tools.ts`, so PROFILE fails when a pin moves without them (SCN-REPO-225 to -227).
 
 ### [ ] T-95 · a rehearsal on GitHub (P0)
 

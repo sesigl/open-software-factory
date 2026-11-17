@@ -4,7 +4,8 @@
 // adapter of it moved, as a published tag never changes. The chart's `images.*` take the same tags, and the chart's
 // version moves by a patch when they change. The factories of deploy/ name the agents' template, an image of the
 // profile, at the same tag (ADR 0096). The reference factory's workflows run each package at the workspace's version
-// (ADR 0150).
+// (ADR 0150). The build arguments of compose.yaml that name a tool of this repository, like PNPM_VERSION, hold its pin
+// from package.json or tools/scaffold/install-tools.ts, and a new pin gives the image a new tag (ADR 0172).
 import type { Repo } from "./repo.ts";
 import { workspace } from "./workspace.ts";
 
@@ -23,6 +24,39 @@ const PIN = /@opensoftware\/([a-z0-9-]+)@(\d+\.\d+\.\d+)/g;
 const ESCAPED = REGISTRY.replaceAll(".", "\\.");
 const IMAGE = new RegExp(`image: ${ESCAPED}/([a-z0-9-]+):(\\S+)`);
 const TAG = /^(\d+\.\d+\.\d+)(?:-r(\d+))?$/;
+/** A build argument of a service, like `        PNPM_VERSION: "10.28.0"`. */
+const ARG = /^(\s+)([A-Z][A-Z0-9_]*): "?([^"\s]*)"?$/gm;
+export const TOOLS = "tools/scaffold/install-tools.ts";
+
+/**
+ * The pins of this repository's tools by the build argument that takes each (ADR 0172): PNPM_VERSION is the version
+ * of `packageManager` in package.json; LYCHEE_VERSION, LYCHEE_SHA256_AMD64 and LYCHEE_SHA256_ARM64 are lychee's version
+ * and the SHA-256 of its builds linux-x64 and linux-arm64 in tools/scaffold/install-tools.ts.
+ */
+export function toolPins(repo: Repo): Map<string, string> {
+  const found = new Map<string, string>();
+  if (repo.exists("package.json")) {
+    const { packageManager } = JSON.parse(repo.read("package.json")) as { packageManager?: string };
+    const pnpm = /^pnpm@(\d+\.\d+\.\d+)/.exec(packageManager ?? "")?.[1];
+    if (pnpm) found.set("PNPM_VERSION", pnpm);
+  }
+  if (!repo.exists(TOOLS)) return found;
+  const text = repo.read(TOOLS);
+  const start = text.indexOf('name: "lychee"');
+  if (start < 0) return found;
+  const next = text.indexOf('name: "', start + 1);
+  const lychee = text.slice(start, next < 0 ? undefined : next);
+  const version = /version: "([^"]+)"/.exec(lychee)?.[1];
+  if (version) found.set("LYCHEE_VERSION", version);
+  for (const [platform, name] of [
+    ["linux-x64", "LYCHEE_SHA256_AMD64"],
+    ["linux-arm64", "LYCHEE_SHA256_ARM64"],
+  ] as const) {
+    const sum = new RegExp(`"${platform}": \\{[^}]*sha256: "([0-9a-f]{64})"`).exec(lychee)?.[1];
+    if (sum) found.set(name, sum);
+  }
+  return found;
+}
 
 export interface Pins {
   compose: string;
@@ -41,6 +75,8 @@ export interface Service {
   line: number;
   image?: { module: string; tag: string };
   packages: Map<string, string>;
+  /** Its lines `NAME: value` with an upper-case name: build arguments like PNPM_VERSION, and variables. */
+  args: Map<string, string>;
   text: string;
 }
 
@@ -63,6 +99,7 @@ export function services(compose: string): Service[] {
       line: start + 1,
       image: image ? { module: image[1] as string, tag: image[2] as string } : undefined,
       packages: new Map([...text.matchAll(PIN)].map((pin) => [pin[1] as string, pin[2] as string])),
+      args: new Map([...text.matchAll(ARG)].map((arg) => [arg[2] as string, arg[3] as string])),
       text,
     };
   });
@@ -82,17 +119,25 @@ function nextTag(tag: string, module: string, before: Map<string, string>, after
 /** compose.yaml, values.yaml and Chart.yaml as `osf profile-pins` writes them. */
 export function pins(repo: Repo): Pins {
   const versions = new Map(workspace(repo).map((unit) => [unit.name.replace(/^@opensoftware\//, ""), unit.version]));
+  const tools = toolPins(repo);
   let compose = repo.read(COMPOSE);
   const tags = new Map<string, string>();
   for (const service of services(compose)) {
     const after = new Map([...service.packages].map(([name, version]) => [name, versions.get(name) ?? version]));
-    const changed = [...after].some(([name, version]) => service.packages.get(name) !== version);
+    const pinned = (name: string, value: string) => tools.get(name) ?? value;
+    const changed =
+      [...after].some(([name, version]) => service.packages.get(name) !== version) ||
+      [...service.args].some(([name, value]) => pinned(name, value) !== value);
     if (service.image && !tags.has(service.image.module)) {
       const { module, tag } = service.image;
       tags.set(module, changed ? nextTag(tag, module, service.packages, after) : tag);
     }
     if (changed) {
-      const text = service.text.replace(PIN, (pin, name: string) => `@opensoftware/${name}@${after.get(name)}`);
+      const text = service.text
+        .replace(PIN, (_pin, name: string) => `@opensoftware/${name}@${after.get(name)}`)
+        .replace(ARG, (arg, indent: string, name: string, value: string) =>
+          tools.has(name) ? `${indent}${name}: "${pinned(name, value)}"` : arg,
+        );
       compose = compose.replace(service.text, () => text);
     }
   }
