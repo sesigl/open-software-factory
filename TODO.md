@@ -356,14 +356,12 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   and DOCS-GEN keeps it current (SCN-REPO-201). ADR 0001 lets a status line and a topic change; 0003, 0016, 0049
   and 0093 name the records that changed them.
 
-### [ ] T-92 · `init`, `up` and `doctor` are commands of `factory` (P2)
+### [x] T-92 · `init`, `up` and `doctor` are commands of `factory` (P2)
 
 - **Found:** the three are commands of `osf` (`tools/scaffold/setup.ts`, ADR 0119), which runs only in a clone.
   As commands of `factory` they would give factory-spec a second job, and the Compose profile they work on is not
   published.
-- **Owner's decision:** keep `osf` and close this item; or publish a package `@opensoftware/profile` with the
-  profile and the three commands, so that `npx` works without a clone (recommended; it meets ADR 0159); or make
-  `factory` an umbrella CLI and rename factory-spec's binary, a breaking change over several pull requests.
+- **Done:** closed by the owner's decision: the three stay commands of `osf` (ADR 0119). Nothing was built.
 
 ### [x] T-93 · test hooks are no product settings (P2)
 
@@ -414,11 +412,13 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   SCN-FORE-193 to 196, SCN-FSPEC-130, SCN-FSPEC-131). Open: this repository's factory names `rework: implement` on
   its stage `verify` once a release carries the field.
 
-### [ ] T-99 · the factory's own identity on GitHub (owner's decision)
+### [x] T-99 · the factory's own identity on GitHub (owner's decision)
 
 - **Problem:** the agents push and comment with the owner's token, and the owner is the only approver: a comment
   of an agent would count as the owner's.
-- **Build:** after the owner chose a GitHub App or a second account.
+- **Done:** decided by the owner. The agents that develop this repository use the owner's identity. A factory's
+  own identity on GitHub, a GitHub App or a second account as its user chooses, is a later feature and no item of
+  this plan yet.
 
 ---
 
