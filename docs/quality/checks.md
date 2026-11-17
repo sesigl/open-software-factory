@@ -41,8 +41,9 @@ pull request with `workflow_dispatch`. That run needs no approval. It uses `veri
 request into `main` before it tests, and reports the result as the `verify` commit status on the pull request's head.
 On each pull request from this repository, the `verify` job also runs the proof GitHub Action on the JUnit results of
 every suite ([ADR 0029](../decisions/0029-proof-capture-and-action.md)): one proof comment and the commit status
-`proof`. The `proof` suite's job installs Chromium for the capture scenarios; the `deploy` suite's job pulls the images of the Compose profile while it builds (ADR 0074), starts kind with
-agent-sandbox and loads the images of the Helm chart into it (ADR 0075, ADR 0097); the `testkit` suite's job starts kind for `sut.helm`. The `verify` job also runs the spec-trace
+`proof`. The `proof` suite's job installs Chromium for the capture scenarios; the `deploy` suite's job pulls the images of the Compose profile while it builds (ADR 0074) and starts kind with
+agent-sandbox, and its `test:system` builds the module images of the commit and loads the images of the Helm chart
+into kind before the timed tests (ADR 0075, ADR 0156); the `testkit` suite's job starts kind for `sut.helm`. The `verify` job also runs the spec-trace
 GitHub Action for its report: the job summary lists the scenarios a pull request adds, removes or changes, and the
 artifact `spec-trace` holds the JSON report. Both actions run the release from npm at the version of the module's
 `package.json`, so a change to proof or spec-trace reaches this check after its release.

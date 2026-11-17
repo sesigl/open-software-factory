@@ -15,8 +15,8 @@ const SECRETS: Record<string, string> = {
 };
 
 /**
- * The chart on the cluster of KUBECONFIG, in the scenario's namespace. The CI job starts kind and loads the images
- * of the Compose profile into it first (deploy/README.md#helm-chart).
+ * The chart on the cluster of KUBECONFIG, in the scenario's namespace. The CI job starts kind; test:system's
+ * scripts/images.ts loads the chart's images into it, the module images of the commit (deploy/README.md).
  */
 export async function cluster(sut: Sut): Promise<Helm> {
   const helm = sut.helm("helm/osf");
