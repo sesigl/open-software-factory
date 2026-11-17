@@ -20,10 +20,10 @@ jobs:
       RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}
     steps:
       - uses: actions/checkout@v4
-      - run: npx --yes @opensoftware/forge-forgejo@0.8.1 check "$REPOSITORY" "$SHA" factory pending --url "$RUN"
-      - run: npx --yes @opensoftware/factory-spec@0.12.1 lint
-      - run: npx --yes @opensoftware/factory-spec@0.12.1 plan --check
+      - run: npx --yes @opensoftware/forge-forgejo@0.9.0 check "$REPOSITORY" "$SHA" factory pending --url "$RUN"
+      - run: npx --yes @opensoftware/factory-spec@0.13.0 lint
+      - run: npx --yes @opensoftware/factory-spec@0.13.0 plan --check
       - if: success()
-        run: npx --yes @opensoftware/forge-forgejo@0.8.1 check "$REPOSITORY" "$SHA" factory success --url "$RUN"
+        run: npx --yes @opensoftware/forge-forgejo@0.9.0 check "$REPOSITORY" "$SHA" factory success --url "$RUN"
       - if: failure()
-        run: npx --yes @opensoftware/forge-forgejo@0.8.1 check "$REPOSITORY" "$SHA" factory failure --url "$RUN"
+        run: npx --yes @opensoftware/forge-forgejo@0.9.0 check "$REPOSITORY" "$SHA" factory failure --url "$RUN"

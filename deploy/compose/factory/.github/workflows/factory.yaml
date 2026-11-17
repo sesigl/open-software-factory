@@ -18,5 +18,5 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-      - run: npx --yes @opensoftware/factory-spec@0.12.1 lint
-      - run: npx --yes @opensoftware/factory-spec@0.12.1 plan --check
+      - run: npx --yes @opensoftware/factory-spec@0.13.0 lint
+      - run: npx --yes @opensoftware/factory-spec@0.13.0 plan --check
