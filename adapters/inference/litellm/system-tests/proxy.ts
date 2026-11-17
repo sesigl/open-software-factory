@@ -15,20 +15,26 @@ export const MASTER_KEY_VARIABLE = "OSF_SECRET_PROXY_MASTER_KEY";
 
 /**
  * Starts the test proxy, which routes "routes/triage" to the test provider's model "model-c", and waits until it is
- * healthy. The test provider answers `calls` chat completions. Gives the provider and the proxy's origin.
+ * healthy. The test provider answers `calls` chat completions. `env` sets more variables of proxy/compose.yaml, such
+ * as PROXY_BATCH_WRITE_AT. Gives the provider and the proxy's origin.
  */
-export async function runningProxy(sut: Sut, fakes: Fakes, calls = 1) {
+export async function runningProxy(sut: Sut, fakes: Fakes, calls = 1, env: Record<string, string> = {}) {
   const api = await provider(fakes, calls);
-  await sut.files.put("$INPUT/.env", `PROVIDER_BASE=${api.containerUrl}/v1\n`);
+  const lines = Object.entries({ PROVIDER_BASE: `${api.containerUrl}/v1`, ...env }).map(([k, v]) => `${k}=${v}\n`);
+  await sut.files.put("$INPUT/.env", lines.join(""));
   const compose = sut.compose("system-tests/proxy/compose.yaml");
   const up = await compose.run(["up", "--detach", "--wait", "--quiet-pull"]);
   if (up.exitCode !== 0) throw new Error(`docker compose up exited with ${up.exitCode}: ${up.stderr}`);
   return { api, origin: await compose.url("litellm", 4000) };
 }
 
-/** A config with only `osf.proxy`: the proxy's origin and the reference to the master key's variable. */
-export function attachConfig(origin: string, variable = MASTER_KEY_VARIABLE): string {
-  return `osf:\n  proxy:\n    url: ${origin}\n    master_key: os.environ/${variable}\n`;
+/**
+ * A config with only `osf.proxy`: the proxy's origin, the reference to the master key's variable and, when one is
+ * given, the proxy's write interval as `proxy_batch_write_at`.
+ */
+export function attachConfig(origin: string, variable = MASTER_KEY_VARIABLE, batchWriteAt?: number | string): string {
+  const interval = batchWriteAt === undefined ? "" : `    proxy_batch_write_at: ${batchWriteAt}\n`;
+  return `osf:\n  proxy:\n    url: ${origin}\n    master_key: os.environ/${variable}\n${interval}`;
 }
 
 /** Runs an adapter command with the master key's variable set to `masterKey`, and the variables of `env`. */
@@ -42,9 +48,16 @@ export async function start(sut: Sut, config: string, masterKey = MASTER_KEY, en
   return cli(sut, ["start", "config.yaml"], masterKey, env);
 }
 
-/** Attaches a gateway to the proxy at `origin`; gives its ID and URL. */
-export async function attached(sut: Sut, origin: string): Promise<{ id: string; url: string }> {
-  const run = await start(sut, attachConfig(origin));
+/**
+ * Attaches a gateway to the proxy at `origin` with the write interval `batchWriteAt`, by default the test proxy's 1
+ * second, so that spend-log waits 8 seconds; null names none. Gives the gateway's ID and URL.
+ */
+export async function attached(
+  sut: Sut,
+  origin: string,
+  batchWriteAt: number | null = 1,
+): Promise<{ id: string; url: string }> {
+  const run = await start(sut, attachConfig(origin, MASTER_KEY_VARIABLE, batchWriteAt ?? undefined));
   if (run.exitCode !== 0) throw new Error(`start exited with ${run.exitCode}: ${run.stderr}`);
   return JSON.parse(run.stdout) as { id: string; url: string };
 }

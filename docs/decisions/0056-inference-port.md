@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; amended by 0171 (spend-log waits the proxy's write interval)
 topic: ports
 date: 2026-10-23
 ---

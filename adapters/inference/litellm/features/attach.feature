@@ -5,9 +5,14 @@ Feature: Attach to a LiteLLM proxy that already runs
   the "litellm" service of the Compose profile, and the variable that holds its master key. start then attaches to
   that proxy and starts no container (ADR 0080). The running LiteLLM proxy is LiteLLM with PostgreSQL in a Compose
   project of the test, with the master key "sk-testkit-master". Its config routes "routes/triage" to the test
-  provider's model "model-c". The test provider is an OpenAI-compatible API at "host.docker.internal". The test proxy
-  is a fake of LiteLLM's admin API on 127.0.0.1: it answers only the paths that a scenario names. The scenarios from
-  SCN-INFLITE-006 on cover the usage of the CLI and the errors of its commands.
+  provider's model "model-c". It writes its spend rows every second ("proxy_batch_write_at" 1), unless a scenario
+  names another interval, and a config that attaches to it says so in "osf.proxy.proxy_batch_write_at". LiteLLM's
+  queue monitor also writes the rows, every 2 to 30 seconds; with "SPEND_LOG_QUEUE_POLL_INTERVAL" set to "600" only
+  the interval writes them while a scenario runs. The test
+  provider is an OpenAI-compatible API at "host.docker.internal". The test proxy is a fake of LiteLLM's admin API on
+  127.0.0.1: it answers only the paths that a scenario names; a config that attaches to it names the interval 1 too,
+  unless a scenario names another. The scenarios from SCN-INFLITE-006 on cover the usage of the CLI and the errors of
+  its commands.
 
   @id=SCN-INFLITE-001 @status=implemented
   Scenario: start attaches to a running proxy without Docker
@@ -160,3 +165,23 @@ Feature: Attach to a LiteLLM proxy that already runs
     And a gateway attached to the test proxy, and a key of it for the run "run-7"
     When the client runs "revoke" for the run "run-7", and then "spend-log" for the gateway
     Then spend-log prints one line, whose "api_key" is "token-7"
+
+  @id=SCN-INFLITE-023 @status=implemented
+  Scenario: spend-log of a gateway attached to a proxy with LiteLLM's write interval has the call made just after a write
+    Given the running LiteLLM proxy with "PROXY_BATCH_WRITE_AT" set to "10" and "SPEND_LOG_QUEUE_POLL_INTERVAL" set to "600"
+    And a gateway attached to it with a config without "osf.proxy.proxy_batch_write_at", and a key for the run "run-7"
+    When a call with the proxy's master key is in "/spend/logs", the run calls "routes/triage" at once, and the client runs "spend-log"
+    Then spend-log prints one line whose "osf.run.id" is "run-7"
+
+  @id=SCN-INFLITE-024 @status=implemented
+  Scenario: start refuses an "osf.proxy.proxy_batch_write_at" that is not a number of seconds above 0
+    When the client runs "start" with a config whose "osf.proxy" names "proxy_batch_write_at" "ten"
+    Then start exits with code 2 with an error that names "osf.proxy.proxy_batch_write_at"
+    And start prints nothing on standard output
+
+  @id=SCN-INFLITE-025 @status=implemented
+  Scenario: spend-log of an attached gateway waits the write interval that its config names, and seven seconds more
+    Given a test proxy that answers "/key/list" and "/spend/logs" with no call
+    And a gateway attached to the test proxy with a config whose "osf.proxy" names "proxy_batch_write_at" 2
+    When the client runs "spend-log" for the gateway
+    Then spend-log exits with code 0 after 9 seconds or more, and sooner than the 17 seconds of LiteLLM's default interval

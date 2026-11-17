@@ -84,7 +84,7 @@ DOCS-GEN keeps it current.
 - [0053](0053-harness-codex-opencode.md) Codex and opencode run behind the harness proxy through their ACP bridges
 - [0054](0054-sandbox-port.md) The sandbox port is a command line; iron-proxy guards each sandbox's egress, secrets and MCP calls
 - [0055](0055-sandbox-kubernetes.md) The kubernetes sandbox adapter runs agent-sandbox claims behind iron-proxy; env and OpenBao secrets
-- [0056](0056-inference-port.md) The inference port is a command line; the litellm adapter runs LiteLLM with PostgreSQL on Docker
+- [0056](0056-inference-port.md) The inference port is a command line; the litellm adapter runs LiteLLM with PostgreSQL on Docker — amended by 0171 (spend-log waits the proxy's write interval)
 - [0057](0057-forge-port.md) The forge port is a command line; the forgejo adapter calls Forgejo's API v1
 - [0058](0058-forge-github.md) The github forge adapter calls GitHub's REST API; fakes.github is the testkit's GitHub
 - [0059](0059-channel-port.md) The channel port is a command line on Vercel Chat SDK, with slack and github channels
@@ -93,6 +93,7 @@ DOCS-GEN keeps it current.
 - [0136](0136-forge-port-changes-from-the-ui.md) The forge port commits, merges when green, reads merge rules and closes pull requests
 - [0137](0137-secrets-port-write-side-and-openbao.md) The secrets port gets a write side; the adapter `secrets-openbao` and `fakes.openbao`
 - [0147](0147-sandbox-egress-is-the-egress-proxy.md) `sandbox-egress` is the egress proxy; the sandbox port's file and copy forms go to contracts
+- [0171](0171-spend-log-waits-the-proxys-write-interval.md) spend-log waits the proxy's write interval, which an attached gateway's config names
 
 ### The tools
 
