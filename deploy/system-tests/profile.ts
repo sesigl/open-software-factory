@@ -1,5 +1,5 @@
 // The Compose profile as the operator sets it up: every value of compose/.env.example set in $INPUT/.env.
-import type { Compose, Fakes, Sut } from "@opensoftware/testkit";
+import type { CliResult, Compose, Fakes, Shared, SharedSut, Sut } from "@opensoftware/testkit";
 
 /**
  * The values of .env that osf init generates for the profile's OpenBao (ADR 0145): 64 hex digits each, made up for
@@ -49,13 +49,29 @@ const PORTS = [
 ];
 
 /** Writes `.env` without the value `except` and with the values `more`, a port among them, and returns the profile. */
-export async function profile(sut: Sut, except?: string, more: Record<string, string> = {}): Promise<Compose> {
+export async function profile(sut: SharedSut, except?: string, more: Record<string, string> = {}): Promise<Compose> {
   const lines = Object.entries({ ...VALUES, ...more })
     .filter(([name]) => name !== except)
     .map(([name, value]) => `${name}=${value}`);
   const ports = PORTS.filter((name) => !(name in more)).map((name) => `${name}=0`);
   await sut.files.put("$INPUT/.env", [...lines, ...ports, ""].join("\n"));
   return sut.compose("compose/compose.yaml");
+}
+
+/**
+ * The one start of the profile for the scenarios tagged `@shared=compose-profile`, which only read it (ADR 0157): every
+ * value of `.env.example` set in `.env`, with FACTORY_DIR the operator's copy of the reference factory, which names a
+ * real approver (ADR 0114), and then "docker compose up --detach --wait". Its result is that command's.
+ */
+export function sharedProfile(sut: Sut, fakes: Fakes): Promise<Shared<CliResult>> {
+  return sut.shared("compose-profile", async (start) => {
+    const compose = await profile(start, undefined, { FACTORY_DIR: await operatorFactory(start, fakes) });
+    const up = await compose.run(words("docker compose up --detach --wait"));
+    if (up.exitCode !== 0) {
+      throw new Error(`"docker compose up --detach --wait" exited with code ${up.exitCode}: ${up.stderr}`);
+    }
+    return up;
+  });
 }
 
 /** The words after "docker compose" in a step like 'the operator runs "docker compose up --detach --wait"'. */
@@ -80,7 +96,7 @@ const OPERATOR: Record<string, [string, string]> = {
  * "maintainers" names a person in place of the example's member slack:U0EXAMPLE (ADR 0114), and whose access.yaml
  * names the admin ada@acme.dev in place of the example's admin@example.com (ADR 0134). Returns its path.
  */
-export async function operatorFactory(sut: Sut, fakes: Fakes): Promise<string> {
+export async function operatorFactory(sut: SharedSut, fakes: Fakes): Promise<string> {
   const files = fakes.fromRepository("deploy/compose/factory");
   for (const [path, text] of Object.entries(files)) {
     const [example, person] = OPERATOR[path] ?? ["", ""];

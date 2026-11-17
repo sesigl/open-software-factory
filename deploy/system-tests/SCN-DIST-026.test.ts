@@ -1,16 +1,19 @@
 import { scenario } from "@opensoftware/testkit";
-import { operatorFactory, profile, words } from "./profile.ts";
+import { type profile, sharedProfile, words } from "./profile.ts";
 
 scenario("SCN-DIST-026", async ({ sut, fakes, given, when, then }) => {
   let compose: Awaited<ReturnType<typeof profile>>;
+  let shared: Awaited<ReturnType<typeof sharedProfile>>;
   await given('the Compose profile with every value of ".env.example" set in ".env"', async () => {
     // FACTORY_DIR is a value of ".env.example": the operator's copy names a real approver (ADR 0114).
-    compose = await profile(sut, undefined, { FACTORY_DIR: await operatorFactory(sut, fakes) });
+    shared = await sharedProfile(sut, fakes);
+    compose = shared.sut.compose("compose/compose.yaml");
   });
 
   let up: Awaited<ReturnType<typeof compose.run>>;
   await when('the operator runs "docker compose up --detach --wait"', async () => {
-    up = await compose.run(words("docker compose up --detach --wait"));
+    // The group's one start ran the command; this is its result.
+    up = shared.result;
   });
 
   await then("the command exits with code 0", async () => {

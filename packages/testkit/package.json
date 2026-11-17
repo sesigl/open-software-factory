@@ -12,7 +12,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./readme": "./src/support/readme.ts",
-    "./harness-agent": "./src/fakes/harness-agent-file.ts"
+    "./harness-agent": "./src/fakes/harness-agent-file.ts",
+    "./global-setup": "./src/sut/global-setup.ts"
   },
   "bin": {
     "testkit": "bin/testkit.ts"
@@ -34,6 +35,10 @@
       "./harness-agent": {
         "types": "./dist/src/fakes/harness-agent-file.d.ts",
         "default": "./dist/src/fakes/harness-agent-file.js"
+      },
+      "./global-setup": {
+        "types": "./dist/src/sut/global-setup.d.ts",
+        "default": "./dist/src/sut/global-setup.js"
       }
     },
     "bin": {

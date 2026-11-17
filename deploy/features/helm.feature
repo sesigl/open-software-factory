@@ -3,7 +3,8 @@ Feature: The Helm chart installs a complete factory on Kubernetes with one comma
   A platform team runs "helm install" with the chart in "deploy/helm/osf/" and a values file that sets the secrets.
   The chart starts LiteLLM, gatekeeper, intake, foreman and console with the reference factory, and PostgreSQL, NATS
   and Temporal unless the values name the team's own (ADR 0075). The scenarios run on kind, each release in a namespace
-  of its own.
+  of its own. The scenarios tagged "@shared=helm-chart" only read the installed chart, or work in a sandbox of their
+  own, and share one install of it in one namespace (ADR 0157).
 
   @id=SCN-DIST-007 @status=deprecated @realizes=SCN-FACTORY-OPEN-006
   Scenario: Every workload of the Helm chart is ready after one command
@@ -21,7 +22,7 @@ Feature: The Helm chart installs a complete factory on Kubernetes with one comma
     Then the command exits with code 0
     And the workloads "postgres", "nats", "temporal", "litellm", "gatekeeper", "intake", "foreman" and "console" are ready
 
-  @id=SCN-DIST-060 @status=implemented @realizes=SCN-FACTORY-OPEN-006 @replaces=SCN-DIST-019
+  @id=SCN-DIST-060 @status=implemented @realizes=SCN-FACTORY-OPEN-006 @replaces=SCN-DIST-019 @shared=helm-chart
   Scenario: Every workload of the Helm chart is ready after one command and runs the module images of this workspace
     Given a kind cluster with the images of the Compose profile, the module images built from this workspace with "node scripts/images.ts"
     And a values file that sets every value under "secrets"
@@ -38,7 +39,7 @@ Feature: The Helm chart installs a complete factory on Kubernetes with one comma
     Then the command exits with code 1
     And the output contains "set secrets.foremanApiToken or secrets.existingSecret"
 
-  @id=SCN-DIST-009 @status=implemented
+  @id=SCN-DIST-009 @status=implemented @shared=helm-chart
   Scenario: The console of the Helm chart lists the runs of its foreman
     Given a kind cluster with the images of the Compose profile
     And a values file that sets every value under "secrets"
@@ -46,7 +47,7 @@ Feature: The Helm chart installs a complete factory on Kubernetes with one comma
     Then the console's page "/" answers 200 with the heading "Runs"
     And the page does not say "did not answer"
 
-  @id=SCN-DIST-010 @status=implemented
+  @id=SCN-DIST-010 @status=implemented @shared=helm-chart
   Scenario: The console of the Helm chart shows the agents of the reference factory
     Given a kind cluster with the images of the Compose profile
     And a values file that sets every value under "secrets"
@@ -61,7 +62,7 @@ Feature: The Helm chart installs a complete factory on Kubernetes with one comma
     Then the command exits with code 0
     And the output contains "Plan: 7 to add, 0 to change, 0 to remove, 0 drifted."
 
-  @id=SCN-DIST-021 @status=implemented @replaces=SCN-DIST-011
+  @id=SCN-DIST-021 @status=implemented @replaces=SCN-DIST-011 @shared=helm-chart
   Scenario: The test of the Helm chart plans the reference factory without problems, with its inference config
     Given a kind cluster with the images of the Compose profile
     And the operator installed the chart with a values file that sets every value under "secrets"
@@ -69,7 +70,7 @@ Feature: The Helm chart installs a complete factory on Kubernetes with one comma
     Then the command exits with code 0
     And the output contains "Plan: 8 to add, 0 to change, 0 to remove, 0 drifted."
 
-  @id=SCN-DIST-022 @status=implemented @realizes=SCN-FACTORY-RUNTIME-004
+  @id=SCN-DIST-022 @status=implemented @realizes=SCN-FACTORY-RUNTIME-004 @shared=helm-chart
   Scenario: The foreman of the Helm chart starts a sandbox of agent-sandbox from the agents' template, with rights only in the sandboxes' namespace
     Given a kind cluster with agent-sandbox and the images of the Compose profile
     And the operator installed the chart with a values file that sets every value under "secrets"

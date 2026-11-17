@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; amended by 0162 (a shared start runs once per test run)
 topic: testing
 date: 2026-11-16
 ---

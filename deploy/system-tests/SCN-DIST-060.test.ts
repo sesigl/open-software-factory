@@ -1,27 +1,30 @@
 import { scenario } from "@opensoftware/testkit";
-import { cluster, install, values, workloads } from "./chart.ts";
+import { type cluster, type install, sharedChart, unsetSecrets, workloads } from "./chart.ts";
 
 const MODULES = ["gatekeeper", "intake", "foreman", "console"];
 
 scenario("SCN-DIST-060", async ({ sut, given, when, then }) => {
   // test:system runs scripts/images.ts before the tests: it builds the module images and loads them into kind.
   let helm: Awaited<ReturnType<typeof cluster>>;
+  let shared: Awaited<ReturnType<typeof sharedChart>>;
   await given(
     'a kind cluster with the images of the Compose profile, the module images built from this workspace with "node scripts/images.ts"',
     async () => {
-      helm = await cluster(sut);
+      shared = await sharedChart(sut);
+      helm = shared.sut.helm("helm/osf");
     },
   );
 
   await given('a values file that sets every value under "secrets"', async () => {
-    await values(sut);
+    expect(await unsetSecrets(shared.sut)).toEqual([]);
   });
 
   let result: Awaited<ReturnType<typeof install>>;
   await when(
     'the operator runs "helm install osf deploy/helm/osf --values values.yaml --wait --timeout 10m"',
     async () => {
-      result = await install(helm);
+      // The group's one install ran the command; this is its result.
+      result = shared.result;
     },
   );
 

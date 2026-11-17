@@ -26,7 +26,7 @@ Each test case in `report.xml` is named after its scenario and has the property 
 
 | Command | What it does |
 | --- | --- |
-| `testkit run --junit <file>` | Run `system-tests/**/*.test.ts` of the module in the current folder with globals, no retries and a 120 s test timeout. Write the JUnit report to `<file>`. Exit 1 when a test fails. |
+| `testkit run --junit <file>` | Run `system-tests/**/*.test.ts` of the module in the current folder with globals, no retries, a 120 s test timeout and the global setup of `sut.shared`. Write the JUnit report to `<file>`. Exit 1 when a test fails. |
 | `testkit conformance <port features folder> --junit <file>` | Run an adapter's system tests like `run`, then print `CONFORMANCE <id> passed` (or `failed`, `was skipped`, `has no system test`) for every implemented `@conformance` scenario in the folder and `N of M conformance scenarios passed`. Exit 1 unless all passed. |
 | `testkit timed <command>...` | Run the command, a package's system tests, and exit with its code. Write its wall time, from its start to its end, to `reports/run-time.json` (`{"seconds": 12.345}`) for BUDGET, on CI and locally ([ADR 0155](../../docs/decisions/0155-budget-is-the-wall-time-of-a-suite.md)). |
 
@@ -144,6 +144,17 @@ See [`skills/write-system-test`](../../skills/write-system-test/SKILL.md). The c
   the service. When the scenario ends, each release of the namespace is uninstalled, with its objects outside the
   namespace, like a namespace of its own, and then the namespace is deleted (SCN-TK-137). `make install` pins helm,
   kubectl and kind.
+- `sut.shared("<name>", start)`: one start of a slow system for the scenarios tagged `@shared=<name>`, which only
+  read it ([ADR 0157](../../docs/decisions/0157-the-testing-rule-shared-starts-outlines-and-wording.md),
+  [ADR 0162](../../docs/decisions/0162-a-shared-start-is-once-per-test-run.md)). The first scenario of the group in
+  the test run calls `start` with the group's workspace: its `files`, and `compose(file)` and `helm(chart)` on the
+  group's project and namespace. Every scenario of the group, in any test process, then gets
+  `{ sut, result }`: the same workspace and what `start` returned, as JSON (SCN-TK-210, SCN-TK-213). When `start`
+  throws, each scenario of the group fails with `the shared start "<name>" failed in <scenario>: <failure>`
+  (SCN-TK-211). The project and the namespace go down when the run ends, also after a failure. What a scenario starts
+  on them, like a port-forward of `url`, stops with the scenario. A scenario without the tag cannot call it, and a
+  scenario with the tag fails when it did not (SCN-TK-212). It needs the global setup: `testkit run` has it, and a
+  package that runs vitest itself names `globalSetup: ["@opensoftware/testkit/global-setup"]` in its config.
 - `sut.adapter("<port>/<name>")`: the command line of a port adapter of this repository, `adapters/<port>/<name>/` in
   the module's folder or above it: Node and the adapter's built `bin`. Pass it to a module that runs adapters as
   programs in its documented variable; the adapter runs as the module's child, with its network guard. The adapter
@@ -647,3 +658,7 @@ publisher for the workflow `publish-testkit.yml`. No credential is stored in the
 | SCN-TK-201 | implemented | The test of an Outline runs once for each row, each in a workspace of its own, as one passed test case |
 | SCN-TK-202 | implemented | One failed row fails the test case of the Outline and the failure names the row |
 | SCN-TK-203 | implemented | A planned Outline whose rows all pass fails |
+| SCN-TK-210 | implemented | Two scenarios with the same tag @shared use one start of the Compose project, which goes down when the run ends |
+| SCN-TK-211 | implemented | When the shared start fails, each scenario of the group fails with the failure of the start, and the project goes down |
+| SCN-TK-212 | implemented | A scenario without the tag @shared cannot use a shared start, and a scenario with the tag must use it |
+| SCN-TK-213 | implemented | Two scenarios with the same tag @shared use one install of the chart in one namespace, which is deleted when the run ends |

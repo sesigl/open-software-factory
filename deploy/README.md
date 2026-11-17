@@ -637,6 +637,21 @@ make test-scenario ID=SCN-DIST-026
 
 The images of the commit hide the released ones with the same tags until `docker compose pull` in `compose/`.
 
+### One start of the profile, one install of the chart
+
+The scenarios that only read the whole profile, or work in a sandbox of their own, are tagged
+`@shared=compose-profile` (SCN-DIST-003, -004, -017, -026 and -050) and share one start of it in a test run: every
+value of `.env.example` set, with the operator's copy of the reference factory, and `docker compose up --detach
+--wait`. The scenarios that only read the installed chart, or work in a sandbox of their own, are tagged
+`@shared=helm-chart` (SCN-DIST-009, -010, -021, -022 and -060) and share one `helm install` in one namespace. The
+first of them that runs starts it with `sut.shared` of the testkit, the others use it, and the testkit's global
+setup in `vitest.config.ts` takes it down when the run ends
+([ADR 0157](../docs/decisions/0157-the-testing-rule-shared-starts-outlines-and-wording.md),
+[ADR 0162](../docs/decisions/0162-a-shared-start-is-once-per-test-run.md)). A scenario that changes the system for
+everyone, or needs other values in `.env` or the values file, starts a project or a namespace of its own. On a
+machine with 4 cores, the 30 scenarios of the profile took 85 s with a start in each of those five and 55 s with one
+shared start. `make test-scenario` of one of them still starts the profile, once.
+
 ## Releases
 
 Each release moves the pins of `compose/compose.yaml` and `helm/osf/` to the released versions: the release workflow

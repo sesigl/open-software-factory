@@ -16,7 +16,10 @@ The only ways a system test or an operator may use the distribution:
 
 System tests drive the profile with `sut.compose("compose/compose.yaml")` and reach the services only through their
 published ports and `docker compose run`. They drive the chart with `sut.helm("helm/osf")` and reach the services only
-through `kubectl port-forward` (`url`), `helm test` and the state of the workloads.
+through `kubectl port-forward` (`url`), `helm test` and the state of the workloads. A scenario that only reads the
+whole profile or the installed chart takes it from `sharedProfile` or `sharedChart` of `system-tests/`, with the tag
+`@shared=compose-profile` or `@shared=helm-chart`; one that changes it for everyone, or needs other settings, starts
+its own.
 
 ## Rules
 
@@ -42,7 +45,8 @@ through `kubectl port-forward` (`url`), `helm test` and the state of the workloa
 ## Budget
 
 - System tests: 340 seconds of wall time on the CI runner.
-- Most of it: four chart installs on kind and five starts of the Compose profile, 40 to 90 s each.
+- Most of it: one chart install on kind and one start of the Compose profile, shared by five scenarios each
+  (ADR 0162), 40 to 90 s each; locally the profile's scenarios took 55 s, down from 85 s. Lower it after CI measured it.
 
 ## Scenario prefix
 

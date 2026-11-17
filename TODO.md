@@ -223,10 +223,13 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   `@replaces` is for behavior that changes or goes. `AGENTS.md`, `docs/quality/testing-strategy.md` and the skills
   `write-scenario` and `write-system-test` follow.
 
-### [ ] T-82 · one start of the profile and one install of the chart for the scenarios that only read (P1)
+### [x] T-82 · one start of the profile and one install of the chart for the scenarios that only read (P1)
 
 - **Build:** a shared form of `sut.compose` and `sut.helm` in the testkit; the deploy scenarios that only read use it.
 - **Done when:** the deploy suite starts the whole profile once and installs the whole chart once.
+- **Done:** `sut.shared` and the testkit's global setup run one start per test run (ADR 0162, SCN-TK-210 to -213);
+  five scenarios share `@shared=compose-profile` and five `@shared=helm-chart`. The 30 profile scenarios took 55 s
+  locally, down from 85 s; the chart's first proof is CI.
 
 ### [ ] T-83 · inference-litellm starts one gateway per test process (P2)
 

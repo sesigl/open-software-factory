@@ -3,7 +3,7 @@
 import { rmSync } from "node:fs";
 import { type TestContext, test } from "vitest";
 import { type Fakes, type FakesHandle, makeFakes } from "./fakes/fakes.ts";
-import { type Example, findModuleRoot, scenarioExamples, scenarioStatus } from "./support/module.ts";
+import { type Example, findModuleRoot, scenarioExamples, scenarioShared, scenarioStatus } from "./support/module.ts";
 import { initGit } from "./support/process.ts";
 import { tempFolder } from "./support/temp.ts";
 import { folders, makeSut, type Sut, type SutHandle } from "./sut/sut.ts";
@@ -81,7 +81,13 @@ async function runOnce(
     const dirs = folders(workspace);
     initGit(dirs.input);
     sut = makeSut(moduleRoot, dirs, () => handle.hosts(), id);
-    return await runBody(body, makeContext(sut, handle, example), sut, handle);
+    const failure = await runBody(body, makeContext(sut, handle, example), sut, handle);
+    // A scenario of a group that starts its own system would hide that it does not share (ADR 0157).
+    const tag = scenarioShared(moduleRoot, id);
+    if (failure === undefined && tag !== undefined && !sut.sharedUsed().includes(tag)) {
+      return new Error(`${id} has the tag @shared=${tag} but did not use sut.shared("${tag}")`);
+    }
+    return failure;
   } finally {
     await sut?.close();
     await handle.close();

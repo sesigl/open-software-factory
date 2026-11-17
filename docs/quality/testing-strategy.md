@@ -222,10 +222,10 @@ Rules for new scenarios, tests and test tooling:
 - Never share a module process across scenarios, for example a server started in a Vitest `globalSetup`. Its
   coverage and its mutants belong to no scenario. The one exception is a declared shared start (ADR 0157): scenarios
   that only read a system whose start takes more than about 10 seconds (the Compose profile, an installed Helm
-  chart, a LiteLLM gateway) share one start per test process. Each carries `@shared=<name>` with the group's name,
-  keeps its own `scenario()`, steps and result, and changes the shared system not at all or only under a name of its
-  own (a project, a namespace, a key). One failed start fails the group. It is allowed only in units outside REACH and
-  MUTATION, today `deploy/` and `e2e/`; the testkit's API for it comes with T-82.
+  chart, a LiteLLM gateway) share one start per test run (ADR 0162). Each carries `@shared=<name>` with the group's
+  name, keeps its own `scenario()`, steps and result, and changes the shared system not at all or only under a name
+  of its own (a project, a namespace, a key). One failed start fails the group. It is allowed only in units outside
+  REACH and MUTATION, today `deploy/` and `e2e/`, with `sut.shared` and the testkit's global setup.
 - Use the fastest stand-in the port allows (ADR 0049). A container start of 20 to 30 seconds is paid again for
   each mutant of the lines it reaches.
 - Never wait for time to pass. When a module flushes or polls on an interval, make the interval configurable and

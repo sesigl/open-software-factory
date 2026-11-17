@@ -55,6 +55,16 @@ export function scenarioStatus(moduleRoot: string, id: string): string | undefin
   return undefined;
 }
 
+/** The name of the scenario's tag `@shared=<name>` on the line of its `@id`, or undefined (ADR 0157). */
+export function scenarioShared(moduleRoot: string, id: string): string | undefined {
+  const line = new RegExp(`^[^\\n]*@id=${id}(?![0-9])[^\\n]*$`, "m");
+  for (const file of featureFiles(moduleRoot)) {
+    const tags = line.exec(readFileSync(file, "utf8"))?.[0];
+    if (tags !== undefined) return /(?:^|\s)@shared=(\S+)/.exec(tags)?.[1];
+  }
+  return undefined;
+}
+
 /** One row of an Outline's Examples: the value of each column, by the column's name. */
 export type Example<Column extends string = string> = Readonly<Record<Column, string>>;
 

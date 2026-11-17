@@ -1,15 +1,17 @@
 import { scenario } from "@opensoftware/testkit";
-import { profile, words } from "./profile.ts";
+import { type profile, sharedProfile } from "./profile.ts";
 
-scenario("SCN-DIST-004", async ({ sut, given, when, then }) => {
+scenario("SCN-DIST-004", async ({ sut, fakes, given, when, then }) => {
   let compose: Awaited<ReturnType<typeof profile>>;
+  let shared: Awaited<ReturnType<typeof sharedProfile>>;
   await given('the Compose profile with every value of ".env.example" set in ".env"', async () => {
-    compose = await profile(sut);
+    shared = await sharedProfile(sut, fakes);
+    compose = shared.sut.compose("compose/compose.yaml");
   });
 
-  await when('the operator runs "docker compose up --detach --wait console"', async () => {
-    const up = await compose.run(words("docker compose up --detach --wait console"));
-    expect(up.exitCode, up.stderr).toBe(0);
+  await when('the operator runs "docker compose up --detach --wait"', async () => {
+    // The group's one start ran the command; this is its result.
+    expect(shared.result.exitCode, shared.result.stderr).toBe(0);
   });
 
   await then(

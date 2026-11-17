@@ -90,19 +90,42 @@ function sweep(env: Record<string, string>, cwd: string): Promise<void> {
   return swept;
 }
 
+/** The Compose project of a workspace and the environment of its docker commands. */
+function projectOf(dirs: Folders): { project: string; env: Record<string, string> & { DOCKER_CONFIG: string } } {
+  return {
+    // The workspace's random name keeps parallel scenarios apart; a project name is lower case.
+    project: basename(dirname(dirs.input)).toLowerCase(),
+    env: {
+      ...baseEnv(dirs.input),
+      ...(process.env.DOCKER_HOST ? { DOCKER_HOST: process.env.DOCKER_HOST } : {}),
+      DOCKER_CONFIG: join(dirname(dirs.input), "docker"),
+    },
+  };
+}
+
+/**
+ * Takes down the workspace's project with its volumes, and removes its owner file. Without the Compose file: a project
+ * whose .env misses a value can still be taken down. Its containers and volumes go, so they get no time to stop
+ * cleanly: a service that stops slowly, like LiteLLM, took seconds of each scenario.
+ */
+export async function composeDown(dirs: Folders): Promise<void> {
+  const { project, env } = projectOf(dirs);
+  await run("docker", ["compose", "--project-name", project, "down", "--volumes", "--timeout", "0"], dirs.input, env);
+  rmSync(join(OWNERS, `${project}.pid`), { force: true });
+}
+
+/**
+ * `sut.compose` on the workspace's folders. `onDown` gets the project's teardown at the first call; `owner` is the
+ * process whose end leaves the project to the sweep: the scenario's own process, or the test run's for a shared start.
+ */
 export function makeCompose(
   moduleRoot: string,
   dirs: Folders,
-  onStop: (stop: () => Promise<unknown>) => void,
+  onDown: (down: () => Promise<unknown>) => void,
+  owner = process.pid,
 ): (file: string) => Compose {
   const documented = moduleEnv(moduleRoot);
-  // The workspace's random name keeps parallel scenarios apart; a project name is lower case.
-  const project = basename(dirname(dirs.input)).toLowerCase();
-  const env = {
-    ...baseEnv(dirs.input),
-    ...(process.env.DOCKER_HOST ? { DOCKER_HOST: process.env.DOCKER_HOST } : {}),
-    DOCKER_CONFIG: join(dirname(dirs.input), "docker"),
-  };
+  const { project, env } = projectOf(dirs);
   let started = false;
   return (file) => {
     const path = resolve(moduleRoot, file);
@@ -121,18 +144,8 @@ export function makeCompose(
       writeDockerConfig(env.DOCKER_CONFIG);
       // The owner of the project, so a later run takes it down when this process ends without doing so.
       mkdirSync(OWNERS, { recursive: true });
-      writeFileSync(join(OWNERS, `${project}.pid`), String(process.pid));
-      // Without the file: a project whose .env misses a value can still be taken down. Its containers and volumes go,
-      // so they get no time to stop cleanly: a service that stops slowly, like LiteLLM, took seconds of each scenario.
-      onStop(async () => {
-        await run(
-          "docker",
-          ["compose", "--project-name", project, "down", "--volumes", "--timeout", "0"],
-          dirs.input,
-          env,
-        );
-        rmSync(join(OWNERS, `${project}.pid`), { force: true });
-      });
+      writeFileSync(join(OWNERS, `${project}.pid`), String(owner));
+      onDown(() => composeDown(dirs));
     }
     return {
       async run(args, options = {}) {
