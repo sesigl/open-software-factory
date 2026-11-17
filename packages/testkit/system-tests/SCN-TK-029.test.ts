@@ -1,37 +1,23 @@
-import { scenario } from "@opensoftware/testkit";
-import { postModule, testCases } from "./module.ts";
+import { type FakeHttp, scenario } from "@opensoftware/testkit";
 
-scenario("SCN-TK-029", async ({ sut, given, when, then }) => {
-  let routes = "";
-  await given(
-    'a module whose CLI posts {"n":1} to "/v1/traces" at "DEMO_API_URL" twice and prints both status codes',
-    async () => {
-      routes =
-        '[{ method: "POST", path: "/v1/traces", status: 503, body: {}, times: 1 }, { method: "POST", path: "/v1/traces", body: {} }]';
-    },
-  );
-
-  await given(
-    'its system test scripts "POST /v1/traces" to answer 503 once and then 200, and expects "503 200"',
-    async () => {
-      const module = postModule(routes, ['expect(run.stdout).toBe("503 200");']);
-      for (const [path, content] of Object.entries(module)) await sut.files.put(path, content);
-    },
-  );
-
-  let run: Awaited<ReturnType<typeof sut.cli>>;
-  await when('the developer runs "testkit run --junit report.xml" in the module', async () => {
-    run = await sut.cli(["run", "--junit", "report.xml"]);
+scenario("SCN-TK-029", async ({ fakes, given, when, then }) => {
+  let api: FakeHttp;
+  await given('fakes.http with "POST /v1/traces" scripted to answer 503 once and then 200', async () => {
+    api = await fakes.http([
+      { method: "POST", path: "/v1/traces", status: 503, body: {}, times: 1 },
+      { method: "POST", path: "/v1/traces", body: {} },
+    ]);
   });
 
-  await then("the command exits with code 0", async () => {
-    expect(run.exitCode, run.stdout + run.stderr).toBe(0);
+  let codes = "";
+  await when('a module posts {"n":1} to "/v1/traces" of the fake twice', async () => {
+    const post = () => fetch(`${api.url}/v1/traces`, { method: "POST", body: '{"n":1}' });
+    const first = await post();
+    const second = await post();
+    codes = `${first.status} ${second.status}`;
   });
 
-  await then('"report.xml" has the passed test case "SCN-DEMO-001"', async () => {
-    expect(testCases(await sut.files.read("$INPUT/report.xml"))).toContainEqual({
-      name: "SCN-DEMO-001",
-      failed: false,
-    });
+  await then('the status codes are "503 200"', async () => {
+    expect(codes).toBe("503 200");
   });
 });

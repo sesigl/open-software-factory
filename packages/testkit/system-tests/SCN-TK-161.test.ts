@@ -1,13 +1,25 @@
-import { scenario } from "@opensoftware/testkit";
-import { testCases } from "./module.ts";
-import { oidcModule } from "./oidc.ts";
+import { type FakeOidc, scenario } from "@opensoftware/testkit";
+import { signIn } from "./oidc.ts";
 
-scenario("SCN-TK-161", async ({ sut, given, when, then }) => {
-  let module: Record<string, string> = {};
-  await given(
-    'a module whose CLI signs in at the provider in "DEMO_ISSUER" with the authorization code flow and PKCE, and prints the state and the claims of the ID token whose signature the provider\'s keys verify',
+scenario("SCN-TK-161", async ({ fakes, given, when, then }) => {
+  let oidc: FakeOidc;
+  await given('fakes.oidc that signs in "ada@acme.dev" named "Ada"', async () => {
+    oidc = await fakes.oidc();
+    oidc.signIn({ email: "ada@acme.dev", name: "Ada" });
+  });
+
+  let answer: Record<string, unknown> = {};
+  await when(
+    "a module signs in at the provider with the authorization code flow and PKCE, and verifies the ID token with the provider's keys",
     async () => {
-      module = oidcModule(['oidc.signIn({ email: "ada@acme.dev", name: "Ada" });'], {
+      answer = await signIn(oidc);
+    },
+  );
+
+  await then(
+    "the module has the state, that email as verified, the name, the nonce, the client as audience, the time 2026-01-01T00:00:00Z and a valid signature",
+    async () => {
+      expect(answer).toEqual({
         state: "state-1",
         valid: true,
         issuer: true,
@@ -20,27 +32,4 @@ scenario("SCN-TK-161", async ({ sut, given, when, then }) => {
       });
     },
   );
-
-  await given(
-    'its system test signs in "ada@acme.dev" named "Ada" at fakes.oidc and expects the state, that email as verified, the name, the nonce, the client as audience, the time 2026-01-01T00:00:00Z and a valid signature',
-    async () => {
-      for (const [path, content] of Object.entries(module)) await sut.files.put(path, content);
-    },
-  );
-
-  let run: Awaited<ReturnType<typeof sut.cli>>;
-  await when('the developer runs "testkit run --junit report.xml" in the module', async () => {
-    run = await sut.cli(["run", "--junit", "report.xml"]);
-  });
-
-  await then("the command exits with code 0", async () => {
-    expect(run.exitCode, run.stdout + run.stderr).toBe(0);
-  });
-
-  await then('"report.xml" has the passed test case "SCN-DEMO-001"', async () => {
-    expect(testCases(await sut.files.read("$INPUT/report.xml"))).toContainEqual({
-      name: "SCN-DEMO-001",
-      failed: false,
-    });
-  });
 });

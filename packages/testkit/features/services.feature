@@ -29,8 +29,8 @@ Feature: Services and outside systems
   @id=SCN-TK-152 @status=implemented
   Scenario: fakes.postgres gives a later scenario the same PostgreSQL server and a database of its own
     Given a module whose two scenarios in one test file each create the table "notes" in fakes.postgres and expect the answer "CREATE TABLE"
-    And its second scenario expects one container with the label "org.opensoftware.run=r8"
-    When the developer runs "testkit run --junit report.xml" with OSF_TESTKIT_RUN "r8" in the module
+    And its second scenario expects one container with the label "org.opensoftware.run" of its run
+    When the developer runs "testkit run --junit report.xml" with OSF_TESTKIT_RUN set to an ID of this test run in the module
     Then the command exits with code 0
     And "report.xml" has the passed test cases "SCN-DEMO-001" and "SCN-DEMO-002"
 
@@ -164,11 +164,9 @@ Feature: Services and outside systems
 
   @id=SCN-TK-013 @status=implemented
   Scenario: fakes.slack shows the message a module posts
-    Given a module whose CLI posts "hello from demo" to the channel "C1" through the Slack Web API at "DEMO_SLACK_URL"
-    And its system test passes the URL and token of fakes.slack and expects that message in "C1"
-    When the developer runs "testkit run --junit report.xml" in the module
-    Then the command exits with code 0
-    And "report.xml" has the passed test case "SCN-DEMO-001"
+    Given fakes.slack
+    When a module posts "hello from demo" to the channel "C1" through the Slack Web API of the fake with its token
+    Then "C1" has the message "hello from demo"
 
   @id=SCN-TK-116 @status=implemented
   Scenario: fakes.slack for containers shows the message a module posts from a container
@@ -180,35 +178,27 @@ Feature: Services and outside systems
 
   @id=SCN-TK-051 @status=implemented
   Scenario: fakes.slack answers auth.test with the user of the module's messages
-    Given a module whose CLI prints the "user_id" of "auth.test" and then the user of the message it posts to "C1"
-    And its system test expects the bot user of fakes.slack twice
-    When the developer runs "testkit run --junit report.xml" in the module
-    Then the command exits with code 0
-    And "report.xml" has the passed test case "SCN-DEMO-001"
+    Given fakes.slack
+    When a module gets the "user_id" of "auth.test", posts a message to "C1" and reads the user of that message from "conversations.history"
+    Then both name the bot user of fakes.slack
 
   @id=SCN-TK-052 @status=implemented
   Scenario: fakes.slack delivers a person's reply to the module's Events API signed with its signing secret
-    Given a module whose server checks the Slack signature with "DEMO_SLACK_SIGNING_SECRET" and keeps the text of each "message" event
-    And its system test passes the signing secret of fakes.slack, says "approve" in "C1" and expects the server to have "approve"
-    When the developer runs "testkit run --junit report.xml" in the module
-    Then the command exits with code 0
-    And "report.xml" has the passed test case "SCN-DEMO-001"
+    Given fakes.slack that delivers events to a URL of fakes.http
+    When a person says "approve" in "C1"
+    Then the URL got one "message" event with the text "approve", signed with the signing secret of fakes.slack
 
   @id=SCN-TK-053 @status=implemented
   Scenario: fakes.slack presses a button of the module's message and delivers the press to its interactivity URL
-    Given a module whose server posts a message with the button "approve" to "C1" and keeps the action ID and user of each signed press
-    And its system test presses "approve" as "U0ADA" and expects the server to have "approve U0ADA"
-    When the developer runs "testkit run --junit report.xml" in the module
-    Then the command exits with code 0
-    And "report.xml" has the passed test case "SCN-DEMO-001"
+    Given a message with the button "approve" that a module posted to "C1", and fakes.slack that delivers presses to a URL of fakes.http
+    When "U0ADA" presses "approve" in "C1"
+    Then the URL got one press of "approve" by "U0ADA", signed with the signing secret of fakes.slack
 
   @id=SCN-TK-090 @status=implemented
   Scenario: fakes.slack answers users.info with the person's name and chat.getPermalink with a link to the message
-    Given a module whose CLI prints the "real_name" of "users.info" for "U0PERSON" and the "permalink" of the message it posts to "C1"
-    And its system test expects "Varun https://testkit.slack.com/archives/C1/p1767225600000001"
-    When the developer runs "testkit run --junit report.xml" in the module
-    Then the command exits with code 0
-    And "report.xml" has the passed test case "SCN-DEMO-001"
+    Given fakes.slack
+    When a module gets the "real_name" of "users.info" for "U0PERSON" and the "permalink" of the message it posts to "C1"
+    Then they are "Varun https://testkit.slack.com/archives/C1/p1767225600000001"
 
   @id=SCN-TK-055 @status=implemented
   Scenario: Pressing a button that the message does not have fails the test with the button shown
@@ -237,11 +227,9 @@ Feature: Services and outside systems
 
   @id=SCN-TK-149 @status=implemented
   Scenario: fakes.traceStore answers Jaeger's query of a trace with the span it received by OTLP, and keeps none with "keep: false"
-    Given a module whose CLI sends the span "ping" of the service "demo" by OTLP/HTTP to "DEMO_OTLP_URL" and prints Jaeger's answer at "DEMO_TRACES_URL"
-    And its system test expects the span "ping" from fakes.traceStore and the status 404 from fakes.traceStore with "keep: false"
-    When the developer runs "testkit run --junit report.xml" in the module
-    Then the command exits with code 0
-    And "report.xml" has the passed test case "SCN-DEMO-001"
+    Given fakes.traceStore, and fakes.traceStore with "keep: false"
+    When a module sends the span "ping" of the service "demo" by OTLP/HTTP to each store and asks Jaeger's query API of that store for its trace
+    Then the first store answers with the span "ping" and the second with the status 404, and both received the span
 
   @id=SCN-TK-050 @status=implemented
   Scenario: fakes.forge shows the pull request a module opens and the files of its branch
@@ -257,11 +245,9 @@ Feature: Services and outside systems
 
   @id=SCN-TK-100 @status=implemented
   Scenario: fakes.slack lists the messages at the top of a channel newest first, without the replies in threads
-    Given a module whose CLI posts "first" and "second" to "C1", replies "in thread" to "first" and prints the texts of "conversations.history"
-    And its system test expects "second first"
-    When the developer runs "testkit run --junit report.xml" in the module
-    Then the command exits with code 0
-    And "report.xml" has the passed test case "SCN-DEMO-001"
+    Given fakes.slack
+    When a module posts "first" and "second" to "C1", replies "in thread" to "first" and reads the texts of "conversations.history"
+    Then the texts are "second first"
 
   @id=SCN-TK-103 @status=implemented
   Scenario: fakes.forge opens an issue and adds a label to it
@@ -271,8 +257,6 @@ Feature: Services and outside systems
 
   @id=SCN-TK-104 @status=implemented
   Scenario: fakes.sentry sends a module's webhook an alert signed with the integration's client secret
-    Given a module whose server keeps the title and level of each alert whose Sentry-Hook-Signature matches "DEMO_SENTRY_SECRET"
-    And its system test has fakes.sentry send the alert "TypeError: total is undefined" of level "fatal" and expects "TypeError: total is undefined fatal"
-    When the developer runs "testkit run --junit report.xml" in the module
-    Then the command exits with code 0
-    And "report.xml" has the passed test case "SCN-DEMO-001"
+    Given fakes.sentry and a webhook of fakes.http
+    When fakes.sentry sends the webhook the alert "TypeError: total is undefined" of level "fatal"
+    Then the webhook got one alert "TypeError: total is undefined fatal" whose Sentry-Hook-Signature matches the client secret

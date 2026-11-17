@@ -1,36 +1,33 @@
-import { scenario } from "@opensoftware/testkit";
-import { testCases } from "./module.ts";
-import { buttonModule } from "./slack-server.ts";
+import { type FakeHttp, type FakeSlack, scenario } from "@opensoftware/testkit";
+import { signedBodies, slackCall } from "./slack.ts";
 
-scenario("SCN-TK-053", async ({ sut, given, when, then }) => {
-  let module: Record<string, string> = {};
+scenario("SCN-TK-053", async ({ fakes, given, when, then }) => {
+  let slack: FakeSlack;
+  let receiver: FakeHttp;
+  let ts = "";
   await given(
-    'a module whose server posts a message with the button "approve" to "C1" and keeps the action ID and user of each signed press',
+    'a message with the button "approve" that a module posted to "C1", and fakes.slack that delivers presses to a URL of fakes.http',
     async () => {
-      module = buttonModule("approve");
+      slack = await fakes.slack();
+      receiver = await fakes.http([{ method: "POST", path: "/actions", body: {} }]);
+      slack.deliverTo(`${receiver.url}/events`, `${receiver.url}/actions`);
+      const button = { type: "button", action_id: "approve", text: { type: "plain_text", text: "Approve" } };
+      const blocks = [{ type: "actions", elements: [button] }];
+      ({ ts } = await slackCall(slack, "chat.postMessage", { channel: "C1", text: "Approve?", blocks }));
     },
   );
 
-  await given(
-    'its system test presses "approve" as "U0ADA" and expects the server to have "approve U0ADA"',
+  await when('"U0ADA" presses "approve" in "C1"', async () => {
+    await slack.press({ channel: "C1", ts, actionId: "approve", user: "U0ADA" });
+  });
+
+  await then(
+    'the URL got one press of "approve" by "U0ADA", signed with the signing secret of fakes.slack',
     async () => {
-      for (const [path, content] of Object.entries(module)) await sut.files.put(path, content);
+      const bodies = await signedBodies(receiver, "/actions", slack.signingSecret);
+      expect(bodies.map(({ signed }) => signed)).toEqual([true]);
+      const payload = JSON.parse(new URLSearchParams(bodies[0]?.text).get("payload") ?? "{}");
+      expect(`${payload.actions?.[0]?.action_id} ${payload.user?.id}`).toBe("approve U0ADA");
     },
   );
-
-  let run: Awaited<ReturnType<typeof sut.cli>>;
-  await when('the developer runs "testkit run --junit report.xml" in the module', async () => {
-    run = await sut.cli(["run", "--junit", "report.xml"]);
-  });
-
-  await then("the command exits with code 0", async () => {
-    expect(run.exitCode, run.stdout + run.stderr).toBe(0);
-  });
-
-  await then('"report.xml" has the passed test case "SCN-DEMO-001"', async () => {
-    expect(testCases(await sut.files.read("$INPUT/report.xml"))).toContainEqual({
-      name: "SCN-DEMO-001",
-      failed: false,
-    });
-  });
 });

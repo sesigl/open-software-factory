@@ -265,10 +265,18 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   nested run: the fake fails the nested test). `fakes.modelGateway`: 13 of its 15 (SCN-TK-007 fails the nested test,
   SCN-TK-120 needs a container that the module starts). Measured back to back: the suite took 96.3 s instead of
   118.7 s, the 27 scenarios 0.7 s instead of 40.0 s and the 13 scenarios 1.3 s instead of 19.7 s summed; budget 210 s.
-  Left, by summed time of their scenarios before: `fakes.harness` (20.9 s, 13), `fakes.http` (15.2 s, 7),
-  `fakes.postgres` (12.1 s, 4), `fakes.s3` (11.4 s, 2), `fakes.collector` (8.8 s, 2), `fakes.slack`, `fakes.nats`,
-  `fakes.inference`, `fakes.sandbox`, `fakes.openbao`, `fakes.temporal`, `fakes.oidc`, `fakes.personIssuer`,
-  `fakes.traceStore`, `fakes.sentry`.
+  `fakes.http`: 7 of its 9 (SCN-TK-028 fails the nested test, SCN-TK-078 calls from a container the module starts).
+  `fakes.slack`: 6 of its 8, with the client of `system-tests/slack.ts` and `fakes.http` as the module's request URLs
+  (SCN-TK-055 fails the nested test, SCN-TK-116 posts from a container). `fakes.oidc`, `fakes.personIssuer`,
+  `fakes.traceStore` and `fakes.sentry`: all 7, with Web Crypto in the test's process in the place of `node:crypto`.
+  Measured back to back: the suite took 98.5 s and 96.1 s instead of 105.0 s and 108.4 s, the 20 scenarios 0.8 s
+  instead of 30.3 s summed; budget 200 s. Kept on the nested run: the 16 of `fakes.harness` and those of
+  `fakes.inference`, `fakes.sandbox` and `fakes.nats`. The first three are programs that a module starts, and a
+  system test starts no process (BOUNDARY-STATIC allows no Node built-in; `sut.acp` starts only the module's own
+  artifact and has no `_session/steering`, usage or cost); `fakes.nats` needs a NATS client. An ACP client of a given
+  command in the testkit would let the harness scenarios follow. Left, as their cost is the start of the service:
+  `fakes.postgres` (12.1 s, 4), `fakes.s3` (11.4 s, 2), `fakes.collector` (8.8 s, 2), `fakes.openbao`,
+  `fakes.temporal`.
 
 ### [ ] T-100 · spec-trace's report lists the changed rows of a Scenario Outline (P2)
 
@@ -283,11 +291,14 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 - **Build:** the wait follows the proxy's write interval, or `attach` refuses a proxy whose interval the wait does
   not cover; the README says which.
 
-### [ ] T-102 · `fakes.postgres` labels its containers per run (P2)
+### [x] T-102 · `fakes.postgres` labels its containers per run (P2)
 
 - **Problem:** found in T-85. SCN-TK-152 expects one container with the label `org.opensoftware.run=r8`; the label is
   the same in every run, so a second run on the same Docker host within a few seconds finds two and fails.
 - **Build:** the scenario's run ID is unique per test run, or it counts only its own run's containers.
+- **Done:** SCN-TK-152 sets `OSF_TESTKIT_RUN` to an ID from its workspace's folder name, and its nested test counts
+  the containers with that run's label; two runs back to back pass. The count also no longer takes an empty
+  `docker ps` for one container, so the test fails when the fake labels no container, which it did not before.
 
 ### Stage D · less weight
 
