@@ -140,6 +140,9 @@ Every agent of the reference factory runs in such a sandbox:
   proxies and networks ([ADR 0158](../docs/decisions/0158-no-sandbox-is-left-behind.md)). A Docker host holds about 30
   sandboxes at once with Docker's default address pools; see the
   [docker sandbox adapter](../adapters/sandbox/docker/README.md) for more.
+- foreman runs at most 2 stages with an agent at once, so at most 2 sandboxes; the stages of other runs wait for a
+  place and then start ([ADR 0160](../docs/decisions/0160-a-limit-on-stages-side-by-side.md)). Set
+  `FOREMAN_MAX_STAGES` in `.env` for another number, like 4 on a machine with the CPUs and memory for 4 sandboxes.
 
 foreman has no Docker socket. It reaches the Docker API through `docker-proxy`
 ([wollomatic/socket-proxy](https://github.com/wollomatic/socket-proxy)), which holds the host's socket read-only,
@@ -574,6 +577,7 @@ are not used then.
 | `gatekeeper.slackChannel` | `C0GATES` | The Slack channel where gatekeeper asks, with the Slack secrets. With `existingSecret`, empty turns Slack off. |
 | `gatekeeper.forgeUrl` | GitHub's API | The forge's API where gatekeeper asks on pull requests, like `https://ghe.example/api/v3`; a pull request link of a request counts only on this forge. |
 | `foreman.harnesses`, `foreman.forges` | claude-code; github and forgejo | foreman's `FOREMAN_HARNESSES` and `FOREMAN_FORGES`. |
+| `foreman.maxStages` | `2` | foreman's `FOREMAN_MAX_STAGES`: how many stages with an agent, each in a sandbox, run at once; the others wait for a place ([ADR 0160](../docs/decisions/0160-a-limit-on-stages-side-by-side.md)). Empty: no limit. |
 | `foreman.persistence.size` | `1Gi` | The volume of the runs' working folders. |
 | `console.temporalUrl`, `console.links` | | The Temporal UI and the dashboards the console links, like `Langfuse=https://langfuse.acme.dev`. |
 | `console.signIn.provider` | | The console's own sign-in, `oidc` or `github` ([ADR 0134](../docs/decisions/0134-console-sign-in-roles-and-modes.md)); only the people of the factory's `access.yaml` sign in. Empty: the console is open and read-only. |
@@ -731,3 +735,5 @@ The label `org.opencontainers.image.licenses` of each image names its license.
 | SCN-DIST-058 | implemented | The foreman of the Compose profile names its sandboxes after the Compose project |
 | SCN-DIST-059 | implemented | The foreman of the Helm chart names its sandboxes after the release's namespace and name |
 | SCN-DIST-060 | implemented | Every workload of the Helm chart is ready after one command and runs the module images of this workspace |
+| SCN-DIST-061 | implemented | The foreman of the Compose profile runs at most 2 stages at once, or the number of "FOREMAN_MAX_STAGES" |
+| SCN-DIST-062 | implemented | The foreman of the Helm chart runs at most 2 stages at once |

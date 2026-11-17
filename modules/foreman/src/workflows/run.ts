@@ -36,12 +36,13 @@ const local = proxyLocalActivities<Activities>({ startToCloseTimeout: "1 minute"
  * The activities that reach outside. A stage heartbeats from its start to its end, so a stage whose worker stopped
  * runs again after `heartbeatMs`; a run that started without it waits 1 minute, as it did then.
  */
-const remoteOf = (heartbeatMs?: number) =>
+const remoteOf = (heartbeatMs?: number, taskQueue?: string) =>
   proxyActivities<Activities>({
     startToCloseTimeout: "1 day",
     heartbeatTimeout: heartbeatMs ?? "1 minute",
     retry: { maximumAttempts: 3 },
     cancellationType: ActivityCancellationType.WAIT_CANCELLATION_COMPLETED,
+    ...(taskQueue ? { taskQueue } : {}),
   });
 
 /** The view with the signals people sent, when there are any (ADR 0118). */
@@ -68,8 +69,12 @@ async function apply(run: RunView, fact: Fact, actions: RunAction[], memoed: boo
   return next;
 }
 
-export async function factoryRun({ view, definition, before, heartbeatMs }: RunInput): Promise<RunView> {
+export async function factoryRun({ view, definition, before, heartbeatMs, stageQueue }: RunInput): Promise<RunView> {
   const remote = remoteOf(heartbeatMs);
+  // A stage whose agent runs goes to the task queue of the stages, whose worker runs at most FOREMAN_MAX_STAGES at once
+  // (ADR 0160). The time it waits there for a place counts against no timeout and no attempt: Temporal starts both
+  // only when a worker takes the stage. A run that started without the queue runs its stages as it did then.
+  const stages = stageQueue ? remoteOf(heartbeatMs, stageQueue) : remote;
   // Asked in the run's first workflow task, before anything waits, so no query can split a task before the marker. A
   // patch asked after a local activity, as MEMO_PATCH before the first `apply`, went to the next task when a query
   // reached the worker while the activity `next` ran, and no replay of the run succeeded (TMPRL1100).
@@ -136,7 +141,9 @@ export async function factoryRun({ view, definition, before, heartbeatMs }: RunI
         run = await apply(run, { kind: "handed-back", index }, actions, memoed);
       } else {
         run = await apply(run, { kind: "stage-started", index }, actions, memoed);
-        const ended = await remote.runStage(run, definition, index, steering.length, before, previous);
+        // A stage that only waits runs no agent and takes no place among the stages (ADR 0107).
+        const runner = definition.stages[index]?.agent === undefined ? remote : stages;
+        const ended = await runner.runStage(run, definition, index, steering.length, before, previous);
         if (ended.kind === "stage-ended" && ended.result) previous = ended.result;
         await settle(ended);
       }

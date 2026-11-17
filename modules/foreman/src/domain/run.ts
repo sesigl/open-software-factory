@@ -54,6 +54,11 @@ export interface RunInput {
    * that started without it waits 1 minute.
    */
   heartbeatMs?: number;
+  /**
+   * The task queue of the stages that run an agent, whose worker limits how many run at once (ADR 0160); a run that
+   * started without it runs them on the task queue of its workflow.
+   */
+  stageQueue?: string;
 }
 
 /** What the workflow does next for the stage at `index`. */
@@ -270,6 +275,19 @@ export function nextStep(view: RunView, definition: Definition, waits: Waits): S
     };
   if (plan?.gate && !stage.gateId) return { kind: "request-gate", index };
   return { kind: "run-stage", index };
+}
+
+/**
+ * The view of a run whose running stage waits for a place among the stages that run at once (ADR 0160): the stage is
+ * blocked since it was due to start, and has no start yet. The run stays running: no person needs to act.
+ */
+export function waitingForPlace(view: RunView): RunView {
+  const stages = view.stages.map((stage) => {
+    if (stage.state !== "running") return stage;
+    const { startedAt, spanId: _, ...due } = stage;
+    return { ...due, state: "blocked" as const, waitingSince: startedAt as string };
+  });
+  return { ...view, stages };
 }
 
 /** The view after the fact, at the time `at`; a blocked stage shows since when it waits (ADR 0106). */

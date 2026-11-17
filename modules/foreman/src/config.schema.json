@@ -46,7 +46,11 @@
     "FOREMAN_TASK_QUEUE": {
       "type": "string",
       "default": "foreman",
-      "description": "serve: the Temporal task queue of the runs' workflows and activities."
+      "description": "serve: the Temporal task queue of the runs' workflows and activities. The stages that run an agent go to the task queue <queue>-stages (ADR 0160)."
+    },
+    "FOREMAN_MAX_STAGES": {
+      "type": "string",
+      "description": "serve: how many stages that run an agent this foreman runs at the same time, a whole number of 1 or more, like 2 on one machine. A stage over the limit waits until a running one ends, without a timeout and without using one of its attempts; GET /v1/runs/<id> shows it blocked with waitingSince, and its run running. A stage that only waits takes no place. Each foreman counts its own stages (ADR 0160). The profile and the chart set 2. Unset: no limit."
     },
     "FOREMAN_HARNESSES": {
       "type": "string",

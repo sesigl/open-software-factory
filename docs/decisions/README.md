@@ -132,6 +132,7 @@ DOCS-GEN keeps it current.
 - [0142](0142-factory-source-library-and-its-token.md) The library `factory-source`: its surface, the token of a private factory and its cache
 - [0143](0143-skill-catalog-contract.md) The JSON of `factory skills` is the format `skill-catalog` of `contracts/`
 - [0146](0146-skills-of-other-repositories-pinned-in-factory-lock.md) Skills of other repositories: the entry `git+<url>#<ref>:<path>`, its pin in `factory.lock`, and its fetch
+- [0160](0160-a-limit-on-stages-side-by-side.md) A limit on the stages that run side by side, on a task queue of their own
 
 ### Runs of the foreman
 

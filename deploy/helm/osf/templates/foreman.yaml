@@ -154,6 +154,11 @@ spec:
             # of a foreman of this release that died (ADR 0158).
             - name: FOREMAN_SANDBOX_OWNER
               value: {{ printf "%s.%s" .Release.Namespace .Release.Name | trunc 63 | trimSuffix "-" | trimSuffix "." | quote }}
+            {{- with .Values.foreman.maxStages }}
+            # At most this many stages run an agent at once, each in a sandbox; the others wait for a place (ADR 0160).
+            - name: FOREMAN_MAX_STAGES
+              value: {{ . | quote }}
+            {{- end }}
             - name: FOREMAN_SANDBOXES
               value: '{"kubernetes": "sandbox-kubernetes"}'
             - name: OSF_SANDBOX_NAMESPACE
