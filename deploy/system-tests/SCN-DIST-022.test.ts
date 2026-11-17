@@ -1,16 +1,18 @@
 import { scenario } from "@opensoftware/testkit";
-import { cluster, inForeman, install, values } from "./chart.ts";
+import { type cluster, inForeman, sharedChart, unsetSecrets } from "./chart.ts";
 
 scenario("SCN-DIST-022", async ({ sut, given, when, then }) => {
   let helm: Awaited<ReturnType<typeof cluster>>;
+  let shared: Awaited<ReturnType<typeof sharedChart>>;
   await given("a kind cluster with agent-sandbox and the images of the Compose profile", async () => {
-    helm = await cluster(sut);
+    shared = await sharedChart(sut);
+    helm = shared.sut.helm("helm/osf");
   });
 
   await given('the operator installed the chart with a values file that sets every value under "secrets"', async () => {
-    await values(sut);
-    const result = await install(helm);
-    expect(result.exitCode, result.stderr).toBe(0);
+    // The group's one install; the sandbox below has a name of its own.
+    expect(await unsetSecrets(shared.sut)).toEqual([]);
+    expect(shared.result.exitCode, shared.result.stderr).toBe(0);
   });
 
   const foreman = (...command: string[]) => inForeman(helm, ...command);

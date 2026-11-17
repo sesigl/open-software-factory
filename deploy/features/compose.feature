@@ -4,7 +4,9 @@ Feature: The Compose profile installs a complete factory with one command
   The profile starts PostgreSQL with Temporal and pgvector, NATS, Jaeger, LiteLLM, gatekeeper, intake, foreman and
   console, with the reference factory in "deploy/compose/factory/" (ADR 0074). A module is healthy when its
   "/v1/health" answers 2xx (ADR 0086). The foreman starts the agents' sandboxes from the image of "agent-template",
-  through "docker-proxy", its only way to the Docker API (ADR 0096).
+  through "docker-proxy", its only way to the Docker API (ADR 0096). The scenarios tagged "@shared=compose-profile" only
+  read the profile, or work in a sandbox of their own, and share one start of it; every other scenario starts a project
+  of its own (ADR 0157).
 
   @id=SCN-DIST-001 @status=deprecated @realizes=SCN-FACTORY-OPEN-006
   Scenario: Every service of the Compose profile is healthy after one command
@@ -24,7 +26,7 @@ Feature: The Compose profile installs a complete factory with one command
     And "/v1/health" of "intake", "gatekeeper" and "foreman" answers 200 with the status "ok"
     And "docker compose run --rm console console doctor" exits with code 0 and prints no line that starts with "FAIL"
 
-  @id=SCN-DIST-026 @status=implemented @realizes=SCN-FACTORY-OPEN-006 @replaces=SCN-DIST-016
+  @id=SCN-DIST-026 @status=implemented @realizes=SCN-FACTORY-OPEN-006 @replaces=SCN-DIST-016 @shared=compose-profile
   Scenario: Every service of the Compose profile is healthy after one command, Jaeger as the trace store, and each server's health checks pass
     Given the Compose profile with every value of ".env.example" set in ".env"
     When the operator runs "docker compose up --detach --wait"
@@ -34,7 +36,7 @@ Feature: The Compose profile installs a complete factory with one command
     And "/v1/health" of "intake", "gatekeeper" and "foreman" answers 200 with the status "ok"
     And "docker compose run --rm console console doctor" exits with code 0 and prints no line that starts with "FAIL"
 
-  @id=SCN-DIST-017 @status=implemented @realizes=SCN-FACTORY-RUNTIME-004
+  @id=SCN-DIST-017 @status=implemented @realizes=SCN-FACTORY-RUNTIME-004 @shared=compose-profile
   Scenario: The foreman of the Compose profile starts a sandbox from the agents' template through docker-proxy only
     Given the Compose profile with every value of ".env.example" set in ".env"
     And the operator ran "docker compose up --detach --wait"
@@ -52,17 +54,17 @@ Feature: The Compose profile installs a complete factory with one command
     Then the command exits with code 1
     And the output contains "set FOREMAN_API_TOKEN in .env"
 
-  @id=SCN-DIST-003 @status=implemented
+  @id=SCN-DIST-003 @status=implemented @shared=compose-profile
   Scenario: The console of the Compose profile lists the runs of its foreman
     Given the Compose profile with every value of ".env.example" set in ".env"
-    When the operator runs "docker compose up --detach --wait console"
+    When the operator runs "docker compose up --detach --wait"
     Then the console's page "/" answers 200 with the heading "Runs"
     And the page does not say "did not answer"
 
-  @id=SCN-DIST-004 @status=implemented
+  @id=SCN-DIST-004 @status=implemented @shared=compose-profile
   Scenario: The console of the Compose profile shows the agents of the reference factory
     Given the Compose profile with every value of ".env.example" set in ".env"
-    When the operator runs "docker compose up --detach --wait console"
+    When the operator runs "docker compose up --detach --wait"
     Then the console's page "/factory" lists the agents "triage", "spec", "implement", "review" and "ship"
 
   @id=SCN-DIST-036 @status=deprecated
@@ -72,10 +74,10 @@ Feature: The Compose profile installs a complete factory with one command
     Then the console's page "/health" has the heading "Health" and the columns "Check", "State" and "What to do"
     And the page allows only the console's own files and no script
 
-  @id=SCN-DIST-050 @status=implemented @replaces=SCN-DIST-036
+  @id=SCN-DIST-050 @status=implemented @replaces=SCN-DIST-036 @shared=compose-profile
   Scenario: The console of the Compose profile renders its health page from the templates its package ships, and allows only its own files
     Given the Compose profile with every value of ".env.example" set in ".env"
-    When the operator runs "docker compose up --detach --wait console"
+    When the operator runs "docker compose up --detach --wait"
     Then the console's page "/health" has the heading "Health" and the columns "Check", "State" and "What to do"
     And the page allows only the console's own files, its script files too, and no inline script
 

@@ -61,6 +61,8 @@ const vitest = await startVitest("test", [], {
   reporters: ["default", ["junit", { outputFile: resolve(root, values.junit), classnameTemplate: "{filepath}" }]],
   // The module's tests import the testkit by name; it resolves to this copy wherever the module lives.
   alias: { "@opensoftware/testkit": testkitEntry },
+  // The run's folder of shared starts for sut.shared, and their teardown at its end (ADR 0157).
+  globalSetup: [join(dirname(self), "..", "src", "sut", `global-setup${extname(self)}`)],
   // scenario() reads the status of a port's scenarios from here.
   env: portFeatures ? { OSF_TESTKIT_PORT_FEATURES: portFeatures } : {},
 });

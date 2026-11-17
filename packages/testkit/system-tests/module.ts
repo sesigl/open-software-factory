@@ -703,6 +703,102 @@ export function inferenceModule(bin: string[], expectations: string[], options =
 }
 
 /**
+ * A Docker CLI plugin "docker-compose" that answers Docker's metadata call and appends every other call to the file
+ * `log`; with `failUp`, it fails "up" with that text and exit code 1.
+ */
+export function composePlugin(log: string, failUp?: string): string {
+  return [
+    "#!/bin/sh",
+    'if [ "$1" = docker-cli-plugin-metadata ]; then',
+    '  echo \'{"SchemaVersion":"0.1.0","Vendor":"testkit","Version":"9.9.9","ShortDescription":"fake"}\'',
+    "  exit 0",
+    "fi",
+    `echo "$*" >> '${log}'`,
+    ...(failUp ? [`case " $* " in *" up "*) echo "${failUp}" >&2; exit 1 ;; esac`] : []),
+    "exit 0",
+    "",
+  ].join("\n");
+}
+
+/** The calls of `composePlugin`'s log, each as its project and its command, like "up", without the Compose file. */
+export function composeCalls(log: string): { project: string; command: string }[] {
+  return log
+    .split("\n")
+    .filter((line) => line.includes("--project-name"))
+    .map((line) => {
+      const words = line.split(" ");
+      const project = words[words.indexOf("--project-name") + 1] as string;
+      const rest = words.slice(words.indexOf("--project-name") + 2);
+      while (rest[0]?.startsWith("--")) rest.splice(0, 2);
+      return { project, command: rest[0] ?? "" };
+    });
+}
+
+/** A scenario of `groupModule`: its tags after `@id` and `@status`, its steps and the body of its test. */
+export interface GroupScenario {
+  tags: string;
+  steps: string[];
+  test: string[];
+}
+
+/**
+ * A scenario of the group "profile": its shared start runs "up" on "compose.yaml" and fails when "up" fails; then the
+ * test runs "ps" on the shared project.
+ */
+export const sharedCompose: GroupScenario = {
+  tags: "@shared=profile",
+  steps: [
+    'Given the shared start "profile", which runs "up" on "compose.yaml"',
+    "Then the shared project lists its services",
+  ],
+  test: [
+    "let shared!: Awaited<ReturnType<typeof sut.shared>>;",
+    'await given(\'the shared start "profile", which runs "up" on "compose.yaml"\', async () => {',
+    '  shared = await sut.shared("profile", async (start) => {',
+    '    const up = await start.compose("compose.yaml").run(["up"]);',
+    "    if (up.exitCode !== 0) throw new Error(`up exited with code ${up.exitCode}: ${up.stderr.trim()}`);",
+    "    return up.exitCode;",
+    "  });",
+    "});",
+    'await then("the shared project lists its services", async () => {',
+    "  expect(shared.result).toBe(0);",
+    '  const ps = await shared.sut.compose("compose.yaml").run(["ps"]);',
+    "  expect(ps.exitCode, ps.stderr).toBe(0);",
+    "});",
+  ],
+};
+
+/**
+ * Module demo with the implemented scenarios SCN-DEMO-001, SCN-DEMO-002 and so on in one feature file, each with a
+ * test file of its own, like the scenarios of a group that share a start.
+ */
+export function groupModule(scenarios: GroupScenario[]): Record<string, string> {
+  const files = demoModule();
+  const id = (index: number) => `SCN-DEMO-${String(index + 1).padStart(3, "0")}`;
+  files["$INPUT/features/a.feature"] = [
+    "Feature: Demo",
+    "",
+    ...scenarios.flatMap(({ tags, steps }, index) => [
+      `  @id=${id(index)} @status=implemented${tags ? ` ${tags}` : ""}`,
+      `  Scenario: Demo ${index + 1}`,
+      ...steps.map((step) => `    ${step}`),
+      "",
+    ]),
+  ].join("\n");
+  for (const [index, { test }] of scenarios.entries()) {
+    files[`$INPUT/system-tests/${id(index)}.test.ts`] = [
+      'import { scenario } from "@opensoftware/testkit";',
+      "",
+      `scenario("${id(index)}", async ({ sut, fakes, given, when, then }) => {`,
+      ...test.map((line) => `  ${line}`),
+      "});",
+      "",
+    ].join("\n");
+  }
+  return files;
+}
+
+/**
  * Module demo whose server answers each path in `pages` with that HTML and every other request with `routes`, plain
  * JavaScript statements that see `request`, `response`, `url` (a URL) and `form` (the sent fields, URLSearchParams).
  * Its README documents `PORT`.

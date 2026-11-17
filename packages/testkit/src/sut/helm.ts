@@ -20,24 +20,50 @@ export interface Helm {
   url(service: string, port: number): Promise<string>;
 }
 
+/** The namespace of a workspace and the environment of its helm and kubectl commands. */
+function namespaceOf(dirs: Folders): { namespace: string; env: Record<string, string> } {
+  // Helm keeps its cache and repositories outside $INPUT, which belongs to the test.
+  const helmHome = join(dirname(dirs.input), "helm");
+  return {
+    // The workspace's random name keeps parallel scenarios apart; a namespace is a lower-case DNS label.
+    namespace: basename(dirname(dirs.input))
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, "-"),
+    env: {
+      ...baseEnv(dirs.input),
+      ...(process.env.KUBECONFIG ? { KUBECONFIG: process.env.KUBECONFIG } : {}),
+      HELM_CACHE_HOME: join(helmHome, "cache"),
+      HELM_CONFIG_HOME: join(helmHome, "config"),
+      HELM_DATA_HOME: join(helmHome, "data"),
+    },
+  };
+}
+
+/**
+ * Uninstalls each release of the workspace's namespace and deletes the namespace. Objects of a release outside the
+ * namespace, like a namespace of its own, go only with the release.
+ */
+export async function helmDown(dirs: Folders): Promise<void> {
+  const { namespace, env } = namespaceOf(dirs);
+  const list = ["list", "--short", "--namespace", namespace];
+  const releases = (await run(program("helm"), list, dirs.input, env)).stdout.split("\n").filter(Boolean);
+  for (const release of releases) {
+    await run(program("helm"), ["uninstall", release, "--namespace", namespace], dirs.input, env);
+  }
+  await run(program("kubectl"), ["delete", "namespace", namespace, "--wait=false"], dirs.input, env);
+}
+
+/**
+ * `sut.helm` on the workspace's folders. `onDown` gets the namespace's teardown once the namespace exists; `onStop`
+ * gets what the scenario itself started, like a port-forward.
+ */
 export function makeHelm(
   moduleRoot: string,
   dirs: Folders,
   onStop: (stop: () => Promise<unknown>) => void,
+  onDown: (down: () => Promise<unknown>) => void = onStop,
 ): (chart: string) => Helm {
-  // The workspace's random name keeps parallel scenarios apart; a namespace is a lower-case DNS label.
-  const namespace = basename(dirname(dirs.input))
-    .toLowerCase()
-    .replace(/[^a-z0-9-]/g, "-");
-  // Helm keeps its cache and repositories outside $INPUT, which belongs to the test.
-  const helmHome = join(dirname(dirs.input), "helm");
-  const env = {
-    ...baseEnv(dirs.input),
-    ...(process.env.KUBECONFIG ? { KUBECONFIG: process.env.KUBECONFIG } : {}),
-    HELM_CACHE_HOME: join(helmHome, "cache"),
-    HELM_CONFIG_HOME: join(helmHome, "config"),
-    HELM_DATA_HOME: join(helmHome, "data"),
-  };
+  const { namespace, env } = namespaceOf(dirs);
   const kubectl = (args: string[]): Promise<CliResult> =>
     run(program("kubectl"), ["--namespace", namespace, ...args], dirs.input, env);
   let created: Promise<void> | undefined;
@@ -45,16 +71,11 @@ export function makeHelm(
     created ??= (async () => {
       await localKindCluster(dirs.input, env);
       const result = await run(program("kubectl"), ["create", "namespace", namespace], dirs.input, env);
-      if (result.exitCode !== 0) throw new Error(`sut.helm: kubectl create namespace failed: ${result.stderr}`);
-      onStop(async () => {
-        // Objects of a release outside the namespace, like a namespace of its own, go only with the release.
-        const list = ["list", "--short", "--namespace", namespace];
-        const releases = (await run(program("helm"), list, dirs.input, env)).stdout.split("\n").filter(Boolean);
-        for (const release of releases) {
-          await run(program("helm"), ["uninstall", release, "--namespace", namespace], dirs.input, env);
-        }
-        await run(program("kubectl"), ["delete", "namespace", namespace, "--wait=false"], dirs.input, env);
-      });
+      // The namespace of a shared start exists already when another test process created it.
+      if (result.exitCode !== 0 && !result.stderr.includes("AlreadyExists")) {
+        throw new Error(`sut.helm: kubectl create namespace failed: ${result.stderr}`);
+      }
+      onDown(() => helmDown(dirs));
     })();
     return created;
   };

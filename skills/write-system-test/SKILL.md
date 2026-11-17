@@ -71,7 +71,7 @@ is tested with this same testkit through its CLI or API.
   values. Name the columns to read them as strings:
   `scenario<"entry" | "line">("SCN-X-001", async ({ example, when }) => …)`. The examples share the test's timeout.
 - A scenario tagged `@shared=<name>` keeps its own `scenario()` call and steps, and uses the group's one start
-  instead of its own (the testkit's API for it comes with T-82). It only reads the shared system, or works under a
+  instead of its own: `sut.shared(name, start)` (ADR 0162). It only reads the shared system, or works under a
   name of its own: a project, a namespace, a key.
 - A `then` checks the fact the step states. When the step names a field, assert on that field, not on the whole
   message.

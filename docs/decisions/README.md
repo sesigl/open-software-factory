@@ -74,7 +74,7 @@ DOCS-GEN keeps it current.
 - [0037](0037-mutation-and-duplication.md) Mutation testing with Stryker and duplication limits with jscpd
 - [0049](0049-in-memory-stand-ins.md) Fast in-memory stand-ins for slow outside systems, starting with PGlite for PostgreSQL — the principle stands; fakes.postgres is a PostgreSQL container again since 0129
 - [0131](0131-ui-tests-pages-journeys-islands.md) Three kinds of UI test: pages over HTTP, journeys and islands in Chromium
-- [0157](0157-the-testing-rule-shared-starts-outlines-and-wording.md) The testing rule: shared starts, Outlines and wording in place
+- [0157](0157-the-testing-rule-shared-starts-outlines-and-wording.md) The testing rule: shared starts, Outlines and wording in place — amended by 0162 (a shared start runs once per test run)
 
 ### Ports and adapters
 
@@ -212,6 +212,7 @@ DOCS-GEN keeps it current.
 - [0154](0154-main-stores-results-under-the-pull-request-hash.md) main stores its test results under the hash a pull request computes
 - [0155](0155-budget-is-the-wall-time-of-a-suite.md) BUDGET is the wall time of a suite
 - [0156](0156-the-deploy-suite-builds-the-commit.md) The deploy suite builds the module images from the commit — since the second slice of T-72 scripts/images.ts also loads the chart's images into kind, and kind-images.sh is gone (deploy/README.md)
+- [0162](0162-a-shared-start-is-once-per-test-run.md) A shared start runs once per test run, through the testkit's global setup
 
 ### Superseded, rejected and deprecated
 

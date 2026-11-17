@@ -1,5 +1,5 @@
 // The Helm chart as a platform team installs it: a values file in $INPUT that sets every secret (ADR 0075).
-import type { CliResult, Helm, Sut } from "@opensoftware/testkit";
+import type { CliResult, Helm, Shared, SharedSut, Sut } from "@opensoftware/testkit";
 
 /** The secrets of the values file, made up for the tests. */
 const SECRETS: Record<string, string> = {
@@ -18,7 +18,7 @@ const SECRETS: Record<string, string> = {
  * The chart on the cluster of KUBECONFIG, in the scenario's namespace. The CI job starts kind; test:system's
  * scripts/images.ts loads the chart's images into it, the module images of the commit (deploy/README.md).
  */
-export async function cluster(sut: Sut): Promise<Helm> {
+export async function cluster(sut: SharedSut): Promise<Helm> {
   const helm = sut.helm("helm/osf");
   // Kubernetes creates the "default" service account of a new namespace a moment after the namespace, so the step
   // asks again, once a second for up to 30 s.
@@ -33,7 +33,7 @@ export async function cluster(sut: Sut): Promise<Helm> {
 
 /** Writes `values.yaml` with every secret but those in `except`, the secrets of `more`, and the YAML of `rest`. */
 export async function values(
-  sut: Sut,
+  sut: SharedSut,
   except: string[] | string = [],
   more: Record<string, string> = {},
   rest = "",
@@ -47,6 +47,28 @@ export async function values(
 /** "helm install osf deploy/helm/osf --values values.yaml --wait --timeout 10m", with the chart's own path. */
 export function install(helm: Helm): Promise<CliResult> {
   return helm.run(["install", "osf", helm.chart, "--values", "values.yaml", "--wait", "--timeout", "10m"]);
+}
+
+/**
+ * The one install of the chart for the scenarios tagged `@shared=helm-chart`, which only read it (ADR 0157): a values
+ * file that sets every secret and "helm install osf deploy/helm/osf --values values.yaml --wait --timeout 10m" in the
+ * group's namespace. Its result is that command's.
+ */
+export function sharedChart(sut: Sut): Promise<Shared<CliResult>> {
+  return sut.shared("helm-chart", async (start) => {
+    const helm = await cluster(start);
+    await values(start);
+    const result = await install(helm);
+    if (result.exitCode !== 0)
+      throw new Error(`"helm install osf" exited with code ${result.exitCode}: ${result.stderr}`);
+    return result;
+  });
+}
+
+/** The secrets that the values file in $INPUT does not set under "secrets"; none in the file that `values` writes. */
+export async function unsetSecrets(sut: SharedSut): Promise<string[]> {
+  const file = await sut.files.read("$INPUT/values.yaml");
+  return Object.keys(SECRETS).filter((name) => !file.includes(`\n  ${name}: `));
 }
 
 /** The manifests that one template of the chart rendered, from the output of "helm template". */

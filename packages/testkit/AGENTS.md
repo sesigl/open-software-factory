@@ -11,6 +11,8 @@ The only ways a system test or another program may use the testkit:
   alone, for a process that must not load the rest
 - Library: `@opensoftware/testkit/readme` (`src/support/readme.ts`: `documentedEnv`, `readmeSection`, `isDocumented`), used by
   the checks that read a module's README without running a test (ADR 0042)
+- Library: `@opensoftware/testkit/global-setup` (`src/sut/global-setup.ts`: `setup`), the global setup of a vitest
+  config that runs the shared starts of `sut.shared` once per test run (ADR 0162); `testkit run` uses it
 - CLI: `testkit <command>` (`bin/testkit.ts`, see `README.md#commands`), run in a module folder
 
 The testkit's own system tests use the CLI on small modules they write into `$INPUT`, and call

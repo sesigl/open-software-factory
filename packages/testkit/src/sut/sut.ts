@@ -19,12 +19,16 @@ import { type Action, makeAction } from "./action.ts";
 import { type Browser, makeBrowser } from "./browser.ts";
 import { type Compose, makeCompose } from "./compose.ts";
 import { type Events, makeEvents } from "./events.ts";
+import { type Folders, folders, foldersOf } from "./folders.ts";
 import { type Helm, makeHelm } from "./helm.ts";
 import { type Http, makeHttp } from "./http.ts";
 import { adapterCommand, makeLaunch } from "./launch.ts";
 import { type Mcp, makeMcp } from "./mcp.ts";
 import { makePages, type Pages } from "./pages.ts";
+import { makeShared, type Shared, type SharedSut } from "./shared.ts";
 import { makeSite, type Site } from "./site.ts";
+
+export { type Folders, folders };
 
 export interface Sut {
   /**
@@ -72,6 +76,15 @@ export interface Sut {
    */
   helm(chart: string): Helm;
   /**
+   * One start of a slow system for the scenarios tagged `@shared=<name>` (ADR 0157): the first scenario of the group
+   * in the test run calls `start` with a workspace of the group, whose `compose` and `helm` use the group's project
+   * and namespace; every scenario of the group then gets that workspace and what `start` returned, as JSON. A failed
+   * start fails each scenario of the group with its failure. The project and the namespace go down when the test run
+   * ends, which needs the testkit's global setup (`testkit run` has it). A scenario without the tag cannot use it,
+   * and a scenario with the tag fails when it does not.
+   */
+  shared<T>(name: string, start: (sut: SharedSut) => Promise<T>): Promise<Shared<T>>;
+  /**
    * The module's input and output folders. Every path starts with `$INPUT/` or `$OUTPUT/` and stays inside that
    * folder; the module gets them as the environment variables `INPUT` and `OUTPUT`.
    */
@@ -117,32 +130,61 @@ export interface Sut {
   };
 }
 
-export interface Folders {
-  input: string;
-  output: string;
-  /** The module's private data folder, `OSF_DATA`. The test has no path into it. */
-  data: string;
-  /** Where the network guard logs refused connections. */
-  noreal: string;
-}
-
-export function folders(workspace: string): Folders {
-  const dirs = {
-    input: join(workspace, "input"),
-    output: join(workspace, "output"),
-    data: join(workspace, "data"),
-    noreal: join(workspace, "noreal.log"),
-  };
-  mkdirSync(dirs.input);
-  mkdirSync(dirs.output);
-  mkdirSync(dirs.data);
-  return dirs;
-}
-
 export interface SutHandle {
   sut: Sut;
   /** Stops every server, client and subscription the scenario started, and returns the connections NOREAL refused. */
   close(): Promise<string[]>;
+  /** The names of the shared starts the scenario used. */
+  sharedUsed(): string[];
+}
+
+/** The path of `$INPUT/...` or `$OUTPUT/...` in the folders; it refuses any other path. */
+function insideOf(dirs: Folders): (path: string) => string {
+  return (path) => {
+    const [, name, rest = ""] = /^\$(INPUT|OUTPUT)(?:\/(.*))?$/s.exec(path) ?? [];
+    const root = name === "INPUT" ? dirs.input : name === "OUTPUT" ? dirs.output : undefined;
+    const full = root && resolve(root, rest);
+    if (!root || !full || (full !== root && !full.startsWith(root + sep))) {
+      throw new Error(`sut.files refuses a path outside $INPUT and $OUTPUT: ${path}`);
+    }
+    return full;
+  };
+}
+
+/** `sut.files` on the folders. */
+function makeFiles(dirs: Folders): Sut["files"] {
+  const inside = insideOf(dirs);
+  return {
+    async put(path, content, options = {}) {
+      const full = inside(path);
+      mkdirSync(dirname(full), { recursive: true });
+      writeFileSync(full, content);
+      if (options.executable) chmodSync(full, 0o755);
+      if (options.mode !== undefined) chmodSync(full, options.mode);
+    },
+    async mode(path) {
+      return statSync(inside(path)).mode & 0o777;
+    },
+    async link(path, target) {
+      const full = inside(path);
+      mkdirSync(dirname(full), { recursive: true });
+      symlinkSync(target, full);
+    },
+    async read(path) {
+      return readFileSync(inside(path), "utf8");
+    },
+    async list(dir = "$INPUT") {
+      return listFiles(inside(dir)).map((file) => relative(inside(dir), file));
+    },
+    async remove(path) {
+      rmSync(inside(path), { recursive: true, force: true });
+    },
+    async clear(path) {
+      const folder = inside(path);
+      for (const entry of readdirSync(folder)) rmSync(join(folder, entry), { recursive: true, force: true });
+    },
+    path: inside,
+  };
 }
 
 export function makeSut(moduleRoot: string, dirs: Folders, hosts: () => string[] = () => [], scenario = ""): SutHandle {
@@ -152,15 +194,17 @@ export function makeSut(moduleRoot: string, dirs: Folders, hosts: () => string[]
     stops.push(stop);
   };
   const input = dirs.input;
-  const inside = (path: string): string => {
-    const [, name, rest = ""] = /^\$(INPUT|OUTPUT)(?:\/(.*))?$/s.exec(path) ?? [];
-    const root = name === "INPUT" ? dirs.input : name === "OUTPUT" ? dirs.output : undefined;
-    const full = root && resolve(root, rest);
-    if (!root || !full || (full !== root && !full.startsWith(root + sep))) {
-      throw new Error(`sut.files refuses a path outside $INPUT and $OUTPUT: ${path}`);
-    }
-    return full;
-  };
+  const inside = insideOf(dirs);
+  // A shared start's system goes down when the test run ends (sharedDown); what this scenario starts on it, like a
+  // port-forward, stops with the scenario.
+  const shared = makeShared(moduleRoot, scenario, (workspace, create, owner, mark) => {
+    const at = create ? folders(workspace) : foldersOf(workspace);
+    return {
+      files: makeFiles(at),
+      compose: makeCompose(moduleRoot, at, () => mark("compose"), owner),
+      helm: makeHelm(moduleRoot, at, onStop, () => mark("helm")),
+    };
+  });
   const http = makeHttp(launch, onStop);
   const site = makeSite(moduleRoot, onStop);
   const chromium = makeBrowser(() => site.base() ?? http.url(), moduleRoot, scenario, onStop);
@@ -179,37 +223,8 @@ export function makeSut(moduleRoot: string, dirs: Folders, hosts: () => string[]
     events: makeEvents(onStop),
     compose: makeCompose(moduleRoot, dirs, onStop),
     helm: makeHelm(moduleRoot, dirs, onStop),
-    files: {
-      async put(path, content, options = {}) {
-        const full = inside(path);
-        mkdirSync(dirname(full), { recursive: true });
-        writeFileSync(full, content);
-        if (options.executable) chmodSync(full, 0o755);
-        if (options.mode !== undefined) chmodSync(full, options.mode);
-      },
-      async mode(path) {
-        return statSync(inside(path)).mode & 0o777;
-      },
-      async link(path, target) {
-        const full = inside(path);
-        mkdirSync(dirname(full), { recursive: true });
-        symlinkSync(target, full);
-      },
-      async read(path) {
-        return readFileSync(inside(path), "utf8");
-      },
-      async list(dir = "$INPUT") {
-        return listFiles(inside(dir)).map((file) => relative(inside(dir), file));
-      },
-      async remove(path) {
-        rmSync(inside(path), { recursive: true, force: true });
-      },
-      async clear(path) {
-        const folder = inside(path);
-        for (const entry of readdirSync(folder)) rmSync(join(folder, entry), { recursive: true, force: true });
-      },
-      path: inside,
-    },
+    shared: shared.shared,
+    files: makeFiles(dirs),
     adapter: (name) => adapterCommand(moduleRoot, name),
     readme: {
       quickStartArgs: () => quickStart(moduleRoot).args,
@@ -237,5 +252,6 @@ export function makeSut(moduleRoot: string, dirs: Folders, hosts: () => string[]
       rmSync(dirs.noreal);
       return [...new Set([...refused, ...seen])];
     },
+    sharedUsed: shared.used,
   };
 }
