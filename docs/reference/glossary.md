@@ -72,6 +72,8 @@ Use these terms in scenarios, code, UI text and docs.
 | Smoke scenario | A scenario of `e2e/features/` that runs the whole factory on the Compose profile, with fakes at its edges. |
 | Shared start | One start of a slow system under test, such as the Compose profile, that scenarios tagged with the same `@shared=<name>` share because they only read it. Each keeps its own test and result (ADR 0157). |
 | Scenario Outline | A scenario with an `Examples` table: one ID and one test for a family of cases with the same steps, where only the literals differ (ADR 0157). |
+| ADR | A decision record in `docs/decisions/`: why the repository does something the way it does. Its body stays as accepted; its status line names a later record that supersedes or amends it (ADR 0001, ADR 0161). |
+| Design note | An ADR about the mechanics of tests and CI, with `topic: design-note`; the index in `docs/decisions/README.md` lists it apart from the decisions that last (ADR 0161). |
 | Live test | A test against a real, paid outside service, without fakes: the paid smoke run `SMOKE-PAID`. It is no system test, and no check counts it. |
 | Product engineer | A person who delivers product value through the factory. |
 | Factory engineer | A person who improves the factory itself. |

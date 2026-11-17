@@ -2,9 +2,9 @@
 import { spawnSync } from "node:child_process";
 import { posix } from "node:path";
 import picomatch from "picomatch";
-import { parse as parseYaml } from "yaml";
 import { refreshDocs } from "../scaffold/docs.ts";
 import type { Context } from "./lib/context.ts";
+import { ADR_FILES, frontMatter, TOPIC_LIST, TOPIC_NAMES } from "./lib/decisions.ts";
 import { changedFiles, showAt } from "./lib/git.ts";
 import { CHART, COMPOSE, FACTORIES, pins, VALUES } from "./lib/profile.ts";
 import { type Finding, lineOf, Repo } from "./lib/repo.ts";
@@ -17,16 +17,6 @@ export function docsGen(context: Context): Finding[] {
     line: section.line,
     message: `the section generated from ${section.source} is out of date: run make docs`,
   }));
-}
-
-export function frontMatter(text: string): Record<string, unknown> {
-  const match = /^---\n([\s\S]*?)\n---\n/.exec(text);
-  if (!match) return {};
-  try {
-    return (parseYaml(match[1] as string) as Record<string, unknown> | null) ?? {};
-  } catch {
-    return {};
-  }
 }
 
 export function docsAffected(context: Context): Finding[] {
@@ -189,7 +179,7 @@ export function adr(context: Context): Finding[] {
   const adrs: Adr[] = [];
   const numbers = new Map<string, string>();
 
-  for (const file of repo.match("docs/decisions/[0-9][0-9][0-9][0-9]-*.md")) {
+  for (const file of repo.match(ADR_FILES)) {
     const text = repo.read(file);
     const meta = frontMatter(text);
     const at = (message: string, needle?: string): void => {
@@ -199,6 +189,8 @@ export function adr(context: Context): Finding[] {
     if (!ADR_STATUS.test(status))
       at(`status "${status}" is not proposed, accepted, rejected, deprecated or superseded by NNNN`);
     if (!meta.date) at("front matter needs a date");
+    if (meta.topic === undefined) at(`front matter needs a topic: ${TOPIC_LIST}`);
+    else if (!TOPIC_NAMES.includes(String(meta.topic))) at(`topic "${meta.topic}" is not ${TOPIC_LIST}`, "topic:");
     const number = posix.basename(file).slice(0, 4);
     const earlier = numbers.get(number);
     if (earlier) at(`ADR number ${number} is already used by ${earlier}: take the next free number`);

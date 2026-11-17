@@ -1,5 +1,6 @@
 ---
 status: accepted
+topic: console
 date: 2026-11-14
 supersedes: 0072 (no build step, no script in the browser, read-only only), 0089 (no sign-in of the console's own)
 ---

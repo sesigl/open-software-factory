@@ -1,5 +1,6 @@
 ---
 status: accepted
+topic: design-note
 date: 2026-11-08
 ---
 

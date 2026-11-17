@@ -1,5 +1,6 @@
 ---
 status: accepted; reuse of a report on a key of the whole tree superseded by 0091
+topic: design-note
 date: 2026-10-26
 ---
 

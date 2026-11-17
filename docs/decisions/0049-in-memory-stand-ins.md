@@ -1,5 +1,6 @@
 ---
-status: accepted; fakes.postgres is a PostgreSQL container again since 0129
+status: accepted; the principle stands; fakes.postgres is a PostgreSQL container again since 0129
+topic: testing
 date: 2026-10-23
 ---
 

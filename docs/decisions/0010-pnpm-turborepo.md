@@ -1,5 +1,6 @@
 ---
 status: accepted
+topic: packages
 date: 2026-10-19
 supersedes: 0005 (build tool part only)
 ---

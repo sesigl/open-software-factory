@@ -1,5 +1,6 @@
 ---
 status: accepted
+topic: factory
 date: 2026-11-14
 ---
 

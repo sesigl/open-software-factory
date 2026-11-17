@@ -274,10 +274,14 @@ TR, D and E; items of one stage can run in parallel when they touch different un
 
 ### [ ] T-90 · one channel package, and `postgres` in a shared library (P2)
 
-### [ ] T-91 · an index of the decisions that last (P2)
+### [x] T-91 · an index of the decisions that last (P2)
 
 - **Build:** `docs/decisions/README.md` lists the durable decisions; records of test and CI mechanics are marked
   as design notes; ADR 0001 allows a status line to change; 0003, 0016, 0049 and 0093 get their notes.
+- **Done:** ADR 0161: every record names a `topic:` (`design-note` for test and CI mechanics), which the ADR check
+  requires (SCN-REPO-200); `make docs` writes the index by topic, the design notes and the superseded records apart,
+  and DOCS-GEN keeps it current (SCN-REPO-201). ADR 0001 lets a status line and a topic change; 0003, 0016, 0049
+  and 0093 name the records that changed them.
 
 ### [ ] T-92 · `init`, `up` and `doctor` are commands of `factory` (P2)
 

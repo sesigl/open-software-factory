@@ -1,5 +1,6 @@
 ---
 status: accepted; main stores its results under the hash of a pull request since 0154
+topic: design-note
 date: 2026-11-09
 ---
 

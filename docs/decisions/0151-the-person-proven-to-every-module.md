@@ -1,5 +1,6 @@
 ---
 status: accepted
+topic: console
 date: 2026-11-15
 ---
 

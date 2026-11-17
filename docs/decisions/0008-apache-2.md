@@ -1,5 +1,6 @@
 ---
 status: accepted
+topic: process
 date: 2026-10-18
 ---
 

@@ -1,5 +1,6 @@
 ---
-status: accepted
+status: accepted; Temporal and NATS run as binaries since 0067; Forgejo, PostgreSQL and Temporal start once per test process since 0064 and 0129
+topic: testing
 date: 2026-10-19
 ---
 

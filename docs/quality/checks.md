@@ -485,7 +485,10 @@ to the base of the pull request. Without it, a check that needs it prints "skipp
 - **Fails, for each ADR:** a status that is not `proposed`, `accepted`, `rejected`, `deprecated` or
   `superseded by NNNN`; no date; a number that another ADR uses; a title that does not start with `# NNNN. `; no
   `## Decision`; an empty Prior art section, or one with the template's text; an empty `## Why a package`, or one with
-  the template's text (ADR 0159).
+  the template's text (ADR 0159); a `topic:` that is missing or not one of `process`, `stack`, `packages`, `testing`,
+  `ports`, `tools`, `factory`, `runs`, `console`, `install` and `design-note` (ADR 0161).
+- **Index:** `make docs` writes the index in `docs/decisions/README.md` from the topics and status lines; DOCS-GEN
+  keeps it current.
 - **Fails, for each unit:** a module, port or adapter that no accepted ADR with a filled Prior art section names.
 - **Fails, compared with the base:** a new dependency in a `package.json` or `pyproject.toml` that no accepted ADR
   with a filled Prior art section names; a package under `modules/`, `packages/` or `adapters/` that is published now

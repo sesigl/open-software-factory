@@ -1,5 +1,6 @@
 ---
 status: accepted; Python and Java clients superseded by 0012
+topic: stack
 date: 2026-10-18
 ---
 

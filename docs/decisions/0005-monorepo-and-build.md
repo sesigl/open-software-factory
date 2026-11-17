@@ -1,5 +1,6 @@
 ---
 status: accepted; build tool part superseded by 0010; client release part superseded by 0012; release pull request part amended by 0038
+topic: packages
 date: 2026-10-18
 ---
 

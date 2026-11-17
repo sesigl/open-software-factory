@@ -126,10 +126,12 @@ export function junit(cases: { file: string; id: string; time?: number; body?: s
   return ['<?xml version="1.0" encoding="UTF-8"?>', "<testsuites>", ...suites, "</testsuites>", ""].join("\n");
 }
 
-export const acceptedAdr = (number: string, names: string, status = "accepted"): string =>
+/** An ADR that names `names`; an empty topic leaves the line `topic:` out. */
+export const acceptedAdr = (number: string, names: string, status = "accepted", topic = "tools"): string =>
   [
     "---",
     `status: ${status}`,
+    ...(topic ? [`topic: ${topic}`] : []),
     "date: 2026-01-01",
     "---",
     "",

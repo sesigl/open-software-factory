@@ -1,5 +1,6 @@
 ---
 status: accepted
+topic: testing
 date: 2026-11-16
 ---
 
