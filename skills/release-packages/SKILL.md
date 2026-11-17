@@ -19,7 +19,8 @@ agent.
      --registry https://registry.npmjs.org` without `--otp`. npm stages the version: the package exists, nothing is
      public. A version `0.0.0-stage` is refused.
    - Add the trusted publisher (step 4 of `contracts/README.md#releases`).
-3. Ask the maintainer before each of these: both publish to npm.
+3. Ask the maintainer before the placeholder publish and before the trusted publisher: both change npm (root
+   `AGENTS.md`, "When to stop and ask").
 
 ## Two-factor authentication for npm
 
@@ -33,7 +34,8 @@ agent.
 ## The release pull request
 
 - It never gets the required status `gatekeeper` (`GITHUB_TOKEN` starts no `pull_request_target`), so it merges
-  only with `gh pr merge <n> --squash --admin`. Ask the maintainer first: the merge publishes every package in it.
+  only with `gh pr merge <n> --squash --admin`. The merge publishes every package in it, so ask the maintainer first
+  (root `AGENTS.md`, "When to stop and ask").
 - Its `verify` runs with `workflow_dispatch` and reports a commit status on the pull request.
 
 ## After the merge

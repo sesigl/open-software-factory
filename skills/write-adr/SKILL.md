@@ -8,8 +8,8 @@ description: Record a durable decision, including every new module, package, dep
 1. Copy `docs/decisions/_template.md` to `docs/decisions/NNNN-<short-name>.md` with the next number.
 2. Fill in: context, decision, options considered, consequences.
 3. Fill in **Prior art** for every new module, dependency or service: which existing projects you checked,
-   their license and maintenance state, and why you adopt, extend or build. The DOCS check rejects an empty
-   Prior art section.
+   their license and maintenance state, and why you adopt, extend or build. The ADR check rejects an empty
+   Prior art section, and a module, port, adapter or new dependency that no accepted ADR with Prior art names.
 4. Fill in **Why a package** for every new published package (module, adapter or library), and delete the section
    otherwise (ADR 0159). Answer each question; the ADR check rejects a new package without this section, and an
    empty one:

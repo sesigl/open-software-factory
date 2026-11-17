@@ -10,7 +10,7 @@ it only through its public surface.
 
 ## File and name
 
-- Location: `modules/<name>/system-tests/`.
+- Location: `system-tests/` of the unit, for example `modules/<name>/system-tests/`.
 - One file per scenario, named after the ID: `SCN-PROOF-004.test.ts`.
 
 ## Example
@@ -48,10 +48,12 @@ is tested with this same testkit through its CLI or API.
 ## Rules
 
 - `sut` comes from the testkit. It runs the module's built artifact (CLI, server or container), never the source.
-- Allowed: `sut.cli`, `sut.http` (generated client from `contracts/`), `sut.mcp`, `sut.events`, `sut.files`
-  (only the folders the module documents as input or output), and `fakes.*`.
-- Forbidden: imports from `src/`, database drivers, reading the module's data folder, environment variables that
-  are not documented in the module's README, `sleep`, real time, real network, real models.
+- Reach the module through `sut`: for example `sut.cli`, `sut.http` (generated client from `contracts/`), `sut.mcp`,
+  `sut.events`, `sut.files` (only the folders the module documents as input or output), and `fakes.*`. A UI test
+  finds elements by role, label or text (UI-QUERY).
+- The hard rules of root `AGENTS.md` hold ("Test from the outside only", "No real network, model, clock or
+  randomness"). Also: no database driver (BOUNDARY-STATIC), no environment variable that the module's README does
+  not document (BOUNDARY-ENV), no `sleep`.
 - Outside systems are fakes from the testkit: a scripted model gateway, a scripted ACP harness, fake Slack,
   a real Forgejo container as forge, a PostgreSQL container with a database for each scenario (ADR 0129), NATS and
   Temporal as processes on the host, a container for S3.
@@ -76,4 +78,5 @@ is tested with this same testkit through its CLI or API.
 - Each `then` must assert on something the module produced. An assertion on a value the test created itself
   does not count.
 - Run the test before you implement: it must fail, and the failure must be about the missing behavior, not a
-  setup error. Write the failure line into the pull request description.
+  setup error. Name the failure line in the commit message that adds the test, not in the pull request description
+  (`skills/ship-pull-request`).

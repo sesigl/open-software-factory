@@ -13,16 +13,19 @@ description: Implement one planned scenario until its system test passes, then m
    not import an adapter.
 4. Run the one test: `make test-scenario ID=SCN-PROOF-004`. Repeat until it passes.
 5. Set `@status=implemented` on the scenario.
-6. Run `make check`. Fix every failure in this module. Never weaken a check to make it pass; fix the cause.
+6. Run `make check` and fix every failure; open `docs/quality/checks.md` for the check ID it names.
 7. Update the docs: `skills/keep-docs-evergreen`.
-8. Run `make verify` and put the summary into the pull request.
+8. Run `make verify` and report its result (root `AGENTS.md`, "How to work").
 
 ## Rules
 
-- One scenario per pull request when possible; at most one module per pull request.
-- Do not add behavior that no scenario asks for. If you need it, stop and write a `planned` scenario first.
-- Do not add a unit test unless the module's `AGENTS.md` allows it for this code.
-- If the test can only pass by changing the scenario, replace the scenario (`skills/write-scenario`) and say why
-  in the pull request.
-- If a check fails outside the module you changed, stop and report it. Do not fix it in the same pull request.
-- Retro at the end: write what did not work the first time into the pull request under "Friction".
+- One scenario per pull request when possible, and one module when possible. A change across modules or to
+  `contracts/` starts in plan mode (root `AGENTS.md`, "Harness notes").
+- Do not add behavior that no scenario asks for. If you need it, write a `planned` scenario first
+  (`skills/write-scenario`).
+- When the test can pass only if the scenario says something else, the requirement is unclear: stop and ask (root
+  `AGENTS.md`, "When to stop and ask"). Never change the scenario to fit the code (ADR 0157).
+- A check that fails outside the module you changed is yours to fix in the same pull request, unless the root
+  `AGENTS.md` says to stop and ask.
+- What did not work the first time is a learning: propose it, with the file it belongs in, in your report to the
+  maintainer (root `AGENTS.md`, "How to work"). It does not go into the pull request description.

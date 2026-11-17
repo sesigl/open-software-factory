@@ -12,7 +12,7 @@ Docs fall into four kinds. Each kind has its own rule.
 | Reference | CLI help, config keys, API, events, scenario list | Generated from code and contracts by `make docs`. Never edit by hand. |
 | Requirements | `modules/*/features/*.feature` | The scenarios themselves. Rendered to the docs site. |
 | How-to and tutorial | `modules/*/README.md`, `docs/how-to/` | Hand-written. Front matter `covers:` lists the paths they describe. |
-| Explanation | `docs/explanation/`, `docs/decisions/` | Hand-written. ADRs are never edited after acceptance; a new ADR supersedes. |
+| Explanation | `docs/explanation/`, `docs/decisions/` | Hand-written. An accepted ADR is not edited: a new ADR supersedes or amends it, and only the old one's `status` line names the new one (ADR 0001). |
 
 ## Steps
 
@@ -20,8 +20,9 @@ Docs fall into four kinds. Each kind has its own rule.
 2. Run `make docs-affected`. It lists every hand-written doc whose `covers:` paths your change touched.
 3. Read each listed doc. Update it, or add `docs-reviewed: <doc path>` to the pull request description when
    nothing had to change.
-4. Run `make check`. The DOCS check passes when generated docs are current, links resolve, and every affected
-   doc was updated or marked reviewed.
+4. Run `make check`: DOCS-GEN (generated docs are current) and DOCS-LINKS (links resolve) run there.
+   DOCS-AFFECTED (every affected doc was updated or marked reviewed) runs in `make verify` and CI, where it reads the
+   pull request description (`docs/quality/checks.md`).
 
 ## Rules
 

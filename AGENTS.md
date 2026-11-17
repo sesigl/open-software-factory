@@ -81,8 +81,7 @@ today and about 300 lines for a library. Otherwise the code goes into an existin
   own (Claude Code puts a subagent's in `.claude/worktrees/`). A worktree keeps its own turbo cache (ADR 0081), so
   its first build is cold. The checks and `make docs` leave a nested checkout alone.
 - Store learnings in the repository, never in an agent's own auto memory: in a skill, an `AGENTS.md` or a doc, where
-  every later session and agent reads them. Before you add one, show the learning and its place to the maintainer
-  and wait for approval.
+  every later session and agent reads them. Ask before you add one (below).
 
 ## Hard rules
 
@@ -163,9 +162,16 @@ When a check fails, its output starts with the check ID and the file and line to
 
 ## When to stop and ask
 
-Stop when a requirement is unclear or contradicts another, when a change needs a new paid service or a paid
-call, or when a check fails for a reason you cannot fix. Ask one clear question with the options and their
-effects. Everything else, including scenarios, contracts, checks and workflows, you change yourself in the pull
+This is the one list; the skills point here. Stop and ask one clear question, with the options and their effects:
+
+- when a requirement is unclear or contradicts another, or a scenario cannot be met as written;
+- when a change needs a new paid service or a paid call (`make smoke-paid` included);
+- when a check fails for a reason you cannot fix, or in a module another agent is changing;
+- before you store a learning: show it and its place, and wait for approval;
+- before a step that changes npm: a placeholder publish, a trusted publisher, the merge of a release pull request;
+- before a merge the maintainer did not ask for, or one that needs `--admin`.
+
+Everything else, including scenarios, contracts, checks and workflows, you change yourself in the pull
 request; its review is the approval.
 
 <!-- BEGIN:turborepo-agent-rules -->

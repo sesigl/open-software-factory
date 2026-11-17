@@ -247,10 +247,13 @@ TR, D and E; items of one stage can run in parallel when they touch different un
   work item) and "session"; `docs/explanation/bootstrapping.md`; the principles and `docs/architecture/` say what
   is built and what is planned; the finished items of this file move to `docs/history/`.
 
-### [ ] T-87 · `checks.md` and the skills, readable and without contradictions (P2)
+### [x] T-87 · `checks.md` and the skills, readable and without contradictions (P2)
 
 - **Build:** one line per check in the tables and a short section per check; one pass over the ten skills, with
   every case to stop and ask in one list of `AGENTS.md`.
+- **Done:** `docs/quality/checks.md` has one line per check with where it runs, and a section per check with what it
+  reads, what fails and the fix, true to `tools/checks/`; the skills link to `AGENTS.md` instead of repeating it, and
+  its "When to stop and ask" holds every case the skills named.
 
 ### [x] T-88 · a package earns its place (P1)
 

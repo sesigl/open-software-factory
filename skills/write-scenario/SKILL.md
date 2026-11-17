@@ -37,13 +37,11 @@ A scenario describes one observable behavior of one module, seen from outside th
   message in quotes. Quote the whole text only when the exact text is the contract (a line other programs parse,
   a format, a published name).
 - New scenarios start as `@status=planned`. Only `implement-scenario` sets `implemented`, after the test passes.
-- Editing an `implemented` scenario (ADR 0157):
-  - The behavior stays the same (a reworded message, a renamed label, a longer list of the same kind, a constant
-    that is not the point of the scenario): edit the text in place and change the test's labels in the same commit.
-  - The behavior changes or goes away: write a new scenario with `@replaces=SCN-...`, mark the old one `deprecated`
-    and delete its test in the same change.
-  - Never edit a scenario to make a failing test pass. The review reads the "steps changed" rows of the spec-trace
-    summary.
+- Editing an `implemented` scenario follows the hard rule of root `AGENTS.md` (ADR 0157): wording in place when the
+  behavior stays (a longer list of the same kind counts too), `@replaces=` when it changes or goes. The review reads
+  the "steps changed" rows of the spec-trace summary.
+- A port's shared behavior goes into `ports/<port>/features/` with `@conformance`. Every adapter of the port
+  runs those scenarios.
 
 ## Scenario Outlines
 
@@ -77,5 +75,3 @@ Helm chart, a LiteLLM gateway) may share one start of it (ADR 0157). Tag each sc
 own test. A scenario in the group does not change the shared system, or changes it only under a name of its own (a
 project, a namespace, a key). A shared start is allowed only outside REACH and MUTATION, today in `deploy/` and
 `e2e/`.
-- A port's shared behavior goes into `ports/<port>/features/` with `@conformance`. Every adapter of the port
-  runs those scenarios.

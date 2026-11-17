@@ -8,13 +8,11 @@ description: Create a new module or adapter from the template. Use when a tool o
 ## Before you start
 
 - An accepted ADR in `docs/decisions/` names the module, its tier (core, optional or community) and the prior art
-  that was checked, and answers `## Why a package` (ADR 0159). Without it, stop and use `skills/write-adr`.
-- The package earns its place: a job of its own, a reason to be installed or released alone (a user installs it
-  without the rest, or a factory names it as the adapter of a port in `factory.yaml`, or two units of different
-  release cadence need it), a second user today for a library, and about 300 lines of source for a library. An
-  adapter may be smaller; then prefer one package per port family with a command per product. When the bar is not
-  met, put the code into an existing library whose job it fits (`cli`, `testkit`, `contracts`, `factory-source`,
-  `spec-files`), or keep it in the one unit that uses it.
+  that was checked, and answers `## Why a package`. Without it, write it first: `skills/write-adr`, whose step 4
+  holds the bar a new package must clear (ADR 0159).
+- When the bar is not met, do not create a module: put the code into an existing library whose job it fits (`cli`,
+  `testkit`, `contracts`, `factory-source`, `spec-files`), or keep it in the one unit that uses it. An adapter may be
+  smaller than a library; then prefer one package per port family with a command per product.
 
 ## Steps
 
@@ -24,8 +22,9 @@ description: Create a new module or adapter from the template. Use when a tool o
 2. Fill in `README.md`: the one problem the module solves alone, the quick start, inputs and outputs. Its first
    sentence and the `description` of `package.json` say the module's one job in one sentence (ADR 0135).
 3. Fill in `AGENTS.md` for the module: public surface (every command, route, event and file, and for a library every
-   value it exports: SURFACE), allowed exceptions (for example unit tests for a parser), the wall time budget of its
-   system tests (one line, ADR 0155). Keep the "Quality limits" (duplication and mutation score) and the `mutation`
+   value it exports: SURFACE), allowed exceptions (for example unit tests for a parser), and the budget of its
+   system tests: the line `System tests: N seconds of wall time`, in a section of at most three lines (BUDGET,
+   ADR 0155). Keep the "Quality limits" (duplication and mutation score) and the `mutation`
    script in `package.json` from the template; DUP and MUTATION fail without them (ADR 0037).
 4. Pick the module's layers in `architecture.json` (ADR 0014). The template starts with `entry` → `adapters` →
    `domain`; change it when the module needs another shape. A file may import its own layer and the layers below
@@ -39,8 +38,9 @@ description: Create a new module or adapter from the template. Use when a tool o
 - A module is useful alone. If it needs another module to be useful, it is part of that module.
 - A package has one job and a narrow surface (ADR 0135). When its sentence needs "and" to join two jobs, or a library's
   list of values keeps growing, split it.
-- The public surface is declared in `README.md` and `contracts/`: CLI commands, HTTP endpoints, MCP tools,
-  events, input and output folders. Everything else is private.
+- The public surface is listed under "Public surface" in the module's `AGENTS.md` (SURFACE reads it), described in
+  `README.md` and, for shared formats, in `contracts/`: CLI commands, HTTP endpoints, MCP tools, events, input and
+  output folders. Everything else is private.
 - An adapter implements one port and passes that port's `@conformance` scenarios.
 - What the module's code loads at run time is in `dependencies` (or `peerDependencies`): npm does not install
   `devDependencies` with a published package. A file it needs from a library that is only a devDependency, like a
