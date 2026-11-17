@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.0](https://github.com/sesigl/open-software-factory/compare/ledger-v0.8.0...ledger-v0.9.0) (2026-11-17)
+
+
+### Features
+
+* **ledger:** the factory's share of merged pull requests and each group's revert rate (T-96) ([#392](https://github.com/sesigl/open-software-factory/issues/392)) ([fb15d59](https://github.com/sesigl/open-software-factory/commit/fb15d594b40ad6e103ea322434696dfd82c00145))
+* **tools, testkit:** BUDGET measures the wall time of a suite (T-74, ADR 0155) ([#379](https://github.com/sesigl/open-software-factory/issues/379)) ([fde5791](https://github.com/sesigl/open-software-factory/commit/fde57913171d572f9aa9b03c93b7048da75b10c0))
+
 ## [0.8.0](https://github.com/sesigl/open-software-factory/compare/ledger-v0.7.0...ledger-v0.8.0) (2026-11-14)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/sesigl/open-software-factory/compare/factory-source-v0.1.0...factory-source-v0.2.0) (2026-11-17)
+
+
+### Features
+
+* **tools, testkit:** BUDGET measures the wall time of a suite (T-74, ADR 0155) ([#379](https://github.com/sesigl/open-software-factory/issues/379)) ([fde5791](https://github.com/sesigl/open-software-factory/commit/fde57913171d572f9aa9b03c93b7048da75b10c0))
+
 ## 0.1.0 (2026-11-15)
 
 

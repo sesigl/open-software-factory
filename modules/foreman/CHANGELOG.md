@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.16.0](https://github.com/sesigl/open-software-factory/compare/foreman-v0.15.0...foreman-v0.16.0) (2026-11-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* **cli, testkit, gatekeeper, foreman, console, intake, proof, runlog, scorekit, channel-slack:** a gatekeeper, foreman, console, intake, proof, runlog, scorekit or channel-slack process started with OSF_NOW (or console with OSF_SEED) set and without OSF_TEST_HOOKS=1 now exits 2 instead of running on that clock or seed; unset the variable. gatekeeper serve with a GATEKEEPER_POLL_MS that is no whole number of 1 or more (like 0, -5 or 1s) now exits 2 instead of falling back to 30 s or polling at once.
+
+### Features
+
+* **cli, testkit, gatekeeper, foreman, console, intake, proof, runlog, scorekit, channel-slack:** test hooks need an explicit switch (T-93) ([#400](https://github.com/sesigl/open-software-factory/issues/400)) ([135c9cd](https://github.com/sesigl/open-software-factory/commit/135c9cd66e1423e8159ca5eb06b3a20d43555863))
+* **foreman, deploy:** a limit on stages side by side (T-97) ([#394](https://github.com/sesigl/open-software-factory/issues/394)) ([9bc4d17](https://github.com/sesigl/open-software-factory/commit/9bc4d17abc4b8dd98ec676ba36d54cd8111f717e))
+* **foreman, deploy:** the profile and the chart run no agent outside a sandbox (T-70) ([#387](https://github.com/sesigl/open-software-factory/issues/387)) ([4406d9f](https://github.com/sesigl/open-software-factory/commit/4406d9f4506e97caf29828f428687c525031a5f6))
+* **foreman:** a failed check sends the run back to implement once (T-98) ([#397](https://github.com/sesigl/open-software-factory/issues/397)) ([a4221ff](https://github.com/sesigl/open-software-factory/commit/a4221ff325a2247f50a09b852a48e3b68b4b0fbc))
+* **tools, testkit:** BUDGET measures the wall time of a suite (T-74, ADR 0155) ([#379](https://github.com/sesigl/open-software-factory/issues/379)) ([fde5791](https://github.com/sesigl/open-software-factory/commit/fde57913171d572f9aa9b03c93b7048da75b10c0))
+
+
+### Bug Fixes
+
+* **foreman, sandbox:** a foreman removes the sandboxes a dead one left, and destroy reports a failed removal (T-71) ([#388](https://github.com/sesigl/open-software-factory/issues/388)) ([b3c5339](https://github.com/sesigl/open-software-factory/commit/b3c53391d73deaa25544ecb99a1a52905b0b7373))
+* **foreman:** a stage heartbeats from its start and hears a cancel before its turn (T-66) ([#380](https://github.com/sesigl/open-software-factory/issues/380)) ([8929ba6](https://github.com/sesigl/open-software-factory/commit/8929ba6bcafb4b8351bb68e2cc0860dbe1085bb7))
+* **foreman:** an event waits for a factory that cannot be read now, and a failed start ends serve (T-67) ([#381](https://github.com/sesigl/open-software-factory/issues/381)) ([c41515c](https://github.com/sesigl/open-software-factory/commit/c41515c12464e2119437da4a4a27b1a596a64cb1))
+* **gatekeeper:** a gate asks only on the server's configured forge (T-63) ([#372](https://github.com/sesigl/open-software-factory/issues/372)) ([332342f](https://github.com/sesigl/open-software-factory/commit/332342fc4a83c57948e89e82c1d7bfd568ac8f6f))
+
 ## [0.15.0](https://github.com/sesigl/open-software-factory/compare/foreman-v0.14.1...foreman-v0.15.0) (2026-11-16)
 
 

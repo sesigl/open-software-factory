@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/sesigl/open-software-factory/compare/inference-litellm-v0.5.1...inference-litellm-v0.6.0) (2026-11-17)
+
+
+### Features
+
+* **tools, testkit:** BUDGET measures the wall time of a suite (T-74, ADR 0155) ([#379](https://github.com/sesigl/open-software-factory/issues/379)) ([fde5791](https://github.com/sesigl/open-software-factory/commit/fde57913171d572f9aa9b03c93b7048da75b10c0))
+
+
+### Bug Fixes
+
+* **inference-litellm:** spend-log waits the proxy's write interval, 17 s for an attached proxy with LiteLLM's default (T-101) ([#408](https://github.com/sesigl/open-software-factory/issues/408)) ([6dce5c7](https://github.com/sesigl/open-software-factory/commit/6dce5c72d6b61949f4015815d2bf86231bb60a54))
+
 ## [0.5.1](https://github.com/sesigl/open-software-factory/compare/inference-litellm-v0.5.0...inference-litellm-v0.5.1) (2026-11-15)
 
 

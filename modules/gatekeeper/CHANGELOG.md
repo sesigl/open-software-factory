@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.12.0](https://github.com/sesigl/open-software-factory/compare/gatekeeper-v0.11.0...gatekeeper-v0.12.0) (2026-11-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* **cli, testkit, gatekeeper, foreman, console, intake, proof, runlog, scorekit, channel-slack:** a gatekeeper, foreman, console, intake, proof, runlog, scorekit or channel-slack process started with OSF_NOW (or console with OSF_SEED) set and without OSF_TEST_HOOKS=1 now exits 2 instead of running on that clock or seed; unset the variable. gatekeeper serve with a GATEKEEPER_POLL_MS that is no whole number of 1 or more (like 0, -5 or 1s) now exits 2 instead of falling back to 30 s or polling at once.
+
+### Features
+
+* **cli, testkit, gatekeeper, foreman, console, intake, proof, runlog, scorekit, channel-slack:** test hooks need an explicit switch (T-93) ([#400](https://github.com/sesigl/open-software-factory/issues/400)) ([135c9cd](https://github.com/sesigl/open-software-factory/commit/135c9cd66e1423e8159ca5eb06b3a20d43555863))
+* **tools, testkit:** BUDGET measures the wall time of a suite (T-74, ADR 0155) ([#379](https://github.com/sesigl/open-software-factory/issues/379)) ([fde5791](https://github.com/sesigl/open-software-factory/commit/fde57913171d572f9aa9b03c93b7048da75b10c0))
+
+
+### Bug Fixes
+
+* **gatekeeper, forge:** a gate on a pull request counts only what came after its request (T-64) ([#377](https://github.com/sesigl/open-software-factory/issues/377)) ([e604533](https://github.com/sesigl/open-software-factory/commit/e6045334b3ba6e3fedfd01a67e2950319818d967))
+* **gatekeeper:** a gate asks only on the server's configured forge (T-63) ([#372](https://github.com/sesigl/open-software-factory/issues/372)) ([332342f](https://github.com/sesigl/open-software-factory/commit/332342fc4a83c57948e89e82c1d7bfd568ac8f6f))
+* **gatekeeper:** the merge gate covers the factory's branches, and unsigned records are said aloud (T-69) ([#378](https://github.com/sesigl/open-software-factory/issues/378)) ([7cc00f5](https://github.com/sesigl/open-software-factory/commit/7cc00f58156b65fa5dd9ae31c5e3ffa50339b30b))
+
 ## [0.11.0](https://github.com/sesigl/open-software-factory/compare/gatekeeper-v0.10.1...gatekeeper-v0.11.0) (2026-11-16)
 
 

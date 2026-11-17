@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.13.0](https://github.com/sesigl/open-software-factory/compare/factory-spec-v0.12.1...factory-spec-v0.13.0) (2026-11-17)
+
+
+### Features
+
+* **factory-spec:** factory render writes an agent's stop check as Claude Code's Stop hook (T-76) ([#403](https://github.com/sesigl/open-software-factory/issues/403)) ([1610e20](https://github.com/sesigl/open-software-factory/commit/1610e20d87604c48ec561dbd8a7f47b83627e3b9))
+* **foreman:** a failed check sends the run back to implement once (T-98) ([#397](https://github.com/sesigl/open-software-factory/issues/397)) ([a4221ff](https://github.com/sesigl/open-software-factory/commit/a4221ff325a2247f50a09b852a48e3b68b4b0fbc))
+* **testkit, factory-spec:** Scenario Outlines with examples, first for factory lint (T-84) ([#391](https://github.com/sesigl/open-software-factory/issues/391)) ([4bc8d49](https://github.com/sesigl/open-software-factory/commit/4bc8d49dd1469cda3b21b74b14d4de23e3e8229a))
+* **tools, testkit:** BUDGET measures the wall time of a suite (T-74, ADR 0155) ([#379](https://github.com/sesigl/open-software-factory/issues/379)) ([fde5791](https://github.com/sesigl/open-software-factory/commit/fde57913171d572f9aa9b03c93b7048da75b10c0))
+
 ## [0.12.1](https://github.com/sesigl/open-software-factory/compare/factory-spec-v0.12.0...factory-spec-v0.12.1) (2026-11-15)
 
 
