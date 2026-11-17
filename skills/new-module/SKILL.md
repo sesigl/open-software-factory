@@ -11,8 +11,8 @@ description: Create a new module or adapter from the template. Use when a tool o
   that was checked, and answers `## Why a package`. Without it, write it first: `skills/write-adr`, whose step 4
   holds the bar a new package must clear (ADR 0159).
 - When the bar is not met, do not create a module: put the code into an existing library whose job it fits (`cli`,
-  `testkit`, `contracts`, `factory-source`, `spec-files`), or keep it in the one unit that uses it. An adapter may be
-  smaller than a library; then prefer one package per port family with a command per product.
+  `testkit`, `contracts`, `factory-source`, `spec-files`), or keep it in the one unit that uses it. An adapter of a
+  port is its own package, `@opensoftware/<port>-<name>`, whatever its size (ADR 0175).
 
 ## Steps
 

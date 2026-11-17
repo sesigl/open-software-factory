@@ -17,8 +17,8 @@ description: Record a durable decision, including every new module, package, dep
    - Why it is installed or released alone: a user or another repository installs it without the rest, a factory
      names it as the adapter of a port in `factory.yaml`, or two units of different release cadence need it.
    - For a library: the two units that use it in this pull request. A planned user does not count.
-   - Its size. About 300 lines of source is the floor for a library; an adapter may be smaller, then say why it is
-     not a command in a package of its port family.
+   - For a library: its size. About 300 lines of source is the floor. An adapter of a port needs no size: it is its
+     own package whatever its size (ADR 0175).
    - Why the code does not fit an existing library (`cli`, `testkit`, `contracts`, `factory-source`, `spec-files`)
      or the one unit that uses it.
 5. Set `topic:` to the group of the index in `docs/decisions/README.md`: `process`, `stack`, `packages`, `testing`,

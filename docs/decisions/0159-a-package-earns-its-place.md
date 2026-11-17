@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; amended by 0175 (an adapter of a port is its own package; the size floor is for libraries)
 topic: process
 date: 2026-11-16
 ---
