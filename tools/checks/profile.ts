@@ -11,12 +11,14 @@
 //   or of the workspace packages they depend on. The testkit does not count: a suite names its fakes in `images`.
 // - deploy/package.json declares each package that compose.yaml installs: the deploy suite builds the module images
 //   from those packages of the workspace (ADR 0156), so their changes are in the turbo hash of its tests.
+// - Compared with OSF_BASE: an image whose build arguments with a tool pin, like PNPM_VERSION, changed has a new tag
+//   (ADR 0172).
 import { statSync } from "node:fs";
 import { dirname, join, normalize } from "node:path";
 import { parse } from "yaml";
 import type { Context } from "./lib/context.ts";
 import { changedFiles, showAt } from "./lib/git.ts";
-import { CHART, COMPOSE, pins, services, VALUES } from "./lib/profile.ts";
+import { CHART, COMPOSE, pins, services, toolPins, VALUES } from "./lib/profile.ts";
 import { type Finding, lineOf, type Repo } from "./lib/repo.ts";
 import { type Unit, workspace } from "./lib/workspace.ts";
 
@@ -110,13 +112,21 @@ function moved(context: Context): Finding[] {
   if (!base) return [];
   const findings: Finding[] = [];
   const before = new Map(services(showAt(repo.root, base, COMPOSE) ?? "").map((service) => [service.name, service]));
+  const tools = toolPins(repo);
   for (const service of services(repo.read(COMPOSE))) {
     const old = before.get(service.name);
-    if (!service.image || !old?.image || service.packages.size === 0) continue;
+    if (!service.image || !old?.image || service.image.tag !== old.image.tag) continue;
+    const { module, tag } = service.image;
     const same = service.packages.size === old.packages.size;
     const changed = !same || [...service.packages].some(([name, version]) => old.packages.get(name) !== version);
-    if (changed && service.image.tag === old.image.tag) {
-      const message = `the packages of the image ${service.image.module} changed, so its tag ${service.image.tag} must change too`;
+    if (changed && service.packages.size > 0) {
+      const message = `the packages of the image ${module} changed, so its tag ${tag} must change too`;
+      findings.push(finding(COMPOSE, service.line, message));
+    }
+    const args = [...service.args].filter(([name, value]) => tools.has(name) && old.args.get(name) !== value);
+    if (args.length > 0) {
+      const names = args.map(([name]) => name).join(", ");
+      const message = `the build argument${args.length > 1 ? "s" : ""} ${names} of the image ${module} changed, so its tag ${tag} must change too`;
       findings.push(finding(COMPOSE, service.line, message));
     }
   }

@@ -399,8 +399,9 @@ services:
 
   # The template of the sandboxes of this repository's factory in dogfood/factory (ADR 0164): the agents' template with
   # pnpm and lychee, for its `make check-fast`. Only with the profile dogfood, which COMPOSE_PROFILES=dogfood turns on.
+  # osf profile-pins writes the versions of pnpm and lychee from package.json and tools/scaffold/install-tools.ts.
   dogfood-template:
-    image: ghcr.io/sesigl/open-software-factory/dogfood-agent:0.6.0
+    image: ghcr.io/sesigl/open-software-factory/dogfood-agent:0.6.0-r1
     profiles: [dogfood]
     build:
       context: ../images
@@ -408,6 +409,10 @@ services:
       secrets: [ca]
       args:
         PACKAGES: "@opensoftware/harness-claude-code@0.6.0"
+        PNPM_VERSION: "10.28.0"
+        LYCHEE_VERSION: "0.20.1"
+        LYCHEE_SHA256_AMD64: "1dd08bb064e2114c2c9d0c9009f51577de24e805361d6332162807972d8e9474"
+        LYCHEE_SHA256_ARM64: "d9c1221b5e349962fdfea74535440242a6483dc4d9a5f886763fc1d0c3d4bf07"
     entrypoint: ["true"]
 
   foreman:

@@ -48,9 +48,9 @@ its own.
 
 ## Budget
 
-- System tests: 340 seconds of wall time on the CI runner.
-- Most of it: one chart install on kind and one start of the Compose profile, shared by five scenarios each
-  (ADR 0162), 40 to 90 s each; locally the profile's scenarios took 55 s, down from 85 s. Lower it after CI measured it.
+- System tests: 190 seconds of wall time on the CI runner.
+- Measured: 65 to 92 s in the last five runs of `main` that ran the suite after the shared starts of T-82 (ADR 0162),
+  without the image build of `scripts/images.ts`; slowest × 2, rounded up (ADR 0155).
 
 ## Scenario prefix
 

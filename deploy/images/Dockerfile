@@ -14,22 +14,28 @@ FROM docker:29.1.3-cli AS docker
 
 FROM registry.k8s.io/kubectl:v1.34.1 AS kubectl
 
-# lychee, which DOCS-LINKS of `make check-fast` runs, at the version and SHA-256 that tools/scaffold/install-tools.ts
-# pins for x86_64; the arm64 build is of the same release.
+# lychee, which DOCS-LINKS of `make check-fast` runs, at the version and SHA-256 sums of its Linux builds that
+# tools/scaffold/install-tools.ts pins: the service dogfood-template of compose.yaml passes them, as osf profile-pins
+# writes them (ADR 0172).
 FROM ${NODE_IMAGE} AS lychee
 ARG TARGETARCH
+ARG LYCHEE_VERSION
+ARG LYCHEE_SHA256_AMD64
+ARG LYCHEE_SHA256_ARM64
 RUN apt-get update \
   && apt-get install --yes --no-install-recommends ca-certificates curl \
   && rm -rf /var/lib/apt/lists/*
 RUN --mount=type=secret,id=ca,required=false \
-  if [ -s /run/secrets/ca ]; then export CURL_CA_BUNDLE=/run/secrets/ca; fi \
+  test -n "$LYCHEE_VERSION" \
+  && if [ -s /run/secrets/ca ]; then export CURL_CA_BUNDLE=/run/secrets/ca; fi \
   && case "$TARGETARCH" in \
-    amd64) build=x86_64 sha256=1dd08bb064e2114c2c9d0c9009f51577de24e805361d6332162807972d8e9474 ;; \
-    arm64) build=aarch64 sha256=d9c1221b5e349962fdfea74535440242a6483dc4d9a5f886763fc1d0c3d4bf07 ;; \
+    amd64) build=x86_64 sha256=$LYCHEE_SHA256_AMD64 ;; \
+    arm64) build=aarch64 sha256=$LYCHEE_SHA256_ARM64 ;; \
     *) echo "no lychee for $TARGETARCH" && exit 1 ;; \
   esac \
+  && test -n "$sha256" \
   && curl -fsSL --retry 3 -o /tmp/lychee.tar.gz \
-    "https://github.com/lycheeverse/lychee/releases/download/lychee-v0.20.1/lychee-$build-unknown-linux-gnu.tar.gz" \
+    "https://github.com/lycheeverse/lychee/releases/download/lychee-v$LYCHEE_VERSION/lychee-$build-unknown-linux-gnu.tar.gz" \
   && echo "$sha256  /tmp/lychee.tar.gz" | sha256sum --check --strict \
   && tar -xzf /tmp/lychee.tar.gz -C /usr/local/bin lychee
 
@@ -71,14 +77,17 @@ ENV CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
 USER node
 
 # The template of the sandboxes of this repository's factory (ADR 0164): its agents run `make check-fast`, which needs
-# pnpm at the version of packageManager in package.json and lychee. They install the packages with pnpm through the
-# sandbox's egress from registry.npmjs.org. The system tests and `make verify` stay with CI: the sandbox has no Docker.
+# pnpm at the version of packageManager in package.json, which compose.yaml passes as PNPM_VERSION, and lychee. They
+# install the packages with pnpm through the sandbox's egress from registry.npmjs.org. The system tests and
+# `make verify` stay with CI: the sandbox has no Docker.
 FROM agent AS dogfood
 USER root
+ARG PNPM_VERSION
 COPY --from=lychee /usr/local/bin/lychee /usr/local/bin/lychee
 RUN --mount=type=secret,id=ca,required=false \
-  if [ -s /run/secrets/ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/ca; fi \
-  && npm install --global --no-fund --no-audit pnpm@10.28.0 \
+  test -n "$PNPM_VERSION" \
+  && if [ -s /run/secrets/ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/ca; fi \
+  && npm install --global --no-fund --no-audit "pnpm@$PNPM_VERSION" \
   && npm cache clean --force
 # turbo's default of ten tasks at a time ran out of memory in the typechecks with 4 GiB; four at a time fit 4 GiB.
 ENV TURBO_CONCURRENCY=4

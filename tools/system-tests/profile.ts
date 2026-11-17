@@ -35,6 +35,52 @@ export interface Profile {
   workflow?: string;
   /** The packages of the profile that deploy/package.json declares besides the testkit; default demo and adapter. */
   declares?: string[];
+  /** The packageManager of the root package.json, which is then written. */
+  packageManager?: string;
+  /** lychee's pins in tools/scaffold/install-tools.ts, which is then written. */
+  lychee?: Lychee;
+  /** Build arguments of the image demo after PACKAGES, from line 9 of compose.yaml on. */
+  args?: Record<string, string>;
+}
+
+/** lychee's version and the SHA-256 of its builds linux-x64 and linux-arm64. */
+export interface Lychee {
+  version: string;
+  x64: string;
+  arm64: string;
+}
+
+/** tools/scaffold/install-tools.ts with its list of pinned tools: lychee, then oasdiff. */
+function installTools({ version, x64, arm64 }: Lychee): string {
+  const build = (platform: string, sha256: string) => [
+    `      "${platform}": {`,
+    `        url: "https://example.invalid/lychee-v${version}/lychee-${platform}.tar.gz",`,
+    `        sha256: "${sha256}",`,
+    "      },",
+  ];
+  return [
+    "const PINNED: Pinned[] = [",
+    "  {",
+    '    name: "lychee",',
+    `    version: "${version}",`,
+    "    builds: {",
+    ...build("linux-x64", x64),
+    ...build("linux-arm64", arm64),
+    "    },",
+    "  },",
+    "  {",
+    '    name: "oasdiff",',
+    '    version: "1.11.7",',
+    "    builds: {",
+    '      "linux-x64": {',
+    '        url: "https://example.invalid/oasdiff_1.11.7_linux_amd64.tar.gz",',
+    `        sha256: "${"0".repeat(64)}",`,
+    "      },",
+    "    },",
+    "  },",
+    "];",
+    "",
+  ].join("\n");
 }
 
 /** A Dockerfile whose stage demo builds on the stage base and the global ARG NODE. */
@@ -67,6 +113,9 @@ export function profileRepository(profile: Profile = {}): Record<string, string>
     gateway,
     workflow,
     declares = ["demo", "adapter"],
+    packageManager,
+    lychee,
+    args = {},
   } = profile;
   const manifest = (name: string, version: string, tested = false) => {
     const scripts = tested ? { scripts: { "test:system": "vitest run" } } : {};
@@ -74,7 +123,10 @@ export function profileRepository(profile: Profile = {}): Record<string, string>
     const devDependencies = tested ? { devDependencies: { "@opensoftware/testkit": "workspace:*", ...own } } : {};
     return `${JSON.stringify({ name: `@opensoftware/${name}`, version, ...scripts, ...devDependencies })}\n`;
   };
+  const root = { name: "root", private: true, packageManager };
   return {
+    ...(packageManager ? { "package.json": `${JSON.stringify(root)}\n` } : {}),
+    ...(lychee ? { "tools/scaffold/install-tools.ts": installTools(lychee) } : {}),
     "pnpm-workspace.yaml": "packages:\n  - modules/*\n  - deploy\n",
     "modules/demo/package.json": manifest("demo", demo),
     "modules/adapter/package.json": manifest("adapter", adapter),
@@ -92,6 +144,7 @@ export function profileRepository(profile: Profile = {}): Record<string, string>
       ...(target ? [`      target: ${target}`] : []),
       "      args:",
       `        PACKAGES: "${pins}"`,
+      ...Object.entries(args).map(([name, value]) => `        ${name}: "${value}"`),
       ...(gateway
         ? ["  litellm:", `    image: ${REGISTRY}/litellm:${gateway}`, "    build:", "      target: litellm"]
         : []),

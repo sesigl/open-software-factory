@@ -191,7 +191,8 @@ DOCS-GEN keeps it current.
 - [0119](0119-setup-commands-around-compose.md) Setup commands around the Compose profile
 - [0145](0145-openbao-in-the-compose-profile-and-the-chart.md) OpenBao in the Compose profile: it sets itself up and unseals itself, and a job makes the two tokens
 - [0150](0150-a-factory-repository-on-a-forge-in-the-profile.md) A factory repository on a forge in the Compose profile and the chart, the check `factory`, and `console doctor`
-- [0164](0164-a-sandbox-that-checks-this-repository.md) A sandbox that checks this repository
+- [0164](0164-a-sandbox-that-checks-this-repository.md) A sandbox that checks this repository — amended by 0172 (pnpm and lychee are build arguments that osf profile-pins writes)
+- [0172](0172-the-sandbox-image-takes-the-tool-pins-from-profile-pins.md) The sandbox image takes the repository's tool pins from osf profile-pins
 
 ### Design notes: test and CI mechanics
 

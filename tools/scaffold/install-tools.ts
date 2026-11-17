@@ -3,7 +3,8 @@
 // `fakes.openbao()`, ADR 0137), and helm, kubectl and kind (the Helm chart's scenarios, ADR 0075) binaries, and the
 // agent-sandbox manifest (the kind cluster of the kubernetes sandbox adapter, ADR 0055), checked against their SHA-256,
 // in .tools/bin. CI caches .tools/bin, so a job downloads nothing while the pins stay the same. Builds are pinned for
-// Linux x86_64 (CI) and macOS arm64; elsewhere put the same versions on PATH.
+// Linux x86_64 (CI) and macOS arm64, lychee also for Linux arm64; elsewhere put the same versions on PATH. lychee's
+// version and Linux builds are the build arguments of the sandbox image too, which osf profile-pins writes (ADR 0172).
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
@@ -42,6 +43,11 @@ const PINNED: Pinned[] = [
       "linux-x64": {
         url: "https://github.com/lycheeverse/lychee/releases/download/lychee-v0.20.1/lychee-x86_64-unknown-linux-gnu.tar.gz",
         sha256: "1dd08bb064e2114c2c9d0c9009f51577de24e805361d6332162807972d8e9474",
+      },
+      // The arm64 build of the sandbox image's lychee: osf profile-pins writes it into compose.yaml (ADR 0172).
+      "linux-arm64": {
+        url: "https://github.com/lycheeverse/lychee/releases/download/lychee-v0.20.1/lychee-aarch64-unknown-linux-gnu.tar.gz",
+        sha256: "d9c1221b5e349962fdfea74535440242a6483dc4d9a5f886763fc1d0c3d4bf07",
       },
       "darwin-arm64": {
         url: "https://github.com/lycheeverse/lychee/releases/download/lychee-v0.20.1/lychee-arm64-macos.tar.gz",

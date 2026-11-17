@@ -969,6 +969,32 @@ Feature: Repository checks
     And "deploy/compose/compose.yaml" pins the image "demo:0.2.0-r2" with the packages "@opensoftware/demo@0.2.0 @opensoftware/adapter@0.3.2"
     And the Helm chart's tag of "demo" is "0.2.0-r2" and its version is 0.1.1
 
+  @id=SCN-REPO-225 @status=implemented
+  Scenario: PROFILE rejects a build argument of an image that is not the repository's pin of pnpm
+    Given a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them, with "packageManager" "pnpm@10.28.0" in "package.json" and the build argument "PNPM_VERSION" "10.28.0" of the image of "demo"
+    And "packageManager" in "package.json" is "pnpm@10.29.0"
+    When the developer runs "osf check PROFILE"
+    Then the command exits with code 1
+    And the output contains "PROFILE deploy/compose/compose.yaml:9 is not the released pin; osf profile-pins writes "PNPM_VERSION: "10.29.0"""
+    And the output contains "PROFILE deploy/compose/compose.yaml:5 is not the released pin; osf profile-pins writes "image: ghcr.io/sesigl/open-software-factory/demo:0.2.0-r1""
+
+  @id=SCN-REPO-226 @status=implemented
+  Scenario: osf profile-pins writes the version and the SHA-256 sums of lychee that "make install" pins into the build arguments of an image
+    Given a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them, with lychee 0.20.1 in "tools/scaffold/install-tools.ts" and the build arguments "LYCHEE_VERSION", "LYCHEE_SHA256_AMD64" and "LYCHEE_SHA256_ARM64" of the image of "demo" at its pins
+    And "tools/scaffold/install-tools.ts" pins lychee 0.21.0 with new SHA-256 sums for "linux-x64" and "linux-arm64"
+    When the developer runs "osf profile-pins"
+    Then the command exits with code 0
+    And the image of "demo" has the build arguments "LYCHEE_VERSION" "0.21.0" and the new sums of "linux-x64" as "LYCHEE_SHA256_AMD64" and of "linux-arm64" as "LYCHEE_SHA256_ARM64"
+    And "deploy/compose/compose.yaml" pins the image "demo:0.2.0-r1"
+
+  @id=SCN-REPO-227 @status=implemented
+  Scenario: PROFILE rejects a moved tool pin in the build arguments of an image without a new tag, compared with the base
+    Given a base commit with a workspace whose Compose profile and Helm chart pin "demo" 0.2.0 and "adapter" 0.3.0 as osf profile-pins writes them, with "packageManager" "pnpm@10.28.0" in "package.json" and the build argument "PNPM_VERSION" "10.28.0" of the image of "demo"
+    And a change that moves "packageManager" and the build argument "PNPM_VERSION" to 10.29.0, with the tag of "demo" unchanged
+    When the developer runs "osf check PROFILE" against the base commit
+    Then the command exits with code 1
+    And the output contains "PROFILE deploy/compose/compose.yaml:4 the build argument PNPM_VERSION of the image demo changed, so its tag 0.2.0 must change too"
+
   @id=SCN-REPO-074 @status=implemented
   Scenario: AFFECTED rejects a test suite that writes its JUnit results outside its own reports folder
     Given a repository that caches the system tests of the modules "demo" and "other" by the rules of ADR 0081
